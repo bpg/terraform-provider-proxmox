@@ -37,7 +37,7 @@ If you're building the provider, follow the instructions to [install it as a plu
 
 #### Virtual Environment
 
-##### Version (proxmox_ve_version)
+##### Version (proxmox_virtual_environment_version)
 
 ###### Arguments
 This data source doesn't accept arguments.
