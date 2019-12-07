@@ -44,9 +44,9 @@ This data source doesn't accept arguments.
 
 ###### Attributes
 * `keyboard` - The keyboard layout.
-* `release` - The release information.
+* `release` - The release number.
 * `repository_id` - The repository id.
-* `version` - The version information.
+* `version` - The version string.
 
 ## Developing the Provider
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.12+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
