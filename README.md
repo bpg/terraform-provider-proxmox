@@ -37,6 +37,15 @@ If you're building the provider, follow the instructions to [install it as a plu
 
 #### Virtual Environment
 
+##### Access Group (proxmox_virtual_environment_access_group)
+
+###### Arguments
+* `id` - (Required) The group id.
+
+###### Attributes
+* `comment` - The group comment.
+* `members` - The group members' as a list with `username@realm` entries.
+
 ##### Access Groups (proxmox_virtual_environment_access_groups)
 
 ###### Arguments
