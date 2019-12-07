@@ -10,8 +10,8 @@ import (
 	"net/url"
 )
 
-// VirtualEnvironmentAccessGroupCreateRequestData contains the data for an access group create request.
-type VirtualEnvironmentAccessGroupCreateRequestData struct {
+// VirtualEnvironmentAccessGroupCreateRequestBody contains the data for an access group create request.
+type VirtualEnvironmentAccessGroupCreateRequestBody struct {
 	Comment string `json:"comment" url:"comment"`
 	ID      string `json:"groupid" url:"groupid"`
 }
@@ -38,20 +38,19 @@ type VirtualEnvironmentAccessGroupListResponseData struct {
 	ID      string `json:"groupid"`
 }
 
+// VirtualEnvironmentAccessGroupUpdateRequestBody contains the data for an access group update request.
+type VirtualEnvironmentAccessGroupUpdateRequestBody struct {
+	Comment string `json:"comment" url:"comment"`
+}
+
 // CreateAccessGroup creates an access group.
-func (c *VirtualEnvironmentClient) CreateAccessGroup(id, comment string) error {
-	reqBody := &VirtualEnvironmentAccessGroupCreateRequestData{
-		Comment: comment,
-		ID:      id,
-	}
+func (c *VirtualEnvironmentClient) CreateAccessGroup(d *VirtualEnvironmentAccessGroupCreateRequestBody) error {
+	return c.DoRequest(hmPOST, "access/groups", d, nil)
+}
 
-	err := c.DoRequest(hmPOST, "access/groups", reqBody, nil)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+// DeleteAccessGroup deletes an access group.
+func (c *VirtualEnvironmentClient) DeleteAccessGroup(id string) error {
+	return c.DoRequest(hmDELETE, fmt.Sprintf("access/groups/%s", id), nil, nil)
 }
 
 // GetAccessGroup retrieves an access group.
@@ -84,4 +83,9 @@ func (c *VirtualEnvironmentClient) ListAccessGroups() ([]*VirtualEnvironmentAcce
 	}
 
 	return resBody.Data, nil
+}
+
+// UpdateAccessGroup updates an access group.
+func (c *VirtualEnvironmentClient) UpdateAccessGroup(id string, d *VirtualEnvironmentAccessGroupUpdateRequestBody) error {
+	return c.DoRequest(hmPUT, fmt.Sprintf("access/groups/%s", id), d, nil)
 }

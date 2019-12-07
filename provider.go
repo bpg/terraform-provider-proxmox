@@ -30,7 +30,9 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_access_groups": dataSourceVirtualEnvironmentAccessGroups(),
 			"proxmox_virtual_environment_version":       dataSourceVirtualEnvironmentVersion(),
 		},
-		ResourcesMap: map[string]*schema.Resource{},
+		ResourcesMap: map[string]*schema.Resource{
+			"proxmox_virtual_environment_access_group": resourceVirtualEnvironmentAccessGroup(),
+		},
 		Schema: map[string]*schema.Schema{
 			mkProviderVirtualEnvironment: &schema.Schema{
 				Type:     schema.TypeList,
@@ -66,7 +68,6 @@ func Provider() *schema.Provider {
 	}
 }
 
-// providerConfigure() configures the provider before processing any IronMQ resources.
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var err error
 	var veClient *proxmox.VirtualEnvironmentClient

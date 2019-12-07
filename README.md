@@ -66,6 +66,19 @@ This data source doesn't accept arguments.
 * `repository_id` - The repository id.
 * `version` - The version string.
 
+### Resources
+
+#### Virtual Environment
+
+##### Access Group (proxmox_virtual_environment_access_group)
+
+###### Arguments
+* `comment` - (Optional) The group comment.
+* `group_id` - (Required) The group id.
+
+###### Attributes
+* `members` - The group members as a list with `username@realm` entries.
+
 ## Developing the Provider
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.12+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
 

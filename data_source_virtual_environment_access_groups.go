@@ -15,7 +15,6 @@ const (
 	mkDataSourceVirtualEnvironmentAccessGroupsIDs      = "ids"
 )
 
-// dataSourceVirtualEnvironmentAccessGroups retrieves a list of access groups.
 func dataSourceVirtualEnvironmentAccessGroups() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -36,7 +35,6 @@ func dataSourceVirtualEnvironmentAccessGroups() *schema.Resource {
 	}
 }
 
-// dataSourceVirtualEnvironmentAccessGroupsRead retrieves a list of access groups.
 func dataSourceVirtualEnvironmentAccessGroupsRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 

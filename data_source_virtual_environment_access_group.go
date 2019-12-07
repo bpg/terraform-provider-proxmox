@@ -16,7 +16,6 @@ const (
 	mkDataSourceVirtualEnvironmentAccessGroupMembers = "members"
 )
 
-// dataSourceVirtualEnvironmentAccessGroup retrieves a list of access groups.
 func dataSourceVirtualEnvironmentAccessGroup() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -41,7 +40,6 @@ func dataSourceVirtualEnvironmentAccessGroup() *schema.Resource {
 	}
 }
 
-// dataSourceVirtualEnvironmentAccessGroupRead retrieves a list of access groups.
 func dataSourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 
@@ -50,7 +48,6 @@ func dataSourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m inter
 	}
 
 	groupID := d.Get(mkDataSourceVirtualEnvironmentAccessGroupID).(string)
-
 	accessGroup, err := config.veClient.GetAccessGroup(groupID)
 
 	if err != nil {

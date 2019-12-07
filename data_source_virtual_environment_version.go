@@ -17,7 +17,6 @@ const (
 	mkDataSourceVirtualEnvironmentVersionVersion      = "version"
 )
 
-// dataSourceVirtualEnvironmentVersion retrieves version information for a Proxmox installation.
 func dataSourceVirtualEnvironmentVersion() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -50,7 +49,6 @@ func dataSourceVirtualEnvironmentVersion() *schema.Resource {
 	}
 }
 
-// dataSourceVirtualEnvironmentVersionRead reads version information for a Proxmox installation.
 func dataSourceVirtualEnvironmentVersionRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 
