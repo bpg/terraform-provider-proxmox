@@ -64,7 +64,7 @@ func dataSourceVirtualEnvironmentVersionRead(d *schema.ResourceData, m interface
 		return err
 	}
 
-	d.SetId(version.Version)
+	d.SetId("version")
 
 	d.Set(mkDataSourceVirtualEnvironmentVersionKeyboard, version.Keyboard)
 	d.Set(mkDataSourceVirtualEnvironmentVersionRelease, version.Release)

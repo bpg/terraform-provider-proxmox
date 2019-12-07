@@ -5,7 +5,9 @@
 package proxmox
 
 import (
+	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,7 +15,13 @@ import (
 	"strings"
 )
 
-const basePathJSONAPI = "api2/json"
+const (
+	basePathJSONAPI = "api2/json"
+	hmDELETE        = "DELETE"
+	hmGET           = "GET"
+	hmPOST          = "POST"
+	hmPUT           = "PUT"
+)
 
 // VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
 type VirtualEnvironmentClient struct {
@@ -63,8 +71,55 @@ func NewVirtualEnvironmentClient(endpoint, username, password string, insecure b
 	}, nil
 }
 
-// ValidateResponse ensures that a response is valid.
-func (c *VirtualEnvironmentClient) ValidateResponse(res *http.Response) error {
+// DoRequest performs a HTTP request against a JSON API endpoint.
+func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody interface{}, responseBody interface{}) error {
+	jsonRequestBody := new(bytes.Buffer)
+
+	if requestBody != nil {
+		err := json.NewEncoder(jsonRequestBody).Encode(requestBody)
+
+		if err != nil {
+			return fmt.Errorf("Failed to encode HTTP %s request (path: %s)", method, path)
+		}
+	}
+
+	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, path), jsonRequestBody)
+
+	if err != nil {
+		return fmt.Errorf("Failed to create HTTP %s request (path: %s)", method, path)
+	}
+
+	err = c.AuthenticateRequest(req)
+
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := c.httpClient.Do(req)
+
+	if err != nil {
+		return fmt.Errorf("Failed to perform HTTP %s request (path: %s)", method, path)
+	}
+
+	err = c.ValidateResponseCode(res)
+
+	if err != nil {
+		return err
+	}
+
+	err = json.NewDecoder(res.Body).Decode(responseBody)
+
+	if err != nil {
+		return fmt.Errorf("Failed to decode HTTP %s response (path: %s)", method, path)
+	}
+
+	return nil
+}
+
+// ValidateResponseCode ensures that a response is valid.
+func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) error {
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		switch res.StatusCode {
 		case 401:

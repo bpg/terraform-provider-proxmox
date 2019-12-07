@@ -37,6 +37,15 @@ If you're building the provider, follow the instructions to [install it as a plu
 
 #### Virtual Environment
 
+##### Access Groups (proxmox_virtual_environment_access_groups)
+
+###### Arguments
+This data source doesn't accept arguments.
+
+###### Attributes
+* `comments` - The group comments.
+* `ids` - The group ids.
+
 ##### Version (proxmox_virtual_environment_version)
 
 ###### Arguments

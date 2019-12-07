@@ -1,10 +1,10 @@
-data "proxmox_virtual_environment_version" "ve_version" {}
+data "proxmox_virtual_environment_version" "example" {}
 
-output "proxmox_virtual_environment_version" {
+output "data_proxmox_virtual_environment_version" {
   value = "${map(
-    "keyboard", data.proxmox_virtual_environment_version.ve_version.keyboard,
-    "release", data.proxmox_virtual_environment_version.ve_version.release,
-    "repository_id", data.proxmox_virtual_environment_version.ve_version.repository_id,
-    "version", data.proxmox_virtual_environment_version.ve_version.version,
+    "keyboard", data.proxmox_virtual_environment_version.example.keyboard,
+    "release", data.proxmox_virtual_environment_version.example.release,
+    "repository_id", data.proxmox_virtual_environment_version.example.repository_id,
+    "version", data.proxmox_virtual_environment_version.example.version,
   )}"
 }

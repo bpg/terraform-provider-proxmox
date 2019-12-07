@@ -29,6 +29,7 @@ type VirtualEnvironmentAuthenticationResponseCapabilities struct {
 
 // VirtualEnvironmentAuthenticationResponseData contains the data from an authentication response.
 type VirtualEnvironmentAuthenticationResponseData struct {
+	ClusterName         string                                                `json:"clustername,omitempty"`
 	CSRFPreventionToken string                                                `json:"CSRFPreventionToken"`
 	Capabilities        *VirtualEnvironmentAuthenticationResponseCapabilities `json:"cap,omitempty"`
 	Ticket              string                                                `json:"ticket"`
@@ -42,7 +43,7 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 	}
 
 	body := bytes.NewBufferString(fmt.Sprintf("username=%s&password=%s", url.QueryEscape(c.Username), url.QueryEscape(c.Password)))
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s/access/ticket", c.Endpoint, basePathJSONAPI), body)
+	req, err := http.NewRequest(hmPOST, fmt.Sprintf("%s/%s/access/ticket", c.Endpoint, basePathJSONAPI), body)
 
 	if err != nil {
 		return errors.New("Failed to create authentication request")
@@ -56,7 +57,7 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 		return errors.New("Failed to retrieve authentication response")
 	}
 
-	err = c.ValidateResponse(res)
+	err = c.ValidateResponseCode(res)
 
 	if err != nil {
 		return err
@@ -102,8 +103,6 @@ func (c *VirtualEnvironmentClient) AuthenticateRequest(req *http.Request) error 
 		Name:  "PVEAuthCookie",
 		Value: c.authenticationData.Ticket,
 	})
-
-	req.Header.Add("Content-Type", "application/json")
 
 	if req.Method != "GET" {
 		req.Header.Add("CSRFPreventionToken", c.authenticationData.CSRFPreventionToken)

@@ -22,6 +22,7 @@ func TestDataSourceVirtualEnvironmentVersionSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentVersion()
 
 	attributeKeys := []string{
+		mkDataSourceVirtualEnvironmentVersionKeyboard,
 		mkDataSourceVirtualEnvironmentVersionRelease,
 		mkDataSourceVirtualEnvironmentVersionRepositoryID,
 		mkDataSourceVirtualEnvironmentVersionVersion,
