@@ -29,6 +29,7 @@ If you're building the provider, follow the instructions to [install it as a plu
 #### Arguments
 * `virtual_environment` - (Optional) This is the configuration block for the Proxmox Virtual Environment.
     * `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment API.
+    * `insecure` - (Optional) Whether to skip the TLS verification step. Defaults to `false`.
     * `password` - (Required) The password for the Proxmox Virtual Environment API.
     * `username` - (Required) The username for the Proxmox Virtual Environment API.
 
