@@ -44,7 +44,7 @@ If you're building the provider, follow the instructions to [install it as a plu
 
 ###### Attributes
 * `comment` - The group comment.
-* `members` - The group members' as a list with `username@realm` entries.
+* `members` - The group members as a list with `username@realm` entries.
 
 ##### Access Groups (proxmox_virtual_environment_access_groups)
 
