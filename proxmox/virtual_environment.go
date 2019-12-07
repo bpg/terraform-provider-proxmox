@@ -13,12 +13,15 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/google/go-querystring/query"
 )
 
 const (
 	basePathJSONAPI = "api2/json"
 	hmDELETE        = "DELETE"
 	hmGET           = "GET"
+	hmHEAD          = "HEAD"
 	hmPOST          = "POST"
 	hmPUT           = "PUT"
 )
@@ -73,20 +76,32 @@ func NewVirtualEnvironmentClient(endpoint, username, password string, insecure b
 
 // DoRequest performs a HTTP request against a JSON API endpoint.
 func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody interface{}, responseBody interface{}) error {
-	jsonRequestBody := new(bytes.Buffer)
+	urlEncodedRequestBody := new(bytes.Buffer)
 
 	if requestBody != nil {
-		err := json.NewEncoder(jsonRequestBody).Encode(requestBody)
+		if method == hmGET || method == hmHEAD {
+			return fmt.Errorf("A request body must not be specified for %s/%s requests", hmGET, hmHEAD)
+		}
+
+		v, err := query.Values(requestBody)
 
 		if err != nil {
 			return fmt.Errorf("Failed to encode HTTP %s request (path: %s)", method, path)
 		}
+
+		urlEncodedRequestBody = bytes.NewBufferString(v.Encode())
 	}
 
-	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, path), jsonRequestBody)
+	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, path), urlEncodedRequestBody)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create HTTP %s request (path: %s)", method, path)
+	}
+
+	req.Header.Add("Accept", "application/json")
+
+	if req.Method != hmGET && req.Method != hmHEAD {
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	}
 
 	err = c.AuthenticateRequest(req)
@@ -94,8 +109,6 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	if err != nil {
 		return err
 	}
-
-	req.Header.Add("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
 
@@ -109,10 +122,12 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		return err
 	}
 
-	err = json.NewDecoder(res.Body).Decode(responseBody)
+	if responseBody != nil {
+		err = json.NewDecoder(res.Body).Decode(responseBody)
 
-	if err != nil {
-		return fmt.Errorf("Failed to decode HTTP %s response (path: %s)", method, path)
+		if err != nil {
+			return fmt.Errorf("Failed to decode HTTP %s response (path: %s)", method, path)
+		}
 	}
 
 	return nil

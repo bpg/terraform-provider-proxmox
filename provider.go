@@ -26,6 +26,7 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		ConfigureFunc: providerConfigure,
 		DataSourcesMap: map[string]*schema.Resource{
+			"proxmox_virtual_environment_access_group":  dataSourceVirtualEnvironmentAccessGroup(),
 			"proxmox_virtual_environment_access_groups": dataSourceVirtualEnvironmentAccessGroups(),
 			"proxmox_virtual_environment_version":       dataSourceVirtualEnvironmentVersion(),
 		},
