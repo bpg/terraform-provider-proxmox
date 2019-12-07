@@ -5,7 +5,6 @@
 package main
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
@@ -48,9 +47,10 @@ func resourceVirtualEnvironmentAccessGroup() *schema.Resource {
 
 func resourceVirtualEnvironmentAccessGroupCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
-	if config.veClient == nil {
-		return errors.New("You must specify the virtual environment details in the provider configuration to use this data source")
+	if err != nil {
+		return err
 	}
 
 	groupID := d.Get(mkResourceVirtualEnvironmentAccessGroupID).(string)
@@ -59,7 +59,7 @@ func resourceVirtualEnvironmentAccessGroupCreate(d *schema.ResourceData, m inter
 		ID:      groupID,
 	}
 
-	err := config.veClient.CreateAccessGroup(body)
+	err = veClient.CreateAccessGroup(body)
 
 	if err != nil {
 		return err
@@ -72,13 +72,14 @@ func resourceVirtualEnvironmentAccessGroupCreate(d *schema.ResourceData, m inter
 
 func resourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
-	if config.veClient == nil {
-		return errors.New("You must specify the virtual environment details in the provider configuration to use this data source")
+	if err != nil {
+		return err
 	}
 
-	groupID := d.Get(mkResourceVirtualEnvironmentAccessGroupID).(string)
-	accessGroup, err := config.veClient.GetAccessGroup(groupID)
+	groupID := d.Id()
+	accessGroup, err := veClient.GetAccessGroup(groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -100,17 +101,18 @@ func resourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m interfa
 
 func resourceVirtualEnvironmentAccessGroupUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
-	if config.veClient == nil {
-		return errors.New("You must specify the virtual environment details in the provider configuration to use this data source")
+	if err != nil {
+		return err
 	}
 
 	body := &proxmox.VirtualEnvironmentAccessGroupUpdateRequestBody{
 		Comment: d.Get(mkResourceVirtualEnvironmentAccessGroupComment).(string),
 	}
 
-	groupID := d.Get(mkResourceVirtualEnvironmentAccessGroupID).(string)
-	err := config.veClient.UpdateAccessGroup(groupID, body)
+	groupID := d.Id()
+	err = veClient.UpdateAccessGroup(groupID, body)
 
 	if err != nil {
 		return err
@@ -121,13 +123,14 @@ func resourceVirtualEnvironmentAccessGroupUpdate(d *schema.ResourceData, m inter
 
 func resourceVirtualEnvironmentAccessGroupDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
-	if config.veClient == nil {
-		return errors.New("You must specify the virtual environment details in the provider configuration to use this data source")
+	if err != nil {
+		return err
 	}
 
-	groupID := d.Get(mkResourceVirtualEnvironmentAccessGroupID).(string)
-	err := config.veClient.DeleteAccessGroup(groupID)
+	groupID := d.Id()
+	err = veClient.DeleteAccessGroup(groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

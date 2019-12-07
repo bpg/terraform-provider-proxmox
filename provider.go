@@ -5,6 +5,8 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -95,4 +97,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	return config, nil
+}
+
+func (c *providerConfiguration) GetVEClient() (*proxmox.VirtualEnvironmentClient, error) {
+	if c.veClient == nil {
+		return nil, errors.New("You must specify the virtual environment details in the provider configuration to use this data source")
+	}
+
+	return c.veClient, nil
 }

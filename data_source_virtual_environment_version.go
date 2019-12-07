@@ -5,8 +5,6 @@
 package main
 
 import (
-	"errors"
-
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -51,12 +49,13 @@ func dataSourceVirtualEnvironmentVersion() *schema.Resource {
 
 func dataSourceVirtualEnvironmentVersionRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
-	if config.veClient == nil {
-		return errors.New("You must specify the virtual environment details in the provider configuration to use this data source")
+	if err != nil {
+		return err
 	}
 
-	version, err := config.veClient.Version()
+	version, err := veClient.Version()
 
 	if err != nil {
 		return err
