@@ -2,4 +2,4 @@
 
 FEATURES:
 
-* **New Data Source:** `proxmox_ve_version`
+* **New Data Source:** `proxmox_virtual_environment_version`
