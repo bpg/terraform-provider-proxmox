@@ -94,8 +94,6 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 
 		encodedValues := v.Encode()
 		urlEncodedRequestBody = bytes.NewBufferString(encodedValues)
-
-		log.Printf("[DEBUG] Values: %s", encodedValues)
 	}
 
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, path), urlEncodedRequestBody)
