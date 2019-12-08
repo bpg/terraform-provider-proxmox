@@ -51,7 +51,12 @@ func dataSourceVirtualEnvironmentGroupsRead(d *schema.ResourceData, m interface{
 	groupIDs := make([]interface{}, len(list))
 
 	for i, v := range list {
-		comments[i] = v.Comment
+		if v.Comment != nil {
+			comments[i] = v.Comment
+		} else {
+			comments[i] = ""
+		}
+
 		groupIDs[i] = v.ID
 	}
 

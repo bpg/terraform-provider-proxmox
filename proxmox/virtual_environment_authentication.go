@@ -29,10 +29,10 @@ type VirtualEnvironmentAuthenticationResponseCapabilities struct {
 
 // VirtualEnvironmentAuthenticationResponseData contains the data from an authentication response.
 type VirtualEnvironmentAuthenticationResponseData struct {
-	ClusterName         string                                                `json:"clustername,omitempty"`
-	CSRFPreventionToken string                                                `json:"CSRFPreventionToken"`
+	ClusterName         *string                                               `json:"clustername,omitempty"`
+	CSRFPreventionToken *string                                               `json:"CSRFPreventionToken,omitempty"`
 	Capabilities        *VirtualEnvironmentAuthenticationResponseCapabilities `json:"cap,omitempty"`
-	Ticket              string                                                `json:"ticket"`
+	Ticket              *string                                               `json:"ticket,omitempty"`
 	Username            string                                                `json:"username"`
 }
 
@@ -74,11 +74,11 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 		return errors.New("The server did not include a data object in the authentication response")
 	}
 
-	if resBody.Data.CSRFPreventionToken == "" {
+	if resBody.Data.CSRFPreventionToken == nil {
 		return errors.New("The server did not include a CSRF prevention token in the authentication response")
 	}
 
-	if resBody.Data.Ticket == "" {
+	if resBody.Data.Ticket == nil {
 		return errors.New("The server did not include a ticket in the authentication response")
 	}
 
@@ -101,11 +101,11 @@ func (c *VirtualEnvironmentClient) AuthenticateRequest(req *http.Request) error 
 
 	req.AddCookie(&http.Cookie{
 		Name:  "PVEAuthCookie",
-		Value: c.authenticationData.Ticket,
+		Value: *c.authenticationData.Ticket,
 	})
 
 	if req.Method != "GET" {
-		req.Header.Add("CSRFPreventionToken", c.authenticationData.CSRFPreventionToken)
+		req.Header.Add("CSRFPreventionToken", *c.authenticationData.CSRFPreventionToken)
 	}
 
 	return nil

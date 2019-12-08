@@ -22,7 +22,7 @@ func dataSourceVirtualEnvironmentRole() *schema.Resource {
 				Required:    true,
 			},
 			mkDataSourceVirtualEnvironmentRolePrivileges: &schema.Schema{
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "The role privileges",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -47,8 +47,17 @@ func dataSourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{})
 		return err
 	}
 
+	privileges := schema.NewSet(schema.HashString, make([]interface{}, 0))
+
+	if *accessRole != nil {
+		for _, v := range *accessRole {
+			privileges.Add(v)
+		}
+	}
+
 	d.SetId(roleID)
-	d.Set(mkDataSourceVirtualEnvironmentRolePrivileges, *accessRole)
+
+	d.Set(mkDataSourceVirtualEnvironmentRolePrivileges, privileges)
 
 	return nil
 }

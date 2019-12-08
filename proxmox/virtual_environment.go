@@ -94,6 +94,8 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 
 		encodedValues := v.Encode()
 		urlEncodedRequestBody = bytes.NewBufferString(encodedValues)
+
+		log.Printf("[DEBUG] Added request body to HTTP %s request (path: %s) - Body: %s", method, path, encodedValues)
 	}
 
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, path), urlEncodedRequestBody)
@@ -141,6 +143,8 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) error {
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		switch res.StatusCode {
+		case 400:
+			return fmt.Errorf("Received a HTTP %d response - This is most likely caused by a bug in the code, so please create a new issue on https://github.com/danitso/terraform-provider-proxmox/issues", res.StatusCode)
 		case 401:
 			return fmt.Errorf("Received a HTTP %d response - Please verify that the specified credentials are valid", res.StatusCode)
 		case 403:

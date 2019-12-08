@@ -28,7 +28,7 @@ func dataSourceVirtualEnvironmentGroup() *schema.Resource {
 				Required:    true,
 			},
 			mkDataSourceVirtualEnvironmentGroupMembers: &schema.Schema{
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "The group members",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -55,7 +55,12 @@ func dataSourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}
 
 	d.SetId(groupID)
 
-	d.Set(mkDataSourceVirtualEnvironmentGroupComment, accessGroup.Comment)
+	if accessGroup.Comment != nil {
+		d.Set(mkDataSourceVirtualEnvironmentGroupComment, accessGroup.Comment)
+	} else {
+		d.Set(mkDataSourceVirtualEnvironmentGroupComment, "")
+	}
+
 	d.Set(mkDataSourceVirtualEnvironmentGroupMembers, accessGroup.Members)
 
 	return nil

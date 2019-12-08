@@ -20,7 +20,7 @@ func resourceVirtualEnvironmentRole() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentRolePrivileges: &schema.Schema{
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "The role privileges",
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -46,10 +46,9 @@ func resourceVirtualEnvironmentRoleCreate(d *schema.ResourceData, m interface{})
 		return err
 	}
 
-	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).([]interface{})
-	roleID := d.Get(mkResourceVirtualEnvironmentRoleRoleID).(string)
-
+	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).(*schema.Set).List()
 	customPrivileges := make(proxmox.CustomPrivileges, len(privileges))
+	roleID := d.Get(mkResourceVirtualEnvironmentRoleRoleID).(string)
 
 	for i, v := range privileges {
 		customPrivileges[i] = v.(string)
@@ -92,9 +91,17 @@ func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
+	privileges := schema.NewSet(schema.HashString, make([]interface{}, 0))
+
+	if *accessRole != nil {
+		for _, v := range *accessRole {
+			privileges.Add(v)
+		}
+	}
+
 	d.SetId(roleID)
 
-	d.Set(mkResourceVirtualEnvironmentRolePrivileges, *accessRole)
+	d.Set(mkResourceVirtualEnvironmentRolePrivileges, privileges)
 
 	return nil
 }
@@ -107,8 +114,9 @@ func resourceVirtualEnvironmentRoleUpdate(d *schema.ResourceData, m interface{})
 		return err
 	}
 
-	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).([]interface{})
+	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).(*schema.Set).List()
 	customPrivileges := make(proxmox.CustomPrivileges, len(privileges))
+	roleID := d.Id()
 
 	for i, v := range privileges {
 		customPrivileges[i] = v.(string)
@@ -118,7 +126,6 @@ func resourceVirtualEnvironmentRoleUpdate(d *schema.ResourceData, m interface{})
 		Privileges: customPrivileges,
 	}
 
-	roleID := d.Id()
 	err = veClient.UpdateRole(roleID, body)
 
 	if err != nil {

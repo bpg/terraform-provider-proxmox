@@ -32,7 +32,7 @@ func resourceVirtualEnvironmentGroup() *schema.Resource {
 				Required:    true,
 			},
 			mkResourceVirtualEnvironmentGroupMembers: &schema.Schema{
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Description: "The group members",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
@@ -53,9 +53,11 @@ func resourceVirtualEnvironmentGroupCreate(d *schema.ResourceData, m interface{}
 		return err
 	}
 
+	comment := d.Get(mkResourceVirtualEnvironmentGroupComment).(string)
 	groupID := d.Get(mkResourceVirtualEnvironmentGroupID).(string)
+
 	body := &proxmox.VirtualEnvironmentGroupCreateRequestBody{
-		Comment: d.Get(mkResourceVirtualEnvironmentGroupComment).(string),
+		Comment: &comment,
 		ID:      groupID,
 	}
 
@@ -93,7 +95,12 @@ func resourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) 
 
 	d.SetId(groupID)
 
-	d.Set(mkResourceVirtualEnvironmentGroupComment, accessGroup.Comment)
+	if accessGroup.Comment != nil {
+		d.Set(mkResourceVirtualEnvironmentGroupComment, accessGroup.Comment)
+	} else {
+		d.Set(mkResourceVirtualEnvironmentGroupComment, "")
+	}
+
 	d.Set(mkResourceVirtualEnvironmentGroupMembers, accessGroup.Members)
 
 	return nil
@@ -107,11 +114,13 @@ func resourceVirtualEnvironmentGroupUpdate(d *schema.ResourceData, m interface{}
 		return err
 	}
 
+	comment := d.Get(mkResourceVirtualEnvironmentGroupComment).(string)
+	groupID := d.Id()
+
 	body := &proxmox.VirtualEnvironmentGroupUpdateRequestBody{
-		Comment: d.Get(mkResourceVirtualEnvironmentGroupComment).(string),
+		Comment: &comment,
 	}
 
-	groupID := d.Id()
 	err = veClient.UpdateGroup(groupID, body)
 
 	if err != nil {

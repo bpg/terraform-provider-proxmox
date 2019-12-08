@@ -1,4 +1,6 @@
-data "proxmox_virtual_environment_roles" "example" {}
+data "proxmox_virtual_environment_roles" "example" {
+  depends_on = ["proxmox_virtual_environment_role.example"]
+}
 
 output "data_proxmox_virtual_environment_roles_example_privileges" {
   value = "${data.proxmox_virtual_environment_roles.example.privileges}"

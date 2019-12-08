@@ -30,8 +30,8 @@ type VirtualEnvironmentRoleListResponseBody struct {
 // VirtualEnvironmentRoleListResponseData contains the data from an access group list response.
 type VirtualEnvironmentRoleListResponseData struct {
 	ID         string            `json:"roleid"`
-	Privileges *CustomPrivileges `json:"privs"`
-	Special    CustomBool        `json:"special"`
+	Privileges *CustomPrivileges `json:"privs,omitempty"`
+	Special    *CustomBool       `json:"special,omitempty"`
 }
 
 // VirtualEnvironmentRoleUpdateRequestBody contains the data for an access group update request.
@@ -83,6 +83,12 @@ func (c *VirtualEnvironmentClient) ListRoles() ([]*VirtualEnvironmentRoleListRes
 	sort.Slice(resBody.Data, func(i, j int) bool {
 		return resBody.Data[i].ID < resBody.Data[j].ID
 	})
+
+	for i := range resBody.Data {
+		if resBody.Data[i].Privileges != nil {
+			sort.Strings(*resBody.Data[i].Privileges)
+		}
+	}
 
 	return resBody.Data, nil
 }
