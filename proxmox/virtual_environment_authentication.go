@@ -20,11 +20,11 @@ type VirtualEnvironmentAuthenticationResponseBody struct {
 
 // VirtualEnvironmentAuthenticationResponseCapabilities contains the supported capabilities for a session.
 type VirtualEnvironmentAuthenticationResponseCapabilities struct {
-	Access          *map[string]CustomBool `json:"access,omitempty"`
-	Datacenter      *map[string]CustomBool `json:"dc,omitempty"`
-	Nodes           *map[string]CustomBool `json:"nodes,omitempty"`
-	Storage         *map[string]CustomBool `json:"storage,omitempty"`
-	VirtualMachines *map[string]CustomBool `json:"vms,omitempty"`
+	Access          *CustomPrivileges `json:"access,omitempty"`
+	Datacenter      *CustomPrivileges `json:"dc,omitempty"`
+	Nodes           *CustomPrivileges `json:"nodes,omitempty"`
+	Storage         *CustomPrivileges `json:"storage,omitempty"`
+	VirtualMachines *CustomPrivileges `json:"vms,omitempty"`
 }
 
 // VirtualEnvironmentAuthenticationResponseData contains the data from an authentication response.

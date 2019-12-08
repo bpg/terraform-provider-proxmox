@@ -4,18 +4,17 @@
 
 package proxmox
 
-import "bytes"
+import (
+	"bytes"
+	"encoding/json"
+	"strings"
+)
 
-// CustomBool allows a JSON boolean value to also be an integer
+// CustomBool allows a JSON boolean value to also be an integer.
 type CustomBool bool
 
-// UnmarshalJSON converts a JSON value to a boolean.
-func (r *CustomBool) UnmarshalJSON(b []byte) error {
-	s := string(b)
-	*r = CustomBool(s == "1" || s == "true")
-
-	return nil
-}
+// CustomPrivileges allows a JSON object of privileges to also be a string array.
+type CustomPrivileges []string
 
 // MarshalJSON converts a boolean to a JSON value.
 func (r CustomBool) MarshalJSON() ([]byte, error) {
@@ -28,4 +27,55 @@ func (r CustomBool) MarshalJSON() ([]byte, error) {
 	}
 
 	return buffer.Bytes(), nil
+}
+
+// UnmarshalJSON converts a JSON value to a boolean.
+func (r *CustomBool) UnmarshalJSON(b []byte) error {
+	s := string(b)
+	*r = CustomBool(s == "1" || s == "true")
+
+	return nil
+}
+
+// MarshalJSON converts a boolean to a JSON value.
+func (r *CustomPrivileges) MarshalJSON() ([]byte, error) {
+	var privileges map[string]CustomBool
+
+	for _, v := range *r {
+		privileges[v] = true
+	}
+
+	return json.Marshal(privileges)
+}
+
+// UnmarshalJSON converts a JSON value to a boolean.
+func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
+	var privileges interface{}
+
+	err := json.Unmarshal(b, &privileges)
+
+	if err != nil {
+		return err
+	}
+
+	switch privileges.(type) {
+	case string:
+		s := privileges.(string)
+
+		if s != "" {
+			*r = strings.Split(s, ",")
+		} else {
+			*r = make(CustomPrivileges, 0)
+		}
+	default:
+		*r = make(CustomPrivileges, 0)
+
+		for k, v := range privileges.(map[string]interface{}) {
+			if v.(float64) >= 1 {
+				*r = append(*r, k)
+			}
+		}
+	}
+
+	return nil
 }

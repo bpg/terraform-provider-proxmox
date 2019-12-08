@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"sort"
 )
 
 // VirtualEnvironmentAccessGroupCreateRequestBody contains the data for an access group create request.
@@ -66,6 +67,8 @@ func (c *VirtualEnvironmentClient) GetAccessGroup(id string) (*VirtualEnvironmen
 		return nil, errors.New("The server did not include a data object in the response")
 	}
 
+	sort.Strings(resBody.Data.Members)
+
 	return resBody.Data, nil
 }
 
@@ -81,6 +84,10 @@ func (c *VirtualEnvironmentClient) ListAccessGroups() ([]*VirtualEnvironmentAcce
 	if resBody.Data == nil {
 		return nil, errors.New("The server did not include a data object in the response")
 	}
+
+	sort.Slice(resBody.Data, func(i, j int) bool {
+		return resBody.Data[i].ID < resBody.Data[j].ID
+	})
 
 	return resBody.Data, nil
 }

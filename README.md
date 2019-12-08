@@ -40,7 +40,7 @@ If you're building the provider, follow the instructions to [install it as a plu
 ##### Access Group (proxmox_virtual_environment_access_group)
 
 ###### Arguments
-* `id` - (Required) The group id.
+* `group_id` - (Required) The group id.
 
 ###### Attributes
 * `comment` - The group comment.
@@ -53,7 +53,25 @@ This data source doesn't accept arguments.
 
 ###### Attributes
 * `comments` - The group comments.
-* `ids` - The group ids.
+* `group_ids` - The group ids.
+
+##### Access Role (proxmox_virtual_environment_access_role)
+
+###### Arguments
+* `role_id` - (Required) The role id.
+
+###### Attributes
+* `privileges` - The role privileges.
+
+##### Access Roles (proxmox_virtual_environment_access_roles)
+
+###### Arguments
+This data source doesn't accept arguments.
+
+###### Attributes
+* `privileges` - The role privileges.
+* `role_ids` - The role ids.
+* `special` - Whether the role is special (built-in).
 
 ##### Version (proxmox_virtual_environment_version)
 

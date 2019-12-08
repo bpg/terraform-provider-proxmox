@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -76,6 +77,8 @@ func NewVirtualEnvironmentClient(endpoint, username, password string, insecure b
 
 // DoRequest performs a HTTP request against a JSON API endpoint.
 func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody interface{}, responseBody interface{}) error {
+	log.Printf("[DEBUG] Performing HTTP %s request (path: %s)", method, path)
+
 	urlEncodedRequestBody := new(bytes.Buffer)
 
 	if requestBody != nil {
@@ -86,16 +89,19 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		v, err := query.Values(requestBody)
 
 		if err != nil {
-			return fmt.Errorf("Failed to encode HTTP %s request (path: %s)", method, path)
+			return fmt.Errorf("Failed to encode HTTP %s request (path: %s) - Reason: %s", method, path, err.Error())
 		}
 
-		urlEncodedRequestBody = bytes.NewBufferString(v.Encode())
+		encodedValues := v.Encode()
+		urlEncodedRequestBody = bytes.NewBufferString(encodedValues)
+
+		log.Printf("[DEBUG] Values: %s", encodedValues)
 	}
 
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, path), urlEncodedRequestBody)
 
 	if err != nil {
-		return fmt.Errorf("Failed to create HTTP %s request (path: %s)", method, path)
+		return fmt.Errorf("Failed to create HTTP %s request (path: %s) - Reason: %s", method, path, err.Error())
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -113,7 +119,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	res, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return fmt.Errorf("Failed to perform HTTP %s request (path: %s)", method, path)
+		return fmt.Errorf("Failed to perform HTTP %s request (path: %s) - Reason: %s", method, path, err.Error())
 	}
 
 	err = c.ValidateResponseCode(res)
@@ -126,7 +132,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		err = json.NewDecoder(res.Body).Decode(responseBody)
 
 		if err != nil {
-			return fmt.Errorf("Failed to decode HTTP %s response (path: %s)", method, path)
+			return fmt.Errorf("Failed to decode HTTP %s response (path: %s) - Reason: %s", method, path, err.Error())
 		}
 	}
 

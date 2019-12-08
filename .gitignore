@@ -24,6 +24,7 @@ modules-dev/
 *.tfplan
 *.tfstate
 *.tfstate.lock.info
+*.tfvars
 
 .*.swp
 .DS_Store

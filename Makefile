@@ -8,14 +8,18 @@ default: build
 build:
 	go build -o "bin/$(NAME)_v$(VERSION)-custom_x4"
 
-example:
+example: example-init example-apply example-apply example-destroy
+
+example-apply:
+	cd ./example && terraform apply -auto-approve
+
+example-destroy:
+	cd ./example && terraform destroy -auto-approve
+
+example-init:
 	rm -f "example/$(NAME)_v"*
 	go build -o "example/$(NAME)_v$(VERSION)-custom_x4"
-	cd ./example && \
-	terraform init && \
-	terraform apply -auto-approve && \
-	terraform apply -auto-approve && \
-	terraform destroy -auto-approve
+	cd ./example && terraform init
 
 fmt:
 	gofmt -w $(GOFMT_FILES)

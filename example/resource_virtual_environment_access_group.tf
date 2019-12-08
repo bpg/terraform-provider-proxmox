@@ -4,13 +4,13 @@ resource "proxmox_virtual_environment_access_group" "example" {
 }
 
 output "resource_proxmox_virtual_environment_access_group_example_comment" {
-  value = proxmox_virtual_environment_access_group.example.comment
+  value = "${proxmox_virtual_environment_access_group.example.comment}"
 }
 
 output "resource_proxmox_virtual_environment_access_group_example_id" {
-  value = proxmox_virtual_environment_access_group.example.id
+  value = "${proxmox_virtual_environment_access_group.example.id}"
 }
 
 output "resource_proxmox_virtual_environment_access_group_example_members" {
-  value = proxmox_virtual_environment_access_group.example.members
+  value = "${proxmox_virtual_environment_access_group.example.members}"
 }

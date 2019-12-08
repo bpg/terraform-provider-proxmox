@@ -23,7 +23,7 @@ func TestDataSourceVirtualEnvironmentAccessGroupsSchema(t *testing.T) {
 
 	attributeKeys := []string{
 		mkDataSourceVirtualEnvironmentAccessGroupsComments,
-		mkDataSourceVirtualEnvironmentAccessGroupsIDs,
+		mkDataSourceVirtualEnvironmentAccessGroupsGroupIDs,
 	}
 
 	for _, v := range attributeKeys {

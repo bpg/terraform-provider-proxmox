@@ -10,7 +10,7 @@ import (
 
 const (
 	mkDataSourceVirtualEnvironmentAccessGroupsComments = "comments"
-	mkDataSourceVirtualEnvironmentAccessGroupsIDs      = "ids"
+	mkDataSourceVirtualEnvironmentAccessGroupsGroupIDs = "group_ids"
 )
 
 func dataSourceVirtualEnvironmentAccessGroups() *schema.Resource {
@@ -22,7 +22,7 @@ func dataSourceVirtualEnvironmentAccessGroups() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentAccessGroupsIDs: &schema.Schema{
+			mkDataSourceVirtualEnvironmentAccessGroupsGroupIDs: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The group ids",
 				Computed:    true,
@@ -48,17 +48,17 @@ func dataSourceVirtualEnvironmentAccessGroupsRead(d *schema.ResourceData, m inte
 	}
 
 	comments := make([]interface{}, len(list))
-	ids := make([]interface{}, len(list))
+	groupIDs := make([]interface{}, len(list))
 
 	for i, v := range list {
 		comments[i] = v.Comment
-		ids[i] = v.ID
+		groupIDs[i] = v.ID
 	}
 
 	d.SetId("access_groups")
 
 	d.Set(mkDataSourceVirtualEnvironmentAccessGroupsComments, comments)
-	d.Set(mkDataSourceVirtualEnvironmentAccessGroupsIDs, ids)
+	d.Set(mkDataSourceVirtualEnvironmentAccessGroupsGroupIDs, groupIDs)
 
 	return nil
 }

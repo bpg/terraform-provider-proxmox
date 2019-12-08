@@ -10,7 +10,7 @@ import (
 
 const (
 	mkDataSourceVirtualEnvironmentAccessGroupComment = "comment"
-	mkDataSourceVirtualEnvironmentAccessGroupID      = "id"
+	mkDataSourceVirtualEnvironmentAccessGroupID      = "group_id"
 	mkDataSourceVirtualEnvironmentAccessGroupMembers = "members"
 )
 
