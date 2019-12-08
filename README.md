@@ -97,6 +97,15 @@ This data source doesn't accept arguments.
 ###### Attributes
 * `members` - The group members as a list with `username@realm` entries.
 
+##### Access Role (proxmox_virtual_environment_access_role)
+
+###### Arguments
+* `privileges` - (Required) The role privileges.
+* `role_id` - (Required) The role id.
+
+###### Attributes
+This resource doesn't expose any additional attributes.
+
 ## Developing the Provider
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.12+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
 
