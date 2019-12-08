@@ -73,6 +73,37 @@ This data source doesn't accept arguments.
 * `role_ids` - The role ids.
 * `special` - Whether the role is special (built-in).
 
+##### User (proxmox_virtual_environment_user)
+
+###### Arguments
+* `user_id` - (Required) The user id.
+
+###### Attributes
+* `comment` - The user comment
+* `email` - The user's email address
+* `enabled` - Whether the user account is enabled
+* `expiration_date` - The user account's expiration date
+* `first_name` - The user's first name
+* `groups` - The user's groups
+* `keys` - The user's keys
+* `last_name` - The user's last name
+
+##### Users (proxmox_virtual_environment_user)
+
+###### Arguments
+This data source doesn't accept arguments.
+
+###### Attributes
+* `comments` - The user comments
+* `emails` - The users' email addresses
+* `enabled` - Whether a user account is enabled
+* `expiration_dates` - The user accounts' expiration dates
+* `first_names` - The users' first names
+* `groups` - The users' groups
+* `keys` - The users' keys
+* `last_names` - The users' last names
+* `user_ids` - The user ids.
+
 ##### Version (proxmox_virtual_environment_version)
 
 ###### Arguments

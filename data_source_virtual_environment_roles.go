@@ -83,7 +83,7 @@ func dataSourceVirtualEnvironmentRolesRead(d *schema.ResourceData, m interface{}
 		}
 	}
 
-	d.SetId("access_roles")
+	d.SetId("roles")
 
 	d.Set(mkDataSourceVirtualEnvironmentRolesPrivileges, privileges)
 	d.Set(mkDataSourceVirtualEnvironmentRolesRoleIDs, roleIDs)

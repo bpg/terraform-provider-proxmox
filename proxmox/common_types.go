@@ -7,7 +7,9 @@ package proxmox
 import (
 	"bytes"
 	"encoding/json"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // CustomBool allows a JSON boolean value to also be an integer.
@@ -15,6 +17,9 @@ type CustomBool bool
 
 // CustomPrivileges allows a JSON object of privileges to also be a string array.
 type CustomPrivileges []string
+
+// CustomTimestamp allows a JSON boolean value to also be a unix timestamp.
+type CustomTimestamp time.Time
 
 // MarshalJSON converts a boolean to a JSON value.
 func (r CustomBool) MarshalJSON() ([]byte, error) {
@@ -76,6 +81,30 @@ func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+// MarshalJSON converts a boolean to a JSON value.
+func (r CustomTimestamp) MarshalJSON() ([]byte, error) {
+	var timestamp time.Time
+
+	timestamp = time.Time(r)
+	buffer := bytes.NewBufferString(strconv.FormatInt(timestamp.Unix(), 10))
+
+	return buffer.Bytes(), nil
+}
+
+// UnmarshalJSON converts a JSON value to a boolean.
+func (r *CustomTimestamp) UnmarshalJSON(b []byte) error {
+	s := string(b)
+	i, err := strconv.ParseInt(s, 10, 64)
+
+	if err != nil {
+		return err
+	}
+
+	*r = CustomTimestamp(time.Unix(i, 0))
 
 	return nil
 }

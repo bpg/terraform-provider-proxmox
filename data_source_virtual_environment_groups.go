@@ -60,7 +60,7 @@ func dataSourceVirtualEnvironmentGroupsRead(d *schema.ResourceData, m interface{
 		groupIDs[i] = v.ID
 	}
 
-	d.SetId("access_groups")
+	d.SetId("groups")
 
 	d.Set(mkDataSourceVirtualEnvironmentGroupsComments, comments)
 	d.Set(mkDataSourceVirtualEnvironmentGroupsGroupIDs, groupIDs)
