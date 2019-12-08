@@ -9,36 +9,36 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentAccessGroupComment = "comment"
-	mkDataSourceVirtualEnvironmentAccessGroupID      = "group_id"
-	mkDataSourceVirtualEnvironmentAccessGroupMembers = "members"
+	mkDataSourceVirtualEnvironmentGroupComment = "comment"
+	mkDataSourceVirtualEnvironmentGroupID      = "group_id"
+	mkDataSourceVirtualEnvironmentGroupMembers = "members"
 )
 
-func dataSourceVirtualEnvironmentAccessGroup() *schema.Resource {
+func dataSourceVirtualEnvironmentGroup() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentAccessGroupComment: &schema.Schema{
+			mkDataSourceVirtualEnvironmentGroupComment: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The group comment",
 				Computed:    true,
 			},
-			mkDataSourceVirtualEnvironmentAccessGroupID: &schema.Schema{
+			mkDataSourceVirtualEnvironmentGroupID: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The group id",
 				Required:    true,
 			},
-			mkDataSourceVirtualEnvironmentAccessGroupMembers: &schema.Schema{
+			mkDataSourceVirtualEnvironmentGroupMembers: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The group members",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentAccessGroupRead,
+		Read: dataSourceVirtualEnvironmentGroupRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -46,8 +46,8 @@ func dataSourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m inter
 		return err
 	}
 
-	groupID := d.Get(mkDataSourceVirtualEnvironmentAccessGroupID).(string)
-	accessGroup, err := veClient.GetAccessGroup(groupID)
+	groupID := d.Get(mkDataSourceVirtualEnvironmentGroupID).(string)
+	accessGroup, err := veClient.GetGroup(groupID)
 
 	if err != nil {
 		return err
@@ -55,8 +55,8 @@ func dataSourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m inter
 
 	d.SetId(groupID)
 
-	d.Set(mkDataSourceVirtualEnvironmentAccessGroupComment, accessGroup.Comment)
-	d.Set(mkDataSourceVirtualEnvironmentAccessGroupMembers, accessGroup.Members)
+	d.Set(mkDataSourceVirtualEnvironmentGroupComment, accessGroup.Comment)
+	d.Set(mkDataSourceVirtualEnvironmentGroupMembers, accessGroup.Members)
 
 	return nil
 }

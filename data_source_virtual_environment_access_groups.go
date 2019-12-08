@@ -9,31 +9,31 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentAccessGroupsComments = "comments"
-	mkDataSourceVirtualEnvironmentAccessGroupsGroupIDs = "group_ids"
+	mkDataSourceVirtualEnvironmentGroupsComments = "comments"
+	mkDataSourceVirtualEnvironmentGroupsGroupIDs = "group_ids"
 )
 
-func dataSourceVirtualEnvironmentAccessGroups() *schema.Resource {
+func dataSourceVirtualEnvironmentGroups() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentAccessGroupsComments: &schema.Schema{
+			mkDataSourceVirtualEnvironmentGroupsComments: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The group comments",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentAccessGroupsGroupIDs: &schema.Schema{
+			mkDataSourceVirtualEnvironmentGroupsGroupIDs: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The group ids",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentAccessGroupsRead,
+		Read: dataSourceVirtualEnvironmentGroupsRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentAccessGroupsRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentGroupsRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -41,7 +41,7 @@ func dataSourceVirtualEnvironmentAccessGroupsRead(d *schema.ResourceData, m inte
 		return err
 	}
 
-	list, err := veClient.ListAccessGroups()
+	list, err := veClient.ListGroups()
 
 	if err != nil {
 		return err
@@ -57,8 +57,8 @@ func dataSourceVirtualEnvironmentAccessGroupsRead(d *schema.ResourceData, m inte
 
 	d.SetId("access_groups")
 
-	d.Set(mkDataSourceVirtualEnvironmentAccessGroupsComments, comments)
-	d.Set(mkDataSourceVirtualEnvironmentAccessGroupsGroupIDs, groupIDs)
+	d.Set(mkDataSourceVirtualEnvironmentGroupsComments, comments)
+	d.Set(mkDataSourceVirtualEnvironmentGroupsGroupIDs, groupIDs)
 
 	return nil
 }

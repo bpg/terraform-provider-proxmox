@@ -28,15 +28,15 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		ConfigureFunc: providerConfigure,
 		DataSourcesMap: map[string]*schema.Resource{
-			"proxmox_virtual_environment_access_group":  dataSourceVirtualEnvironmentAccessGroup(),
-			"proxmox_virtual_environment_access_groups": dataSourceVirtualEnvironmentAccessGroups(),
-			"proxmox_virtual_environment_access_role":   dataSourceVirtualEnvironmentAccessRole(),
-			"proxmox_virtual_environment_access_roles":  dataSourceVirtualEnvironmentAccessRoles(),
-			"proxmox_virtual_environment_version":       dataSourceVirtualEnvironmentVersion(),
+			"proxmox_virtual_environment_group":   dataSourceVirtualEnvironmentGroup(),
+			"proxmox_virtual_environment_groups":  dataSourceVirtualEnvironmentGroups(),
+			"proxmox_virtual_environment_role":    dataSourceVirtualEnvironmentRole(),
+			"proxmox_virtual_environment_roles":   dataSourceVirtualEnvironmentRoles(),
+			"proxmox_virtual_environment_version": dataSourceVirtualEnvironmentVersion(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"proxmox_virtual_environment_access_group": resourceVirtualEnvironmentAccessGroup(),
-			"proxmox_virtual_environment_access_role":  resourceVirtualEnvironmentAccessRole(),
+			"proxmox_virtual_environment_group": resourceVirtualEnvironmentGroup(),
+			"proxmox_virtual_environment_role":  resourceVirtualEnvironmentRole(),
 		},
 		Schema: map[string]*schema.Schema{
 			mkProviderVirtualEnvironment: &schema.Schema{

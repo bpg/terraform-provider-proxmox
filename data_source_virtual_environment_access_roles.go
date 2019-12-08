@@ -9,15 +9,15 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentAccessRolesPrivileges = "privileges"
-	mkDataSourceVirtualEnvironmentAccessRolesRoleIDs    = "role_ids"
-	mkDataSourceVirtualEnvironmentAccessRolesSpecial    = "special"
+	mkDataSourceVirtualEnvironmentRolesPrivileges = "privileges"
+	mkDataSourceVirtualEnvironmentRolesRoleIDs    = "role_ids"
+	mkDataSourceVirtualEnvironmentRolesSpecial    = "special"
 )
 
-func dataSourceVirtualEnvironmentAccessRoles() *schema.Resource {
+func dataSourceVirtualEnvironmentRoles() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentAccessRolesPrivileges: &schema.Schema{
+			mkDataSourceVirtualEnvironmentRolesPrivileges: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The role privileges",
 				Computed:    true,
@@ -26,24 +26,24 @@ func dataSourceVirtualEnvironmentAccessRoles() *schema.Resource {
 					Elem: &schema.Schema{Type: schema.TypeString},
 				},
 			},
-			mkDataSourceVirtualEnvironmentAccessRolesRoleIDs: &schema.Schema{
+			mkDataSourceVirtualEnvironmentRolesRoleIDs: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The role ids",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentAccessRolesSpecial: &schema.Schema{
+			mkDataSourceVirtualEnvironmentRolesSpecial: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "Whether the role is special (built-in)",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentAccessRolesRead,
+		Read: dataSourceVirtualEnvironmentRolesRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentAccessRolesRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentRolesRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -51,7 +51,7 @@ func dataSourceVirtualEnvironmentAccessRolesRead(d *schema.ResourceData, m inter
 		return err
 	}
 
-	list, err := veClient.ListAccessRoles()
+	list, err := veClient.ListRoles()
 
 	if err != nil {
 		return err
@@ -69,9 +69,9 @@ func dataSourceVirtualEnvironmentAccessRolesRead(d *schema.ResourceData, m inter
 
 	d.SetId("access_roles")
 
-	d.Set(mkDataSourceVirtualEnvironmentAccessRolesPrivileges, privileges)
-	d.Set(mkDataSourceVirtualEnvironmentAccessRolesRoleIDs, roleIDs)
-	d.Set(mkDataSourceVirtualEnvironmentAccessRolesSpecial, special)
+	d.Set(mkDataSourceVirtualEnvironmentRolesPrivileges, privileges)
+	d.Set(mkDataSourceVirtualEnvironmentRolesRoleIDs, roleIDs)
+	d.Set(mkDataSourceVirtualEnvironmentRolesSpecial, special)
 
 	return nil
 }

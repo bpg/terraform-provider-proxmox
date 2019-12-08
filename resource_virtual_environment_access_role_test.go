@@ -8,28 +8,28 @@ import (
 	"testing"
 )
 
-// TestResourceVirtualEnvironmentAccessRoleInstantiation tests whether the ResourceVirtualEnvironmentAccessRole instance can be instantiated.
-func TestResourceVirtualEnvironmentAccessRoleInstantiation(t *testing.T) {
-	s := resourceVirtualEnvironmentAccessRole()
+// TestResourceVirtualEnvironmentRoleInstantiation tests whether the ResourceVirtualEnvironmentRole instance can be instantiated.
+func TestResourceVirtualEnvironmentRoleInstantiation(t *testing.T) {
+	s := resourceVirtualEnvironmentRole()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate resourceVirtualEnvironmentAccessRole")
+		t.Fatalf("Cannot instantiate resourceVirtualEnvironmentRole")
 	}
 }
 
-// TestResourceVirtualEnvironmentAccessRoleSchema tests the resourceVirtualEnvironmentAccessRole schema.
-func TestResourceVirtualEnvironmentAccessRoleSchema(t *testing.T) {
-	s := resourceVirtualEnvironmentAccessRole()
+// TestResourceVirtualEnvironmentRoleSchema tests the resourceVirtualEnvironmentRole schema.
+func TestResourceVirtualEnvironmentRoleSchema(t *testing.T) {
+	s := resourceVirtualEnvironmentRole()
 
 	attributeKeys := []string{}
 
 	for _, v := range attributeKeys {
 		if s.Schema[v] == nil {
-			t.Fatalf("Error in resourceVirtualEnvironmentAccessRole.Schema: Missing attribute \"%s\"", v)
+			t.Fatalf("Error in resourceVirtualEnvironmentRole.Schema: Missing attribute \"%s\"", v)
 		}
 
 		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in resourceVirtualEnvironmentAccessRole.Schema: Attribute \"%s\" is not computed", v)
+			t.Fatalf("Error in resourceVirtualEnvironmentRole.Schema: Attribute \"%s\" is not computed", v)
 		}
 	}
 }

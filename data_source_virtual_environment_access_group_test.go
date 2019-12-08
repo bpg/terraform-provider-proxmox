@@ -8,31 +8,31 @@ import (
 	"testing"
 )
 
-// TestDataSourceVirtualEnvironmentAccessGroupInstantiation tests whether the DataSourceVirtualEnvironmentAccessGroup instance can be instantiated.
-func TestDataSourceVirtualEnvironmentAccessGroupInstantiation(t *testing.T) {
-	s := dataSourceVirtualEnvironmentAccessGroup()
+// TestDataSourceVirtualEnvironmentGroupInstantiation tests whether the DataSourceVirtualEnvironmentGroup instance can be instantiated.
+func TestDataSourceVirtualEnvironmentGroupInstantiation(t *testing.T) {
+	s := dataSourceVirtualEnvironmentGroup()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate dataSourceVirtualEnvironmentAccessGroup")
+		t.Fatalf("Cannot instantiate dataSourceVirtualEnvironmentGroup")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentAccessGroupSchema tests the dataSourceVirtualEnvironmentAccessGroup schema.
-func TestDataSourceVirtualEnvironmentAccessGroupSchema(t *testing.T) {
-	s := dataSourceVirtualEnvironmentAccessGroup()
+// TestDataSourceVirtualEnvironmentGroupSchema tests the dataSourceVirtualEnvironmentGroup schema.
+func TestDataSourceVirtualEnvironmentGroupSchema(t *testing.T) {
+	s := dataSourceVirtualEnvironmentGroup()
 
 	attributeKeys := []string{
-		mkDataSourceVirtualEnvironmentAccessGroupComment,
-		mkDataSourceVirtualEnvironmentAccessGroupMembers,
+		mkDataSourceVirtualEnvironmentGroupComment,
+		mkDataSourceVirtualEnvironmentGroupMembers,
 	}
 
 	for _, v := range attributeKeys {
 		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentAccessGroup.Schema: Missing attribute \"%s\"", v)
+			t.Fatalf("Error in dataSourceVirtualEnvironmentGroup.Schema: Missing attribute \"%s\"", v)
 		}
 
 		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentAccessGroup.Schema: Attribute \"%s\" is not computed", v)
+			t.Fatalf("Error in dataSourceVirtualEnvironmentGroup.Schema: Attribute \"%s\" is not computed", v)
 		}
 	}
 }

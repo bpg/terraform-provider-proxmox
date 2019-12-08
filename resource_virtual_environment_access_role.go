@@ -12,33 +12,33 @@ import (
 )
 
 const (
-	mkResourceVirtualEnvironmentAccessRolePrivileges = "privileges"
-	mkResourceVirtualEnvironmentAccessRoleRoleID     = "role_id"
+	mkResourceVirtualEnvironmentRolePrivileges = "privileges"
+	mkResourceVirtualEnvironmentRoleRoleID     = "role_id"
 )
 
-func resourceVirtualEnvironmentAccessRole() *schema.Resource {
+func resourceVirtualEnvironmentRole() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentAccessRolePrivileges: &schema.Schema{
+			mkResourceVirtualEnvironmentRolePrivileges: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The role privileges",
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkResourceVirtualEnvironmentAccessRoleRoleID: &schema.Schema{
+			mkResourceVirtualEnvironmentRoleRoleID: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The role id",
 				Required:    true,
 			},
 		},
-		Create: resourceVirtualEnvironmentAccessRoleCreate,
-		Read:   resourceVirtualEnvironmentAccessRoleRead,
-		Update: resourceVirtualEnvironmentAccessRoleUpdate,
-		Delete: resourceVirtualEnvironmentAccessRoleDelete,
+		Create: resourceVirtualEnvironmentRoleCreate,
+		Read:   resourceVirtualEnvironmentRoleRead,
+		Update: resourceVirtualEnvironmentRoleUpdate,
+		Delete: resourceVirtualEnvironmentRoleDelete,
 	}
 }
 
-func resourceVirtualEnvironmentAccessRoleCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentRoleCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -46,8 +46,8 @@ func resourceVirtualEnvironmentAccessRoleCreate(d *schema.ResourceData, m interf
 		return err
 	}
 
-	privileges := d.Get(mkResourceVirtualEnvironmentAccessRolePrivileges).([]interface{})
-	roleID := d.Get(mkResourceVirtualEnvironmentAccessRoleRoleID).(string)
+	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).([]interface{})
+	roleID := d.Get(mkResourceVirtualEnvironmentRoleRoleID).(string)
 
 	customPrivileges := make(proxmox.CustomPrivileges, len(privileges))
 
@@ -55,12 +55,12 @@ func resourceVirtualEnvironmentAccessRoleCreate(d *schema.ResourceData, m interf
 		customPrivileges[i] = v.(string)
 	}
 
-	body := &proxmox.VirtualEnvironmentAccessRoleCreateRequestBody{
+	body := &proxmox.VirtualEnvironmentRoleCreateRequestBody{
 		ID:         roleID,
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.CreateAccessRole(body)
+	err = veClient.CreateRole(body)
 
 	if err != nil {
 		return err
@@ -68,10 +68,10 @@ func resourceVirtualEnvironmentAccessRoleCreate(d *schema.ResourceData, m interf
 
 	d.SetId(roleID)
 
-	return resourceVirtualEnvironmentAccessRoleRead(d, m)
+	return resourceVirtualEnvironmentRoleRead(d, m)
 }
 
-func resourceVirtualEnvironmentAccessRoleRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -80,7 +80,7 @@ func resourceVirtualEnvironmentAccessRoleRead(d *schema.ResourceData, m interfac
 	}
 
 	roleID := d.Id()
-	accessRole, err := veClient.GetAccessRole(roleID)
+	accessRole, err := veClient.GetRole(roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -94,12 +94,12 @@ func resourceVirtualEnvironmentAccessRoleRead(d *schema.ResourceData, m interfac
 
 	d.SetId(roleID)
 
-	d.Set(mkResourceVirtualEnvironmentAccessRolePrivileges, *accessRole)
+	d.Set(mkResourceVirtualEnvironmentRolePrivileges, *accessRole)
 
 	return nil
 }
 
-func resourceVirtualEnvironmentAccessRoleUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentRoleUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -107,28 +107,28 @@ func resourceVirtualEnvironmentAccessRoleUpdate(d *schema.ResourceData, m interf
 		return err
 	}
 
-	privileges := d.Get(mkResourceVirtualEnvironmentAccessRolePrivileges).([]interface{})
+	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).([]interface{})
 	customPrivileges := make(proxmox.CustomPrivileges, len(privileges))
 
 	for i, v := range privileges {
 		customPrivileges[i] = v.(string)
 	}
 
-	body := &proxmox.VirtualEnvironmentAccessRoleUpdateRequestBody{
+	body := &proxmox.VirtualEnvironmentRoleUpdateRequestBody{
 		Privileges: customPrivileges,
 	}
 
 	roleID := d.Id()
-	err = veClient.UpdateAccessRole(roleID, body)
+	err = veClient.UpdateRole(roleID, body)
 
 	if err != nil {
 		return err
 	}
 
-	return resourceVirtualEnvironmentAccessRoleRead(d, m)
+	return resourceVirtualEnvironmentRoleRead(d, m)
 }
 
-func resourceVirtualEnvironmentAccessRoleDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentRoleDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -137,7 +137,7 @@ func resourceVirtualEnvironmentAccessRoleDelete(d *schema.ResourceData, m interf
 	}
 
 	roleID := d.Id()
-	err = veClient.DeleteAccessRole(roleID)
+	err = veClient.DeleteRole(roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

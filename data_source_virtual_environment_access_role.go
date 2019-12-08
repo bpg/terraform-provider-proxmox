@@ -9,30 +9,30 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentAccessRoleID         = "role_id"
-	mkDataSourceVirtualEnvironmentAccessRolePrivileges = "privileges"
+	mkDataSourceVirtualEnvironmentRoleID         = "role_id"
+	mkDataSourceVirtualEnvironmentRolePrivileges = "privileges"
 )
 
-func dataSourceVirtualEnvironmentAccessRole() *schema.Resource {
+func dataSourceVirtualEnvironmentRole() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentAccessRoleID: &schema.Schema{
+			mkDataSourceVirtualEnvironmentRoleID: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The role id",
 				Required:    true,
 			},
-			mkDataSourceVirtualEnvironmentAccessRolePrivileges: &schema.Schema{
+			mkDataSourceVirtualEnvironmentRolePrivileges: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The role privileges",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentAccessRoleRead,
+		Read: dataSourceVirtualEnvironmentRoleRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentAccessRoleRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -40,15 +40,15 @@ func dataSourceVirtualEnvironmentAccessRoleRead(d *schema.ResourceData, m interf
 		return err
 	}
 
-	roleID := d.Get(mkDataSourceVirtualEnvironmentAccessRoleID).(string)
-	accessRole, err := veClient.GetAccessRole(roleID)
+	roleID := d.Get(mkDataSourceVirtualEnvironmentRoleID).(string)
+	accessRole, err := veClient.GetRole(roleID)
 
 	if err != nil {
 		return err
 	}
 
 	d.SetId(roleID)
-	d.Set(mkDataSourceVirtualEnvironmentAccessRolePrivileges, *accessRole)
+	d.Set(mkDataSourceVirtualEnvironmentRolePrivileges, *accessRole)
 
 	return nil
 }

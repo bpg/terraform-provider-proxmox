@@ -8,30 +8,30 @@ import (
 	"testing"
 )
 
-// TestResourceVirtualEnvironmentAccessGroupInstantiation tests whether the ResourceVirtualEnvironmentAccessGroup instance can be instantiated.
-func TestResourceVirtualEnvironmentAccessGroupInstantiation(t *testing.T) {
-	s := resourceVirtualEnvironmentAccessGroup()
+// TestResourceVirtualEnvironmentGroupInstantiation tests whether the ResourceVirtualEnvironmentGroup instance can be instantiated.
+func TestResourceVirtualEnvironmentGroupInstantiation(t *testing.T) {
+	s := resourceVirtualEnvironmentGroup()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate resourceVirtualEnvironmentAccessGroup")
+		t.Fatalf("Cannot instantiate resourceVirtualEnvironmentGroup")
 	}
 }
 
-// TestResourceVirtualEnvironmentAccessGroupSchema tests the resourceVirtualEnvironmentAccessGroup schema.
-func TestResourceVirtualEnvironmentAccessGroupSchema(t *testing.T) {
-	s := resourceVirtualEnvironmentAccessGroup()
+// TestResourceVirtualEnvironmentGroupSchema tests the resourceVirtualEnvironmentGroup schema.
+func TestResourceVirtualEnvironmentGroupSchema(t *testing.T) {
+	s := resourceVirtualEnvironmentGroup()
 
 	attributeKeys := []string{
-		mkResourceVirtualEnvironmentAccessGroupMembers,
+		mkResourceVirtualEnvironmentGroupMembers,
 	}
 
 	for _, v := range attributeKeys {
 		if s.Schema[v] == nil {
-			t.Fatalf("Error in resourceVirtualEnvironmentAccessGroup.Schema: Missing attribute \"%s\"", v)
+			t.Fatalf("Error in resourceVirtualEnvironmentGroup.Schema: Missing attribute \"%s\"", v)
 		}
 
 		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in resourceVirtualEnvironmentAccessGroup.Schema: Attribute \"%s\" is not computed", v)
+			t.Fatalf("Error in resourceVirtualEnvironmentGroup.Schema: Attribute \"%s\" is not computed", v)
 		}
 	}
 }

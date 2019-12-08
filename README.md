@@ -37,7 +37,7 @@ If you're building the provider, follow the instructions to [install it as a plu
 
 #### Virtual Environment
 
-##### Access Group (proxmox_virtual_environment_access_group)
+##### Group (proxmox_virtual_environment_group)
 
 ###### Arguments
 * `group_id` - (Required) The group id.
@@ -46,7 +46,7 @@ If you're building the provider, follow the instructions to [install it as a plu
 * `comment` - The group comment.
 * `members` - The group members as a list with `username@realm` entries.
 
-##### Access Groups (proxmox_virtual_environment_access_groups)
+##### Groups (proxmox_virtual_environment_groups)
 
 ###### Arguments
 This data source doesn't accept arguments.
@@ -55,7 +55,7 @@ This data source doesn't accept arguments.
 * `comments` - The group comments.
 * `group_ids` - The group ids.
 
-##### Access Role (proxmox_virtual_environment_access_role)
+##### Role (proxmox_virtual_environment_role)
 
 ###### Arguments
 * `role_id` - (Required) The role id.
@@ -63,7 +63,7 @@ This data source doesn't accept arguments.
 ###### Attributes
 * `privileges` - The role privileges.
 
-##### Access Roles (proxmox_virtual_environment_access_roles)
+##### Roles (proxmox_virtual_environment_roles)
 
 ###### Arguments
 This data source doesn't accept arguments.
@@ -88,7 +88,7 @@ This data source doesn't accept arguments.
 
 #### Virtual Environment
 
-##### Access Group (proxmox_virtual_environment_access_group)
+##### Group (proxmox_virtual_environment_group)
 
 ###### Arguments
 * `comment` - (Optional) The group comment.
@@ -97,7 +97,7 @@ This data source doesn't accept arguments.
 ###### Attributes
 * `members` - The group members as a list with `username@realm` entries.
 
-##### Access Role (proxmox_virtual_environment_access_role)
+##### Role (proxmox_virtual_environment_role)
 
 ###### Arguments
 * `privileges` - (Required) The role privileges.

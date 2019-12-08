@@ -12,40 +12,40 @@ import (
 )
 
 const (
-	mkResourceVirtualEnvironmentAccessGroupComment = "comment"
-	mkResourceVirtualEnvironmentAccessGroupID      = "group_id"
-	mkResourceVirtualEnvironmentAccessGroupMembers = "members"
+	mkResourceVirtualEnvironmentGroupComment = "comment"
+	mkResourceVirtualEnvironmentGroupID      = "group_id"
+	mkResourceVirtualEnvironmentGroupMembers = "members"
 )
 
-func resourceVirtualEnvironmentAccessGroup() *schema.Resource {
+func resourceVirtualEnvironmentGroup() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentAccessGroupComment: &schema.Schema{
+			mkResourceVirtualEnvironmentGroupComment: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The group comment",
 				Optional:    true,
 				Default:     "",
 			},
-			mkResourceVirtualEnvironmentAccessGroupID: &schema.Schema{
+			mkResourceVirtualEnvironmentGroupID: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The group id",
 				Required:    true,
 			},
-			mkResourceVirtualEnvironmentAccessGroupMembers: &schema.Schema{
+			mkResourceVirtualEnvironmentGroupMembers: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The group members",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Create: resourceVirtualEnvironmentAccessGroupCreate,
-		Read:   resourceVirtualEnvironmentAccessGroupRead,
-		Update: resourceVirtualEnvironmentAccessGroupUpdate,
-		Delete: resourceVirtualEnvironmentAccessGroupDelete,
+		Create: resourceVirtualEnvironmentGroupCreate,
+		Read:   resourceVirtualEnvironmentGroupRead,
+		Update: resourceVirtualEnvironmentGroupUpdate,
+		Delete: resourceVirtualEnvironmentGroupDelete,
 	}
 }
 
-func resourceVirtualEnvironmentAccessGroupCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentGroupCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -53,13 +53,13 @@ func resourceVirtualEnvironmentAccessGroupCreate(d *schema.ResourceData, m inter
 		return err
 	}
 
-	groupID := d.Get(mkResourceVirtualEnvironmentAccessGroupID).(string)
-	body := &proxmox.VirtualEnvironmentAccessGroupCreateRequestBody{
-		Comment: d.Get(mkResourceVirtualEnvironmentAccessGroupComment).(string),
+	groupID := d.Get(mkResourceVirtualEnvironmentGroupID).(string)
+	body := &proxmox.VirtualEnvironmentGroupCreateRequestBody{
+		Comment: d.Get(mkResourceVirtualEnvironmentGroupComment).(string),
 		ID:      groupID,
 	}
 
-	err = veClient.CreateAccessGroup(body)
+	err = veClient.CreateGroup(body)
 
 	if err != nil {
 		return err
@@ -67,10 +67,10 @@ func resourceVirtualEnvironmentAccessGroupCreate(d *schema.ResourceData, m inter
 
 	d.SetId(groupID)
 
-	return resourceVirtualEnvironmentAccessGroupRead(d, m)
+	return resourceVirtualEnvironmentGroupRead(d, m)
 }
 
-func resourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -79,7 +79,7 @@ func resourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m interfa
 	}
 
 	groupID := d.Id()
-	accessGroup, err := veClient.GetAccessGroup(groupID)
+	accessGroup, err := veClient.GetGroup(groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -93,13 +93,13 @@ func resourceVirtualEnvironmentAccessGroupRead(d *schema.ResourceData, m interfa
 
 	d.SetId(groupID)
 
-	d.Set(mkResourceVirtualEnvironmentAccessGroupComment, accessGroup.Comment)
-	d.Set(mkResourceVirtualEnvironmentAccessGroupMembers, accessGroup.Members)
+	d.Set(mkResourceVirtualEnvironmentGroupComment, accessGroup.Comment)
+	d.Set(mkResourceVirtualEnvironmentGroupMembers, accessGroup.Members)
 
 	return nil
 }
 
-func resourceVirtualEnvironmentAccessGroupUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentGroupUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -107,21 +107,21 @@ func resourceVirtualEnvironmentAccessGroupUpdate(d *schema.ResourceData, m inter
 		return err
 	}
 
-	body := &proxmox.VirtualEnvironmentAccessGroupUpdateRequestBody{
-		Comment: d.Get(mkResourceVirtualEnvironmentAccessGroupComment).(string),
+	body := &proxmox.VirtualEnvironmentGroupUpdateRequestBody{
+		Comment: d.Get(mkResourceVirtualEnvironmentGroupComment).(string),
 	}
 
 	groupID := d.Id()
-	err = veClient.UpdateAccessGroup(groupID, body)
+	err = veClient.UpdateGroup(groupID, body)
 
 	if err != nil {
 		return err
 	}
 
-	return resourceVirtualEnvironmentAccessGroupRead(d, m)
+	return resourceVirtualEnvironmentGroupRead(d, m)
 }
 
-func resourceVirtualEnvironmentAccessGroupDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentGroupDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -130,7 +130,7 @@ func resourceVirtualEnvironmentAccessGroupDelete(d *schema.ResourceData, m inter
 	}
 
 	groupID := d.Id()
-	err = veClient.DeleteAccessGroup(groupID)
+	err = veClient.DeleteGroup(groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

@@ -8,32 +8,32 @@ import (
 	"testing"
 )
 
-// TestDataSourceVirtualEnvironmentAccessRolesInstantiation tests whether the DataSourceVirtualEnvironmentAccessRoles instance can be instantiated.
-func TestDataSourceVirtualEnvironmentAccessRolesInstantiation(t *testing.T) {
-	s := dataSourceVirtualEnvironmentAccessRoles()
+// TestDataSourceVirtualEnvironmentRolesInstantiation tests whether the DataSourceVirtualEnvironmentRoles instance can be instantiated.
+func TestDataSourceVirtualEnvironmentRolesInstantiation(t *testing.T) {
+	s := dataSourceVirtualEnvironmentRoles()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate dataSourceVirtualEnvironmentAccessRoles")
+		t.Fatalf("Cannot instantiate dataSourceVirtualEnvironmentRoles")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentAccessRolesSchema tests the dataSourceVirtualEnvironmentAccessRoles schema.
-func TestDataSourceVirtualEnvironmentAccessRolesSchema(t *testing.T) {
-	s := dataSourceVirtualEnvironmentAccessRoles()
+// TestDataSourceVirtualEnvironmentRolesSchema tests the dataSourceVirtualEnvironmentRoles schema.
+func TestDataSourceVirtualEnvironmentRolesSchema(t *testing.T) {
+	s := dataSourceVirtualEnvironmentRoles()
 
 	attributeKeys := []string{
-		mkDataSourceVirtualEnvironmentAccessRolesPrivileges,
-		mkDataSourceVirtualEnvironmentAccessRolesRoleIDs,
-		mkDataSourceVirtualEnvironmentAccessRolesSpecial,
+		mkDataSourceVirtualEnvironmentRolesPrivileges,
+		mkDataSourceVirtualEnvironmentRolesRoleIDs,
+		mkDataSourceVirtualEnvironmentRolesSpecial,
 	}
 
 	for _, v := range attributeKeys {
 		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentAccessRoles.Schema: Missing attribute \"%s\"", v)
+			t.Fatalf("Error in dataSourceVirtualEnvironmentRoles.Schema: Missing attribute \"%s\"", v)
 		}
 
 		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentAccessRoles.Schema: Attribute \"%s\" is not computed", v)
+			t.Fatalf("Error in dataSourceVirtualEnvironmentRoles.Schema: Attribute \"%s\" is not computed", v)
 		}
 	}
 }
