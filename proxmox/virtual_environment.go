@@ -152,7 +152,7 @@ func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) erro
 		case 404:
 			return fmt.Errorf("Received a HTTP %d response - Please verify that the endpoint refers to a supported version of the Proxmox Virtual Environment API", res.StatusCode)
 		case 500:
-			return fmt.Errorf("Received a HTTP %d response - Please verify that the Proxmox Virtual Environment API is healthy", res.StatusCode)
+			return fmt.Errorf("Received a HTTP %d response - Please verify that the Proxmox Virtual Environment API is healthy (status: %s)", res.StatusCode, res.Status)
 		default:
 			return fmt.Errorf("Received a HTTP %d response", res.StatusCode)
 		}

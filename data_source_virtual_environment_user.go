@@ -117,10 +117,10 @@ func dataSourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{})
 		if t.Unix() > 0 {
 			d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, t.UTC().Format(time.RFC3339))
 		} else {
-			d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(2147483647, 0).UTC().Format(time.RFC3339))
+			d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
 		}
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(2147483647, 0).UTC().Format(time.RFC3339))
+		d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
 	}
 
 	if v.FirstName != nil {

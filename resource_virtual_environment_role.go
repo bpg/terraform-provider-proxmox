@@ -29,6 +29,7 @@ func resourceVirtualEnvironmentRole() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The role id",
 				Required:    true,
+				ForceNew:    true,
 			},
 		},
 		Create: resourceVirtualEnvironmentRoleCreate,

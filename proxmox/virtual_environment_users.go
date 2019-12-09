@@ -9,20 +9,27 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"time"
 )
+
+// VirtualEnvironmentUserChangePasswordRequestBody contains the data for a user password change request.
+type VirtualEnvironmentUserChangePasswordRequestBody struct {
+	ID       string `json:"userid" url:"userid"`
+	Password string `json:"password" url:"password"`
+}
 
 // VirtualEnvironmentUserCreateRequestBody contains the data for an user create request.
 type VirtualEnvironmentUserCreateRequestBody struct {
-	Comment        *string          `json:"comment,omitempty"`
-	Email          *string          `json:"email,omitempty"`
-	Enabled        *CustomBool      `json:"enable,omitempty"`
-	ExpirationDate *CustomTimestamp `json:"expire,omitempty"`
-	FirstName      *string          `json:"firstname,omitempty"`
-	Groups         *[]string        `json:"groups,omitempty"`
-	ID             string           `json:"userid"`
-	Keys           *string          `json:"keys,omitempty"`
-	LastName       *string          `json:"lastname,omitempty"`
-	Password       string           `json:"password"`
+	Comment        *string          `json:"comment,omitempty" url:"comment,omitempty"`
+	Email          *string          `json:"email,omitempty" url:"email,omitempty"`
+	Enabled        *CustomBool      `json:"enable,omitempty" url:"enable,omitempty,int"`
+	ExpirationDate *CustomTimestamp `json:"expire,omitempty" url:"expire,omitempty,unix"`
+	FirstName      *string          `json:"firstname,omitempty" url:"firstname,omitempty"`
+	Groups         []string         `json:"groups,omitempty" url:"groups,omitempty,comma"`
+	ID             string           `json:"userid" url:"userid"`
+	Keys           *string          `json:"keys,omitempty" url:"keys,omitempty"`
+	LastName       *string          `json:"lastname,omitempty" url:"lastname,omitempty"`
+	Password       string           `json:"password" url:"password"`
 }
 
 // VirtualEnvironmentUserGetResponseBody contains the body from an user get response.
@@ -62,15 +69,25 @@ type VirtualEnvironmentUserListResponseData struct {
 
 // VirtualEnvironmentUserUpdateRequestBody contains the data for an user update request.
 type VirtualEnvironmentUserUpdateRequestBody struct {
-	Append         *CustomBool      `json:"append,omitempty"`
-	Comment        *string          `json:"comment,omitempty"`
-	Email          *string          `json:"email,omitempty"`
-	Enabled        *CustomBool      `json:"enable,omitempty"`
-	ExpirationDate *CustomTimestamp `json:"expire,omitempty"`
-	FirstName      *string          `json:"firstname,omitempty"`
-	Groups         *[]string        `json:"groups,omitempty"`
-	Keys           *string          `json:"keys,omitempty"`
-	LastName       *string          `json:"lastname,omitempty"`
+	Append         *CustomBool      `json:"append,omitempty" url:"append,omitempty"`
+	Comment        *string          `json:"comment,omitempty" url:"comment,omitempty"`
+	Email          *string          `json:"email,omitempty" url:"email,omitempty"`
+	Enabled        *CustomBool      `json:"enable,omitempty" url:"enable,omitempty,int"`
+	ExpirationDate *CustomTimestamp `json:"expire,omitempty" url:"expire,omitempty,unix"`
+	FirstName      *string          `json:"firstname,omitempty" url:"firstname,omitempty"`
+	Groups         []string         `json:"groups,omitempty" url:"groups,omitempty,comma"`
+	Keys           *string          `json:"keys,omitempty" url:"keys,omitempty"`
+	LastName       *string          `json:"lastname,omitempty" url:"lastname,omitempty"`
+}
+
+// ChangeUserPassword changes a user's password.
+func (c *VirtualEnvironmentClient) ChangeUserPassword(id, password string) error {
+	d := VirtualEnvironmentUserChangePasswordRequestBody{
+		ID:       id,
+		Password: password,
+	}
+
+	return c.DoRequest(hmPUT, "access/password", d, nil)
 }
 
 // CreateUser creates an user.
@@ -96,6 +113,15 @@ func (c *VirtualEnvironmentClient) GetUser(id string) (*VirtualEnvironmentUserGe
 		return nil, errors.New("The server did not include a data object in the response")
 	}
 
+	if resBody.Data.ExpirationDate != nil {
+		expirationDate := CustomTimestamp(time.Time(*resBody.Data.ExpirationDate).UTC())
+		resBody.Data.ExpirationDate = &expirationDate
+	}
+
+	if resBody.Data.Groups != nil {
+		sort.Strings(*resBody.Data.Groups)
+	}
+
 	return resBody.Data, nil
 }
 
@@ -115,6 +141,17 @@ func (c *VirtualEnvironmentClient) ListUsers() ([]*VirtualEnvironmentUserListRes
 	sort.Slice(resBody.Data, func(i, j int) bool {
 		return resBody.Data[i].ID < resBody.Data[j].ID
 	})
+
+	for i := range resBody.Data {
+		if resBody.Data[i].ExpirationDate != nil {
+			expirationDate := CustomTimestamp(time.Time(*resBody.Data[i].ExpirationDate).UTC())
+			resBody.Data[i].ExpirationDate = &expirationDate
+		}
+
+		if resBody.Data[i].Groups != nil {
+			sort.Strings(*resBody.Data[i].Groups)
+		}
+	}
 
 	return resBody.Data, nil
 }

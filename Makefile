@@ -21,6 +21,9 @@ example-init:
 	go build -o "example/$(NAME)_v$(VERSION)-custom_x4"
 	cd ./example && terraform init
 
+example-plan:
+	cd ./example && terraform plan
+
 fmt:
 	gofmt -w $(GOFMT_FILES)
 

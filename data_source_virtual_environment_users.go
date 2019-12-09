@@ -136,10 +136,10 @@ func dataSourceVirtualEnvironmentUsersRead(d *schema.ResourceData, m interface{}
 			if t.Unix() > 0 {
 				expirationDates[i] = t.UTC().Format(time.RFC3339)
 			} else {
-				expirationDates[i] = time.Unix(2147483647, 0).UTC().Format(time.RFC3339)
+				expirationDates[i] = time.Unix(0, 0).UTC().Format(time.RFC3339)
 			}
 		} else {
-			expirationDates[i] = time.Unix(2147483647, 0).UTC().Format(time.RFC3339)
+			expirationDates[i] = time.Unix(0, 0).UTC().Format(time.RFC3339)
 		}
 
 		if v.FirstName != nil {

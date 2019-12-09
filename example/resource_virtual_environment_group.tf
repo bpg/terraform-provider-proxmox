@@ -1,5 +1,5 @@
 resource "proxmox_virtual_environment_group" "example" {
-  comment  = "Created by Terraform"
+  comment  = "Managed by Terraform"
   group_id = "terraform-provider-proxmox-example"
 }
 

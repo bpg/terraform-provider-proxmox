@@ -30,6 +30,7 @@ func resourceVirtualEnvironmentGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The group id",
 				Required:    true,
+				ForceNew:    true,
 			},
 			mkResourceVirtualEnvironmentGroupMembers: &schema.Schema{
 				Type:        schema.TypeSet,

@@ -1,5 +1,5 @@
 data "proxmox_virtual_environment_user" "example" {
-  user_id = "root@pam"
+  user_id = "${proxmox_virtual_environment_user.example.id}"
 }
 
 output "data_proxmox_virtual_environment_user_example_comment" {
