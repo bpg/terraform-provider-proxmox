@@ -30,6 +30,8 @@ func Provider() *schema.Provider {
 		DataSourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_group":   dataSourceVirtualEnvironmentGroup(),
 			"proxmox_virtual_environment_groups":  dataSourceVirtualEnvironmentGroups(),
+			"proxmox_virtual_environment_pool":    dataSourceVirtualEnvironmentPool(),
+			"proxmox_virtual_environment_pools":   dataSourceVirtualEnvironmentPools(),
 			"proxmox_virtual_environment_role":    dataSourceVirtualEnvironmentRole(),
 			"proxmox_virtual_environment_roles":   dataSourceVirtualEnvironmentRoles(),
 			"proxmox_virtual_environment_user":    dataSourceVirtualEnvironmentUser(),
@@ -38,6 +40,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_group": resourceVirtualEnvironmentGroup(),
+			"proxmox_virtual_environment_pool":  resourceVirtualEnvironmentPool(),
 			"proxmox_virtual_environment_role":  resourceVirtualEnvironmentRole(),
 			"proxmox_virtual_environment_user":  resourceVirtualEnvironmentUser(),
 		},

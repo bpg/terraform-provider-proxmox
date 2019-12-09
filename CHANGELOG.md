@@ -4,11 +4,15 @@ FEATURES:
 
 * **New Data Source:** `proxmox_virtual_environment_group`
 * **New Data Source:** `proxmox_virtual_environment_groups`
+* **New Data Source:** `proxmox_virtual_environment_pool`
+* **New Data Source:** `proxmox_virtual_environment_pools`
 * **New Data Source:** `proxmox_virtual_environment_role`
 * **New Data Source:** `proxmox_virtual_environment_roles`
 * **New Data Source:** `proxmox_virtual_environment_user`
 * **New Data Source:** `proxmox_virtual_environment_users`
 * **New Data Source:** `proxmox_virtual_environment_version`
+
 * **New Resource:** `proxmox_virtual_environment_group`
+* **New Resource:** `proxmox_virtual_environment_pool`
 * **New Resource:** `proxmox_virtual_environment_role`
 * **New Resource:** `proxmox_virtual_environment_user`

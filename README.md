@@ -55,6 +55,28 @@ This data source doesn't accept arguments.
 * `comments` - The group comments
 * `group_ids` - The group ids
 
+##### Pool (proxmox_virtual_environment_pool)
+
+###### Arguments
+* `pool_id` - (Required) The pool id
+
+###### Attributes
+* `comment` - The pool comment
+* `members` - The pool members
+    * `id` - The member id
+    * `node` - The node id
+    * `storage` - The storage id
+    * `type` - The member type
+    * `virtual_machine_id` - The virtual machine id
+
+##### Pools (proxmox_virtual_environment_pools)
+
+###### Arguments
+This data source doesn't accept arguments.
+
+###### Attributes
+* `pool_ids` - The pool ids
+
 ##### Role (proxmox_virtual_environment_role)
 
 ###### Arguments
@@ -127,6 +149,20 @@ This data source doesn't accept arguments.
 
 ###### Attributes
 * `members` - The group members as a list with `username@realm` entries
+
+##### Pool (proxmox_virtual_environment_pool)
+
+###### Arguments
+* `comment` - (Optional) The pool comment
+* `pool_id` - (Required) The pool id
+
+###### Attributes
+* `members` - The pool members
+    * `id` - The member id
+    * `node` - The node id
+    * `storage` - The storage id
+    * `type` - The member type
+    * `virtual_machine_id` - The virtual machine id
 
 ##### Role (proxmox_virtual_environment_role)
 

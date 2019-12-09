@@ -10,6 +10,7 @@ import (
 
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
 
 const (
@@ -47,10 +48,11 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				Default:     true,
 			},
 			mkResourceVirtualEnvironmentUserExpirationDate: &schema.Schema{
-				Type:        schema.TypeString,
-				Description: "The user account's expiration date",
-				Optional:    true,
-				Default:     time.Unix(0, 0).UTC().Format(time.RFC3339),
+				Type:         schema.TypeString,
+				Description:  "The user account's expiration date",
+				Optional:     true,
+				Default:      time.Unix(0, 0).UTC().Format(time.RFC3339),
+				ValidateFunc: validation.ValidateRFC3339TimeString,
 			},
 			mkResourceVirtualEnvironmentUserFirstName: &schema.Schema{
 				Type:        schema.TypeString,
