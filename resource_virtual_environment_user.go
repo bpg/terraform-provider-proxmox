@@ -14,6 +14,10 @@ import (
 )
 
 const (
+	mkResourceVirtualEnvironmentUserACL            = "acl"
+	mkResourceVirtualEnvironmentUserACLPath        = "path"
+	mkResourceVirtualEnvironmentUserACLPropagate   = "propagate"
+	mkResourceVirtualEnvironmentUserACLRoleID      = "role_id"
 	mkResourceVirtualEnvironmentUserComment        = "comment"
 	mkResourceVirtualEnvironmentUserEmail          = "email"
 	mkResourceVirtualEnvironmentUserEnabled        = "enabled"
@@ -29,6 +33,34 @@ const (
 func resourceVirtualEnvironmentUser() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			mkResourceVirtualEnvironmentUserACL: &schema.Schema{
+				Type:        schema.TypeSet,
+				Description: "The access control list",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return make([]interface{}, 0), nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentUserACLPath: {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The path",
+						},
+						mkResourceVirtualEnvironmentUserACLPropagate: {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether to propagate to child paths",
+							Default:     false,
+						},
+						mkResourceVirtualEnvironmentUserACLRoleID: {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The role id",
+						},
+					},
+				},
+			},
 			mkResourceVirtualEnvironmentUserComment: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The user comment",
@@ -64,10 +96,10 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				Type:        schema.TypeSet,
 				Description: "The user's groups",
 				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
 				DefaultFunc: func() (interface{}, error) {
 					return []string{}, nil
 				},
+				Elem: &schema.Schema{Type: schema.TypeString},
 			},
 			mkResourceVirtualEnvironmentUserKeys: &schema.Schema{
 				Type:        schema.TypeString,
@@ -152,6 +184,28 @@ func resourceVirtualEnvironmentUserCreate(d *schema.ResourceData, m interface{})
 
 	d.SetId(userID)
 
+	aclParsed := d.Get(mkResourceVirtualEnvironmentUserACL).(*schema.Set).List()
+
+	for _, v := range aclParsed {
+		aclDelete := proxmox.CustomBool(false)
+		aclEntry := v.(map[string]interface{})
+		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool))
+
+		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+			Delete:    &aclDelete,
+			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
+			Propagate: &aclPropagate,
+			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentUserACLRoleID].(string)},
+			Users:     []string{userID},
+		}
+
+		err := veClient.UpdateACL(aclBody)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	return resourceVirtualEnvironmentUserRead(d, m)
 }
 
@@ -176,7 +230,35 @@ func resourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
+	acl, err := veClient.GetACL()
+
+	if err != nil {
+		return err
+	}
+
 	d.SetId(userID)
+
+	aclParsed := make([]interface{}, 0)
+
+	for _, v := range acl {
+		if v.Type == "user" && v.UserOrGroupID == userID {
+			aclEntry := make(map[string]interface{})
+
+			aclEntry[mkResourceVirtualEnvironmentUserACLPath] = v.Path
+
+			if v.Propagate != nil {
+				aclEntry[mkResourceVirtualEnvironmentUserACLPropagate] = bool(*v.Propagate)
+			} else {
+				aclEntry[mkResourceVirtualEnvironmentUserACLPropagate] = false
+			}
+
+			aclEntry[mkResourceVirtualEnvironmentUserACLRoleID] = v.RoleID
+
+			aclParsed = append(aclParsed, aclEntry)
+		}
+	}
+
+	d.Set(mkResourceVirtualEnvironmentUserACL, aclParsed)
 
 	if user.Comment != nil {
 		d.Set(mkResourceVirtualEnvironmentUserComment, user.Comment)
@@ -289,6 +371,51 @@ func resourceVirtualEnvironmentUserUpdate(d *schema.ResourceData, m interface{})
 		}
 	}
 
+	aclArgOld, aclArg := d.GetChange(mkResourceVirtualEnvironmentUserACL)
+	aclParsedOld := aclArgOld.(*schema.Set).List()
+
+	for _, v := range aclParsedOld {
+		aclDelete := proxmox.CustomBool(true)
+		aclEntry := v.(map[string]interface{})
+		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool))
+
+		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+			Delete:    &aclDelete,
+			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
+			Propagate: &aclPropagate,
+			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentUserACLRoleID].(string)},
+			Users:     []string{userID},
+		}
+
+		err := veClient.UpdateACL(aclBody)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	aclParsed := aclArg.(*schema.Set).List()
+
+	for _, v := range aclParsed {
+		aclDelete := proxmox.CustomBool(false)
+		aclEntry := v.(map[string]interface{})
+		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool))
+
+		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+			Delete:    &aclDelete,
+			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
+			Propagate: &aclPropagate,
+			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentUserACLRoleID].(string)},
+			Users:     []string{userID},
+		}
+
+		err := veClient.UpdateACL(aclBody)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	return resourceVirtualEnvironmentUserRead(d, m)
 }
 
@@ -300,7 +427,29 @@ func resourceVirtualEnvironmentUserDelete(d *schema.ResourceData, m interface{})
 		return err
 	}
 
+	aclParsed := d.Get(mkResourceVirtualEnvironmentUserACL).(*schema.Set).List()
 	userID := d.Id()
+
+	for _, v := range aclParsed {
+		aclDelete := proxmox.CustomBool(true)
+		aclEntry := v.(map[string]interface{})
+		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool))
+
+		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+			Delete:    &aclDelete,
+			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
+			Propagate: &aclPropagate,
+			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentUserACLRoleID].(string)},
+			Users:     []string{userID},
+		}
+
+		err := veClient.UpdateACL(aclBody)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	err = veClient.DeleteUser(userID)
 
 	if err != nil {

@@ -11,6 +11,10 @@ import (
 )
 
 const (
+	mkDataSourceVirtualEnvironmentUserACL            = "acl"
+	mkDataSourceVirtualEnvironmentUserACLPath        = "path"
+	mkDataSourceVirtualEnvironmentUserACLPropagate   = "propagate"
+	mkDataSourceVirtualEnvironmentUserACLRoleID      = "role_id"
 	mkDataSourceVirtualEnvironmentUserComment        = "comment"
 	mkDataSourceVirtualEnvironmentUserEmail          = "email"
 	mkDataSourceVirtualEnvironmentUserEnabled        = "enabled"
@@ -25,6 +29,34 @@ const (
 func dataSourceVirtualEnvironmentUser() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			mkDataSourceVirtualEnvironmentUserACL: &schema.Schema{
+				Type:        schema.TypeSet,
+				Description: "The access control list",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return make([]interface{}, 0), nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkDataSourceVirtualEnvironmentUserACLPath: {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The path",
+						},
+						mkDataSourceVirtualEnvironmentUserACLPropagate: {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether to propagate to child paths",
+							Default:     false,
+						},
+						mkDataSourceVirtualEnvironmentUserACLRoleID: {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The role id",
+						},
+					},
+				},
+			},
 			mkDataSourceVirtualEnvironmentUserComment: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The user comment",
@@ -91,7 +123,35 @@ func dataSourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{})
 		return err
 	}
 
+	acl, err := veClient.GetACL()
+
+	if err != nil {
+		return err
+	}
+
 	d.SetId(userID)
+
+	aclParsed := make([]interface{}, 0)
+
+	for _, v := range acl {
+		if v.Type == "user" && v.UserOrGroupID == userID {
+			aclEntry := make(map[string]interface{})
+
+			aclEntry[mkDataSourceVirtualEnvironmentUserACLPath] = v.Path
+
+			if v.Propagate != nil {
+				aclEntry[mkDataSourceVirtualEnvironmentUserACLPropagate] = bool(*v.Propagate)
+			} else {
+				aclEntry[mkDataSourceVirtualEnvironmentUserACLPropagate] = false
+			}
+
+			aclEntry[mkDataSourceVirtualEnvironmentUserACLRoleID] = v.RoleID
+
+			aclParsed = append(aclParsed, aclEntry)
+		}
+	}
+
+	d.Set(mkDataSourceVirtualEnvironmentUserACL, aclParsed)
 
 	if v.Comment != nil {
 		d.Set(mkDataSourceVirtualEnvironmentUserComment, v.Comment)

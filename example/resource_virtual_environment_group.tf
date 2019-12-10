@@ -1,6 +1,15 @@
 resource "proxmox_virtual_environment_group" "example" {
+  acl {
+    path    = "/vms/1"
+    role_id = "${proxmox_virtual_environment_role.example.id}"
+  }
+
   comment  = "Managed by Terraform"
   group_id = "terraform-provider-proxmox-example"
+}
+
+output "resource_proxmox_virtual_environment_group_example_acl" {
+  value = "${proxmox_virtual_environment_group.example.acl}"
 }
 
 output "resource_proxmox_virtual_environment_group_example_comment" {

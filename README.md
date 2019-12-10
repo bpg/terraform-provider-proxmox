@@ -43,6 +43,10 @@ If you're building the provider, follow the instructions to [install it as a plu
 * `group_id` - (Required) The group id
 
 ###### Attributes
+* `acl` - The access control list
+    * `path` - The path
+    * `propagate` - Whether to propagate to child paths
+    * `role_id` - The role id
 * `comment` - The group comment
 * `members` - The group members as a list with `username@realm` entries
 
@@ -101,6 +105,10 @@ This data source doesn't accept arguments.
 * `user_id` - (Required) The user id.
 
 ###### Attributes
+* `acl` - The access control list
+    * `path` - The path
+    * `propagate` - Whether to propagate to child paths
+    * `role_id` - The role id
 * `comment` - The user comment
 * `email` - The user's email address
 * `enabled` - Whether the user account is enabled
@@ -144,6 +152,10 @@ This data source doesn't accept arguments.
 ##### Group (proxmox_virtual_environment_group)
 
 ###### Arguments
+* `acl` - (Optional) The access control list (multiple blocks supported)
+    * `path` - The path
+    * `propagate` - Whether to propagate to child paths
+    * `role_id` - The role id
 * `comment` - (Optional) The group comment
 * `group_id` - (Required) The group id
 
@@ -176,6 +188,10 @@ This resource doesn't expose any additional attributes.
 ##### User (proxmox_virtual_environment_user)
 
 ###### Arguments
+* `acl` - (Optional) The access control list (multiple blocks supported)
+    * `path` - The path
+    * `propagate` - Whether to propagate to child paths
+    * `role_id` - The role id
 * `comment` - (Optional) The user comment
 * `email` - (Optional) The user's email address
 * `enabled` - (Optional) Whether the user account is enabled

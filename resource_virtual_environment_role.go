@@ -80,7 +80,7 @@ func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) e
 	}
 
 	roleID := d.Id()
-	accessRole, err := veClient.GetRole(roleID)
+	role, err := veClient.GetRole(roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -94,8 +94,8 @@ func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) e
 
 	privileges := schema.NewSet(schema.HashString, make([]interface{}, 0))
 
-	if *accessRole != nil {
-		for _, v := range *accessRole {
+	if *role != nil {
+		for _, v := range *role {
 			privileges.Add(v)
 		}
 	}

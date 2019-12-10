@@ -9,14 +9,46 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentGroupComment = "comment"
-	mkDataSourceVirtualEnvironmentGroupID      = "group_id"
-	mkDataSourceVirtualEnvironmentGroupMembers = "members"
+	mkDataSourceVirtualEnvironmentGroupACL          = "acl"
+	mkDataSourceVirtualEnvironmentGroupACLPath      = "path"
+	mkDataSourceVirtualEnvironmentGroupACLPropagate = "propagate"
+	mkDataSourceVirtualEnvironmentGroupACLRoleID    = "role_id"
+	mkDataSourceVirtualEnvironmentGroupComment      = "comment"
+	mkDataSourceVirtualEnvironmentGroupID           = "group_id"
+	mkDataSourceVirtualEnvironmentGroupMembers      = "members"
 )
 
 func dataSourceVirtualEnvironmentGroup() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			mkDataSourceVirtualEnvironmentGroupACL: &schema.Schema{
+				Type:        schema.TypeSet,
+				Description: "The access control list",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return make([]interface{}, 0), nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkDataSourceVirtualEnvironmentGroupACLPath: {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The path",
+						},
+						mkDataSourceVirtualEnvironmentGroupACLPropagate: {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether to propagate to child paths",
+							Default:     false,
+						},
+						mkDataSourceVirtualEnvironmentGroupACLRoleID: {
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "The role id",
+						},
+					},
+				},
+			},
 			mkDataSourceVirtualEnvironmentGroupComment: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The group comment",
@@ -47,7 +79,13 @@ func dataSourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}
 	}
 
 	groupID := d.Get(mkDataSourceVirtualEnvironmentGroupID).(string)
-	accessGroup, err := veClient.GetGroup(groupID)
+	group, err := veClient.GetGroup(groupID)
+
+	if err != nil {
+		return err
+	}
+
+	acl, err := veClient.GetACL()
 
 	if err != nil {
 		return err
@@ -55,13 +93,35 @@ func dataSourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}
 
 	d.SetId(groupID)
 
-	if accessGroup.Comment != nil {
-		d.Set(mkDataSourceVirtualEnvironmentGroupComment, accessGroup.Comment)
+	aclParsed := make([]interface{}, 0)
+
+	for _, v := range acl {
+		if v.Type == "group" && v.UserOrGroupID == groupID {
+			aclEntry := make(map[string]interface{})
+
+			aclEntry[mkDataSourceVirtualEnvironmentGroupACLPath] = v.Path
+
+			if v.Propagate != nil {
+				aclEntry[mkDataSourceVirtualEnvironmentGroupACLPropagate] = bool(*v.Propagate)
+			} else {
+				aclEntry[mkDataSourceVirtualEnvironmentGroupACLPropagate] = false
+			}
+
+			aclEntry[mkDataSourceVirtualEnvironmentGroupACLRoleID] = v.RoleID
+
+			aclParsed = append(aclParsed, aclEntry)
+		}
+	}
+
+	d.Set(mkDataSourceVirtualEnvironmentGroupACL, aclParsed)
+
+	if group.Comment != nil {
+		d.Set(mkDataSourceVirtualEnvironmentGroupComment, group.Comment)
 	} else {
 		d.Set(mkDataSourceVirtualEnvironmentGroupComment, "")
 	}
 
-	d.Set(mkDataSourceVirtualEnvironmentGroupMembers, accessGroup.Members)
+	d.Set(mkDataSourceVirtualEnvironmentGroupMembers, group.Members)
 
 	return nil
 }

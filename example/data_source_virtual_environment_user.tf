@@ -2,6 +2,10 @@ data "proxmox_virtual_environment_user" "example" {
   user_id = "${proxmox_virtual_environment_user.example.id}"
 }
 
+output "data_proxmox_virtual_environment_user_example_acl" {
+  value = "${data.proxmox_virtual_environment_user.example.acl}"
+}
+
 output "data_proxmox_virtual_environment_user_example_comment" {
   value = "${data.proxmox_virtual_environment_user.example.comment}"
 }
