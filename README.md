@@ -59,6 +59,22 @@ This data source doesn't accept arguments.
 * `comments` - The group comments
 * `group_ids` - The group ids
 
+##### Nodes (proxmox_virtual_environment_nodes)
+
+###### Arguments
+This data source doesn't accept arguments.
+
+###### Attributes
+* `cpu_count` - The CPU count for each node
+* `cpu_utilization` - The CPU utilization on each node
+* `memory_available` - The memory available on each node
+* `memory_used` - The memory used on each node
+* `names` - The node names
+* `online` - Whether a node is online
+* `ssl_fingerprints` - The SSL fingerprint for each node
+* `support_level` - The support level for each node
+* `uptime` - The uptime in seconds for each node
+
 ##### Pool (proxmox_virtual_environment_pool)
 
 ###### Arguments

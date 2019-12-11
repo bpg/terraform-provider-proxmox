@@ -1,5 +1,5 @@
 resource "proxmox_virtual_environment_pool" "example" {
-  comment  = "Managed by Terraform"
+  comment = "Managed by Terraform"
   pool_id = "terraform-provider-proxmox-example"
 }
 

@@ -4,6 +4,7 @@ FEATURES:
 
 * **New Data Source:** `proxmox_virtual_environment_group`
 * **New Data Source:** `proxmox_virtual_environment_groups`
+* **New Data Source:** `proxmox_virtual_environment_nodes`
 * **New Data Source:** `proxmox_virtual_environment_pool`
 * **New Data Source:** `proxmox_virtual_environment_pools`
 * **New Data Source:** `proxmox_virtual_environment_role`
