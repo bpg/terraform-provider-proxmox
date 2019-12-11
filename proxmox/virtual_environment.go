@@ -79,13 +79,10 @@ func NewVirtualEnvironmentClient(endpoint, username, password string, insecure b
 func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody interface{}, responseBody interface{}) error {
 	log.Printf("[DEBUG] Performing HTTP %s request (path: %s)", method, path)
 
+	modifiedPath := path
 	urlEncodedRequestBody := new(bytes.Buffer)
 
 	if requestBody != nil {
-		if method == hmGET || method == hmHEAD {
-			return fmt.Errorf("A request body must not be specified for %s/%s requests", hmGET, hmHEAD)
-		}
-
 		v, err := query.Values(requestBody)
 
 		if err != nil {
@@ -93,12 +90,21 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		}
 
 		encodedValues := v.Encode()
-		urlEncodedRequestBody = bytes.NewBufferString(encodedValues)
+
+		if method == hmGET || method == hmHEAD {
+			if !strings.Contains(modifiedPath, "?") {
+				modifiedPath = fmt.Sprintf("%s?%s", modifiedPath, encodedValues)
+			} else {
+				modifiedPath = fmt.Sprintf("%s&%s", modifiedPath, encodedValues)
+			}
+		} else {
+			urlEncodedRequestBody = bytes.NewBufferString(encodedValues)
+		}
 
 		log.Printf("[DEBUG] Added request body to HTTP %s request (path: %s) - Body: %s", method, path, encodedValues)
 	}
 
-	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, path), urlEncodedRequestBody)
+	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, modifiedPath), urlEncodedRequestBody)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create HTTP %s request (path: %s) - Reason: %s", method, path, err.Error())

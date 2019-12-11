@@ -37,6 +37,22 @@ If you're building the provider, follow the instructions to [install it as a plu
 
 #### Virtual Environment
 
+##### Datastores (proxmox_virtual_environment_datastores)
+
+###### Arguments
+* `node_name` - (Required) A node name
+
+###### Attributes
+* `active` - Whether the datastore is active
+* `content_types` - The allowed content types
+* `datastore_ids` - The datastore ids
+* `enabled` - Whether the datastore is enabled
+* `shared` - Whether the datastore is shared
+* `space_available` - The available space in bytes
+* `space_total` - The total space in bytes
+* `space_used` - The used space in bytes
+* `types` - The storage types
+
 ##### Group (proxmox_virtual_environment_group)
 
 ###### Arguments

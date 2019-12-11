@@ -18,6 +18,9 @@ type CustomBool bool
 // CustomPrivileges allows a JSON object of privileges to also be a string array.
 type CustomPrivileges []string
 
+// CustomCommaSeparatedList allows a JSON string to also be a string array.
+type CustomCommaSeparatedList []string
+
 // CustomTimestamp allows a JSON boolean value to also be a unix timestamp.
 type CustomTimestamp time.Time
 
@@ -38,6 +41,28 @@ func (r CustomBool) MarshalJSON() ([]byte, error) {
 func (r *CustomBool) UnmarshalJSON(b []byte) error {
 	s := string(b)
 	*r = CustomBool(s == "1" || s == "true")
+
+	return nil
+}
+
+// MarshalJSON converts a boolean to a JSON value.
+func (r *CustomCommaSeparatedList) MarshalJSON() ([]byte, error) {
+	s := strings.Join(*r, ",")
+
+	return json.Marshal(s)
+}
+
+// UnmarshalJSON converts a JSON value to a boolean.
+func (r *CustomCommaSeparatedList) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	*r = strings.Split(s, ",")
 
 	return nil
 }
