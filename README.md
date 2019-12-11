@@ -72,7 +72,7 @@ This data source doesn't accept arguments.
 * `names` - The node names
 * `online` - Whether a node is online
 * `ssl_fingerprints` - The SSL fingerprint for each node
-* `support_level` - The support level for each node
+* `support_levels` - The support level for each node
 * `uptime` - The uptime in seconds for each node
 
 ##### Pool (proxmox_virtual_environment_pool)
