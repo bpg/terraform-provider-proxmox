@@ -5,8 +5,11 @@
 package proxmox
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"sort"
 )
 
@@ -24,7 +27,7 @@ type VirtualEnvironmentDatastoreListResponseBody struct {
 	Data []*VirtualEnvironmentDatastoreListResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentDatastoreListResponseData contains the data from a node list response.
+// VirtualEnvironmentDatastoreListResponseData contains the data from a datastore list response.
 type VirtualEnvironmentDatastoreListResponseData struct {
 	Active              *CustomBool               `json:"active,omitempty"`
 	ContentTypes        *CustomCommaSeparatedList `json:"content,omitempty"`
@@ -36,6 +39,20 @@ type VirtualEnvironmentDatastoreListResponseData struct {
 	SpaceUsed           *int                      `json:"used,omitempty"`
 	SpaceUsedPercentage *float64                  `json:"used_fraction,omitempty"`
 	Type                string                    `json:"type,omitempty"`
+}
+
+// VirtualEnvironmentDatastoreUploadRequestBody contains the body for a datastore upload request.
+type VirtualEnvironmentDatastoreUploadRequestBody struct {
+	ContentType string    `json:"content,omitempty"`
+	DatastoreID string    `json:"storage,omitempty"`
+	FileName    string    `json:"filename,omitempty"`
+	FileReader  io.Reader `json:"-"`
+	NodeName    string    `json:"node,omitempty"`
+}
+
+// VirtualEnvironmentDatastoreUploadResponseBody contains the body from a datastore upload response.
+type VirtualEnvironmentDatastoreUploadResponseBody struct {
+	UploadID *string `json:"data,omitempty"`
 }
 
 // ListDatastores retrieves a list of nodes.
@@ -56,4 +73,48 @@ func (c *VirtualEnvironmentClient) ListDatastores(nodeName string, d *VirtualEnv
 	})
 
 	return resBody.Data, nil
+}
+
+// UploadFileToDatastore uploads a file to a datastore.
+func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDatastoreUploadRequestBody) (*VirtualEnvironmentDatastoreUploadResponseBody, error) {
+	r, w := io.Pipe()
+	m := multipart.NewWriter(w)
+
+	go func() {
+		defer w.Close()
+		defer m.Close()
+
+		m.WriteField("content", d.ContentType)
+
+		part, err := m.CreateFormFile("filename", d.FileName)
+
+		if err != nil {
+			return
+		}
+
+		_, err = io.Copy(part, d.FileReader)
+
+		if err != nil {
+			return
+		}
+	}()
+
+	// Due to Proxmox VE not supporting chunked transfers, we sadly need to load the file into memory.
+	// This is not optimal for large files but there's no alternative right now.
+	workaroundReader := new(bytes.Buffer)
+	workaroundReader.ReadFrom(r)
+
+	reqBody := &VirtualEnvironmentMultiPartData{
+		Boundary: m.Boundary(),
+		Reader:   workaroundReader,
+	}
+
+	resBody := &VirtualEnvironmentDatastoreUploadResponseBody{}
+	err := c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", d.NodeName, d.DatastoreID), reqBody, resBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resBody, nil
 }

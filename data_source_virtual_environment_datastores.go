@@ -42,9 +42,10 @@ func dataSourceVirtualEnvironmentDatastores() *schema.Resource {
 				},
 			},
 			mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs: &schema.Schema{
-				Type:        schema.TypeString,
+				Type:        schema.TypeList,
 				Description: "The datastore id",
 				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			mkDataSourceVirtualEnvironmentDatastoresEnabled: &schema.Schema{
 				Type:        schema.TypeList,
@@ -54,7 +55,7 @@ func dataSourceVirtualEnvironmentDatastores() *schema.Resource {
 			},
 			mkDataSourceVirtualEnvironmentDatastoresNodeName: &schema.Schema{
 				Type:        schema.TypeString,
-				Description: "The node id",
+				Description: "The node name",
 				Required:    true,
 			},
 			mkDataSourceVirtualEnvironmentDatastoresShared: &schema.Schema{

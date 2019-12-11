@@ -181,6 +181,18 @@ This data source doesn't accept arguments.
 
 #### Virtual Environment
 
+##### File (proxmox_virtual_environment_file)
+
+###### Arguments
+* `datastore_id` - (Required) The datastore id
+* `file_name` - (Optional) The file name to use in the datastore (leave undefined to use source file name)
+* `node_name` - (Required) The node name
+* `source` - (Required) A path to a file
+* `template` - (Required) Whether this is a container template
+
+###### Attributes
+This resource doesn't expose any additional attributes.
+
 ##### Group (proxmox_virtual_environment_group)
 
 ###### Arguments

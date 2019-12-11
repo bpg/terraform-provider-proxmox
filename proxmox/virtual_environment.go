@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -36,6 +37,12 @@ type VirtualEnvironmentClient struct {
 
 	authenticationData *VirtualEnvironmentAuthenticationResponseData
 	httpClient         *http.Client
+}
+
+// VirtualEnvironmentMultiPartData enables multipart uploads in DoRequest.
+type VirtualEnvironmentMultiPartData struct {
+	Boundary string
+	Reader   io.Reader
 }
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
@@ -77,43 +84,64 @@ func NewVirtualEnvironmentClient(endpoint, username, password string, insecure b
 
 // DoRequest performs a HTTP request against a JSON API endpoint.
 func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody interface{}, responseBody interface{}) error {
+	var reqBodyReader io.Reader
+
 	log.Printf("[DEBUG] Performing HTTP %s request (path: %s)", method, path)
 
 	modifiedPath := path
-	urlEncodedRequestBody := new(bytes.Buffer)
+	reqBodyType := ""
 
 	if requestBody != nil {
-		v, err := query.Values(requestBody)
+		multipartData, multipart := requestBody.(*VirtualEnvironmentMultiPartData)
+		pipedBodyReader, pipedBody := requestBody.(*io.PipeReader)
 
-		if err != nil {
-			return fmt.Errorf("Failed to encode HTTP %s request (path: %s) - Reason: %s", method, path, err.Error())
-		}
+		if multipart {
+			reqBodyReader = multipartData.Reader
+			reqBodyType = fmt.Sprintf("multipart/form-data; boundary=%s", multipartData.Boundary)
 
-		encodedValues := v.Encode()
+			log.Printf("[DEBUG] Added multipart request body to HTTP %s request (path: %s)", method, modifiedPath)
+		} else if pipedBody {
+			reqBodyReader = pipedBodyReader
 
-		if method == hmGET || method == hmHEAD {
-			if !strings.Contains(modifiedPath, "?") {
-				modifiedPath = fmt.Sprintf("%s?%s", modifiedPath, encodedValues)
-			} else {
-				modifiedPath = fmt.Sprintf("%s&%s", modifiedPath, encodedValues)
-			}
+			log.Printf("[DEBUG] Added piped request body to HTTP %s request (path: %s)", method, modifiedPath)
 		} else {
-			urlEncodedRequestBody = bytes.NewBufferString(encodedValues)
-		}
+			v, err := query.Values(requestBody)
 
-		log.Printf("[DEBUG] Added request body to HTTP %s request (path: %s) - Body: %s", method, path, encodedValues)
+			if err != nil {
+				return fmt.Errorf("Failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+			}
+
+			encodedValues := v.Encode()
+
+			if encodedValues != "" {
+				if method == hmGET || method == hmHEAD {
+					if !strings.Contains(modifiedPath, "?") {
+						modifiedPath = fmt.Sprintf("%s?%s", modifiedPath, encodedValues)
+					} else {
+						modifiedPath = fmt.Sprintf("%s&%s", modifiedPath, encodedValues)
+					}
+				} else {
+					reqBodyReader = bytes.NewBufferString(encodedValues)
+					reqBodyType = "application/x-www-form-urlencoded"
+				}
+
+				log.Printf("[DEBUG] Added request body to HTTP %s request (path: %s) - Body: %s", method, modifiedPath, encodedValues)
+			}
+		}
+	} else {
+		reqBodyReader = new(bytes.Buffer)
 	}
 
-	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, modifiedPath), urlEncodedRequestBody)
+	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, modifiedPath), reqBodyReader)
 
 	if err != nil {
-		return fmt.Errorf("Failed to create HTTP %s request (path: %s) - Reason: %s", method, path, err.Error())
+		return fmt.Errorf("Failed to create HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 	}
 
 	req.Header.Add("Accept", "application/json")
 
-	if req.Method != hmGET && req.Method != hmHEAD {
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	if reqBodyType != "" {
+		req.Header.Add("Content-Type", reqBodyType)
 	}
 
 	err = c.AuthenticateRequest(req)
@@ -125,7 +153,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	res, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return fmt.Errorf("Failed to perform HTTP %s request (path: %s) - Reason: %s", method, path, err.Error())
+		return fmt.Errorf("Failed to perform HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 	}
 
 	err = c.ValidateResponseCode(res)
@@ -138,7 +166,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		err = json.NewDecoder(res.Body).Decode(responseBody)
 
 		if err != nil {
-			return fmt.Errorf("Failed to decode HTTP %s response (path: %s) - Reason: %s", method, path, err.Error())
+			return fmt.Errorf("Failed to decode HTTP %s response (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 		}
 	}
 
@@ -150,7 +178,7 @@ func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) erro
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		switch res.StatusCode {
 		case 400:
-			return fmt.Errorf("Received a HTTP %d response - This is most likely caused by a bug in the code, so please create a new issue on https://github.com/danitso/terraform-provider-proxmox/issues", res.StatusCode)
+			return fmt.Errorf("Received a HTTP %d response - Reason: %s", res.StatusCode, res.Status)
 		case 401:
 			return fmt.Errorf("Received a HTTP %d response - Please verify that the specified credentials are valid", res.StatusCode)
 		case 403:
