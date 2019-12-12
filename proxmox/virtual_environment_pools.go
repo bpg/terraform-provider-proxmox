@@ -60,7 +60,7 @@ func (c *VirtualEnvironmentClient) CreatePool(d *VirtualEnvironmentPoolCreateReq
 
 // DeletePool deletes an pool.
 func (c *VirtualEnvironmentClient) DeletePool(id string) error {
-	return c.DoRequest(hmDELETE, fmt.Sprintf("pools/%s", id), nil, nil)
+	return c.DoRequest(hmDELETE, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetPool retrieves an pool.
@@ -105,5 +105,5 @@ func (c *VirtualEnvironmentClient) ListPools() ([]*VirtualEnvironmentPoolListRes
 
 // UpdatePool updates an pool.
 func (c *VirtualEnvironmentClient) UpdatePool(id string, d *VirtualEnvironmentPoolUpdateRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("pools/%s", id), d, nil)
+	return c.DoRequest(hmPUT, fmt.Sprintf("pools/%s", url.PathEscape(id)), d, nil)
 }

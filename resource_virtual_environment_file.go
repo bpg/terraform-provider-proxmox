@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -113,28 +114,78 @@ func resourceVirtualEnvironmentFileCreate(d *schema.ResourceData, m interface{})
 	return resourceVirtualEnvironmentFileRead(d, m)
 }
 
-func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) error {
-	/*
-		config := m.(providerConfiguration)
-		veClient, err := config.GetVEClient()
+func resourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData, m interface{}) string {
+	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+	fileName := d.Get(mkResourceVirtualEnvironmentFileFileName).(string)
+	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
+	template := d.Get(mkResourceVirtualEnvironmentFileTemplate).(bool)
 
-		if err != nil {
-			return err
+	if fileName == "" {
+		fileName = filepath.Base(source)
+	}
+
+	contentType := "iso"
+
+	if template {
+		contentType = "vztmpl"
+	}
+
+	return fmt.Sprintf("%s:%s/%s", datastoreID, contentType, fileName)
+}
+
+func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) error {
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
+
+	if err != nil {
+		return err
+	}
+
+	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
+
+	list, err := veClient.ListDatastoreFiles(nodeName, datastoreID)
+
+	if err != nil {
+		return err
+	}
+
+	volumeID := resourceVirtualEnvironmentFileGetVolumeID(d, m)
+
+	for _, v := range list {
+		if v.VolumeID == volumeID {
+			return nil
 		}
-	*/
+	}
+
+	d.SetId("")
 
 	return nil
 }
 
 func resourceVirtualEnvironmentFileDelete(d *schema.ResourceData, m interface{}) error {
-	/*
-		config := m.(providerConfiguration)
-		veClient, err := config.GetVEClient()
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
-		if err != nil {
-			return err
+	if err != nil {
+		return err
+	}
+
+	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
+	volumeID := resourceVirtualEnvironmentFileGetVolumeID(d, m)
+
+	err = veClient.DeleteDatastoreFile(nodeName, datastoreID, volumeID)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "HTTP 404") {
+			d.SetId("")
+
+			return nil
 		}
-	*/
+
+		return err
+	}
 
 	d.SetId("")
 

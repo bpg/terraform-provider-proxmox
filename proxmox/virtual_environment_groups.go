@@ -51,7 +51,7 @@ func (c *VirtualEnvironmentClient) CreateGroup(d *VirtualEnvironmentGroupCreateR
 
 // DeleteGroup deletes an access group.
 func (c *VirtualEnvironmentClient) DeleteGroup(id string) error {
-	return c.DoRequest(hmDELETE, fmt.Sprintf("access/groups/%s", id), nil, nil)
+	return c.DoRequest(hmDELETE, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetGroup retrieves an access group.
@@ -94,5 +94,5 @@ func (c *VirtualEnvironmentClient) ListGroups() ([]*VirtualEnvironmentGroupListR
 
 // UpdateGroup updates an access group.
 func (c *VirtualEnvironmentClient) UpdateGroup(id string, d *VirtualEnvironmentGroupUpdateRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("access/groups/%s", id), d, nil)
+	return c.DoRequest(hmPUT, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), d, nil)
 }

@@ -46,7 +46,7 @@ func (c *VirtualEnvironmentClient) CreateRole(d *VirtualEnvironmentRoleCreateReq
 
 // DeleteRole deletes an access role.
 func (c *VirtualEnvironmentClient) DeleteRole(id string) error {
-	return c.DoRequest(hmDELETE, fmt.Sprintf("access/roles/%s", id), nil, nil)
+	return c.DoRequest(hmDELETE, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetRole retrieves an access role.
@@ -95,5 +95,5 @@ func (c *VirtualEnvironmentClient) ListRoles() ([]*VirtualEnvironmentRoleListRes
 
 // UpdateRole updates an access role.
 func (c *VirtualEnvironmentClient) UpdateRole(id string, d *VirtualEnvironmentRoleUpdateRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("access/roles/%s", id), d, nil)
+	return c.DoRequest(hmPUT, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), d, nil)
 }

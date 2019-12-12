@@ -97,7 +97,7 @@ func (c *VirtualEnvironmentClient) CreateUser(d *VirtualEnvironmentUserCreateReq
 
 // DeleteUser deletes an user.
 func (c *VirtualEnvironmentClient) DeleteUser(id string) error {
-	return c.DoRequest(hmDELETE, fmt.Sprintf("access/users/%s", id), nil, nil)
+	return c.DoRequest(hmDELETE, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetUser retrieves an user.
@@ -158,5 +158,5 @@ func (c *VirtualEnvironmentClient) ListUsers() ([]*VirtualEnvironmentUserListRes
 
 // UpdateUser updates an user.
 func (c *VirtualEnvironmentClient) UpdateUser(id string, d *VirtualEnvironmentUserUpdateRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("access/users/%s", id), d, nil)
+	return c.DoRequest(hmPUT, fmt.Sprintf("access/users/%s", url.PathEscape(id)), d, nil)
 }

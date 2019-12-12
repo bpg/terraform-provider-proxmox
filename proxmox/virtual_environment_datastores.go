@@ -10,9 +10,26 @@ import (
 	"io"
 	"io/ioutil"
 	"mime/multipart"
+	"net/url"
 	"os"
 	"sort"
 )
+
+// VirtualEnvironmentDatastoreFileListResponseBody contains the body from a datastore content list response.
+type VirtualEnvironmentDatastoreFileListResponseBody struct {
+	Data []*VirtualEnvironmentDatastoreFileListResponseData `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentDatastoreFileListResponseData contains the data from a datastore content list response.
+type VirtualEnvironmentDatastoreFileListResponseData struct {
+	ContentType      string  `json:"content"`
+	FileFormat       string  `json:"format"`
+	FileSize         int     `json:"size"`
+	ParentVolumeID   *string `json:"parent,omitempty"`
+	SpaceUsed        *int    `json:"used,omitempty"`
+	VirtualMachineID *int    `json:"vmid,omitempty"`
+	VolumeID         string  `json:"volid"`
+}
 
 // VirtualEnvironmentDatastoreListRequestBody contains the body for a datastore list request.
 type VirtualEnvironmentDatastoreListRequestBody struct {
@@ -56,10 +73,41 @@ type VirtualEnvironmentDatastoreUploadResponseBody struct {
 	UploadID *string `json:"data,omitempty"`
 }
 
+// DeleteDatastoreFile deletes a file in a datastore.
+func (c *VirtualEnvironmentClient) DeleteDatastoreFile(nodeName, datastoreID, volumeID string) error {
+	err := c.DoRequest(hmDELETE, fmt.Sprintf("nodes/%s/storage/%s/content/%s", url.PathEscape(nodeName), url.PathEscape(datastoreID), url.PathEscape(volumeID)), nil, nil)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ListDatastoreFiles retrieves a list of the files in a datastore.
+func (c *VirtualEnvironmentClient) ListDatastoreFiles(nodeName, datastoreID string) ([]*VirtualEnvironmentDatastoreFileListResponseData, error) {
+	resBody := &VirtualEnvironmentDatastoreFileListResponseBody{}
+	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/storage/%s/content", url.PathEscape(nodeName), url.PathEscape(datastoreID)), nil, resBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("The server did not include a data object in the response")
+	}
+
+	sort.Slice(resBody.Data, func(i, j int) bool {
+		return resBody.Data[i].VolumeID < resBody.Data[j].VolumeID
+	})
+
+	return resBody.Data, nil
+}
+
 // ListDatastores retrieves a list of nodes.
 func (c *VirtualEnvironmentClient) ListDatastores(nodeName string, d *VirtualEnvironmentDatastoreListRequestBody) ([]*VirtualEnvironmentDatastoreListResponseData, error) {
 	resBody := &VirtualEnvironmentDatastoreListResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/storage", nodeName), d, resBody)
+	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/storage", url.PathEscape(nodeName)), d, resBody)
 
 	if err != nil {
 		return nil, err
@@ -144,7 +192,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDa
 	}
 
 	resBody := &VirtualEnvironmentDatastoreUploadResponseBody{}
-	err = c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", d.NodeName, d.DatastoreID), reqBody, resBody)
+	err = c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", url.PathEscape(d.NodeName), url.PathEscape(d.DatastoreID)), reqBody, resBody)
 
 	if err != nil {
 		return nil, err
