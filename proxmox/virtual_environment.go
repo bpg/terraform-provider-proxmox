@@ -43,6 +43,7 @@ type VirtualEnvironmentClient struct {
 type VirtualEnvironmentMultiPartData struct {
 	Boundary string
 	Reader   io.Reader
+	Size     *int64
 }
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
@@ -85,6 +86,7 @@ func NewVirtualEnvironmentClient(endpoint, username, password string, insecure b
 // DoRequest performs a HTTP request against a JSON API endpoint.
 func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody interface{}, responseBody interface{}) error {
 	var reqBodyReader io.Reader
+	var reqContentLength *int64
 
 	log.Printf("[DEBUG] Performing HTTP %s request (path: %s)", method, path)
 
@@ -98,6 +100,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		if multipart {
 			reqBodyReader = multipartData.Reader
 			reqBodyType = fmt.Sprintf("multipart/form-data; boundary=%s", multipartData.Boundary)
+			reqContentLength = multipartData.Size
 
 			log.Printf("[DEBUG] Added multipart request body to HTTP %s request (path: %s)", method, modifiedPath)
 		} else if pipedBody {
@@ -139,6 +142,10 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	}
 
 	req.Header.Add("Accept", "application/json")
+
+	if reqContentLength != nil {
+		req.ContentLength = *reqContentLength
+	}
 
 	if reqBodyType != "" {
 		req.Header.Add("Content-Type", reqBodyType)

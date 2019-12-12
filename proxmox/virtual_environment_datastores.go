@@ -5,11 +5,12 @@
 package proxmox
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
+	"os"
 	"sort"
 )
 
@@ -99,18 +100,51 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDa
 		}
 	}()
 
-	// Due to Proxmox VE not supporting chunked transfers, we sadly need to load the file into memory.
-	// This is not optimal for large files but there's no alternative right now.
-	workaroundReader := new(bytes.Buffer)
-	workaroundReader.ReadFrom(r)
+	// We need to store the multipart content in a temporary file to avoid using high amounts of memory.
+	// This is necessary due to Proxmox VE not supporting chunked transfers in v6.1 and earlier versions.
+	tempMultipartFile, err := ioutil.TempFile("", "multipart")
+
+	if err != nil {
+		return nil, err
+	}
+
+	tempMultipartFileName := tempMultipartFile.Name()
+
+	io.Copy(tempMultipartFile, r)
+
+	err = tempMultipartFile.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer os.Remove(tempMultipartFileName)
+
+	// Now that the multipart data is stored in a file, we can go ahead and do a HTTP POST request.
+	fileReader, err := os.Open(tempMultipartFileName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer fileReader.Close()
+
+	fileInfo, err := fileReader.Stat()
+
+	if err != nil {
+		return nil, err
+	}
+
+	fileSize := fileInfo.Size()
 
 	reqBody := &VirtualEnvironmentMultiPartData{
 		Boundary: m.Boundary(),
-		Reader:   workaroundReader,
+		Reader:   fileReader,
+		Size:     &fileSize,
 	}
 
 	resBody := &VirtualEnvironmentDatastoreUploadResponseBody{}
-	err := c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", d.NodeName, d.DatastoreID), reqBody, resBody)
+	err = c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", d.NodeName, d.DatastoreID), reqBody, resBody)
 
 	if err != nil {
 		return nil, err
