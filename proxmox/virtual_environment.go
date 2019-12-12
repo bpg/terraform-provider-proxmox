@@ -163,6 +163,8 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		return fmt.Errorf("Failed to perform HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 	}
 
+	defer res.Body.Close()
+
 	err = c.ValidateResponseCode(res)
 
 	if err != nil {

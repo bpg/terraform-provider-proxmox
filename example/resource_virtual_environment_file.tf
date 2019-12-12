@@ -1,8 +1,7 @@
 resource "proxmox_virtual_environment_file" "alpine_template" {
   datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))}"
-  file_name    = "alpine-3.10-default-amd64.tar.xz"
   node_name    = "${data.proxmox_virtual_environment_datastores.example.node_name}"
-  source       = "${path.module}/assets/alpine-3.10-default_20190626_amd64.tar.xz"
+  source       = "http://download.proxmox.com/images/system/alpine-3.10-default_20190626_amd64.tar.xz"
   template     = true
 }
 
@@ -12,6 +11,10 @@ output "resource_proxmox_virtual_environment_file_alpine_template_datastore_id" 
 
 output "resource_proxmox_virtual_environment_file_alpine_template_file_name" {
   value = "${proxmox_virtual_environment_file.alpine_template.file_name}"
+}
+
+output "resource_proxmox_virtual_environment_file_alpine_template_id" {
+  value = "${proxmox_virtual_environment_file.alpine_template.id}"
 }
 
 output "resource_proxmox_virtual_environment_file_alpine_template_node_name" {

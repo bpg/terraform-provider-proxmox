@@ -5,7 +5,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,11 +21,12 @@ import (
 )
 
 const (
-	mkResourceVirtualEnvironmentFileDatastoreID = "datastore_id"
-	mkResourceVirtualEnvironmentFileFileName    = "file_name"
-	mkResourceVirtualEnvironmentFileNodeName    = "node_name"
-	mkResourceVirtualEnvironmentFileSource      = "source"
-	mkResourceVirtualEnvironmentFileTemplate    = "template"
+	mkResourceVirtualEnvironmentFileDatastoreID      = "datastore_id"
+	mkResourceVirtualEnvironmentFileFileName         = "file_name"
+	mkResourceVirtualEnvironmentFileOverrideFileName = "override_file_name"
+	mkResourceVirtualEnvironmentFileNodeName         = "node_name"
+	mkResourceVirtualEnvironmentFileSource           = "source"
+	mkResourceVirtualEnvironmentFileTemplate         = "template"
 )
 
 func resourceVirtualEnvironmentFile() *schema.Resource {
@@ -33,7 +40,12 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentFileFileName: &schema.Schema{
 				Type:        schema.TypeString,
-				Description: "The file name to use in the datastore",
+				Description: "The datastore file name",
+				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentFileOverrideFileName: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The file name to use in the datastore (leave undefined to use source file name)",
 				Optional:    true,
 				ForceNew:    true,
 				Default:     "",
@@ -72,22 +84,69 @@ func resourceVirtualEnvironmentFileCreate(d *schema.ResourceData, m interface{})
 	}
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
-	fileName := d.Get(mkResourceVirtualEnvironmentFileFileName).(string)
-	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
-	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
-	template := d.Get(mkResourceVirtualEnvironmentFileTemplate).(bool)
-
-	if fileName == "" {
-		fileName = filepath.Base(source)
-	}
-
-	file, err := os.Open(source)
+	fileName, err := resourceVirtualEnvironmentFileGetFileName(d, m)
 
 	if err != nil {
 		return err
 	}
 
-	defer file.Close()
+	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
+	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
+	template := d.Get(mkResourceVirtualEnvironmentFileTemplate).(bool)
+
+	var sourceReader io.Reader
+
+	if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
+		log.Printf("[DEBUG] Downloading file '%s'", source)
+
+		res, err := http.Get(source)
+
+		if err != nil {
+			return err
+		}
+
+		defer res.Body.Close()
+
+		tempDownloadedFile, err := ioutil.TempFile("", "download")
+
+		if err != nil {
+			return err
+		}
+
+		tempDownloadedFileName := tempDownloadedFile.Name()
+
+		_, err = io.Copy(tempDownloadedFile, res.Body)
+
+		if err != nil {
+			tempDownloadedFile.Close()
+
+			return err
+		}
+
+		tempDownloadedFile.Close()
+
+		defer os.Remove(tempDownloadedFileName)
+
+		file, err := os.Open(tempDownloadedFileName)
+
+		if err != nil {
+			return err
+		}
+
+		defer file.Close()
+
+		sourceReader = file
+	} else {
+		file, err := os.Open(source)
+
+		if err != nil {
+			return err
+		}
+
+		defer file.Close()
+
+		sourceReader = file
+	}
 
 	contentType := "iso"
 
@@ -98,8 +157,8 @@ func resourceVirtualEnvironmentFileCreate(d *schema.ResourceData, m interface{})
 	body := &proxmox.VirtualEnvironmentDatastoreUploadRequestBody{
 		ContentType: contentType,
 		DatastoreID: datastoreID,
-		FileName:    fileName,
-		FileReader:  file,
+		FileName:    *fileName,
+		FileReader:  sourceReader,
 		NodeName:    nodeName,
 	}
 
@@ -109,28 +168,61 @@ func resourceVirtualEnvironmentFileCreate(d *schema.ResourceData, m interface{})
 		return err
 	}
 
-	d.SetId(fmt.Sprintf("%s:%s:%s", nodeName, datastoreID, fileName))
+	volumeID, err := resourceVirtualEnvironmentFileGetVolumeID(d, m)
+
+	if err != nil {
+		return err
+	}
+
+	d.SetId(*volumeID)
 
 	return resourceVirtualEnvironmentFileRead(d, m)
 }
 
-func resourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData, m interface{}) string {
-	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
-	fileName := d.Get(mkResourceVirtualEnvironmentFileFileName).(string)
+func resourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData, m interface{}) (*string, error) {
+	fileName := d.Get(mkResourceVirtualEnvironmentFileOverrideFileName).(string)
 	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
-	template := d.Get(mkResourceVirtualEnvironmentFileTemplate).(bool)
 
 	if fileName == "" {
-		fileName = filepath.Base(source)
+		if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
+			downloadURL, err := url.ParseRequestURI(source)
+
+			if err != nil {
+				return nil, err
+			}
+
+			path := strings.Split(downloadURL.Path, "/")
+			fileName = path[len(path)-1]
+
+			if fileName == "" {
+				return nil, errors.New("Failed to determine file name from source URL")
+			}
+		} else {
+			fileName = filepath.Base(source)
+		}
 	}
 
+	return &fileName, nil
+}
+
+func resourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData, m interface{}) (*string, error) {
 	contentType := "iso"
+	fileName, err := resourceVirtualEnvironmentFileGetFileName(d, m)
+
+	if err != nil {
+		return nil, err
+	}
+
+	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+	template := d.Get(mkResourceVirtualEnvironmentFileTemplate).(bool)
 
 	if template {
 		contentType = "vztmpl"
 	}
 
-	return fmt.Sprintf("%s:%s/%s", datastoreID, contentType, fileName)
+	volumeID := fmt.Sprintf("%s:%s/%s", datastoreID, contentType, *fileName)
+
+	return &volumeID, nil
 }
 
 func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) error {
@@ -150,10 +242,12 @@ func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	volumeID := resourceVirtualEnvironmentFileGetVolumeID(d, m)
-
 	for _, v := range list {
-		if v.VolumeID == volumeID {
+		if v.VolumeID == d.Id() {
+			fileName, _ := resourceVirtualEnvironmentFileGetFileName(d, m)
+
+			d.Set(mkResourceVirtualEnvironmentFileFileName, *fileName)
+
 			return nil
 		}
 	}
@@ -173,9 +267,8 @@ func resourceVirtualEnvironmentFileDelete(d *schema.ResourceData, m interface{})
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
-	volumeID := resourceVirtualEnvironmentFileGetVolumeID(d, m)
 
-	err = veClient.DeleteDatastoreFile(nodeName, datastoreID, volumeID)
+	err = veClient.DeleteDatastoreFile(nodeName, datastoreID, d.Id())
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

@@ -127,6 +127,9 @@ func (c *VirtualEnvironmentClient) ListDatastores(nodeName string, d *VirtualEnv
 // UploadFileToDatastore uploads a file to a datastore.
 func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDatastoreUploadRequestBody) (*VirtualEnvironmentDatastoreUploadResponseBody, error) {
 	r, w := io.Pipe()
+
+	defer r.Close()
+
 	m := multipart.NewWriter(w)
 
 	go func() {

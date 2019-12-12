@@ -185,13 +185,13 @@ This data source doesn't accept arguments.
 
 ###### Arguments
 * `datastore_id` - (Required) The datastore id
-* `file_name` - (Optional) The file name to use in the datastore (leave undefined to use source file name)
 * `node_name` - (Required) The node name
-* `source` - (Required) A path to a file
+* `override_file_name` - (Optional) The file name to use in the datastore (leave undefined to use source file name)
+* `source` - (Required) A path to a local file or a URL
 * `template` - (Required) Whether this is a container template
 
 ###### Attributes
-This resource doesn't expose any additional attributes.
+* `file_name` - The datastore file name
 
 ##### Group (proxmox_virtual_environment_group)
 

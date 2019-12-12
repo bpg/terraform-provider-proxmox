@@ -21,7 +21,9 @@ func TestResourceVirtualEnvironmentFileInstantiation(t *testing.T) {
 func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 	s := resourceVirtualEnvironmentFile()
 
-	attributeKeys := []string{}
+	attributeKeys := []string{
+		mkResourceVirtualEnvironmentFileFileName,
+	}
 
 	for _, v := range attributeKeys {
 		if s.Schema[v] == nil {
