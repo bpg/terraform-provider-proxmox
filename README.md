@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.com/danitso/terraform-provider-proxmox.svg?branch=master)](https://travis-ci.com/danitso/terraform-provider-proxmox)
+
 # Terraform Provider for Proxmox
 A Terraform Provider which adds support for Proxmox solutions.
 
