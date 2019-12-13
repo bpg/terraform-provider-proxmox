@@ -5,7 +5,7 @@ A Terraform Provider which adds support for Proxmox solutions.
 
 ## Requirements
 - [Terraform](https://www.terraform.io/downloads.html) 0.11+
-- [Go](https://golang.org/doc/install) 1.12 (to build the provider plugin)
+- [Go](https://golang.org/doc/install) 1.13 (to build the provider plugin)
 
 ## Building the Provider
 Clone repository to: `$GOPATH/src/github.com/danitso/terraform-provider-proxmox`
@@ -253,7 +253,7 @@ This resource doesn't expose any additional attributes.
 This resource doesn't expose any additional attributes.
 
 ## Developing the Provider
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.12+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.13+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
 
 To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
