@@ -188,7 +188,7 @@ This data source doesn't accept arguments.
 * `node_name` - (Required) The node name
 * `override_file_name` - (Optional) The file name to use in the datastore (leave undefined to use source file name)
 * `source` - (Required) A path to a local file or a URL
-* `template` - (Required) Whether this is a container template
+* `template` - (Required) Whether this is a container template (`vztmpl` instead of `iso`)
 
 ###### Attributes
 * `file_name` - The datastore file name
