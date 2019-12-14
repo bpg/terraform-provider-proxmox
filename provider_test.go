@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestProviderInstantiation() tests whether the Provider instance can be instantiated.
@@ -15,4 +17,27 @@ func TestProviderInstantiation(t *testing.T) {
 	if s == nil {
 		t.Fatalf("Cannot instantiate Provider")
 	}
+}
+
+// TestProviderSchema() tests the Provider schema.
+func TestProviderSchema(t *testing.T) {
+	s := &schema.Resource{
+		Schema: Provider().Schema,
+	}
+
+	testOptionalArguments(t, s, []string{
+		mkProviderVirtualEnvironment,
+	})
+
+	veSchema := testNestedSchemaExistence(t, s, mkProviderVirtualEnvironment)
+
+	testRequiredArguments(t, veSchema, []string{
+		mkProviderVirtualEnvironmentEndpoint,
+		mkProviderVirtualEnvironmentPassword,
+		mkProviderVirtualEnvironmentUsername,
+	})
+
+	testOptionalArguments(t, veSchema, []string{
+		mkProviderVirtualEnvironmentInsecure,
+	})
 }
