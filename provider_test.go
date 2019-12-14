@@ -29,6 +29,12 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderVirtualEnvironment,
 	})
 
+	testSchemaValueTypes(t, s, []string{
+		mkProviderVirtualEnvironment,
+	}, []schema.ValueType{
+		schema.TypeList,
+	})
+
 	veSchema := testNestedSchemaExistence(t, s, mkProviderVirtualEnvironment)
 
 	testRequiredArguments(t, veSchema, []string{
@@ -39,5 +45,17 @@ func TestProviderSchema(t *testing.T) {
 
 	testOptionalArguments(t, veSchema, []string{
 		mkProviderVirtualEnvironmentInsecure,
+	})
+
+	testSchemaValueTypes(t, veSchema, []string{
+		mkProviderVirtualEnvironmentEndpoint,
+		mkProviderVirtualEnvironmentInsecure,
+		mkProviderVirtualEnvironmentPassword,
+		mkProviderVirtualEnvironmentUsername,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeBool,
+		schema.TypeString,
+		schema.TypeString,
 	})
 }
