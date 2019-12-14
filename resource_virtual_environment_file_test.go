@@ -32,16 +32,24 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 
 	testOptionalArguments(t, s, []string{
 		mkResourceVirtualEnvironmentFileOverrideFileName,
+		mkResourceVirtualEnvironmentFileSourceChanged,
 	})
 
 	testComputedAttributes(t, s, []string{
+		mkResourceVirtualEnvironmentFileFileModificationDate,
 		mkResourceVirtualEnvironmentFileFileName,
+		mkResourceVirtualEnvironmentFileFileSize,
+		mkResourceVirtualEnvironmentFileFileTag,
 	})
 
 	testSchemaValueTypes(t, s, []string{
 		mkResourceVirtualEnvironmentFileDatastoreID,
+		mkResourceVirtualEnvironmentFileFileModificationDate,
 		mkResourceVirtualEnvironmentFileFileName,
+		mkResourceVirtualEnvironmentFileFileSize,
+		mkResourceVirtualEnvironmentFileFileTag,
 		mkResourceVirtualEnvironmentFileOverrideFileName,
+		mkResourceVirtualEnvironmentFileSourceChanged,
 		mkResourceVirtualEnvironmentFileNodeName,
 		mkResourceVirtualEnvironmentFileSource,
 		mkResourceVirtualEnvironmentFileTemplate,
@@ -49,6 +57,10 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeString,
+		schema.TypeInt,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeBool,
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeBool,

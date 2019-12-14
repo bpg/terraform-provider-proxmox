@@ -146,7 +146,7 @@ This data source doesn't accept arguments.
 * `comment` - The user comment
 * `email` - The user's email address
 * `enabled` - Whether the user account is enabled
-* `expiration_date` - The user account's expiration date
+* `expiration_date` - The user account's expiration date (RFC 3339)
 * `first_name` - The user's first name
 * `groups` - The user's groups
 * `keys` - The user's keys
@@ -161,7 +161,7 @@ This data source doesn't accept arguments.
 * `comments` - The user comments
 * `emails` - The users' email addresses
 * `enabled` - Whether a user account is enabled
-* `expiration_dates` - The user accounts' expiration dates
+* `expiration_dates` - The user accounts' expiration dates (RFC 3339)
 * `first_names` - The users' first names
 * `groups` - The users' groups
 * `keys` - The users' keys
@@ -188,12 +188,16 @@ This data source doesn't accept arguments.
 ###### Arguments
 * `datastore_id` - (Required) The datastore id
 * `node_name` - (Required) The node name
-* `override_file_name` - (Optional) The file name to use in the datastore (leave undefined to use source file name)
+* `override_file_name` - (Optional) The file name to use instead of the source file name
 * `source` - (Required) A path to a local file or a URL
+* `source_changed` - (Optional) Whether the source has changed (leave undefined to use built-in detection)
 * `template` - (Required) Whether this is a container template (`vztmpl` instead of `iso`)
 
 ###### Attributes
+* `file_modification_date` - The file modification date (RFC 3339)
 * `file_name` - The datastore file name
+* `file_size` - The file size in bytes
+* `file_tag` - The file tag
 
 ##### Group (proxmox_virtual_environment_group)
 
@@ -241,7 +245,7 @@ This resource doesn't expose any additional attributes.
 * `comment` - (Optional) The user comment
 * `email` - (Optional) The user's email address
 * `enabled` - (Optional) Whether the user account is enabled
-* `expiration_date` - (Optional) The user account's expiration date
+* `expiration_date` - (Optional) The user account's expiration date (RFC 3339)
 * `first_name` - (Optional) The user's first name
 * `groups` - (Optional) The user's groups
 * `keys` - (Optional) The user's keys

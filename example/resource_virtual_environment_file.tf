@@ -9,8 +9,20 @@ output "resource_proxmox_virtual_environment_file_alpine_template_datastore_id" 
   value = "${proxmox_virtual_environment_file.alpine_template.datastore_id}"
 }
 
+output "resource_proxmox_virtual_environment_file_alpine_template_file_modification_date" {
+  value = "${proxmox_virtual_environment_file.alpine_template.file_modification_date}"
+}
+
 output "resource_proxmox_virtual_environment_file_alpine_template_file_name" {
   value = "${proxmox_virtual_environment_file.alpine_template.file_name}"
+}
+
+output "resource_proxmox_virtual_environment_file_alpine_template_file_size" {
+  value = "${proxmox_virtual_environment_file.alpine_template.file_size}"
+}
+
+output "resource_proxmox_virtual_environment_file_alpine_template_file_tag" {
+  value = "${proxmox_virtual_environment_file.alpine_template.file_tag}"
 }
 
 output "resource_proxmox_virtual_environment_file_alpine_template_id" {

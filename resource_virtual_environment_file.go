@@ -15,18 +15,23 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
 const (
-	mkResourceVirtualEnvironmentFileDatastoreID      = "datastore_id"
-	mkResourceVirtualEnvironmentFileFileName         = "file_name"
-	mkResourceVirtualEnvironmentFileOverrideFileName = "override_file_name"
-	mkResourceVirtualEnvironmentFileNodeName         = "node_name"
-	mkResourceVirtualEnvironmentFileSource           = "source"
-	mkResourceVirtualEnvironmentFileTemplate         = "template"
+	mkResourceVirtualEnvironmentFileDatastoreID          = "datastore_id"
+	mkResourceVirtualEnvironmentFileFileModificationDate = "file_modification_date"
+	mkResourceVirtualEnvironmentFileFileName             = "file_name"
+	mkResourceVirtualEnvironmentFileFileSize             = "file_size"
+	mkResourceVirtualEnvironmentFileFileTag              = "file_tag"
+	mkResourceVirtualEnvironmentFileOverrideFileName     = "override_file_name"
+	mkResourceVirtualEnvironmentFileNodeName             = "node_name"
+	mkResourceVirtualEnvironmentFileSource               = "source"
+	mkResourceVirtualEnvironmentFileSourceChanged        = "source_changed"
+	mkResourceVirtualEnvironmentFileTemplate             = "template"
 )
 
 func resourceVirtualEnvironmentFile() *schema.Resource {
@@ -38,14 +43,32 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
+			mkResourceVirtualEnvironmentFileFileModificationDate: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The file modification date",
+				Computed:    true,
+				ForceNew:    true,
+			},
 			mkResourceVirtualEnvironmentFileFileName: &schema.Schema{
 				Type:        schema.TypeString,
-				Description: "The datastore file name",
+				Description: "The file name",
 				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentFileFileSize: &schema.Schema{
+				Type:        schema.TypeInt,
+				Description: "The file size in bytes",
+				Computed:    true,
+				ForceNew:    true,
+			},
+			mkResourceVirtualEnvironmentFileFileTag: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The file tag",
+				Computed:    true,
+				ForceNew:    true,
 			},
 			mkResourceVirtualEnvironmentFileOverrideFileName: &schema.Schema{
 				Type:        schema.TypeString,
-				Description: "The file name to use in the datastore (leave undefined to use source file name)",
+				Description: "The file name to use instead of the source file name",
 				Optional:    true,
 				ForceNew:    true,
 				Default:     "",
@@ -61,6 +84,13 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				Description: "The path to a file",
 				Required:    true,
 				ForceNew:    true,
+			},
+			mkResourceVirtualEnvironmentFileSourceChanged: &schema.Schema{
+				Type:        schema.TypeBool,
+				Description: "Whether the source has changed since the last run",
+				Optional:    true,
+				ForceNew:    true,
+				Default:     false,
 			},
 			mkResourceVirtualEnvironmentFileTemplate: &schema.Schema{
 				Type:        schema.TypeBool,
@@ -96,8 +126,8 @@ func resourceVirtualEnvironmentFileCreate(d *schema.ResourceData, m interface{})
 
 	var sourceReader io.Reader
 
-	if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
-		log.Printf("[DEBUG] Downloading file '%s'", source)
+	if resourceVirtualEnvironmentFileIsURL(d, m) {
+		log.Printf("[DEBUG] Downloading file from '%s'", source)
 
 		res, err := http.Get(source)
 
@@ -184,7 +214,7 @@ func resourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData, m interfa
 	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
 
 	if fileName == "" {
-		if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
+		if resourceVirtualEnvironmentFileIsURL(d, m) {
 			downloadURL, err := url.ParseRequestURI(source)
 
 			if err != nil {
@@ -225,6 +255,12 @@ func resourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData, m interfa
 	return &volumeID, nil
 }
 
+func resourceVirtualEnvironmentFileIsURL(d *schema.ResourceData, m interface{}) bool {
+	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
+
+	return strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://")
+}
+
 func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
@@ -245,8 +281,82 @@ func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) e
 	for _, v := range list {
 		if v.VolumeID == d.Id() {
 			fileName, _ := resourceVirtualEnvironmentFileGetFileName(d, m)
+			source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
 
+			var fileModificationDate string
+			var fileSize int64
+			var fileTag string
+
+			if resourceVirtualEnvironmentFileIsURL(d, m) {
+				res, err := http.Head(source)
+
+				if err != nil {
+					return err
+				}
+
+				defer res.Body.Close()
+
+				fileSize = res.ContentLength
+				httpLastModified := res.Header.Get("Last-Modified")
+
+				if httpLastModified != "" {
+					timeParsed, err := time.Parse(time.RFC1123, httpLastModified)
+
+					if err != nil {
+						timeParsed, err = time.Parse(time.RFC1123Z, httpLastModified)
+
+						if err != nil {
+							return err
+						}
+					}
+
+					fileModificationDate = timeParsed.UTC().Format(time.RFC3339)
+				} else {
+					d.Set(mkResourceVirtualEnvironmentFileFileModificationDate, "")
+				}
+
+				httpTag := res.Header.Get("ETag")
+
+				if httpTag != "" {
+					httpTagParts := strings.Split(httpTag, "\"")
+
+					if len(httpTagParts) > 1 {
+						fileTag = httpTagParts[1]
+					} else {
+						fileTag = ""
+					}
+				} else {
+					fileTag = ""
+				}
+			} else {
+				f, err := os.Open(source)
+
+				if err != nil {
+					return err
+				}
+
+				defer f.Close()
+
+				fileInfo, err := f.Stat()
+
+				if err != nil {
+					return err
+				}
+
+				fileModificationDate = fileInfo.ModTime().UTC().Format(time.RFC3339)
+				fileSize = fileInfo.Size()
+				fileTag = fmt.Sprintf("%x-%x", fileInfo.ModTime().UTC().Unix(), fileInfo.Size())
+			}
+
+			lastFileModificationDate := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
+			lastFileSize := int64(d.Get(mkResourceVirtualEnvironmentFileFileSize).(int))
+			lastFileTag := d.Get(mkResourceVirtualEnvironmentFileFileTag).(string)
+
+			d.Set(mkResourceVirtualEnvironmentFileFileModificationDate, fileModificationDate)
 			d.Set(mkResourceVirtualEnvironmentFileFileName, *fileName)
+			d.Set(mkResourceVirtualEnvironmentFileFileSize, fileSize)
+			d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
+			d.Set(mkResourceVirtualEnvironmentFileSourceChanged, lastFileModificationDate != fileModificationDate || lastFileSize != fileSize || lastFileTag != fileTag)
 
 			return nil
 		}
