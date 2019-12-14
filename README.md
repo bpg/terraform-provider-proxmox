@@ -190,12 +190,11 @@ This data source doesn't accept arguments.
 * `node_name` - (Required) The node name
 * `override_file_name` - (Optional) The file name to use instead of the source file name
 * `source` - (Required) A path to a local file or a URL
-* `source_changed` - (Optional) Whether the source has changed (leave undefined to use built-in detection)
 * `template` - (Required) Whether this is a container template (`vztmpl` instead of `iso`)
 
 ###### Attributes
 * `file_modification_date` - The file modification date (RFC 3339)
-* `file_name` - The datastore file name
+* `file_name` - The file name
 * `file_size` - The file size in bytes
 * `file_tag` - The file tag
 
