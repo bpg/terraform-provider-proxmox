@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentVersionInstantiation tests whether the DataSourceVirtualEnvironmentVersion instance can be instantiated.
@@ -21,20 +23,22 @@ func TestDataSourceVirtualEnvironmentVersionInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentVersionSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentVersion()
 
-	attributeKeys := []string{
-		mkDataSourceVirtualEnvironmentVersionKeyboard,
+	testComputedAttributes(t, s, []string{
+		mkDataSourceVirtualEnvironmentVersionKeyboardLayout,
 		mkDataSourceVirtualEnvironmentVersionRelease,
 		mkDataSourceVirtualEnvironmentVersionRepositoryID,
 		mkDataSourceVirtualEnvironmentVersionVersion,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentVersion.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentVersion.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentVersionKeyboardLayout,
+		mkDataSourceVirtualEnvironmentVersionRelease,
+		mkDataSourceVirtualEnvironmentVersionRepositoryID,
+		mkDataSourceVirtualEnvironmentVersionVersion,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+	})
 }

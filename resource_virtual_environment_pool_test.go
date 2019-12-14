@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestResourceVirtualEnvironmentPoolInstantiation tests whether the ResourceVirtualEnvironmentPool instance can be instantiated.
@@ -21,15 +23,39 @@ func TestResourceVirtualEnvironmentPoolInstantiation(t *testing.T) {
 func TestResourceVirtualEnvironmentPoolSchema(t *testing.T) {
 	s := resourceVirtualEnvironmentPool()
 
-	attributeKeys := []string{}
+	testRequiredArguments(t, s, []string{
+		mkResourceVirtualEnvironmentPoolPoolID,
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in resourceVirtualEnvironmentPool.Schema: Missing attribute \"%s\"", v)
-		}
+	testOptionalArguments(t, s, []string{
+		mkResourceVirtualEnvironmentPoolComment,
+	})
 
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in resourceVirtualEnvironmentPool.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testComputedAttributes(t, s, []string{
+		mkResourceVirtualEnvironmentPoolMembers,
+	})
+
+	membersSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentPoolMembers)
+
+	testComputedAttributes(t, membersSchema, []string{
+		mkResourceVirtualEnvironmentPoolMembersDatastoreID,
+		mkResourceVirtualEnvironmentPoolMembersID,
+		mkResourceVirtualEnvironmentPoolMembersNodeName,
+		mkResourceVirtualEnvironmentPoolMembersType,
+		mkResourceVirtualEnvironmentPoolMembersVMID,
+	})
+
+	testSchemaValueTypes(t, membersSchema, []string{
+		mkResourceVirtualEnvironmentPoolMembersDatastoreID,
+		mkResourceVirtualEnvironmentPoolMembersID,
+		mkResourceVirtualEnvironmentPoolMembersNodeName,
+		mkResourceVirtualEnvironmentPoolMembersType,
+		mkResourceVirtualEnvironmentPoolMembersVMID,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeInt,
+	})
 }

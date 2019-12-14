@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/hashicorp/terraform/helper/schema"
 	"testing"
 )
 
@@ -21,19 +22,19 @@ func TestDataSourceVirtualEnvironmentRolesInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentRolesSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentRoles()
 
-	attributeKeys := []string{
+	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentRolesPrivileges,
 		mkDataSourceVirtualEnvironmentRolesRoleIDs,
 		mkDataSourceVirtualEnvironmentRolesSpecial,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentRoles.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentRoles.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentRolesPrivileges,
+		mkDataSourceVirtualEnvironmentRolesRoleIDs,
+		mkDataSourceVirtualEnvironmentRolesSpecial,
+	}, []schema.ValueType{
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+	})
 }

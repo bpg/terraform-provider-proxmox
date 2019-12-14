@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestResourceVirtualEnvironmentUserInstantiation tests whether the ResourceVirtualEnvironmentUser instance can be instantiated.
@@ -21,15 +23,67 @@ func TestResourceVirtualEnvironmentUserInstantiation(t *testing.T) {
 func TestResourceVirtualEnvironmentUserSchema(t *testing.T) {
 	s := resourceVirtualEnvironmentUser()
 
-	attributeKeys := []string{}
+	testRequiredArguments(t, s, []string{
+		mkResourceVirtualEnvironmentUserPassword,
+		mkResourceVirtualEnvironmentUserUserID,
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in resourceVirtualEnvironmentUser.Schema: Missing attribute \"%s\"", v)
-		}
+	testOptionalArguments(t, s, []string{
+		mkResourceVirtualEnvironmentUserACL,
+		mkResourceVirtualEnvironmentUserComment,
+		mkResourceVirtualEnvironmentUserEmail,
+		mkResourceVirtualEnvironmentUserEnabled,
+		mkResourceVirtualEnvironmentUserExpirationDate,
+		mkResourceVirtualEnvironmentUserFirstName,
+		mkResourceVirtualEnvironmentUserGroups,
+		mkResourceVirtualEnvironmentUserKeys,
+		mkResourceVirtualEnvironmentUserLastName,
+	})
 
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in resourceVirtualEnvironmentUser.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkResourceVirtualEnvironmentUserACL,
+		mkResourceVirtualEnvironmentUserComment,
+		mkResourceVirtualEnvironmentUserEmail,
+		mkResourceVirtualEnvironmentUserEnabled,
+		mkResourceVirtualEnvironmentUserExpirationDate,
+		mkResourceVirtualEnvironmentUserFirstName,
+		mkResourceVirtualEnvironmentUserGroups,
+		mkResourceVirtualEnvironmentUserKeys,
+		mkResourceVirtualEnvironmentUserLastName,
+		mkResourceVirtualEnvironmentUserPassword,
+		mkResourceVirtualEnvironmentUserUserID,
+	}, []schema.ValueType{
+		schema.TypeSet,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeBool,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeSet,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+	})
+
+	aclSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentUserACL)
+
+	testRequiredArguments(t, aclSchema, []string{
+		mkResourceVirtualEnvironmentUserACLPath,
+		mkResourceVirtualEnvironmentUserACLRoleID,
+	})
+
+	testOptionalArguments(t, aclSchema, []string{
+		mkResourceVirtualEnvironmentUserACLPropagate,
+	})
+
+	testSchemaValueTypes(t, aclSchema, []string{
+		mkResourceVirtualEnvironmentUserACLPath,
+		mkResourceVirtualEnvironmentUserACLPropagate,
+		mkResourceVirtualEnvironmentUserACLRoleID,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeBool,
+		schema.TypeString,
+	})
 }

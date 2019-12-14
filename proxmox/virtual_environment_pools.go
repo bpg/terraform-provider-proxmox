@@ -30,11 +30,11 @@ type VirtualEnvironmentPoolGetResponseData struct {
 
 // VirtualEnvironmentPoolGetResponseMembers contains the members data from an pool get response.
 type VirtualEnvironmentPoolGetResponseMembers struct {
-	ID               string  `json:"id"`
-	Node             string  `json:"node"`
-	Storage          *string `json:"storage,omitempty"`
-	Type             string  `json:"type"`
-	VirtualMachineID *int    `json:"vmid"`
+	ID          string  `json:"id"`
+	Node        string  `json:"node"`
+	DatastoreID *string `json:"storage,omitempty"`
+	Type        string  `json:"type"`
+	VMID        *int    `json:"vmid"`
 }
 
 // VirtualEnvironmentPoolListResponseBody contains the body from an pool list response.

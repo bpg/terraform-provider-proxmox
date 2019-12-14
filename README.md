@@ -101,11 +101,11 @@ This data source doesn't accept arguments.
 ###### Attributes
 * `comment` - The pool comment
 * `members` - The pool members
+    * `datastore_id` - The datastore id
     * `id` - The member id
-    * `node` - The node id
-    * `storage` - The storage id
+    * `node_name` - The node name
     * `type` - The member type
-    * `virtual_machine_id` - The virtual machine id
+    * `vm_id` - The virtual machine id
 
 ##### Pools (proxmox_virtual_environment_pools)
 
@@ -174,7 +174,7 @@ This data source doesn't accept arguments.
 This data source doesn't accept arguments.
 
 ###### Attributes
-* `keyboard` - The keyboard layout
+* `keyboard_layout` - The keyboard layout
 * `release` - The release number
 * `repository_id` - The repository id
 * `version` - The version string
@@ -216,11 +216,11 @@ This data source doesn't accept arguments.
 
 ###### Attributes
 * `members` - The pool members
+    * `datastore_id` - The datastore id
     * `id` - The member id
-    * `node` - The node id
-    * `storage` - The storage id
+    * `node_name` - The node name
     * `type` - The member type
-    * `virtual_machine_id` - The virtual machine id
+    * `vm_id` - The virtual machine id
 
 ##### Role (proxmox_virtual_environment_role)
 

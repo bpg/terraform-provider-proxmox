@@ -32,26 +32,22 @@ func dataSourceVirtualEnvironmentUser() *schema.Resource {
 			mkDataSourceVirtualEnvironmentUserACL: &schema.Schema{
 				Type:        schema.TypeSet,
 				Description: "The access control list",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return make([]interface{}, 0), nil
-				},
+				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkDataSourceVirtualEnvironmentUserACLPath: {
 							Type:        schema.TypeString,
-							Required:    true,
+							Computed:    true,
 							Description: "The path",
 						},
 						mkDataSourceVirtualEnvironmentUserACLPropagate: {
 							Type:        schema.TypeBool,
-							Optional:    true,
+							Computed:    true,
 							Description: "Whether to propagate to child paths",
-							Default:     false,
 						},
 						mkDataSourceVirtualEnvironmentUserACLRoleID: {
 							Type:        schema.TypeString,
-							Required:    true,
+							Computed:    true,
 							Description: "The role id",
 						},
 					},

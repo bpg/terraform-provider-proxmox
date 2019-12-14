@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentGroupInstantiation tests whether the DataSourceVirtualEnvironmentGroup instance can be instantiated.
@@ -21,18 +23,43 @@ func TestDataSourceVirtualEnvironmentGroupInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentGroupSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentGroup()
 
-	attributeKeys := []string{
+	testRequiredArguments(t, s, []string{
+		mkDataSourceVirtualEnvironmentGroupID,
+	})
+
+	testComputedAttributes(t, s, []string{
+		mkDataSourceVirtualEnvironmentGroupACL,
 		mkDataSourceVirtualEnvironmentGroupComment,
 		mkDataSourceVirtualEnvironmentGroupMembers,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentGroup.Schema: Missing attribute \"%s\"", v)
-		}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentGroupACL,
+		mkDataSourceVirtualEnvironmentGroupID,
+		mkDataSourceVirtualEnvironmentGroupComment,
+		mkDataSourceVirtualEnvironmentGroupMembers,
+	}, []schema.ValueType{
+		schema.TypeSet,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeSet,
+	})
 
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentGroup.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	aclSchema := testNestedSchemaExistence(t, s, mkDataSourceVirtualEnvironmentGroupACL)
+
+	testComputedAttributes(t, aclSchema, []string{
+		mkDataSourceVirtualEnvironmentGroupACLPath,
+		mkDataSourceVirtualEnvironmentGroupACLPropagate,
+		mkDataSourceVirtualEnvironmentGroupACLRoleID,
+	})
+
+	testSchemaValueTypes(t, aclSchema, []string{
+		mkDataSourceVirtualEnvironmentGroupACLPath,
+		mkDataSourceVirtualEnvironmentGroupACLPropagate,
+		mkDataSourceVirtualEnvironmentGroupACLRoleID,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeBool,
+		schema.TypeString,
+	})
 }

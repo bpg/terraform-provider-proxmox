@@ -22,13 +22,13 @@ type VirtualEnvironmentDatastoreFileListResponseBody struct {
 
 // VirtualEnvironmentDatastoreFileListResponseData contains the data from a datastore content list response.
 type VirtualEnvironmentDatastoreFileListResponseData struct {
-	ContentType      string  `json:"content"`
-	FileFormat       string  `json:"format"`
-	FileSize         int     `json:"size"`
-	ParentVolumeID   *string `json:"parent,omitempty"`
-	SpaceUsed        *int    `json:"used,omitempty"`
-	VirtualMachineID *int    `json:"vmid,omitempty"`
-	VolumeID         string  `json:"volid"`
+	ContentType    string  `json:"content"`
+	FileFormat     string  `json:"format"`
+	FileSize       int     `json:"size"`
+	ParentVolumeID *string `json:"parent,omitempty"`
+	SpaceUsed      *int    `json:"used,omitempty"`
+	VMID           *int    `json:"vmid,omitempty"`
+	VolumeID       string  `json:"volid"`
 }
 
 // VirtualEnvironmentDatastoreListRequestBody contains the body for a datastore list request.

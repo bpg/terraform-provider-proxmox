@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestResourceVirtualEnvironmentFileInstantiation tests whether the ResourceVirtualEnvironmentFile instance can be instantiated.
@@ -21,17 +23,34 @@ func TestResourceVirtualEnvironmentFileInstantiation(t *testing.T) {
 func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 	s := resourceVirtualEnvironmentFile()
 
-	attributeKeys := []string{
+	testRequiredArguments(t, s, []string{
+		mkResourceVirtualEnvironmentFileDatastoreID,
+		mkResourceVirtualEnvironmentFileNodeName,
+		mkResourceVirtualEnvironmentFileSource,
+		mkResourceVirtualEnvironmentFileTemplate,
+	})
+
+	testOptionalArguments(t, s, []string{
+		mkResourceVirtualEnvironmentFileOverrideFileName,
+	})
+
+	testComputedAttributes(t, s, []string{
 		mkResourceVirtualEnvironmentFileFileName,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in resourceVirtualEnvironmentFile.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in resourceVirtualEnvironmentFile.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkResourceVirtualEnvironmentFileDatastoreID,
+		mkResourceVirtualEnvironmentFileFileName,
+		mkResourceVirtualEnvironmentFileOverrideFileName,
+		mkResourceVirtualEnvironmentFileNodeName,
+		mkResourceVirtualEnvironmentFileSource,
+		mkResourceVirtualEnvironmentFileTemplate,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeBool,
+	})
 }

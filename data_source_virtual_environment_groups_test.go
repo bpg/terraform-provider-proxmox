@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/hashicorp/terraform/helper/schema"
 	"testing"
 )
 
@@ -21,18 +22,16 @@ func TestDataSourceVirtualEnvironmentGroupsInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentGroupsSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentGroups()
 
-	attributeKeys := []string{
+	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentGroupsComments,
 		mkDataSourceVirtualEnvironmentGroupsGroupIDs,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentGroups.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentGroups.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentGroupsComments,
+		mkDataSourceVirtualEnvironmentGroupsGroupIDs,
+	}, []schema.ValueType{
+		schema.TypeList,
+		schema.TypeList,
+	})
 }

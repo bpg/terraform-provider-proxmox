@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/hashicorp/terraform/helper/schema"
 	"testing"
 )
 
@@ -21,7 +22,11 @@ func TestDataSourceVirtualEnvironmentDatastoresInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentDatastoresSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentDatastores()
 
-	attributeKeys := []string{
+	testRequiredArguments(t, s, []string{
+		mkDataSourceVirtualEnvironmentDatastoresNodeName,
+	})
+
+	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentDatastoresActive,
 		mkDataSourceVirtualEnvironmentDatastoresContentTypes,
 		mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs,
@@ -31,15 +36,29 @@ func TestDataSourceVirtualEnvironmentDatastoresSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentDatastoresSpaceTotal,
 		mkDataSourceVirtualEnvironmentDatastoresSpaceUsed,
 		mkDataSourceVirtualEnvironmentDatastoresTypes,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentDatastores.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentDatastores.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentDatastoresActive,
+		mkDataSourceVirtualEnvironmentDatastoresContentTypes,
+		mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs,
+		mkDataSourceVirtualEnvironmentDatastoresEnabled,
+		mkDataSourceVirtualEnvironmentDatastoresNodeName,
+		mkDataSourceVirtualEnvironmentDatastoresShared,
+		mkDataSourceVirtualEnvironmentDatastoresSpaceAvailable,
+		mkDataSourceVirtualEnvironmentDatastoresSpaceTotal,
+		mkDataSourceVirtualEnvironmentDatastoresSpaceUsed,
+		mkDataSourceVirtualEnvironmentDatastoresTypes,
+	}, []schema.ValueType{
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeString,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+	})
 }

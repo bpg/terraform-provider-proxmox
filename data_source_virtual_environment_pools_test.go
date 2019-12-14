@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentPoolsInstantiation tests whether the DataSourceVirtualEnvironmentPools instance can be instantiated.
@@ -21,17 +23,13 @@ func TestDataSourceVirtualEnvironmentPoolsInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentPoolsSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentPools()
 
-	attributeKeys := []string{
+	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentPoolsPoolIDs,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentPools.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentPools.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentPoolsPoolIDs,
+	}, []schema.ValueType{
+		schema.TypeList,
+	})
 }

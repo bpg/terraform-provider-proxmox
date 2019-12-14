@@ -9,16 +9,16 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentVersionKeyboard     = "keyboard"
-	mkDataSourceVirtualEnvironmentVersionRelease      = "release"
-	mkDataSourceVirtualEnvironmentVersionRepositoryID = "repository_id"
-	mkDataSourceVirtualEnvironmentVersionVersion      = "version"
+	mkDataSourceVirtualEnvironmentVersionKeyboardLayout = "keyboard_layout"
+	mkDataSourceVirtualEnvironmentVersionRelease        = "release"
+	mkDataSourceVirtualEnvironmentVersionRepositoryID   = "repository_id"
+	mkDataSourceVirtualEnvironmentVersionVersion        = "version"
 )
 
 func dataSourceVirtualEnvironmentVersion() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentVersionKeyboard: &schema.Schema{
+			mkDataSourceVirtualEnvironmentVersionKeyboardLayout: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The keyboard layout",
 				Computed:    true,
@@ -63,7 +63,7 @@ func dataSourceVirtualEnvironmentVersionRead(d *schema.ResourceData, m interface
 
 	d.SetId("version")
 
-	d.Set(mkDataSourceVirtualEnvironmentVersionKeyboard, version.Keyboard)
+	d.Set(mkDataSourceVirtualEnvironmentVersionKeyboardLayout, version.Keyboard)
 	d.Set(mkDataSourceVirtualEnvironmentVersionRelease, version.Release)
 	d.Set(mkDataSourceVirtualEnvironmentVersionRepositoryID, version.RepositoryID)
 	d.Set(mkDataSourceVirtualEnvironmentVersionVersion, version.Version)

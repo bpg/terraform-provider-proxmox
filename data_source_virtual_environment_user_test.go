@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentUserInstantiation tests whether the DataSourceVirtualEnvironmentUser instance can be instantiated.
@@ -21,7 +23,12 @@ func TestDataSourceVirtualEnvironmentUserInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentUserSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentUser()
 
-	attributeKeys := []string{
+	testRequiredArguments(t, s, []string{
+		mkDataSourceVirtualEnvironmentUserUserID,
+	})
+
+	testComputedAttributes(t, s, []string{
+		mkDataSourceVirtualEnvironmentUserACL,
 		mkDataSourceVirtualEnvironmentUserComment,
 		mkDataSourceVirtualEnvironmentUserEmail,
 		mkDataSourceVirtualEnvironmentUserEnabled,
@@ -30,15 +37,45 @@ func TestDataSourceVirtualEnvironmentUserSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentUserGroups,
 		mkDataSourceVirtualEnvironmentUserKeys,
 		mkDataSourceVirtualEnvironmentUserLastName,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentUser.Schema: Missing attribute \"%s\"", v)
-		}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentUserACL,
+		mkDataSourceVirtualEnvironmentUserComment,
+		mkDataSourceVirtualEnvironmentUserEmail,
+		mkDataSourceVirtualEnvironmentUserEnabled,
+		mkDataSourceVirtualEnvironmentUserExpirationDate,
+		mkDataSourceVirtualEnvironmentUserFirstName,
+		mkDataSourceVirtualEnvironmentUserGroups,
+		mkDataSourceVirtualEnvironmentUserKeys,
+		mkDataSourceVirtualEnvironmentUserLastName,
+	}, []schema.ValueType{
+		schema.TypeSet,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeBool,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeList,
+		schema.TypeString,
+		schema.TypeString,
+	})
 
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentUser.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	aclSchema := testNestedSchemaExistence(t, s, mkDataSourceVirtualEnvironmentGroupACL)
+
+	testComputedAttributes(t, aclSchema, []string{
+		mkDataSourceVirtualEnvironmentUserACLPath,
+		mkDataSourceVirtualEnvironmentUserACLPropagate,
+		mkDataSourceVirtualEnvironmentUserACLRoleID,
+	})
+
+	testSchemaValueTypes(t, aclSchema, []string{
+		mkDataSourceVirtualEnvironmentUserACLPath,
+		mkDataSourceVirtualEnvironmentUserACLPropagate,
+		mkDataSourceVirtualEnvironmentUserACLRoleID,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeBool,
+		schema.TypeString,
+	})
 }

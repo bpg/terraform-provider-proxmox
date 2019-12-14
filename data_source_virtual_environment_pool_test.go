@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentPoolInstantiation tests whether the DataSourceVirtualEnvironmentPool instance can be instantiated.
@@ -21,18 +23,46 @@ func TestDataSourceVirtualEnvironmentPoolInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentPoolSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentPool()
 
-	attributeKeys := []string{
+	testRequiredArguments(t, s, []string{
+		mkDataSourceVirtualEnvironmentPoolPoolID,
+	})
+
+	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentPoolComment,
 		mkDataSourceVirtualEnvironmentPoolMembers,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentPool.Schema: Missing attribute \"%s\"", v)
-		}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentPoolComment,
+		mkDataSourceVirtualEnvironmentPoolMembers,
+		mkDataSourceVirtualEnvironmentPoolPoolID,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeList,
+		schema.TypeString,
+	})
 
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentPool.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	membersSchema := testNestedSchemaExistence(t, s, mkDataSourceVirtualEnvironmentPoolMembers)
+
+	testComputedAttributes(t, membersSchema, []string{
+		mkDataSourceVirtualEnvironmentPoolMembersDatastoreID,
+		mkDataSourceVirtualEnvironmentPoolMembersID,
+		mkDataSourceVirtualEnvironmentPoolMembersNodeName,
+		mkDataSourceVirtualEnvironmentPoolMembersType,
+		mkDataSourceVirtualEnvironmentPoolMembersVMID,
+	})
+
+	testSchemaValueTypes(t, membersSchema, []string{
+		mkDataSourceVirtualEnvironmentPoolMembersDatastoreID,
+		mkDataSourceVirtualEnvironmentPoolMembersID,
+		mkDataSourceVirtualEnvironmentPoolMembersNodeName,
+		mkDataSourceVirtualEnvironmentPoolMembersType,
+		mkDataSourceVirtualEnvironmentPoolMembersVMID,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeInt,
+	})
 }

@@ -12,14 +12,14 @@ import (
 )
 
 const (
-	mkResourceVirtualEnvironmentPoolComment                 = "comment"
-	mkResourceVirtualEnvironmentPoolMembers                 = "members"
-	mkResourceVirtualEnvironmentPoolMembersID               = "id"
-	mkResourceVirtualEnvironmentPoolMembersNode             = "node"
-	mkResourceVirtualEnvironmentPoolMembersStorage          = "storage"
-	mkResourceVirtualEnvironmentPoolMembersType             = "type"
-	mkResourceVirtualEnvironmentPoolMembersVirtualMachineID = "virtual_machine_id"
-	mkResourceVirtualEnvironmentPoolPoolID                  = "pool_id"
+	mkResourceVirtualEnvironmentPoolComment            = "comment"
+	mkResourceVirtualEnvironmentPoolMembers            = "members"
+	mkResourceVirtualEnvironmentPoolMembersDatastoreID = "datastore_id"
+	mkResourceVirtualEnvironmentPoolMembersID          = "id"
+	mkResourceVirtualEnvironmentPoolMembersNodeName    = "node_name"
+	mkResourceVirtualEnvironmentPoolMembersType        = "type"
+	mkResourceVirtualEnvironmentPoolMembersVMID        = "vm_id"
+	mkResourceVirtualEnvironmentPoolPoolID             = "pool_id"
 )
 
 func resourceVirtualEnvironmentPool() *schema.Resource {
@@ -37,32 +37,30 @@ func resourceVirtualEnvironmentPool() *schema.Resource {
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentPoolMembersDatastoreID: {
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: "The datastore id",
+						},
 						mkResourceVirtualEnvironmentPoolMembersID: {
 							Type:        schema.TypeString,
-							Required:    true,
+							Computed:    true,
 							Description: "The member id",
 						},
-						mkResourceVirtualEnvironmentPoolMembersNode: {
+						mkResourceVirtualEnvironmentPoolMembersNodeName: {
 							Type:        schema.TypeString,
-							Required:    true,
-							Description: "The node id",
-						},
-						mkResourceVirtualEnvironmentPoolMembersStorage: {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "The storage id",
-							Default:     "",
+							Computed:    true,
+							Description: "The node name",
 						},
 						mkResourceVirtualEnvironmentPoolMembersType: {
 							Type:        schema.TypeString,
-							Required:    true,
+							Computed:    true,
 							Description: "The member type",
 						},
-						mkResourceVirtualEnvironmentPoolMembersVirtualMachineID: {
+						mkResourceVirtualEnvironmentPoolMembersVMID: {
 							Type:        schema.TypeInt,
-							Optional:    true,
+							Computed:    true,
 							Description: "The virtual machine id",
-							Default:     0,
 						},
 					},
 				},
@@ -143,20 +141,20 @@ func resourceVirtualEnvironmentPoolRead(d *schema.ResourceData, m interface{}) e
 		values := make(map[string]interface{})
 
 		values[mkResourceVirtualEnvironmentPoolMembersID] = v.ID
-		values[mkResourceVirtualEnvironmentPoolMembersNode] = v.Node
+		values[mkResourceVirtualEnvironmentPoolMembersNodeName] = v.Node
 
-		if v.Storage != nil {
-			values[mkResourceVirtualEnvironmentPoolMembersStorage] = v.Storage
+		if v.DatastoreID != nil {
+			values[mkResourceVirtualEnvironmentPoolMembersDatastoreID] = v.DatastoreID
 		} else {
-			values[mkResourceVirtualEnvironmentPoolMembersStorage] = ""
+			values[mkResourceVirtualEnvironmentPoolMembersDatastoreID] = ""
 		}
 
 		values[mkResourceVirtualEnvironmentPoolMembersType] = v.Type
 
-		if v.VirtualMachineID != nil {
-			values[mkResourceVirtualEnvironmentPoolMembersVirtualMachineID] = v.VirtualMachineID
+		if v.VMID != nil {
+			values[mkResourceVirtualEnvironmentPoolMembersVMID] = v.VMID
 		} else {
-			values[mkResourceVirtualEnvironmentPoolMembersVirtualMachineID] = 0
+			values[mkResourceVirtualEnvironmentPoolMembersVMID] = 0
 		}
 
 		members[i] = values

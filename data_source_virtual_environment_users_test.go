@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentUsersInstantiation tests whether the DataSourceVirtualEnvironmentUsers instance can be instantiated.
@@ -21,7 +23,7 @@ func TestDataSourceVirtualEnvironmentUsersInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentUsersSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentUsers()
 
-	attributeKeys := []string{
+	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentUsersComments,
 		mkDataSourceVirtualEnvironmentUsersEmails,
 		mkDataSourceVirtualEnvironmentUsersEnabled,
@@ -31,15 +33,27 @@ func TestDataSourceVirtualEnvironmentUsersSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentUsersKeys,
 		mkDataSourceVirtualEnvironmentUsersLastNames,
 		mkDataSourceVirtualEnvironmentUsersUserIDs,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentUsers.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentUsers.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentUsersComments,
+		mkDataSourceVirtualEnvironmentUsersEmails,
+		mkDataSourceVirtualEnvironmentUsersEnabled,
+		mkDataSourceVirtualEnvironmentUsersExpirationDates,
+		mkDataSourceVirtualEnvironmentUsersFirstNames,
+		mkDataSourceVirtualEnvironmentUsersGroups,
+		mkDataSourceVirtualEnvironmentUsersKeys,
+		mkDataSourceVirtualEnvironmentUsersLastNames,
+		mkDataSourceVirtualEnvironmentUsersUserIDs,
+	}, []schema.ValueType{
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+	})
 }

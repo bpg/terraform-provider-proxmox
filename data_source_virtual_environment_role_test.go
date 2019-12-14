@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentRoleInstantiation tests whether the DataSourceVirtualEnvironmentRole instance can be instantiated.
@@ -21,17 +23,19 @@ func TestDataSourceVirtualEnvironmentRoleInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentRoleSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentRole()
 
-	attributeKeys := []string{
+	testRequiredArguments(t, s, []string{
+		mkDataSourceVirtualEnvironmentRoleID,
+	})
+
+	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentRolePrivileges,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentRole.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentRole.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentRoleID,
+		mkDataSourceVirtualEnvironmentRolePrivileges,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeSet,
+	})
 }

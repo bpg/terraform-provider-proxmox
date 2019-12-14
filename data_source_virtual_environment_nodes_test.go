@@ -6,6 +6,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentNodesInstantiation tests whether the DataSourceVirtualEnvironmentNodes instance can be instantiated.
@@ -21,7 +23,7 @@ func TestDataSourceVirtualEnvironmentNodesInstantiation(t *testing.T) {
 func TestDataSourceVirtualEnvironmentNodesSchema(t *testing.T) {
 	s := dataSourceVirtualEnvironmentNodes()
 
-	attributeKeys := []string{
+	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentNodesCPUCount,
 		mkDataSourceVirtualEnvironmentNodesCPUUtilization,
 		mkDataSourceVirtualEnvironmentNodesMemoryAvailable,
@@ -31,15 +33,27 @@ func TestDataSourceVirtualEnvironmentNodesSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentNodesSSLFingerprints,
 		mkDataSourceVirtualEnvironmentNodesSupportLevels,
 		mkDataSourceVirtualEnvironmentNodesUptime,
-	}
+	})
 
-	for _, v := range attributeKeys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentNodes.Schema: Missing attribute \"%s\"", v)
-		}
-
-		if s.Schema[v].Computed != true {
-			t.Fatalf("Error in dataSourceVirtualEnvironmentNodes.Schema: Attribute \"%s\" is not computed", v)
-		}
-	}
+	testSchemaValueTypes(t, s, []string{
+		mkDataSourceVirtualEnvironmentNodesCPUCount,
+		mkDataSourceVirtualEnvironmentNodesCPUUtilization,
+		mkDataSourceVirtualEnvironmentNodesMemoryAvailable,
+		mkDataSourceVirtualEnvironmentNodesMemoryUsed,
+		mkDataSourceVirtualEnvironmentNodesNames,
+		mkDataSourceVirtualEnvironmentNodesOnline,
+		mkDataSourceVirtualEnvironmentNodesSSLFingerprints,
+		mkDataSourceVirtualEnvironmentNodesSupportLevels,
+		mkDataSourceVirtualEnvironmentNodesUptime,
+	}, []schema.ValueType{
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+	})
 }
