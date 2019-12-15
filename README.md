@@ -51,12 +51,12 @@ provider "proxmox" {
 
 ##### Usage
 
-```
-export PROXMOX_VE_ENDPOINT="https://hostname:8006"
-export PROXMOX_VE_INSECURE="true"
-export PROXMOX_VE_PASSWORD="a-strong-password"
-export PROXMOX_VE_USERNAME="username@realm"
-terraform plan
+```sh
+$ export PROXMOX_VE_ENDPOINT="https://hostname:8006"
+$ export PROXMOX_VE_INSECURE="true"
+$ export PROXMOX_VE_PASSWORD="a-strong-password"
+$ export PROXMOX_VE_USERNAME="username@realm"
+$ terraform plan
 ```
 
 You can omit `PROXMOX_VE_INSECURE`, if the Proxmox Virtual Environment API is exposing a certificate trusted by your operating system.
