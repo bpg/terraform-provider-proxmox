@@ -6,6 +6,8 @@ package proxmoxtf
 
 import (
 	"errors"
+	"net/url"
+	"os"
 
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -55,24 +57,87 @@ func Provider() *schema.Provider {
 					Schema: map[string]*schema.Schema{
 						mkProviderVirtualEnvironmentEndpoint: {
 							Type:        schema.TypeString,
-							Required:    true,
+							Optional:    true,
 							Description: "The endpoint for the Proxmox Virtual Environment API",
+							DefaultFunc: schema.MultiEnvDefaultFunc(
+								[]string{"PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT"},
+								"",
+							),
+							ValidateFunc: func(v interface{}, k string) (warns []string, errs []error) {
+								value := v.(string)
+
+								if value == "" {
+									return []string{}, []error{
+										errors.New("You must specify an endpoint for the Proxmox Virtual Environment API (valid: https://host:port)"),
+									}
+								}
+
+								_, err := url.ParseRequestURI(value)
+
+								if err != nil {
+									return []string{}, []error{
+										errors.New("You must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port)"),
+									}
+								}
+
+								return []string{}, []error{}
+							},
 						},
 						mkProviderVirtualEnvironmentInsecure: {
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Description: "Whether to skip the TLS verification step",
-							Default:     false,
+							DefaultFunc: func() (interface{}, error) {
+								for _, k := range []string{"PROXMOX_VE_INSECURE", "PM_VE_INSECURE"} {
+									v := os.Getenv(k)
+
+									if v == "true" || v == "1" {
+										return true, nil
+									}
+								}
+
+								return false, nil
+							},
 						},
 						mkProviderVirtualEnvironmentPassword: {
 							Type:        schema.TypeString,
-							Required:    true,
+							Optional:    true,
 							Description: "The password for the Proxmox Virtual Environment API",
+							DefaultFunc: schema.MultiEnvDefaultFunc(
+								[]string{"PROXMOX_VE_PASSWORD", "PM_VE_PASSWORD"},
+								"",
+							),
+							ValidateFunc: func(v interface{}, k string) (warns []string, errs []error) {
+								value := v.(string)
+
+								if value == "" {
+									return []string{}, []error{
+										errors.New("You must specify a password for the Proxmox Virtual Environment API"),
+									}
+								}
+
+								return []string{}, []error{}
+							},
 						},
 						mkProviderVirtualEnvironmentUsername: {
 							Type:        schema.TypeString,
-							Required:    true,
+							Optional:    true,
 							Description: "The username for the Proxmox Virtual Environment API",
+							DefaultFunc: schema.MultiEnvDefaultFunc(
+								[]string{"PROXMOX_VE_USERNAME", "PM_VE_USERNAME"},
+								"",
+							),
+							ValidateFunc: func(v interface{}, k string) (warns []string, errs []error) {
+								value := v.(string)
+
+								if value == "" {
+									return []string{}, []error{
+										errors.New("You must specify a username for the Proxmox Virtual Environment API (valid: username@realm)"),
+									}
+								}
+
+								return []string{}, []error{}
+							},
 						},
 					},
 				},
@@ -113,7 +178,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 func (c *providerConfiguration) GetVEClient() (*proxmox.VirtualEnvironmentClient, error) {
 	if c.veClient == nil {
-		return nil, errors.New("You must specify the virtual environment details in the provider configuration to use this data source")
+		return nil, errors.New("You must specify the virtual environment details in the provider configuration")
 	}
 
 	return c.veClient, nil

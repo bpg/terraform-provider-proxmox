@@ -35,6 +35,32 @@ If you're building the provider, follow the instructions to [install it as a plu
     * `password` - (Required) The password for the Proxmox Virtual Environment API
     * `username` - (Required) The username for the Proxmox Virtual Environment API
 
+#### Environment variables
+You can set up the provider by passing environment variables instead of specifying arguments.
+
+* `PROXMOX_VE_ENDPOINT` or `PM_VE_ENDPOINT` - The endpoint for the Proxmox Virtual Environment API
+* `PROXMOX_VE_INSECURE` or `PM_VE_INSECURE` - Whether to skip the TLS verification step
+* `PROXMOX_VE_PASSWORD` or `PM_VE_PASSWORD` - The password for the Proxmox Virtual Environment API
+* `PROXMOX_VE_USERNAME` or `PM_VE_USERNAME` - The username for the Proxmox Virtual Environment API
+
+```hcl
+provider "proxmox" {
+  virtual_environment {}
+}
+```
+
+##### Usage
+
+```
+export PROXMOX_VE_ENDPOINT="https://hostname:8006"
+export PROXMOX_VE_INSECURE="true"
+export PROXMOX_VE_PASSWORD="a-strong-password"
+export PROXMOX_VE_USERNAME="username@realm"
+terraform plan
+```
+
+You can omit `PROXMOX_VE_INSECURE`, if the Proxmox Virtual Environment API is exposing a certificate trusted by your operating system.
+
 ### Data Sources
 
 #### Virtual Environment
