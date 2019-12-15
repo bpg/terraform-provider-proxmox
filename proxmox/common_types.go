@@ -15,11 +15,11 @@ import (
 // CustomBool allows a JSON boolean value to also be an integer.
 type CustomBool bool
 
-// CustomPrivileges allows a JSON object of privileges to also be a string array.
-type CustomPrivileges []string
-
 // CustomCommaSeparatedList allows a JSON string to also be a string array.
 type CustomCommaSeparatedList []string
+
+// CustomPrivileges allows a JSON object of privileges to also be a string array.
+type CustomPrivileges []string
 
 // CustomTimestamp allows a JSON boolean value to also be a unix timestamp.
 type CustomTimestamp time.Time
