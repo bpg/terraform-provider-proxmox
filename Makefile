@@ -28,7 +28,7 @@ fmt:
 	gofmt -w $(GOFMT_FILES)
 
 test:
-	go test -v
+	go test -v ./...
 
 init:
 	go get ./...
