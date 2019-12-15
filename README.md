@@ -7,6 +7,33 @@ A Terraform Provider which adds support for Proxmox solutions.
 - [Terraform](https://www.terraform.io/downloads.html) 0.11+
 - [Go](https://golang.org/doc/install) 1.13 (to build the provider plugin)
 
+## Table of contents
+- [Building the Provider](#building-the-provider)
+- [Using the Provider](#using-the-provider)
+    - [Configuration](#configuration)
+        - [Arguments](#arguments)
+        - [Environment variables](#environment-variables)
+    - [Data Sources](#data-sources)
+        - [Datastores](#datastores-proxmox_virtual_environment_datastores)
+        - [Group](#group-proxmox_virtual_environment_group)
+        - [Groups](#groups-proxmox_virtual_environment_groups)
+        - [Nodes](#nodes-proxmox_virtual_environment_nodes)
+        - [Pool](#pool-proxmox_virtual_environment_pool)
+        - [Pools](#pools-proxmox_virtual_environment_pools)
+        - [Role](#role-proxmox_virtual_environment_role)
+        - [Roles](#roles-proxmox_virtual_environment_roles)
+        - [User](#user-proxmox_virtual_environment_user)
+        - [Users](#users-proxmox_virtual_environment_users)
+        - [Version](#version-proxmox_virtual_environment_version)
+    - [Resources](#resources)
+        - [File](#file-proxmox_virtual_environment_file)
+        - [Group](#group-proxmox_virtual_environment_group-1)
+        - [Pool](#pool-proxmox_virtual_environment_pool-1)
+        - [Role](#role-proxmox_virtual_environment_role-1)
+        - [User](#user-proxmox_virtual_environment_user-1)
+- [Developing the Provider](#developing-the-provider)
+- [Testing the Provider](#testing-the-provider)
+
 ## Building the Provider
 Clone repository to: `$GOPATH/src/github.com/danitso/terraform-provider-proxmox`
 
@@ -178,7 +205,7 @@ This data source doesn't accept arguments.
 * `keys` - The user's keys
 * `last_name` - The user's last name
 
-##### Users (proxmox_virtual_environment_user)
+##### Users (proxmox_virtual_environment_users)
 
 ###### Arguments
 This data source doesn't accept arguments.
