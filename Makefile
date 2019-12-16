@@ -27,13 +27,13 @@ example-plan:
 fmt:
 	gofmt -w $(GOFMT_FILES)
 
-test:
-	go test -v ./...
-
 init:
 	go get ./...
 
 targets: $(TARGETS)
+
+test:
+	go test -v ./...
 
 $(TARGETS):
 	GOOS=$@ GOARCH=amd64 CGO_ENABLED=0 go build \
@@ -43,4 +43,4 @@ $(TARGETS):
 		-j "dist/$(NAME)_v$(VERSION)-custom_$@_amd64.zip" \
 		"dist/$@/$(NAME)_v$(VERSION)-custom_x4"
 
-.PHONY: build example example-apply example-destroy example-init example-plan fmt test init targets $(TARGETS)
+.PHONY: build example example-apply example-destroy example-init example-plan fmt init targets test $(TARGETS)
