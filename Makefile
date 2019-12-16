@@ -43,4 +43,4 @@ $(TARGETS):
 		-j "dist/$(NAME)_v$(VERSION)-custom_$@_amd64.zip" \
 		"dist/$@/$(NAME)_v$(VERSION)-custom_x4"
 
-.PHONY: build example fmt test init targets $(TARGETS)
+.PHONY: build example example-apply example-destroy example-init example-plan fmt test init targets $(TARGETS)
