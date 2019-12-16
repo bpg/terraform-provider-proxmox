@@ -60,14 +60,14 @@ type CustomEFIDisk struct {
 	Format     *string `json:"format,omitempty" url:"format,omitempty"`
 }
 
-// CustomIDEDevice handles QEMU host IDE device parameters.
+// CustomIDEDevice handles QEMU IDE device parameters.
 type CustomIDEDevice struct {
 	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
 	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
 	FileVolume    string      `json:"file" url:"file"`
 }
 
-// CustomIDEDevices handles QEMU host IDE device parameters.
+// CustomIDEDevices handles QEMU IDE device parameters.
 type CustomIDEDevices []CustomIDEDevice
 
 // CustomNetworkDevice handles QEMU network device parameters.
@@ -110,10 +110,161 @@ type CustomPCIDevice struct {
 // CustomPCIDevices handles QEMU host PCI device mapping parameters.
 type CustomPCIDevices []CustomPCIDevice
 
+// CustomSATADevice handles QEMU SATA device parameters.
+type CustomSATADevice struct {
+	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
+	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
+	FileVolume    string      `json:"file" url:"file"`
+}
+
+// CustomSATADevices handles QEMU SATA device parameters.
+type CustomSATADevices []CustomSATADevice
+
+// CustomSCSIDevice handles QEMU SCSI device parameters.
+type CustomSCSIDevice struct {
+	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
+	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
+	FileVolume    string      `json:"file" url:"file"`
+}
+
+// CustomSCSIDevices handles QEMU SCSI device parameters.
+type CustomSCSIDevices []CustomSCSIDevice
+
+// CustomSerialDevices handles QEMU serial device parameters.
+type CustomSerialDevices []string
+
 // CustomSharedMemory handles QEMU Inter-VM shared memory parameters.
 type CustomSharedMemory struct {
 	Name *string `json:"name,omitempty" url:"name,omitempty"`
 	Size int     `json:"size" url:"size"`
+}
+
+// CustomSMBIOS handles QEMU SMBIOS parameters.
+type CustomSMBIOS struct {
+	Base64       *CustomBool `json:"base64,omitempty" url:"base64,omitempty"`
+	Family       *string     `json:"family,omitempty" url:"family,omitempty"`
+	Manufacturer *string     `json:"manufacturer,omitempty" url:"manufacturer,omitempty"`
+	Product      *string     `json:"product,omitempty" url:"product,omitempty"`
+	Serial       *string     `json:"serial,omitempty" url:"serial,omitempty"`
+	SKU          *string     `json:"sku,omitempty" url:"sku,omitempty"`
+	UUID         *string     `json:"uuid,omitempty" url:"uuid,omitempty"`
+	Version      *string     `json:"version,omitempty" url:"version,omitempty"`
+}
+
+// CustomSpiceEnhancements handles QEMU spice enhancement parameters.
+type CustomSpiceEnhancements struct {
+	FolderSharing  *CustomBool `json:"foldersharing,omitempty" url:"foldersharing,omitempty"`
+	VideoStreaming *string     `json:"videostreaming,omitempty" url:"videostreaming,omitempty"`
+}
+
+// CustomStartupOrder handles QEMU startup order parameters.
+type CustomStartupOrder struct {
+	Down  *int `json:"down,omitempty" url:"down,omitempty"`
+	Order *int `json:"order,omitempty" url:"order,omitempty"`
+	Up    *int `json:"up,omitempty" url:"up,omitempty"`
+}
+
+// CustomUSBDevice handles QEMU USB device parameters.
+type CustomUSBDevice struct {
+	HostDevice string      `json:"host" url:"host"`
+	USB3       *CustomBool `json:"usb3,omitempty" url:"usb3,omitempty,int"`
+}
+
+// CustomUSBDevices handles QEMU USB device parameters.
+type CustomUSBDevices []CustomUSBDevice
+
+// CustomVGADevice handles QEMU VGA device parameters.
+type CustomVGADevice struct {
+	Memory *int   `json:"memory,omitempty" url:"memory,omitempty"`
+	Type   string `json:"type" url:"type"`
+}
+
+// CustomVirtualIODevice handles QEMU VirtIO device parameters.
+type CustomVirtualIODevice struct {
+	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
+	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
+	FileVolume    string      `json:"file" url:"file"`
+}
+
+// CustomVirtualIODevices handles QEMU VirtIO device parameters.
+type CustomVirtualIODevices []CustomVirtualIODevice
+
+// CustomWatchdogDevice handles QEMU watchdog device parameters.
+type CustomWatchdogDevice struct {
+	Action *string `json:"action,omitempty" url:"action,omitempty"`
+	Model  string  `json:"model" url:"model"`
+}
+
+// VirtualEnvironmentVMCreateRequestBody contains the data for an virtual machine create request.
+type VirtualEnvironmentVMCreateRequestBody struct {
+	ACPI                 *CustomBool              `json:"acpi,omitempty" url:"acpi,omitempty,int"`
+	Agent                *CustomAgent             `json:"agent,omitempty" url:"agent,omitempty"`
+	AllocatedMemory      *int                     `json:"memory,omitempty" url:"memory,omitempty"`
+	AllowReboot          *CustomBool              `json:"reboot,omitempty" url:"reboot,omitempty,int"`
+	AudioDevice          *CustomAudioDevice       `json:"audio0,omitempty" url:"audio0,omitempty"`
+	Autostart            *CustomBool              `json:"autostart,omitempty" url:"autostart,omitempty,int"`
+	BackupFile           *string                  `json:"archive,omitempty" url:"archive,omitempty"`
+	BandwidthLimit       *int                     `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
+	BIOS                 *string                  `json:"bios,omitempty" url:"bios,omitempty"`
+	BootDiskID           *string                  `json:"bootdisk,omitempty" url:"bootdisk,omitempty"`
+	BootOrder            *string                  `json:"boot,omitempty" url:"boot,omitempty"`
+	CDROM                *string                  `json:"cdrom,omitempty" url:"cdrom,omitempty"`
+	CloudInitConfig      *CustomCloudInitConfig   `json:"cloudinit,omitempty" url:"cloudinit,omitempty"`
+	CPUArchitecture      *string                  `json:"arch,omitempty" url:"arch,omitempty"`
+	CPUCores             *int                     `json:"cores,omitempty" url:"cores,omitempty"`
+	CPULimit             *int                     `json:"cpulimit,omitempty" url:"cpulimit,omitempty"`
+	CPUSockets           *int                     `json:"sockets,omitempty" url:"sockets,omitempty"`
+	CPUUnits             *int                     `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
+	DeletionProtection   *CustomBool              `json:"protection,omitempty" url:"force,omitempty,int"`
+	Description          *string                  `json:"description,omitempty" url:"description,omitempty"`
+	EFIDisk              *CustomEFIDisk           `json:"efidisk0,omitempty" url:"efidisk0,omitempty"`
+	FloatingMemory       *int                     `json:"balloon,omitempty" url:"balloon,omitempty"`
+	FloatingMemoryShares *int                     `json:"shares,omitempty" url:"shares,omitempty"`
+	Freeze               *CustomBool              `json:"freeze,omitempty" url:"freeze,omitempty,int"`
+	HookScript           *string                  `json:"hookscript,omitempty" url:"hookscript,omitempty"`
+	Hotplug              []string                 `json:"hotplug,omitempty" url:"hotplug,omitempty,comma"`
+	Hugepages            *string                  `json:"hugepages,omitempty" url:"hugepages,omitempty"`
+	IDEDevices           CustomIDEDevices         `json:"ide,omitempty" url:"ide,omitempty"`
+	KeyboardLayout       *string                  `json:"keyboard,omitempty" url:"keyboard,omitempty"`
+	KVMArguments         []string                 `json:"args,omitempty" url:"args,omitempty,space"`
+	KVMEnabled           *CustomBool              `json:"kvm,omitempty" url:"kvm,omitempty,int"`
+	LocalTime            *CustomBool              `json:"localtime,omitempty" url:"localtime,omitempty,int"`
+	Lock                 *string                  `json:"lock,omitempty" url:"lock,omitempty"`
+	MachineType          *string                  `json:"machine,omitempty" url:"machine,omitempty"`
+	MigrateDowntime      *float64                 `json:"migrate_downtime,omitempty" url:"migrate_downtime,omitempty"`
+	MigrateSpeed         *int                     `json:"migrate_speed,omitempty" url:"migrate_speed,omitempty"`
+	Name                 *string                  `json:"name,omitempty" url:"name,omitempty"`
+	NetworkDevices       CustomNetworkDevices     `json:"net,omitempty" url:"net,omitempty"`
+	NodeName             string                   `json:"node" url:"node"`
+	NUMADevices          CustomNUMADevices        `json:"numa_devices,omitempty" url:"numa,omitempty"`
+	NUMAEnabled          *CustomBool              `json:"numa,omitempty" url:"numa,omitempty,int"`
+	OSType               *string                  `json:"ostype,omitempty" url:"ostype,omitempty"`
+	Overwrite            *CustomBool              `json:"force,omitempty" url:"force,omitempty,int"`
+	PCIDevices           CustomPCIDevices         `json:"hostpci,omitempty" url:"hostpci,omitempty"`
+	Revert               *string                  `json:"revert,omitempty" url:"revert,omitempty"`
+	SATADevices          CustomSATADevices        `json:"sata,omitempty" url:"sata,omitempty"`
+	SCSIDevices          CustomSCSIDevices        `json:"scsi,omitempty" url:"sata,omitempty"`
+	SCSIHardware         *string                  `json:"scsihw,omitempty" url:"scsihw,omitempty"`
+	SerialDevices        CustomSerialDevices      `json:"serial,omitempty" url:"serial,omitempty"`
+	SharedMemory         *CustomSharedMemory      `json:"ivshmem,omitempty" url:"ivshmem,omitempty"`
+	SkipLock             *CustomBool              `json:"skiplock,omitempty" url:"skiplock,omitempty,int"`
+	SMBIOS               *CustomSMBIOS            `json:"smbios1,omitempty" url:"smbios1,omitempty"`
+	SpiceEnhancements    *CustomSpiceEnhancements `json:"spice_enhancements,omitempty" url:"spice_enhancements,omitempty"`
+	StartDate            *string                  `json:"startdate,omitempty" url:"startdate,omitempty"`
+	StartOnBoot          *CustomBool              `json:"onboot,omitempty" url:"onboot,omitempty,int"`
+	StartupOrder         *CustomStartupOrder      `json:"startup,omitempty" url:"startup,omitempty"`
+	TabletDeviceEnabled  *CustomBool              `json:"tablet,omitempty" url:"tablet,omitempty,int"`
+	Tags                 *string                  `json:"tags,omitempty" url:"tags,omitempty"`
+	Template             *CustomBool              `json:"template,omitempty" url:"template,omitempty,int"`
+	TimeDriftFixEnabled  *CustomBool              `json:"tdf,omitempty" url:"tdf,omitempty,int"`
+	USBDevices           CustomUSBDevices         `json:"usb,omitempty" url:"usb,omitempty"`
+	VGADevice            *CustomVGADevice         `json:"vga,omitempty" url:"vga,omitempty"`
+	VirtualCPUCount      *int                     `json:"vcpus,omitempty" url:"vcpus,omitempty"`
+	VirtualIODevices     CustomVirtualIODevices   `json:"virtio,omitempty" url:"virtio,omitempty"`
+	VMGenerationID       *string                  `json:"vmgenid,omitempty" url:"vmgenid,omitempty"`
+	VMID                 int                      `json:"vmid" url:"vmid"`
+	VMStateDatastoreID   *string                  `json:"vmstatestorage,omitempty" url:"vmstatestorage,omitempty"`
+	WatchdogDevice       *CustomWatchdogDevice    `json:"watchdog,omitempty" url:"watchdog,omitempty"`
 }
 
 // EncodeValues converts a CustomAgent struct to a URL vlaue.
@@ -416,6 +567,79 @@ func (r CustomPCIDevices) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
+// EncodeValues converts a CustomSATADevice struct to a URL vlaue.
+func (r CustomSATADevice) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("file=%s", r.FileVolume),
+	}
+
+	if r.AIO != nil {
+		values = append(values, fmt.Sprintf("aio=%s", *r.AIO))
+	}
+
+	if r.BackupEnabled != nil {
+		if *r.BackupEnabled {
+			values = append(values, "backup=1")
+		} else {
+			values = append(values, "backup=0")
+		}
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// EncodeValues converts a CustomSATADevices array to multiple URL values.
+func (r CustomSATADevices) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomSCSIDevice struct to a URL vlaue.
+func (r CustomSCSIDevice) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("file=%s", r.FileVolume),
+	}
+
+	if r.AIO != nil {
+		values = append(values, fmt.Sprintf("aio=%s", *r.AIO))
+	}
+
+	if r.BackupEnabled != nil {
+		if *r.BackupEnabled {
+			values = append(values, "backup=1")
+		} else {
+			values = append(values, "backup=0")
+		}
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// EncodeValues converts a CustomSCSIDevices array to multiple URL values.
+func (r CustomSCSIDevices) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomSerialDevices array to multiple URL values.
+func (r CustomSerialDevices) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		v.Add(fmt.Sprintf("%s[%d]", key, i), d)
+	}
+
+	return nil
+}
+
 // EncodeValues converts a CustomSharedMemory struct to a URL vlaue.
 func (r CustomSharedMemory) EncodeValues(key string, v *url.Values) error {
 	values := []string{
@@ -424,6 +648,189 @@ func (r CustomSharedMemory) EncodeValues(key string, v *url.Values) error {
 
 	if r.Name != nil {
 		values = append(values, fmt.Sprintf("name=%s", *r.Name))
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// EncodeValues converts a CustomSMBIOS struct to a URL vlaue.
+func (r CustomSMBIOS) EncodeValues(key string, v *url.Values) error {
+	values := []string{}
+
+	if r.Base64 != nil {
+		if *r.Base64 {
+			values = append(values, "base64=1")
+		} else {
+			values = append(values, "base64=0")
+		}
+	}
+
+	if r.Family != nil {
+		values = append(values, fmt.Sprintf("family=%s", *r.Family))
+	}
+
+	if r.Manufacturer != nil {
+		values = append(values, fmt.Sprintf("manufacturer=%s", *r.Manufacturer))
+	}
+
+	if r.Product != nil {
+		values = append(values, fmt.Sprintf("product=%s", *r.Product))
+	}
+
+	if r.Serial != nil {
+		values = append(values, fmt.Sprintf("serial=%s", *r.Serial))
+	}
+
+	if r.SKU != nil {
+		values = append(values, fmt.Sprintf("sku=%s", *r.SKU))
+	}
+
+	if r.UUID != nil {
+		values = append(values, fmt.Sprintf("uuid=%s", *r.UUID))
+	}
+
+	if r.Version != nil {
+		values = append(values, fmt.Sprintf("version=%s", *r.Version))
+	}
+
+	if len(values) > 0 {
+		v.Add(key, strings.Join(values, ","))
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomSpiceEnhancements struct to a URL vlaue.
+func (r CustomSpiceEnhancements) EncodeValues(key string, v *url.Values) error {
+	values := []string{}
+
+	if r.FolderSharing != nil {
+		if *r.FolderSharing {
+			values = append(values, fmt.Sprintf("foldersharing=1"))
+		} else {
+			values = append(values, fmt.Sprintf("foldersharing=0"))
+		}
+	}
+
+	if r.VideoStreaming != nil {
+		values = append(values, fmt.Sprintf("videostreaming=%s", *r.VideoStreaming))
+	}
+
+	if len(values) > 0 {
+		v.Add(key, strings.Join(values, ","))
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomStartupOrder struct to a URL vlaue.
+func (r CustomStartupOrder) EncodeValues(key string, v *url.Values) error {
+	values := []string{}
+
+	if r.Order != nil {
+		values = append(values, fmt.Sprintf("order=%d", *r.Order))
+	}
+
+	if r.Up != nil {
+		values = append(values, fmt.Sprintf("up=%d", *r.Up))
+	}
+
+	if r.Down != nil {
+		values = append(values, fmt.Sprintf("down=%d", *r.Down))
+	}
+
+	if len(values) > 0 {
+		v.Add(key, strings.Join(values, ","))
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomUSBDevice struct to a URL vlaue.
+func (r CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("host=%s", r.HostDevice),
+	}
+
+	if r.USB3 != nil {
+		if *r.USB3 {
+			values = append(values, "usb3=1")
+		} else {
+			values = append(values, "usb3=0")
+		}
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// EncodeValues converts a CustomUSBDevices array to multiple URL values.
+func (r CustomUSBDevices) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomVGADevice struct to a URL vlaue.
+func (r CustomVGADevice) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("type=%s", r.Type),
+	}
+
+	if r.Memory != nil {
+		values = append(values, fmt.Sprintf("memory=%d", *r.Memory))
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// EncodeValues converts a CustomVirtualIODevice struct to a URL vlaue.
+func (r CustomVirtualIODevice) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("file=%s", r.FileVolume),
+	}
+
+	if r.AIO != nil {
+		values = append(values, fmt.Sprintf("aio=%s", *r.AIO))
+	}
+
+	if r.BackupEnabled != nil {
+		if *r.BackupEnabled {
+			values = append(values, "backup=1")
+		} else {
+			values = append(values, "backup=0")
+		}
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// EncodeValues converts a CustomVirtualIODevices array to multiple URL values.
+func (r CustomVirtualIODevices) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomWatchdogDevice struct to a URL vlaue.
+func (r CustomWatchdogDevice) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("model=%s", r.Model),
+	}
+
+	if r.Action != nil {
+		values = append(values, fmt.Sprintf("action=%s", *r.Action))
 	}
 
 	v.Add(key, strings.Join(values, ","))
