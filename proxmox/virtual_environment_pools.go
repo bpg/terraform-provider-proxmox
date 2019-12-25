@@ -11,48 +11,6 @@ import (
 	"sort"
 )
 
-// VirtualEnvironmentPoolCreateRequestBody contains the data for an pool create request.
-type VirtualEnvironmentPoolCreateRequestBody struct {
-	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	ID      string  `json:"groupid" url:"poolid"`
-}
-
-// VirtualEnvironmentPoolGetResponseBody contains the body from an pool get response.
-type VirtualEnvironmentPoolGetResponseBody struct {
-	Data *VirtualEnvironmentPoolGetResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentPoolGetResponseData contains the data from an pool get response.
-type VirtualEnvironmentPoolGetResponseData struct {
-	Comment *string                                    `json:"comment,omitempty"`
-	Members []VirtualEnvironmentPoolGetResponseMembers `json:"members,omitempty"`
-}
-
-// VirtualEnvironmentPoolGetResponseMembers contains the members data from an pool get response.
-type VirtualEnvironmentPoolGetResponseMembers struct {
-	ID          string  `json:"id"`
-	Node        string  `json:"node"`
-	DatastoreID *string `json:"storage,omitempty"`
-	Type        string  `json:"type"`
-	VMID        *int    `json:"vmid"`
-}
-
-// VirtualEnvironmentPoolListResponseBody contains the body from an pool list response.
-type VirtualEnvironmentPoolListResponseBody struct {
-	Data []*VirtualEnvironmentPoolListResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentPoolListResponseData contains the data from an pool list response.
-type VirtualEnvironmentPoolListResponseData struct {
-	Comment *string `json:"comment,omitempty"`
-	ID      string  `json:"poolid"`
-}
-
-// VirtualEnvironmentPoolUpdateRequestBody contains the data for an pool update request.
-type VirtualEnvironmentPoolUpdateRequestBody struct {
-	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-}
-
 // CreatePool creates an pool.
 func (c *VirtualEnvironmentClient) CreatePool(d *VirtualEnvironmentPoolCreateRequestBody) error {
 	return c.DoRequest(hmPOST, "pools", d, nil)

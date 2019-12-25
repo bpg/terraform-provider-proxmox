@@ -18,6 +18,9 @@ type CustomBool bool
 // CustomCommaSeparatedList allows a JSON string to also be a string array.
 type CustomCommaSeparatedList []string
 
+// CustomLineBreakSeparatedList allows a multiline JSON string to also be a string array.
+type CustomLineBreakSeparatedList []string
+
 // CustomPrivileges allows a JSON object of privileges to also be a string array.
 type CustomPrivileges []string
 
@@ -63,6 +66,28 @@ func (r *CustomCommaSeparatedList) UnmarshalJSON(b []byte) error {
 	}
 
 	*r = strings.Split(s, ",")
+
+	return nil
+}
+
+// MarshalJSON converts a boolean to a JSON value.
+func (r *CustomLineBreakSeparatedList) MarshalJSON() ([]byte, error) {
+	s := strings.Join(*r, "\n")
+
+	return json.Marshal(s)
+}
+
+// UnmarshalJSON converts a JSON value to a boolean.
+func (r *CustomLineBreakSeparatedList) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	*r = strings.Split(s, "\n")
 
 	return nil
 }

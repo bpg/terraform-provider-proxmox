@@ -6,46 +6,34 @@ package proxmox
 
 import (
 	"errors"
+	"fmt"
+	"net/url"
 )
 
-// VirtualEnvironmentVMGetResponseBody contains the body from an virtual machine get response.
-type VirtualEnvironmentVMGetResponseBody struct {
-	Data *VirtualEnvironmentVMGetResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentVMGetResponseData contains the data from an virtual machine get response.
-type VirtualEnvironmentVMGetResponseData struct {
-	ACPI *CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
-}
-
-// VirtualEnvironmentVMListResponseBody contains the body from an virtual machine list response.
-type VirtualEnvironmentVMListResponseBody struct {
-	Data []*VirtualEnvironmentVMListResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentVMListResponseData contains the data from an virtual machine list response.
-type VirtualEnvironmentVMListResponseData struct {
-	ACPI *CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
-}
-
-// VirtualEnvironmentVMUpdateRequestBody contains the data for an virtual machine update request.
-type VirtualEnvironmentVMUpdateRequestBody struct {
-	ACPI *CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
-}
-
 // CreateVM creates an virtual machine.
-func (c *VirtualEnvironmentClient) CreateVM(d *VirtualEnvironmentVMCreateRequestBody) error {
-	return c.DoRequest(hmPOST, "nodes/%s/qemu", d, nil)
+func (c *VirtualEnvironmentClient) CreateVM(nodeName string, d *VirtualEnvironmentVMCreateRequestBody) error {
+	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu", url.PathEscape(nodeName)), d, nil)
 }
 
 // DeleteVM deletes an virtual machine.
-func (c *VirtualEnvironmentClient) DeleteVM(id string) error {
-	return errors.New("Not implemented")
+func (c *VirtualEnvironmentClient) DeleteVM(nodeName string, vmID int) error {
+	return c.DoRequest(hmDELETE, fmt.Sprintf("nodes/%s/qemu/%d", url.PathEscape(nodeName), vmID), nil, nil)
 }
 
 // GetVM retrieves an virtual machine.
 func (c *VirtualEnvironmentClient) GetVM(nodeName string, vmID int) (*VirtualEnvironmentVMGetResponseData, error) {
-	return nil, errors.New("Not implemented")
+	resBody := &VirtualEnvironmentVMGetResponseBody{}
+	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/qemu/%d/config", url.PathEscape(nodeName), vmID), nil, resBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("The server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
 }
 
 // ListVMs retrieves a list of virtual machines.
@@ -53,7 +41,12 @@ func (c *VirtualEnvironmentClient) ListVMs() ([]*VirtualEnvironmentVMListRespons
 	return nil, errors.New("Not implemented")
 }
 
-// UpdateVM updates an virtual machine.
-func (c *VirtualEnvironmentClient) UpdateVM(id string, d *VirtualEnvironmentVMUpdateRequestBody) error {
-	return errors.New("Not implemented")
+// UpdateVM updates a virtual machine.
+func (c *VirtualEnvironmentClient) UpdateVM(nodeName string, vmID int, d *VirtualEnvironmentVMUpdateRequestBody) error {
+	return c.DoRequest(hmPUT, fmt.Sprintf("nodes/%s/qemu/%d/config", url.PathEscape(nodeName), vmID), d, nil)
+}
+
+// UpdateVMAsync updates a virtual machine asynchronously.
+func (c *VirtualEnvironmentClient) UpdateVMAsync(nodeName string, vmID int, d *VirtualEnvironmentVMUpdateRequestBody) error {
+	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/config", url.PathEscape(nodeName), vmID), d, nil)
 }

@@ -15,64 +15,6 @@ import (
 	"sort"
 )
 
-// VirtualEnvironmentDatastoreFileListResponseBody contains the body from a datastore content list response.
-type VirtualEnvironmentDatastoreFileListResponseBody struct {
-	Data []*VirtualEnvironmentDatastoreFileListResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentDatastoreFileListResponseData contains the data from a datastore content list response.
-type VirtualEnvironmentDatastoreFileListResponseData struct {
-	ContentType    string  `json:"content"`
-	FileFormat     string  `json:"format"`
-	FileSize       int     `json:"size"`
-	ParentVolumeID *string `json:"parent,omitempty"`
-	SpaceUsed      *int    `json:"used,omitempty"`
-	VMID           *int    `json:"vmid,omitempty"`
-	VolumeID       string  `json:"volid"`
-}
-
-// VirtualEnvironmentDatastoreListRequestBody contains the body for a datastore list request.
-type VirtualEnvironmentDatastoreListRequestBody struct {
-	ContentTypes CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
-	Enabled      *CustomBool              `json:"enabled,omitempty" url:"enabled,omitempty,int"`
-	Format       *CustomBool              `json:"format,omitempty" url:"format,omitempty,int"`
-	ID           *string                  `json:"storage,omitempty" url:"storage,omitempty"`
-	Target       *string                  `json:"target,omitempty" url:"target,omitempty"`
-}
-
-// VirtualEnvironmentDatastoreListResponseBody contains the body from a datastore list response.
-type VirtualEnvironmentDatastoreListResponseBody struct {
-	Data []*VirtualEnvironmentDatastoreListResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentDatastoreListResponseData contains the data from a datastore list response.
-type VirtualEnvironmentDatastoreListResponseData struct {
-	Active              *CustomBool               `json:"active,omitempty"`
-	ContentTypes        *CustomCommaSeparatedList `json:"content,omitempty"`
-	Enabled             *CustomBool               `json:"enabled,omitempty"`
-	ID                  string                    `json:"storage,omitempty"`
-	Shared              *CustomBool               `json:"shared,omitempty"`
-	SpaceAvailable      *int                      `json:"avail,omitempty"`
-	SpaceTotal          *int                      `json:"total,omitempty"`
-	SpaceUsed           *int                      `json:"used,omitempty"`
-	SpaceUsedPercentage *float64                  `json:"used_fraction,omitempty"`
-	Type                string                    `json:"type,omitempty"`
-}
-
-// VirtualEnvironmentDatastoreUploadRequestBody contains the body for a datastore upload request.
-type VirtualEnvironmentDatastoreUploadRequestBody struct {
-	ContentType string    `json:"content,omitempty"`
-	DatastoreID string    `json:"storage,omitempty"`
-	FileName    string    `json:"filename,omitempty"`
-	FileReader  io.Reader `json:"-"`
-	NodeName    string    `json:"node,omitempty"`
-}
-
-// VirtualEnvironmentDatastoreUploadResponseBody contains the body from a datastore upload response.
-type VirtualEnvironmentDatastoreUploadResponseBody struct {
-	UploadID *string `json:"data,omitempty"`
-}
-
 // DeleteDatastoreFile deletes a file in a datastore.
 func (c *VirtualEnvironmentClient) DeleteDatastoreFile(nodeName, datastoreID, volumeID string) error {
 	err := c.DoRequest(hmDELETE, fmt.Sprintf("nodes/%s/storage/%s/content/%s", url.PathEscape(nodeName), url.PathEscape(datastoreID), url.PathEscape(volumeID)), nil, nil)

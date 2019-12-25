@@ -19,33 +19,6 @@ import (
 	"github.com/google/go-querystring/query"
 )
 
-const (
-	basePathJSONAPI = "api2/json"
-	hmDELETE        = "DELETE"
-	hmGET           = "GET"
-	hmHEAD          = "HEAD"
-	hmPOST          = "POST"
-	hmPUT           = "PUT"
-)
-
-// VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
-type VirtualEnvironmentClient struct {
-	Endpoint string
-	Insecure bool
-	Password string
-	Username string
-
-	authenticationData *VirtualEnvironmentAuthenticationResponseData
-	httpClient         *http.Client
-}
-
-// VirtualEnvironmentMultiPartData enables multipart uploads in DoRequest.
-type VirtualEnvironmentMultiPartData struct {
-	Boundary string
-	Reader   io.Reader
-	Size     *int64
-}
-
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
 func NewVirtualEnvironmentClient(endpoint, username, password string, insecure bool) (*VirtualEnvironmentClient, error) {
 	url, err := url.ParseRequestURI(endpoint)
@@ -185,19 +158,34 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 // ValidateResponseCode ensures that a response is valid.
 func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) error {
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		status := strings.TrimPrefix(res.Status, fmt.Sprintf("%d ", res.StatusCode))
+
+		errRes := &VirtualEnvironmentErrorResponseBody{}
+		err := json.NewDecoder(res.Body).Decode(errRes)
+
+		if err == nil && errRes.Errors != nil {
+			errList := []string{}
+
+			for k, v := range *errRes.Errors {
+				errList = append(errList, fmt.Sprintf("%s: %s", k, strings.TrimRight(v, "\n\r")))
+			}
+
+			status = fmt.Sprintf("%s (%s)", status, strings.Join(errList, " - "))
+		}
+
 		switch res.StatusCode {
-		case 400:
-			return fmt.Errorf("Received a HTTP %d response - Reason: %s", res.StatusCode, res.Status)
+		case 400, 500:
+			return fmt.Errorf("Received an HTTP %d response - Reason: %s", res.StatusCode, status)
 		case 401:
-			return fmt.Errorf("Received a HTTP %d response - Please verify that the specified credentials are valid", res.StatusCode)
+			return fmt.Errorf("Received an HTTP %d response - Please verify that the specified credentials are valid", res.StatusCode)
 		case 403:
-			return fmt.Errorf("Received a HTTP %d response - Please verify that the user account has the necessary permissions", res.StatusCode)
+			return fmt.Errorf("Received an HTTP %d response - Please verify that the user account has the necessary permissions", res.StatusCode)
 		case 404:
-			return fmt.Errorf("Received a HTTP %d response - Please verify that the endpoint refers to a supported version of the Proxmox Virtual Environment API", res.StatusCode)
-		case 500, 501, 502, 503:
-			return fmt.Errorf("Received a HTTP %d response - Please verify that the Proxmox Virtual Environment API is healthy (status: %s)", res.StatusCode, res.Status)
+			return fmt.Errorf("Received an HTTP %d response - Please verify that the endpoint refers to a supported version of the Proxmox Virtual Environment API", res.StatusCode)
+		case 501, 502, 503:
+			return fmt.Errorf("Received an HTTP %d response - Please verify that the Proxmox Virtual Environment API is healthy", res.StatusCode)
 		default:
-			return fmt.Errorf("Received a HTTP %d response", res.StatusCode)
+			return fmt.Errorf("Received an HTTP %d response", res.StatusCode)
 		}
 	}
 

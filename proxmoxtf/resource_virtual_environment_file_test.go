@@ -27,12 +27,14 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileDatastoreID,
 		mkResourceVirtualEnvironmentFileNodeName,
 		mkResourceVirtualEnvironmentFileSource,
-		mkResourceVirtualEnvironmentFileTemplate,
 	})
 
 	testOptionalArguments(t, s, []string{
+		mkResourceVirtualEnvironmentFileContentType,
 		mkResourceVirtualEnvironmentFileOverrideFileName,
 		mkResourceVirtualEnvironmentFileSourceChanged,
+		mkResourceVirtualEnvironmentFileSourceChecksum,
+		mkResourceVirtualEnvironmentFileSourceInsecure,
 	})
 
 	testComputedAttributes(t, s, []string{
@@ -43,6 +45,7 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 	})
 
 	testSchemaValueTypes(t, s, []string{
+		mkResourceVirtualEnvironmentFileContentType,
 		mkResourceVirtualEnvironmentFileDatastoreID,
 		mkResourceVirtualEnvironmentFileFileModificationDate,
 		mkResourceVirtualEnvironmentFileFileName,
@@ -52,8 +55,10 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileSourceChanged,
 		mkResourceVirtualEnvironmentFileNodeName,
 		mkResourceVirtualEnvironmentFileSource,
-		mkResourceVirtualEnvironmentFileTemplate,
+		mkResourceVirtualEnvironmentFileSourceChecksum,
+		mkResourceVirtualEnvironmentFileSourceInsecure,
 	}, []schema.ValueType{
+		schema.TypeString,
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeString,
@@ -61,6 +66,7 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeBool,
+		schema.TypeString,
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeBool,

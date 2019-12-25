@@ -9,24 +9,6 @@ import (
 	"sort"
 )
 
-// VirtualEnvironmentNodeListResponseBody contains the body from a node list response.
-type VirtualEnvironmentNodeListResponseBody struct {
-	Data []*VirtualEnvironmentNodeListResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentNodeListResponseData contains the data from a node list response.
-type VirtualEnvironmentNodeListResponseData struct {
-	CPUCount        *int     `json:"maxcpu,omitempty"`
-	CPUUtilization  *float64 `json:"cpu,omitempty"`
-	MemoryAvailable *int     `json:"maxmem,omitempty"`
-	MemoryUsed      *int     `json:"mem,omitempty"`
-	Name            string   `json:"node"`
-	SSLFingerprint  *string  `json:"ssl_fingerprint,omitempty"`
-	Status          *string  `json:"status"`
-	SupportLevel    *string  `json:"level,omitempty"`
-	Uptime          *int     `json:"uptime"`
-}
-
 // ListNodes retrieves a list of nodes.
 func (c *VirtualEnvironmentClient) ListNodes() ([]*VirtualEnvironmentNodeListResponseData, error) {
 	resBody := &VirtualEnvironmentNodeListResponseBody{}

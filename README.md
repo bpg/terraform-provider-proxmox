@@ -239,11 +239,13 @@ This data source doesn't accept arguments.
 ##### File (proxmox_virtual_environment_file)
 
 ###### Arguments
+* `content_type` - (Optional) The content type (`backup`, `images`, `iso` or `vztmpl`)
 * `datastore_id` - (Required) The datastore id
 * `node_name` - (Required) The node name
 * `override_file_name` - (Optional) The file name to use instead of the source file name
 * `source` - (Required) A path to a local file or a URL
-* `template` - (Required) Whether this is a container template (`vztmpl` instead of `iso`)
+* `source_checksum` - (Optional) The SHA256 checksum of the source file
+* `source_insecure` - (Optional) Whether to skip the TLS verification step for HTTPS sources (defaults to `false`)
 
 ###### Attributes
 * `file_modification_date` - The file modification date (RFC 3339)

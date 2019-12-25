@@ -8,19 +8,6 @@ import (
 	"errors"
 )
 
-// VirtualEnvironmentVersionResponseBody contains the body from a version response.
-type VirtualEnvironmentVersionResponseBody struct {
-	Data *VirtualEnvironmentVersionResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentVersionResponseData contains the data from a version response.
-type VirtualEnvironmentVersionResponseData struct {
-	Keyboard     string `json:"keyboard"`
-	Release      string `json:"release"`
-	RepositoryID string `json:"repoid"`
-	Version      string `json:"version"`
-}
-
 // Version retrieves the version information.
 func (c *VirtualEnvironmentClient) Version() (*VirtualEnvironmentVersionResponseData, error) {
 	resBody := &VirtualEnvironmentVersionResponseBody{}
