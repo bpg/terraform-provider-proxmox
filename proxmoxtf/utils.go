@@ -5,10 +5,160 @@
 package proxmoxtf
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 )
+
+func getFileFormatValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{"qcow2", "raw", "vmdk"}, false)
+}
+
+func getFileIDValidator() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (ws []string, es []error) {
+		v, ok := i.(string)
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		if v != "" {
+			r := regexp.MustCompile(`^(?i)[a-z0-9\-_]+:([a-z0-9\-_]+/)?.+$`)
+			ok := r.MatchString(v)
+
+			if !ok {
+				es = append(es, fmt.Errorf("expected %s to be a valid file identifier (datastore-name:iso/some-file.img), got %s", k, v))
+				return
+			}
+		}
+
+		return
+	}
+}
+
+func getKeyboardLayoutValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"da",
+		"de",
+		"de-ch",
+		"en-gb",
+		"en-us",
+		"es",
+		"fi",
+		"fr",
+		"fr-be",
+		"fr-ca",
+		"fr-ch",
+		"hu",
+		"is",
+		"it",
+		"ja",
+		"lt",
+		"mk",
+		"nl",
+		"no",
+		"pl",
+		"pt",
+		"pt-br",
+		"sl",
+		"sv",
+		"tr",
+	}, false)
+}
+
+func getMACAddressValidator() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (ws []string, es []error) {
+		v, ok := i.(string)
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		if v != "" {
+			r := regexp.MustCompile(`^[A-Z0-9]{2}(:[A-Z0-9]{2}){5}$`)
+			ok := r.MatchString(v)
+
+			if !ok {
+				es = append(es, fmt.Errorf("expected %s to be a valid MAC address (A0:B1:C2:D3:E4:F5), got %s", k, v))
+				return
+			}
+		}
+
+		return
+	}
+}
+
+func getNetworkDeviceModelValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{"e1000", "rtl8139", "virtio", "vmxnet3"}, false)
+}
+
+func getOSTypeValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"l24",
+		"l26",
+		"other",
+		"solaris",
+		"w2k",
+		"w2k3",
+		"w2k8",
+		"win7",
+		"win8",
+		"win10",
+		"wvista",
+		"wxp",
+	}, false)
+}
+
+func getVLANIDValidator() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (ws []string, es []error) {
+		min := 1
+		max := 4094
+
+		v, ok := i.(int)
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be int", k))
+			return
+		}
+
+		if v != -1 {
+			if v < min || v > max {
+				es = append(es, fmt.Errorf("expected %s to be in the range (%d - %d), got %d", k, min, max, v))
+				return
+			}
+		}
+
+		return
+	}
+}
+
+func getVMIDValidator() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (ws []string, es []error) {
+		min := 1
+		max := 2147483647
+
+		v, ok := i.(int)
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be int", k))
+			return
+		}
+
+		if v != -1 {
+			if v < min || v > max {
+				es = append(es, fmt.Errorf("expected %s to be in the range (%d - %d), got %d", k, min, max, v))
+				return
+			}
+		}
+
+		return
+	}
+}
 
 func testComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {
 	for _, v := range keys {

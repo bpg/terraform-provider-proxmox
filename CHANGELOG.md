@@ -18,3 +18,4 @@ FEATURES:
 * **New Resource:** `proxmox_virtual_environment_pool`
 * **New Resource:** `proxmox_virtual_environment_role`
 * **New Resource:** `proxmox_virtual_environment_user`
+* **New Resource:** `proxmox_virtual_environment_vm`

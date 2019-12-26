@@ -23,21 +23,31 @@ func TestResourceVirtualEnvironmentVMInstantiation(t *testing.T) {
 func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	s := resourceVirtualEnvironmentVM()
 
+	testRequiredArguments(t, s, []string{
+		mkResourceVirtualEnvironmentVMNodeName,
+	})
+
 	testOptionalArguments(t, s, []string{
+		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDisk,
+		mkResourceVirtualEnvironmentVMKeyboardLayout,
 		mkResourceVirtualEnvironmentVMMemory,
 		mkResourceVirtualEnvironmentVMName,
 		mkResourceVirtualEnvironmentVMNetworkDevice,
+		mkResourceVirtualEnvironmentVMOSType,
 		mkResourceVirtualEnvironmentVMVMID,
 	})
 
 	testSchemaValueTypes(t, s, []string{
+		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDisk,
+		mkResourceVirtualEnvironmentVMKeyboardLayout,
 		mkResourceVirtualEnvironmentVMMemory,
 		mkResourceVirtualEnvironmentVMName,
 		mkResourceVirtualEnvironmentVMNetworkDevice,
+		mkResourceVirtualEnvironmentVMOSType,
 		mkResourceVirtualEnvironmentVMVMID,
 	}, []schema.ValueType{
 		schema.TypeList,
@@ -45,7 +55,25 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
+		schema.TypeString,
+		schema.TypeList,
+		schema.TypeString,
 		schema.TypeInt,
+	})
+
+	cdromSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMCDROM)
+
+	testOptionalArguments(t, cdromSchema, []string{
+		mkResourceVirtualEnvironmentVMCDROMEnabled,
+		mkResourceVirtualEnvironmentVMCDROMFileID,
+	})
+
+	testSchemaValueTypes(t, cdromSchema, []string{
+		mkResourceVirtualEnvironmentVMCDROMEnabled,
+		mkResourceVirtualEnvironmentVMCDROMFileID,
+	}, []schema.ValueType{
+		schema.TypeBool,
+		schema.TypeString,
 	})
 
 	cpuSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMCPU)
@@ -67,15 +95,21 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, diskSchema, []string{
 		mkResourceVirtualEnvironmentVMDiskDatastoreID,
+		mkResourceVirtualEnvironmentVMDiskEnabled,
+		mkResourceVirtualEnvironmentVMDiskFileFormat,
 		mkResourceVirtualEnvironmentVMDiskFileID,
 		mkResourceVirtualEnvironmentVMDiskSize,
 	})
 
 	testSchemaValueTypes(t, diskSchema, []string{
 		mkResourceVirtualEnvironmentVMDiskDatastoreID,
+		mkResourceVirtualEnvironmentVMDiskEnabled,
+		mkResourceVirtualEnvironmentVMDiskFileFormat,
 		mkResourceVirtualEnvironmentVMDiskFileID,
 		mkResourceVirtualEnvironmentVMDiskSize,
 	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeBool,
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeInt,
@@ -103,6 +137,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, networkDeviceSchema, []string{
 		mkResourceVirtualEnvironmentVMNetworkDeviceBridge,
+		mkResourceVirtualEnvironmentVMNetworkDeviceEnabled,
 		mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
 		mkResourceVirtualEnvironmentVMNetworkDeviceModel,
 		mkResourceVirtualEnvironmentVMNetworkDeviceVLANID,
@@ -110,11 +145,13 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testSchemaValueTypes(t, networkDeviceSchema, []string{
 		mkResourceVirtualEnvironmentVMNetworkDeviceBridge,
+		mkResourceVirtualEnvironmentVMNetworkDeviceEnabled,
 		mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
 		mkResourceVirtualEnvironmentVMNetworkDeviceModel,
 		mkResourceVirtualEnvironmentVMNetworkDeviceVLANID,
 	}, []schema.ValueType{
 		schema.TypeString,
+		schema.TypeBool,
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeInt,

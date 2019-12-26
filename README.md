@@ -31,6 +31,7 @@ A Terraform Provider which adds support for Proxmox solutions.
         - [Pool](#pool-proxmox_virtual_environment_pool-1)
         - [Role](#role-proxmox_virtual_environment_role-1)
         - [User](#user-proxmox_virtual_environment_user-1)
+        - [VM](#vm-proxmox_virtual_environment_vm)
 - [Developing the Provider](#developing-the-provider)
 - [Testing the Provider](#testing-the-provider)
 
@@ -306,6 +307,54 @@ This resource doesn't expose any additional attributes.
 * `last_name` - (Optional) The user's last name
 * `password` - (Required) The user's password
 * `user_id` - (Required) The user id
+
+###### Attributes
+This resource doesn't expose any additional attributes.
+
+##### VM (proxmox_virtual_environment_vm)
+
+###### Arguments
+* `cdrom` - (Optional) The CDROM configuration
+    * `enabled` - (Optional) Whether to enable the CDROM drive (defaults to `false`)
+    * `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as in the physical drive)
+* `cloud_init` - (Optional) The cloud-init configuration (conflicts with `cdrom`)
+    * `dns` - (Optional) The DNS configuration
+        * `domain` - (Optional) The DNS search domain
+        * `server` - (Optional) The DNS server
+    * `ip_config` - (Optional) The IP configuration (one block per network device)
+        * `ipv4` - (Optional) The IPv4 configuration
+            * `address` - (Optional) The IPv4 address (use `dhcp` for autodiscovery)
+            * `gateway` - (Optional) The IPv4 gateway (must be omitted when `dhcp` is used as the address)
+        * `ipv6` - (Optional) The IPv4 configuration
+            * `address` - (Optional) The IPv6 address (use `dhcp` for autodiscovery)
+            * `gateway` - (Optional) The IPv6 gateway (must be omitted when `dhcp` is used as the address)
+    * `user_account` - (Optional) The user account configuration
+        * `keys` - (Optional) The SSH keys
+        * `username` - (Optional) The SSH username
+* `cpu` - (Optional) The CPU configuration
+    * `cores` - (Optional) The number of CPU cores (defaults to `1`)
+    * `sockets` - (Optional) The number of CPU sockets (defaults to `1`)
+* `disk` - (Optional) The disk configuration (multiple blocks supported)
+    * `datastore_id` - (Optional) The ID of the datastore to create the disk in (defaults to `local-lvm`)
+    * `enabled` - (Optional) Whether to enable the disk (defaults to `true`)
+    * `file_format` - (Optional) The file format (defaults to `qcow2`)
+    * `file_id` - (Optional) The file ID for a disk image
+    * `size` - (Optional) The disk size in gigabytes (defaults to `8`)
+* `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`)
+* `memory` - (Optional) The memory configuration
+    * `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`)
+    * `floating` - (Optional) The floating memory in megabytes (defaults to `0`)
+    * `shared` - (Optional) The shared memory in megabytes (defaults to `0`)
+* `name` - (Optional) The virtual machine name
+* `network_device` - (Optional) The network device configuration (multiple blocks supported)
+    * `bridge` - (Optional) The name of the network bridge (defaults to `vmbr0`)
+    * `enabled` - (Optional) Whether to enable the network device (defaults to `true`)
+    * `mac_address` - (Optional) The MAC address
+    * `model` - (Optional) The network device model (defaults to `virtio`)
+    * `vlan_id` - (Optional) The VLAN identifier
+* `node_name` - (Required) The name of the node to assign the virtual machine to
+* `os_type` - (Optional) The OS type (defaults to `other`)
+* `vm_id` - (Optional) The virtual machine ID
 
 ###### Attributes
 This resource doesn't expose any additional attributes.

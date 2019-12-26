@@ -13,9 +13,9 @@ import (
 
 // CustomAgent handles QEMU agent parameters.
 type CustomAgent struct {
-	Enabled         CustomBool `json:"enabled,omitempty" url:"enabled,int"`
-	TrimClonedDisks CustomBool `json:"fstrim_cloned_disks" url:"fstrim_cloned_disks,int"`
-	Type            string     `json:"type" url:"type"`
+	Enabled         *CustomBool `json:"enabled,omitempty" url:"enabled,int"`
+	TrimClonedDisks *CustomBool `json:"fstrim_cloned_disks" url:"fstrim_cloned_disks,int"`
+	Type            *string     `json:"type" url:"type"`
 }
 
 // CustomAudioDevice handles QEMU audio parameters.
@@ -65,6 +65,7 @@ type CustomEFIDisk struct {
 type CustomNetworkDevice struct {
 	Model      string      `json:"model" url:"model"`
 	Bridge     *string     `json:"bridge,omitempty" url:"bridge,omitempty"`
+	Enabled    bool        `json:"-" url:"-"`
 	Firewall   *CustomBool `json:"firewall,omitempty" url:"firewall,omitempty,int"`
 	LinkDown   *CustomBool `json:"link_down,omitempty" url:"link_down,omitempty,int"`
 	MACAddress *string     `json:"macaddr,omitempty" url:"macaddr,omitempty"`
@@ -141,6 +142,7 @@ type CustomStorageDevice struct {
 	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
 	Enabled       bool        `json:"-" url:"-"`
 	FileVolume    string      `json:"file" url:"file"`
+	Media         *string     `json:"media,omitempty" url:"media,omitempty"`
 }
 
 // CustomStorageDevices handles QEMU SATA device parameters.
@@ -244,6 +246,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	VirtualCPUCount      *int                         `json:"vcpus,omitempty" url:"vcpus,omitempty"`
 	VirtualIODevices     CustomVirtualIODevices       `json:"virtio,omitempty" url:"virtio,omitempty"`
 	VMGenerationID       *string                      `json:"vmgenid,omitempty" url:"vmgenid,omitempty"`
+	VMID                 *int                         `json:"vmid,omitempty" url:"vmid,omitempty"`
 	VMStateDatastoreID   *string                      `json:"vmstatestorage,omitempty" url:"vmstatestorage,omitempty"`
 	WatchdogDevice       *CustomWatchdogDevice        `json:"watchdog,omitempty" url:"watchdog,omitempty"`
 }
@@ -338,19 +341,31 @@ type VirtualEnvironmentVMUpdateRequestBody VirtualEnvironmentVMCreateRequestBody
 
 // EncodeValues converts a CustomAgent struct to a URL vlaue.
 func (r CustomAgent) EncodeValues(key string, v *url.Values) error {
-	enabled := 0
+	values := []string{}
 
-	if r.Enabled {
-		enabled = 1
+	if r.Enabled != nil {
+		if *r.Enabled {
+			values = append(values, "enabled=1")
+		} else {
+			values = append(values, "enabled=0")
+		}
 	}
 
-	trimClonedDisks := 0
-
-	if r.TrimClonedDisks {
-		trimClonedDisks = 1
+	if r.TrimClonedDisks != nil {
+		if *r.TrimClonedDisks {
+			values = append(values, "fstrim_cloned_disks=1")
+		} else {
+			values = append(values, "fstrim_cloned_disks=0")
+		}
 	}
 
-	v.Add(key, fmt.Sprintf("enabled=%d,fstrim_cloned_disks=%d,type=%s", enabled, trimClonedDisks, r.Type))
+	if r.Type != nil {
+		values = append(values, fmt.Sprintf("type=%s", *r.Type))
+	}
+
+	if len(values) > 0 {
+		v.Add(key, strings.Join(values, ","))
+	}
 
 	return nil
 }
@@ -421,13 +436,7 @@ func (r CustomCloudInitConfig) EncodeValues(key string, v *url.Values) error {
 	}
 
 	if r.SSHKeys != nil {
-		keys := []string{}
-
-		for _, pk := range *r.SSHKeys {
-			keys = append(keys, pk)
-		}
-
-		v.Add("sshkeys", strings.Join(keys, "\n"))
+		v.Add("sshkeys", strings.ReplaceAll(url.QueryEscape(strings.Join(*r.SSHKeys, "\n")), "+", "%20"))
 	}
 
 	if r.Type != nil {
@@ -520,7 +529,9 @@ func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomNetworkDevices array to multiple URL values.
 func (r CustomNetworkDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		if d.Enabled {
+			d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		}
 	}
 
 	return nil
@@ -743,6 +754,10 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		} else {
 			values = append(values, "backup=0")
 		}
+	}
+
+	if r.Media != nil {
+		values = append(values, fmt.Sprintf("media=%s", *r.Media))
 	}
 
 	v.Add(key, strings.Join(values, ","))

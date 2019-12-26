@@ -36,6 +36,34 @@ func (c *VirtualEnvironmentClient) GetVM(nodeName string, vmID int) (*VirtualEnv
 	return resBody.Data, nil
 }
 
+// GetVMID retrieves the next available VM identifier.
+func (c *VirtualEnvironmentClient) GetVMID() (*int, error) {
+	nodes, err := c.ListNodes()
+
+	if err != nil {
+		return nil, err
+	}
+
+	vmID := 100
+
+VMID:
+	for vmID <= 2147483637 {
+		for _, n := range nodes {
+			err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/qemu/%d/status/current", url.PathEscape(n.Name), vmID), nil, nil)
+
+			if err == nil {
+				vmID += 5
+
+				continue VMID
+			}
+		}
+
+		return &vmID, nil
+	}
+
+	return nil, errors.New("Unable to retrieve the next available VM identifier")
+}
+
 // ListVMs retrieves a list of virtual machines.
 func (c *VirtualEnvironmentClient) ListVMs() ([]*VirtualEnvironmentVMListResponseData, error) {
 	return nil, errors.New("Not implemented")
