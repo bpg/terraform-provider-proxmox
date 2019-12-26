@@ -7,6 +7,7 @@ package proxmox
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -60,16 +61,6 @@ type CustomEFIDisk struct {
 	Format     *string `json:"format,omitempty" url:"format,omitempty"`
 }
 
-// CustomIDEDevice handles QEMU IDE device parameters.
-type CustomIDEDevice struct {
-	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
-	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	FileVolume    string      `json:"file" url:"file"`
-}
-
-// CustomIDEDevices handles QEMU IDE device parameters.
-type CustomIDEDevices []CustomIDEDevice
-
 // CustomNetworkDevice handles QEMU network device parameters.
 type CustomNetworkDevice struct {
 	Model      string      `json:"model" url:"model"`
@@ -80,7 +71,7 @@ type CustomNetworkDevice struct {
 	Queues     *int        `json:"queues,omitempty" url:"queues,omitempty"`
 	RateLimit  *float64    `json:"rate,omitempty" url:"rate,omitempty"`
 	Tag        *int        `json:"tag,omitempty" url:"tag,omitempty"`
-	Trunks     []string    `json:"trunks,omitempty" url:"trunks,omitempty"`
+	Trunks     []int       `json:"trunks,omitempty" url:"trunks,omitempty"`
 }
 
 // CustomNetworkDevices handles QEMU network device parameters.
@@ -109,26 +100,6 @@ type CustomPCIDevice struct {
 
 // CustomPCIDevices handles QEMU host PCI device mapping parameters.
 type CustomPCIDevices []CustomPCIDevice
-
-// CustomSATADevice handles QEMU SATA device parameters.
-type CustomSATADevice struct {
-	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
-	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	FileVolume    string      `json:"file" url:"file"`
-}
-
-// CustomSATADevices handles QEMU SATA device parameters.
-type CustomSATADevices []CustomSATADevice
-
-// CustomSCSIDevice handles QEMU SCSI device parameters.
-type CustomSCSIDevice struct {
-	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
-	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	FileVolume    string      `json:"file" url:"file"`
-}
-
-// CustomSCSIDevices handles QEMU SCSI device parameters.
-type CustomSCSIDevices []CustomSCSIDevice
 
 // CustomSerialDevices handles QEMU serial device parameters.
 type CustomSerialDevices []string
@@ -164,6 +135,17 @@ type CustomStartupOrder struct {
 	Up    *int `json:"up,omitempty" url:"up,omitempty"`
 }
 
+// CustomStorageDevice handles QEMU SATA device parameters.
+type CustomStorageDevice struct {
+	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
+	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
+	Enabled       bool        `json:"-" url:"-"`
+	FileVolume    string      `json:"file" url:"file"`
+}
+
+// CustomStorageDevices handles QEMU SATA device parameters.
+type CustomStorageDevices []CustomStorageDevice
+
 // CustomUSBDevice handles QEMU USB device parameters.
 type CustomUSBDevice struct {
 	HostDevice string      `json:"host" url:"host"`
@@ -183,6 +165,7 @@ type CustomVGADevice struct {
 type CustomVirtualIODevice struct {
 	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
 	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
+	Enabled       bool        `json:"-" url:"-"`
 	FileVolume    string      `json:"file" url:"file"`
 }
 
@@ -199,14 +182,13 @@ type CustomWatchdogDevice struct {
 type VirtualEnvironmentVMCreateRequestBody struct {
 	ACPI                 *CustomBool                  `json:"acpi,omitempty" url:"acpi,omitempty,int"`
 	Agent                *CustomAgent                 `json:"agent,omitempty" url:"agent,omitempty"`
-	AllocatedMemory      *int                         `json:"memory,omitempty" url:"memory,omitempty"`
 	AllowReboot          *CustomBool                  `json:"reboot,omitempty" url:"reboot,omitempty,int"`
 	AudioDevice          *CustomAudioDevice           `json:"audio0,omitempty" url:"audio0,omitempty"`
 	Autostart            *CustomBool                  `json:"autostart,omitempty" url:"autostart,omitempty,int"`
 	BackupFile           *string                      `json:"archive,omitempty" url:"archive,omitempty"`
 	BandwidthLimit       *int                         `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
 	BIOS                 *string                      `json:"bios,omitempty" url:"bios,omitempty"`
-	BootDiskID           *string                      `json:"bootdisk,omitempty" url:"bootdisk,omitempty"`
+	BootDisk             *string                      `json:"bootdisk,omitempty" url:"bootdisk,omitempty"`
 	BootOrder            *string                      `json:"boot,omitempty" url:"boot,omitempty"`
 	CDROM                *string                      `json:"cdrom,omitempty" url:"cdrom,omitempty"`
 	CloudInitConfig      *CustomCloudInitConfig       `json:"cloudinit,omitempty" url:"cloudinit,omitempty"`
@@ -215,6 +197,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	CPULimit             *int                         `json:"cpulimit,omitempty" url:"cpulimit,omitempty"`
 	CPUSockets           *int                         `json:"sockets,omitempty" url:"sockets,omitempty"`
 	CPUUnits             *int                         `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
+	DedicatedMemory      *int                         `json:"memory,omitempty" url:"memory,omitempty"`
 	DeletionProtection   *CustomBool                  `json:"protection,omitempty" url:"force,omitempty,int"`
 	Description          *string                      `json:"description,omitempty" url:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk               `json:"efidisk0,omitempty" url:"efidisk0,omitempty"`
@@ -224,7 +207,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	HookScript           *string                      `json:"hookscript,omitempty" url:"hookscript,omitempty"`
 	Hotplug              CustomCommaSeparatedList     `json:"hotplug,omitempty" url:"hotplug,omitempty,comma"`
 	Hugepages            *string                      `json:"hugepages,omitempty" url:"hugepages,omitempty"`
-	IDEDevices           CustomIDEDevices             `json:"ide,omitempty" url:"ide,omitempty"`
+	IDEDevices           CustomStorageDevices         `json:"ide,omitempty" url:"ide,omitempty"`
 	KeyboardLayout       *string                      `json:"keyboard,omitempty" url:"keyboard,omitempty"`
 	KVMArguments         CustomLineBreakSeparatedList `json:"args,omitempty" url:"args,omitempty,space"`
 	KVMEnabled           *CustomBool                  `json:"kvm,omitempty" url:"kvm,omitempty,int"`
@@ -241,8 +224,8 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	Overwrite            *CustomBool                  `json:"force,omitempty" url:"force,omitempty,int"`
 	PCIDevices           CustomPCIDevices             `json:"hostpci,omitempty" url:"hostpci,omitempty"`
 	Revert               *string                      `json:"revert,omitempty" url:"revert,omitempty"`
-	SATADevices          CustomSATADevices            `json:"sata,omitempty" url:"sata,omitempty"`
-	SCSIDevices          CustomSCSIDevices            `json:"scsi,omitempty" url:"sata,omitempty"`
+	SATADevices          CustomStorageDevices         `json:"sata,omitempty" url:"sata,omitempty"`
+	SCSIDevices          CustomStorageDevices         `json:"scsi,omitempty" url:"sata,omitempty"`
 	SCSIHardware         *string                      `json:"scsihw,omitempty" url:"scsihw,omitempty"`
 	SerialDevices        CustomSerialDevices          `json:"serial,omitempty" url:"serial,omitempty"`
 	SharedMemory         *CustomSharedMemory          `json:"ivshmem,omitempty" url:"ivshmem,omitempty"`
@@ -274,14 +257,13 @@ type VirtualEnvironmentVMGetResponseBody struct {
 type VirtualEnvironmentVMGetResponseData struct {
 	ACPI                 *CustomBool                   `json:"acpi,omitempty"`
 	Agent                *CustomAgent                  `json:"agent,omitempty"`
-	AllocatedMemory      *int                          `json:"memory,omitempty"`
 	AllowReboot          *CustomBool                   `json:"reboot,omitempty"`
 	AudioDevice          *CustomAudioDevice            `json:"audio0,omitempty"`
 	Autostart            *CustomBool                   `json:"autostart,omitempty"`
 	BackupFile           *string                       `json:"archive,omitempty"`
 	BandwidthLimit       *int                          `json:"bwlimit,omitempty"`
 	BIOS                 *string                       `json:"bios,omitempty"`
-	BootDiskID           *string                       `json:"bootdisk,omitempty"`
+	BootDisk             *string                       `json:"bootdisk,omitempty"`
 	BootOrder            *string                       `json:"boot,omitempty"`
 	CDROM                *string                       `json:"cdrom,omitempty"`
 	CloudInitConfig      *CustomCloudInitConfig        `json:"cloudinit,omitempty"`
@@ -290,6 +272,7 @@ type VirtualEnvironmentVMGetResponseData struct {
 	CPULimit             *int                          `json:"cpulimit,omitempty"`
 	CPUSockets           *int                          `json:"sockets,omitempty"`
 	CPUUnits             *int                          `json:"cpuunits,omitempty"`
+	DedicatedMemory      *int                          `json:"memory,omitempty"`
 	DeletionProtection   *CustomBool                   `json:"protection,omitempty"`
 	Description          *string                       `json:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                `json:"efidisk0,omitempty"`
@@ -299,7 +282,7 @@ type VirtualEnvironmentVMGetResponseData struct {
 	HookScript           *string                       `json:"hookscript,omitempty"`
 	Hotplug              *CustomCommaSeparatedList     `json:"hotplug,omitempty"`
 	Hugepages            *string                       `json:"hugepages,omitempty"`
-	IDEDevices           *CustomIDEDevices             `json:"ide,omitempty"`
+	IDEDevices           *CustomStorageDevices         `json:"ide,omitempty"`
 	KeyboardLayout       *string                       `json:"keyboard,omitempty"`
 	KVMArguments         *CustomLineBreakSeparatedList `json:"args,omitempty"`
 	KVMEnabled           *CustomBool                   `json:"kvm,omitempty"`
@@ -316,8 +299,8 @@ type VirtualEnvironmentVMGetResponseData struct {
 	Overwrite            *CustomBool                   `json:"force,omitempty"`
 	PCIDevices           *CustomPCIDevices             `json:"hostpci,omitempty"`
 	Revert               *string                       `json:"revert,omitempty"`
-	SATADevices          *CustomSATADevices            `json:"sata,omitempty"`
-	SCSIDevices          *CustomSCSIDevices            `json:"scsi,omitempty"`
+	SATADevices          *CustomStorageDevices         `json:"sata,omitempty"`
+	SCSIDevices          *CustomStorageDevices         `json:"scsi,omitempty"`
 	SCSIHardware         *string                       `json:"scsihw,omitempty"`
 	SerialDevices        *CustomSerialDevices          `json:"serial,omitempty"`
 	SharedMemory         *CustomSharedMemory           `json:"ivshmem,omitempty"`
@@ -477,38 +460,6 @@ func (r CustomEFIDisk) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomIDEDevice struct to a URL vlaue.
-func (r CustomIDEDevice) EncodeValues(key string, v *url.Values) error {
-	values := []string{
-		fmt.Sprintf("file=%s", r.FileVolume),
-	}
-
-	if r.AIO != nil {
-		values = append(values, fmt.Sprintf("aio=%s", *r.AIO))
-	}
-
-	if r.BackupEnabled != nil {
-		if *r.BackupEnabled {
-			values = append(values, "backup=1")
-		} else {
-			values = append(values, "backup=0")
-		}
-	}
-
-	v.Add(key, strings.Join(values, ","))
-
-	return nil
-}
-
-// EncodeValues converts a CustomIDEDevices array to multiple URL values.
-func (r CustomIDEDevices) EncodeValues(key string, v *url.Values) error {
-	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
-	}
-
-	return nil
-}
-
 // EncodeValues converts a CustomNetworkDevice struct to a URL vlaue.
 func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
@@ -552,7 +503,13 @@ func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 	}
 
 	if len(r.Trunks) > 0 {
-		values = append(values, fmt.Sprintf("trunks=%s", strings.Join(r.Trunks, ";")))
+		trunks := make([]string, len(r.Trunks))
+
+		for i, v := range r.Trunks {
+			trunks[i] = strconv.Itoa(v)
+		}
+
+		values = append(values, fmt.Sprintf("trunks=%s", strings.Join(trunks, ";")))
 	}
 
 	v.Add(key, strings.Join(values, ","))
@@ -563,7 +520,7 @@ func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomNetworkDevices array to multiple URL values.
 func (r CustomNetworkDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
 	}
 
 	return nil
@@ -595,7 +552,7 @@ func (r CustomNUMADevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomNUMADevices array to multiple URL values.
 func (r CustomNUMADevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
 	}
 
 	return nil
@@ -647,71 +604,7 @@ func (r CustomPCIDevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomPCIDevices array to multiple URL values.
 func (r CustomPCIDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
-	}
-
-	return nil
-}
-
-// EncodeValues converts a CustomSATADevice struct to a URL vlaue.
-func (r CustomSATADevice) EncodeValues(key string, v *url.Values) error {
-	values := []string{
-		fmt.Sprintf("file=%s", r.FileVolume),
-	}
-
-	if r.AIO != nil {
-		values = append(values, fmt.Sprintf("aio=%s", *r.AIO))
-	}
-
-	if r.BackupEnabled != nil {
-		if *r.BackupEnabled {
-			values = append(values, "backup=1")
-		} else {
-			values = append(values, "backup=0")
-		}
-	}
-
-	v.Add(key, strings.Join(values, ","))
-
-	return nil
-}
-
-// EncodeValues converts a CustomSATADevices array to multiple URL values.
-func (r CustomSATADevices) EncodeValues(key string, v *url.Values) error {
-	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
-	}
-
-	return nil
-}
-
-// EncodeValues converts a CustomSCSIDevice struct to a URL vlaue.
-func (r CustomSCSIDevice) EncodeValues(key string, v *url.Values) error {
-	values := []string{
-		fmt.Sprintf("file=%s", r.FileVolume),
-	}
-
-	if r.AIO != nil {
-		values = append(values, fmt.Sprintf("aio=%s", *r.AIO))
-	}
-
-	if r.BackupEnabled != nil {
-		if *r.BackupEnabled {
-			values = append(values, "backup=1")
-		} else {
-			values = append(values, "backup=0")
-		}
-	}
-
-	v.Add(key, strings.Join(values, ","))
-
-	return nil
-}
-
-// EncodeValues converts a CustomSCSIDevices array to multiple URL values.
-func (r CustomSCSIDevices) EncodeValues(key string, v *url.Values) error {
-	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
 	}
 
 	return nil
@@ -720,7 +613,7 @@ func (r CustomSCSIDevices) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomSerialDevices array to multiple URL values.
 func (r CustomSerialDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		v.Add(fmt.Sprintf("%s[%d]", key, i), d)
+		v.Add(fmt.Sprintf("%s%d", key, i), d)
 	}
 
 	return nil
@@ -834,6 +727,40 @@ func (r CustomStartupOrder) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
+// EncodeValues converts a CustomStorageDevice struct to a URL vlaue.
+func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("file=%s", r.FileVolume),
+	}
+
+	if r.AIO != nil {
+		values = append(values, fmt.Sprintf("aio=%s", *r.AIO))
+	}
+
+	if r.BackupEnabled != nil {
+		if *r.BackupEnabled {
+			values = append(values, "backup=1")
+		} else {
+			values = append(values, "backup=0")
+		}
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// EncodeValues converts a CustomStorageDevices array to multiple URL values.
+func (r CustomStorageDevices) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		if d.Enabled {
+			d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		}
+	}
+
+	return nil
+}
+
 // EncodeValues converts a CustomUSBDevice struct to a URL vlaue.
 func (r CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
@@ -856,7 +783,7 @@ func (r CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomUSBDevices array to multiple URL values.
 func (r CustomUSBDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
 	}
 
 	return nil
@@ -903,7 +830,9 @@ func (r CustomVirtualIODevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomVirtualIODevices array to multiple URL values.
 func (r CustomVirtualIODevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s[%d]", key, i), v)
+		if d.Enabled {
+			d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		}
 	}
 
 	return nil
