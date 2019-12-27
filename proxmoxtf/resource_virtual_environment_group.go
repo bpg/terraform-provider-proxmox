@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	dvResourceVirtualEnvironmentGroupComment = ""
+
 	mkResourceVirtualEnvironmentGroupACL          = "acl"
 	mkResourceVirtualEnvironmentGroupACLPath      = "path"
 	mkResourceVirtualEnvironmentGroupACLPropagate = "propagate"
@@ -56,7 +58,7 @@ func resourceVirtualEnvironmentGroup() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The group comment",
 				Optional:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentGroupComment,
 			},
 			mkResourceVirtualEnvironmentGroupID: &schema.Schema{
 				Type:        schema.TypeString,

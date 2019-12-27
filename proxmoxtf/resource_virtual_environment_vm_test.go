@@ -31,12 +31,14 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMCloudInit,
 		mkResourceVirtualEnvironmentVMCPU,
+		mkResourceVirtualEnvironmentVMDescription,
 		mkResourceVirtualEnvironmentVMDisk,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
 		mkResourceVirtualEnvironmentVMMemory,
 		mkResourceVirtualEnvironmentVMName,
 		mkResourceVirtualEnvironmentVMNetworkDevice,
 		mkResourceVirtualEnvironmentVMOSType,
+		mkResourceVirtualEnvironmentVMPoolID,
 		mkResourceVirtualEnvironmentVMVMID,
 	})
 
@@ -44,24 +46,46 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMCloudInit,
 		mkResourceVirtualEnvironmentVMCPU,
+		mkResourceVirtualEnvironmentVMDescription,
 		mkResourceVirtualEnvironmentVMDisk,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
 		mkResourceVirtualEnvironmentVMMemory,
 		mkResourceVirtualEnvironmentVMName,
 		mkResourceVirtualEnvironmentVMNetworkDevice,
 		mkResourceVirtualEnvironmentVMOSType,
+		mkResourceVirtualEnvironmentVMPoolID,
 		mkResourceVirtualEnvironmentVMVMID,
 	}, []schema.ValueType{
 		schema.TypeList,
 		schema.TypeList,
 		schema.TypeList,
-		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
+		schema.TypeString,
+		schema.TypeList,
+		schema.TypeString,
 		schema.TypeString,
 		schema.TypeInt,
+	})
+
+	agentSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMAgent)
+
+	testOptionalArguments(t, agentSchema, []string{
+		mkResourceVirtualEnvironmentVMAgentEnabled,
+		mkResourceVirtualEnvironmentVMAgentTrim,
+		mkResourceVirtualEnvironmentVMAgentType,
+	})
+
+	testSchemaValueTypes(t, agentSchema, []string{
+		mkResourceVirtualEnvironmentVMAgentEnabled,
+		mkResourceVirtualEnvironmentVMAgentTrim,
+		mkResourceVirtualEnvironmentVMAgentType,
+	}, []schema.ValueType{
+		schema.TypeBool,
+		schema.TypeBool,
+		schema.TypeString,
 	})
 
 	cdromSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMCDROM)
@@ -179,13 +203,16 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, cpuSchema, []string{
 		mkResourceVirtualEnvironmentVMCPUCores,
+		mkResourceVirtualEnvironmentVMCPUHotplugged,
 		mkResourceVirtualEnvironmentVMCPUSockets,
 	})
 
 	testSchemaValueTypes(t, cpuSchema, []string{
 		mkResourceVirtualEnvironmentVMCPUCores,
+		mkResourceVirtualEnvironmentVMCPUHotplugged,
 		mkResourceVirtualEnvironmentVMCPUSockets,
 	}, []schema.ValueType{
+		schema.TypeInt,
 		schema.TypeInt,
 		schema.TypeInt,
 	})

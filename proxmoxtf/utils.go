@@ -114,6 +114,10 @@ func getOSTypeValidator() schema.SchemaValidateFunc {
 	}, false)
 }
 
+func getQEMUAgentTypeValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{"isa", "virtio"}, false)
+}
+
 func getVLANIDValidator() schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (ws []string, es []error) {
 		min := 1

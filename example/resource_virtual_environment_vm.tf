@@ -25,6 +25,8 @@ resource "proxmox_virtual_environment_vm" "example" {
 
   node_name = "${data.proxmox_virtual_environment_nodes.example.names[0]}"
   os_type   = "l26"
+  pool_id   = "${proxmox_virtual_environment_pool.example.id}"
+  vm_id     = 2038
 }
 
 resource "local_file" "example_ssh_private_key" {

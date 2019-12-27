@@ -314,6 +314,10 @@ This resource doesn't expose any additional attributes.
 ##### VM (proxmox_virtual_environment_vm)
 
 ###### Arguments
+* `agent` - (Optional) The QEMU agent configuration
+    * `enabled` - (Optional) Whether to enable the QEMU agent (defaults to `false`)
+    * `trim` - (Optional) Whether to enable the FSTRIM feature in the QEMU agent (defaults to `false`)
+    * `type` - (Optional) The QEMU agent interface type (defaults to `virtio`)
 * `cdrom` - (Optional) The CDROM configuration
     * `enabled` - (Optional) Whether to enable the CDROM drive (defaults to `false`)
     * `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as in the physical drive)
@@ -333,7 +337,9 @@ This resource doesn't expose any additional attributes.
         * `username` - (Required) The SSH username
 * `cpu` - (Optional) The CPU configuration
     * `cores` - (Optional) The number of CPU cores (defaults to `1`)
+    * `hotplugged` - (Optional) The number of hotplugged vCPUs (defaults to `0`)
     * `sockets` - (Optional) The number of CPU sockets (defaults to `1`)
+* `description` - (Optional) The description
 * `disk` - (Optional) The disk configuration (multiple blocks supported)
     * `datastore_id` - (Optional) The ID of the datastore to create the disk in (defaults to `local-lvm`)
     * `enabled` - (Optional) Whether to enable the disk (defaults to `true`)
@@ -345,7 +351,7 @@ This resource doesn't expose any additional attributes.
     * `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`)
     * `floating` - (Optional) The floating memory in megabytes (defaults to `0`)
     * `shared` - (Optional) The shared memory in megabytes (defaults to `0`)
-* `name` - (Optional) The virtual machine name
+* `name` - (Optional) The name
 * `network_device` - (Optional) The network device configuration (multiple blocks supported)
     * `bridge` - (Optional) The name of the network bridge (defaults to `vmbr0`)
     * `enabled` - (Optional) Whether to enable the network device (defaults to `true`)
@@ -354,7 +360,8 @@ This resource doesn't expose any additional attributes.
     * `vlan_id` - (Optional) The VLAN identifier
 * `node_name` - (Required) The name of the node to assign the virtual machine to
 * `os_type` - (Optional) The OS type (defaults to `other`)
-* `vm_id` - (Optional) The virtual machine ID
+* `pool_id` - (Optional) The ID of a pool to assign the virtual machine to
+* `vm_id` - (Optional) The ID
 
 ###### Attributes
 This resource doesn't expose any additional attributes.

@@ -6,7 +6,6 @@ package proxmoxtf
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -16,12 +15,17 @@ import (
 )
 
 const (
+	dvResourceVirtualEnvironmentVMAgentEnabled            = false
+	dvResourceVirtualEnvironmentVMAgentTrim               = false
+	dvResourceVirtualEnvironmentVMAgentType               = "virtio"
 	dvResourceVirtualEnvironmentVMCDROMEnabled            = false
 	dvResourceVirtualEnvironmentVMCDROMFileID             = ""
 	dvResourceVirtualEnvironmentVMCloudInitDNSDomain      = ""
 	dvResourceVirtualEnvironmentVMCloudInitDNSServer      = ""
 	dvResourceVirtualEnvironmentVMCPUCores                = 1
+	dvResourceVirtualEnvironmentVMCPUHotplugged           = 0
 	dvResourceVirtualEnvironmentVMCPUSockets              = 1
+	dvResourceVirtualEnvironmentVMDescription             = ""
 	dvResourceVirtualEnvironmentVMDiskDatastoreID         = "local-lvm"
 	dvResourceVirtualEnvironmentVMDiskEnabled             = true
 	dvResourceVirtualEnvironmentVMDiskFileFormat          = "qcow2"
@@ -38,8 +42,13 @@ const (
 	dvResourceVirtualEnvironmentVMNetworkDeviceModel      = "virtio"
 	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID     = -1
 	dvResourceVirtualEnvironmentVMOSType                  = "other"
+	dvResourceVirtualEnvironmentVMPoolID                  = ""
 	dvResourceVirtualEnvironmentVMVMID                    = -1
 
+	mkResourceVirtualEnvironmentVMAgent                        = "agent"
+	mkResourceVirtualEnvironmentVMAgentEnabled                 = "enabled"
+	mkResourceVirtualEnvironmentVMAgentTrim                    = "trim"
+	mkResourceVirtualEnvironmentVMAgentType                    = "type"
 	mkResourceVirtualEnvironmentVMCDROM                        = "cdrom"
 	mkResourceVirtualEnvironmentVMCDROMEnabled                 = "enabled"
 	mkResourceVirtualEnvironmentVMCDROMFileID                  = "file_id"
@@ -59,7 +68,9 @@ const (
 	mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername = "username"
 	mkResourceVirtualEnvironmentVMCPU                          = "cpu"
 	mkResourceVirtualEnvironmentVMCPUCores                     = "cores"
+	mkResourceVirtualEnvironmentVMCPUHotplugged                = "hotplugged"
 	mkResourceVirtualEnvironmentVMCPUSockets                   = "sockets"
+	mkResourceVirtualEnvironmentVMDescription                  = "description"
 	mkResourceVirtualEnvironmentVMDisk                         = "disk"
 	mkResourceVirtualEnvironmentVMDiskDatastoreID              = "datastore_id"
 	mkResourceVirtualEnvironmentVMDiskEnabled                  = "enabled"
@@ -80,12 +91,55 @@ const (
 	mkResourceVirtualEnvironmentVMNetworkDeviceVLANID          = "vlan_id"
 	mkResourceVirtualEnvironmentVMNodeName                     = "node_name"
 	mkResourceVirtualEnvironmentVMOSType                       = "os_type"
+	mkResourceVirtualEnvironmentVMPoolID                       = "pool_id"
 	mkResourceVirtualEnvironmentVMVMID                         = "vm_id"
 )
 
 func resourceVirtualEnvironmentVM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			mkResourceVirtualEnvironmentVMAgent: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The QEMU agent configuration",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					defaultList := make([]interface{}, 1)
+					defaultMap := make(map[string]interface{})
+
+					defaultMap[mkResourceVirtualEnvironmentVMAgentEnabled] = dvResourceVirtualEnvironmentVMAgentEnabled
+					defaultMap[mkResourceVirtualEnvironmentVMAgentTrim] = dvResourceVirtualEnvironmentVMAgentTrim
+					defaultMap[mkResourceVirtualEnvironmentVMAgentType] = dvResourceVirtualEnvironmentVMAgentType
+
+					defaultList[0] = defaultMap
+
+					return defaultList, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMAgentEnabled: {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether to enable the QEMU agent",
+							Default:     dvResourceVirtualEnvironmentVMAgentEnabled,
+						},
+						mkResourceVirtualEnvironmentVMAgentTrim: {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Whether to enable the FSTRIM feature in the QEMU agent",
+							Default:     dvResourceVirtualEnvironmentVMAgentTrim,
+						},
+						mkResourceVirtualEnvironmentVMAgentType: {
+							Type:         schema.TypeString,
+							Optional:     true,
+							Description:  "The QEMU agent interface type",
+							Default:      dvResourceVirtualEnvironmentVMAgentType,
+							ValidateFunc: getQEMUAgentTypeValidator(),
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
 			mkResourceVirtualEnvironmentVMCDROM: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The CDROM drive",
@@ -261,6 +315,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					defaultMap := make(map[string]interface{})
 
 					defaultMap[mkResourceVirtualEnvironmentVMCPUCores] = dvResourceVirtualEnvironmentVMCPUCores
+					defaultMap[mkResourceVirtualEnvironmentVMCPUHotplugged] = dvResourceVirtualEnvironmentVMCPUHotplugged
 					defaultMap[mkResourceVirtualEnvironmentVMCPUSockets] = dvResourceVirtualEnvironmentVMCPUSockets
 
 					defaultList[0] = defaultMap
@@ -276,6 +331,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:      dvResourceVirtualEnvironmentVMCPUCores,
 							ValidateFunc: validation.IntBetween(1, 2304),
 						},
+						mkResourceVirtualEnvironmentVMCPUHotplugged: {
+							Type:         schema.TypeInt,
+							Optional:     true,
+							Description:  "The number of hotplugged vCPUs",
+							Default:      dvResourceVirtualEnvironmentVMCPUHotplugged,
+							ValidateFunc: validation.IntBetween(0, 2304),
+						},
 						mkResourceVirtualEnvironmentVMCPUSockets: {
 							Type:         schema.TypeInt,
 							Optional:     true,
@@ -287,6 +349,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentVMDescription: {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The description",
+				Default:     dvResourceVirtualEnvironmentVMDescription,
 			},
 			mkResourceVirtualEnvironmentVMDisk: &schema.Schema{
 				Type:        schema.TypeList,
@@ -461,6 +529,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Default:      dvResourceVirtualEnvironmentVMOSType,
 				ValidateFunc: getOSTypeValidator(),
 			},
+			mkResourceVirtualEnvironmentVMPoolID: {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The ID of the pool to assign the virtual machine to",
+				Default:     dvResourceVirtualEnvironmentVMPoolID,
+			},
 			mkResourceVirtualEnvironmentVMVMID: {
 				Type:         schema.TypeInt,
 				Optional:     true,
@@ -486,6 +560,23 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	}
 
 	schema := resourceVirtualEnvironmentVM().Schema
+	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+
+	if len(agent) == 0 {
+		agentDefault, err := schema[mkResourceVirtualEnvironmentVMAgent].DefaultValue()
+
+		if err != nil {
+			return err
+		}
+
+		agent = agentDefault.([]interface{})
+	}
+
+	agentBlock := agent[0].(map[string]interface{})
+	agentEnabled := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
+	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
+
 	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 
 	if len(cdrom) == 0 {
@@ -609,8 +700,10 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	cpuBlock := cpu[0].(map[string]interface{})
 	cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
+	cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 
+	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	scsiDevices := make(proxmox.CustomStorageDevices, len(disk))
 
@@ -689,6 +782,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
+	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
@@ -703,7 +797,6 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	var memorySharedObject *proxmox.CustomSharedMemory
 
-	agentEnabled := proxmox.CustomBool(true)
 	bootDisk := "scsi0"
 	bootOrder := "c"
 
@@ -738,7 +831,11 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	tabletDeviceEnabled := proxmox.CustomBool(true)
 
 	body := &proxmox.VirtualEnvironmentVMCreateRequestBody{
-		Agent:               &proxmox.CustomAgent{Enabled: &agentEnabled},
+		Agent: &proxmox.CustomAgent{
+			Enabled:         &agentEnabled,
+			TrimClonedDisks: &agentTrim,
+			Type:            &agentType,
+		},
 		BootDisk:            &bootDisk,
 		BootOrder:           &bootOrder,
 		CloudInitConfig:     cloudInitConfig,
@@ -758,8 +855,20 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		VMID:                &vmID,
 	}
 
+	if cpuHotplugged > 0 {
+		body.VirtualCPUCount = &cpuHotplugged
+	}
+
+	if description != "" {
+		body.Description = &description
+	}
+
 	if name != "" {
 		body.Name = &name
+	}
+
+	if poolID != "" {
+		body.PoolID = &poolID
 	}
 
 	err = veClient.CreateVM(nodeName, body)
@@ -770,10 +879,10 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	d.SetId(strconv.Itoa(vmID))
 
-	return resourceVirtualEnvironmentVMImportDisks(d, m)
+	return resourceVirtualEnvironmentVMCreateImportedDisks(d, m)
 }
 
-func resourceVirtualEnvironmentVMImportDisks(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -838,15 +947,42 @@ func resourceVirtualEnvironmentVMImportDisks(d *schema.ResourceData, m interface
 	// Execute the commands on the node and wait for the result.
 	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
 	if len(commands) > 0 {
-		for _, cmd := range commands {
-			log.Printf("[DEBUG] Node command: %s", cmd)
-		}
-
 		err = veClient.ExecuteNodeCommands(nodeName, commands)
 
 		if err != nil {
 			return err
 		}
+	}
+
+	return resourceVirtualEnvironmentVMCreateStart(d, m)
+}
+
+func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface{}) error {
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
+
+	if err != nil {
+		return err
+	}
+
+	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+	vmID, err := strconv.Atoi(d.Id())
+
+	if err != nil {
+		return err
+	}
+
+	// Start the virtual machine and wait for it to reach a running state before continuing.
+	err = veClient.StartVM(nodeName, vmID)
+
+	if err != nil {
+		return err
+	}
+
+	err = veClient.WaitForState(nodeName, vmID, "running", 120, 5)
+
+	if err != nil {
+		return err
 	}
 
 	return resourceVirtualEnvironmentVMRead(d, m)
@@ -893,6 +1029,25 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
+	// Shut down the virtual machine before deleting it.
+	forceStop := proxmox.CustomBool(true)
+	shutdownTimeout := 300
+
+	err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
+		ForceStop: &forceStop,
+		Timeout:   &shutdownTimeout,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	err = veClient.WaitForState(nodeName, vmID, "stopped", 30, 5)
+
+	if err != nil {
+		return err
+	}
+
 	err = veClient.DeleteVM(nodeName, vmID)
 
 	if err != nil {
@@ -903,6 +1058,13 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 		}
 
 		return err
+	}
+
+	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
+	err = veClient.WaitForState(nodeName, vmID, "", 30, 2)
+
+	if err == nil {
+		return fmt.Errorf("Failed to delete VM \"%d\"", vmID)
 	}
 
 	d.SetId("")

@@ -14,6 +14,13 @@ import (
 )
 
 const (
+	dvResourceVirtualEnvironmentUserComment   = ""
+	dvResourceVirtualEnvironmentUserEmail     = ""
+	dvResourceVirtualEnvironmentUserEnabled   = true
+	dvResourceVirtualEnvironmentUserFirstName = ""
+	dvResourceVirtualEnvironmentUserKeys      = ""
+	dvResourceVirtualEnvironmentUserLastName  = ""
+
 	mkResourceVirtualEnvironmentUserACL            = "acl"
 	mkResourceVirtualEnvironmentUserACLPath        = "path"
 	mkResourceVirtualEnvironmentUserACLPropagate   = "propagate"
@@ -65,19 +72,19 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The user comment",
 				Optional:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentUserComment,
 			},
 			mkResourceVirtualEnvironmentUserEmail: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The user's email address",
 				Optional:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentUserEmail,
 			},
 			mkResourceVirtualEnvironmentUserEnabled: &schema.Schema{
 				Type:        schema.TypeBool,
 				Description: "Whether the user account is enabled",
 				Optional:    true,
-				Default:     true,
+				Default:     dvResourceVirtualEnvironmentUserEnabled,
 			},
 			mkResourceVirtualEnvironmentUserExpirationDate: &schema.Schema{
 				Type:         schema.TypeString,
@@ -90,7 +97,7 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The user's first name",
 				Optional:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentUserFirstName,
 			},
 			mkResourceVirtualEnvironmentUserGroups: &schema.Schema{
 				Type:        schema.TypeSet,
@@ -105,13 +112,13 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The user's keys",
 				Optional:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentUserKeys,
 			},
 			mkResourceVirtualEnvironmentUserLastName: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The user's last name",
 				Optional:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentUserLastName,
 			},
 			mkResourceVirtualEnvironmentUserPassword: &schema.Schema{
 				Type:        schema.TypeString,

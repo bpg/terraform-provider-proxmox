@@ -24,6 +24,12 @@ import (
 )
 
 const (
+	dvResourceVirtualEnvironmentFileContentType      = ""
+	dvResourceVirtualEnvironmentFileOverrideFileName = ""
+	dvResourceVirtualEnvironmentFileSourceChanged    = false
+	dvResourceVirtualEnvironmentFileSourceChecksum   = ""
+	dvResourceVirtualEnvironmentFileSourceInsecure   = false
+
 	mkResourceVirtualEnvironmentFileContentType          = "content_type"
 	mkResourceVirtualEnvironmentFileDatastoreID          = "datastore_id"
 	mkResourceVirtualEnvironmentFileFileModificationDate = "file_modification_date"
@@ -46,7 +52,7 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				Description: "The content type",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentFileContentType,
 			},
 			mkResourceVirtualEnvironmentFileDatastoreID: &schema.Schema{
 				Type:        schema.TypeString,
@@ -82,7 +88,7 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				Description: "The file name to use instead of the source file name",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentFileOverrideFileName,
 			},
 			mkResourceVirtualEnvironmentFileNodeName: &schema.Schema{
 				Type:        schema.TypeString,
@@ -101,21 +107,21 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				Description: "Whether the source has changed since the last run",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     false,
+				Default:     dvResourceVirtualEnvironmentFileSourceChanged,
 			},
 			mkResourceVirtualEnvironmentFileSourceChecksum: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The SHA256 checksum of the source file",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentFileSourceChecksum,
 			},
 			mkResourceVirtualEnvironmentFileSourceInsecure: &schema.Schema{
 				Type:        schema.TypeBool,
 				Description: "Whether to skip the TLS verification step for HTTPS sources",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     false,
+				Default:     dvResourceVirtualEnvironmentFileSourceInsecure,
 			},
 		},
 		Create: resourceVirtualEnvironmentFileCreate,

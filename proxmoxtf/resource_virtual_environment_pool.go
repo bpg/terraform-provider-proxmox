@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	dvResourceVirtualEnvironmentPoolComment = ""
+
 	mkResourceVirtualEnvironmentPoolComment            = "comment"
 	mkResourceVirtualEnvironmentPoolMembers            = "members"
 	mkResourceVirtualEnvironmentPoolMembersDatastoreID = "datastore_id"
@@ -29,7 +31,7 @@ func resourceVirtualEnvironmentPool() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The pool comment",
 				Optional:    true,
-				Default:     "",
+				Default:     dvResourceVirtualEnvironmentPoolComment,
 			},
 			mkResourceVirtualEnvironmentPoolMembers: &schema.Schema{
 				Type:        schema.TypeList,

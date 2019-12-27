@@ -225,6 +225,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	OSType               *string                      `json:"ostype,omitempty" url:"ostype,omitempty"`
 	Overwrite            *CustomBool                  `json:"force,omitempty" url:"force,omitempty,int"`
 	PCIDevices           CustomPCIDevices             `json:"hostpci,omitempty" url:"hostpci,omitempty"`
+	PoolID               *string                      `json:"pool,omitempty" url:"pool,omitempty"`
 	Revert               *string                      `json:"revert,omitempty" url:"revert,omitempty"`
 	SATADevices          CustomStorageDevices         `json:"sata,omitempty" url:"sata,omitempty"`
 	SCSIDevices          CustomStorageDevices         `json:"scsi,omitempty" url:"scsi,omitempty"`
@@ -326,6 +327,28 @@ type VirtualEnvironmentVMGetResponseData struct {
 	WatchdogDevice       *CustomWatchdogDevice         `json:"watchdog,omitempty"`
 }
 
+// VirtualEnvironmentVMGetStatusResponseBody contains the body from a VM get status response.
+type VirtualEnvironmentVMGetStatusResponseBody struct {
+	Data *VirtualEnvironmentVMGetStatusResponseData `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentVMGetStatusResponseData contains the data from a VM get status response.
+type VirtualEnvironmentVMGetStatusResponseData struct {
+	AgentEnabled     *CustomBool `json:"agent,omitempty"`
+	CPUCount         *float64    `json:"cpus,omitempty"`
+	Lock             *string     `json:"lock,omitempty"`
+	MemoryAllocation *int        `json:"maxmem,omitempty"`
+	Name             *string     `json:"name,omitempty"`
+	PID              *string     `json:"pid,omitempty"`
+	QMPStatus        *string     `json:"qmpstatus,omitempty"`
+	RootDiskSize     *int        `json:"maxdisk,omitempty"`
+	SpiceSupport     *CustomBool `json:"spice,omitempty"`
+	Status           string      `json:"status,omitempty"`
+	Tags             *string     `json:"tags,omitempty"`
+	Uptime           *int        `json:"uptime,omitempty"`
+	VMID             string      `json:"vmid,omitempty"`
+}
+
 // VirtualEnvironmentVMListResponseBody contains the body from an virtual machine list response.
 type VirtualEnvironmentVMListResponseBody struct {
 	Data []*VirtualEnvironmentVMListResponseData `json:"data,omitempty"`
@@ -334,6 +357,14 @@ type VirtualEnvironmentVMListResponseBody struct {
 // VirtualEnvironmentVMListResponseData contains the data from an virtual machine list response.
 type VirtualEnvironmentVMListResponseData struct {
 	ACPI *CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
+}
+
+// VirtualEnvironmentVMShutdownRequestBody contains the body for a VM shutdown request.
+type VirtualEnvironmentVMShutdownRequestBody struct {
+	ForceStop  *CustomBool `json:"forceStop,omitempty,int" url:"forceStop,omitempty,int"`
+	KeepActive *CustomBool `json:"keepActive,omitempty,int" url:"keepActive,omitempty,int"`
+	SkipLock   *CustomBool `json:"skipLock,omitempty,int" url:"skipLock,omitempty,int"`
+	Timeout    *int        `json:"timeout,omitempty" url:"timeout,omitempty"`
 }
 
 // VirtualEnvironmentVMUpdateRequestBody contains the data for an virtual machine update request.
