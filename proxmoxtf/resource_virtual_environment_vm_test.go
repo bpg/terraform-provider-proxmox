@@ -191,11 +191,17 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername,
 	})
 
+	testOptionalArguments(t, cloudInitUserAccountSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword,
+	})
+
 	testSchemaValueTypes(t, cloudInitUserAccountSchema, []string{
 		mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys,
+		mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword,
 		mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername,
 	}, []schema.ValueType{
 		schema.TypeList,
+		schema.TypeString,
 		schema.TypeString,
 	})
 

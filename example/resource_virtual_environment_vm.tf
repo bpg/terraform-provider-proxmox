@@ -12,6 +12,7 @@ resource "proxmox_virtual_environment_vm" "example" {
 
     user_account {
       keys     = ["${trimspace(tls_private_key.example.public_key_openssh)}"]
+      password = "proxmoxtf"
       username = "ubuntu"
     }
   }
@@ -42,4 +43,8 @@ resource "local_file" "example_ssh_public_key" {
 resource "tls_private_key" "example" {
   algorithm = "RSA"
   rsa_bits  = 2048
+}
+
+output "resource_proxmox_virtual_environment_vm_example_id" {
+  value = "${proxmox_virtual_environment_vm.example.id}"
 }

@@ -15,35 +15,36 @@ import (
 )
 
 const (
-	dvResourceVirtualEnvironmentVMAgentEnabled            = false
-	dvResourceVirtualEnvironmentVMAgentTrim               = false
-	dvResourceVirtualEnvironmentVMAgentType               = "virtio"
-	dvResourceVirtualEnvironmentVMCDROMEnabled            = false
-	dvResourceVirtualEnvironmentVMCDROMFileID             = ""
-	dvResourceVirtualEnvironmentVMCloudInitDNSDomain      = ""
-	dvResourceVirtualEnvironmentVMCloudInitDNSServer      = ""
-	dvResourceVirtualEnvironmentVMCPUCores                = 1
-	dvResourceVirtualEnvironmentVMCPUHotplugged           = 0
-	dvResourceVirtualEnvironmentVMCPUSockets              = 1
-	dvResourceVirtualEnvironmentVMDescription             = ""
-	dvResourceVirtualEnvironmentVMDiskDatastoreID         = "local-lvm"
-	dvResourceVirtualEnvironmentVMDiskEnabled             = true
-	dvResourceVirtualEnvironmentVMDiskFileFormat          = "qcow2"
-	dvResourceVirtualEnvironmentVMDiskFileID              = ""
-	dvResourceVirtualEnvironmentVMDiskSize                = 8
-	dvResourceVirtualEnvironmentVMKeyboardLayout          = "en-us"
-	dvResourceVirtualEnvironmentVMMemoryDedicated         = 512
-	dvResourceVirtualEnvironmentVMMemoryFloating          = 0
-	dvResourceVirtualEnvironmentVMMemoryShared            = 0
-	dvResourceVirtualEnvironmentVMName                    = ""
-	dvResourceVirtualEnvironmentVMNetworkDeviceBridge     = "vmbr0"
-	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled    = true
-	dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress = ""
-	dvResourceVirtualEnvironmentVMNetworkDeviceModel      = "virtio"
-	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID     = -1
-	dvResourceVirtualEnvironmentVMOSType                  = "other"
-	dvResourceVirtualEnvironmentVMPoolID                  = ""
-	dvResourceVirtualEnvironmentVMVMID                    = -1
+	dvResourceVirtualEnvironmentVMAgentEnabled                 = false
+	dvResourceVirtualEnvironmentVMAgentTrim                    = false
+	dvResourceVirtualEnvironmentVMAgentType                    = "virtio"
+	dvResourceVirtualEnvironmentVMCDROMEnabled                 = false
+	dvResourceVirtualEnvironmentVMCDROMFileID                  = ""
+	dvResourceVirtualEnvironmentVMCloudInitDNSDomain           = ""
+	dvResourceVirtualEnvironmentVMCloudInitDNSServer           = ""
+	dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword = ""
+	dvResourceVirtualEnvironmentVMCPUCores                     = 1
+	dvResourceVirtualEnvironmentVMCPUHotplugged                = 0
+	dvResourceVirtualEnvironmentVMCPUSockets                   = 1
+	dvResourceVirtualEnvironmentVMDescription                  = ""
+	dvResourceVirtualEnvironmentVMDiskDatastoreID              = "local-lvm"
+	dvResourceVirtualEnvironmentVMDiskEnabled                  = true
+	dvResourceVirtualEnvironmentVMDiskFileFormat               = "qcow2"
+	dvResourceVirtualEnvironmentVMDiskFileID                   = ""
+	dvResourceVirtualEnvironmentVMDiskSize                     = 8
+	dvResourceVirtualEnvironmentVMKeyboardLayout               = "en-us"
+	dvResourceVirtualEnvironmentVMMemoryDedicated              = 512
+	dvResourceVirtualEnvironmentVMMemoryFloating               = 0
+	dvResourceVirtualEnvironmentVMMemoryShared                 = 0
+	dvResourceVirtualEnvironmentVMName                         = ""
+	dvResourceVirtualEnvironmentVMNetworkDeviceBridge          = "vmbr0"
+	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled         = true
+	dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress      = ""
+	dvResourceVirtualEnvironmentVMNetworkDeviceModel           = "virtio"
+	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID          = -1
+	dvResourceVirtualEnvironmentVMOSType                       = "other"
+	dvResourceVirtualEnvironmentVMPoolID                       = ""
+	dvResourceVirtualEnvironmentVMVMID                         = -1
 
 	mkResourceVirtualEnvironmentVMAgent                        = "agent"
 	mkResourceVirtualEnvironmentVMAgentEnabled                 = "enabled"
@@ -65,6 +66,7 @@ const (
 	mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway = "gateway"
 	mkResourceVirtualEnvironmentVMCloudInitUserAccount         = "user_account"
 	mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys     = "keys"
+	mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword = "password"
 	mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername = "username"
 	mkResourceVirtualEnvironmentVMCPU                          = "cpu"
 	mkResourceVirtualEnvironmentVMCPUCores                     = "cores"
@@ -290,6 +292,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 										Required:    true,
 										Description: "The SSH keys",
 										Elem:        &schema.Schema{Type: schema.TypeString},
+									},
+									mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword: {
+										Type:        schema.TypeString,
+										Optional:    true,
+										Description: "The SSH password",
+										Default:     dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword,
 									},
 									mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername: {
 										Type:        schema.TypeString,
@@ -678,6 +686,12 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 				}
 
 				cloudInitConfig.SSHKeys = &sshKeys
+			}
+
+			password := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword].(string)
+
+			if password != "" {
+				cloudInitConfig.Password = &password
 			}
 
 			username := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername].(string)
