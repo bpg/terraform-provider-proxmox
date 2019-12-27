@@ -118,22 +118,31 @@ func getQEMUAgentTypeValidator() schema.SchemaValidateFunc {
 	return validation.StringInSlice([]string{"isa", "virtio"}, false)
 }
 
-func getVLANIDValidator() schema.SchemaValidateFunc {
+func getVLANIDsValidator() schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (ws []string, es []error) {
 		min := 1
 		max := 4094
 
-		v, ok := i.(int)
+		list, ok := i.([]interface{})
 
 		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be int", k))
+			es = append(es, fmt.Errorf("expected type of %s to be []interface{}", k))
 			return
 		}
 
-		if v != -1 {
-			if v < min || v > max {
-				es = append(es, fmt.Errorf("expected %s to be in the range (%d - %d), got %d", k, min, max, v))
+		for li, lv := range list {
+			v, ok := lv.(int)
+
+			if !ok {
+				es = append(es, fmt.Errorf("expected type of %s[%d] to be int", k, li))
 				return
+			}
+
+			if v != -1 {
+				if v < min || v > max {
+					es = append(es, fmt.Errorf("expected %s[%d] to be in the range (%d - %d), got %d", k, li, min, max, v))
+					return
+				}
 			}
 		}
 

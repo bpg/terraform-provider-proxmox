@@ -361,7 +361,7 @@ This resource doesn't expose any additional attributes.
     * `enabled` - (Optional) Whether to enable the network device (defaults to `true`)
     * `mac_address` - (Optional) The MAC address
     * `model` - (Optional) The network device model (defaults to `virtio`)
-    * `vlan_id` - (Optional) The VLAN identifier
+    * `vlan_ids` - (Optional) The VLAN identifiers
 * `node_name` - (Required) The name of the node to assign the virtual machine to
 * `os_type` - (Optional) The OS type (defaults to `other`)
 * `pool_id` - (Optional) The ID of a pool to assign the virtual machine to
