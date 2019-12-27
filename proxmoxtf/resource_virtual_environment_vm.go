@@ -32,6 +32,8 @@ const (
 	dvResourceVirtualEnvironmentVMDiskFileFormat               = "qcow2"
 	dvResourceVirtualEnvironmentVMDiskFileID                   = ""
 	dvResourceVirtualEnvironmentVMDiskSize                     = 8
+	dvResourceVirtualEnvironmentVMDiskSpeedRead                = 0
+	dvResourceVirtualEnvironmentVMDiskSpeedWrite               = 0
 	dvResourceVirtualEnvironmentVMKeyboardLayout               = "en-us"
 	dvResourceVirtualEnvironmentVMMemoryDedicated              = 512
 	dvResourceVirtualEnvironmentVMMemoryFloating               = 0
@@ -79,6 +81,9 @@ const (
 	mkResourceVirtualEnvironmentVMDiskFileFormat               = "file_format"
 	mkResourceVirtualEnvironmentVMDiskFileID                   = "file_id"
 	mkResourceVirtualEnvironmentVMDiskSize                     = "size"
+	mkResourceVirtualEnvironmentVMDiskSpeed                    = "speed"
+	mkResourceVirtualEnvironmentVMDiskSpeedRead                = "read"
+	mkResourceVirtualEnvironmentVMDiskSpeedWrite               = "write"
 	mkResourceVirtualEnvironmentVMKeyboardLayout               = "keyboard_layout"
 	mkResourceVirtualEnvironmentVMMemory                       = "memory"
 	mkResourceVirtualEnvironmentVMMemoryDedicated              = "dedicated"
@@ -416,6 +421,40 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:      dvResourceVirtualEnvironmentVMDiskSize,
 							ValidateFunc: validation.IntBetween(1, 8192),
 						},
+						mkResourceVirtualEnvironmentVMDiskSpeed: {
+							Type:        schema.TypeList,
+							Description: "The speed limits",
+							Optional:    true,
+							DefaultFunc: func() (interface{}, error) {
+								defaultList := make([]interface{}, 1)
+								defaultMap := make(map[string]interface{})
+
+								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedRead] = dvResourceVirtualEnvironmentVMDiskSpeedRead
+								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedWrite] = dvResourceVirtualEnvironmentVMDiskSpeedWrite
+
+								defaultList[0] = defaultMap
+
+								return defaultList, nil
+							},
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									mkResourceVirtualEnvironmentVMDiskSpeedRead: {
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: "The maximum read speed in megabytes per second",
+										Default:     dvResourceVirtualEnvironmentVMDiskSpeedRead,
+									},
+									mkResourceVirtualEnvironmentVMDiskSpeedWrite: {
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: "The maximum write speed in megabytes per second",
+										Default:     dvResourceVirtualEnvironmentVMDiskSpeedRead,
+									},
+								},
+							},
+							MaxItems: 1,
+							MinItems: 0,
+						},
 					},
 				},
 				MaxItems: 14,
@@ -567,11 +606,11 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	schema := resourceVirtualEnvironmentVM().Schema
+	resourceSchema := resourceVirtualEnvironmentVM().Schema
 	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
 
 	if len(agent) == 0 {
-		agentDefault, err := schema[mkResourceVirtualEnvironmentVMAgent].DefaultValue()
+		agentDefault, err := resourceSchema[mkResourceVirtualEnvironmentVMAgent].DefaultValue()
 
 		if err != nil {
 			return err
@@ -588,7 +627,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 
 	if len(cdrom) == 0 {
-		cdromDefault, err := schema[mkResourceVirtualEnvironmentVMCDROM].DefaultValue()
+		cdromDefault, err := resourceSchema[mkResourceVirtualEnvironmentVMCDROM].DefaultValue()
 
 		if err != nil {
 			return err
@@ -703,7 +742,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 
 	if len(cpu) == 0 {
-		cpuDefault, err := schema[mkResourceVirtualEnvironmentVMCPU].DefaultValue()
+		cpuDefault, err := resourceSchema[mkResourceVirtualEnvironmentVMCPU].DefaultValue()
 
 		if err != nil {
 			return err
@@ -721,6 +760,10 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	scsiDevices := make(proxmox.CustomStorageDevices, len(disk))
 
+	diskSchemaElem := resourceSchema[mkResourceVirtualEnvironmentVMDisk].Elem
+	diskSchemaResource := diskSchemaElem.(*schema.Resource)
+	diskSpeedResource := diskSchemaResource.Schema[mkResourceVirtualEnvironmentVMDiskSpeed]
+
 	for i, d := range disk {
 		block := d.(map[string]interface{})
 
@@ -728,9 +771,32 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		enabled, _ := block[mkResourceVirtualEnvironmentVMDiskEnabled].(bool)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
+
+		if len(speed) == 0 {
+			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
+
+			if err != nil {
+				return err
+			}
+
+			speed = diskSpeedDefault.([]interface{})
+		}
+
+		speedBlock := speed[0].(map[string]interface{})
+		speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
+		speedLimitWrite := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWrite].(int)
 
 		diskDevice := proxmox.CustomStorageDevice{
 			Enabled: enabled,
+		}
+
+		if speedLimitRead > 0 {
+			diskDevice.MaxReadSpeedMbps = &speedLimitRead
+		}
+
+		if speedLimitWrite > 0 {
+			diskDevice.MaxWriteSpeedMbps = &speedLimitWrite
 		}
 
 		if fileID != "" {
@@ -746,7 +812,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	memory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
 
 	if len(memory) == 0 {
-		memoryDefault, err := schema[mkResourceVirtualEnvironmentVMMemory].DefaultValue()
+		memoryDefault, err := resourceSchema[mkResourceVirtualEnvironmentVMMemory].DefaultValue()
 
 		if err != nil {
 			return err
@@ -842,6 +908,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	}
 
 	scsiHardware := "virtio-scsi-pci"
+	startOnBoot := proxmox.CustomBool(true)
 	tabletDeviceEnabled := proxmox.CustomBool(true)
 
 	body := &proxmox.VirtualEnvironmentVMCreateRequestBody{
@@ -865,6 +932,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		SCSIHardware:        &scsiHardware,
 		SerialDevices:       []string{"socket"},
 		SharedMemory:        memorySharedObject,
+		StartOnBoot:         &startOnBoot,
 		TabletDeviceEnabled: &tabletDeviceEnabled,
 		VMID:                &vmID,
 	}
@@ -926,20 +994,52 @@ func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m i
 		}
 	}
 
+	// Retrieve some information about the disk schema.
+	resourceSchema := resourceVirtualEnvironmentVM().Schema
+	diskSchemaElem := resourceSchema[mkResourceVirtualEnvironmentVMDisk].Elem
+	diskSchemaResource := diskSchemaElem.(*schema.Resource)
+	diskSpeedResource := diskSchemaResource.Schema[mkResourceVirtualEnvironmentVMDiskSpeed]
+
 	// Generate the commands required to import the specified disks.
 	importedDiskCount := 0
 
 	for i, d := range disk {
 		block := d.(map[string]interface{})
 
-		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
 		enabled, _ := block[mkResourceVirtualEnvironmentVMDiskEnabled].(bool)
-		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
-		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 
 		if !enabled || fileID == "" {
 			continue
+		}
+
+		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
+		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
+		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
+
+		if len(speed) == 0 {
+			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
+
+			if err != nil {
+				return err
+			}
+
+			speed = diskSpeedDefault.([]interface{})
+		}
+
+		speedBlock := speed[0].(map[string]interface{})
+		speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
+		speedLimitWrite := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWrite].(int)
+
+		diskOptions := ""
+
+		if speedLimitRead > 0 {
+			diskOptions += fmt.Sprintf(",mbps_rd=%d", speedLimitRead)
+		}
+
+		if speedLimitWrite > 0 {
+			diskOptions += fmt.Sprintf(",mbps_wr=%d", speedLimitWrite)
 		}
 
 		fileIDParts := strings.Split(fileID, ":")
@@ -951,7 +1051,7 @@ func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m i
 			fmt.Sprintf("cp %s %s", filePath, filePathTmp),
 			fmt.Sprintf("qemu-img resize %s %dG", filePathTmp, size),
 			fmt.Sprintf("qm importdisk %d %s %s -format qcow2", vmID, filePathTmp, datastoreID),
-			fmt.Sprintf("qm set %d --scsi%d %s:vm-%d-disk-%d", vmID, i, datastoreID, vmID, diskCount+importedDiskCount),
+			fmt.Sprintf("qm set %d -scsi%d %s:vm-%d-disk-%d%s", vmID, i, datastoreID, vmID, diskCount+importedDiskCount, diskOptions),
 			fmt.Sprintf("rm -f %s", filePathTmp),
 		)
 

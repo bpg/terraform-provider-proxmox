@@ -247,6 +247,21 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		schema.TypeInt,
 	})
 
+	diskSpeedSchema := testNestedSchemaExistence(t, diskSchema, mkResourceVirtualEnvironmentVMDiskSpeed)
+
+	testOptionalArguments(t, diskSpeedSchema, []string{
+		mkResourceVirtualEnvironmentVMDiskSpeedRead,
+		mkResourceVirtualEnvironmentVMDiskSpeedWrite,
+	})
+
+	testSchemaValueTypes(t, diskSpeedSchema, []string{
+		mkResourceVirtualEnvironmentVMDiskSpeedRead,
+		mkResourceVirtualEnvironmentVMDiskSpeedWrite,
+	}, []schema.ValueType{
+		schema.TypeInt,
+		schema.TypeInt,
+	})
+
 	memorySchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMMemory)
 
 	testOptionalArguments(t, memorySchema, []string{

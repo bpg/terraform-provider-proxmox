@@ -138,11 +138,13 @@ type CustomStartupOrder struct {
 
 // CustomStorageDevice handles QEMU SATA device parameters.
 type CustomStorageDevice struct {
-	AIO           *string     `json:"aio,omitempty" url:"aio,omitempty"`
-	BackupEnabled *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	Enabled       bool        `json:"-" url:"-"`
-	FileVolume    string      `json:"file" url:"file"`
-	Media         *string     `json:"media,omitempty" url:"media,omitempty"`
+	AIO               *string     `json:"aio,omitempty" url:"aio,omitempty"`
+	BackupEnabled     *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
+	Enabled           bool        `json:"-" url:"-"`
+	FileVolume        string      `json:"file" url:"file"`
+	MaxReadSpeedMbps  *int        `json:"mbps_rd,omitempty" url:"mbps_rd,omitempty"`
+	MaxWriteSpeedMbps *int        `json:"mbps_wr,omitempty" url:"mbps_wr,omitempty"`
+	Media             *string     `json:"media,omitempty" url:"media,omitempty"`
 }
 
 // CustomStorageDevices handles QEMU SATA device parameters.
@@ -785,6 +787,14 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		} else {
 			values = append(values, "backup=0")
 		}
+	}
+
+	if r.MaxReadSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_rd=%d", *r.MaxReadSpeedMbps))
+	}
+
+	if r.MaxWriteSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_wr=%d", *r.MaxWriteSpeedMbps))
 	}
 
 	if r.Media != nil {

@@ -347,6 +347,9 @@ This resource doesn't expose any additional attributes.
     * `file_format` - (Optional) The file format (defaults to `qcow2`)
     * `file_id` - (Optional) The file ID for a disk image
     * `size` - (Optional) The disk size in gigabytes (defaults to `8`)
+    * `speed` - (Optional) The speed limits
+        * `read` - (Optional) The maximum read speed in megabytes per second
+        * `write` - (Optional) The maximum write speed in megabytes per second
 * `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`)
 * `memory` - (Optional) The memory configuration
     * `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`)
