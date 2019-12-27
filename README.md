@@ -318,6 +318,8 @@ This resource doesn't expose any additional attributes.
     * `enabled` - (Optional) Whether to enable the QEMU agent (defaults to `false`)
     * `trim` - (Optional) Whether to enable the FSTRIM feature in the QEMU agent (defaults to `false`)
     * `type` - (Optional) The QEMU agent interface type (defaults to `virtio`)
+        * `isa` - ISA Serial Port
+        * `virtio` - VirtIO (paravirtualized)
 * `cdrom` - (Optional) The CDROM configuration
     * `enabled` - (Optional) Whether to enable the CDROM drive (defaults to `false`)
     * `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as in the physical drive)
@@ -345,12 +347,40 @@ This resource doesn't expose any additional attributes.
     * `datastore_id` - (Optional) The ID of the datastore to create the disk in (defaults to `local-lvm`)
     * `enabled` - (Optional) Whether to enable the disk (defaults to `true`)
     * `file_format` - (Optional) The file format (defaults to `qcow2`)
-    * `file_id` - (Optional) The file ID for a disk image
+        * `qcow2` - QEMU Disk Image v2
+        * `raw` - Raw Disk Image
+        * `vmdk` - VMware Disk Image
+    * `file_id` - (Optional) The file ID for a disk image (experimental)
     * `size` - (Optional) The disk size in gigabytes (defaults to `8`)
     * `speed` - (Optional) The speed limits
         * `read` - (Optional) The maximum read speed in megabytes per second
         * `write` - (Optional) The maximum write speed in megabytes per second
 * `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`)
+    * `da` - Danish
+    * `de` - German
+    * `de-ch` - Swiss German
+    * `en-gb` - British English
+    * `en-us` - American English
+    * `es` - Spanish
+    * `fi` - Finnish
+    * `fr` - French
+    * `fr-be` - Belgian French
+    * `fr-ca` - French Canadian
+    * `fr-ch` - Swish French
+    * `hu` - Hungarian
+    * `is` - Icelandic
+    * `it` - Italian
+    * `ja` - Japanese
+    * `lt` - Lithuanian
+    * `mk` - Macedonian
+    * `nl` - Dutch
+    * `no` - Norwegian
+    * `pl` - Polish
+    * `pt` - Portuguese
+    * `pt-br` - Brazilian Portuguese
+    * `sl` - Slovenian
+    * `sv` - Swedish
+    * `tr` - Turkish
 * `memory` - (Optional) The memory configuration
     * `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`)
     * `floating` - (Optional) The floating memory in megabytes (defaults to `0`)
@@ -361,9 +391,25 @@ This resource doesn't expose any additional attributes.
     * `enabled` - (Optional) Whether to enable the network device (defaults to `true`)
     * `mac_address` - (Optional) The MAC address
     * `model` - (Optional) The network device model (defaults to `virtio`)
+        * `e1000` - Intel E1000
+        * `rtl8139` - Realtek RTL8139
+        * `virtio` - VirtIO (paravirtualized)
+        * `vmxnet3` - VMware vmxnet3
     * `vlan_ids` - (Optional) The VLAN identifiers
 * `node_name` - (Required) The name of the node to assign the virtual machine to
 * `os_type` - (Optional) The OS type (defaults to `other`)
+    * `l24` - Linux Kernel 2.4
+    * `l26` - Linux Kernel 2.6 - 5.X
+    * `other` - Unspecified OS
+    * `solaris` - OpenIndiania, OpenSolaris og Solaris Kernel
+    * `w2k` - Windows 2000
+    * `w2k3` - Windows 2003
+    * `w2k8` - Windows 2008
+    * `win7` - Windows 7
+    * `win8` - Windows 8, 2012 or 2012 R2
+    * `win10` - Windows 10 or 2016
+    * `wvista` - Windows Vista
+    * `wxp` - Windows XP
 * `pool_id` - (Optional) The ID of a pool to assign the virtual machine to
 * `vm_id` - (Optional) The ID
 
