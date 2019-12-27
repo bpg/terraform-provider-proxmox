@@ -411,6 +411,7 @@ This resource doesn't expose any additional attributes.
     * `wvista` - Windows Vista
     * `wxp` - Windows XP
 * `pool_id` - (Optional) The ID of a pool to assign the virtual machine to
+* `started` - (Optional) Whether to start the virtual machine (defaults to `true`)
 * `vm_id` - (Optional) The ID
 
 ###### Attributes

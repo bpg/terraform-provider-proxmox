@@ -45,6 +45,7 @@ const (
 	dvResourceVirtualEnvironmentVMNetworkDeviceModel           = "virtio"
 	dvResourceVirtualEnvironmentVMOSType                       = "other"
 	dvResourceVirtualEnvironmentVMPoolID                       = ""
+	dvResourceVirtualEnvironmentVMStarted                      = true
 	dvResourceVirtualEnvironmentVMVMID                         = -1
 
 	mkResourceVirtualEnvironmentVMAgent                        = "agent"
@@ -98,6 +99,7 @@ const (
 	mkResourceVirtualEnvironmentVMNodeName                     = "node_name"
 	mkResourceVirtualEnvironmentVMOSType                       = "os_type"
 	mkResourceVirtualEnvironmentVMPoolID                       = "pool_id"
+	mkResourceVirtualEnvironmentVMStarted                      = "started"
 	mkResourceVirtualEnvironmentVMVMID                         = "vm_id"
 )
 
@@ -582,6 +584,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				Description: "The ID of the pool to assign the virtual machine to",
 				Default:     dvResourceVirtualEnvironmentVMPoolID,
+			},
+			mkResourceVirtualEnvironmentVMStarted: {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Whether to start the virtual machine",
+				Default:     dvResourceVirtualEnvironmentVMStarted,
 			},
 			mkResourceVirtualEnvironmentVMVMID: {
 				Type:         schema.TypeInt,
@@ -1077,6 +1085,12 @@ func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m i
 }
 
 func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface{}) error {
+	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
+
+	if !started {
+		return resourceVirtualEnvironmentVMRead(d, m)
+	}
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -1108,27 +1122,83 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 }
 
 func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) error {
-	/*
-		config := m.(providerConfiguration)
-		veClient, err := config.GetVEClient()
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
-		if err != nil {
-			return err
-		}
-	*/
+	if err != nil {
+		return err
+	}
+
+	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+	vmID, err := strconv.Atoi(d.Id())
+
+	if err != nil {
+		return err
+	}
+
+	// Determine the state of the virtual machine in order to update the "started" argument.
+	status, err := veClient.GetVMStatus(nodeName, vmID)
+
+	if err != nil {
+		return err
+	}
+
+	d.Set(mkResourceVirtualEnvironmentVMStarted, status.Status == "running")
 
 	return nil
 }
 
 func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) error {
-	/*
-		config := m.(providerConfiguration)
-		veClient, err := config.GetVEClient()
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
-		if err != nil {
-			return err
+	if err != nil {
+		return err
+	}
+
+	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+	vmID, err := strconv.Atoi(d.Id())
+
+	if err != nil {
+		return err
+	}
+
+	// Determine if the state of the virtual machine needs to be changed.
+	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) {
+		started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
+
+		if started {
+			err = veClient.StartVM(nodeName, vmID)
+
+			if err != nil {
+				return err
+			}
+
+			err = veClient.WaitForState(nodeName, vmID, "running", 120, 5)
+
+			if err != nil {
+				return err
+			}
+		} else {
+			forceStop := proxmox.CustomBool(true)
+			shutdownTimeout := 300
+
+			err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
+				ForceStop: &forceStop,
+				Timeout:   &shutdownTimeout,
+			})
+
+			if err != nil {
+				return err
+			}
+
+			err = veClient.WaitForState(nodeName, vmID, "stopped", 30, 5)
+
+			if err != nil {
+				return err
+			}
 		}
-	*/
+	}
 
 	return resourceVirtualEnvironmentVMRead(d, m)
 }

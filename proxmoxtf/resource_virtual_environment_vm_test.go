@@ -39,6 +39,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDevice,
 		mkResourceVirtualEnvironmentVMOSType,
 		mkResourceVirtualEnvironmentVMPoolID,
+		mkResourceVirtualEnvironmentVMStarted,
 		mkResourceVirtualEnvironmentVMVMID,
 	})
 
@@ -54,6 +55,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDevice,
 		mkResourceVirtualEnvironmentVMOSType,
 		mkResourceVirtualEnvironmentVMPoolID,
+		mkResourceVirtualEnvironmentVMStarted,
 		mkResourceVirtualEnvironmentVMVMID,
 	}, []schema.ValueType{
 		schema.TypeList,
@@ -67,6 +69,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		schema.TypeList,
 		schema.TypeString,
 		schema.TypeString,
+		schema.TypeBool,
 		schema.TypeInt,
 	})
 
