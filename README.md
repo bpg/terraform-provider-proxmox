@@ -328,9 +328,9 @@ This resource doesn't expose any additional attributes.
         * `ipv6` - (Optional) The IPv4 configuration
             * `address` - (Optional) The IPv6 address (use `dhcp` for autodiscovery)
             * `gateway` - (Optional) The IPv6 gateway (must be omitted when `dhcp` is used as the address)
-    * `user_account` - (Optional) The user account configuration
-        * `keys` - (Optional) The SSH keys
-        * `username` - (Optional) The SSH username
+    * `user_account` - (Required) The user account configuration
+        * `keys` - (Required) The SSH keys
+        * `username` - (Required) The SSH username
 * `cpu` - (Optional) The CPU configuration
     * `cores` - (Optional) The number of CPU cores (defaults to `1`)
     * `sockets` - (Optional) The number of CPU sockets (defaults to `1`)
