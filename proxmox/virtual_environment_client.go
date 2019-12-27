@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -150,6 +151,9 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		if err != nil {
 			return fmt.Errorf("Failed to decode HTTP %s response (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 		}
+	} else {
+		data, _ := ioutil.ReadAll(res.Body)
+		log.Printf("[DEBUG] Unhandled HTTP response body: %s", string(data))
 	}
 
 	return nil

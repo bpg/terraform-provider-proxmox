@@ -29,6 +29,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, s, []string{
 		mkResourceVirtualEnvironmentVMCDROM,
+		mkResourceVirtualEnvironmentVMCloudInit,
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDisk,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
@@ -41,6 +42,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testSchemaValueTypes(t, s, []string{
 		mkResourceVirtualEnvironmentVMCDROM,
+		mkResourceVirtualEnvironmentVMCloudInit,
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDisk,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
@@ -50,6 +52,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMOSType,
 		mkResourceVirtualEnvironmentVMVMID,
 	}, []schema.ValueType{
+		schema.TypeList,
 		schema.TypeList,
 		schema.TypeList,
 		schema.TypeList,
@@ -73,6 +76,102 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCDROMFileID,
 	}, []schema.ValueType{
 		schema.TypeBool,
+		schema.TypeString,
+	})
+
+	cloudInitSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMCloudInit)
+
+	testRequiredArguments(t, cloudInitSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitUserAccount,
+	})
+
+	testOptionalArguments(t, cloudInitSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitDNS,
+		mkResourceVirtualEnvironmentVMCloudInitIPConfig,
+	})
+
+	testSchemaValueTypes(t, cloudInitSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitDNS,
+		mkResourceVirtualEnvironmentVMCloudInitIPConfig,
+		mkResourceVirtualEnvironmentVMCloudInitUserAccount,
+	}, []schema.ValueType{
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+	})
+
+	cloudInitDNSSchema := testNestedSchemaExistence(t, cloudInitSchema, mkResourceVirtualEnvironmentVMCloudInitDNS)
+
+	testOptionalArguments(t, cloudInitDNSSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitDNSDomain,
+		mkResourceVirtualEnvironmentVMCloudInitDNSServer,
+	})
+
+	testSchemaValueTypes(t, cloudInitDNSSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitDNSDomain,
+		mkResourceVirtualEnvironmentVMCloudInitDNSServer,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+	})
+
+	cloudInitIPConfigSchema := testNestedSchemaExistence(t, cloudInitSchema, mkResourceVirtualEnvironmentVMCloudInitIPConfig)
+
+	testOptionalArguments(t, cloudInitIPConfigSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4,
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6,
+	})
+
+	testSchemaValueTypes(t, cloudInitIPConfigSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4,
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6,
+	}, []schema.ValueType{
+		schema.TypeList,
+		schema.TypeList,
+	})
+
+	cloudInitIPConfigIPv4Schema := testNestedSchemaExistence(t, cloudInitIPConfigSchema, mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4)
+
+	testOptionalArguments(t, cloudInitIPConfigIPv4Schema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address,
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway,
+	})
+
+	testSchemaValueTypes(t, cloudInitIPConfigIPv4Schema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address,
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+	})
+
+	cloudInitIPConfigIPv6Schema := testNestedSchemaExistence(t, cloudInitIPConfigSchema, mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6)
+
+	testOptionalArguments(t, cloudInitIPConfigIPv6Schema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Address,
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway,
+	})
+
+	testSchemaValueTypes(t, cloudInitIPConfigIPv6Schema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Address,
+		mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+	})
+
+	cloudInitUserAccountSchema := testNestedSchemaExistence(t, cloudInitSchema, mkResourceVirtualEnvironmentVMCloudInitUserAccount)
+
+	testRequiredArguments(t, cloudInitUserAccountSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys,
+		mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername,
+	})
+
+	testSchemaValueTypes(t, cloudInitUserAccountSchema, []string{
+		mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys,
+		mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername,
+	}, []schema.ValueType{
+		schema.TypeList,
 		schema.TypeString,
 	})
 

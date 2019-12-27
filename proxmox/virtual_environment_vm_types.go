@@ -227,7 +227,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	PCIDevices           CustomPCIDevices             `json:"hostpci,omitempty" url:"hostpci,omitempty"`
 	Revert               *string                      `json:"revert,omitempty" url:"revert,omitempty"`
 	SATADevices          CustomStorageDevices         `json:"sata,omitempty" url:"sata,omitempty"`
-	SCSIDevices          CustomStorageDevices         `json:"scsi,omitempty" url:"sata,omitempty"`
+	SCSIDevices          CustomStorageDevices         `json:"scsi,omitempty" url:"scsi,omitempty"`
 	SCSIHardware         *string                      `json:"scsihw,omitempty" url:"scsihw,omitempty"`
 	SerialDevices        CustomSerialDevices          `json:"serial,omitempty" url:"serial,omitempty"`
 	SharedMemory         *CustomSharedMemory          `json:"ivshmem,omitempty" url:"ivshmem,omitempty"`

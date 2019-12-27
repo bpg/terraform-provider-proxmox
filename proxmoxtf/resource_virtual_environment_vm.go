@@ -6,6 +6,7 @@ package proxmoxtf
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -610,6 +611,30 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 
+	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+	scsiDevices := make(proxmox.CustomStorageDevices, len(disk))
+
+	for i, d := range disk {
+		block := d.(map[string]interface{})
+
+		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
+		enabled, _ := block[mkResourceVirtualEnvironmentVMDiskEnabled].(bool)
+		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
+		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
+
+		diskDevice := proxmox.CustomStorageDevice{
+			Enabled: enabled,
+		}
+
+		if fileID != "" {
+			diskDevice.Enabled = false
+		} else {
+			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+		}
+
+		scsiDevices[i] = diskDevice
+	}
+
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	memory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
 
@@ -679,6 +704,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	var memorySharedObject *proxmox.CustomSharedMemory
 
 	agentEnabled := proxmox.CustomBool(true)
+	bootDisk := "scsi0"
 	bootOrder := "c"
 
 	if cdromEnabled {
@@ -713,6 +739,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	body := &proxmox.VirtualEnvironmentVMCreateRequestBody{
 		Agent:               &proxmox.CustomAgent{Enabled: &agentEnabled},
+		BootDisk:            &bootDisk,
 		BootOrder:           &bootOrder,
 		CloudInitConfig:     cloudInitConfig,
 		CPUCores:            &cpuCores,
@@ -723,11 +750,11 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		KeyboardLayout:      &keyboardLayout,
 		NetworkDevices:      networkDeviceObjects,
 		OSType:              &osType,
+		SCSIDevices:         scsiDevices,
 		SCSIHardware:        &scsiHardware,
 		SerialDevices:       []string{"socket"},
 		SharedMemory:        memorySharedObject,
 		TabletDeviceEnabled: &tabletDeviceEnabled,
-		VGADevice:           &proxmox.CustomVGADevice{Type: "serial0"},
 		VMID:                &vmID,
 	}
 
@@ -742,6 +769,85 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	}
 
 	d.SetId(strconv.Itoa(vmID))
+
+	return resourceVirtualEnvironmentVMImportDisks(d, m)
+}
+
+func resourceVirtualEnvironmentVMImportDisks(d *schema.ResourceData, m interface{}) error {
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
+
+	if err != nil {
+		return err
+	}
+
+	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+	vmID, err := strconv.Atoi(d.Id())
+
+	if err != nil {
+		return err
+	}
+
+	commands := []string{}
+
+	// Determine the ID of the next disk.
+	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+	diskCount := 0
+
+	for _, d := range disk {
+		block := d.(map[string]interface{})
+		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
+
+		if fileID == "" {
+			diskCount++
+		}
+	}
+
+	// Generate the commands required to import the specified disks.
+	importedDiskCount := 0
+
+	for i, d := range disk {
+		block := d.(map[string]interface{})
+
+		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
+		enabled, _ := block[mkResourceVirtualEnvironmentVMDiskEnabled].(bool)
+		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
+		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
+		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
+
+		if !enabled || fileID == "" {
+			continue
+		}
+
+		fileIDParts := strings.Split(fileID, ":")
+		filePath := fmt.Sprintf("/var/lib/vz/template/%s", fileIDParts[1])
+		filePathTmp := fmt.Sprintf("/tmp/vm-%d-disk-%d.%s", vmID, diskCount+importedDiskCount, fileFormat)
+
+		commands = append(
+			commands,
+			fmt.Sprintf("cp %s %s", filePath, filePathTmp),
+			fmt.Sprintf("qemu-img resize %s %dG", filePathTmp, size),
+			fmt.Sprintf("qm importdisk %d %s %s -format qcow2", vmID, filePathTmp, datastoreID),
+			fmt.Sprintf("qm set %d --scsi%d %s:vm-%d-disk-%d", vmID, i, datastoreID, vmID, diskCount+importedDiskCount),
+			fmt.Sprintf("rm -f %s", filePathTmp),
+		)
+
+		importedDiskCount++
+	}
+
+	// Execute the commands on the node and wait for the result.
+	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
+	if len(commands) > 0 {
+		for _, cmd := range commands {
+			log.Printf("[DEBUG] Node command: %s", cmd)
+		}
+
+		err = veClient.ExecuteNodeCommands(nodeName, commands)
+
+		if err != nil {
+			return err
+		}
+	}
 
 	return resourceVirtualEnvironmentVMRead(d, m)
 }
