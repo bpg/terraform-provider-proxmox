@@ -1362,10 +1362,29 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 			dd.MaxWriteSpeedMbps != nil {
 			speed := map[string]interface{}{}
 
-			speed[mkResourceVirtualEnvironmentVMDiskSpeedRead] = *dd.MaxReadSpeedMbps
-			speed[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable] = *dd.BurstableReadSpeedMbps
-			speed[mkResourceVirtualEnvironmentVMDiskSpeedWrite] = *dd.MaxWriteSpeedMbps
-			speed[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable] = *dd.BurstableWriteSpeedMbps
+			if dd.MaxReadSpeedMbps != nil {
+				speed[mkResourceVirtualEnvironmentVMDiskSpeedRead] = *dd.MaxReadSpeedMbps
+			} else {
+				speed[mkResourceVirtualEnvironmentVMDiskSpeedRead] = 0
+			}
+
+			if dd.BurstableReadSpeedMbps != nil {
+				speed[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable] = *dd.BurstableReadSpeedMbps
+			} else {
+				speed[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable] = 0
+			}
+
+			if dd.MaxWriteSpeedMbps != nil {
+				speed[mkResourceVirtualEnvironmentVMDiskSpeedWrite] = *dd.MaxWriteSpeedMbps
+			} else {
+				speed[mkResourceVirtualEnvironmentVMDiskSpeedWrite] = 0
+			}
+
+			if dd.BurstableWriteSpeedMbps != nil {
+				speed[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable] = *dd.BurstableWriteSpeedMbps
+			} else {
+				speed[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable] = 0
+			}
 
 			disk[mkResourceVirtualEnvironmentVMDiskSpeed] = []interface{}{speed}
 		} else {
