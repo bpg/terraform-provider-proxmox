@@ -5,6 +5,7 @@
 package proxmox
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -288,7 +289,9 @@ type VirtualEnvironmentVMGetResponseData struct {
 	HookScript           *string                       `json:"hookscript,omitempty"`
 	Hotplug              *CustomCommaSeparatedList     `json:"hotplug,omitempty"`
 	Hugepages            *string                       `json:"hugepages,omitempty"`
-	IDEDevices           *CustomStorageDevices         `json:"ide,omitempty"`
+	IDEDevice0           *CustomStorageDevice          `json:"ide0,omitempty"`
+	IDEDevice1           *CustomStorageDevice          `json:"ide1,omitempty"`
+	IDEDevice2           *CustomStorageDevice          `json:"ide2,omitempty"`
 	KeyboardLayout       *string                       `json:"keyboard,omitempty"`
 	KVMArguments         *CustomLineBreakSeparatedList `json:"args,omitempty"`
 	KVMEnabled           *CustomBool                   `json:"kvm,omitempty"`
@@ -298,15 +301,41 @@ type VirtualEnvironmentVMGetResponseData struct {
 	MigrateDowntime      *float64                      `json:"migrate_downtime,omitempty"`
 	MigrateSpeed         *int                          `json:"migrate_speed,omitempty"`
 	Name                 *string                       `json:"name,omitempty"`
-	NetworkDevices       *CustomNetworkDevices         `json:"net,omitempty"`
+	NetworkDevice0       *CustomNetworkDevice          `json:"net0,omitempty"`
+	NetworkDevice1       *CustomNetworkDevice          `json:"net1,omitempty"`
+	NetworkDevice2       *CustomNetworkDevice          `json:"net2,omitempty"`
+	NetworkDevice3       *CustomNetworkDevice          `json:"net3,omitempty"`
+	NetworkDevice4       *CustomNetworkDevice          `json:"net4,omitempty"`
+	NetworkDevice5       *CustomNetworkDevice          `json:"net5,omitempty"`
+	NetworkDevice6       *CustomNetworkDevice          `json:"net6,omitempty"`
+	NetworkDevice7       *CustomNetworkDevice          `json:"net7,omitempty"`
 	NUMADevices          *CustomNUMADevices            `json:"numa_devices,omitempty"`
 	NUMAEnabled          *CustomBool                   `json:"numa,omitempty"`
 	OSType               *string                       `json:"ostype,omitempty"`
 	Overwrite            *CustomBool                   `json:"force,omitempty"`
 	PCIDevices           *CustomPCIDevices             `json:"hostpci,omitempty"`
+	PoolID               *string                       `json:"pool,omitempty" url:"pool,omitempty"`
 	Revert               *string                       `json:"revert,omitempty"`
-	SATADevices          *CustomStorageDevices         `json:"sata,omitempty"`
-	SCSIDevices          *CustomStorageDevices         `json:"scsi,omitempty"`
+	SATADevice0          *CustomStorageDevice          `json:"sata0,omitempty"`
+	SATADevice1          *CustomStorageDevice          `json:"sata1,omitempty"`
+	SATADevice2          *CustomStorageDevice          `json:"sata2,omitempty"`
+	SATADevice3          *CustomStorageDevice          `json:"sata3,omitempty"`
+	SATADevice4          *CustomStorageDevice          `json:"sata4,omitempty"`
+	SATADevice5          *CustomStorageDevice          `json:"sata5,omitempty"`
+	SCSIDevice0          *CustomStorageDevice          `json:"scsi0,omitempty"`
+	SCSIDevice1          *CustomStorageDevice          `json:"scsi1,omitempty"`
+	SCSIDevice2          *CustomStorageDevice          `json:"scsi2,omitempty"`
+	SCSIDevice3          *CustomStorageDevice          `json:"scsi3,omitempty"`
+	SCSIDevice4          *CustomStorageDevice          `json:"scsi4,omitempty"`
+	SCSIDevice5          *CustomStorageDevice          `json:"scsi5,omitempty"`
+	SCSIDevice6          *CustomStorageDevice          `json:"scsi6,omitempty"`
+	SCSIDevice7          *CustomStorageDevice          `json:"scsi7,omitempty"`
+	SCSIDevice8          *CustomStorageDevice          `json:"scsi8,omitempty"`
+	SCSIDevice9          *CustomStorageDevice          `json:"scsi9,omitempty"`
+	SCSIDevice10         *CustomStorageDevice          `json:"scsi10,omitempty"`
+	SCSIDevice11         *CustomStorageDevice          `json:"scsi11,omitempty"`
+	SCSIDevice12         *CustomStorageDevice          `json:"scsi12,omitempty"`
+	SCSIDevice13         *CustomStorageDevice          `json:"scsi13,omitempty"`
 	SCSIHardware         *string                       `json:"scsihw,omitempty"`
 	SerialDevices        *CustomSerialDevices          `json:"serial,omitempty"`
 	SharedMemory         *CustomSharedMemory           `json:"ivshmem,omitempty"`
@@ -905,6 +934,242 @@ func (r CustomWatchdogDevice) EncodeValues(key string, v *url.Values) error {
 	}
 
 	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomAgent string to an object.
+func (r *CustomAgent) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 1 {
+			enabled := CustomBool(v[0] == "1")
+			r.Enabled = &enabled
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "enabled":
+				enabled := CustomBool(v[1] == "1")
+				r.Enabled = &enabled
+			case "fstrim_cloned_disks":
+				fstrim := CustomBool(v[1] == "1")
+				r.TrimClonedDisks = &fstrim
+			case "type":
+				r.Type = &v[1]
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomNetworkDevice string to an object.
+func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			switch v[0] {
+			case "bridge":
+				r.Bridge = &v[1]
+			case "firewall":
+				bv := CustomBool(v[1] == "1")
+				r.Firewall = &bv
+			case "link_down":
+				bv := CustomBool(v[1] == "1")
+				r.LinkDown = &bv
+			case "macaddr":
+				r.MACAddress = &v[1]
+			case "model":
+				r.Model = v[1]
+			case "queues":
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.Queues = &iv
+			case "rate":
+				fv, err := strconv.ParseFloat(v[1], 64)
+
+				if err != nil {
+					return err
+				}
+
+				r.RateLimit = &fv
+			case "tag":
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.Tag = &iv
+			case "trunks":
+				trunks := strings.Split(v[1], ";")
+				r.Trunks = make([]int, len(trunks))
+
+				for i, trunk := range trunks {
+					iv, err := strconv.Atoi(trunk)
+
+					if err != nil {
+						return err
+					}
+
+					r.Trunks[i] = iv
+				}
+			}
+		}
+	}
+
+	r.Enabled = true
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomSharedMemory string to an object.
+func (r *CustomSharedMemory) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			switch v[0] {
+			case "name":
+				r.Name = &v[1]
+			case "size":
+				r.Size, err = strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomSMBIOS string to an object.
+func (r *CustomSMBIOS) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			switch v[0] {
+			case "base64":
+				base64 := CustomBool(v[1] == "1")
+				r.Base64 = &base64
+			case "family":
+				r.Family = &v[1]
+			case "manufacturer":
+				r.Manufacturer = &v[1]
+			case "product":
+				r.Product = &v[1]
+			case "serial":
+				r.Serial = &v[1]
+			case "sku":
+				r.SKU = &v[1]
+			case "uuid":
+				r.UUID = &v[1]
+			case "version":
+				r.Version = &v[1]
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomStorageDevice string to an object.
+func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 1 {
+			r.FileVolume = v[0]
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "aio":
+				r.AIO = &v[1]
+			case "backup":
+				bv := CustomBool(v[1] == "1")
+				r.BackupEnabled = &bv
+			case "file":
+				r.FileVolume = v[1]
+			case "mbps_rd":
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.MaxReadSpeedMbps = &iv
+			case "mbps_wr":
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.MaxWriteSpeedMbps = &iv
+			case "media":
+				r.Media = &v[1]
+			}
+		}
+	}
+
+	r.Enabled = true
 
 	return nil
 }

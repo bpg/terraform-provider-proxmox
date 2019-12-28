@@ -374,6 +374,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The disk devices",
 				Optional:    true,
+				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
 					defaultList := make([]interface{}, 1)
 					defaultMap := make(map[string]interface{})
@@ -392,18 +393,21 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						mkResourceVirtualEnvironmentVMDiskDatastoreID: {
 							Type:        schema.TypeString,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "The datastore id",
 							Default:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
 						},
 						mkResourceVirtualEnvironmentVMDiskEnabled: {
 							Type:        schema.TypeBool,
 							Optional:    true,
+							ForceNew:    true,
 							Description: "Whether to enable the disk",
 							Default:     dvResourceVirtualEnvironmentVMDiskEnabled,
 						},
 						mkResourceVirtualEnvironmentVMDiskFileFormat: {
 							Type:         schema.TypeString,
 							Optional:     true,
+							ForceNew:     true,
 							Description:  "The file format",
 							Default:      dvResourceVirtualEnvironmentVMDiskFileFormat,
 							ValidateFunc: getFileFormatValidator(),
@@ -411,6 +415,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						mkResourceVirtualEnvironmentVMDiskFileID: {
 							Type:         schema.TypeString,
 							Optional:     true,
+							ForceNew:     true,
 							Description:  "The file id for a disk image",
 							Default:      dvResourceVirtualEnvironmentVMDiskFileID,
 							ValidateFunc: getFileIDValidator(),
@@ -418,6 +423,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						mkResourceVirtualEnvironmentVMDiskSize: {
 							Type:         schema.TypeInt,
 							Optional:     true,
+							ForceNew:     true,
 							Description:  "The disk size in gigabytes",
 							Default:      dvResourceVirtualEnvironmentVMDiskSize,
 							ValidateFunc: validation.IntBetween(1, 8192),
@@ -540,10 +546,17 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceEnabled,
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress: {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Description:  "The MAC address",
-							Default:      dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The MAC address",
+							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
+							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+								if old == "" {
+									return true
+								}
+
+								return false
+							},
 							ValidateFunc: getMACAddressValidator(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceModel: {
@@ -571,6 +584,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
+				ForceNew:    true,
 			},
 			mkResourceVirtualEnvironmentVMOSType: {
 				Type:         schema.TypeString,
@@ -876,6 +890,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
+	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
@@ -921,7 +936,6 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	}
 
 	scsiHardware := "virtio-scsi-pci"
-	startOnBoot := proxmox.CustomBool(true)
 	tabletDeviceEnabled := proxmox.CustomBool(true)
 
 	body := &proxmox.VirtualEnvironmentVMCreateRequestBody{
@@ -945,7 +959,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		SCSIHardware:        &scsiHardware,
 		SerialDevices:       []string{"socket"},
 		SharedMemory:        memorySharedObject,
-		StartOnBoot:         &startOnBoot,
+		StartOnBoot:         &started,
 		TabletDeviceEnabled: &tabletDeviceEnabled,
 		VMID:                &vmID,
 	}
@@ -1134,6 +1148,138 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 	if err != nil {
 		return err
+	}
+
+	// Retrieve the entire configuration in order to compare it to the state.
+	vmConfig, err := veClient.GetVM(nodeName, vmID)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "HTTP 404") {
+			d.SetId("")
+
+			return nil
+		}
+
+		return err
+	}
+
+	if vmConfig.Agent != nil {
+		agent := make(map[string]interface{})
+
+		if vmConfig.Agent.Enabled != nil {
+			agent[mkResourceVirtualEnvironmentVMAgentEnabled] = bool(*vmConfig.Agent.Enabled)
+		} else {
+			agent[mkResourceVirtualEnvironmentVMAgentEnabled] = dvResourceVirtualEnvironmentVMAgentEnabled
+		}
+
+		if vmConfig.Agent.TrimClonedDisks != nil {
+			agent[mkResourceVirtualEnvironmentVMAgentTrim] = bool(*vmConfig.Agent.TrimClonedDisks)
+		} else {
+			agent[mkResourceVirtualEnvironmentVMAgentTrim] = dvResourceVirtualEnvironmentVMAgentTrim
+		}
+
+		if vmConfig.Agent.Type != nil {
+			agent[mkResourceVirtualEnvironmentVMAgentType] = *vmConfig.Agent.Type
+		} else {
+			agent[mkResourceVirtualEnvironmentVMAgentType] = dvResourceVirtualEnvironmentVMAgentType
+		}
+
+		currentAgent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+
+		if len(currentAgent) > 0 ||
+			agent[mkResourceVirtualEnvironmentVMAgentEnabled] != dvResourceVirtualEnvironmentVMAgentEnabled ||
+			agent[mkResourceVirtualEnvironmentVMAgentTrim] != dvResourceVirtualEnvironmentVMAgentTrim ||
+			agent[mkResourceVirtualEnvironmentVMAgentType] != dvResourceVirtualEnvironmentVMAgentType {
+			d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
+		}
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMAgent, make([]interface{}, 0))
+	}
+
+	cpu := make(map[string]interface{})
+
+	if vmConfig.CPUCores != nil {
+		cpu[mkResourceVirtualEnvironmentVMCPUCores] = *vmConfig.CPUCores
+	} else {
+		cpu[mkResourceVirtualEnvironmentVMCPUCores] = dvResourceVirtualEnvironmentVMCPUCores
+	}
+
+	if vmConfig.VirtualCPUCount != nil {
+		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = *vmConfig.VirtualCPUCount
+	} else {
+		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = dvResourceVirtualEnvironmentVMCPUHotplugged
+	}
+
+	if vmConfig.CPUSockets != nil {
+		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = *vmConfig.CPUSockets
+	} else {
+		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = dvResourceVirtualEnvironmentVMCPUSockets
+	}
+
+	currentCPU := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
+
+	if len(currentCPU) > 0 ||
+		cpu[mkResourceVirtualEnvironmentVMCPUCores] != dvResourceVirtualEnvironmentVMCPUCores ||
+		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] != dvResourceVirtualEnvironmentVMCPUHotplugged ||
+		cpu[mkResourceVirtualEnvironmentVMCPUSockets] != dvResourceVirtualEnvironmentVMCPUSockets {
+		d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
+	}
+
+	if vmConfig.Description != nil {
+		d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMDescription, "")
+	}
+
+	if vmConfig.KeyboardLayout != nil {
+		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, *vmConfig.KeyboardLayout)
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
+	}
+
+	memory := make(map[string]interface{})
+
+	if vmConfig.DedicatedMemory != nil {
+		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = *vmConfig.DedicatedMemory
+	} else {
+		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = dvResourceVirtualEnvironmentVMMemoryDedicated
+	}
+
+	if vmConfig.FloatingMemory != nil {
+		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = *vmConfig.FloatingMemory
+	} else {
+		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = dvResourceVirtualEnvironmentVMMemoryFloating
+	}
+
+	if vmConfig.SharedMemory != nil {
+		memory[mkResourceVirtualEnvironmentVMMemoryShared] = vmConfig.SharedMemory.Size
+	} else {
+		memory[mkResourceVirtualEnvironmentVMMemoryShared] = dvResourceVirtualEnvironmentVMMemoryShared
+	}
+
+	currentMemory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
+
+	if len(currentMemory) > 0 ||
+		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] != dvResourceVirtualEnvironmentVMMemoryDedicated ||
+		memory[mkResourceVirtualEnvironmentVMMemoryFloating] != dvResourceVirtualEnvironmentVMMemoryFloating ||
+		memory[mkResourceVirtualEnvironmentVMMemoryShared] != dvResourceVirtualEnvironmentVMMemoryShared {
+		d.Set(mkResourceVirtualEnvironmentVMMemory, []interface{}{memory})
+	}
+
+	if vmConfig.Name != nil {
+		d.Set(mkResourceVirtualEnvironmentVMName, *vmConfig.Name)
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMName, "")
+	}
+
+	if vmConfig.OSType != nil {
+		d.Set(mkResourceVirtualEnvironmentVMOSType, *vmConfig.OSType)
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMOSType, "")
+	}
+
+	if vmConfig.PoolID != nil {
+		d.Set(mkResourceVirtualEnvironmentVMPoolID, *vmConfig.PoolID)
 	}
 
 	// Determine the state of the virtual machine in order to update the "started" argument.
