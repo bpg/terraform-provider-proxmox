@@ -345,7 +345,6 @@ This resource doesn't expose any additional attributes.
 * `description` - (Optional) The description
 * `disk` - (Optional) The disk configuration (multiple blocks supported)
     * `datastore_id` - (Optional) The ID of the datastore to create the disk in (defaults to `local-lvm`)
-    * `enabled` - (Optional) Whether to enable the disk (defaults to `true`)
     * `file_format` - (Optional) The file format (defaults to `qcow2`)
         * `qcow2` - QEMU Disk Image v2
         * `raw` - Raw Disk Image
@@ -354,7 +353,9 @@ This resource doesn't expose any additional attributes.
     * `size` - (Optional) The disk size in gigabytes (defaults to `8`)
     * `speed` - (Optional) The speed limits
         * `read` - (Optional) The maximum read speed in megabytes per second
+        * `read_burstable` - (Optional) The maximum burstable read speed in megabytes per second
         * `write` - (Optional) The maximum write speed in megabytes per second
+        * `write_burstable` - (Optional) The maximum burstable write speed in megabytes per second
 * `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`)
     * `da` - Danish
     * `de` - German

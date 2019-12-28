@@ -139,13 +139,16 @@ type CustomStartupOrder struct {
 
 // CustomStorageDevice handles QEMU SATA device parameters.
 type CustomStorageDevice struct {
-	AIO               *string     `json:"aio,omitempty" url:"aio,omitempty"`
-	BackupEnabled     *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	Enabled           bool        `json:"-" url:"-"`
-	FileVolume        string      `json:"file" url:"file"`
-	MaxReadSpeedMbps  *int        `json:"mbps_rd,omitempty" url:"mbps_rd,omitempty"`
-	MaxWriteSpeedMbps *int        `json:"mbps_wr,omitempty" url:"mbps_wr,omitempty"`
-	Media             *string     `json:"media,omitempty" url:"media,omitempty"`
+	AIO                     *string     `json:"aio,omitempty" url:"aio,omitempty"`
+	BackupEnabled           *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
+	BurstableReadSpeedMbps  *int        `json:"mbps_rd_max,omitempty" url:"mbps_rd_max,omitempty"`
+	BurstableWriteSpeedMbps *int        `json:"mbps_wr_max,omitempty" url:"mbps_wr_max,omitempty"`
+	Enabled                 bool        `json:"-" url:"-"`
+	FileVolume              string      `json:"file" url:"file"`
+	MaxReadSpeedMbps        *int        `json:"mbps_rd,omitempty" url:"mbps_rd,omitempty"`
+	MaxWriteSpeedMbps       *int        `json:"mbps_wr,omitempty" url:"mbps_wr,omitempty"`
+	Media                   *string     `json:"media,omitempty" url:"media,omitempty"`
+	Size                    *string     `json:"size,omitempty" url:"size,omitempty"`
 }
 
 // CustomStorageDevices handles QEMU SATA device parameters.
@@ -337,7 +340,10 @@ type VirtualEnvironmentVMGetResponseData struct {
 	SCSIDevice12         *CustomStorageDevice          `json:"scsi12,omitempty"`
 	SCSIDevice13         *CustomStorageDevice          `json:"scsi13,omitempty"`
 	SCSIHardware         *string                       `json:"scsihw,omitempty"`
-	SerialDevices        *CustomSerialDevices          `json:"serial,omitempty"`
+	SerialDevice0        *string                       `json:"serial0,omitempty"`
+	SerialDevice1        *string                       `json:"serial1,omitempty"`
+	SerialDevice2        *string                       `json:"serial2,omitempty"`
+	SerialDevice3        *string                       `json:"serial3,omitempty"`
 	SharedMemory         *CustomSharedMemory           `json:"ivshmem,omitempty"`
 	SkipLock             *CustomBool                   `json:"skiplock,omitempty"`
 	SMBIOS               *CustomSMBIOS                 `json:"smbios1,omitempty"`
@@ -818,6 +824,14 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		}
 	}
 
+	if r.BurstableReadSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_rd_max=%d", *r.BurstableReadSpeedMbps))
+	}
+
+	if r.BurstableWriteSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_wr_max=%d", *r.BurstableWriteSpeedMbps))
+	}
+
 	if r.MaxReadSpeedMbps != nil {
 		values = append(values, fmt.Sprintf("mbps_rd=%d", *r.MaxReadSpeedMbps))
 	}
@@ -828,6 +842,10 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 
 	if r.Media != nil {
 		values = append(values, fmt.Sprintf("media=%s", *r.Media))
+	}
+
+	if r.Size != nil {
+		values = append(values, fmt.Sprintf("size=%s", *r.Size))
 	}
 
 	v.Add(key, strings.Join(values, ","))
@@ -1039,6 +1057,8 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 
 					r.Trunks[i] = iv
 				}
+			default:
+				r.Model = v[0]
 			}
 		}
 	}
@@ -1155,6 +1175,14 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				}
 
 				r.MaxReadSpeedMbps = &iv
+			case "mbps_rd_max":
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.BurstableReadSpeedMbps = &iv
 			case "mbps_wr":
 				iv, err := strconv.Atoi(v[1])
 
@@ -1163,8 +1191,18 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				}
 
 				r.MaxWriteSpeedMbps = &iv
+			case "mbps_wr_max":
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.BurstableWriteSpeedMbps = &iv
 			case "media":
 				r.Media = &v[1]
+			case "size":
+				r.Size = &v[1]
 			}
 		}
 	}

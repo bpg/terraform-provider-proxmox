@@ -6,6 +6,7 @@ package proxmoxtf
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -28,12 +29,13 @@ const (
 	dvResourceVirtualEnvironmentVMCPUSockets                   = 1
 	dvResourceVirtualEnvironmentVMDescription                  = ""
 	dvResourceVirtualEnvironmentVMDiskDatastoreID              = "local-lvm"
-	dvResourceVirtualEnvironmentVMDiskEnabled                  = true
 	dvResourceVirtualEnvironmentVMDiskFileFormat               = "qcow2"
 	dvResourceVirtualEnvironmentVMDiskFileID                   = ""
 	dvResourceVirtualEnvironmentVMDiskSize                     = 8
 	dvResourceVirtualEnvironmentVMDiskSpeedRead                = 0
+	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable       = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWrite               = 0
+	dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable      = 0
 	dvResourceVirtualEnvironmentVMKeyboardLayout               = "en-us"
 	dvResourceVirtualEnvironmentVMMemoryDedicated              = 512
 	dvResourceVirtualEnvironmentVMMemoryFloating               = 0
@@ -77,13 +79,14 @@ const (
 	mkResourceVirtualEnvironmentVMDescription                  = "description"
 	mkResourceVirtualEnvironmentVMDisk                         = "disk"
 	mkResourceVirtualEnvironmentVMDiskDatastoreID              = "datastore_id"
-	mkResourceVirtualEnvironmentVMDiskEnabled                  = "enabled"
 	mkResourceVirtualEnvironmentVMDiskFileFormat               = "file_format"
 	mkResourceVirtualEnvironmentVMDiskFileID                   = "file_id"
 	mkResourceVirtualEnvironmentVMDiskSize                     = "size"
 	mkResourceVirtualEnvironmentVMDiskSpeed                    = "speed"
 	mkResourceVirtualEnvironmentVMDiskSpeedRead                = "read"
+	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable       = "read_burstable"
 	mkResourceVirtualEnvironmentVMDiskSpeedWrite               = "write"
+	mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable      = "write_burstable"
 	mkResourceVirtualEnvironmentVMKeyboardLayout               = "keyboard_layout"
 	mkResourceVirtualEnvironmentVMMemory                       = "memory"
 	mkResourceVirtualEnvironmentVMMemoryDedicated              = "dedicated"
@@ -397,13 +400,6 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "The datastore id",
 							Default:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
 						},
-						mkResourceVirtualEnvironmentVMDiskEnabled: {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "Whether to enable the disk",
-							Default:     dvResourceVirtualEnvironmentVMDiskEnabled,
-						},
 						mkResourceVirtualEnvironmentVMDiskFileFormat: {
 							Type:         schema.TypeString,
 							Optional:     true,
@@ -437,7 +433,9 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 								defaultMap := make(map[string]interface{})
 
 								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedRead] = dvResourceVirtualEnvironmentVMDiskSpeedRead
+								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable] = dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable
 								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedWrite] = dvResourceVirtualEnvironmentVMDiskSpeedWrite
+								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable] = dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable
 
 								defaultList[0] = defaultMap
 
@@ -451,11 +449,23 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 										Description: "The maximum read speed in megabytes per second",
 										Default:     dvResourceVirtualEnvironmentVMDiskSpeedRead,
 									},
+									mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable: {
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: "The maximum burstable read speed in megabytes per second",
+										Default:     dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable,
+									},
 									mkResourceVirtualEnvironmentVMDiskSpeedWrite: {
 										Type:        schema.TypeInt,
 										Optional:    true,
 										Description: "The maximum write speed in megabytes per second",
-										Default:     dvResourceVirtualEnvironmentVMDiskSpeedRead,
+										Default:     dvResourceVirtualEnvironmentVMDiskSpeedWrite,
+									},
+									mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable: {
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: "The maximum burstable write speed in megabytes per second",
+										Default:     dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable,
 									},
 								},
 							},
@@ -791,7 +801,6 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		block := d.(map[string]interface{})
 
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		enabled, _ := block[mkResourceVirtualEnvironmentVMDiskEnabled].(bool)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
@@ -808,18 +817,28 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 		speedBlock := speed[0].(map[string]interface{})
 		speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
+		speedLimitReadBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable].(int)
 		speedLimitWrite := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWrite].(int)
+		speedLimitWriteBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable].(int)
 
 		diskDevice := proxmox.CustomStorageDevice{
-			Enabled: enabled,
+			Enabled: true,
 		}
 
 		if speedLimitRead > 0 {
 			diskDevice.MaxReadSpeedMbps = &speedLimitRead
 		}
 
+		if speedLimitReadBurstable > 0 {
+			diskDevice.BurstableReadSpeedMbps = &speedLimitReadBurstable
+		}
+
 		if speedLimitWrite > 0 {
 			diskDevice.MaxWriteSpeedMbps = &speedLimitWrite
+		}
+
+		if speedLimitWriteBurstable > 0 {
+			diskDevice.BurstableWriteSpeedMbps = &speedLimitWriteBurstable
 		}
 
 		if fileID != "" {
@@ -1033,10 +1052,9 @@ func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m i
 	for i, d := range disk {
 		block := d.(map[string]interface{})
 
-		enabled, _ := block[mkResourceVirtualEnvironmentVMDiskEnabled].(bool)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 
-		if !enabled || fileID == "" {
+		if fileID == "" {
 			continue
 		}
 
@@ -1163,6 +1181,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		return err
 	}
 
+	// Compare the agent configuration to the one stored in the state.
 	if vmConfig.Agent != nil {
 		agent := make(map[string]interface{})
 
@@ -1196,6 +1215,34 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMAgent, make([]interface{}, 0))
 	}
 
+	// Compare the IDE devices to the CDROM and cloud-init configurations stored in the state.
+	if vmConfig.IDEDevice2 != nil {
+		if *vmConfig.IDEDevice2.Media == "cdrom" {
+			if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
+				d.Set(mkResourceVirtualEnvironmentVMCDROM, make([]interface{}, 0))
+			} else {
+				d.Set(mkResourceVirtualEnvironmentVMCloudInit, make([]interface{}, 0))
+
+				cdrom := make([]interface{}, 1)
+				cdromBlock := make(map[string]interface{})
+
+				cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = true
+				cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = vmConfig.IDEDevice2.FileVolume
+
+				cdrom[0] = cdromBlock
+
+				d.Set(mkResourceVirtualEnvironmentVMCDROM, cdrom)
+			}
+		} else {
+			d.Set(mkResourceVirtualEnvironmentVMCDROM, make([]interface{}, 0))
+			d.Set(mkResourceVirtualEnvironmentVMCloudInit, make([]interface{}, 0))
+		}
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMCDROM, make([]interface{}, 0))
+		d.Set(mkResourceVirtualEnvironmentVMCloudInit, make([]interface{}, 0))
+	}
+
+	// Compare the CPU configuration to the one stored in the state.
 	cpu := make(map[string]interface{})
 
 	if vmConfig.CPUCores != nil {
@@ -1225,6 +1272,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
 	}
 
+	// Compare the description and keyboard layout to the values stored in the state.
 	if vmConfig.Description != nil {
 		d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
 	} else {
@@ -1237,6 +1285,101 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
 	}
 
+	// Compare the disks to those stored in the state.
+	currentDiskList := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+
+	diskList := make([]interface{}, 0)
+	diskObjects := []*proxmox.CustomStorageDevice{
+		vmConfig.SCSIDevice0,
+		vmConfig.SCSIDevice1,
+		vmConfig.SCSIDevice2,
+		vmConfig.SCSIDevice3,
+		vmConfig.SCSIDevice4,
+		vmConfig.SCSIDevice5,
+		vmConfig.SCSIDevice6,
+		vmConfig.SCSIDevice7,
+		vmConfig.SCSIDevice8,
+		vmConfig.SCSIDevice9,
+		vmConfig.SCSIDevice10,
+		vmConfig.SCSIDevice11,
+		vmConfig.SCSIDevice12,
+		vmConfig.SCSIDevice13,
+	}
+
+	for di, dd := range diskObjects {
+		disk := make(map[string]interface{})
+
+		if dd == nil {
+			continue
+		}
+
+		fileIDParts := strings.Split(dd.FileVolume, ":")
+
+		disk[mkResourceVirtualEnvironmentVMDiskDatastoreID] = fileIDParts[0]
+
+		if len(currentDiskList) > di {
+			currentDisk := currentDiskList[di].(map[string]interface{})
+
+			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = currentDisk[mkResourceVirtualEnvironmentVMDiskFileFormat]
+			disk[mkResourceVirtualEnvironmentVMDiskFileID] = currentDisk[mkResourceVirtualEnvironmentVMDiskFileID]
+		}
+
+		diskSize := 0
+
+		if dd.Size != nil {
+			if strings.HasSuffix(*dd.Size, "T") {
+				diskSize, err = strconv.Atoi(strings.TrimSuffix(*dd.Size, "T"))
+
+				if err != nil {
+					return err
+				}
+
+				diskSize = int(math.Ceil(float64(diskSize) * 1024))
+			} else if strings.HasSuffix(*dd.Size, "G") {
+				diskSize, err = strconv.Atoi(strings.TrimSuffix(*dd.Size, "G"))
+
+				if err != nil {
+					return err
+				}
+			} else if strings.HasSuffix(*dd.Size, "M") {
+				diskSize, err = strconv.Atoi(strings.TrimSuffix(*dd.Size, "M"))
+
+				if err != nil {
+					return err
+				}
+
+				diskSize = int(math.Ceil(float64(diskSize) / 1024))
+			} else {
+				return fmt.Errorf("Cannot parse storage size \"%s\"", *dd.Size)
+			}
+		}
+
+		disk[mkResourceVirtualEnvironmentVMDiskSize] = diskSize
+
+		if dd.BurstableReadSpeedMbps != nil ||
+			dd.BurstableWriteSpeedMbps != nil ||
+			dd.MaxReadSpeedMbps != nil ||
+			dd.MaxWriteSpeedMbps != nil {
+			speed := map[string]interface{}{}
+
+			speed[mkResourceVirtualEnvironmentVMDiskSpeedRead] = *dd.MaxReadSpeedMbps
+			speed[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable] = *dd.BurstableReadSpeedMbps
+			speed[mkResourceVirtualEnvironmentVMDiskSpeedWrite] = *dd.MaxWriteSpeedMbps
+			speed[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable] = *dd.BurstableWriteSpeedMbps
+
+			disk[mkResourceVirtualEnvironmentVMDiskSpeed] = []interface{}{speed}
+		} else {
+			disk[mkResourceVirtualEnvironmentVMDiskSpeed] = []interface{}{}
+		}
+
+		diskList = append(diskList, disk)
+	}
+
+	if len(currentDiskList) > 0 || len(diskList) > 0 {
+		d.Set(mkResourceVirtualEnvironmentVMDisk, diskList)
+	}
+
+	// Compare the memory configuration to the one stored in the state.
 	memory := make(map[string]interface{})
 
 	if vmConfig.DedicatedMemory != nil {
@@ -1266,12 +1409,63 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMMemory, []interface{}{memory})
 	}
 
+	// Compare the name to the value stored in the state.
 	if vmConfig.Name != nil {
 		d.Set(mkResourceVirtualEnvironmentVMName, *vmConfig.Name)
 	} else {
 		d.Set(mkResourceVirtualEnvironmentVMName, "")
 	}
 
+	// Compare the network devices to those stored in the state.
+	currentNetworkDeviceList := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
+
+	networkDeviceLast := -1
+	networkDeviceList := make([]interface{}, 8)
+	networkDeviceObjects := []*proxmox.CustomNetworkDevice{
+		vmConfig.NetworkDevice0,
+		vmConfig.NetworkDevice1,
+		vmConfig.NetworkDevice2,
+		vmConfig.NetworkDevice3,
+		vmConfig.NetworkDevice4,
+		vmConfig.NetworkDevice5,
+		vmConfig.NetworkDevice6,
+		vmConfig.NetworkDevice7,
+	}
+
+	for ni, nd := range networkDeviceObjects {
+		networkDevice := make(map[string]interface{})
+
+		if nd != nil {
+			networkDeviceLast = ni
+
+			if nd.Bridge != nil {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceBridge] = *nd.Bridge
+			} else {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceBridge] = ""
+			}
+
+			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled] = nd.Enabled
+
+			if nd.MACAddress != nil {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress] = *nd.MACAddress
+			} else {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress] = ""
+			}
+
+			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceModel] = nd.Model
+			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs] = nd.Trunks
+		} else {
+			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled] = false
+		}
+
+		networkDeviceList[ni] = networkDevice
+	}
+
+	if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
+		d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[0:networkDeviceLast+1])
+	}
+
+	// Compare the OS type and pool ID to the values stored in the state.
 	if vmConfig.OSType != nil {
 		d.Set(mkResourceVirtualEnvironmentVMOSType, *vmConfig.OSType)
 	} else {

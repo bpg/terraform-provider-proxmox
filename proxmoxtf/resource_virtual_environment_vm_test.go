@@ -230,7 +230,6 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, diskSchema, []string{
 		mkResourceVirtualEnvironmentVMDiskDatastoreID,
-		mkResourceVirtualEnvironmentVMDiskEnabled,
 		mkResourceVirtualEnvironmentVMDiskFileFormat,
 		mkResourceVirtualEnvironmentVMDiskFileID,
 		mkResourceVirtualEnvironmentVMDiskSize,
@@ -238,13 +237,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testSchemaValueTypes(t, diskSchema, []string{
 		mkResourceVirtualEnvironmentVMDiskDatastoreID,
-		mkResourceVirtualEnvironmentVMDiskEnabled,
 		mkResourceVirtualEnvironmentVMDiskFileFormat,
 		mkResourceVirtualEnvironmentVMDiskFileID,
 		mkResourceVirtualEnvironmentVMDiskSize,
 	}, []schema.ValueType{
 		schema.TypeString,
-		schema.TypeBool,
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeInt,
@@ -254,13 +251,19 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, diskSpeedSchema, []string{
 		mkResourceVirtualEnvironmentVMDiskSpeedRead,
+		mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable,
 		mkResourceVirtualEnvironmentVMDiskSpeedWrite,
+		mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable,
 	})
 
 	testSchemaValueTypes(t, diskSpeedSchema, []string{
 		mkResourceVirtualEnvironmentVMDiskSpeedRead,
+		mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable,
 		mkResourceVirtualEnvironmentVMDiskSpeedWrite,
+		mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable,
 	}, []schema.ValueType{
+		schema.TypeInt,
+		schema.TypeInt,
 		schema.TypeInt,
 		schema.TypeInt,
 	})
