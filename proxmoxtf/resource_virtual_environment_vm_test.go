@@ -43,16 +43,25 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMVMID,
 	})
 
+	testComputedAttributes(t, s, []string{
+		mkResourceVirtualEnvironmentVMIPv4Addresses,
+		mkResourceVirtualEnvironmentVMIPv6Addresses,
+		mkResourceVirtualEnvironmentVMNetworkInterfaceNames,
+	})
+
 	testSchemaValueTypes(t, s, []string{
 		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMCloudInit,
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDescription,
 		mkResourceVirtualEnvironmentVMDisk,
+		mkResourceVirtualEnvironmentVMIPv4Addresses,
+		mkResourceVirtualEnvironmentVMIPv6Addresses,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
 		mkResourceVirtualEnvironmentVMMemory,
 		mkResourceVirtualEnvironmentVMName,
 		mkResourceVirtualEnvironmentVMNetworkDevice,
+		mkResourceVirtualEnvironmentVMNetworkInterfaceNames,
 		mkResourceVirtualEnvironmentVMOSType,
 		mkResourceVirtualEnvironmentVMPoolID,
 		mkResourceVirtualEnvironmentVMStarted,
@@ -63,9 +72,12 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
 		schema.TypeString,
+		schema.TypeList,
 		schema.TypeList,
 		schema.TypeString,
 		schema.TypeString,

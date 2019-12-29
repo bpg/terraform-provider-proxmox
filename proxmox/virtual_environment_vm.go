@@ -66,6 +66,22 @@ VMID:
 	return nil, errors.New("Unable to retrieve the next available VM identifier")
 }
 
+// GetVMNetworkInterfacesFromAgent retrieves the network interfaces reported by the QEMU agent.
+func (c *VirtualEnvironmentClient) GetVMNetworkInterfacesFromAgent(nodeName string, vmID int) (*VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData, error) {
+	resBody := &VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseBody{}
+	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/qemu/%d/agent/network-get-interfaces", url.PathEscape(nodeName), vmID), nil, resBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("The server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
+}
+
 // GetVMStatus retrieves the status for a virtual machine.
 func (c *VirtualEnvironmentClient) GetVMStatus(nodeName string, vmID int) (*VirtualEnvironmentVMGetStatusResponseData, error) {
 	resBody := &VirtualEnvironmentVMGetStatusResponseBody{}
@@ -112,6 +128,32 @@ func (c *VirtualEnvironmentClient) UpdateVMAsync(nodeName string, vmID int, d *V
 	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/config", url.PathEscape(nodeName), vmID), d, nil)
 }
 
+// WaitForNetworkInterfacesFromAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
+func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromAgent(nodeName string, vmID int, timeout int, delay int) (*VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData, error) {
+	timeDelay := int64(delay)
+	timeMax := float64(timeout)
+	timeStart := time.Now()
+	timeElapsed := timeStart.Sub(timeStart)
+
+	for timeElapsed.Seconds() < timeMax {
+		if int64(timeElapsed.Seconds())%timeDelay == 0 {
+			data, err := c.GetVMNetworkInterfacesFromAgent(nodeName, vmID)
+
+			if err == nil && data != nil {
+				return data, err
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+
+		time.Sleep(200 * time.Millisecond)
+
+		timeElapsed = time.Now().Sub(timeStart)
+	}
+
+	return nil, fmt.Errorf("Timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces", vmID)
+}
+
 // WaitForState waits for a virtual machine to reach a specific state.
 func (c *VirtualEnvironmentClient) WaitForState(nodeName string, vmID int, state string, timeout int, delay int) error {
 	state = strings.ToLower(state)
@@ -141,5 +183,5 @@ func (c *VirtualEnvironmentClient) WaitForState(nodeName string, vmID int, state
 		timeElapsed = time.Now().Sub(timeStart)
 	}
 
-	return fmt.Errorf("Failed to wait for VM \"%d\" to enter the state \"%s\"", vmID, state)
+	return fmt.Errorf("Timeout while waiting for VM \"%d\" to enter the state \"%s\"", vmID, state)
 }

@@ -8,7 +8,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_cloud_image" {
   }
 }
 
-resource "proxmox_virtual_environment_file" "cloud_init_config" {
+resource "proxmox_virtual_environment_file" "cloud_config" {
   content_type = "snippets"
   datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))}"
   node_name    = "${data.proxmox_virtual_environment_datastores.example.node_name}"
@@ -19,7 +19,7 @@ resource "proxmox_virtual_environment_file" "cloud_init_config" {
 chpasswd:
   list: |
     ubuntu:example
-  expire: False
+  expire: false
 hostname: terraform-provider-proxmox-example
 packages:
   - qemu-guest-agent
@@ -33,7 +33,7 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
     EOF
 
-    file_name = "terraform-provider-proxmox-example-cloud-init.yaml"
+    file_name = "terraform-provider-proxmox-example-cloud-config.yaml"
   }
 }
 

@@ -16,11 +16,11 @@ resource "proxmox_virtual_environment_vm" "example" {
 
     user_account {
       keys     = ["${trimspace(tls_private_key.example.public_key_openssh)}"]
-      password = "proxmoxtf"
+      password = "example"
       username = "ubuntu"
     }
 
-    user_data_file_id = "${proxmox_virtual_environment_file.cloud_init_config.id}"
+    user_data_file_id = "${proxmox_virtual_environment_file.cloud_config.id}"
   }
 
   disk {
@@ -34,6 +34,20 @@ resource "proxmox_virtual_environment_vm" "example" {
   os_type   = "l26"
   pool_id   = "${proxmox_virtual_environment_pool.example.id}"
   vm_id     = 2038
+
+  connection {
+    type        = "ssh"
+    agent       = false
+    host        = "${element(element(self.ipv4_addresses, index(self.network_interface_names, "eth0")), 0)}"
+    private_key = "${tls_private_key.example.private_key_pem}"
+    user        = "ubuntu"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo Welcome to $(hostname)!",
+    ]
+  }
 }
 
 resource "local_file" "example_ssh_private_key" {
@@ -53,4 +67,16 @@ resource "tls_private_key" "example" {
 
 output "resource_proxmox_virtual_environment_vm_example_id" {
   value = "${proxmox_virtual_environment_vm.example.id}"
+}
+
+output "resource_proxmox_virtual_environment_vm_example_ipv4_addresses" {
+  value = "${proxmox_virtual_environment_vm.example.ipv4_addresses}"
+}
+
+output "resource_proxmox_virtual_environment_vm_example_ipv6_addresses" {
+  value = "${proxmox_virtual_environment_vm.example.ipv6_addresses}"
+}
+
+output "resource_proxmox_virtual_environment_vm_example_network_interface_names" {
+  value = "${proxmox_virtual_environment_vm.example.network_interface_names}"
 }

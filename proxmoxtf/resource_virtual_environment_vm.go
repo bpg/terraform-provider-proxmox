@@ -89,6 +89,8 @@ const (
 	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable       = "read_burstable"
 	mkResourceVirtualEnvironmentVMDiskSpeedWrite               = "write"
 	mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable      = "write_burstable"
+	mkResourceVirtualEnvironmentVMIPv4Addresses                = "ipv4_addresses"
+	mkResourceVirtualEnvironmentVMIPv6Addresses                = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout               = "keyboard_layout"
 	mkResourceVirtualEnvironmentVMMemory                       = "memory"
 	mkResourceVirtualEnvironmentVMMemoryDedicated              = "dedicated"
@@ -101,6 +103,7 @@ const (
 	mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress      = "mac_address"
 	mkResourceVirtualEnvironmentVMNetworkDeviceModel           = "model"
 	mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs         = "vlan_ids"
+	mkResourceVirtualEnvironmentVMNetworkInterfaceNames        = "network_interface_names"
 	mkResourceVirtualEnvironmentVMNodeName                     = "node_name"
 	mkResourceVirtualEnvironmentVMOSType                       = "os_type"
 	mkResourceVirtualEnvironmentVMPoolID                       = "pool_id"
@@ -193,7 +196,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "The cloud-init configuration",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					return make([]interface{}, 0), nil
+					return []interface{}{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -202,7 +205,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "The DNS configuration",
 							Optional:    true,
 							DefaultFunc: func() (interface{}, error) {
-								return make([]interface{}, 0), nil
+								return []interface{}{}, nil
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -228,7 +231,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "The IP configuration",
 							Optional:    true,
 							DefaultFunc: func() (interface{}, error) {
-								return make([]interface{}, 0), nil
+								return []interface{}{}, nil
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -237,7 +240,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 										Description: "The IPv4 configuration",
 										Optional:    true,
 										DefaultFunc: func() (interface{}, error) {
-											return make([]interface{}, 0), nil
+											return []interface{}{}, nil
 										},
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
@@ -263,7 +266,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 										Description: "The IPv6 configuration",
 										Optional:    true,
 										DefaultFunc: func() (interface{}, error) {
-											return make([]interface{}, 0), nil
+											return []interface{}{}, nil
 										},
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
@@ -294,7 +297,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "The user account configuration",
 							Required:    true,
 							DefaultFunc: func() (interface{}, error) {
-								return make([]interface{}, 0), nil
+								return []interface{}{}, nil
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -487,6 +490,24 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 14,
 				MinItems: 0,
 			},
+			mkResourceVirtualEnvironmentVMIPv4Addresses: {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "The IPv4 addresses published by the QEMU agent",
+				Elem: &schema.Schema{
+					Type: schema.TypeList,
+					Elem: &schema.Schema{Type: schema.TypeString},
+				},
+			},
+			mkResourceVirtualEnvironmentVMIPv6Addresses: {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "The IPv6 addresses published by the QEMU agent",
+				Elem: &schema.Schema{
+					Type: schema.TypeList,
+					Elem: &schema.Schema{Type: schema.TypeString},
+				},
+			},
 			mkResourceVirtualEnvironmentVMKeyboardLayout: {
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -591,7 +612,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:    true,
 							Description: "The VLAN identifiers",
 							DefaultFunc: func() (interface{}, error) {
-								return make([]interface{}, 0), nil
+								return []interface{}{}, nil
 							},
 							Elem: &schema.Schema{Type: schema.TypeInt},
 						},
@@ -599,6 +620,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 				MaxItems: 8,
 				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentVMNetworkInterfaceNames: {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "The network interface names published by the QEMU agent",
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			mkResourceVirtualEnvironmentVMNodeName: &schema.Schema{
 				Type:        schema.TypeString,
@@ -649,37 +676,24 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	resourceSchema := resourceVirtualEnvironmentVM().Schema
-	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+	resource := resourceVirtualEnvironmentVM()
 
-	if len(agent) == 0 {
-		agentDefault, err := resourceSchema[mkResourceVirtualEnvironmentVMAgent].DefaultValue()
+	agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 
-		if err != nil {
-			return err
-		}
-
-		agent = agentDefault.([]interface{})
+	if err != nil {
+		return err
 	}
 
-	agentBlock := agent[0].(map[string]interface{})
 	agentEnabled := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
 	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
-	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
+	cdromBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
 
-	if len(cdrom) == 0 {
-		cdromDefault, err := resourceSchema[mkResourceVirtualEnvironmentVMCDROM].DefaultValue()
-
-		if err != nil {
-			return err
-		}
-
-		cdrom = cdromDefault.([]interface{})
+	if err != nil {
+		return err
 	}
 
-	cdromBlock := cdrom[0].(map[string]interface{})
 	cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 	cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
 
@@ -790,19 +804,12 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		}
 	}
 
-	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
+	cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
 
-	if len(cpu) == 0 {
-		cpuDefault, err := resourceSchema[mkResourceVirtualEnvironmentVMCPU].DefaultValue()
-
-		if err != nil {
-			return err
-		}
-
-		cpu = cpuDefault.([]interface{})
+	if err != nil {
+		return err
 	}
 
-	cpuBlock := cpu[0].(map[string]interface{})
 	cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 	cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
@@ -811,52 +818,20 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	scsiDevices := make(proxmox.CustomStorageDevices, len(disk))
 
-	diskSchemaElem := resourceSchema[mkResourceVirtualEnvironmentVMDisk].Elem
-	diskSchemaResource := diskSchemaElem.(*schema.Resource)
-	diskSpeedResource := diskSchemaResource.Schema[mkResourceVirtualEnvironmentVMDiskSpeed]
-
-	for i, d := range disk {
-		block := d.(map[string]interface{})
-
-		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
-		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
-		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
-
-		if len(speed) == 0 {
-			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
-
-			if err != nil {
-				return err
-			}
-
-			speed = diskSpeedDefault.([]interface{})
-		}
-
-		speedBlock := speed[0].(map[string]interface{})
-		speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
-		speedLimitReadBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable].(int)
-		speedLimitWrite := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWrite].(int)
-		speedLimitWriteBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable].(int)
-
+	for i, diskEntry := range disk {
 		diskDevice := proxmox.CustomStorageDevice{
 			Enabled: true,
 		}
 
-		if speedLimitRead > 0 {
-			diskDevice.MaxReadSpeedMbps = &speedLimitRead
-		}
+		block := diskEntry.(map[string]interface{})
+		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
+		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
+		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 
-		if speedLimitReadBurstable > 0 {
-			diskDevice.BurstableReadSpeedMbps = &speedLimitReadBurstable
-		}
+		speedBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
 
-		if speedLimitWrite > 0 {
-			diskDevice.MaxWriteSpeedMbps = &speedLimitWrite
-		}
-
-		if speedLimitWriteBurstable > 0 {
-			diskDevice.BurstableWriteSpeedMbps = &speedLimitWriteBurstable
+		if err != nil {
+			return err
 		}
 
 		if fileID != "" {
@@ -865,23 +840,39 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
 		}
 
+		if len(speedBlock) > 0 {
+			speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
+			speedLimitReadBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable].(int)
+			speedLimitWrite := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWrite].(int)
+			speedLimitWriteBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable].(int)
+
+			if speedLimitRead > 0 {
+				diskDevice.MaxReadSpeedMbps = &speedLimitRead
+			}
+
+			if speedLimitReadBurstable > 0 {
+				diskDevice.BurstableReadSpeedMbps = &speedLimitReadBurstable
+			}
+
+			if speedLimitWrite > 0 {
+				diskDevice.MaxWriteSpeedMbps = &speedLimitWrite
+			}
+
+			if speedLimitWriteBurstable > 0 {
+				diskDevice.BurstableWriteSpeedMbps = &speedLimitWriteBurstable
+			}
+		}
+
 		scsiDevices[i] = diskDevice
 	}
 
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
-	memory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
+	memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
 
-	if len(memory) == 0 {
-		memoryDefault, err := resourceSchema[mkResourceVirtualEnvironmentVMMemory].DefaultValue()
-
-		if err != nil {
-			return err
-		}
-
-		memory = memoryDefault.([]interface{})
+	if err != nil {
+		return err
 	}
 
-	memoryBlock := memory[0].(map[string]interface{})
 	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
 	memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
 	memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
@@ -891,8 +882,8 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 	networkDeviceObjects := make(proxmox.CustomNetworkDevices, len(networkDevice))
 
-	for i, d := range networkDevice {
-		block := d.(map[string]interface{})
+	for i, networkDeviceEntry := range networkDevice {
+		block := networkDeviceEntry.(map[string]interface{})
 
 		bridge, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceBridge].(string)
 		enabled, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled].(bool)
@@ -1539,6 +1530,43 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	}
 
 	d.Set(mkResourceVirtualEnvironmentVMStarted, status.Status == "running")
+
+	// Populate the attributes that rely on the QEMU agent.
+	ipv4Addresses := []interface{}{}
+	ipv6Addresses := []interface{}{}
+	networkInterfaceNames := []interface{}{}
+
+	if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
+		networkInterfaces, err := veClient.WaitForNetworkInterfacesFromAgent(nodeName, vmID, 600, 5)
+
+		if err == nil && networkInterfaces.Result != nil {
+			ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
+			ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))
+			networkInterfaceNames = make([]interface{}, len(*networkInterfaces.Result))
+
+			for ri, rv := range *networkInterfaces.Result {
+				rvIPv4Addresses := []interface{}{}
+				rvIPv6Addresses := []interface{}{}
+
+				for _, ip := range *rv.IPAddresses {
+					switch ip.Type {
+					case "ipv4":
+						rvIPv4Addresses = append(rvIPv4Addresses, ip.Address)
+					case "ipv6":
+						rvIPv6Addresses = append(rvIPv6Addresses, ip.Address)
+					}
+				}
+
+				ipv4Addresses[ri] = rvIPv4Addresses
+				ipv6Addresses[ri] = rvIPv6Addresses
+				networkInterfaceNames[ri] = rv.Name
+			}
+		}
+	}
+
+	d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
+	d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
+	d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
 
 	return nil
 }

@@ -258,6 +258,43 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	WatchdogDevice       *CustomWatchdogDevice        `json:"watchdog,omitempty" url:"watchdog,omitempty"`
 }
 
+// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseBody contains the body from a QEMU get network interfaces response.
+type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseBody struct {
+	Data *VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData contains the data from a QEMU get network interfaces response.
+type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData struct {
+	Result *[]VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResult `json:"result,omitempty"`
+}
+
+// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResult contains the result from a QEMU get network interfaces response.
+type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResult struct {
+	MACAddress  string                                                                 `json:"hardware-address"`
+	Name        string                                                                 `json:"name"`
+	Statistics  VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics   `json:"statistics"`
+	IPAddresses *[]VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultIPAddress `json:"ip-addresses,omitempty"`
+}
+
+// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultIPAddress contains the IP address from a QEMU get network interfaces response.
+type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultIPAddress struct {
+	Address string `json:"ip-address"`
+	Prefix  int    `json:"prefix"`
+	Type    string `json:"ip-address-type"`
+}
+
+// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics contains the statistics from a QEMU get network interfaces response.
+type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics struct {
+	RXBytes   int `json:"rx-bytes"`
+	RXDropped int `json:"rx-dropped"`
+	RXErrors  int `json:"rx-errs"`
+	RXPackets int `json:"rx-packets"`
+	TXBytes   int `json:"tx-bytes"`
+	TXDropped int `json:"tx-dropped"`
+	TXErrors  int `json:"tx-errs"`
+	TXPackets int `json:"tx-packets"`
+}
+
 // VirtualEnvironmentVMGetResponseBody contains the body from an virtual machine get response.
 type VirtualEnvironmentVMGetResponseBody struct {
 	Data *VirtualEnvironmentVMGetResponseData `json:"data,omitempty"`

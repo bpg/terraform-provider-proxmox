@@ -426,7 +426,9 @@ This resource doesn't expose any additional attributes.
 * `vm_id` - (Optional) The ID
 
 ###### Attributes
-This resource doesn't expose any additional attributes.
+* `ipv4_addresses` - The IPv4 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
+* `ipv6_addresses` - The IPv6 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
+* `network_interface_names` - The network interface names published by the QEMU agent (empty list when `agent.enabled` is `false`)
 
 ## Developing the Provider
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.13+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.

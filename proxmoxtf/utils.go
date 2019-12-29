@@ -131,6 +131,50 @@ func getQEMUAgentTypeValidator() schema.SchemaValidateFunc {
 	return validation.StringInSlice([]string{"isa", "virtio"}, false)
 }
 
+func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, m interface{}, k []string, i int, allowDefault bool) (map[string]interface{}, error) {
+	var resourceBlock map[string]interface{}
+	var resourceData interface{}
+	var resourceSchema *schema.Schema
+
+	for ki, kv := range k {
+		if ki == 0 {
+			resourceData = d.Get(kv)
+			resourceSchema = r.Schema[kv]
+		} else {
+			mapValues := resourceData.([]interface{})
+
+			if len(mapValues) <= i {
+				return resourceBlock, fmt.Errorf("Index out of bounds %d", i)
+			}
+
+			mapValue := mapValues[i].(map[string]interface{})
+
+			resourceData = mapValue[kv]
+			resourceSchema = resourceSchema.Elem.(*schema.Resource).Schema[kv]
+		}
+	}
+
+	list := resourceData.([]interface{})
+
+	if len(list) == 0 {
+		if allowDefault {
+			listDefault, err := resourceSchema.DefaultValue()
+
+			if err != nil {
+				return nil, err
+			}
+
+			list = listDefault.([]interface{})
+		}
+	}
+
+	if len(list) > i {
+		resourceBlock = list[i].(map[string]interface{})
+	}
+
+	return resourceBlock, nil
+}
+
 func getVLANIDsValidator() schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (ws []string, es []error) {
 		min := 1
