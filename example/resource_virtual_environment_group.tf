@@ -1,6 +1,6 @@
 resource "proxmox_virtual_environment_group" "example" {
   acl {
-    path    = "/vms/100"
+    path    = "/vms/${proxmox_virtual_environment_vm.example.id}"
     role_id = "${proxmox_virtual_environment_role.example.id}"
   }
 

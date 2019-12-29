@@ -1,6 +1,6 @@
 resource "proxmox_virtual_environment_user" "example" {
   acl {
-    path      = "/"
+    path      = "/vms/${proxmox_virtual_environment_vm.example.id}"
     propagate = true
     role_id   = "PVEVMAdmin"
   }

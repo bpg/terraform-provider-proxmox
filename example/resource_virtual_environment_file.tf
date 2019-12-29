@@ -14,7 +14,7 @@ resource "proxmox_virtual_environment_file" "cloud_init_config" {
   node_name    = "${data.proxmox_virtual_environment_datastores.example.node_name}"
 
   source_raw {
-    data      = <<EOF
+    data = <<EOF
 #cloud-config
 chpasswd:
   list: |
