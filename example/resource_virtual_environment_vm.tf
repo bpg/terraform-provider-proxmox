@@ -1,4 +1,8 @@
 resource "proxmox_virtual_environment_vm" "example" {
+  agent {
+    enabled = true
+  }
+
   cloud_init {
     dns {
       server = "1.1.1.1"
@@ -15,6 +19,8 @@ resource "proxmox_virtual_environment_vm" "example" {
       password = "proxmoxtf"
       username = "ubuntu"
     }
+
+    user_data_file_id = "${proxmox_virtual_environment_file.cloud_init_config.id}"
   }
 
   disk {

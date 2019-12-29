@@ -16,37 +16,7 @@ import (
 
 // ExecuteNodeCommands executes commands on a given node.
 func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands []string) error {
-	// We must first retrieve the IP address of the node as we need to bypass the API and use SSH instead.
-	networkDevices, err := c.ListNodeNetworkDevices(nodeName)
-
-	if err != nil {
-		return err
-	}
-
-	nodeAddress := ""
-
-	for _, d := range networkDevices {
-		if d.Address != nil {
-			nodeAddress = *d.Address
-			break
-		}
-	}
-
-	if nodeAddress == "" {
-		return fmt.Errorf("Failed to determine the IP address of node \"%s\"", nodeName)
-	}
-
-	// We can now go ahead and execute the commands using SSH.
-	// Hopefully, the developers will add this feature to the REST API at some point.
-	ur := strings.Split(c.Username, "@")
-
-	sshConfig := &ssh.ClientConfig{
-		User:            ur[0],
-		Auth:            []ssh.AuthMethod{ssh.Password(c.Password)},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	sshClient, err := ssh.Dial("tcp", nodeAddress+":22", sshConfig)
+	sshClient, err := c.OpenNodeShell(nodeName)
 
 	if err != nil {
 		return err
@@ -62,7 +32,7 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands
 
 	defer sshSession.Close()
 
-	_, err = sshSession.CombinedOutput(
+	output, err := sshSession.CombinedOutput(
 		fmt.Sprintf(
 			"/bin/bash -c '%s'",
 			strings.ReplaceAll(strings.Join(commands, " && "), "'", "'\"'\"'"),
@@ -70,10 +40,34 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands
 	)
 
 	if err != nil {
-		return err
+		return errors.New(string(output))
 	}
 
 	return nil
+}
+
+// GetNodeIP retrieves the IP address of a node.
+func (c *VirtualEnvironmentClient) GetNodeIP(nodeName string) (*string, error) {
+	networkDevices, err := c.ListNodeNetworkDevices(nodeName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	nodeAddress := ""
+
+	for _, d := range networkDevices {
+		if d.Address != nil {
+			nodeAddress = *d.Address
+			break
+		}
+	}
+
+	if nodeAddress == "" {
+		return nil, fmt.Errorf("Failed to determine the IP address of node \"%s\"", nodeName)
+	}
+
+	return &nodeAddress, nil
 }
 
 // ListNodeNetworkDevices retrieves a list of network devices for a specific nodes.
@@ -114,4 +108,29 @@ func (c *VirtualEnvironmentClient) ListNodes() ([]*VirtualEnvironmentNodeListRes
 	})
 
 	return resBody.Data, nil
+}
+
+// OpenNodeShell establishes a new SSH connection to a node.
+func (c *VirtualEnvironmentClient) OpenNodeShell(nodeName string) (*ssh.Client, error) {
+	nodeAddress, err := c.GetNodeIP(nodeName)
+
+	if err != nil {
+		return nil, err
+	}
+
+	ur := strings.Split(c.Username, "@")
+
+	sshConfig := &ssh.ClientConfig{
+		User:            ur[0],
+		Auth:            []ssh.AuthMethod{ssh.Password(c.Password)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	sshClient, err := ssh.Dial("tcp", *nodeAddress+":22", sshConfig)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return sshClient, nil
 }

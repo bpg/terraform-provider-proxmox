@@ -177,20 +177,7 @@ func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) erro
 			status = fmt.Sprintf("%s (%s)", status, strings.Join(errList, " - "))
 		}
 
-		switch res.StatusCode {
-		case 400, 500:
-			return fmt.Errorf("Received an HTTP %d response - Reason: %s", res.StatusCode, status)
-		case 401:
-			return fmt.Errorf("Received an HTTP %d response - Please verify that the specified credentials are valid", res.StatusCode)
-		case 403:
-			return fmt.Errorf("Received an HTTP %d response - Please verify that the user account has the necessary permissions", res.StatusCode)
-		case 404:
-			return fmt.Errorf("Received an HTTP %d response - Please verify that the endpoint refers to a supported version of the Proxmox Virtual Environment API", res.StatusCode)
-		case 501, 502, 503:
-			return fmt.Errorf("Received an HTTP %d response - Please verify that the Proxmox Virtual Environment API is healthy", res.StatusCode)
-		default:
-			return fmt.Errorf("Received an HTTP %d response", res.StatusCode)
-		}
+		return fmt.Errorf("Received an HTTP %d response - Reason: %s", res.StatusCode, status)
 	}
 
 	return nil

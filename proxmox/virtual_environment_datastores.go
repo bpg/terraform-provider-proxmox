@@ -13,6 +13,9 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strings"
+
+	"github.com/pkg/sftp"
 )
 
 // DeleteDatastoreFile deletes a file in a datastore.
@@ -68,80 +71,155 @@ func (c *VirtualEnvironmentClient) ListDatastores(nodeName string, d *VirtualEnv
 
 // UploadFileToDatastore uploads a file to a datastore.
 func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDatastoreUploadRequestBody) (*VirtualEnvironmentDatastoreUploadResponseBody, error) {
-	r, w := io.Pipe()
+	switch d.ContentType {
+	case "iso", "vztmpl":
+		r, w := io.Pipe()
 
-	defer r.Close()
+		defer r.Close()
 
-	m := multipart.NewWriter(w)
+		m := multipart.NewWriter(w)
 
-	go func() {
-		defer w.Close()
-		defer m.Close()
+		go func() {
+			defer w.Close()
+			defer m.Close()
 
-		m.WriteField("content", d.ContentType)
+			m.WriteField("content", d.ContentType)
 
-		part, err := m.CreateFormFile("filename", d.FileName)
+			part, err := m.CreateFormFile("filename", d.FileName)
+
+			if err != nil {
+				return
+			}
+
+			_, err = io.Copy(part, d.FileReader)
+
+			if err != nil {
+				return
+			}
+		}()
+
+		// We need to store the multipart content in a temporary file to avoid using high amounts of memory.
+		// This is necessary due to Proxmox VE not supporting chunked transfers in v6.1 and earlier versions.
+		tempMultipartFile, err := ioutil.TempFile("", "multipart")
 
 		if err != nil {
-			return
+			return nil, err
 		}
 
-		_, err = io.Copy(part, d.FileReader)
+		tempMultipartFileName := tempMultipartFile.Name()
+
+		io.Copy(tempMultipartFile, r)
+
+		err = tempMultipartFile.Close()
 
 		if err != nil {
-			return
+			return nil, err
 		}
-	}()
 
-	// We need to store the multipart content in a temporary file to avoid using high amounts of memory.
-	// This is necessary due to Proxmox VE not supporting chunked transfers in v6.1 and earlier versions.
-	tempMultipartFile, err := ioutil.TempFile("", "multipart")
+		defer os.Remove(tempMultipartFileName)
 
-	if err != nil {
-		return nil, err
+		// Now that the multipart data is stored in a file, we can go ahead and do a HTTP POST request.
+		fileReader, err := os.Open(tempMultipartFileName)
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer fileReader.Close()
+
+		fileInfo, err := fileReader.Stat()
+
+		if err != nil {
+			return nil, err
+		}
+
+		fileSize := fileInfo.Size()
+
+		reqBody := &VirtualEnvironmentMultiPartData{
+			Boundary: m.Boundary(),
+			Reader:   fileReader,
+			Size:     &fileSize,
+		}
+
+		resBody := &VirtualEnvironmentDatastoreUploadResponseBody{}
+		err = c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", url.PathEscape(d.NodeName), url.PathEscape(d.DatastoreID)), reqBody, resBody)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return resBody, nil
+	default:
+		// We need to upload all other files using SFTP due to API limitations.
+		// Hopefully, this will not be required in future releases of Proxmox VE.
+		sshClient, err := c.OpenNodeShell(d.NodeName)
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer sshClient.Close()
+
+		sshSession, err := sshClient.NewSession()
+
+		if err != nil {
+			return nil, err
+		}
+
+		buf, err := sshSession.CombinedOutput(
+			fmt.Sprintf(`grep -Pzo ': %s\s+path\s+[^\s]+' /etc/pve/storage.cfg | grep -Pzo '/[^\s]*' | tr -d '\000'`, d.DatastoreID),
+		)
+
+		if err != nil {
+			sshSession.Close()
+
+			return nil, err
+		}
+
+		sshSession.Close()
+
+		datastorePath := strings.Trim(string(buf), "\000")
+
+		if datastorePath == "" {
+			return nil, errors.New("Failed to determine the datastore path")
+		}
+
+		remoteFileDir := datastorePath
+
+		switch d.ContentType {
+		default:
+			remoteFileDir += fmt.Sprintf("/%s", d.ContentType)
+		}
+
+		remoteFilePath := fmt.Sprintf("%s/%s", remoteFileDir, d.FileName)
+		sftpClient, err := sftp.NewClient(sshClient)
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer sftpClient.Close()
+
+		err = sftpClient.MkdirAll(remoteFileDir)
+
+		if err != nil {
+			return nil, err
+		}
+
+		remoteFile, err := sftpClient.Create(remoteFilePath)
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer remoteFile.Close()
+
+		_, err = remoteFile.ReadFrom(d.FileReader)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &VirtualEnvironmentDatastoreUploadResponseBody{}, nil
 	}
-
-	tempMultipartFileName := tempMultipartFile.Name()
-
-	io.Copy(tempMultipartFile, r)
-
-	err = tempMultipartFile.Close()
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer os.Remove(tempMultipartFileName)
-
-	// Now that the multipart data is stored in a file, we can go ahead and do a HTTP POST request.
-	fileReader, err := os.Open(tempMultipartFileName)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer fileReader.Close()
-
-	fileInfo, err := fileReader.Stat()
-
-	if err != nil {
-		return nil, err
-	}
-
-	fileSize := fileInfo.Size()
-
-	reqBody := &VirtualEnvironmentMultiPartData{
-		Boundary: m.Boundary(),
-		Reader:   fileReader,
-		Size:     &fileSize,
-	}
-
-	resBody := &VirtualEnvironmentDatastoreUploadResponseBody{}
-	err = c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", url.PathEscape(d.NodeName), url.PathEscape(d.DatastoreID)), reqBody, resBody)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return resBody, nil
 }

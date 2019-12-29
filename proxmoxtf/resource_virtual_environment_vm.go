@@ -24,6 +24,7 @@ const (
 	dvResourceVirtualEnvironmentVMCloudInitDNSDomain           = ""
 	dvResourceVirtualEnvironmentVMCloudInitDNSServer           = ""
 	dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword = ""
+	dvResourceVirtualEnvironmentVMCloudInitUserDataFileID      = ""
 	dvResourceVirtualEnvironmentVMCPUCores                     = 1
 	dvResourceVirtualEnvironmentVMCPUHotplugged                = 0
 	dvResourceVirtualEnvironmentVMCPUSockets                   = 1
@@ -72,6 +73,7 @@ const (
 	mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys     = "keys"
 	mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword = "password"
 	mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername = "username"
+	mkResourceVirtualEnvironmentVMCloudInitUserDataFileID      = "user_data_file_id"
 	mkResourceVirtualEnvironmentVMCPU                          = "cpu"
 	mkResourceVirtualEnvironmentVMCPUCores                     = "cores"
 	mkResourceVirtualEnvironmentVMCPUHotplugged                = "hotplugged"
@@ -317,6 +319,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							},
 							MaxItems: 1,
 							MinItems: 0,
+						},
+						mkResourceVirtualEnvironmentVMCloudInitUserDataFileID: {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ForceNew:     true,
+							Description:  "The ID of a file containing custom user data",
+							Default:      dvResourceVirtualEnvironmentVMCloudInitUserDataFileID,
+							ValidateFunc: getFileIDValidator(),
 						},
 					},
 				},
@@ -770,6 +780,14 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 			cloudInitConfig.Username = &username
 		}
+
+		cloudInitUserDataFileID := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID].(string)
+
+		if cloudInitUserDataFileID != "" {
+			cloudInitConfig.Files = &proxmox.CustomCloudInitFiles{
+				UserVolume: &cloudInitUserDataFileID,
+			}
+		}
 	}
 
 	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
@@ -1075,7 +1093,9 @@ func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m i
 
 		speedBlock := speed[0].(map[string]interface{})
 		speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
+		speedLimitReadBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable].(int)
 		speedLimitWrite := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWrite].(int)
+		speedLimitWriteBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable].(int)
 
 		diskOptions := ""
 
@@ -1083,21 +1103,37 @@ func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m i
 			diskOptions += fmt.Sprintf(",mbps_rd=%d", speedLimitRead)
 		}
 
+		if speedLimitReadBurstable > 0 {
+			diskOptions += fmt.Sprintf(",mbps_rd_max=%d", speedLimitReadBurstable)
+		}
+
 		if speedLimitWrite > 0 {
 			diskOptions += fmt.Sprintf(",mbps_wr=%d", speedLimitWrite)
 		}
 
+		if speedLimitWriteBurstable > 0 {
+			diskOptions += fmt.Sprintf(",mbps_wr_max=%d", speedLimitWriteBurstable)
+		}
+
 		fileIDParts := strings.Split(fileID, ":")
-		filePath := fmt.Sprintf("/var/lib/vz/template/%s", fileIDParts[1])
+		filePath := ""
+
+		if strings.HasPrefix(fileIDParts[1], "iso/") {
+			filePath = fmt.Sprintf("/template/%s", fileIDParts[1])
+		} else {
+			filePath = fmt.Sprintf("/%s", fileIDParts[1])
+		}
+
 		filePathTmp := fmt.Sprintf("/tmp/vm-%d-disk-%d.%s", vmID, diskCount+importedDiskCount, fileFormat)
 
 		commands = append(
 			commands,
-			fmt.Sprintf("cp %s %s", filePath, filePathTmp),
-			fmt.Sprintf("qemu-img resize %s %dG", filePathTmp, size),
-			fmt.Sprintf("qm importdisk %d %s %s -format qcow2", vmID, filePathTmp, datastoreID),
-			fmt.Sprintf("qm set %d -scsi%d %s:vm-%d-disk-%d%s", vmID, i, datastoreID, vmID, diskCount+importedDiskCount, diskOptions),
-			fmt.Sprintf("rm -f %s", filePathTmp),
+			`set -e`,
+			fmt.Sprintf(`cp "$(grep -Pzo ': %s\s+path\s+[^\s]+' /etc/pve/storage.cfg | grep -Pzo '/[^\s]*' | tr -d '\000')%s" %s`, fileIDParts[0], filePath, filePathTmp),
+			fmt.Sprintf(`qemu-img resize %s %dG`, filePathTmp, size),
+			fmt.Sprintf(`qm importdisk %d %s %s -format qcow2`, vmID, filePathTmp, datastoreID),
+			fmt.Sprintf(`qm set %d -scsi%d %s:vm-%d-disk-%d%s`, vmID, i, datastoreID, vmID, diskCount+importedDiskCount, diskOptions),
+			fmt.Sprintf(`rm -f %s`, filePathTmp),
 		)
 
 		importedDiskCount++

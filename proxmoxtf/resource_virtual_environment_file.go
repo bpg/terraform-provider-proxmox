@@ -5,9 +5,9 @@
 package proxmoxtf
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,11 +24,13 @@ import (
 )
 
 const (
-	dvResourceVirtualEnvironmentFileContentType      = ""
-	dvResourceVirtualEnvironmentFileOverrideFileName = ""
-	dvResourceVirtualEnvironmentFileSourceChanged    = false
-	dvResourceVirtualEnvironmentFileSourceChecksum   = ""
-	dvResourceVirtualEnvironmentFileSourceInsecure   = false
+	dvResourceVirtualEnvironmentFileContentType        = ""
+	dvResourceVirtualEnvironmentFileSourceData         = ""
+	dvResourceVirtualEnvironmentFileSourceFileChanged  = false
+	dvResourceVirtualEnvironmentFileSourceFileChecksum = ""
+	dvResourceVirtualEnvironmentFileSourceFileFileName = ""
+	dvResourceVirtualEnvironmentFileSourceFileInsecure = false
+	dvResourceVirtualEnvironmentFileSourceRawResize    = 0
 
 	mkResourceVirtualEnvironmentFileContentType          = "content_type"
 	mkResourceVirtualEnvironmentFileDatastoreID          = "datastore_id"
@@ -36,23 +38,29 @@ const (
 	mkResourceVirtualEnvironmentFileFileName             = "file_name"
 	mkResourceVirtualEnvironmentFileFileSize             = "file_size"
 	mkResourceVirtualEnvironmentFileFileTag              = "file_tag"
-	mkResourceVirtualEnvironmentFileOverrideFileName     = "override_file_name"
 	mkResourceVirtualEnvironmentFileNodeName             = "node_name"
-	mkResourceVirtualEnvironmentFileSource               = "source"
-	mkResourceVirtualEnvironmentFileSourceChanged        = "source_changed"
-	mkResourceVirtualEnvironmentFileSourceChecksum       = "source_checksum"
-	mkResourceVirtualEnvironmentFileSourceInsecure       = "source_insecure"
+	mkResourceVirtualEnvironmentFileSourceFile           = "source_file"
+	mkResourceVirtualEnvironmentFileSourceFilePath       = "path"
+	mkResourceVirtualEnvironmentFileSourceFileChanged    = "changed"
+	mkResourceVirtualEnvironmentFileSourceFileChecksum   = "checksum"
+	mkResourceVirtualEnvironmentFileSourceFileFileName   = "file_name"
+	mkResourceVirtualEnvironmentFileSourceFileInsecure   = "insecure"
+	mkResourceVirtualEnvironmentFileSourceRaw            = "source_raw"
+	mkResourceVirtualEnvironmentFileSourceRawData        = "data"
+	mkResourceVirtualEnvironmentFileSourceRawFileName    = "file_name"
+	mkResourceVirtualEnvironmentFileSourceRawResize      = "resize"
 )
 
 func resourceVirtualEnvironmentFile() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentFileContentType: &schema.Schema{
-				Type:        schema.TypeString,
-				Description: "The content type",
-				Optional:    true,
-				ForceNew:    true,
-				Default:     dvResourceVirtualEnvironmentFileContentType,
+				Type:         schema.TypeString,
+				Description:  "The content type",
+				Optional:     true,
+				ForceNew:     true,
+				Default:      dvResourceVirtualEnvironmentFileContentType,
+				ValidateFunc: getContentTypeValidator(),
 			},
 			mkResourceVirtualEnvironmentFileDatastoreID: &schema.Schema{
 				Type:        schema.TypeString,
@@ -83,45 +91,94 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				Computed:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentFileOverrideFileName: &schema.Schema{
-				Type:        schema.TypeString,
-				Description: "The file name to use instead of the source file name",
-				Optional:    true,
-				ForceNew:    true,
-				Default:     dvResourceVirtualEnvironmentFileOverrideFileName,
-			},
 			mkResourceVirtualEnvironmentFileNodeName: &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentFileSource: &schema.Schema{
-				Type:        schema.TypeString,
-				Description: "A path to a local file or a URL",
-				Required:    true,
-				ForceNew:    true,
-			},
-			mkResourceVirtualEnvironmentFileSourceChanged: &schema.Schema{
-				Type:        schema.TypeBool,
-				Description: "Whether the source has changed since the last run",
+			mkResourceVirtualEnvironmentFileSourceFile: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The source file",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     dvResourceVirtualEnvironmentFileSourceChanged,
+				DefaultFunc: func() (interface{}, error) {
+					return make([]interface{}, 1), nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceFilePath: &schema.Schema{
+							Type:        schema.TypeString,
+							Description: "A path to a local file or a URL",
+							Required:    true,
+							ForceNew:    true,
+						},
+						mkResourceVirtualEnvironmentFileSourceFileChanged: &schema.Schema{
+							Type:        schema.TypeBool,
+							Description: "Whether the source file has changed since the last run",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentFileSourceFileChanged,
+						},
+						mkResourceVirtualEnvironmentFileSourceFileChecksum: &schema.Schema{
+							Type:        schema.TypeString,
+							Description: "The SHA256 checksum of the source file",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentFileSourceFileChecksum,
+						},
+						mkResourceVirtualEnvironmentFileSourceFileFileName: &schema.Schema{
+							Type:        schema.TypeString,
+							Description: "The file name to use instead of the source file name",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentFileSourceFileFileName,
+						},
+						mkResourceVirtualEnvironmentFileSourceFileInsecure: &schema.Schema{
+							Type:        schema.TypeBool,
+							Description: "Whether to skip the TLS verification step for HTTPS sources",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentFileSourceFileInsecure,
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentFileSourceChecksum: &schema.Schema{
-				Type:        schema.TypeString,
-				Description: "The SHA256 checksum of the source file",
+			mkResourceVirtualEnvironmentFileSourceRaw: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The raw source",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     dvResourceVirtualEnvironmentFileSourceChecksum,
-			},
-			mkResourceVirtualEnvironmentFileSourceInsecure: &schema.Schema{
-				Type:        schema.TypeBool,
-				Description: "Whether to skip the TLS verification step for HTTPS sources",
-				Optional:    true,
-				ForceNew:    true,
-				Default:     dvResourceVirtualEnvironmentFileSourceInsecure,
+				DefaultFunc: func() (interface{}, error) {
+					return make([]interface{}, 1), nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceRawData: &schema.Schema{
+							Type:        schema.TypeString,
+							Description: "The raw data",
+							Required:    true,
+							ForceNew:    true,
+						},
+						mkResourceVirtualEnvironmentFileSourceRawFileName: &schema.Schema{
+							Type:        schema.TypeString,
+							Description: "The file name",
+							Required:    true,
+							ForceNew:    true,
+						},
+						mkResourceVirtualEnvironmentFileSourceRawResize: &schema.Schema{
+							Type:        schema.TypeInt,
+							Description: "The number of bytes to resize the file to",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentFileSourceRawResize,
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
 			},
 		},
 		Create: resourceVirtualEnvironmentFileCreate,
@@ -152,87 +209,144 @@ func resourceVirtualEnvironmentFileCreate(d *schema.ResourceData, m interface{})
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
-	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
-	sourceChecksum := d.Get(mkResourceVirtualEnvironmentFileSourceChecksum).(string)
-	sourceInsecure := d.Get(mkResourceVirtualEnvironmentFileSourceInsecure).(bool)
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
 
-	sourceFile := ""
+	sourceFilePathLocal := ""
 
-	// Download the source file, if it's not available locally.
-	if resourceVirtualEnvironmentFileIsURL(d, m) {
-		log.Printf("[DEBUG] Downloading file from '%s'", source)
-
-		httpClient := http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: sourceInsecure,
-				},
-			},
-		}
-
-		res, err := httpClient.Get(source)
-
-		if err != nil {
-			return err
-		}
-
-		defer res.Body.Close()
-
-		tempDownloadedFile, err := ioutil.TempFile("", "download")
-
-		if err != nil {
-			return err
-		}
-
-		tempDownloadedFileName := tempDownloadedFile.Name()
-
-		_, err = io.Copy(tempDownloadedFile, res.Body)
-
-		if err != nil {
-			tempDownloadedFile.Close()
-
-			return err
-		}
-
-		tempDownloadedFile.Close()
-
-		defer os.Remove(tempDownloadedFileName)
-
-		sourceFile = tempDownloadedFileName
-	} else {
-		sourceFile = source
+	// Determine if both source_data and source_file is specified as this is not supported.
+	if len(sourceFile) > 0 && len(sourceRaw) > 0 {
+		return fmt.Errorf(
+			"Please specify \"%s.%s\" or \"%s\" - not both",
+			mkResourceVirtualEnvironmentFileSourceFile,
+			mkResourceVirtualEnvironmentFileSourceFilePath,
+			mkResourceVirtualEnvironmentFileSourceRaw,
+		)
 	}
 
-	// Calculate the checksum of the source file now that it's available locally.
-	if sourceChecksum != "" {
-		file, err := os.Open(sourceFile)
+	// Determine if we're dealing with raw file data or a reference to a file or URL.
+	// In case of a URL, we must first download the file before proceeding.
+	// This is due to lack of support for chunked transfers in the Proxmox VE API.
+	if len(sourceFile) > 0 {
+		sourceFileBlock := sourceFile[0].(map[string]interface{})
+		sourceFilePath := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
+		sourceFileChecksum := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChecksum].(string)
+		sourceFileInsecure := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileInsecure].(bool)
 
-		if err != nil {
-			return err
+		if resourceVirtualEnvironmentFileIsURL(d, m) {
+			log.Printf("[DEBUG] Downloading file from '%s'", sourceFilePath)
+
+			httpClient := http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{
+						InsecureSkipVerify: sourceFileInsecure,
+					},
+				},
+			}
+
+			res, err := httpClient.Get(sourceFilePath)
+
+			if err != nil {
+				return err
+			}
+
+			defer res.Body.Close()
+
+			tempDownloadedFile, err := ioutil.TempFile("", "download")
+
+			if err != nil {
+				return err
+			}
+
+			tempDownloadedFileName := tempDownloadedFile.Name()
+			_, err = io.Copy(tempDownloadedFile, res.Body)
+
+			if err != nil {
+				tempDownloadedFile.Close()
+
+				return err
+			}
+
+			tempDownloadedFile.Close()
+
+			defer os.Remove(tempDownloadedFileName)
+
+			sourceFilePathLocal = tempDownloadedFileName
+		} else {
+			sourceFilePathLocal = sourceFilePath
 		}
 
-		h := sha256.New()
-		_, err = io.Copy(h, file)
+		// Calculate the checksum of the source file now that it's available locally.
+		if sourceFileChecksum != "" {
+			file, err := os.Open(sourceFilePathLocal)
 
-		if err != nil {
+			if err != nil {
+				return err
+			}
+
+			h := sha256.New()
+			_, err = io.Copy(h, file)
+
+			if err != nil {
+				file.Close()
+
+				return err
+			}
+
 			file.Close()
 
+			calculatedChecksum := fmt.Sprintf("%x", h.Sum(nil))
+
+			log.Printf("[DEBUG] The calculated SHA256 checksum for source \"%s\" is \"%s\"", sourceFilePath, calculatedChecksum)
+
+			if sourceFileChecksum != calculatedChecksum {
+				return fmt.Errorf("The calculated SHA256 checksum \"%s\" does not match source checksum \"%s\"", calculatedChecksum, sourceFileChecksum)
+			}
+		}
+	} else if len(sourceRaw) > 0 {
+		sourceRawBlock := sourceRaw[0].(map[string]interface{})
+		sourceRawData := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawData].(string)
+		sourceRawResize := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawResize].(int)
+
+		if sourceRawResize > 0 {
+			if len(sourceRawData) <= sourceRawResize {
+				sourceRawData = fmt.Sprintf(fmt.Sprintf("%%-%dv", sourceRawResize), sourceRawData)
+			} else {
+				return fmt.Errorf("Cannot resize %d bytes to %d bytes", len(sourceRawData), sourceRawResize)
+			}
+		}
+
+		tempRawFile, err := ioutil.TempFile("", "raw")
+
+		if err != nil {
 			return err
 		}
 
-		file.Close()
+		tempRawFileName := tempRawFile.Name()
+		_, err = io.Copy(tempRawFile, bytes.NewBufferString(sourceRawData))
 
-		calculatedChecksum := fmt.Sprintf("%x", h.Sum(nil))
+		if err != nil {
+			tempRawFile.Close()
 
-		log.Printf("[DEBUG] The calculated SHA256 checksum for source \"%s\" is \"%s\"", source, calculatedChecksum)
-
-		if sourceChecksum != calculatedChecksum {
-			return fmt.Errorf("The calculated SHA256 checksum \"%s\" does not match source checksum \"%s\"", calculatedChecksum, sourceChecksum)
+			return err
 		}
+
+		tempRawFile.Close()
+
+		defer os.Remove(tempRawFileName)
+
+		sourceFilePathLocal = tempRawFileName
+	} else {
+		return fmt.Errorf(
+			"Please specify either \"%s.%s\" or \"%s\"",
+			mkResourceVirtualEnvironmentFileSourceFile,
+			mkResourceVirtualEnvironmentFileSourceFilePath,
+			mkResourceVirtualEnvironmentFileSourceRaw,
+		)
 	}
 
 	// Open the source file for reading in order to upload it.
-	file, err := os.Open(sourceFile)
+	file, err := os.Open(sourceFilePathLocal)
 
 	if err != nil {
 		return err
@@ -267,69 +381,101 @@ func resourceVirtualEnvironmentFileCreate(d *schema.ResourceData, m interface{})
 
 func resourceVirtualEnvironmentFileGetContentType(d *schema.ResourceData, m interface{}) (*string, error) {
 	contentType := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
-	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
-	supportedTypes := []string{"backup", "images", "iso", "vztmpl"}
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
+
+	sourceFilePath := ""
+
+	if len(sourceFile) > 0 {
+		sourceFileBlock := sourceFile[0].(map[string]interface{})
+		sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
+	} else if len(sourceRaw) > 0 {
+		sourceRawBlock := sourceRaw[0].(map[string]interface{})
+		sourceFilePath = sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawFileName].(string)
+	} else {
+		return nil, fmt.Errorf(
+			"Missing argument \"%s.%s\" or \"%s\"",
+			mkResourceVirtualEnvironmentFileSourceFile,
+			mkResourceVirtualEnvironmentFileSourceFilePath,
+			mkResourceVirtualEnvironmentFileSourceRaw,
+		)
+	}
 
 	if contentType == "" {
-		if strings.HasSuffix(source, ".tar.xz") {
+		if strings.HasSuffix(sourceFilePath, ".tar.xz") {
 			contentType = "vztmpl"
 		} else {
-			ext := strings.TrimLeft(strings.ToLower(filepath.Ext(source)), ".")
+			ext := strings.TrimLeft(strings.ToLower(filepath.Ext(sourceFilePath)), ".")
 
 			switch ext {
 			case "img", "iso":
 				contentType = "iso"
+			case "yaml", "yml":
+				contentType = "snippets"
 			}
 		}
 
 		if contentType == "" {
 			return nil, fmt.Errorf(
-				"Cannot determine the content type of source \"%s\" - Please manually define the \"%s\" argument (supported: %s)",
-				source,
+				"Cannot determine the content type of source \"%s\" - Please manually define the \"%s\" argument",
+				sourceFilePath,
 				mkResourceVirtualEnvironmentFileContentType,
-				strings.Join(supportedTypes, " or "),
 			)
 		}
 	}
 
-	for _, v := range supportedTypes {
-		if v == contentType {
-			return &contentType, nil
-		}
+	ctValidator := getContentTypeValidator()
+	_, errs := ctValidator(contentType, mkResourceVirtualEnvironmentFileContentType)
+
+	if len(errs) > 0 {
+		return nil, errs[0]
 	}
 
-	return nil, fmt.Errorf(
-		"Unsupported content type \"%s\" for source \"%s\" (supported: %s)",
-		contentType,
-		source,
-		strings.Join(supportedTypes, " or "),
-	)
+	return &contentType, nil
 }
 
 func resourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData, m interface{}) (*string, error) {
-	fileName := d.Get(mkResourceVirtualEnvironmentFileOverrideFileName).(string)
-	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
 
-	if fileName == "" {
+	sourceFileFileName := ""
+	sourceFilePath := ""
+
+	if len(sourceFile) > 0 {
+		sourceFileBlock := sourceFile[0].(map[string]interface{})
+		sourceFileFileName = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileFileName].(string)
+		sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
+	} else if len(sourceRaw) > 0 {
+		sourceRawBlock := sourceRaw[0].(map[string]interface{})
+		sourceFileFileName = sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawFileName].(string)
+	} else {
+		return nil, fmt.Errorf(
+			"Missing argument \"%s.%s\"",
+			mkResourceVirtualEnvironmentFileSourceFile,
+			mkResourceVirtualEnvironmentFileSourceFilePath,
+		)
+	}
+
+	if sourceFileFileName == "" {
 		if resourceVirtualEnvironmentFileIsURL(d, m) {
-			downloadURL, err := url.ParseRequestURI(source)
+			downloadURL, err := url.ParseRequestURI(sourceFilePath)
 
 			if err != nil {
 				return nil, err
 			}
 
 			path := strings.Split(downloadURL.Path, "/")
-			fileName = path[len(path)-1]
+			sourceFileFileName = path[len(path)-1]
 
-			if fileName == "" {
-				return nil, errors.New("Failed to determine file name from source URL")
+			if sourceFileFileName == "" {
+				return nil, fmt.Errorf("Failed to determine file name from the URL \"%s\"", sourceFilePath)
 			}
 		} else {
-			fileName = filepath.Base(source)
+			sourceFileFileName = filepath.Base(sourceFilePath)
 		}
 	}
 
-	return &fileName, nil
+	return &sourceFileFileName, nil
 }
 
 func resourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData, m interface{}) (*string, error) {
@@ -352,9 +498,17 @@ func resourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData, m interfa
 }
 
 func resourceVirtualEnvironmentFileIsURL(d *schema.ResourceData, m interface{}) bool {
-	source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	sourceFilePath := ""
 
-	return strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://")
+	if len(sourceFile) > 0 {
+		sourceFileBlock := sourceFile[0].(map[string]interface{})
+		sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
+	} else {
+		return false
+	}
+
+	return strings.HasPrefix(sourceFilePath, "http://") || strings.HasPrefix(sourceFilePath, "https://")
 }
 
 func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) error {
@@ -367,6 +521,15 @@ func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) e
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
+	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	sourceFilePath := ""
+
+	if len(sourceFile) == 0 {
+		return nil
+	}
+
+	sourceFileBlock := sourceFile[0].(map[string]interface{})
+	sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 
 	list, err := veClient.ListDatastoreFiles(nodeName, datastoreID)
 
@@ -374,17 +537,21 @@ func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
+	fileIsURL := resourceVirtualEnvironmentFileIsURL(d, m)
+	fileName, err := resourceVirtualEnvironmentFileGetFileName(d, m)
+
+	if err != nil {
+		return err
+	}
+
 	for _, v := range list {
 		if v.VolumeID == d.Id() {
-			fileName, _ := resourceVirtualEnvironmentFileGetFileName(d, m)
-			source := d.Get(mkResourceVirtualEnvironmentFileSource).(string)
-
 			var fileModificationDate string
 			var fileSize int64
 			var fileTag string
 
-			if resourceVirtualEnvironmentFileIsURL(d, m) {
-				res, err := http.Head(source)
+			if fileIsURL {
+				res, err := http.Head(sourceFilePath)
 
 				if err != nil {
 					return err
@@ -425,7 +592,7 @@ func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) e
 					fileTag = ""
 				}
 			} else {
-				f, err := os.Open(source)
+				f, err := os.Open(sourceFilePath)
 
 				if err != nil {
 					return err
@@ -452,7 +619,7 @@ func resourceVirtualEnvironmentFileRead(d *schema.ResourceData, m interface{}) e
 			d.Set(mkResourceVirtualEnvironmentFileFileName, *fileName)
 			d.Set(mkResourceVirtualEnvironmentFileFileSize, fileSize)
 			d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
-			d.Set(mkResourceVirtualEnvironmentFileSourceChanged, lastFileModificationDate != fileModificationDate || lastFileSize != fileSize || lastFileTag != fileTag)
+			d.Set(mkResourceVirtualEnvironmentFileSourceFileChanged, lastFileModificationDate != fileModificationDate || lastFileSize != fileSize || lastFileTag != fileTag)
 
 			return nil
 		}

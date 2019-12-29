@@ -26,15 +26,12 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 	testRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentFileDatastoreID,
 		mkResourceVirtualEnvironmentFileNodeName,
-		mkResourceVirtualEnvironmentFileSource,
 	})
 
 	testOptionalArguments(t, s, []string{
 		mkResourceVirtualEnvironmentFileContentType,
-		mkResourceVirtualEnvironmentFileOverrideFileName,
-		mkResourceVirtualEnvironmentFileSourceChanged,
-		mkResourceVirtualEnvironmentFileSourceChecksum,
-		mkResourceVirtualEnvironmentFileSourceInsecure,
+		mkResourceVirtualEnvironmentFileSourceFile,
+		mkResourceVirtualEnvironmentFileSourceRaw,
 	})
 
 	testComputedAttributes(t, s, []string{
@@ -51,12 +48,9 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileFileName,
 		mkResourceVirtualEnvironmentFileFileSize,
 		mkResourceVirtualEnvironmentFileFileTag,
-		mkResourceVirtualEnvironmentFileOverrideFileName,
-		mkResourceVirtualEnvironmentFileSourceChanged,
 		mkResourceVirtualEnvironmentFileNodeName,
-		mkResourceVirtualEnvironmentFileSource,
-		mkResourceVirtualEnvironmentFileSourceChecksum,
-		mkResourceVirtualEnvironmentFileSourceInsecure,
+		mkResourceVirtualEnvironmentFileSourceFile,
+		mkResourceVirtualEnvironmentFileSourceRaw,
 	}, []schema.ValueType{
 		schema.TypeString,
 		schema.TypeString,
@@ -65,10 +59,55 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		schema.TypeInt,
 		schema.TypeString,
 		schema.TypeString,
+		schema.TypeList,
+		schema.TypeList,
+	})
+
+	sourceFileSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentFileSourceFile)
+
+	testRequiredArguments(t, sourceFileSchema, []string{
+		mkResourceVirtualEnvironmentFileSourceFilePath,
+	})
+
+	testOptionalArguments(t, sourceFileSchema, []string{
+		mkResourceVirtualEnvironmentFileSourceFileChanged,
+		mkResourceVirtualEnvironmentFileSourceFileChecksum,
+		mkResourceVirtualEnvironmentFileSourceFileFileName,
+		mkResourceVirtualEnvironmentFileSourceFileInsecure,
+	})
+
+	testSchemaValueTypes(t, sourceFileSchema, []string{
+		mkResourceVirtualEnvironmentFileSourceFileChanged,
+		mkResourceVirtualEnvironmentFileSourceFileChecksum,
+		mkResourceVirtualEnvironmentFileSourceFileFileName,
+		mkResourceVirtualEnvironmentFileSourceFileInsecure,
+		mkResourceVirtualEnvironmentFileSourceFilePath,
+	}, []schema.ValueType{
 		schema.TypeBool,
 		schema.TypeString,
 		schema.TypeString,
-		schema.TypeString,
 		schema.TypeBool,
+		schema.TypeString,
+	})
+
+	sourceRawSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentFileSourceRaw)
+
+	testRequiredArguments(t, sourceRawSchema, []string{
+		mkResourceVirtualEnvironmentFileSourceRawData,
+		mkResourceVirtualEnvironmentFileSourceRawFileName,
+	})
+
+	testOptionalArguments(t, sourceRawSchema, []string{
+		mkResourceVirtualEnvironmentFileSourceRawResize,
+	})
+
+	testSchemaValueTypes(t, sourceRawSchema, []string{
+		mkResourceVirtualEnvironmentFileSourceRawData,
+		mkResourceVirtualEnvironmentFileSourceRawFileName,
+		mkResourceVirtualEnvironmentFileSourceRawResize,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeInt,
 	})
 }

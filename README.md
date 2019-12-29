@@ -240,13 +240,22 @@ This data source doesn't accept arguments.
 ##### File (proxmox_virtual_environment_file)
 
 ###### Arguments
-* `content_type` - (Optional) The content type (`backup`, `images`, `iso` or `vztmpl`)
+* `content_type` - (Optional) The content type
+    * `backup`
+    * `iso`
+    * `snippets`
+    * `vztmpl`
 * `datastore_id` - (Required) The datastore id
 * `node_name` - (Required) The node name
-* `override_file_name` - (Optional) The file name to use instead of the source file name
-* `source` - (Required) A path to a local file or a URL
-* `source_checksum` - (Optional) The SHA256 checksum of the source file
-* `source_insecure` - (Optional) Whether to skip the TLS verification step for HTTPS sources (defaults to `false`)
+* `source_file` - (Optional) The source file (conflicts with `source_raw`)
+    * `checksum` - (Optional) The SHA256 checksum of the source file
+    * `file_name` - (Optional) The file name to use instead of the source file name
+    * `insecure` - (Optional) Whether to skip the TLS verification step for HTTPS sources (defaults to `false`)
+    * `path` - (Required) A path to a local file or a URL
+* `source_raw` - (Optional) The raw source (conflicts with `source_file`)
+    * `data` - (Required) The raw data
+    * `file_name` - (Required) The file name
+    * `resize` - (Optional) The number of bytes to resize the file to
 
 ###### Attributes
 * `file_modification_date` - The file modification date (RFC 3339)
@@ -334,10 +343,11 @@ This resource doesn't expose any additional attributes.
         * `ipv6` - (Optional) The IPv4 configuration
             * `address` - (Optional) The IPv6 address (use `dhcp` for autodiscovery)
             * `gateway` - (Optional) The IPv6 gateway (must be omitted when `dhcp` is used as the address)
-    * `user_account` - (Required) The user account configuration
+    * `user_account` - (Required) The user account configuration (conflicts with `user_data_file_id`)
         * `keys` - (Required) The SSH keys
         * `password` - (Optional) The SSH password
         * `username` - (Required) The SSH username
+    * `user_data_file_id` - (Optional) The ID of a file containing custom user data (conflicts with `user_account`)
 * `cpu` - (Optional) The CPU configuration
     * `cores` - (Optional) The number of CPU cores (defaults to `1`)
     * `hotplugged` - (Optional) The number of hotplugged vCPUs (defaults to `0`)

@@ -13,8 +13,21 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
+func getContentTypeValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"backup",
+		"iso",
+		"snippets",
+		"vztmpl",
+	}, false)
+}
+
 func getFileFormatValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{"qcow2", "raw", "vmdk"}, false)
+	return validation.StringInSlice([]string{
+		"qcow2",
+		"raw",
+		"vmdk",
+	}, false)
 }
 
 func getFileIDValidator() schema.SchemaValidateFunc {
