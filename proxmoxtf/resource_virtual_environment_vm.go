@@ -92,6 +92,7 @@ const (
 	mkResourceVirtualEnvironmentVMIPv4Addresses                = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout               = "keyboard_layout"
+	mkResourceVirtualEnvironmentVMMACAddresses                 = "mac_addresses"
 	mkResourceVirtualEnvironmentVMMemory                       = "memory"
 	mkResourceVirtualEnvironmentVMMemoryDedicated              = "dedicated"
 	mkResourceVirtualEnvironmentVMMemoryFloating               = "floating"
@@ -514,6 +515,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description:  "The keyboard layout",
 				Default:      dvResourceVirtualEnvironmentVMKeyboardLayout,
 				ValidateFunc: getKeyboardLayoutValidator(),
+			},
+			mkResourceVirtualEnvironmentVMMACAddresses: {
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: "The MAC addresses for the network interfaces",
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			mkResourceVirtualEnvironmentVMMemory: &schema.Schema{
 				Type:        schema.TypeList,
@@ -1465,6 +1472,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	// Compare the network devices to those stored in the state.
 	currentNetworkDeviceList := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 
+	macAddresses := make([]interface{}, 8)
 	networkDeviceLast := -1
 	networkDeviceList := make([]interface{}, 8)
 	networkDeviceObjects := []*proxmox.CustomNetworkDevice{
@@ -1493,19 +1501,23 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled] = nd.Enabled
 
 			if nd.MACAddress != nil {
-				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress] = *nd.MACAddress
+				macAddresses[ni] = *nd.MACAddress
 			} else {
-				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress] = ""
+				macAddresses[ni] = ""
 			}
 
+			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress] = macAddresses[ni]
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceModel] = nd.Model
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs] = nd.Trunks
 		} else {
+			macAddresses[ni] = ""
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled] = false
 		}
 
 		networkDeviceList[ni] = networkDevice
 	}
+
+	d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
 
 	if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
 		d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[0:networkDeviceLast+1])

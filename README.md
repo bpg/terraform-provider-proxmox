@@ -428,6 +428,7 @@ This resource doesn't expose any additional attributes.
 ###### Attributes
 * `ipv4_addresses` - The IPv4 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
 * `ipv6_addresses` - The IPv6 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
+* `mac_addresses` - The MAC addresses assigned to the network devices
 * `network_interface_names` - The network interface names published by the QEMU agent (empty list when `agent.enabled` is `false`)
 
 ## Developing the Provider

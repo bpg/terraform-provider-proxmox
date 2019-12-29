@@ -1095,6 +1095,7 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 					r.Trunks[i] = iv
 				}
 			default:
+				r.MACAddress = &v[1]
 				r.Model = v[0]
 			}
 		}

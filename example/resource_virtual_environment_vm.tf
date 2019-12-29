@@ -77,6 +77,10 @@ output "resource_proxmox_virtual_environment_vm_example_ipv6_addresses" {
   value = "${proxmox_virtual_environment_vm.example.ipv6_addresses}"
 }
 
+output "resource_proxmox_virtual_environment_vm_example_mac_addresses" {
+  value = "${proxmox_virtual_environment_vm.example.mac_addresses}"
+}
+
 output "resource_proxmox_virtual_environment_vm_example_network_interface_names" {
   value = "${proxmox_virtual_environment_vm.example.network_interface_names}"
 }
