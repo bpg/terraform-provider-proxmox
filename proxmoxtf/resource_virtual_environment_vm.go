@@ -1554,6 +1554,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		if err == nil && networkInterfaces.Result != nil {
 			ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
 			ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))
+			macAddresses = make([]interface{}, len(*networkInterfaces.Result))
 			networkInterfaceNames = make([]interface{}, len(*networkInterfaces.Result))
 
 			for ri, rv := range *networkInterfaces.Result {
@@ -1571,6 +1572,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 				ipv4Addresses[ri] = rvIPv4Addresses
 				ipv6Addresses[ri] = rvIPv6Addresses
+				macAddresses[ri] = strings.ToUpper(rv.MACAddress)
 				networkInterfaceNames[ri] = rv.Name
 			}
 		}
@@ -1578,6 +1580,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 	d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
 	d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
+	d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses)
 	d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
 
 	return nil
