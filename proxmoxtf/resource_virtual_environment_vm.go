@@ -135,20 +135,20 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMAgentEnabled: {
 							Type:        schema.TypeBool,
-							Optional:    true,
 							Description: "Whether to enable the QEMU agent",
+							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMAgentEnabled,
 						},
 						mkResourceVirtualEnvironmentVMAgentTrim: {
 							Type:        schema.TypeBool,
-							Optional:    true,
 							Description: "Whether to enable the FSTRIM feature in the QEMU agent",
+							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMAgentTrim,
 						},
 						mkResourceVirtualEnvironmentVMAgentType: {
 							Type:         schema.TypeString,
-							Optional:     true,
 							Description:  "The QEMU agent interface type",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMAgentType,
 							ValidateFunc: getQEMUAgentTypeValidator(),
 						},
@@ -176,14 +176,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMCDROMEnabled: {
 							Type:        schema.TypeBool,
-							Optional:    true,
 							Description: "Whether to enable the CDROM drive",
+							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMCDROMEnabled,
 						},
 						mkResourceVirtualEnvironmentVMCDROMFileID: {
 							Type:         schema.TypeString,
-							Optional:     true,
 							Description:  "The file id",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMCDROMFileID,
 							ValidateFunc: getFileIDValidator(),
 						},
@@ -212,14 +212,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 								Schema: map[string]*schema.Schema{
 									mkResourceVirtualEnvironmentVMCloudInitDNSDomain: {
 										Type:        schema.TypeString,
-										Optional:    true,
 										Description: "The DNS search domain",
+										Optional:    true,
 										Default:     dvResourceVirtualEnvironmentVMCloudInitDNSDomain,
 									},
 									mkResourceVirtualEnvironmentVMCloudInitDNSServer: {
 										Type:        schema.TypeString,
-										Optional:    true,
 										Description: "The DNS server",
+										Optional:    true,
 										Default:     dvResourceVirtualEnvironmentVMCloudInitDNSServer,
 									},
 								},
@@ -247,14 +247,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 											Schema: map[string]*schema.Schema{
 												mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address: {
 													Type:        schema.TypeString,
-													Optional:    true,
 													Description: "The IPv4 address",
+													Optional:    true,
 													Default:     "",
 												},
 												mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway: {
 													Type:        schema.TypeString,
-													Optional:    true,
 													Description: "The IPv4 gateway",
+													Optional:    true,
 													Default:     "",
 												},
 											},
@@ -273,14 +273,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 											Schema: map[string]*schema.Schema{
 												mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Address: {
 													Type:        schema.TypeString,
-													Optional:    true,
 													Description: "The IPv6 address",
+													Optional:    true,
 													Default:     "",
 												},
 												mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway: {
 													Type:        schema.TypeString,
-													Optional:    true,
 													Description: "The IPv6 gateway",
+													Optional:    true,
 													Default:     "",
 												},
 											},
@@ -297,6 +297,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Type:        schema.TypeList,
 							Description: "The user account configuration",
 							Required:    true,
+							ForceNew:    true,
 							DefaultFunc: func() (interface{}, error) {
 								return []interface{}{}, nil
 							},
@@ -304,14 +305,16 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 								Schema: map[string]*schema.Schema{
 									mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys: {
 										Type:        schema.TypeList,
-										Required:    true,
 										Description: "The SSH keys",
+										Required:    true,
+										ForceNew:    true,
 										Elem:        &schema.Schema{Type: schema.TypeString},
 									},
 									mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword: {
 										Type:        schema.TypeString,
-										Optional:    true,
 										Description: "The SSH password",
+										Optional:    true,
+										ForceNew:    true,
 										Default:     dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword,
 										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 											return strings.ReplaceAll(old, "*", "") == ""
@@ -319,8 +322,9 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 									},
 									mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername: {
 										Type:        schema.TypeString,
-										Required:    true,
 										Description: "The SSH username",
+										Required:    true,
+										ForceNew:    true,
 									},
 								},
 							},
@@ -329,9 +333,9 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						},
 						mkResourceVirtualEnvironmentVMCloudInitUserDataFileID: {
 							Type:         schema.TypeString,
+							Description:  "The ID of a file containing custom user data",
 							Optional:     true,
 							ForceNew:     true,
-							Description:  "The ID of a file containing custom user data",
 							Default:      dvResourceVirtualEnvironmentVMCloudInitUserDataFileID,
 							ValidateFunc: getFileIDValidator(),
 						},
@@ -360,22 +364,22 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMCPUCores: {
 							Type:         schema.TypeInt,
-							Optional:     true,
 							Description:  "The number of CPU cores",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMCPUCores,
 							ValidateFunc: validation.IntBetween(1, 2304),
 						},
 						mkResourceVirtualEnvironmentVMCPUHotplugged: {
 							Type:         schema.TypeInt,
-							Optional:     true,
 							Description:  "The number of hotplugged vCPUs",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMCPUHotplugged,
 							ValidateFunc: validation.IntBetween(0, 2304),
 						},
 						mkResourceVirtualEnvironmentVMCPUSockets: {
 							Type:         schema.TypeInt,
-							Optional:     true,
 							Description:  "The number of CPU sockets",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMCPUSockets,
 							ValidateFunc: validation.IntBetween(1, 16),
 						},
@@ -386,8 +390,8 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMDescription: {
 				Type:        schema.TypeString,
-				Optional:    true,
 				Description: "The description",
+				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMDescription,
 			},
 			mkResourceVirtualEnvironmentVMDisk: &schema.Schema{
@@ -412,32 +416,32 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMDiskDatastoreID: {
 							Type:        schema.TypeString,
+							Description: "The datastore id",
 							Optional:    true,
 							ForceNew:    true,
-							Description: "The datastore id",
 							Default:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
 						},
 						mkResourceVirtualEnvironmentVMDiskFileFormat: {
 							Type:         schema.TypeString,
+							Description:  "The file format",
 							Optional:     true,
 							ForceNew:     true,
-							Description:  "The file format",
 							Default:      dvResourceVirtualEnvironmentVMDiskFileFormat,
 							ValidateFunc: getFileFormatValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskFileID: {
 							Type:         schema.TypeString,
+							Description:  "The file id for a disk image",
 							Optional:     true,
 							ForceNew:     true,
-							Description:  "The file id for a disk image",
 							Default:      dvResourceVirtualEnvironmentVMDiskFileID,
 							ValidateFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskSize: {
 							Type:         schema.TypeInt,
+							Description:  "The disk size in gigabytes",
 							Optional:     true,
 							ForceNew:     true,
-							Description:  "The disk size in gigabytes",
 							Default:      dvResourceVirtualEnvironmentVMDiskSize,
 							ValidateFunc: validation.IntBetween(1, 8192),
 						},
@@ -462,26 +466,26 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 								Schema: map[string]*schema.Schema{
 									mkResourceVirtualEnvironmentVMDiskSpeedRead: {
 										Type:        schema.TypeInt,
-										Optional:    true,
 										Description: "The maximum read speed in megabytes per second",
+										Optional:    true,
 										Default:     dvResourceVirtualEnvironmentVMDiskSpeedRead,
 									},
 									mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable: {
 										Type:        schema.TypeInt,
-										Optional:    true,
 										Description: "The maximum burstable read speed in megabytes per second",
+										Optional:    true,
 										Default:     dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable,
 									},
 									mkResourceVirtualEnvironmentVMDiskSpeedWrite: {
 										Type:        schema.TypeInt,
-										Optional:    true,
 										Description: "The maximum write speed in megabytes per second",
+										Optional:    true,
 										Default:     dvResourceVirtualEnvironmentVMDiskSpeedWrite,
 									},
 									mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable: {
 										Type:        schema.TypeInt,
-										Optional:    true,
 										Description: "The maximum burstable write speed in megabytes per second",
+										Optional:    true,
 										Default:     dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable,
 									},
 								},
@@ -496,8 +500,8 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMIPv4Addresses: {
 				Type:        schema.TypeList,
-				Computed:    true,
 				Description: "The IPv4 addresses published by the QEMU agent",
+				Computed:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeList,
 					Elem: &schema.Schema{Type: schema.TypeString},
@@ -505,8 +509,8 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMIPv6Addresses: {
 				Type:        schema.TypeList,
-				Computed:    true,
 				Description: "The IPv6 addresses published by the QEMU agent",
+				Computed:    true,
 				Elem: &schema.Schema{
 					Type: schema.TypeList,
 					Elem: &schema.Schema{Type: schema.TypeString},
@@ -514,15 +518,15 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMKeyboardLayout: {
 				Type:         schema.TypeString,
-				Optional:     true,
 				Description:  "The keyboard layout",
+				Optional:     true,
 				Default:      dvResourceVirtualEnvironmentVMKeyboardLayout,
 				ValidateFunc: getKeyboardLayoutValidator(),
 			},
 			mkResourceVirtualEnvironmentVMMACAddresses: {
 				Type:        schema.TypeList,
-				Computed:    true,
 				Description: "The MAC addresses for the network interfaces",
+				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			mkResourceVirtualEnvironmentVMMemory: &schema.Schema{
@@ -545,22 +549,22 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMMemoryDedicated: {
 							Type:         schema.TypeInt,
-							Optional:     true,
 							Description:  "The dedicated memory in megabytes",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMMemoryDedicated,
 							ValidateFunc: validation.IntBetween(64, 268435456),
 						},
 						mkResourceVirtualEnvironmentVMMemoryFloating: {
 							Type:         schema.TypeInt,
-							Optional:     true,
 							Description:  "The floating memory in megabytes (balloon)",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMMemoryFloating,
 							ValidateFunc: validation.IntBetween(0, 268435456),
 						},
 						mkResourceVirtualEnvironmentVMMemoryShared: {
 							Type:         schema.TypeInt,
-							Optional:     true,
 							Description:  "The shared memory in megabytes",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMMemoryShared,
 							ValidateFunc: validation.IntBetween(0, 268435456),
 						},
@@ -571,8 +575,8 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMName: {
 				Type:        schema.TypeString,
-				Optional:    true,
 				Description: "The name",
+				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMName,
 			},
 			mkResourceVirtualEnvironmentVMNetworkDevice: &schema.Schema{
@@ -586,20 +590,20 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMNetworkDeviceBridge: {
 							Type:        schema.TypeString,
-							Optional:    true,
 							Description: "The bridge",
+							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceBridge,
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceEnabled: {
 							Type:        schema.TypeBool,
-							Optional:    true,
 							Description: "Whether to enable the network device",
+							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceEnabled,
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress: {
 							Type:        schema.TypeString,
-							Optional:    true,
 							Description: "The MAC address",
+							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 								return new == ""
@@ -608,15 +612,15 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceModel: {
 							Type:         schema.TypeString,
-							Optional:     true,
 							Description:  "The model",
+							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMNetworkDeviceModel,
 							ValidateFunc: getNetworkDeviceModelValidator(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs: {
 							Type:        schema.TypeList,
-							Optional:    true,
 							Description: "The VLAN identifiers",
+							Optional:    true,
 							DefaultFunc: func() (interface{}, error) {
 								return []interface{}{}, nil
 							},
@@ -629,8 +633,8 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMNetworkInterfaceNames: {
 				Type:        schema.TypeList,
-				Computed:    true,
 				Description: "The network interface names published by the QEMU agent",
+				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			mkResourceVirtualEnvironmentVMNodeName: &schema.Schema{
@@ -641,28 +645,29 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMOSType: {
 				Type:         schema.TypeString,
-				Optional:     true,
 				Description:  "The OS type",
+				Optional:     true,
 				Default:      dvResourceVirtualEnvironmentVMOSType,
 				ValidateFunc: getOSTypeValidator(),
 			},
 			mkResourceVirtualEnvironmentVMPoolID: {
 				Type:        schema.TypeString,
-				Optional:    true,
 				Description: "The ID of the pool to assign the virtual machine to",
+				Optional:    true,
+				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentVMPoolID,
 			},
 			mkResourceVirtualEnvironmentVMStarted: {
 				Type:        schema.TypeBool,
-				Optional:    true,
 				Description: "Whether to start the virtual machine",
+				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMStarted,
 			},
 			mkResourceVirtualEnvironmentVMVMID: {
 				Type:         schema.TypeInt,
+				Description:  "The VM identifier",
 				Optional:     true,
 				ForceNew:     true,
-				Description:  "The VM identifier",
 				Default:      dvResourceVirtualEnvironmentVMVMID,
 				ValidateFunc: getVMIDValidator(),
 			},
@@ -707,107 +712,15 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		cdromFileID = "cdrom"
 	}
 
-	var cloudInitConfig *proxmox.CustomCloudInitConfig
+	cloudInitConfig, err := resourceVirtualEnvironmentVMGetCloudConfig(d, m)
 
-	cloudInit := d.Get(mkResourceVirtualEnvironmentVMCloudInit).([]interface{})
+	if err != nil {
+		return err
+	}
 
-	if len(cloudInit) > 0 {
+	if cloudInitConfig != nil {
 		cdromEnabled = true
 		cdromFileID = "local-lvm:cloudinit"
-
-		cloudInitBlock := cloudInit[0].(map[string]interface{})
-		cloudInitConfig = &proxmox.CustomCloudInitConfig{}
-		cloudInitDNS := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitDNS].([]interface{})
-
-		if len(cloudInitDNS) > 0 {
-			cloudInitDNSBlock := cloudInitDNS[0].(map[string]interface{})
-			domain := cloudInitDNSBlock[mkResourceVirtualEnvironmentVMCloudInitDNSDomain].(string)
-
-			if domain != "" {
-				cloudInitConfig.SearchDomain = &domain
-			}
-
-			server := cloudInitDNSBlock[mkResourceVirtualEnvironmentVMCloudInitDNSServer].(string)
-
-			if server != "" {
-				cloudInitConfig.Nameserver = &server
-			}
-		}
-
-		cloudInitIPConfig := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfig].([]interface{})
-		cloudInitConfig.IPConfig = make([]proxmox.CustomCloudInitIPConfig, len(cloudInitIPConfig))
-
-		for i, c := range cloudInitIPConfig {
-			configBlock := c.(map[string]interface{})
-			ipv4 := configBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4].([]interface{})
-
-			if len(ipv4) > 0 {
-				ipv4Block := ipv4[0].(map[string]interface{})
-				ipv4Address := ipv4Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address].(string)
-
-				if ipv4Address != "" {
-					cloudInitConfig.IPConfig[i].IPv4 = &ipv4Address
-				}
-
-				ipv4Gateway := ipv4Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway].(string)
-
-				if ipv4Gateway != "" {
-					cloudInitConfig.IPConfig[i].GatewayIPv4 = &ipv4Gateway
-				}
-			}
-
-			ipv6 := configBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6].([]interface{})
-
-			if len(ipv6) > 0 {
-				ipv6Block := ipv6[0].(map[string]interface{})
-				ipv6Address := ipv6Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Address].(string)
-
-				if ipv6Address != "" {
-					cloudInitConfig.IPConfig[i].IPv6 = &ipv6Address
-				}
-
-				ipv6Gateway := ipv6Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway].(string)
-
-				if ipv6Gateway != "" {
-					cloudInitConfig.IPConfig[i].GatewayIPv6 = &ipv6Gateway
-				}
-			}
-		}
-
-		cloudInitUserAccount := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccount].([]interface{})
-
-		if len(cloudInitUserAccount) > 0 {
-			cloudInitUserAccountBlock := cloudInitUserAccount[0].(map[string]interface{})
-			keys := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys].([]interface{})
-
-			if len(keys) > 0 {
-				sshKeys := make(proxmox.CustomCloudInitSSHKeys, len(keys))
-
-				for i, k := range keys {
-					sshKeys[i] = k.(string)
-				}
-
-				cloudInitConfig.SSHKeys = &sshKeys
-			}
-
-			password := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword].(string)
-
-			if password != "" {
-				cloudInitConfig.Password = &password
-			}
-
-			username := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername].(string)
-
-			cloudInitConfig.Username = &username
-		}
-
-		cloudInitUserDataFileID := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID].(string)
-
-		if cloudInitUserDataFileID != "" {
-			cloudInitConfig.Files = &proxmox.CustomCloudInitFiles{
-				UserVolume: &cloudInitUserDataFileID,
-			}
-		}
 	}
 
 	cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
@@ -989,6 +902,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		KeyboardLayout:      &keyboardLayout,
 		NetworkDevices:      networkDeviceObjects,
 		OSType:              &osType,
+		PoolID:              &poolID,
 		SCSIDevices:         scsiDevices,
 		SCSIHardware:        &scsiHardware,
 		SerialDevices:       []string{"socket"},
@@ -1008,10 +922,6 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	if name != "" {
 		body.Name = &name
-	}
-
-	if poolID != "" {
-		body.PoolID = &poolID
 	}
 
 	err = veClient.CreateVM(nodeName, body)
@@ -1186,6 +1096,110 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 	return resourceVirtualEnvironmentVMRead(d, m)
 }
 
+func resourceVirtualEnvironmentVMGetCloudConfig(d *schema.ResourceData, m interface{}) (*proxmox.CustomCloudInitConfig, error) {
+	var cloudInitConfig *proxmox.CustomCloudInitConfig
+
+	cloudInit := d.Get(mkResourceVirtualEnvironmentVMCloudInit).([]interface{})
+
+	if len(cloudInit) > 0 {
+		cloudInitBlock := cloudInit[0].(map[string]interface{})
+		cloudInitConfig = &proxmox.CustomCloudInitConfig{}
+		cloudInitDNS := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitDNS].([]interface{})
+
+		if len(cloudInitDNS) > 0 {
+			cloudInitDNSBlock := cloudInitDNS[0].(map[string]interface{})
+			domain := cloudInitDNSBlock[mkResourceVirtualEnvironmentVMCloudInitDNSDomain].(string)
+
+			if domain != "" {
+				cloudInitConfig.SearchDomain = &domain
+			}
+
+			server := cloudInitDNSBlock[mkResourceVirtualEnvironmentVMCloudInitDNSServer].(string)
+
+			if server != "" {
+				cloudInitConfig.Nameserver = &server
+			}
+		}
+
+		cloudInitIPConfig := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfig].([]interface{})
+		cloudInitConfig.IPConfig = make([]proxmox.CustomCloudInitIPConfig, len(cloudInitIPConfig))
+
+		for i, c := range cloudInitIPConfig {
+			configBlock := c.(map[string]interface{})
+			ipv4 := configBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4].([]interface{})
+
+			if len(ipv4) > 0 {
+				ipv4Block := ipv4[0].(map[string]interface{})
+				ipv4Address := ipv4Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address].(string)
+
+				if ipv4Address != "" {
+					cloudInitConfig.IPConfig[i].IPv4 = &ipv4Address
+				}
+
+				ipv4Gateway := ipv4Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway].(string)
+
+				if ipv4Gateway != "" {
+					cloudInitConfig.IPConfig[i].GatewayIPv4 = &ipv4Gateway
+				}
+			}
+
+			ipv6 := configBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6].([]interface{})
+
+			if len(ipv6) > 0 {
+				ipv6Block := ipv6[0].(map[string]interface{})
+				ipv6Address := ipv6Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Address].(string)
+
+				if ipv6Address != "" {
+					cloudInitConfig.IPConfig[i].IPv6 = &ipv6Address
+				}
+
+				ipv6Gateway := ipv6Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway].(string)
+
+				if ipv6Gateway != "" {
+					cloudInitConfig.IPConfig[i].GatewayIPv6 = &ipv6Gateway
+				}
+			}
+		}
+
+		cloudInitUserAccount := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccount].([]interface{})
+
+		if len(cloudInitUserAccount) > 0 {
+			cloudInitUserAccountBlock := cloudInitUserAccount[0].(map[string]interface{})
+			keys := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys].([]interface{})
+
+			if len(keys) > 0 {
+				sshKeys := make(proxmox.CustomCloudInitSSHKeys, len(keys))
+
+				for i, k := range keys {
+					sshKeys[i] = k.(string)
+				}
+
+				cloudInitConfig.SSHKeys = &sshKeys
+			}
+
+			password := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword].(string)
+
+			if password != "" {
+				cloudInitConfig.Password = &password
+			}
+
+			username := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername].(string)
+
+			cloudInitConfig.Username = &username
+		}
+
+		cloudInitUserDataFileID := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID].(string)
+
+		if cloudInitUserDataFileID != "" {
+			cloudInitConfig.Files = &proxmox.CustomCloudInitFiles{
+				UserVolume: &cloudInitUserDataFileID,
+			}
+		}
+	}
+
+	return cloudInitConfig, nil
+}
+
 func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
@@ -1296,16 +1310,6 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		cloudInit[mkResourceVirtualEnvironmentVMCloudInitDNS] = []interface{}{cloudInitDNS}
 	}
 
-	if vmConfig.CloudInitFiles != nil {
-		if vmConfig.CloudInitFiles.UserVolume != nil {
-			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = *vmConfig.CloudInitFiles.UserVolume
-		} else {
-			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = dvResourceVirtualEnvironmentVMCloudInitUserDataFileID
-		}
-	} else {
-		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = dvResourceVirtualEnvironmentVMCloudInitUserDataFileID
-	}
-
 	ipConfigLast := -1
 	ipConfigObjects := []*proxmox.CustomCloudInitIPConfig{
 		vmConfig.IPConfig0,
@@ -1396,6 +1400,16 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		}
 
 		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserAccount] = []interface{}{cloudInitUserAccount}
+	}
+
+	if vmConfig.CloudInitFiles != nil {
+		if vmConfig.CloudInitFiles.UserVolume != nil {
+			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = *vmConfig.CloudInitFiles.UserVolume
+		} else {
+			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = dvResourceVirtualEnvironmentVMCloudInitUserDataFileID
+		}
+	} else {
+		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = dvResourceVirtualEnvironmentVMCloudInitUserDataFileID
 	}
 
 	if len(cloudInit) > 0 {
@@ -1677,7 +1691,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	networkInterfaceNames := []interface{}{}
 
 	if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
-		networkInterfaces, err := veClient.WaitForNetworkInterfacesFromAgent(nodeName, vmID, 600, 5)
+		networkInterfaces, err := veClient.WaitForNetworkInterfacesFromAgent(nodeName, vmID, 1800, 5)
 
 		if err == nil && networkInterfaces.Result != nil {
 			ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
@@ -1723,7 +1737,108 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+	rebootRequired := false
+
 	vmID, err := strconv.Atoi(d.Id())
+
+	if err != nil {
+		return err
+	}
+
+	body := &proxmox.VirtualEnvironmentVMUpdateRequestBody{}
+	resource := resourceVirtualEnvironmentVM()
+
+	// Retrieve the entire configuration as we need to process certain values.
+	vmConfig, err := veClient.GetVM(nodeName, vmID)
+
+	if err != nil {
+		return err
+	}
+
+	// Prepare the new primitive configuration values.
+	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
+	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
+	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
+
+	if description != "" {
+		body.Description = &description
+	}
+
+	if name != "" {
+		body.Name = &name
+	}
+
+	body.OSType = &osType
+
+	// Prepare the new CPU configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMCPU) {
+		cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
+		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
+		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
+
+		if cpuCores > 0 {
+			body.CPUCores = &cpuCores
+		}
+
+		if cpuHotplugged > 0 {
+			body.VirtualCPUCount = &cpuHotplugged
+		}
+
+		if cpuSockets > 0 {
+			body.CPUSockets = &cpuSockets
+		}
+
+		rebootRequired = true
+	}
+
+	// Prepare the new cloud-init configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMCloudInit) {
+		cloudInitConfig, err := resourceVirtualEnvironmentVMGetCloudConfig(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		body.CloudInitConfig = cloudInitConfig
+
+		rebootRequired = true
+	}
+
+	// Prepare the new memory configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMMemory) {
+		memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
+		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
+		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
+
+		body.DedicatedMemory = &memoryDedicated
+		body.FloatingMemory = &memoryFloating
+
+		if memoryShared > 0 {
+			memorySharedName := fmt.Sprintf("vm-%d-ivshmem", vmID)
+
+			body.SharedMemory = &proxmox.CustomSharedMemory{
+				Name: &memorySharedName,
+				Size: memoryShared,
+			}
+		}
+
+		rebootRequired = true
+	}
+
+	// Update the configuration now that everything has been prepared.
+	err = veClient.UpdateVM(nodeName, vmID, body)
 
 	if err != nil {
 		return err
@@ -1731,6 +1846,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Determine if the state of the virtual machine needs to be changed.
 	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) {
+		rebootRequired = false
 		started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
 		if started {
@@ -1759,6 +1875,28 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			}
 
 			err = veClient.WaitForState(nodeName, vmID, "stopped", 30, 5)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// As a final step in the update procedure, we might need to reboot the virtual machine.
+	if rebootRequired {
+		rebootTimeout := 300
+
+		err = veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
+			Timeout: &rebootTimeout,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// Wait for the agent to unpublish the network interfaces, if it's enabled.
+		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
+			err = veClient.WaitForNoNetworkInterfacesFromAgent(nodeName, vmID, 300, 5)
 
 			if err != nil {
 				return err

@@ -447,6 +447,11 @@ type VirtualEnvironmentVMListResponseData struct {
 	ACPI *CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
 }
 
+// VirtualEnvironmentVMRebootRequestBody contains the body for a VM reboot request.
+type VirtualEnvironmentVMRebootRequestBody struct {
+	Timeout *int `json:"timeout,omitempty" url:"timeout,omitempty"`
+}
+
 // VirtualEnvironmentVMShutdownRequestBody contains the body for a VM shutdown request.
 type VirtualEnvironmentVMShutdownRequestBody struct {
 	ForceStop  *CustomBool `json:"forceStop,omitempty,int" url:"forceStop,omitempty,int"`

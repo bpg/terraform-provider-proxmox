@@ -103,6 +103,11 @@ func (c *VirtualEnvironmentClient) ListVMs() ([]*VirtualEnvironmentVMListRespons
 	return nil, errors.New("Not implemented")
 }
 
+// RebootVM reboots a virtual machine.
+func (c *VirtualEnvironmentClient) RebootVM(nodeName string, vmID int, d *VirtualEnvironmentVMRebootRequestBody) error {
+	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/status/reboot", url.PathEscape(nodeName), vmID), d, nil)
+}
+
 // ShutdownVM shuts down a virtual machine.
 func (c *VirtualEnvironmentClient) ShutdownVM(nodeName string, vmID int, d *VirtualEnvironmentVMShutdownRequestBody) error {
 	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/status/shutdown", url.PathEscape(nodeName), vmID), d, nil)
@@ -152,6 +157,32 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromAgent(nodeName st
 	}
 
 	return nil, fmt.Errorf("Timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces", vmID)
+}
+
+// WaitForNoNetworkInterfacesFromAgent waits for a virtual machine's QEMU agent to unpublish the network interfaces.
+func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromAgent(nodeName string, vmID int, timeout int, delay int) error {
+	timeDelay := int64(delay)
+	timeMax := float64(timeout)
+	timeStart := time.Now()
+	timeElapsed := timeStart.Sub(timeStart)
+
+	for timeElapsed.Seconds() < timeMax {
+		if int64(timeElapsed.Seconds())%timeDelay == 0 {
+			_, err := c.GetVMNetworkInterfacesFromAgent(nodeName, vmID)
+
+			if err != nil {
+				return nil
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+
+		time.Sleep(200 * time.Millisecond)
+
+		timeElapsed = time.Now().Sub(timeStart)
+	}
+
+	return fmt.Errorf("Timeout while waiting for the QEMU agent on VM \"%d\" to unpublish the network interfaces", vmID)
 }
 
 // WaitForState waits for a virtual machine to reach a specific state.
