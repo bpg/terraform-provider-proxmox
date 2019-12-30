@@ -121,7 +121,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					defaultList := make([]interface{}, 1)
-					defaultMap := make(map[string]interface{})
+					defaultMap := map[string]interface{}{}
 
 					defaultMap[mkResourceVirtualEnvironmentVMAgentEnabled] = dvResourceVirtualEnvironmentVMAgentEnabled
 					defaultMap[mkResourceVirtualEnvironmentVMAgentTrim] = dvResourceVirtualEnvironmentVMAgentTrim
@@ -163,7 +163,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					defaultList := make([]interface{}, 1)
-					defaultMap := make(map[string]interface{})
+					defaultMap := map[string]interface{}{}
 
 					defaultMap[mkResourceVirtualEnvironmentVMCDROMEnabled] = dvResourceVirtualEnvironmentVMCDROMEnabled
 					defaultMap[mkResourceVirtualEnvironmentVMCDROMFileID] = dvResourceVirtualEnvironmentVMCDROMFileID
@@ -313,6 +313,9 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 										Optional:    true,
 										Description: "The SSH password",
 										Default:     dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword,
+										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+											return strings.ReplaceAll(old, "*", "") == ""
+										},
 									},
 									mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername: {
 										Type:        schema.TypeString,
@@ -343,7 +346,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					defaultList := make([]interface{}, 1)
-					defaultMap := make(map[string]interface{})
+					defaultMap := map[string]interface{}{}
 
 					defaultMap[mkResourceVirtualEnvironmentVMCPUCores] = dvResourceVirtualEnvironmentVMCPUCores
 					defaultMap[mkResourceVirtualEnvironmentVMCPUHotplugged] = dvResourceVirtualEnvironmentVMCPUHotplugged
@@ -394,7 +397,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
 					defaultList := make([]interface{}, 1)
-					defaultMap := make(map[string]interface{})
+					defaultMap := map[string]interface{}{}
 
 					defaultMap[mkResourceVirtualEnvironmentVMDiskDatastoreID] = dvResourceVirtualEnvironmentVMDiskDatastoreID
 					defaultMap[mkResourceVirtualEnvironmentVMDiskFileFormat] = dvResourceVirtualEnvironmentVMDiskFileFormat
@@ -444,7 +447,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:    true,
 							DefaultFunc: func() (interface{}, error) {
 								defaultList := make([]interface{}, 1)
-								defaultMap := make(map[string]interface{})
+								defaultMap := map[string]interface{}{}
 
 								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedRead] = dvResourceVirtualEnvironmentVMDiskSpeedRead
 								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable] = dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable
@@ -528,7 +531,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					defaultList := make([]interface{}, 1)
-					defaultMap := make(map[string]interface{})
+					defaultMap := map[string]interface{}{}
 
 					defaultMap[mkResourceVirtualEnvironmentVMMemoryDedicated] = dvResourceVirtualEnvironmentVMMemoryDedicated
 					defaultMap[mkResourceVirtualEnvironmentVMMemoryFloating] = dvResourceVirtualEnvironmentVMMemoryFloating
@@ -599,11 +602,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "The MAC address",
 							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-								if old == "" {
-									return true
-								}
-
-								return false
+								return new == ""
 							},
 							ValidateFunc: getMACAddressValidator(),
 						},
@@ -1217,7 +1216,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 	// Compare the agent configuration to the one stored in the state.
 	if vmConfig.Agent != nil {
-		agent := make(map[string]interface{})
+		agent := map[string]interface{}{}
 
 		if vmConfig.Agent.Enabled != nil {
 			agent[mkResourceVirtualEnvironmentVMAgentEnabled] = bool(*vmConfig.Agent.Enabled)
@@ -1258,7 +1257,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 				d.Set(mkResourceVirtualEnvironmentVMCloudInit, make([]interface{}, 0))
 
 				cdrom := make([]interface{}, 1)
-				cdromBlock := make(map[string]interface{})
+				cdromBlock := map[string]interface{}{}
 
 				cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = true
 				cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = vmConfig.IDEDevice2.FileVolume
@@ -1276,8 +1275,137 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMCloudInit, make([]interface{}, 0))
 	}
 
+	// Compare the cloud-init configuration to the one stored in the state.
+	cloudInit := map[string]interface{}{}
+
+	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
+		cloudInitDNS := map[string]interface{}{}
+
+		if vmConfig.CloudInitDNSDomain != nil {
+			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSDomain] = *vmConfig.CloudInitDNSDomain
+		} else {
+			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSDomain] = dvResourceVirtualEnvironmentVMCloudInitDNSDomain
+		}
+
+		if vmConfig.CloudInitDNSServer != nil {
+			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSServer] = *vmConfig.CloudInitDNSServer
+		} else {
+			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSServer] = dvResourceVirtualEnvironmentVMCloudInitDNSServer
+		}
+
+		cloudInit[mkResourceVirtualEnvironmentVMCloudInitDNS] = []interface{}{cloudInitDNS}
+	}
+
+	if vmConfig.CloudInitFiles != nil {
+		if vmConfig.CloudInitFiles.UserVolume != nil {
+			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = *vmConfig.CloudInitFiles.UserVolume
+		} else {
+			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = dvResourceVirtualEnvironmentVMCloudInitUserDataFileID
+		}
+	} else {
+		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = dvResourceVirtualEnvironmentVMCloudInitUserDataFileID
+	}
+
+	ipConfigLast := -1
+	ipConfigObjects := []*proxmox.CustomCloudInitIPConfig{
+		vmConfig.IPConfig0,
+		vmConfig.IPConfig1,
+		vmConfig.IPConfig2,
+		vmConfig.IPConfig3,
+		vmConfig.IPConfig4,
+		vmConfig.IPConfig5,
+		vmConfig.IPConfig6,
+		vmConfig.IPConfig7,
+	}
+	ipConfigList := make([]interface{}, len(ipConfigObjects))
+
+	for ipConfigIndex, ipConfig := range ipConfigObjects {
+		ipConfigItem := map[string]interface{}{}
+
+		if ipConfig != nil {
+			ipConfigLast = ipConfigIndex
+
+			if ipConfig.GatewayIPv4 != nil || ipConfig.IPv4 != nil {
+				ipv4 := map[string]interface{}{}
+
+				if ipConfig.IPv4 != nil {
+					ipv4[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address] = *ipConfig.IPv4
+				} else {
+					ipv4[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address] = ""
+				}
+
+				if ipConfig.GatewayIPv4 != nil {
+					ipv4[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway] = *ipConfig.GatewayIPv4
+				} else {
+					ipv4[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway] = ""
+				}
+
+				ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4] = []interface{}{ipv4}
+			} else {
+				ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4] = []interface{}{}
+			}
+
+			if ipConfig.GatewayIPv6 != nil || ipConfig.IPv6 != nil {
+				ipv6 := map[string]interface{}{}
+
+				if ipConfig.IPv4 != nil {
+					ipv6[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address] = *ipConfig.IPv6
+				} else {
+					ipv6[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address] = ""
+				}
+
+				if ipConfig.GatewayIPv4 != nil {
+					ipv6[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway] = *ipConfig.GatewayIPv6
+				} else {
+					ipv6[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway] = ""
+				}
+
+				ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6] = []interface{}{ipv6}
+			} else {
+				ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6] = []interface{}{}
+			}
+		} else {
+			ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4] = []interface{}{}
+			ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6] = []interface{}{}
+		}
+
+		ipConfigList[ipConfigIndex] = ipConfigItem
+	}
+
+	cloudInit[mkResourceVirtualEnvironmentVMCloudInitIPConfig] = ipConfigList[:ipConfigLast+1]
+
+	if vmConfig.CloudInitPassword != nil || vmConfig.CloudInitSSHKeys != nil || vmConfig.CloudInitUsername != nil {
+		cloudInitUserAccount := map[string]interface{}{}
+
+		if vmConfig.CloudInitSSHKeys != nil {
+			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys] = []string(*vmConfig.CloudInitSSHKeys)
+		} else {
+			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys] = []string{}
+		}
+
+		if vmConfig.CloudInitPassword != nil {
+			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword] = *vmConfig.CloudInitPassword
+		} else {
+			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword] = dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword
+		}
+
+		if vmConfig.CloudInitUsername != nil {
+			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername] = *vmConfig.CloudInitUsername
+		} else {
+			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername] = ""
+		}
+
+		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserAccount] = []interface{}{cloudInitUserAccount}
+	}
+
+	if len(cloudInit) > 0 {
+		d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{cloudInit})
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{})
+	}
+
 	// Compare the CPU configuration to the one stored in the state.
-	cpu := make(map[string]interface{})
+	cpu := map[string]interface{}{}
 
 	if vmConfig.CPUCores != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUCores] = *vmConfig.CPUCores
@@ -1341,7 +1469,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	}
 
 	for di, dd := range diskObjects {
-		disk := make(map[string]interface{})
+		disk := map[string]interface{}{}
 
 		if dd == nil {
 			continue
@@ -1433,7 +1561,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	}
 
 	// Compare the memory configuration to the one stored in the state.
-	memory := make(map[string]interface{})
+	memory := map[string]interface{}{}
 
 	if vmConfig.DedicatedMemory != nil {
 		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = *vmConfig.DedicatedMemory
@@ -1487,7 +1615,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	}
 
 	for ni, nd := range networkDeviceObjects {
-		networkDevice := make(map[string]interface{})
+		networkDevice := map[string]interface{}{}
 
 		if nd != nil {
 			networkDeviceLast = ni

@@ -313,7 +313,13 @@ type VirtualEnvironmentVMGetResponseData struct {
 	BootDisk             *string                       `json:"bootdisk,omitempty"`
 	BootOrder            *string                       `json:"boot,omitempty"`
 	CDROM                *string                       `json:"cdrom,omitempty"`
-	CloudInitConfig      *CustomCloudInitConfig        `json:"cloudinit,omitempty"`
+	CloudInitDNSDomain   *string                       `json:"searchdomain,omitempty"`
+	CloudInitDNSServer   *string                       `json:"nameserver,omitempty"`
+	CloudInitFiles       *CustomCloudInitFiles         `json:"cicustom,omitempty"`
+	CloudInitPassword    *string                       `json:"cipassword,omitempty"`
+	CloudInitSSHKeys     *CustomCloudInitSSHKeys       `json:"sshkeys,omitempty"`
+	CloudInitType        *string                       `json:"citype,omitempty"`
+	CloudInitUsername    *string                       `json:"ciuser,omitempty"`
 	CPUArchitecture      *string                       `json:"arch,omitempty"`
 	CPUCores             *int                          `json:"cores,omitempty"`
 	CPULimit             *int                          `json:"cpulimit,omitempty"`
@@ -332,6 +338,14 @@ type VirtualEnvironmentVMGetResponseData struct {
 	IDEDevice0           *CustomStorageDevice          `json:"ide0,omitempty"`
 	IDEDevice1           *CustomStorageDevice          `json:"ide1,omitempty"`
 	IDEDevice2           *CustomStorageDevice          `json:"ide2,omitempty"`
+	IPConfig0            *CustomCloudInitIPConfig      `json:"ipconfig0,omitempty"`
+	IPConfig1            *CustomCloudInitIPConfig      `json:"ipconfig1,omitempty"`
+	IPConfig2            *CustomCloudInitIPConfig      `json:"ipconfig2,omitempty"`
+	IPConfig3            *CustomCloudInitIPConfig      `json:"ipconfig3,omitempty"`
+	IPConfig4            *CustomCloudInitIPConfig      `json:"ipconfig4,omitempty"`
+	IPConfig5            *CustomCloudInitIPConfig      `json:"ipconfig5,omitempty"`
+	IPConfig6            *CustomCloudInitIPConfig      `json:"ipconfig6,omitempty"`
+	IPConfig7            *CustomCloudInitIPConfig      `json:"ipconfig7,omitempty"`
 	KeyboardLayout       *string                       `json:"keyboard,omitempty"`
 	KVMArguments         *CustomLineBreakSeparatedList `json:"args,omitempty"`
 	KVMEnabled           *CustomBool                   `json:"kvm,omitempty"`
@@ -1023,6 +1037,93 @@ func (r *CustomAgent) UnmarshalJSON(b []byte) error {
 				r.Type = &v[1]
 			}
 		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomCloudInitFiles string to an object.
+func (r *CustomCloudInitFiles) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			switch v[0] {
+			case "meta":
+				r.MetaVolume = &v[1]
+			case "network":
+				r.MetaVolume = &v[1]
+			case "user":
+				r.UserVolume = &v[1]
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomCloudInitIPConfig string to an object.
+func (r *CustomCloudInitIPConfig) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			switch v[0] {
+			case "gw":
+				r.GatewayIPv4 = &v[1]
+			case "gw6":
+				r.GatewayIPv6 = &v[1]
+			case "ip":
+				r.IPv4 = &v[1]
+			case "ip6":
+				r.IPv6 = &v[1]
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomCloudInitFiles string to an object.
+func (r *CustomCloudInitSSHKeys) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	s, err = url.QueryUnescape(s)
+
+	if err != nil {
+		return err
+	}
+
+	if s != "" {
+		*r = strings.Split(strings.TrimSpace(s), "\n")
+	} else {
+		*r = []string{}
 	}
 
 	return nil
