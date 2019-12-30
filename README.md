@@ -451,11 +451,7 @@ $ $GOPATH/bin/terraform-provider-proxmox
 ...
 ```
 
-If you wish to contribute to the provider, the following requirements must be met,
-
-* All tests must pass using `make test`
-* The Go code must be formatted using Gofmt
-* Dependencies are installed by `make init`
+If you wish to contribute to the provider, please see [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Testing the Provider
 In order to test the provider, you can simply run `make test`.
