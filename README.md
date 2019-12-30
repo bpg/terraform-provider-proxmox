@@ -34,6 +34,7 @@ A Terraform Provider which adds support for Proxmox solutions.
         - [VM](#vm-proxmox_virtual_environment_vm)
 - [Developing the Provider](#developing-the-provider)
 - [Testing the Provider](#testing-the-provider)
+- [Known issues](#known-issues)
 
 ## Building the Provider
 Clone repository to: `$GOPATH/src/github.com/danitso/terraform-provider-proxmox`
@@ -263,6 +264,12 @@ This data source doesn't accept arguments.
 * `file_size` - The file size in bytes
 * `file_tag` - The file tag
 
+**IMPORTANT INFORMATION**
+
+The Proxmox VE API endpoint for file uploads does not support chunked transfer encoding, which means that we must first store the source file as a temporary file locally before uploading it.
+
+You must ensure that you have at least `Size-in-MB * 2 + 1` MB of storage space available (twice the size plus overhead because a multipart payload needs to be created as another temporary file).
+
 ##### Group (proxmox_virtual_environment_group)
 
 ###### Arguments
@@ -359,7 +366,7 @@ This resource doesn't expose any additional attributes.
         * `qcow2` - QEMU Disk Image v2
         * `raw` - Raw Disk Image
         * `vmdk` - VMware Disk Image
-    * `file_id` - (Optional) The file ID for a disk image (experimental)
+    * `file_id` - (Optional) The file ID for a disk image (experimental - might cause high CPU utilization during import, especially with large disk images)
     * `size` - (Optional) The disk size in gigabytes (defaults to `8`)
     * `speed` - (Optional) The speed limits
         * `read` - (Optional) The maximum read speed in megabytes per second
@@ -428,7 +435,7 @@ This resource doesn't expose any additional attributes.
 ###### Attributes
 * `ipv4_addresses` - The IPv4 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
 * `ipv6_addresses` - The IPv6 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
-* `mac_addresses` - The MAC addresses published by the QEMU agent with fallback to the VM configuration, if the agent is disabled
+* `mac_addresses` - The MAC addresses published by the QEMU agent with fallback to the network device configuration, if the agent is disabled
 * `network_interface_names` - The network interface names published by the QEMU agent (empty list when `agent.enabled` is `false`)
 
 ## Developing the Provider
@@ -457,3 +464,40 @@ $ make test
 ```
 
 Tests are limited to regression tests, ensuring backwards compability.
+
+## Known issues
+
+### Disk images cannot be imported by non-PAM accounts
+Due to limitations in the Proxmox VE API, disk images need to be imported using SSH. This requires the use of a PAM account (standard Linux account).
+
+We expect the Proxmox developers to improve the API over time so that these custom shell commands can eventually be replaced by an API method.
+
+### Disk images from VMware (.vmdk) cannot be uploaded
+Proxmox VE is not currently supporting `.vmdk` disk images directly. However, you can still use it as a disk image:
+
+```hcl
+resource "proxmox_virtual_environment_file" "vmdk_disk_image" {
+  content_type = "iso"
+  datastore_id = "datastore-id"
+  node_name    = "node-name"
+
+  source_file {
+    # We must override the file extension to bypass the validation code in the Proxmox VE API.
+    file_name = "vmdk-file-name.img"
+    path      = "path-to-vmdk-file"
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "example" {
+  ...
+
+  disk {
+    datastore_id = "datastore-id"
+    # We must tell the provider that the file format is vmdk instead of qcow2.
+    file_format  = "vmdk"
+    file_id      = "${proxmox_virtual_environment_file.vmdk_disk_image.id}"
+  }
+
+  ...
+}
+```
