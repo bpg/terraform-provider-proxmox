@@ -308,7 +308,8 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDeviceEnabled,
 		mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
 		mkResourceVirtualEnvironmentVMNetworkDeviceModel,
-		mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs,
+		mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit,
+		mkResourceVirtualEnvironmentVMNetworkDeviceVLANID,
 	})
 
 	testSchemaValueTypes(t, networkDeviceSchema, []string{
@@ -316,12 +317,14 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDeviceEnabled,
 		mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
 		mkResourceVirtualEnvironmentVMNetworkDeviceModel,
-		mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs,
+		mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit,
+		mkResourceVirtualEnvironmentVMNetworkDeviceVLANID,
 	}, []schema.ValueType{
 		schema.TypeString,
 		schema.TypeBool,
 		schema.TypeString,
 		schema.TypeString,
-		schema.TypeList,
+		schema.TypeFloat,
+		schema.TypeInt,
 	})
 }

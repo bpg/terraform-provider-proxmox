@@ -413,7 +413,8 @@ This resource doesn't expose any additional attributes.
         * `rtl8139` - Realtek RTL8139
         * `virtio` - VirtIO (paravirtualized)
         * `vmxnet3` - VMware vmxnet3
-    * `vlan_ids` - (Optional) The VLAN identifiers
+    * `rate_limit` - (Optional) The rate limit in megabytes per second
+    * `vlan_id` - (Optional) The VLAN identifier
 * `node_name` - (Required) The name of the node to assign the virtual machine to
 * `os_type` - (Optional) The OS type (defaults to `other`)
     * `l24` - Linux Kernel 2.4

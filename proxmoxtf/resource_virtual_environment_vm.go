@@ -46,6 +46,8 @@ const (
 	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled         = true
 	dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress      = ""
 	dvResourceVirtualEnvironmentVMNetworkDeviceModel           = "virtio"
+	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit       = 0
+	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID          = 0
 	dvResourceVirtualEnvironmentVMOSType                       = "other"
 	dvResourceVirtualEnvironmentVMPoolID                       = ""
 	dvResourceVirtualEnvironmentVMStarted                      = true
@@ -103,7 +105,8 @@ const (
 	mkResourceVirtualEnvironmentVMNetworkDeviceEnabled         = "enabled"
 	mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress      = "mac_address"
 	mkResourceVirtualEnvironmentVMNetworkDeviceModel           = "model"
-	mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs         = "vlan_ids"
+	mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit       = "rate_limit"
+	mkResourceVirtualEnvironmentVMNetworkDeviceVLANID          = "vlan_id"
 	mkResourceVirtualEnvironmentVMNetworkInterfaceNames        = "network_interface_names"
 	mkResourceVirtualEnvironmentVMNodeName                     = "node_name"
 	mkResourceVirtualEnvironmentVMOSType                       = "os_type"
@@ -617,14 +620,17 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:      dvResourceVirtualEnvironmentVMNetworkDeviceModel,
 							ValidateFunc: getNetworkDeviceModelValidator(),
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs: {
-							Type:        schema.TypeList,
-							Description: "The VLAN identifiers",
+						mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit: {
+							Type:        schema.TypeFloat,
+							Description: "The rate limit in megabytes per second",
 							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
-							},
-							Elem: &schema.Schema{Type: schema.TypeInt},
+							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit,
+						},
+						mkResourceVirtualEnvironmentVMNetworkDeviceVLANID: {
+							Type:        schema.TypeInt,
+							Description: "The VLAN identifier",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceVLANID,
 						},
 					},
 				},
@@ -798,40 +804,10 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 
-	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
-	networkDeviceObjects := make(proxmox.CustomNetworkDevices, len(networkDevice))
+	networkDeviceObjects, err := resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
 
-	for i, networkDeviceEntry := range networkDevice {
-		block := networkDeviceEntry.(map[string]interface{})
-
-		bridge, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceBridge].(string)
-		enabled, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled].(bool)
-		macAddress, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress].(string)
-		model, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceModel].(string)
-		vlanIDs, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs].([]interface{})
-
-		device := proxmox.CustomNetworkDevice{
-			Enabled: enabled,
-			Model:   model,
-		}
-
-		if bridge != "" {
-			device.Bridge = &bridge
-		}
-
-		if macAddress != "" {
-			device.MACAddress = &macAddress
-		}
-
-		if len(vlanIDs) > 0 {
-			device.Trunks = make([]int, len(vlanIDs))
-
-			for vi, vv := range vlanIDs {
-				device.Trunks[vi] = vv.(int)
-			}
-		}
-
-		networkDeviceObjects[i] = device
+	if err != nil {
+		return err
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
@@ -1198,6 +1174,47 @@ func resourceVirtualEnvironmentVMGetCloudConfig(d *schema.ResourceData, m interf
 	}
 
 	return cloudInitConfig, nil
+}
+
+func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData, m interface{}) (proxmox.CustomNetworkDevices, error) {
+	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
+	networkDeviceObjects := make(proxmox.CustomNetworkDevices, len(networkDevice))
+
+	for i, networkDeviceEntry := range networkDevice {
+		block := networkDeviceEntry.(map[string]interface{})
+
+		bridge, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceBridge].(string)
+		enabled, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled].(bool)
+		macAddress, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress].(string)
+		model, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceModel].(string)
+		rateLimit, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit].(float64)
+		vlanID, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID].(int)
+
+		device := proxmox.CustomNetworkDevice{
+			Enabled: enabled,
+			Model:   model,
+		}
+
+		if bridge != "" {
+			device.Bridge = &bridge
+		}
+
+		if macAddress != "" {
+			device.MACAddress = &macAddress
+		}
+
+		if rateLimit != 0 {
+			device.RateLimit = &rateLimit
+		}
+
+		if vlanID != 0 {
+			device.Tag = &vlanID
+		}
+
+		networkDeviceObjects[i] = device
+	}
+
+	return networkDeviceObjects, nil
 }
 
 func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) error {
@@ -1650,7 +1667,18 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress] = macAddresses[ni]
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceModel] = nd.Model
-			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceVLANIDs] = nd.Trunks
+
+			if nd.RateLimit != nil {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit] = *nd.RateLimit
+			} else {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit] = 0
+			}
+
+			if nd.Tag != nil {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID] = nd.Tag
+			} else {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID] = 0
+			}
 		} else {
 			macAddresses[ni] = ""
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled] = false
@@ -1662,7 +1690,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
 
 	if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-		d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[0:networkDeviceLast+1])
+		d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
 	}
 
 	// Compare the OS type and pool ID to the values stored in the state.
@@ -1856,6 +1884,17 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 				Name: &memorySharedName,
 				Size: memoryShared,
 			}
+		}
+
+		rebootRequired = true
+	}
+
+	// Prepare the new network device configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice) {
+		body.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
+
+		if err != nil {
+			return err
 		}
 
 		rebootRequired = true
