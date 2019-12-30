@@ -264,7 +264,7 @@ This data source doesn't accept arguments.
 * `file_size` - The file size in bytes
 * `file_tag` - The file tag
 
-**IMPORTANT INFORMATION**
+###### Notes
 
 The Proxmox VE API endpoint for file uploads does not support chunked transfer encoding, which means that we must first store the source file as a temporary file locally before uploading it.
 
