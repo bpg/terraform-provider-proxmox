@@ -740,55 +740,10 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
-	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
-	scsiDevices := make(proxmox.CustomStorageDevices, len(disk))
+	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m)
 
-	for i, diskEntry := range disk {
-		diskDevice := proxmox.CustomStorageDevice{
-			Enabled: true,
-		}
-
-		block := diskEntry.(map[string]interface{})
-		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
-		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
-
-		speedBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
-
-		if err != nil {
-			return err
-		}
-
-		if fileID != "" {
-			diskDevice.Enabled = false
-		} else {
-			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
-		}
-
-		if len(speedBlock) > 0 {
-			speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
-			speedLimitReadBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable].(int)
-			speedLimitWrite := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWrite].(int)
-			speedLimitWriteBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable].(int)
-
-			if speedLimitRead > 0 {
-				diskDevice.MaxReadSpeedMbps = &speedLimitRead
-			}
-
-			if speedLimitReadBurstable > 0 {
-				diskDevice.BurstableReadSpeedMbps = &speedLimitReadBurstable
-			}
-
-			if speedLimitWrite > 0 {
-				diskDevice.MaxWriteSpeedMbps = &speedLimitWrite
-			}
-
-			if speedLimitWriteBurstable > 0 {
-				diskDevice.BurstableWriteSpeedMbps = &speedLimitWriteBurstable
-			}
-		}
-
-		scsiDevices[i] = diskDevice
+	if err != nil {
+		return err
 	}
 
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
@@ -879,7 +834,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		NetworkDevices:      networkDeviceObjects,
 		OSType:              &osType,
 		PoolID:              &poolID,
-		SCSIDevices:         scsiDevices,
+		SCSIDevices:         diskDeviceObjects,
 		SCSIHardware:        &scsiHardware,
 		SerialDevices:       []string{"socket"},
 		SharedMemory:        memorySharedObject,
@@ -1174,6 +1129,62 @@ func resourceVirtualEnvironmentVMGetCloudConfig(d *schema.ResourceData, m interf
 	}
 
 	return cloudInitConfig, nil
+}
+
+func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m interface{}) (proxmox.CustomStorageDevices, error) {
+	diskDevice := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+	diskDeviceObjects := make(proxmox.CustomStorageDevices, len(diskDevice))
+	resource := resourceVirtualEnvironmentVM()
+
+	for i, diskEntry := range diskDevice {
+		diskDevice := proxmox.CustomStorageDevice{
+			Enabled: true,
+		}
+
+		block := diskEntry.(map[string]interface{})
+		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
+		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
+		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
+
+		speedBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
+
+		if err != nil {
+			return diskDeviceObjects, err
+		}
+
+		if fileID != "" {
+			diskDevice.Enabled = false
+		} else {
+			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+		}
+
+		if len(speedBlock) > 0 {
+			speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
+			speedLimitReadBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable].(int)
+			speedLimitWrite := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWrite].(int)
+			speedLimitWriteBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable].(int)
+
+			if speedLimitRead > 0 {
+				diskDevice.MaxReadSpeedMbps = &speedLimitRead
+			}
+
+			if speedLimitReadBurstable > 0 {
+				diskDevice.BurstableReadSpeedMbps = &speedLimitReadBurstable
+			}
+
+			if speedLimitWrite > 0 {
+				diskDevice.MaxWriteSpeedMbps = &speedLimitWrite
+			}
+
+			if speedLimitWriteBurstable > 0 {
+				diskDevice.BurstableWriteSpeedMbps = &speedLimitWriteBurstable
+			}
+		}
+
+		diskDeviceObjects[i] = diskDevice
+	}
+
+	return diskDeviceObjects, nil
 }
 
 func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData, m interface{}) (proxmox.CustomNetworkDevices, error) {
@@ -1858,6 +1869,48 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		}
 
 		body.CloudInitConfig = cloudInitConfig
+
+		rebootRequired = true
+	}
+
+	// Prepare the new disk device configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
+		diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		scsiDevices := []*proxmox.CustomStorageDevice{
+			vmConfig.SCSIDevice0,
+			vmConfig.SCSIDevice1,
+			vmConfig.SCSIDevice2,
+			vmConfig.SCSIDevice3,
+			vmConfig.SCSIDevice4,
+			vmConfig.SCSIDevice5,
+			vmConfig.SCSIDevice6,
+			vmConfig.SCSIDevice7,
+			vmConfig.SCSIDevice8,
+			vmConfig.SCSIDevice9,
+			vmConfig.SCSIDevice10,
+			vmConfig.SCSIDevice11,
+			vmConfig.SCSIDevice12,
+			vmConfig.SCSIDevice13,
+		}
+
+		body.SCSIDevices = make(proxmox.CustomStorageDevices, len(diskDeviceObjects))
+
+		for di, do := range diskDeviceObjects {
+			if scsiDevices[di] == nil {
+				return fmt.Errorf("Missing SCSI device %d (scsi%d)", di, di)
+			}
+
+			body.SCSIDevices[di] = *scsiDevices[di]
+			body.SCSIDevices[di].BurstableReadSpeedMbps = do.BurstableReadSpeedMbps
+			body.SCSIDevices[di].BurstableWriteSpeedMbps = do.BurstableWriteSpeedMbps
+			body.SCSIDevices[di].MaxReadSpeedMbps = do.MaxReadSpeedMbps
+			body.SCSIDevices[di].MaxWriteSpeedMbps = do.MaxWriteSpeedMbps
+		}
 
 		rebootRequired = true
 	}
