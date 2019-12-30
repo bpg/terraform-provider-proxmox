@@ -472,8 +472,8 @@ Due to limitations in the Proxmox VE API, disk images need to be imported using 
 
 We expect the Proxmox developers to improve the API over time so that these custom shell commands can eventually be replaced by an API method.
 
-### Disk images from VMware (.vmdk) cannot be uploaded
-Proxmox VE is not currently supporting `.vmdk` disk images directly. However, you can still use it as a disk image:
+### Disk images from VMware cannot be uploaded or imported
+Proxmox VE is not currently supporting VMware disk images directly. However, you can still use them as disk images by using this workaround:
 
 ```hcl
 resource "proxmox_virtual_environment_file" "vmdk_disk_image" {
