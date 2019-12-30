@@ -21,8 +21,8 @@ You can run all the test cases by invoking `make test`.
 
 ## Submitting changes
 
-Please create a new PR against the `master` which must be based on the project's
-[pull request template](.github/PULL_REQUEST_TEMPLATE.md).
+Please create a new PR against the `master` branch which must be based on the
+project's [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
 
 ## Coding conventions
 
