@@ -468,9 +468,7 @@ Tests are limited to regression tests, ensuring backwards compability.
 ## Known issues
 
 ### Disk images cannot be imported by non-PAM accounts
-Due to limitations in the Proxmox VE API, disk images need to be imported using SSH. This requires the use of a PAM account (standard Linux account).
-
-We expect the Proxmox developers to improve the API over time so that these custom shell commands can eventually be replaced by an API method.
+Due to limitations in the Proxmox VE API, certain actions need to be performed using SSH. This requires the use of a PAM account (standard Linux account).
 
 ### Disk images from VMware cannot be uploaded or imported
 Proxmox VE is not currently supporting VMware disk images directly. However, you can still use them as disk images by using this workaround:
@@ -501,3 +499,6 @@ resource "proxmox_virtual_environment_vm" "example" {
   ...
 }
 ```
+
+### Snippets cannot be uploaded by non-PAM accounts
+Due to limitations in the Proxmox VE API, certain files need to be uploaded using SFTP. This requires the use of a PAM account (standard Linux account).
