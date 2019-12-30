@@ -1784,7 +1784,20 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	body := &proxmox.VirtualEnvironmentVMUpdateRequestBody{}
+	body := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
+		IDEDevices: proxmox.CustomStorageDevices{
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+		},
+	}
+
 	resource := resourceVirtualEnvironmentVM()
 
 	// Retrieve the entire configuration as we need to process certain values.
@@ -1833,6 +1846,59 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		rebootRequired = true
 	}
 
+	// Prepare the new CDROM configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMCDROM) {
+		cdromBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
+		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
+
+		if cdromFileID == "" {
+			cdromFileID = "cdrom"
+		}
+
+		cdromMedia := "cdrom"
+
+		body.IDEDevices[2] = proxmox.CustomStorageDevice{
+			Enabled:    cdromEnabled,
+			FileVolume: cdromFileID,
+			Media:      &cdromMedia,
+		}
+	}
+
+	// Prepare the new cloud-init configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMCloudInit) {
+		cloudInitConfig, err := resourceVirtualEnvironmentVMGetCloudConfig(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		body.CloudInitConfig = cloudInitConfig
+
+		if body.CloudInitConfig != nil {
+			cdromMedia := "cdrom"
+
+			body.IDEDevices[2] = proxmox.CustomStorageDevice{
+				Enabled:    true,
+				FileVolume: "local-lvm:cloudinit",
+				Media:      &cdromMedia,
+			}
+
+			if vmConfig.IDEDevice2 != nil {
+				if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
+					body.IDEDevices[2].Enabled = false
+				}
+			}
+		}
+
+		rebootRequired = true
+	}
+
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCPU) {
 		cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
@@ -1856,19 +1922,6 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		if cpuSockets > 0 {
 			body.CPUSockets = &cpuSockets
 		}
-
-		rebootRequired = true
-	}
-
-	// Prepare the new cloud-init configuration.
-	if d.HasChange(mkResourceVirtualEnvironmentVMCloudInit) {
-		cloudInitConfig, err := resourceVirtualEnvironmentVMGetCloudConfig(d, m)
-
-		if err != nil {
-			return err
-		}
-
-		body.CloudInitConfig = cloudInitConfig
 
 		rebootRequired = true
 	}
