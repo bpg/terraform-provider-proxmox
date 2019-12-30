@@ -1757,6 +1757,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new primitive configuration values.
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
+	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
 
@@ -1764,11 +1765,34 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		body.Description = &description
 	}
 
+	body.KeyboardLayout = &keyboardLayout
+
 	if name != "" {
 		body.Name = &name
 	}
 
 	body.OSType = &osType
+
+	// Prepare the new agent configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMAgent) {
+		agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		agentEnabled := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
+		agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
+
+		body.Agent = &proxmox.CustomAgent{
+			Enabled:         &agentEnabled,
+			TrimClonedDisks: &agentTrim,
+			Type:            &agentType,
+		}
+
+		rebootRequired = true
+	}
 
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCPU) {
@@ -1846,7 +1870,6 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Determine if the state of the virtual machine needs to be changed.
 	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) {
-		rebootRequired = false
 		started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
 		if started {
@@ -1879,6 +1902,8 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			if err != nil {
 				return err
 			}
+
+			rebootRequired = false
 		}
 	}
 
