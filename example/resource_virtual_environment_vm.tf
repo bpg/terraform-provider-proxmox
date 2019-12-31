@@ -23,10 +23,14 @@ resource "proxmox_virtual_environment_vm" "example" {
     user_data_file_id = "${proxmox_virtual_environment_file.cloud_config.id}"
   }
 
+  description = "Managed by Terraform"
+
   disk {
     datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))}"
     file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
   }
+
+  name = "terraform-provider-proxmox-example"
 
   network_device {}
 

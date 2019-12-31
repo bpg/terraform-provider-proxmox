@@ -53,6 +53,7 @@ const (
 	dvResourceVirtualEnvironmentVMOSType                       = "other"
 	dvResourceVirtualEnvironmentVMPoolID                       = ""
 	dvResourceVirtualEnvironmentVMStarted                      = true
+	dvResourceVirtualEnvironmentVMTabletDevice                 = true
 	dvResourceVirtualEnvironmentVMVGAEnabled                   = true
 	dvResourceVirtualEnvironmentVMVGAMemory                    = 16
 	dvResourceVirtualEnvironmentVMVGAType                      = "std"
@@ -120,6 +121,7 @@ const (
 	mkResourceVirtualEnvironmentVMOSType                       = "os_type"
 	mkResourceVirtualEnvironmentVMPoolID                       = "pool_id"
 	mkResourceVirtualEnvironmentVMStarted                      = "started"
+	mkResourceVirtualEnvironmentVMTabletDevice                 = "tablet_device"
 	mkResourceVirtualEnvironmentVMVGA                          = "vga"
 	mkResourceVirtualEnvironmentVMVGAEnabled                   = "enabled"
 	mkResourceVirtualEnvironmentVMVGAMemory                    = "memory"
@@ -707,6 +709,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMStarted,
 			},
+			mkResourceVirtualEnvironmentVMTabletDevice: {
+				Type:        schema.TypeBool,
+				Description: "Whether to enable the USB tablet device",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTabletDevice,
+			},
 			mkResourceVirtualEnvironmentVMVGA: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The VGA configuration",
@@ -853,6 +861,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
 	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
+	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 
 	vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
 
@@ -911,7 +920,6 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	}
 
 	scsiHardware := "virtio-scsi-pci"
-	tabletDeviceEnabled := proxmox.CustomBool(true)
 
 	body := &proxmox.VirtualEnvironmentVMCreateRequestBody{
 		Agent: &proxmox.CustomAgent{
@@ -941,7 +949,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		SerialDevices:       []string{"socket"},
 		SharedMemory:        memorySharedObject,
 		StartOnBoot:         &started,
-		TabletDeviceEnabled: &tabletDeviceEnabled,
+		TabletDeviceEnabled: &tabletDevice,
 		VGADevice:           vgaDevice,
 		VMID:                &vmID,
 	}
@@ -1639,7 +1647,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
 	}
 
-	// Compare the description and keyboard layout to the values stored in the state.
+	// Compare some primitive arguments to the values stored in the state.
 	if vmConfig.Description != nil {
 		d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
 	} else {
@@ -1650,6 +1658,12 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, *vmConfig.KeyboardLayout)
 	} else {
 		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
+	}
+
+	if vmConfig.TabletDeviceEnabled != nil {
+		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, false)
 	}
 
 	// Compare the disks to those stored in the state.
@@ -2018,6 +2032,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
+	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 
 	if description != "" {
 		body.Description = &description
@@ -2030,6 +2045,13 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	body.OSType = &osType
+	body.TabletDeviceEnabled = &tabletDevice
+
+	if d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) ||
+		d.HasChange(mkResourceVirtualEnvironmentVMOSType) ||
+		d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
+		rebootRequired = true
+	}
 
 	// Prepare the new agent configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMAgent) {

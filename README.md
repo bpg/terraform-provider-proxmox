@@ -478,6 +478,7 @@ This resource doesn't expose any additional attributes.
     * `wxp` - Windows XP
 * `pool_id` - (Optional) The ID of a pool to assign the virtual machine to
 * `started` - (Optional) Whether to start the virtual machine (defaults to `true`)
+* `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults to `true`)
 * `vga` - (Optional) The VGA configuration
     * `enabled` - (Optional) Whether to enable the VGA device (defaults to `true`)
     * `memory` - (Optional) The VGA memory in megabytes (defaults to `16`)
