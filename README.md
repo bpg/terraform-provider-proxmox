@@ -436,7 +436,7 @@ This resource doesn't expose any additional attributes.
 * `vga` - (Optional) The VGA configuration
     * `enabled` - (Optional) Whether to enable the VGA device (defaults to `true`)
     * `memory` - (Optional) The VGA memory in megabytes (4-512 MB)
-    * `type` - (Optional) The VGA type
+    * `type` - (Optional) The VGA type (defaults to `std`)
         * `cirrus` - Cirrus (deprecated since QEMU 2.2)
         * `qxl` - SPICE
         * `qxl2` - SPICE Dual Monitor
