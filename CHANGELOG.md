@@ -2,9 +2,9 @@
 
 ENHANCEMENTS:
 
-resource/virtual_environment_vm: Add `cpu.flags`, `cpu.type` and `cpu.units` arguments
-resource/virtual_environment_vm: Add `tablet_device` argument
-resource/virtual_environment_vm: Add `vga` argument
+* resource/virtual_environment_vm: Add `cpu.flags`, `cpu.type` and `cpu.units` arguments
+* resource/virtual_environment_vm: Add `tablet_device` argument
+* resource/virtual_environment_vm: Add `vga` argument
 
 ## 0.1.0
 
