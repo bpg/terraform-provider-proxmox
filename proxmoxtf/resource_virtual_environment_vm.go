@@ -29,6 +29,7 @@ const (
 	dvResourceVirtualEnvironmentVMCPUHotplugged                = 0
 	dvResourceVirtualEnvironmentVMCPUSockets                   = 1
 	dvResourceVirtualEnvironmentVMCPUType                      = "qemu64"
+	dvResourceVirtualEnvironmentVMCPUUnits                     = 1024
 	dvResourceVirtualEnvironmentVMDescription                  = ""
 	dvResourceVirtualEnvironmentVMDiskDatastoreID              = "local-lvm"
 	dvResourceVirtualEnvironmentVMDiskFileFormat               = "qcow2"
@@ -86,6 +87,7 @@ const (
 	mkResourceVirtualEnvironmentVMCPUHotplugged                = "hotplugged"
 	mkResourceVirtualEnvironmentVMCPUSockets                   = "sockets"
 	mkResourceVirtualEnvironmentVMCPUType                      = "type"
+	mkResourceVirtualEnvironmentVMCPUUnits                     = "units"
 	mkResourceVirtualEnvironmentVMDescription                  = "description"
 	mkResourceVirtualEnvironmentVMDisk                         = "disk"
 	mkResourceVirtualEnvironmentVMDiskDatastoreID              = "datastore_id"
@@ -370,6 +372,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					defaultMap[mkResourceVirtualEnvironmentVMCPUHotplugged] = dvResourceVirtualEnvironmentVMCPUHotplugged
 					defaultMap[mkResourceVirtualEnvironmentVMCPUSockets] = dvResourceVirtualEnvironmentVMCPUSockets
 					defaultMap[mkResourceVirtualEnvironmentVMCPUType] = dvResourceVirtualEnvironmentVMCPUType
+					defaultMap[mkResourceVirtualEnvironmentVMCPUUnits] = dvResourceVirtualEnvironmentVMCPUUnits
 
 					defaultList[0] = defaultMap
 
@@ -413,6 +416,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMCPUType,
 							ValidateFunc: getCPUTypeValidator(),
+						},
+						mkResourceVirtualEnvironmentVMCPUUnits: {
+							Type:         schema.TypeInt,
+							Description:  "The CPU units",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMCPUUnits,
+							ValidateFunc: validation.IntBetween(2, 262144),
 						},
 					},
 				},
@@ -811,6 +821,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 	cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
+	cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m)
@@ -917,6 +928,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 			Type:  cpuType,
 		},
 		CPUSockets:          &cpuSockets,
+		CPUUnits:            &cpuUnits,
 		DedicatedMemory:     &memoryDedicated,
 		FloatingMemory:      &memoryFloating,
 		IDEDevices:          ideDevices,
@@ -1609,6 +1621,12 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		cpu[mkResourceVirtualEnvironmentVMCPUType] = ""
 	}
 
+	if vmConfig.CPUUnits != nil {
+		cpu[mkResourceVirtualEnvironmentVMCPUUnits] = *vmConfig.CPUUnits
+	} else {
+		cpu[mkResourceVirtualEnvironmentVMCPUUnits] = 0
+	}
+
 	currentCPU := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 
 	if len(currentCPU) > 0 ||
@@ -1616,7 +1634,8 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		len(cpu[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})) > 0 ||
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] != dvResourceVirtualEnvironmentVMCPUHotplugged ||
 		cpu[mkResourceVirtualEnvironmentVMCPUSockets] != dvResourceVirtualEnvironmentVMCPUSockets ||
-		cpu[mkResourceVirtualEnvironmentVMCPUType] != dvResourceVirtualEnvironmentVMCPUType {
+		cpu[mkResourceVirtualEnvironmentVMCPUType] != dvResourceVirtualEnvironmentVMCPUType ||
+		cpu[mkResourceVirtualEnvironmentVMCPUUnits] != dvResourceVirtualEnvironmentVMCPUUnits {
 		d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
 	}
 
@@ -2094,21 +2113,29 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		}
 
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
-		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
-		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
-		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
-		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 
 		if cpuCores > 0 {
 			body.CPUCores = &cpuCores
 		}
 
+		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
+		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
+
 		if cpuHotplugged > 0 {
 			body.VirtualCPUCount = &cpuHotplugged
 		}
 
+		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
+
 		if cpuSockets > 0 {
 			body.CPUSockets = &cpuSockets
+		}
+
+		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
+		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
+
+		if cpuUnits > 0 {
+			body.CPUUnits = &cpuUnits
 		}
 
 		cpuFlagsConverted := make([]string, len(cpuFlags))

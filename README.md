@@ -405,6 +405,7 @@ This resource doesn't expose any additional attributes.
         * `pentium3` - Intel Pentium 3 (1999-2001)
         * `phenom` - AMD Phenom (2010)
         * `qemu32`/`qemu64` - QEMU Virtual CPU version 2.5+ (32 & 64 bit variants)
+    * `units` - (Optional) The CPU units (defaults to `1024`)
 * `description` - (Optional) The description
 * `disk` - (Optional) The disk configuration (multiple blocks supported)
     * `datastore_id` - (Optional) The ID of the datastore to create the disk in (defaults to `local-lvm`)
