@@ -216,6 +216,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	CPUSockets           *int                         `json:"sockets,omitempty" url:"sockets,omitempty"`
 	CPUUnits             *int                         `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
 	DedicatedMemory      *int                         `json:"memory,omitempty" url:"memory,omitempty"`
+	Delete               []string                     `json:"delete,omitempty" url:"delete,omitempty,comma"`
 	DeletionProtection   *CustomBool                  `json:"protection,omitempty" url:"force,omitempty,int"`
 	Description          *string                      `json:"description,omitempty" url:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk               `json:"efidisk0,omitempty" url:"efidisk0,omitempty"`

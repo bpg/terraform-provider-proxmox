@@ -2013,6 +2013,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Prepare the new primitive configuration values.
+	delete := []string{}
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
@@ -2113,29 +2114,20 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		}
 
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
-
-		if cpuCores > 0 {
-			body.CPUCores = &cpuCores
-		}
-
 		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
-
-		if cpuHotplugged > 0 {
-			body.VirtualCPUCount = &cpuHotplugged
-		}
-
 		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
-
-		if cpuSockets > 0 {
-			body.CPUSockets = &cpuSockets
-		}
-
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
-		if cpuUnits > 0 {
-			body.CPUUnits = &cpuUnits
+		body.CPUCores = &cpuCores
+		body.CPUSockets = &cpuSockets
+		body.CPUUnits = &cpuUnits
+
+		if cpuHotplugged > 0 {
+			body.VirtualCPUCount = &cpuHotplugged
+		} else {
+			delete = append(delete, "vcpus")
 		}
 
 		cpuFlagsConverted := make([]string, len(cpuFlags))
@@ -2244,6 +2236,8 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Update the configuration now that everything has been prepared.
+	body.Delete = delete
+
 	err = veClient.UpdateVM(nodeName, vmID, body)
 
 	if err != nil {
