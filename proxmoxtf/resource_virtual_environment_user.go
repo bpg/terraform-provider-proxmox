@@ -247,7 +247,7 @@ func resourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) e
 
 	for _, v := range acl {
 		if v.Type == "user" && v.UserOrGroupID == userID {
-			aclEntry := make(map[string]interface{})
+			aclEntry := map[string]interface{}{}
 
 			aclEntry[mkResourceVirtualEnvironmentUserACLPath] = v.Path
 

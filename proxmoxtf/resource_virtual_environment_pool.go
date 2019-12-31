@@ -140,7 +140,7 @@ func resourceVirtualEnvironmentPoolRead(d *schema.ResourceData, m interface{}) e
 	members := make([]interface{}, len(pool.Members))
 
 	for i, v := range pool.Members {
-		values := make(map[string]interface{})
+		values := map[string]interface{}{}
 
 		values[mkResourceVirtualEnvironmentPoolMembersID] = v.ID
 		values[mkResourceVirtualEnvironmentPoolMembersNodeName] = v.Node

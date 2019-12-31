@@ -93,7 +93,7 @@ func dataSourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}
 
 	for _, v := range acl {
 		if v.Type == "group" && v.UserOrGroupID == groupID {
-			aclEntry := make(map[string]interface{})
+			aclEntry := map[string]interface{}{}
 
 			aclEntry[mkDataSourceVirtualEnvironmentGroupACLPath] = v.Path
 

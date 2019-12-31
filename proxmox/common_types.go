@@ -120,10 +120,10 @@ func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
 		if s != "" {
 			*r = strings.Split(s, ",")
 		} else {
-			*r = make(CustomPrivileges, 0)
+			*r = CustomPrivileges{}
 		}
 	default:
-		*r = make(CustomPrivileges, 0)
+		*r = CustomPrivileges{}
 
 		for k, v := range privileges.(map[string]interface{}) {
 			if v.(float64) >= 1 {

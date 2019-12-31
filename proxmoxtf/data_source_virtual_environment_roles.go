@@ -71,7 +71,7 @@ func dataSourceVirtualEnvironmentRolesRead(d *schema.ResourceData, m interface{}
 
 			privileges[i] = p
 		} else {
-			privileges[i] = make(map[string]interface{})
+			privileges[i] = map[string]interface{}{}
 		}
 
 		roleIDs[i] = v.ID

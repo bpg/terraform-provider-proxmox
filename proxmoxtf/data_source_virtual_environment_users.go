@@ -151,7 +151,7 @@ func dataSourceVirtualEnvironmentUsersRead(d *schema.ResourceData, m interface{}
 		if v.Groups != nil {
 			groups[i] = v.Groups
 		} else {
-			groups[i] = make([]string, 0)
+			groups[i] = []string{}
 		}
 
 		if v.Keys != nil {

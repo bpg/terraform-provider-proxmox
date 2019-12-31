@@ -97,7 +97,7 @@ func dataSourceVirtualEnvironmentPoolRead(d *schema.ResourceData, m interface{})
 	members := make([]interface{}, len(pool.Members))
 
 	for i, v := range pool.Members {
-		values := make(map[string]interface{})
+		values := map[string]interface{}{}
 
 		values[mkDataSourceVirtualEnvironmentPoolMembersID] = v.ID
 		values[mkDataSourceVirtualEnvironmentPoolMembersNodeName] = v.Node
