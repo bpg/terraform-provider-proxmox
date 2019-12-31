@@ -175,6 +175,41 @@ func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, m interface{}, k
 	return resourceBlock, nil
 }
 
+func getVGAMemoryValidator() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) ([]string, []error) {
+		v, ok := i.(int)
+
+		if !ok {
+			return []string{}, []error{fmt.Errorf("expected type of %s to be []interface{}", k)}
+		}
+
+		if v == 0 {
+			return []string{}, []error{}
+		}
+
+		validator := validation.IntBetween(4, 512)
+
+		return validator(i, k)
+	}
+}
+
+func getVGATypeValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"cirrus",
+		"qxl",
+		"qxl2",
+		"qxl3",
+		"qxl4",
+		"serial0",
+		"serial1",
+		"serial2",
+		"serial3",
+		"std",
+		"virtio",
+		"vmware",
+	}, false)
+}
+
 func getVLANIDsValidator() schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (ws []string, es []error) {
 		min := 1

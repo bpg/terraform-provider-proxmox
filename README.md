@@ -433,6 +433,22 @@ This resource doesn't expose any additional attributes.
     * `wxp` - Windows XP
 * `pool_id` - (Optional) The ID of a pool to assign the virtual machine to
 * `started` - (Optional) Whether to start the virtual machine (defaults to `true`)
+* `vga` - (Optional) The VGA configuration
+    * `enabled` - (Optional) Whether to enable the VGA device (defaults to `true`)
+    * `memory` - (Optional) The VGA memory in megabytes (4-512 MB)
+    * `type` - (Optional) The VGA type
+        * `cirrus` - Cirrus (deprecated since QEMU 2.2)
+        * `qxl` - SPICE
+        * `qxl2` - SPICE Dual Monitor
+        * `qxl3` - SPICE Triple Monitor
+        * `qxl4` - SPICE Quad Monitor
+        * `serial0` - Serial Terminal 0
+        * `serial1` - Serial Terminal 1
+        * `serial2` - Serial Terminal 2
+        * `serial3` - Serial Terminal 3
+        * `std` - Standard VGA
+        * `virtio` - VirtIO-GPU
+        * `vmware` - VMware Compatible
 * `vm_id` - (Optional) The ID
 
 ###### Attributes

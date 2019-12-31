@@ -165,8 +165,8 @@ type CustomUSBDevices []CustomUSBDevice
 
 // CustomVGADevice handles QEMU VGA device parameters.
 type CustomVGADevice struct {
-	Memory *int   `json:"memory,omitempty" url:"memory,omitempty"`
-	Type   string `json:"type" url:"type"`
+	Memory *int    `json:"memory,omitempty" url:"memory,omitempty"`
+	Type   *string `json:"type,omitempty" url:"type,omitempty"`
 }
 
 // CustomVirtualIODevice handles QEMU VirtIO device parameters.
@@ -950,12 +950,14 @@ func (r CustomUSBDevices) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomVGADevice struct to a URL vlaue.
 func (r CustomVGADevice) EncodeValues(key string, v *url.Values) error {
-	values := []string{
-		fmt.Sprintf("type=%s", r.Type),
-	}
+	values := []string{}
 
 	if r.Memory != nil {
 		values = append(values, fmt.Sprintf("memory=%d", *r.Memory))
+	}
+
+	if r.Type != nil {
+		values = append(values, fmt.Sprintf("type=%s", *r.Type))
 	}
 
 	v.Add(key, strings.Join(values, ","))
@@ -1352,6 +1354,46 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	}
 
 	r.Enabled = true
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomVGADevice string to an object.
+func (r *CustomVGADevice) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	if s == "" {
+		return nil
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 1 {
+			r.Type = &v[0]
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "memory":
+				m, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.Memory = &m
+			case "type":
+				r.Type = &v[1]
+			}
+		}
+	}
 
 	return nil
 }

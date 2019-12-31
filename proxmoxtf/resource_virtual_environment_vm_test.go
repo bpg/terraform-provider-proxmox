@@ -327,4 +327,22 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		schema.TypeFloat,
 		schema.TypeInt,
 	})
+
+	vgaSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMVGA)
+
+	testOptionalArguments(t, vgaSchema, []string{
+		mkResourceVirtualEnvironmentVMVGAEnabled,
+		mkResourceVirtualEnvironmentVMVGAMemory,
+		mkResourceVirtualEnvironmentVMVGAType,
+	})
+
+	testSchemaValueTypes(t, vgaSchema, []string{
+		mkResourceVirtualEnvironmentVMVGAEnabled,
+		mkResourceVirtualEnvironmentVMVGAMemory,
+		mkResourceVirtualEnvironmentVMVGAType,
+	}, []schema.ValueType{
+		schema.TypeBool,
+		schema.TypeInt,
+		schema.TypeString,
+	})
 }

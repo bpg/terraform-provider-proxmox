@@ -51,6 +51,9 @@ const (
 	dvResourceVirtualEnvironmentVMOSType                       = "other"
 	dvResourceVirtualEnvironmentVMPoolID                       = ""
 	dvResourceVirtualEnvironmentVMStarted                      = true
+	dvResourceVirtualEnvironmentVMVGAEnabled                   = true
+	dvResourceVirtualEnvironmentVMVGAMemory                    = 0
+	dvResourceVirtualEnvironmentVMVGAType                      = "std"
 	dvResourceVirtualEnvironmentVMVMID                         = -1
 
 	mkResourceVirtualEnvironmentVMAgent                        = "agent"
@@ -112,6 +115,10 @@ const (
 	mkResourceVirtualEnvironmentVMOSType                       = "os_type"
 	mkResourceVirtualEnvironmentVMPoolID                       = "pool_id"
 	mkResourceVirtualEnvironmentVMStarted                      = "started"
+	mkResourceVirtualEnvironmentVMVGA                          = "vga"
+	mkResourceVirtualEnvironmentVMVGAEnabled                   = "enabled"
+	mkResourceVirtualEnvironmentVMVGAMemory                    = "memory"
+	mkResourceVirtualEnvironmentVMVGAType                      = "type"
 	mkResourceVirtualEnvironmentVMVMID                         = "vm_id"
 )
 
@@ -669,6 +676,49 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMStarted,
 			},
+			mkResourceVirtualEnvironmentVMVGA: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The VGA configuration",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					defaultList := make([]interface{}, 1)
+					defaultMap := map[string]interface{}{}
+
+					defaultMap[mkResourceVirtualEnvironmentVMVGAEnabled] = dvResourceVirtualEnvironmentVMVGAEnabled
+					defaultMap[mkResourceVirtualEnvironmentVMVGAMemory] = dvResourceVirtualEnvironmentVMVGAMemory
+					defaultMap[mkResourceVirtualEnvironmentVMVGAType] = dvResourceVirtualEnvironmentVMVGAType
+
+					defaultList[0] = defaultMap
+
+					return defaultList, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMVGAEnabled: {
+							Type:        schema.TypeBool,
+							Description: "Whether to enable the VGA device",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMVGAEnabled,
+						},
+						mkResourceVirtualEnvironmentVMVGAMemory: {
+							Type:         schema.TypeInt,
+							Description:  "The VGA memory in megabytes (4-512 MB)",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMVGAMemory,
+							ValidateFunc: getVGAMemoryValidator(),
+						},
+						mkResourceVirtualEnvironmentVMVGAType: {
+							Type:         schema.TypeString,
+							Description:  "The VGA type",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMVGAType,
+							ValidateFunc: getVGATypeValidator(),
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
 			mkResourceVirtualEnvironmentVMVMID: {
 				Type:         schema.TypeInt,
 				Description:  "The VM identifier",
@@ -769,6 +819,13 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
 	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
+
+	vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
+
+	if err != nil {
+		return err
+	}
+
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
@@ -840,6 +897,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		SharedMemory:        memorySharedObject,
 		StartOnBoot:         &started,
 		TabletDeviceEnabled: &tabletDeviceEnabled,
+		VGADevice:           vgaDevice,
 		VMID:                &vmID,
 	}
 
@@ -1226,6 +1284,38 @@ func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData,
 	}
 
 	return networkDeviceObjects, nil
+}
+
+func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData, m interface{}) (*proxmox.CustomVGADevice, error) {
+	resource := resourceVirtualEnvironmentVM()
+
+	vgaBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMVGA}, 0, true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	vgaEnabled := proxmox.CustomBool(vgaBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
+	vgaMemory := vgaBlock[mkResourceVirtualEnvironmentVMVGAMemory].(int)
+	vgaType := vgaBlock[mkResourceVirtualEnvironmentVMVGAType].(string)
+
+	vgaDevice := &proxmox.CustomVGADevice{}
+
+	if vgaEnabled {
+		if vgaMemory > 0 {
+			vgaDevice.Memory = &vgaMemory
+		}
+
+		vgaDevice.Type = &vgaType
+	} else {
+		vgaType = "none"
+
+		vgaDevice = &proxmox.CustomVGADevice{
+			Type: &vgaType,
+		}
+	}
+
+	return vgaDevice, nil
 }
 
 func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) error {
@@ -1715,6 +1805,48 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMPoolID, *vmConfig.PoolID)
 	}
 
+	// Compare the VGA configuration to the one stored in the state.
+	vga := map[string]interface{}{}
+
+	if vmConfig.VGADevice != nil {
+		vgaEnabled := true
+
+		if vmConfig.VGADevice.Type != nil {
+			vgaEnabled = *vmConfig.VGADevice.Type != "none"
+		}
+
+		vga[mkResourceVirtualEnvironmentVMVGAEnabled] = vgaEnabled
+
+		if vmConfig.VGADevice.Memory != nil {
+			vga[mkResourceVirtualEnvironmentVMVGAMemory] = *vmConfig.VGADevice.Memory
+		} else {
+			vga[mkResourceVirtualEnvironmentVMVGAMemory] = dvResourceVirtualEnvironmentVMVGAMemory
+		}
+
+		if vgaEnabled {
+			if vmConfig.VGADevice.Type != nil {
+				vga[mkResourceVirtualEnvironmentVMVGAType] = *vmConfig.VGADevice.Type
+			} else {
+				vga[mkResourceVirtualEnvironmentVMVGAType] = dvResourceVirtualEnvironmentVMVGAType
+			}
+		}
+	} else {
+		vga[mkResourceVirtualEnvironmentVMVGAEnabled] = true
+		vga[mkResourceVirtualEnvironmentVMVGAMemory] = dvResourceVirtualEnvironmentVMVGAMemory
+		vga[mkResourceVirtualEnvironmentVMVGAType] = dvResourceVirtualEnvironmentVMVGAType
+	}
+
+	currentVGA := d.Get(mkResourceVirtualEnvironmentVMVGA).([]interface{})
+
+	if len(currentVGA) > 0 ||
+		vga[mkResourceVirtualEnvironmentVMVGAEnabled] != dvResourceVirtualEnvironmentVMVGAEnabled ||
+		vga[mkResourceVirtualEnvironmentVMVGAMemory] != dvResourceVirtualEnvironmentVMVGAMemory ||
+		vga[mkResourceVirtualEnvironmentVMVGAType] != dvResourceVirtualEnvironmentVMVGAType {
+		d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{vga})
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMVGA, make([]interface{}, 0))
+	}
+
 	// Determine the state of the virtual machine in order to update the "started" argument.
 	status, err := veClient.GetVMStatus(nodeName, vmID)
 
@@ -1998,6 +2130,17 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	// Prepare the new network device configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice) {
 		body.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		rebootRequired = true
+	}
+
+	// Prepare the new VGA configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMVGA) {
+		body.VGADevice, err = resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
 
 		if err != nil {
 			return err

@@ -1,3 +1,9 @@
+## 0.2.0 (UNRELEASED)
+
+ENHANCEMENTS:
+
+resource/virtual_environment_vm: Add `vga` argument
+
 ## 0.1.0
 
 FEATURES:
