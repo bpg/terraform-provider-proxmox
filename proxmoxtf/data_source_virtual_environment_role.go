@@ -47,7 +47,7 @@ func dataSourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{})
 		return err
 	}
 
-	privileges := schema.NewSet(schema.HashString, make([]interface{}, 0))
+	privileges := schema.NewSet(schema.HashString, []interface{}{})
 
 	if *accessRole != nil {
 		for _, v := range *accessRole {

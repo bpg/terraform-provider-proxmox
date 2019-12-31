@@ -63,7 +63,7 @@ func dataSourceVirtualEnvironmentRolesRead(d *schema.ResourceData, m interface{}
 
 	for i, v := range list {
 		if v.Privileges != nil {
-			p := schema.NewSet(schema.HashString, make([]interface{}, 0))
+			p := schema.NewSet(schema.HashString, []interface{}{})
 
 			for _, v := range *v.Privileges {
 				p.Add(v)

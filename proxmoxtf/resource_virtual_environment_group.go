@@ -31,7 +31,7 @@ func resourceVirtualEnvironmentGroup() *schema.Resource {
 				Description: "The access control list",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					return make([]interface{}, 0), nil
+					return []interface{}{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -158,7 +158,7 @@ func resourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) 
 
 	d.SetId(groupID)
 
-	aclParsed := make([]interface{}, 0)
+	aclParsed := []interface{}{}
 
 	for _, v := range acl {
 		if v.Type == "group" && v.UserOrGroupID == groupID {

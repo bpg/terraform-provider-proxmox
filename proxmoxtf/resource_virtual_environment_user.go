@@ -45,7 +45,7 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				Description: "The access control list",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					return make([]interface{}, 0), nil
+					return []interface{}{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -243,7 +243,7 @@ func resourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	aclParsed := make([]interface{}, 0)
+	aclParsed := []interface{}{}
 
 	for _, v := range acl {
 		if v.Type == "user" && v.UserOrGroupID == userID {
@@ -295,7 +295,7 @@ func resourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) e
 		d.Set(mkResourceVirtualEnvironmentUserFirstName, "")
 	}
 
-	groups := schema.NewSet(schema.HashString, make([]interface{}, 0))
+	groups := schema.NewSet(schema.HashString, []interface{}{})
 
 	if user.Groups != nil {
 		for _, v := range *user.Groups {

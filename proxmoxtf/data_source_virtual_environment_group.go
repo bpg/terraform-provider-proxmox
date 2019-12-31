@@ -89,7 +89,7 @@ func dataSourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}
 
 	d.SetId(groupID)
 
-	aclParsed := make([]interface{}, 0)
+	aclParsed := []interface{}{}
 
 	for _, v := range acl {
 		if v.Type == "group" && v.UserOrGroupID == groupID {

@@ -176,21 +176,7 @@ func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, m interface{}, k
 }
 
 func getVGAMemoryValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) ([]string, []error) {
-		v, ok := i.(int)
-
-		if !ok {
-			return []string{}, []error{fmt.Errorf("expected type of %s to be []interface{}", k)}
-		}
-
-		if v == 0 {
-			return []string{}, []error{}
-		}
-
-		validator := validation.IntBetween(4, 512)
-
-		return validator(i, k)
-	}
+	return validation.IntBetween(4, 512)
 }
 
 func getVGATypeValidator() schema.SchemaValidateFunc {

@@ -435,7 +435,7 @@ This resource doesn't expose any additional attributes.
 * `started` - (Optional) Whether to start the virtual machine (defaults to `true`)
 * `vga` - (Optional) The VGA configuration
     * `enabled` - (Optional) Whether to enable the VGA device (defaults to `true`)
-    * `memory` - (Optional) The VGA memory in megabytes (4-512 MB)
+    * `memory` - (Optional) The VGA memory in megabytes (defaults to `16`)
     * `type` - (Optional) The VGA type (defaults to `std`)
         * `cirrus` - Cirrus (deprecated since QEMU 2.2)
         * `qxl` - SPICE

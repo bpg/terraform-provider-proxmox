@@ -92,7 +92,7 @@ func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	privileges := schema.NewSet(schema.HashString, make([]interface{}, 0))
+	privileges := schema.NewSet(schema.HashString, []interface{}{})
 
 	if *role != nil {
 		for _, v := range *role {

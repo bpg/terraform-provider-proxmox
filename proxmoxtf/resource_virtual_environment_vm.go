@@ -52,7 +52,7 @@ const (
 	dvResourceVirtualEnvironmentVMPoolID                       = ""
 	dvResourceVirtualEnvironmentVMStarted                      = true
 	dvResourceVirtualEnvironmentVMVGAEnabled                   = true
-	dvResourceVirtualEnvironmentVMVGAMemory                    = 0
+	dvResourceVirtualEnvironmentVMVGAMemory                    = 16
 	dvResourceVirtualEnvironmentVMVGAType                      = "std"
 	dvResourceVirtualEnvironmentVMVMID                         = -1
 
@@ -1353,19 +1353,19 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		if vmConfig.Agent.Enabled != nil {
 			agent[mkResourceVirtualEnvironmentVMAgentEnabled] = bool(*vmConfig.Agent.Enabled)
 		} else {
-			agent[mkResourceVirtualEnvironmentVMAgentEnabled] = dvResourceVirtualEnvironmentVMAgentEnabled
+			agent[mkResourceVirtualEnvironmentVMAgentEnabled] = false
 		}
 
 		if vmConfig.Agent.TrimClonedDisks != nil {
 			agent[mkResourceVirtualEnvironmentVMAgentTrim] = bool(*vmConfig.Agent.TrimClonedDisks)
 		} else {
-			agent[mkResourceVirtualEnvironmentVMAgentTrim] = dvResourceVirtualEnvironmentVMAgentTrim
+			agent[mkResourceVirtualEnvironmentVMAgentTrim] = false
 		}
 
 		if vmConfig.Agent.Type != nil {
 			agent[mkResourceVirtualEnvironmentVMAgentType] = *vmConfig.Agent.Type
 		} else {
-			agent[mkResourceVirtualEnvironmentVMAgentType] = dvResourceVirtualEnvironmentVMAgentType
+			agent[mkResourceVirtualEnvironmentVMAgentType] = ""
 		}
 
 		currentAgent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
@@ -1377,16 +1377,16 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 			d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
 		}
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMAgent, make([]interface{}, 0))
+		d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
 	}
 
 	// Compare the IDE devices to the CDROM and cloud-init configurations stored in the state.
 	if vmConfig.IDEDevice2 != nil {
 		if *vmConfig.IDEDevice2.Media == "cdrom" {
 			if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
-				d.Set(mkResourceVirtualEnvironmentVMCDROM, make([]interface{}, 0))
+				d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
 			} else {
-				d.Set(mkResourceVirtualEnvironmentVMCloudInit, make([]interface{}, 0))
+				d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{})
 
 				cdrom := make([]interface{}, 1)
 				cdromBlock := map[string]interface{}{}
@@ -1399,12 +1399,12 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 				d.Set(mkResourceVirtualEnvironmentVMCDROM, cdrom)
 			}
 		} else {
-			d.Set(mkResourceVirtualEnvironmentVMCDROM, make([]interface{}, 0))
-			d.Set(mkResourceVirtualEnvironmentVMCloudInit, make([]interface{}, 0))
+			d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
+			d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{})
 		}
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMCDROM, make([]interface{}, 0))
-		d.Set(mkResourceVirtualEnvironmentVMCloudInit, make([]interface{}, 0))
+		d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
+		d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{})
 	}
 
 	// Compare the cloud-init configuration to the one stored in the state.
@@ -1416,13 +1416,13 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		if vmConfig.CloudInitDNSDomain != nil {
 			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSDomain] = *vmConfig.CloudInitDNSDomain
 		} else {
-			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSDomain] = dvResourceVirtualEnvironmentVMCloudInitDNSDomain
+			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSDomain] = ""
 		}
 
 		if vmConfig.CloudInitDNSServer != nil {
 			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSServer] = *vmConfig.CloudInitDNSServer
 		} else {
-			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSServer] = dvResourceVirtualEnvironmentVMCloudInitDNSServer
+			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSServer] = ""
 		}
 
 		cloudInit[mkResourceVirtualEnvironmentVMCloudInitDNS] = []interface{}{cloudInitDNS}
@@ -1508,7 +1508,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		if vmConfig.CloudInitPassword != nil {
 			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword] = *vmConfig.CloudInitPassword
 		} else {
-			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword] = dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword
+			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword] = ""
 		}
 
 		if vmConfig.CloudInitUsername != nil {
@@ -1524,10 +1524,10 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		if vmConfig.CloudInitFiles.UserVolume != nil {
 			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = *vmConfig.CloudInitFiles.UserVolume
 		} else {
-			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = dvResourceVirtualEnvironmentVMCloudInitUserDataFileID
+			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = ""
 		}
 	} else {
-		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = dvResourceVirtualEnvironmentVMCloudInitUserDataFileID
+		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = ""
 	}
 
 	if len(cloudInit) > 0 {
@@ -1542,19 +1542,19 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	if vmConfig.CPUCores != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUCores] = *vmConfig.CPUCores
 	} else {
-		cpu[mkResourceVirtualEnvironmentVMCPUCores] = dvResourceVirtualEnvironmentVMCPUCores
+		cpu[mkResourceVirtualEnvironmentVMCPUCores] = 0
 	}
 
 	if vmConfig.VirtualCPUCount != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = *vmConfig.VirtualCPUCount
 	} else {
-		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = dvResourceVirtualEnvironmentVMCPUHotplugged
+		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = 0
 	}
 
 	if vmConfig.CPUSockets != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = *vmConfig.CPUSockets
 	} else {
-		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = dvResourceVirtualEnvironmentVMCPUSockets
+		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = 0
 	}
 
 	currentCPU := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
@@ -1582,7 +1582,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	// Compare the disks to those stored in the state.
 	currentDiskList := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 
-	diskList := make([]interface{}, 0)
+	diskList := []interface{}{}
 	diskObjects := []*proxmox.CustomStorageDevice{
 		vmConfig.SCSIDevice0,
 		vmConfig.SCSIDevice1,
@@ -1698,19 +1698,19 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	if vmConfig.DedicatedMemory != nil {
 		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = *vmConfig.DedicatedMemory
 	} else {
-		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = dvResourceVirtualEnvironmentVMMemoryDedicated
+		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = 0
 	}
 
 	if vmConfig.FloatingMemory != nil {
 		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = *vmConfig.FloatingMemory
 	} else {
-		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = dvResourceVirtualEnvironmentVMMemoryFloating
+		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = 0
 	}
 
 	if vmConfig.SharedMemory != nil {
 		memory[mkResourceVirtualEnvironmentVMMemoryShared] = vmConfig.SharedMemory.Size
 	} else {
-		memory[mkResourceVirtualEnvironmentVMMemoryShared] = dvResourceVirtualEnvironmentVMMemoryShared
+		memory[mkResourceVirtualEnvironmentVMMemoryShared] = 0
 	}
 
 	currentMemory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
@@ -1820,20 +1820,20 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		if vmConfig.VGADevice.Memory != nil {
 			vga[mkResourceVirtualEnvironmentVMVGAMemory] = *vmConfig.VGADevice.Memory
 		} else {
-			vga[mkResourceVirtualEnvironmentVMVGAMemory] = dvResourceVirtualEnvironmentVMVGAMemory
+			vga[mkResourceVirtualEnvironmentVMVGAMemory] = 0
 		}
 
 		if vgaEnabled {
 			if vmConfig.VGADevice.Type != nil {
 				vga[mkResourceVirtualEnvironmentVMVGAType] = *vmConfig.VGADevice.Type
 			} else {
-				vga[mkResourceVirtualEnvironmentVMVGAType] = dvResourceVirtualEnvironmentVMVGAType
+				vga[mkResourceVirtualEnvironmentVMVGAType] = ""
 			}
 		}
 	} else {
 		vga[mkResourceVirtualEnvironmentVMVGAEnabled] = true
-		vga[mkResourceVirtualEnvironmentVMVGAMemory] = dvResourceVirtualEnvironmentVMVGAMemory
-		vga[mkResourceVirtualEnvironmentVMVGAType] = dvResourceVirtualEnvironmentVMVGAType
+		vga[mkResourceVirtualEnvironmentVMVGAMemory] = 0
+		vga[mkResourceVirtualEnvironmentVMVGAType] = ""
 	}
 
 	currentVGA := d.Get(mkResourceVirtualEnvironmentVMVGA).([]interface{})
@@ -1844,7 +1844,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		vga[mkResourceVirtualEnvironmentVMVGAType] != dvResourceVirtualEnvironmentVMVGAType {
 		d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{vga})
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMVGA, make([]interface{}, 0))
+		d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{})
 	}
 
 	// Determine the state of the virtual machine in order to update the "started" argument.
