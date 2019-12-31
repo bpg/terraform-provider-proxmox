@@ -20,6 +20,7 @@ const (
 	dvResourceVirtualEnvironmentVMAgentEnabled                 = false
 	dvResourceVirtualEnvironmentVMAgentTrim                    = false
 	dvResourceVirtualEnvironmentVMAgentType                    = "virtio"
+	dvResourceVirtualEnvironmentVMBIOS                         = "seabios"
 	dvResourceVirtualEnvironmentVMCDROMEnabled                 = false
 	dvResourceVirtualEnvironmentVMCDROMFileID                  = ""
 	dvResourceVirtualEnvironmentVMCloudInitDNSDomain           = ""
@@ -65,6 +66,7 @@ const (
 	mkResourceVirtualEnvironmentVMAgentEnabled                 = "enabled"
 	mkResourceVirtualEnvironmentVMAgentTrim                    = "trim"
 	mkResourceVirtualEnvironmentVMAgentType                    = "type"
+	mkResourceVirtualEnvironmentVMBIOS                         = "bios"
 	mkResourceVirtualEnvironmentVMCDROM                        = "cdrom"
 	mkResourceVirtualEnvironmentVMCDROMEnabled                 = "enabled"
 	mkResourceVirtualEnvironmentVMCDROMFileID                  = "file_id"
@@ -181,6 +183,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentVMBIOS: {
+				Type:         schema.TypeString,
+				Description:  "The BIOS implementation",
+				Optional:     true,
+				Default:      dvResourceVirtualEnvironmentVMBIOS,
+				ValidateFunc: getBIOSValidator(),
 			},
 			mkResourceVirtualEnvironmentVMCDROM: &schema.Schema{
 				Type:        schema.TypeList,
@@ -804,6 +813,8 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
+	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
+
 	cdromBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
 
 	if err != nil {
@@ -938,6 +949,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
+		BIOS:            &bios,
 		BootDisk:        &bootDisk,
 		BootOrder:       &bootOrder,
 		CloudInitConfig: cloudInitConfig,
@@ -1414,7 +1426,15 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	if vmConfig.ACPI != nil {
 		d.Set(mkResourceVirtualEnvironmentVMACPI, bool(*vmConfig.ACPI))
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMACPI, false)
+		// Default value of "acpi" is "1" according to the API documentation.
+		d.Set(mkResourceVirtualEnvironmentVMACPI, true)
+	}
+
+	if vmConfig.BIOS != nil {
+		d.Set(mkResourceVirtualEnvironmentVMBIOS, *vmConfig.BIOS)
+	} else {
+		// Default value of "bios" is "seabios" according to the API documentation.
+		d.Set(mkResourceVirtualEnvironmentVMBIOS, "seabios")
 	}
 
 	if vmConfig.Description != nil {
@@ -1432,7 +1452,8 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	if vmConfig.TabletDeviceEnabled != nil {
 		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, false)
+		// Default value of "tablet" is "1" according to the API documentation.
+		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, true)
 	}
 
 	// Compare the agent configuration to the one stored in the state.
@@ -1631,19 +1652,22 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	if vmConfig.CPUCores != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUCores] = *vmConfig.CPUCores
 	} else {
-		cpu[mkResourceVirtualEnvironmentVMCPUCores] = 0
+		// Default value of "cores" is "1" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentVMCPUCores] = 1
 	}
 
 	if vmConfig.VirtualCPUCount != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = *vmConfig.VirtualCPUCount
 	} else {
+		// Default value of "vcpus" is "1" according to the API documentation.
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = 0
 	}
 
 	if vmConfig.CPUSockets != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = *vmConfig.CPUSockets
 	} else {
-		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = 0
+		// Default value of "sockets" is "1" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = 1
 	}
 
 	if vmConfig.CPUEmulation != nil {
@@ -1668,7 +1692,8 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	if vmConfig.CPUUnits != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUUnits] = *vmConfig.CPUUnits
 	} else {
-		cpu[mkResourceVirtualEnvironmentVMCPUUnits] = 0
+		// Default value of "cpuunits" is "1024" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentVMCPUUnits] = 1024
 	}
 
 	currentCPU := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
@@ -2045,6 +2070,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new primitive configuration values.
 	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 	delete := []string{}
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
@@ -2053,6 +2079,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 
 	body.ACPI = &acpi
+	body.BIOS = &bios
 
 	if description != "" {
 		body.Description = &description
@@ -2068,6 +2095,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	body.TabletDeviceEnabled = &tabletDevice
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) ||
+		d.HasChange(mkResourceVirtualEnvironmentVMBIOS) ||
 		d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) ||
 		d.HasChange(mkResourceVirtualEnvironmentVMOSType) ||
 		d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {

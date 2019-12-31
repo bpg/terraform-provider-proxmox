@@ -339,6 +339,9 @@ This resource doesn't expose any additional attributes.
     * `type` - (Optional) The QEMU agent interface type (defaults to `virtio`)
         * `isa` - ISA Serial Port
         * `virtio` - VirtIO (paravirtualized)
+* `bios` - (Optional) The BIOS implementation (defaults to `seabios`)
+    * `ovmf` - OVMF (UEFI)
+    * `seabios` - SeaBIOS
 * `cdrom` - (Optional) The CDROM configuration
     * `enabled` - (Optional) Whether to enable the CDROM drive (defaults to `false`)
     * `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as in the physical drive)

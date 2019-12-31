@@ -13,6 +13,13 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 )
 
+func getBIOSValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"ovmf",
+		"seabios",
+	}, false)
+}
+
 func getContentTypeValidator() schema.SchemaValidateFunc {
 	return validation.StringInSlice([]string{
 		"backup",
