@@ -1686,7 +1686,8 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		cpu[mkResourceVirtualEnvironmentVMCPUType] = vmConfig.CPUEmulation.Type
 	} else {
 		cpu[mkResourceVirtualEnvironmentVMCPUFlags] = []interface{}{}
-		cpu[mkResourceVirtualEnvironmentVMCPUType] = ""
+		// Default value of "cputype" is "qemu64" according to the QEMU documentation.
+		cpu[mkResourceVirtualEnvironmentVMCPUType] = "qemu64"
 	}
 
 	if vmConfig.CPUUnits != nil {
