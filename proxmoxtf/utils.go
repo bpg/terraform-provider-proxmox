@@ -22,6 +22,114 @@ func getContentTypeValidator() schema.SchemaValidateFunc {
 	}, false)
 }
 
+func getCPUFlagsValidator() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (ws []string, es []error) {
+		list, ok := i.([]interface{})
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be []interface{}", k))
+			return
+		}
+
+		validator := validation.StringInSlice([]string{
+			"+aes",
+			"-aes",
+			"+amd-no-ssb",
+			"-amd-no-ssb",
+			"+amd-ssbd",
+			"-amd-ssbd",
+			"+hv-evmcs",
+			"-hv-evmcs",
+			"+hv-tlbflush",
+			"-hv-tlbflush",
+			"+ibpb",
+			"-ibpb",
+			"+md-clear",
+			"-md-clear",
+			"+pcid",
+			"-pcid",
+			"+pdpe1gb",
+			"-pdpe1gb",
+			"+spec-ctrl",
+			"-spec-ctrl",
+			"+ssbd",
+			"-ssbd",
+			"+virt-ssbd",
+			"-virt-ssbd",
+		}, false)
+
+		for li, lv := range list {
+			v, ok := lv.(string)
+
+			if !ok {
+				es = append(es, fmt.Errorf("expected type of %s[%d] to be string", k, li))
+				return
+			}
+
+			warns, errs := validator(v, k)
+
+			ws = append(ws, warns...)
+			es = append(es, errs...)
+
+			if len(es) > 0 {
+				return
+			}
+		}
+
+		return
+	}
+}
+
+func getCPUTypeValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"486",
+		"Broadwell",
+		"Broadwell-IBRS",
+		"Broadwell-noTSX",
+		"Broadwell-noTSX-IBRS",
+		"Cascadelake-Server",
+		"Conroe",
+		"EPYC",
+		"EPYC-IBPB",
+		"Haswell",
+		"Haswell-IBRS",
+		"Haswell-noTSX",
+		"Haswell-noTSX-IBRS",
+		"IvyBridge",
+		"IvyBridge-IBRS",
+		"KnightsMill",
+		"Nehalem",
+		"Nehalem-IBRS",
+		"Opteron_G1",
+		"Opteron_G2",
+		"Opteron_G3",
+		"Opteron_G4",
+		"Opteron_G5",
+		"Penryn",
+		"SandyBridge",
+		"SandyBridge-IBRS",
+		"Skylake-Client",
+		"Skylake-Client-IBRS",
+		"Skylake-Server",
+		"Skylake-Server-IBRS",
+		"Westmere",
+		"Westmere-IBRS",
+		"athlon",
+		"core2duo",
+		"coreduo",
+		"host",
+		"kvm32",
+		"kvm64",
+		"max",
+		"pentium",
+		"pentium2",
+		"pentium3",
+		"phenom",
+		"qemu32",
+		"qemu64",
+	}, false)
+}
+
 func getFileFormatValidator() schema.SchemaValidateFunc {
 	return validation.StringInSlice([]string{
 		"qcow2",

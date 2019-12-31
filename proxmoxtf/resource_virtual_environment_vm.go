@@ -28,6 +28,7 @@ const (
 	dvResourceVirtualEnvironmentVMCPUCores                     = 1
 	dvResourceVirtualEnvironmentVMCPUHotplugged                = 0
 	dvResourceVirtualEnvironmentVMCPUSockets                   = 1
+	dvResourceVirtualEnvironmentVMCPUType                      = "qemu64"
 	dvResourceVirtualEnvironmentVMDescription                  = ""
 	dvResourceVirtualEnvironmentVMDiskDatastoreID              = "local-lvm"
 	dvResourceVirtualEnvironmentVMDiskFileFormat               = "qcow2"
@@ -81,8 +82,10 @@ const (
 	mkResourceVirtualEnvironmentVMCloudInitUserDataFileID      = "user_data_file_id"
 	mkResourceVirtualEnvironmentVMCPU                          = "cpu"
 	mkResourceVirtualEnvironmentVMCPUCores                     = "cores"
+	mkResourceVirtualEnvironmentVMCPUFlags                     = "flags"
 	mkResourceVirtualEnvironmentVMCPUHotplugged                = "hotplugged"
 	mkResourceVirtualEnvironmentVMCPUSockets                   = "sockets"
+	mkResourceVirtualEnvironmentVMCPUType                      = "type"
 	mkResourceVirtualEnvironmentVMDescription                  = "description"
 	mkResourceVirtualEnvironmentVMDisk                         = "disk"
 	mkResourceVirtualEnvironmentVMDiskDatastoreID              = "datastore_id"
@@ -363,8 +366,10 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					defaultMap := map[string]interface{}{}
 
 					defaultMap[mkResourceVirtualEnvironmentVMCPUCores] = dvResourceVirtualEnvironmentVMCPUCores
+					defaultMap[mkResourceVirtualEnvironmentVMCPUFlags] = []interface{}{}
 					defaultMap[mkResourceVirtualEnvironmentVMCPUHotplugged] = dvResourceVirtualEnvironmentVMCPUHotplugged
 					defaultMap[mkResourceVirtualEnvironmentVMCPUSockets] = dvResourceVirtualEnvironmentVMCPUSockets
+					defaultMap[mkResourceVirtualEnvironmentVMCPUType] = dvResourceVirtualEnvironmentVMCPUType
 
 					defaultList[0] = defaultMap
 
@@ -379,6 +384,15 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:      dvResourceVirtualEnvironmentVMCPUCores,
 							ValidateFunc: validation.IntBetween(1, 2304),
 						},
+						mkResourceVirtualEnvironmentVMCPUFlags: {
+							Type:        schema.TypeList,
+							Description: "The CPU flags",
+							Optional:    true,
+							DefaultFunc: func() (interface{}, error) {
+								return []interface{}{}, nil
+							},
+							Elem: &schema.Schema{Type: schema.TypeString},
+						},
 						mkResourceVirtualEnvironmentVMCPUHotplugged: {
 							Type:         schema.TypeInt,
 							Description:  "The number of hotplugged vCPUs",
@@ -392,6 +406,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMCPUSockets,
 							ValidateFunc: validation.IntBetween(1, 16),
+						},
+						mkResourceVirtualEnvironmentVMCPUType: {
+							Type:         schema.TypeString,
+							Description:  "The emulated CPU type",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMCPUType,
+							ValidateFunc: getCPUTypeValidator(),
 						},
 					},
 				},
@@ -786,8 +807,10 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	}
 
 	cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
+	cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 	cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
+	cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m)
@@ -847,6 +870,12 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		bootOrder = "cd"
 	}
 
+	cpuFlagsConverted := make([]string, len(cpuFlags))
+
+	for fi, flag := range cpuFlags {
+		cpuFlagsConverted[fi] = flag.(string)
+	}
+
 	ideDevice2Media := "cdrom"
 	ideDevices := proxmox.CustomStorageDevices{
 		proxmox.CustomStorageDevice{
@@ -879,10 +908,14 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
-		BootDisk:            &bootDisk,
-		BootOrder:           &bootOrder,
-		CloudInitConfig:     cloudInitConfig,
-		CPUCores:            &cpuCores,
+		BootDisk:        &bootDisk,
+		BootOrder:       &bootOrder,
+		CloudInitConfig: cloudInitConfig,
+		CPUCores:        &cpuCores,
+		CPUEmulation: &proxmox.CustomCPUEmulation{
+			Flags: &cpuFlagsConverted,
+			Type:  cpuType,
+		},
 		CPUSockets:          &cpuSockets,
 		DedicatedMemory:     &memoryDedicated,
 		FloatingMemory:      &memoryFloating,
@@ -1557,12 +1590,33 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		cpu[mkResourceVirtualEnvironmentVMCPUSockets] = 0
 	}
 
+	if vmConfig.CPUEmulation != nil {
+		if vmConfig.CPUEmulation.Flags != nil {
+			convertedFlags := make([]interface{}, len(*vmConfig.CPUEmulation.Flags))
+
+			for fi, fv := range *vmConfig.CPUEmulation.Flags {
+				convertedFlags[fi] = fv
+			}
+
+			cpu[mkResourceVirtualEnvironmentVMCPUFlags] = convertedFlags
+		} else {
+			cpu[mkResourceVirtualEnvironmentVMCPUFlags] = []interface{}{}
+		}
+
+		cpu[mkResourceVirtualEnvironmentVMCPUType] = vmConfig.CPUEmulation.Type
+	} else {
+		cpu[mkResourceVirtualEnvironmentVMCPUFlags] = []interface{}{}
+		cpu[mkResourceVirtualEnvironmentVMCPUType] = ""
+	}
+
 	currentCPU := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 
 	if len(currentCPU) > 0 ||
 		cpu[mkResourceVirtualEnvironmentVMCPUCores] != dvResourceVirtualEnvironmentVMCPUCores ||
+		len(cpu[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})) > 0 ||
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] != dvResourceVirtualEnvironmentVMCPUHotplugged ||
-		cpu[mkResourceVirtualEnvironmentVMCPUSockets] != dvResourceVirtualEnvironmentVMCPUSockets {
+		cpu[mkResourceVirtualEnvironmentVMCPUSockets] != dvResourceVirtualEnvironmentVMCPUSockets ||
+		cpu[mkResourceVirtualEnvironmentVMCPUType] != dvResourceVirtualEnvironmentVMCPUType {
 		d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
 	}
 
@@ -2040,8 +2094,10 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		}
 
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
+		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
 		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
+		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 
 		if cpuCores > 0 {
 			body.CPUCores = &cpuCores
@@ -2053,6 +2109,17 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 		if cpuSockets > 0 {
 			body.CPUSockets = &cpuSockets
+		}
+
+		cpuFlagsConverted := make([]string, len(cpuFlags))
+
+		for fi, flag := range cpuFlags {
+			cpuFlagsConverted[fi] = flag.(string)
+		}
+
+		body.CPUEmulation = &proxmox.CustomCPUEmulation{
+			Flags: &cpuFlagsConverted,
+			Type:  cpuType,
 		}
 
 		rebootRequired = true

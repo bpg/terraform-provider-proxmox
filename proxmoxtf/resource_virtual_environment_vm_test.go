@@ -227,18 +227,24 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, cpuSchema, []string{
 		mkResourceVirtualEnvironmentVMCPUCores,
+		mkResourceVirtualEnvironmentVMCPUFlags,
 		mkResourceVirtualEnvironmentVMCPUHotplugged,
 		mkResourceVirtualEnvironmentVMCPUSockets,
+		mkResourceVirtualEnvironmentVMCPUType,
 	})
 
 	testSchemaValueTypes(t, cpuSchema, []string{
 		mkResourceVirtualEnvironmentVMCPUCores,
+		mkResourceVirtualEnvironmentVMCPUFlags,
 		mkResourceVirtualEnvironmentVMCPUHotplugged,
 		mkResourceVirtualEnvironmentVMCPUSockets,
+		mkResourceVirtualEnvironmentVMCPUType,
 	}, []schema.ValueType{
 		schema.TypeInt,
+		schema.TypeList,
 		schema.TypeInt,
 		schema.TypeInt,
+		schema.TypeString,
 	})
 
 	diskSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMDisk)

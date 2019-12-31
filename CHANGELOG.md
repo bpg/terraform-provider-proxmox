@@ -2,7 +2,7 @@
 
 ENHANCEMENTS:
 
-resource/virtual_environment_vm: Add `vga` argument
+resource/virtual_environment_vm: Add `cpu.flags`, `cpu.type` and `vga` arguments
 
 ## 0.1.0
 

@@ -6,6 +6,7 @@ package proxmox
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -54,6 +55,14 @@ type CustomCloudInitIPConfig struct {
 
 // CustomCloudInitSSHKeys handles QEMU cloud-init SSH keys parameters.
 type CustomCloudInitSSHKeys []string
+
+// CustomCPUEmulation handles QEMU CPU emulation parameters.
+type CustomCPUEmulation struct {
+	Flags      *[]string   `json:"flags,omitempty" url:"flags,omitempty,semicolon"`
+	Hidden     *CustomBool `json:"hidden,omitempty" url:"hidden,omitempty,int"`
+	HVVendorID *string     `json:"hv-vendor-id,omitempty" url:"hv-vendor-id,omitempty"`
+	Type       string      `json:"cputype,omitempty" url:"cputype,omitempty"`
+}
 
 // CustomEFIDisk handles QEMU EFI disk parameters.
 type CustomEFIDisk struct {
@@ -202,6 +211,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	CloudInitConfig      *CustomCloudInitConfig       `json:"cloudinit,omitempty" url:"cloudinit,omitempty"`
 	CPUArchitecture      *string                      `json:"arch,omitempty" url:"arch,omitempty"`
 	CPUCores             *int                         `json:"cores,omitempty" url:"cores,omitempty"`
+	CPUEmulation         *CustomCPUEmulation          `json:"cpu,omitempty" url:"cpu,omitempty"`
 	CPULimit             *int                         `json:"cpulimit,omitempty" url:"cpulimit,omitempty"`
 	CPUSockets           *int                         `json:"sockets,omitempty" url:"sockets,omitempty"`
 	CPUUnits             *int                         `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
@@ -322,6 +332,7 @@ type VirtualEnvironmentVMGetResponseData struct {
 	CloudInitUsername    *string                       `json:"ciuser,omitempty"`
 	CPUArchitecture      *string                       `json:"arch,omitempty"`
 	CPUCores             *int                          `json:"cores,omitempty"`
+	CPUEmulation         *CustomCPUEmulation           `json:"cpu,omitempty"`
 	CPULimit             *int                          `json:"cpulimit,omitempty"`
 	CPUSockets           *int                          `json:"sockets,omitempty"`
 	CPUUnits             *int                          `json:"cpuunits,omitempty"`
@@ -570,6 +581,33 @@ func (r CustomCloudInitConfig) EncodeValues(key string, v *url.Values) error {
 	if r.Username != nil {
 		v.Add("ciuser", *r.Username)
 	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomCPUEmulation struct to a URL vlaue.
+func (r CustomCPUEmulation) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("cputype=%s", r.Type),
+	}
+
+	if r.Flags != nil && len(*r.Flags) > 0 {
+		values = append(values, fmt.Sprintf("flags=%s", strings.Join(*r.Flags, ";")))
+	}
+
+	if r.Hidden != nil {
+		if *r.Hidden {
+			values = append(values, "hidden=1")
+		} else {
+			values = append(values, "hidden=0")
+		}
+	}
+
+	if r.HVVendorID != nil {
+		values = append(values, fmt.Sprintf("hv-vendor-id=%s", *r.HVVendorID))
+	}
+
+	v.Add(key, strings.Join(values, ","))
 
 	return nil
 }
@@ -1131,6 +1169,51 @@ func (r *CustomCloudInitSSHKeys) UnmarshalJSON(b []byte) error {
 		*r = strings.Split(strings.TrimSpace(s), "\n")
 	} else {
 		*r = []string{}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomCPUEmulation string to an object.
+func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	if s == "" {
+		return errors.New("Unexpected empty string")
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 1 {
+			r.Type = v[0]
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "cputype":
+				r.Type = v[1]
+			case "flags":
+				if v[1] != "" {
+					f := strings.Split(v[1], ";")
+					r.Flags = &f
+				} else {
+					f := []string{}
+					r.Flags = &f
+				}
+			case "hidden":
+				bv := CustomBool(v[1] == "1")
+				r.Hidden = &bv
+			case "hv-vendor-id":
+				r.HVVendorID = &v[1]
+			}
+		}
 	}
 
 	return nil

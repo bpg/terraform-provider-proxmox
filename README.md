@@ -359,8 +359,52 @@ This resource doesn't expose any additional attributes.
     * `user_data_file_id` - (Optional) The ID of a file containing custom user data (conflicts with `user_account`)
 * `cpu` - (Optional) The CPU configuration
     * `cores` - (Optional) The number of CPU cores (defaults to `1`)
+    * `flags` - (Optional) The CPU flags
+        * `+aes`/`-aes` - Activate AES instruction set for HW acceleration
+        * `+amd-no-ssb`/`-amd-no-ssb` - Notifies guest OS that host is not vulnerable for Spectre on AMD CPUs
+        * `+amd-ssbd`/`-amd-ssbd` - Improves Spectre mitigation performance with AMD CPUs, best used with "virt-ssbd"
+        * `+hv-evmcs`/`-hv-evmcs` - Improve performance for nested virtualization (only supported on Intel CPUs)
+        * `+hv-tlbflush`/`-hv-tlbflush` - Improve performance in overcommitted Windows guests (may lead to guest BSOD on old CPUs)
+        * `+ibpb`/`-ibpb` - Allows improved Spectre mitigation on AMD CPUs
+        * `+md-clear`/`-md-clear` - Required to let the guest OS know if MDS is mitigated correctly
+        * `+pcid`/`-pcid` - Meltdown fix cost reduction on Westmere, Sandy- and Ivy Bridge Intel CPUs
+        * `+pdpe1gb`/`-pdpe1gb` - Allows guest OS to use 1 GB size pages, if host HW supports it
+        * `+spec-ctrl`/`-spec-ctrl` - Allows improved Spectre mitigation with Intel CPUs
+        * `+ssbd`/`-ssbd` - Protection for "Speculative Store Bypass" for Intel models
+        * `+virt-ssbd`/`-virt-ssbd` - Basis for "Speculative Store Bypass" protection for AMD models
     * `hotplugged` - (Optional) The number of hotplugged vCPUs (defaults to `0`)
     * `sockets` - (Optional) The number of CPU sockets (defaults to `1`)
+    * `type` - (Optional) The emulated CPU type (defaults to `qemu64`)
+        * `486` - Intel 486
+        * `Broadwell`/`Broadwell-IBRS`/`Broadwell-noTSX`/`Broadwell-noTSX-IBRS` - Intel Core Processor (Broadwell, 2014)
+        * `Cascadelake-Server` - Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (2019)
+        * `Conroe` - Intel Celeron_4x0 (Conroe/Merom Class Core 2, 2006)
+        * `EPYC`/`EPYC-IBPB` - AMD EPYC Processor (2017)
+        * `Haswell`/`Haswell-IBRS`/`Haswell-noTSX`/`Haswell-noTSX-IBRS` - Intel Core Processor (Haswell, 2013)
+        * `IvyBridge`/`IvyBridge-IBRS` - Intel Xeon E3-12xx v2 (Ivy Bridge, 2012)
+        * `KnightsMill` - Intel Xeon Phi 72xx (2017)
+        * `Nehalem`/`Nehalem-IBRS` - Intel Core i7 9xx (Nehalem Class Core i7, 2008)
+        * `Opteron_G1` - AMD Opteron 240 (Gen 1 Class Opteron, 2004)
+        * `Opteron_G2` - AMD Opteron 22xx (Gen 2 Class Opteron, 2006)
+        * `Opteron_G3` - AMD Opteron 23xx (Gen 3 Class Opteron, 2009)
+        * `Opteron_G4` - AMD Opteron 62xx class CPU (2011)
+        * `Opteron_G5` - AMD Opteron 63xx class CPU (2012)
+        * `Penryn` - Intel Core 2 Duo P9xxx (Penryn Class Core 2, 2007)
+        * `SandyBridge`/`SandyBridge-IBRS` - Intel Xeon E312xx (Sandy Bridge, 2011)
+        * `Skylake-Client`/`Skylake-Client-IBRS` - Intel Core Processor (Skylake, 2015)
+        * `Skylake-Server`/`Skylake-Server-IBRS` - Intel Xeon Processor (Skylake, 2016)
+        * `Westmere`/`Westmere-IBRS` - Intel Westmere E56xx/L56xx/X56xx (Nehalem-C, 2010)
+        * `athlon` - AMD Athlon
+        * `core2duo` - Intel Core 2 Duo
+        * `coreduo` - Intel Core Duo
+        * `host` - Host passthrough
+        * `kvm32`/`kvm64` - Common KVM processor (32 & 64 bit variants)
+        * `max` - Maximum amount of features from host CPU
+        * `pentium` - Intel Pentium (1993)
+        * `pentium2` - Intel Pentium 2 (1997-1999)
+        * `pentium3` - Intel Pentium 3 (1999-2001)
+        * `phenom` - AMD Phenom (2010)
+        * `qemu32`/`qemu64` - QEMU Virtual CPU version 2.5+ (32 & 64 bit variants)
 * `description` - (Optional) The description
 * `disk` - (Optional) The disk configuration (multiple blocks supported)
     * `datastore_id` - (Optional) The ID of the datastore to create the disk in (defaults to `local-lvm`)
