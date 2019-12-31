@@ -332,6 +332,7 @@ This resource doesn't expose any additional attributes.
 ##### VM (proxmox_virtual_environment_vm)
 
 ###### Arguments
+* `acpi` - (Optional) Whether to enable ACPI (defaults to `true`)
 * `agent` - (Optional) The QEMU agent configuration
     * `enabled` - (Optional) Whether to enable the QEMU agent (defaults to `false`)
     * `trim` - (Optional) Whether to enable the FSTRIM feature in the QEMU agent (defaults to `false`)

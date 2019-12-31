@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	dvResourceVirtualEnvironmentVMACPI                         = true
 	dvResourceVirtualEnvironmentVMAgentEnabled                 = false
 	dvResourceVirtualEnvironmentVMAgentTrim                    = false
 	dvResourceVirtualEnvironmentVMAgentType                    = "virtio"
@@ -59,6 +60,7 @@ const (
 	dvResourceVirtualEnvironmentVMVGAType                      = "std"
 	dvResourceVirtualEnvironmentVMVMID                         = -1
 
+	mkResourceVirtualEnvironmentVMACPI                         = "acpi"
 	mkResourceVirtualEnvironmentVMAgent                        = "agent"
 	mkResourceVirtualEnvironmentVMAgentEnabled                 = "enabled"
 	mkResourceVirtualEnvironmentVMAgentTrim                    = "trim"
@@ -132,6 +134,12 @@ const (
 func resourceVirtualEnvironmentVM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			mkResourceVirtualEnvironmentVMACPI: {
+				Type:        schema.TypeBool,
+				Description: "Whether to enable ACPI",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMACPI,
+			},
 			mkResourceVirtualEnvironmentVMAgent: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The QEMU agent configuration",
@@ -784,6 +792,8 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	resource := resourceVirtualEnvironmentVM()
 
+	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+
 	agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 
 	if err != nil {
@@ -922,6 +932,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	scsiHardware := "virtio-scsi-pci"
 
 	body := &proxmox.VirtualEnvironmentVMCreateRequestBody{
+		ACPI: &acpi,
 		Agent: &proxmox.CustomAgent{
 			Enabled:         &agentEnabled,
 			TrimClonedDisks: &agentTrim,
@@ -1399,6 +1410,31 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		return err
 	}
 
+	// Compare some primitive arguments to the values stored in the state.
+	if vmConfig.ACPI != nil {
+		d.Set(mkResourceVirtualEnvironmentVMACPI, bool(*vmConfig.ACPI))
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMACPI, false)
+	}
+
+	if vmConfig.Description != nil {
+		d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMDescription, "")
+	}
+
+	if vmConfig.KeyboardLayout != nil {
+		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, *vmConfig.KeyboardLayout)
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
+	}
+
+	if vmConfig.TabletDeviceEnabled != nil {
+		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, false)
+	}
+
 	// Compare the agent configuration to the one stored in the state.
 	if vmConfig.Agent != nil {
 		agent := map[string]interface{}{}
@@ -1645,25 +1681,6 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		cpu[mkResourceVirtualEnvironmentVMCPUType] != dvResourceVirtualEnvironmentVMCPUType ||
 		cpu[mkResourceVirtualEnvironmentVMCPUUnits] != dvResourceVirtualEnvironmentVMCPUUnits {
 		d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
-	}
-
-	// Compare some primitive arguments to the values stored in the state.
-	if vmConfig.Description != nil {
-		d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
-	} else {
-		d.Set(mkResourceVirtualEnvironmentVMDescription, "")
-	}
-
-	if vmConfig.KeyboardLayout != nil {
-		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, *vmConfig.KeyboardLayout)
-	} else {
-		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
-	}
-
-	if vmConfig.TabletDeviceEnabled != nil {
-		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
-	} else {
-		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, false)
 	}
 
 	// Compare the disks to those stored in the state.
@@ -2027,12 +2044,15 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Prepare the new primitive configuration values.
+	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 	delete := []string{}
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+
+	body.ACPI = &acpi
 
 	if description != "" {
 		body.Description = &description
@@ -2047,7 +2067,8 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	body.OSType = &osType
 	body.TabletDeviceEnabled = &tabletDevice
 
-	if d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) ||
+	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) ||
+		d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) ||
 		d.HasChange(mkResourceVirtualEnvironmentVMOSType) ||
 		d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
 		rebootRequired = true

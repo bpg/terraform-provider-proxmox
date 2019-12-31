@@ -28,6 +28,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	})
 
 	testOptionalArguments(t, s, []string{
+		mkResourceVirtualEnvironmentVMACPI,
 		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMCloudInit,
 		mkResourceVirtualEnvironmentVMCPU,
@@ -52,6 +53,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	})
 
 	testSchemaValueTypes(t, s, []string{
+		mkResourceVirtualEnvironmentVMACPI,
 		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMCloudInit,
 		mkResourceVirtualEnvironmentVMCPU,
@@ -71,6 +73,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMTabletDevice,
 		mkResourceVirtualEnvironmentVMVMID,
 	}, []schema.ValueType{
+		schema.TypeBool,
 		schema.TypeList,
 		schema.TypeList,
 		schema.TypeList,
