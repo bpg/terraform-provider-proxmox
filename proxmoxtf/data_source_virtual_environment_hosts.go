@@ -37,7 +37,7 @@ func dataSourceVirtualEnvironmentHosts() *schema.Resource {
 			},
 			mkDataSourceVirtualEnvironmentHostsEntries: &schema.Schema{
 				Type:        schema.TypeList,
-				Description: "The entries",
+				Description: "The host entries",
 				Computed:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{

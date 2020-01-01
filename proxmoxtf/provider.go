@@ -49,6 +49,7 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_dns":         resourceVirtualEnvironmentDNS(),
 			"proxmox_virtual_environment_file":        resourceVirtualEnvironmentFile(),
 			"proxmox_virtual_environment_group":       resourceVirtualEnvironmentGroup(),
+			"proxmox_virtual_environment_hosts":       resourceVirtualEnvironmentHosts(),
 			"proxmox_virtual_environment_pool":        resourceVirtualEnvironmentPool(),
 			"proxmox_virtual_environment_role":        resourceVirtualEnvironmentRole(),
 			"proxmox_virtual_environment_user":        resourceVirtualEnvironmentUser(),

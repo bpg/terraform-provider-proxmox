@@ -34,6 +34,7 @@ A Terraform Provider which adds support for Proxmox solutions.
             - [DNS](#dns-proxmox_virtual_environment_dns-1)
             - [File](#file-proxmox_virtual_environment_file)
             - [Group](#group-proxmox_virtual_environment_group-1)
+            - [Hosts](#hosts-proxmox_virtual_environment_hosts-1)
             - [Pool](#pool-proxmox_virtual_environment_pool-1)
             - [Role](#role-proxmox_virtual_environment_role-1)
             - [User](#user-proxmox_virtual_environment_user-1)
@@ -155,7 +156,7 @@ This data source doesn't accept arguments.
 ###### Attributes
 * `addresses` - The IP addresses
 * `digest` - The SHA1 digest
-* `entries` - The entries (conversion of `addresses` and `hostnames` into objects)
+* `entries` - The host entries (conversion of `addresses` and `hostnames` into objects)
 * `hostnames` - The hostnames associated with each of the IP addresses
 
 ##### Nodes (proxmox_virtual_environment_nodes)
@@ -340,6 +341,20 @@ You must ensure that you have at least `Size-in-MB * 2 + 1` MB of storage space 
 
 ###### Attributes
 * `members` - The group members as a list with `username@realm` entries
+
+##### Hosts (proxmox_virtual_environment_hosts)
+
+###### Arguments
+* `node_name` - (Required) A node name
+* `entry` - (Required) A host entry (multiple blocks supported)
+    * `address` - (Required) The IP address
+    * `hostnames` - (Required) The hostnames
+
+###### Attributes
+* `addresses` - The IP addresses
+* `digest` - The SHA1 digest
+* `entries` - The host entries (conversion of `addresses` and `hostnames` into objects)
+* `hostnames` - The hostnames associated with each of the IP addresses
 
 ##### Pool (proxmox_virtual_environment_pool)
 
