@@ -33,15 +33,45 @@ func TestResourceVirtualEnvironmentCertificateSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentCertificateCertificateChain,
 	})
 
+	testComputedAttributes(t, s, []string{
+		mkResourceVirtualEnvironmentCertificateExpirationDate,
+		mkResourceVirtualEnvironmentCertificateFileName,
+		mkResourceVirtualEnvironmentCertificateIssuer,
+		mkResourceVirtualEnvironmentCertificatePublicKeySize,
+		mkResourceVirtualEnvironmentCertificatePublicKeyType,
+		mkResourceVirtualEnvironmentCertificateSSLFingerprint,
+		mkResourceVirtualEnvironmentCertificateStartDate,
+		mkResourceVirtualEnvironmentCertificateSubject,
+		mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames,
+	})
+
 	testSchemaValueTypes(t, s, []string{
 		mkResourceVirtualEnvironmentCertificateCertificate,
 		mkResourceVirtualEnvironmentCertificateCertificateChain,
+		mkResourceVirtualEnvironmentCertificateExpirationDate,
+		mkResourceVirtualEnvironmentCertificateFileName,
+		mkResourceVirtualEnvironmentCertificateIssuer,
 		mkResourceVirtualEnvironmentCertificateNodeName,
 		mkResourceVirtualEnvironmentCertificatePrivateKey,
+		mkResourceVirtualEnvironmentCertificatePublicKeySize,
+		mkResourceVirtualEnvironmentCertificatePublicKeyType,
+		mkResourceVirtualEnvironmentCertificateSSLFingerprint,
+		mkResourceVirtualEnvironmentCertificateStartDate,
+		mkResourceVirtualEnvironmentCertificateSubject,
+		mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames,
 	}, []schema.ValueType{
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeString,
 		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeInt,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeList,
 	})
 }

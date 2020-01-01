@@ -26,3 +26,39 @@ resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
     "server_auth",
   ]
 }
+
+output "resource_proxmox_virtual_environment_certificate_example_expiration_date" {
+  value = "${proxmox_virtual_environment_certificate.example.expiration_date}"
+}
+
+output "resource_proxmox_virtual_environment_certificate_example_file_name" {
+  value = "${proxmox_virtual_environment_certificate.example.file_name}"
+}
+
+output "resource_proxmox_virtual_environment_certificate_example_issuer" {
+  value = "${proxmox_virtual_environment_certificate.example.issuer}"
+}
+
+output "resource_proxmox_virtual_environment_certificate_example_public_key_size" {
+  value = "${proxmox_virtual_environment_certificate.example.public_key_size}"
+}
+
+output "resource_proxmox_virtual_environment_certificate_example_public_key_type" {
+  value = "${proxmox_virtual_environment_certificate.example.public_key_type}"
+}
+
+output "resource_proxmox_virtual_environment_certificate_example_ssl_fingerprint" {
+  value = "${proxmox_virtual_environment_certificate.example.ssl_fingerprint}"
+}
+
+output "resource_proxmox_virtual_environment_certificate_example_start_date" {
+  value = "${proxmox_virtual_environment_certificate.example.start_date}"
+}
+
+output "resource_proxmox_virtual_environment_certificate_example_subject" {
+  value = "${proxmox_virtual_environment_certificate.example.subject}"
+}
+
+output "resource_proxmox_virtual_environment_certificate_example_subject_alternative_names" {
+  value = "${proxmox_virtual_environment_certificate.example.subject_alternative_names}"
+}

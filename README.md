@@ -261,7 +261,15 @@ This data source doesn't accept arguments.
 * `private_key` - (Required) The PEM encoded private key
 
 ###### Attributes
-This resource doesn't expose any additional attributes.
+* `expiration_date` - The expiration date (RFC 3339)
+* `file_name` - The file name
+* `issuer` - The issuer
+* `public_key_size` - The public key size
+* `public_key_type` - The public key type
+* `ssl_fingerprint` - The SSL fingerprint
+* `start_date` - The start date (RFC 3339)
+* `subject` - The subject
+* `subject_alternative_names` - The subject alternative names
 
 ##### DNS (proxmox_virtual_environment_dns)
 

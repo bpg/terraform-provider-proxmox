@@ -7,6 +7,7 @@ package proxmoxtf
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -16,11 +17,20 @@ const (
 	dvResourceVirtualEnvironmentCertificateCertificateChain = ""
 	dvResourceVirtualEnvironmentCertificateOverwrite        = false
 
-	mkResourceVirtualEnvironmentCertificateCertificate      = "certificate"
-	mkResourceVirtualEnvironmentCertificateCertificateChain = "certificate_chain"
-	mkResourceVirtualEnvironmentCertificateNodeName         = "node_name"
-	mkResourceVirtualEnvironmentCertificateOverwrite        = "overwrite"
-	mkResourceVirtualEnvironmentCertificatePrivateKey       = "private_key"
+	mkResourceVirtualEnvironmentCertificateCertificate             = "certificate"
+	mkResourceVirtualEnvironmentCertificateCertificateChain        = "certificate_chain"
+	mkResourceVirtualEnvironmentCertificateFileName                = "file_name"
+	mkResourceVirtualEnvironmentCertificateIssuer                  = "issuer"
+	mkResourceVirtualEnvironmentCertificateNodeName                = "node_name"
+	mkResourceVirtualEnvironmentCertificateExpirationDate          = "expiration_date"
+	mkResourceVirtualEnvironmentCertificateOverwrite               = "overwrite"
+	mkResourceVirtualEnvironmentCertificatePrivateKey              = "private_key"
+	mkResourceVirtualEnvironmentCertificatePublicKeySize           = "public_key_size"
+	mkResourceVirtualEnvironmentCertificatePublicKeyType           = "public_key_type"
+	mkResourceVirtualEnvironmentCertificateSSLFingerprint          = "ssl_fingerprint"
+	mkResourceVirtualEnvironmentCertificateStartDate               = "start_date"
+	mkResourceVirtualEnvironmentCertificateSubject                 = "subject"
+	mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames = "subject_alternative_names"
 )
 
 func resourceVirtualEnvironmentCertificate() *schema.Resource {
@@ -36,6 +46,21 @@ func resourceVirtualEnvironmentCertificate() *schema.Resource {
 				Description: "The PEM encoded certificate chain",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentCertificateCertificateChain,
+			},
+			mkResourceVirtualEnvironmentCertificateExpirationDate: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The expiration date",
+				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentCertificateFileName: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The file name",
+				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentCertificateIssuer: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The issuer",
+				Computed:    true,
 			},
 			mkResourceVirtualEnvironmentCertificateNodeName: &schema.Schema{
 				Type:        schema.TypeString,
@@ -54,6 +79,37 @@ func resourceVirtualEnvironmentCertificate() *schema.Resource {
 				Description: "The PEM encoded private key",
 				Required:    true,
 				Sensitive:   true,
+			},
+			mkResourceVirtualEnvironmentCertificatePublicKeySize: &schema.Schema{
+				Type:        schema.TypeInt,
+				Description: "The public key size",
+				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentCertificatePublicKeyType: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The public key type",
+				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentCertificateSSLFingerprint: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The SSL fingerprint",
+				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentCertificateStartDate: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The start date",
+				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentCertificateSubject: &schema.Schema{
+				Type:        schema.TypeString,
+				Description: "The subject",
+				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The subject alternative names",
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 		Create: resourceVirtualEnvironmentCertificateCreate,
@@ -146,6 +202,74 @@ func resourceVirtualEnvironmentCertificateRead(d *schema.ResourceData, m interfa
 
 				d.Set(mkResourceVirtualEnvironmentCertificateCertificate, newCertificate)
 				d.Set(mkResourceVirtualEnvironmentCertificateCertificateChain, newCertificateChain)
+			}
+
+			d.Set(mkResourceVirtualEnvironmentCertificateFileName, *c.FileName)
+
+			if c.NotAfter != nil {
+				t := time.Time(*c.NotAfter)
+
+				d.Set(mkResourceVirtualEnvironmentCertificateExpirationDate, t.UTC().Format(time.RFC3339))
+			} else {
+				d.Set(mkResourceVirtualEnvironmentCertificateExpirationDate, "")
+			}
+
+			if c.Issuer != nil {
+				d.Set(mkResourceVirtualEnvironmentCertificateIssuer, *c.Issuer)
+			} else {
+				d.Set(mkResourceVirtualEnvironmentCertificateIssuer, "")
+			}
+
+			if c.PublicKeyBits != nil {
+				d.Set(mkResourceVirtualEnvironmentCertificatePublicKeySize, *c.PublicKeyBits)
+			} else {
+				d.Set(mkResourceVirtualEnvironmentCertificatePublicKeySize, 0)
+			}
+
+			if c.PublicKeyType != nil {
+				pkType := *c.PublicKeyType
+
+				for _, pkt := range []string{"ecdsa", "dsa", "rsa"} {
+					if strings.Contains(pkType, pkt) {
+						pkType = pkt
+					}
+				}
+
+				d.Set(mkResourceVirtualEnvironmentCertificatePublicKeyType, pkType)
+			} else {
+				d.Set(mkResourceVirtualEnvironmentCertificatePublicKeyType, "")
+			}
+
+			if c.Fingerprint != nil {
+				d.Set(mkResourceVirtualEnvironmentCertificateSSLFingerprint, *c.Fingerprint)
+			} else {
+				d.Set(mkResourceVirtualEnvironmentCertificateSSLFingerprint, "")
+			}
+
+			if c.NotBefore != nil {
+				t := time.Time(*c.NotBefore)
+
+				d.Set(mkResourceVirtualEnvironmentCertificateStartDate, t.UTC().Format(time.RFC3339))
+			} else {
+				d.Set(mkResourceVirtualEnvironmentCertificateStartDate, "")
+			}
+
+			if c.Subject != nil {
+				d.Set(mkResourceVirtualEnvironmentCertificateSubject, *c.Subject)
+			} else {
+				d.Set(mkResourceVirtualEnvironmentCertificateSubject, "")
+			}
+
+			if c.SubjectAlternativeNames != nil {
+				sanList := make([]interface{}, len(*c.SubjectAlternativeNames))
+
+				for i, san := range *c.SubjectAlternativeNames {
+					sanList[i] = san
+				}
+
+				d.Set(mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames, sanList)
+			} else {
+				d.Set(mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames, []interface{}{})
 			}
 		}
 	}
