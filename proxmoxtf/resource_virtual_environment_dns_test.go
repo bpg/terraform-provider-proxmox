@@ -26,6 +26,9 @@ func TestResourceVirtualEnvironmentDNSSchema(t *testing.T) {
 	testRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentDNSDomain,
 		mkResourceVirtualEnvironmentDNSNodeName,
+	})
+
+	testOptionalArguments(t, s, []string{
 		mkResourceVirtualEnvironmentDNSServers,
 	})
 
