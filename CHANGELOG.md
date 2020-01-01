@@ -3,6 +3,7 @@
 FEATURES:
 
 * **New Data Source:** `proxmox_virtual_environment_dns`
+* **New Data Source:** `proxmox_virtual_environment_hosts`
 * **New Resource:** `proxmox_virtual_environment_certificate`
 * **New Resource:** `proxmox_virtual_environment_dns`
 

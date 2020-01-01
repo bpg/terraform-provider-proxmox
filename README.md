@@ -19,6 +19,7 @@ A Terraform Provider which adds support for Proxmox solutions.
             - [DNS](#dns-proxmox_virtual_environment_dns)
             - [Group](#group-proxmox_virtual_environment_group)
             - [Groups](#groups-proxmox_virtual_environment_groups)
+            - [Hosts](#hosts-proxmox_virtual_environment_hosts)
             - [Nodes](#nodes-proxmox_virtual_environment_nodes)
             - [Pool](#pool-proxmox_virtual_environment_pool)
             - [Pools](#pools-proxmox_virtual_environment_pools)
@@ -145,6 +146,16 @@ This data source doesn't accept arguments.
 ###### Attributes
 * `comments` - The group comments
 * `group_ids` - The group ids
+
+##### Hosts (proxmox_virtual_environment_hosts)
+
+###### Arguments
+* `node_name` - (Required) A node name
+
+###### Attributes
+* `addresses` - The IP addresses
+* `digest` - The SHA1 digest
+* `hostnames` - The hostnames associated with each of the IP addresses
 
 ##### Nodes (proxmox_virtual_environment_nodes)
 
