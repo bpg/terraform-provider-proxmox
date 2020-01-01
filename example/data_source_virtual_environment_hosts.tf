@@ -10,6 +10,10 @@ output "data_proxmox_virtual_environment_hosts_example_digest" {
   value = "${data.proxmox_virtual_environment_hosts.example.digest}"
 }
 
+output "data_proxmox_virtual_environment_hosts_example_entries" {
+  value = "${data.proxmox_virtual_environment_hosts.example.entries}"
+}
+
 output "data_proxmox_virtual_environment_hosts_example_hostnames" {
   value = "${data.proxmox_virtual_environment_hosts.example.hostnames}"
 }

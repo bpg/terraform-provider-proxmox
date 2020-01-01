@@ -155,6 +155,7 @@ This data source doesn't accept arguments.
 ###### Attributes
 * `addresses` - The IP addresses
 * `digest` - The SHA1 digest
+* `entries` - The entries (conversion of `addresses` and `hostnames` into objects)
 * `hostnames` - The hostnames associated with each of the IP addresses
 
 ##### Nodes (proxmox_virtual_environment_nodes)

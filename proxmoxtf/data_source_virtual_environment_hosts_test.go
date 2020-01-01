@@ -29,18 +29,36 @@ func TestDataSourceVirtualEnvironmentHostsSchema(t *testing.T) {
 	testComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentHostsAddresses,
 		mkDataSourceVirtualEnvironmentHostsDigest,
+		mkDataSourceVirtualEnvironmentHostsEntries,
 		mkDataSourceVirtualEnvironmentHostsHostnames,
 	})
 
 	testSchemaValueTypes(t, s, []string{
 		mkDataSourceVirtualEnvironmentHostsAddresses,
 		mkDataSourceVirtualEnvironmentHostsDigest,
+		mkDataSourceVirtualEnvironmentHostsEntries,
 		mkDataSourceVirtualEnvironmentHostsHostnames,
 		mkDataSourceVirtualEnvironmentHostsNodeName,
 	}, []schema.ValueType{
 		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
+		schema.TypeList,
 		schema.TypeString,
+	})
+
+	entriesSchema := testNestedSchemaExistence(t, s, mkDataSourceVirtualEnvironmentHostsEntries)
+
+	testComputedAttributes(t, entriesSchema, []string{
+		mkDataSourceVirtualEnvironmentHostsEntriesAddress,
+		mkDataSourceVirtualEnvironmentHostsEntriesHostnames,
+	})
+
+	testSchemaValueTypes(t, entriesSchema, []string{
+		mkDataSourceVirtualEnvironmentHostsEntriesAddress,
+		mkDataSourceVirtualEnvironmentHostsEntriesHostnames,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeList,
 	})
 }

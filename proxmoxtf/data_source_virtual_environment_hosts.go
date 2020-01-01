@@ -12,10 +12,13 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentHostsAddresses = "addresses"
-	mkDataSourceVirtualEnvironmentHostsDigest    = "digest"
-	mkDataSourceVirtualEnvironmentHostsHostnames = "hostnames"
-	mkDataSourceVirtualEnvironmentHostsNodeName  = "node_name"
+	mkDataSourceVirtualEnvironmentHostsAddresses        = "addresses"
+	mkDataSourceVirtualEnvironmentHostsDigest           = "digest"
+	mkDataSourceVirtualEnvironmentHostsEntries          = "entries"
+	mkDataSourceVirtualEnvironmentHostsEntriesAddress   = "address"
+	mkDataSourceVirtualEnvironmentHostsEntriesHostnames = "hostnames"
+	mkDataSourceVirtualEnvironmentHostsHostnames        = "hostnames"
+	mkDataSourceVirtualEnvironmentHostsNodeName         = "node_name"
 )
 
 func dataSourceVirtualEnvironmentHosts() *schema.Resource {
@@ -31,6 +34,26 @@ func dataSourceVirtualEnvironmentHosts() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The SHA1 digest",
 				Computed:    true,
+			},
+			mkDataSourceVirtualEnvironmentHostsEntries: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The entries",
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkDataSourceVirtualEnvironmentHostsEntriesAddress: {
+							Type:        schema.TypeString,
+							Description: "The address",
+							Computed:    true,
+						},
+						mkDataSourceVirtualEnvironmentHostsEntriesHostnames: &schema.Schema{
+							Type:        schema.TypeList,
+							Description: "The hostnames",
+							Computed:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+					},
+				},
 			},
 			mkDataSourceVirtualEnvironmentHostsHostnames: &schema.Schema{
 				Type:        schema.TypeList,
@@ -70,6 +93,7 @@ func dataSourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}
 
 	// Parse the entries in the hosts file.
 	addresses := []interface{}{}
+	entries := []interface{}{}
 	hostnames := []interface{}{}
 	lines := strings.Split(hosts.Data, "\n")
 
@@ -86,6 +110,7 @@ func dataSourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}
 		}
 
 		addresses = append(addresses, values[0])
+		entry := map[string]interface{}{}
 		hostnamesForAddress := []interface{}{}
 
 		for _, hostname := range values[1:] {
@@ -94,6 +119,10 @@ func dataSourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}
 			}
 		}
 
+		entry[mkDataSourceVirtualEnvironmentHostsEntriesAddress] = values[0]
+		entry[mkDataSourceVirtualEnvironmentHostsEntriesHostnames] = hostnamesForAddress
+
+		entries = append(entries, entry)
 		hostnames = append(hostnames, hostnamesForAddress)
 	}
 
@@ -105,6 +134,7 @@ func dataSourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}
 		d.Set(mkDataSourceVirtualEnvironmentHostsDigest, "")
 	}
 
+	d.Set(mkDataSourceVirtualEnvironmentHostsEntries, entries)
 	d.Set(mkDataSourceVirtualEnvironmentHostsHostnames, hostnames)
 
 	return nil
