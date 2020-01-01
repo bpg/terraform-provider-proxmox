@@ -1,5 +1,10 @@
 ## 0.2.0 (UNRELEASED)
 
+FEATURES:
+
+* **New Data Source:** `proxmox_virtual_environment_dns`
+* **New Resource:** `proxmox_virtual_environment_dns`
+
 ENHANCEMENTS:
 
 * resource/virtual_environment_vm: Add `acpi` argument

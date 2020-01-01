@@ -16,6 +16,7 @@ A Terraform Provider which adds support for Proxmox solutions.
     - [Data Sources](#data-sources)
         - [Virtual Environment](#virtual-environment)
             - [Datastores](#datastores-proxmox_virtual_environment_datastores)
+            - [DNS](#group-proxmox_virtual_environment_dns)
             - [Group](#group-proxmox_virtual_environment_group)
             - [Groups](#groups-proxmox_virtual_environment_groups)
             - [Nodes](#nodes-proxmox_virtual_environment_nodes)
@@ -111,6 +112,15 @@ You can omit `PROXMOX_VE_INSECURE`, if the Proxmox Virtual Environment API is ex
 * `space_total` - The total space in bytes
 * `space_used` - The used space in bytes
 * `types` - The storage types
+
+##### DNS (proxmox_virtual_environment_dns)
+
+###### Arguments
+* `node_name` - (Required) A node name
+
+###### Attributes
+* `domain` - The DNS search domain
+* `servers` - The DNS servers
 
 ##### Group (proxmox_virtual_environment_group)
 
@@ -239,6 +249,16 @@ This data source doesn't accept arguments.
 ### Resources
 
 #### Virtual Environment
+
+##### DNS (proxmox_virtual_environment_dns)
+
+###### Arguments
+* `domain` - (Required) The DNS search domain
+* `node_name` - (Required) A node name
+* `servers` - (Optional) The DNS servers
+
+###### Attributes
+This resource doesn't expose any additional attributes.
 
 ##### File (proxmox_virtual_environment_file)
 

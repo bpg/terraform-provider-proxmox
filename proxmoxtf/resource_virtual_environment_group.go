@@ -156,8 +156,6 @@ func resourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) 
 		return err
 	}
 
-	d.SetId(groupID)
-
 	aclParsed := []interface{}{}
 
 	for _, v := range acl {

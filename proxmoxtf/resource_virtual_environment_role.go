@@ -100,8 +100,6 @@ func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) e
 		}
 	}
 
-	d.SetId(roleID)
-
 	d.Set(mkResourceVirtualEnvironmentRolePrivileges, privileges)
 
 	return nil

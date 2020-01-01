@@ -129,8 +129,6 @@ func resourceVirtualEnvironmentPoolRead(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	d.SetId(poolID)
-
 	if pool.Comment != nil {
 		d.Set(mkResourceVirtualEnvironmentPoolComment, pool.Comment)
 	} else {
