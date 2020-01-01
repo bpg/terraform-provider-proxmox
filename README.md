@@ -29,6 +29,7 @@ A Terraform Provider which adds support for Proxmox solutions.
             - [Version](#version-proxmox_virtual_environment_version)
     - [Resources](#resources)
         - [Virtual Environment](#virtual-environment-1)
+            - [Certificate](#certificate-proxmox_virtual_environment_certificate)
             - [DNS](#dns-proxmox_virtual_environment_dns-1)
             - [File](#file-proxmox_virtual_environment_file)
             - [Group](#group-proxmox_virtual_environment_group-1)
