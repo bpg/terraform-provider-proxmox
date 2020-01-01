@@ -261,6 +261,9 @@ This data source doesn't accept arguments.
 ###### Attributes
 This resource doesn't expose any additional attributes.
 
+###### Notes
+Be careful not to use this resource multiple times for the same node.
+
 ##### File (proxmox_virtual_environment_file)
 
 ###### Arguments
