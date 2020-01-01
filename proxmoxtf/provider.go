@@ -44,13 +44,14 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_version":    dataSourceVirtualEnvironmentVersion(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"proxmox_virtual_environment_dns":   resourceVirtualEnvironmentDNS(),
-			"proxmox_virtual_environment_file":  resourceVirtualEnvironmentFile(),
-			"proxmox_virtual_environment_group": resourceVirtualEnvironmentGroup(),
-			"proxmox_virtual_environment_pool":  resourceVirtualEnvironmentPool(),
-			"proxmox_virtual_environment_role":  resourceVirtualEnvironmentRole(),
-			"proxmox_virtual_environment_user":  resourceVirtualEnvironmentUser(),
-			"proxmox_virtual_environment_vm":    resourceVirtualEnvironmentVM(),
+			"proxmox_virtual_environment_certificate": resourceVirtualEnvironmentCertificate(),
+			"proxmox_virtual_environment_dns":         resourceVirtualEnvironmentDNS(),
+			"proxmox_virtual_environment_file":        resourceVirtualEnvironmentFile(),
+			"proxmox_virtual_environment_group":       resourceVirtualEnvironmentGroup(),
+			"proxmox_virtual_environment_pool":        resourceVirtualEnvironmentPool(),
+			"proxmox_virtual_environment_role":        resourceVirtualEnvironmentRole(),
+			"proxmox_virtual_environment_user":        resourceVirtualEnvironmentUser(),
+			"proxmox_virtual_environment_vm":          resourceVirtualEnvironmentVM(),
 		},
 		Schema: map[string]*schema.Schema{
 			mkProviderVirtualEnvironment: &schema.Schema{

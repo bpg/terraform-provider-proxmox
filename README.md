@@ -251,6 +251,17 @@ This data source doesn't accept arguments.
 
 #### Virtual Environment
 
+##### Certificate (proxmox_virtual_environment_certificate)
+
+###### Arguments
+* `certificate` - (Required) The PEM encoded certificate
+* `certificate_chain` - (Optional) The PEM encoded certificate chain
+* `node_name` - (Required) A node name
+* `private_key` - (Required) The PEM encoded private key
+
+###### Attributes
+This resource doesn't expose any additional attributes.
+
 ##### DNS (proxmox_virtual_environment_dns)
 
 ###### Arguments

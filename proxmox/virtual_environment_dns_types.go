@@ -4,12 +4,12 @@
 
 package proxmox
 
-// VirtualEnvironmentDNSGetResponseBody contains the body from an pool get response.
+// VirtualEnvironmentDNSGetResponseBody contains the body from a DNS get response.
 type VirtualEnvironmentDNSGetResponseBody struct {
 	Data *VirtualEnvironmentDNSGetResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentDNSGetResponseData contains the data from an pool get response.
+// VirtualEnvironmentDNSGetResponseData contains the data from a DNS get response.
 type VirtualEnvironmentDNSGetResponseData struct {
 	Server1      *string `json:"dns1,omitempty" url:"dns1,omitempty"`
 	Server2      *string `json:"dns2,omitempty" url:"dns2,omitempty"`
@@ -17,7 +17,7 @@ type VirtualEnvironmentDNSGetResponseData struct {
 	SearchDomain *string `json:"search,omitempty" url:"search,omitempty"`
 }
 
-// VirtualEnvironmentDNSUpdateRequestBody contains the data for an pool create request.
+// VirtualEnvironmentDNSUpdateRequestBody contains the body for a DNS update request.
 type VirtualEnvironmentDNSUpdateRequestBody struct {
 	Server1      *string `json:"dns1,omitempty" url:"dns1,omitempty"`
 	Server2      *string `json:"dns2,omitempty" url:"dns2,omitempty"`

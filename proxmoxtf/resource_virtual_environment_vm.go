@@ -349,6 +349,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 										Description: "The SSH password",
 										Optional:    true,
 										ForceNew:    true,
+										Sensitive:   true,
 										Default:     dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword,
 										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 											return strings.ReplaceAll(old, "*", "") == ""
