@@ -3,7 +3,7 @@
 BREAKING CHANGES:
 
 * resource/virtual_environment_vm: Rename `cloud_init` argument to `initialization`
-* resource/virtual_environment_vm: Rename `os_type` argument to `os.type`
+* resource/virtual_environment_vm: Rename `os_type` argument to `operating_system.type`
 
 FEATURES:
 
