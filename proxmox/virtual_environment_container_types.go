@@ -23,6 +23,7 @@ type VirtualEnvironmentContainerCreateRequestBody struct {
 	CPUUnits             *int                                                   `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
 	DatastoreID          *string                                                `json:"storage,omitempty" url:"storage,omitempty"`
 	DedicatedMemory      *int                                                   `json:"memory,omitempty" url:"memory,omitempty"`
+	Delete               []string                                               `json:"delete,omitempty" url:"delete,omitempty"`
 	Description          *string                                                `json:"description,omitempty" url:"description,omitempty"`
 	DNSDomain            *string                                                `json:"searchdomain,omitempty" url:"searchdomain,omitempty"`
 	DNSServer            *string                                                `json:"nameserver,omitempty" url:"nameserver,omitempty"`

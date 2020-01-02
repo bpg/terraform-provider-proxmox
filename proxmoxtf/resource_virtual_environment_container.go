@@ -1126,7 +1126,9 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	}
 
 	// Prepare the new request object.
-	body := proxmox.VirtualEnvironmentContainerUpdateRequestBody{}
+	body := proxmox.VirtualEnvironmentContainerUpdateRequestBody{
+		Delete: []string{},
+	}
 	rebootRequired := false
 	resource := resourceVirtualEnvironmentContainer()
 
@@ -1175,6 +1177,65 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 		rebootRequired = true
 	}
 
+	// Prepare the new initialization configuration.
+	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
+	initializationDNSDomain := dvResourceVirtualEnvironmentContainerInitializationDNSDomain
+	initializationDNSServer := dvResourceVirtualEnvironmentContainerInitializationDNSServer
+	initializationHostname := dvResourceVirtualEnvironmentContainerInitializationHostname
+	initializationIPConfigIPv4Address := []string{}
+	initializationIPConfigIPv4Gateway := []string{}
+	initializationIPConfigIPv6Address := []string{}
+	initializationIPConfigIPv6Gateway := []string{}
+
+	if len(initialization) > 0 {
+		initializationBlock := initialization[0].(map[string]interface{})
+		initializationDNS := initializationBlock[mkResourceVirtualEnvironmentContainerInitializationDNS].([]interface{})
+
+		if len(initializationDNS) > 0 {
+			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
+			initializationDNSDomain = initializationDNSBlock[mkResourceVirtualEnvironmentContainerInitializationDNSDomain].(string)
+			initializationDNSServer = initializationDNSBlock[mkResourceVirtualEnvironmentContainerInitializationDNSServer].(string)
+		}
+
+		initializationHostname = initializationBlock[mkResourceVirtualEnvironmentContainerInitializationHostname].(string)
+		initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfig].([]interface{})
+
+		for _, c := range initializationIPConfig {
+			configBlock := c.(map[string]interface{})
+			ipv4 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4].([]interface{})
+
+			if len(ipv4) > 0 {
+				ipv4Block := ipv4[0].(map[string]interface{})
+
+				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string))
+				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string))
+			} else {
+				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, "")
+				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
+			}
+
+			ipv6 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6].([]interface{})
+
+			if len(ipv6) > 0 {
+				ipv6Block := ipv6[0].(map[string]interface{})
+
+				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string))
+				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string))
+			} else {
+				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, "")
+				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, "")
+			}
+		}
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentContainerInitialization) {
+		body.DNSDomain = &initializationDNSDomain
+		body.DNSServer = &initializationDNSServer
+		body.Hostname = &initializationHostname
+
+		rebootRequired = true
+	}
+
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerMemory) {
 		memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
@@ -1188,6 +1249,90 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 
 		body.DedicatedMemory = &memoryDedicated
 		body.Swap = &memorySwap
+
+		rebootRequired = true
+	}
+
+	// Prepare the new network interface configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
+		networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
+		networkInterfaceArray := make(proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray, len(networkInterface))
+
+		for ni, nv := range networkInterface {
+			networkInterfaceMap := nv.(map[string]interface{})
+			networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
+
+			bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
+			enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
+			macAddress := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress].(string)
+			name := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceName].(string)
+			rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
+			vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
+
+			if bridge != "" {
+				networkInterfaceObject.Bridge = &bridge
+			}
+
+			networkInterfaceObject.Enabled = enabled
+
+			if len(initializationIPConfigIPv4Address) > ni {
+				if initializationIPConfigIPv4Address[ni] != "" {
+					networkInterfaceObject.IPv4Address = &initializationIPConfigIPv4Address[ni]
+				}
+
+				if initializationIPConfigIPv4Gateway[ni] != "" {
+					networkInterfaceObject.IPv4Gateway = &initializationIPConfigIPv4Gateway[ni]
+				}
+
+				if initializationIPConfigIPv6Address[ni] != "" {
+					networkInterfaceObject.IPv6Address = &initializationIPConfigIPv6Address[ni]
+				}
+
+				if initializationIPConfigIPv6Gateway[ni] != "" {
+					networkInterfaceObject.IPv6Gateway = &initializationIPConfigIPv6Gateway[ni]
+				}
+			}
+
+			if macAddress != "" {
+				networkInterfaceObject.MACAddress = &macAddress
+			}
+
+			networkInterfaceObject.Name = name
+
+			if rateLimit != 0 {
+				networkInterfaceObject.RateLimit = &rateLimit
+			}
+
+			if vlanID != 0 {
+				networkInterfaceObject.Tag = &vlanID
+			}
+
+			networkInterfaceArray[ni] = networkInterfaceObject
+		}
+
+		body.NetworkInterfaces = networkInterfaceArray
+
+		index := len(networkInterface)
+
+		for index < 8 {
+			body.Delete = append(body.Delete, fmt.Sprintf("net%d", index))
+			index++
+		}
+
+		rebootRequired = true
+	}
+
+	// Prepare the new operating system configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentContainerOperatingSystem) {
+		operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerOperatingSystem}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentContainerOperatingSystemType].(string)
+
+		body.OSType = &operatingSystemType
 
 		rebootRequired = true
 	}
