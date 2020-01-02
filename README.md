@@ -606,7 +606,7 @@ This resource doesn't expose any additional attributes.
     * `rate_limit` - (Optional) The rate limit in megabytes per second
     * `vlan_id` - (Optional) The VLAN identifier
 * `node_name` - (Required) The name of the node to assign the virtual machine to
-* `operating_system` - (Required) The Operating System configuration
+* `operating_system` - (Optional) The Operating System configuration
     * `type` - (Optional) The type (defaults to `other`)
         * `l24` - Linux Kernel 2.4
         * `l26` - Linux Kernel 2.6 - 5.X
