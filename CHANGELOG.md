@@ -1,4 +1,4 @@
-## 0.2.0 (UNRELEASED)
+## 0.2.0
 
 BREAKING CHANGES:
 
