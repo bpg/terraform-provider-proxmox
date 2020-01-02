@@ -110,3 +110,33 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(nodeName string, vmID i
 
 	return fmt.Errorf("Timeout while waiting for container \"%d\" to enter the state \"%s\"", vmID, state)
 }
+
+// WaitForContainerLock waits for a container lock to be released.
+func (c *VirtualEnvironmentClient) WaitForContainerLock(nodeName string, vmID int, timeout int, delay int) error {
+	timeDelay := int64(delay)
+	timeMax := float64(timeout)
+	timeStart := time.Now()
+	timeElapsed := timeStart.Sub(timeStart)
+
+	for timeElapsed.Seconds() < timeMax {
+		if int64(timeElapsed.Seconds())%timeDelay == 0 {
+			data, err := c.GetContainerStatus(nodeName, vmID)
+
+			if err != nil {
+				return err
+			}
+
+			if data.Lock == nil || *data.Lock == "" {
+				return nil
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+
+		time.Sleep(200 * time.Millisecond)
+
+		timeElapsed = time.Now().Sub(timeStart)
+	}
+
+	return fmt.Errorf("Timeout while waiting for container \"%d\" to become unlocked", vmID)
+}

@@ -46,6 +46,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_certificate": resourceVirtualEnvironmentCertificate(),
+			"proxmox_virtual_environment_container":   resourceVirtualEnvironmentContainer(),
 			"proxmox_virtual_environment_dns":         resourceVirtualEnvironmentDNS(),
 			"proxmox_virtual_environment_file":        resourceVirtualEnvironmentFile(),
 			"proxmox_virtual_environment_group":       resourceVirtualEnvironmentGroup(),

@@ -34,7 +34,7 @@ type VirtualEnvironmentContainerCreateRequestBody struct {
 	Lock                 *string                                                `json:"lock,omitempty" url:"lock,omitempty,int"`
 	MountPoints          VirtualEnvironmentContainerCustomMountPointArray       `json:"mp,omitempty" url:"mp,omitempty,numbered"`
 	NetworkInterfaces    VirtualEnvironmentContainerCustomNetworkInterfaceArray `json:"net,omitempty" url:"net,omitempty,numbered"`
-	OSTemplateFileVolume string                                                 `json:"ostemplate" url:"ostemplate"`
+	OSTemplateFileVolume *string                                                `json:"ostemplate,omitempty" url:"ostemplate,omitempty"`
 	OSType               *string                                                `json:"ostype,omitempty" url:"ostype,omitempty"`
 	Password             *string                                                `json:"password,omitempty" url:"password,omitempty"`
 	PoolID               *string                                                `json:"pool,omitempty" url:"pool,omitempty"`
@@ -51,7 +51,7 @@ type VirtualEnvironmentContainerCreateRequestBody struct {
 	TTY                  *int                                                   `json:"tty,omitempty" url:"tty,omitempty"`
 	Unique               *CustomBool                                            `json:"unique,omitempty" url:"unique,omitempty,int"`
 	Unprivileged         *CustomBool                                            `json:"unprivileged,omitempty" url:"unprivileged,omitempty,int"`
-	VMID                 int                                                    `json:"vmid" url:"vmid"`
+	VMID                 *int                                                   `json:"vmid,omitempty" url:"vmid,omitempty"`
 }
 
 // VirtualEnvironmentContainerCustomFeatures contains the values for the "features" property.
@@ -66,7 +66,7 @@ type VirtualEnvironmentContainerCustomFeatures struct {
 type VirtualEnvironmentContainerCustomMountPoint struct {
 	ACL          *CustomBool `json:"acl,omitempty" url:"acl,omitempty,int"`
 	Backup       *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	DiskSize     *int        `json:"size,omitempty" url:"size,omitempty"`
+	DiskSize     *string     `json:"size,omitempty" url:"size,omitempty"`
 	Enabled      bool        `json:"-" url:"-"`
 	MountOptions *[]string   `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
 	MountPoint   string      `json:"mp" url:"mp"`
@@ -92,7 +92,7 @@ type VirtualEnvironmentContainerCustomNetworkInterface struct {
 	MACAddress  *string     `json:"hwaddr,omitempty" url:"hwaddr,omitempty"`
 	MTU         *int        `json:"mtu,omitempty" url:"mtu,omitempty"`
 	Name        string      `json:"name" url:"name"`
-	RateLimit   *int        `json:"rate,omitempty" url:"rate,omitempty"`
+	RateLimit   *float64    `json:"rate,omitempty" url:"rate,omitempty"`
 	Tag         *int        `json:"tag,omitempty" url:"tag,omitempty"`
 	Trunks      *[]int      `json:"trunks,omitempty" url:"trunks,omitempty"`
 	Type        *string     `json:"type,omitempty" url:"type,omitempty"`
@@ -104,7 +104,7 @@ type VirtualEnvironmentContainerCustomNetworkInterfaceArray []VirtualEnvironment
 // VirtualEnvironmentContainerCustomRootFS contains the values for the "rootfs" property.
 type VirtualEnvironmentContainerCustomRootFS struct {
 	ACL          *CustomBool `json:"acl,omitempty" url:"acl,omitempty,int"`
-	DiskSize     *int        `json:"size,omitempty" url:"size,omitempty"`
+	DiskSize     *string     `json:"size,omitempty" url:"size,omitempty"`
 	MountOptions *[]string   `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
 	Quota        *CustomBool `json:"quota,omitempty" url:"quota,omitempty,int"`
 	ReadOnly     *CustomBool `json:"ro,omitempty" url:"ro,omitempty,int"`
@@ -177,16 +177,16 @@ type VirtualEnvironmentContainerGetStatusResponseBody struct {
 
 // VirtualEnvironmentContainerGetStatusResponseData contains the data from a container get status response.
 type VirtualEnvironmentContainerGetStatusResponseData struct {
-	CPUCount         *float64 `json:"cpus,omitempty"`
-	Lock             *string  `json:"lock,omitempty"`
-	MemoryAllocation *int     `json:"maxmem,omitempty"`
-	Name             *string  `json:"name,omitempty"`
-	RootDiskSize     *int     `json:"maxdisk,omitempty"`
-	Status           string   `json:"status,omitempty"`
-	SwapAllocation   *int     `json:"maxswap,omitempty"`
-	Tags             *string  `json:"tags,omitempty"`
-	Uptime           *int     `json:"uptime,omitempty"`
-	VMID             string   `json:"vmid,omitempty"`
+	CPUCount         *float64     `json:"cpus,omitempty"`
+	Lock             *string      `json:"lock,omitempty"`
+	MemoryAllocation *int         `json:"maxmem,omitempty"`
+	Name             *string      `json:"name,omitempty"`
+	RootDiskSize     *interface{} `json:"maxdisk,omitempty"`
+	Status           string       `json:"status,omitempty"`
+	SwapAllocation   *int         `json:"maxswap,omitempty"`
+	Tags             *string      `json:"tags,omitempty"`
+	Uptime           *int         `json:"uptime,omitempty"`
+	VMID             string       `json:"vmid,omitempty"`
 }
 
 // VirtualEnvironmentContainerRebootRequestBody contains the body for a container reboot request.
@@ -265,7 +265,7 @@ func (r VirtualEnvironmentContainerCustomMountPoint) EncodeValues(key string, v 
 	}
 
 	if r.DiskSize != nil {
-		values = append(values, fmt.Sprintf("size=%d", *r.DiskSize))
+		values = append(values, fmt.Sprintf("size=%s", *r.DiskSize))
 	}
 
 	if r.MountOptions != nil {
@@ -317,6 +317,15 @@ func (r VirtualEnvironmentContainerCustomMountPoint) EncodeValues(key string, v 
 	return nil
 }
 
+// EncodeValues converts a VirtualEnvironmentContainerCustomMountPointArray array to multiple URL values.
+func (r VirtualEnvironmentContainerCustomMountPointArray) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+	}
+
+	return nil
+}
+
 // EncodeValues converts a VirtualEnvironmentContainerCustomNetworkInterface struct to a URL vlaue.
 func (r VirtualEnvironmentContainerCustomNetworkInterface) EncodeValues(key string, v *url.Values) error {
 	values := []string{}
@@ -360,7 +369,7 @@ func (r VirtualEnvironmentContainerCustomNetworkInterface) EncodeValues(key stri
 	values = append(values, fmt.Sprintf("name=%s", r.Name))
 
 	if r.RateLimit != nil {
-		values = append(values, fmt.Sprintf("rate=%d", *r.RateLimit))
+		values = append(values, fmt.Sprintf("rate=%.2f", *r.RateLimit))
 	}
 
 	if r.Tag != nil {
@@ -388,6 +397,15 @@ func (r VirtualEnvironmentContainerCustomNetworkInterface) EncodeValues(key stri
 	return nil
 }
 
+// EncodeValues converts a VirtualEnvironmentContainerCustomNetworkInterfaceArray array to multiple URL values.
+func (r VirtualEnvironmentContainerCustomNetworkInterfaceArray) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+	}
+
+	return nil
+}
+
 // EncodeValues converts a VirtualEnvironmentContainerCustomRootFS struct to a URL vlaue.
 func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url.Values) error {
 	values := []string{}
@@ -401,7 +419,7 @@ func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url
 	}
 
 	if r.DiskSize != nil {
-		values = append(values, fmt.Sprintf("size=%d", *r.DiskSize))
+		values = append(values, fmt.Sprintf("size=%s", *r.DiskSize))
 	}
 
 	if r.MountOptions != nil {
@@ -453,7 +471,7 @@ func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomSSHKeys array to a URL vlaue.
 func (r VirtualEnvironmentContainerCustomSSHKeys) EncodeValues(key string, v *url.Values) error {
-	v.Add(key, strings.ReplaceAll(url.QueryEscape(strings.Join(r, "\n")), "+", "%20"))
+	v.Add(key, strings.Join(r, "\n"))
 
 	return nil
 }
@@ -538,7 +556,7 @@ func (r *VirtualEnvironmentContainerCustomMountPoint) UnmarshalJSON(b []byte) er
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
-			r.Volume = v[1]
+			r.Volume = v[0]
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "acl":
@@ -570,13 +588,7 @@ func (r *VirtualEnvironmentContainerCustomMountPoint) UnmarshalJSON(b []byte) er
 				bv := CustomBool(v[1] == "1")
 				r.Shared = &bv
 			case "size":
-				iv, err := strconv.Atoi(v[1])
-
-				if err != nil {
-					return err
-				}
-
-				r.DiskSize = &iv
+				r.DiskSize = &v[1]
 			}
 		}
 	}
@@ -600,7 +612,7 @@ func (r *VirtualEnvironmentContainerCustomNetworkInterface) UnmarshalJSON(b []by
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
-			r.Name = v[1]
+			r.Name = v[0]
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "bridge":
@@ -629,13 +641,13 @@ func (r *VirtualEnvironmentContainerCustomNetworkInterface) UnmarshalJSON(b []by
 			case "name":
 				r.Name = v[1]
 			case "rate":
-				iv, err := strconv.Atoi(v[1])
+				fv, err := strconv.ParseFloat(v[1], 64)
 
 				if err != nil {
 					return err
 				}
 
-				r.RateLimit = &iv
+				r.RateLimit = &fv
 			case "tag":
 				iv, err := strconv.Atoi(v[1])
 
@@ -687,7 +699,7 @@ func (r *VirtualEnvironmentContainerCustomRootFS) UnmarshalJSON(b []byte) error 
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
-			r.Volume = v[1]
+			r.Volume = v[0]
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "acl":
@@ -714,13 +726,7 @@ func (r *VirtualEnvironmentContainerCustomRootFS) UnmarshalJSON(b []byte) error 
 				bv := CustomBool(v[1] == "1")
 				r.Shared = &bv
 			case "size":
-				iv, err := strconv.Atoi(v[1])
-
-				if err != nil {
-					return err
-				}
-
-				r.DiskSize = &iv
+				r.DiskSize = &v[1]
 			}
 		}
 	}

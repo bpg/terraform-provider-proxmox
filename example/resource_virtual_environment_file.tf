@@ -1,12 +1,6 @@
-resource "proxmox_virtual_environment_file" "ubuntu_cloud_image" {
-  content_type = "iso"
-  datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))}"
-  node_name    = "${data.proxmox_virtual_environment_datastores.example.node_name}"
-
-  source_file {
-    path = "https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img"
-  }
-}
+#===============================================================================
+# Cloud Config (cloud-init)
+#===============================================================================
 
 resource "proxmox_virtual_environment_file" "cloud_config" {
   content_type = "snippets"
@@ -34,6 +28,20 @@ users:
     EOF
 
     file_name = "terraform-provider-proxmox-example-cloud-config.yaml"
+  }
+}
+
+#===============================================================================
+# Ubuntu Cloud Image
+#===============================================================================
+
+resource "proxmox_virtual_environment_file" "ubuntu_cloud_image" {
+  content_type = "iso"
+  datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))}"
+  node_name    = "${data.proxmox_virtual_environment_datastores.example.node_name}"
+
+  source_file {
+    path = "https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img"
   }
 }
 
@@ -71,4 +79,54 @@ output "resource_proxmox_virtual_environment_file_ubuntu_cloud_image_node_name" 
 
 output "resource_proxmox_virtual_environment_file_ubuntu_cloud_image_source_file" {
   value = "${proxmox_virtual_environment_file.ubuntu_cloud_image.source_file}"
+}
+
+#===============================================================================
+# Ubuntu Container Template
+#===============================================================================
+
+resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
+  content_type = "vztmpl"
+  datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))}"
+  node_name    = "${data.proxmox_virtual_environment_datastores.example.node_name}"
+
+  source_file {
+    path = "http://download.proxmox.com/images/system/ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz"
+  }
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_content_type" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.content_type}"
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_datastore_id" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.datastore_id}"
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_file_modification_date" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.file_modification_date}"
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_file_name" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.file_name}"
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_file_size" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.file_size}"
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_file_tag" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.file_tag}"
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_id" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.id}"
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_node_name" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.node_name}"
+}
+
+output "resource_proxmox_virtual_environment_file_ubuntu_container_template_source_file" {
+  value = "${proxmox_virtual_environment_file.ubuntu_container_template.source_file}"
 }

@@ -5,6 +5,7 @@
 package proxmoxtf
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -77,7 +78,7 @@ const (
 	mkResourceVirtualEnvironmentContainerMemory                            = "memory"
 	mkResourceVirtualEnvironmentContainerMemoryDedicated                   = "dedicated"
 	mkResourceVirtualEnvironmentContainerMemorySwap                        = "swap"
-	mkResourceVirtualEnvironmentContainerNetworkInterface                  = "network_device"
+	mkResourceVirtualEnvironmentContainerNetworkInterface                  = "network_interface"
 	mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge            = "bridge"
 	mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled           = "enabled"
 	mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress        = "mac_address"
@@ -324,7 +325,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 										Sensitive:   true,
 										Default:     dvResourceVirtualEnvironmentContainerInitializationUserAccountPassword,
 										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-											return strings.ReplaceAll(old, "*", "") == ""
+											return len(old) > 0 && strings.ReplaceAll(old, "*", "") == ""
 										},
 									},
 								},
@@ -459,7 +460,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentContainerPoolID: {
 				Type:        schema.TypeString,
-				Description: "The ID of the pool to assign the virtual machine to",
+				Description: "The ID of the pool to assign the container to",
 				Optional:    true,
 				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentContainerPoolID,
@@ -576,7 +577,7 @@ func resourceVirtualEnvironmentContainerCreate(d *schema.ResourceData, m interfa
 			initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
 
 			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentContainerInitializationUserAccountKeys].([]interface{})
-			initializationUserAccountKeys := make(proxmox.VirtualEnvironmentContainerCustomSSHKeys, len(keys))
+			initializationUserAccountKeys = make(proxmox.VirtualEnvironmentContainerCustomSSHKeys, len(keys))
 
 			for ki, kv := range keys {
 				initializationUserAccountKeys[ki] = kv.(string)
@@ -606,7 +607,7 @@ func resourceVirtualEnvironmentContainerCreate(d *schema.ResourceData, m interfa
 		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
 		macAddress := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress].(string)
 		name := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceName].(string)
-		rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(int)
+		rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
 		vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
 
 		if bridge != "" {
@@ -637,9 +638,7 @@ func resourceVirtualEnvironmentContainerCreate(d *schema.ResourceData, m interfa
 			networkInterfaceObject.MACAddress = &macAddress
 		}
 
-		if name != "" {
-			networkInterfaceObject.Name = name
-		}
+		networkInterfaceObject.Name = name
 
 		if rateLimit != 0 {
 			networkInterfaceObject.RateLimit = &rateLimit
@@ -676,20 +675,23 @@ func resourceVirtualEnvironmentContainerCreate(d *schema.ResourceData, m interfa
 	}
 
 	// Attempt to create the resource using the retrieved values.
+	datastoreID := "local-lvm"
+
 	body := proxmox.VirtualEnvironmentContainerCreateRequestBody{
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
 		CPUCores:             &cpuCores,
 		CPUUnits:             &cpuUnits,
+		DatastoreID:          &datastoreID,
 		DedicatedMemory:      &memoryDedicated,
 		NetworkInterfaces:    networkInterfaceArray,
-		OSTemplateFileVolume: operatingSystemTemplateFileID,
+		OSTemplateFileVolume: &operatingSystemTemplateFileID,
 		OSType:               &operatingSystemType,
 		StartOnBoot:          &started,
 		Swap:                 &memorySwap,
 		TTY:                  &consoleTTYCount,
-		VMID:                 vmID,
+		VMID:                 &vmID,
 	}
 
 	if description != "" {
@@ -727,6 +729,13 @@ func resourceVirtualEnvironmentContainerCreate(d *schema.ResourceData, m interfa
 	}
 
 	d.SetId(strconv.Itoa(vmID))
+
+	// Wait for the container's lock to be released.
+	err = veClient.WaitForContainerLock(nodeName, vmID, 300, 5)
+
+	if err != nil {
+		return err
+	}
 
 	return resourceVirtualEnvironmentContainerCreateStart(d, m)
 }
@@ -815,10 +824,11 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 	}
 
 	// Retrieve the entire configuration in order to compare it to the state.
-	_, err = veClient.GetContainer(nodeName, vmID)
+	containerConfig, err := veClient.GetContainer(nodeName, vmID)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if strings.Contains(err.Error(), "HTTP 404") ||
+			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
 			d.SetId("")
 
 			return nil
@@ -826,6 +836,276 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 
 		return err
 	}
+
+	// Compare the primitive values to those stored in the state.
+	if containerConfig.Description != nil {
+		d.Set(mkResourceVirtualEnvironmentContainerDescription, strings.TrimSpace(*containerConfig.Description))
+	} else {
+		d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
+	}
+
+	// Compare the console configuration to the one stored in the state.
+	console := map[string]interface{}{}
+
+	if containerConfig.ConsoleEnabled != nil {
+		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] = *containerConfig.ConsoleEnabled
+	} else {
+		// Default value of "console" is "1" according to the API documentation.
+		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] = true
+	}
+
+	if containerConfig.ConsoleMode != nil {
+		console[mkResourceVirtualEnvironmentContainerConsoleMode] = *containerConfig.ConsoleMode
+	} else {
+		// Default value of "cmode" is "tty" according to the API documentation.
+		console[mkResourceVirtualEnvironmentContainerConsoleMode] = "tty"
+	}
+
+	if containerConfig.TTY != nil {
+		console[mkResourceVirtualEnvironmentContainerConsoleTTYCount] = *containerConfig.TTY
+	} else {
+		// Default value of "tty" is "2" according to the API documentation.
+		console[mkResourceVirtualEnvironmentContainerConsoleTTYCount] = 2
+	}
+
+	currentConsole := d.Get(mkResourceVirtualEnvironmentContainerConsole).([]interface{})
+
+	if len(currentConsole) > 0 ||
+		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] != proxmox.CustomBool(dvResourceVirtualEnvironmentContainerConsoleEnabled) ||
+		console[mkResourceVirtualEnvironmentContainerConsoleMode] != dvResourceVirtualEnvironmentContainerConsoleMode ||
+		console[mkResourceVirtualEnvironmentContainerConsoleTTYCount] != dvResourceVirtualEnvironmentContainerConsoleTTYCount {
+		d.Set(mkResourceVirtualEnvironmentContainerConsole, []interface{}{console})
+	}
+
+	// Compare the CPU configuration to the one stored in the state.
+	cpu := map[string]interface{}{}
+
+	if containerConfig.CPUArchitecture != nil {
+		cpu[mkResourceVirtualEnvironmentContainerCPUArchitecture] = *containerConfig.CPUArchitecture
+	} else {
+		// Default value of "arch" is "amd64" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentContainerCPUArchitecture] = "amd64"
+	}
+
+	if containerConfig.CPUCores != nil {
+		cpu[mkResourceVirtualEnvironmentContainerCPUCores] = *containerConfig.CPUCores
+	} else {
+		// Default value of "cores" is "1" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentContainerCPUCores] = 1
+	}
+
+	if containerConfig.CPUUnits != nil {
+		cpu[mkResourceVirtualEnvironmentContainerCPUUnits] = *containerConfig.CPUUnits
+	} else {
+		// Default value of "cpuunits" is "1024" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentContainerCPUUnits] = 1024
+	}
+
+	currentCPU := d.Get(mkResourceVirtualEnvironmentContainerCPU).([]interface{})
+
+	if len(currentCPU) > 0 ||
+		cpu[mkResourceVirtualEnvironmentContainerCPUArchitecture] != dvResourceVirtualEnvironmentContainerCPUArchitecture ||
+		cpu[mkResourceVirtualEnvironmentContainerCPUCores] != dvResourceVirtualEnvironmentContainerCPUCores ||
+		cpu[mkResourceVirtualEnvironmentContainerCPUUnits] != dvResourceVirtualEnvironmentContainerCPUUnits {
+		d.Set(mkResourceVirtualEnvironmentContainerCPU, []interface{}{cpu})
+	}
+
+	// Compare the memory configuration to the one stored in the state.
+	memory := map[string]interface{}{}
+
+	if containerConfig.DedicatedMemory != nil {
+		memory[mkResourceVirtualEnvironmentContainerMemoryDedicated] = *containerConfig.DedicatedMemory
+	} else {
+		memory[mkResourceVirtualEnvironmentContainerMemoryDedicated] = 0
+	}
+
+	if containerConfig.Swap != nil {
+		memory[mkResourceVirtualEnvironmentContainerMemorySwap] = *containerConfig.Swap
+	} else {
+		memory[mkResourceVirtualEnvironmentContainerMemorySwap] = 0
+	}
+
+	currentMemory := d.Get(mkResourceVirtualEnvironmentContainerMemory).([]interface{})
+
+	if len(currentMemory) > 0 ||
+		memory[mkResourceVirtualEnvironmentContainerMemoryDedicated] != dvResourceVirtualEnvironmentContainerMemoryDedicated ||
+		memory[mkResourceVirtualEnvironmentContainerMemorySwap] != dvResourceVirtualEnvironmentContainerMemorySwap {
+		d.Set(mkResourceVirtualEnvironmentContainerMemory, []interface{}{memory})
+	}
+
+	// Compare the initialization and network interface configuration to the one stored in the state.
+	initialization := map[string]interface{}{}
+
+	if containerConfig.DNSDomain != nil || containerConfig.DNSServer != nil {
+		initializationDNS := map[string]interface{}{}
+
+		if containerConfig.DNSDomain != nil {
+			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSDomain] = *containerConfig.DNSDomain
+		} else {
+			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSDomain] = ""
+		}
+
+		if containerConfig.DNSServer != nil {
+			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServer] = *containerConfig.DNSServer
+		} else {
+			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServer] = ""
+		}
+
+		initialization[mkResourceVirtualEnvironmentContainerInitializationDNS] = []interface{}{initializationDNS}
+	}
+
+	if containerConfig.Hostname != nil {
+		initialization[mkResourceVirtualEnvironmentContainerInitializationHostname] = *containerConfig.Hostname
+	} else {
+		initialization[mkResourceVirtualEnvironmentContainerInitializationHostname] = ""
+	}
+
+	ipConfigList := []interface{}{}
+	networkInterfaceArray := []*proxmox.VirtualEnvironmentContainerCustomNetworkInterface{
+		containerConfig.NetworkInterface0,
+		containerConfig.NetworkInterface1,
+		containerConfig.NetworkInterface2,
+		containerConfig.NetworkInterface3,
+		containerConfig.NetworkInterface4,
+		containerConfig.NetworkInterface5,
+		containerConfig.NetworkInterface6,
+		containerConfig.NetworkInterface7,
+	}
+	networkInterfaceList := []interface{}{}
+
+	for _, nv := range networkInterfaceArray {
+		if nv == nil {
+			continue
+		}
+
+		if nv.IPv4Address != nil || nv.IPv4Gateway != nil || nv.IPv6Address != nil || nv.IPv6Gateway != nil {
+			ipConfig := map[string]interface{}{}
+
+			if nv.IPv4Address != nil || nv.IPv4Gateway != nil {
+				ip := map[string]interface{}{}
+
+				if nv.IPv4Address != nil {
+					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address] = *nv.IPv4Address
+				} else {
+					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address] = ""
+				}
+
+				if nv.IPv4Gateway != nil {
+					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway] = *nv.IPv4Gateway
+				} else {
+					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway] = ""
+				}
+
+				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4] = []interface{}{ip}
+			} else {
+				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4] = []interface{}{}
+			}
+
+			if nv.IPv6Address != nil || nv.IPv6Gateway != nil {
+				ip := map[string]interface{}{}
+
+				if nv.IPv6Address != nil {
+					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address] = *nv.IPv6Address
+				} else {
+					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address] = ""
+				}
+
+				if nv.IPv6Gateway != nil {
+					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway] = *nv.IPv6Gateway
+				} else {
+					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway] = ""
+				}
+
+				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6] = []interface{}{ip}
+			} else {
+				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6] = []interface{}{}
+			}
+
+			ipConfigList = append(ipConfigList, ipConfig)
+		}
+
+		networkInterface := map[string]interface{}{}
+
+		if nv.Bridge != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge] = *nv.Bridge
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge] = ""
+		}
+
+		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled] = true
+
+		if nv.MACAddress != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress] = *nv.MACAddress
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress] = ""
+		}
+
+		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceName] = nv.Name
+
+		if nv.RateLimit != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit] = *nv.RateLimit
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit] = 0
+		}
+
+		if nv.Tag != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID] = *nv.Tag
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID] = 0
+		}
+
+		networkInterfaceList = append(networkInterfaceList, networkInterface)
+	}
+
+	initialization[mkResourceVirtualEnvironmentContainerInitializationIPConfig] = ipConfigList
+
+	currentInitialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
+
+	if len(currentInitialization) > 0 {
+		currentInitializationMap := currentInitialization[0].(map[string]interface{})
+
+		initialization[mkResourceVirtualEnvironmentContainerInitializationUserAccount] = currentInitializationMap[mkResourceVirtualEnvironmentContainerInitializationUserAccount].([]interface{})
+	}
+
+	if len(initialization) > 0 {
+		d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
+	} else {
+		d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
+	}
+
+	d.Set(mkResourceVirtualEnvironmentContainerNetworkInterface, networkInterfaceList)
+
+	// Compare the operating system configuration to the one stored in the state.
+	operatingSystem := map[string]interface{}{}
+
+	if containerConfig.OSType != nil {
+		operatingSystem[mkResourceVirtualEnvironmentContainerOperatingSystemType] = *containerConfig.OSType
+	} else {
+		// Default value of "ostype" is "" according to the API documentation.
+		operatingSystem[mkResourceVirtualEnvironmentContainerOperatingSystemType] = ""
+	}
+
+	currentOperatingSystem := d.Get(mkResourceVirtualEnvironmentContainerOperatingSystem).([]interface{})
+
+	if len(currentOperatingSystem) > 0 {
+		currentOperatingSystemMap := currentOperatingSystem[0].(map[string]interface{})
+
+		operatingSystem[mkResourceVirtualEnvironmentContainerOperatingSystemTemplateFileID] = currentOperatingSystemMap[mkResourceVirtualEnvironmentContainerOperatingSystemTemplateFileID]
+	}
+
+	if len(currentOperatingSystem) > 0 ||
+		operatingSystem[mkResourceVirtualEnvironmentContainerOperatingSystemType] != dvResourceVirtualEnvironmentContainerOperatingSystemType {
+		d.Set(mkResourceVirtualEnvironmentContainerOperatingSystem, []interface{}{operatingSystem})
+	}
+
+	// Determine the state of the container in order to update the "started" argument.
+	status, err := veClient.GetContainerStatus(nodeName, vmID)
+
+	if err != nil {
+		return err
+	}
+
+	d.Set(mkResourceVirtualEnvironmentContainerStarted, status.Status == "running")
 
 	return nil
 }
@@ -845,11 +1125,130 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 		return err
 	}
 
-	// Retrieve the entire configuration as we need to process certain values.
-	_, err = veClient.GetContainer(nodeName, vmID)
+	// Prepare the new request object.
+	body := proxmox.VirtualEnvironmentContainerUpdateRequestBody{}
+	rebootRequired := false
+	resource := resourceVirtualEnvironmentContainer()
+
+	// Prepare the new primitive values.
+	if d.HasChange(mkResourceVirtualEnvironmentContainerDescription) {
+		description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
+
+		body.Description = &description
+	}
+
+	// Prepare the new console configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentContainerConsole) {
+		consoleBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		consoleEnabled := proxmox.CustomBool(consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool))
+		consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
+		consoleTTYCount := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleTTYCount].(int)
+
+		body.ConsoleEnabled = &consoleEnabled
+		body.ConsoleMode = &consoleMode
+		body.TTY = &consoleTTYCount
+
+		rebootRequired = true
+	}
+
+	// Prepare the new CPU configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentContainerCPU) {
+		cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentContainerCPUArchitecture].(string)
+		cpuCores := cpuBlock[mkResourceVirtualEnvironmentContainerCPUCores].(int)
+		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentContainerCPUUnits].(int)
+
+		body.CPUArchitecture = &cpuArchitecture
+		body.CPUCores = &cpuCores
+		body.CPUUnits = &cpuUnits
+
+		rebootRequired = true
+	}
+
+	// Prepare the new memory configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentContainerMemory) {
+		memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int)
+		memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int)
+
+		body.DedicatedMemory = &memoryDedicated
+		body.Swap = &memorySwap
+
+		rebootRequired = true
+	}
+
+	// Update the configuration now that everything has been prepared.
+	err = veClient.UpdateContainer(nodeName, vmID, &body)
 
 	if err != nil {
 		return err
+	}
+
+	// Determine if the state of the container needs to be changed.
+	if d.HasChange(mkResourceVirtualEnvironmentContainerStarted) {
+		started := d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool)
+
+		if started {
+			err = veClient.StartContainer(nodeName, vmID)
+
+			if err != nil {
+				return err
+			}
+
+			err = veClient.WaitForContainerState(nodeName, vmID, "running", 120, 5)
+
+			if err != nil {
+				return err
+			}
+		} else {
+			forceStop := proxmox.CustomBool(true)
+			shutdownTimeout := 300
+
+			err = veClient.ShutdownContainer(nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+				ForceStop: &forceStop,
+				Timeout:   &shutdownTimeout,
+			})
+
+			if err != nil {
+				return err
+			}
+
+			err = veClient.WaitForContainerState(nodeName, vmID, "stopped", 30, 5)
+
+			if err != nil {
+				return err
+			}
+
+			rebootRequired = false
+		}
+	}
+
+	// As a final step in the update procedure, we might need to reboot the virtual machine.
+	if rebootRequired {
+		rebootTimeout := 300
+
+		err = veClient.RebootContainer(nodeName, vmID, &proxmox.VirtualEnvironmentContainerRebootRequestBody{
+			Timeout: &rebootTimeout,
+		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return resourceVirtualEnvironmentContainerRead(d, m)
@@ -870,6 +1269,33 @@ func resourceVirtualEnvironmentContainerDelete(d *schema.ResourceData, m interfa
 		return err
 	}
 
+	// Shut down the container before deleting it.
+	status, err := veClient.GetContainerStatus(nodeName, vmID)
+
+	if err != nil {
+		return err
+	}
+
+	if status.Status != "stopped" {
+		forceStop := proxmox.CustomBool(true)
+		shutdownTimeout := 300
+
+		err = veClient.ShutdownContainer(nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+			ForceStop: &forceStop,
+			Timeout:   &shutdownTimeout,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		err = veClient.WaitForContainerState(nodeName, vmID, "stopped", 30, 5)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	err = veClient.DeleteContainer(nodeName, vmID)
 
 	if err != nil {
@@ -880,6 +1306,13 @@ func resourceVirtualEnvironmentContainerDelete(d *schema.ResourceData, m interfa
 		}
 
 		return err
+	}
+
+	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
+	err = veClient.WaitForContainerState(nodeName, vmID, "", 60, 2)
+
+	if err == nil {
+		return fmt.Errorf("Failed to delete container \"%d\"", vmID)
 	}
 
 	d.SetId("")

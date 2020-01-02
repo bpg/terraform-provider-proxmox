@@ -547,7 +547,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 										Sensitive:   true,
 										Default:     dvResourceVirtualEnvironmentVMInitializationUserAccountPassword,
 										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-											return strings.ReplaceAll(old, "*", "") == ""
+											return len(old) > 0 && strings.ReplaceAll(old, "*", "") == ""
 										},
 									},
 									mkResourceVirtualEnvironmentVMInitializationUserAccountUsername: {
@@ -1484,7 +1484,8 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	vmConfig, err := veClient.GetVM(nodeName, vmID)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if strings.Contains(err.Error(), "HTTP 404") ||
+			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
 			d.SetId("")
 
 			return nil
@@ -2502,28 +2503,37 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Shut down the virtual machine before deleting it.
-	forceStop := proxmox.CustomBool(true)
-	shutdownTimeout := 300
-
-	err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
-		ForceStop: &forceStop,
-		Timeout:   &shutdownTimeout,
-	})
+	status, err := veClient.GetVMStatus(nodeName, vmID)
 
 	if err != nil {
 		return err
 	}
 
-	err = veClient.WaitForVMState(nodeName, vmID, "stopped", 30, 5)
+	if status.Status != "stopped" {
+		forceStop := proxmox.CustomBool(true)
+		shutdownTimeout := 300
 
-	if err != nil {
-		return err
+		err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
+			ForceStop: &forceStop,
+			Timeout:   &shutdownTimeout,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		err = veClient.WaitForVMState(nodeName, vmID, "stopped", 30, 5)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	err = veClient.DeleteVM(nodeName, vmID)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if strings.Contains(err.Error(), "HTTP 404") ||
+			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
 			d.SetId("")
 
 			return nil
@@ -2533,7 +2543,7 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
-	err = veClient.WaitForVMState(nodeName, vmID, "", 30, 2)
+	err = veClient.WaitForVMState(nodeName, vmID, "", 60, 2)
 
 	if err == nil {
 		return fmt.Errorf("Failed to delete VM \"%d\"", vmID)

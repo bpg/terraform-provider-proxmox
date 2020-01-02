@@ -402,7 +402,8 @@ func resourceVirtualEnvironmentFileGetContentType(d *schema.ResourceData, m inte
 	}
 
 	if contentType == "" {
-		if strings.HasSuffix(sourceFilePath, ".tar.xz") {
+		if strings.HasSuffix(sourceFilePath, ".tar.gz") ||
+			strings.HasSuffix(sourceFilePath, ".tar.xz") {
 			contentType = "vztmpl"
 		} else {
 			ext := strings.TrimLeft(strings.ToLower(filepath.Ext(sourceFilePath)), ".")
