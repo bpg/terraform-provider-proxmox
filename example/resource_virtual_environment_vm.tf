@@ -3,7 +3,14 @@ resource "proxmox_virtual_environment_vm" "example" {
     enabled = true
   }
 
-  cloud_init {
+  description = "Managed by Terraform"
+
+  disk {
+    datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))}"
+    file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
+  }
+
+  initialization {
     dns {
       server = "1.1.1.1"
     }
@@ -23,21 +30,18 @@ resource "proxmox_virtual_environment_vm" "example" {
     user_data_file_id = "${proxmox_virtual_environment_file.cloud_config.id}"
   }
 
-  description = "Managed by Terraform"
-
-  disk {
-    datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))}"
-    file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
-  }
-
   name = "terraform-provider-proxmox-example"
 
   network_device {}
 
   node_name = "${data.proxmox_virtual_environment_nodes.example.names[0]}"
-  os_type   = "l26"
-  pool_id   = "${proxmox_virtual_environment_pool.example.id}"
-  vm_id     = 2038
+
+  operating_system {
+    type = "l26"
+  }
+
+  pool_id = "${proxmox_virtual_environment_pool.example.id}"
+  vm_id   = 2038
 
   connection {
     type        = "ssh"

@@ -79,6 +79,7 @@ func resourceVirtualEnvironmentHosts() *schema.Resource {
 						},
 					},
 				},
+				MinItems: 1,
 			},
 			mkResourceVirtualEnvironmentHostsHostnames: &schema.Schema{
 				Type:        schema.TypeList,

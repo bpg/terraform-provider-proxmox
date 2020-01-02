@@ -133,8 +133,8 @@ func (c *VirtualEnvironmentClient) UpdateVMAsync(nodeName string, vmID int, d *V
 	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/config", url.PathEscape(nodeName), vmID), d, nil)
 }
 
-// WaitForNetworkInterfacesFromAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
-func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromAgent(nodeName string, vmID int, timeout int, delay int) (*VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData, error) {
+// WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
+func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(nodeName string, vmID int, timeout int, delay int) (*VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData, error) {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -159,8 +159,8 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromAgent(nodeName st
 	return nil, fmt.Errorf("Timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces", vmID)
 }
 
-// WaitForNoNetworkInterfacesFromAgent waits for a virtual machine's QEMU agent to unpublish the network interfaces.
-func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromAgent(nodeName string, vmID int, timeout int, delay int) error {
+// WaitForNoNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to unpublish the network interfaces.
+func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(nodeName string, vmID int, timeout int, delay int) error {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -185,8 +185,8 @@ func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromAgent(nodeName 
 	return fmt.Errorf("Timeout while waiting for the QEMU agent on VM \"%d\" to unpublish the network interfaces", vmID)
 }
 
-// WaitForState waits for a virtual machine to reach a specific state.
-func (c *VirtualEnvironmentClient) WaitForState(nodeName string, vmID int, state string, timeout int, delay int) error {
+// WaitForVMState waits for a virtual machine to reach a specific state.
+func (c *VirtualEnvironmentClient) WaitForVMState(nodeName string, vmID int, state string, timeout int, delay int) error {
 	state = strings.ToLower(state)
 
 	timeDelay := int64(delay)

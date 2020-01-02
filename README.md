@@ -31,6 +31,7 @@ A Terraform Provider which adds support for Proxmox solutions.
     - [Resources](#resources)
         - [Virtual Environment](#virtual-environment-1)
             - [Certificate](#certificate-proxmox_virtual_environment_certificate)
+            - [Container](#container-proxmox_virtual_environment_container)
             - [DNS](#dns-proxmox_virtual_environment_dns-1)
             - [File](#file-proxmox_virtual_environment_file)
             - [Group](#group-proxmox_virtual_environment_group-1)
@@ -38,7 +39,7 @@ A Terraform Provider which adds support for Proxmox solutions.
             - [Pool](#pool-proxmox_virtual_environment_pool-1)
             - [Role](#role-proxmox_virtual_environment_role-1)
             - [User](#user-proxmox_virtual_environment_user-1)
-            - [VM](#vm-proxmox_virtual_environment_vm)
+            - [Virtual Machine](#virtual-machine-proxmox_virtual_environment_vm)
 - [Developing the Provider](#developing-the-provider)
 - [Testing the Provider](#testing-the-provider)
 - [Known issues](#known-issues)
@@ -284,6 +285,70 @@ This data source doesn't accept arguments.
 * `subject` - The subject
 * `subject_alternative_names` - The subject alternative names
 
+##### Container (proxmox_virtual_environment_container)
+
+###### Arguments
+* `console` - (Optional) The console configuration
+    * `enabled` - (Optional) Whether to enable the console device (defaults to `true`)
+    * `mode` - (Optional) The console mode (defaults to `tty`)
+        * `console` - Console
+        * `shell` - Shell
+        * `tty` - TTY
+    * `tty_count` - (Optional) The number of available TTY (defaults to `2`)
+* `cpu` - (Optional) The CPU configuration
+    * `architecture` - (Optional) The CPU architecture (defaults to `amd64`)
+        * `amd64` - x86 (64 bit)
+        * `arm64` - ARM (64-bit)
+        * `armhf` - ARM (32 bit)
+        * `i386` - x86 (32 bit)
+    * `cores` - (Optional) The number of CPU cores (defaults to `1`)
+    * `units` - (Optional) The CPU units (defaults to `1024`)
+* `description` - (Optional) The description
+* `initialization` - (Optional) The initialization configuration
+    * `dns` - (Optional) The DNS configuration
+        * `domain` - (Optional) The DNS search domain
+        * `server` - (Optional) The DNS server
+    * `hostname` - (Optional) The hostname
+    * `ip_config` - (Optional) The IP configuration (one block per network device)
+        * `ipv4` - (Optional) The IPv4 configuration
+            * `address` - (Optional) The IPv4 address (use `dhcp` for autodiscovery)
+            * `gateway` - (Optional) The IPv4 gateway (must be omitted when `dhcp` is used as the address)
+        * `ipv6` - (Optional) The IPv4 configuration
+            * `address` - (Optional) The IPv6 address (use `dhcp` for autodiscovery)
+            * `gateway` - (Optional) The IPv6 gateway (must be omitted when `dhcp` is used as the address)
+    * `user_account` - (Optional) The user account configuration
+        * `keys` - (Optional) The SSH keys for the root account
+        * `password` - (Optional) The password for the root account
+* `memory` - (Optional) The memory configuration
+    * `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`)
+    * `swap` - (Optional) The swap size in megabytes (defaults to `0`)
+* `network_interface` - (Optional) A network interface (multiple blocks supported)
+    * `bridge` - (Optional) The name of the network bridge (defaults to `vmbr0`)
+    * `enabled` - (Optional) Whether to enable the network device (defaults to `true`)
+    * `mac_address` - (Optional) The MAC address
+    * `name` - (Required) The network interface name
+    * `rate_limit` - (Optional) The rate limit in megabytes per second
+    * `vlan_id` - (Optional) The VLAN identifier
+* `node_name` - (Required) The name of the node to assign the container to
+* `operating_system` - (Required) The Operating System configuration
+    * `template_file_id` - (Required) The ID of an OS template file
+    * `type` - (Optional) The type (defaults to `unmanaged`)
+        * `alpine` - Alpine
+        * `archlinux` - Arch Linux
+        * `centos` - CentOS
+        * `debian` - Debian
+        * `fedora` - Fedora
+        * `gentoo` - Gentoo
+        * `opensuse` - openSUSE
+        * `ubuntu` - Ubuntu
+        * `unmanaged` - Unmanaged
+* `pool_id` - (Optional) The ID of a pool to assign the container to
+* `started` - (Optional) Whether to start the container (defaults to `true`)
+* `vm_id` - (Optional) The ID
+
+###### Attributes
+This resource doesn't expose any additional attributes.
+
 ##### DNS (proxmox_virtual_environment_dns)
 
 ###### Arguments
@@ -400,7 +465,7 @@ This resource doesn't expose any additional attributes.
 ###### Attributes
 This resource doesn't expose any additional attributes.
 
-##### VM (proxmox_virtual_environment_vm)
+##### Virtual Machine (proxmox_virtual_environment_vm)
 
 ###### Arguments
 * `acpi` - (Optional) Whether to enable ACPI (defaults to `true`)
@@ -416,23 +481,10 @@ This resource doesn't expose any additional attributes.
 * `cdrom` - (Optional) The CDROM configuration
     * `enabled` - (Optional) Whether to enable the CDROM drive (defaults to `false`)
     * `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as in the physical drive)
-* `cloud_init` - (Optional) The cloud-init configuration (conflicts with `cdrom`)
-    * `dns` - (Optional) The DNS configuration
-        * `domain` - (Optional) The DNS search domain
-        * `server` - (Optional) The DNS server
-    * `ip_config` - (Optional) The IP configuration (one block per network device)
-        * `ipv4` - (Optional) The IPv4 configuration
-            * `address` - (Optional) The IPv4 address (use `dhcp` for autodiscovery)
-            * `gateway` - (Optional) The IPv4 gateway (must be omitted when `dhcp` is used as the address)
-        * `ipv6` - (Optional) The IPv4 configuration
-            * `address` - (Optional) The IPv6 address (use `dhcp` for autodiscovery)
-            * `gateway` - (Optional) The IPv6 gateway (must be omitted when `dhcp` is used as the address)
-    * `user_account` - (Required) The user account configuration (conflicts with `user_data_file_id`)
-        * `keys` - (Required) The SSH keys
-        * `password` - (Optional) The SSH password
-        * `username` - (Required) The SSH username
-    * `user_data_file_id` - (Optional) The ID of a file containing custom user data (conflicts with `user_account`)
 * `cpu` - (Optional) The CPU configuration
+    * `architecture` - (Optional) The CPU architecture (defaults to `x86_64`)
+        * `aarch64` - ARM (64 bit)
+        * `x86_64` - x86 (64-bit)
     * `cores` - (Optional) The number of CPU cores (defaults to `1`)
     * `flags` - (Optional) The CPU flags
         * `+aes`/`-aes` - Activate AES instruction set for HW acceleration
@@ -482,7 +534,7 @@ This resource doesn't expose any additional attributes.
         * `qemu32`/`qemu64` - QEMU Virtual CPU version 2.5+ (32 & 64 bit variants)
     * `units` - (Optional) The CPU units (defaults to `1024`)
 * `description` - (Optional) The description
-* `disk` - (Optional) The disk configuration (multiple blocks supported)
+* `disk` - (Optional) A disk (multiple blocks supported)
     * `datastore_id` - (Optional) The ID of the datastore to create the disk in (defaults to `local-lvm`)
     * `file_format` - (Optional) The file format (defaults to `qcow2`)
         * `qcow2` - QEMU Disk Image v2
@@ -495,6 +547,22 @@ This resource doesn't expose any additional attributes.
         * `read_burstable` - (Optional) The maximum burstable read speed in megabytes per second
         * `write` - (Optional) The maximum write speed in megabytes per second
         * `write_burstable` - (Optional) The maximum burstable write speed in megabytes per second
+* `initialization` - (Optional) The cloud-init configuration (conflicts with `cdrom`)
+    * `dns` - (Optional) The DNS configuration
+        * `domain` - (Optional) The DNS search domain
+        * `server` - (Optional) The DNS server
+    * `ip_config` - (Optional) The IP configuration (one block per network device)
+        * `ipv4` - (Optional) The IPv4 configuration
+            * `address` - (Optional) The IPv4 address (use `dhcp` for autodiscovery)
+            * `gateway` - (Optional) The IPv4 gateway (must be omitted when `dhcp` is used as the address)
+        * `ipv6` - (Optional) The IPv4 configuration
+            * `address` - (Optional) The IPv6 address (use `dhcp` for autodiscovery)
+            * `gateway` - (Optional) The IPv6 gateway (must be omitted when `dhcp` is used as the address)
+    * `user_account` - (Optional) The user account configuration (conflicts with `user_data_file_id`)
+        * `keys` - (Optional) The SSH keys
+        * `password` - (Optional) The SSH password
+        * `username` - (Optional) The SSH username
+    * `user_data_file_id` - (Optional) The ID of a file containing custom user data (conflicts with `user_account`)
 * `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`)
     * `da` - Danish
     * `de` - German
@@ -526,7 +594,7 @@ This resource doesn't expose any additional attributes.
     * `floating` - (Optional) The floating memory in megabytes (defaults to `0`)
     * `shared` - (Optional) The shared memory in megabytes (defaults to `0`)
 * `name` - (Optional) The name
-* `network_device` - (Optional) The network device configuration (multiple blocks supported)
+* `network_device` - (Optional) A network device (multiple blocks supported)
     * `bridge` - (Optional) The name of the network bridge (defaults to `vmbr0`)
     * `enabled` - (Optional) Whether to enable the network device (defaults to `true`)
     * `mac_address` - (Optional) The MAC address
@@ -538,19 +606,20 @@ This resource doesn't expose any additional attributes.
     * `rate_limit` - (Optional) The rate limit in megabytes per second
     * `vlan_id` - (Optional) The VLAN identifier
 * `node_name` - (Required) The name of the node to assign the virtual machine to
-* `os_type` - (Optional) The OS type (defaults to `other`)
-    * `l24` - Linux Kernel 2.4
-    * `l26` - Linux Kernel 2.6 - 5.X
-    * `other` - Unspecified OS
-    * `solaris` - OpenIndiania, OpenSolaris og Solaris Kernel
-    * `w2k` - Windows 2000
-    * `w2k3` - Windows 2003
-    * `w2k8` - Windows 2008
-    * `win7` - Windows 7
-    * `win8` - Windows 8, 2012 or 2012 R2
-    * `win10` - Windows 10 or 2016
-    * `wvista` - Windows Vista
-    * `wxp` - Windows XP
+* `operating_system` - (Required) The Operating System configuration
+    * `type` - (Optional) The type (defaults to `other`)
+        * `l24` - Linux Kernel 2.4
+        * `l26` - Linux Kernel 2.6 - 5.X
+        * `other` - Unspecified OS
+        * `solaris` - OpenIndiania, OpenSolaris og Solaris Kernel
+        * `w2k` - Windows 2000
+        * `w2k3` - Windows 2003
+        * `w2k8` - Windows 2008
+        * `win7` - Windows 7
+        * `win8` - Windows 8, 2012 or 2012 R2
+        * `win10` - Windows 10 or 2016
+        * `wvista` - Windows Vista
+        * `wxp` - Windows XP
 * `pool_id` - (Optional) The ID of a pool to assign the virtual machine to
 * `started` - (Optional) Whether to start the virtual machine (defaults to `true`)
 * `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults to `true`)

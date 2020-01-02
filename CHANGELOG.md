@@ -1,10 +1,16 @@
 ## 0.2.0 (UNRELEASED)
 
+BREAKING CHANGES:
+
+* resource/virtual_environment_vm: Rename `cloud_init` argument to `initialization`
+* resource/virtual_environment_vm: Rename `os_type` argument to `os.type`
+
 FEATURES:
 
 * **New Data Source:** `proxmox_virtual_environment_dns`
 * **New Data Source:** `proxmox_virtual_environment_hosts`
 * **New Resource:** `proxmox_virtual_environment_certificate`
+* **New Resource:** `proxmox_virtual_environment_container`
 * **New Resource:** `proxmox_virtual_environment_dns`
 * **New Resource:** `proxmox_virtual_environment_hosts`
 
@@ -12,7 +18,7 @@ ENHANCEMENTS:
 
 * resource/virtual_environment_vm: Add `acpi` argument
 * resource/virtual_environment_vm: Add `bios` argument
-* resource/virtual_environment_vm: Add `cpu.flags`, `cpu.type` and `cpu.units` arguments
+* resource/virtual_environment_vm: Add `cpu.architecture`, `cpu.flags`, `cpu.type` and `cpu.units` arguments
 * resource/virtual_environment_vm: Add `tablet_device` argument
 * resource/virtual_environment_vm: Add `vga` argument
 

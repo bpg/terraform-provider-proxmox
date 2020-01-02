@@ -16,121 +16,128 @@ import (
 )
 
 const (
-	dvResourceVirtualEnvironmentVMACPI                         = true
-	dvResourceVirtualEnvironmentVMAgentEnabled                 = false
-	dvResourceVirtualEnvironmentVMAgentTrim                    = false
-	dvResourceVirtualEnvironmentVMAgentType                    = "virtio"
-	dvResourceVirtualEnvironmentVMBIOS                         = "seabios"
-	dvResourceVirtualEnvironmentVMCDROMEnabled                 = false
-	dvResourceVirtualEnvironmentVMCDROMFileID                  = ""
-	dvResourceVirtualEnvironmentVMCloudInitDNSDomain           = ""
-	dvResourceVirtualEnvironmentVMCloudInitDNSServer           = ""
-	dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword = ""
-	dvResourceVirtualEnvironmentVMCloudInitUserDataFileID      = ""
-	dvResourceVirtualEnvironmentVMCPUCores                     = 1
-	dvResourceVirtualEnvironmentVMCPUHotplugged                = 0
-	dvResourceVirtualEnvironmentVMCPUSockets                   = 1
-	dvResourceVirtualEnvironmentVMCPUType                      = "qemu64"
-	dvResourceVirtualEnvironmentVMCPUUnits                     = 1024
-	dvResourceVirtualEnvironmentVMDescription                  = ""
-	dvResourceVirtualEnvironmentVMDiskDatastoreID              = "local-lvm"
-	dvResourceVirtualEnvironmentVMDiskFileFormat               = "qcow2"
-	dvResourceVirtualEnvironmentVMDiskFileID                   = ""
-	dvResourceVirtualEnvironmentVMDiskSize                     = 8
-	dvResourceVirtualEnvironmentVMDiskSpeedRead                = 0
-	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable       = 0
-	dvResourceVirtualEnvironmentVMDiskSpeedWrite               = 0
-	dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable      = 0
-	dvResourceVirtualEnvironmentVMKeyboardLayout               = "en-us"
-	dvResourceVirtualEnvironmentVMMemoryDedicated              = 512
-	dvResourceVirtualEnvironmentVMMemoryFloating               = 0
-	dvResourceVirtualEnvironmentVMMemoryShared                 = 0
-	dvResourceVirtualEnvironmentVMName                         = ""
-	dvResourceVirtualEnvironmentVMNetworkDeviceBridge          = "vmbr0"
-	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled         = true
-	dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress      = ""
-	dvResourceVirtualEnvironmentVMNetworkDeviceModel           = "virtio"
-	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit       = 0
-	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID          = 0
-	dvResourceVirtualEnvironmentVMOSType                       = "other"
-	dvResourceVirtualEnvironmentVMPoolID                       = ""
-	dvResourceVirtualEnvironmentVMStarted                      = true
-	dvResourceVirtualEnvironmentVMTabletDevice                 = true
-	dvResourceVirtualEnvironmentVMVGAEnabled                   = true
-	dvResourceVirtualEnvironmentVMVGAMemory                    = 16
-	dvResourceVirtualEnvironmentVMVGAType                      = "std"
-	dvResourceVirtualEnvironmentVMVMID                         = -1
+	dvResourceVirtualEnvironmentVMACPI                              = true
+	dvResourceVirtualEnvironmentVMAgentEnabled                      = false
+	dvResourceVirtualEnvironmentVMAgentTrim                         = false
+	dvResourceVirtualEnvironmentVMAgentType                         = "virtio"
+	dvResourceVirtualEnvironmentVMBIOS                              = "seabios"
+	dvResourceVirtualEnvironmentVMCDROMEnabled                      = false
+	dvResourceVirtualEnvironmentVMCDROMFileID                       = ""
+	dvResourceVirtualEnvironmentVMCPUArchitecture                   = "x86_64"
+	dvResourceVirtualEnvironmentVMCPUCores                          = 1
+	dvResourceVirtualEnvironmentVMCPUHotplugged                     = 0
+	dvResourceVirtualEnvironmentVMCPUSockets                        = 1
+	dvResourceVirtualEnvironmentVMCPUType                           = "qemu64"
+	dvResourceVirtualEnvironmentVMCPUUnits                          = 1024
+	dvResourceVirtualEnvironmentVMDescription                       = ""
+	dvResourceVirtualEnvironmentVMDiskDatastoreID                   = "local-lvm"
+	dvResourceVirtualEnvironmentVMDiskFileFormat                    = "qcow2"
+	dvResourceVirtualEnvironmentVMDiskFileID                        = ""
+	dvResourceVirtualEnvironmentVMDiskSize                          = 8
+	dvResourceVirtualEnvironmentVMDiskSpeedRead                     = 0
+	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
+	dvResourceVirtualEnvironmentVMDiskSpeedWrite                    = 0
+	dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable           = 0
+	dvResourceVirtualEnvironmentVMInitializationDNSDomain           = ""
+	dvResourceVirtualEnvironmentVMInitializationDNSServer           = ""
+	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address = ""
+	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway = ""
+	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address = ""
+	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway = ""
+	dvResourceVirtualEnvironmentVMInitializationUserAccountPassword = ""
+	dvResourceVirtualEnvironmentVMInitializationUserDataFileID      = ""
+	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
+	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
+	dvResourceVirtualEnvironmentVMMemoryFloating                    = 0
+	dvResourceVirtualEnvironmentVMMemoryShared                      = 0
+	dvResourceVirtualEnvironmentVMName                              = ""
+	dvResourceVirtualEnvironmentVMNetworkDeviceBridge               = "vmbr0"
+	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled              = true
+	dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress           = ""
+	dvResourceVirtualEnvironmentVMNetworkDeviceModel                = "virtio"
+	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = 0
+	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID               = 0
+	dvResourceVirtualEnvironmentVMOperatingSystemType               = "other"
+	dvResourceVirtualEnvironmentVMPoolID                            = ""
+	dvResourceVirtualEnvironmentVMStarted                           = true
+	dvResourceVirtualEnvironmentVMTabletDevice                      = true
+	dvResourceVirtualEnvironmentVMVGAEnabled                        = true
+	dvResourceVirtualEnvironmentVMVGAMemory                         = 16
+	dvResourceVirtualEnvironmentVMVGAType                           = "std"
+	dvResourceVirtualEnvironmentVMVMID                              = -1
 
-	mkResourceVirtualEnvironmentVMACPI                         = "acpi"
-	mkResourceVirtualEnvironmentVMAgent                        = "agent"
-	mkResourceVirtualEnvironmentVMAgentEnabled                 = "enabled"
-	mkResourceVirtualEnvironmentVMAgentTrim                    = "trim"
-	mkResourceVirtualEnvironmentVMAgentType                    = "type"
-	mkResourceVirtualEnvironmentVMBIOS                         = "bios"
-	mkResourceVirtualEnvironmentVMCDROM                        = "cdrom"
-	mkResourceVirtualEnvironmentVMCDROMEnabled                 = "enabled"
-	mkResourceVirtualEnvironmentVMCDROMFileID                  = "file_id"
-	mkResourceVirtualEnvironmentVMCloudInit                    = "cloud_init"
-	mkResourceVirtualEnvironmentVMCloudInitDNS                 = "dns"
-	mkResourceVirtualEnvironmentVMCloudInitDNSDomain           = "domain"
-	mkResourceVirtualEnvironmentVMCloudInitDNSServer           = "server"
-	mkResourceVirtualEnvironmentVMCloudInitIPConfig            = "ip_config"
-	mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4        = "ipv4"
-	mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address = "address"
-	mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway = "gateway"
-	mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6        = "ipv6"
-	mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Address = "address"
-	mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway = "gateway"
-	mkResourceVirtualEnvironmentVMCloudInitUserAccount         = "user_account"
-	mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys     = "keys"
-	mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword = "password"
-	mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername = "username"
-	mkResourceVirtualEnvironmentVMCloudInitUserDataFileID      = "user_data_file_id"
-	mkResourceVirtualEnvironmentVMCPU                          = "cpu"
-	mkResourceVirtualEnvironmentVMCPUCores                     = "cores"
-	mkResourceVirtualEnvironmentVMCPUFlags                     = "flags"
-	mkResourceVirtualEnvironmentVMCPUHotplugged                = "hotplugged"
-	mkResourceVirtualEnvironmentVMCPUSockets                   = "sockets"
-	mkResourceVirtualEnvironmentVMCPUType                      = "type"
-	mkResourceVirtualEnvironmentVMCPUUnits                     = "units"
-	mkResourceVirtualEnvironmentVMDescription                  = "description"
-	mkResourceVirtualEnvironmentVMDisk                         = "disk"
-	mkResourceVirtualEnvironmentVMDiskDatastoreID              = "datastore_id"
-	mkResourceVirtualEnvironmentVMDiskFileFormat               = "file_format"
-	mkResourceVirtualEnvironmentVMDiskFileID                   = "file_id"
-	mkResourceVirtualEnvironmentVMDiskSize                     = "size"
-	mkResourceVirtualEnvironmentVMDiskSpeed                    = "speed"
-	mkResourceVirtualEnvironmentVMDiskSpeedRead                = "read"
-	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable       = "read_burstable"
-	mkResourceVirtualEnvironmentVMDiskSpeedWrite               = "write"
-	mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable      = "write_burstable"
-	mkResourceVirtualEnvironmentVMIPv4Addresses                = "ipv4_addresses"
-	mkResourceVirtualEnvironmentVMIPv6Addresses                = "ipv6_addresses"
-	mkResourceVirtualEnvironmentVMKeyboardLayout               = "keyboard_layout"
-	mkResourceVirtualEnvironmentVMMACAddresses                 = "mac_addresses"
-	mkResourceVirtualEnvironmentVMMemory                       = "memory"
-	mkResourceVirtualEnvironmentVMMemoryDedicated              = "dedicated"
-	mkResourceVirtualEnvironmentVMMemoryFloating               = "floating"
-	mkResourceVirtualEnvironmentVMMemoryShared                 = "shared"
-	mkResourceVirtualEnvironmentVMName                         = "name"
-	mkResourceVirtualEnvironmentVMNetworkDevice                = "network_device"
-	mkResourceVirtualEnvironmentVMNetworkDeviceBridge          = "bridge"
-	mkResourceVirtualEnvironmentVMNetworkDeviceEnabled         = "enabled"
-	mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress      = "mac_address"
-	mkResourceVirtualEnvironmentVMNetworkDeviceModel           = "model"
-	mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit       = "rate_limit"
-	mkResourceVirtualEnvironmentVMNetworkDeviceVLANID          = "vlan_id"
-	mkResourceVirtualEnvironmentVMNetworkInterfaceNames        = "network_interface_names"
-	mkResourceVirtualEnvironmentVMNodeName                     = "node_name"
-	mkResourceVirtualEnvironmentVMOSType                       = "os_type"
-	mkResourceVirtualEnvironmentVMPoolID                       = "pool_id"
-	mkResourceVirtualEnvironmentVMStarted                      = "started"
-	mkResourceVirtualEnvironmentVMTabletDevice                 = "tablet_device"
-	mkResourceVirtualEnvironmentVMVGA                          = "vga"
-	mkResourceVirtualEnvironmentVMVGAEnabled                   = "enabled"
-	mkResourceVirtualEnvironmentVMVGAMemory                    = "memory"
-	mkResourceVirtualEnvironmentVMVGAType                      = "type"
-	mkResourceVirtualEnvironmentVMVMID                         = "vm_id"
+	mkResourceVirtualEnvironmentVMACPI                              = "acpi"
+	mkResourceVirtualEnvironmentVMAgent                             = "agent"
+	mkResourceVirtualEnvironmentVMAgentEnabled                      = "enabled"
+	mkResourceVirtualEnvironmentVMAgentTrim                         = "trim"
+	mkResourceVirtualEnvironmentVMAgentType                         = "type"
+	mkResourceVirtualEnvironmentVMBIOS                              = "bios"
+	mkResourceVirtualEnvironmentVMCDROM                             = "cdrom"
+	mkResourceVirtualEnvironmentVMCDROMEnabled                      = "enabled"
+	mkResourceVirtualEnvironmentVMCDROMFileID                       = "file_id"
+	mkResourceVirtualEnvironmentVMCPU                               = "cpu"
+	mkResourceVirtualEnvironmentVMCPUArchitecture                   = "architecture"
+	mkResourceVirtualEnvironmentVMCPUCores                          = "cores"
+	mkResourceVirtualEnvironmentVMCPUFlags                          = "flags"
+	mkResourceVirtualEnvironmentVMCPUHotplugged                     = "hotplugged"
+	mkResourceVirtualEnvironmentVMCPUSockets                        = "sockets"
+	mkResourceVirtualEnvironmentVMCPUType                           = "type"
+	mkResourceVirtualEnvironmentVMCPUUnits                          = "units"
+	mkResourceVirtualEnvironmentVMDescription                       = "description"
+	mkResourceVirtualEnvironmentVMDisk                              = "disk"
+	mkResourceVirtualEnvironmentVMDiskDatastoreID                   = "datastore_id"
+	mkResourceVirtualEnvironmentVMDiskFileFormat                    = "file_format"
+	mkResourceVirtualEnvironmentVMDiskFileID                        = "file_id"
+	mkResourceVirtualEnvironmentVMDiskSize                          = "size"
+	mkResourceVirtualEnvironmentVMDiskSpeed                         = "speed"
+	mkResourceVirtualEnvironmentVMDiskSpeedRead                     = "read"
+	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = "read_burstable"
+	mkResourceVirtualEnvironmentVMDiskSpeedWrite                    = "write"
+	mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable           = "write_burstable"
+	mkResourceVirtualEnvironmentVMInitialization                    = "initialization"
+	mkResourceVirtualEnvironmentVMInitializationDNS                 = "dns"
+	mkResourceVirtualEnvironmentVMInitializationDNSDomain           = "domain"
+	mkResourceVirtualEnvironmentVMInitializationDNSServer           = "server"
+	mkResourceVirtualEnvironmentVMInitializationIPConfig            = "ip_config"
+	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4        = "ipv4"
+	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address = "address"
+	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway = "gateway"
+	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6        = "ipv6"
+	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address = "address"
+	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway = "gateway"
+	mkResourceVirtualEnvironmentVMInitializationUserAccount         = "user_account"
+	mkResourceVirtualEnvironmentVMInitializationUserAccountKeys     = "keys"
+	mkResourceVirtualEnvironmentVMInitializationUserAccountPassword = "password"
+	mkResourceVirtualEnvironmentVMInitializationUserAccountUsername = "username"
+	mkResourceVirtualEnvironmentVMInitializationUserDataFileID      = "user_data_file_id"
+	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
+	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
+	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
+	mkResourceVirtualEnvironmentVMMACAddresses                      = "mac_addresses"
+	mkResourceVirtualEnvironmentVMMemory                            = "memory"
+	mkResourceVirtualEnvironmentVMMemoryDedicated                   = "dedicated"
+	mkResourceVirtualEnvironmentVMMemoryFloating                    = "floating"
+	mkResourceVirtualEnvironmentVMMemoryShared                      = "shared"
+	mkResourceVirtualEnvironmentVMName                              = "name"
+	mkResourceVirtualEnvironmentVMNetworkDevice                     = "network_device"
+	mkResourceVirtualEnvironmentVMNetworkDeviceBridge               = "bridge"
+	mkResourceVirtualEnvironmentVMNetworkDeviceEnabled              = "enabled"
+	mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress           = "mac_address"
+	mkResourceVirtualEnvironmentVMNetworkDeviceModel                = "model"
+	mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = "rate_limit"
+	mkResourceVirtualEnvironmentVMNetworkDeviceVLANID               = "vlan_id"
+	mkResourceVirtualEnvironmentVMNetworkInterfaceNames             = "network_interface_names"
+	mkResourceVirtualEnvironmentVMNodeName                          = "node_name"
+	mkResourceVirtualEnvironmentVMOperatingSystem                   = "operating_system"
+	mkResourceVirtualEnvironmentVMOperatingSystemType               = "type"
+	mkResourceVirtualEnvironmentVMPoolID                            = "pool_id"
+	mkResourceVirtualEnvironmentVMStarted                           = "started"
+	mkResourceVirtualEnvironmentVMTabletDevice                      = "tablet_device"
+	mkResourceVirtualEnvironmentVMVGA                               = "vga"
+	mkResourceVirtualEnvironmentVMVGAEnabled                        = "enabled"
+	mkResourceVirtualEnvironmentVMVGAMemory                         = "memory"
+	mkResourceVirtualEnvironmentVMVGAType                           = "type"
+	mkResourceVirtualEnvironmentVMVMID                              = "vm_id"
 )
 
 func resourceVirtualEnvironmentVM() *schema.Resource {
@@ -226,159 +233,6 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMCloudInit: &schema.Schema{
-				Type:        schema.TypeList,
-				Description: "The cloud-init configuration",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMCloudInitDNS: {
-							Type:        schema.TypeList,
-							Description: "The DNS configuration",
-							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
-							},
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									mkResourceVirtualEnvironmentVMCloudInitDNSDomain: {
-										Type:        schema.TypeString,
-										Description: "The DNS search domain",
-										Optional:    true,
-										Default:     dvResourceVirtualEnvironmentVMCloudInitDNSDomain,
-									},
-									mkResourceVirtualEnvironmentVMCloudInitDNSServer: {
-										Type:        schema.TypeString,
-										Description: "The DNS server",
-										Optional:    true,
-										Default:     dvResourceVirtualEnvironmentVMCloudInitDNSServer,
-									},
-								},
-							},
-							MaxItems: 1,
-							MinItems: 0,
-						},
-						mkResourceVirtualEnvironmentVMCloudInitIPConfig: {
-							Type:        schema.TypeList,
-							Description: "The IP configuration",
-							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
-							},
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4: {
-										Type:        schema.TypeList,
-										Description: "The IPv4 configuration",
-										Optional:    true,
-										DefaultFunc: func() (interface{}, error) {
-											return []interface{}{}, nil
-										},
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address: {
-													Type:        schema.TypeString,
-													Description: "The IPv4 address",
-													Optional:    true,
-													Default:     "",
-												},
-												mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway: {
-													Type:        schema.TypeString,
-													Description: "The IPv4 gateway",
-													Optional:    true,
-													Default:     "",
-												},
-											},
-										},
-										MaxItems: 1,
-										MinItems: 0,
-									},
-									mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6: {
-										Type:        schema.TypeList,
-										Description: "The IPv6 configuration",
-										Optional:    true,
-										DefaultFunc: func() (interface{}, error) {
-											return []interface{}{}, nil
-										},
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Address: {
-													Type:        schema.TypeString,
-													Description: "The IPv6 address",
-													Optional:    true,
-													Default:     "",
-												},
-												mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway: {
-													Type:        schema.TypeString,
-													Description: "The IPv6 gateway",
-													Optional:    true,
-													Default:     "",
-												},
-											},
-										},
-										MaxItems: 1,
-										MinItems: 0,
-									},
-								},
-							},
-							MaxItems: 8,
-							MinItems: 0,
-						},
-						mkResourceVirtualEnvironmentVMCloudInitUserAccount: {
-							Type:        schema.TypeList,
-							Description: "The user account configuration",
-							Required:    true,
-							ForceNew:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
-							},
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys: {
-										Type:        schema.TypeList,
-										Description: "The SSH keys",
-										Required:    true,
-										ForceNew:    true,
-										Elem:        &schema.Schema{Type: schema.TypeString},
-									},
-									mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword: {
-										Type:        schema.TypeString,
-										Description: "The SSH password",
-										Optional:    true,
-										ForceNew:    true,
-										Sensitive:   true,
-										Default:     dvResourceVirtualEnvironmentVMCloudInitUserAccountPassword,
-										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-											return strings.ReplaceAll(old, "*", "") == ""
-										},
-									},
-									mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername: {
-										Type:        schema.TypeString,
-										Description: "The SSH username",
-										Required:    true,
-										ForceNew:    true,
-									},
-								},
-							},
-							MaxItems: 1,
-							MinItems: 0,
-						},
-						mkResourceVirtualEnvironmentVMCloudInitUserDataFileID: {
-							Type:         schema.TypeString,
-							Description:  "The ID of a file containing custom user data",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMCloudInitUserDataFileID,
-							ValidateFunc: getFileIDValidator(),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
 			mkResourceVirtualEnvironmentVMCPU: &schema.Schema{
 				Type:        schema.TypeList,
 				Description: "The CPU allocation",
@@ -387,6 +241,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					defaultList := make([]interface{}, 1)
 					defaultMap := map[string]interface{}{}
 
+					defaultMap[mkResourceVirtualEnvironmentVMCPUArchitecture] = dvResourceVirtualEnvironmentVMCPUArchitecture
 					defaultMap[mkResourceVirtualEnvironmentVMCPUCores] = dvResourceVirtualEnvironmentVMCPUCores
 					defaultMap[mkResourceVirtualEnvironmentVMCPUFlags] = []interface{}{}
 					defaultMap[mkResourceVirtualEnvironmentVMCPUHotplugged] = dvResourceVirtualEnvironmentVMCPUHotplugged
@@ -400,6 +255,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMCPUArchitecture: {
+							Type:         schema.TypeString,
+							Description:  "The CPU architecture",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMCPUArchitecture,
+							ValidateFunc: resourceVirtualEnvironmentVMGetCPUArchitectureValidator(),
+						},
 						mkResourceVirtualEnvironmentVMCPUCores: {
 							Type:         schema.TypeInt,
 							Description:  "The number of CPU cores",
@@ -559,6 +421,159 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 14,
 				MinItems: 0,
 			},
+			mkResourceVirtualEnvironmentVMInitialization: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The cloud-init configuration",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMInitializationDNS: {
+							Type:        schema.TypeList,
+							Description: "The DNS configuration",
+							Optional:    true,
+							DefaultFunc: func() (interface{}, error) {
+								return []interface{}{}, nil
+							},
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									mkResourceVirtualEnvironmentVMInitializationDNSDomain: {
+										Type:        schema.TypeString,
+										Description: "The DNS search domain",
+										Optional:    true,
+										Default:     dvResourceVirtualEnvironmentVMInitializationDNSDomain,
+									},
+									mkResourceVirtualEnvironmentVMInitializationDNSServer: {
+										Type:        schema.TypeString,
+										Description: "The DNS server",
+										Optional:    true,
+										Default:     dvResourceVirtualEnvironmentVMInitializationDNSServer,
+									},
+								},
+							},
+							MaxItems: 1,
+							MinItems: 0,
+						},
+						mkResourceVirtualEnvironmentVMInitializationIPConfig: {
+							Type:        schema.TypeList,
+							Description: "The IP configuration",
+							Optional:    true,
+							DefaultFunc: func() (interface{}, error) {
+								return []interface{}{}, nil
+							},
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4: {
+										Type:        schema.TypeList,
+										Description: "The IPv4 configuration",
+										Optional:    true,
+										DefaultFunc: func() (interface{}, error) {
+											return []interface{}{}, nil
+										},
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address: {
+													Type:        schema.TypeString,
+													Description: "The IPv4 address",
+													Optional:    true,
+													Default:     dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address,
+												},
+												mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway: {
+													Type:        schema.TypeString,
+													Description: "The IPv4 gateway",
+													Optional:    true,
+													Default:     dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway,
+												},
+											},
+										},
+										MaxItems: 1,
+										MinItems: 0,
+									},
+									mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6: {
+										Type:        schema.TypeList,
+										Description: "The IPv6 configuration",
+										Optional:    true,
+										DefaultFunc: func() (interface{}, error) {
+											return []interface{}{}, nil
+										},
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address: {
+													Type:        schema.TypeString,
+													Description: "The IPv6 address",
+													Optional:    true,
+													Default:     dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address,
+												},
+												mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway: {
+													Type:        schema.TypeString,
+													Description: "The IPv6 gateway",
+													Optional:    true,
+													Default:     dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway,
+												},
+											},
+										},
+										MaxItems: 1,
+										MinItems: 0,
+									},
+								},
+							},
+							MaxItems: 8,
+							MinItems: 0,
+						},
+						mkResourceVirtualEnvironmentVMInitializationUserAccount: {
+							Type:        schema.TypeList,
+							Description: "The user account configuration",
+							Optional:    true,
+							ForceNew:    true,
+							DefaultFunc: func() (interface{}, error) {
+								return []interface{}{}, nil
+							},
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									mkResourceVirtualEnvironmentVMInitializationUserAccountKeys: {
+										Type:        schema.TypeList,
+										Description: "The SSH keys",
+										Optional:    true,
+										ForceNew:    true,
+										Elem:        &schema.Schema{Type: schema.TypeString},
+									},
+									mkResourceVirtualEnvironmentVMInitializationUserAccountPassword: {
+										Type:        schema.TypeString,
+										Description: "The SSH password",
+										Optional:    true,
+										ForceNew:    true,
+										Sensitive:   true,
+										Default:     dvResourceVirtualEnvironmentVMInitializationUserAccountPassword,
+										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+											return strings.ReplaceAll(old, "*", "") == ""
+										},
+									},
+									mkResourceVirtualEnvironmentVMInitializationUserAccountUsername: {
+										Type:        schema.TypeString,
+										Description: "The SSH username",
+										Optional:    true,
+										ForceNew:    true,
+									},
+								},
+							},
+							MaxItems: 1,
+							MinItems: 0,
+						},
+						mkResourceVirtualEnvironmentVMInitializationUserDataFileID: {
+							Type:         schema.TypeString,
+							Description:  "The ID of a file containing custom user data",
+							Optional:     true,
+							ForceNew:     true,
+							Default:      dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
+							ValidateFunc: getFileIDValidator(),
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
 			mkResourceVirtualEnvironmentVMIPv4Addresses: {
 				Type:        schema.TypeList,
 				Description: "The IPv4 addresses published by the QEMU agent",
@@ -707,12 +722,33 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentVMOSType: {
-				Type:         schema.TypeString,
-				Description:  "The OS type",
-				Optional:     true,
-				Default:      dvResourceVirtualEnvironmentVMOSType,
-				ValidateFunc: getOSTypeValidator(),
+			mkResourceVirtualEnvironmentVMOperatingSystem: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The operating system configuration",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					defaultList := make([]interface{}, 1)
+					defaultMap := map[string]interface{}{}
+
+					defaultMap[mkResourceVirtualEnvironmentVMOperatingSystemType] = dvResourceVirtualEnvironmentVMOperatingSystemType
+
+					defaultList[0] = defaultMap
+
+					return defaultList, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMOperatingSystemType: {
+							Type:         schema.TypeString,
+							Description:  "The type",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMOperatingSystemType,
+							ValidateFunc: resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator(),
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMPoolID: {
 				Type:        schema.TypeString,
@@ -829,23 +865,13 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		cdromFileID = "cdrom"
 	}
 
-	cloudInitConfig, err := resourceVirtualEnvironmentVMGetCloudConfig(d, m)
-
-	if err != nil {
-		return err
-	}
-
-	if cloudInitConfig != nil {
-		cdromEnabled = true
-		cdromFileID = "local-lvm:cloudinit"
-	}
-
 	cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
 
 	if err != nil {
 		return err
 	}
 
+	cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentVMCPUArchitecture].(string)
 	cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 	cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 	cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
@@ -858,6 +884,17 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	if err != nil {
 		return err
+	}
+
+	initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
+
+	if err != nil {
+		return err
+	}
+
+	if initializationConfig != nil {
+		cdromEnabled = true
+		cdromFileID = "local-lvm:cloudinit"
 	}
 
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
@@ -880,7 +917,15 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
-	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
+
+	operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
+
+	if err != nil {
+		return err
+	}
+
+	operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
+
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
 	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
@@ -953,7 +998,8 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		BIOS:            &bios,
 		BootDisk:        &bootDisk,
 		BootOrder:       &bootOrder,
-		CloudInitConfig: cloudInitConfig,
+		CloudInitConfig: initializationConfig,
+		CPUArchitecture: &cpuArchitecture,
 		CPUCores:        &cpuCores,
 		CPUEmulation: &proxmox.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
@@ -966,7 +1012,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		IDEDevices:          ideDevices,
 		KeyboardLayout:      &keyboardLayout,
 		NetworkDevices:      networkDeviceObjects,
-		OSType:              &osType,
+		OSType:              &operatingSystemType,
 		PoolID:              &poolID,
 		SCSIDevices:         diskDeviceObjects,
 		SCSIHardware:        &scsiHardware,
@@ -1153,7 +1199,7 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 		return err
 	}
 
-	err = veClient.WaitForState(nodeName, vmID, "running", 120, 5)
+	err = veClient.WaitForVMState(nodeName, vmID, "running", 120, 5)
 
 	if err != nil {
 		return err
@@ -1162,76 +1208,76 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 	return resourceVirtualEnvironmentVMRead(d, m)
 }
 
-func resourceVirtualEnvironmentVMGetCloudConfig(d *schema.ResourceData, m interface{}) (*proxmox.CustomCloudInitConfig, error) {
-	var cloudInitConfig *proxmox.CustomCloudInitConfig
+func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m interface{}) (*proxmox.CustomCloudInitConfig, error) {
+	var initializationConfig *proxmox.CustomCloudInitConfig
 
-	cloudInit := d.Get(mkResourceVirtualEnvironmentVMCloudInit).([]interface{})
+	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 
-	if len(cloudInit) > 0 {
-		cloudInitBlock := cloudInit[0].(map[string]interface{})
-		cloudInitConfig = &proxmox.CustomCloudInitConfig{}
-		cloudInitDNS := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitDNS].([]interface{})
+	if len(initialization) > 0 {
+		initializationBlock := initialization[0].(map[string]interface{})
+		initializationConfig = &proxmox.CustomCloudInitConfig{}
+		initializationDNS := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDNS].([]interface{})
 
-		if len(cloudInitDNS) > 0 {
-			cloudInitDNSBlock := cloudInitDNS[0].(map[string]interface{})
-			domain := cloudInitDNSBlock[mkResourceVirtualEnvironmentVMCloudInitDNSDomain].(string)
+		if len(initializationDNS) > 0 {
+			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
+			domain := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSDomain].(string)
 
 			if domain != "" {
-				cloudInitConfig.SearchDomain = &domain
+				initializationConfig.SearchDomain = &domain
 			}
 
-			server := cloudInitDNSBlock[mkResourceVirtualEnvironmentVMCloudInitDNSServer].(string)
+			server := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServer].(string)
 
 			if server != "" {
-				cloudInitConfig.Nameserver = &server
+				initializationConfig.Nameserver = &server
 			}
 		}
 
-		cloudInitIPConfig := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfig].([]interface{})
-		cloudInitConfig.IPConfig = make([]proxmox.CustomCloudInitIPConfig, len(cloudInitIPConfig))
+		initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentVMInitializationIPConfig].([]interface{})
+		initializationConfig.IPConfig = make([]proxmox.CustomCloudInitIPConfig, len(initializationIPConfig))
 
-		for i, c := range cloudInitIPConfig {
+		for i, c := range initializationIPConfig {
 			configBlock := c.(map[string]interface{})
-			ipv4 := configBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4].([]interface{})
+			ipv4 := configBlock[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4].([]interface{})
 
 			if len(ipv4) > 0 {
 				ipv4Block := ipv4[0].(map[string]interface{})
-				ipv4Address := ipv4Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address].(string)
+				ipv4Address := ipv4Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address].(string)
 
 				if ipv4Address != "" {
-					cloudInitConfig.IPConfig[i].IPv4 = &ipv4Address
+					initializationConfig.IPConfig[i].IPv4 = &ipv4Address
 				}
 
-				ipv4Gateway := ipv4Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway].(string)
+				ipv4Gateway := ipv4Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway].(string)
 
 				if ipv4Gateway != "" {
-					cloudInitConfig.IPConfig[i].GatewayIPv4 = &ipv4Gateway
+					initializationConfig.IPConfig[i].GatewayIPv4 = &ipv4Gateway
 				}
 			}
 
-			ipv6 := configBlock[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6].([]interface{})
+			ipv6 := configBlock[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6].([]interface{})
 
 			if len(ipv6) > 0 {
 				ipv6Block := ipv6[0].(map[string]interface{})
-				ipv6Address := ipv6Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Address].(string)
+				ipv6Address := ipv6Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address].(string)
 
 				if ipv6Address != "" {
-					cloudInitConfig.IPConfig[i].IPv6 = &ipv6Address
+					initializationConfig.IPConfig[i].IPv6 = &ipv6Address
 				}
 
-				ipv6Gateway := ipv6Block[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6Gateway].(string)
+				ipv6Gateway := ipv6Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway].(string)
 
 				if ipv6Gateway != "" {
-					cloudInitConfig.IPConfig[i].GatewayIPv6 = &ipv6Gateway
+					initializationConfig.IPConfig[i].GatewayIPv6 = &ipv6Gateway
 				}
 			}
 		}
 
-		cloudInitUserAccount := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccount].([]interface{})
+		initializationUserAccount := initializationBlock[mkResourceVirtualEnvironmentVMInitializationUserAccount].([]interface{})
 
-		if len(cloudInitUserAccount) > 0 {
-			cloudInitUserAccountBlock := cloudInitUserAccount[0].(map[string]interface{})
-			keys := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys].([]interface{})
+		if len(initializationUserAccount) > 0 {
+			initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
+			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountKeys].([]interface{})
 
 			if len(keys) > 0 {
 				sshKeys := make(proxmox.CustomCloudInitSSHKeys, len(keys))
@@ -1240,30 +1286,37 @@ func resourceVirtualEnvironmentVMGetCloudConfig(d *schema.ResourceData, m interf
 					sshKeys[i] = k.(string)
 				}
 
-				cloudInitConfig.SSHKeys = &sshKeys
+				initializationConfig.SSHKeys = &sshKeys
 			}
 
-			password := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword].(string)
+			password := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountPassword].(string)
 
 			if password != "" {
-				cloudInitConfig.Password = &password
+				initializationConfig.Password = &password
 			}
 
-			username := cloudInitUserAccountBlock[mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername].(string)
+			username := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountUsername].(string)
 
-			cloudInitConfig.Username = &username
+			initializationConfig.Username = &username
 		}
 
-		cloudInitUserDataFileID := cloudInitBlock[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID].(string)
+		initializationUserDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationUserDataFileID].(string)
 
-		if cloudInitUserDataFileID != "" {
-			cloudInitConfig.Files = &proxmox.CustomCloudInitFiles{
-				UserVolume: &cloudInitUserDataFileID,
+		if initializationUserDataFileID != "" {
+			initializationConfig.Files = &proxmox.CustomCloudInitFiles{
+				UserVolume: &initializationUserDataFileID,
 			}
 		}
 	}
 
-	return cloudInitConfig, nil
+	return initializationConfig, nil
+}
+
+func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"aarch64",
+		"x86_64",
+	}, false)
 }
 
 func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m interface{}) (proxmox.CustomStorageDevices, error) {
@@ -1361,6 +1414,23 @@ func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData,
 	}
 
 	return networkDeviceObjects, nil
+}
+
+func resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"l24",
+		"l26",
+		"other",
+		"solaris",
+		"w2k",
+		"w2k3",
+		"w2k8",
+		"win7",
+		"win8",
+		"win10",
+		"wvista",
+		"wxp",
+	}, false)
 }
 
 func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData, m interface{}) (*proxmox.CustomVGADevice, error) {
@@ -1497,7 +1567,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 			if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
 				d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
 			} else {
-				d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{})
+				d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
 
 				cdrom := make([]interface{}, 1)
 				cdromBlock := map[string]interface{}{}
@@ -1511,144 +1581,22 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 			}
 		} else {
 			d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
-			d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{})
+			d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
 		}
 	} else {
 		d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
-		d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{})
-	}
-
-	// Compare the cloud-init configuration to the one stored in the state.
-	cloudInit := map[string]interface{}{}
-
-	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
-		cloudInitDNS := map[string]interface{}{}
-
-		if vmConfig.CloudInitDNSDomain != nil {
-			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSDomain] = *vmConfig.CloudInitDNSDomain
-		} else {
-			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSDomain] = ""
-		}
-
-		if vmConfig.CloudInitDNSServer != nil {
-			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSServer] = *vmConfig.CloudInitDNSServer
-		} else {
-			cloudInitDNS[mkResourceVirtualEnvironmentVMCloudInitDNSServer] = ""
-		}
-
-		cloudInit[mkResourceVirtualEnvironmentVMCloudInitDNS] = []interface{}{cloudInitDNS}
-	}
-
-	ipConfigLast := -1
-	ipConfigObjects := []*proxmox.CustomCloudInitIPConfig{
-		vmConfig.IPConfig0,
-		vmConfig.IPConfig1,
-		vmConfig.IPConfig2,
-		vmConfig.IPConfig3,
-		vmConfig.IPConfig4,
-		vmConfig.IPConfig5,
-		vmConfig.IPConfig6,
-		vmConfig.IPConfig7,
-	}
-	ipConfigList := make([]interface{}, len(ipConfigObjects))
-
-	for ipConfigIndex, ipConfig := range ipConfigObjects {
-		ipConfigItem := map[string]interface{}{}
-
-		if ipConfig != nil {
-			ipConfigLast = ipConfigIndex
-
-			if ipConfig.GatewayIPv4 != nil || ipConfig.IPv4 != nil {
-				ipv4 := map[string]interface{}{}
-
-				if ipConfig.IPv4 != nil {
-					ipv4[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address] = *ipConfig.IPv4
-				} else {
-					ipv4[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address] = ""
-				}
-
-				if ipConfig.GatewayIPv4 != nil {
-					ipv4[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway] = *ipConfig.GatewayIPv4
-				} else {
-					ipv4[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway] = ""
-				}
-
-				ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4] = []interface{}{ipv4}
-			} else {
-				ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4] = []interface{}{}
-			}
-
-			if ipConfig.GatewayIPv6 != nil || ipConfig.IPv6 != nil {
-				ipv6 := map[string]interface{}{}
-
-				if ipConfig.IPv4 != nil {
-					ipv6[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address] = *ipConfig.IPv6
-				} else {
-					ipv6[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Address] = ""
-				}
-
-				if ipConfig.GatewayIPv4 != nil {
-					ipv6[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway] = *ipConfig.GatewayIPv6
-				} else {
-					ipv6[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4Gateway] = ""
-				}
-
-				ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6] = []interface{}{ipv6}
-			} else {
-				ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6] = []interface{}{}
-			}
-		} else {
-			ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv4] = []interface{}{}
-			ipConfigItem[mkResourceVirtualEnvironmentVMCloudInitIPConfigIPv6] = []interface{}{}
-		}
-
-		ipConfigList[ipConfigIndex] = ipConfigItem
-	}
-
-	cloudInit[mkResourceVirtualEnvironmentVMCloudInitIPConfig] = ipConfigList[:ipConfigLast+1]
-
-	if vmConfig.CloudInitPassword != nil || vmConfig.CloudInitSSHKeys != nil || vmConfig.CloudInitUsername != nil {
-		cloudInitUserAccount := map[string]interface{}{}
-
-		if vmConfig.CloudInitSSHKeys != nil {
-			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys] = []string(*vmConfig.CloudInitSSHKeys)
-		} else {
-			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountKeys] = []string{}
-		}
-
-		if vmConfig.CloudInitPassword != nil {
-			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword] = *vmConfig.CloudInitPassword
-		} else {
-			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountPassword] = ""
-		}
-
-		if vmConfig.CloudInitUsername != nil {
-			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername] = *vmConfig.CloudInitUsername
-		} else {
-			cloudInitUserAccount[mkResourceVirtualEnvironmentVMCloudInitUserAccountUsername] = ""
-		}
-
-		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserAccount] = []interface{}{cloudInitUserAccount}
-	}
-
-	if vmConfig.CloudInitFiles != nil {
-		if vmConfig.CloudInitFiles.UserVolume != nil {
-			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = *vmConfig.CloudInitFiles.UserVolume
-		} else {
-			cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = ""
-		}
-	} else {
-		cloudInit[mkResourceVirtualEnvironmentVMCloudInitUserDataFileID] = ""
-	}
-
-	if len(cloudInit) > 0 {
-		d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{cloudInit})
-	} else {
-		d.Set(mkResourceVirtualEnvironmentVMCloudInit, []interface{}{})
+		d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
 	}
 
 	// Compare the CPU configuration to the one stored in the state.
 	cpu := map[string]interface{}{}
+
+	if vmConfig.CPUArchitecture != nil {
+		cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = *vmConfig.CPUArchitecture
+	} else {
+		// Default value of "arch" is "" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = ""
+	}
 
 	if vmConfig.CPUCores != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUCores] = *vmConfig.CPUCores
@@ -1701,6 +1649,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	currentCPU := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 
 	if len(currentCPU) > 0 ||
+		cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] != dvResourceVirtualEnvironmentVMCPUArchitecture ||
 		cpu[mkResourceVirtualEnvironmentVMCPUCores] != dvResourceVirtualEnvironmentVMCPUCores ||
 		len(cpu[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})) > 0 ||
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] != dvResourceVirtualEnvironmentVMCPUHotplugged ||
@@ -1823,6 +1772,135 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMDisk, diskList)
 	}
 
+	// Compare the cloud-init configuration to the one stored in the state.
+	initialization := map[string]interface{}{}
+
+	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
+		initializationDNS := map[string]interface{}{}
+
+		if vmConfig.CloudInitDNSDomain != nil {
+			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSDomain] = *vmConfig.CloudInitDNSDomain
+		} else {
+			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSDomain] = ""
+		}
+
+		if vmConfig.CloudInitDNSServer != nil {
+			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServer] = *vmConfig.CloudInitDNSServer
+		} else {
+			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServer] = ""
+		}
+
+		initialization[mkResourceVirtualEnvironmentVMInitializationDNS] = []interface{}{initializationDNS}
+	}
+
+	ipConfigLast := -1
+	ipConfigObjects := []*proxmox.CustomCloudInitIPConfig{
+		vmConfig.IPConfig0,
+		vmConfig.IPConfig1,
+		vmConfig.IPConfig2,
+		vmConfig.IPConfig3,
+		vmConfig.IPConfig4,
+		vmConfig.IPConfig5,
+		vmConfig.IPConfig6,
+		vmConfig.IPConfig7,
+	}
+	ipConfigList := make([]interface{}, len(ipConfigObjects))
+
+	for ipConfigIndex, ipConfig := range ipConfigObjects {
+		ipConfigItem := map[string]interface{}{}
+
+		if ipConfig != nil {
+			ipConfigLast = ipConfigIndex
+
+			if ipConfig.GatewayIPv4 != nil || ipConfig.IPv4 != nil {
+				ipv4 := map[string]interface{}{}
+
+				if ipConfig.IPv4 != nil {
+					ipv4[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address] = *ipConfig.IPv4
+				} else {
+					ipv4[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address] = ""
+				}
+
+				if ipConfig.GatewayIPv4 != nil {
+					ipv4[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway] = *ipConfig.GatewayIPv4
+				} else {
+					ipv4[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway] = ""
+				}
+
+				ipConfigItem[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4] = []interface{}{ipv4}
+			} else {
+				ipConfigItem[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4] = []interface{}{}
+			}
+
+			if ipConfig.GatewayIPv6 != nil || ipConfig.IPv6 != nil {
+				ipv6 := map[string]interface{}{}
+
+				if ipConfig.IPv4 != nil {
+					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address] = *ipConfig.IPv6
+				} else {
+					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address] = ""
+				}
+
+				if ipConfig.GatewayIPv4 != nil {
+					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway] = *ipConfig.GatewayIPv6
+				} else {
+					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway] = ""
+				}
+
+				ipConfigItem[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6] = []interface{}{ipv6}
+			} else {
+				ipConfigItem[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6] = []interface{}{}
+			}
+		} else {
+			ipConfigItem[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4] = []interface{}{}
+			ipConfigItem[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6] = []interface{}{}
+		}
+
+		ipConfigList[ipConfigIndex] = ipConfigItem
+	}
+
+	initialization[mkResourceVirtualEnvironmentVMInitializationIPConfig] = ipConfigList[:ipConfigLast+1]
+
+	if vmConfig.CloudInitPassword != nil || vmConfig.CloudInitSSHKeys != nil || vmConfig.CloudInitUsername != nil {
+		initializationUserAccount := map[string]interface{}{}
+
+		if vmConfig.CloudInitSSHKeys != nil {
+			initializationUserAccount[mkResourceVirtualEnvironmentVMInitializationUserAccountKeys] = []string(*vmConfig.CloudInitSSHKeys)
+		} else {
+			initializationUserAccount[mkResourceVirtualEnvironmentVMInitializationUserAccountKeys] = []string{}
+		}
+
+		if vmConfig.CloudInitPassword != nil {
+			initializationUserAccount[mkResourceVirtualEnvironmentVMInitializationUserAccountPassword] = *vmConfig.CloudInitPassword
+		} else {
+			initializationUserAccount[mkResourceVirtualEnvironmentVMInitializationUserAccountPassword] = ""
+		}
+
+		if vmConfig.CloudInitUsername != nil {
+			initializationUserAccount[mkResourceVirtualEnvironmentVMInitializationUserAccountUsername] = *vmConfig.CloudInitUsername
+		} else {
+			initializationUserAccount[mkResourceVirtualEnvironmentVMInitializationUserAccountUsername] = ""
+		}
+
+		initialization[mkResourceVirtualEnvironmentVMInitializationUserAccount] = []interface{}{initializationUserAccount}
+	}
+
+	if vmConfig.CloudInitFiles != nil {
+		if vmConfig.CloudInitFiles.UserVolume != nil {
+			initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = *vmConfig.CloudInitFiles.UserVolume
+		} else {
+			initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
+		}
+	} else {
+		initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
+	}
+
+	if len(initialization) > 0 {
+		d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+	}
+
 	// Compare the memory configuration to the one stored in the state.
 	memory := map[string]interface{}{}
 
@@ -1925,13 +2003,25 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
 	}
 
-	// Compare the OS type and pool ID to the values stored in the state.
+	// Compare the operating system configuration to the one stored in the state.
+	operatingSystem := map[string]interface{}{}
+
 	if vmConfig.OSType != nil {
-		d.Set(mkResourceVirtualEnvironmentVMOSType, *vmConfig.OSType)
+		operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType] = *vmConfig.OSType
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMOSType, "")
+		operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType] = ""
 	}
 
+	currentOperatingSystem := d.Get(mkResourceVirtualEnvironmentVMOperatingSystem).([]interface{})
+
+	if len(currentOperatingSystem) > 0 ||
+		operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType] != dvResourceVirtualEnvironmentVMOperatingSystemType {
+		d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{operatingSystem})
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{})
+	}
+
+	// Compare the pool ID to the values stored in the state.
 	if vmConfig.PoolID != nil {
 		d.Set(mkResourceVirtualEnvironmentVMPoolID, *vmConfig.PoolID)
 	}
@@ -1993,7 +2083,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	networkInterfaceNames := []interface{}{}
 
 	if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
-		networkInterfaces, err := veClient.WaitForNetworkInterfacesFromAgent(nodeName, vmID, 1800, 5)
+		networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, 1800, 5)
 
 		if err == nil && networkInterfaces.Result != nil {
 			ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
@@ -2077,7 +2167,6 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
-	osType := d.Get(mkResourceVirtualEnvironmentVMOSType).(string)
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 
 	body.ACPI = &acpi
@@ -2093,13 +2182,12 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		body.Name = &name
 	}
 
-	body.OSType = &osType
 	body.TabletDeviceEnabled = &tabletDevice
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) ||
 		d.HasChange(mkResourceVirtualEnvironmentVMBIOS) ||
 		d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) ||
-		d.HasChange(mkResourceVirtualEnvironmentVMOSType) ||
+		d.HasChange(mkResourceVirtualEnvironmentVMOperatingSystemType) ||
 		d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
 		rebootRequired = true
 	}
@@ -2149,35 +2237,6 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		}
 	}
 
-	// Prepare the new cloud-init configuration.
-	if d.HasChange(mkResourceVirtualEnvironmentVMCloudInit) {
-		cloudInitConfig, err := resourceVirtualEnvironmentVMGetCloudConfig(d, m)
-
-		if err != nil {
-			return err
-		}
-
-		body.CloudInitConfig = cloudInitConfig
-
-		if body.CloudInitConfig != nil {
-			cdromMedia := "cdrom"
-
-			body.IDEDevices[2] = proxmox.CustomStorageDevice{
-				Enabled:    true,
-				FileVolume: "local-lvm:cloudinit",
-				Media:      &cdromMedia,
-			}
-
-			if vmConfig.IDEDevice2 != nil {
-				if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
-					body.IDEDevices[2].Enabled = false
-				}
-			}
-		}
-
-		rebootRequired = true
-	}
-
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCPU) {
 		cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
@@ -2186,6 +2245,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			return err
 		}
 
+		cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentVMCPUArchitecture].(string)
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
@@ -2193,6 +2253,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
+		body.CPUArchitecture = &cpuArchitecture
 		body.CPUCores = &cpuCores
 		body.CPUSockets = &cpuSockets
 		body.CPUUnits = &cpuUnits
@@ -2259,6 +2320,35 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		rebootRequired = true
 	}
 
+	// Prepare the new cloud-init configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMInitialization) {
+		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		body.CloudInitConfig = initializationConfig
+
+		if body.CloudInitConfig != nil {
+			cdromMedia := "cdrom"
+
+			body.IDEDevices[2] = proxmox.CustomStorageDevice{
+				Enabled:    true,
+				FileVolume: "local-lvm:cloudinit",
+				Media:      &cdromMedia,
+			}
+
+			if vmConfig.IDEDevice2 != nil {
+				if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
+					body.IDEDevices[2].Enabled = false
+				}
+			}
+		}
+
+		rebootRequired = true
+	}
+
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMMemory) {
 		memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
@@ -2297,6 +2387,21 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		rebootRequired = true
 	}
 
+	// Prepare the new operating system configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMOperatingSystem) {
+		operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
+
+		if err != nil {
+			return err
+		}
+
+		operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
+
+		body.OSType = &operatingSystemType
+
+		rebootRequired = true
+	}
+
 	// Prepare the new VGA configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMVGA) {
 		body.VGADevice, err = resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
@@ -2328,7 +2433,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 				return err
 			}
 
-			err = veClient.WaitForState(nodeName, vmID, "running", 120, 5)
+			err = veClient.WaitForVMState(nodeName, vmID, "running", 120, 5)
 
 			if err != nil {
 				return err
@@ -2346,7 +2451,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 				return err
 			}
 
-			err = veClient.WaitForState(nodeName, vmID, "stopped", 30, 5)
+			err = veClient.WaitForVMState(nodeName, vmID, "stopped", 30, 5)
 
 			if err != nil {
 				return err
@@ -2370,7 +2475,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 		// Wait for the agent to unpublish the network interfaces, if it's enabled.
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
-			err = veClient.WaitForNoNetworkInterfacesFromAgent(nodeName, vmID, 300, 5)
+			err = veClient.WaitForNoNetworkInterfacesFromVMAgent(nodeName, vmID, 300, 5)
 
 			if err != nil {
 				return err
@@ -2409,7 +2514,7 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	err = veClient.WaitForState(nodeName, vmID, "stopped", 30, 5)
+	err = veClient.WaitForVMState(nodeName, vmID, "stopped", 30, 5)
 
 	if err != nil {
 		return err
@@ -2428,7 +2533,7 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
-	err = veClient.WaitForState(nodeName, vmID, "", 30, 2)
+	err = veClient.WaitForVMState(nodeName, vmID, "", 30, 2)
 
 	if err == nil {
 		return fmt.Errorf("Failed to delete VM \"%d\"", vmID)

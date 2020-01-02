@@ -225,23 +225,6 @@ func getNetworkDeviceModelValidator() schema.SchemaValidateFunc {
 	return validation.StringInSlice([]string{"e1000", "rtl8139", "virtio", "vmxnet3"}, false)
 }
 
-func getOSTypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
-		"l24",
-		"l26",
-		"other",
-		"solaris",
-		"w2k",
-		"w2k3",
-		"w2k8",
-		"win7",
-		"win8",
-		"win10",
-		"wvista",
-		"wxp",
-	}, false)
-}
-
 func getQEMUAgentTypeValidator() schema.SchemaValidateFunc {
 	return validation.StringInSlice([]string{"isa", "virtio"}, false)
 }
