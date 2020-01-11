@@ -621,6 +621,10 @@ This resource doesn't expose any additional attributes.
         * `wvista` - Windows Vista
         * `wxp` - Windows XP
 * `pool_id` - (Optional) The ID of a pool to assign the virtual machine to
+* `serial_device` - (Optional) A serial device (multiple blocks supported)
+    * `device` - (Optional) The device (defaults to `socket`)
+        * `/dev/*` - A host serial device
+        * `socket` - A unix socket
 * `started` - (Optional) Whether to start the virtual machine (defaults to `true`)
 * `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults to `true`)
 * `vga` - (Optional) The VGA configuration

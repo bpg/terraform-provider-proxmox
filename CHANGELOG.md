@@ -1,3 +1,9 @@
+## 0.3.0 (UNRELEASED)
+
+ENHANCEMENTS:
+
+* resource/virtual_environment_vm: Add `serial_device` argument
+
 ## 0.2.0
 
 BREAKING CHANGES:

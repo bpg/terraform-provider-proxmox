@@ -41,7 +41,10 @@ resource "proxmox_virtual_environment_vm" "example" {
   }
 
   pool_id = "${proxmox_virtual_environment_pool.example.id}"
-  vm_id   = 2038
+
+  serial_device {}
+
+  vm_id = 2038
 
   connection {
     type        = "ssh"

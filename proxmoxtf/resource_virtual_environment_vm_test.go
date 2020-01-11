@@ -41,6 +41,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDevice,
 		mkResourceVirtualEnvironmentVMOperatingSystem,
 		mkResourceVirtualEnvironmentVMPoolID,
+		mkResourceVirtualEnvironmentVMSerialDevice,
 		mkResourceVirtualEnvironmentVMStarted,
 		mkResourceVirtualEnvironmentVMTabletDevice,
 		mkResourceVirtualEnvironmentVMVMID,
@@ -72,6 +73,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkInterfaceNames,
 		mkResourceVirtualEnvironmentVMOperatingSystem,
 		mkResourceVirtualEnvironmentVMPoolID,
+		mkResourceVirtualEnvironmentVMSerialDevice,
 		mkResourceVirtualEnvironmentVMStarted,
 		mkResourceVirtualEnvironmentVMTabletDevice,
 		mkResourceVirtualEnvironmentVMVMID,
@@ -94,6 +96,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		schema.TypeList,
 		schema.TypeList,
 		schema.TypeString,
+		schema.TypeList,
 		schema.TypeBool,
 		schema.TypeBool,
 		schema.TypeInt,
@@ -353,6 +356,18 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testSchemaValueTypes(t, operatingSystemSchema, []string{
 		mkResourceVirtualEnvironmentVMOperatingSystemType,
+	}, []schema.ValueType{
+		schema.TypeString,
+	})
+
+	serialDeviceSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMSerialDevice)
+
+	testOptionalArguments(t, serialDeviceSchema, []string{
+		mkResourceVirtualEnvironmentVMSerialDeviceDevice,
+	})
+
+	testSchemaValueTypes(t, serialDeviceSchema, []string{
+		mkResourceVirtualEnvironmentVMSerialDeviceDevice,
 	}, []schema.ValueType{
 		schema.TypeString,
 	})

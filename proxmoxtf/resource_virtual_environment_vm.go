@@ -59,6 +59,7 @@ const (
 	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID               = 0
 	dvResourceVirtualEnvironmentVMOperatingSystemType               = "other"
 	dvResourceVirtualEnvironmentVMPoolID                            = ""
+	dvResourceVirtualEnvironmentVMSerialDeviceDevice                = "socket"
 	dvResourceVirtualEnvironmentVMStarted                           = true
 	dvResourceVirtualEnvironmentVMTabletDevice                      = true
 	dvResourceVirtualEnvironmentVMVGAEnabled                        = true
@@ -131,6 +132,8 @@ const (
 	mkResourceVirtualEnvironmentVMOperatingSystem                   = "operating_system"
 	mkResourceVirtualEnvironmentVMOperatingSystemType               = "type"
 	mkResourceVirtualEnvironmentVMPoolID                            = "pool_id"
+	mkResourceVirtualEnvironmentVMSerialDevice                      = "serial_device"
+	mkResourceVirtualEnvironmentVMSerialDeviceDevice                = "device"
 	mkResourceVirtualEnvironmentVMStarted                           = "started"
 	mkResourceVirtualEnvironmentVMTabletDevice                      = "tablet_device"
 	mkResourceVirtualEnvironmentVMVGA                               = "vga"
@@ -757,6 +760,31 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentVMPoolID,
 			},
+			mkResourceVirtualEnvironmentVMSerialDevice: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The serial devices",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMSerialDeviceDevice: dvResourceVirtualEnvironmentVMSerialDeviceDevice,
+						},
+					}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMSerialDeviceDevice: {
+							Type:         schema.TypeString,
+							Description:  "The device",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMSerialDeviceDevice,
+							ValidateFunc: resourceVirtualEnvironmentVMGetSerialDeviceValidator(),
+						},
+					},
+				},
+				MaxItems: 4,
+				MinItems: 0,
+			},
 			mkResourceVirtualEnvironmentVMStarted: {
 				Type:        schema.TypeBool,
 				Description: "Whether to start the virtual machine",
@@ -927,6 +955,13 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
 
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
+
+	serialDevices, err := resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
+
+	if err != nil {
+		return err
+	}
+
 	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 
@@ -1016,7 +1051,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		PoolID:              &poolID,
 		SCSIDevices:         diskDeviceObjects,
 		SCSIHardware:        &scsiHardware,
-		SerialDevices:       []string{"socket"},
+		SerialDevices:       serialDevices,
 		SharedMemory:        memorySharedObject,
 		StartOnBoot:         &started,
 		TabletDeviceEnabled: &tabletDevice,
@@ -1431,6 +1466,39 @@ func resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator() schema.Schema
 		"wvista",
 		"wxp",
 	}, false)
+}
+
+func resourceVirtualEnvironmentVMGetSerialDeviceList(d *schema.ResourceData, m interface{}) (proxmox.CustomSerialDevices, error) {
+	device := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
+	list := make(proxmox.CustomSerialDevices, len(device))
+
+	for i, v := range device {
+		block := v.(map[string]interface{})
+
+		device, _ := block[mkResourceVirtualEnvironmentVMSerialDeviceDevice].(string)
+
+		list[i] = device
+	}
+
+	return list, nil
+}
+
+func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (s []string, es []error) {
+		v, ok := i.(string)
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		if !strings.HasPrefix(v, "/dev/") && v != "socket" {
+			es = append(es, fmt.Errorf("expected %s to be '/dev/*' or 'socket'", k))
+			return
+		}
+
+		return
+	}
 }
 
 func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData, m interface{}) (*proxmox.CustomVGADevice, error) {
@@ -2027,6 +2095,31 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMPoolID, *vmConfig.PoolID)
 	}
 
+	// Compare the serial devices to those stored in the state.
+	serialDevices := make([]interface{}, 4)
+	serialDevicesArray := []*string{
+		vmConfig.SerialDevice0,
+		vmConfig.SerialDevice1,
+		vmConfig.SerialDevice2,
+		vmConfig.SerialDevice3,
+	}
+	serialDevicesCount := 0
+
+	for sdi, sd := range serialDevicesArray {
+		m := map[string]interface{}{}
+
+		if sd != nil {
+			m[mkResourceVirtualEnvironmentVMSerialDeviceDevice] = *sd
+			serialDevicesCount = sdi + 1
+		} else {
+			m[mkResourceVirtualEnvironmentVMSerialDeviceDevice] = ""
+		}
+
+		serialDevices[sdi] = m
+	}
+
+	d.Set(mkResourceVirtualEnvironmentVMSerialDevice, serialDevices[:serialDevicesCount])
+
 	// Compare the VGA configuration to the one stored in the state.
 	vga := map[string]interface{}{}
 
@@ -2399,6 +2492,17 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
 
 		body.OSType = &operatingSystemType
+
+		rebootRequired = true
+	}
+
+	// Prepare the new serial devices.
+	if d.HasChange(mkResourceVirtualEnvironmentVMSerialDevice) {
+		body.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
+
+		if err != nil {
+			return err
+		}
 
 		rebootRequired = true
 	}
