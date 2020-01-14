@@ -304,6 +304,8 @@ This data source doesn't accept arguments.
     * `cores` - (Optional) The number of CPU cores (defaults to `1`)
     * `units` - (Optional) The CPU units (defaults to `1024`)
 * `description` - (Optional) The description
+* `disk` - (Optional) A disk
+    * `datastore_id` - (Optional) The ID of the datastore to create the disk in (defaults to `local-lvm`)
 * `initialization` - (Optional) The initialization configuration
     * `dns` - (Optional) The DNS configuration
         * `domain` - (Optional) The DNS search domain

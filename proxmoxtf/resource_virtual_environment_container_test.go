@@ -31,6 +31,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 	testOptionalArguments(t, s, []string{
 		mkResourceVirtualEnvironmentContainerCPU,
 		mkResourceVirtualEnvironmentContainerDescription,
+		mkResourceVirtualEnvironmentContainerDisk,
 		mkResourceVirtualEnvironmentContainerInitialization,
 		mkResourceVirtualEnvironmentContainerMemory,
 		mkResourceVirtualEnvironmentContainerPoolID,
@@ -41,6 +42,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 	testSchemaValueTypes(t, s, []string{
 		mkResourceVirtualEnvironmentContainerCPU,
 		mkResourceVirtualEnvironmentContainerDescription,
+		mkResourceVirtualEnvironmentContainerDisk,
 		mkResourceVirtualEnvironmentContainerInitialization,
 		mkResourceVirtualEnvironmentContainerMemory,
 		mkResourceVirtualEnvironmentContainerOperatingSystem,
@@ -50,6 +52,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 	}, []schema.ValueType{
 		schema.TypeList,
 		schema.TypeString,
+		schema.TypeList,
 		schema.TypeList,
 		schema.TypeList,
 		schema.TypeList,
@@ -74,6 +77,18 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		schema.TypeString,
 		schema.TypeInt,
 		schema.TypeInt,
+	})
+
+	diskSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentContainerDisk)
+
+	testOptionalArguments(t, diskSchema, []string{
+		mkResourceVirtualEnvironmentContainerDiskDatastoreID,
+	})
+
+	testSchemaValueTypes(t, diskSchema, []string{
+		mkResourceVirtualEnvironmentContainerDiskDatastoreID,
+	}, []schema.ValueType{
+		schema.TypeString,
 	})
 
 	initializationSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentContainerInitialization)

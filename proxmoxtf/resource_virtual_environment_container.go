@@ -31,13 +31,6 @@ const (
 	dvResourceVirtualEnvironmentContainerCPUUnits                          = 1024
 	dvResourceVirtualEnvironmentContainerDescription                       = ""
 	dvResourceVirtualEnvironmentContainerDiskDatastoreID                   = "local-lvm"
-	dvResourceVirtualEnvironmentContainerDiskFileFormat                    = "qcow2"
-	dvResourceVirtualEnvironmentContainerDiskFileID                        = ""
-	dvResourceVirtualEnvironmentContainerDiskSize                          = 8
-	dvResourceVirtualEnvironmentContainerDiskSpeedRead                     = 0
-	dvResourceVirtualEnvironmentContainerDiskSpeedReadBurstable            = 0
-	dvResourceVirtualEnvironmentContainerDiskSpeedWrite                    = 0
-	dvResourceVirtualEnvironmentContainerDiskSpeedWriteBurstable           = 0
 	dvResourceVirtualEnvironmentContainerMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentContainerMemorySwap                        = 0
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceBridge            = "vmbr0"
@@ -59,6 +52,8 @@ const (
 	mkResourceVirtualEnvironmentContainerCPUCores                          = "cores"
 	mkResourceVirtualEnvironmentContainerCPUUnits                          = "units"
 	mkResourceVirtualEnvironmentContainerDescription                       = "description"
+	mkResourceVirtualEnvironmentContainerDisk                              = "disk"
+	mkResourceVirtualEnvironmentContainerDiskDatastoreID                   = "datastore_id"
 	mkResourceVirtualEnvironmentContainerInitialization                    = "initialization"
 	mkResourceVirtualEnvironmentContainerInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentContainerInitializationDNSDomain           = "domain"
@@ -183,6 +178,32 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Description: "The description",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentContainerDescription,
+			},
+			mkResourceVirtualEnvironmentContainerDisk: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The disks",
+				Optional:    true,
+				ForceNew:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMDiskDatastoreID: dvResourceVirtualEnvironmentContainerDiskDatastoreID,
+						},
+					}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentContainerDiskDatastoreID: {
+							Type:        schema.TypeString,
+							Description: "The datastore id",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentContainerDiskDatastoreID,
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentContainerInitialization: &schema.Schema{
 				Type:        schema.TypeList,
@@ -511,6 +532,14 @@ func resourceVirtualEnvironmentContainerCreate(d *schema.ResourceData, m interfa
 
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
 
+	diskBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerDisk}, 0, true)
+
+	if err != nil {
+		return err
+	}
+
+	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
+
 	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
 	initializationDNSDomain := dvResourceVirtualEnvironmentContainerInitializationDNSDomain
 	initializationDNSServer := dvResourceVirtualEnvironmentContainerInitializationDNSServer
@@ -666,15 +695,13 @@ func resourceVirtualEnvironmentContainerCreate(d *schema.ResourceData, m interfa
 	}
 
 	// Attempt to create the resource using the retrieved values.
-	datastoreID := "local-lvm"
-
 	body := proxmox.VirtualEnvironmentContainerCreateRequestBody{
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
 		CPUCores:             &cpuCores,
 		CPUUnits:             &cpuUnits,
-		DatastoreID:          &datastoreID,
+		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
 		NetworkInterfaces:    networkInterfaceArray,
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
@@ -899,6 +926,25 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 		cpu[mkResourceVirtualEnvironmentContainerCPUCores] != dvResourceVirtualEnvironmentContainerCPUCores ||
 		cpu[mkResourceVirtualEnvironmentContainerCPUUnits] != dvResourceVirtualEnvironmentContainerCPUUnits {
 		d.Set(mkResourceVirtualEnvironmentContainerCPU, []interface{}{cpu})
+	}
+
+	// Compare the disk configuration to the one stored in the state.
+	disk := map[string]interface{}{}
+
+	if containerConfig.RootFS != nil {
+		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
+
+		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = volumeParts[0]
+	} else {
+		// Default value of "storage" is "local" according to the API documentation.
+		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = "local"
+	}
+
+	currentDisk := d.Get(mkResourceVirtualEnvironmentContainerDisk).([]interface{})
+
+	if len(currentDisk) > 0 ||
+		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] != dvResourceVirtualEnvironmentContainerDiskDatastoreID {
+		d.Set(mkResourceVirtualEnvironmentContainerDiskDatastoreID, []interface{}{disk})
 	}
 
 	// Compare the memory configuration to the one stored in the state.
