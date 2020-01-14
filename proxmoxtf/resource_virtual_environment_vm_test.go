@@ -29,6 +29,8 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, s, []string{
 		mkResourceVirtualEnvironmentVMACPI,
+		mkResourceVirtualEnvironmentVMAgent,
+		mkResourceVirtualEnvironmentVMAudioDevice,
 		mkResourceVirtualEnvironmentVMBIOS,
 		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMInitialization,
@@ -57,6 +59,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	testSchemaValueTypes(t, s, []string{
 		mkResourceVirtualEnvironmentVMACPI,
 		mkResourceVirtualEnvironmentVMAgent,
+		mkResourceVirtualEnvironmentVMAudioDevice,
 		mkResourceVirtualEnvironmentVMBIOS,
 		mkResourceVirtualEnvironmentVMCDROM,
 		mkResourceVirtualEnvironmentVMInitialization,
@@ -79,6 +82,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMVMID,
 	}, []schema.ValueType{
 		schema.TypeBool,
+		schema.TypeList,
 		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
@@ -117,6 +121,21 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	}, []schema.ValueType{
 		schema.TypeBool,
 		schema.TypeBool,
+		schema.TypeString,
+	})
+
+	audioDeviceSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMAudioDevice)
+
+	testOptionalArguments(t, audioDeviceSchema, []string{
+		mkResourceVirtualEnvironmentVMAudioDeviceDevice,
+		mkResourceVirtualEnvironmentVMAudioDeviceDriver,
+	})
+
+	testSchemaValueTypes(t, audioDeviceSchema, []string{
+		mkResourceVirtualEnvironmentVMAudioDeviceDevice,
+		mkResourceVirtualEnvironmentVMAudioDeviceDriver,
+	}, []schema.ValueType{
+		schema.TypeString,
 		schema.TypeString,
 	})
 

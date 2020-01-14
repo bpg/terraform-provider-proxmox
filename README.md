@@ -475,6 +475,14 @@ This resource doesn't expose any additional attributes.
     * `type` - (Optional) The QEMU agent interface type (defaults to `virtio`)
         * `isa` - ISA Serial Port
         * `virtio` - VirtIO (paravirtualized)
+* `audio_device` - (Optional) An audio device
+    * `device` - (Optional) The device (defaults to `intel-hda`)
+        * `AC97` - Intel 82801AA AC97 Audio
+        * `ich9-intel-hda` - Intel HD Audio Controller (ich9)
+        * `intel-hda` - Intel HD Audio
+    * `driver` - (Optional) The driver (defaults to `spice`)
+        * `spice` - Spice
+    * `enabled` - (Optional) Whether to enable the audio device (defaults to `true`)
 * `bios` - (Optional) The BIOS implementation (defaults to `seabios`)
     * `ovmf` - OVMF (UEFI)
     * `seabios` - SeaBIOS

@@ -16,10 +16,17 @@ import (
 )
 
 const (
+	maxAudioDevices   = 1
+	maxNetworkDevices = 8
+	maxSerialDevices  = 4
+
 	dvResourceVirtualEnvironmentVMACPI                              = true
 	dvResourceVirtualEnvironmentVMAgentEnabled                      = false
 	dvResourceVirtualEnvironmentVMAgentTrim                         = false
 	dvResourceVirtualEnvironmentVMAgentType                         = "virtio"
+	dvResourceVirtualEnvironmentVMAudioDeviceDevice                 = "intel-hda"
+	dvResourceVirtualEnvironmentVMAudioDeviceDriver                 = "spice"
+	dvResourceVirtualEnvironmentVMAudioDeviceEnabled                = true
 	dvResourceVirtualEnvironmentVMBIOS                              = "seabios"
 	dvResourceVirtualEnvironmentVMCDROMEnabled                      = false
 	dvResourceVirtualEnvironmentVMCDROMFileID                       = ""
@@ -72,6 +79,10 @@ const (
 	mkResourceVirtualEnvironmentVMAgentEnabled                      = "enabled"
 	mkResourceVirtualEnvironmentVMAgentTrim                         = "trim"
 	mkResourceVirtualEnvironmentVMAgentType                         = "type"
+	mkResourceVirtualEnvironmentVMAudioDevice                       = "audio_device"
+	mkResourceVirtualEnvironmentVMAudioDeviceDevice                 = "device"
+	mkResourceVirtualEnvironmentVMAudioDeviceDriver                 = "driver"
+	mkResourceVirtualEnvironmentVMAudioDeviceEnabled                = "enabled"
 	mkResourceVirtualEnvironmentVMBIOS                              = "bios"
 	mkResourceVirtualEnvironmentVMCDROM                             = "cdrom"
 	mkResourceVirtualEnvironmentVMCDROMEnabled                      = "enabled"
@@ -157,16 +168,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "The QEMU agent configuration",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentVMAgentEnabled] = dvResourceVirtualEnvironmentVMAgentEnabled
-					defaultMap[mkResourceVirtualEnvironmentVMAgentTrim] = dvResourceVirtualEnvironmentVMAgentTrim
-					defaultMap[mkResourceVirtualEnvironmentVMAgentType] = dvResourceVirtualEnvironmentVMAgentType
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMAgentEnabled: dvResourceVirtualEnvironmentVMAgentEnabled,
+							mkResourceVirtualEnvironmentVMAgentTrim:    dvResourceVirtualEnvironmentVMAgentEnabled,
+							mkResourceVirtualEnvironmentVMAgentType:    dvResourceVirtualEnvironmentVMAgentType,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -194,6 +202,40 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
+			mkResourceVirtualEnvironmentVMAudioDevice: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The audio devices",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMAudioDeviceDevice: {
+							Type:         schema.TypeString,
+							Description:  "The device",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMAudioDeviceDevice,
+							ValidateFunc: resourceVirtualEnvironmentVMGetAudioDeviceValidator(),
+						},
+						mkResourceVirtualEnvironmentVMAudioDeviceDriver: {
+							Type:         schema.TypeString,
+							Description:  "The driver",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMAudioDeviceDriver,
+							ValidateFunc: resourceVirtualEnvironmentVMGetAudioDriverValidator(),
+						},
+						mkResourceVirtualEnvironmentVMAudioDeviceEnabled: {
+							Type:        schema.TypeBool,
+							Description: "Whether to enable the audio device",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMAudioDeviceEnabled,
+						},
+					},
+				},
+				MaxItems: maxAudioDevices,
+				MinItems: 0,
+			},
 			mkResourceVirtualEnvironmentVMBIOS: {
 				Type:         schema.TypeString,
 				Description:  "The BIOS implementation",
@@ -206,15 +248,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "The CDROM drive",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentVMCDROMEnabled] = dvResourceVirtualEnvironmentVMCDROMEnabled
-					defaultMap[mkResourceVirtualEnvironmentVMCDROMFileID] = dvResourceVirtualEnvironmentVMCDROMFileID
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMCDROMEnabled: dvResourceVirtualEnvironmentVMCDROMEnabled,
+							mkResourceVirtualEnvironmentVMCDROMFileID:  dvResourceVirtualEnvironmentVMCDROMFileID,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -241,20 +280,17 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "The CPU allocation",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentVMCPUArchitecture] = dvResourceVirtualEnvironmentVMCPUArchitecture
-					defaultMap[mkResourceVirtualEnvironmentVMCPUCores] = dvResourceVirtualEnvironmentVMCPUCores
-					defaultMap[mkResourceVirtualEnvironmentVMCPUFlags] = []interface{}{}
-					defaultMap[mkResourceVirtualEnvironmentVMCPUHotplugged] = dvResourceVirtualEnvironmentVMCPUHotplugged
-					defaultMap[mkResourceVirtualEnvironmentVMCPUSockets] = dvResourceVirtualEnvironmentVMCPUSockets
-					defaultMap[mkResourceVirtualEnvironmentVMCPUType] = dvResourceVirtualEnvironmentVMCPUType
-					defaultMap[mkResourceVirtualEnvironmentVMCPUUnits] = dvResourceVirtualEnvironmentVMCPUUnits
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMCPUArchitecture: dvResourceVirtualEnvironmentVMCPUArchitecture,
+							mkResourceVirtualEnvironmentVMCPUCores:        dvResourceVirtualEnvironmentVMCPUCores,
+							mkResourceVirtualEnvironmentVMCPUFlags:        []interface{}{},
+							mkResourceVirtualEnvironmentVMCPUHotplugged:   dvResourceVirtualEnvironmentVMCPUHotplugged,
+							mkResourceVirtualEnvironmentVMCPUSockets:      dvResourceVirtualEnvironmentVMCPUSockets,
+							mkResourceVirtualEnvironmentVMCPUType:         dvResourceVirtualEnvironmentVMCPUType,
+							mkResourceVirtualEnvironmentVMCPUUnits:        dvResourceVirtualEnvironmentVMCPUUnits,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -326,17 +362,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentVMDiskDatastoreID] = dvResourceVirtualEnvironmentVMDiskDatastoreID
-					defaultMap[mkResourceVirtualEnvironmentVMDiskFileFormat] = dvResourceVirtualEnvironmentVMDiskFileFormat
-					defaultMap[mkResourceVirtualEnvironmentVMDiskFileID] = dvResourceVirtualEnvironmentVMDiskFileID
-					defaultMap[mkResourceVirtualEnvironmentVMDiskSize] = dvResourceVirtualEnvironmentVMDiskSize
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMDiskDatastoreID: dvResourceVirtualEnvironmentVMDiskDatastoreID,
+							mkResourceVirtualEnvironmentVMDiskFileFormat:  dvResourceVirtualEnvironmentVMDiskFileFormat,
+							mkResourceVirtualEnvironmentVMDiskFileID:      dvResourceVirtualEnvironmentVMDiskFileID,
+							mkResourceVirtualEnvironmentVMDiskSize:        dvResourceVirtualEnvironmentVMDiskSize,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -376,17 +409,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "The speed limits",
 							Optional:    true,
 							DefaultFunc: func() (interface{}, error) {
-								defaultList := make([]interface{}, 1)
-								defaultMap := map[string]interface{}{}
-
-								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedRead] = dvResourceVirtualEnvironmentVMDiskSpeedRead
-								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable] = dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable
-								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedWrite] = dvResourceVirtualEnvironmentVMDiskSpeedWrite
-								defaultMap[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable] = dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable
-
-								defaultList[0] = defaultMap
-
-								return defaultList, nil
+								return []interface{}{
+									map[string]interface{}{
+										mkResourceVirtualEnvironmentVMDiskSpeedRead:           dvResourceVirtualEnvironmentVMDiskSpeedRead,
+										mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable:  dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable,
+										mkResourceVirtualEnvironmentVMDiskSpeedWrite:          dvResourceVirtualEnvironmentVMDiskSpeedWrite,
+										mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable: dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable,
+									},
+								}, nil
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -613,16 +643,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "The memory allocation",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentVMMemoryDedicated] = dvResourceVirtualEnvironmentVMMemoryDedicated
-					defaultMap[mkResourceVirtualEnvironmentVMMemoryFloating] = dvResourceVirtualEnvironmentVMMemoryFloating
-					defaultMap[mkResourceVirtualEnvironmentVMMemoryShared] = dvResourceVirtualEnvironmentVMMemoryShared
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMMemoryDedicated: dvResourceVirtualEnvironmentVMMemoryDedicated,
+							mkResourceVirtualEnvironmentVMMemoryFloating:  dvResourceVirtualEnvironmentVMMemoryFloating,
+							mkResourceVirtualEnvironmentVMMemoryShared:    dvResourceVirtualEnvironmentVMMemoryShared,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -710,7 +737,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: 8,
+				MaxItems: maxNetworkDevices,
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMNetworkInterfaceNames: {
@@ -730,14 +757,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "The operating system configuration",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentVMOperatingSystemType] = dvResourceVirtualEnvironmentVMOperatingSystemType
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMOperatingSystemType: dvResourceVirtualEnvironmentVMOperatingSystemType,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -782,7 +806,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: 4,
+				MaxItems: maxSerialDevices,
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMStarted: {
@@ -802,16 +826,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "The VGA configuration",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentVMVGAEnabled] = dvResourceVirtualEnvironmentVMVGAEnabled
-					defaultMap[mkResourceVirtualEnvironmentVMVGAMemory] = dvResourceVirtualEnvironmentVMVGAMemory
-					defaultMap[mkResourceVirtualEnvironmentVMVGAType] = dvResourceVirtualEnvironmentVMVGAType
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMVGAEnabled: dvResourceVirtualEnvironmentVMVGAEnabled,
+							mkResourceVirtualEnvironmentVMVGAMemory:  dvResourceVirtualEnvironmentVMVGAMemory,
+							mkResourceVirtualEnvironmentVMVGAType:    dvResourceVirtualEnvironmentVMVGAType,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -877,6 +898,12 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 	agentEnabled := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
 	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
+
+	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
+
+	if err != nil {
+		return err
+	}
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 
@@ -1030,6 +1057,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
+		AudioDevices:    audioDevices,
 		BIOS:            &bios,
 		BootDisk:        &bootDisk,
 		BootOrder:       &bootOrder,
@@ -1347,6 +1375,39 @@ func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m in
 	return initializationConfig, nil
 }
 
+func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData, m interface{}) (proxmox.CustomAudioDevices, error) {
+	devices := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
+	list := make(proxmox.CustomAudioDevices, len(devices))
+
+	for i, v := range devices {
+		block := v.(map[string]interface{})
+
+		device, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceDevice].(string)
+		driver, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceDriver].(string)
+		enabled, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceEnabled].(bool)
+
+		list[i].Device = device
+		list[i].Driver = &driver
+		list[i].Enabled = enabled
+	}
+
+	return list, nil
+}
+
+func resourceVirtualEnvironmentVMGetAudioDeviceValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"AC97",
+		"ich9-intel-hda",
+		"intel-hda",
+	}, false)
+}
+
+func resourceVirtualEnvironmentVMGetAudioDriverValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"spice",
+	}, false)
+}
+
 func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaValidateFunc {
 	return validation.StringInSlice([]string{
 		"aarch64",
@@ -1629,6 +1690,39 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	} else {
 		d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
 	}
+
+	// Compare the audio devices to those stored in the state.
+	audioDevices := make([]interface{}, 1)
+	audioDevicesArray := []*proxmox.CustomAudioDevice{
+		vmConfig.AudioDevice,
+	}
+	audioDevicesCount := 0
+
+	for adi, ad := range audioDevicesArray {
+		m := map[string]interface{}{}
+
+		if ad != nil {
+			m[mkResourceVirtualEnvironmentVMAudioDeviceDevice] = ad.Device
+
+			if ad.Driver != nil {
+				m[mkResourceVirtualEnvironmentVMAudioDeviceDriver] = *ad.Driver
+			} else {
+				m[mkResourceVirtualEnvironmentVMAudioDeviceDriver] = ""
+			}
+
+			m[mkResourceVirtualEnvironmentVMAudioDeviceEnabled] = true
+
+			audioDevicesCount = adi + 1
+		} else {
+			m[mkResourceVirtualEnvironmentVMAudioDeviceDevice] = ""
+			m[mkResourceVirtualEnvironmentVMAudioDeviceDriver] = ""
+			m[mkResourceVirtualEnvironmentVMAudioDeviceEnabled] = false
+		}
+
+		audioDevices[adi] = m
+	}
+
+	d.Set(mkResourceVirtualEnvironmentVMAudioDevice, audioDevices[:audioDevicesCount])
 
 	// Compare the IDE devices to the CDROM and cloud-init configurations stored in the state.
 	if vmConfig.IDEDevice2 != nil {
@@ -2307,6 +2401,27 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		rebootRequired = true
 	}
 
+	// Prepare the new audio devices.
+	if d.HasChange(mkResourceVirtualEnvironmentVMAudioDevice) {
+		body.AudioDevices, err = resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		for i := 0; i < len(body.AudioDevices); i++ {
+			if !body.AudioDevices[i].Enabled {
+				delete = append(delete, fmt.Sprintf("audio%d", i))
+			}
+		}
+
+		for i := len(body.AudioDevices); i < maxAudioDevices; i++ {
+			delete = append(delete, fmt.Sprintf("audio%d", i))
+		}
+
+		rebootRequired = true
+	}
+
 	// Prepare the new CDROM configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCDROM) {
 		cdromBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
@@ -2478,6 +2593,16 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			return err
 		}
 
+		for i := 0; i < len(body.NetworkDevices); i++ {
+			if !body.NetworkDevices[i].Enabled {
+				delete = append(delete, fmt.Sprintf("net%d", i))
+			}
+		}
+
+		for i := len(body.NetworkDevices); i < maxNetworkDevices; i++ {
+			delete = append(delete, fmt.Sprintf("net%d", i))
+		}
+
 		rebootRequired = true
 	}
 
@@ -2502,6 +2627,10 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 		if err != nil {
 			return err
+		}
+
+		for i := len(body.SerialDevices); i < maxSerialDevices; i++ {
+			delete = append(delete, fmt.Sprintf("serial%d", i))
 		}
 
 		rebootRequired = true

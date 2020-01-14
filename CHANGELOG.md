@@ -2,7 +2,12 @@
 
 ENHANCEMENTS:
 
+* resource/virtual_environment_vm: Add `audio_device` argument
 * resource/virtual_environment_vm: Add `serial_device` argument
+
+BUG FIXES:
+
+* resource/virtual_environment_vm: Fix `network_device` deletion issue
 
 ## 0.2.0
 

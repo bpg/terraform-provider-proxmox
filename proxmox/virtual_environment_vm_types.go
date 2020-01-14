@@ -22,9 +22,13 @@ type CustomAgent struct {
 
 // CustomAudioDevice handles QEMU audio parameters.
 type CustomAudioDevice struct {
-	Device string `json:"device" url:"device"`
-	Driver string `json:"driver" url:"driver"`
+	Device  string  `json:"device" url:"device"`
+	Driver  *string `json:"driver" url:"driver"`
+	Enabled bool    `json:"-" url:"-"`
 }
+
+// CustomAudioDevices handles QEMU audio device parameters.
+type CustomAudioDevices []CustomAudioDevice
 
 // CustomCloudInitConfig handles QEMU cloud-init parameters.
 type CustomCloudInitConfig struct {
@@ -200,7 +204,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	ACPI                 *CustomBool                  `json:"acpi,omitempty" url:"acpi,omitempty,int"`
 	Agent                *CustomAgent                 `json:"agent,omitempty" url:"agent,omitempty"`
 	AllowReboot          *CustomBool                  `json:"reboot,omitempty" url:"reboot,omitempty,int"`
-	AudioDevice          *CustomAudioDevice           `json:"audio0,omitempty" url:"audio0,omitempty"`
+	AudioDevices         CustomAudioDevices           `json:"audio,omitempty" url:"audio,omitempty"`
 	Autostart            *CustomBool                  `json:"autostart,omitempty" url:"autostart,omitempty,int"`
 	BackupFile           *string                      `json:"archive,omitempty" url:"archive,omitempty"`
 	BandwidthLimit       *int                         `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
@@ -508,7 +512,24 @@ func (r CustomAgent) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomAudioDevice struct to a URL vlaue.
 func (r CustomAudioDevice) EncodeValues(key string, v *url.Values) error {
-	v.Add(key, fmt.Sprintf("device=%s,driver=%s", r.Device, r.Driver))
+	values := []string{fmt.Sprintf("device=%s", r.Device)}
+
+	if r.Driver != nil {
+		values = append(values, fmt.Sprintf("driver=%s", *r.Driver))
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
+// EncodeValues converts a CustomAudioDevices array to multiple URL values.
+func (r CustomAudioDevices) EncodeValues(key string, v *url.Values) error {
+	for i, d := range r {
+		if d.Enabled {
+			d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		}
+	}
 
 	return nil
 }
@@ -1081,6 +1102,34 @@ func (r *CustomAgent) UnmarshalJSON(b []byte) error {
 				r.TrimClonedDisks = &fstrim
 			case "type":
 				r.Type = &v[1]
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomAgent string to an object.
+func (r *CustomAudioDevice) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			switch v[0] {
+			case "device":
+				r.Device = v[1]
+			case "driver":
+				r.Driver = &v[1]
 			}
 		}
 	}

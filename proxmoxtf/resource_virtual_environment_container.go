@@ -102,16 +102,13 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Description: "The console configuration",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentContainerConsoleEnabled] = dvResourceVirtualEnvironmentContainerConsoleEnabled
-					defaultMap[mkResourceVirtualEnvironmentContainerConsoleMode] = dvResourceVirtualEnvironmentContainerConsoleMode
-					defaultMap[mkResourceVirtualEnvironmentContainerConsoleTTYCount] = dvResourceVirtualEnvironmentContainerConsoleTTYCount
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentContainerConsoleEnabled:  dvResourceVirtualEnvironmentContainerConsoleEnabled,
+							mkResourceVirtualEnvironmentContainerConsoleMode:     dvResourceVirtualEnvironmentContainerConsoleMode,
+							mkResourceVirtualEnvironmentContainerConsoleTTYCount: dvResourceVirtualEnvironmentContainerConsoleTTYCount,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -145,16 +142,13 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Description: "The CPU allocation",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentContainerCPUArchitecture] = dvResourceVirtualEnvironmentContainerCPUArchitecture
-					defaultMap[mkResourceVirtualEnvironmentContainerCPUCores] = dvResourceVirtualEnvironmentContainerCPUCores
-					defaultMap[mkResourceVirtualEnvironmentContainerCPUUnits] = dvResourceVirtualEnvironmentContainerCPUUnits
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentContainerCPUArchitecture: dvResourceVirtualEnvironmentContainerCPUArchitecture,
+							mkResourceVirtualEnvironmentContainerCPUCores:        dvResourceVirtualEnvironmentContainerCPUCores,
+							mkResourceVirtualEnvironmentContainerCPUUnits:        dvResourceVirtualEnvironmentContainerCPUUnits,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -343,15 +337,12 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Description: "The memory allocation",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
-					defaultList := make([]interface{}, 1)
-					defaultMap := map[string]interface{}{}
-
-					defaultMap[mkResourceVirtualEnvironmentContainerMemoryDedicated] = dvResourceVirtualEnvironmentContainerMemoryDedicated
-					defaultMap[mkResourceVirtualEnvironmentContainerMemorySwap] = dvResourceVirtualEnvironmentContainerMemorySwap
-
-					defaultList[0] = defaultMap
-
-					return defaultList, nil
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentContainerMemoryDedicated: dvResourceVirtualEnvironmentContainerMemoryDedicated,
+							mkResourceVirtualEnvironmentContainerMemorySwap:      dvResourceVirtualEnvironmentContainerMemorySwap,
+						},
+					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
