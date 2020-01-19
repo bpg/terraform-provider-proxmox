@@ -33,18 +33,12 @@ func TestDataSourceVirtualEnvironmentHostsSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentHostsHostnames,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkDataSourceVirtualEnvironmentHostsAddresses,
-		mkDataSourceVirtualEnvironmentHostsDigest,
-		mkDataSourceVirtualEnvironmentHostsEntries,
-		mkDataSourceVirtualEnvironmentHostsHostnames,
-		mkDataSourceVirtualEnvironmentHostsNodeName,
-	}, []schema.ValueType{
-		schema.TypeList,
-		schema.TypeString,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeString,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentHostsAddresses: schema.TypeList,
+		mkDataSourceVirtualEnvironmentHostsDigest:    schema.TypeString,
+		mkDataSourceVirtualEnvironmentHostsEntries:   schema.TypeList,
+		mkDataSourceVirtualEnvironmentHostsHostnames: schema.TypeList,
+		mkDataSourceVirtualEnvironmentHostsNodeName:  schema.TypeString,
 	})
 
 	entriesSchema := testNestedSchemaExistence(t, s, mkDataSourceVirtualEnvironmentHostsEntries)
@@ -54,11 +48,8 @@ func TestDataSourceVirtualEnvironmentHostsSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentHostsEntriesHostnames,
 	})
 
-	testSchemaValueTypes(t, entriesSchema, []string{
-		mkDataSourceVirtualEnvironmentHostsEntriesAddress,
-		mkDataSourceVirtualEnvironmentHostsEntriesHostnames,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeList,
+	testSchemaValueTypes(t, entriesSchema, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentHostsEntriesAddress:   schema.TypeString,
+		mkDataSourceVirtualEnvironmentHostsEntriesHostnames: schema.TypeList,
 	})
 }

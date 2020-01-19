@@ -35,25 +35,15 @@ func TestDataSourceVirtualEnvironmentUsersSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentUsersUserIDs,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkDataSourceVirtualEnvironmentUsersComments,
-		mkDataSourceVirtualEnvironmentUsersEmails,
-		mkDataSourceVirtualEnvironmentUsersEnabled,
-		mkDataSourceVirtualEnvironmentUsersExpirationDates,
-		mkDataSourceVirtualEnvironmentUsersFirstNames,
-		mkDataSourceVirtualEnvironmentUsersGroups,
-		mkDataSourceVirtualEnvironmentUsersKeys,
-		mkDataSourceVirtualEnvironmentUsersLastNames,
-		mkDataSourceVirtualEnvironmentUsersUserIDs,
-	}, []schema.ValueType{
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentUsersComments:        schema.TypeList,
+		mkDataSourceVirtualEnvironmentUsersEmails:          schema.TypeList,
+		mkDataSourceVirtualEnvironmentUsersEnabled:         schema.TypeList,
+		mkDataSourceVirtualEnvironmentUsersExpirationDates: schema.TypeList,
+		mkDataSourceVirtualEnvironmentUsersFirstNames:      schema.TypeList,
+		mkDataSourceVirtualEnvironmentUsersGroups:          schema.TypeList,
+		mkDataSourceVirtualEnvironmentUsersKeys:            schema.TypeList,
+		mkDataSourceVirtualEnvironmentUsersLastNames:       schema.TypeList,
+		mkDataSourceVirtualEnvironmentUsersUserIDs:         schema.TypeList,
 	})
 }

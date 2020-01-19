@@ -36,16 +36,11 @@ func TestResourceVirtualEnvironmentGroupSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentGroupMembers,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkResourceVirtualEnvironmentGroupACL,
-		mkResourceVirtualEnvironmentGroupComment,
-		mkResourceVirtualEnvironmentGroupID,
-		mkResourceVirtualEnvironmentGroupMembers,
-	}, []schema.ValueType{
-		schema.TypeSet,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeSet,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentGroupACL:     schema.TypeSet,
+		mkResourceVirtualEnvironmentGroupComment: schema.TypeString,
+		mkResourceVirtualEnvironmentGroupID:      schema.TypeString,
+		mkResourceVirtualEnvironmentGroupMembers: schema.TypeSet,
 	})
 
 	aclSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentGroupACL)
@@ -59,13 +54,9 @@ func TestResourceVirtualEnvironmentGroupSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentGroupACLPropagate,
 	})
 
-	testSchemaValueTypes(t, aclSchema, []string{
-		mkResourceVirtualEnvironmentGroupACLPath,
-		mkResourceVirtualEnvironmentGroupACLPropagate,
-		mkResourceVirtualEnvironmentGroupACLRoleID,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeBool,
-		schema.TypeString,
+	testSchemaValueTypes(t, aclSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentGroupACLPath:      schema.TypeString,
+		mkResourceVirtualEnvironmentGroupACLPropagate: schema.TypeBool,
+		mkResourceVirtualEnvironmentGroupACLRoleID:    schema.TypeString,
 	})
 }

@@ -27,11 +27,8 @@ func TestDataSourceVirtualEnvironmentGroupsSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentGroupsGroupIDs,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkDataSourceVirtualEnvironmentGroupsComments,
-		mkDataSourceVirtualEnvironmentGroupsGroupIDs,
-	}, []schema.ValueType{
-		schema.TypeList,
-		schema.TypeList,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentGroupsComments: schema.TypeList,
+		mkDataSourceVirtualEnvironmentGroupsGroupIDs: schema.TypeList,
 	})
 }

@@ -45,17 +45,11 @@ func TestResourceVirtualEnvironmentPoolSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentPoolMembersVMID,
 	})
 
-	testSchemaValueTypes(t, membersSchema, []string{
-		mkResourceVirtualEnvironmentPoolMembersDatastoreID,
-		mkResourceVirtualEnvironmentPoolMembersID,
-		mkResourceVirtualEnvironmentPoolMembersNodeName,
-		mkResourceVirtualEnvironmentPoolMembersType,
-		mkResourceVirtualEnvironmentPoolMembersVMID,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeInt,
+	testSchemaValueTypes(t, membersSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentPoolMembersDatastoreID: schema.TypeString,
+		mkResourceVirtualEnvironmentPoolMembersID:          schema.TypeString,
+		mkResourceVirtualEnvironmentPoolMembersNodeName:    schema.TypeString,
+		mkResourceVirtualEnvironmentPoolMembersType:        schema.TypeString,
+		mkResourceVirtualEnvironmentPoolMembersVMID:        schema.TypeInt,
 	})
 }

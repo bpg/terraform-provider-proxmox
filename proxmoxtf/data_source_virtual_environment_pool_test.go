@@ -32,14 +32,10 @@ func TestDataSourceVirtualEnvironmentPoolSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentPoolMembers,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkDataSourceVirtualEnvironmentPoolComment,
-		mkDataSourceVirtualEnvironmentPoolMembers,
-		mkDataSourceVirtualEnvironmentPoolPoolID,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeList,
-		schema.TypeString,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentPoolComment: schema.TypeString,
+		mkDataSourceVirtualEnvironmentPoolMembers: schema.TypeList,
+		mkDataSourceVirtualEnvironmentPoolPoolID:  schema.TypeString,
 	})
 
 	membersSchema := testNestedSchemaExistence(t, s, mkDataSourceVirtualEnvironmentPoolMembers)
@@ -52,17 +48,11 @@ func TestDataSourceVirtualEnvironmentPoolSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentPoolMembersVMID,
 	})
 
-	testSchemaValueTypes(t, membersSchema, []string{
-		mkDataSourceVirtualEnvironmentPoolMembersDatastoreID,
-		mkDataSourceVirtualEnvironmentPoolMembersID,
-		mkDataSourceVirtualEnvironmentPoolMembersNodeName,
-		mkDataSourceVirtualEnvironmentPoolMembersType,
-		mkDataSourceVirtualEnvironmentPoolMembersVMID,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeInt,
+	testSchemaValueTypes(t, membersSchema, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentPoolMembersDatastoreID: schema.TypeString,
+		mkDataSourceVirtualEnvironmentPoolMembersID:          schema.TypeString,
+		mkDataSourceVirtualEnvironmentPoolMembersNodeName:    schema.TypeString,
+		mkDataSourceVirtualEnvironmentPoolMembersType:        schema.TypeString,
+		mkDataSourceVirtualEnvironmentPoolMembersVMID:        schema.TypeInt,
 	})
 }

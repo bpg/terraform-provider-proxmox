@@ -31,13 +31,9 @@ func TestDataSourceVirtualEnvironmentDNSSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentDNSServers,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkDataSourceVirtualEnvironmentDNSDomain,
-		mkDataSourceVirtualEnvironmentDNSNodeName,
-		mkDataSourceVirtualEnvironmentDNSServers,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeList,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentDNSDomain:   schema.TypeString,
+		mkDataSourceVirtualEnvironmentDNSNodeName: schema.TypeString,
+		mkDataSourceVirtualEnvironmentDNSServers:  schema.TypeList,
 	})
 }

@@ -38,27 +38,16 @@ func TestDataSourceVirtualEnvironmentDatastoresSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentDatastoresTypes,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkDataSourceVirtualEnvironmentDatastoresActive,
-		mkDataSourceVirtualEnvironmentDatastoresContentTypes,
-		mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs,
-		mkDataSourceVirtualEnvironmentDatastoresEnabled,
-		mkDataSourceVirtualEnvironmentDatastoresNodeName,
-		mkDataSourceVirtualEnvironmentDatastoresShared,
-		mkDataSourceVirtualEnvironmentDatastoresSpaceAvailable,
-		mkDataSourceVirtualEnvironmentDatastoresSpaceTotal,
-		mkDataSourceVirtualEnvironmentDatastoresSpaceUsed,
-		mkDataSourceVirtualEnvironmentDatastoresTypes,
-	}, []schema.ValueType{
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeString,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentDatastoresActive:         schema.TypeList,
+		mkDataSourceVirtualEnvironmentDatastoresContentTypes:   schema.TypeList,
+		mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs:   schema.TypeList,
+		mkDataSourceVirtualEnvironmentDatastoresEnabled:        schema.TypeList,
+		mkDataSourceVirtualEnvironmentDatastoresNodeName:       schema.TypeString,
+		mkDataSourceVirtualEnvironmentDatastoresShared:         schema.TypeList,
+		mkDataSourceVirtualEnvironmentDatastoresSpaceAvailable: schema.TypeList,
+		mkDataSourceVirtualEnvironmentDatastoresSpaceTotal:     schema.TypeList,
+		mkDataSourceVirtualEnvironmentDatastoresSpaceUsed:      schema.TypeList,
+		mkDataSourceVirtualEnvironmentDatastoresTypes:          schema.TypeList,
 	})
 }

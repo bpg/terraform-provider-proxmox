@@ -35,20 +35,13 @@ func TestResourceVirtualEnvironmentHostsSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentHostsHostnames,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkResourceVirtualEnvironmentHostsAddresses,
-		mkResourceVirtualEnvironmentHostsDigest,
-		mkResourceVirtualEnvironmentHostsEntries,
-		mkResourceVirtualEnvironmentHostsEntry,
-		mkResourceVirtualEnvironmentHostsHostnames,
-		mkResourceVirtualEnvironmentHostsNodeName,
-	}, []schema.ValueType{
-		schema.TypeList,
-		schema.TypeString,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeString,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentHostsAddresses: schema.TypeList,
+		mkResourceVirtualEnvironmentHostsDigest:    schema.TypeString,
+		mkResourceVirtualEnvironmentHostsEntries:   schema.TypeList,
+		mkResourceVirtualEnvironmentHostsEntry:     schema.TypeList,
+		mkResourceVirtualEnvironmentHostsHostnames: schema.TypeList,
+		mkResourceVirtualEnvironmentHostsNodeName:  schema.TypeString,
 	})
 
 	entriesSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentHostsEntries)
@@ -58,12 +51,9 @@ func TestResourceVirtualEnvironmentHostsSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentHostsEntriesHostnames,
 	})
 
-	testSchemaValueTypes(t, entriesSchema, []string{
-		mkResourceVirtualEnvironmentHostsEntriesAddress,
-		mkResourceVirtualEnvironmentHostsEntriesHostnames,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeList,
+	testSchemaValueTypes(t, entriesSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentHostsEntriesAddress:   schema.TypeString,
+		mkResourceVirtualEnvironmentHostsEntriesHostnames: schema.TypeList,
 	})
 
 	entrySchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentHostsEntry)
@@ -73,11 +63,8 @@ func TestResourceVirtualEnvironmentHostsSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentHostsEntryHostnames,
 	})
 
-	testSchemaValueTypes(t, entrySchema, []string{
-		mkResourceVirtualEnvironmentHostsEntryAddress,
-		mkResourceVirtualEnvironmentHostsEntryHostnames,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeList,
+	testSchemaValueTypes(t, entrySchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentHostsEntryAddress:   schema.TypeString,
+		mkResourceVirtualEnvironmentHostsEntryHostnames: schema.TypeList,
 	})
 }

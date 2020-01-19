@@ -29,10 +29,8 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderVirtualEnvironment,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkProviderVirtualEnvironment,
-	}, []schema.ValueType{
-		schema.TypeList,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkProviderVirtualEnvironment: schema.TypeList,
 	})
 
 	veSchema := testNestedSchemaExistence(t, s, mkProviderVirtualEnvironment)
@@ -44,15 +42,10 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderVirtualEnvironmentUsername,
 	})
 
-	testSchemaValueTypes(t, veSchema, []string{
-		mkProviderVirtualEnvironmentEndpoint,
-		mkProviderVirtualEnvironmentInsecure,
-		mkProviderVirtualEnvironmentPassword,
-		mkProviderVirtualEnvironmentUsername,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeBool,
-		schema.TypeString,
-		schema.TypeString,
+	testSchemaValueTypes(t, veSchema, map[string]schema.ValueType{
+		mkProviderVirtualEnvironmentEndpoint: schema.TypeString,
+		mkProviderVirtualEnvironmentInsecure: schema.TypeBool,
+		mkProviderVirtualEnvironmentPassword: schema.TypeString,
+		mkProviderVirtualEnvironmentUsername: schema.TypeString,
 	})
 }

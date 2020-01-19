@@ -35,25 +35,15 @@ func TestDataSourceVirtualEnvironmentNodesSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentNodesUptime,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkDataSourceVirtualEnvironmentNodesCPUCount,
-		mkDataSourceVirtualEnvironmentNodesCPUUtilization,
-		mkDataSourceVirtualEnvironmentNodesMemoryAvailable,
-		mkDataSourceVirtualEnvironmentNodesMemoryUsed,
-		mkDataSourceVirtualEnvironmentNodesNames,
-		mkDataSourceVirtualEnvironmentNodesOnline,
-		mkDataSourceVirtualEnvironmentNodesSSLFingerprints,
-		mkDataSourceVirtualEnvironmentNodesSupportLevels,
-		mkDataSourceVirtualEnvironmentNodesUptime,
-	}, []schema.ValueType{
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentNodesCPUCount:        schema.TypeList,
+		mkDataSourceVirtualEnvironmentNodesCPUUtilization:  schema.TypeList,
+		mkDataSourceVirtualEnvironmentNodesMemoryAvailable: schema.TypeList,
+		mkDataSourceVirtualEnvironmentNodesMemoryUsed:      schema.TypeList,
+		mkDataSourceVirtualEnvironmentNodesNames:           schema.TypeList,
+		mkDataSourceVirtualEnvironmentNodesOnline:          schema.TypeList,
+		mkDataSourceVirtualEnvironmentNodesSSLFingerprints: schema.TypeList,
+		mkDataSourceVirtualEnvironmentNodesSupportLevels:   schema.TypeList,
+		mkDataSourceVirtualEnvironmentNodesUptime:          schema.TypeList,
 	})
 }

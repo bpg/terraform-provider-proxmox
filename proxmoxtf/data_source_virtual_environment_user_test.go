@@ -39,26 +39,16 @@ func TestDataSourceVirtualEnvironmentUserSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentUserLastName,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkDataSourceVirtualEnvironmentUserACL,
-		mkDataSourceVirtualEnvironmentUserComment,
-		mkDataSourceVirtualEnvironmentUserEmail,
-		mkDataSourceVirtualEnvironmentUserEnabled,
-		mkDataSourceVirtualEnvironmentUserExpirationDate,
-		mkDataSourceVirtualEnvironmentUserFirstName,
-		mkDataSourceVirtualEnvironmentUserGroups,
-		mkDataSourceVirtualEnvironmentUserKeys,
-		mkDataSourceVirtualEnvironmentUserLastName,
-	}, []schema.ValueType{
-		schema.TypeSet,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeBool,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeList,
-		schema.TypeString,
-		schema.TypeString,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentUserACL:            schema.TypeSet,
+		mkDataSourceVirtualEnvironmentUserComment:        schema.TypeString,
+		mkDataSourceVirtualEnvironmentUserEmail:          schema.TypeString,
+		mkDataSourceVirtualEnvironmentUserEnabled:        schema.TypeBool,
+		mkDataSourceVirtualEnvironmentUserExpirationDate: schema.TypeString,
+		mkDataSourceVirtualEnvironmentUserFirstName:      schema.TypeString,
+		mkDataSourceVirtualEnvironmentUserGroups:         schema.TypeList,
+		mkDataSourceVirtualEnvironmentUserKeys:           schema.TypeString,
+		mkDataSourceVirtualEnvironmentUserLastName:       schema.TypeString,
 	})
 
 	aclSchema := testNestedSchemaExistence(t, s, mkDataSourceVirtualEnvironmentGroupACL)
@@ -69,13 +59,9 @@ func TestDataSourceVirtualEnvironmentUserSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentUserACLRoleID,
 	})
 
-	testSchemaValueTypes(t, aclSchema, []string{
-		mkDataSourceVirtualEnvironmentUserACLPath,
-		mkDataSourceVirtualEnvironmentUserACLPropagate,
-		mkDataSourceVirtualEnvironmentUserACLRoleID,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeBool,
-		schema.TypeString,
+	testSchemaValueTypes(t, aclSchema, map[string]schema.ValueType{
+		mkDataSourceVirtualEnvironmentUserACLPath:      schema.TypeString,
+		mkDataSourceVirtualEnvironmentUserACLPropagate: schema.TypeBool,
+		mkDataSourceVirtualEnvironmentUserACLRoleID:    schema.TypeString,
 	})
 }

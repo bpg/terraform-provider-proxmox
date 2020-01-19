@@ -41,26 +41,16 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileFileTag,
 	})
 
-	testSchemaValueTypes(t, s, []string{
-		mkResourceVirtualEnvironmentFileContentType,
-		mkResourceVirtualEnvironmentFileDatastoreID,
-		mkResourceVirtualEnvironmentFileFileModificationDate,
-		mkResourceVirtualEnvironmentFileFileName,
-		mkResourceVirtualEnvironmentFileFileSize,
-		mkResourceVirtualEnvironmentFileFileTag,
-		mkResourceVirtualEnvironmentFileNodeName,
-		mkResourceVirtualEnvironmentFileSourceFile,
-		mkResourceVirtualEnvironmentFileSourceRaw,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeInt,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeList,
-		schema.TypeList,
+	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentFileContentType:          schema.TypeString,
+		mkResourceVirtualEnvironmentFileDatastoreID:          schema.TypeString,
+		mkResourceVirtualEnvironmentFileFileModificationDate: schema.TypeString,
+		mkResourceVirtualEnvironmentFileFileName:             schema.TypeString,
+		mkResourceVirtualEnvironmentFileFileSize:             schema.TypeInt,
+		mkResourceVirtualEnvironmentFileFileTag:              schema.TypeString,
+		mkResourceVirtualEnvironmentFileNodeName:             schema.TypeString,
+		mkResourceVirtualEnvironmentFileSourceFile:           schema.TypeList,
+		mkResourceVirtualEnvironmentFileSourceRaw:            schema.TypeList,
 	})
 
 	sourceFileSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentFileSourceFile)
@@ -76,18 +66,12 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileSourceFileInsecure,
 	})
 
-	testSchemaValueTypes(t, sourceFileSchema, []string{
-		mkResourceVirtualEnvironmentFileSourceFileChanged,
-		mkResourceVirtualEnvironmentFileSourceFileChecksum,
-		mkResourceVirtualEnvironmentFileSourceFileFileName,
-		mkResourceVirtualEnvironmentFileSourceFileInsecure,
-		mkResourceVirtualEnvironmentFileSourceFilePath,
-	}, []schema.ValueType{
-		schema.TypeBool,
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeBool,
-		schema.TypeString,
+	testSchemaValueTypes(t, sourceFileSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentFileSourceFileChanged:  schema.TypeBool,
+		mkResourceVirtualEnvironmentFileSourceFileChecksum: schema.TypeString,
+		mkResourceVirtualEnvironmentFileSourceFileFileName: schema.TypeString,
+		mkResourceVirtualEnvironmentFileSourceFileInsecure: schema.TypeBool,
+		mkResourceVirtualEnvironmentFileSourceFilePath:     schema.TypeString,
 	})
 
 	sourceRawSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentFileSourceRaw)
@@ -101,13 +85,9 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileSourceRawResize,
 	})
 
-	testSchemaValueTypes(t, sourceRawSchema, []string{
-		mkResourceVirtualEnvironmentFileSourceRawData,
-		mkResourceVirtualEnvironmentFileSourceRawFileName,
-		mkResourceVirtualEnvironmentFileSourceRawResize,
-	}, []schema.ValueType{
-		schema.TypeString,
-		schema.TypeString,
-		schema.TypeInt,
+	testSchemaValueTypes(t, sourceRawSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentFileSourceRawData:     schema.TypeString,
+		mkResourceVirtualEnvironmentFileSourceRawFileName: schema.TypeString,
+		mkResourceVirtualEnvironmentFileSourceRawResize:   schema.TypeInt,
 	})
 }

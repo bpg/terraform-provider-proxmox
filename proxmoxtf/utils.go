@@ -397,14 +397,14 @@ func testRequiredArguments(t *testing.T, s *schema.Resource, keys []string) {
 	}
 }
 
-func testSchemaValueTypes(t *testing.T, s *schema.Resource, keys []string, types []schema.ValueType) {
-	for i, v := range keys {
-		if s.Schema[v] == nil {
-			t.Fatalf("Error in Schema: Missing definition for \"%s\"", v)
+func testSchemaValueTypes(t *testing.T, s *schema.Resource, f map[string]schema.ValueType) {
+	for fn, ft := range f {
+		if s.Schema[fn] == nil {
+			t.Fatalf("Error in Schema: Missing definition for \"%s\"", fn)
 		}
 
-		if s.Schema[v].Type != types[i] {
-			t.Fatalf("Error in Schema: Argument \"%s\" is not of type \"%v\"", v, types[i])
+		if s.Schema[fn].Type != ft {
+			t.Fatalf("Error in Schema: Argument or attribute \"%s\" is not of type \"%v\"", fn, ft)
 		}
 	}
 }
