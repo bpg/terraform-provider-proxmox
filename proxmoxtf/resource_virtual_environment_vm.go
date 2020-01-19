@@ -1038,8 +1038,9 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	updateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
 		AudioDevices: audioDevices,
-		Description:  &description,
 	}
+
+	delete := []string{}
 
 	if acpi != dvResourceVirtualEnvironmentVMACPI {
 		updateBody.ACPI = &acpi
@@ -1172,6 +1173,16 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			return err
 		}
 
+		for i := 0; i < len(updateBody.NetworkDevices); i++ {
+			if !updateBody.NetworkDevices[i].Enabled {
+				delete = append(delete, fmt.Sprintf("net%d", i))
+			}
+		}
+
+		for i := len(updateBody.NetworkDevices); i < maxNetworkDevices; i++ {
+			delete = append(delete, fmt.Sprintf("net%d", i))
+		}
+
 		updateBody.NetworkDevices = networkDeviceObjects
 	}
 
@@ -1187,6 +1198,10 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 		if err != nil {
 			return err
+		}
+
+		for i := len(updateBody.SerialDevices); i < maxSerialDevices; i++ {
+			delete = append(delete, fmt.Sprintf("serial%d", i))
 		}
 
 		updateBody.SerialDevices = serialDevices
@@ -1213,6 +1228,8 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 		updateBody.VGADevice = vgaDevice
 	}
+
+	updateBody.Delete = delete
 
 	err = veClient.UpdateVM(nodeName, vmID, updateBody)
 
