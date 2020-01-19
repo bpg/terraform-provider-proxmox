@@ -30,6 +30,8 @@ const (
 	dvResourceVirtualEnvironmentVMBIOS                              = "seabios"
 	dvResourceVirtualEnvironmentVMCDROMEnabled                      = false
 	dvResourceVirtualEnvironmentVMCDROMFileID                       = ""
+	dvResourceVirtualEnvironmentVMCloneDatastoreID                  = ""
+	dvResourceVirtualEnvironmentVMCloneNodeName                     = ""
 	dvResourceVirtualEnvironmentVMCPUArchitecture                   = "x86_64"
 	dvResourceVirtualEnvironmentVMCPUCores                          = 1
 	dvResourceVirtualEnvironmentVMCPUHotplugged                     = 0
@@ -69,6 +71,7 @@ const (
 	dvResourceVirtualEnvironmentVMSerialDeviceDevice                = "socket"
 	dvResourceVirtualEnvironmentVMStarted                           = true
 	dvResourceVirtualEnvironmentVMTabletDevice                      = true
+	dvResourceVirtualEnvironmentVMTemplate                          = false
 	dvResourceVirtualEnvironmentVMVGAEnabled                        = true
 	dvResourceVirtualEnvironmentVMVGAMemory                         = 16
 	dvResourceVirtualEnvironmentVMVGAType                           = "std"
@@ -87,6 +90,10 @@ const (
 	mkResourceVirtualEnvironmentVMCDROM                             = "cdrom"
 	mkResourceVirtualEnvironmentVMCDROMEnabled                      = "enabled"
 	mkResourceVirtualEnvironmentVMCDROMFileID                       = "file_id"
+	mkResourceVirtualEnvironmentVMClone                             = "clone"
+	mkResourceVirtualEnvironmentVMCloneDatastoreID                  = "datastore_id"
+	mkResourceVirtualEnvironmentVMCloneNodeName                     = "node_name"
+	mkResourceVirtualEnvironmentVMCloneVMID                         = "vm_id"
 	mkResourceVirtualEnvironmentVMCPU                               = "cpu"
 	mkResourceVirtualEnvironmentVMCPUArchitecture                   = "architecture"
 	mkResourceVirtualEnvironmentVMCPUCores                          = "cores"
@@ -147,6 +154,7 @@ const (
 	mkResourceVirtualEnvironmentVMSerialDeviceDevice                = "device"
 	mkResourceVirtualEnvironmentVMStarted                           = "started"
 	mkResourceVirtualEnvironmentVMTabletDevice                      = "tablet_device"
+	mkResourceVirtualEnvironmentVMTemplate                          = "template"
 	mkResourceVirtualEnvironmentVMVGA                               = "vga"
 	mkResourceVirtualEnvironmentVMVGAEnabled                        = "enabled"
 	mkResourceVirtualEnvironmentVMVGAMemory                         = "memory"
@@ -269,6 +277,41 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMCDROMFileID,
 							ValidateFunc: getFileIDValidator(),
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentVMClone: &schema.Schema{
+				Type:        schema.TypeList,
+				Description: "The cloning configuration",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMCloneDatastoreID: {
+							Type:        schema.TypeString,
+							Description: "The ID of the target datastore",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentVMCloneDatastoreID,
+						},
+						mkResourceVirtualEnvironmentVMCloneNodeName: {
+							Type:        schema.TypeString,
+							Description: "The name of the source node",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentVMCloneNodeName,
+						},
+						mkResourceVirtualEnvironmentVMCloneVMID: {
+							Type:         schema.TypeInt,
+							Description:  "The ID of the source VM",
+							Required:     true,
+							ForceNew:     true,
+							ValidateFunc: getVMIDValidator(),
 						},
 					},
 				},
@@ -814,12 +857,22 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "Whether to start the virtual machine",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMStarted,
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
+				},
 			},
 			mkResourceVirtualEnvironmentVMTabletDevice: {
 				Type:        schema.TypeBool,
 				Description: "Whether to enable the USB tablet device",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMTabletDevice,
+			},
+			mkResourceVirtualEnvironmentVMTemplate: {
+				Type:        schema.TypeBool,
+				Description: "Whether to create a template",
+				Optional:    true,
+				ForceNew:    true,
+				Default:     dvResourceVirtualEnvironmentVMTemplate,
 			},
 			mkResourceVirtualEnvironmentVMVGA: &schema.Schema{
 				Type:        schema.TypeList,
@@ -878,6 +931,299 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 }
 
 func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) error {
+	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
+
+	if len(clone) > 0 {
+		return resourceVirtualEnvironmentVMCreateClone(d, m)
+	}
+
+	return resourceVirtualEnvironmentVMCreateCustom(d, m)
+}
+
+func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface{}) error {
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
+
+	if err != nil {
+		return err
+	}
+
+	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
+	cloneBlock := clone[0].(map[string]interface{})
+	cloneDatastoreID := cloneBlock[mkResourceVirtualEnvironmentVMCloneDatastoreID].(string)
+	cloneNodeName := cloneBlock[mkResourceVirtualEnvironmentVMCloneNodeName].(string)
+	cloneVMID := cloneBlock[mkResourceVirtualEnvironmentVMCloneVMID].(int)
+
+	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
+	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
+	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
+	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
+
+	if vmID == -1 {
+		vmIDNew, err := veClient.GetVMID()
+
+		if err != nil {
+			return err
+		}
+
+		vmID = *vmIDNew
+	}
+
+	fullCopy := proxmox.CustomBool(true)
+
+	body := &proxmox.VirtualEnvironmentVMCloneRequestBody{
+		FullCopy: &fullCopy,
+		VMIDNew:  vmID,
+	}
+
+	if cloneDatastoreID != "" {
+		body.TargetStorage = &cloneDatastoreID
+	}
+
+	if description != "" {
+		body.Description = &description
+	}
+
+	if name != "" {
+		body.Name = &name
+	}
+
+	if poolID != "" {
+		body.PoolID = &poolID
+	}
+
+	if cloneNodeName != "" && cloneNodeName != nodeName {
+		body.TargetNodeName = &nodeName
+
+		err = veClient.CloneVM(cloneNodeName, cloneVMID, body)
+	} else {
+		err = veClient.CloneVM(nodeName, cloneVMID, body)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	d.SetId(strconv.Itoa(vmID))
+
+	err = veClient.WaitForVMConfigUnlock(nodeName, vmID, 300, 5)
+
+	if err != nil {
+		return err
+	}
+
+	// Now that the virtual machine has been cloned, we need to perform some modifications.
+	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
+
+	if err != nil {
+		return err
+	}
+
+	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
+	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
+	cpu := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
+	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
+	memory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
+	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
+	operatingSystem := d.Get(mkResourceVirtualEnvironmentVMOperatingSystem).([]interface{})
+	serialDevice := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
+	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
+	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
+	vga := d.Get(mkResourceVirtualEnvironmentVMVGA).([]interface{})
+
+	updateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
+		AudioDevices: audioDevices,
+		Description:  &description,
+	}
+
+	if acpi != dvResourceVirtualEnvironmentVMACPI {
+		updateBody.ACPI = &acpi
+	}
+
+	if len(agent) > 0 {
+		agentBlock := agent[0].(map[string]interface{})
+
+		agentEnabled := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
+		agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
+
+		updateBody.Agent = &proxmox.CustomAgent{
+			Enabled:         &agentEnabled,
+			TrimClonedDisks: &agentTrim,
+			Type:            &agentType,
+		}
+	}
+
+	if bios != dvResourceVirtualEnvironmentVMBIOS {
+		updateBody.BIOS = &bios
+	}
+
+	if len(cdrom) > 0 {
+		cdromBlock := cdrom[0].(map[string]interface{})
+
+		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
+		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
+
+		if cdromFileID == "" {
+			cdromFileID = "cdrom"
+		}
+
+		cdromMedia := "cdrom"
+
+		updateBody.IDEDevices = proxmox.CustomStorageDevices{
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled:    cdromEnabled,
+				FileVolume: cdromFileID,
+				Media:      &cdromMedia,
+			},
+		}
+	}
+
+	if len(cpu) > 0 {
+		cpuBlock := cpu[0].(map[string]interface{})
+
+		cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentVMCPUArchitecture].(string)
+		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
+		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
+		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
+		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
+		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
+		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
+
+		cpuFlagsConverted := make([]string, len(cpuFlags))
+
+		for fi, flag := range cpuFlags {
+			cpuFlagsConverted[fi] = flag.(string)
+		}
+
+		updateBody.CPUArchitecture = &cpuArchitecture
+		updateBody.CPUCores = &cpuCores
+		updateBody.CPUEmulation = &proxmox.CustomCPUEmulation{
+			Flags: &cpuFlagsConverted,
+			Type:  cpuType,
+		}
+		updateBody.CPUSockets = &cpuSockets
+		updateBody.CPUUnits = &cpuUnits
+
+		if cpuHotplugged > 0 {
+			updateBody.VirtualCPUCount = &cpuHotplugged
+		}
+	}
+
+	if len(initialization) > 0 {
+		cdromEnabled := true
+		cdromFileID := "local-lvm:cloudinit"
+		cdromMedia := "cdrom"
+
+		updateBody.IDEDevices = proxmox.CustomStorageDevices{
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled:    cdromEnabled,
+				FileVolume: cdromFileID,
+				Media:      &cdromMedia,
+			},
+		}
+	}
+
+	if keyboardLayout != dvResourceVirtualEnvironmentVMKeyboardLayout {
+		updateBody.KeyboardLayout = &keyboardLayout
+	}
+
+	if len(memory) > 0 {
+		memoryBlock := memory[0].(map[string]interface{})
+
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
+		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
+		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
+
+		updateBody.DedicatedMemory = &memoryDedicated
+		updateBody.FloatingMemory = &memoryFloating
+
+		if memoryShared > 0 {
+			memorySharedName := fmt.Sprintf("vm-%d-ivshmem", vmID)
+
+			updateBody.SharedMemory = &proxmox.CustomSharedMemory{
+				Name: &memorySharedName,
+				Size: memoryShared,
+			}
+		}
+	}
+
+	if len(networkDevice) > 0 {
+		networkDeviceObjects, err := resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		updateBody.NetworkDevices = networkDeviceObjects
+	}
+
+	if len(operatingSystem) > 0 {
+		operatingSystemBlock := operatingSystem[0].(map[string]interface{})
+		operatingSystemType := operatingSystemBlock[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
+
+		updateBody.OSType = &operatingSystemType
+	}
+
+	if len(serialDevice) > 0 {
+		serialDevices, err := resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		updateBody.SerialDevices = serialDevices
+	}
+
+	if started != dvResourceVirtualEnvironmentVMStarted {
+		updateBody.StartOnBoot = &started
+	}
+
+	if tabletDevice != dvResourceVirtualEnvironmentVMTabletDevice {
+		updateBody.TabletDeviceEnabled = &tabletDevice
+	}
+
+	if template != dvResourceVirtualEnvironmentVMTemplate {
+		updateBody.Template = &template
+	}
+
+	if len(vga) > 0 {
+		vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		updateBody.VGADevice = vgaDevice
+	}
+
+	err = veClient.UpdateVM(nodeName, vmID, updateBody)
+
+	if err != nil {
+		return err
+	}
+
+	return resourceVirtualEnvironmentVMCreateStart(d, m)
+}
+
+func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -991,6 +1337,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
 	vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
 
@@ -1083,6 +1430,7 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 		SharedMemory:        memorySharedObject,
 		StartOnBoot:         &started,
 		TabletDeviceEnabled: &tabletDevice,
+		Template:            &template,
 		VGADevice:           vgaDevice,
 		VMID:                &vmID,
 	}
@@ -1107,10 +1455,10 @@ func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) e
 
 	d.SetId(strconv.Itoa(vmID))
 
-	return resourceVirtualEnvironmentVMCreateImportedDisks(d, m)
+	return resourceVirtualEnvironmentVMCreateCustomDisks(d, m)
 }
 
-func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 
@@ -1236,8 +1584,9 @@ func resourceVirtualEnvironmentVMCreateImportedDisks(d *schema.ResourceData, m i
 
 func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface{}) error {
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
+	template := d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
 
-	if !started {
+	if !started || template {
 		return resourceVirtualEnvironmentVMRead(d, m)
 	}
 
@@ -1269,6 +1618,39 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 	}
 
 	return resourceVirtualEnvironmentVMRead(d, m)
+}
+
+func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData, m interface{}) (proxmox.CustomAudioDevices, error) {
+	devices := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
+	list := make(proxmox.CustomAudioDevices, len(devices))
+
+	for i, v := range devices {
+		block := v.(map[string]interface{})
+
+		device, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceDevice].(string)
+		driver, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceDriver].(string)
+		enabled, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceEnabled].(bool)
+
+		list[i].Device = device
+		list[i].Driver = &driver
+		list[i].Enabled = enabled
+	}
+
+	return list, nil
+}
+
+func resourceVirtualEnvironmentVMGetAudioDeviceValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"AC97",
+		"ich9-intel-hda",
+		"intel-hda",
+	}, false)
+}
+
+func resourceVirtualEnvironmentVMGetAudioDriverValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"spice",
+	}, false)
 }
 
 func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m interface{}) (*proxmox.CustomCloudInitConfig, error) {
@@ -1373,39 +1755,6 @@ func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m in
 	}
 
 	return initializationConfig, nil
-}
-
-func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData, m interface{}) (proxmox.CustomAudioDevices, error) {
-	devices := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
-	list := make(proxmox.CustomAudioDevices, len(devices))
-
-	for i, v := range devices {
-		block := v.(map[string]interface{})
-
-		device, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceDevice].(string)
-		driver, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceDriver].(string)
-		enabled, _ := block[mkResourceVirtualEnvironmentVMAudioDeviceEnabled].(bool)
-
-		list[i].Device = device
-		list[i].Driver = &driver
-		list[i].Enabled = enabled
-	}
-
-	return list, nil
-}
-
-func resourceVirtualEnvironmentVMGetAudioDeviceValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
-		"AC97",
-		"ich9-intel-hda",
-		"intel-hda",
-	}, false)
-}
-
-func resourceVirtualEnvironmentVMGetAudioDriverValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
-		"spice",
-	}, false)
 }
 
 func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaValidateFunc {
@@ -1623,75 +1972,79 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		return err
 	}
 
-	// Compare some primitive arguments to the values stored in the state.
-	if vmConfig.ACPI != nil {
-		d.Set(mkResourceVirtualEnvironmentVMACPI, bool(*vmConfig.ACPI))
-	} else {
-		// Default value of "acpi" is "1" according to the API documentation.
-		d.Set(mkResourceVirtualEnvironmentVMACPI, true)
+	vmStatus, err := veClient.GetVMStatus(nodeName, vmID)
+
+	if err != nil {
+		return err
 	}
 
-	if vmConfig.BIOS != nil {
-		d.Set(mkResourceVirtualEnvironmentVMBIOS, *vmConfig.BIOS)
-	} else {
-		// Default value of "bios" is "seabios" according to the API documentation.
-		d.Set(mkResourceVirtualEnvironmentVMBIOS, "seabios")
+	/*
+		clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
+
+		if len(clone) > 0 {
+			return resourceVirtualEnvironmentVMReadClone(d, m, vmID, vmConfig, vmStatus)
+		}
+	*/
+
+	return resourceVirtualEnvironmentVMReadCustom(d, m, vmID, vmConfig, vmStatus)
+}
+
+func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) error {
+	err := resourceVirtualEnvironmentVMReadPrimitiveValues(d, m, vmID, vmConfig, vmStatus)
+
+	if err != nil {
+		return err
 	}
 
-	if vmConfig.Description != nil {
-		d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
-	} else {
-		d.Set(mkResourceVirtualEnvironmentVMDescription, "")
-	}
-
-	if vmConfig.KeyboardLayout != nil {
-		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, *vmConfig.KeyboardLayout)
-	} else {
-		d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
-	}
-
-	if vmConfig.TabletDeviceEnabled != nil {
-		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
-	} else {
-		// Default value of "tablet" is "1" according to the API documentation.
-		d.Set(mkResourceVirtualEnvironmentVMTabletDevice, true)
-	}
+	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
 
 	// Compare the agent configuration to the one stored in the state.
-	if vmConfig.Agent != nil {
-		agent := map[string]interface{}{}
+	currentAgent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
 
-		if vmConfig.Agent.Enabled != nil {
-			agent[mkResourceVirtualEnvironmentVMAgentEnabled] = bool(*vmConfig.Agent.Enabled)
+	if len(clone) == 0 || len(currentAgent) > 0 {
+		if vmConfig.Agent != nil {
+			agent := map[string]interface{}{}
+
+			if vmConfig.Agent.Enabled != nil {
+				agent[mkResourceVirtualEnvironmentVMAgentEnabled] = bool(*vmConfig.Agent.Enabled)
+			} else {
+				agent[mkResourceVirtualEnvironmentVMAgentEnabled] = false
+			}
+
+			if vmConfig.Agent.TrimClonedDisks != nil {
+				agent[mkResourceVirtualEnvironmentVMAgentTrim] = bool(*vmConfig.Agent.TrimClonedDisks)
+			} else {
+				agent[mkResourceVirtualEnvironmentVMAgentTrim] = false
+			}
+
+			if vmConfig.Agent.Type != nil {
+				agent[mkResourceVirtualEnvironmentVMAgentType] = *vmConfig.Agent.Type
+			} else {
+				agent[mkResourceVirtualEnvironmentVMAgentType] = ""
+			}
+
+			if len(clone) > 0 {
+				if len(currentAgent) > 0 {
+					d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
+				}
+			} else if len(currentAgent) > 0 ||
+				agent[mkResourceVirtualEnvironmentVMAgentEnabled] != dvResourceVirtualEnvironmentVMAgentEnabled ||
+				agent[mkResourceVirtualEnvironmentVMAgentTrim] != dvResourceVirtualEnvironmentVMAgentTrim ||
+				agent[mkResourceVirtualEnvironmentVMAgentType] != dvResourceVirtualEnvironmentVMAgentType {
+				d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
+			}
+		} else if len(clone) > 0 {
+			if len(currentAgent) > 0 {
+				d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
+			}
 		} else {
-			agent[mkResourceVirtualEnvironmentVMAgentEnabled] = false
+			d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
 		}
-
-		if vmConfig.Agent.TrimClonedDisks != nil {
-			agent[mkResourceVirtualEnvironmentVMAgentTrim] = bool(*vmConfig.Agent.TrimClonedDisks)
-		} else {
-			agent[mkResourceVirtualEnvironmentVMAgentTrim] = false
-		}
-
-		if vmConfig.Agent.Type != nil {
-			agent[mkResourceVirtualEnvironmentVMAgentType] = *vmConfig.Agent.Type
-		} else {
-			agent[mkResourceVirtualEnvironmentVMAgentType] = ""
-		}
-
-		currentAgent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
-
-		if len(currentAgent) > 0 ||
-			agent[mkResourceVirtualEnvironmentVMAgentEnabled] != dvResourceVirtualEnvironmentVMAgentEnabled ||
-			agent[mkResourceVirtualEnvironmentVMAgentTrim] != dvResourceVirtualEnvironmentVMAgentTrim ||
-			agent[mkResourceVirtualEnvironmentVMAgentType] != dvResourceVirtualEnvironmentVMAgentType {
-			d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
-		}
-	} else {
-		d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
 	}
 
 	// Compare the audio devices to those stored in the state.
+	currentAudioDevice := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
+
 	audioDevices := make([]interface{}, 1)
 	audioDevicesArray := []*proxmox.CustomAudioDevice{
 		vmConfig.AudioDevice,
@@ -1722,7 +2075,9 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		audioDevices[adi] = m
 	}
 
-	d.Set(mkResourceVirtualEnvironmentVMAudioDevice, audioDevices[:audioDevicesCount])
+	if len(clone) == 0 || len(currentAudioDevice) > 0 {
+		d.Set(mkResourceVirtualEnvironmentVMAudioDevice, audioDevices[:audioDevicesCount])
+	}
 
 	// Compare the IDE devices to the CDROM and cloud-init configurations stored in the state.
 	if vmConfig.IDEDevice2 != nil {
@@ -1740,7 +2095,11 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 				cdrom[0] = cdromBlock
 
-				d.Set(mkResourceVirtualEnvironmentVMCDROM, cdrom)
+				currentCDROM := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
+
+				if len(clone) == 0 || len(currentCDROM) > 0 {
+					d.Set(mkResourceVirtualEnvironmentVMCDROM, cdrom)
+				}
 			}
 		} else {
 			d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
@@ -1811,7 +2170,11 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 	currentCPU := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 
-	if len(currentCPU) > 0 ||
+	if len(clone) > 0 {
+		if len(currentCPU) > 0 {
+			d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
+		}
+	} else if len(currentCPU) > 0 ||
 		cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] != dvResourceVirtualEnvironmentVMCPUArchitecture ||
 		cpu[mkResourceVirtualEnvironmentVMCPUCores] != dvResourceVirtualEnvironmentVMCPUCores ||
 		len(cpu[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})) > 0 ||
@@ -1823,7 +2186,7 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	}
 
 	// Compare the disks to those stored in the state.
-	currentDiskList := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+	currentDisk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 
 	diskList := []interface{}{}
 	diskObjects := []*proxmox.CustomStorageDevice{
@@ -1854,14 +2217,16 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 		disk[mkResourceVirtualEnvironmentVMDiskDatastoreID] = fileIDParts[0]
 
-		if len(currentDiskList) > di {
-			currentDisk := currentDiskList[di].(map[string]interface{})
+		if len(currentDisk) > di {
+			currentDiskEntry := currentDisk[di].(map[string]interface{})
 
-			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = currentDisk[mkResourceVirtualEnvironmentVMDiskFileFormat]
-			disk[mkResourceVirtualEnvironmentVMDiskFileID] = currentDisk[mkResourceVirtualEnvironmentVMDiskFileID]
+			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = currentDiskEntry[mkResourceVirtualEnvironmentVMDiskFileFormat]
+			disk[mkResourceVirtualEnvironmentVMDiskFileID] = currentDiskEntry[mkResourceVirtualEnvironmentVMDiskFileID]
 		}
 
 		diskSize := 0
+
+		var err error
 
 		if dd.Size != nil {
 			if strings.HasSuffix(*dd.Size, "T") {
@@ -1931,11 +2296,15 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		diskList = append(diskList, disk)
 	}
 
-	if len(currentDiskList) > 0 || len(diskList) > 0 {
+	if len(clone) > 0 {
+		if len(currentDisk) > 0 {
+			d.Set(mkResourceVirtualEnvironmentVMDisk, diskList)
+		}
+	} else if len(currentDisk) > 0 || len(diskList) > 0 {
 		d.Set(mkResourceVirtualEnvironmentVMDisk, diskList)
 	}
 
-	// Compare the cloud-init configuration to the one stored in the state.
+	// Compare the initialization configuration to the one stored in the state.
 	initialization := map[string]interface{}{}
 
 	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
@@ -2058,7 +2427,17 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
 	}
 
-	if len(initialization) > 0 {
+	currentInitialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
+
+	if len(clone) > 0 {
+		if len(currentInitialization) > 0 {
+			if len(initialization) > 0 {
+				d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
+			} else {
+				d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+			}
+		}
+	} else if len(initialization) > 0 {
 		d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
 	} else {
 		d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
@@ -2087,18 +2466,15 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 	currentMemory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
 
-	if len(currentMemory) > 0 ||
+	if len(clone) > 0 {
+		if len(currentMemory) > 0 {
+			d.Set(mkResourceVirtualEnvironmentVMMemory, []interface{}{memory})
+		}
+	} else if len(currentMemory) > 0 ||
 		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] != dvResourceVirtualEnvironmentVMMemoryDedicated ||
 		memory[mkResourceVirtualEnvironmentVMMemoryFloating] != dvResourceVirtualEnvironmentVMMemoryFloating ||
 		memory[mkResourceVirtualEnvironmentVMMemoryShared] != dvResourceVirtualEnvironmentVMMemoryShared {
 		d.Set(mkResourceVirtualEnvironmentVMMemory, []interface{}{memory})
-	}
-
-	// Compare the name to the value stored in the state.
-	if vmConfig.Name != nil {
-		d.Set(mkResourceVirtualEnvironmentVMName, *vmConfig.Name)
-	} else {
-		d.Set(mkResourceVirtualEnvironmentVMName, "")
 	}
 
 	// Compare the network devices to those stored in the state.
@@ -2160,10 +2536,17 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		networkDeviceList[ni] = networkDevice
 	}
 
-	d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
+	if len(clone) > 0 {
+		if len(currentNetworkDeviceList) > 0 {
+			d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
+			d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+		}
+	} else {
+		d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
 
-	if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-		d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+		if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
+			d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+		}
 	}
 
 	// Compare the operating system configuration to the one stored in the state.
@@ -2177,16 +2560,24 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 	currentOperatingSystem := d.Get(mkResourceVirtualEnvironmentVMOperatingSystem).([]interface{})
 
-	if len(currentOperatingSystem) > 0 ||
+	if len(clone) > 0 {
+		if len(currentOperatingSystem) > 0 {
+			d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{operatingSystem})
+		}
+	} else if len(currentOperatingSystem) > 0 ||
 		operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType] != dvResourceVirtualEnvironmentVMOperatingSystemType {
 		d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{operatingSystem})
 	} else {
 		d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{})
 	}
 
-	// Compare the pool ID to the values stored in the state.
-	if vmConfig.PoolID != nil {
-		d.Set(mkResourceVirtualEnvironmentVMPoolID, *vmConfig.PoolID)
+	// Compare the pool ID to the value stored in the state.
+	currentPoolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
+
+	if len(clone) == 0 || currentPoolID != dvResourceVirtualEnvironmentVMPoolID {
+		if vmConfig.PoolID != nil {
+			d.Set(mkResourceVirtualEnvironmentVMPoolID, *vmConfig.PoolID)
+		}
 	}
 
 	// Compare the serial devices to those stored in the state.
@@ -2212,7 +2603,11 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		serialDevices[sdi] = m
 	}
 
-	d.Set(mkResourceVirtualEnvironmentVMSerialDevice, serialDevices[:serialDevicesCount])
+	currentSerialDevice := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
+
+	if len(clone) == 0 || len(currentSerialDevice) > 0 {
+		d.Set(mkResourceVirtualEnvironmentVMSerialDevice, serialDevices[:serialDevicesCount])
+	}
 
 	// Compare the VGA configuration to the one stored in the state.
 	vga := map[string]interface{}{}
@@ -2247,7 +2642,11 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 
 	currentVGA := d.Get(mkResourceVirtualEnvironmentVMVGA).([]interface{})
 
-	if len(currentVGA) > 0 ||
+	if len(clone) > 0 {
+		if len(currentVGA) > 0 {
+			d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{vga})
+		}
+	} else if len(currentVGA) > 0 ||
 		vga[mkResourceVirtualEnvironmentVMVGAEnabled] != dvResourceVirtualEnvironmentVMVGAEnabled ||
 		vga[mkResourceVirtualEnvironmentVMVGAMemory] != dvResourceVirtualEnvironmentVMVGAMemory ||
 		vga[mkResourceVirtualEnvironmentVMVGAType] != dvResourceVirtualEnvironmentVMVGAType {
@@ -2256,18 +2655,27 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 		d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{})
 	}
 
-	// Determine the state of the virtual machine in order to update the "started" argument.
-	status, err := veClient.GetVMStatus(nodeName, vmID)
+	return resourceVirtualEnvironmentVMReadNetworkValues(d, m, vmID, vmConfig)
+}
+
+func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData) error {
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
 
 	if err != nil {
 		return err
 	}
 
-	d.Set(mkResourceVirtualEnvironmentVMStarted, status.Status == "running")
+	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
-	// Populate the attributes that rely on the QEMU agent.
+	if !started {
+		return nil
+	}
+
 	ipv4Addresses := []interface{}{}
 	ipv6Addresses := []interface{}{}
+	macAddresses := []interface{}{}
 	networkInterfaceNames := []interface{}{}
 
 	if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
@@ -2308,6 +2716,90 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	return nil
 }
 
+func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) error {
+	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
+	currentACPI := d.Get(mkResourceVirtualEnvironmentVMACPI).(bool)
+
+	if len(clone) == 0 || currentACPI != dvResourceVirtualEnvironmentVMACPI {
+		if vmConfig.ACPI != nil {
+			d.Set(mkResourceVirtualEnvironmentVMACPI, bool(*vmConfig.ACPI))
+		} else {
+			// Default value of "acpi" is "1" according to the API documentation.
+			d.Set(mkResourceVirtualEnvironmentVMACPI, true)
+		}
+	}
+
+	currentBIOS := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
+
+	if len(clone) == 0 || currentBIOS != dvResourceVirtualEnvironmentVMBIOS {
+		if vmConfig.BIOS != nil {
+			d.Set(mkResourceVirtualEnvironmentVMBIOS, *vmConfig.BIOS)
+		} else {
+			// Default value of "bios" is "seabios" according to the API documentation.
+			d.Set(mkResourceVirtualEnvironmentVMBIOS, "seabios")
+		}
+	}
+
+	currentDescription := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
+
+	if len(clone) == 0 || currentDescription != dvResourceVirtualEnvironmentVMDescription {
+		if vmConfig.Description != nil {
+			d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
+		} else {
+			// Default value of "description" is "" according to the API documentation.
+			d.Set(mkResourceVirtualEnvironmentVMDescription, "")
+		}
+	}
+
+	currentKeyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
+
+	if len(clone) == 0 || currentKeyboardLayout != dvResourceVirtualEnvironmentVMKeyboardLayout {
+		if vmConfig.KeyboardLayout != nil {
+			d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, *vmConfig.KeyboardLayout)
+		} else {
+			// Default value of "keyboard" is "" according to the API documentation.
+			d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
+		}
+	}
+
+	currentName := d.Get(mkResourceVirtualEnvironmentVMName).(string)
+
+	if len(clone) == 0 || currentName != dvResourceVirtualEnvironmentVMName {
+		if vmConfig.Name != nil {
+			d.Set(mkResourceVirtualEnvironmentVMName, *vmConfig.Name)
+		} else {
+			// Default value of "name" is "" according to the API documentation.
+			d.Set(mkResourceVirtualEnvironmentVMName, "")
+		}
+	}
+
+	d.Set(mkResourceVirtualEnvironmentVMStarted, vmStatus.Status == "running")
+
+	currentTabletDevice := d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool)
+
+	if len(clone) == 0 || currentTabletDevice != dvResourceVirtualEnvironmentVMTabletDevice {
+		if vmConfig.TabletDeviceEnabled != nil {
+			d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
+		} else {
+			// Default value of "tablet" is "1" according to the API documentation.
+			d.Set(mkResourceVirtualEnvironmentVMTabletDevice, true)
+		}
+	}
+
+	currentTemplate := d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
+
+	if len(clone) == 0 || currentTemplate != dvResourceVirtualEnvironmentVMTemplate {
+		if vmConfig.Template != nil {
+			d.Set(mkResourceVirtualEnvironmentVMTemplate, bool(*vmConfig.Template))
+		} else {
+			// Default value of "template" is "0" according to the API documentation.
+			d.Set(mkResourceVirtualEnvironmentVMTemplate, false)
+		}
+	}
+
+	return nil
+}
+
 func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
@@ -2339,6 +2831,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		},
 	}
 
+	delete := []string{}
 	resource := resourceVirtualEnvironmentVM()
 
 	// Retrieve the entire configuration as we need to process certain values.
@@ -2349,34 +2842,44 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Prepare the new primitive configuration values.
-	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
-	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
-	delete := []string{}
-	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
-	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
-	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
-	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) {
+		acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+		body.ACPI = &acpi
+		rebootRequired = true
+	}
 
-	body.ACPI = &acpi
-	body.BIOS = &bios
+	if d.HasChange(mkResourceVirtualEnvironmentVMBIOS) {
+		bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
+		body.BIOS = &bios
+		rebootRequired = true
+	}
 
-	if description != "" {
+	if d.HasChange(mkResourceVirtualEnvironmentVMDescription) {
+		description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 		body.Description = &description
 	}
 
-	body.KeyboardLayout = &keyboardLayout
+	if d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) {
+		keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
+		body.KeyboardLayout = &keyboardLayout
+		rebootRequired = true
+	}
 
-	if name != "" {
+	if d.HasChange(mkResourceVirtualEnvironmentVMName) {
+		name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 		body.Name = &name
 	}
 
-	body.TabletDeviceEnabled = &tabletDevice
+	if d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
+		tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+		body.TabletDeviceEnabled = &tabletDevice
+		rebootRequired = true
+	}
 
-	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) ||
-		d.HasChange(mkResourceVirtualEnvironmentVMBIOS) ||
-		d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) ||
-		d.HasChange(mkResourceVirtualEnvironmentVMOperatingSystemType) ||
-		d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
+	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
+
+	if d.HasChange(mkResourceVirtualEnvironmentVMTemplate) {
+		body.Template = &template
 		rebootRequired = true
 	}
 
@@ -2656,10 +3159,10 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	// Determine if the state of the virtual machine needs to be changed.
-	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) {
-		started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
+	// Determine if the state of the virtual machine state needs to be changed.
+	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
+	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) && !bool(template) {
 		if started {
 			err = veClient.StartVM(nodeName, vmID)
 
@@ -2695,8 +3198,8 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		}
 	}
 
-	// As a final step in the update procedure, we might need to reboot the virtual machine.
-	if rebootRequired {
+	// Reboot the virtual machine, if required.
+	if !bool(template) && rebootRequired {
 		rebootTimeout := 300
 
 		err = veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{

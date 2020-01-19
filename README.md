@@ -491,6 +491,10 @@ This resource doesn't expose any additional attributes.
 * `cdrom` - (Optional) The CDROM configuration
     * `enabled` - (Optional) Whether to enable the CDROM drive (defaults to `false`)
     * `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as in the physical drive)
+* `clone` - (Optional) The cloning configuration
+    * `datastore_id` - (Optional) The ID of the target datastore
+    * `node_name` - (Optional) The name of the source node (leave blank, if equal to the `node_name` argument)
+    * `vm_id` - (Required) The ID of the source VM
 * `cpu` - (Optional) The CPU configuration
     * `architecture` - (Optional) The CPU architecture (defaults to `x86_64`)
         * `aarch64` - ARM (64 bit)
@@ -637,6 +641,7 @@ This resource doesn't expose any additional attributes.
         * `socket` - A unix socket
 * `started` - (Optional) Whether to start the virtual machine (defaults to `true`)
 * `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults to `true`)
+* `template` - (Optional) Whether to create a template (defaults to `false`)
 * `vga` - (Optional) The VGA configuration
     * `enabled` - (Optional) Whether to enable the VGA device (defaults to `true`)
     * `memory` - (Optional) The VGA memory in megabytes (defaults to `16`)
@@ -653,13 +658,16 @@ This resource doesn't expose any additional attributes.
         * `std` - Standard VGA
         * `virtio` - VirtIO-GPU
         * `vmware` - VMware Compatible
-* `vm_id` - (Optional) The ID
+* `vm_id` - (Optional) The VM identifier
 
 ###### Attributes
 * `ipv4_addresses` - The IPv4 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
 * `ipv6_addresses` - The IPv6 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
 * `mac_addresses` - The MAC addresses published by the QEMU agent with fallback to the network device configuration, if the agent is disabled
 * `network_interface_names` - The network interface names published by the QEMU agent (empty list when `agent.enabled` is `false`)
+
+###### Notes
+When cloning an existing virtual machine, whether it's a template or not, the resource will only detect changes to the arguments which are not set to their default values.
 
 ## Developing the Provider
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.13+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.

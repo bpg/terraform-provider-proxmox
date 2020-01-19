@@ -1,4 +1,4 @@
-resource "proxmox_virtual_environment_vm" "example" {
+resource "proxmox_virtual_environment_vm" "example_template" {
   agent {
     enabled = true
   }
@@ -30,7 +30,7 @@ resource "proxmox_virtual_environment_vm" "example" {
     user_data_file_id = "${proxmox_virtual_environment_file.cloud_config.id}"
   }
 
-  name = "terraform-provider-proxmox-example"
+  name = "terraform-provider-proxmox-example-template"
 
   network_device {}
 
@@ -44,7 +44,23 @@ resource "proxmox_virtual_environment_vm" "example" {
 
   serial_device {}
 
-  vm_id = 2038
+  template = true
+  vm_id    = 2040
+}
+
+resource "proxmox_virtual_environment_vm" "example" {
+  name      = "terraform-provider-proxmox-example"
+  node_name = "${data.proxmox_virtual_environment_nodes.example.names[0]}"
+  pool_id   = "${proxmox_virtual_environment_pool.example.id}"
+  vm_id     = 2041
+
+  clone {
+    vm_id = proxmox_virtual_environment_vm.example_template.id
+  }
+
+  memory {
+    dedicated = 768
+  }
 
   connection {
     type        = "ssh"

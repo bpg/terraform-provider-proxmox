@@ -199,6 +199,20 @@ type CustomWatchdogDevice struct {
 	Model  string  `json:"model" url:"model"`
 }
 
+// VirtualEnvironmentVMCloneRequestBody contains the data for an virtual machine clone request.
+type VirtualEnvironmentVMCloneRequestBody struct {
+	BandwidthLimit      *int        `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
+	Description         *string     `json:"description,omitempty" url:"description,omitempty"`
+	FullCopy            *CustomBool `json:"full,omitempty" url:"full,omitempty,int"`
+	Name                *string     `json:"name,omitempty" url:"name,omitempty"`
+	PoolID              *string     `json:"pool,omitempty" url:"pool,omitempty"`
+	SnapshotName        *string     `json:"snapname,omitempty" url:"snapname,omitempty"`
+	TargetNodeName      *string     `json:"target,omitempty" url:"target,omitempty"`
+	TargetStorage       *string     `json:"storage,omitempty" url:"storage,omitempty"`
+	TargetStorageFormat *string     `json:"format,omitempty" url:"format,omitempty"`
+	VMIDNew             int         `json:"newid" url:"newid"`
+}
+
 // VirtualEnvironmentVMCreateRequestBody contains the data for an virtual machine create request.
 type VirtualEnvironmentVMCreateRequestBody struct {
 	ACPI                 *CustomBool                  `json:"acpi,omitempty" url:"acpi,omitempty,int"`

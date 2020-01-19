@@ -33,10 +33,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMAudioDevice,
 		mkResourceVirtualEnvironmentVMBIOS,
 		mkResourceVirtualEnvironmentVMCDROM,
-		mkResourceVirtualEnvironmentVMInitialization,
+		mkResourceVirtualEnvironmentVMClone,
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDescription,
 		mkResourceVirtualEnvironmentVMDisk,
+		mkResourceVirtualEnvironmentVMInitialization,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
 		mkResourceVirtualEnvironmentVMMemory,
 		mkResourceVirtualEnvironmentVMName,
@@ -46,6 +47,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMSerialDevice,
 		mkResourceVirtualEnvironmentVMStarted,
 		mkResourceVirtualEnvironmentVMTabletDevice,
+		mkResourceVirtualEnvironmentVMTemplate,
 		mkResourceVirtualEnvironmentVMVMID,
 	})
 
@@ -62,10 +64,10 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMAudioDevice,
 		mkResourceVirtualEnvironmentVMBIOS,
 		mkResourceVirtualEnvironmentVMCDROM,
-		mkResourceVirtualEnvironmentVMInitialization,
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDescription,
 		mkResourceVirtualEnvironmentVMDisk,
+		mkResourceVirtualEnvironmentVMInitialization,
 		mkResourceVirtualEnvironmentVMIPv4Addresses,
 		mkResourceVirtualEnvironmentVMIPv6Addresses,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
@@ -79,6 +81,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMSerialDevice,
 		mkResourceVirtualEnvironmentVMStarted,
 		mkResourceVirtualEnvironmentVMTabletDevice,
+		mkResourceVirtualEnvironmentVMTemplate,
 		mkResourceVirtualEnvironmentVMVMID,
 	}, []schema.ValueType{
 		schema.TypeBool,
@@ -87,13 +90,6 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		schema.TypeString,
 		schema.TypeList,
 		schema.TypeList,
-		schema.TypeList,
-		schema.TypeString,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeList,
-		schema.TypeString,
-		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
 		schema.TypeList,
@@ -101,6 +97,14 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		schema.TypeList,
 		schema.TypeString,
 		schema.TypeList,
+		schema.TypeString,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeList,
+		schema.TypeString,
+		schema.TypeList,
+		schema.TypeBool,
 		schema.TypeBool,
 		schema.TypeBool,
 		schema.TypeInt,
@@ -152,6 +156,27 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	}, []schema.ValueType{
 		schema.TypeBool,
 		schema.TypeString,
+	})
+
+	cloneSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMClone)
+
+	testRequiredArguments(t, cloneSchema, []string{
+		mkResourceVirtualEnvironmentVMCloneVMID,
+	})
+
+	testOptionalArguments(t, cloneSchema, []string{
+		mkResourceVirtualEnvironmentVMCloneDatastoreID,
+		mkResourceVirtualEnvironmentVMCloneNodeName,
+	})
+
+	testSchemaValueTypes(t, cloneSchema, []string{
+		mkResourceVirtualEnvironmentVMCloneDatastoreID,
+		mkResourceVirtualEnvironmentVMCloneNodeName,
+		mkResourceVirtualEnvironmentVMCloneVMID,
+	}, []schema.ValueType{
+		schema.TypeString,
+		schema.TypeString,
+		schema.TypeInt,
 	})
 
 	cpuSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMCPU)

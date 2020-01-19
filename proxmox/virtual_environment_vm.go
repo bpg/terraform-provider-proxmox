@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+// CloneVM clones a virtual machine.
+func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, d *VirtualEnvironmentVMCloneRequestBody) error {
+	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/clone", url.PathEscape(nodeName), vmID), d, nil)
+}
+
 // CreateVM creates a virtual machine.
 func (c *VirtualEnvironmentClient) CreateVM(nodeName string, d *VirtualEnvironmentVMCreateRequestBody) error {
 	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu", url.PathEscape(nodeName)), d, nil)
@@ -183,6 +188,36 @@ func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(nodeNam
 	}
 
 	return fmt.Errorf("Timeout while waiting for the QEMU agent on VM \"%d\" to unpublish the network interfaces", vmID)
+}
+
+// WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.
+func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(nodeName string, vmID int, timeout int, delay int) error {
+	timeDelay := int64(delay)
+	timeMax := float64(timeout)
+	timeStart := time.Now()
+	timeElapsed := timeStart.Sub(timeStart)
+
+	for timeElapsed.Seconds() < timeMax {
+		if int64(timeElapsed.Seconds())%timeDelay == 0 {
+			data, err := c.GetVMStatus(nodeName, vmID)
+
+			if err != nil {
+				return err
+			}
+
+			if data.Lock == nil || *data.Lock == "" {
+				return nil
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+
+		time.Sleep(200 * time.Millisecond)
+
+		timeElapsed = time.Now().Sub(timeStart)
+	}
+
+	return fmt.Errorf("Timeout while waiting for VM \"%d\" configuration to become unlocked", vmID)
 }
 
 // WaitForVMState waits for a virtual machine to reach a specific state.
