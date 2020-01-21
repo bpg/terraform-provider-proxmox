@@ -191,7 +191,7 @@ func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(nodeNam
 }
 
 // WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.
-func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(nodeName string, vmID int, timeout int, delay int) error {
+func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(nodeName string, vmID int, timeout int, delay int, ignoreErrorResponse bool) error {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -202,10 +202,10 @@ func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(nodeName string, vmID i
 			data, err := c.GetVMStatus(nodeName, vmID)
 
 			if err != nil {
-				return err
-			}
-
-			if data.Lock == nil || *data.Lock == "" {
+				if !ignoreErrorResponse {
+					return err
+				}
+			} else if data.Lock == nil || *data.Lock == "" {
 				return nil
 			}
 

@@ -1007,7 +1007,8 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	d.SetId(strconv.Itoa(vmID))
 
-	err = veClient.WaitForVMConfigUnlock(nodeName, vmID, 300, 5)
+	// Wait for the virtual machine to be created and its configuration lock to be released.
+	err = veClient.WaitForVMConfigUnlock(nodeName, vmID, 600, 5, true)
 
 	if err != nil {
 		return err
