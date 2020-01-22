@@ -1168,7 +1168,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	}
 
 	if len(networkDevice) > 0 {
-		networkDeviceObjects, err := resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
+		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
 
 		if err != nil {
 			return err
@@ -1183,8 +1183,6 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		for i := len(updateBody.NetworkDevices); i < maxNetworkDevices; i++ {
 			delete = append(delete, fmt.Sprintf("net%d", i))
 		}
-
-		updateBody.NetworkDevices = networkDeviceObjects
 	}
 
 	if len(operatingSystem) > 0 {
@@ -1195,7 +1193,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	}
 
 	if len(serialDevice) > 0 {
-		serialDevices, err := resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
+		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
 
 		if err != nil {
 			return err
@@ -1204,8 +1202,6 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		for i := len(updateBody.SerialDevices); i < maxSerialDevices; i++ {
 			delete = append(delete, fmt.Sprintf("serial%d", i))
 		}
-
-		updateBody.SerialDevices = serialDevices
 	}
 
 	if started != dvResourceVirtualEnvironmentVMStarted {
