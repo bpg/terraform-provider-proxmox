@@ -1025,7 +1025,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
-	cpu := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	memory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
