@@ -38,7 +38,7 @@ func TestDataSourceVirtualEnvironmentDatastoresSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentDatastoresTypes,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentDatastoresActive:         schema.TypeList,
 		mkDataSourceVirtualEnvironmentDatastoresContentTypes:   schema.TypeList,
 		mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs:   schema.TypeList,

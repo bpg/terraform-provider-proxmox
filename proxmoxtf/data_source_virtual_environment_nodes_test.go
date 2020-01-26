@@ -35,7 +35,7 @@ func TestDataSourceVirtualEnvironmentNodesSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentNodesUptime,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentNodesCPUCount:        schema.TypeList,
 		mkDataSourceVirtualEnvironmentNodesCPUUtilization:  schema.TypeList,
 		mkDataSourceVirtualEnvironmentNodesMemoryAvailable: schema.TypeList,

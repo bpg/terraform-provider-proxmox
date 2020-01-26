@@ -397,7 +397,7 @@ func testRequiredArguments(t *testing.T, s *schema.Resource, keys []string) {
 	}
 }
 
-func testSchemaValueTypes(t *testing.T, s *schema.Resource, f map[string]schema.ValueType) {
+func testValueTypes(t *testing.T, s *schema.Resource, f map[string]schema.ValueType) {
 	for fn, ft := range f {
 		if s.Schema[fn] == nil {
 			t.Fatalf("Error in Schema: Missing definition for \"%s\"", fn)

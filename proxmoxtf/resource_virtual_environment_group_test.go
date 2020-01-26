@@ -36,7 +36,7 @@ func TestResourceVirtualEnvironmentGroupSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentGroupMembers,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentGroupACL:     schema.TypeSet,
 		mkResourceVirtualEnvironmentGroupComment: schema.TypeString,
 		mkResourceVirtualEnvironmentGroupID:      schema.TypeString,
@@ -54,7 +54,7 @@ func TestResourceVirtualEnvironmentGroupSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentGroupACLPropagate,
 	})
 
-	testSchemaValueTypes(t, aclSchema, map[string]schema.ValueType{
+	testValueTypes(t, aclSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentGroupACLPath:      schema.TypeString,
 		mkResourceVirtualEnvironmentGroupACLPropagate: schema.TypeBool,
 		mkResourceVirtualEnvironmentGroupACLRoleID:    schema.TypeString,

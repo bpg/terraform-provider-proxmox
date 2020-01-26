@@ -288,6 +288,10 @@ This data source doesn't accept arguments.
 ##### Container (proxmox_virtual_environment_container)
 
 ###### Arguments
+* `clone` - (Optional) The cloning configuration
+    * `datastore_id` - (Optional) The ID of the target datastore
+    * `node_name` - (Optional) The name of the source node (leave blank, if equal to the `node_name` argument)
+    * `vm_id` - (Required) The ID of the source container
 * `console` - (Optional) The console configuration
     * `enabled` - (Optional) Whether to enable the console device (defaults to `true`)
     * `mode` - (Optional) The console mode (defaults to `tty`)
@@ -346,6 +350,7 @@ This data source doesn't accept arguments.
         * `unmanaged` - Unmanaged
 * `pool_id` - (Optional) The ID of a pool to assign the container to
 * `started` - (Optional) Whether to start the container (defaults to `true`)
+* `template` - (Optional) Whether to create a template (defaults to `false`)
 * `vm_id` - (Optional) The ID
 
 ###### Attributes

@@ -2,7 +2,9 @@
 
 ENHANCEMENTS:
 
+* resource/virtual_environment_container: Add `clone` argument
 * resource/virtual_environment_container: Add `disk` argument
+* resource/virtual_environment_container: Add `template` argument
 * resource/virtual_environment_vm: Add `audio_device` argument
 * resource/virtual_environment_vm: Add `clone` argument
 * resource/virtual_environment_vm: Add `serial_device` argument
@@ -10,6 +12,7 @@ ENHANCEMENTS:
 
 BUG FIXES:
 
+* resource/virtual_environment_container: Fix `network_interface` deletion issue
 * resource/virtual_environment_vm: Fix `network_device` deletion issue
 * resource/virtual_environment_vm: Fix slow refresh when VM is stopped and agent is enabled
 

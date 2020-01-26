@@ -28,7 +28,7 @@ func TestDataSourceVirtualEnvironmentRolesSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentRolesSpecial,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentRolesPrivileges: schema.TypeList,
 		mkDataSourceVirtualEnvironmentRolesRoleIDs:    schema.TypeList,
 		mkDataSourceVirtualEnvironmentRolesSpecial:    schema.TypeList,

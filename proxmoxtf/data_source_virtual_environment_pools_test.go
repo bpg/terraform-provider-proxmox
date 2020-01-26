@@ -27,7 +27,7 @@ func TestDataSourceVirtualEnvironmentPoolsSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentPoolsPoolIDs,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentPoolsPoolIDs: schema.TypeList,
 	})
 }

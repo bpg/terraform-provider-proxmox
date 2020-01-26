@@ -33,7 +33,7 @@ func TestDataSourceVirtualEnvironmentHostsSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentHostsHostnames,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentHostsAddresses: schema.TypeList,
 		mkDataSourceVirtualEnvironmentHostsDigest:    schema.TypeString,
 		mkDataSourceVirtualEnvironmentHostsEntries:   schema.TypeList,
@@ -48,7 +48,7 @@ func TestDataSourceVirtualEnvironmentHostsSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentHostsEntriesHostnames,
 	})
 
-	testSchemaValueTypes(t, entriesSchema, map[string]schema.ValueType{
+	testValueTypes(t, entriesSchema, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentHostsEntriesAddress:   schema.TypeString,
 		mkDataSourceVirtualEnvironmentHostsEntriesHostnames: schema.TypeList,
 	})

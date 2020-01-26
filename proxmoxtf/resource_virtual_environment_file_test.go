@@ -41,7 +41,7 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileFileTag,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentFileContentType:          schema.TypeString,
 		mkResourceVirtualEnvironmentFileDatastoreID:          schema.TypeString,
 		mkResourceVirtualEnvironmentFileFileModificationDate: schema.TypeString,
@@ -66,7 +66,7 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileSourceFileInsecure,
 	})
 
-	testSchemaValueTypes(t, sourceFileSchema, map[string]schema.ValueType{
+	testValueTypes(t, sourceFileSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentFileSourceFileChanged:  schema.TypeBool,
 		mkResourceVirtualEnvironmentFileSourceFileChecksum: schema.TypeString,
 		mkResourceVirtualEnvironmentFileSourceFileFileName: schema.TypeString,
@@ -85,7 +85,7 @@ func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileSourceRawResize,
 	})
 
-	testSchemaValueTypes(t, sourceRawSchema, map[string]schema.ValueType{
+	testValueTypes(t, sourceRawSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentFileSourceRawData:     schema.TypeString,
 		mkResourceVirtualEnvironmentFileSourceRawFileName: schema.TypeString,
 		mkResourceVirtualEnvironmentFileSourceRawResize:   schema.TypeInt,

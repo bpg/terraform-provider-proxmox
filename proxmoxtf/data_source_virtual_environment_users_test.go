@@ -35,7 +35,7 @@ func TestDataSourceVirtualEnvironmentUsersSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentUsersUserIDs,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentUsersComments:        schema.TypeList,
 		mkDataSourceVirtualEnvironmentUsersEmails:          schema.TypeList,
 		mkDataSourceVirtualEnvironmentUsersEnabled:         schema.TypeList,

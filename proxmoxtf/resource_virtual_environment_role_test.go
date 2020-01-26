@@ -28,7 +28,7 @@ func TestResourceVirtualEnvironmentRoleSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentRoleRoleID,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentRolePrivileges: schema.TypeSet,
 		mkResourceVirtualEnvironmentRoleRoleID:     schema.TypeString,
 	})

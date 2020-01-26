@@ -16,10 +16,6 @@ import (
 )
 
 const (
-	maxAudioDevices   = 1
-	maxNetworkDevices = 8
-	maxSerialDevices  = 4
-
 	dvResourceVirtualEnvironmentVMACPI                              = true
 	dvResourceVirtualEnvironmentVMAgentEnabled                      = false
 	dvResourceVirtualEnvironmentVMAgentTrim                         = false
@@ -76,6 +72,10 @@ const (
 	dvResourceVirtualEnvironmentVMVGAMemory                         = 16
 	dvResourceVirtualEnvironmentVMVGAType                           = "std"
 	dvResourceVirtualEnvironmentVMVMID                              = -1
+
+	maxResourceVirtualEnvironmentVMAudioDevices   = 1
+	maxResourceVirtualEnvironmentVMNetworkDevices = 8
+	maxResourceVirtualEnvironmentVMSerialDevices  = 4
 
 	mkResourceVirtualEnvironmentVMACPI                              = "acpi"
 	mkResourceVirtualEnvironmentVMAgent                             = "agent"
@@ -241,7 +241,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: maxAudioDevices,
+				MaxItems: maxResourceVirtualEnvironmentVMAudioDevices,
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMBIOS: {
@@ -780,7 +780,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: maxNetworkDevices,
+				MaxItems: maxResourceVirtualEnvironmentVMNetworkDevices,
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMNetworkInterfaceNames: {
@@ -849,7 +849,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: maxSerialDevices,
+				MaxItems: maxResourceVirtualEnvironmentVMSerialDevices,
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMStarted: {
@@ -972,33 +972,33 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	fullCopy := proxmox.CustomBool(true)
 
-	body := &proxmox.VirtualEnvironmentVMCloneRequestBody{
+	cloneBody := &proxmox.VirtualEnvironmentVMCloneRequestBody{
 		FullCopy: &fullCopy,
 		VMIDNew:  vmID,
 	}
 
 	if cloneDatastoreID != "" {
-		body.TargetStorage = &cloneDatastoreID
+		cloneBody.TargetStorage = &cloneDatastoreID
 	}
 
 	if description != "" {
-		body.Description = &description
+		cloneBody.Description = &description
 	}
 
 	if name != "" {
-		body.Name = &name
+		cloneBody.Name = &name
 	}
 
 	if poolID != "" {
-		body.PoolID = &poolID
+		cloneBody.PoolID = &poolID
 	}
 
 	if cloneNodeName != "" && cloneNodeName != nodeName {
-		body.TargetNodeName = &nodeName
+		cloneBody.TargetNodeName = &nodeName
 
-		err = veClient.CloneVM(cloneNodeName, cloneVMID, body)
+		err = veClient.CloneVM(cloneNodeName, cloneVMID, cloneBody)
 	} else {
-		err = veClient.CloneVM(nodeName, cloneVMID, body)
+		err = veClient.CloneVM(nodeName, cloneVMID, cloneBody)
 	}
 
 	if err != nil {
@@ -1180,7 +1180,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			}
 		}
 
-		for i := len(updateBody.NetworkDevices); i < maxNetworkDevices; i++ {
+		for i := len(updateBody.NetworkDevices); i < maxResourceVirtualEnvironmentVMNetworkDevices; i++ {
 			delete = append(delete, fmt.Sprintf("net%d", i))
 		}
 	}
@@ -1199,7 +1199,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			return err
 		}
 
-		for i := len(updateBody.SerialDevices); i < maxSerialDevices; i++ {
+		for i := len(updateBody.SerialDevices); i < maxResourceVirtualEnvironmentVMSerialDevices; i++ {
 			delete = append(delete, fmt.Sprintf("serial%d", i))
 		}
 	}
@@ -1411,7 +1411,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 
 	scsiHardware := "virtio-scsi-pci"
 
-	body := &proxmox.VirtualEnvironmentVMCreateRequestBody{
+	createBody := &proxmox.VirtualEnvironmentVMCreateRequestBody{
 		ACPI: &acpi,
 		Agent: &proxmox.CustomAgent{
 			Enabled:         &agentEnabled,
@@ -1450,18 +1450,18 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	}
 
 	if cpuHotplugged > 0 {
-		body.VirtualCPUCount = &cpuHotplugged
+		createBody.VirtualCPUCount = &cpuHotplugged
 	}
 
 	if description != "" {
-		body.Description = &description
+		createBody.Description = &description
 	}
 
 	if name != "" {
-		body.Name = &name
+		createBody.Name = &name
 	}
 
-	err = veClient.CreateVM(nodeName, body)
+	err = veClient.CreateVM(nodeName, createBody)
 
 	if err != nil {
 		return err
@@ -1991,14 +1991,6 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 	if err != nil {
 		return err
 	}
-
-	/*
-		clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
-
-		if len(clone) > 0 {
-			return resourceVirtualEnvironmentVMReadClone(d, m, vmID, vmConfig, vmStatus)
-		}
-	*/
 
 	return resourceVirtualEnvironmentVMReadCustom(d, m, vmID, vmConfig, vmStatus)
 }
@@ -2831,7 +2823,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		return err
 	}
 
-	body := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
+	updateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
 		IDEDevices: proxmox.CustomStorageDevices{
 			proxmox.CustomStorageDevice{
 				Enabled: false,
@@ -2858,42 +2850,42 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	// Prepare the new primitive configuration values.
 	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) {
 		acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
-		body.ACPI = &acpi
+		updateBody.ACPI = &acpi
 		rebootRequired = true
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMBIOS) {
 		bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
-		body.BIOS = &bios
+		updateBody.BIOS = &bios
 		rebootRequired = true
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMDescription) {
 		description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
-		body.Description = &description
+		updateBody.Description = &description
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) {
 		keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
-		body.KeyboardLayout = &keyboardLayout
+		updateBody.KeyboardLayout = &keyboardLayout
 		rebootRequired = true
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMName) {
 		name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
-		body.Name = &name
+		updateBody.Name = &name
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
 		tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
-		body.TabletDeviceEnabled = &tabletDevice
+		updateBody.TabletDeviceEnabled = &tabletDevice
 		rebootRequired = true
 	}
 
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMTemplate) {
-		body.Template = &template
+		updateBody.Template = &template
 		rebootRequired = true
 	}
 
@@ -2909,7 +2901,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
-		body.Agent = &proxmox.CustomAgent{
+		updateBody.Agent = &proxmox.CustomAgent{
 			Enabled:         &agentEnabled,
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
@@ -2920,19 +2912,19 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new audio devices.
 	if d.HasChange(mkResourceVirtualEnvironmentVMAudioDevice) {
-		body.AudioDevices, err = resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
+		updateBody.AudioDevices, err = resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
 
 		if err != nil {
 			return err
 		}
 
-		for i := 0; i < len(body.AudioDevices); i++ {
-			if !body.AudioDevices[i].Enabled {
+		for i := 0; i < len(updateBody.AudioDevices); i++ {
+			if !updateBody.AudioDevices[i].Enabled {
 				delete = append(delete, fmt.Sprintf("audio%d", i))
 			}
 		}
 
-		for i := len(body.AudioDevices); i < maxAudioDevices; i++ {
+		for i := len(updateBody.AudioDevices); i < maxResourceVirtualEnvironmentVMAudioDevices; i++ {
 			delete = append(delete, fmt.Sprintf("audio%d", i))
 		}
 
@@ -2956,7 +2948,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 		cdromMedia := "cdrom"
 
-		body.IDEDevices[2] = proxmox.CustomStorageDevice{
+		updateBody.IDEDevices[2] = proxmox.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
@@ -2979,13 +2971,13 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
-		body.CPUArchitecture = &cpuArchitecture
-		body.CPUCores = &cpuCores
-		body.CPUSockets = &cpuSockets
-		body.CPUUnits = &cpuUnits
+		updateBody.CPUArchitecture = &cpuArchitecture
+		updateBody.CPUCores = &cpuCores
+		updateBody.CPUSockets = &cpuSockets
+		updateBody.CPUUnits = &cpuUnits
 
 		if cpuHotplugged > 0 {
-			body.VirtualCPUCount = &cpuHotplugged
+			updateBody.VirtualCPUCount = &cpuHotplugged
 		} else {
 			delete = append(delete, "vcpus")
 		}
@@ -2996,7 +2988,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			cpuFlagsConverted[fi] = flag.(string)
 		}
 
-		body.CPUEmulation = &proxmox.CustomCPUEmulation{
+		updateBody.CPUEmulation = &proxmox.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		}
@@ -3029,18 +3021,18 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			vmConfig.SCSIDevice13,
 		}
 
-		body.SCSIDevices = make(proxmox.CustomStorageDevices, len(diskDeviceObjects))
+		updateBody.SCSIDevices = make(proxmox.CustomStorageDevices, len(diskDeviceObjects))
 
 		for di, do := range diskDeviceObjects {
 			if scsiDevices[di] == nil {
 				return fmt.Errorf("Missing SCSI device %d (scsi%d)", di, di)
 			}
 
-			body.SCSIDevices[di] = *scsiDevices[di]
-			body.SCSIDevices[di].BurstableReadSpeedMbps = do.BurstableReadSpeedMbps
-			body.SCSIDevices[di].BurstableWriteSpeedMbps = do.BurstableWriteSpeedMbps
-			body.SCSIDevices[di].MaxReadSpeedMbps = do.MaxReadSpeedMbps
-			body.SCSIDevices[di].MaxWriteSpeedMbps = do.MaxWriteSpeedMbps
+			updateBody.SCSIDevices[di] = *scsiDevices[di]
+			updateBody.SCSIDevices[di].BurstableReadSpeedMbps = do.BurstableReadSpeedMbps
+			updateBody.SCSIDevices[di].BurstableWriteSpeedMbps = do.BurstableWriteSpeedMbps
+			updateBody.SCSIDevices[di].MaxReadSpeedMbps = do.MaxReadSpeedMbps
+			updateBody.SCSIDevices[di].MaxWriteSpeedMbps = do.MaxWriteSpeedMbps
 		}
 
 		rebootRequired = true
@@ -3054,12 +3046,12 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			return err
 		}
 
-		body.CloudInitConfig = initializationConfig
+		updateBody.CloudInitConfig = initializationConfig
 
-		if body.CloudInitConfig != nil {
+		if updateBody.CloudInitConfig != nil {
 			cdromMedia := "cdrom"
 
-			body.IDEDevices[2] = proxmox.CustomStorageDevice{
+			updateBody.IDEDevices[2] = proxmox.CustomStorageDevice{
 				Enabled:    true,
 				FileVolume: "local-lvm:cloudinit",
 				Media:      &cdromMedia,
@@ -3067,7 +3059,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 			if vmConfig.IDEDevice2 != nil {
 				if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
-					body.IDEDevices[2].Enabled = false
+					updateBody.IDEDevices[2].Enabled = false
 				}
 			}
 		}
@@ -3087,13 +3079,13 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
 		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
 
-		body.DedicatedMemory = &memoryDedicated
-		body.FloatingMemory = &memoryFloating
+		updateBody.DedicatedMemory = &memoryDedicated
+		updateBody.FloatingMemory = &memoryFloating
 
 		if memoryShared > 0 {
 			memorySharedName := fmt.Sprintf("vm-%d-ivshmem", vmID)
 
-			body.SharedMemory = &proxmox.CustomSharedMemory{
+			updateBody.SharedMemory = &proxmox.CustomSharedMemory{
 				Name: &memorySharedName,
 				Size: memoryShared,
 			}
@@ -3104,19 +3096,19 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new network device configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice) {
-		body.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
+		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
 
 		if err != nil {
 			return err
 		}
 
-		for i := 0; i < len(body.NetworkDevices); i++ {
-			if !body.NetworkDevices[i].Enabled {
+		for i := 0; i < len(updateBody.NetworkDevices); i++ {
+			if !updateBody.NetworkDevices[i].Enabled {
 				delete = append(delete, fmt.Sprintf("net%d", i))
 			}
 		}
 
-		for i := len(body.NetworkDevices); i < maxNetworkDevices; i++ {
+		for i := len(updateBody.NetworkDevices); i < maxResourceVirtualEnvironmentVMNetworkDevices; i++ {
 			delete = append(delete, fmt.Sprintf("net%d", i))
 		}
 
@@ -3133,20 +3125,20 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 		operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
 
-		body.OSType = &operatingSystemType
+		updateBody.OSType = &operatingSystemType
 
 		rebootRequired = true
 	}
 
 	// Prepare the new serial devices.
 	if d.HasChange(mkResourceVirtualEnvironmentVMSerialDevice) {
-		body.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
+		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
 
 		if err != nil {
 			return err
 		}
 
-		for i := len(body.SerialDevices); i < maxSerialDevices; i++ {
+		for i := len(updateBody.SerialDevices); i < maxResourceVirtualEnvironmentVMSerialDevices; i++ {
 			delete = append(delete, fmt.Sprintf("serial%d", i))
 		}
 
@@ -3155,7 +3147,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new VGA configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMVGA) {
-		body.VGADevice, err = resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
+		updateBody.VGADevice, err = resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
 
 		if err != nil {
 			return err
@@ -3165,9 +3157,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Update the configuration now that everything has been prepared.
-	body.Delete = delete
+	updateBody.Delete = delete
 
-	err = veClient.UpdateVM(nodeName, vmID, body)
+	err = veClient.UpdateVM(nodeName, vmID, updateBody)
 
 	if err != nil {
 		return err

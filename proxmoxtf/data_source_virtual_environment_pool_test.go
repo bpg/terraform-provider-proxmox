@@ -32,7 +32,7 @@ func TestDataSourceVirtualEnvironmentPoolSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentPoolMembers,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentPoolComment: schema.TypeString,
 		mkDataSourceVirtualEnvironmentPoolMembers: schema.TypeList,
 		mkDataSourceVirtualEnvironmentPoolPoolID:  schema.TypeString,
@@ -48,7 +48,7 @@ func TestDataSourceVirtualEnvironmentPoolSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentPoolMembersVMID,
 	})
 
-	testSchemaValueTypes(t, membersSchema, map[string]schema.ValueType{
+	testValueTypes(t, membersSchema, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentPoolMembersDatastoreID: schema.TypeString,
 		mkDataSourceVirtualEnvironmentPoolMembersID:          schema.TypeString,
 		mkDataSourceVirtualEnvironmentPoolMembersNodeName:    schema.TypeString,

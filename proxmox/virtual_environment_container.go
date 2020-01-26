@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+// CloneContainer clones a container.
+func (c *VirtualEnvironmentClient) CloneContainer(nodeName string, vmID int, d *VirtualEnvironmentContainerCloneRequestBody) error {
+	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/lxc/%d/clone", url.PathEscape(nodeName), vmID), d, nil)
+}
+
 // CreateContainer creates a container.
 func (c *VirtualEnvironmentClient) CreateContainer(nodeName string, d *VirtualEnvironmentContainerCreateRequestBody) error {
 	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/lxc", url.PathEscape(nodeName)), d, nil)
@@ -112,7 +117,7 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(nodeName string, vmID i
 }
 
 // WaitForContainerLock waits for a container lock to be released.
-func (c *VirtualEnvironmentClient) WaitForContainerLock(nodeName string, vmID int, timeout int, delay int) error {
+func (c *VirtualEnvironmentClient) WaitForContainerLock(nodeName string, vmID int, timeout int, delay int, ignoreErrorResponse bool) error {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -123,10 +128,10 @@ func (c *VirtualEnvironmentClient) WaitForContainerLock(nodeName string, vmID in
 			data, err := c.GetContainerStatus(nodeName, vmID)
 
 			if err != nil {
-				return err
-			}
-
-			if data.Lock == nil || *data.Lock == "" {
+				if !ignoreErrorResponse {
+					return err
+				}
+			} else if data.Lock == nil || *data.Lock == "" {
 				return nil
 			}
 

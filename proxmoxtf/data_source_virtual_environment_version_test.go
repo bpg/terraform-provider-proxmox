@@ -30,7 +30,7 @@ func TestDataSourceVirtualEnvironmentVersionSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentVersionVersion,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentVersionKeyboardLayout: schema.TypeString,
 		mkDataSourceVirtualEnvironmentVersionRelease:        schema.TypeString,
 		mkDataSourceVirtualEnvironmentVersionRepositoryID:   schema.TypeString,

@@ -58,7 +58,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkInterfaceNames,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMACPI:                  schema.TypeBool,
 		mkResourceVirtualEnvironmentVMAgent:                 schema.TypeList,
 		mkResourceVirtualEnvironmentVMAudioDevice:           schema.TypeList,
@@ -93,7 +93,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMAgentType,
 	})
 
-	testSchemaValueTypes(t, agentSchema, map[string]schema.ValueType{
+	testValueTypes(t, agentSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMAgentEnabled: schema.TypeBool,
 		mkResourceVirtualEnvironmentVMAgentTrim:    schema.TypeBool,
 		mkResourceVirtualEnvironmentVMAgentType:    schema.TypeString,
@@ -106,7 +106,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMAudioDeviceDriver,
 	})
 
-	testSchemaValueTypes(t, audioDeviceSchema, map[string]schema.ValueType{
+	testValueTypes(t, audioDeviceSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMAudioDeviceDevice: schema.TypeString,
 		mkResourceVirtualEnvironmentVMAudioDeviceDriver: schema.TypeString,
 	})
@@ -118,7 +118,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCDROMFileID,
 	})
 
-	testSchemaValueTypes(t, cdromSchema, map[string]schema.ValueType{
+	testValueTypes(t, cdromSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMCDROMEnabled: schema.TypeBool,
 		mkResourceVirtualEnvironmentVMCDROMFileID:  schema.TypeString,
 	})
@@ -134,7 +134,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCloneNodeName,
 	})
 
-	testSchemaValueTypes(t, cloneSchema, map[string]schema.ValueType{
+	testValueTypes(t, cloneSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMCloneDatastoreID: schema.TypeString,
 		mkResourceVirtualEnvironmentVMCloneNodeName:    schema.TypeString,
 		mkResourceVirtualEnvironmentVMCloneVMID:        schema.TypeInt,
@@ -152,7 +152,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCPUUnits,
 	})
 
-	testSchemaValueTypes(t, cpuSchema, map[string]schema.ValueType{
+	testValueTypes(t, cpuSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMCPUArchitecture: schema.TypeString,
 		mkResourceVirtualEnvironmentVMCPUCores:        schema.TypeInt,
 		mkResourceVirtualEnvironmentVMCPUFlags:        schema.TypeList,
@@ -171,7 +171,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDiskSize,
 	})
 
-	testSchemaValueTypes(t, diskSchema, map[string]schema.ValueType{
+	testValueTypes(t, diskSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMDiskDatastoreID: schema.TypeString,
 		mkResourceVirtualEnvironmentVMDiskFileFormat:  schema.TypeString,
 		mkResourceVirtualEnvironmentVMDiskFileID:      schema.TypeString,
@@ -187,7 +187,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable,
 	})
 
-	testSchemaValueTypes(t, diskSpeedSchema, map[string]schema.ValueType{
+	testValueTypes(t, diskSpeedSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMDiskSpeedRead:           schema.TypeInt,
 		mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable:  schema.TypeInt,
 		mkResourceVirtualEnvironmentVMDiskSpeedWrite:          schema.TypeInt,
@@ -202,7 +202,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationUserAccount,
 	})
 
-	testSchemaValueTypes(t, initializationSchema, map[string]schema.ValueType{
+	testValueTypes(t, initializationSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMInitializationDNS:         schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitializationIPConfig:    schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitializationUserAccount: schema.TypeList,
@@ -215,7 +215,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationDNSServer,
 	})
 
-	testSchemaValueTypes(t, initializationDNSSchema, map[string]schema.ValueType{
+	testValueTypes(t, initializationDNSSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMInitializationDNSDomain: schema.TypeString,
 		mkResourceVirtualEnvironmentVMInitializationDNSServer: schema.TypeString,
 	})
@@ -227,7 +227,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6,
 	})
 
-	testSchemaValueTypes(t, initializationIPConfigSchema, map[string]schema.ValueType{
+	testValueTypes(t, initializationIPConfigSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4: schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6: schema.TypeList,
 	})
@@ -239,7 +239,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway,
 	})
 
-	testSchemaValueTypes(t, initializationIPConfigIPv4Schema, map[string]schema.ValueType{
+	testValueTypes(t, initializationIPConfigIPv4Schema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address: schema.TypeString,
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway: schema.TypeString,
 	})
@@ -251,7 +251,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway,
 	})
 
-	testSchemaValueTypes(t, initializationIPConfigIPv6Schema, map[string]schema.ValueType{
+	testValueTypes(t, initializationIPConfigIPv6Schema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address: schema.TypeString,
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway: schema.TypeString,
 	})
@@ -264,7 +264,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationUserAccountUsername,
 	})
 
-	testSchemaValueTypes(t, initializationUserAccountSchema, map[string]schema.ValueType{
+	testValueTypes(t, initializationUserAccountSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMInitializationUserAccountKeys:     schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitializationUserAccountPassword: schema.TypeString,
 		mkResourceVirtualEnvironmentVMInitializationUserAccountUsername: schema.TypeString,
@@ -278,7 +278,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMMemoryShared,
 	})
 
-	testSchemaValueTypes(t, memorySchema, map[string]schema.ValueType{
+	testValueTypes(t, memorySchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMMemoryDedicated: schema.TypeInt,
 		mkResourceVirtualEnvironmentVMMemoryFloating:  schema.TypeInt,
 		mkResourceVirtualEnvironmentVMMemoryShared:    schema.TypeInt,
@@ -295,7 +295,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDeviceVLANID,
 	})
 
-	testSchemaValueTypes(t, networkDeviceSchema, map[string]schema.ValueType{
+	testValueTypes(t, networkDeviceSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMNetworkDeviceBridge:     schema.TypeString,
 		mkResourceVirtualEnvironmentVMNetworkDeviceEnabled:    schema.TypeBool,
 		mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress: schema.TypeString,
@@ -310,7 +310,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMOperatingSystemType,
 	})
 
-	testSchemaValueTypes(t, operatingSystemSchema, map[string]schema.ValueType{
+	testValueTypes(t, operatingSystemSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMOperatingSystemType: schema.TypeString,
 	})
 
@@ -320,7 +320,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMSerialDeviceDevice,
 	})
 
-	testSchemaValueTypes(t, serialDeviceSchema, map[string]schema.ValueType{
+	testValueTypes(t, serialDeviceSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMSerialDeviceDevice: schema.TypeString,
 	})
 
@@ -332,7 +332,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMVGAType,
 	})
 
-	testSchemaValueTypes(t, vgaSchema, map[string]schema.ValueType{
+	testValueTypes(t, vgaSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMVGAEnabled: schema.TypeBool,
 		mkResourceVirtualEnvironmentVMVGAMemory:  schema.TypeInt,
 		mkResourceVirtualEnvironmentVMVGAType:    schema.TypeString,

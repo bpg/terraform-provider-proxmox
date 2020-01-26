@@ -29,7 +29,7 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderVirtualEnvironment,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkProviderVirtualEnvironment: schema.TypeList,
 	})
 
@@ -42,7 +42,7 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderVirtualEnvironmentUsername,
 	})
 
-	testSchemaValueTypes(t, veSchema, map[string]schema.ValueType{
+	testValueTypes(t, veSchema, map[string]schema.ValueType{
 		mkProviderVirtualEnvironmentEndpoint: schema.TypeString,
 		mkProviderVirtualEnvironmentInsecure: schema.TypeBool,
 		mkProviderVirtualEnvironmentPassword: schema.TypeString,

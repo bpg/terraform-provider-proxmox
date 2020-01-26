@@ -25,7 +25,6 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 
 	testRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentContainerNodeName,
-		mkResourceVirtualEnvironmentContainerOperatingSystem,
 	})
 
 	testOptionalArguments(t, s, []string{
@@ -34,12 +33,14 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerDisk,
 		mkResourceVirtualEnvironmentContainerInitialization,
 		mkResourceVirtualEnvironmentContainerMemory,
+		mkResourceVirtualEnvironmentContainerOperatingSystem,
 		mkResourceVirtualEnvironmentContainerPoolID,
 		mkResourceVirtualEnvironmentContainerStarted,
+		mkResourceVirtualEnvironmentContainerTemplate,
 		mkResourceVirtualEnvironmentContainerVMID,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerCPU:             schema.TypeList,
 		mkResourceVirtualEnvironmentContainerDescription:     schema.TypeString,
 		mkResourceVirtualEnvironmentContainerDisk:            schema.TypeList,
@@ -48,7 +49,25 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerOperatingSystem: schema.TypeList,
 		mkResourceVirtualEnvironmentContainerPoolID:          schema.TypeString,
 		mkResourceVirtualEnvironmentContainerStarted:         schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerTemplate:        schema.TypeBool,
 		mkResourceVirtualEnvironmentContainerVMID:            schema.TypeInt,
+	})
+
+	cloneSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentContainerClone)
+
+	testRequiredArguments(t, cloneSchema, []string{
+		mkResourceVirtualEnvironmentContainerCloneVMID,
+	})
+
+	testOptionalArguments(t, cloneSchema, []string{
+		mkResourceVirtualEnvironmentContainerCloneDatastoreID,
+		mkResourceVirtualEnvironmentContainerCloneNodeName,
+	})
+
+	testValueTypes(t, cloneSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentContainerCloneDatastoreID: schema.TypeString,
+		mkResourceVirtualEnvironmentContainerCloneNodeName:    schema.TypeString,
+		mkResourceVirtualEnvironmentContainerCloneVMID:        schema.TypeInt,
 	})
 
 	cpuSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentContainerCPU)
@@ -59,7 +78,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerCPUUnits,
 	})
 
-	testSchemaValueTypes(t, cpuSchema, map[string]schema.ValueType{
+	testValueTypes(t, cpuSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerCPUArchitecture: schema.TypeString,
 		mkResourceVirtualEnvironmentContainerCPUCores:        schema.TypeInt,
 		mkResourceVirtualEnvironmentContainerCPUUnits:        schema.TypeInt,
@@ -71,7 +90,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerDiskDatastoreID,
 	})
 
-	testSchemaValueTypes(t, diskSchema, map[string]schema.ValueType{
+	testValueTypes(t, diskSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerDiskDatastoreID: schema.TypeString,
 	})
 
@@ -84,7 +103,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerInitializationUserAccount,
 	})
 
-	testSchemaValueTypes(t, initializationSchema, map[string]schema.ValueType{
+	testValueTypes(t, initializationSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerInitializationDNS:         schema.TypeList,
 		mkResourceVirtualEnvironmentContainerInitializationHostname:    schema.TypeString,
 		mkResourceVirtualEnvironmentContainerInitializationIPConfig:    schema.TypeList,
@@ -98,7 +117,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerInitializationDNSServer,
 	})
 
-	testSchemaValueTypes(t, initializationDNSSchema, map[string]schema.ValueType{
+	testValueTypes(t, initializationDNSSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerInitializationDNSDomain: schema.TypeString,
 		mkResourceVirtualEnvironmentContainerInitializationDNSServer: schema.TypeString,
 	})
@@ -110,7 +129,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6,
 	})
 
-	testSchemaValueTypes(t, initializationIPConfigSchema, map[string]schema.ValueType{
+	testValueTypes(t, initializationIPConfigSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4: schema.TypeList,
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6: schema.TypeList,
 	})
@@ -122,7 +141,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway,
 	})
 
-	testSchemaValueTypes(t, initializationIPConfigIPv4Schema, map[string]schema.ValueType{
+	testValueTypes(t, initializationIPConfigIPv4Schema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address: schema.TypeString,
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway: schema.TypeString,
 	})
@@ -134,7 +153,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway,
 	})
 
-	testSchemaValueTypes(t, initializationIPConfigIPv6Schema, map[string]schema.ValueType{
+	testValueTypes(t, initializationIPConfigIPv6Schema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address: schema.TypeString,
 		mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway: schema.TypeString,
 	})
@@ -146,7 +165,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerInitializationUserAccountPassword,
 	})
 
-	testSchemaValueTypes(t, initializationUserAccountSchema, map[string]schema.ValueType{
+	testValueTypes(t, initializationUserAccountSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerInitializationUserAccountKeys:     schema.TypeList,
 		mkResourceVirtualEnvironmentContainerInitializationUserAccountPassword: schema.TypeString,
 	})
@@ -158,7 +177,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerMemorySwap,
 	})
 
-	testSchemaValueTypes(t, memorySchema, map[string]schema.ValueType{
+	testValueTypes(t, memorySchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerMemoryDedicated: schema.TypeInt,
 		mkResourceVirtualEnvironmentContainerMemorySwap:      schema.TypeInt,
 	})
@@ -177,7 +196,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID,
 	})
 
-	testSchemaValueTypes(t, networkInterfaceSchema, map[string]schema.ValueType{
+	testValueTypes(t, networkInterfaceSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge:     schema.TypeString,
 		mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled:    schema.TypeBool,
 		mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress: schema.TypeString,
@@ -196,7 +215,7 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerOperatingSystemType,
 	})
 
-	testSchemaValueTypes(t, operatingSystemSchema, map[string]schema.ValueType{
+	testValueTypes(t, operatingSystemSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerOperatingSystemTemplateFileID: schema.TypeString,
 		mkResourceVirtualEnvironmentContainerOperatingSystemType:           schema.TypeString,
 	})

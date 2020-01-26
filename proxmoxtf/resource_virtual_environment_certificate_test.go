@@ -45,7 +45,7 @@ func TestResourceVirtualEnvironmentCertificateSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames,
 	})
 
-	testSchemaValueTypes(t, s, map[string]schema.ValueType{
+	testValueTypes(t, s, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentCertificateCertificate:             schema.TypeString,
 		mkResourceVirtualEnvironmentCertificateCertificateChain:        schema.TypeString,
 		mkResourceVirtualEnvironmentCertificateExpirationDate:          schema.TypeString,

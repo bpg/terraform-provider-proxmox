@@ -12,6 +12,19 @@ import (
 	"strings"
 )
 
+// VirtualEnvironmentContainerCloneRequestBody contains the data for an container clone request.
+type VirtualEnvironmentContainerCloneRequestBody struct {
+	BandwidthLimit *int        `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
+	Description    *string     `json:"description,omitempty" url:"description,omitempty"`
+	FullCopy       *CustomBool `json:"full,omitempty" url:"full,omitempty,int"`
+	Hostname       *string     `json:"hostname,omitempty" url:"hostname,omitempty"`
+	PoolID         *string     `json:"pool,omitempty" url:"pool,omitempty"`
+	SnapshotName   *string     `json:"snapname,omitempty" url:"snapname,omitempty"`
+	TargetNodeName *string     `json:"target,omitempty" url:"target,omitempty"`
+	TargetStorage  *string     `json:"storage,omitempty" url:"storage,omitempty"`
+	VMIDNew        int         `json:"newid" url:"newid"`
+}
+
 // VirtualEnvironmentContainerCreateRequestBody contains the data for an user create request.
 type VirtualEnvironmentContainerCreateRequestBody struct {
 	BandwidthLimit       *float64                                               `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`

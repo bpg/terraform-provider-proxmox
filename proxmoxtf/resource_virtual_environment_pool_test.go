@@ -45,7 +45,7 @@ func TestResourceVirtualEnvironmentPoolSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentPoolMembersVMID,
 	})
 
-	testSchemaValueTypes(t, membersSchema, map[string]schema.ValueType{
+	testValueTypes(t, membersSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentPoolMembersDatastoreID: schema.TypeString,
 		mkResourceVirtualEnvironmentPoolMembersID:          schema.TypeString,
 		mkResourceVirtualEnvironmentPoolMembersNodeName:    schema.TypeString,
