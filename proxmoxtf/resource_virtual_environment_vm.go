@@ -2683,11 +2683,12 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 
 	ipv4Addresses := []interface{}{}
 	ipv6Addresses := []interface{}{}
-	macAddresses := []interface{}{}
 	networkInterfaceNames := []interface{}{}
 
 	if started {
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
+			macAddresses := []interface{}{}
+
 			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, 1800, 5)
 
 			if err == nil && networkInterfaces.Result != nil {
@@ -2715,12 +2716,13 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 					networkInterfaceNames[ri] = rv.Name
 				}
 			}
+
+			d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses)
 		}
 	}
 
 	d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
 	d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
-	d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses)
 	d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
 
 	return nil
