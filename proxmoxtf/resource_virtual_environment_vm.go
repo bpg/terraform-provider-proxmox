@@ -1573,7 +1573,13 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 		commands = append(
 			commands,
 			`set -e`,
-			fmt.Sprintf(`cp "$(grep -Pzo ': %s\s+path\s+[^\s]+' /etc/pve/storage.cfg | grep -Pzo '/[^\s]*' | tr -d '\000')%s" %s`, fileIDParts[0], filePath, filePathTmp),
+			`export nr='^[A-Za-z0-9_]+: ([A-Za-z0-9_]+)$'`,
+			`export pr='^[[:space:]]+path[[:space:]]+([^[:space:]]+)$'`,
+			`export dn=""`,
+			`export dp=""`,
+			fmt.Sprintf(`while IFS='' read -r l || [[ -n "$l" ]]; do if [[ "$l" =~ $nr ]]; then export dn="${BASH_REMATCH[1]}"; elif [[ "$l" =~ $pr ]] && [[ "$dn" == "%s" ]]; then export dp="${BASH_REMATCH[1]}"; break; fi; done < /etc/pve/storage.cfg`, fileIDParts[0]),
+			`if [[ -z "$dp" ]]; then echo "Failed to determine the datastore path"; exit 1; fi`,
+			fmt.Sprintf(`cp "${dp}%s" %s`, filePath, filePathTmp),
 			fmt.Sprintf(`qemu-img resize %s %dG`, filePathTmp, size),
 			fmt.Sprintf(`qm importdisk %d %s %s -format qcow2`, vmID, filePathTmp, datastoreID),
 			fmt.Sprintf(`qm set %d -scsi%d %s:vm-%d-disk-%d%s`, vmID, i, datastoreID, vmID, diskCount+importedDiskCount, diskOptions),
@@ -2675,41 +2681,39 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
-	if !started {
-		return nil
-	}
-
 	ipv4Addresses := []interface{}{}
 	ipv6Addresses := []interface{}{}
 	macAddresses := []interface{}{}
 	networkInterfaceNames := []interface{}{}
 
-	if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
-		networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, 1800, 5)
+	if started {
+		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
+			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, 1800, 5)
 
-		if err == nil && networkInterfaces.Result != nil {
-			ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
-			ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))
-			macAddresses = make([]interface{}, len(*networkInterfaces.Result))
-			networkInterfaceNames = make([]interface{}, len(*networkInterfaces.Result))
+			if err == nil && networkInterfaces.Result != nil {
+				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
+				ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))
+				macAddresses = make([]interface{}, len(*networkInterfaces.Result))
+				networkInterfaceNames = make([]interface{}, len(*networkInterfaces.Result))
 
-			for ri, rv := range *networkInterfaces.Result {
-				rvIPv4Addresses := []interface{}{}
-				rvIPv6Addresses := []interface{}{}
+				for ri, rv := range *networkInterfaces.Result {
+					rvIPv4Addresses := []interface{}{}
+					rvIPv6Addresses := []interface{}{}
 
-				for _, ip := range *rv.IPAddresses {
-					switch ip.Type {
-					case "ipv4":
-						rvIPv4Addresses = append(rvIPv4Addresses, ip.Address)
-					case "ipv6":
-						rvIPv6Addresses = append(rvIPv6Addresses, ip.Address)
+					for _, ip := range *rv.IPAddresses {
+						switch ip.Type {
+						case "ipv4":
+							rvIPv4Addresses = append(rvIPv4Addresses, ip.Address)
+						case "ipv6":
+							rvIPv6Addresses = append(rvIPv6Addresses, ip.Address)
+						}
 					}
-				}
 
-				ipv4Addresses[ri] = rvIPv4Addresses
-				ipv6Addresses[ri] = rvIPv6Addresses
-				macAddresses[ri] = strings.ToUpper(rv.MACAddress)
-				networkInterfaceNames[ri] = rv.Name
+					ipv4Addresses[ri] = rvIPv4Addresses
+					ipv6Addresses[ri] = rvIPv6Addresses
+					macAddresses[ri] = strings.ToUpper(rv.MACAddress)
+					networkInterfaceNames[ri] = rv.Name
+				}
 			}
 		}
 	}
@@ -2871,10 +2875,8 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		rebootRequired = true
 	}
 
-	if d.HasChange(mkResourceVirtualEnvironmentVMName) {
-		name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
-		updateBody.Name = &name
-	}
+	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
+	updateBody.Name = &name
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
 		tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
