@@ -7,6 +7,7 @@ ENHANCEMENTS:
 * resource/virtual_environment_container: Add `template` argument
 * resource/virtual_environment_vm: Add `audio_device` argument
 * resource/virtual_environment_vm: Add `clone` argument
+* resource/virtual_environment_vm: Add `initialization.datastore_id` argument
 * resource/virtual_environment_vm: Add `serial_device` argument
 * resource/virtual_environment_vm: Add `template` argument
 

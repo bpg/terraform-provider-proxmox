@@ -43,6 +43,7 @@ const (
 	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWrite                    = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable           = 0
+	dvResourceVirtualEnvironmentVMInitializationDatastoreID         = "local-lvm"
 	dvResourceVirtualEnvironmentVMInitializationDNSDomain           = ""
 	dvResourceVirtualEnvironmentVMInitializationDNSServer           = ""
 	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address = ""
@@ -114,6 +115,7 @@ const (
 	mkResourceVirtualEnvironmentVMDiskSpeedWrite                    = "write"
 	mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable           = "write_burstable"
 	mkResourceVirtualEnvironmentVMInitialization                    = "initialization"
+	mkResourceVirtualEnvironmentVMInitializationDatastoreID         = "datastore_id"
 	mkResourceVirtualEnvironmentVMInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentVMInitializationDNSDomain           = "domain"
 	mkResourceVirtualEnvironmentVMInitializationDNSServer           = "server"
@@ -506,6 +508,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMInitializationDatastoreID: {
+							Type:        schema.TypeString,
+							Description: "The datastore id",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentVMInitializationDatastoreID,
+						},
 						mkResourceVirtualEnvironmentVMInitializationDNS: {
 							Type:        schema.TypeList,
 							Description: "The DNS configuration",
@@ -1124,8 +1133,11 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	}
 
 	if len(initialization) > 0 {
+		initializationBlock := initialization[0].(map[string]interface{})
+		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
+
 		cdromEnabled := true
-		cdromFileID := "local-lvm:cloudinit"
+		cdromFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromMedia := "cdrom"
 
 		updateBody.IDEDevices = proxmox.CustomStorageDevices{
@@ -1141,6 +1153,14 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 				Media:      &cdromMedia,
 			},
 		}
+
+		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
+
+		if err != nil {
+			return err
+		}
+
+		updateBody.CloudInitConfig = initializationConfig
 	}
 
 	if keyboardLayout != dvResourceVirtualEnvironmentVMKeyboardLayout {
@@ -1308,8 +1328,12 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	}
 
 	if initializationConfig != nil {
+		initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
+		initializationBlock := initialization[0].(map[string]interface{})
+		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
+
 		cdromEnabled = true
-		cdromFileID = "local-lvm:cloudinit"
+		cdromFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 	}
 
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
@@ -2319,6 +2343,15 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 	// Compare the initialization configuration to the one stored in the state.
 	initialization := map[string]interface{}{}
 
+	if vmConfig.IDEDevice2 != nil {
+		if *vmConfig.IDEDevice2.Media == "cdrom" {
+			if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
+				fileVolumeParts := strings.Split(vmConfig.IDEDevice2.FileVolume, ":")
+				initialization[mkResourceVirtualEnvironmentVMInitializationDatastoreID] = fileVolumeParts[0]
+			}
+		}
+	}
+
 	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
 		initializationDNS := map[string]interface{}{}
 
@@ -3053,11 +3086,15 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		updateBody.CloudInitConfig = initializationConfig
 
 		if updateBody.CloudInitConfig != nil {
+			initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
+			initializationBlock := initialization[0].(map[string]interface{})
+			initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
+
 			cdromMedia := "cdrom"
 
 			updateBody.IDEDevices[2] = proxmox.CustomStorageDevice{
 				Enabled:    true,
-				FileVolume: "local-lvm:cloudinit",
+				FileVolume: fmt.Sprintf("%s:cloudinit", initializationDatastoreID),
 				Media:      &cdromMedia,
 			}
 

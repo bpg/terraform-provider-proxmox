@@ -11,6 +11,8 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   }
 
   initialization {
+    datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))}"
+
     dns {
       server = "1.1.1.1"
     }

@@ -197,12 +197,14 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	initializationSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMInitialization)
 
 	testOptionalArguments(t, initializationSchema, []string{
+		mkResourceVirtualEnvironmentVMInitializationDatastoreID,
 		mkResourceVirtualEnvironmentVMInitializationDNS,
 		mkResourceVirtualEnvironmentVMInitializationIPConfig,
 		mkResourceVirtualEnvironmentVMInitializationUserAccount,
 	})
 
 	testValueTypes(t, initializationSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentVMInitializationDatastoreID: schema.TypeString,
 		mkResourceVirtualEnvironmentVMInitializationDNS:         schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitializationIPConfig:    schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitializationUserAccount: schema.TypeList,
