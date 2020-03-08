@@ -2,8 +2,6 @@ email: info@danitso.com
 title: Proxmox Provider
 description: >-
   Terraform Provider for Proxmox.
-baseurl: ""
-url: ""
 github_username: "danitso"
 
 highlighter: rouge
