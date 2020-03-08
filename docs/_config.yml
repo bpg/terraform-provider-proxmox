@@ -11,7 +11,6 @@ markdown: kramdown
 plugins:
   - github-pages
 remote_theme: pmarsceill/just-the-docs
-theme: just-the-docs
 
 # Theme settings.
 footer_content: 'Copyright &copy; 2019-2020 <a href="https://danitso.com/" target="_blank">Danitso</a> - Distributed under the <a href="https://github.com/danitso/terraform-provider-proxmox/blob/master/LICENSE" target="_blank">Mozilla Public License 2.0</a>'
