@@ -16,6 +16,10 @@ BUG FIXES:
 * resource/virtual_environment_vm: Fix `network_device` deletion issue
 * resource/virtual_environment_vm: Fix slow refresh when VM is stopped and agent is enabled
 
+OTHER:
+
+* provider/docs: Add HTML documentation powered by GitHub Pages
+
 ## 0.2.0
 
 BREAKING CHANGES:

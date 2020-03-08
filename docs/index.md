@@ -25,27 +25,19 @@ provider "proxmox" {
 
 ## Installation
 
-You can install a specific version of the provider on Windows using Git Bash:
+You can install the latest release of the provider using either Git Bash or regular Bash:
 
 ```sh
-$ export PLUGINS_PATH="$(cygpath "$APPDATA")/terraform.d/plugins"
-$ export PROVIDER_VERSION="0.2.0"
+$ export PROVIDER_PLATFORM="$([[ "$OSTYPE" =~ ^msys|cygwin$ ]] && echo "windows" || ([[ "$OSTYPE" == "darwin"* ]] && echo "darwin" || ([[ "$OSTYPE" == "linux"* ]] && echo "linux" || echo "unsupported")))"
+$ export PROVIDER_VERSION="$(curl -L -s -H 'Accept: application/json' https://github.com/danitso/terraform-provider-proxmox/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')"
+$ export PLUGINS_PATH="$([[ "$PROVIDER_PLATFORM" == "windows" ]] && cygpath -u "$APPDATA" || echo "$HOME")/terraform.d/plugins"
 $ mkdir -p "$PLUGINS_PATH"
-$ curl -o "${PLUGINS_PATH}/terraform-provider-proxmox.zip" -sL https://github.com/danitso/terraform-provider-proxmox/releases/download/${PROVIDER_VERSION}/terraform-provider-proxmox_v${PROVIDER_VERSION}-custom_windows_amd64.zip
-$ unzip -o -d "$PLUGINS_PATH" "${PLUGINS_PATH}/terraform-provider-proxmox.zip"
-$ rm "${PLUGINS_PATH}/terraform-provider-proxmox.zip"
+$ curl -o "${PLUGINS_PATH}/terraform-provider-proxmox_v${PROVIDER_VERSION}.zip" -sL "https://github.com/danitso/terraform-provider-proxmox/releases/download/${PROVIDER_VERSION}/terraform-provider-proxmox_v${PROVIDER_VERSION}-custom_${PROVIDER_PLATFORM}_amd64.zip"
+$ unzip -o -d "$PLUGINS_PATH" "${PLUGINS_PATH}/terraform-provider-proxmox_v${PROVIDER_VERSION}.zip"
+$ rm "${PLUGINS_PATH}/terraform-provider-proxmox_v${PROVIDER_VERSION}.zip"
 ```
 
-On all other platforms, you should be able to install it using Bash:
-
-```sh
-$ export PLUGINS_PATH="${HOME}/.terraform.d/plugins"
-$ export PROVIDER_VERSION="0.2.0"
-$ mkdir -p "$PLUGINS_PATH"
-$ curl -o "${PLUGINS_PATH}/terraform-provider-proxmox.zip" -sL https://github.com/danitso/terraform-provider-proxmox/releases/download/${PROVIDER_VERSION}/terraform-provider-proxmox_v${PROVIDER_VERSION}-custom_windows_amd64.zip
-$ unzip -o -d "$PLUGINS_PATH" "${PLUGINS_PATH}/terraform-provider-proxmox.zip"
-$ rm "${PLUGINS_PATH}/terraform-provider-proxmox.zip"
-```
+You can also install it manually by following the instructions to [install it as a plugin](https://www.terraform.io/docs/plugins/basics.html#installing-plugins). You can download the latest release from the [releases](https://github.com/danitso/terraform-provider-proxmox/releases) page.
 
 ## Authentication
 
