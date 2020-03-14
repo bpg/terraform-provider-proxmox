@@ -139,7 +139,7 @@ func (c *VirtualEnvironmentClient) UpdateVMAsync(nodeName string, vmID int, d *V
 }
 
 // WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
-func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(nodeName string, vmID int, timeout int, delay int) (*VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData, error) {
+func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(nodeName string, vmID int, timeout int, delay int, waitForIP bool) (*VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData, error) {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -149,8 +149,21 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(nodeName 
 		if int64(timeElapsed.Seconds())%timeDelay == 0 {
 			data, err := c.GetVMNetworkInterfacesFromAgent(nodeName, vmID)
 
-			if err == nil && data != nil {
-				return data, err
+			if err == nil && data != nil && data.Result != nil {
+				missingIP := false
+
+				if waitForIP {
+					for _, nic := range *data.Result {
+						if nic.IPAddresses == nil {
+							missingIP = true
+							break
+						}
+					}
+				}
+
+				if !missingIP {
+					return data, err
+				}
 			}
 
 			time.Sleep(1 * time.Second)

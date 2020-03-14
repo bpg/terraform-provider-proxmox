@@ -2722,7 +2722,7 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
 			macAddresses := []interface{}{}
 
-			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, 1800, 5)
+			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, 900, 5, true)
 
 			if err == nil && networkInterfaces.Result != nil {
 				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
