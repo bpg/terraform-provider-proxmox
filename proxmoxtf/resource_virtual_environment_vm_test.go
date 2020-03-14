@@ -89,6 +89,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 
 	testOptionalArguments(t, agentSchema, []string{
 		mkResourceVirtualEnvironmentVMAgentEnabled,
+		mkResourceVirtualEnvironmentVMAgentTimeout,
 		mkResourceVirtualEnvironmentVMAgentTrim,
 		mkResourceVirtualEnvironmentVMAgentType,
 	})

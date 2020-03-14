@@ -96,6 +96,7 @@ output "ubuntu_vm_public_key" {
 * `acpi` - (Optional) Whether to enable ACPI (defaults to `true`).
 * `agent` - (Optional) The QEMU agent configuration.
     * `enabled` - (Optional) Whether to enable the QEMU agent (defaults to `false`).
+    * `timeout` - (Optional) The maximum amount of time to wait for data from the QEMU agent to become available (defaults to `15m`).
     * `trim` - (Optional) Whether to enable the FSTRIM feature in the QEMU agent (defaults to `false`).
     * `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
         * `isa` - ISA Serial Port.

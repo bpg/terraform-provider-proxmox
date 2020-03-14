@@ -9,6 +9,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -18,6 +19,7 @@ import (
 const (
 	dvResourceVirtualEnvironmentVMACPI                              = true
 	dvResourceVirtualEnvironmentVMAgentEnabled                      = false
+	dvResourceVirtualEnvironmentVMAgentTimeout                      = "15m"
 	dvResourceVirtualEnvironmentVMAgentTrim                         = false
 	dvResourceVirtualEnvironmentVMAgentType                         = "virtio"
 	dvResourceVirtualEnvironmentVMAudioDeviceDevice                 = "intel-hda"
@@ -81,6 +83,7 @@ const (
 	mkResourceVirtualEnvironmentVMACPI                              = "acpi"
 	mkResourceVirtualEnvironmentVMAgent                             = "agent"
 	mkResourceVirtualEnvironmentVMAgentEnabled                      = "enabled"
+	mkResourceVirtualEnvironmentVMAgentTimeout                      = "timeout"
 	mkResourceVirtualEnvironmentVMAgentTrim                         = "trim"
 	mkResourceVirtualEnvironmentVMAgentType                         = "type"
 	mkResourceVirtualEnvironmentVMAudioDevice                       = "audio_device"
@@ -181,6 +184,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					return []interface{}{
 						map[string]interface{}{
 							mkResourceVirtualEnvironmentVMAgentEnabled: dvResourceVirtualEnvironmentVMAgentEnabled,
+							mkResourceVirtualEnvironmentVMAgentTimeout: dvResourceVirtualEnvironmentVMAgentTimeout,
 							mkResourceVirtualEnvironmentVMAgentTrim:    dvResourceVirtualEnvironmentVMAgentEnabled,
 							mkResourceVirtualEnvironmentVMAgentType:    dvResourceVirtualEnvironmentVMAgentType,
 						},
@@ -193,6 +197,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "Whether to enable the QEMU agent",
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMAgentEnabled,
+						},
+						mkResourceVirtualEnvironmentVMAgentTimeout: &schema.Schema{
+							Type:         schema.TypeString,
+							Description:  "The maximum amount of time to wait for data from the QEMU agent to become available",
+							Optional:     true,
+							Default:      dvResourceVirtualEnvironmentVMAgentTimeout,
+							ValidateFunc: getTimeoutValidator(),
 						},
 						mkResourceVirtualEnvironmentVMAgentTrim: {
 							Type:        schema.TypeBool,
@@ -2053,6 +2064,19 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 				agent[mkResourceVirtualEnvironmentVMAgentTrim] = false
 			}
 
+			if len(currentAgent) > 0 {
+				currentAgentBlock := currentAgent[0].(map[string]interface{})
+				currentAgentTimeout := currentAgentBlock[mkResourceVirtualEnvironmentVMAgentTimeout].(string)
+
+				if currentAgentTimeout != "" {
+					agent[mkResourceVirtualEnvironmentVMAgentTimeout] = currentAgentTimeout
+				} else {
+					agent[mkResourceVirtualEnvironmentVMAgentTimeout] = dvResourceVirtualEnvironmentVMAgentTimeout
+				}
+			} else {
+				agent[mkResourceVirtualEnvironmentVMAgentTimeout] = dvResourceVirtualEnvironmentVMAgentTimeout
+			}
+
 			if vmConfig.Agent.Type != nil {
 				agent[mkResourceVirtualEnvironmentVMAgentType] = *vmConfig.Agent.Type
 			} else {
@@ -2065,6 +2089,7 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 				}
 			} else if len(currentAgent) > 0 ||
 				agent[mkResourceVirtualEnvironmentVMAgentEnabled] != dvResourceVirtualEnvironmentVMAgentEnabled ||
+				agent[mkResourceVirtualEnvironmentVMAgentTimeout] != dvResourceVirtualEnvironmentVMAgentTimeout ||
 				agent[mkResourceVirtualEnvironmentVMAgentTrim] != dvResourceVirtualEnvironmentVMAgentTrim ||
 				agent[mkResourceVirtualEnvironmentVMAgentType] != dvResourceVirtualEnvironmentVMAgentType {
 				d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
@@ -2720,9 +2745,21 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 
 	if started {
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
-			macAddresses := []interface{}{}
+			resource := resourceVirtualEnvironmentVM()
+			agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 
-			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, 900, 5, true)
+			if err != nil {
+				return err
+			}
+
+			agentTimeout, err := time.ParseDuration(agentBlock[mkResourceVirtualEnvironmentVMAgentTimeout].(string))
+
+			if err != nil {
+				return err
+			}
+
+			macAddresses := []interface{}{}
+			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, int(agentTimeout.Seconds()), 5, true)
 
 			if err == nil && networkInterfaces.Result != nil {
 				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
@@ -271,6 +272,26 @@ func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, m interface{}, k
 	}
 
 	return resourceBlock, nil
+}
+
+func getTimeoutValidator() schema.SchemaValidateFunc {
+	return func(i interface{}, k string) (ws []string, es []error) {
+		v, ok := i.(string)
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		_, err := time.ParseDuration(v)
+
+		if err != nil {
+			es = append(es, fmt.Errorf("expected value of %s to be a duration - got: %s", k, v))
+			return
+		}
+
+		return
+	}
 }
 
 func getVGAMemoryValidator() schema.SchemaValidateFunc {

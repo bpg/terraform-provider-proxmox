@@ -5,6 +5,7 @@ ENHANCEMENTS:
 * resource/virtual_environment_container: Add `clone` argument
 * resource/virtual_environment_container: Add `disk` argument
 * resource/virtual_environment_container: Add `template` argument
+* resource/virtual_environment_vm: Add `agent.timeout` argument
 * resource/virtual_environment_vm: Add `audio_device` argument
 * resource/virtual_environment_vm: Add `clone` argument
 * resource/virtual_environment_vm: Add `initialization.datastore_id` argument
