@@ -16,6 +16,7 @@ BUG FIXES:
 * resource/virtual_environment_container: Fix `network_interface` deletion issue
 * resource/virtual_environment_vm: Fix `network_device` deletion issue
 * resource/virtual_environment_vm: Fix slow refresh when VM is stopped and agent is enabled
+* resource/virtual_environment_vm: Fix crash caused by assuming IP addresses are always reported by the QEMU agent
 
 OTHER:
 

@@ -2734,12 +2734,14 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 					rvIPv4Addresses := []interface{}{}
 					rvIPv6Addresses := []interface{}{}
 
-					for _, ip := range *rv.IPAddresses {
-						switch ip.Type {
-						case "ipv4":
-							rvIPv4Addresses = append(rvIPv4Addresses, ip.Address)
-						case "ipv6":
-							rvIPv6Addresses = append(rvIPv6Addresses, ip.Address)
+					if rv.IPAddresses != nil {
+						for _, ip := range *rv.IPAddresses {
+							switch ip.Type {
+							case "ipv4":
+								rvIPv4Addresses = append(rvIPv4Addresses, ip.Address)
+							case "ipv6":
+								rvIPv6Addresses = append(rvIPv6Addresses, ip.Address)
+							}
 						}
 					}
 
