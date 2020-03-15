@@ -301,7 +301,7 @@ type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData struct {
 type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResult struct {
 	MACAddress  string                                                                 `json:"hardware-address"`
 	Name        string                                                                 `json:"name"`
-	Statistics  VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics   `json:"statistics"`
+	Statistics  *VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics  `json:"statistics,omitempty"`
 	IPAddresses *[]VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultIPAddress `json:"ip-addresses,omitempty"`
 }
 
