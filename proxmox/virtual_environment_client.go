@@ -85,7 +85,9 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 			v, err := query.Values(requestBody)
 
 			if err != nil {
-				return fmt.Errorf("Failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+				fErr := fmt.Errorf("Failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+				log.Printf("[DEBUG] WARNING: %s", fErr.Error())
+				return fErr
 			}
 
 			encodedValues := v.Encode()
@@ -112,7 +114,9 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, modifiedPath), reqBodyReader)
 
 	if err != nil {
-		return fmt.Errorf("Failed to create HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+		fErr := fmt.Errorf("Failed to create HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+		log.Printf("[DEBUG] WARNING: %s", fErr.Error())
+		return fErr
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -128,13 +132,16 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	err = c.AuthenticateRequest(req)
 
 	if err != nil {
+		log.Printf("[DEBUG] WARNING: %s", err.Error())
 		return err
 	}
 
 	res, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return fmt.Errorf("Failed to perform HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+		fErr := fmt.Errorf("Failed to perform HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+		log.Printf("[DEBUG] WARNING: %s", fErr.Error())
+		return fErr
 	}
 
 	defer res.Body.Close()
@@ -142,6 +149,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	err = c.ValidateResponseCode(res)
 
 	if err != nil {
+		log.Printf("[DEBUG] WARNING: %s", err.Error())
 		return err
 	}
 
@@ -149,11 +157,13 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		err = json.NewDecoder(res.Body).Decode(responseBody)
 
 		if err != nil {
-			return fmt.Errorf("Failed to decode HTTP %s response (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+			fErr := fmt.Errorf("Failed to decode HTTP %s response (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+			log.Printf("[DEBUG] WARNING: %s", fErr.Error())
+			return fErr
 		}
 	} else {
 		data, _ := ioutil.ReadAll(res.Body)
-		log.Printf("[DEBUG] Unhandled HTTP response body: %s", string(data))
+		log.Printf("[DEBUG] WARNING: Unhandled HTTP response body: %s", string(data))
 	}
 
 	return nil
