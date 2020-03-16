@@ -1,4 +1,4 @@
-## 0.3.0 (UNRELEASED)
+## 0.3.0
 
 ENHANCEMENTS:
 
