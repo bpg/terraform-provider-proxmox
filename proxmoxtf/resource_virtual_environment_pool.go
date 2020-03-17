@@ -27,13 +27,13 @@ const (
 func resourceVirtualEnvironmentPool() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentPoolComment: &schema.Schema{
+			mkResourceVirtualEnvironmentPoolComment: {
 				Type:        schema.TypeString,
 				Description: "The pool comment",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentPoolComment,
 			},
-			mkResourceVirtualEnvironmentPoolMembers: &schema.Schema{
+			mkResourceVirtualEnvironmentPoolMembers: {
 				Type:        schema.TypeList,
 				Description: "The pool members",
 				Computed:    true,
@@ -67,7 +67,7 @@ func resourceVirtualEnvironmentPool() *schema.Resource {
 					},
 				},
 			},
-			mkResourceVirtualEnvironmentPoolPoolID: &schema.Schema{
+			mkResourceVirtualEnvironmentPoolPoolID: {
 				Type:        schema.TypeString,
 				Description: "The pool id",
 				Required:    true,

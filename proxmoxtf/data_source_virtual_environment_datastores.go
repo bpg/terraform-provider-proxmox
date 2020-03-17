@@ -26,13 +26,13 @@ const (
 func dataSourceVirtualEnvironmentDatastores() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentDatastoresActive: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresActive: {
 				Type:        schema.TypeList,
 				Description: "Whether a datastore is active",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
-			mkDataSourceVirtualEnvironmentDatastoresContentTypes: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresContentTypes: {
 				Type:        schema.TypeList,
 				Description: "The allowed content types",
 				Computed:    true,
@@ -41,48 +41,48 @@ func dataSourceVirtualEnvironmentDatastores() *schema.Resource {
 					Elem: &schema.Schema{Type: schema.TypeString},
 				},
 			},
-			mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs: {
 				Type:        schema.TypeList,
 				Description: "The datastore id",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentDatastoresEnabled: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresEnabled: {
 				Type:        schema.TypeList,
 				Description: "Whether a datastore is enabled",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
-			mkDataSourceVirtualEnvironmentDatastoresNodeName: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
 			},
-			mkDataSourceVirtualEnvironmentDatastoresShared: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresShared: {
 				Type:        schema.TypeList,
 				Description: "Whether a datastore is shared",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
-			mkDataSourceVirtualEnvironmentDatastoresSpaceAvailable: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresSpaceAvailable: {
 				Type:        schema.TypeList,
 				Description: "The available space in bytes",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
-			mkDataSourceVirtualEnvironmentDatastoresSpaceTotal: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresSpaceTotal: {
 				Type:        schema.TypeList,
 				Description: "The total space in bytes",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
-			mkDataSourceVirtualEnvironmentDatastoresSpaceUsed: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresSpaceUsed: {
 				Type:        schema.TypeList,
 				Description: "The used space in bytes",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
-			mkDataSourceVirtualEnvironmentDatastoresTypes: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDatastoresTypes: {
 				Type:        schema.TypeList,
 				Description: "The storage type",
 				Computed:    true,

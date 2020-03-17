@@ -25,55 +25,55 @@ const (
 func dataSourceVirtualEnvironmentNodes() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentNodesCPUCount: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesCPUCount: {
 				Type:        schema.TypeList,
 				Description: "The CPU count for each node",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
-			mkDataSourceVirtualEnvironmentNodesCPUUtilization: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesCPUUtilization: {
 				Type:        schema.TypeList,
 				Description: "The CPU utilization on each node",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeFloat},
 			},
-			mkDataSourceVirtualEnvironmentNodesMemoryAvailable: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesMemoryAvailable: {
 				Type:        schema.TypeList,
 				Description: "The available memory in bytes on each node",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
-			mkDataSourceVirtualEnvironmentNodesMemoryUsed: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesMemoryUsed: {
 				Type:        schema.TypeList,
 				Description: "The used memory in bytes on each node",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
-			mkDataSourceVirtualEnvironmentNodesNames: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesNames: {
 				Type:        schema.TypeList,
 				Description: "The node names",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentNodesOnline: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesOnline: {
 				Type:        schema.TypeList,
 				Description: "Whether a node is online",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
-			mkDataSourceVirtualEnvironmentNodesSSLFingerprints: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesSSLFingerprints: {
 				Type:        schema.TypeList,
 				Description: "The SSL fingerprint for each node",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentNodesSupportLevels: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesSupportLevels: {
 				Type:        schema.TypeList,
 				Description: "The support level for each node",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentNodesUptime: &schema.Schema{
+			mkDataSourceVirtualEnvironmentNodesUptime: {
 				Type:        schema.TypeList,
 				Description: "The uptime in seconds for each node",
 				Computed:    true,

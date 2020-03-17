@@ -16,12 +16,12 @@ const (
 func dataSourceVirtualEnvironmentRole() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentRoleID: &schema.Schema{
+			mkDataSourceVirtualEnvironmentRoleID: {
 				Type:        schema.TypeString,
 				Description: "The role id",
 				Required:    true,
 			},
-			mkDataSourceVirtualEnvironmentRolePrivileges: &schema.Schema{
+			mkDataSourceVirtualEnvironmentRolePrivileges: {
 				Type:        schema.TypeSet,
 				Description: "The role privileges",
 				Computed:    true,

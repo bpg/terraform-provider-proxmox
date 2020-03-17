@@ -54,7 +54,7 @@ const (
 func resourceVirtualEnvironmentFile() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentFileContentType: &schema.Schema{
+			mkResourceVirtualEnvironmentFileContentType: {
 				Type:         schema.TypeString,
 				Description:  "The content type",
 				Optional:     true,
@@ -62,42 +62,42 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				Default:      dvResourceVirtualEnvironmentFileContentType,
 				ValidateFunc: getContentTypeValidator(),
 			},
-			mkResourceVirtualEnvironmentFileDatastoreID: &schema.Schema{
+			mkResourceVirtualEnvironmentFileDatastoreID: {
 				Type:        schema.TypeString,
 				Description: "The datastore id",
 				Required:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentFileFileModificationDate: &schema.Schema{
+			mkResourceVirtualEnvironmentFileFileModificationDate: {
 				Type:        schema.TypeString,
 				Description: "The file modification date",
 				Computed:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentFileFileName: &schema.Schema{
+			mkResourceVirtualEnvironmentFileFileName: {
 				Type:        schema.TypeString,
 				Description: "The file name",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentFileFileSize: &schema.Schema{
+			mkResourceVirtualEnvironmentFileFileSize: {
 				Type:        schema.TypeInt,
 				Description: "The file size in bytes",
 				Computed:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentFileFileTag: &schema.Schema{
+			mkResourceVirtualEnvironmentFileFileTag: {
 				Type:        schema.TypeString,
 				Description: "The file tag",
 				Computed:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentFileNodeName: &schema.Schema{
+			mkResourceVirtualEnvironmentFileNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentFileSourceFile: &schema.Schema{
+			mkResourceVirtualEnvironmentFileSourceFile: {
 				Type:        schema.TypeList,
 				Description: "The source file",
 				Optional:    true,
@@ -107,34 +107,34 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentFileSourceFilePath: &schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceFilePath: {
 							Type:        schema.TypeString,
 							Description: "A path to a local file or a URL",
 							Required:    true,
 							ForceNew:    true,
 						},
-						mkResourceVirtualEnvironmentFileSourceFileChanged: &schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceFileChanged: {
 							Type:        schema.TypeBool,
 							Description: "Whether the source file has changed since the last run",
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentFileSourceFileChanged,
 						},
-						mkResourceVirtualEnvironmentFileSourceFileChecksum: &schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceFileChecksum: {
 							Type:        schema.TypeString,
 							Description: "The SHA256 checksum of the source file",
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentFileSourceFileChecksum,
 						},
-						mkResourceVirtualEnvironmentFileSourceFileFileName: &schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceFileFileName: {
 							Type:        schema.TypeString,
 							Description: "The file name to use instead of the source file name",
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentFileSourceFileFileName,
 						},
-						mkResourceVirtualEnvironmentFileSourceFileInsecure: &schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceFileInsecure: {
 							Type:        schema.TypeBool,
 							Description: "Whether to skip the TLS verification step for HTTPS sources",
 							Optional:    true,
@@ -146,7 +146,7 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentFileSourceRaw: &schema.Schema{
+			mkResourceVirtualEnvironmentFileSourceRaw: {
 				Type:        schema.TypeList,
 				Description: "The raw source",
 				Optional:    true,
@@ -156,19 +156,19 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentFileSourceRawData: &schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceRawData: {
 							Type:        schema.TypeString,
 							Description: "The raw data",
 							Required:    true,
 							ForceNew:    true,
 						},
-						mkResourceVirtualEnvironmentFileSourceRawFileName: &schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceRawFileName: {
 							Type:        schema.TypeString,
 							Description: "The file name",
 							Required:    true,
 							ForceNew:    true,
 						},
-						mkResourceVirtualEnvironmentFileSourceRawResize: &schema.Schema{
+						mkResourceVirtualEnvironmentFileSourceRawResize: {
 							Type:        schema.TypeInt,
 							Description: "The number of bytes to resize the file to",
 							Optional:    true,

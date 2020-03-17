@@ -57,7 +57,7 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_vm":          resourceVirtualEnvironmentVM(),
 		},
 		Schema: map[string]*schema.Schema{
-			mkProviderVirtualEnvironment: &schema.Schema{
+			mkProviderVirtualEnvironment: {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{

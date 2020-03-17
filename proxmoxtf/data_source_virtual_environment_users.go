@@ -25,37 +25,37 @@ const (
 func dataSourceVirtualEnvironmentUsers() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentUsersComments: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersComments: {
 				Type:        schema.TypeList,
 				Description: "The user comments",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentUsersEmails: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersEmails: {
 				Type:        schema.TypeList,
 				Description: "The users' email addresses",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentUsersEnabled: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersEnabled: {
 				Type:        schema.TypeList,
 				Description: "Whether a user account is enabled",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
-			mkDataSourceVirtualEnvironmentUsersExpirationDates: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersExpirationDates: {
 				Type:        schema.TypeList,
 				Description: "The user accounts' expiration dates",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentUsersFirstNames: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersFirstNames: {
 				Type:        schema.TypeList,
 				Description: "The users' first names",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentUsersGroups: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersGroups: {
 				Type:        schema.TypeList,
 				Description: "The users' groups",
 				Computed:    true,
@@ -64,19 +64,19 @@ func dataSourceVirtualEnvironmentUsers() *schema.Resource {
 					Elem: &schema.Schema{Type: schema.TypeString},
 				},
 			},
-			mkDataSourceVirtualEnvironmentUsersKeys: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersKeys: {
 				Type:        schema.TypeList,
 				Description: "The users' keys",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentUsersLastNames: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersLastNames: {
 				Type:        schema.TypeList,
 				Description: "The users' last names",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentUsersUserIDs: &schema.Schema{
+			mkDataSourceVirtualEnvironmentUsersUserIDs: {
 				Type:        schema.TypeList,
 				Description: "The user ids",
 				Computed:    true,

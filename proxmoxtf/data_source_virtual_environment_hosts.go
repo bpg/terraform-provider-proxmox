@@ -24,18 +24,18 @@ const (
 func dataSourceVirtualEnvironmentHosts() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentHostsAddresses: &schema.Schema{
+			mkDataSourceVirtualEnvironmentHostsAddresses: {
 				Type:        schema.TypeList,
 				Description: "The addresses",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentHostsDigest: &schema.Schema{
+			mkDataSourceVirtualEnvironmentHostsDigest: {
 				Type:        schema.TypeString,
 				Description: "The SHA1 digest",
 				Computed:    true,
 			},
-			mkDataSourceVirtualEnvironmentHostsEntries: &schema.Schema{
+			mkDataSourceVirtualEnvironmentHostsEntries: {
 				Type:        schema.TypeList,
 				Description: "The host entries",
 				Computed:    true,
@@ -46,7 +46,7 @@ func dataSourceVirtualEnvironmentHosts() *schema.Resource {
 							Description: "The address",
 							Computed:    true,
 						},
-						mkDataSourceVirtualEnvironmentHostsEntriesHostnames: &schema.Schema{
+						mkDataSourceVirtualEnvironmentHostsEntriesHostnames: {
 							Type:        schema.TypeList,
 							Description: "The hostnames",
 							Computed:    true,
@@ -55,7 +55,7 @@ func dataSourceVirtualEnvironmentHosts() *schema.Resource {
 					},
 				},
 			},
-			mkDataSourceVirtualEnvironmentHostsHostnames: &schema.Schema{
+			mkDataSourceVirtualEnvironmentHostsHostnames: {
 				Type:        schema.TypeList,
 				Description: "The hostnames",
 				Computed:    true,
@@ -64,7 +64,7 @@ func dataSourceVirtualEnvironmentHosts() *schema.Resource {
 					Elem: &schema.Schema{Type: schema.TypeString},
 				},
 			},
-			mkDataSourceVirtualEnvironmentHostsNodeName: &schema.Schema{
+			mkDataSourceVirtualEnvironmentHostsNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,

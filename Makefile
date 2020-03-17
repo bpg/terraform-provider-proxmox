@@ -25,7 +25,7 @@ example-plan:
 	cd ./example && terraform plan
 
 fmt:
-	gofmt -w $(GOFMT_FILES)
+	gofmt -s -w $(GOFMT_FILES)
 
 init:
 	go get ./...

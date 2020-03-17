@@ -28,18 +28,18 @@ const (
 func resourceVirtualEnvironmentHosts() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentHostsAddresses: &schema.Schema{
+			mkResourceVirtualEnvironmentHostsAddresses: {
 				Type:        schema.TypeList,
 				Description: "The addresses",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkResourceVirtualEnvironmentHostsDigest: &schema.Schema{
+			mkResourceVirtualEnvironmentHostsDigest: {
 				Type:        schema.TypeString,
 				Description: "The SHA1 digest",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentHostsEntries: &schema.Schema{
+			mkResourceVirtualEnvironmentHostsEntries: {
 				Type:        schema.TypeList,
 				Description: "The host entries",
 				Computed:    true,
@@ -50,7 +50,7 @@ func resourceVirtualEnvironmentHosts() *schema.Resource {
 							Description: "The address",
 							Computed:    true,
 						},
-						mkResourceVirtualEnvironmentHostsEntriesHostnames: &schema.Schema{
+						mkResourceVirtualEnvironmentHostsEntriesHostnames: {
 							Type:        schema.TypeList,
 							Description: "The hostnames",
 							Computed:    true,
@@ -59,7 +59,7 @@ func resourceVirtualEnvironmentHosts() *schema.Resource {
 					},
 				},
 			},
-			mkResourceVirtualEnvironmentHostsEntry: &schema.Schema{
+			mkResourceVirtualEnvironmentHostsEntry: {
 				Type:        schema.TypeList,
 				Description: "The host entries",
 				Required:    true,
@@ -70,7 +70,7 @@ func resourceVirtualEnvironmentHosts() *schema.Resource {
 							Description: "The address",
 							Required:    true,
 						},
-						mkResourceVirtualEnvironmentHostsEntryHostnames: &schema.Schema{
+						mkResourceVirtualEnvironmentHostsEntryHostnames: {
 							Type:        schema.TypeList,
 							Description: "The hostnames",
 							Required:    true,
@@ -81,7 +81,7 @@ func resourceVirtualEnvironmentHosts() *schema.Resource {
 				},
 				MinItems: 1,
 			},
-			mkResourceVirtualEnvironmentHostsHostnames: &schema.Schema{
+			mkResourceVirtualEnvironmentHostsHostnames: {
 				Type:        schema.TypeList,
 				Description: "The hostnames",
 				Computed:    true,
@@ -90,7 +90,7 @@ func resourceVirtualEnvironmentHosts() *schema.Resource {
 					Elem: &schema.Schema{Type: schema.TypeString},
 				},
 			},
-			mkResourceVirtualEnvironmentHostsNodeName: &schema.Schema{
+			mkResourceVirtualEnvironmentHostsNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,

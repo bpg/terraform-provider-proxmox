@@ -176,7 +176,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMACPI,
 			},
-			mkResourceVirtualEnvironmentVMAgent: &schema.Schema{
+			mkResourceVirtualEnvironmentVMAgent: {
 				Type:        schema.TypeList,
 				Description: "The QEMU agent configuration",
 				Optional:    true,
@@ -198,7 +198,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMAgentEnabled,
 						},
-						mkResourceVirtualEnvironmentVMAgentTimeout: &schema.Schema{
+						mkResourceVirtualEnvironmentVMAgentTimeout: {
 							Type:         schema.TypeString,
 							Description:  "The maximum amount of time to wait for data from the QEMU agent to become available",
 							Optional:     true,
@@ -223,7 +223,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMAudioDevice: &schema.Schema{
+			mkResourceVirtualEnvironmentVMAudioDevice: {
 				Type:        schema.TypeList,
 				Description: "The audio devices",
 				Optional:    true,
@@ -264,7 +264,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Default:      dvResourceVirtualEnvironmentVMBIOS,
 				ValidateFunc: getBIOSValidator(),
 			},
-			mkResourceVirtualEnvironmentVMCDROM: &schema.Schema{
+			mkResourceVirtualEnvironmentVMCDROM: {
 				Type:        schema.TypeList,
 				Description: "The CDROM drive",
 				Optional:    true,
@@ -296,7 +296,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMClone: &schema.Schema{
+			mkResourceVirtualEnvironmentVMClone: {
 				Type:        schema.TypeList,
 				Description: "The cloning configuration",
 				Optional:    true,
@@ -331,7 +331,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMCPU: &schema.Schema{
+			mkResourceVirtualEnvironmentVMCPU: {
 				Type:        schema.TypeList,
 				Description: "The CPU allocation",
 				Optional:    true,
@@ -412,7 +412,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMDescription,
 			},
-			mkResourceVirtualEnvironmentVMDisk: &schema.Schema{
+			mkResourceVirtualEnvironmentVMDisk: {
 				Type:        schema.TypeList,
 				Description: "The disk devices",
 				Optional:    true,
@@ -510,7 +510,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 14,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMInitialization: &schema.Schema{
+			mkResourceVirtualEnvironmentVMInitialization: {
 				Type:        schema.TypeList,
 				Description: "The cloud-init configuration",
 				Optional:    true,
@@ -701,7 +701,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkResourceVirtualEnvironmentVMMemory: &schema.Schema{
+			mkResourceVirtualEnvironmentVMMemory: {
 				Type:        schema.TypeList,
 				Description: "The memory allocation",
 				Optional:    true,
@@ -748,7 +748,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMName,
 			},
-			mkResourceVirtualEnvironmentVMNetworkDevice: &schema.Schema{
+			mkResourceVirtualEnvironmentVMNetworkDevice: {
 				Type:        schema.TypeList,
 				Description: "The network devices",
 				Optional:    true,
@@ -809,13 +809,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkResourceVirtualEnvironmentVMNodeName: &schema.Schema{
+			mkResourceVirtualEnvironmentVMNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentVMOperatingSystem: &schema.Schema{
+			mkResourceVirtualEnvironmentVMOperatingSystem: {
 				Type:        schema.TypeList,
 				Description: "The operating system configuration",
 				Optional:    true,
@@ -847,7 +847,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentVMPoolID,
 			},
-			mkResourceVirtualEnvironmentVMSerialDevice: &schema.Schema{
+			mkResourceVirtualEnvironmentVMSerialDevice: {
 				Type:        schema.TypeList,
 				Description: "The serial devices",
 				Optional:    true,
@@ -894,7 +894,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentVMTemplate,
 			},
-			mkResourceVirtualEnvironmentVMVGA: &schema.Schema{
+			mkResourceVirtualEnvironmentVMVGA: {
 				Type:        schema.TypeList,
 				Description: "The VGA configuration",
 				Optional:    true,

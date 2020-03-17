@@ -36,76 +36,76 @@ const (
 func resourceVirtualEnvironmentCertificate() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentCertificateCertificate: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateCertificate: {
 				Type:        schema.TypeString,
 				Description: "The PEM encoded certificate",
 				Required:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateCertificateChain: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateCertificateChain: {
 				Type:        schema.TypeString,
 				Description: "The PEM encoded certificate chain",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentCertificateCertificateChain,
 			},
-			mkResourceVirtualEnvironmentCertificateExpirationDate: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateExpirationDate: {
 				Type:        schema.TypeString,
 				Description: "The expiration date",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateFileName: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateFileName: {
 				Type:        schema.TypeString,
 				Description: "The file name",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateIssuer: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateIssuer: {
 				Type:        schema.TypeString,
 				Description: "The issuer",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateNodeName: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateOverwrite: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateOverwrite: {
 				Type:        schema.TypeBool,
 				Description: "Whether to overwrite an existing certificate",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentCertificateOverwrite,
 			},
-			mkResourceVirtualEnvironmentCertificatePrivateKey: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificatePrivateKey: {
 				Type:        schema.TypeString,
 				Description: "The PEM encoded private key",
 				Required:    true,
 				Sensitive:   true,
 			},
-			mkResourceVirtualEnvironmentCertificatePublicKeySize: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificatePublicKeySize: {
 				Type:        schema.TypeInt,
 				Description: "The public key size",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentCertificatePublicKeyType: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificatePublicKeyType: {
 				Type:        schema.TypeString,
 				Description: "The public key type",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateSSLFingerprint: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateSSLFingerprint: {
 				Type:        schema.TypeString,
 				Description: "The SSL fingerprint",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateStartDate: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateStartDate: {
 				Type:        schema.TypeString,
 				Description: "The start date",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateSubject: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateSubject: {
 				Type:        schema.TypeString,
 				Description: "The subject",
 				Computed:    true,
 			},
-			mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames: &schema.Schema{
+			mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames: {
 				Type:        schema.TypeList,
 				Description: "The subject alternative names",
 				Computed:    true,

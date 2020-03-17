@@ -40,7 +40,7 @@ const (
 func resourceVirtualEnvironmentUser() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentUserACL: &schema.Schema{
+			mkResourceVirtualEnvironmentUserACL: {
 				Type:        schema.TypeSet,
 				Description: "The access control list",
 				Optional:    true,
@@ -68,38 +68,38 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 					},
 				},
 			},
-			mkResourceVirtualEnvironmentUserComment: &schema.Schema{
+			mkResourceVirtualEnvironmentUserComment: {
 				Type:        schema.TypeString,
 				Description: "The user comment",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentUserComment,
 			},
-			mkResourceVirtualEnvironmentUserEmail: &schema.Schema{
+			mkResourceVirtualEnvironmentUserEmail: {
 				Type:        schema.TypeString,
 				Description: "The user's email address",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentUserEmail,
 			},
-			mkResourceVirtualEnvironmentUserEnabled: &schema.Schema{
+			mkResourceVirtualEnvironmentUserEnabled: {
 				Type:        schema.TypeBool,
 				Description: "Whether the user account is enabled",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentUserEnabled,
 			},
-			mkResourceVirtualEnvironmentUserExpirationDate: &schema.Schema{
+			mkResourceVirtualEnvironmentUserExpirationDate: {
 				Type:         schema.TypeString,
 				Description:  "The user account's expiration date",
 				Optional:     true,
 				Default:      time.Unix(0, 0).UTC().Format(time.RFC3339),
 				ValidateFunc: validation.ValidateRFC3339TimeString,
 			},
-			mkResourceVirtualEnvironmentUserFirstName: &schema.Schema{
+			mkResourceVirtualEnvironmentUserFirstName: {
 				Type:        schema.TypeString,
 				Description: "The user's first name",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentUserFirstName,
 			},
-			mkResourceVirtualEnvironmentUserGroups: &schema.Schema{
+			mkResourceVirtualEnvironmentUserGroups: {
 				Type:        schema.TypeSet,
 				Description: "The user's groups",
 				Optional:    true,
@@ -108,24 +108,24 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				},
 				Elem: &schema.Schema{Type: schema.TypeString},
 			},
-			mkResourceVirtualEnvironmentUserKeys: &schema.Schema{
+			mkResourceVirtualEnvironmentUserKeys: {
 				Type:        schema.TypeString,
 				Description: "The user's keys",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentUserKeys,
 			},
-			mkResourceVirtualEnvironmentUserLastName: &schema.Schema{
+			mkResourceVirtualEnvironmentUserLastName: {
 				Type:        schema.TypeString,
 				Description: "The user's last name",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentUserLastName,
 			},
-			mkResourceVirtualEnvironmentUserPassword: &schema.Schema{
+			mkResourceVirtualEnvironmentUserPassword: {
 				Type:        schema.TypeString,
 				Description: "The user's password",
 				Required:    true,
 			},
-			mkResourceVirtualEnvironmentUserUserID: &schema.Schema{
+			mkResourceVirtualEnvironmentUserUserID: {
 				Type:        schema.TypeString,
 				Description: "The user id",
 				Required:    true,

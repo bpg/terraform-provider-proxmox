@@ -19,17 +19,17 @@ const (
 func dataSourceVirtualEnvironmentDNS() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentDNSDomain: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDNSDomain: {
 				Type:        schema.TypeString,
 				Description: "The DNS search domain",
 				Computed:    true,
 			},
-			mkDataSourceVirtualEnvironmentDNSNodeName: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDNSNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
 			},
-			mkDataSourceVirtualEnvironmentDNSServers: &schema.Schema{
+			mkDataSourceVirtualEnvironmentDNSServers: {
 				Type:        schema.TypeList,
 				Description: "The DNS servers",
 				Computed:    true,

@@ -102,7 +102,7 @@ const (
 func resourceVirtualEnvironmentContainer() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentContainerClone: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerClone: {
 				Type:        schema.TypeList,
 				Description: "The cloning configuration",
 				Optional:    true,
@@ -137,7 +137,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentContainerConsole: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerConsole: {
 				Type:        schema.TypeList,
 				Description: "The console configuration",
 				Optional:    true,
@@ -177,7 +177,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentContainerCPU: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerCPU: {
 				Type:        schema.TypeList,
 				Description: "The CPU allocation",
 				Optional:    true,
@@ -224,7 +224,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentContainerDescription,
 			},
-			mkResourceVirtualEnvironmentContainerDisk: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerDisk: {
 				Type:        schema.TypeList,
 				Description: "The disks",
 				Optional:    true,
@@ -250,7 +250,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentContainerInitialization: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerInitialization: {
 				Type:        schema.TypeList,
 				Description: "The initialization configuration",
 				Optional:    true,
@@ -398,7 +398,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentContainerMemory: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerMemory: {
 				Type:        schema.TypeList,
 				Description: "The memory allocation",
 				Optional:    true,
@@ -431,7 +431,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentContainerNetworkInterface: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerNetworkInterface: {
 				Type:        schema.TypeList,
 				Description: "The network interfaces",
 				Optional:    true,
@@ -484,13 +484,13 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				MaxItems: maxResourceVirtualEnvironmentContainerNetworkInterfaces,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentContainerNodeName: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentContainerOperatingSystem: &schema.Schema{
+			mkResourceVirtualEnvironmentContainerOperatingSystem: {
 				Type:        schema.TypeList,
 				Description: "The operating system configuration",
 				Optional:    true,

@@ -26,7 +26,7 @@ const (
 func resourceVirtualEnvironmentGroup() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentGroupACL: &schema.Schema{
+			mkResourceVirtualEnvironmentGroupACL: {
 				Type:        schema.TypeSet,
 				Description: "The access control list",
 				Optional:    true,
@@ -54,19 +54,19 @@ func resourceVirtualEnvironmentGroup() *schema.Resource {
 					},
 				},
 			},
-			mkResourceVirtualEnvironmentGroupComment: &schema.Schema{
+			mkResourceVirtualEnvironmentGroupComment: {
 				Type:        schema.TypeString,
 				Description: "The group comment",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentGroupComment,
 			},
-			mkResourceVirtualEnvironmentGroupID: &schema.Schema{
+			mkResourceVirtualEnvironmentGroupID: {
 				Type:        schema.TypeString,
 				Description: "The group id",
 				Required:    true,
 				ForceNew:    true,
 			},
-			mkResourceVirtualEnvironmentGroupMembers: &schema.Schema{
+			mkResourceVirtualEnvironmentGroupMembers: {
 				Type:        schema.TypeSet,
 				Description: "The group members",
 				Computed:    true,

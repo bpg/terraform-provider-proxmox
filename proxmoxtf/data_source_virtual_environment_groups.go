@@ -16,13 +16,13 @@ const (
 func dataSourceVirtualEnvironmentGroups() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentGroupsComments: &schema.Schema{
+			mkDataSourceVirtualEnvironmentGroupsComments: {
 				Type:        schema.TypeList,
 				Description: "The group comments",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkDataSourceVirtualEnvironmentGroupsGroupIDs: &schema.Schema{
+			mkDataSourceVirtualEnvironmentGroupsGroupIDs: {
 				Type:        schema.TypeList,
 				Description: "The group ids",
 				Computed:    true,

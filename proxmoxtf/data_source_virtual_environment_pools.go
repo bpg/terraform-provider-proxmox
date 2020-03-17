@@ -15,7 +15,7 @@ const (
 func dataSourceVirtualEnvironmentPools() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentPoolsPoolIDs: &schema.Schema{
+			mkDataSourceVirtualEnvironmentPoolsPoolIDs: {
 				Type:        schema.TypeList,
 				Description: "The pool ids",
 				Computed:    true,

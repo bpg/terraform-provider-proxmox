@@ -19,13 +19,13 @@ const (
 func resourceVirtualEnvironmentRole() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentRolePrivileges: &schema.Schema{
+			mkResourceVirtualEnvironmentRolePrivileges: {
 				Type:        schema.TypeSet,
 				Description: "The role privileges",
 				Required:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkResourceVirtualEnvironmentRoleRoleID: &schema.Schema{
+			mkResourceVirtualEnvironmentRoleRoleID: {
 				Type:        schema.TypeString,
 				Description: "The role id",
 				Required:    true,

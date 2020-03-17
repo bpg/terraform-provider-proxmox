@@ -18,25 +18,25 @@ const (
 func dataSourceVirtualEnvironmentVersion() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentVersionKeyboardLayout: &schema.Schema{
+			mkDataSourceVirtualEnvironmentVersionKeyboardLayout: {
 				Type:        schema.TypeString,
 				Description: "The keyboard layout",
 				Computed:    true,
 				ForceNew:    true,
 			},
-			mkDataSourceVirtualEnvironmentVersionRelease: &schema.Schema{
+			mkDataSourceVirtualEnvironmentVersionRelease: {
 				Type:        schema.TypeString,
 				Description: "The release information",
 				Computed:    true,
 				ForceNew:    true,
 			},
-			mkDataSourceVirtualEnvironmentVersionRepositoryID: &schema.Schema{
+			mkDataSourceVirtualEnvironmentVersionRepositoryID: {
 				Type:        schema.TypeString,
 				Description: "The repository id",
 				Computed:    true,
 				ForceNew:    true,
 			},
-			mkDataSourceVirtualEnvironmentVersionVersion: &schema.Schema{
+			mkDataSourceVirtualEnvironmentVersionVersion: {
 				Type:        schema.TypeString,
 				Description: "The version information",
 				Computed:    true,
