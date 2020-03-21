@@ -162,6 +162,7 @@ type CustomStorageDevice struct {
 	MaxWriteSpeedMbps       *int        `json:"mbps_wr,omitempty" url:"mbps_wr,omitempty"`
 	Media                   *string     `json:"media,omitempty" url:"media,omitempty"`
 	Size                    *string     `json:"size,omitempty" url:"size,omitempty"`
+	Format                  *string     `json:"format,omitempty" url:"format,omitempty"`
 }
 
 // CustomStorageDevices handles QEMU SATA device parameters.
@@ -280,7 +281,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	USBDevices           CustomUSBDevices             `json:"usb,omitempty" url:"usb,omitempty"`
 	VGADevice            *CustomVGADevice             `json:"vga,omitempty" url:"vga,omitempty"`
 	VirtualCPUCount      *int                         `json:"vcpus,omitempty" url:"vcpus,omitempty"`
-	VirtualIODevices     CustomVirtualIODevices       `json:"virtio,omitempty" url:"virtio,omitempty"`
+	VirtualIODevices     CustomStorageDevices         `json:"virtio,omitempty" url:"virtio,omitempty"`
 	VMGenerationID       *string                      `json:"vmgenid,omitempty" url:"vmgenid,omitempty"`
 	VMID                 *int                         `json:"vmid,omitempty" url:"vmid,omitempty"`
 	VMStateDatastoreID   *string                      `json:"vmstatestorage,omitempty" url:"vmstatestorage,omitempty"`
@@ -440,7 +441,22 @@ type VirtualEnvironmentVMGetResponseData struct {
 	USBDevices           *CustomUSBDevices             `json:"usb,omitempty"`
 	VGADevice            *CustomVGADevice              `json:"vga,omitempty"`
 	VirtualCPUCount      *int                          `json:"vcpus,omitempty"`
-	VirtualIODevices     *CustomVirtualIODevices       `json:"virtio,omitempty"`
+	VirtualIODevice0     *CustomStorageDevice          `json:"virtio0,omitempty"`
+	VirtualIODevice1     *CustomStorageDevice          `json:"virtio1,omitempty"`
+	VirtualIODevice2     *CustomStorageDevice          `json:"virtio2,omitempty"`
+	VirtualIODevice3     *CustomStorageDevice          `json:"virtio3,omitempty"`
+	VirtualIODevice4     *CustomStorageDevice          `json:"virtio4,omitempty"`
+	VirtualIODevice5     *CustomStorageDevice          `json:"virtio5,omitempty"`
+	VirtualIODevice6     *CustomStorageDevice          `json:"virtio6,omitempty"`
+	VirtualIODevice7     *CustomStorageDevice          `json:"virtio7,omitempty"`
+	VirtualIODevice8     *CustomStorageDevice          `json:"virtio8,omitempty"`
+	VirtualIODevice9     *CustomStorageDevice          `json:"virtio9,omitempty"`
+	VirtualIODevice10    *CustomStorageDevice          `json:"virtio10,omitempty"`
+	VirtualIODevice11    *CustomStorageDevice          `json:"virtio11,omitempty"`
+	VirtualIODevice12    *CustomStorageDevice          `json:"virtio12,omitempty"`
+	VirtualIODevice13    *CustomStorageDevice          `json:"virtio13,omitempty"`
+	VirtualIODevice14    *CustomStorageDevice          `json:"virtio14,omitempty"`
+	VirtualIODevice15    *CustomStorageDevice          `json:"virtio15,omitempty"`
 	VMGenerationID       *string                       `json:"vmgenid,omitempty"`
 	VMStateDatastoreID   *string                       `json:"vmstatestorage,omitempty"`
 	WatchdogDevice       *CustomWatchdogDevice         `json:"watchdog,omitempty"`
@@ -478,9 +494,37 @@ type VirtualEnvironmentVMListResponseData struct {
 	ACPI *CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
 }
 
+// VirtualEnvironmentVMMoveDiskRequestBody contains the body for a VM move disk request.
+type VirtualEnvironmentVMMoveDiskRequestBody struct {
+	BandwidthLimit      *int        `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
+	DeleteOriginalDisk  *CustomBool `json:"delete,omitempty,int" url:"delete,omitempty,int"`
+	Digest              *string     `json:"digest,omitempty" url:"digest,omitempty"`
+	Disk                string      `json:"disk" url:"disk"`
+	TargetStorage       string      `json:"storage" url:"storage"`
+	TargetStorageFormat *string     `json:"format,omitempty" url:"format,omitempty"`
+}
+
+// VirtualEnvironmentVMMoveDiskResponseBody contains the body from a VM move disk response.
+type VirtualEnvironmentVMMoveDiskResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
 // VirtualEnvironmentVMRebootRequestBody contains the body for a VM reboot request.
 type VirtualEnvironmentVMRebootRequestBody struct {
 	Timeout *int `json:"timeout,omitempty" url:"timeout,omitempty"`
+}
+
+// VirtualEnvironmentVMRebootResponseBody contains the body from a VM reboot response.
+type VirtualEnvironmentVMRebootResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentVMResizeDiskRequestBody contains the body for a VM resize disk request.
+type VirtualEnvironmentVMResizeDiskRequestBody struct {
+	Digest   *string     `json:"digest,omitempty" url:"digest,omitempty"`
+	Disk     string      `json:"disk" url:"disk"`
+	Size     string      `json:"size" url:"size"`
+	SkipLock *CustomBool `json:"skiplock,omitempty,int" url:"skiplock,omitempty,int"`
 }
 
 // VirtualEnvironmentVMShutdownRequestBody contains the body for a VM shutdown request.
@@ -489,6 +533,26 @@ type VirtualEnvironmentVMShutdownRequestBody struct {
 	KeepActive *CustomBool `json:"keepActive,omitempty,int" url:"keepActive,omitempty,int"`
 	SkipLock   *CustomBool `json:"skipLock,omitempty,int" url:"skipLock,omitempty,int"`
 	Timeout    *int        `json:"timeout,omitempty" url:"timeout,omitempty"`
+}
+
+// VirtualEnvironmentVMShutdownResponseBody contains the body from a VM shutdown response.
+type VirtualEnvironmentVMShutdownResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentVMStartResponseBody contains the body from a VM start response.
+type VirtualEnvironmentVMStartResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentVMStopResponseBody contains the body from a VM stop response.
+type VirtualEnvironmentVMStopResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentVMUpdateAsyncResponseBody contains the body from a VM async update response.
+type VirtualEnvironmentVMUpdateAsyncResponseBody struct {
+	Data *string `json:"data,omitempty"`
 }
 
 // VirtualEnvironmentVMUpdateRequestBody contains the data for an virtual machine update request.
@@ -1497,6 +1561,8 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				r.Media = &v[1]
 			case "size":
 				r.Size = &v[1]
+			case "format":
+				r.Format = &v[1]
 			}
 		}
 	}

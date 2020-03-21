@@ -29,6 +29,17 @@ type VirtualEnvironmentNodeGetTimeResponseData struct {
 	UTCTime   CustomTimestamp `json:"time"`
 }
 
+// VirtualEnvironmentNodeGetTaskStatusResponseBody contains the body from a node get task status response.
+type VirtualEnvironmentNodeGetTaskStatusResponseBody struct {
+	Data *VirtualEnvironmentNodeGetTaskStatusResponseData `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentNodeGetTaskStatusResponseData contains the data from a node get task status response.
+type VirtualEnvironmentNodeGetTaskStatusResponseData struct {
+	PID    int    `json:"pid,omitempty"`
+	Status string `json:"status,omitempty"`
+}
+
 // VirtualEnvironmentNodeListResponseBody contains the body from a node list response.
 type VirtualEnvironmentNodeListResponseBody struct {
 	Data []*VirtualEnvironmentNodeListResponseData `json:"data,omitempty"`
