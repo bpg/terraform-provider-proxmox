@@ -67,7 +67,9 @@ func (c *VirtualEnvironmentClient) GetNodeIP(nodeName string) (*string, error) {
 		return nil, fmt.Errorf("Failed to determine the IP address of node \"%s\"", nodeName)
 	}
 
-	return &nodeAddress, nil
+	nodeAddressParts := strings.Split(nodeAddress, "/")
+
+	return &nodeAddressParts[0], nil
 }
 
 // ListNodeNetworkDevices retrieves a list of network devices for a specific nodes.
