@@ -1,3 +1,9 @@
+## 0.4.0
+
+BUG FIXES:
+
+* library/virtual_environment_nodes: Fix node IP address format
+
 ## 0.3.0
 
 ENHANCEMENTS:
