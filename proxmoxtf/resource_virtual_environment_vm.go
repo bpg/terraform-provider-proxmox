@@ -1129,7 +1129,11 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			cpuFlagsConverted[fi] = flag.(string)
 		}
 
-		updateBody.CPUArchitecture = &cpuArchitecture
+		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
+		if veClient.Username == proxmox.DefaultRootAccount || cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
+			updateBody.CPUArchitecture = &cpuArchitecture
+		}
+
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUEmulation = &proxmox.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
@@ -1458,7 +1462,6 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		BootDisk:        &bootDisk,
 		BootOrder:       &bootOrder,
 		CloudInitConfig: initializationConfig,
-		CPUArchitecture: &cpuArchitecture,
 		CPUCores:        &cpuCores,
 		CPUEmulation: &proxmox.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
@@ -1482,6 +1485,11 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		Template:            &template,
 		VGADevice:           vgaDevice,
 		VMID:                &vmID,
+	}
+
+	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
+	if veClient.Username == proxmox.DefaultRootAccount || cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
+		createBody.CPUArchitecture = &cpuArchitecture
 	}
 
 	if cpuHotplugged > 0 {
@@ -2037,7 +2045,14 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 }
 
 func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) error {
-	err := resourceVirtualEnvironmentVMReadPrimitiveValues(d, m, vmID, vmConfig, vmStatus)
+	config := m.(providerConfiguration)
+	veClient, err := config.GetVEClient()
+
+	if err != nil {
+		return err
+	}
+
+	err = resourceVirtualEnvironmentVMReadPrimitiveValues(d, m, vmID, vmConfig, vmStatus)
 
 	if err != nil {
 		return err
@@ -2178,7 +2193,12 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 		cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = *vmConfig.CPUArchitecture
 	} else {
 		// Default value of "arch" is "" according to the API documentation.
-		cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = ""
+		// However, assume the provider's default value as a workaround when the root account is not being used.
+		if veClient.Username != proxmox.DefaultRootAccount {
+			cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = dvResourceVirtualEnvironmentVMCPUArchitecture
+		} else {
+			cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = ""
+		}
 	}
 
 	if vmConfig.CPUCores != nil {
@@ -3047,7 +3067,11 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
-		updateBody.CPUArchitecture = &cpuArchitecture
+		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
+		if veClient.Username == proxmox.DefaultRootAccount || cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
+			updateBody.CPUArchitecture = &cpuArchitecture
+		}
+
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
