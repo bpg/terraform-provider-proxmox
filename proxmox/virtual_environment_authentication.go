@@ -13,6 +13,11 @@ import (
 	"net/url"
 )
 
+const (
+	// DefaultRootAccount contains the default username and realm for the root account.
+	DefaultRootAccount = "root@pam"
+)
+
 // Authenticate authenticates against the specified endpoint.
 func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 	if c.authenticationData != nil && !reset {
