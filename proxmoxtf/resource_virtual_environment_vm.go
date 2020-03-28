@@ -30,6 +30,7 @@ const (
 	dvResourceVirtualEnvironmentVMCDROMFileID                       = ""
 	dvResourceVirtualEnvironmentVMCloneDatastoreID                  = ""
 	dvResourceVirtualEnvironmentVMCloneNodeName                     = ""
+	dvResourceVirtualEnvironmentVMCloneFull                         = true
 	dvResourceVirtualEnvironmentVMCPUArchitecture                   = "x86_64"
 	dvResourceVirtualEnvironmentVMCPUCores                          = 1
 	dvResourceVirtualEnvironmentVMCPUHotplugged                     = 0
@@ -98,6 +99,7 @@ const (
 	mkResourceVirtualEnvironmentVMCloneDatastoreID                  = "datastore_id"
 	mkResourceVirtualEnvironmentVMCloneNodeName                     = "node_name"
 	mkResourceVirtualEnvironmentVMCloneVMID                         = "vm_id"
+	mkResourceVirtualEnvironmentVMCloneFull                         = "full"
 	mkResourceVirtualEnvironmentVMCPU                               = "cpu"
 	mkResourceVirtualEnvironmentVMCPUArchitecture                   = "architecture"
 	mkResourceVirtualEnvironmentVMCPUCores                          = "cores"
@@ -325,6 +327,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Required:     true,
 							ForceNew:     true,
 							ValidateFunc: getVMIDValidator(),
+						},
+						mkResourceVirtualEnvironmentVMCloneFull: {
+							Type:        schema.TypeBool,
+							Description: "The Clone Type, create a Full Clone (true) or a linked Clone (false)",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentVMCloneFull,
 						},
 					},
 				},
@@ -973,6 +982,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	cloneDatastoreID := cloneBlock[mkResourceVirtualEnvironmentVMCloneDatastoreID].(string)
 	cloneNodeName := cloneBlock[mkResourceVirtualEnvironmentVMCloneNodeName].(string)
 	cloneVMID := cloneBlock[mkResourceVirtualEnvironmentVMCloneVMID].(int)
+	cloneFull := cloneBlock[mkResourceVirtualEnvironmentVMCloneFull].(bool)
 
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
@@ -990,7 +1000,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		vmID = *vmIDNew
 	}
 
-	fullCopy := proxmox.CustomBool(true)
+	fullCopy := proxmox.CustomBool(cloneFull)
 
 	cloneBody := &proxmox.VirtualEnvironmentVMCloneRequestBody{
 		FullCopy: &fullCopy,
