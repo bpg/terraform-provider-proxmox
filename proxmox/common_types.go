@@ -18,6 +18,9 @@ type CustomBool bool
 // CustomCommaSeparatedList allows a JSON string to also be a string array.
 type CustomCommaSeparatedList []string
 
+// CustomInt allows a JSON integer value to also be a string.
+type CustomInt int
+
 // CustomLineBreakSeparatedList allows a multiline JSON string to also be a string array.
 type CustomLineBreakSeparatedList []string
 
@@ -66,6 +69,25 @@ func (r *CustomCommaSeparatedList) UnmarshalJSON(b []byte) error {
 	}
 
 	*r = strings.Split(s, ",")
+
+	return nil
+}
+
+// UnmarshalJSON converts a JSON value to an integer.
+func (r *CustomInt) UnmarshalJSON(b []byte) error {
+	s := string(b)
+
+	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
+		s = s[1 : len(s)-1]
+	}
+
+	i, err := strconv.ParseInt(s, 10, 32)
+
+	if err != nil {
+		return err
+	}
+
+	*r = CustomInt(i)
 
 	return nil
 }

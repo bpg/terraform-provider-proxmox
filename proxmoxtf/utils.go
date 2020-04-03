@@ -349,7 +349,7 @@ func getVLANIDsValidator() schema.SchemaValidateFunc {
 
 func getVMIDValidator() schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (ws []string, es []error) {
-		min := 1
+		min := 100
 		max := 2147483647
 
 		v, ok := i.(int)

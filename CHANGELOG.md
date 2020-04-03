@@ -3,6 +3,7 @@
 BUG FIXES:
 
 * library/virtual_environment_nodes: Fix node IP address format
+* resource/virtual_environment_vm: Fix VM ID collision when `vm_id` is not specified
 
 WORKAROUNDS:
 
