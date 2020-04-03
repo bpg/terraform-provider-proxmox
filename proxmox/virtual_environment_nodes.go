@@ -35,7 +35,7 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands
 	output, err := sshSession.CombinedOutput(
 		fmt.Sprintf(
 			"/bin/bash -c '%s'",
-			strings.ReplaceAll(strings.Join(commands, " && "), "'", "'\"'\"'"),
+			strings.ReplaceAll(strings.Join(commands, " && \\\n"), "'", "'\"'\"'"),
 		),
 	)
 
