@@ -7,9 +7,20 @@ package proxmox
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
+)
+
+const (
+	getVMIDStep = 1
+)
+
+var (
+	getVMIDCounter      = -1
+	getVMIDCounterMutex = &sync.Mutex{}
 )
 
 // CloneVM clones a virtual machine.
@@ -45,30 +56,46 @@ func (c *VirtualEnvironmentClient) GetVM(nodeName string, vmID int) (*VirtualEnv
 
 // GetVMID retrieves the next available VM identifier.
 func (c *VirtualEnvironmentClient) GetVMID() (*int, error) {
-	nodes, err := c.ListNodes()
+	getVMIDCounterMutex.Lock()
+	defer getVMIDCounterMutex.Unlock()
 
-	if err != nil {
-		return nil, err
+	if getVMIDCounter < 0 {
+		nextVMID, err := c.GetClusterNextID(nil)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if nextVMID == nil {
+			return nil, errors.New("Unable to retrieve the next available VM identifier")
+		}
+
+		getVMIDCounter = *nextVMID + getVMIDStep
+
+		log.Printf("[DEBUG] Determined next available VM identifier to be %d", *nextVMID)
+
+		return nextVMID, nil
 	}
 
-	vmID := 100
+	vmID := getVMIDCounter
 
-VMID:
 	for vmID <= 2147483637 {
-		for _, n := range nodes {
-			err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/qemu/%d/status/current", url.PathEscape(n.Name), vmID), nil, nil)
+		_, err := c.GetClusterNextID(&vmID)
 
-			if err == nil {
-				vmID += 5
+		if err != nil {
+			vmID += getVMIDStep
 
-				continue VMID
-			}
+			continue
 		}
+
+		getVMIDCounter = vmID + getVMIDStep
+
+		log.Printf("[DEBUG] Determined next available VM identifier to be %d", vmID)
 
 		return &vmID, nil
 	}
 
-	return nil, errors.New("Unable to retrieve the next available VM identifier")
+	return nil, errors.New("Unable to determine the next available VM identifier")
 }
 
 // GetVMNetworkInterfacesFromAgent retrieves the network interfaces reported by the QEMU agent.
