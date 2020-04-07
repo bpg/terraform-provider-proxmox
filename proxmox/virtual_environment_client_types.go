@@ -22,6 +22,7 @@ const (
 type VirtualEnvironmentClient struct {
 	Endpoint string
 	Insecure bool
+	OTP      *string
 	Password string
 	Username string
 

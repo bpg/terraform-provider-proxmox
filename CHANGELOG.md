@@ -1,5 +1,9 @@
 ## 0.4.0 (UNRELEASED)
 
+ENHANCEMENTS:
+
+* provider/configuration: Add `virtual_environment.otp` argument for TOTP support
+
 BUG FIXES:
 
 * library/virtual_environment_nodes: Fix node IP address format

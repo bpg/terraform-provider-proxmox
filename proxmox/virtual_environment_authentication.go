@@ -24,8 +24,24 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 		return nil
 	}
 
-	body := bytes.NewBufferString(fmt.Sprintf("username=%s&password=%s", url.QueryEscape(c.Username), url.QueryEscape(c.Password)))
-	req, err := http.NewRequest(hmPOST, fmt.Sprintf("%s/%s/access/ticket", c.Endpoint, basePathJSONAPI), body)
+	var reqBody *bytes.Buffer
+
+	if c.OTP != nil {
+		reqBody = bytes.NewBufferString(fmt.Sprintf(
+			"username=%s&password=%s&otp=%s",
+			url.QueryEscape(c.Username),
+			url.QueryEscape(c.Password),
+			url.QueryEscape(*c.OTP),
+		))
+	} else {
+		reqBody = bytes.NewBufferString(fmt.Sprintf(
+			"username=%s&password=%s",
+			url.QueryEscape(c.Username),
+			url.QueryEscape(c.Password),
+		))
+	}
+
+	req, err := http.NewRequest(hmPOST, fmt.Sprintf("%s/%s/access/ticket", c.Endpoint, basePathJSONAPI), reqBody)
 
 	if err != nil {
 		return errors.New("Failed to create authentication request")

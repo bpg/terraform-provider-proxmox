@@ -14,9 +14,15 @@ import (
 )
 
 const (
+	dvProviderVirtualEnvironmentEndpoint = ""
+	dvProviderVirtualEnvironmentOTP      = ""
+	dvProviderVirtualEnvironmentPassword = ""
+	dvProviderVirtualEnvironmentUsername = ""
+
 	mkProviderVirtualEnvironment         = "virtual_environment"
 	mkProviderVirtualEnvironmentEndpoint = "endpoint"
 	mkProviderVirtualEnvironmentInsecure = "insecure"
+	mkProviderVirtualEnvironmentOTP      = "otp"
 	mkProviderVirtualEnvironmentPassword = "password"
 	mkProviderVirtualEnvironmentUsername = "username"
 )
@@ -68,7 +74,7 @@ func Provider() *schema.Provider {
 							Description: "The endpoint for the Proxmox Virtual Environment API",
 							DefaultFunc: schema.MultiEnvDefaultFunc(
 								[]string{"PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT"},
-								"",
+								dvProviderVirtualEnvironmentEndpoint,
 							),
 							ValidateFunc: func(v interface{}, k string) (warns []string, errs []error) {
 								value := v.(string)
@@ -106,13 +112,22 @@ func Provider() *schema.Provider {
 								return false, nil
 							},
 						},
+						mkProviderVirtualEnvironmentOTP: {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "The one-time password for the Proxmox Virtual Environment API",
+							DefaultFunc: schema.MultiEnvDefaultFunc(
+								[]string{"PROXMOX_VE_OTP", "PM_VE_OTP"},
+								dvProviderVirtualEnvironmentOTP,
+							),
+						},
 						mkProviderVirtualEnvironmentPassword: {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "The password for the Proxmox Virtual Environment API",
 							DefaultFunc: schema.MultiEnvDefaultFunc(
 								[]string{"PROXMOX_VE_PASSWORD", "PM_VE_PASSWORD"},
-								"",
+								dvProviderVirtualEnvironmentPassword,
 							),
 							ValidateFunc: func(v interface{}, k string) (warns []string, errs []error) {
 								value := v.(string)
@@ -132,7 +147,7 @@ func Provider() *schema.Provider {
 							Description: "The username for the Proxmox Virtual Environment API",
 							DefaultFunc: schema.MultiEnvDefaultFunc(
 								[]string{"PROXMOX_VE_USERNAME", "PM_VE_USERNAME"},
-								"",
+								dvProviderVirtualEnvironmentUsername,
 							),
 							ValidateFunc: func(v interface{}, k string) (warns []string, errs []error) {
 								value := v.(string)
@@ -168,6 +183,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 			veConfig[mkProviderVirtualEnvironmentEndpoint].(string),
 			veConfig[mkProviderVirtualEnvironmentUsername].(string),
 			veConfig[mkProviderVirtualEnvironmentPassword].(string),
+			veConfig[mkProviderVirtualEnvironmentOTP].(string),
 			veConfig[mkProviderVirtualEnvironmentInsecure].(bool),
 		)
 
