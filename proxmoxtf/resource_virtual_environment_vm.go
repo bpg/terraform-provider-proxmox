@@ -1622,7 +1622,6 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 			fmt.Sprintf(`disk_index="%d"`, i),
 			fmt.Sprintf(`disk_options="%s"`, diskOptions),
 			fmt.Sprintf(`disk_size="%d"`, size),
-			fmt.Sprintf(`file_format="%s"`, fileFormat),
 			fmt.Sprintf(`file_path="%s"`, filePath),
 			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
 			fmt.Sprintf(`vm_id="%d"`, vmID),
@@ -1636,7 +1635,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 			`cp "${dsp_image}${file_path}" "$file_path_tmp"`,
 			`qemu-img resize "$file_path_tmp" "${disk_size}G"`,
 			`qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format qcow2`,
-			`disk_id="${datastore_id_target}:$([[ "$dst_target" == "dir" ]] && echo "${vm_id}/" || echo "")vm-${vm_id}-disk-${disk_count}$([[ "$dst_target" == "dir" ]] && echo ".${file_format}" || echo "")${disk_options}"`,
+			`disk_id="${datastore_id_target}:$([[ "$dst_target" == "dir" ]] && echo "${vm_id}/" || echo "")vm-${vm_id}-disk-${disk_count}$([[ "$dst_target" == "dir" ]] && echo ".qcow2" || echo "")${disk_options}"`,
 			`qm set "$vm_id" "-scsi${disk_index}" "$disk_id"`,
 			`rm -f "$file_path_tmp"`,
 		)
