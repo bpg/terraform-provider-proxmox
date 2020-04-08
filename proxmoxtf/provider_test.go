@@ -38,6 +38,7 @@ func TestProviderSchema(t *testing.T) {
 	testOptionalArguments(t, veSchema, []string{
 		mkProviderVirtualEnvironmentEndpoint,
 		mkProviderVirtualEnvironmentInsecure,
+		mkProviderVirtualEnvironmentOTP,
 		mkProviderVirtualEnvironmentPassword,
 		mkProviderVirtualEnvironmentUsername,
 	})
@@ -45,6 +46,7 @@ func TestProviderSchema(t *testing.T) {
 	testValueTypes(t, veSchema, map[string]schema.ValueType{
 		mkProviderVirtualEnvironmentEndpoint: schema.TypeString,
 		mkProviderVirtualEnvironmentInsecure: schema.TypeBool,
+		mkProviderVirtualEnvironmentOTP:      schema.TypeString,
 		mkProviderVirtualEnvironmentPassword: schema.TypeString,
 		mkProviderVirtualEnvironmentUsername: schema.TypeString,
 	})
