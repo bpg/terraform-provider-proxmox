@@ -24,8 +24,30 @@ var (
 )
 
 // CloneVM clones a virtual machine.
-func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, d *VirtualEnvironmentVMCloneRequestBody) error {
-	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/clone", url.PathEscape(nodeName), vmID), d, nil)
+func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, retries int, d *VirtualEnvironmentVMCloneRequestBody) error {
+	resBody := &VirtualEnvironmentVMMoveDiskResponseBody{}
+	var err error
+
+	for i := 0; i < retries; i++ {
+		err = c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/clone", url.PathEscape(nodeName), vmID), d, resBody)
+
+		if err != nil {
+			return err
+		}
+
+		if resBody.Data == nil {
+			return errors.New("The server did not include a data object in the response")
+		}
+
+		err = c.WaitForNodeTask(nodeName, *resBody.Data, 1800, 5)
+
+		if err == nil {
+			return nil
+		}
+		time.Sleep(10 * time.Second)
+	}
+
+	return err
 }
 
 // CreateVM creates a virtual machine.
@@ -203,7 +225,16 @@ func (c *VirtualEnvironmentClient) RebootVMAsync(nodeName string, vmID int, d *V
 
 // ResizeVMDisk resizes a virtual machine disk.
 func (c *VirtualEnvironmentClient) ResizeVMDisk(nodeName string, vmID int, d *VirtualEnvironmentVMResizeDiskRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("nodes/%s/qemu/%d/resize", url.PathEscape(nodeName), vmID), d, nil)
+	var err error
+	for i := 0; i < 5; i++ {
+		err = c.DoRequest(hmPUT, fmt.Sprintf("nodes/%s/qemu/%d/resize", url.PathEscape(nodeName), vmID), d, nil)
+		if err == nil {
+			return nil
+		}
+		log.Printf("[DEBUG] resize disk failed, retry nr: %d", i)
+		time.Sleep(5 * time.Second)
+	}
+	return err
 }
 
 // ShutdownVM shuts down a virtual machine.

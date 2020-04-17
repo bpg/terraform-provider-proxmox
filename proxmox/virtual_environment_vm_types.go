@@ -163,6 +163,9 @@ type CustomStorageDevice struct {
 	Media                   *string     `json:"media,omitempty" url:"media,omitempty"`
 	Size                    *string     `json:"size,omitempty" url:"size,omitempty"`
 	Format                  *string     `json:"format,omitempty" url:"format,omitempty"`
+	Interface               *string
+	ID                      *string
+	FileId                  *string
 }
 
 // CustomStorageDevices handles QEMU SATA device parameters.

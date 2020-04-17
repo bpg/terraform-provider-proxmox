@@ -36,8 +36,9 @@ type VirtualEnvironmentNodeGetTaskStatusResponseBody struct {
 
 // VirtualEnvironmentNodeGetTaskStatusResponseData contains the data from a node get task status response.
 type VirtualEnvironmentNodeGetTaskStatusResponseData struct {
-	PID    int    `json:"pid,omitempty"`
-	Status string `json:"status,omitempty"`
+	PID      int    `json:"pid,omitempty"`
+	Status   string `json:"status,omitempty"`
+	ExitCode string `json:"exitstatus,omitempty"`
 }
 
 // VirtualEnvironmentNodeListResponseBody contains the body from a node list response.

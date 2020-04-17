@@ -7,6 +7,7 @@ package proxmoxtf
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ import (
 )
 
 const (
+	dvResourceVirtualEnvironmentVMRebootAfterCreation               = false
 	dvResourceVirtualEnvironmentVMACPI                              = true
 	dvResourceVirtualEnvironmentVMAgentEnabled                      = false
 	dvResourceVirtualEnvironmentVMAgentTimeout                      = "15m"
@@ -32,6 +34,7 @@ const (
 	dvResourceVirtualEnvironmentVMCloneDatastoreID                  = ""
 	dvResourceVirtualEnvironmentVMCloneNodeName                     = ""
 	dvResourceVirtualEnvironmentVMCloneFull                         = true
+	dvResourceVirtualEnvironmentVMCloneRetries                      = 0
 	dvResourceVirtualEnvironmentVMCPUArchitecture                   = "x86_64"
 	dvResourceVirtualEnvironmentVMCPUCores                          = 1
 	dvResourceVirtualEnvironmentVMCPUHotplugged                     = 0
@@ -83,6 +86,7 @@ const (
 	maxResourceVirtualEnvironmentVMNetworkDevices = 8
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
 
+	mkResourceVirtualEnvironmentVMRebootAfterCreation               = "reboot"
 	mkResourceVirtualEnvironmentVMACPI                              = "acpi"
 	mkResourceVirtualEnvironmentVMAgent                             = "agent"
 	mkResourceVirtualEnvironmentVMAgentEnabled                      = "enabled"
@@ -98,6 +102,7 @@ const (
 	mkResourceVirtualEnvironmentVMCDROMEnabled                      = "enabled"
 	mkResourceVirtualEnvironmentVMCDROMFileID                       = "file_id"
 	mkResourceVirtualEnvironmentVMClone                             = "clone"
+	mkResourceVirtualEnvironmentVMCloneRetries                      = "retries"
 	mkResourceVirtualEnvironmentVMCloneDatastoreID                  = "datastore_id"
 	mkResourceVirtualEnvironmentVMCloneNodeName                     = "node_name"
 	mkResourceVirtualEnvironmentVMCloneVMID                         = "vm_id"
@@ -175,6 +180,12 @@ const (
 func resourceVirtualEnvironmentVM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			mkResourceVirtualEnvironmentVMRebootAfterCreation: {
+				Type:        schema.TypeBool,
+				Description: "Wether to reboot vm after creation",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMRebootAfterCreation,
+			},
 			mkResourceVirtualEnvironmentVMACPI: {
 				Type:        schema.TypeBool,
 				Description: "Whether to enable ACPI",
@@ -310,6 +321,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMCloneRetries: {
+							Type:        schema.TypeInt,
+							Description: "The number of Retries to create a clone",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentVMCloneRetries,
+						},
 						mkResourceVirtualEnvironmentVMCloneDatastoreID: {
 							Type:        schema.TypeString,
 							Description: "The ID of the target datastore",
@@ -987,6 +1005,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
 	cloneBlock := clone[0].(map[string]interface{})
+	cloneRetries := cloneBlock[mkResourceVirtualEnvironmentVMCloneRetries].(int)
 	cloneDatastoreID := cloneBlock[mkResourceVirtualEnvironmentVMCloneDatastoreID].(string)
 	cloneNodeName := cloneBlock[mkResourceVirtualEnvironmentVMCloneNodeName].(string)
 	cloneVMID := cloneBlock[mkResourceVirtualEnvironmentVMCloneVMID].(int)
@@ -1034,9 +1053,9 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = veClient.CloneVM(cloneNodeName, cloneVMID, cloneBody)
+		err = veClient.CloneVM(cloneNodeName, cloneVMID, cloneRetries, cloneBody)
 	} else {
-		err = veClient.CloneVM(nodeName, cloneVMID, cloneBody)
+		err = veClient.CloneVM(nodeName, cloneVMID, cloneRetries, cloneBody)
 	}
 
 	if err != nil {
@@ -1784,6 +1803,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface{}) error {
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 	template := d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
+	reboot := d.Get(mkResourceVirtualEnvironmentVMRebootAfterCreation).(bool)
 
 	if !started || template {
 		return resourceVirtualEnvironmentVMRead(d, m)
@@ -1808,6 +1828,18 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 
 	if err != nil {
 		return err
+	}
+
+	if reboot {
+		rebootTimeout := 300
+
+		err := veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
+			Timeout: &rebootTimeout,
+		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return resourceVirtualEnvironmentVMRead(d, m)
@@ -2415,30 +2447,34 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 	}
 
 	// Compare the disks to those stored in the state.
-	currentDisk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+	currentDisks := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 
 	diskList := []interface{}{}
-	diskObjects := []*proxmox.CustomStorageDevice{
-		vmConfig.SCSIDevice0,
-		vmConfig.SCSIDevice1,
-		vmConfig.SCSIDevice2,
-		vmConfig.SCSIDevice3,
-		vmConfig.SCSIDevice4,
-		vmConfig.SCSIDevice5,
-		vmConfig.SCSIDevice6,
-		vmConfig.SCSIDevice7,
-		vmConfig.SCSIDevice8,
-		vmConfig.SCSIDevice9,
-		vmConfig.SCSIDevice10,
-		vmConfig.SCSIDevice11,
-		vmConfig.SCSIDevice12,
-		vmConfig.SCSIDevice13,
+	diskObjects := getDiskInfo(vmConfig)
+
+	currentDiskMap := make(map[string]*proxmox.CustomStorageDevice)
+
+	for _, dd := range currentDisks {
+		var disk proxmox.CustomStorageDevice
+		currentDiskEntry := dd.(map[string]interface{})
+
+		id := currentDiskEntry[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
+		diskInterface := currentDiskEntry[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+		format := currentDiskEntry[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
+		fileId := currentDiskEntry[mkResourceVirtualEnvironmentVMDiskFileID].(string)
+
+		disk.Interface = &diskInterface
+		disk.ID = &id
+		disk.Format = &format
+		disk.FileId = &fileId
+
+		currentDiskMap[diskInterface] = &disk
 	}
 
 	for di, dd := range diskObjects {
 		disk := map[string]interface{}{}
 
-		if dd == nil {
+		if dd == nil || strings.HasPrefix(di, "ide") {
 			continue
 		}
 
@@ -2446,11 +2482,13 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 		disk[mkResourceVirtualEnvironmentVMDiskDatastoreID] = fileIDParts[0]
 
-		if len(currentDisk) > di {
-			currentDiskEntry := currentDisk[di].(map[string]interface{})
+		if val, ok := currentDiskMap[di]; ok {
+			if *val.FileId != "" {
+				disk[mkResourceVirtualEnvironmentVMDiskFileID] = val.FileId
+			}
 
-			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = currentDiskEntry[mkResourceVirtualEnvironmentVMDiskFileFormat]
-			disk[mkResourceVirtualEnvironmentVMDiskFileID] = currentDiskEntry[mkResourceVirtualEnvironmentVMDiskFileID]
+			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = val.Format
+			disk[mkResourcevirtualEnvironmentVMDiskInterface] = val.Interface
 		}
 
 		diskSize := 0
@@ -2525,11 +2563,12 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 		diskList = append(diskList, disk)
 	}
 
+	log.Printf("[DEBUG] NUMBER CURRENT DISKS %d NUMBER READ DISKS %d", len(currentDisks), len(diskList))
 	if len(clone) > 0 {
-		if len(currentDisk) > 0 {
+		if len(currentDisks) > 0 || len(diskList) > 0 {
 			d.Set(mkResourceVirtualEnvironmentVMDisk, diskList)
 		}
-	} else if len(currentDisk) > 0 || len(diskList) > 0 {
+	} else if len(currentDisks) > 0 || len(diskList) > 0 {
 		d.Set(mkResourceVirtualEnvironmentVMDisk, diskList)
 	}
 
