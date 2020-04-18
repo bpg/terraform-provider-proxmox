@@ -5,8 +5,8 @@ resource "proxmox_virtual_environment_time" "example" {
 
 output "resource_proxmox_virtual_environment_time" {
   value = "${map(
-    "local_time", data.proxmox_virtual_environment_time.example.local_time,
-    "time_zone", data.proxmox_virtual_environment_time.example.time_zone,
-    "utc_time", data.proxmox_virtual_environment_time.example.utc_time,
+    "local_time", proxmox_virtual_environment_time.example.local_time,
+    "time_zone", proxmox_virtual_environment_time.example.time_zone,
+    "utc_time", proxmox_virtual_environment_time.example.utc_time,
   )}"
 }
