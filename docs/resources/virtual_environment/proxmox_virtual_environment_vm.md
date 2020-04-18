@@ -2,7 +2,7 @@
 layout: page
 title: VM
 permalink: /ressources/virtual-environment/vm
-nav_order: 10
+nav_order: 11
 parent: Virtual Environment Resources
 grand_parent: Resources
 ---

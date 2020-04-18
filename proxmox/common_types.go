@@ -176,7 +176,7 @@ func (r *CustomTimestamp) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	*r = CustomTimestamp(time.Unix(i, 0))
+	*r = CustomTimestamp(time.Unix(i, 0).UTC())
 
 	return nil
 }

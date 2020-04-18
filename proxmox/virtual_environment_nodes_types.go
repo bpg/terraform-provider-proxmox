@@ -17,6 +17,18 @@ type VirtualEnvironmentNodeExecuteRequestBody struct {
 	Commands CustomNodeCommands `json:"commands" url:"commands"`
 }
 
+// VirtualEnvironmentNodeGetTimeResponseBody contains the body from a node time zone get response.
+type VirtualEnvironmentNodeGetTimeResponseBody struct {
+	Data *VirtualEnvironmentNodeGetTimeResponseData `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentNodeGetTimeResponseData contains the data from a node list response.
+type VirtualEnvironmentNodeGetTimeResponseData struct {
+	LocalTime CustomTimestamp `json:"localtime"`
+	TimeZone  string          `json:"timezone"`
+	UTCTime   CustomTimestamp `json:"time"`
+}
+
 // VirtualEnvironmentNodeListResponseBody contains the body from a node list response.
 type VirtualEnvironmentNodeListResponseBody struct {
 	Data []*VirtualEnvironmentNodeListResponseData `json:"data,omitempty"`
@@ -58,6 +70,11 @@ type VirtualEnvironmentNodeNetworkDeviceListResponseData struct {
 	Netmask     *string     `json:"netmask,omitempty"`
 	Priority    int         `json:"priority"`
 	Type        string      `json:"type"`
+}
+
+// VirtualEnvironmentNodeUpdateTimeRequestBody contains the body for a node time update request.
+type VirtualEnvironmentNodeUpdateTimeRequestBody struct {
+	TimeZone string `json:"timezone" url:"timezone"`
 }
 
 // EncodeValues converts a CustomNodeCommands array to a JSON encoded URL vlaue.

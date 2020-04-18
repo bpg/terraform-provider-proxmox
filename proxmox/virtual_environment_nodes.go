@@ -72,6 +72,22 @@ func (c *VirtualEnvironmentClient) GetNodeIP(nodeName string) (*string, error) {
 	return &nodeAddressParts[0], nil
 }
 
+// GetNodeTime retrieves the time information for a node.
+func (c *VirtualEnvironmentClient) GetNodeTime(nodeName string) (*VirtualEnvironmentNodeGetTimeResponseData, error) {
+	resBody := &VirtualEnvironmentNodeGetTimeResponseBody{}
+	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), nil, resBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("The server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
+}
+
 // ListNodeNetworkDevices retrieves a list of network devices for a specific nodes.
 func (c *VirtualEnvironmentClient) ListNodeNetworkDevices(nodeName string) ([]*VirtualEnvironmentNodeNetworkDeviceListResponseData, error) {
 	resBody := &VirtualEnvironmentNodeNetworkDeviceListResponseBody{}
@@ -135,4 +151,9 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(nodeName string) (*ssh.Client, 
 	}
 
 	return sshClient, nil
+}
+
+// UpdateNodeTime updates the time on a node.
+func (c *VirtualEnvironmentClient) UpdateNodeTime(nodeName string, d *VirtualEnvironmentNodeUpdateTimeRequestBody) error {
+	return c.DoRequest(hmPUT, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), d, nil)
 }

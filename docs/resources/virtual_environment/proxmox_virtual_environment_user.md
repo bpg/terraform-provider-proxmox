@@ -2,7 +2,7 @@
 layout: page
 title: User
 permalink: /ressources/virtual-environment/user
-nav_order: 9
+nav_order: 10
 parent: Virtual Environment Resources
 grand_parent: Resources
 ---
