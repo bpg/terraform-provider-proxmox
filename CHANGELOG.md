@@ -1,5 +1,10 @@
 ## 0.4.0 (UNRELEASED)
 
+FEATURES:
+
+* **New Data Source:** `proxmox_virtual_environment_time`
+* **New Resource:** `proxmox_virtual_environment_time`
+
 ENHANCEMENTS:
 
 * provider/configuration: Add `virtual_environment.otp` argument for TOTP support
