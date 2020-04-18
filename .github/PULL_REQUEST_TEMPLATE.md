@@ -14,11 +14,3 @@ Release note for [CHANGELOG](https://github.com/danitso/terraform-provider-proxm
 ```release-note
 
 ```
-
-Output from acceptance testing:
-
-```sh
-$ make test
-
-...
-```
