@@ -159,11 +159,11 @@ type VirtualEnvironmentContainerGetResponseData struct {
 	HookScript        *string                                            `json:"hookscript,omitempty"`
 	Hostname          *string                                            `json:"hostname,omitempty"`
 	Lock              *CustomBool                                        `json:"lock,omitempty"`
-	LXCConfiguration  *[]string                                          `json:"lxc,omitempty"`
-	MountPoint0       VirtualEnvironmentContainerCustomMountPointArray   `json:"mp0,omitempty"`
-	MountPoint1       VirtualEnvironmentContainerCustomMountPointArray   `json:"mp1,omitempty"`
-	MountPoint2       VirtualEnvironmentContainerCustomMountPointArray   `json:"mp2,omitempty"`
-	MountPoint3       VirtualEnvironmentContainerCustomMountPointArray   `json:"mp3,omitempty"`
+	LXCConfiguration  *[][2]string                                       `json:"lxc,omitempty"`
+	MountPoint0       VirtualEnvironmentContainerCustomMountPoint        `json:"mp0,omitempty"`
+	MountPoint1       VirtualEnvironmentContainerCustomMountPoint        `json:"mp1,omitempty"`
+	MountPoint2       VirtualEnvironmentContainerCustomMountPoint        `json:"mp2,omitempty"`
+	MountPoint3       VirtualEnvironmentContainerCustomMountPoint        `json:"mp3,omitempty"`
 	NetworkInterface0 *VirtualEnvironmentContainerCustomNetworkInterface `json:"net0,omitempty"`
 	NetworkInterface1 *VirtualEnvironmentContainerCustomNetworkInterface `json:"net1,omitempty"`
 	NetworkInterface2 *VirtualEnvironmentContainerCustomNetworkInterface `json:"net2,omitempty"`
