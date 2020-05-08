@@ -28,6 +28,11 @@ func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, retries in
 	resBody := &VirtualEnvironmentVMMoveDiskResponseBody{}
 	var err error
 
+	// just a guard in case someone sets retries to 0 unknowingly
+	if retries <= 0 {
+		retries = 1
+	}
+
 	for i := 0; i < retries; i++ {
 		err = c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/clone", url.PathEscape(nodeName), vmID), d, resBody)
 

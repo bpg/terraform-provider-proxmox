@@ -34,7 +34,7 @@ const (
 	dvResourceVirtualEnvironmentVMCloneDatastoreID                  = ""
 	dvResourceVirtualEnvironmentVMCloneNodeName                     = ""
 	dvResourceVirtualEnvironmentVMCloneFull                         = true
-	dvResourceVirtualEnvironmentVMCloneRetries                      = 0
+	dvResourceVirtualEnvironmentVMCloneRetries                      = 1
 	dvResourceVirtualEnvironmentVMCPUArchitecture                   = "x86_64"
 	dvResourceVirtualEnvironmentVMCPUCores                          = 1
 	dvResourceVirtualEnvironmentVMCPUHotplugged                     = 0
