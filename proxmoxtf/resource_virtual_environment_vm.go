@@ -1631,11 +1631,11 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 			`dst_image="$(echo "$dsi_image" | cut -d ";" -f 2)"`,
 			`if [[ -z "$dsp_image" ]]; then echo "Failed to determine the path for datastore '${datastore_id_image}' (${dsi_image})"; exit 1; fi`,
 			`dsi_target="$(getdsi "$datastore_id_target")"`,
-			`dst_target="$(echo "$dsi_target" | cut -d ";" -f 2)"`,
+			`dsp_target="$(echo "$dsi_target" | cut -d ";" -f 1)"`,
 			`cp "${dsp_image}${file_path}" "$file_path_tmp"`,
 			`qemu-img resize "$file_path_tmp" "${disk_size}G"`,
 			`qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format qcow2`,
-			`disk_id="${datastore_id_target}:$([[ "$dst_target" == "dir" ]] && echo "${vm_id}/" || echo "")vm-${vm_id}-disk-${disk_count}$([[ "$dst_target" == "dir" ]] && echo ".qcow2" || echo "")${disk_options}"`,
+			`disk_id="${datastore_id_target}:$([[ -n "$dsp_target" ]] && echo "${vm_id}/" || echo "")vm-${vm_id}-disk-${disk_count}$([[ -n "$dsp_target" ]] && echo ".qcow2" || echo "")${disk_options}"`,
 			`qm set "$vm_id" "-scsi${disk_index}" "$disk_id"`,
 			`rm -f "$file_path_tmp"`,
 		)
