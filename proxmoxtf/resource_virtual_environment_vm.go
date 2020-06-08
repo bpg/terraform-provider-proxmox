@@ -463,7 +463,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 						mkResourcevirtualEnvironmentVMDiskInterface: {
 							Type:        schema.TypeString,
 							Description: "The datastore name",
-							Optional:    true,
+							Optional:    false,
 							Default:     dvResourcevirtualEnvironmentVMDiskInterface,
 						},
 						mkResourceVirtualEnvironmentVMDiskDatastoreID: {
@@ -1624,7 +1624,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		createBody.VirtualIODevices = virtioDeviceObjects
 	}
 
-	//this will most likely break the cdrom part
+	//this will most likely break the cdrom part thats why ide is disabled in line 2017
 	/*
 		if ideDevices != nil {
 			createBody.IDEDevices = ideDeviceObjects
@@ -1993,7 +1993,6 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m 
 	diskDevice := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	diskDeviceObjects := make(map[string]map[string]proxmox.CustomStorageDevice)
 	resource := resourceVirtualEnvironmentVM()
-	scsiDefaultCount := 0
 
 	for _, diskEntry := range diskDevice {
 		diskDevice := proxmox.CustomStorageDevice{
@@ -2041,16 +2040,10 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m 
 			}
 		}
 
-		// only for backwards compatibility
-		if diskInterface == "" {
-			diskInterface = fmt.Sprintf("scsi%d", scsiDefaultCount)
-			scsiDefaultCount = scsiDefaultCount + 1
-		}
-
 		baseDiskInterface := diskDigitPrefix(diskInterface)
 
-		if baseDiskInterface != "virtio" && baseDiskInterface != "scsi" && baseDiskInterface != "sata" && baseDiskInterface != "ide" {
-			errorMsg := fmt.Sprintf("Defined disk interface not supported. Interface was %s, but only virtio, sata, scsi, and ide are supported", diskInterface)
+		if baseDiskInterface != "virtio" && baseDiskInterface != "scsi" && baseDiskInterface != "sata" {
+			errorMsg := fmt.Sprintf("Defined disk interface not supported. Interface was %s, but only virtio, sata and scsi are supported", diskInterface)
 			return diskDeviceObjects, errors.New(errorMsg)
 		}
 
