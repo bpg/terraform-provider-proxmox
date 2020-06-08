@@ -1625,7 +1625,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 			fmt.Sprintf(`file_path="%s"`, filePath),
 			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
 			fmt.Sprintf(`vm_id="%d"`, vmID),
-			`getdsi() { local nr='^([A-Za-z0-9_]+): ([A-Za-z0-9_]+)$'; local pr='^[[:space:]]+path[[:space:]]+([^[:space:]]+)$'; local dn=""; local dt=""; while IFS='' read -r l || [[ -n "$l" ]]; do if [[ "$l" =~ $nr ]]; then dt="${BASH_REMATCH[1]}"; dn="${BASH_REMATCH[2]}"; elif [[ "$l" =~ $pr ]] && [[ "$dn" == "$1" ]]; then echo "${BASH_REMATCH[1]};${dt}"; break; fi; done < /etc/pve/storage.cfg; }`,
+			`getdsi() { local nr='^([A-Za-z0-9_-]+): ([A-Za-z0-9_-]+)$'; local pr='^[[:space:]]+path[[:space:]]+([^[:space:]]+)$'; local dn=""; local dt=""; while IFS='' read -r l || [[ -n "$l" ]]; do if [[ "$l" =~ $nr ]]; then dt="${BASH_REMATCH[1]}"; dn="${BASH_REMATCH[2]}"; elif [[ "$l" =~ $pr ]] && [[ "$dn" == "$1" ]]; then echo "${BASH_REMATCH[1]};${dt}"; break; fi; done < /etc/pve/storage.cfg; }`,
 			`dsi_image="$(getdsi "$datastore_id_image")"`,
 			`dsp_image="$(echo "$dsi_image" | cut -d ";" -f 1)"`,
 			`dst_image="$(echo "$dsi_image" | cut -d ";" -f 2)"`,
