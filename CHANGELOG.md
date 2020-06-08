@@ -8,6 +8,8 @@ FEATURES:
 ENHANCEMENTS:
 
 * provider/configuration: Add `virtual_environment.otp` argument for TOTP support
+* resource/virtual_environment_vm: Clone supports resize and datastore_id for moving disks
+* resource/virtual_environment_vm: Bulk clones can now use retries as argument to try multiple times to create a clone.
 
 BUG FIXES:
 
@@ -16,6 +18,8 @@ BUG FIXES:
 * resource/virtual_environment_vm: Fix VM ID collision when `vm_id` is not specified
 * resource/virtual_environment_vm: Fix disk import issue when importing from directory-based datastores
 * resource/virtual/environment/vm: Fix handling of storage name - correct handling of `-`
+* library/virtual_environment_nodes: Fix WaitForNodeTask now detects errors correctly
+* library/virtual_environment_vm: Fix CloneVM now waits for the task to be finished and detect errors.
 
 WORKAROUNDS:
 
