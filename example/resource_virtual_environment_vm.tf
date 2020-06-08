@@ -8,6 +8,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   disk {
     datastore_id = "${element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))}"
     file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
+    interface    = "scsi0"
   }
 
   initialization {
