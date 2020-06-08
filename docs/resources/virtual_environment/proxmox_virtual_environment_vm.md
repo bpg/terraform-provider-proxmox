@@ -28,6 +28,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   disk {
     datastore_id = "local-lvm"
     file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
+    interface    = "scsi0"
   }
 
   initialization {
@@ -118,6 +119,7 @@ output "ubuntu_vm_public_key" {
 * `clone` - (Optional) The cloning configuration.
     * `datastore_id` - (Optional) The identifier for the target datastore.
     * `node_name` - (Optional) The name of the source node (leave blank, if equal to the `node_name` argument).
+    * `retries` - (Optional) Number of retries in Proxmox for clone vm. Sometimes Proxmox errors with timeout when creating multiple clones at once.
     * `vm_id` - (Required) The identifier for the source VM.
 * `cpu` - (Optional) The CPU configuration.
     * `architecture` - (Optional) The CPU architecture (defaults to `x86_64`).
@@ -179,6 +181,7 @@ output "ubuntu_vm_public_key" {
         * `raw` - Raw Disk Image.
         * `vmdk` - VMware Disk Image.
     * `file_id` - (Optional) The file ID for a disk image (experimental - might cause high CPU utilization during import, especially with large disk images).
+    * `interface` - (Required) The disk interface for Proxmox, currently scsi, sata and virtio are supported.
     * `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     * `speed` - (Optional) The speed limits.
         * `read` - (Optional) The maximum read speed in megabytes per second.
