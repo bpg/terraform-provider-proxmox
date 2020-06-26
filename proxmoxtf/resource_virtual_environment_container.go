@@ -1622,11 +1622,8 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	resource := resourceVirtualEnvironmentContainer()
 
 	// Prepare the new primitive values.
-	if d.HasChange(mkResourceVirtualEnvironmentContainerDescription) {
-		description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
-
-		updateBody.Description = &description
-	}
+	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
+	updateBody.Description = &description
 
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 
@@ -1853,7 +1850,7 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 				return err
 			}
 
-			err = veClient.WaitForContainerState(nodeName, vmID, "running", 120, 5)
+			err = veClient.WaitForContainerState(nodeName, vmID, "running", 300, 5)
 
 			if err != nil {
 				return err
@@ -1871,7 +1868,7 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 				return err
 			}
 
-			err = veClient.WaitForContainerState(nodeName, vmID, "stopped", 30, 5)
+			err = veClient.WaitForContainerState(nodeName, vmID, "stopped", 300, 5)
 
 			if err != nil {
 				return err
