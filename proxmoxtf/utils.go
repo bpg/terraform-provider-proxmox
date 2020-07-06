@@ -6,7 +6,10 @@ package proxmoxtf
 
 import (
 	"fmt"
+	"math"
 	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 	"unicode"
@@ -443,6 +446,39 @@ func getDiskInfo(data *proxmox.VirtualEnvironmentVMGetResponseData) map[string]*
 	storageDevices["virtio15"] = data.VirtualIODevice15
 
 	return storageDevices
+}
+
+func parseDiskSize(size *string) (int, error) {
+	var diskSize int
+	var err error
+	if size != nil {
+		if strings.HasSuffix(*size, "T") {
+			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "T"))
+
+			if err != nil {
+				return -1, err
+			}
+
+			diskSize = int(math.Ceil(float64(diskSize) * 1024))
+		} else if strings.HasSuffix(*size, "G") {
+			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "G"))
+
+			if err != nil {
+				return -1, err
+			}
+		} else if strings.HasSuffix(*size, "M") {
+			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "M"))
+
+			if err != nil {
+				return -1, err
+			}
+
+			diskSize = int(math.Ceil(float64(diskSize) / 1024))
+		} else {
+			return -1, fmt.Errorf("Cannot parse storage size \"%s\"", *size)
+		}
+	}
+	return diskSize, err
 }
 
 func testComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {
