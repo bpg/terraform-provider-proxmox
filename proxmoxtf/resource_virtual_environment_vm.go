@@ -19,6 +19,7 @@ import (
 
 const (
 	dvResourceVirtualEnvironmentVMRebootAfterCreation               = false
+	dvResourceVirtualEnvironmentVMOnBoot                            = false
 	dvResourceVirtualEnvironmentVMACPI                              = true
 	dvResourceVirtualEnvironmentVMAgentEnabled                      = false
 	dvResourceVirtualEnvironmentVMAgentTimeout                      = "15m"
@@ -86,6 +87,7 @@ const (
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
 
 	mkResourceVirtualEnvironmentVMRebootAfterCreation               = "reboot"
+	mkResourceVirtualEnvironmentVMOnBoot                            = "on_boot"
 	mkResourceVirtualEnvironmentVMACPI                              = "acpi"
 	mkResourceVirtualEnvironmentVMAgent                             = "agent"
 	mkResourceVirtualEnvironmentVMAgentEnabled                      = "enabled"
@@ -184,6 +186,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Description: "Wether to reboot vm after creation",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMRebootAfterCreation,
+			},
+			mkResourceVirtualEnvironmentVMOnBoot: {
+				Type:        schema.TypeBool,
+				Description: "Start VM on Node boot",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMOnBoot,
 			},
 			mkResourceVirtualEnvironmentVMACPI: {
 				Type:        schema.TypeBool,
@@ -1087,7 +1095,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 	operatingSystem := d.Get(mkResourceVirtualEnvironmentVMOperatingSystem).([]interface{})
 	serialDevice := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
-	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
+	onBoot := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 	vga := d.Get(mkResourceVirtualEnvironmentVMVGA).([]interface{})
@@ -1284,9 +1292,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		}
 	}
 
-	if started != dvResourceVirtualEnvironmentVMStarted {
-		updateBody.StartOnBoot = &started
-	}
+	updateBody.StartOnBoot = &onBoot
 
 	if tabletDevice != dvResourceVirtualEnvironmentVMTabletDevice {
 		updateBody.TabletDeviceEnabled = &tabletDevice
@@ -1507,7 +1513,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		return err
 	}
 
-	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMStarted).(bool))
+	onBoot := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
@@ -1603,7 +1609,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		SCSIHardware:        &scsiHardware,
 		SerialDevices:       serialDevices,
 		SharedMemory:        memorySharedObject,
-		StartOnBoot:         &started,
+		StartOnBoot:         &onBoot,
 		TabletDeviceEnabled: &tabletDevice,
 		Template:            &template,
 		VGADevice:           vgaDevice,
