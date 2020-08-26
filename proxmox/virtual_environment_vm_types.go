@@ -368,6 +368,7 @@ type VirtualEnvironmentVMGetResponseData struct {
 	IDEDevice0           *CustomStorageDevice          `json:"ide0,omitempty"`
 	IDEDevice1           *CustomStorageDevice          `json:"ide1,omitempty"`
 	IDEDevice2           *CustomStorageDevice          `json:"ide2,omitempty"`
+	IDEDevice3           *CustomStorageDevice          `json:"ide3,omitempty"`
 	IPConfig0            *CustomCloudInitIPConfig      `json:"ipconfig0,omitempty"`
 	IPConfig1            *CustomCloudInitIPConfig      `json:"ipconfig1,omitempty"`
 	IPConfig2            *CustomCloudInitIPConfig      `json:"ipconfig2,omitempty"`

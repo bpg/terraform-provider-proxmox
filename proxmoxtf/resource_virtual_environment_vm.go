@@ -1061,6 +1061,8 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		AudioDevices: audioDevices,
 	}
 
+	ideDevices := proxmox.CustomStorageDevices{}
+
 	delete := []string{}
 
 	if acpi != dvResourceVirtualEnvironmentVMACPI {
@@ -1085,6 +1087,23 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		updateBody.BIOS = &bios
 	}
 
+	if len(cdrom) > 0 || len(initialization) > 0 {
+		ideDevices = proxmox.CustomStorageDevices{
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
+		}
+	}
+
 	if len(cdrom) > 0 {
 		cdromBlock := cdrom[0].(map[string]interface{})
 
@@ -1097,19 +1116,13 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 		cdromMedia := "cdrom"
 
-		updateBody.IDEDevices = proxmox.CustomStorageDevices{
-			proxmox.CustomStorageDevice{
-				Enabled: false,
-			},
-			proxmox.CustomStorageDevice{
-				Enabled: false,
-			},
-			proxmox.CustomStorageDevice{
-				Enabled:    cdromEnabled,
-				FileVolume: cdromFileID,
-				Media:      &cdromMedia,
-			},
+		cdromDevice := proxmox.CustomStorageDevice{
+			Enabled:    cdromEnabled,
+			FileVolume: cdromFileID,
+			Media:      &cdromMedia,
 		}
+
+		ideDevices[3] = cdromDevice
 	}
 
 	if len(cpu) > 0 {
@@ -1151,24 +1164,17 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
 
-		cdromEnabled := true
-		cdromFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
-		cdromMedia := "cdrom"
+		cdromCloudInitEnabled := true
+		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+		cdromCloudInitMedia := "cdrom"
 
-		updateBody.IDEDevices = proxmox.CustomStorageDevices{
-			proxmox.CustomStorageDevice{
-				Enabled: false,
-			},
-			proxmox.CustomStorageDevice{
-				Enabled: false,
-			},
-			proxmox.CustomStorageDevice{
-				Enabled:    cdromEnabled,
-				FileVolume: cdromFileID,
-				Media:      &cdromMedia,
-			},
+		cdromCloudInitDevice := proxmox.CustomStorageDevice{
+			Enabled:    cdromCloudInitEnabled,
+			FileVolume: cdromCloudInitFileID,
+			Media:      &cdromCloudInitMedia,
 		}
 
+		ideDevices[2] = cdromCloudInitDevice
 		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
 
 		if err != nil {
@@ -1176,6 +1182,10 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		}
 
 		updateBody.CloudInitConfig = initializationConfig
+	}
+
+	if len(cdrom) > 0 || len(initialization) > 0 {
+		updateBody.IDEDevices = ideDevices
 	}
 
 	if keyboardLayout != dvResourceVirtualEnvironmentVMKeyboardLayout {
@@ -1311,6 +1321,9 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 	cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
 
+	cdromCloudInitEnabled := false
+	cdromCloudInitFileID := ""
+
 	if cdromFileID == "" {
 		cdromFileID = "cdrom"
 	}
@@ -1347,8 +1360,8 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
 
-		cdromEnabled = true
-		cdromFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+		cdromCloudInitEnabled = true
+		cdromCloudInitFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 	}
 
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
@@ -1432,6 +1445,11 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		},
 		proxmox.CustomStorageDevice{
 			Enabled: false,
+		},
+		proxmox.CustomStorageDevice{
+			Enabled:    cdromCloudInitEnabled,
+			FileVolume: cdromCloudInitFileID,
+			Media:      &ideDevice2Media,
 		},
 		proxmox.CustomStorageDevice{
 			Enabled:    cdromEnabled,
@@ -2167,34 +2185,33 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 	}
 
 	// Compare the IDE devices to the CDROM and cloud-init configurations stored in the state.
-	if vmConfig.IDEDevice2 != nil {
-		if *vmConfig.IDEDevice2.Media == "cdrom" {
-			if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
-				d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
-			} else {
-				d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+	if vmConfig.IDEDevice3 != nil {
 
-				cdrom := make([]interface{}, 1)
-				cdromBlock := map[string]interface{}{}
+		cdrom := make([]interface{}, 1)
+		cdromBlock := map[string]interface{}{}
+		currentCDROM := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 
-				cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = true
-				cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = vmConfig.IDEDevice2.FileVolume
+		if len(clone) == 0 || len(currentCDROM) > 0 {
+			cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = vmConfig.IDEDevice3.Enabled
+			cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = vmConfig.IDEDevice3.FileVolume
 
-				cdrom[0] = cdromBlock
+			isCurrentCDROMFileId := currentCDROM[0].(map[string]interface{})
 
-				currentCDROM := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
-
-				if len(clone) == 0 || len(currentCDROM) > 0 {
-					d.Set(mkResourceVirtualEnvironmentVMCDROM, cdrom)
-				}
+			if isCurrentCDROMFileId[mkResourceVirtualEnvironmentVMCDROMFileID] == "" {
+				cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = ""
 			}
-		} else {
-			d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
-			d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+
+			if isCurrentCDROMFileId[mkResourceVirtualEnvironmentVMCDROMEnabled] == false {
+				cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = false
+			}
+
+			cdrom[0] = cdromBlock
+
+			d.Set(mkResourceVirtualEnvironmentVMCDROM, cdrom)
 		}
+
 	} else {
 		d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
-		d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
 	}
 
 	// Compare the CPU configuration to the one stored in the state.
@@ -2943,6 +2960,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
+			proxmox.CustomStorageDevice{
+				Enabled: false,
+			},
 		},
 	}
 
@@ -3049,13 +3069,17 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
 
+		if cdromEnabled == false && cdromFileID == "" {
+			delete = append(delete, "ide3")
+		}
+
 		if cdromFileID == "" {
 			cdromFileID = "cdrom"
 		}
 
 		cdromMedia := "cdrom"
 
-		updateBody.IDEDevices[2] = proxmox.CustomStorageDevice{
+		updateBody.IDEDevices[3] = proxmox.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
