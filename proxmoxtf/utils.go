@@ -384,22 +384,6 @@ func getVMIDValidator() schema.SchemaValidateFunc {
 	}
 }
 
-func getOrderedDiskDeviceList(diskDeviceMap map[string]map[string]proxmox.CustomStorageDevice, diskInterface string) proxmox.CustomStorageDevices {
-	diskDevices := diskDeviceMap[diskInterface]
-
-	if diskDevices == nil {
-		return nil
-	}
-
-	orderedDiskList := make(proxmox.CustomStorageDevices, len(diskDevices))
-
-	for _, value := range diskDevices {
-		orderedDiskList = append(orderedDiskList, value)
-	}
-
-	return orderedDiskList
-}
-
 func getDiskInfo(data *proxmox.VirtualEnvironmentVMGetResponseData) map[string]*proxmox.CustomStorageDevice {
 	storageDevices := make(map[string]*proxmox.CustomStorageDevice)
 	storageDevices["ide0"] = data.IDEDevice0
@@ -444,6 +428,13 @@ func getDiskInfo(data *proxmox.VirtualEnvironmentVMGetResponseData) map[string]*
 	storageDevices["virtio13"] = data.VirtualIODevice13
 	storageDevices["virtio14"] = data.VirtualIODevice14
 	storageDevices["virtio15"] = data.VirtualIODevice15
+
+	for key, value := range storageDevices {
+		if value != nil {
+			tmpKey := key
+			value.Interface = &tmpKey
+		}
+	}
 
 	return storageDevices
 }

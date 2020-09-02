@@ -7,7 +7,7 @@ package proxmoxtf
 import (
 	"errors"
 	"fmt"
-	"log"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -499,7 +499,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description:  "The disk size in gigabytes",
 							Optional:     true,
 							Default:      dvResourceVirtualEnvironmentVMDiskSize,
-							ValidateFunc: validation.IntBetween(1, 8192),
+							ValidateFunc: validation.IntAtLeast(1),
 						},
 						mkResourceVirtualEnvironmentVMDiskSpeed: {
 							Type:        schema.TypeList,
@@ -1132,16 +1132,16 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	if len(cdrom) > 0 || len(initialization) > 0 {
 		ideDevices = proxmox.CustomStorageDevices{
-			proxmox.CustomStorageDevice{
+			"ide0": proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
-			proxmox.CustomStorageDevice{
+			"ide1": proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
-			proxmox.CustomStorageDevice{
+			"ide2": proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
-			proxmox.CustomStorageDevice{
+			"ide3": proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
 		}
@@ -1159,13 +1159,13 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 		cdromMedia := "cdrom"
 
-		cdromDevice := proxmox.CustomStorageDevice{
-			Enabled:    cdromEnabled,
-			FileVolume: cdromFileID,
-			Media:      &cdromMedia,
+		updateBody.IDEDevices = proxmox.CustomStorageDevices{
+			"ide3": proxmox.CustomStorageDevice{
+				Enabled:    cdromEnabled,
+				FileVolume: cdromFileID,
+				Media:      &cdromMedia,
+			},
 		}
-
-		ideDevices[3] = cdromDevice
 	}
 
 	if len(cpu) > 0 {
@@ -1211,13 +1211,14 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
 
-		cdromCloudInitDevice := proxmox.CustomStorageDevice{
-			Enabled:    cdromCloudInitEnabled,
-			FileVolume: cdromCloudInitFileID,
-			Media:      &cdromCloudInitMedia,
+		updateBody.IDEDevices = proxmox.CustomStorageDevices{
+			"ide2": proxmox.CustomStorageDevice{
+				Enabled:    cdromCloudInitEnabled,
+				FileVolume: cdromCloudInitFileID,
+				Media:      &cdromCloudInitMedia,
+			},
 		}
 
-		ideDevices[2] = cdromCloudInitDevice
 		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
 
 		if err != nil {
@@ -1336,6 +1337,12 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	allDiskInfo := getDiskInfo(vmConfig)
 
+	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
+
+	if err != nil {
+		return err
+	}
+
 	for i := range disk {
 
 		diskBlock := disk[i].(map[string]interface{})
@@ -1346,7 +1353,32 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		currentDiskInfo := allDiskInfo[diskInterface]
 
 		if currentDiskInfo == nil {
-			return errors.New(fmt.Sprintf("Disk move failed, no disk named %s", diskInterface))
+			diskUpdateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{}
+			prefix := diskDigitPrefix(diskInterface)
+			switch prefix {
+			case "virtio":
+				if diskUpdateBody.VirtualIODevices == nil {
+					diskUpdateBody.VirtualIODevices = make(proxmox.CustomStorageDevices)
+				}
+				diskUpdateBody.VirtualIODevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
+			case "sata":
+				if diskUpdateBody.SATADevices == nil {
+					diskUpdateBody.SATADevices = make(proxmox.CustomStorageDevices)
+				}
+				diskUpdateBody.SATADevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
+			case "scsi":
+				if diskUpdateBody.SCSIDevices == nil {
+					diskUpdateBody.SCSIDevices = make(proxmox.CustomStorageDevices)
+				}
+				diskUpdateBody.SCSIDevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
+			}
+
+			err = veClient.UpdateVM(nodeName, vmID, diskUpdateBody)
+			if err != nil {
+				return err
+			}
+
+			continue
 		}
 
 		compareNumber, err := parseDiskSize(currentDiskInfo.Size)
@@ -1356,7 +1388,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		}
 
 		if diskSize < compareNumber {
-			return errors.New(fmt.Sprintf("Disk resize fails requests size (%dG) is lower than current size (%s)", diskSize, *currentDiskInfo.Size))
+			return fmt.Errorf("Disk resize fails requests size (%dG) is lower than current size (%s)", diskSize, *currentDiskInfo.Size)
 		}
 
 		deleteOriginalDisk := proxmox.CustomBool(true)
@@ -1450,16 +1482,16 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
-	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m)
+	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
 
 	if err != nil {
 		return err
 	}
 
-	virtioDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "virtio")
-	scsiDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "scsi")
+	virtioDeviceObjects := diskDeviceObjects["vitio"]
+	scsiDeviceObjects := diskDeviceObjects["scsi"]
 	//ideDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "ide")
-	sataDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "sata")
+	sataDeviceObjects := diskDeviceObjects["sata"]
 
 	initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
 
@@ -1552,18 +1584,12 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 
 	ideDevice2Media := "cdrom"
 	ideDevices := proxmox.CustomStorageDevices{
-		proxmox.CustomStorageDevice{
-			Enabled: false,
-		},
-		proxmox.CustomStorageDevice{
-			Enabled: false,
-		},
-		proxmox.CustomStorageDevice{
+		"ide1": proxmox.CustomStorageDevice{
 			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
 		},
-		proxmox.CustomStorageDevice{
+		"ide2": proxmox.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &ideDevice2Media,
@@ -1993,8 +2019,13 @@ func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaVali
 	}, false)
 }
 
-func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m interface{}) (map[string]map[string]proxmox.CustomStorageDevice, error) {
-	diskDevice := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m interface{}, disks []interface{}) (map[string]map[string]proxmox.CustomStorageDevice, error) {
+	var diskDevice []interface{}
+	if disks != nil {
+		diskDevice = disks
+	} else {
+		diskDevice = d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+	}
 	diskDeviceObjects := make(map[string]map[string]proxmox.CustomStorageDevice)
 	resource := resourceVirtualEnvironmentVM()
 
@@ -2020,6 +2051,13 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m 
 		} else {
 			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
 		}
+
+		diskDevice.ID = &datastoreID
+		diskDevice.Interface = &diskInterface
+		diskDevice.FileID = &fileID
+		sizeString := fmt.Sprintf("%dG", size)
+		diskDevice.Size = &sizeString
+		diskDevice.SizeInt = &size
 
 		if len(speedBlock) > 0 {
 			speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
@@ -2443,30 +2481,9 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 		d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
 	}
 
-	// Compare the disks to those stored in the state.
-	currentDisks := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
-
-	diskList := []interface{}{}
+	diskMap := map[string]interface{}{}
+	orderedDiskList := []interface{}{}
 	diskObjects := getDiskInfo(vmConfig)
-
-	currentDiskMap := make(map[string]*proxmox.CustomStorageDevice)
-
-	for _, dd := range currentDisks {
-		var disk proxmox.CustomStorageDevice
-		currentDiskEntry := dd.(map[string]interface{})
-
-		id := currentDiskEntry[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		diskInterface := currentDiskEntry[mkResourcevirtualEnvironmentVMDiskInterface].(string)
-		format := currentDiskEntry[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
-		fileId := currentDiskEntry[mkResourceVirtualEnvironmentVMDiskFileID].(string)
-
-		disk.Interface = &diskInterface
-		disk.ID = &id
-		disk.Format = &format
-		disk.FileId = &fileId
-
-		currentDiskMap[diskInterface] = &disk
-	}
 
 	for di, dd := range diskObjects {
 		disk := map[string]interface{}{}
@@ -2479,14 +2496,13 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 		disk[mkResourceVirtualEnvironmentVMDiskDatastoreID] = fileIDParts[0]
 
-		if val, ok := currentDiskMap[di]; ok {
-			if *val.FileId != "" {
-				disk[mkResourceVirtualEnvironmentVMDiskFileID] = val.FileId
-			}
-
-			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = val.Format
-			disk[mkResourcevirtualEnvironmentVMDiskInterface] = val.Interface
+		disk[mkResourceVirtualEnvironmentVMDiskFileID] = dd.FileID
+		if dd.Format == nil {
+			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = "qcow2"
+		} else {
+			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = dd.Format
 		}
+		disk[mkResourcevirtualEnvironmentVMDiskInterface] = di
 
 		diskSize := 0
 
@@ -2534,16 +2550,23 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 			disk[mkResourceVirtualEnvironmentVMDiskSpeed] = []interface{}{}
 		}
 
-		diskList = append(diskList, disk)
+		diskMap[di] = disk
 	}
 
-	log.Printf("[DEBUG] NUMBER CURRENT DISKS %d NUMBER READ DISKS %d", len(currentDisks), len(diskList))
+	keyList := []string{}
+	for key := range diskMap {
+		keyList = append(keyList, key)
+	}
+	sort.Strings(keyList)
+	for _, k := range keyList {
+		orderedDiskList = append(orderedDiskList, diskMap[k])
+	}
 	if len(clone) > 0 {
-		if len(currentDisks) > 0 || len(diskList) > 0 {
-			d.Set(mkResourceVirtualEnvironmentVMDisk, diskList)
+		if len(orderedDiskList) > 0 {
+			d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
 		}
-	} else if len(currentDisks) > 0 || len(diskList) > 0 {
-		d.Set(mkResourceVirtualEnvironmentVMDisk, diskList)
+	} else if len(orderedDiskList) > 0 {
+		d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
 	}
 
 	// Compare the initialization configuration to the one stored in the state.
@@ -3084,16 +3107,16 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	updateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
 		IDEDevices: proxmox.CustomStorageDevices{
-			proxmox.CustomStorageDevice{
+			"ide0": proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
-			proxmox.CustomStorageDevice{
+			"ide1": proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
-			proxmox.CustomStorageDevice{
+			"ide2": proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
-			proxmox.CustomStorageDevice{
+			"ide3": proxmox.CustomStorageDevice{
 				Enabled: false,
 			},
 		},
@@ -3212,7 +3235,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 		cdromMedia := "cdrom"
 
-		updateBody.IDEDevices[3] = proxmox.CustomStorageDevice{
+		updateBody.IDEDevices["ide3"] = proxmox.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
@@ -3266,7 +3289,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new disk device configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
-		diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m)
+		diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
 
 		if err != nil {
 			return err
@@ -3275,8 +3298,6 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		diskDeviceInfo := getDiskInfo(vmConfig)
 
 		for prefix, diskMap := range diskDeviceObjects {
-			index := 0
-
 			if diskMap == nil {
 				continue
 			}
@@ -3286,39 +3307,33 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 					return fmt.Errorf("Missing %s device %s", prefix, key)
 				}
 
+				tmp := *diskDeviceInfo[key]
+				tmp.BurstableReadSpeedMbps = value.BurstableReadSpeedMbps
+				tmp.BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
+				tmp.MaxReadSpeedMbps = value.MaxReadSpeedMbps
+				tmp.MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
+
 				switch prefix {
 				case "virtio":
 					{
 						if updateBody.VirtualIODevices == nil {
-							updateBody.VirtualIODevices = make(proxmox.CustomStorageDevices, len(diskMap))
+							updateBody.VirtualIODevices = make(proxmox.CustomStorageDevices)
 						}
-						updateBody.VirtualIODevices[index] = *diskDeviceInfo[key]
-						updateBody.VirtualIODevices[index].BurstableReadSpeedMbps = value.BurstableReadSpeedMbps
-						updateBody.VirtualIODevices[index].BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
-						updateBody.VirtualIODevices[index].MaxReadSpeedMbps = value.MaxReadSpeedMbps
-						updateBody.VirtualIODevices[index].MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
+						updateBody.VirtualIODevices[key] = tmp
 					}
 				case "sata":
 					{
 						if updateBody.SATADevices == nil {
-							updateBody.SATADevices = make(proxmox.CustomStorageDevices, len(diskMap))
+							updateBody.SATADevices = make(proxmox.CustomStorageDevices)
 						}
-						updateBody.SATADevices[index] = *diskDeviceInfo[key]
-						updateBody.SATADevices[index].BurstableReadSpeedMbps = value.BurstableReadSpeedMbps
-						updateBody.SATADevices[index].BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
-						updateBody.SATADevices[index].MaxReadSpeedMbps = value.MaxReadSpeedMbps
-						updateBody.SATADevices[index].MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
+						updateBody.SATADevices[key] = tmp
 					}
 				case "scsi":
 					{
 						if updateBody.SCSIDevices == nil {
-							updateBody.SCSIDevices = make(proxmox.CustomStorageDevices, len(diskMap))
+							updateBody.SCSIDevices = make(proxmox.CustomStorageDevices)
 						}
-						updateBody.SCSIDevices[index] = *diskDeviceInfo[key]
-						updateBody.SCSIDevices[index].BurstableReadSpeedMbps = value.BurstableReadSpeedMbps
-						updateBody.SCSIDevices[index].BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
-						updateBody.SCSIDevices[index].MaxReadSpeedMbps = value.MaxReadSpeedMbps
-						updateBody.SCSIDevices[index].MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
+						updateBody.SCSIDevices[key] = tmp
 					}
 				case "ide":
 					{
@@ -3327,7 +3342,6 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 				default:
 					return fmt.Errorf("Device prefix %s not supported", prefix)
 				}
-				index = index + 1
 			}
 		}
 
@@ -3351,7 +3365,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 			cdromMedia := "cdrom"
 
-			updateBody.IDEDevices[2] = proxmox.CustomStorageDevice{
+			updateBody.IDEDevices["ide2"] = proxmox.CustomStorageDevice{
 				Enabled:    true,
 				FileVolume: fmt.Sprintf("%s:cloudinit", initializationDatastoreID),
 				Media:      &cdromMedia,
@@ -3359,7 +3373,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 			if vmConfig.IDEDevice2 != nil {
 				if strings.Contains(vmConfig.IDEDevice2.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
-					updateBody.IDEDevices[2].Enabled = false
+					var tmp = updateBody.IDEDevices["ide2"]
+					tmp.Enabled = true
+					updateBody.IDEDevices["ide2"] = tmp
 				}
 			}
 		}
@@ -3517,44 +3533,41 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
 		diskOld, diskNew := d.GetChange(mkResourceVirtualEnvironmentVMDisk)
 
-		diskOldEntries := diskOld.([]interface{})
-		diskNewEntries := diskNew.([]interface{})
+		diskOldEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, diskOld.([]interface{}))
+		if err != nil {
+			return err
+		}
+
+		diskNewEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, diskNew.([]interface{}))
+		if err != nil {
+			return err
+		}
 
 		diskMoveBodies := []*proxmox.VirtualEnvironmentVMMoveDiskRequestBody{}
 		diskResizeBodies := []*proxmox.VirtualEnvironmentVMResizeDiskRequestBody{}
 
-		for i := range diskOldEntries {
-			diskOldBlock := diskOldEntries[i].(map[string]interface{})
-			diskNewBlock := diskNewEntries[i].(map[string]interface{})
+		for prefix, diskMap := range diskOldEntries {
+			for oldKey, oldDisk := range diskMap {
+				if _, present := diskNewEntries[prefix][oldKey]; !present {
+					return fmt.Errorf("Deletion of disks not supported. Please delete disk by hand. Old Interface was %s", *oldDisk.Interface)
+				}
 
-			diskOldDatastoreID := diskOldBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-			diskOldInterface := diskOldBlock[mkResourcevirtualEnvironmentVMDiskInterface].(string)
-			diskNewInterface := diskNewBlock[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+				if oldDisk.ID != diskNewEntries[prefix][oldKey].ID {
+					deleteOriginalDisk := proxmox.CustomBool(true)
 
-			if diskNewInterface != diskOldInterface {
-				return fmt.Errorf("Alteration of disk interface is not supported. Old Interface was %s", diskOldInterface)
-			}
+					diskMoveBodies = append(diskMoveBodies, &proxmox.VirtualEnvironmentVMMoveDiskRequestBody{
+						DeleteOriginalDisk: &deleteOriginalDisk,
+						Disk:               *oldDisk.Interface,
+						TargetStorage:      *diskNewEntries[prefix][oldKey].ID,
+					})
+				}
 
-			diskNewDatastoreID := diskNewBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-
-			if diskOldDatastoreID != diskNewDatastoreID {
-				deleteOriginalDisk := proxmox.CustomBool(true)
-
-				diskMoveBodies = append(diskMoveBodies, &proxmox.VirtualEnvironmentVMMoveDiskRequestBody{
-					DeleteOriginalDisk: &deleteOriginalDisk,
-					Disk:               diskOldInterface,
-					TargetStorage:      diskNewDatastoreID,
-				})
-			}
-
-			diskOldSize := diskOldBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
-			diskNewSize := diskNewBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
-
-			if diskOldSize <= diskNewSize {
-				diskResizeBodies = append(diskResizeBodies, &proxmox.VirtualEnvironmentVMResizeDiskRequestBody{
-					Disk: diskOldInterface,
-					Size: fmt.Sprintf("%dG", diskNewSize),
-				})
+				if *oldDisk.SizeInt <= *diskNewEntries[prefix][oldKey].SizeInt {
+					diskResizeBodies = append(diskResizeBodies, &proxmox.VirtualEnvironmentVMResizeDiskRequestBody{
+						Disk: *oldDisk.Interface,
+						Size: *diskNewEntries[prefix][oldKey].Size,
+					})
+				}
 			}
 		}
 

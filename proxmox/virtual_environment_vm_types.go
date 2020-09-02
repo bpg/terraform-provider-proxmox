@@ -165,11 +165,12 @@ type CustomStorageDevice struct {
 	Format                  *string     `json:"format,omitempty" url:"format,omitempty"`
 	Interface               *string
 	ID                      *string
-	FileId                  *string
+	FileID                  *string
+	SizeInt                 *int
 }
 
 // CustomStorageDevices handles QEMU SATA device parameters.
-type CustomStorageDevices []CustomStorageDevice
+type CustomStorageDevices map[string]CustomStorageDevice
 
 // CustomUSBDevice handles QEMU USB device parameters.
 type CustomUSBDevice struct {
@@ -248,7 +249,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	HookScript           *string                      `json:"hookscript,omitempty" url:"hookscript,omitempty"`
 	Hotplug              CustomCommaSeparatedList     `json:"hotplug,omitempty" url:"hotplug,omitempty,comma"`
 	Hugepages            *string                      `json:"hugepages,omitempty" url:"hugepages,omitempty"`
-	IDEDevices           CustomStorageDevices         `json:"ide,omitempty" url:"ide,omitempty"`
+	IDEDevices           CustomStorageDevices         `json:"ide,omitempty" url:",omitempty"`
 	KeyboardLayout       *string                      `json:"keyboard,omitempty" url:"keyboard,omitempty"`
 	KVMArguments         CustomLineBreakSeparatedList `json:"args,omitempty" url:"args,omitempty,space"`
 	KVMEnabled           *CustomBool                  `json:"kvm,omitempty" url:"kvm,omitempty,int"`
@@ -1055,7 +1056,7 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 func (r CustomStorageDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
 		if d.Enabled {
-			d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+			d.EncodeValues(i, v)
 		}
 	}
 
