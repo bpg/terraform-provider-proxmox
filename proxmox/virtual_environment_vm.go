@@ -180,16 +180,14 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(nodeName 
 				missingIP := false
 
 				if waitForIP {
-					if len(*data.Result) == 0 {
-						missingIP = true
-					} else if len(*data.Result) == 1 && (*data.Result)[0].Name == "lo" {
-						missingIP = true
-					} else {
-						for _, nic := range *data.Result {
-							if nic.IPAddresses != nil && len(*nic.IPAddresses) == 0 {
-								missingIP = true
-								break
-							}
+					for _, nic := range *data.Result {
+						if nic.Name == "lo" {
+							continue
+						}
+
+						if nic.IPAddresses == nil || (nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
+							missingIP = true
+							break
 						}
 					}
 				}
