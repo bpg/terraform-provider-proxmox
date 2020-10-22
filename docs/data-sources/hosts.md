@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Hosts
-permalink: /data-sources/virtual-environment/hosts
+permalink: /data-sources/hosts
 nav_order: 5
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: Hosts

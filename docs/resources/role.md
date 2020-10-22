@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Role
-permalink: /ressources/virtual-environment/role
+permalink: /resources/role
 nav_order: 8
-parent: Virtual Environment Resources
-grand_parent: Resources
+parent: Resources
 ---
 
 # Resource: Role

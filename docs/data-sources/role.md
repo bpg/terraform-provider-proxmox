@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Role
-permalink: /data-sources/virtual-environment/role
+permalink: /data-sources/role
 nav_order: 9
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: Role

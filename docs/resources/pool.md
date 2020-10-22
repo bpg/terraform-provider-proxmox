@@ -1,31 +1,31 @@
 ---
 layout: page
 title: Pool
-permalink: /data-sources/virtual-environment/pool
+permalink: /resources/pool
 nav_order: 7
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Resources
 ---
 
-# Data Source: Pool
+# Resource: Pool
 
-Retrieves information about a specific resource pool.
+Manages a resource pool.
 
 ## Example Usage
 
 ```
-data "proxmox_virtual_environment_pool" "operations_pool" {
-  pool_id = "operations"
+resource "proxmox_virtual_environment_pool" "operations_pool" {
+  comment = "Managed by Terraform"
+  pool_id = "operations-pool"
 }
 ```
 
 ## Arguments Reference
 
+* `comment` - (Optional) The pool comment.
 * `pool_id` - (Required) The pool identifier.
 
 ## Attributes Reference
 
-* `comment` - The pool comment.
 * `members` - The pool members.
     * `datastore_id` - The datastore identifier.
     * `id` - The member identifier.

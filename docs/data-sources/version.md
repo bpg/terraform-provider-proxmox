@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Version
-permalink: /data-sources/virtual-environment/version
+permalink: /data-sources/version
 nav_order: 14
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: Version

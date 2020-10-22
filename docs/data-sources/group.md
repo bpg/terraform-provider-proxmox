@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Group
-permalink: /data-sources/virtual-environment/group
+permalink: /data-sources/group
 nav_order: 3
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: Group

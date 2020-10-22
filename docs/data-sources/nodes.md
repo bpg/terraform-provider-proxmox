@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Nodes
-permalink: /data-sources/virtual-environment/nodes
+permalink: /data-sources/nodes
 nav_order: 6
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: Nodes

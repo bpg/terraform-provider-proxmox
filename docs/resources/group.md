@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Group
-permalink: /ressources/virtual-environment/group
+permalink: /resources/group
 nav_order: 5
-parent: Virtual Environment Resources
-grand_parent: Resources
+parent: Resources
 ---
 
 # Resource: Group

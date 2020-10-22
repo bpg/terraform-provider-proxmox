@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Container
-permalink: /ressources/virtual-environment/container
+permalink: /resources/container
 nav_order: 2
-parent: Virtual Environment Resources
-grand_parent: Resources
+parent: Resources
 ---
 
 # Resource: Container

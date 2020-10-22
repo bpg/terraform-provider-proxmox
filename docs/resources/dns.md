@@ -1,10 +1,9 @@
 ---
 layout: page
 title: DNS
-permalink: /ressources/virtual-environment/dns
+permalink: /resources/dns
 nav_order: 3
-parent: Virtual Environment Resources
-grand_parent: Resources
+parent: Resources
 ---
 
 # Resource: DNS

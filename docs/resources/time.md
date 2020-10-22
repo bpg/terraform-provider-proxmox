@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Time
-permalink: /ressources/virtual-environment/time
+permalink: /resources/time
 nav_order: 9
-parent: Virtual Environment Resources
-grand_parent: Resources
+parent: Resources
 ---
 
 # Resource: Time

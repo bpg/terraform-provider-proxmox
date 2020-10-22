@@ -1,10 +1,9 @@
 ---
 layout: page
 title: DNS
-permalink: /data-sources/virtual-environment/dns
+permalink: /data-sources/dns
 nav_order: 2
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: DNS

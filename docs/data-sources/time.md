@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Time
-permalink: /data-sources/virtual-environment/time
+permalink: /data-sources/time
 nav_order: 11
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: Time

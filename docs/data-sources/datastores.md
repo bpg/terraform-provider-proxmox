@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Datastores
-permalink: /data-sources/virtual-environment/datastores
+permalink: /data-sources/datastores
 nav_order: 1
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: Datastores

@@ -1,10 +1,9 @@
 ---
 layout: page
 title: User
-permalink: /data-sources/virtual-environment/user
+permalink: /data-sources/user
 nav_order: 12
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: User

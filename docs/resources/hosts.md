@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Hosts
-permalink: /ressources/virtual-environment/hosts
+permalink: /resources/hosts
 nav_order: 6
-parent: Virtual Environment Resources
-grand_parent: Resources
+parent: Resources
 ---
 
 # Resource: Hosts

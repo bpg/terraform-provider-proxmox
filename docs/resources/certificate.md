@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Certificate
-permalink: /ressources/virtual-environment/certificate
+permalink: /resources/certificate
 nav_order: 1
-parent: Virtual Environment Resources
-grand_parent: Resources
+parent: Resources
 ---
 
 # Resource: Certificate

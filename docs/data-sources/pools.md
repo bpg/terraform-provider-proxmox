@@ -1,10 +1,9 @@
 ---
 layout: page
 title: Pools
-permalink: /data-sources/virtual-environment/pools
+permalink: /data-sources/pools
 nav_order: 8
-parent: Virtual Environment Data Sources
-grand_parent: Data Sources
+parent: Data Sources
 ---
 
 # Data Source: Pools

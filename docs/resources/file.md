@@ -1,10 +1,9 @@
 ---
 layout: page
 title: File
-permalink: /ressources/virtual-environment/file
+permalink: /resources/file
 nav_order: 4
-parent: Virtual Environment Resources
-grand_parent: Resources
+parent: Resources
 ---
 
 # Resource: File
