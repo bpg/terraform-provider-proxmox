@@ -184,7 +184,7 @@ output "ubuntu_vm_public_key" {
         * `read_burstable` - (Optional) The maximum burstable read speed in megabytes per second.
         * `write` - (Optional) The maximum write speed in megabytes per second.
         * `write_burstable` - (Optional) The maximum burstable write speed in megabytes per second.
-* `initialization` - (Optional) The cloud-init configuration (conflicts with `cdrom`).
+* `initialization` - (Optional) The cloud-init configuration.
     * `datastore_id` - (Optional) The identifier for the datastore to create the cloud-init disk in (defaults to `local-lvm`).
     * `dns` - (Optional) The DNS configuration.
         * `domain` - (Optional) The DNS search domain.
