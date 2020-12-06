@@ -2205,14 +2205,16 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 			cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = vmConfig.IDEDevice3.Enabled
 			cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = vmConfig.IDEDevice3.FileVolume
 
-			isCurrentCDROMFileId := currentCDROM[0].(map[string]interface{})
+			if len(currentCDROM) > 0 {
+				isCurrentCDROMFileId := currentCDROM[0].(map[string]interface{})
 
-			if isCurrentCDROMFileId[mkResourceVirtualEnvironmentVMCDROMFileID] == "" {
-				cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = ""
-			}
+				if isCurrentCDROMFileId[mkResourceVirtualEnvironmentVMCDROMFileID] == "" {
+					cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = ""
+				}
 
-			if isCurrentCDROMFileId[mkResourceVirtualEnvironmentVMCDROMEnabled] == false {
-				cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = false
+				if isCurrentCDROMFileId[mkResourceVirtualEnvironmentVMCDROMEnabled] == false {
+					cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = false
+				}
 			}
 
 			cdrom[0] = cdromBlock
