@@ -370,6 +370,13 @@ func getVMIDValidator() schema.SchemaValidateFunc {
 	}
 }
 
+func getCloudInitTypeValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"configdrive2",
+		"nocloud",
+	}, false)
+}
+
 func testComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {
 	for _, v := range keys {
 		if s.Schema[v] == nil {
