@@ -50,6 +50,8 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_user":       dataSourceVirtualEnvironmentUser(),
 			"proxmox_virtual_environment_users":      dataSourceVirtualEnvironmentUsers(),
 			"proxmox_virtual_environment_version":    dataSourceVirtualEnvironmentVersion(),
+			"proxmox_virtual_environment_cluster_alias":   dataSourceVirtualEnvironmentClusterAlias(),
+			"proxmox_virtual_environment_cluster_aliases": dataSourceVirtualEnvironmentClusterAliases(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_certificate": resourceVirtualEnvironmentCertificate(),
@@ -63,6 +65,7 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_time":        resourceVirtualEnvironmentTime(),
 			"proxmox_virtual_environment_user":        resourceVirtualEnvironmentUser(),
 			"proxmox_virtual_environment_vm":          resourceVirtualEnvironmentVM(),
+			"proxmox_virtual_environment_cluster_alias": resourceVirtualEnvironmentClusterAlias(),
 		},
 		Schema: map[string]*schema.Schema{
 			mkProviderVirtualEnvironment: {
