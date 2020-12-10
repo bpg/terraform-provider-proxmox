@@ -63,6 +63,7 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_time":        resourceVirtualEnvironmentTime(),
 			"proxmox_virtual_environment_user":        resourceVirtualEnvironmentUser(),
 			"proxmox_virtual_environment_vm":          resourceVirtualEnvironmentVM(),
+			"proxmox_virtual_environment_cluster_ipset": resourceVirtualEnvironmentClusterIPSet(),
 		},
 		Schema: map[string]*schema.Schema{
 			mkProviderVirtualEnvironment: {
