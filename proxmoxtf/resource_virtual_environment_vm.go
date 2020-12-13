@@ -2915,7 +2915,9 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, m i
 		}
 	}
 
-	d.Set(mkResourceVirtualEnvironmentVMStarted, vmStatus.Status == "running")
+	if d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool) != true {
+		d.Set(mkResourceVirtualEnvironmentVMStarted, vmStatus.Status == "running")
+	}
 
 	currentTabletDevice := d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool)
 
