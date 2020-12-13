@@ -6,8 +6,8 @@ package main
 
 import (
 	"github.com/danitso/terraform-provider-proxmox/proxmoxtf"
-	"github.com/hashicorp/terraform/plugin"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/plugin"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func main() {

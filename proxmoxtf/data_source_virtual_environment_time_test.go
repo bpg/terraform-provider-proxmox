@@ -7,7 +7,7 @@ package proxmoxtf
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentTimeInstantiation tests whether the DataSourceVirtualEnvironmentRoles instance can be instantiated.
