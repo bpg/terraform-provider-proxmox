@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	dvResourceVirtualEnvironmentClusterIPSetComment	= ""
-	dvResourceVirtualEnvironmentClusterIPSetNoMatch	= false
+	dvResourceVirtualEnvironmentClusterIPSetCIDRComment = ""
+	dvResourceVirtualEnvironmentClusterIPSetCIDRNoMatch = false
 
-	mkResourceVirtualEnvironmentClusterIPSet        = "ipset"
-	mkResourceVirtualEnvironmentClusterIPSetCIDR    = "cidr"
-	mkResourceVirtualEnvironmentClusterIPSetName    = "name"
-	mkResourceVirtualEnvironmentClusterIPSetComment = "comment"
-	mkResourceVirtualEnvironmentClusterIPSetNoMatch = "nomatch"
+	mkResourceVirtualEnvironmentClusterIPSetName        = "name"
+	mkResourceVirtualEnvironmentClusterIPSetCIDR        = "cidr"
+	mkResourceVirtualEnvironmentClusterIPSetCIDRName    = "name"
+	mkResourceVirtualEnvironmentClusterIPSetCIDRComment = "comment"
+	mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch = "nomatch"
 )
 
 func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
@@ -30,7 +30,7 @@ func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
 				Required: true,
 				ForceNew: false,
 			},
-			mkResourceVirtualEnvironmentClusterIPSet: {
+			mkResourceVirtualEnvironmentClusterIPSetCIDR: {
 				Type: schema.TypeList,
 				Description: "List of IP or Networks",
 				Optional: true,
@@ -40,34 +40,34 @@ func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentClusterIPSetCIDR: {
+						mkResourceVirtualEnvironmentClusterIPSetCIDRName: {
 							Type: schema.TypeString,
 							Description: "Network/IP specification in CIDR format",
 							Required: true,
 							ForceNew: true,
 						},
-						mkResourceVirtualEnvironmentClusterIPSetNoMatch: {
-							Type: schema.TypeBool,
+						mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch: {
+							Type:        schema.TypeBool,
 							Description: "No match this IP/CIDR",
-							Optional: true,
-							Default: dvResourceVirtualEnvironmentClusterIPSetNoMatch,
-							ForceNew: true,
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentClusterIPSetCIDRNoMatch,
+							ForceNew:    true,
 						},
-						mkResourceVirtualEnvironmentClusterIPSetComment: {
-							Type: schema.TypeString,
+						mkResourceVirtualEnvironmentClusterIPSetCIDRComment: {
+							Type:        schema.TypeString,
 							Description: "IP/CIDR comment",
-							Optional: true,
-							Default: dvResourceVirtualEnvironmentClusterIPSetComment,
-							ForceNew: true,
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentClusterIPSetCIDRComment,
+							ForceNew:    true,
 						},
 					},
 				},
 			},
-			mkResourceVirtualEnvironmentClusterIPSetComment: {
-				Type: schema.TypeString,
+			mkResourceVirtualEnvironmentClusterIPSetCIDRComment: {
+				Type:        schema.TypeString,
 				Description: "IPSet comment",
-				Optional: true,
-				Default: dvResourceVirtualEnvironmentClusterIPSetComment,
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentClusterIPSetCIDRComment,
 			},
 		},
 		Create: resourceVirtualEnvironmentClusterIPSetCreate,
@@ -85,19 +85,19 @@ func resourceVirtualEnvironmentClusterIPSetCreate(d *schema.ResourceData, m inte
 		return err
 	}
 
-	comment := d.Get(mkResourceVirtualEnvironmentClusterIPSetComment).(string)
+	comment := d.Get(mkResourceVirtualEnvironmentClusterIPSetCIDRComment).(string)
 	name := d.Get(mkResourceVirtualEnvironmentClusterIPSetName).(string)
 
-	IPSets := d.Get(mkResourceVirtualEnvironmentClusterIPSet).([]interface{})
+	IPSets := d.Get(mkResourceVirtualEnvironmentClusterIPSetCIDR).([]interface{})
 	IPSetsArray := make(proxmox.VirtualEnvironmentClusterIPSetContent, len(IPSets))
 
 	for i, v := range IPSets {
 		IPSetMap := v.(map[string]interface{})
 		IPSetObject := proxmox.VirtualEnvironmentClusterIPSetGetResponseData{}
 
-		cidr := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetCIDR].(string)
-		noMatch := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetNoMatch].(bool)
-		comment := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetComment].(string)
+		cidr    := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetCIDRName].(string)
+		noMatch := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch].(bool)
+		comment := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetCIDRComment].(string)
 
 
 		IPSetObject.Comment = comment
@@ -159,7 +159,7 @@ func resourceVirtualEnvironmentClusterIPSetRead(d *schema.ResourceData, m interf
 				return err
 			}
 
-			err = d.Set(mkResourceVirtualEnvironmentClusterIPSetComment, v.Comment)
+			err = d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDRComment, v.Comment)
 
 			if err != nil {
 				return err
@@ -180,7 +180,7 @@ func resourceVirtualEnvironmentClusterIPSetRead(d *schema.ResourceData, m interf
 	}
 
 	for key, _ := range IPSet {
-		d.Set(mkResourceVirtualEnvironmentClusterIPSet, IPSet[key])
+		d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDR, IPSet[key])
 	}
 
 	return nil
@@ -194,7 +194,7 @@ func resourceVirtualEnvironmentClusterIPSetUpdate(d *schema.ResourceData, m inte
 		return err
 	}
 
-	comment := d.Get(mkResourceVirtualEnvironmentClusterIPSetComment).(string)
+	comment := d.Get(mkResourceVirtualEnvironmentClusterIPSetCIDRComment).(string)
 	newName := d.Get(mkResourceVirtualEnvironmentClusterIPSetName).(string)
 	previousName := d.Id()
 

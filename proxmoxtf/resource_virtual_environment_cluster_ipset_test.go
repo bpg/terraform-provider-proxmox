@@ -28,31 +28,31 @@ func TestResourceVirtualEnvironmentIPSetSchema(t *testing.T) {
 	})
 
 	testOptionalArguments(t, s, []string{
-		mkResourceVirtualEnvironmentClusterIPSet,
-		mkResourceVirtualEnvironmentClusterIPSetComment,
+		mkResourceVirtualEnvironmentClusterIPSetCIDR,
+		mkResourceVirtualEnvironmentClusterIPSetCIDRComment,
 	})
 
 	testValueTypes(t, s, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentClusterIPSetName: 		schema.TypeString,
-		mkResourceVirtualEnvironmentClusterIPSet:			schema.TypeList,
-		mkResourceVirtualEnvironmentClusterIPSetComment:   	schema.TypeString,
+		mkResourceVirtualEnvironmentClusterIPSetName:        schema.TypeString,
+		mkResourceVirtualEnvironmentClusterIPSetCIDR:        schema.TypeList,
+		mkResourceVirtualEnvironmentClusterIPSetCIDRComment: schema.TypeString,
 	})
 
-	IPSetSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentClusterIPSet)
+	IPSetSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentClusterIPSetCIDR)
 
 	testRequiredArguments(t, IPSetSchema, []string{
-		mkResourceVirtualEnvironmentClusterIPSetCIDR,
+		mkResourceVirtualEnvironmentClusterIPSetCIDRName,
 	})
 
 	testOptionalArguments(t, IPSetSchema, []string{
-		mkResourceVirtualEnvironmentClusterIPSetComment,
-		mkResourceVirtualEnvironmentClusterIPSetNoMatch,
+		mkResourceVirtualEnvironmentClusterIPSetCIDRComment,
+		mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch,
 	})
 
 	testValueTypes(t, IPSetSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentClusterIPSetCIDR: schema.TypeString,
-		mkResourceVirtualEnvironmentClusterIPSetComment: schema.TypeString,
-		mkResourceVirtualEnvironmentClusterIPSetNoMatch: schema.TypeBool,
+		mkResourceVirtualEnvironmentClusterIPSetCIDRName:    schema.TypeString,
+		mkResourceVirtualEnvironmentClusterIPSetCIDRComment: schema.TypeString,
+		mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch: schema.TypeBool,
 	})
 
 }
