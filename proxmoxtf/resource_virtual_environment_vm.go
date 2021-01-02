@@ -1631,7 +1631,6 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		KeyboardLayout:      &keyboardLayout,
 		NetworkDevices:      networkDeviceObjects,
 		OSType:              &operatingSystemType,
-		PoolID:              &poolID,
 		SCSIHardware:        &scsiHardware,
 		SerialDevices:       serialDevices,
 		SharedMemory:        memorySharedObject,
@@ -1676,6 +1675,10 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 
 	if name != "" {
 		createBody.Name = &name
+	}
+
+	if poolID != "" {
+		createBody.PoolID = &poolID
 	}
 
 	err = veClient.CreateVM(nodeName, createBody)
@@ -3157,7 +3160,12 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
-	updateBody.Name = &name
+
+	if name == "" {
+		delete = append(delete, "name")
+	} else {
+		updateBody.Name = &name
+	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
 		tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
