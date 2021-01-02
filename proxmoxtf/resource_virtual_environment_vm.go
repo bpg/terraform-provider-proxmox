@@ -60,6 +60,7 @@ const (
 	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway = ""
 	dvResourceVirtualEnvironmentVMInitializationUserAccountPassword = ""
 	dvResourceVirtualEnvironmentVMInitializationUserDataFileID      = ""
+	dvResourceVirtualEnvironmentVMInitializationType                = ""
 	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
 	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentVMMemoryFloating                    = 0
@@ -140,6 +141,7 @@ const (
 	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6        = "ipv6"
 	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address = "address"
 	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway = "gateway"
+	mkResourceVirtualEnvironmentVMInitializationType                = "type"
 	mkResourceVirtualEnvironmentVMInitializationUserAccount         = "user_account"
 	mkResourceVirtualEnvironmentVMInitializationUserAccountKeys     = "keys"
 	mkResourceVirtualEnvironmentVMInitializationUserAccountPassword = "password"
@@ -705,6 +707,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							ForceNew:     true,
 							Default:      dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
 							ValidateFunc: getFileIDValidator(),
+						},
+						mkResourceVirtualEnvironmentVMInitializationType: {
+							Type:         schema.TypeString,
+							Description:  "The cloud-init configuration format",
+							Optional:     true,
+							ForceNew:     true,
+							Default:      dvResourceVirtualEnvironmentVMInitializationType,
+							ValidateFunc: getCloudInitTypeValidator(),
 						},
 					},
 				},
@@ -2010,6 +2020,12 @@ func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m in
 				UserVolume: &initializationUserDataFileID,
 			}
 		}
+
+		initializationType := initializationBlock[mkResourceVirtualEnvironmentVMInitializationType].(string)
+
+		if initializationType != "" {
+			initializationConfig.Type = &initializationType
+		}
 	}
 
 	return initializationConfig, nil
@@ -2704,6 +2720,12 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 		}
 	} else if len(initialization) > 0 {
 		initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
+	}
+
+	if vmConfig.CloudInitType != nil {
+		initialization[mkResourceVirtualEnvironmentVMInitializationType] = *vmConfig.CloudInitType
+	} else if len(initialization) > 0 {
+		initialization[mkResourceVirtualEnvironmentVMInitializationType] = ""
 	}
 
 	currentInitialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
