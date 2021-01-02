@@ -5,11 +5,11 @@
 package proxmoxtf
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 const (
-	mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs        = "alias_ids"
+	mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs = "alias_ids"
 )
 
 func dataSourceVirtualEnvironmentClusterAliases() *schema.Resource {

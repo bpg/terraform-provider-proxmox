@@ -5,8 +5,9 @@
 package proxmoxtf
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 // TestResourceVirtualEnvironmentIPSetInstantiation tests whether the resourceVirtualEnvironmentClusterIPSet

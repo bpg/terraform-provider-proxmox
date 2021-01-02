@@ -5,16 +5,15 @@
 package proxmoxtf
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 const (
-	dvDataVirtualEnvironmentClusterAliasComment 	           = ""
+	dvDataVirtualEnvironmentClusterAliasComment = ""
 
-	mkDataSourceVirtualEnvironmentClusterAliasName             = "name"
-	mkDataSourceVirtualEnvironmentClusterAliasCIDR             = "cidr"
-	mkDataSourceVirtualEnvironmentClusterAliasComment          = "comment"
-
+	mkDataSourceVirtualEnvironmentClusterAliasName    = "name"
+	mkDataSourceVirtualEnvironmentClusterAliasCIDR    = "cidr"
+	mkDataSourceVirtualEnvironmentClusterAliasComment = "comment"
 )
 
 func dataSourceVirtualEnvironmentClusterAlias() *schema.Resource {
@@ -35,7 +34,6 @@ func dataSourceVirtualEnvironmentClusterAlias() *schema.Resource {
 				Description: "Alias comment",
 				Computed:    true,
 			},
-
 		},
 		Read: dataSourceVirtualEnvironmentAliasRead,
 	}

@@ -7,7 +7,7 @@ package proxmoxtf
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentAliasInstantiation tests whether the DataSourceVirtualEnvironmentAlias instance can be instantiated.
@@ -33,8 +33,8 @@ func TestDataSourceVirtualEnvironmentAliasSchema(t *testing.T) {
 	})
 
 	testValueTypes(t, s, map[string]schema.ValueType{
-		mkDataSourceVirtualEnvironmentClusterAliasName: schema.TypeString,
-		mkDataSourceVirtualEnvironmentClusterAliasCIDR: schema.TypeString,
+		mkDataSourceVirtualEnvironmentClusterAliasName:    schema.TypeString,
+		mkDataSourceVirtualEnvironmentClusterAliasCIDR:    schema.TypeString,
 		mkDataSourceVirtualEnvironmentClusterAliasComment: schema.TypeString,
 	})
 }
