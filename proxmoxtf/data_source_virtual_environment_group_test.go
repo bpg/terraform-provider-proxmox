@@ -7,7 +7,7 @@ package proxmoxtf
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentGroupInstantiation tests whether the DataSourceVirtualEnvironmentGroup instance can be instantiated.
