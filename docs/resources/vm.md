@@ -247,6 +247,7 @@ output "ubuntu_vm_public_key" {
     * `rate_limit` - (Optional) The rate limit in megabytes per second.
     * `vlan_id` - (Optional) The VLAN identifier.
 * `node_name` - (Required) The name of the node to assign the virtual machine to.
+* `on_boot` - (Optional) Specifies whether a VM will be started during system boot. (defaults to `false`)
 * `operating_system` - (Optional) The Operating System configuration.
     * `type` - (Optional) The type (defaults to `other`).
         * `l24` - Linux Kernel 2.4.
@@ -262,6 +263,7 @@ output "ubuntu_vm_public_key" {
         * `wvista` - Windows Vista.
         * `wxp` - Windows XP.
 * `pool_id` - (Optional) The identifier for a pool to assign the virtual machine to.
+* `reboot` - (Optional) Reboot the VM after initial creation. (defaults to `false`)
 * `serial_device` - (Optional) A serial device (multiple blocks supported).
     * `device` - (Optional) The device (defaults to `socket`).
         * `/dev/*` - A host serial device.

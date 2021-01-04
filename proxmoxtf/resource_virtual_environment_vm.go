@@ -1169,7 +1169,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 		cdromMedia := "cdrom"
 
-		updateBody.IDEDevices = proxmox.CustomStorageDevices{
+		ideDevices = proxmox.CustomStorageDevices{
 			"ide3": proxmox.CustomStorageDevice{
 				Enabled:    cdromEnabled,
 				FileVolume: cdromFileID,
@@ -1221,7 +1221,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
 
-		updateBody.IDEDevices = proxmox.CustomStorageDevices{
+		ideDevices = proxmox.CustomStorageDevices{
 			"ide2": proxmox.CustomStorageDevice{
 				Enabled:    cdromCloudInitEnabled,
 				FileVolume: cdromCloudInitFileID,
@@ -1594,12 +1594,12 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 
 	ideDevice2Media := "cdrom"
 	ideDevices := proxmox.CustomStorageDevices{
-		"ide1": proxmox.CustomStorageDevice{
+		"ide2": proxmox.CustomStorageDevice{
 			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
 		},
-		"ide2": proxmox.CustomStorageDevice{
+		"ide3": proxmox.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &ideDevice2Media,
@@ -1662,13 +1662,6 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	if virtioDeviceObjects != nil {
 		createBody.VirtualIODevices = virtioDeviceObjects
 	}
-
-	//this will most likely break the cdrom part thats why ide is disabled in line 2017
-	/*
-		if ideDevices != nil {
-			createBody.IDEDevices = ideDeviceObjects
-		}
-	*/
 
 	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
 	if veClient.Username == proxmox.DefaultRootAccount || cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {

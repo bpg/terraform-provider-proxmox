@@ -5,11 +5,25 @@ FEATURES:
 * **New Data Source:** `proxmox_virtual_environment_time`
 * **New Resource:** `proxmox_virtual_environment_time`
 
+BREAKING CHANGES:
+
+* `interface` is now required to create disks
+
+```
+  disk {
+    datastore_id = "local-lvm"
+    file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
+    interface    = "scsi0"
+  }
+```
+
 ENHANCEMENTS:
 
 * provider/configuration: Add `virtual_environment.otp` argument for TOTP support
 * resource/virtual_environment_vm: Clone supports resize and datastore_id for moving disks
 * resource/virtual_environment_vm: Bulk clones can now use retries as argument to try multiple times to create a clone.
+* resource/virtual_environment_vm: `on_boot` parameter can be used to start a VM after the Node has been rebooted.
+* resource/virtual_environment_vm: `reboot` parameter can be used to reboot a VM after creation
 
 BUG FIXES:
 
