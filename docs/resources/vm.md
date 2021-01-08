@@ -271,6 +271,12 @@ output "ubuntu_vm_public_key" {
 * `started` - (Optional) Whether to start the virtual machine (defaults to `true`).
 * `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults to `true`).
 * `template` - (Optional) Whether to create a template (defaults to `false`).
+* `timeout_clone` - (Optional) Timeout for cloning a VM in seconds (defaults to 1800).
+* `timeout_move_disk` - (Optional) Timeout for moving the disk of a VM in seconds (defaults to 1800).
+* `timeout_reboot` - (Optional) Timeout for rebooting a VM in seconds (defaults to 1800).
+* `timeout_shutdown_vm` - (Optional) Timeout for shutting down a VM in seconds (defaults to 1800).
+* `timeout_start_vm` - (Optional) Timeout for starting a VM in seconds (defaults to 1800).
+* `timeout_stop_vm` - (Optional) Timeout for stopping a VM in seconds (defaults to 300).
 * `vga` - (Optional) The VGA configuration.
     * `enabled` - (Optional) Whether to enable the VGA device (defaults to `true`).
     * `memory` - (Optional) The VGA memory in megabytes (defaults to `16`).
