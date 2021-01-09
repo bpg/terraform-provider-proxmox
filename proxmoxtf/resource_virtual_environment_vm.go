@@ -78,6 +78,12 @@ const (
 	dvResourceVirtualEnvironmentVMStarted                           = true
 	dvResourceVirtualEnvironmentVMTabletDevice                      = true
 	dvResourceVirtualEnvironmentVMTemplate                          = false
+	dvResourceVirtualEnvironmentVMTimeoutClone                      = 1800
+	dvResourceVirtualEnvironmentVMTimeoutMoveDisk                   = 1800
+	dvResourceVirtualEnvironmentVMTimeoutReboot                     = 1800
+	dvResourceVirtualEnvironmentVMTimeoutShutdownVM                 = 1800
+	dvResourceVirtualEnvironmentVMTimeoutStartVM                    = 1800
+	dvResourceVirtualEnvironmentVMTimeoutStopVM                     = 300
 	dvResourceVirtualEnvironmentVMVGAEnabled                        = true
 	dvResourceVirtualEnvironmentVMVGAMemory                         = 16
 	dvResourceVirtualEnvironmentVMVGAType                           = "std"
@@ -173,6 +179,12 @@ const (
 	mkResourceVirtualEnvironmentVMStarted                           = "started"
 	mkResourceVirtualEnvironmentVMTabletDevice                      = "tablet_device"
 	mkResourceVirtualEnvironmentVMTemplate                          = "template"
+	mkResourceVirtualEnvironmentVMTimeoutClone                      = "timeout_clone"
+	mkResourceVirtualEnvironmentVMTimeoutMoveDisk                   = "timeout_move_disk"
+	mkResourceVirtualEnvironmentVMTimeoutReboot                     = "timeout_reboot"
+	mkResourceVirtualEnvironmentVMTimeoutShutdownVM                 = "timeout_shutdown_vm"
+	mkResourceVirtualEnvironmentVMTimeoutStartVM                    = "timeout_start_vm"
+	mkResourceVirtualEnvironmentVMTimeoutStopVM                     = "timeout_stop_vm"
 	mkResourceVirtualEnvironmentVMVGA                               = "vga"
 	mkResourceVirtualEnvironmentVMVGAEnabled                        = "enabled"
 	mkResourceVirtualEnvironmentVMVGAMemory                         = "memory"
@@ -945,6 +957,42 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentVMTemplate,
 			},
+			mkResourceVirtualEnvironmentVMTimeoutClone: {
+				Type:        schema.TypeInt,
+				Description: "Clone VM timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutClone,
+			},
+			mkResourceVirtualEnvironmentVMTimeoutMoveDisk: {
+				Type:        schema.TypeInt,
+				Description: "MoveDisk timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutMoveDisk,
+			},
+			mkResourceVirtualEnvironmentVMTimeoutReboot: {
+				Type:        schema.TypeInt,
+				Description: "Reboot timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutReboot,
+			},
+			mkResourceVirtualEnvironmentVMTimeoutShutdownVM: {
+				Type:        schema.TypeInt,
+				Description: "Shutdown timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutShutdownVM,
+			},
+			mkResourceVirtualEnvironmentVMTimeoutStartVM: {
+				Type:        schema.TypeInt,
+				Description: "Start VM timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutStartVM,
+			},
+			mkResourceVirtualEnvironmentVMTimeoutStopVM: {
+				Type:        schema.TypeInt,
+				Description: "Stop VM timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutStopVM,
+			},
 			mkResourceVirtualEnvironmentVMVGA: {
 				Type:        schema.TypeList,
 				Description: "The VGA configuration",
@@ -1066,12 +1114,14 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		cloneBody.PoolID = &poolID
 	}
 
+	cloneTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutClone).(int)
+
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = veClient.CloneVM(cloneNodeName, cloneVMID, cloneRetries, cloneBody)
+		err = veClient.CloneVM(cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
 	} else {
-		err = veClient.CloneVM(nodeName, cloneVMID, cloneRetries, cloneBody)
+		err = veClient.CloneVM(nodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
 	}
 
 	if err != nil {
@@ -1414,7 +1464,8 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		}
 
 		if dataStoreID != "" {
-			err = veClient.MoveVMDisk(nodeName, vmID, diskMoveBody)
+			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
+			err = veClient.MoveVMDisk(nodeName, vmID, diskMoveBody, moveDiskTimeout)
 
 			if err != nil {
 				return err
@@ -1860,18 +1911,19 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 	}
 
 	// Start the virtual machine and wait for it to reach a running state before continuing.
-	err = veClient.StartVM(nodeName, vmID)
+	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
+	err = veClient.StartVM(nodeName, vmID, startVMTimeout)
 
 	if err != nil {
 		return err
 	}
 
 	if reboot {
-		rebootTimeout := 300
+		rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
 
 		err := veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
 			Timeout: &rebootTimeout,
-		})
+		}, (rebootTimeout + 30))
 
 		if err != nil {
 			return err
@@ -3515,19 +3567,20 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) && !bool(template) {
 		if started {
-			err = veClient.StartVM(nodeName, vmID)
+			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
+			err = veClient.StartVM(nodeName, vmID, startVMTimeout)
 
 			if err != nil {
 				return err
 			}
 		} else {
 			forceStop := proxmox.CustomBool(true)
-			shutdownTimeout := 300
+			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 			err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
-			})
+			}, (shutdownTimeout + 30))
 
 			if err != nil {
 				return err
@@ -3603,12 +3656,12 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 		if len(diskMoveBodies) > 0 || len(diskResizeBodies) > 0 {
 			if !template {
 				forceStop := proxmox.CustomBool(true)
-				shutdownTimeout := 300
+				shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 				err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 					ForceStop: &forceStop,
 					Timeout:   &shutdownTimeout,
-				})
+				}, (shutdownTimeout + 30))
 
 				if err != nil {
 					return err
@@ -3619,7 +3672,8 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 		}
 
 		for _, reqBody := range diskMoveBodies {
-			err = veClient.MoveVMDisk(nodeName, vmID, reqBody)
+			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
+			err = veClient.MoveVMDisk(nodeName, vmID, reqBody, moveDiskTimeout)
 
 			if err != nil {
 				return err
@@ -3635,7 +3689,8 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 		}
 
 		if (len(diskMoveBodies) > 0 || len(diskResizeBodies) > 0) && started && !template {
-			err = veClient.StartVM(nodeName, vmID)
+			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
+			err = veClient.StartVM(nodeName, vmID, startVMTimeout)
 
 			if err != nil {
 				return err
@@ -3645,11 +3700,11 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 
 	// Perform a regular reboot in case it's necessary and haven't already been done.
 	if reboot {
-		rebootTimeout := 300
+		rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
 
 		err := veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
 			Timeout: &rebootTimeout,
-		})
+		}, (rebootTimeout + 30))
 
 		if err != nil {
 			return err
@@ -3683,12 +3738,12 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 
 	if status.Status != "stopped" {
 		forceStop := proxmox.CustomBool(true)
-		shutdownTimeout := 300
+		shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 		err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 			ForceStop: &forceStop,
 			Timeout:   &shutdownTimeout,
-		})
+		}, (shutdownTimeout + 30))
 
 		if err != nil {
 			return err

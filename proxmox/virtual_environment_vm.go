@@ -24,7 +24,7 @@ var (
 )
 
 // CloneVM clones a virtual machine.
-func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, retries int, d *VirtualEnvironmentVMCloneRequestBody) error {
+func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, retries int, d *VirtualEnvironmentVMCloneRequestBody, timeout int) error {
 	resBody := &VirtualEnvironmentVMMoveDiskResponseBody{}
 	var err error
 
@@ -44,7 +44,7 @@ func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, retries in
 			return errors.New("The server did not include a data object in the response")
 		}
 
-		err = c.WaitForNodeTask(nodeName, *resBody.Data, 1800, 5)
+		err = c.WaitForNodeTask(nodeName, *resBody.Data, timeout, 5)
 
 		if err == nil {
 			return nil
@@ -158,7 +158,7 @@ func (c *VirtualEnvironmentClient) GetVMStatus(nodeName string, vmID int) (*Virt
 }
 
 // MoveVMDisk moves a virtual machine disk.
-func (c *VirtualEnvironmentClient) MoveVMDisk(nodeName string, vmID int, d *VirtualEnvironmentVMMoveDiskRequestBody) error {
+func (c *VirtualEnvironmentClient) MoveVMDisk(nodeName string, vmID int, d *VirtualEnvironmentVMMoveDiskRequestBody, timeout int) error {
 	taskID, err := c.MoveVMDiskAsync(nodeName, vmID, d)
 
 	if strings.Contains(err.Error(), "you can't move to the same storage with same format") {
@@ -170,7 +170,7 @@ func (c *VirtualEnvironmentClient) MoveVMDisk(nodeName string, vmID int, d *Virt
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, 86400, 5)
+	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -201,14 +201,14 @@ func (c *VirtualEnvironmentClient) ListVMs() ([]*VirtualEnvironmentVMListRespons
 }
 
 // RebootVM reboots a virtual machine.
-func (c *VirtualEnvironmentClient) RebootVM(nodeName string, vmID int, d *VirtualEnvironmentVMRebootRequestBody) error {
+func (c *VirtualEnvironmentClient) RebootVM(nodeName string, vmID int, d *VirtualEnvironmentVMRebootRequestBody, timeout int) error {
 	taskID, err := c.RebootVMAsync(nodeName, vmID, d)
 
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, 1800, 5)
+	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -249,14 +249,14 @@ func (c *VirtualEnvironmentClient) ResizeVMDisk(nodeName string, vmID int, d *Vi
 }
 
 // ShutdownVM shuts down a virtual machine.
-func (c *VirtualEnvironmentClient) ShutdownVM(nodeName string, vmID int, d *VirtualEnvironmentVMShutdownRequestBody) error {
+func (c *VirtualEnvironmentClient) ShutdownVM(nodeName string, vmID int, d *VirtualEnvironmentVMShutdownRequestBody, timeout int) error {
 	taskID, err := c.ShutdownVMAsync(nodeName, vmID, d)
 
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, 1800, 5)
+	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -282,14 +282,14 @@ func (c *VirtualEnvironmentClient) ShutdownVMAsync(nodeName string, vmID int, d 
 }
 
 // StartVM starts a virtual machine.
-func (c *VirtualEnvironmentClient) StartVM(nodeName string, vmID int) error {
+func (c *VirtualEnvironmentClient) StartVM(nodeName string, vmID int, timeout int) error {
 	taskID, err := c.StartVMAsync(nodeName, vmID)
 
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, 1800, 5)
+	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -315,14 +315,14 @@ func (c *VirtualEnvironmentClient) StartVMAsync(nodeName string, vmID int) (*str
 }
 
 // StopVM stops a virtual machine.
-func (c *VirtualEnvironmentClient) StopVM(nodeName string, vmID int) error {
+func (c *VirtualEnvironmentClient) StopVM(nodeName string, vmID int, timeout int) error {
 	taskID, err := c.StopVMAsync(nodeName, vmID)
 
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, 300, 5)
+	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
