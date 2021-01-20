@@ -1549,7 +1549,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		return err
 	}
 
-	virtioDeviceObjects := diskDeviceObjects["vitio"]
+	virtioDeviceObjects := diskDeviceObjects["virtio"]
 	scsiDeviceObjects := diskDeviceObjects["scsi"]
 	//ideDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "ide")
 	sataDeviceObjects := diskDeviceObjects["sata"]
@@ -1798,6 +1798,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
+		diskInterface,_ := block[mkResourcevirtualEnvironmentVMDiskInterface].(string)
 
 		if len(speed) == 0 {
 			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
@@ -1853,6 +1854,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 			fmt.Sprintf(`disk_index="%d"`, i),
 			fmt.Sprintf(`disk_options="%s"`, diskOptions),
 			fmt.Sprintf(`disk_size="%d"`, size),
+			fmt.Sprintf(`disk_interface="%s"`, diskInterface),
 			fmt.Sprintf(`file_path="%s"`, filePath),
 			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
 			fmt.Sprintf(`vm_id="%d"`, vmID),
@@ -1867,7 +1869,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 			`qemu-img resize "$file_path_tmp" "${disk_size}G"`,
 			`qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format qcow2`,
 			`disk_id="${datastore_id_target}:$([[ -n "$dsp_target" ]] && echo "${vm_id}/" || echo "")vm-${vm_id}-disk-${disk_count}$([[ -n "$dsp_target" ]] && echo ".qcow2" || echo "")${disk_options}"`,
-			`qm set "$vm_id" "-scsi${disk_index}" "$disk_id"`,
+			`qm set "$vm_id" "-${disk_interface}" "$disk_id"`,
 			`rm -f "$file_path_tmp"`,
 		)
 
