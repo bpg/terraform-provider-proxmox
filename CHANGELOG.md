@@ -9,13 +9,13 @@ BREAKING CHANGES:
 
 * resource/virtual_environment_vm: `interface` is now required to create disks
 
-```
-  disk {
-    datastore_id = "local-lvm"
-    file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
-    interface    = "scsi0"
-  }
-```
+    ```
+      disk {
+        datastore_id = "local-lvm"
+        file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
+        interface    = "scsi0"
+      }
+    ```
 
 ENHANCEMENTS:
 
