@@ -4,6 +4,7 @@ title: Time
 permalink: /data-sources/time
 nav_order: 13
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Time
@@ -18,11 +19,11 @@ data "proxmox_virtual_environment_time" "first_node_time" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `node_name` - (Required) A node name.
 
-## Attributes Reference
+## Attribute Reference
 
 * `local_time` - The node's local time.
 * `time_zone` - The node's time zone.

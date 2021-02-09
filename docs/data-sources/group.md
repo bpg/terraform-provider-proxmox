@@ -4,6 +4,7 @@ title: Group
 permalink: /data-sources/group
 nav_order: 5
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Group
@@ -18,11 +19,11 @@ data "proxmox_virtual_environment_group" "operations_team" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `group_id` - (Required) The group identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 * `acl` - The access control list.
     * `path` - The path.

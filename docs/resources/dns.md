@@ -4,6 +4,7 @@ title: DNS
 permalink: /resources/dns
 nav_order: 4
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: DNS
@@ -28,13 +29,13 @@ data "proxmox_virtual_environment_dns" "first_node_dns_configuration" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `domain` - (Required) The DNS search domain.
 * `node_name` - (Required) A node name.
 * `servers` - (Optional) The DNS servers.
 
-## Attributes Reference
+## Attribute Reference
 
 There are no additional attributes available for this resource.
 

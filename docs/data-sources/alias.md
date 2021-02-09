@@ -4,6 +4,7 @@ title: Alias
 permalink: /data-sources/alias
 nav_order: 1
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Alias
@@ -18,11 +19,11 @@ data "proxmox_virtual_environment_cluster_alias" "local_network" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `name` - (Required) Alias name.
 
-## Attributes Reference
+## Attribute Reference
 
 * `cidr` - (Required) Network/IP specification in CIDR format.
 * `comment` - (Optional) Alias comment.

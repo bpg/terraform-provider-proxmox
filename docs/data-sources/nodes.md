@@ -4,6 +4,7 @@ title: Nodes
 permalink: /data-sources/nodes
 nav_order: 8
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Nodes
@@ -16,11 +17,11 @@ Retrieves information about all available nodes.
 data "proxmox_virtual_environment_nodes" "available_nodes" {}
 ```
 
-## Arguments Reference
+## Argument Reference
 
 There are no arguments available for this data source.
 
-## Attributes Reference
+## Attribute Reference
 
 * `cpu_count` - The CPU count for each node.
 * `cpu_utilization` - The CPU utilization on each node.

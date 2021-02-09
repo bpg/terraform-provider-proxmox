@@ -4,6 +4,7 @@ title: VM
 permalink: /resources/vm
 nav_order: 13
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: VM
@@ -91,7 +92,7 @@ output "ubuntu_vm_public_key" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `acpi` - (Optional) Whether to enable ACPI (defaults to `true`).
 * `agent` - (Optional) The QEMU agent configuration.
@@ -295,7 +296,7 @@ output "ubuntu_vm_public_key" {
         * `vmware` - VMware Compatible.
 * `vm_id` - (Optional) The VM identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 * `ipv4_addresses` - The IPv4 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
 * `ipv6_addresses` - The IPv6 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)

@@ -4,6 +4,7 @@ title: Role
 permalink: /data-sources/role
 nav_order: 11
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Role
@@ -18,10 +19,10 @@ data "proxmox_virtual_environment_role" "operations_role" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `role_id` - (Required) The role identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 * `privileges` - The role privileges

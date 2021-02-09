@@ -4,6 +4,7 @@ title: Alias
 permalink: /ressources/alias
 nav_order: 1
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: Alias
@@ -27,12 +28,12 @@ resource "proxmox_virtual_environment_cluster_alias" "ubuntu_vm" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `name` - (Required) Alias name.
 * `cidr` - (Required) Network/IP specification in CIDR format.
 * `comment` - (Optional) Alias comment.
 
-## Attributes Reference
+## Attribute Reference
 
 There are no attribute references available for this resource.

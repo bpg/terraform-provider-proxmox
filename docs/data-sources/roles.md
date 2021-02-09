@@ -4,6 +4,7 @@ title: Roles
 permalink: /data-sources/roles
 nav_order: 12
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Roles
@@ -16,11 +17,11 @@ Retrieves information about all the available roles.
 data "proxmox_virtual_environment_roles" "available_roles" {}
 ```
 
-## Arguments Reference
+## Argument Reference
 
 There are no arguments available for this data source.
 
-## Attributes Reference
+## Attribute Reference
 
 * `privileges` - The role privileges.
 * `role_ids` - The role identifiers.

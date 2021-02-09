@@ -4,6 +4,7 @@ title: Pool
 permalink: /resources/pool
 nav_order: 9
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: Pool
@@ -19,12 +20,12 @@ resource "proxmox_virtual_environment_pool" "operations_pool" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `comment` - (Optional) The pool comment.
 * `pool_id` - (Required) The pool identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 * `members` - The pool members.
     * `datastore_id` - The datastore identifier.

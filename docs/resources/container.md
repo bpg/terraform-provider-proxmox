@@ -4,6 +4,7 @@ title: Container
 permalink: /resources/container
 nav_order: 3
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: Container
@@ -80,7 +81,7 @@ output "ubuntu_container_public_key" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `clone` - (Optional) The cloning configuration.
     * `datastore_id` - (Optional) The identifier for the target datastore.
@@ -147,6 +148,6 @@ output "ubuntu_container_public_key" {
 * `template` - (Optional) Whether to create a template (defaults to `false`).
 * `vm_id` - (Optional) The virtual machine identifier
 
-## Attributes Reference
+## Attribute Reference
 
 There are no additional attributes available for this resource.

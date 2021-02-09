@@ -4,6 +4,7 @@ title: Datastores
 permalink: /data-sources/datastores
 nav_order: 3
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Datastores
@@ -18,11 +19,11 @@ data "proxmox_virtual_environment_datastores" "first_node" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `node_name` - (Required) A node name.
 
-## Attributes Reference
+## Attribute Reference
 
 * `active` - Whether the datastore is active.
 * `content_types` - The allowed content types.

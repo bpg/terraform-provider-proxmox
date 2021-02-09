@@ -4,6 +4,7 @@ title: User
 permalink: /resources/user
 nav_order: 12
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: User
@@ -34,7 +35,7 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `acl` - (Optional) The access control list (multiple blocks supported).
     * `path` - The path.
@@ -51,6 +52,6 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
 * `password` - (Required) The user's password.
 * `user_id` - (Required) The user identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 There are no additional attributes available for this resource.

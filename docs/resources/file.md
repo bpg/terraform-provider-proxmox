@@ -4,6 +4,7 @@ title: File
 permalink: /resources/file
 nav_order: 5
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: File
@@ -24,7 +25,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `content_type` - (Optional) The content type.
     * `backup`
@@ -43,7 +44,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     * `file_name` - (Required) The file name.
     * `resize` - (Optional) The number of bytes to resize the file to.
 
-## Attributes Reference
+## Attribute Reference
 
 * `file_modification_date` - The file modification date (RFC 3339).
 * `file_name` - The file name.

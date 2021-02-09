@@ -4,6 +4,7 @@ title: DNS
 permalink: /data-sources/dns
 nav_order: 4
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: DNS
@@ -18,11 +19,11 @@ data "proxmox_virtual_environment_dns" "first_node" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `node_name` - (Required) A node name.
 
-## Attributes Reference
+## Attribute Reference
 
 * `domain` - The DNS search domain.
 * `servers` - The DNS servers.

@@ -4,6 +4,7 @@ title: User
 permalink: /data-sources/user
 nav_order: 14
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: User
@@ -18,11 +19,11 @@ data "proxmox_virtual_environment_user" "operations_user" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `user_id` - (Required) The user identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 * `acl` - The access control list.
     * `path` - The path.

@@ -4,6 +4,7 @@ title: Group
 permalink: /resources/group
 nav_order: 6
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: Group
@@ -19,7 +20,7 @@ resource "proxmox_virtual_environment_group" "operations_team" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `acl` - (Optional) The access control list (multiple blocks supported).
     * `path` - The path.
@@ -28,6 +29,6 @@ resource "proxmox_virtual_environment_group" "operations_team" {
 * `comment` - (Optional) The group comment.
 * `group_id` - (Required) The group identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 * `members` - The group members as a list of `username@realm` entries

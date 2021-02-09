@@ -4,6 +4,7 @@ title: Pool
 permalink: /data-sources/pool
 nav_order: 9
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Pool
@@ -18,11 +19,11 @@ data "proxmox_virtual_environment_pool" "operations_pool" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `pool_id` - (Required) The pool identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 * `comment` - The pool comment.
 * `members` - The pool members.

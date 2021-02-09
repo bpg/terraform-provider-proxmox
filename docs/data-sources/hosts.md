@@ -4,6 +4,7 @@ title: Hosts
 permalink: /data-sources/hosts
 nav_order: 7
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Hosts
@@ -18,11 +19,11 @@ data "proxmox_virtual_environment_hosts" "first_node_host_entries" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `node_name` - (Required) A node name.
 
-## Attributes Reference
+## Attribute Reference
 
 * `addresses` - The IP addresses.
 * `digest` - The SHA1 digest.

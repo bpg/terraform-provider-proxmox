@@ -4,6 +4,7 @@ title: Role
 permalink: /resources/role
 nav_order: 10
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: Role
@@ -22,11 +23,11 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `privileges` - (Required) The role privileges.
 * `role_id` - (Required) The role identifier.
 
-## Attributes Reference
+## Attribute Reference
 
 There are no additional attributes available for this resource.

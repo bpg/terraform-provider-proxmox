@@ -4,6 +4,7 @@ title: Hosts
 permalink: /resources/hosts
 nav_order: 7
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: Hosts
@@ -27,14 +28,14 @@ resource "proxmox_virtual_environment_hosts" "first_node_host_entries" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `node_name` - (Required) A node name.
 * `entry` - (Required) A host entry (multiple blocks supported).
     * `address` - (Required) The IP address.
     * `hostnames` - (Required) The hostnames.
 
-## Attributes Reference
+## Attribute Reference
 
 * `addresses` - The IP addresses.
 * `digest` - The SHA1 digest.

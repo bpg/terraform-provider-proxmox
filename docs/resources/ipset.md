@@ -4,6 +4,7 @@ title: IPSet
 permalink: /ressources/ipset
 nav_order: 8
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: IPSet
@@ -35,7 +36,7 @@ resource "proxmox_virtual_environment_cluster_ipset" "ipset" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `name` - (Required) Alias name.
 * `comment` - (Optional) Alias comment.
@@ -44,6 +45,6 @@ resource "proxmox_virtual_environment_cluster_ipset" "ipset" {
     * `comment` - (Optional) Arbitrary string annotation.
     * `nomatch` -  (Optional) Entries marked as `nomatch` are skipped as if those were not added to the set.
 
-## Attributes Reference
+## Attribute Reference
 
 There are no attribute references available for this resource.

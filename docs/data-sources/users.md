@@ -4,6 +4,7 @@ title: Users
 permalink: /data-sources/users
 nav_order: 15
 parent: Data Sources
+subcategory: Virtual Environment
 ---
 
 # Data Source: Users
@@ -16,11 +17,11 @@ Retrieves information about all the available users.
 data "proxmox_virtual_environment_users" "available_users" {}
 ```
 
-## Arguments Reference
+## Argument Reference
 
 There are no arguments available for this data source.
 
-## Attributes Reference
+## Attribute Reference
 
 * `comments` - The user comments.
 * `emails` - The users' email addresses.

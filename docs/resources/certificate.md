@@ -4,6 +4,7 @@ title: Certificate
 permalink: /resources/certificate
 nav_order: 2
 parent: Resources
+subcategory: Virtual Environment
 ---
 
 # Resource: Certificate
@@ -43,14 +44,14 @@ resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
 }
 ```
 
-## Arguments Reference
+## Argument Reference
 
 * `certificate` - (Required) The PEM encoded certificate.
 * `certificate_chain` - (Optional) The PEM encoded certificate chain.
 * `node_name` - (Required) A node name.
 * `private_key` - (Required) The PEM encoded private key.
 
-## Attributes Reference
+## Attribute Reference
 
 * `expiration_date` - The expiration date (RFC 3339).
 * `file_name` - The file name.
