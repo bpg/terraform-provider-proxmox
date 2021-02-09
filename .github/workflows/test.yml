@@ -6,7 +6,8 @@ on:
       - master
       - 'v*'
 jobs:
-  goreleaser:
+  test:
+    name: Pull Request
     runs-on: ubuntu-20.04
     steps:
       -
@@ -24,6 +25,9 @@ jobs:
         env:
           GPG_KEY: ${{ secrets.GPG_KEY }}
         run: |
+          GPG_TTY="$(tty)"
+          export GPG_TTY
+
           echo "$GPG_KEY" | base64 -d | gpg --batch --allow-secret-key-import --import
           gpg --keyid-format LONG --list-secret-keys
       -
