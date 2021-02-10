@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/danitso/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 const (
@@ -36,33 +36,37 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		ConfigureFunc: providerConfigure,
 		DataSourcesMap: map[string]*schema.Resource{
-			"proxmox_virtual_environment_datastores": dataSourceVirtualEnvironmentDatastores(),
-			"proxmox_virtual_environment_dns":        dataSourceVirtualEnvironmentDNS(),
-			"proxmox_virtual_environment_group":      dataSourceVirtualEnvironmentGroup(),
-			"proxmox_virtual_environment_groups":     dataSourceVirtualEnvironmentGroups(),
-			"proxmox_virtual_environment_hosts":      dataSourceVirtualEnvironmentHosts(),
-			"proxmox_virtual_environment_nodes":      dataSourceVirtualEnvironmentNodes(),
-			"proxmox_virtual_environment_pool":       dataSourceVirtualEnvironmentPool(),
-			"proxmox_virtual_environment_pools":      dataSourceVirtualEnvironmentPools(),
-			"proxmox_virtual_environment_role":       dataSourceVirtualEnvironmentRole(),
-			"proxmox_virtual_environment_roles":      dataSourceVirtualEnvironmentRoles(),
-			"proxmox_virtual_environment_time":       dataSourceVirtualEnvironmentTime(),
-			"proxmox_virtual_environment_user":       dataSourceVirtualEnvironmentUser(),
-			"proxmox_virtual_environment_users":      dataSourceVirtualEnvironmentUsers(),
-			"proxmox_virtual_environment_version":    dataSourceVirtualEnvironmentVersion(),
+			"proxmox_virtual_environment_cluster_alias":   dataSourceVirtualEnvironmentClusterAlias(),
+			"proxmox_virtual_environment_cluster_aliases": dataSourceVirtualEnvironmentClusterAliases(),
+			"proxmox_virtual_environment_datastores":      dataSourceVirtualEnvironmentDatastores(),
+			"proxmox_virtual_environment_dns":             dataSourceVirtualEnvironmentDNS(),
+			"proxmox_virtual_environment_group":           dataSourceVirtualEnvironmentGroup(),
+			"proxmox_virtual_environment_groups":          dataSourceVirtualEnvironmentGroups(),
+			"proxmox_virtual_environment_hosts":           dataSourceVirtualEnvironmentHosts(),
+			"proxmox_virtual_environment_nodes":           dataSourceVirtualEnvironmentNodes(),
+			"proxmox_virtual_environment_pool":            dataSourceVirtualEnvironmentPool(),
+			"proxmox_virtual_environment_pools":           dataSourceVirtualEnvironmentPools(),
+			"proxmox_virtual_environment_role":            dataSourceVirtualEnvironmentRole(),
+			"proxmox_virtual_environment_roles":           dataSourceVirtualEnvironmentRoles(),
+			"proxmox_virtual_environment_time":            dataSourceVirtualEnvironmentTime(),
+			"proxmox_virtual_environment_user":            dataSourceVirtualEnvironmentUser(),
+			"proxmox_virtual_environment_users":           dataSourceVirtualEnvironmentUsers(),
+			"proxmox_virtual_environment_version":         dataSourceVirtualEnvironmentVersion(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"proxmox_virtual_environment_certificate": resourceVirtualEnvironmentCertificate(),
-			"proxmox_virtual_environment_container":   resourceVirtualEnvironmentContainer(),
-			"proxmox_virtual_environment_dns":         resourceVirtualEnvironmentDNS(),
-			"proxmox_virtual_environment_file":        resourceVirtualEnvironmentFile(),
-			"proxmox_virtual_environment_group":       resourceVirtualEnvironmentGroup(),
-			"proxmox_virtual_environment_hosts":       resourceVirtualEnvironmentHosts(),
-			"proxmox_virtual_environment_pool":        resourceVirtualEnvironmentPool(),
-			"proxmox_virtual_environment_role":        resourceVirtualEnvironmentRole(),
-			"proxmox_virtual_environment_time":        resourceVirtualEnvironmentTime(),
-			"proxmox_virtual_environment_user":        resourceVirtualEnvironmentUser(),
-			"proxmox_virtual_environment_vm":          resourceVirtualEnvironmentVM(),
+			"proxmox_virtual_environment_certificate":   resourceVirtualEnvironmentCertificate(),
+			"proxmox_virtual_environment_cluster_alias": resourceVirtualEnvironmentClusterAlias(),
+			"proxmox_virtual_environment_cluster_ipset": resourceVirtualEnvironmentClusterIPSet(),
+			"proxmox_virtual_environment_container":     resourceVirtualEnvironmentContainer(),
+			"proxmox_virtual_environment_dns":           resourceVirtualEnvironmentDNS(),
+			"proxmox_virtual_environment_file":          resourceVirtualEnvironmentFile(),
+			"proxmox_virtual_environment_group":         resourceVirtualEnvironmentGroup(),
+			"proxmox_virtual_environment_hosts":         resourceVirtualEnvironmentHosts(),
+			"proxmox_virtual_environment_pool":          resourceVirtualEnvironmentPool(),
+			"proxmox_virtual_environment_role":          resourceVirtualEnvironmentRole(),
+			"proxmox_virtual_environment_time":          resourceVirtualEnvironmentTime(),
+			"proxmox_virtual_environment_user":          resourceVirtualEnvironmentUser(),
+			"proxmox_virtual_environment_vm":            resourceVirtualEnvironmentVM(),
 		},
 		Schema: map[string]*schema.Schema{
 			mkProviderVirtualEnvironment: {

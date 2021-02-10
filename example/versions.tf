@@ -4,7 +4,7 @@ terraform {
       source = "hashicorp/local"
     }
     proxmox = {
-      source  = "terraform.danitso.com/provider/proxmox"
+      source  = "danitso/proxmox"
     }
     tls = {
       source = "hashicorp/tls"

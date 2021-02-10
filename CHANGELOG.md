@@ -1,17 +1,36 @@
-## 0.4.0 (UNRELEASED)
+## v0.4.0
 
 FEATURES:
 
 * **New Data Source:** `proxmox_virtual_environment_time`
 * **New Resource:** `proxmox_virtual_environment_time`
 
+BREAKING CHANGES:
+
+* resource/virtual_environment_vm: `interface` is now required to create disks
+
+    ```
+      disk {
+        datastore_id = "local-lvm"
+        file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
+        interface    = "scsi0"
+      }
+    ```
+
 ENHANCEMENTS:
 
 * provider/configuration: Add `virtual_environment.otp` argument for TOTP support
+* resource/virtual_environment_vm: Clone supports resize and datastore_id for moving disks
+* resource/virtual_environment_vm: Bulk clones can now use retries as argument to try multiple times to create a clone.
+* resource/virtual_environment_vm: `on_boot` parameter can be used to start a VM after the Node has been rebooted.
+* resource/virtual_environment_vm: `reboot` parameter can be used to reboot a VM after creation
+* resource/virtual_environment_vm: Has now multiple new parameters to set timeouts for the vm creation/cloning `timeout_clone`, `timeout_move_disk`, `timeout_reboot`, `timeout_shutdown_vm`, `timeout_start_vm`, `timeout_stop_vm`
 
 BUG FIXES:
 
 * library/virtual_environment_nodes: Fix node IP address format
+* library/virtual_environment_nodes: Fix WaitForNodeTask now detects errors correctly
+* library/virtual_environment_vm: Fix CloneVM now waits for the task to be finished and detect errors.
 * resource/virtual_environment_container: Fix VM ID collision when `vm_id` is not specified
 * resource/virtual_environment_vm: Fix VM ID collision when `vm_id` is not specified
 * resource/virtual_environment_vm: Fix disk import issue when importing from directory-based datastores

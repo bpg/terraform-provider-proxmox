@@ -1,0 +1,28 @@
+---
+layout: page
+title: Role
+permalink: /data-sources/role
+nav_order: 11
+parent: Data Sources
+subcategory: Virtual Environment
+---
+
+# Data Source: Role
+
+Retrieves information about a specific role.
+
+## Example Usage
+
+```
+data "proxmox_virtual_environment_role" "operations_role" {
+  role_id = "operations"
+}
+```
+
+## Argument Reference
+
+* `role_id` - (Required) The role identifier.
+
+## Attribute Reference
+
+* `privileges` - The role privileges

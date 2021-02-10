@@ -1,0 +1,61 @@
+name: Create release
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  release:
+    name: Tag
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        name: Checkout the code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      -
+        name: Install and configure Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      -
+        name: Install and configure GoReleaser
+        env:
+          GORELEASER_VERSION: '0.155.1'
+        run: |
+          curl -sL -o goreleaser_amd64.deb "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_amd64.deb"
+          sudo dpkg -i goreleaser_amd64.deb
+          rm -f goreleaser_amd64.deb
+      -
+        name: Import the GPG signing key
+        env:
+          GPG_KEY: ${{ secrets.GPG_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 0700 ~/.gnupg
+
+          cat << EOF > ~/.gnupg/gpg.conf
+          use-agent
+          pinentry-mode loopback
+          EOF
+
+          echo "$GPG_KEY" | base64 -d | gpg --batch --allow-secret-key-import --import
+          gpg --keyid-format LONG --list-secret-keys
+
+          cat << EOF > ~/.gnupg/gpg-agent.conf
+          default-cache-ttl 7200
+          max-cache-ttl 31536000
+          allow-loopback-pinentry
+          allow-preset-passphrase
+          EOF
+
+          echo RELOADAGENT | gpg-connect-agent
+
+          printf '%s' "$GPG_PASSPHRASE" > ./.gpg_passphrase
+      -
+        name: Create release
+        env:
+          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
+        run: |
+          goreleaser build --parallelism 2 --rm-dist --timeout 1h

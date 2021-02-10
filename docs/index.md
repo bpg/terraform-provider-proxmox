@@ -23,22 +23,6 @@ provider "proxmox" {
 }
 ```
 
-## Installation
-
-You can install the latest release of the provider using either Git Bash or regular Bash:
-
-```sh
-$ export PROVIDER_PLATFORM="$([[ "$OSTYPE" =~ ^msys|cygwin$ ]] && echo "windows" || ([[ "$OSTYPE" == "darwin"* ]] && echo "darwin" || ([[ "$OSTYPE" == "linux"* ]] && echo "linux" || echo "unsupported")))"
-$ export PROVIDER_VERSION="$(curl -L -s -H 'Accept: application/json' https://github.com/danitso/terraform-provider-proxmox/releases/latest | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')"
-$ export PLUGINS_PATH="$([[ "$PROVIDER_PLATFORM" == "windows" ]] && cygpath -u "$APPDATA" || echo "$HOME")/terraform.d/plugins"
-$ mkdir -p "$PLUGINS_PATH"
-$ curl -o "${PLUGINS_PATH}/terraform-provider-proxmox_v${PROVIDER_VERSION}.zip" -sL "https://github.com/danitso/terraform-provider-proxmox/releases/download/${PROVIDER_VERSION}/terraform-provider-proxmox_v${PROVIDER_VERSION}-custom_${PROVIDER_PLATFORM}_amd64.zip"
-$ unzip -o -d "$PLUGINS_PATH" "${PLUGINS_PATH}/terraform-provider-proxmox_v${PROVIDER_VERSION}.zip"
-$ rm "${PLUGINS_PATH}/terraform-provider-proxmox_v${PROVIDER_VERSION}.zip"
-```
-
-You can also install it manually by following the instructions to [install it as a plugin](https://www.terraform.io/docs/plugins/basics.html#installing-plugins). You can download the latest release from the [releases](https://github.com/danitso/terraform-provider-proxmox/releases) page.
-
 ## Authentication
 
 The Proxmox provider offers a flexible means of providing credentials for authentication. The following methods are supported, in this order, and explained below:
@@ -80,7 +64,7 @@ $ export PROXMOX_VE_PASSWORD="a-strong-password"
 $ terraform plan
 ```
 
-## Arguments Reference
+## Argument Reference
 
 In addition to [generic provider arguments](https://www.terraform.io/docs/configuration/providers.html) (e.g. `alias` and `version`), the following arguments are supported in the Proxmox `provider` block:
 

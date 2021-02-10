@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -76,6 +77,22 @@ func (c *VirtualEnvironmentClient) GetNodeIP(nodeName string) (*string, error) {
 func (c *VirtualEnvironmentClient) GetNodeTime(nodeName string) (*VirtualEnvironmentNodeGetTimeResponseData, error) {
 	resBody := &VirtualEnvironmentNodeGetTimeResponseBody{}
 	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), nil, resBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("The server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
+}
+
+// GetNodeTaskStatus retrieves the status of a node task.
+func (c *VirtualEnvironmentClient) GetNodeTaskStatus(nodeName string, upid string) (*VirtualEnvironmentNodeGetTaskStatusResponseData, error) {
+	resBody := &VirtualEnvironmentNodeGetTaskStatusResponseBody{}
+	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/tasks/%s/status", url.PathEscape(nodeName), url.PathEscape(upid)), nil, resBody)
 
 	if err != nil {
 		return nil, err
@@ -156,4 +173,37 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(nodeName string) (*ssh.Client, 
 // UpdateNodeTime updates the time on a node.
 func (c *VirtualEnvironmentClient) UpdateNodeTime(nodeName string, d *VirtualEnvironmentNodeUpdateTimeRequestBody) error {
 	return c.DoRequest(hmPUT, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), d, nil)
+}
+
+// WaitForNodeTask waits for a specific node task to complete.
+func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string, timeout int, delay int) error {
+	timeDelay := int64(delay)
+	timeMax := float64(timeout)
+	timeStart := time.Now()
+	timeElapsed := timeStart.Sub(timeStart)
+
+	for timeElapsed.Seconds() < timeMax {
+		if int64(timeElapsed.Seconds())%timeDelay == 0 {
+			status, err := c.GetNodeTaskStatus(nodeName, upid)
+
+			if err != nil {
+				return err
+			}
+
+			if status.Status != "running" {
+				if status.ExitCode != "OK" {
+					return fmt.Errorf("Task \"%s\" on node \"%s\" failed to complete with error: %s", upid, nodeName, status.ExitCode)
+				}
+				return nil
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+
+		time.Sleep(200 * time.Millisecond)
+
+		timeElapsed = time.Now().Sub(timeStart)
+	}
+
+	return fmt.Errorf("Timeout while waiting for task \"%s\" on node \"%s\" to complete", upid, nodeName)
 }

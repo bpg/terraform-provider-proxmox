@@ -6,12 +6,17 @@ package proxmoxtf
 
 import (
 	"fmt"
+	"math"
 	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
+	"unicode"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/danitso/terraform-provider-proxmox/proxmox"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func getBIOSValidator() schema.SchemaValidateFunc {
@@ -199,6 +204,15 @@ func getKeyboardLayoutValidator() schema.SchemaValidateFunc {
 	}, false)
 }
 
+func diskDigitPrefix(s string) string {
+	for i, r := range s {
+		if unicode.IsDigit(r) {
+			return s[:i]
+		}
+	}
+	return s
+}
+
 func getMACAddressValidator() schema.SchemaValidateFunc {
 	return func(i interface{}, k string) (ws []string, es []error) {
 		v, ok := i.(string)
@@ -368,6 +382,101 @@ func getVMIDValidator() schema.SchemaValidateFunc {
 
 		return
 	}
+}
+
+func getDiskInfo(data *proxmox.VirtualEnvironmentVMGetResponseData) map[string]*proxmox.CustomStorageDevice {
+	storageDevices := make(map[string]*proxmox.CustomStorageDevice)
+	storageDevices["ide0"] = data.IDEDevice0
+	storageDevices["ide1"] = data.IDEDevice1
+	storageDevices["ide2"] = data.IDEDevice2
+
+	storageDevices["sata0"] = data.SATADevice0
+	storageDevices["sata1"] = data.SATADevice1
+	storageDevices["sata2"] = data.SATADevice2
+	storageDevices["sata3"] = data.SATADevice3
+	storageDevices["sata4"] = data.SATADevice4
+	storageDevices["sata5"] = data.SATADevice5
+
+	storageDevices["scsi0"] = data.SCSIDevice0
+	storageDevices["scsi1"] = data.SCSIDevice1
+	storageDevices["scsi2"] = data.SCSIDevice2
+	storageDevices["scsi3"] = data.SCSIDevice3
+	storageDevices["scsi4"] = data.SCSIDevice4
+	storageDevices["scsi5"] = data.SCSIDevice5
+	storageDevices["scsi6"] = data.SCSIDevice6
+	storageDevices["scsi7"] = data.SCSIDevice7
+	storageDevices["scsi8"] = data.SCSIDevice8
+	storageDevices["scsi9"] = data.SCSIDevice9
+	storageDevices["scsi10"] = data.SCSIDevice10
+	storageDevices["scsi11"] = data.SCSIDevice11
+	storageDevices["scsi12"] = data.SCSIDevice12
+	storageDevices["scsi13"] = data.SCSIDevice13
+
+	storageDevices["virtio0"] = data.VirtualIODevice0
+	storageDevices["virtio1"] = data.VirtualIODevice1
+	storageDevices["virtio2"] = data.VirtualIODevice2
+	storageDevices["virtio3"] = data.VirtualIODevice3
+	storageDevices["virtio4"] = data.VirtualIODevice4
+	storageDevices["virtio5"] = data.VirtualIODevice5
+	storageDevices["virtio6"] = data.VirtualIODevice6
+	storageDevices["virtio7"] = data.VirtualIODevice7
+	storageDevices["virtio8"] = data.VirtualIODevice8
+	storageDevices["virtio9"] = data.VirtualIODevice9
+	storageDevices["virtio10"] = data.VirtualIODevice10
+	storageDevices["virtio11"] = data.VirtualIODevice11
+	storageDevices["virtio12"] = data.VirtualIODevice12
+	storageDevices["virtio13"] = data.VirtualIODevice13
+	storageDevices["virtio14"] = data.VirtualIODevice14
+	storageDevices["virtio15"] = data.VirtualIODevice15
+
+	for key, value := range storageDevices {
+		if value != nil {
+			tmpKey := key
+			value.Interface = &tmpKey
+		}
+	}
+
+	return storageDevices
+}
+
+func parseDiskSize(size *string) (int, error) {
+	var diskSize int
+	var err error
+	if size != nil {
+		if strings.HasSuffix(*size, "T") {
+			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "T"))
+
+			if err != nil {
+				return -1, err
+			}
+
+			diskSize = int(math.Ceil(float64(diskSize) * 1024))
+		} else if strings.HasSuffix(*size, "G") {
+			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "G"))
+
+			if err != nil {
+				return -1, err
+			}
+		} else if strings.HasSuffix(*size, "M") {
+			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "M"))
+
+			if err != nil {
+				return -1, err
+			}
+
+			diskSize = int(math.Ceil(float64(diskSize) / 1024))
+		} else {
+			return -1, fmt.Errorf("Cannot parse storage size \"%s\"", *size)
+		}
+	}
+	return diskSize, err
+}
+
+func getCloudInitTypeValidator() schema.SchemaValidateFunc {
+	return validation.StringInSlice([]string{
+		"configdrive2",
+		"nocloud",
+	}, false)
 }
 
 func testComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {

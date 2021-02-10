@@ -1,0 +1,34 @@
+name: Test changes
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - 'v*'
+jobs:
+  test:
+    name: Pull Request
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        name: Checkout the code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      -
+        name: Install and configure Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      -
+        name: Install and configure GoReleaser
+        env:
+          GORELEASER_VERSION: '0.155.1'
+        run: |
+          curl -sL -o goreleaser_amd64.deb "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_amd64.deb"
+          sudo dpkg -i goreleaser_amd64.deb
+          rm -f goreleaser_amd64.deb
+      -
+        name: Create snapshot
+        run: |
+          goreleaser build --config .goreleaser.test.yml --parallelism 2 --rm-dist --snapshot --timeout 1h
