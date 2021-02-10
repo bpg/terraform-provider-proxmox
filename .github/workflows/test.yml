@@ -21,18 +21,42 @@ jobs:
         with:
           go-version: 1.15
       -
+        name: Install the required version of GoReleaser
+        env:
+          GORELEASER_VERSION: '0.155.1'
+        run: |
+          curl -sL -o goreleaser_amd64.deb "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_amd64.deb"
+          sudo dpkg -i goreleaser_amd64.deb
+          rm -f goreleaser_amd64.deb
+      -
         name: Import the GPG signing key
-        id: import_gpg
-        uses: danitso/ghaction-import-gpg@master
-        with:
-          gpg-private-key: ${{ secrets.GPG_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+        env:
+          GPG_KEY: ${{ secrets.GPG_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          mkdir -p ~/.gnupg
+
+          cat << EOF > ~/.gnupg/gpg.conf
+          use-agent
+          pinentry-mode loopback
+          EOF
+
+          echo "$GPG_KEY" | base64 -d -i | gpg --batch --allow-secret-key-import --import
+          gpg --keyid-format LONG --list-secret-keys
+
+          cat << EOF > ~/.gnupg/gpg-agent.conf
+          default-cache-ttl 7200
+          max-cache-ttl 31536000
+          allow-loopback-pinentry
+          allow-preset-passphrase
+          EOF
+
+          echo RELOADAGENT | gpg-connect-agent
+
+          printf '%s' "$GPG_PASSPHRASE" > ./.gpg_passphrase
       -
         name: Create release
-        uses: danitso/goreleaser-action@v2
-        with:
-          version: latest
-          args: release --rm-dist --snapshot
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
+        run: |
+          goreleaser build --parallelism 2 --rm-dist --snapshot --timeout 1h
