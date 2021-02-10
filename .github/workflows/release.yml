@@ -52,7 +52,7 @@ jobs:
 
           echo RELOADAGENT | gpg-connect-agent
 
-          printf '%s' "$GPG_PASSPHRASE" > ./.gpg_passphrase
+          printf '%s' "$GPG_PASSPHRASE" > /tmp/.gpg_passphrase
       -
         name: Create release
         env:

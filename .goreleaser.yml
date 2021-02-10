@@ -41,7 +41,7 @@ signs:
       - "0"
       - "--detach-sign"
       - "${artifact}"
-    stdin_file: ./.gpg_passphrase
+    stdin_file: /tmp/.gpg_passphrase
 release:
   draft: false
 changelog:
