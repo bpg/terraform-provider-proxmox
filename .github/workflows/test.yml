@@ -30,7 +30,5 @@ jobs:
           rm -f goreleaser_amd64.deb
       -
         name: Create snapshot
-        env:
-          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
         run: |
           goreleaser build --config .goreleaser.test.yml --parallelism 2 --rm-dist --snapshot --timeout 1h
