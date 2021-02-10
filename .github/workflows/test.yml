@@ -22,20 +22,17 @@ jobs:
           go-version: 1.15
       -
         name: Import the GPG signing key
-        env:
-          GPG_KEY: ${{ secrets.GPG_KEY }}
-        run: |
-          GPG_TTY="$(tty)"
-          export GPG_TTY
-
-          echo "$GPG_KEY" | base64 -d | gpg --batch --allow-secret-key-import --import
-          gpg --keyid-format LONG --list-secret-keys
+        id: import_gpg
+        uses: danitso/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.GPG_KEY }
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
       -
         name: Create release
-        uses: goreleaser/goreleaser-action@v2
+        uses: danitso/goreleaser-action@v2
         with:
           version: latest
           args: release --rm-dist --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
