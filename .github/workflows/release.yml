@@ -33,6 +33,7 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           mkdir -p ~/.gnupg
+          chmod 0700 ~/.gnupg
 
           cat << EOF > ~/.gnupg/gpg.conf
           use-agent

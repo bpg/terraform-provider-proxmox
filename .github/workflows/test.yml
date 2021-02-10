@@ -29,34 +29,8 @@ jobs:
           sudo dpkg -i goreleaser_amd64.deb
           rm -f goreleaser_amd64.deb
       -
-        name: Import the GPG signing key
-        env:
-          GPG_KEY: ${{ secrets.GPG_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          mkdir -p ~/.gnupg
-
-          cat << EOF > ~/.gnupg/gpg.conf
-          use-agent
-          pinentry-mode loopback
-          EOF
-
-          echo "$GPG_KEY" | base64 -d -i | gpg --batch --allow-secret-key-import --import
-          gpg --keyid-format LONG --list-secret-keys
-
-          cat << EOF > ~/.gnupg/gpg-agent.conf
-          default-cache-ttl 7200
-          max-cache-ttl 31536000
-          allow-loopback-pinentry
-          allow-preset-passphrase
-          EOF
-
-          echo RELOADAGENT | gpg-connect-agent
-
-          printf '%s' "$GPG_PASSPHRASE" > ./.gpg_passphrase
-      -
-        name: Create release
+        name: Create snapshot
         env:
           GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
         run: |
-          goreleaser build --parallelism 2 --rm-dist --snapshot --timeout 1h
+          goreleaser build --config .goreleaser.test.yml --parallelism 2 --rm-dist --snapshot --timeout 1h
