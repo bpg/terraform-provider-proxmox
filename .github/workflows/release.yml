@@ -21,7 +21,7 @@ jobs:
       -
         name: Import the GPG signing key
         id: import_gpg
-        uses: danitso/ghaction-import-gpg@v3
+        uses: danitso/ghaction-import-gpg@master
         with:
           gpg-private-key: ${{ secrets.GPG_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
