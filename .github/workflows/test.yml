@@ -31,4 +31,4 @@ jobs:
       -
         name: Create snapshot
         run: |
-          goreleaser build --config .goreleaser.test.yml --parallelism 2 --rm-dist --snapshot --timeout 1h
+          goreleaser build --parallelism 2 --rm-dist --snapshot --timeout 1h
