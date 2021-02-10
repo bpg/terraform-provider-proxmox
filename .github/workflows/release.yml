@@ -23,7 +23,7 @@ jobs:
         id: import_gpg
         uses: danitso/ghaction-import-gpg@v3
         with:
-          gpg-private-key: ${{ secrets.GPG_KEY }
+          gpg-private-key: ${{ secrets.GPG_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
       -
         name: Create release
