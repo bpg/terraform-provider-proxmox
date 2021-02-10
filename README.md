@@ -6,52 +6,36 @@
 A Terraform Provider which adds support for Proxmox solutions.
 
 ## Requirements
-- [Terraform](https://www.terraform.io/downloads.html) 0.11+
-- [Go](https://golang.org/doc/install) 1.13 (to build the provider plugin)
+- [Terraform](https://www.terraform.io/downloads.html) 0.13+
+- [Go](https://golang.org/doc/install) 1.15+ (to build the provider plugin)
+- [GoReleaser](https://goreleaser.com/install/) 0.155+ (to build the provider plugin)
 
-## Table of contents
-- [Building the Provider](#building-the-provider)
-- [Using the Provider](#using-the-provider)
-- [Developing the Provider](#developing-the-provider)
-- [Testing the Provider](#testing-the-provider)
+## Table of Contents
+- [Building the provider](#building-the-provider)
+- [Using the provider](#using-the-provider)
+- [Testing the provider](#testing-the-provider)
 - [Known issues](#known-issues)
 
-## Building the Provider
-Clone repository to: `$GOPATH/src/github.com/danitso/terraform-provider-proxmox`
+## Building the provider
+- Clone the repository to `$GOPATH/src/github.com/danitso/terraform-provider-proxmox`:
 
-```sh
-$ mkdir -p $GOPATH/src/github.com/danitso; cd $GOPATH/src/github.com/danitso
-$ git clone git@github.com:danitso/terraform-provider-proxmox
-```
+    ```sh
+    $ mkdir -p "${GOPATH}/src/github.com/danitso"
+    $ cd "${GOPATH}/src/github.com/danitso"
+    $ git clone git@github.com:danitso/terraform-provider-proxmox
+    ```
 
-Enter the provider directory, initialize and build the provider
+- Enter the provider directory and build it:
 
-```sh
-$ cd $GOPATH/src/github.com/danitso/terraform-provider-proxmox
-$ make init
-$ make build
-```
+    ```sh
+    $ cd "${GOPATH}/src/github.com/danitso/terraform-provider-proxmox"
+    $ make build
+    ```
 
-## Using the Provider
-If you're building the provider, follow the instructions to [install it as a plugin.](https://www.terraform.io/docs/plugins/basics.html#installing-plugins) After placing it into your plugins directory, run `terraform init` to initialize it.
+## Using the provider
+You can find the latest release and its documentation in the [Terraform Registry](https://registry.terraform.io/providers/danitso/proxmox/latest).
 
-For more information, please refer to the [official documentation](http://danitso.com/terraform-provider-proxmox/).
-
-## Developing the Provider
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.13+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
-
-To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
-
-```sh
-$ make build
-...
-$ $GOPATH/bin/terraform-provider-proxmox
-...
-```
-
-If you wish to contribute to the provider, please see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Testing the Provider
+## Testing the provider
 In order to test the provider, you can simply run `make test`.
 
 ```sh
