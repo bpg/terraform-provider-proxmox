@@ -11,17 +11,17 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       -
-        name: Checkout the repository
+        name: Checkout the code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       -
-        name: Set up the required version of Go
+        name: Install and configure Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.15
       -
-        name: Install the required version of GoReleaser
+        name: Install and configure GoReleaser
         env:
           GORELEASER_VERSION: '0.155.1'
         run: |
