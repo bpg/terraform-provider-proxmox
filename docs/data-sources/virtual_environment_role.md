@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Role
-permalink: /data-sources/role
+title: proxmox_virtual_environment_role
+permalink: /data-sources/virtual_environment_role
 nav_order: 11
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Role
+# Data Source: proxmox_virtual_environment_role
 
 Retrieves information about a specific role.
 

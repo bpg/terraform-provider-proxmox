@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Time
-permalink: /resources/time
+title: proxmox_virtual_environment_time
+permalink: /resources/virtual_environment_time
 nav_order: 11
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: Time
+# Resource: proxmox_virtual_environment_time
 
 Manages the time for a specific node.
 

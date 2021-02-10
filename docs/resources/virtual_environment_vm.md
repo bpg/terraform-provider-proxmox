@@ -1,13 +1,13 @@
 ---
 layout: page
-title: VM
-permalink: /resources/vm
+title: proxmox_virtual_environment_vm
+permalink: /resources/virtual_environment_vm
 nav_order: 13
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: VM
+# Resource: proxmox_virtual_environment_vm
 
 Manages a virtual machine.
 

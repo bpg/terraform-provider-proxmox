@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Groups
-permalink: /data-sources/groups
+title: proxmox_virtual_environment_groups
+permalink: /data-sources/virtual_environment_groups
 nav_order: 6
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Groups
+# Data Source: proxmox_virtual_environment_groups
 
 Retrieves basic information about all available user groups.
 

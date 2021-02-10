@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Version
-permalink: /data-sources/version
+title: proxmox_virtual_environment_version
+permalink: /data-sources/virtual_environment_version
 nav_order: 16
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Version
+# Data Source: proxmox_virtual_environment_version
 
 Retrieves the version information from the API endpoint.
 

@@ -1,13 +1,13 @@
 ---
 layout: page
-title: User
-permalink: /data-sources/user
+title: proxmox_virtual_environment_user
+permalink: /data-sources/virtual_environment_user
 nav_order: 14
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: User
+# Data Source: proxmox_virtual_environment_user
 
 Retrieves information about a specific user.
 

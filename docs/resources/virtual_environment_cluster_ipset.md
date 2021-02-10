@@ -1,13 +1,13 @@
 ---
 layout: page
-title: IPSet
-permalink: /ressources/ipset
-nav_order: 8
+title: proxmox_virtual_environment_cluster_ipset
+permalink: /resources/virtual_environment_cluster_ipset
+nav_order: 3
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: IPSet
+# Resource: proxmox_virtual_environment_cluster_ipset
 
 An IPSet allows us to group multiple IP addresses, IP subnets and aliases.
 

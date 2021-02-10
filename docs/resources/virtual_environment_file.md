@@ -1,13 +1,13 @@
 ---
 layout: page
-title: File
-permalink: /resources/file
-nav_order: 5
+title: proxmox_virtual_environment_file
+permalink: /resources/virtual_environment_file
+nav_order: 6
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: File
+# Resource: proxmox_virtual_environment_file
 
 Manages a file.
 

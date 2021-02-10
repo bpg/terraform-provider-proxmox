@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Hosts
-permalink: /resources/hosts
-nav_order: 7
+title: proxmox_virtual_environment_hosts
+permalink: /resources/virtual_environment_hosts
+nav_order: 8
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: Hosts
+# Resource: proxmox_virtual_environment_hosts
 
 Manages the host entries on a specific node.
 

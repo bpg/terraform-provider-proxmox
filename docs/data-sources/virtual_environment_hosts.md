@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Hosts
-permalink: /data-sources/hosts
+title: proxmox_virtual_environment_hosts
+permalink: /data-sources/virtual_environment_hosts
 nav_order: 7
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Hosts
+# Data Source: proxmox_virtual_environment_hosts
 
 Retrieves all the host entries from a specific node.
 

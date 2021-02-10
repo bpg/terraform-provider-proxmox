@@ -1,3 +1,9 @@
+## v0.4.1
+
+OTHER:
+
+* provider/docs: Fix issue with navigational link titles in Terraform Registry
+
 ## v0.4.0
 
 FEATURES:

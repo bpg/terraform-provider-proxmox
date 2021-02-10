@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Aliases
-permalink: /data-sources/aliases
+title: proxmox_virtual_environment_cluster_aliases
+permalink: /data-sources/virtual_environment_cluster_aliases
 nav_order: 2
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Aliases
+# Data Source: proxmox_virtual_environment_cluster_aliases
 
 Retrieves the identifiers for all the available aliases.
 

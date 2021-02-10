@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Certificate
-permalink: /resources/certificate
-nav_order: 2
+title: proxmox_virtual_environment_certificate
+permalink: /resources/virtual_environment_certificate
+nav_order: 1
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: Certificate
+# Resource: proxmox_virtual_environment_certificate
 
 Manages the custom SSL/TLS certificate for a specific node.
 

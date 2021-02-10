@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Pool
-permalink: /data-sources/pool
+title: proxmox_virtual_environment_pool
+permalink: /data-sources/virtual_environment_pool
 nav_order: 9
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Pool
+# Data Source: proxmox_virtual_environment_pool
 
 Retrieves information about a specific resource pool.
 

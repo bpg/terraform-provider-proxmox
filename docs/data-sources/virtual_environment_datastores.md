@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Datastores
-permalink: /data-sources/datastores
+title: proxmox_virtual_environment_datastores
+permalink: /data-sources/virtual_environment_datastores
 nav_order: 3
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Datastores
+# Data Source: proxmox_virtual_environment_datastores
 
 Retrieves information about all the datastores available to a specific node.
 

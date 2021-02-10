@@ -1,13 +1,13 @@
 ---
 layout: page
-title: DNS
-permalink: /resources/dns
-nav_order: 4
+title: proxmox_virtual_environment_dns
+permalink: /resources/virtual_environment_dns
+nav_order: 5
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: DNS
+# Resource: proxmox_virtual_environment_dns
 
 Manages the DNS configuration for a specific node.
 

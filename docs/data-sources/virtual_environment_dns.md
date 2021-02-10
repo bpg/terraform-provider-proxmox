@@ -1,13 +1,13 @@
 ---
 layout: page
-title: DNS
-permalink: /data-sources/dns
+title: proxmox_virtual_environment_dns
+permalink: /data-sources/virtual_environment_dns
 nav_order: 4
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: DNS
+# Data Source: proxmox_virtual_environment_dns
 
 Retrieves the DNS configuration for a specific node.
 

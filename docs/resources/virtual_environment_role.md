@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Role
-permalink: /resources/role
+title: proxmox_virtual_environment_role
+permalink: /resources/virtual_environment_role
 nav_order: 10
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: Role
+# Resource: proxmox_virtual_environment_role
 
 Manages a role.
 

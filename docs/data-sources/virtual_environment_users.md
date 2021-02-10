@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Users
-permalink: /data-sources/users
+title: proxmox_virtual_environment_users
+permalink: /data-sources/virtual_environment_users
 nav_order: 15
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Users
+# Data Source: proxmox_virtual_environment_users
 
 Retrieves information about all the available users.
 

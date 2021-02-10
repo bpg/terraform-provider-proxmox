@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Container
-permalink: /resources/container
-nav_order: 3
+title: proxmox_virtual_environment_container
+permalink: /resources/virtual_environment_container
+nav_order: 4
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: Container
+# Resource: proxmox_virtual_environment_container
 
 Manages a container.
 

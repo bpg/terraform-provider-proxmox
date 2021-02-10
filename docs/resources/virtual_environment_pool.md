@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Pool
-permalink: /resources/pool
+title: proxmox_virtual_environment_pool
+permalink: /resources/virtual_environment_pool
 nav_order: 9
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: Pool
+# Resource: proxmox_virtual_environment_pool
 
 Manages a resource pool.
 

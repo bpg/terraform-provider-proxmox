@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Alias
-permalink: /data-sources/alias
+title: proxmox_virtual_environment_cluster_alias
+permalink: /data-sources/virtual_environment_cluster_alias
 nav_order: 1
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Alias
+# Data Source: proxmox_virtual_environment_cluster_alias
 
 Retrieves information about a specific alias.
 

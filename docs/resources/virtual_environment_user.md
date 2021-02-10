@@ -1,13 +1,13 @@
 ---
 layout: page
-title: User
-permalink: /resources/user
+title: proxmox_virtual_environment_user
+permalink: /resources/virtual_environment_user
 nav_order: 12
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: User
+# Resource: proxmox_virtual_environment_user
 
 Manages a user.
 

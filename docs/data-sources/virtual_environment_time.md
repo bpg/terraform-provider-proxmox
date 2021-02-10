@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Time
-permalink: /data-sources/time
+title: proxmox_virtual_environment_time
+permalink: /data-sources/virtual_environment_time
 nav_order: 13
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Time
+# Data Source: proxmox_virtual_environment_time
 
 Retrieves the current time for a specific node.
 

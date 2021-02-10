@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Group
-permalink: /resources/group
-nav_order: 6
+title: proxmox_virtual_environment_group
+permalink: /resources/virtual_environment_group
+nav_order: 7
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: Group
+# Resource: proxmox_virtual_environment_group
 
 Manages a user group.
 

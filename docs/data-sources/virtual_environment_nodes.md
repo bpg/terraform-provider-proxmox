@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Nodes
-permalink: /data-sources/nodes
+title: proxmox_virtual_environment_nodes
+permalink: /data-sources/virtual_environment_nodes
 nav_order: 8
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: Nodes
+# Data Source: proxmox_virtual_environment_nodes
 
 Retrieves information about all available nodes.
 

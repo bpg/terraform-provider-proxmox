@@ -1,13 +1,13 @@
 ---
 layout: page
-title: Alias
-permalink: /ressources/alias
-nav_order: 1
+title: proxmox_virtual_environment_cluster_alias
+permalink: /resources/virtual_environment_cluster_alias
+nav_order: 2
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: Alias
+# Resource: proxmox_virtual_environment_cluster_alias
 
 Aliases are used to see what devices or group of devices are affected by a rule.
 We can create aliases to identify an IP address or a network.
