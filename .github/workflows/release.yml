@@ -59,4 +59,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
         run: |
-          goreleaser build --parallelism 2 --rm-dist --timeout 1h
+          goreleaser release --parallelism 2 --rm-dist --timeout 1h
