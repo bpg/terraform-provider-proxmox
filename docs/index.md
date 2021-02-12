@@ -6,7 +6,7 @@ nav_order: 1
 
 # Proxmox Provider
 
-This provider for [Terraform](https://www.terraform.io/) is used to interact with resources supported by [Proxmox](https://www.proxmox.com/en/). The provider needs to be configured with the proper endpoints and credentials before it can be used.
+This provider for [Terraform](https://www.terraform.io/) is used for interacting with resources supported by [Proxmox](https://www.proxmox.com/en/). The provider needs to be configured with the proper endpoints and credentials before it can be used.
 
 Use the navigation to the left to read about the available resources.
 
