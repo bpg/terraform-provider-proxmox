@@ -384,55 +384,74 @@ func getVMIDValidator() schema.SchemaValidateFunc {
 	}
 }
 
-func getDiskInfo(data *proxmox.VirtualEnvironmentVMGetResponseData) map[string]*proxmox.CustomStorageDevice {
-	storageDevices := make(map[string]*proxmox.CustomStorageDevice)
-	storageDevices["ide0"] = data.IDEDevice0
-	storageDevices["ide1"] = data.IDEDevice1
-	storageDevices["ide2"] = data.IDEDevice2
+func getDiskInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) map[string]*proxmox.CustomStorageDevice {
+	currentDisk := d.Get(mkResourceVirtualEnvironmentVMDisk)
 
-	storageDevices["sata0"] = data.SATADevice0
-	storageDevices["sata1"] = data.SATADevice1
-	storageDevices["sata2"] = data.SATADevice2
-	storageDevices["sata3"] = data.SATADevice3
-	storageDevices["sata4"] = data.SATADevice4
-	storageDevices["sata5"] = data.SATADevice5
+	currentDiskList := currentDisk.([]interface{})
+	currentDiskMap := map[string]map[string]interface{}{}
 
-	storageDevices["scsi0"] = data.SCSIDevice0
-	storageDevices["scsi1"] = data.SCSIDevice1
-	storageDevices["scsi2"] = data.SCSIDevice2
-	storageDevices["scsi3"] = data.SCSIDevice3
-	storageDevices["scsi4"] = data.SCSIDevice4
-	storageDevices["scsi5"] = data.SCSIDevice5
-	storageDevices["scsi6"] = data.SCSIDevice6
-	storageDevices["scsi7"] = data.SCSIDevice7
-	storageDevices["scsi8"] = data.SCSIDevice8
-	storageDevices["scsi9"] = data.SCSIDevice9
-	storageDevices["scsi10"] = data.SCSIDevice10
-	storageDevices["scsi11"] = data.SCSIDevice11
-	storageDevices["scsi12"] = data.SCSIDevice12
-	storageDevices["scsi13"] = data.SCSIDevice13
+	for _, v := range currentDiskList {
+		diskMap := v.(map[string]interface{})
+		diskInterface := diskMap[mkResourcevirtualEnvironmentVMDiskInterface].(string)
 
-	storageDevices["virtio0"] = data.VirtualIODevice0
-	storageDevices["virtio1"] = data.VirtualIODevice1
-	storageDevices["virtio2"] = data.VirtualIODevice2
-	storageDevices["virtio3"] = data.VirtualIODevice3
-	storageDevices["virtio4"] = data.VirtualIODevice4
-	storageDevices["virtio5"] = data.VirtualIODevice5
-	storageDevices["virtio6"] = data.VirtualIODevice6
-	storageDevices["virtio7"] = data.VirtualIODevice7
-	storageDevices["virtio8"] = data.VirtualIODevice8
-	storageDevices["virtio9"] = data.VirtualIODevice9
-	storageDevices["virtio10"] = data.VirtualIODevice10
-	storageDevices["virtio11"] = data.VirtualIODevice11
-	storageDevices["virtio12"] = data.VirtualIODevice12
-	storageDevices["virtio13"] = data.VirtualIODevice13
-	storageDevices["virtio14"] = data.VirtualIODevice14
-	storageDevices["virtio15"] = data.VirtualIODevice15
+		currentDiskMap[diskInterface] = diskMap
+	}
 
-	for key, value := range storageDevices {
-		if value != nil {
-			tmpKey := key
-			value.Interface = &tmpKey
+	storageDevices := map[string]*proxmox.CustomStorageDevice{}
+
+	storageDevices["ide0"] = vm.IDEDevice0
+	storageDevices["ide1"] = vm.IDEDevice1
+	storageDevices["ide2"] = vm.IDEDevice2
+
+	storageDevices["sata0"] = vm.SATADevice0
+	storageDevices["sata1"] = vm.SATADevice1
+	storageDevices["sata2"] = vm.SATADevice2
+	storageDevices["sata3"] = vm.SATADevice3
+	storageDevices["sata4"] = vm.SATADevice4
+	storageDevices["sata5"] = vm.SATADevice5
+
+	storageDevices["scsi0"] = vm.SCSIDevice0
+	storageDevices["scsi1"] = vm.SCSIDevice1
+	storageDevices["scsi2"] = vm.SCSIDevice2
+	storageDevices["scsi3"] = vm.SCSIDevice3
+	storageDevices["scsi4"] = vm.SCSIDevice4
+	storageDevices["scsi5"] = vm.SCSIDevice5
+	storageDevices["scsi6"] = vm.SCSIDevice6
+	storageDevices["scsi7"] = vm.SCSIDevice7
+	storageDevices["scsi8"] = vm.SCSIDevice8
+	storageDevices["scsi9"] = vm.SCSIDevice9
+	storageDevices["scsi10"] = vm.SCSIDevice10
+	storageDevices["scsi11"] = vm.SCSIDevice11
+	storageDevices["scsi12"] = vm.SCSIDevice12
+	storageDevices["scsi13"] = vm.SCSIDevice13
+
+	storageDevices["virtio0"] = vm.VirtualIODevice0
+	storageDevices["virtio1"] = vm.VirtualIODevice1
+	storageDevices["virtio2"] = vm.VirtualIODevice2
+	storageDevices["virtio3"] = vm.VirtualIODevice3
+	storageDevices["virtio4"] = vm.VirtualIODevice4
+	storageDevices["virtio5"] = vm.VirtualIODevice5
+	storageDevices["virtio6"] = vm.VirtualIODevice6
+	storageDevices["virtio7"] = vm.VirtualIODevice7
+	storageDevices["virtio8"] = vm.VirtualIODevice8
+	storageDevices["virtio9"] = vm.VirtualIODevice9
+	storageDevices["virtio10"] = vm.VirtualIODevice10
+	storageDevices["virtio11"] = vm.VirtualIODevice11
+	storageDevices["virtio12"] = vm.VirtualIODevice12
+	storageDevices["virtio13"] = vm.VirtualIODevice13
+	storageDevices["virtio14"] = vm.VirtualIODevice14
+	storageDevices["virtio15"] = vm.VirtualIODevice15
+
+	for k, v := range storageDevices {
+		if v != nil {
+			if currentDiskMap[k] != nil {
+				if currentDiskMap[k][mkResourceVirtualEnvironmentVMDiskFileID] != nil {
+					fileID := currentDiskMap[k][mkResourceVirtualEnvironmentVMDiskFileID].(string)
+					v.FileID = &fileID
+				}
+			}
+
+			v.Interface = &k
 		}
 	}
 

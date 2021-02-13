@@ -12,7 +12,7 @@ import (
 )
 
 // CreateIPSet create an IPSet
-func (c *VirtualEnvironmentClient) CreateIPSet(d *VirtualEnvironmentClusterIPSetCreateRequestBody) error  {
+func (c *VirtualEnvironmentClient) CreateIPSet(d *VirtualEnvironmentClusterIPSetCreateRequestBody) error {
 	return c.DoRequest(hmPOST, "cluster/firewall/ipset", d, nil)
 }
 

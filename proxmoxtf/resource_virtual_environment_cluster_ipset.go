@@ -177,7 +177,7 @@ func resourceVirtualEnvironmentClusterIPSetRead(d *schema.ResourceData, m interf
 		return err
 	}
 
-	for key, _ := range IPSet {
+	for key := range IPSet {
 		d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDR, IPSet[key])
 	}
 
