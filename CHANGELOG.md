@@ -1,4 +1,4 @@
-## v0.5.0 (UNRELEASED)
+## v0.4.2 (UNRELEASED)
 
 OTHER:
 
