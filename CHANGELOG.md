@@ -3,6 +3,7 @@
 BUG FIXES:
 
 * resource/virtual_environment_vm: Fix `disk.file_id` diff issue
+* resource/virtual_environment_vm: Fix disk resizing issue
 
 OTHER:
 

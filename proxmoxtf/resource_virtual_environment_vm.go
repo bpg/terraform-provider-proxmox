@@ -1413,6 +1413,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		if currentDiskInfo == nil {
 			diskUpdateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{}
 			prefix := diskDigitPrefix(diskInterface)
+
 			switch prefix {
 			case "virtio":
 				if diskUpdateBody.VirtualIODevices == nil {
@@ -1432,6 +1433,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			}
 
 			err = veClient.UpdateVM(nodeName, vmID, diskUpdateBody)
+
 			if err != nil {
 				return err
 			}
@@ -1450,6 +1452,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		}
 
 		deleteOriginalDisk := proxmox.CustomBool(true)
+
 		diskMoveBody := &proxmox.VirtualEnvironmentVMMoveDiskRequestBody{
 			DeleteOriginalDisk: &deleteOriginalDisk,
 			Disk:               diskInterface,
@@ -1461,7 +1464,18 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			Size: fmt.Sprintf("%dG", diskSize),
 		}
 
+		moveDisk := false
+
 		if dataStoreID != "" {
+			moveDisk = true
+
+			if allDiskInfo[diskInterface] != nil {
+				fileIDParts := strings.Split(allDiskInfo[diskInterface].FileVolume, ":")
+				moveDisk = dataStoreID != fileIDParts[0]
+			}
+		}
+
+		if moveDisk {
 			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
 			err = veClient.MoveVMDisk(nodeName, vmID, diskMoveBody, moveDiskTimeout)
 
@@ -1470,10 +1484,12 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			}
 		}
 
-		err = veClient.ResizeVMDisk(nodeName, vmID, diskResizeBody)
+		if diskSize > compareNumber {
+			err = veClient.ResizeVMDisk(nodeName, vmID, diskResizeBody)
 
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -3649,7 +3665,7 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 					return fmt.Errorf("Deletion of disks not supported. Please delete disk by hand. Old Interface was %s", *oldDisk.Interface)
 				}
 
-				if oldDisk.ID != diskNewEntries[prefix][oldKey].ID {
+				if *oldDisk.ID != *diskNewEntries[prefix][oldKey].ID {
 					deleteOriginalDisk := proxmox.CustomBool(true)
 
 					diskMoveBodies = append(diskMoveBodies, &proxmox.VirtualEnvironmentVMMoveDiskRequestBody{
