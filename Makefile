@@ -3,13 +3,13 @@ NAME=$$(grep TerraformProviderName proxmoxtf/version.go | grep -o -e 'terraform-
 TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
 VERSION=$$(grep TerraformProviderVersion proxmoxtf/version.go | grep -o -e '[0-9]\.[0-9]\.[0-9]')
+VERSION_EXAMPLE=9999.0.0
 
 ifeq ($(OS),Windows_NT)
-	TERRAFORM_CACHE_DIRECTORY=$$(cygpath -u "$(APPDATA)")/terraform.d/plugins
 	TERRAFORM_PLATFORM=windows_amd64
+	TERRAFORM_PLUGIN_CACHE_DIRECTORY=$$(cygpath -u "$(shell pwd -P)")/cache/plugins
 	TERRAFORM_PLUGIN_EXTENSION=.exe
 else
-	TERRAFORM_CACHE_DIRECTORY=$(HOME)/terraform.d/plugins
 	UNAME_S=$$(shell uname -s)
 
 	ifeq ($(UNAME_S),Darwin)
@@ -17,36 +17,58 @@ else
 	else
 		TERRAFORM_PLATFORM=linux_amd64
 	endif
+
+	TERRAFORM_PLUGIN_CACHE_DIRECTORY=$(shell pwd -P)/cache/plugins
 endif
 
-TERRAFORM_PLUGIN_DIRECTORY=$(TERRAFORM_CACHE_DIRECTORY)/terraform.danitso.com/provider/proxmox/$(VERSION)/$(TERRAFORM_PLATFORM)
+TERRAFORM_PLUGIN_DIRECTORY=$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)/registry.terraform.io/danitso/proxmox/$(VERSION)/$(TERRAFORM_PLATFORM)
+TERRAFORM_PLUGIN_DIRECTORY_EXAMPLE=$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)/registry.terraform.io/danitso/proxmox/$(VERSION_EXAMPLE)/$(TERRAFORM_PLATFORM)
 TERRAFORM_PLUGIN_EXECUTABLE=$(TERRAFORM_PLUGIN_DIRECTORY)/$(NAME)_v$(VERSION)_x4$(TERRAFORM_PLUGIN_EXTENSION)
+TERRAFORM_PLUGIN_EXECUTABLE_EXAMPLE=$(TERRAFORM_PLUGIN_DIRECTORY_EXAMPLE)/$(NAME)_v$(VERSION_EXAMPLE)_x4$(TERRAFORM_PLUGIN_EXTENSION)
 
 default: build
 
 build:
-	go build -o "bin/$(NAME)_v$(VERSION)-custom_x4"
-
-example: example-init example-apply example-apply example-destroy
-
-example-apply:
-	cd ./example && terraform apply -auto-approve
-
-example-destroy:
-	cd ./example && terraform destroy -auto-approve
-
-example-init:
-	rm -f "example/$(NAME)_v"*
-	go build -o "example/$(NAME)_v$(VERSION)-custom_x4"
-
 	mkdir -p "$(TERRAFORM_PLUGIN_DIRECTORY)"
 	rm -f "$(TERRAFORM_PLUGIN_EXECUTABLE)"
-	cp "example/$(NAME)_v$(VERSION)-custom_x4" "$(TERRAFORM_PLUGIN_EXECUTABLE)"
+	go build -o "$(TERRAFORM_PLUGIN_EXECUTABLE)"
 
-	cd ./example && terraform init
+example: example-build example-init example-apply example-apply example-destroy
+
+example-apply:
+	export TF_CLI_CONFIG_FILE="$(shell pwd -P)/example.tfrc" \
+		&& export TF_DISABLE_CHECKPOINT="true" \
+		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
+		&& cd ./example \
+		&& terraform apply -auto-approve
+
+example-build:
+	mkdir -p "$(TERRAFORM_PLUGIN_DIRECTORY_EXAMPLE)"
+	rm -f "$(TERRAFORM_PLUGIN_EXECUTABLE_EXAMPLE)"
+	go build -o "$(TERRAFORM_PLUGIN_EXECUTABLE_EXAMPLE)"
+
+example-destroy:
+	export TF_CLI_CONFIG_FILE="$(shell pwd -P)/example.tfrc" \
+		&& export TF_DISABLE_CHECKPOINT="true" \
+		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
+		&& cd ./example \
+		&& terraform destroy -auto-approve
+
+example-init:
+	export TF_CLI_CONFIG_FILE="$(shell pwd -P)/example.tfrc" \
+		&& export TF_DISABLE_CHECKPOINT="true" \
+		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
+		&& cd ./example \
+		&& rm -f .terraform.lock.hcl \
+		&& terraform init \
+			-verify-plugins=false
 
 example-plan:
-	cd ./example && terraform plan
+	export TF_CLI_CONFIG_FILE="$(shell pwd -P)/example.tfrc" \
+		&& export TF_DISABLE_CHECKPOINT="true" \
+		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
+		&& cd ./example \
+		&& terraform plan
 
 fmt:
 	gofmt -s -w $(GOFMT_FILES)

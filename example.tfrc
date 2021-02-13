@@ -1,0 +1,9 @@
+provider_installation {
+  filesystem_mirror {
+    path    = "../cache/plugins"
+    include = ["registry.terraform.io/danitso/proxmox"]
+  }
+  direct {
+    exclude = ["registry.terraform.io/danitso/proxmox"]
+  }
+}

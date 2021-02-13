@@ -1,15 +1,15 @@
 data "proxmox_virtual_environment_group" "example" {
-  group_id = "${proxmox_virtual_environment_group.example.id}"
+  group_id = proxmox_virtual_environment_group.example.id
 }
 
 output "data_proxmox_virtual_environment_group_example_acl" {
-  value = "${data.proxmox_virtual_environment_group.example.acl}"
+  value = data.proxmox_virtual_environment_group.example.acl
 }
 
 output "data_proxmox_virtual_environment_group_example_comment" {
-  value = "${data.proxmox_virtual_environment_group.example.comment}"
+  value = data.proxmox_virtual_environment_group.example.comment
 }
 
 output "data_proxmox_virtual_environment_group_example_members" {
-  value = "${data.proxmox_virtual_environment_group.example.members}"
+  value = data.proxmox_virtual_environment_group.example.members
 }
