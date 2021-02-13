@@ -1,4 +1,3 @@
-[![Build Status](https://api.travis-ci.com/danitso/terraform-provider-proxmox.svg?branch=master)](https://travis-ci.com/danitso/terraform-provider-proxmox)
 [![Go Report Card](https://goreportcard.com/badge/github.com/danitso/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/danitso/terraform-provider-proxmox)
 [![GoDoc](https://godoc.org/github.com/danitso/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/danitso/terraform-provider-proxmox)
 
