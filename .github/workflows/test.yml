@@ -4,7 +4,7 @@ on:
     branches:
       - main
       - master
-      - 'v*'
+      - 'release/v*'
 jobs:
   test:
     name: Pull Request
