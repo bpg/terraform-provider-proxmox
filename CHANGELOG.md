@@ -1,4 +1,9 @@
-## v0.5.0 (UNRELEASED)
+## v0.4.2
+
+BUG FIXES:
+
+* resource/virtual_environment_vm: Fix `disk.file_id` diff issue
+* resource/virtual_environment_vm: Fix disk resizing issue
 
 OTHER:
 
@@ -47,7 +52,7 @@ BUG FIXES:
 * resource/virtual_environment_container: Fix VM ID collision when `vm_id` is not specified
 * resource/virtual_environment_vm: Fix VM ID collision when `vm_id` is not specified
 * resource/virtual_environment_vm: Fix disk import issue when importing from directory-based datastores
-* resource/virtual/environment/vm: Fix handling of storage name - correct handling of `-`
+* resource/virtual_environment_vm: Fix handling of storage name - correct handling of `-`
 
 WORKAROUNDS:
 

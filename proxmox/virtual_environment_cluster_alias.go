@@ -12,7 +12,7 @@ import (
 )
 
 // CreateAlias create an alias
-func (c *VirtualEnvironmentClient) CreateAlias(d *VirtualEnvironmentClusterAliasCreateRequestBody) error  {
+func (c *VirtualEnvironmentClient) CreateAlias(d *VirtualEnvironmentClusterAliasCreateRequestBody) error {
 	return c.DoRequest(hmPOST, "cluster/firewall/aliases", d, nil)
 }
 
