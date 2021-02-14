@@ -2,7 +2,7 @@
 
 BUG FIXES:
 
-* resource/virtual_environment_container: Fix IP initialization issue for cloned containers
+* resource/virtual_environment_container: Fix IP initialization issue
 
 ## v0.4.2
 
