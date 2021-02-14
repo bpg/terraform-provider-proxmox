@@ -702,6 +702,35 @@ func resourceVirtualEnvironmentContainerCreateClone(d *schema.ResourceData, m in
 			updateBody.Hostname = &initializationHostname
 		}
 
+		initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfig].([]interface{})
+
+		for _, c := range initializationIPConfig {
+			configBlock := c.(map[string]interface{})
+			ipv4 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4].([]interface{})
+
+			if len(ipv4) > 0 {
+				ipv4Block := ipv4[0].(map[string]interface{})
+
+				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string))
+				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string))
+			} else {
+				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, "")
+				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
+			}
+
+			ipv6 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6].([]interface{})
+
+			if len(ipv6) > 0 {
+				ipv6Block := ipv6[0].(map[string]interface{})
+
+				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string))
+				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string))
+			} else {
+				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, "")
+				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, "")
+			}
+		}
+
 		initializationUserAccount := initializationBlock[mkResourceVirtualEnvironmentContainerInitializationUserAccount].([]interface{})
 
 		if len(initializationUserAccount) > 0 {
@@ -718,35 +747,6 @@ func resourceVirtualEnvironmentContainerCreateClone(d *schema.ResourceData, m in
 				updateBody.SSHKeys = &initializationUserAccountKeys
 			} else {
 				updateBody.Delete = append(updateBody.Delete, "ssh-public-keys")
-			}
-
-			initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfig].([]interface{})
-
-			for _, c := range initializationIPConfig {
-				configBlock := c.(map[string]interface{})
-				ipv4 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4].([]interface{})
-
-				if len(ipv4) > 0 {
-					ipv4Block := ipv4[0].(map[string]interface{})
-
-					initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string))
-					initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string))
-				} else {
-					initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, "")
-					initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
-				}
-
-				ipv6 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6].([]interface{})
-
-				if len(ipv6) > 0 {
-					ipv6Block := ipv6[0].(map[string]interface{})
-
-					initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string))
-					initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string))
-				} else {
-					initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, "")
-					initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, "")
-				}
 			}
 
 			initializationUserAccountPassword := initializationUserAccountBlock[mkResourceVirtualEnvironmentContainerInitializationUserAccountPassword].(string)
@@ -773,72 +773,78 @@ func resourceVirtualEnvironmentContainerCreateClone(d *schema.ResourceData, m in
 
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
-	if len(networkInterface) > 0 {
-		networkInterfaceArray := make(proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray, len(networkInterface))
+	if len(networkInterface) == 0 {
+		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(veClient, nodeName, vmID)
 
-		for ni, nv := range networkInterface {
-			networkInterfaceMap := nv.(map[string]interface{})
-			networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
+		if err != nil {
+			return err
+		}
+	}
 
-			bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
-			enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
-			macAddress := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress].(string)
-			name := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceName].(string)
-			rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
-			vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
+	networkInterfaceArray := make(proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray, len(networkInterface))
 
-			if bridge != "" {
-				networkInterfaceObject.Bridge = &bridge
-			}
+	for ni, nv := range networkInterface {
+		networkInterfaceMap := nv.(map[string]interface{})
+		networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
 
-			networkInterfaceObject.Enabled = enabled
+		bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
+		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
+		macAddress := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress].(string)
+		name := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceName].(string)
+		rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
+		vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
 
-			if len(initializationIPConfigIPv4Address) > ni {
-				if initializationIPConfigIPv4Address[ni] != "" {
-					networkInterfaceObject.IPv4Address = &initializationIPConfigIPv4Address[ni]
-				}
-
-				if initializationIPConfigIPv4Gateway[ni] != "" {
-					networkInterfaceObject.IPv4Gateway = &initializationIPConfigIPv4Gateway[ni]
-				}
-
-				if initializationIPConfigIPv6Address[ni] != "" {
-					networkInterfaceObject.IPv6Address = &initializationIPConfigIPv6Address[ni]
-				}
-
-				if initializationIPConfigIPv6Gateway[ni] != "" {
-					networkInterfaceObject.IPv6Gateway = &initializationIPConfigIPv6Gateway[ni]
-				}
-			}
-
-			if macAddress != "" {
-				networkInterfaceObject.MACAddress = &macAddress
-			}
-
-			networkInterfaceObject.Name = name
-
-			if rateLimit != 0 {
-				networkInterfaceObject.RateLimit = &rateLimit
-			}
-
-			if vlanID != 0 {
-				networkInterfaceObject.Tag = &vlanID
-			}
-
-			networkInterfaceArray[ni] = networkInterfaceObject
+		if bridge != "" {
+			networkInterfaceObject.Bridge = &bridge
 		}
 
-		updateBody.NetworkInterfaces = networkInterfaceArray
+		networkInterfaceObject.Enabled = enabled
 
-		for i := 0; i < len(updateBody.NetworkInterfaces); i++ {
-			if !updateBody.NetworkInterfaces[i].Enabled {
-				updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
+		if len(initializationIPConfigIPv4Address) > ni {
+			if initializationIPConfigIPv4Address[ni] != "" {
+				networkInterfaceObject.IPv4Address = &initializationIPConfigIPv4Address[ni]
+			}
+
+			if initializationIPConfigIPv4Gateway[ni] != "" {
+				networkInterfaceObject.IPv4Gateway = &initializationIPConfigIPv4Gateway[ni]
+			}
+
+			if initializationIPConfigIPv6Address[ni] != "" {
+				networkInterfaceObject.IPv6Address = &initializationIPConfigIPv6Address[ni]
+			}
+
+			if initializationIPConfigIPv6Gateway[ni] != "" {
+				networkInterfaceObject.IPv6Gateway = &initializationIPConfigIPv6Gateway[ni]
 			}
 		}
 
-		for i := len(updateBody.NetworkInterfaces); i < maxResourceVirtualEnvironmentContainerNetworkInterfaces; i++ {
+		if macAddress != "" {
+			networkInterfaceObject.MACAddress = &macAddress
+		}
+
+		networkInterfaceObject.Name = name
+
+		if rateLimit != 0 {
+			networkInterfaceObject.RateLimit = &rateLimit
+		}
+
+		if vlanID != 0 {
+			networkInterfaceObject.Tag = &vlanID
+		}
+
+		networkInterfaceArray[ni] = networkInterfaceObject
+	}
+
+	updateBody.NetworkInterfaces = networkInterfaceArray
+
+	for i := 0; i < len(updateBody.NetworkInterfaces); i++ {
+		if !updateBody.NetworkInterfaces[i].Enabled {
 			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 		}
+	}
+
+	for i := len(updateBody.NetworkInterfaces); i < maxResourceVirtualEnvironmentContainerNetworkInterfaces; i++ {
+		updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 	}
 
 	operatingSystem := d.Get(mkResourceVirtualEnvironmentContainerOperatingSystem).([]interface{})
@@ -1190,6 +1196,66 @@ func resourceVirtualEnvironmentContainerGetCPUArchitectureValidator() schema.Sch
 		"armhf",
 		"i386",
 	}, false)
+}
+
+func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(client *proxmox.VirtualEnvironmentClient, nodeName string, vmID int) ([]interface{}, error) {
+	containerInfo, err := client.GetContainer(nodeName, vmID)
+
+	if err != nil {
+		return []interface{}{}, err
+	}
+
+	networkInterfaces := []interface{}{}
+	networkInterfaceArray := []*proxmox.VirtualEnvironmentContainerCustomNetworkInterface{
+		containerInfo.NetworkInterface0,
+		containerInfo.NetworkInterface1,
+		containerInfo.NetworkInterface2,
+		containerInfo.NetworkInterface3,
+		containerInfo.NetworkInterface4,
+		containerInfo.NetworkInterface5,
+		containerInfo.NetworkInterface6,
+		containerInfo.NetworkInterface7,
+	}
+
+	for _, nv := range networkInterfaceArray {
+		if nv == nil {
+			continue
+		}
+
+		networkInterface := map[string]interface{}{}
+
+		if nv.Bridge != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge] = *nv.Bridge
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge] = ""
+		}
+
+		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled] = true
+
+		if nv.MACAddress != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress] = *nv.MACAddress
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress] = ""
+		}
+
+		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceName] = nv.Name
+
+		if nv.RateLimit != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit] = *nv.RateLimit
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit] = float64(0)
+		}
+
+		if nv.Tag != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID] = *nv.Tag
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID] = 0
+		}
+
+		networkInterfaces = append(networkInterfaces, networkInterface)
+	}
+
+	return networkInterfaces, nil
 }
 
 func resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema.SchemaValidateFunc {
@@ -1621,6 +1687,9 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	rebootRequired := false
 	resource := resourceVirtualEnvironmentContainer()
 
+	// Retrieve the clone argument as the update logic varies for clones.
+	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
+
 	// Prepare the new primitive values.
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
 	updateBody.Description = &description
@@ -1746,8 +1815,17 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	}
 
 	// Prepare the new network interface configuration.
-	if d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
-		networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
+	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
+
+	if len(networkInterface) == 0 && len(clone) > 0 {
+		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(veClient, nodeName, vmID)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentContainerInitialization) || d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
 		networkInterfaceArray := make(proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray, len(networkInterface))
 
 		for ni, nv := range networkInterface {
