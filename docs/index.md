@@ -32,8 +32,7 @@ The Proxmox provider offers a flexible means of providing credentials for authen
 
 ### Static credentials
 
-Warning: Hard-coding credentials into any Terraform configuration is not recommended, and risks secret leakage should this file ever be committed to a public version control system.
-{: .label .label-red }
+> Warning: Hard-coding credentials into any Terraform configuration is not recommended, and risks secret leakage should this file ever be committed to a public version control system.
 
 Static credentials can be provided by adding a `username` and `password` in-line in the Proxmox provider block:
 
