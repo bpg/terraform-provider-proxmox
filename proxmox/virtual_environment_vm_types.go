@@ -201,7 +201,7 @@ type CustomVirtualIODevices []CustomVirtualIODevice
 // CustomWatchdogDevice handles QEMU watchdog device parameters.
 type CustomWatchdogDevice struct {
 	Action *string `json:"action,omitempty" url:"action,omitempty"`
-	Model  string  `json:"model" url:"model"`
+	Model  *string `json:"model" url:"model"`
 }
 
 // VirtualEnvironmentVMCloneRequestBody contains the data for an virtual machine clone request.
@@ -1609,6 +1609,40 @@ func (r *CustomVGADevice) UnmarshalJSON(b []byte) error {
 				r.Memory = &m
 			case "type":
 				r.Type = &v[1]
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomWatchdogDevice string to an object.
+func (r *CustomWatchdogDevice) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	if s == "" {
+		return nil
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 1 {
+			r.Model = &v[0]
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "action":
+				r.Action = &v[1]
+			case "model":
+				r.Model = &v[1]
 			}
 		}
 	}
