@@ -1,3 +1,9 @@
+## v0.4.4
+
+BUG FIXES:
+
+* resource/virtual_environment_vm: Fix watchdog deserialization issue
+
 ## v0.4.3
 
 BUG FIXES:
