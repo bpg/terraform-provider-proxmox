@@ -478,7 +478,7 @@ type VirtualEnvironmentVMGetStatusResponseData struct {
 	Lock             *string     `json:"lock,omitempty"`
 	MemoryAllocation *int        `json:"maxmem,omitempty"`
 	Name             *string     `json:"name,omitempty"`
-	PID              *string     `json:"pid,omitempty"`
+	PID              *float64    `json:"pid,omitempty"`
 	QMPStatus        *string     `json:"qmpstatus,omitempty"`
 	RootDiskSize     *int        `json:"maxdisk,omitempty"`
 	SpiceSupport     *CustomBool `json:"spice,omitempty"`
