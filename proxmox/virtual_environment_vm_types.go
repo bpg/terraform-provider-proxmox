@@ -1145,7 +1145,7 @@ func (r CustomVirtualIODevices) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomWatchdogDevice struct to a URL vlaue.
 func (r CustomWatchdogDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
-		fmt.Sprintf("model=%s", r.Model),
+		fmt.Sprintf("model=%+v", r.Model),
 	}
 
 	if r.Action != nil {
