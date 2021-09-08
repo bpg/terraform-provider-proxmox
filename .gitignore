@@ -36,3 +36,6 @@ modules-dev/
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
+
+# Binary
+terraform-provider-proxmox*
