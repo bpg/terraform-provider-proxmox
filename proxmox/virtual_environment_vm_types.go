@@ -478,14 +478,14 @@ type VirtualEnvironmentVMGetStatusResponseData struct {
 	Lock             *string     `json:"lock,omitempty"`
 	MemoryAllocation *int        `json:"maxmem,omitempty"`
 	Name             *string     `json:"name,omitempty"`
-	PID              *float64    `json:"pid,omitempty"`
+	PID              *int        `json:"pid,omitempty"`
 	QMPStatus        *string     `json:"qmpstatus,omitempty"`
 	RootDiskSize     *int        `json:"maxdisk,omitempty"`
 	SpiceSupport     *CustomBool `json:"spice,omitempty"`
 	Status           string      `json:"status,omitempty"`
 	Tags             *string     `json:"tags,omitempty"`
 	Uptime           *int        `json:"uptime,omitempty"`
-	VMID             string      `json:"vmid,omitempty"`
+	VMID             *int        `json:"vmid,omitempty"`
 }
 
 // VirtualEnvironmentVMListResponseBody contains the body from an virtual machine list response.
