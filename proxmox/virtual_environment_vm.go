@@ -161,12 +161,12 @@ func (c *VirtualEnvironmentClient) GetVMStatus(nodeName string, vmID int) (*Virt
 func (c *VirtualEnvironmentClient) MoveVMDisk(nodeName string, vmID int, d *VirtualEnvironmentVMMoveDiskRequestBody, timeout int) error {
 	taskID, err := c.MoveVMDiskAsync(nodeName, vmID, d)
 
-	if strings.Contains(err.Error(), "you can't move to the same storage with same format") {
-		// if someone tries to move to the same storage, the move is considered to be successful
-		return nil
-	}
-
 	if err != nil {
+		if strings.Contains(err.Error(), "you can't move to the same storage with same format") {
+			// if someone tries to move to the same storage, the move is considered to be successful
+			return nil
+		}
+
 		return err
 	}
 
