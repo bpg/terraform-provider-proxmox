@@ -1,48 +1,47 @@
+archives:
+  - files:
+      - none*
+    format: zip
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 before:
   hooks:
-    - go mod tidy
+    - go mod download
 builds:
-  - env:
-      - CGO_ENABLED=0
-    mod_timestamp: '{{ .CommitTimestamp }}'
+  - binary: '{{ .ProjectName }}_{{ .Version }}'
     flags:
       - -trimpath
-    ldflags:
-      - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
-    goos:
-      - freebsd
-      - windows
-      - linux
-      - darwin
     goarch:
-      - amd64
       - '386'
+      - amd64
       - arm
       - arm64
+    goos:
+      - darwin
+      - freebsd
+      - linux
+      - windows
     ignore:
-      - goos: darwin
-        goarch: '386'
-    binary: '{{ .ProjectName }}_v{{ .Version }}'
-archives:
-  - format: zip
-    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+      - goarch: '386'
+        goos: darwin
+    ldflags:
+      - -s -w -X version.ProviderVersion={{.Version}}
+    mod_timestamp: '{{ .CommitTimestamp }}'
+changelog:
+  skip: true
 checksum:
   name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
   algorithm: sha256
+env:
+  - CGO_ENABLED=0
+release:
+  disable: true
 signs:
   - artifacts: checksum
     args:
       - "--batch"
       - "--local-user"
-      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
       - "--output"
       - "${signature}"
-      - "--passphrase-fd"
-      - "0"
       - "--detach-sign"
       - "${artifact}"
-    stdin_file: /tmp/.gpg_passphrase
-release:
-  draft: false
-changelog:
-  skip: true
