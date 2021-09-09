@@ -1,2 +1,2 @@
 since_tag=v0.4.4
-add-sections={"dependencies":{"prefix":"**Dependency updates:**","labels":["dependency"]}}
+add-sections={"dependencies":{"prefix":"**Dependency updates:**","labels":["dependencies"]}}
