@@ -1,6 +1,6 @@
-module github.com/danitso/terraform-provider-proxmox
+module github.com/bpg/terraform-provider-proxmox
 
-go 1.15
+go 1.16
 
 require (
 	cloud.google.com/go v0.74.0 // indirect

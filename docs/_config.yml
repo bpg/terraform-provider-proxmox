@@ -1,8 +1,8 @@
-email: info@danitso.com
+email: info@boldyrev.me
 title: Proxmox Provider
 description: >-
   Terraform Provider for Proxmox.
-github_username: "danitso"
+github_username: "bpg"
 
 highlighter: rouge
 markdown: kramdown
@@ -11,6 +11,6 @@ plugins:
 remote_theme: pmarsceill/just-the-docs
 
 # Theme settings.
-footer_content: 'Copyright &copy; 2019-2020 <a href="https://danitso.com/" target="_blank">Danitso</a> - Distributed under the <a href="https://github.com/danitso/terraform-provider-proxmox/blob/master/LICENSE" target="_blank">Mozilla Public License 2.0</a>'
+footer_content: 'Copyright &copy; 2019-2021 <a href="https://danitso.com/" target="_blank">Danitso</a> - Distributed under the <a href="https://github.com/danitso/terraform-provider-proxmox/blob/master/LICENSE" target="_blank">Mozilla Public License 2.0</a><br>Copyright &copy; 2021 <a href="https://github.com/bpg/" target="_blank">Pavel Boldyrev</a> - Distributed under the <a href="https://github.com/bpg/terraform-provider-proxmox/blob/master/LICENSE" target="_blank">Mozilla Public License 2.0</a>'
 heading_anchors: true
 search_enabled: false
