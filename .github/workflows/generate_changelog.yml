@@ -21,7 +21,6 @@ jobs:
         uses: charmixer/auto-changelog-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          since_tag: v0.4.4
 
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
