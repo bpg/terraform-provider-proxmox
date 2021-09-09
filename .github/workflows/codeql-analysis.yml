@@ -14,11 +14,6 @@ name: "CodeQL"
 on:
   push:
     branches: [ master ]
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.tf'
-      - 'example/**'
-      - '.github/**'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
@@ -27,6 +22,7 @@ on:
       - '**/*.tf'
       - 'example/**'
       - '.github/**'
+      - 'docs/**'
   schedule:
     - cron: '30 9 * * 6'
 
