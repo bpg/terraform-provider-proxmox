@@ -1,3 +1,6 @@
 since_tag=v0.4.4
 exclude-labels=duplicate,question,invalid,wontfix,dependencies
 pr-wo-labels=false
+bugs-label=BUG FIXES:
+breaking-label=BREAKING CHANGES:
+enhancement-label=ENHANCEMENTS:

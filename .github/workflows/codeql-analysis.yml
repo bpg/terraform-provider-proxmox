@@ -17,16 +17,16 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/*.tf'
-      - 'example/**/*'
-      - '.github/**/*'
+      - 'example/**'
+      - '.github/**'
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
     paths-ignore:
       - '**/*.md'
       - '**/*.tf'
-      - 'example/**/*'
-      - '.github/**/*'
+      - 'example/**'
+      - '.github/**'
   schedule:
     - cron: '30 9 * * 6'
 
