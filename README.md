@@ -6,7 +6,7 @@ A Terraform Provider which adds support for Proxmox solutions.
 
 ## Requirements
 - [Terraform](https://www.terraform.io/downloads.html) 0.13+
-- [Go](https://golang.org/doc/install) 1.15+ (to build the provider plugin)
+- [Go](https://golang.org/doc/install) 1.16+ (to build the provider plugin)
 - [GoReleaser](https://goreleaser.com/install/) 0.155+ (to build the provider plugin)
 
 ## Table of Contents

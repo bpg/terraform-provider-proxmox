@@ -1,34 +1,71 @@
-name: Test changes
+name: Tests
 on:
   pull_request:
+    paths-ignore:
+      - 'README.md'
+  push:
     branches:
       - main
-      - master
-      - 'release/v*'
+      - "release/**"
+    paths-ignore:
+      - 'README.md'
 jobs:
-  test:
-    name: Pull Request
-    runs-on: ubuntu-20.04
+  # ensure the code builds...
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      -
-        name: Checkout the code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      -
-        name: Install and configure Go
+
+      - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
-      -
-        name: Install and configure GoReleaser
+          go-version: '1.16'
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: |
+          go mod download
+      - name: Build
+        run: |
+          go build -v .
+  # run acceptance tests in a matrix with Terraform core versions
+  test:
+    name: Matrix Test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # list whatever Terraform versions here you would like to support
+        terraform:
+          - '0.14.11'
+          - '0.15.5'
+          - '1.0.6'
+    steps:
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: TF acceptance tests
+        timeout-minutes: 10
         env:
-          GORELEASER_VERSION: '0.155.1'
+          TF_ACC: "1"
+          TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
+
         run: |
-          curl -sL -o goreleaser_amd64.deb "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_amd64.deb"
-          sudo dpkg -i goreleaser_amd64.deb
-          rm -f goreleaser_amd64.deb
-      -
-        name: Create snapshot
-        run: |
-          goreleaser build --parallelism 2 --rm-dist --snapshot --timeout 1h
+          go test -v -cover ./...
