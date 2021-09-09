@@ -24,5 +24,6 @@ jobs:
 
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: Update Changelog for PR
+          commit_message: Update CHANGELOG.md
+          branch: master
           file_pattern: CHANGELOG.md
