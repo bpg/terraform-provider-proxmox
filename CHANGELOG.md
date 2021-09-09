@@ -9,15 +9,6 @@
 - \[BUG\] SIGSEGV if cloned VM disk is in the different storage [\#2](https://github.com/bpg/terraform-provider-proxmox/issues/2)
 - fix `make test` error [\#1](https://github.com/bpg/terraform-provider-proxmox/pull/1) ([bpg](https://github.com/bpg))
 
-**Merged pull requests:**
-
-- Bump github.com/pkg/sftp from 1.12.0 to 1.13.3 [\#11](https://github.com/bpg/terraform-provider-proxmox/pull/11) ([dependabot[bot]](https://github.com/apps/dependabot))
-- Bump github.com/google/go-querystring from 1.0.0 to 1.1.0 [\#10](https://github.com/bpg/terraform-provider-proxmox/pull/10) ([dependabot[bot]](https://github.com/apps/dependabot))
-- Bump github.com/hashicorp/terraform-plugin-sdk from 1.16.0 to 1.17.2 [\#9](https://github.com/bpg/terraform-provider-proxmox/pull/9) ([dependabot[bot]](https://github.com/apps/dependabot))
-- Bump addressable from 2.7.0 to 2.8.0 in /docs [\#6](https://github.com/bpg/terraform-provider-proxmox/pull/6) ([dependabot[bot]](https://github.com/apps/dependabot))
-- Bump rexml from 3.2.4 to 3.2.5 in /docs [\#5](https://github.com/bpg/terraform-provider-proxmox/pull/5) ([dependabot[bot]](https://github.com/apps/dependabot))
-- Bump nokogiri from 1.11.1 to 1.12.4 in /docs [\#4](https://github.com/bpg/terraform-provider-proxmox/pull/4) ([dependabot[bot]](https://github.com/apps/dependabot))
-
 ## v0.4.4
 
 BUG FIXES:
