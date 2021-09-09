@@ -20,12 +20,12 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.0 // indirect
 	github.com/oklog/run v1.1.0 // indirect
-	github.com/pkg/sftp v1.12.0
+	github.com/pkg/sftp v1.13.3
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/ulikunitz/xz v0.5.9 // indirect
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
+	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 	golang.org/x/tools v0.0.0-20210102185154-773b96fafca2 // indirect
 	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d // indirect
 )
