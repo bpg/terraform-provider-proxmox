@@ -1,11 +1,14 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/danitso/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/danitso/terraform-provider-proxmox)
-[![GoDoc](https://godoc.org/github.com/danitso/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/danitso/terraform-provider-proxmox)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bpg/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/bpg/terraform-provider-proxmox)
+[![GoDoc](https://godoc.org/github.com/bpg/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/bpg/terraform-provider-proxmox)
 
 # Terraform Provider for Proxmox
 A Terraform Provider which adds support for Proxmox solutions.
 
+This repository is a fork of https://github.com/danitso/terraform-provider-proxmox with several critical fixes to unblock
+VM deployment in Proxmox v7.0, and a few other enhancements.
+
 ## Requirements
-- [Terraform](https://www.terraform.io/downloads.html) 0.13+
+- [Terraform](https://www.terraform.io/downloads.html) 0.14+
 - [Go](https://golang.org/doc/install) 1.16+ (to build the provider plugin)
 - [GoReleaser](https://goreleaser.com/install/) 0.155+ (to build the provider plugin)
 
@@ -16,23 +19,23 @@ A Terraform Provider which adds support for Proxmox solutions.
 - [Known issues](#known-issues)
 
 ## Building the provider
-- Clone the repository to `$GOPATH/src/github.com/danitso/terraform-provider-proxmox`:
+- Clone the repository to `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
 
     ```sh
-    $ mkdir -p "${GOPATH}/src/github.com/danitso"
-    $ cd "${GOPATH}/src/github.com/danitso"
-    $ git clone git@github.com:danitso/terraform-provider-proxmox
+    $ mkdir -p "${GOPATH}/src/github.com/bpg"
+    $ cd "${GOPATH}/src/github.com/bpg"
+    $ git clone git@github.com:bpg/terraform-provider-proxmox
     ```
 
 - Enter the provider directory and build it:
 
     ```sh
-    $ cd "${GOPATH}/src/github.com/danitso/terraform-provider-proxmox"
+    $ cd "${GOPATH}/src/github.com/bpg/terraform-provider-proxmox"
     $ make build
     ```
 
 ## Using the provider
-You can find the latest release and its documentation in the [Terraform Registry](https://registry.terraform.io/providers/danitso/proxmox/latest).
+You can find the latest release and its documentation in the [Terraform Registry](https://registry.terraform.io/providers/bpg/proxmox/latest).
 
 ## Testing the provider
 In order to test the provider, you can simply run `make test`.
