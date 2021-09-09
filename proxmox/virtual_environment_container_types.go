@@ -200,7 +200,7 @@ type VirtualEnvironmentContainerGetStatusResponseData struct {
 	SwapAllocation   *int         `json:"maxswap,omitempty"`
 	Tags             *string      `json:"tags,omitempty"`
 	Uptime           *int         `json:"uptime,omitempty"`
-	VMID             string       `json:"vmid,omitempty"`
+	VMID             *int         `json:"vmid,omitempty"`
 }
 
 // VirtualEnvironmentContainerRebootRequestBody contains the body for a container reboot request.
