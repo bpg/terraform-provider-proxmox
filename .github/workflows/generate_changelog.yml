@@ -2,7 +2,7 @@ name: Generate CHANGELOG
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
   pull_request:
     types: [closed]
@@ -16,7 +16,7 @@ on:
 jobs:
   generate_changelog:
     runs-on: ubuntu-latest
-    name: Generate changelog for master branch
+    name: Generate changelog for main branch
     steps:
       - uses: actions/checkout@v2
 
@@ -28,5 +28,5 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Update CHANGELOG.md
-          branch: master
+          branch: main
           file_pattern: CHANGELOG.md
