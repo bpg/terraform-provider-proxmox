@@ -1,2 +1,3 @@
 since_tag=v0.4.4
 add-sections={"dependencies":{"prefix":"**Dependency updates:**","labels":["dependencies"]}}
+pr-wo-labels=false
