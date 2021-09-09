@@ -9,7 +9,7 @@
 - \[BUG\] SIGSEGV if cloned VM disk is in the different storage [\#2](https://github.com/bpg/terraform-provider-proxmox/issues/2)
 - fix `make test` error [\#1](https://github.com/bpg/terraform-provider-proxmox/pull/1) ([bpg](https://github.com/bpg))
 
-**Dependency updates:**
+**Merged pull requests:**
 
 - Bump github.com/pkg/sftp from 1.12.0 to 1.13.3 [\#11](https://github.com/bpg/terraform-provider-proxmox/pull/11) ([dependabot[bot]](https://github.com/apps/dependabot))
 - Bump github.com/google/go-querystring from 1.0.0 to 1.1.0 [\#10](https://github.com/bpg/terraform-provider-proxmox/pull/10) ([dependabot[bot]](https://github.com/apps/dependabot))
