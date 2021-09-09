@@ -4,6 +4,9 @@ on:
     paths-ignore:
       - 'README.md'
   push:
+    branches:
+      - main
+      - "release/**"
     paths-ignore:
       - 'README.md'
 jobs:
