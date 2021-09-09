@@ -4,7 +4,7 @@
 
 [Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.4.4...HEAD)
 
-**Fixed bugs:**
+BUG FIXES:
 
 - \[BUG\] SIGSEGV if cloned VM disk is in the different storage [\#2](https://github.com/bpg/terraform-provider-proxmox/issues/2)
 - fix `make test` error [\#1](https://github.com/bpg/terraform-provider-proxmox/pull/1) ([bpg](https://github.com/bpg))
