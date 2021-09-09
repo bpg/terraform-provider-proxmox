@@ -1,28 +1,45 @@
 name: Generate CHANGELOG
+
 on:
   pull_request:
 #    types: [closed]
-  workflow_dispatch:
+
+  release:
+    types: [published]
+
+  issues:
+    types: [closed, edited]
+
 jobs:
-  GenerateChangelog:
-#    if: github.event.pull_request.merged || github.event_name == 'workflow_dispatch'
+  generate_changelog:
     runs-on: ubuntu-latest
+    name: Generate changelog for master branch
     steps:
       - uses: actions/checkout@v2
+
+      - name: Generate changelog
+        uses: charmixer/auto-changelog-action@v1
         with:
-          fetch-depth: 0
-      - run: cd tools && go install github.com/hashicorp/go-changelog/cmd/changelog-build
-      - run: ./scripts/generate-changelog.sh
-      - run: |
-          if [[ `git status --porcelain` ]]; then
-            if ${{github.event_name == 'workflow_dispatch'}}; then
-              MSG="Update CHANGELOG.md (Manual Trigger)"
-            else
-              MSG="Update CHANGELOG.md for #${{ github.event.pull_request.number }}"
-            fi
-            git config --local user.email changelogbot@hashicorp.com
-            git config --local user.name changelogbot
-            git add CHANGELOG.md
-            git commit -m "$MSG" 
-            git push
-          fi
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+#      - name: Commit files
+#        env:
+#          CI_USER: ${{ secrets.YOUR_GITHUB_USER }}
+#          CI_EMAIL: ${{ secrets.YOUR_GITHUB_EMAIL }}
+#        run: |
+#          git config --local user.email "$CI_EMAIL"
+#          git config --local user.name "$CI_USER"
+#          git add CHANGELOG.md && git commit -m 'Updated CHANGELOG.md' && echo "push=true" >> $GITHUB_ENV || echo "No changes to CHANGELOG.md"
+
+#      - name: Push changes
+#        if: env.push == 'true'
+#        env:
+#          CI_USER: ${{ secrets.YOUR_GITHUB_USER }}
+#          CI_TOKEN: ${{ secrets.YOUR_GITHUB_TOKEN or GITHUB_TOKEN }}
+#        run: |
+#          git push "https://$CI_USER:$CI_TOKEN@github.com/$GITHUB_REPOSITORY.git" HEAD:master
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Update Changelog for PR
+          file_pattern: CHANGELOG.md
