@@ -1,62 +1,48 @@
-name: Create release
+# This GitHub action can publish assets for release when a tag is created.
+# Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
+#
+# This uses an action (hashicorp/ghaction-import-gpg) that assumes you set your
+# private key in the `GPG_PRIVATE_KEY` secret and passphrase in the `PASSPHRASE`
+# secret. If you would rather own your own GPG handling, please fork this action
+# or use an alternative one for key handling.
+#
+# You will need to pass the `--batch` flag to `gpg` in your signing step
+# in `goreleaser` to indicate this is being used in a non-interactive mode.
+#
+name: release
 on:
   push:
     tags:
       - 'v*'
 jobs:
-  release:
-    name: Tag
-    runs-on: ubuntu-20.04
+  goreleaser:
+    runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout the code
+      - name: Checkout
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      -
-        name: Install and configure Go
+
+      - name: Unshallow
+        run: git fetch --prune --unshallow
+
+      - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
-      -
-        name: Install and configure GoReleaser
+          go-version: 1.16
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v4
+        with:
+          git_user_signingkey: true
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2.7.0
+        with:
+          version: latest
+          args: release --rm-dist
         env:
-          GORELEASER_VERSION: '0.155.1'
-        run: |
-          curl -sL -o goreleaser_amd64.deb "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_amd64.deb"
-          sudo dpkg -i goreleaser_amd64.deb
-          rm -f goreleaser_amd64.deb
-      -
-        name: Import the GPG signing key
-        env:
-          GPG_KEY: ${{ secrets.GPG_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          mkdir -p ~/.gnupg
-          chmod 0700 ~/.gnupg
-
-          cat << EOF > ~/.gnupg/gpg.conf
-          use-agent
-          pinentry-mode loopback
-          EOF
-
-          echo "$GPG_KEY" | base64 -d | gpg --batch --allow-secret-key-import --import
-          gpg --keyid-format LONG --list-secret-keys
-
-          cat << EOF > ~/.gnupg/gpg-agent.conf
-          default-cache-ttl 7200
-          max-cache-ttl 31536000
-          allow-loopback-pinentry
-          allow-preset-passphrase
-          EOF
-
-          echo RELOADAGENT | gpg-connect-agent
-
-          printf '%s' "$GPG_PASSPHRASE" > /tmp/.gpg_passphrase
-      -
-        name: Create release
-        env:
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          # GitHub sets this automatically
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
-        run: |
-          goreleaser release --parallelism 2 --rm-dist --timeout 1h

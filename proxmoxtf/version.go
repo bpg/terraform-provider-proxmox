@@ -9,5 +9,5 @@ const (
 	TerraformProviderName = "terraform-provider-proxmox"
 
 	// TerraformProviderVersion specifies the version number.
-	TerraformProviderVersion = "0.4.5"
+	TerraformProviderVersion = "0.4.6"
 )
