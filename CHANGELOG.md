@@ -1,13 +1,18 @@
 # Changelog
 
-## [Unreleased](https://github.com/bpg/terraform-provider-proxmox/tree/HEAD)
+## [v0.4.6](https://github.com/bpg/terraform-provider-proxmox/tree/v0.4.6) (2021-09-10)
 
-[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.4.4...HEAD)
+[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.4.5...v0.4.6)
 
 BUG FIXES:
 
 - JSON unmarshal error when deploying LCX container [\#15](https://github.com/bpg/terraform-provider-proxmox/issues/15)
 - \[BUG\] SIGSEGV if cloned VM disk is in the different storage [\#2](https://github.com/bpg/terraform-provider-proxmox/issues/2)
+- fix `make test` error [\#1](https://github.com/bpg/terraform-provider-proxmox/pull/1) ([bpg](https://github.com/bpg))
+
+## [v0.4.5](https://github.com/bpg/terraform-provider-proxmox/tree/v0.4.5) (2021-07-16)
+
+[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.4.4...v0.4.5)
 
 ## v0.4.4
 
