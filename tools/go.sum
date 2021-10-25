@@ -494,10 +494,11 @@ github.com/google/go-cmp v0.5.4/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.6 h1:BKbKCqvP6I+rmFHt06ZmyQtvB8xAkWdhFyr0ZUNZcxQ=
 github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
-github.com/google/go-github/v35 v35.3.0 h1:fU+WBzuukn0VssbayTT+Zo3/ESKX9JYWjbZTLOTEyho=
-github.com/google/go-github/v35 v35.3.0/go.mod h1:yWB7uCcVWaUbUP74Aq3whuMySRMatyRmq5U9FTNlbio=
-github.com/google/go-querystring v1.0.0 h1:Xkwi/a1rcvNg1PPYe5vI8GbeBY/jrVuDX5ASuANWTrk=
+github.com/google/go-github/v39 v39.2.0 h1:rNNM311XtPOz5rDdsJXAp2o8F67X9FnROXTvto3aSnQ=
+github.com/google/go-github/v39 v39.2.0/go.mod h1:C1s8C5aCC9L+JXIYpJM5GYytdX52vC1bLvHEF1IhBrE=
 github.com/google/go-querystring v1.0.0/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=
+github.com/google/go-querystring v1.1.0 h1:AnCroh3fv4ZBgVIf1Iwtovgjaw/GiKJo8M8yD/fhyJ8=
+github.com/google/go-querystring v1.1.0/go.mod h1:Kcdr2DB4koayq7X8pmAG4sNG59So17icRSOU623lUBU=
 github.com/google/go-replayers/grpcreplay v1.1.0 h1:S5+I3zYyZ+GQz68OfbURDdt/+cSMqCK1wrvNx7WBzTE=
 github.com/google/go-replayers/grpcreplay v1.1.0/go.mod h1:qzAvJ8/wi57zq7gWqaE6AwLM6miiXUQwP1S+I9icmhk=
 github.com/google/go-replayers/httpreplay v1.0.0 h1:8SmT8fUYM4nueF+UnXIX8LJxNTb1vpPuknXz+yTWzL4=
@@ -556,8 +557,8 @@ github.com/goreleaser/chglog v0.1.2 h1:tdzAb/ILeMnphzI9zQ7Nkq+T8R9qyXli8GydD8plF
 github.com/goreleaser/chglog v0.1.2/go.mod h1:tTZsFuSZK4epDXfjMkxzcGbrIOXprf0JFp47BjIr3B8=
 github.com/goreleaser/fileglob v1.2.0 h1:OErqbdzeg/eibfDGPHDQDN8jL5u1jNyxA5IQzNPLLoU=
 github.com/goreleaser/fileglob v1.2.0/go.mod h1:rFyb2pXaK3YdnYnSjn6lifw0h2Q6s8OfOsx6I6bXkKE=
-github.com/goreleaser/goreleaser v0.182.1 h1:cKRlHfbMxejiyMCNACsl82slFXEW+k9RggADv6/Akqg=
-github.com/goreleaser/goreleaser v0.182.1/go.mod h1:DDAKfIsyz8N8HTGYxGT9OvLW2XMLaS5Gr8/O3fSasKw=
+github.com/goreleaser/goreleaser v0.183.0 h1:nN//eVCpCzv8cC9YxC4tOOJJAkY0/KUe1j9eewo7WjI=
+github.com/goreleaser/goreleaser v0.183.0/go.mod h1:YpbfWvjVbC7sjT2xoRypFjse2E+hrBAkxemNnzix9I0=
 github.com/goreleaser/nfpm/v2 v2.6.0 h1:bwDU9o4/CVTSpqASJA7+r+rkqpTGamQKYHMRH3wDlRE=
 github.com/goreleaser/nfpm/v2 v2.6.0/go.mod h1:qaMnjBaZz/2vInOIWx0IbuKuaZpaVB6O8oLG0u4qH1Y=
 github.com/gorhill/cronexpr v0.0.0-20180427100037-88b0669f7d75/go.mod h1:g2644b03hfBX9Ov0ZBDgXXens4rxSxmqFBbhvKv2yVA=
