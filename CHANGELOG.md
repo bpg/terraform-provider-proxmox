@@ -4,9 +4,9 @@
 
 [Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.4.6...HEAD)
 
-BUG FIXES:
+BREAKING CHANGES:
 
-- Container is not created "unmarshal string into Go struct" [\#30](https://github.com/bpg/terraform-provider-proxmox/issues/30)
+- Bump provider version to 0.5.0
 
 ## [v0.4.6](https://github.com/bpg/terraform-provider-proxmox/tree/v0.4.6) (2021-09-10)
 
