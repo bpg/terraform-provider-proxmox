@@ -7,6 +7,13 @@ A Terraform Provider which adds support for Proxmox solutions.
 This repository is a fork of https://github.com/danitso/terraform-provider-proxmox with several critical fixes to unblock
 VM deployment in Proxmox v7.0, and a few other enhancements.
 
+## Compatibility Matrix
+
+| Proxmox version | Provider version         |
+|-----------------|--------------------------|
+| 6.x             | \<= 0.4.4                |
+| 7.x             | 0.4.x \> 0.4.4 <br>0.5.x |
+
 ## Requirements
 - [Terraform](https://www.terraform.io/downloads.html) 0.14+
 - [Go](https://golang.org/doc/install) 1.16+ (to build the provider plugin)
@@ -44,7 +51,7 @@ In order to test the provider, you can simply run `make test`.
 $ make test
 ```
 
-Tests are limited to regression tests, ensuring backwards compability.
+Tests are limited to regression tests, ensuring backwards compatibility.
 
 ## Known issues
 
