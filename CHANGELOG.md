@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased](https://github.com/bpg/terraform-provider-proxmox/tree/HEAD)
+
+[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.5.0...HEAD)
+
+BUG FIXES:
+
+- Version mismatch in the code [\#44](https://github.com/bpg/terraform-provider-proxmox/issues/44)
+
 ## [v0.5.0](https://github.com/bpg/terraform-provider-proxmox/tree/v0.5.0) (2021-11-06)
 
 [Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.4.6...v0.5.0)
