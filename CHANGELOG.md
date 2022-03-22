@@ -7,6 +7,7 @@
 BUG FIXES:
 
 - Version mismatch in the code [\#44](https://github.com/bpg/terraform-provider-proxmox/issues/44)
+- virtual\_environment\_datastores.go: Update remote command to get datasource path [\#49](https://github.com/bpg/terraform-provider-proxmox/pull/49) ([mattburchett](https://github.com/mattburchett))
 
 ## [v0.5.0](https://github.com/bpg/terraform-provider-proxmox/tree/v0.5.0) (2021-11-06)
 
