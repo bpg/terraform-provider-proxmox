@@ -4,3 +4,4 @@ pr-wo-labels=false
 bugs-label=BUG FIXES:
 breaking-label=BREAKING CHANGES:
 enhancement-label=ENHANCEMENTS:
+release-branch=main
