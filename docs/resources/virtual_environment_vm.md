@@ -13,7 +13,7 @@ Manages a virtual machine.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   name        = "terraform-provider-proxmox-ubuntu-vm"
   description = "Managed by Terraform"
@@ -27,7 +27,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
+    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
     interface    = "scsi0"
   }
 
@@ -39,12 +39,12 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     }
 
     user_account {
-      keys     = ["${trimspace(tls_private_key.ubuntu_vm_key.public_key_openssh)}"]
-      password = "${random_password.ubuntu_vm_password.result}"
+      keys     = [trimspace(tls_private_key.ubuntu_vm_key.public_key_openssh)]
+      password = random_password.ubuntu_vm_password.result
       username = "ubuntu"
     }
 
-    user_data_file_id = "${proxmox_virtual_environment_file.cloud_config.id}"
+    user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
   }
 
   network_device {}
@@ -78,17 +78,17 @@ resource "tls_private_key" "ubuntu_vm_key" {
 }
 
 output "ubuntu_vm_password" {
-  value     = "${random_password.ubuntu_vm_password.result}"
+  value     = random_password.ubuntu_vm_password.result
   sensitive = true
 }
 
 output "ubuntu_vm_private_key" {
-  value     = "${tls_private_key.ubuntu_vm_key.private_key_pem}"
+  value     = tls_private_key.ubuntu_vm_key.private_key_pem
   sensitive = true
 }
 
 output "ubuntu_vm_public_key" {
-  value = "${tls_private_key.ubuntu_vm_key.public_key_openssh}"
+  value = tls_private_key.ubuntu_vm_key.public_key_openssh
 }
 ```
 
