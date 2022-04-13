@@ -25,6 +25,7 @@ jobs:
       - name: Generate changelog
         uses: charmixer/auto-changelog-action@v1
         with:
+          token: ${{ secrets.BOT_TOKEN }}
           release_branch: main
 
       - uses: stefanzweifel/git-auto-commit-action@v4
