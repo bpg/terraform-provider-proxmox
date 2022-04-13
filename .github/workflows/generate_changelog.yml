@@ -19,11 +19,13 @@ jobs:
     name: Generate changelog for main branch
     steps:
       - uses: actions/checkout@v3
+      - with:
+          token: ${{ secrets.BOT_TOKEN }}
 
       - name: Generate changelog
         uses: charmixer/auto-changelog-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.BOT_TOKEN }}
           release_branch: main
 
       - uses: stefanzweifel/git-auto-commit-action@v4
@@ -31,3 +33,4 @@ jobs:
           commit_message: Update CHANGELOG.md
           branch: main
           file_pattern: CHANGELOG.md
+          push_options: --force
