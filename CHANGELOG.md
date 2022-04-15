@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased](https://github.com/bpg/terraform-provider-proxmox/tree/HEAD)
+
+[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.5.1...HEAD)
+
+BUG FIXES:
+
+- proxmox\_virtual\_environment\_file json unmarshalling type issue [\#41](https://github.com/bpg/terraform-provider-proxmox/issues/41)
+
 ## [v0.5.1](https://github.com/bpg/terraform-provider-proxmox/tree/v0.5.1) (2022-03-22)
 
 [Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.5.0...v0.5.1)
