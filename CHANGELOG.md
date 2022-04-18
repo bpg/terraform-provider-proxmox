@@ -4,7 +4,7 @@
 
 [Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.5.1...HEAD)
 
-BUG FIXES:
+**Closed issues:**
 
 - proxmox\_virtual\_environment\_file json unmarshalling type issue [\#41](https://github.com/bpg/terraform-provider-proxmox/issues/41)
 
