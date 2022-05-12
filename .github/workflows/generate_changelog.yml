@@ -3,7 +3,7 @@ name: Generate CHANGELOG
 on:
 
   pull_request:
-#    types: [ closed ]
+    types: [ closed ]
 
   release:
     types: [ published ]
