@@ -3,7 +3,7 @@ name: Generate CHANGELOG
 on:
 
   pull_request:
-    types: [ closed ]
+#    types: [ closed ]
 
   release:
     types: [ published ]
@@ -23,6 +23,7 @@ jobs:
           token: ${{ secrets.BOT_TOKEN }}
 
       - name: Import GPG key
+        id: import_gpg_key
         uses: crazy-max/ghaction-import-gpg@v2
         with:
           git_commit_gpgsign: true
@@ -43,7 +44,6 @@ jobs:
           branch: main
           file_pattern: CHANGELOG.md
           push_options: --force
-          commit_author: ${{ steps.import_gpg.outputs.name }} <${{ steps.import_gpg.outputs.email }}>
-          commit_user_email: ${{ steps.import_gpg.outputs.email }}
-          commit_user_name: ${{ steps.import_gpg.outputs.name }}
-          commit_options: '-S'
+          commit_author: ${{ steps.import_gpg_key.outputs.name }} <${{ steps.import_gpg_key.outputs.email }}>
+          commit_user_email: ${{ steps.import_gpg_key.outputs.email }}
+          commit_user_name: ${{ steps.import_gpg_key.outputs.name }}
