@@ -13,7 +13,7 @@ Retrieves the version information from the API endpoint.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_version" "current_version" {}
 ```
 

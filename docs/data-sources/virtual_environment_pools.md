@@ -13,7 +13,7 @@ Retrieves the identifiers for all the available resource pools.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_pools" "available_pools" {}
 ```
 

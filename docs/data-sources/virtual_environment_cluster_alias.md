@@ -13,7 +13,7 @@ Retrieves information about a specific alias.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_cluster_alias" "local_network" {
   name    = "local_network"
 }

@@ -62,7 +62,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_cloud_image" {
   node_name    = "first-node"
 
   source_file {
-    path = "https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img"
+    path = "http://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img"
   }
 }
 

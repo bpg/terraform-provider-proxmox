@@ -13,7 +13,7 @@ An IPSet allows us to group multiple IP addresses, IP subnets and aliases.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_cluster_ipset" "ipset" {
 	name    = "local_network"
 	comment = "Managed by Terraform"

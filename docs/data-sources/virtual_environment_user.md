@@ -13,7 +13,7 @@ Retrieves information about a specific user.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_user" "operations_user" {
   user_id = "operation@pam"
 }

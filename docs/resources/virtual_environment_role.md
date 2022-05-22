@@ -13,7 +13,7 @@ Manages a role.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_role" "operations_monitoring" {
   role_id = "operations-monitoring"
 

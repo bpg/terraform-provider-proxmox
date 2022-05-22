@@ -13,7 +13,7 @@ Retrieves the identifiers for all the available aliases.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_cluster_aliases" "available_aliases" {}
 ```
 

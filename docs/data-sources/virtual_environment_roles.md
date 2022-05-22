@@ -13,7 +13,7 @@ Retrieves information about all the available roles.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_roles" "available_roles" {}
 ```
 

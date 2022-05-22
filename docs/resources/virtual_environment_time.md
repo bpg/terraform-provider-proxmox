@@ -13,7 +13,7 @@ Manages the time for a specific node.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_time" "first_node_time" {
   node_name = "first-node"
   time_zone = "UTC"
