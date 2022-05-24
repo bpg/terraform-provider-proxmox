@@ -1,7 +1,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/bpg/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/bpg/terraform-provider-proxmox)
 [![GoDoc](https://godoc.org/github.com/bpg/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/bpg/terraform-provider-proxmox)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg/terraform-provider-proxmox)
-![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
+[![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
 
 # Terraform Provider for Proxmox
