@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (6.0.4.6)
+    activesupport (6.0.4.7)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
@@ -283,7 +283,6 @@ GEM
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.8)
-    unf_ext (0.0.8-x64-mingw32)
     unicode-display_width (1.8.0)
     webrick (1.7.0)
     zeitwerk (2.5.4)
@@ -304,4 +303,4 @@ DEPENDENCIES
   webrick (~> 1.7)
 
 BUNDLED WITH
-   2.2.11
+   2.3.14

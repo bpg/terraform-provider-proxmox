@@ -14,7 +14,7 @@ We can create aliases to identify an IP address or a network.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_cluster_alias" "local_network" {
 	name    = "local_network"
 	cidr    = "192.168.0.0/23"

@@ -13,11 +13,11 @@ Manages the custom SSL/TLS certificate for a specific node.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_certificate" "example" {
-  certificate = "${tls_self_signed_cert.proxmox_virtual_environment_certificate.cert_pem}"
+  certificate = tls_self_signed_cert.proxmox_virtual_environment_certificate.cert_pem
   node_name   = "first-node"
-  private_key = "${tls_private_key.proxmox_virtual_environment_certificate.private_key_pem}"
+  private_key = tls_private_key.proxmox_virtual_environment_certificate.private_key_pem
 }
 
 resource "tls_private_key" "proxmox_virtual_environment_certificate" {
@@ -26,8 +26,8 @@ resource "tls_private_key" "proxmox_virtual_environment_certificate" {
 }
 
 resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
-  key_algorithm   = "${tls_private_key.proxmox_virtual_environment_certificate.algorithm}"
-  private_key_pem = "${tls_private_key.proxmox_virtual_environment_certificate.private_key_pem}"
+  key_algorithm   = tls_private_key.proxmox_virtual_environment_certificate.algorithm
+  private_key_pem = tls_private_key.proxmox_virtual_environment_certificate.private_key_pem
 
   subject {
     common_name  = "example.com"

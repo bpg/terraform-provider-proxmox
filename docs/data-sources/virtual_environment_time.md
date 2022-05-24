@@ -13,7 +13,7 @@ Retrieves the current time for a specific node.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_time" "first_node_time" {
   node_name = "first-node"
 }

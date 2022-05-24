@@ -13,14 +13,45 @@ Manages a file.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
   content_type = "vztmpl"
   datastore_id = "local"
   node_name    = "first-node"
 
   source_file {
-    path = "http://download.proxmox.com/images/system/ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz"
+    path = "https://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+  }
+}
+```
+
+```terraform
+resource "proxmox_virtual_environment_file" "cloud_config" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = "pve"
+
+  source_raw {
+    data = <<EOF
+#cloud-config
+chpasswd:
+  list: |
+    ubuntu:example
+  expire: false
+hostname: example-hostname
+packages:
+  - qemu-guest-agent
+users:
+  - default
+  - name: ubuntu
+    groups: sudo
+    shell: /bin/bash
+    ssh-authorized-keys:
+      - ${trimspace(tls_private_key.example.public_key_openssh)}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+EOF
+
+    file_name = "example.cloud-config.yaml"
   }
 }
 ```
@@ -53,6 +84,8 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 
 ## Important Notes
 
-The Proxmox VE API endpoint for file uploads does not support chunked transfer encoding, which means that we must first store the source file as a temporary file locally before uploading it.
+The Proxmox VE API endpoint for file uploads does not support chunked transfer encoding, which means that we must first
+store the source file as a temporary file locally before uploading it.
 
-You must ensure that you have at least `Size-in-MB * 2 + 1` MB of storage space available (twice the size plus overhead because a multipart payload needs to be created as another temporary file).
+You must ensure that you have at least `Size-in-MB * 2 + 1` MB of storage space available (twice the size plus overhead
+because a multipart payload needs to be created as another temporary file).

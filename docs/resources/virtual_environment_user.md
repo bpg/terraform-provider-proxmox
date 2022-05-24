@@ -13,12 +13,12 @@ Manages a user.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_user" "operations_automation" {
   acl {
     path      = "/vms/1234"
     propagate = true
-    role_id   = "${proxmox_virtual_environment_role.operations_monitoring.role_id}"
+    role_id   = proxmox_virtual_environment_role.operations_monitoring.role_id
   }
 
   comment  = "Managed by Terraform"

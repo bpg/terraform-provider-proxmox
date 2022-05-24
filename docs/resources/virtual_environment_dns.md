@@ -13,10 +13,10 @@ Manages the DNS configuration for a specific node.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_dns" "first_node_dns_configuration" {
-  domain    = "${data.proxmox_virtual_environment_dns.first_node_dns_configuration.domain}"
-  node_name = "${data.proxmox_virtual_environment_dns.first_node_dns_configuration.node_name}"
+  domain    = data.proxmox_virtual_environment_dns.first_node_dns_configuration.domain
+  node_name = data.proxmox_virtual_environment_dns.first_node_dns_configuration.node_name
 
   servers = [
     "1.1.1.1",

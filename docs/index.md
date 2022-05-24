@@ -12,7 +12,7 @@ Use the navigation to the left to read about the available resources.
 
 ## Example Usage
 
-```
+```terraform
 provider "proxmox" {
   virtual_environment {
     endpoint = "https://10.0.0.2"
@@ -36,7 +36,7 @@ The Proxmox provider offers a flexible means of providing credentials for authen
 
 Static credentials can be provided by adding a `username` and `password` in-line in the Proxmox provider block:
 
-```
+```terraform
 provider "proxmox" {
   virtual_environment {
     username = "username@realm"

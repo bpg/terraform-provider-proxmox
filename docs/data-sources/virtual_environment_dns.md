@@ -13,7 +13,7 @@ Retrieves the DNS configuration for a specific node.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_dns" "first_node" {
   node_name = "first-node"
 }

@@ -13,7 +13,7 @@ Manages the host entries on a specific node.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_hosts" "first_node_host_entries" {
   node_name = "first-node"
 

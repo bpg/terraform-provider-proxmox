@@ -11,6 +11,6 @@ plugins:
 remote_theme: pmarsceill/just-the-docs
 
 # Theme settings.
-footer_content: 'Copyright &copy; 2019-2021 <a href="https://danitso.com/" target="_blank">Danitso</a> - Distributed under the <a href="https://github.com/danitso/terraform-provider-proxmox/blob/master/LICENSE" target="_blank">Mozilla Public License 2.0</a><br>Copyright &copy; 2021 <a href="https://github.com/bpg/" target="_blank">Pavel Boldyrev</a> - Distributed under the <a href="https://github.com/bpg/terraform-provider-proxmox/blob/main/LICENSE" target="_blank">Mozilla Public License 2.0</a>'
+footer_content: 'Copyright &copy; 2019-2021 <a href="https://danitso.com/" target="_blank">Danitso</a> - Distributed under the <a href="https://github.com/danitso/terraform-provider-proxmox/blob/master/LICENSE" target="_blank">Mozilla Public License 2.0</a><br>Copyright &copy; 2021-2022 <a href="https://github.com/bpg/" target="_blank">Pavel Boldyrev</a> - Distributed under the <a href="https://github.com/bpg/terraform-provider-proxmox/blob/main/LICENSE" target="_blank">Mozilla Public License 2.0</a>'
 heading_anchors: true
 search_enabled: false

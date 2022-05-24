@@ -13,7 +13,7 @@ Retrieves information about all the available users.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_users" "available_users" {}
 ```
 

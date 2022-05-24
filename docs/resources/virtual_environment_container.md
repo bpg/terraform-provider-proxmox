@@ -13,7 +13,7 @@ Manages a container.
 
 ## Example Usage
 
-```
+```terraform
 resource "proxmox_virtual_environment_container" "ubuntu_container" {
   description = "Managed by Terraform"
 
@@ -30,8 +30,8 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     }
 
     user_account {
-      keys     = ["${trimspace(tls_private_key.ubuntu_container_key.public_key_openssh)}"]
-      password = "${random_password.ubuntu_container_password.result}"
+      keys     = [trimspace(tls_private_key.ubuntu_container_key.public_key_openssh)]
+      password = random_password.ubuntu_container_password.result
     }
   }
 
@@ -40,7 +40,7 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   }
 
   operating_system {
-    template_file_id = "${proxmox_virtual_environment_file.ubuntu_container_template.id}"
+    template_file_id = proxmox_virtual_environment_file.ubuntu_container_template.id
     type             = "ubuntu"
   }
 }
@@ -51,7 +51,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
   node_name    = "first-node"
 
   source_file {
-    path = "http://download.proxmox.com/images/system/ubuntu-18.04-standard_18.04.1-1_amd64.tar.gz"
+    path = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
   }
 }
 
@@ -67,17 +67,17 @@ resource "tls_private_key" "ubuntu_container_key" {
 }
 
 output "ubuntu_container_password" {
-  value     = "${random_password.ubuntu_container_password.result}"
+  value     = random_password.ubuntu_container_password.result
   sensitive = true
 }
 
 output "ubuntu_container_private_key" {
-  value     = "${tls_private_key.ubuntu_container_key.private_key_pem}"
+  value     = tls_private_key.ubuntu_container_key.private_key_pem
   sensitive = true
 }
 
 output "ubuntu_container_public_key" {
-  value = "${tls_private_key.ubuntu_container_key.public_key_openssh}"
+  value = tls_private_key.ubuntu_container_key.public_key_openssh
 }
 ```
 

@@ -13,7 +13,7 @@ Retrieves information about a specific role.
 
 ## Example Usage
 
-```
+```terraform
 data "proxmox_virtual_environment_role" "operations_role" {
   role_id = "operations"
 }
