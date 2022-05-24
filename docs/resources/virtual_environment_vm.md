@@ -47,7 +47,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
   }
 
-  network_device {}
+  network_device {
+    bridge = "vmbr0"
+  }
 
   operating_system {
     type = "l26"
@@ -97,7 +99,8 @@ output "ubuntu_vm_public_key" {
 * `acpi` - (Optional) Whether to enable ACPI (defaults to `true`).
 * `agent` - (Optional) The QEMU agent configuration.
     * `enabled` - (Optional) Whether to enable the QEMU agent (defaults to `false`).
-    * `timeout` - (Optional) The maximum amount of time to wait for data from the QEMU agent to become available (defaults to `15m`).
+    * `timeout` - (Optional) The maximum amount of time to wait for data from the QEMU agent to become available (
+      defaults to `15m`).
     * `trim` - (Optional) Whether to enable the FSTRIM feature in the QEMU agent (defaults to `false`).
     * `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
         * `isa` - ISA Serial Port.
@@ -119,7 +122,8 @@ output "ubuntu_vm_public_key" {
 * `clone` - (Optional) The cloning configuration.
     * `datastore_id` - (Optional) The identifier for the target datastore.
     * `node_name` - (Optional) The name of the source node (leave blank, if equal to the `node_name` argument).
-    * `retries` - (Optional) Number of retries in Proxmox for clone vm. Sometimes Proxmox errors with timeout when creating multiple clones at once.
+    * `retries` - (Optional) Number of retries in Proxmox for clone vm. Sometimes Proxmox errors with timeout when
+      creating multiple clones at once.
     * `vm_id` - (Required) The identifier for the source VM.
 * `cpu` - (Optional) The CPU configuration.
     * `architecture` - (Optional) The CPU architecture (defaults to `x86_64`).
@@ -131,7 +135,8 @@ output "ubuntu_vm_public_key" {
         * `+amd-no-ssb`/`-amd-no-ssb` - Notifies guest OS that host is not vulnerable for Spectre on AMD CPUs.
         * `+amd-ssbd`/`-amd-ssbd` - Improves Spectre mitigation performance with AMD CPUs, best used with "virt-ssbd".
         * `+hv-evmcs`/`-hv-evmcs` - Improve performance for nested virtualization (only supported on Intel CPUs).
-        * `+hv-tlbflush`/`-hv-tlbflush` - Improve performance in overcommitted Windows guests (may lead to guest BSOD on old CPUs).
+        * `+hv-tlbflush`/`-hv-tlbflush` - Improve performance in overcommitted Windows guests (may lead to guest BSOD on
+          old CPUs).
         * `+ibpb`/`-ibpb` - Allows improved Spectre mitigation on AMD CPUs.
         * `+md-clear`/`-md-clear` - Required to let the guest OS know if MDS is mitigated correctly.
         * `+pcid`/`-pcid` - Meltdown fix cost reduction on Westmere, Sandy- and Ivy Bridge Intel CPUs.
@@ -143,7 +148,8 @@ output "ubuntu_vm_public_key" {
     * `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
     * `type` - (Optional) The emulated CPU type (defaults to `qemu64`).
         * `486` - Intel 486.
-        * `Broadwell`/`Broadwell-IBRS`/`Broadwell-noTSX`/`Broadwell-noTSX-IBRS` - Intel Core Processor (Broadwell, 2014).
+        * `Broadwell`/`Broadwell-IBRS`/`Broadwell-noTSX`/`Broadwell-noTSX-IBRS` - Intel Core Processor (Broadwell, 2014)
+          .
         * `Cascadelake-Server` - Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (2019).
         * `Conroe` - Intel Celeron_4x0 (Conroe/Merom Class Core 2, 2006).
         * `EPYC`/`EPYC-IBPB` - AMD EPYC Processor (2017).
@@ -180,7 +186,8 @@ output "ubuntu_vm_public_key" {
         * `qcow2` - QEMU Disk Image v2.
         * `raw` - Raw Disk Image.
         * `vmdk` - VMware Disk Image.
-    * `file_id` - (Optional) The file ID for a disk image (experimental - might cause high CPU utilization during import, especially with large disk images).
+    * `file_id` - (Optional) The file ID for a disk image (experimental - might cause high CPU utilization during
+      import, especially with large disk images).
     * `interface` - (Required) The disk interface for Proxmox, currently scsi, sata and virtio are supported.
     * `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     * `speed` - (Optional) The speed limits.
@@ -189,7 +196,8 @@ output "ubuntu_vm_public_key" {
         * `write` - (Optional) The maximum write speed in megabytes per second.
         * `write_burstable` - (Optional) The maximum burstable write speed in megabytes per second.
 * `initialization` - (Optional) The cloud-init configuration.
-    * `datastore_id` - (Optional) The identifier for the datastore to create the cloud-init disk in (defaults to `local-lvm`).
+    * `datastore_id` - (Optional) The identifier for the datastore to create the cloud-init disk in (defaults
+      to `local-lvm`).
     * `dns` - (Optional) The DNS configuration.
         * `domain` - (Optional) The DNS search domain.
         * `server` - (Optional) The DNS server.
@@ -204,7 +212,8 @@ output "ubuntu_vm_public_key" {
         * `keys` - (Optional) The SSH keys.
         * `password` - (Optional) The SSH password.
         * `username` - (Optional) The SSH username.
-    * `user_data_file_id` - (Optional) The identifier for a file containing custom user data (conflicts with `user_account`).
+    * `user_data_file_id` - (Optional) The identifier for a file containing custom user data (conflicts
+      with `user_account`).
 * `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`).
     * `da` - Danish.
     * `de` - German.
@@ -298,11 +307,16 @@ output "ubuntu_vm_public_key" {
 
 ## Attribute Reference
 
-* `ipv4_addresses` - The IPv4 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
-* `ipv6_addresses` - The IPv6 addresses per network interface published by the QEMU agent (empty list when `agent.enabled` is `false`)
-* `mac_addresses` - The MAC addresses published by the QEMU agent with fallback to the network device configuration, if the agent is disabled
-* `network_interface_names` - The network interface names published by the QEMU agent (empty list when `agent.enabled` is `false`)
+* `ipv4_addresses` - The IPv4 addresses per network interface published by the QEMU agent (empty list
+  when `agent.enabled` is `false`)
+* `ipv6_addresses` - The IPv6 addresses per network interface published by the QEMU agent (empty list
+  when `agent.enabled` is `false`)
+* `mac_addresses` - The MAC addresses published by the QEMU agent with fallback to the network device configuration, if
+  the agent is disabled
+* `network_interface_names` - The network interface names published by the QEMU agent (empty list when `agent.enabled`
+  is `false`)
 
 ## Important Notes
 
-When cloning an existing virtual machine, whether it's a template or not, the resource will only detect changes to the arguments which are not set to their default values.
+When cloning an existing virtual machine, whether it's a template or not, the resource will only detect changes to the
+arguments which are not set to their default values.
