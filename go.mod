@@ -30,7 +30,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oklog/run v1.1.0 // indirect
-	github.com/pkg/sftp v1.13.4
+	github.com/pkg/sftp v1.13.5
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
