@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -91,7 +91,7 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				Description:  "The user account's expiration date",
 				Optional:     true,
 				Default:      time.Unix(0, 0).UTC().Format(time.RFC3339),
-				ValidateFunc: validation.ValidateRFC3339TimeString,
+				ValidateFunc: validation.IsRFC3339Time,
 			},
 			mkResourceVirtualEnvironmentUserFirstName: {
 				Type:        schema.TypeString,

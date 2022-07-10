@@ -31,7 +31,7 @@ func (c *VirtualEnvironmentClient) GetPool(id string) (*VirtualEnvironmentPoolGe
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data.Members, func(i, j int) bool {
@@ -51,7 +51,7 @@ func (c *VirtualEnvironmentClient) ListPools() ([]*VirtualEnvironmentPoolListRes
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

@@ -16,7 +16,7 @@ func (c *VirtualEnvironmentClient) CreateIPSet(d *VirtualEnvironmentClusterIPSet
 	return c.DoRequest(hmPOST, "cluster/firewall/ipset", d, nil)
 }
 
-// Add IP or Network to IPSet
+// AddCIDRToIPSet adds IP or Network to IPSet
 func (c *VirtualEnvironmentClient) AddCIDRToIPSet(id string, d *VirtualEnvironmentClusterIPSetGetResponseData) error {
 	return c.DoRequest(hmPOST, fmt.Sprintf("cluster/firewall/ipset/%s/", url.PathEscape(id)), d, nil)
 }
@@ -46,7 +46,7 @@ func (c *VirtualEnvironmentClient) GetListIPSetContent(id string) ([]*VirtualEnv
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -62,7 +62,7 @@ func (c *VirtualEnvironmentClient) GetListIPSets() (*VirtualEnvironmentClusterIP
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

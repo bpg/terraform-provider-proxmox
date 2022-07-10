@@ -31,6 +31,7 @@ example: example-build example-init example-apply example-apply example-destroy
 example-apply:
 	export TF_CLI_CONFIG_FILE="$(shell pwd -P)/example.tfrc" \
 		&& export TF_DISABLE_CHECKPOINT="true" \
+		&& export TF_LOG="DEBUG" \
 		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
 		&& cd ./example \
 		&& terraform apply -auto-approve

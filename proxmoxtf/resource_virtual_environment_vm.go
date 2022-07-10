@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -197,7 +197,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentVMRebootAfterCreation: {
 				Type:        schema.TypeBool,
-				Description: "Wether to reboot vm after creation",
+				Description: "Whether to reboot vm after creation",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMRebootAfterCreation,
 			},
@@ -236,11 +236,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMAgentEnabled,
 						},
 						mkResourceVirtualEnvironmentVMAgentTimeout: {
-							Type:         schema.TypeString,
-							Description:  "The maximum amount of time to wait for data from the QEMU agent to become available",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMAgentTimeout,
-							ValidateFunc: getTimeoutValidator(),
+							Type:             schema.TypeString,
+							Description:      "The maximum amount of time to wait for data from the QEMU agent to become available",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMAgentTimeout,
+							ValidateDiagFunc: getTimeoutValidator(),
 						},
 						mkResourceVirtualEnvironmentVMAgentTrim: {
 							Type:        schema.TypeBool,
@@ -249,11 +249,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMAgentTrim,
 						},
 						mkResourceVirtualEnvironmentVMAgentType: {
-							Type:         schema.TypeString,
-							Description:  "The QEMU agent interface type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMAgentType,
-							ValidateFunc: getQEMUAgentTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The QEMU agent interface type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMAgentType,
+							ValidateDiagFunc: getQEMUAgentTypeValidator(),
 						},
 					},
 				},
@@ -270,18 +270,18 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMAudioDeviceDevice: {
-							Type:         schema.TypeString,
-							Description:  "The device",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMAudioDeviceDevice,
-							ValidateFunc: resourceVirtualEnvironmentVMGetAudioDeviceValidator(),
+							Type:             schema.TypeString,
+							Description:      "The device",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMAudioDeviceDevice,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetAudioDeviceValidator(),
 						},
 						mkResourceVirtualEnvironmentVMAudioDeviceDriver: {
-							Type:         schema.TypeString,
-							Description:  "The driver",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMAudioDeviceDriver,
-							ValidateFunc: resourceVirtualEnvironmentVMGetAudioDriverValidator(),
+							Type:             schema.TypeString,
+							Description:      "The driver",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMAudioDeviceDriver,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetAudioDriverValidator(),
 						},
 						mkResourceVirtualEnvironmentVMAudioDeviceEnabled: {
 							Type:        schema.TypeBool,
@@ -295,11 +295,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMBIOS: {
-				Type:         schema.TypeString,
-				Description:  "The BIOS implementation",
-				Optional:     true,
-				Default:      dvResourceVirtualEnvironmentVMBIOS,
-				ValidateFunc: getBIOSValidator(),
+				Type:             schema.TypeString,
+				Description:      "The BIOS implementation",
+				Optional:         true,
+				Default:          dvResourceVirtualEnvironmentVMBIOS,
+				ValidateDiagFunc: getBIOSValidator(),
 			},
 			mkResourceVirtualEnvironmentVMCDROM: {
 				Type:        schema.TypeList,
@@ -322,11 +322,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMCDROMEnabled,
 						},
 						mkResourceVirtualEnvironmentVMCDROMFileID: {
-							Type:         schema.TypeString,
-							Description:  "The file id",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCDROMFileID,
-							ValidateFunc: getFileIDValidator(),
+							Type:             schema.TypeString,
+							Description:      "The file id",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCDROMFileID,
+							ValidateDiagFunc: getFileIDValidator(),
 						},
 					},
 				},
@@ -364,11 +364,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMCloneNodeName,
 						},
 						mkResourceVirtualEnvironmentVMCloneVMID: {
-							Type:         schema.TypeInt,
-							Description:  "The ID of the source VM",
-							Required:     true,
-							ForceNew:     true,
-							ValidateFunc: getVMIDValidator(),
+							Type:             schema.TypeInt,
+							Description:      "The ID of the source VM",
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: getVMIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMCloneFull: {
 							Type:        schema.TypeBool,
@@ -402,18 +402,18 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMCPUArchitecture: {
-							Type:         schema.TypeString,
-							Description:  "The CPU architecture",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUArchitecture,
-							ValidateFunc: resourceVirtualEnvironmentVMGetCPUArchitectureValidator(),
+							Type:             schema.TypeString,
+							Description:      "The CPU architecture",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUArchitecture,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetCPUArchitectureValidator(),
 						},
 						mkResourceVirtualEnvironmentVMCPUCores: {
-							Type:         schema.TypeInt,
-							Description:  "The number of CPU cores",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUCores,
-							ValidateFunc: validation.IntBetween(1, 2304),
+							Type:             schema.TypeInt,
+							Description:      "The number of CPU cores",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUCores,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 2304)),
 						},
 						mkResourceVirtualEnvironmentVMCPUFlags: {
 							Type:        schema.TypeList,
@@ -425,32 +425,32 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Elem: &schema.Schema{Type: schema.TypeString},
 						},
 						mkResourceVirtualEnvironmentVMCPUHotplugged: {
-							Type:         schema.TypeInt,
-							Description:  "The number of hotplugged vCPUs",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUHotplugged,
-							ValidateFunc: validation.IntBetween(0, 2304),
+							Type:             schema.TypeInt,
+							Description:      "The number of hotplugged vCPUs",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUHotplugged,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
 						},
 						mkResourceVirtualEnvironmentVMCPUSockets: {
-							Type:         schema.TypeInt,
-							Description:  "The number of CPU sockets",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUSockets,
-							ValidateFunc: validation.IntBetween(1, 16),
+							Type:             schema.TypeInt,
+							Description:      "The number of CPU sockets",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUSockets,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 16)),
 						},
 						mkResourceVirtualEnvironmentVMCPUType: {
-							Type:         schema.TypeString,
-							Description:  "The emulated CPU type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUType,
-							ValidateFunc: getCPUTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The emulated CPU type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUType,
+							ValidateDiagFunc: getCPUTypeValidator(),
 						},
 						mkResourceVirtualEnvironmentVMCPUUnits: {
-							Type:         schema.TypeInt,
-							Description:  "The CPU units",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUUnits,
-							ValidateFunc: validation.IntBetween(2, 262144),
+							Type:             schema.TypeInt,
+							Description:      "The CPU units",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUUnits,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(2, 262144)),
 						},
 					},
 				},
@@ -493,27 +493,27 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
 						},
 						mkResourceVirtualEnvironmentVMDiskFileFormat: {
-							Type:         schema.TypeString,
-							Description:  "The file format",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMDiskFileFormat,
-							ValidateFunc: getFileFormatValidator(),
+							Type:             schema.TypeString,
+							Description:      "The file format",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMDiskFileFormat,
+							ValidateDiagFunc: getFileFormatValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskFileID: {
-							Type:         schema.TypeString,
-							Description:  "The file id for a disk image",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMDiskFileID,
-							ValidateFunc: getFileIDValidator(),
+							Type:             schema.TypeString,
+							Description:      "The file id for a disk image",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMDiskFileID,
+							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskSize: {
-							Type:         schema.TypeInt,
-							Description:  "The disk size in gigabytes",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMDiskSize,
-							ValidateFunc: validation.IntAtLeast(1),
+							Type:             schema.TypeInt,
+							Description:      "The disk size in gigabytes",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMDiskSize,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
 						},
 						mkResourceVirtualEnvironmentVMDiskSpeed: {
 							Type:        schema.TypeList,
@@ -713,20 +713,20 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							MinItems: 0,
 						},
 						mkResourceVirtualEnvironmentVMInitializationUserDataFileID: {
-							Type:         schema.TypeString,
-							Description:  "The ID of a file containing custom user data",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
-							ValidateFunc: getFileIDValidator(),
+							Type:             schema.TypeString,
+							Description:      "The ID of a file containing custom user data",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
+							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationType: {
-							Type:         schema.TypeString,
-							Description:  "The cloud-init configuration format",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMInitializationType,
-							ValidateFunc: getCloudInitTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The cloud-init configuration format",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMInitializationType,
+							ValidateDiagFunc: getCloudInitTypeValidator(),
 						},
 					},
 				},
@@ -752,11 +752,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 			},
 			mkResourceVirtualEnvironmentVMKeyboardLayout: {
-				Type:         schema.TypeString,
-				Description:  "The keyboard layout",
-				Optional:     true,
-				Default:      dvResourceVirtualEnvironmentVMKeyboardLayout,
-				ValidateFunc: getKeyboardLayoutValidator(),
+				Type:             schema.TypeString,
+				Description:      "The keyboard layout",
+				Optional:         true,
+				Default:          dvResourceVirtualEnvironmentVMKeyboardLayout,
+				ValidateDiagFunc: getKeyboardLayoutValidator(),
 			},
 			mkResourceVirtualEnvironmentVMMACAddresses: {
 				Type:        schema.TypeList,
@@ -780,25 +780,25 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMMemoryDedicated: {
-							Type:         schema.TypeInt,
-							Description:  "The dedicated memory in megabytes",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMMemoryDedicated,
-							ValidateFunc: validation.IntBetween(64, 268435456),
+							Type:             schema.TypeInt,
+							Description:      "The dedicated memory in megabytes",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMMemoryDedicated,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(64, 268435456)),
 						},
 						mkResourceVirtualEnvironmentVMMemoryFloating: {
-							Type:         schema.TypeInt,
-							Description:  "The floating memory in megabytes (balloon)",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMMemoryFloating,
-							ValidateFunc: validation.IntBetween(0, 268435456),
+							Type:             schema.TypeInt,
+							Description:      "The floating memory in megabytes (balloon)",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMMemoryFloating,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 268435456)),
 						},
 						mkResourceVirtualEnvironmentVMMemoryShared: {
-							Type:         schema.TypeInt,
-							Description:  "The shared memory in megabytes",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMMemoryShared,
-							ValidateFunc: validation.IntBetween(0, 268435456),
+							Type:             schema.TypeInt,
+							Description:      "The shared memory in megabytes",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMMemoryShared,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 268435456)),
 						},
 					},
 				},
@@ -840,14 +840,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 								return new == ""
 							},
-							ValidateFunc: getMACAddressValidator(),
+							ValidateDiagFunc: getMACAddressValidator(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceModel: {
-							Type:         schema.TypeString,
-							Description:  "The model",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMNetworkDeviceModel,
-							ValidateFunc: getNetworkDeviceModelValidator(),
+							Type:             schema.TypeString,
+							Description:      "The model",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMNetworkDeviceModel,
+							ValidateDiagFunc: getNetworkDeviceModelValidator(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit: {
 							Type:        schema.TypeFloat,
@@ -892,11 +892,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMOperatingSystemType: {
-							Type:         schema.TypeString,
-							Description:  "The type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMOperatingSystemType,
-							ValidateFunc: resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMOperatingSystemType,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator(),
 						},
 					},
 				},
@@ -924,11 +924,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMSerialDeviceDevice: {
-							Type:         schema.TypeString,
-							Description:  "The device",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMSerialDeviceDevice,
-							ValidateFunc: resourceVirtualEnvironmentVMGetSerialDeviceValidator(),
+							Type:             schema.TypeString,
+							Description:      "The device",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMSerialDeviceDevice,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetSerialDeviceValidator(),
 						},
 					},
 				},
@@ -1015,18 +1015,18 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMVGAEnabled,
 						},
 						mkResourceVirtualEnvironmentVMVGAMemory: {
-							Type:         schema.TypeInt,
-							Description:  "The VGA memory in megabytes (4-512 MB)",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMVGAMemory,
-							ValidateFunc: getVGAMemoryValidator(),
+							Type:             schema.TypeInt,
+							Description:      "The VGA memory in megabytes (4-512 MB)",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMVGAMemory,
+							ValidateDiagFunc: getVGAMemoryValidator(),
 						},
 						mkResourceVirtualEnvironmentVMVGAType: {
-							Type:         schema.TypeString,
-							Description:  "The VGA type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMVGAType,
-							ValidateFunc: getVGATypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The VGA type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMVGAType,
+							ValidateDiagFunc: getVGATypeValidator(),
 						},
 					},
 				},
@@ -1034,12 +1034,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMVMID: {
-				Type:         schema.TypeInt,
-				Description:  "The VM identifier",
-				Optional:     true,
-				ForceNew:     true,
-				Default:      dvResourceVirtualEnvironmentVMVMID,
-				ValidateFunc: getVMIDValidator(),
+				Type:             schema.TypeInt,
+				Description:      "The VM identifier",
+				Optional:         true,
+				ForceNew:         true,
+				Default:          dvResourceVirtualEnvironmentVMVMID,
+				ValidateDiagFunc: getVMIDValidator(),
 			},
 		},
 		Create: resourceVirtualEnvironmentVMCreate,
@@ -1140,7 +1140,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
 	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
-	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
+	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 
 	if err != nil {
 		return err
@@ -1166,7 +1166,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	ideDevices := proxmox.CustomStorageDevices{}
 
-	delete := []string{}
+	del := []string{}
 
 	if acpi != dvResourceVirtualEnvironmentVMACPI {
 		updateBody.ACPI = &acpi
@@ -1279,7 +1279,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			},
 		}
 
-		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
+		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d)
 
 		if err != nil {
 			return err
@@ -1317,7 +1317,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	}
 
 	if len(networkDevice) > 0 {
-		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
+		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d)
 
 		if err != nil {
 			return err
@@ -1325,12 +1325,12 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 		for i := 0; i < len(updateBody.NetworkDevices); i++ {
 			if !updateBody.NetworkDevices[i].Enabled {
-				delete = append(delete, fmt.Sprintf("net%d", i))
+				del = append(del, fmt.Sprintf("net%d", i))
 			}
 		}
 
 		for i := len(updateBody.NetworkDevices); i < maxResourceVirtualEnvironmentVMNetworkDevices; i++ {
-			delete = append(delete, fmt.Sprintf("net%d", i))
+			del = append(del, fmt.Sprintf("net%d", i))
 		}
 	}
 
@@ -1342,14 +1342,14 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	}
 
 	if len(serialDevice) > 0 {
-		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
+		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d)
 
 		if err != nil {
 			return err
 		}
 
 		for i := len(updateBody.SerialDevices); i < maxResourceVirtualEnvironmentVMSerialDevices; i++ {
-			delete = append(delete, fmt.Sprintf("serial%d", i))
+			del = append(del, fmt.Sprintf("serial%d", i))
 		}
 	}
 
@@ -1373,7 +1373,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		updateBody.VGADevice = vgaDevice
 	}
 
-	updateBody.Delete = delete
+	updateBody.Delete = del
 
 	err = veClient.UpdateVM(nodeName, vmID, updateBody)
 	if err != nil {
@@ -1448,7 +1448,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		}
 
 		if diskSize < compareNumber {
-			return fmt.Errorf("Disk resize fails requests size (%dG) is lower than current size (%s)", diskSize, *currentDiskInfo.Size)
+			return fmt.Errorf("disk resize fails requests size (%dG) is lower than current size (%s)", diskSize, *currentDiskInfo.Size)
 		}
 
 		deleteOriginalDisk := proxmox.CustomBool(true)
@@ -1518,7 +1518,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
-	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
+	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 
 	if err != nil {
 		return err
@@ -1568,7 +1568,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	//ideDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "ide")
 	sataDeviceObjects := diskDeviceObjects["sata"]
 
-	initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
+	initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d)
 
 	if err != nil {
 		return err
@@ -1596,7 +1596,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 
-	networkDeviceObjects, err := resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
+	networkDeviceObjects, err := resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d)
 
 	if err != nil {
 		return err
@@ -1614,7 +1614,7 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
 
-	serialDevices, err := resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
+	serialDevices, err := resourceVirtualEnvironmentVMGetSerialDeviceList(d)
 
 	if err != nil {
 		return err
@@ -1939,7 +1939,7 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 
 		err := veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
 			Timeout: &rebootTimeout,
-		}, (rebootTimeout + 30))
+		}, rebootTimeout+30)
 
 		if err != nil {
 			return err
@@ -1949,7 +1949,7 @@ func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface
 	return resourceVirtualEnvironmentVMRead(d, m)
 }
 
-func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData, m interface{}) (proxmox.CustomAudioDevices, error) {
+func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData) (proxmox.CustomAudioDevices, error) {
 	devices := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
 	list := make(proxmox.CustomAudioDevices, len(devices))
 
@@ -1968,21 +1968,21 @@ func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData, m in
 	return list, nil
 }
 
-func resourceVirtualEnvironmentVMGetAudioDeviceValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentVMGetAudioDeviceValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"AC97",
 		"ich9-intel-hda",
 		"intel-hda",
-	}, false)
+	}, false))
 }
 
-func resourceVirtualEnvironmentVMGetAudioDriverValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentVMGetAudioDriverValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"spice",
-	}, false)
+	}, false))
 }
 
-func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m interface{}) (*proxmox.CustomCloudInitConfig, error) {
+func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData) (*proxmox.CustomCloudInitConfig, error) {
 	var initializationConfig *proxmox.CustomCloudInitConfig
 
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
@@ -2092,11 +2092,11 @@ func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m in
 	return initializationConfig, nil
 }
 
-func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"aarch64",
 		"x86_64",
-	}, false)
+	}, false))
 }
 
 func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m interface{}, disks []interface{}) (map[string]map[string]proxmox.CustomStorageDevice, error) {
@@ -2181,7 +2181,7 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m 
 	return diskDeviceObjects, nil
 }
 
-func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData, m interface{}) (proxmox.CustomNetworkDevices, error) {
+func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData) (proxmox.CustomNetworkDevices, error) {
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 	networkDeviceObjects := make(proxmox.CustomNetworkDevices, len(networkDevice))
 
@@ -2222,8 +2222,8 @@ func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData,
 	return networkDeviceObjects, nil
 }
 
-func resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"l24",
 		"l26",
 		"other",
@@ -2236,10 +2236,10 @@ func resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator() schema.Schema
 		"win10",
 		"wvista",
 		"wxp",
-	}, false)
+	}, false))
 }
 
-func resourceVirtualEnvironmentVMGetSerialDeviceList(d *schema.ResourceData, m interface{}) (proxmox.CustomSerialDevices, error) {
+func resourceVirtualEnvironmentVMGetSerialDeviceList(d *schema.ResourceData) (proxmox.CustomSerialDevices, error) {
 	device := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
 	list := make(proxmox.CustomSerialDevices, len(device))
 
@@ -2254,8 +2254,8 @@ func resourceVirtualEnvironmentVMGetSerialDeviceList(d *schema.ResourceData, m i
 	return list, nil
 }
 
-func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (s []string, es []error) {
+func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(string)
 
 		if !ok {
@@ -2269,7 +2269,7 @@ func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidat
 		}
 
 		return
-	}
+	})
 }
 
 func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData, m interface{}) (*proxmox.CustomVGADevice, error) {
@@ -2350,7 +2350,7 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 		return err
 	}
 
-	err = resourceVirtualEnvironmentVMReadPrimitiveValues(d, m, vmID, vmConfig, vmStatus)
+	err = resourceVirtualEnvironmentVMReadPrimitiveValues(d, vmID, vmConfig, vmStatus)
 
 	if err != nil {
 		return err
@@ -3104,7 +3104,7 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 	return nil
 }
 
-func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) error {
+func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) error {
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
 	currentACPI := d.Get(mkResourceVirtualEnvironmentVMACPI).(bool)
 
@@ -3224,7 +3224,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		},
 	}
 
-	delete := []string{}
+	del := []string{}
 	resource := resourceVirtualEnvironmentVM()
 
 	// Retrieve the entire configuration as we need to process certain values.
@@ -3261,7 +3261,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 
 	if name == "" {
-		delete = append(delete, "name")
+		del = append(del, "name")
 	} else {
 		updateBody.Name = &name
 	}
@@ -3302,7 +3302,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new audio devices.
 	if d.HasChange(mkResourceVirtualEnvironmentVMAudioDevice) {
-		updateBody.AudioDevices, err = resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
+		updateBody.AudioDevices, err = resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 
 		if err != nil {
 			return err
@@ -3310,12 +3310,12 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 		for i := 0; i < len(updateBody.AudioDevices); i++ {
 			if !updateBody.AudioDevices[i].Enabled {
-				delete = append(delete, fmt.Sprintf("audio%d", i))
+				del = append(del, fmt.Sprintf("audio%d", i))
 			}
 		}
 
 		for i := len(updateBody.AudioDevices); i < maxResourceVirtualEnvironmentVMAudioDevices; i++ {
-			delete = append(delete, fmt.Sprintf("audio%d", i))
+			del = append(del, fmt.Sprintf("audio%d", i))
 		}
 
 		rebootRequired = true
@@ -3333,7 +3333,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
 
 		if cdromEnabled == false && cdromFileID == "" {
-			delete = append(delete, "ide3")
+			del = append(del, "ide3")
 		}
 
 		if cdromFileID == "" {
@@ -3377,7 +3377,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
 		} else {
-			delete = append(delete, "vcpus")
+			del = append(del, "vcpus")
 		}
 
 		cpuFlagsConverted := make([]string, len(cpuFlags))
@@ -3411,7 +3411,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 			for key, value := range diskMap {
 				if diskDeviceInfo[key] == nil {
-					return fmt.Errorf("Missing %s device %s", prefix, key)
+					return fmt.Errorf("missing %s device %s", prefix, key)
 				}
 
 				tmp := *diskDeviceInfo[key]
@@ -3450,7 +3450,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 						// Investigate whether to support IDE mapping.
 					}
 				default:
-					return fmt.Errorf("Device prefix %s not supported", prefix)
+					return fmt.Errorf("device prefix %s not supported", prefix)
 				}
 			}
 		}
@@ -3460,7 +3460,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new cloud-init configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMInitialization) {
-		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
+		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d)
 
 		if err != nil {
 			return err
@@ -3522,7 +3522,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new network device configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice) {
-		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
+		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d)
 
 		if err != nil {
 			return err
@@ -3530,12 +3530,12 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 		for i := 0; i < len(updateBody.NetworkDevices); i++ {
 			if !updateBody.NetworkDevices[i].Enabled {
-				delete = append(delete, fmt.Sprintf("net%d", i))
+				del = append(del, fmt.Sprintf("net%d", i))
 			}
 		}
 
 		for i := len(updateBody.NetworkDevices); i < maxResourceVirtualEnvironmentVMNetworkDevices; i++ {
-			delete = append(delete, fmt.Sprintf("net%d", i))
+			del = append(del, fmt.Sprintf("net%d", i))
 		}
 
 		rebootRequired = true
@@ -3558,14 +3558,14 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new serial devices.
 	if d.HasChange(mkResourceVirtualEnvironmentVMSerialDevice) {
-		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
+		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d)
 
 		if err != nil {
 			return err
 		}
 
 		for i := len(updateBody.SerialDevices); i < maxResourceVirtualEnvironmentVMSerialDevices; i++ {
-			delete = append(delete, fmt.Sprintf("serial%d", i))
+			del = append(del, fmt.Sprintf("serial%d", i))
 		}
 
 		rebootRequired = true
@@ -3583,7 +3583,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Update the configuration now that everything has been prepared.
-	updateBody.Delete = delete
+	updateBody.Delete = del
 
 	err = veClient.UpdateVM(nodeName, vmID, updateBody)
 
@@ -3609,7 +3609,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 			err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
-			}, (shutdownTimeout + 30))
+			}, shutdownTimeout+30)
 
 			if err != nil {
 				return err
@@ -3662,7 +3662,7 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 		for prefix, diskMap := range diskOldEntries {
 			for oldKey, oldDisk := range diskMap {
 				if _, present := diskNewEntries[prefix][oldKey]; !present {
-					return fmt.Errorf("Deletion of disks not supported. Please delete disk by hand. Old Interface was %s", *oldDisk.Interface)
+					return fmt.Errorf("deletion of disks not supported. Please delete disk by hand. Old Interface was %s", *oldDisk.Interface)
 				}
 
 				if *oldDisk.ID != *diskNewEntries[prefix][oldKey].ID {
@@ -3692,7 +3692,7 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 				err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 					ForceStop: &forceStop,
 					Timeout:   &shutdownTimeout,
-				}, (shutdownTimeout + 30))
+				}, shutdownTimeout+30)
 
 				if err != nil {
 					return err
@@ -3735,7 +3735,7 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 
 		err := veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
 			Timeout: &rebootTimeout,
-		}, (rebootTimeout + 30))
+		}, rebootTimeout+30)
 
 		if err != nil {
 			return err
@@ -3774,7 +3774,7 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 		err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 			ForceStop: &forceStop,
 			Timeout:   &shutdownTimeout,
-		}, (shutdownTimeout + 30))
+		}, shutdownTimeout+30)
 
 		if err != nil {
 			return err
@@ -3798,7 +3798,7 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 	err = veClient.WaitForVMState(nodeName, vmID, "", 60, 2)
 
 	if err == nil {
-		return fmt.Errorf("Failed to delete VM \"%d\"", vmID)
+		return fmt.Errorf("failed to delete VM \"%d\"", vmID)
 	}
 
 	d.SetId("")

@@ -39,7 +39,7 @@ func (c *VirtualEnvironmentClient) ListDatastoreFiles(nodeName, datastoreID stri
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -59,7 +59,7 @@ func (c *VirtualEnvironmentClient) ListDatastores(nodeName string, d *VirtualEnv
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -181,7 +181,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDa
 		datastorePath := strings.Trim(string(buf), "\000")
 
 		if datastorePath == "" {
-			return nil, errors.New("Failed to determine the datastore path")
+			return nil, errors.New("failed to determine the datastore path")
 		}
 
 		remoteFileDir := datastorePath

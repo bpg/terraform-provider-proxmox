@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -149,19 +149,19 @@ func dataSourceVirtualEnvironmentDatastoresRead(d *schema.ResourceData, m interf
 		}
 
 		if v.SpaceAvailable != nil {
-			spaceAvailable[i] = int(*v.SpaceAvailable)
+			spaceAvailable[i] = *v.SpaceAvailable
 		} else {
 			spaceAvailable[i] = 0
 		}
 
 		if v.SpaceTotal != nil {
-			spaceTotal[i] = int(*v.SpaceTotal)
+			spaceTotal[i] = *v.SpaceTotal
 		} else {
 			spaceTotal[i] = 0
 		}
 
 		if v.SpaceUsed != nil {
-			spaceUsed[i] = int(*v.SpaceUsed)
+			spaceUsed[i] = *v.SpaceUsed
 		} else {
 			spaceUsed[i] = 0
 		}

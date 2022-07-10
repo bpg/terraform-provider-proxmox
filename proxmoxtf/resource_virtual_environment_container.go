@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -126,11 +126,11 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentContainerCloneNodeName,
 						},
 						mkResourceVirtualEnvironmentContainerCloneVMID: {
-							Type:         schema.TypeInt,
-							Description:  "The ID of the source container",
-							Required:     true,
-							ForceNew:     true,
-							ValidateFunc: getVMIDValidator(),
+							Type:             schema.TypeInt,
+							Description:      "The ID of the source container",
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: getVMIDValidator(),
 						},
 					},
 				},
@@ -159,18 +159,18 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentContainerConsoleEnabled,
 						},
 						mkResourceVirtualEnvironmentContainerConsoleMode: {
-							Type:         schema.TypeString,
-							Description:  "The console mode",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentContainerConsoleMode,
-							ValidateFunc: resourceVirtualEnvironmentContainerGetConsoleModeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The console mode",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerConsoleMode,
+							ValidateDiagFunc: resourceVirtualEnvironmentContainerGetConsoleModeValidator(),
 						},
 						mkResourceVirtualEnvironmentContainerConsoleTTYCount: {
-							Type:         schema.TypeInt,
-							Description:  "The number of available TTY",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentContainerConsoleTTYCount,
-							ValidateFunc: validation.IntBetween(0, 6),
+							Type:             schema.TypeInt,
+							Description:      "The number of available TTY",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerConsoleTTYCount,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 6)),
 						},
 					},
 				},
@@ -193,25 +193,25 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentContainerCPUArchitecture: {
-							Type:         schema.TypeString,
-							Description:  "The CPU architecture",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentContainerCPUArchitecture,
-							ValidateFunc: resourceVirtualEnvironmentContainerGetCPUArchitectureValidator(),
+							Type:             schema.TypeString,
+							Description:      "The CPU architecture",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerCPUArchitecture,
+							ValidateDiagFunc: resourceVirtualEnvironmentContainerGetCPUArchitectureValidator(),
 						},
 						mkResourceVirtualEnvironmentContainerCPUCores: {
-							Type:         schema.TypeInt,
-							Description:  "The number of CPU cores",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentContainerCPUCores,
-							ValidateFunc: validation.IntBetween(1, 128),
+							Type:             schema.TypeInt,
+							Description:      "The number of CPU cores",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerCPUCores,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 128)),
 						},
 						mkResourceVirtualEnvironmentContainerCPUUnits: {
-							Type:         schema.TypeInt,
-							Description:  "The CPU units",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentContainerCPUUnits,
-							ValidateFunc: validation.IntBetween(0, 500000),
+							Type:             schema.TypeInt,
+							Description:      "The CPU units",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerCPUUnits,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 500000)),
 						},
 					},
 				},
@@ -413,18 +413,18 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentContainerMemoryDedicated: {
-							Type:         schema.TypeInt,
-							Description:  "The dedicated memory in megabytes",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentContainerMemoryDedicated,
-							ValidateFunc: validation.IntBetween(16, 268435456),
+							Type:             schema.TypeInt,
+							Description:      "The dedicated memory in megabytes",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerMemoryDedicated,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(16, 268435456)),
 						},
 						mkResourceVirtualEnvironmentContainerMemorySwap: {
-							Type:         schema.TypeInt,
-							Description:  "The swap size in megabytes",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentContainerMemorySwap,
-							ValidateFunc: validation.IntBetween(0, 268435456),
+							Type:             schema.TypeInt,
+							Description:      "The swap size in megabytes",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerMemorySwap,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 268435456)),
 						},
 					},
 				},
@@ -460,7 +460,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 								return new == ""
 							},
-							ValidateFunc: getMACAddressValidator(),
+							ValidateDiagFunc: getMACAddressValidator(),
 						},
 						mkResourceVirtualEnvironmentContainerNetworkInterfaceName: {
 							Type:        schema.TypeString,
@@ -498,18 +498,18 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentContainerOperatingSystemTemplateFileID: {
-							Type:         schema.TypeString,
-							Description:  "The ID of an OS template file",
-							Required:     true,
-							ForceNew:     true,
-							ValidateFunc: getFileIDValidator(),
+							Type:             schema.TypeString,
+							Description:      "The ID of an OS template file",
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentContainerOperatingSystemType: {
-							Type:         schema.TypeString,
-							Description:  "The type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentContainerOperatingSystemType,
-							ValidateFunc: resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerOperatingSystemType,
+							ValidateDiagFunc: resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator(),
 						},
 					},
 				},
@@ -540,12 +540,12 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Default:     dvResourceVirtualEnvironmentContainerTemplate,
 			},
 			mkResourceVirtualEnvironmentContainerVMID: {
-				Type:         schema.TypeInt,
-				Description:  "The VM identifier",
-				Optional:     true,
-				ForceNew:     true,
-				Default:      dvResourceVirtualEnvironmentContainerVMID,
-				ValidateFunc: getVMIDValidator(),
+				Type:             schema.TypeInt,
+				Description:      "The VM identifier",
+				Optional:         true,
+				ForceNew:         true,
+				Default:          dvResourceVirtualEnvironmentContainerVMID,
+				ValidateDiagFunc: getVMIDValidator(),
 			},
 		},
 		Create: resourceVirtualEnvironmentContainerCreate,
@@ -1181,21 +1181,21 @@ func resourceVirtualEnvironmentContainerCreateStart(d *schema.ResourceData, m in
 	return resourceVirtualEnvironmentContainerRead(d, m)
 }
 
-func resourceVirtualEnvironmentContainerGetConsoleModeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentContainerGetConsoleModeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"console",
 		"shell",
 		"tty",
-	}, false)
+	}, false))
 }
 
-func resourceVirtualEnvironmentContainerGetCPUArchitectureValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentContainerGetCPUArchitectureValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"amd64",
 		"arm64",
 		"armhf",
 		"i386",
-	}, false)
+	}, false))
 }
 
 func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(client *proxmox.VirtualEnvironmentClient, nodeName string, vmID int) ([]interface{}, error) {
@@ -1258,8 +1258,8 @@ func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(client *prox
 	return networkInterfaces, nil
 }
 
-func resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"alpine",
 		"archlinux",
 		"centos",
@@ -1269,7 +1269,7 @@ func resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema
 		"opensuse",
 		"ubuntu",
 		"unmanaged",
-	}, false)
+	}, false))
 }
 
 func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface{}) error {
@@ -2030,7 +2030,7 @@ func resourceVirtualEnvironmentContainerDelete(d *schema.ResourceData, m interfa
 	err = veClient.WaitForContainerState(nodeName, vmID, "", 60, 2)
 
 	if err == nil {
-		return fmt.Errorf("Failed to delete container \"%d\"", vmID)
+		return fmt.Errorf("failed to delete container \"%d\"", vmID)
 	}
 
 	d.SetId("")

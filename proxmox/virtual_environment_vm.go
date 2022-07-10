@@ -41,7 +41,7 @@ func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, retries in
 		}
 
 		if resBody.Data == nil {
-			return errors.New("The server did not include a data object in the response")
+			return errors.New("the server did not include a data object in the response")
 		}
 
 		err = c.WaitForNodeTask(nodeName, *resBody.Data, timeout, 5)
@@ -75,7 +75,7 @@ func (c *VirtualEnvironmentClient) GetVM(nodeName string, vmID int) (*VirtualEnv
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -94,7 +94,7 @@ func (c *VirtualEnvironmentClient) GetVMID() (*int, error) {
 		}
 
 		if nextVMID == nil {
-			return nil, errors.New("Unable to retrieve the next available VM identifier")
+			return nil, errors.New("unable to retrieve the next available VM identifier")
 		}
 
 		getVMIDCounter = *nextVMID + getVMIDStep
@@ -122,7 +122,7 @@ func (c *VirtualEnvironmentClient) GetVMID() (*int, error) {
 		return &vmID, nil
 	}
 
-	return nil, errors.New("Unable to determine the next available VM identifier")
+	return nil, errors.New("unable to determine the next available VM identifier")
 }
 
 // GetVMNetworkInterfacesFromAgent retrieves the network interfaces reported by the QEMU agent.
@@ -135,7 +135,7 @@ func (c *VirtualEnvironmentClient) GetVMNetworkInterfacesFromAgent(nodeName stri
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -151,7 +151,7 @@ func (c *VirtualEnvironmentClient) GetVMStatus(nodeName string, vmID int) (*Virt
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -189,7 +189,7 @@ func (c *VirtualEnvironmentClient) MoveVMDiskAsync(nodeName string, vmID int, d 
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -197,7 +197,7 @@ func (c *VirtualEnvironmentClient) MoveVMDiskAsync(nodeName string, vmID int, d 
 
 // ListVMs retrieves a list of virtual machines.
 func (c *VirtualEnvironmentClient) ListVMs() ([]*VirtualEnvironmentVMListResponseData, error) {
-	return nil, errors.New("Not implemented")
+	return nil, errors.New("not implemented")
 }
 
 // RebootVM reboots a virtual machine.
@@ -227,7 +227,7 @@ func (c *VirtualEnvironmentClient) RebootVMAsync(nodeName string, vmID int, d *V
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -275,7 +275,7 @@ func (c *VirtualEnvironmentClient) ShutdownVMAsync(nodeName string, vmID int, d 
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -308,7 +308,7 @@ func (c *VirtualEnvironmentClient) StartVMAsync(nodeName string, vmID int) (*str
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -341,7 +341,7 @@ func (c *VirtualEnvironmentClient) StopVMAsync(nodeName string, vmID int) (*stri
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -362,7 +362,7 @@ func (c *VirtualEnvironmentClient) UpdateVMAsync(nodeName string, vmID int, d *V
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -408,7 +408,7 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(nodeName 
 		timeElapsed = time.Now().Sub(timeStart)
 	}
 
-	return nil, fmt.Errorf("Timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces", vmID)
+	return nil, fmt.Errorf("timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces", vmID)
 }
 
 // WaitForNoNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to unpublish the network interfaces.
@@ -434,7 +434,7 @@ func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(nodeNam
 		timeElapsed = time.Now().Sub(timeStart)
 	}
 
-	return fmt.Errorf("Timeout while waiting for the QEMU agent on VM \"%d\" to unpublish the network interfaces", vmID)
+	return fmt.Errorf("timeout while waiting for the QEMU agent on VM \"%d\" to unpublish the network interfaces", vmID)
 }
 
 // WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.
@@ -464,7 +464,7 @@ func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(nodeName string, vmID i
 		timeElapsed = time.Now().Sub(timeStart)
 	}
 
-	return fmt.Errorf("Timeout while waiting for VM \"%d\" configuration to become unlocked", vmID)
+	return fmt.Errorf("timeout while waiting for VM \"%d\" configuration to become unlocked", vmID)
 }
 
 // WaitForVMState waits for a virtual machine to reach a specific state.
@@ -496,5 +496,5 @@ func (c *VirtualEnvironmentClient) WaitForVMState(nodeName string, vmID int, sta
 		timeElapsed = time.Now().Sub(timeStart)
 	}
 
-	return fmt.Errorf("Timeout while waiting for VM \"%d\" to enter the state \"%s\"", vmID, state)
+	return fmt.Errorf("timeout while waiting for VM \"%d\" to enter the state \"%s\"", vmID, state)
 }

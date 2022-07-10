@@ -22,22 +22,22 @@ import (
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
 func NewVirtualEnvironmentClient(endpoint, username, password, otp string, insecure bool) (*VirtualEnvironmentClient, error) {
-	url, err := url.ParseRequestURI(endpoint)
+	u, err := url.ParseRequestURI(endpoint)
 
 	if err != nil {
-		return nil, errors.New("You must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port/)")
+		return nil, errors.New("you must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port/)")
 	}
 
-	if url.Scheme != "https" {
-		return nil, errors.New("You must specify a secure endpoint for the Proxmox Virtual Environment API (valid: https://host:port/)")
+	if u.Scheme != "https" {
+		return nil, errors.New("you must specify a secure endpoint for the Proxmox Virtual Environment API (valid: https://host:port/)")
 	}
 
 	if password == "" {
-		return nil, errors.New("You must specify a password for the Proxmox Virtual Environment API")
+		return nil, errors.New("you must specify a password for the Proxmox Virtual Environment API")
 	}
 
 	if username == "" {
-		return nil, errors.New("You must specify a username for the Proxmox Virtual Environment API")
+		return nil, errors.New("you must specify a username for the Proxmox Virtual Environment API")
 	}
 
 	var pOTP *string
@@ -55,7 +55,7 @@ func NewVirtualEnvironmentClient(endpoint, username, password, otp string, insec
 	}
 
 	return &VirtualEnvironmentClient{
-		Endpoint:   strings.TrimRight(url.String(), "/"),
+		Endpoint:   strings.TrimRight(u.String(), "/"),
 		Insecure:   insecure,
 		OTP:        pOTP,
 		Password:   password,
@@ -92,7 +92,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 			v, err := query.Values(requestBody)
 
 			if err != nil {
-				fErr := fmt.Errorf("Failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+				fErr := fmt.Errorf("failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 				log.Printf("[DEBUG] WARNING: %s", fErr.Error())
 				return fErr
 			}
@@ -121,7 +121,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, modifiedPath), reqBodyReader)
 
 	if err != nil {
-		fErr := fmt.Errorf("Failed to create HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+		fErr := fmt.Errorf("failed to create HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 		log.Printf("[DEBUG] WARNING: %s", fErr.Error())
 		return fErr
 	}
@@ -146,7 +146,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	res, err := c.httpClient.Do(req)
 
 	if err != nil {
-		fErr := fmt.Errorf("Failed to perform HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+		fErr := fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 		log.Printf("[DEBUG] WARNING: %s", fErr.Error())
 		return fErr
 	}
@@ -164,7 +164,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 		err = json.NewDecoder(res.Body).Decode(responseBody)
 
 		if err != nil {
-			fErr := fmt.Errorf("Failed to decode HTTP %s response (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+			fErr := fmt.Errorf("failed to decode HTTP %s response (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 			log.Printf("[DEBUG] WARNING: %s", fErr.Error())
 			return fErr
 		}
@@ -194,7 +194,7 @@ func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) erro
 			status = fmt.Sprintf("%s (%s)", status, strings.Join(errList, " - "))
 		}
 
-		return fmt.Errorf("Received an HTTP %d response - Reason: %s", res.StatusCode, status)
+		return fmt.Errorf("received an HTTP %d response - Reason: %s", res.StatusCode, status)
 	}
 
 	return nil

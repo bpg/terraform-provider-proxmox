@@ -31,13 +31,13 @@ func (c *VirtualEnvironmentClient) GetAlias(id string) (*VirtualEnvironmentClust
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
 }
 
-// ListAlias retrieves a list of aliases.
+// ListAliases retrieves a list of aliases.
 func (c *VirtualEnvironmentClient) ListAliases() ([]*VirtualEnvironmentClusterAliasGetResponseData, error) {
 	resBody := &VirtualEnvironmentClusterAliasListResponseBody{}
 	err := c.DoRequest(hmGET, "cluster/firewall/aliases", nil, resBody)
@@ -47,7 +47,7 @@ func (c *VirtualEnvironmentClient) ListAliases() ([]*VirtualEnvironmentClusterAl
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

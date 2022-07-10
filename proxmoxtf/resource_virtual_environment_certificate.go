@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -148,7 +148,7 @@ func resourceVirtualEnvironmentCertificateGetUpdateBody(d *schema.ResourceData, 
 	force := overwrite
 
 	if d.Id() != "" {
-		force = proxmox.CustomBool(true)
+		force = true
 	}
 
 	restart := proxmox.CustomBool(true)

@@ -5,7 +5,10 @@
 package proxmoxtf
 
 import (
+	"errors"
 	"fmt"
+	"github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"math"
 	"regexp"
 	"strconv"
@@ -15,28 +18,28 @@ import (
 	"unicode"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-func getBIOSValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func getBIOSValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"ovmf",
 		"seabios",
-	}, false)
+	}, false))
 }
 
-func getContentTypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func getContentTypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"backup",
 		"iso",
 		"snippets",
 		"vztmpl",
-	}, false)
+	}, false))
 }
 
-func getCPUFlagsValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (ws []string, es []error) {
+func getCPUFlagsValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		list, ok := i.([]interface{})
 
 		if !ok {
@@ -90,11 +93,11 @@ func getCPUFlagsValidator() schema.SchemaValidateFunc {
 		}
 
 		return
-	}
+	})
 }
 
-func getCPUTypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func getCPUTypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"486",
 		"Broadwell",
 		"Broadwell-IBRS",
@@ -140,19 +143,19 @@ func getCPUTypeValidator() schema.SchemaValidateFunc {
 		"phenom",
 		"qemu32",
 		"qemu64",
-	}, false)
+	}, false))
 }
 
-func getFileFormatValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func getFileFormatValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"qcow2",
 		"raw",
 		"vmdk",
-	}, false)
+	}, false))
 }
 
-func getFileIDValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (ws []string, es []error) {
+func getFileIDValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		v, ok := i.(string)
 
 		if !ok {
@@ -171,11 +174,11 @@ func getFileIDValidator() schema.SchemaValidateFunc {
 		}
 
 		return
-	}
+	})
 }
 
-func getKeyboardLayoutValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func getKeyboardLayoutValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"da",
 		"de",
 		"de-ch",
@@ -201,7 +204,7 @@ func getKeyboardLayoutValidator() schema.SchemaValidateFunc {
 		"sl",
 		"sv",
 		"tr",
-	}, false)
+	}, false))
 }
 
 func diskDigitPrefix(s string) string {
@@ -213,8 +216,8 @@ func diskDigitPrefix(s string) string {
 	return s
 }
 
-func getMACAddressValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (ws []string, es []error) {
+func getMACAddressValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		v, ok := i.(string)
 
 		if !ok {
@@ -233,15 +236,15 @@ func getMACAddressValidator() schema.SchemaValidateFunc {
 		}
 
 		return
-	}
+	})
 }
 
-func getNetworkDeviceModelValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{"e1000", "rtl8139", "virtio", "vmxnet3"}, false)
+func getNetworkDeviceModelValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{"e1000", "rtl8139", "virtio", "vmxnet3"}, false))
 }
 
-func getQEMUAgentTypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{"isa", "virtio"}, false)
+func getQEMUAgentTypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{"isa", "virtio"}, false))
 }
 
 func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, m interface{}, k []string, i int, allowDefault bool) (map[string]interface{}, error) {
@@ -257,7 +260,7 @@ func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, m interface{}, k
 			mapValues := resourceData.([]interface{})
 
 			if len(mapValues) <= i {
-				return resourceBlock, fmt.Errorf("Index out of bounds %d", i)
+				return resourceBlock, fmt.Errorf("index out of bounds %d", i)
 			}
 
 			mapValue := mapValues[i].(map[string]interface{})
@@ -288,8 +291,8 @@ func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, m interface{}, k
 	return resourceBlock, nil
 }
 
-func getTimeoutValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (ws []string, es []error) {
+func getTimeoutValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		v, ok := i.(string)
 
 		if !ok {
@@ -305,15 +308,15 @@ func getTimeoutValidator() schema.SchemaValidateFunc {
 		}
 
 		return
-	}
+	})
 }
 
-func getVGAMemoryValidator() schema.SchemaValidateFunc {
-	return validation.IntBetween(4, 512)
+func getVGAMemoryValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.IntBetween(4, 512))
 }
 
-func getVGATypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func getVGATypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"cirrus",
 		"qxl",
 		"qxl2",
@@ -326,11 +329,11 @@ func getVGATypeValidator() schema.SchemaValidateFunc {
 		"std",
 		"virtio",
 		"vmware",
-	}, false)
+	}, false))
 }
 
-func getVLANIDsValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (ws []string, es []error) {
+func getVLANIDsValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		min := 1
 		max := 4094
 
@@ -358,11 +361,11 @@ func getVLANIDsValidator() schema.SchemaValidateFunc {
 		}
 
 		return
-	}
+	})
 }
 
-func getVMIDValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (ws []string, es []error) {
+func getVMIDValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		min := 100
 		max := 2147483647
 
@@ -381,7 +384,7 @@ func getVMIDValidator() schema.SchemaValidateFunc {
 		}
 
 		return
-	}
+	})
 }
 
 func getDiskInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) map[string]*proxmox.CustomStorageDevice {
@@ -485,17 +488,17 @@ func parseDiskSize(size *string) (int, error) {
 
 			diskSize = int(math.Ceil(float64(diskSize) / 1024))
 		} else {
-			return -1, fmt.Errorf("Cannot parse storage size \"%s\"", *size)
+			return -1, fmt.Errorf("cannot parse storage size \"%s\"", *size)
 		}
 	}
 	return diskSize, err
 }
 
-func getCloudInitTypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func getCloudInitTypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"configdrive2",
 		"nocloud",
-	}, false)
+	}, false))
 }
 
 func testComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {
@@ -511,7 +514,7 @@ func testComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {
 }
 
 func testNestedSchemaExistence(t *testing.T, s *schema.Resource, key string) *schema.Resource {
-	schema, ok := s.Schema[key].Elem.(*schema.Resource)
+	sh, ok := s.Schema[key].Elem.(*schema.Resource)
 
 	if !ok {
 		t.Fatalf("Error in Schema: Missing nested schema for \"%s\"", key)
@@ -519,7 +522,7 @@ func testNestedSchemaExistence(t *testing.T, s *schema.Resource, key string) *sc
 		return nil
 	}
 
-	return schema
+	return sh
 }
 
 func testOptionalArguments(t *testing.T, s *schema.Resource, keys []string) {
@@ -556,4 +559,24 @@ func testValueTypes(t *testing.T, s *schema.Resource, f map[string]schema.ValueT
 			t.Fatalf("Error in Schema: Argument or attribute \"%s\" is not of type \"%v\"", fn, ft)
 		}
 	}
+}
+
+type ErrorDiags diag.Diagnostics
+
+func (diags ErrorDiags) Errors() []error {
+	var es []error
+	for i := range diags {
+		if diags[i].Severity == diag.Error {
+			s := fmt.Sprintf("Error: %s", diags[i].Summary)
+			if diags[i].Detail != "" {
+				s = fmt.Sprintf("%s: %s", s, diags[i].Detail)
+			}
+			es = append(es, errors.New(s))
+		}
+	}
+	return es
+}
+
+func (diags ErrorDiags) Error() string {
+	return multierror.ListFormatFunc(diags.Errors())
 }

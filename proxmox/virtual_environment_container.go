@@ -37,7 +37,7 @@ func (c *VirtualEnvironmentClient) GetContainer(nodeName string, vmID int) (*Vir
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -53,7 +53,7 @@ func (c *VirtualEnvironmentClient) GetContainerStatus(nodeName string, vmID int)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -113,7 +113,7 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(nodeName string, vmID i
 		timeElapsed = time.Now().Sub(timeStart)
 	}
 
-	return fmt.Errorf("Timeout while waiting for container \"%d\" to enter the state \"%s\"", vmID, state)
+	return fmt.Errorf("timeout while waiting for container \"%d\" to enter the state \"%s\"", vmID, state)
 }
 
 // WaitForContainerLock waits for a container lock to be released.
@@ -143,5 +143,5 @@ func (c *VirtualEnvironmentClient) WaitForContainerLock(nodeName string, vmID in
 		timeElapsed = time.Now().Sub(timeStart)
 	}
 
-	return fmt.Errorf("Timeout while waiting for container \"%d\" to become unlocked", vmID)
+	return fmt.Errorf("timeout while waiting for container \"%d\" to become unlocked", vmID)
 }

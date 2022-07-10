@@ -65,7 +65,7 @@ func (c *VirtualEnvironmentClient) GetNodeIP(nodeName string) (*string, error) {
 	}
 
 	if nodeAddress == "" {
-		return nil, fmt.Errorf("Failed to determine the IP address of node \"%s\"", nodeName)
+		return nil, fmt.Errorf("failed to determine the IP address of node \"%s\"", nodeName)
 	}
 
 	nodeAddressParts := strings.Split(nodeAddress, "/")
@@ -83,7 +83,7 @@ func (c *VirtualEnvironmentClient) GetNodeTime(nodeName string) (*VirtualEnviron
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -99,7 +99,7 @@ func (c *VirtualEnvironmentClient) GetNodeTaskStatus(nodeName string, upid strin
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
@@ -115,7 +115,7 @@ func (c *VirtualEnvironmentClient) ListNodeNetworkDevices(nodeName string) ([]*V
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -135,7 +135,7 @@ func (c *VirtualEnvironmentClient) ListNodes() ([]*VirtualEnvironmentNodeListRes
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -192,7 +192,7 @@ func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string,
 
 			if status.Status != "running" {
 				if status.ExitCode != "OK" {
-					return fmt.Errorf("Task \"%s\" on node \"%s\" failed to complete with error: %s", upid, nodeName, status.ExitCode)
+					return fmt.Errorf("task \"%s\" on node \"%s\" failed to complete with error: %s", upid, nodeName, status.ExitCode)
 				}
 				return nil
 			}
@@ -205,5 +205,5 @@ func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string,
 		timeElapsed = time.Now().Sub(timeStart)
 	}
 
-	return fmt.Errorf("Timeout while waiting for task \"%s\" on node \"%s\" to complete", upid, nodeName)
+	return fmt.Errorf("timeout while waiting for task \"%s\" on node \"%s\" to complete", upid, nodeName)
 }

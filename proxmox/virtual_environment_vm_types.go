@@ -1318,7 +1318,7 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 	}
 
 	if s == "" {
-		return errors.New("Unexpected empty string")
+		return errors.New("unexpected empty string")
 	}
 
 	pairs := strings.Split(s, ",")

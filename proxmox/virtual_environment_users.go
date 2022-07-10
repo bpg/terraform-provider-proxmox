@@ -42,7 +42,7 @@ func (c *VirtualEnvironmentClient) GetUser(id string) (*VirtualEnvironmentUserGe
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	if resBody.Data.ExpirationDate != nil {
@@ -67,7 +67,7 @@ func (c *VirtualEnvironmentClient) ListUsers() ([]*VirtualEnvironmentUserListRes
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

@@ -22,7 +22,7 @@ func (c *VirtualEnvironmentClient) GetClusterNextID(vmID *int) (*int, error) {
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return (*int)(resBody.Data), nil
