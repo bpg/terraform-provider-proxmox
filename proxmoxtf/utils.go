@@ -164,7 +164,7 @@ func getFileIDValidator() schema.SchemaValidateDiagFunc {
 		}
 
 		if v != "" {
-			r := regexp.MustCompile(`^(?i)[a-z0-9\-_]+:([a-z0-9\-_]+/)?.+$`)
+			r := regexp.MustCompile(`^(?i)[a-z\d\-_]+:([a-z\d\-_]+/)?.+$`)
 			ok := r.MatchString(v)
 
 			if !ok {
@@ -226,7 +226,7 @@ func getMACAddressValidator() schema.SchemaValidateDiagFunc {
 		}
 
 		if v != "" {
-			r := regexp.MustCompile(`^[A-Z0-9]{2}(:[A-Z0-9]{2}){5}$`)
+			r := regexp.MustCompile(`^[A-Z\d]{2}(:[A-Z\d]{2}){5}$`)
 			ok := r.MatchString(v)
 
 			if !ok {

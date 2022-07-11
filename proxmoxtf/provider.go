@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
+	"context"
 	"errors"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"net/url"
 	"os"
 
@@ -34,7 +36,7 @@ type providerConfiguration struct {
 // Provider returns the object for this provider.
 func Provider() *schema.Provider {
 	return &schema.Provider{
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigure,
 		DataSourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_cluster_alias":   dataSourceVirtualEnvironmentClusterAlias(),
 			"proxmox_virtual_environment_cluster_aliases": dataSourceVirtualEnvironmentClusterAliases(),
@@ -175,7 +177,7 @@ func Provider() *schema.Provider {
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
 	var veClient *proxmox.VirtualEnvironmentClient
 
@@ -192,9 +194,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 			veConfig[mkProviderVirtualEnvironmentOTP].(string),
 			veConfig[mkProviderVirtualEnvironmentInsecure].(bool),
 		)
-
 		if err != nil {
-			return nil, err
+			return nil, diag.FromErr(err)
 		}
 	}
 

@@ -334,7 +334,10 @@ func (r VirtualEnvironmentContainerCustomMountPoint) EncodeValues(key string, v 
 // EncodeValues converts a VirtualEnvironmentContainerCustomMountPointArray array to multiple URL values.
 func (r VirtualEnvironmentContainerCustomMountPointArray) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -414,7 +417,10 @@ func (r VirtualEnvironmentContainerCustomNetworkInterface) EncodeValues(key stri
 // EncodeValues converts a VirtualEnvironmentContainerCustomNetworkInterfaceArray array to multiple URL values.
 func (r VirtualEnvironmentContainerCustomNetworkInterfaceArray) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
