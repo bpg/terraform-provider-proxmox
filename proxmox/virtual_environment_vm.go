@@ -5,6 +5,7 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -24,7 +25,7 @@ var (
 )
 
 // CloneVM clones a virtual machine.
-func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, retries int, d *VirtualEnvironmentVMCloneRequestBody, timeout int) error {
+func (c *VirtualEnvironmentClient) CloneVM(ctx context.Context, nodeName string, vmID int, retries int, d *VirtualEnvironmentVMCloneRequestBody, timeout int) error {
 	resBody := &VirtualEnvironmentVMMoveDiskResponseBody{}
 	var err error
 
@@ -44,7 +45,7 @@ func (c *VirtualEnvironmentClient) CloneVM(nodeName string, vmID int, retries in
 			return errors.New("the server did not include a data object in the response")
 		}
 
-		err = c.WaitForNodeTask(nodeName, *resBody.Data, timeout, 5)
+		err = c.WaitForNodeTask(ctx, nodeName, *resBody.Data, timeout, 5)
 
 		if err == nil {
 			return nil
@@ -158,7 +159,7 @@ func (c *VirtualEnvironmentClient) GetVMStatus(nodeName string, vmID int) (*Virt
 }
 
 // MoveVMDisk moves a virtual machine disk.
-func (c *VirtualEnvironmentClient) MoveVMDisk(nodeName string, vmID int, d *VirtualEnvironmentVMMoveDiskRequestBody, timeout int) error {
+func (c *VirtualEnvironmentClient) MoveVMDisk(ctx context.Context, nodeName string, vmID int, d *VirtualEnvironmentVMMoveDiskRequestBody, timeout int) error {
 	taskID, err := c.MoveVMDiskAsync(nodeName, vmID, d)
 
 	if err != nil {
@@ -170,7 +171,7 @@ func (c *VirtualEnvironmentClient) MoveVMDisk(nodeName string, vmID int, d *Virt
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
+	err = c.WaitForNodeTask(ctx, nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -201,14 +202,14 @@ func (c *VirtualEnvironmentClient) ListVMs() ([]*VirtualEnvironmentVMListRespons
 }
 
 // RebootVM reboots a virtual machine.
-func (c *VirtualEnvironmentClient) RebootVM(nodeName string, vmID int, d *VirtualEnvironmentVMRebootRequestBody, timeout int) error {
+func (c *VirtualEnvironmentClient) RebootVM(ctx context.Context, nodeName string, vmID int, d *VirtualEnvironmentVMRebootRequestBody, timeout int) error {
 	taskID, err := c.RebootVMAsync(nodeName, vmID, d)
 
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
+	err = c.WaitForNodeTask(ctx, nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -249,14 +250,14 @@ func (c *VirtualEnvironmentClient) ResizeVMDisk(nodeName string, vmID int, d *Vi
 }
 
 // ShutdownVM shuts down a virtual machine.
-func (c *VirtualEnvironmentClient) ShutdownVM(nodeName string, vmID int, d *VirtualEnvironmentVMShutdownRequestBody, timeout int) error {
+func (c *VirtualEnvironmentClient) ShutdownVM(ctx context.Context, nodeName string, vmID int, d *VirtualEnvironmentVMShutdownRequestBody, timeout int) error {
 	taskID, err := c.ShutdownVMAsync(nodeName, vmID, d)
 
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
+	err = c.WaitForNodeTask(ctx, nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -282,14 +283,14 @@ func (c *VirtualEnvironmentClient) ShutdownVMAsync(nodeName string, vmID int, d 
 }
 
 // StartVM starts a virtual machine.
-func (c *VirtualEnvironmentClient) StartVM(nodeName string, vmID int, timeout int) error {
+func (c *VirtualEnvironmentClient) StartVM(ctx context.Context, nodeName string, vmID int, timeout int) error {
 	taskID, err := c.StartVMAsync(nodeName, vmID)
 
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
+	err = c.WaitForNodeTask(ctx, nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -315,14 +316,14 @@ func (c *VirtualEnvironmentClient) StartVMAsync(nodeName string, vmID int) (*str
 }
 
 // StopVM stops a virtual machine.
-func (c *VirtualEnvironmentClient) StopVM(nodeName string, vmID int, timeout int) error {
+func (c *VirtualEnvironmentClient) StopVM(ctx context.Context, nodeName string, vmID int, timeout int) error {
 	taskID, err := c.StopVMAsync(nodeName, vmID)
 
 	if err != nil {
 		return err
 	}
 
-	err = c.WaitForNodeTask(nodeName, *taskID, timeout, 5)
+	err = c.WaitForNodeTask(ctx, nodeName, *taskID, timeout, 5)
 
 	if err != nil {
 		return err
@@ -369,7 +370,7 @@ func (c *VirtualEnvironmentClient) UpdateVMAsync(nodeName string, vmID int, d *V
 }
 
 // WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
-func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(nodeName string, vmID int, timeout int, delay int, waitForIP bool) (*VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData, error) {
+func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(ctx context.Context, nodeName string, vmID int, timeout int, delay int, waitForIP bool) (*VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData, error) {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -406,13 +407,17 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(nodeName 
 		time.Sleep(200 * time.Millisecond)
 
 		timeElapsed = time.Now().Sub(timeStart)
+
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 	}
 
 	return nil, fmt.Errorf("timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces", vmID)
 }
 
 // WaitForNoNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to unpublish the network interfaces.
-func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(nodeName string, vmID int, timeout int, delay int) error {
+func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(ctx context.Context, nodeName string, vmID int, timeout int, delay int) error {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -432,13 +437,17 @@ func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(nodeNam
 		time.Sleep(200 * time.Millisecond)
 
 		timeElapsed = time.Now().Sub(timeStart)
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 	}
 
 	return fmt.Errorf("timeout while waiting for the QEMU agent on VM \"%d\" to unpublish the network interfaces", vmID)
 }
 
 // WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.
-func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(nodeName string, vmID int, timeout int, delay int, ignoreErrorResponse bool) error {
+func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(ctx context.Context, nodeName string, vmID int, timeout int, delay int, ignoreErrorResponse bool) error {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -462,13 +471,17 @@ func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(nodeName string, vmID i
 		time.Sleep(200 * time.Millisecond)
 
 		timeElapsed = time.Now().Sub(timeStart)
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 	}
 
 	return fmt.Errorf("timeout while waiting for VM \"%d\" configuration to become unlocked", vmID)
 }
 
 // WaitForVMState waits for a virtual machine to reach a specific state.
-func (c *VirtualEnvironmentClient) WaitForVMState(nodeName string, vmID int, state string, timeout int, delay int) error {
+func (c *VirtualEnvironmentClient) WaitForVMState(ctx context.Context, nodeName string, vmID int, state string, timeout int, delay int) error {
 	state = strings.ToLower(state)
 
 	timeDelay := int64(delay)
@@ -479,7 +492,6 @@ func (c *VirtualEnvironmentClient) WaitForVMState(nodeName string, vmID int, sta
 	for timeElapsed.Seconds() < timeMax {
 		if int64(timeElapsed.Seconds())%timeDelay == 0 {
 			data, err := c.GetVMStatus(nodeName, vmID)
-
 			if err != nil {
 				return err
 			}
@@ -494,6 +506,10 @@ func (c *VirtualEnvironmentClient) WaitForVMState(nodeName string, vmID int, sta
 		time.Sleep(200 * time.Millisecond)
 
 		timeElapsed = time.Now().Sub(timeStart)
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 	}
 
 	return fmt.Errorf("timeout while waiting for VM \"%d\" to enter the state \"%s\"", vmID, state)

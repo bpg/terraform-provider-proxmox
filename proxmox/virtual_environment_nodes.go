@@ -5,6 +5,7 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -176,7 +177,7 @@ func (c *VirtualEnvironmentClient) UpdateNodeTime(nodeName string, d *VirtualEnv
 }
 
 // WaitForNodeTask waits for a specific node task to complete.
-func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string, timeout int, delay int) error {
+func (c *VirtualEnvironmentClient) WaitForNodeTask(ctx context.Context, nodeName string, upid string, timeout int, delay int) error {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -203,6 +204,10 @@ func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string,
 		time.Sleep(200 * time.Millisecond)
 
 		timeElapsed = time.Now().Sub(timeStart)
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 	}
 
 	return fmt.Errorf("timeout while waiting for task \"%s\" on node \"%s\" to complete", upid, nodeName)
