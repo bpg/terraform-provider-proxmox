@@ -677,10 +677,10 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 		updateBody.CPUUnits = &cpuUnits
 	}
 
-	initializationIPConfigIPv4Address := []string{}
-	initializationIPConfigIPv4Gateway := []string{}
-	initializationIPConfigIPv6Address := []string{}
-	initializationIPConfigIPv6Gateway := []string{}
+	var initializationIPConfigIPv4Address []string
+	var initializationIPConfigIPv4Gateway []string
+	var initializationIPConfigIPv6Address []string
+	var initializationIPConfigIPv6Gateway []string
 
 	if len(initialization) > 0 {
 		initializationBlock := initialization[0].(map[string]interface{})
@@ -918,10 +918,10 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	initializationDNSDomain := dvResourceVirtualEnvironmentContainerInitializationDNSDomain
 	initializationDNSServer := dvResourceVirtualEnvironmentContainerInitializationDNSServer
 	initializationHostname := dvResourceVirtualEnvironmentContainerInitializationHostname
-	initializationIPConfigIPv4Address := []string{}
-	initializationIPConfigIPv4Gateway := []string{}
-	initializationIPConfigIPv6Address := []string{}
-	initializationIPConfigIPv6Gateway := []string{}
+	var initializationIPConfigIPv4Address []string
+	var initializationIPConfigIPv4Gateway []string
+	var initializationIPConfigIPv6Address []string
+	var initializationIPConfigIPv6Gateway []string
 	initializationUserAccountKeys := proxmox.VirtualEnvironmentContainerCustomSSHKeys{}
 	initializationUserAccountPassword := dvResourceVirtualEnvironmentContainerInitializationUserAccountPassword
 
@@ -1189,7 +1189,7 @@ func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(client *prox
 		return []interface{}{}, err
 	}
 
-	networkInterfaces := []interface{}{}
+	var networkInterfaces []interface{}
 	networkInterfaceArray := []*proxmox.VirtualEnvironmentContainerCustomNetworkInterface{
 		containerInfo.NetworkInterface0,
 		containerInfo.NetworkInterface1,
@@ -1457,7 +1457,7 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 		initialization[mkResourceVirtualEnvironmentContainerInitializationHostname] = ""
 	}
 
-	ipConfigList := []interface{}{}
+	var ipConfigList []interface{}
 	networkInterfaceArray := []*proxmox.VirtualEnvironmentContainerCustomNetworkInterface{
 		containerConfig.NetworkInterface0,
 		containerConfig.NetworkInterface1,
@@ -1468,7 +1468,7 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 		containerConfig.NetworkInterface6,
 		containerConfig.NetworkInterface7,
 	}
-	networkInterfaceList := []interface{}{}
+	var networkInterfaceList []interface{}
 
 	for _, nv := range networkInterfaceArray {
 		if nv == nil {
@@ -1738,10 +1738,10 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 	initializationDNSDomain := dvResourceVirtualEnvironmentContainerInitializationDNSDomain
 	initializationDNSServer := dvResourceVirtualEnvironmentContainerInitializationDNSServer
 	initializationHostname := dvResourceVirtualEnvironmentContainerInitializationHostname
-	initializationIPConfigIPv4Address := []string{}
-	initializationIPConfigIPv4Gateway := []string{}
-	initializationIPConfigIPv6Address := []string{}
-	initializationIPConfigIPv6Gateway := []string{}
+	var initializationIPConfigIPv4Address []string
+	var initializationIPConfigIPv4Gateway []string
+	var initializationIPConfigIPv6Address []string
+	var initializationIPConfigIPv6Gateway []string
 
 	if len(initialization) > 0 {
 		initializationBlock := initialization[0].(map[string]interface{})

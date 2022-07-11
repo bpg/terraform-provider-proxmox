@@ -395,7 +395,7 @@ func getDiskInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.Reso
 
 	for _, v := range currentDiskList {
 		diskMap := v.(map[string]interface{})
-		diskInterface := diskMap[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+		diskInterface := diskMap[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 
 		currentDiskMap[diskInterface] = diskMap
 	}

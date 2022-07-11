@@ -44,7 +44,7 @@ const (
 	dvResourceVirtualEnvironmentVMCPUType                           = "qemu64"
 	dvResourceVirtualEnvironmentVMCPUUnits                          = 1024
 	dvResourceVirtualEnvironmentVMDescription                       = ""
-	dvResourcevirtualEnvironmentVMDiskInterface                     = "scsi0"
+	dvResourceVirtualEnvironmentVMDiskInterface                     = "scsi0"
 	dvResourceVirtualEnvironmentVMDiskDatastoreID                   = "local-lvm"
 	dvResourceVirtualEnvironmentVMDiskFileFormat                    = "qcow2"
 	dvResourceVirtualEnvironmentVMDiskFileID                        = ""
@@ -127,7 +127,7 @@ const (
 	mkResourceVirtualEnvironmentVMCPUUnits                          = "units"
 	mkResourceVirtualEnvironmentVMDescription                       = "description"
 	mkResourceVirtualEnvironmentVMDisk                              = "disk"
-	mkResourcevirtualEnvironmentVMDiskInterface                     = "interface"
+	mkResourceVirtualEnvironmentVMDiskInterface                     = "interface"
 	mkResourceVirtualEnvironmentVMDiskDatastoreID                   = "datastore_id"
 	mkResourceVirtualEnvironmentVMDiskFileFormat                    = "file_format"
 	mkResourceVirtualEnvironmentVMDiskFileID                        = "file_id"
@@ -476,14 +476,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							mkResourceVirtualEnvironmentVMDiskDatastoreID: dvResourceVirtualEnvironmentVMDiskDatastoreID,
 							mkResourceVirtualEnvironmentVMDiskFileFormat:  dvResourceVirtualEnvironmentVMDiskFileFormat,
 							mkResourceVirtualEnvironmentVMDiskFileID:      dvResourceVirtualEnvironmentVMDiskFileID,
-							mkResourcevirtualEnvironmentVMDiskInterface:   dvResourcevirtualEnvironmentVMDiskInterface,
+							mkResourceVirtualEnvironmentVMDiskInterface:   dvResourceVirtualEnvironmentVMDiskInterface,
 							mkResourceVirtualEnvironmentVMDiskSize:        dvResourceVirtualEnvironmentVMDiskSize,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourcevirtualEnvironmentVMDiskInterface: {
+						mkResourceVirtualEnvironmentVMDiskInterface: {
 							Type:        schema.TypeString,
 							Description: "The datastore name",
 							Required:    true,
@@ -1162,7 +1162,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 
 	ideDevices := proxmox.CustomStorageDevices{}
 
-	del := []string{}
+	var del []string
 
 	if acpi != dvResourceVirtualEnvironmentVMACPI {
 		updateBody.ACPI = &acpi
@@ -1263,7 +1263,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
 
-		cdromCloudInitEnabled := true
+		const cdromCloudInitEnabled = true
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
 
@@ -1394,7 +1394,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 
 	for i := range disk {
 		diskBlock := disk[i].(map[string]interface{})
-		diskInterface := diskBlock[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+		diskInterface := diskBlock[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
 		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
 
@@ -1745,7 +1745,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 		return diag.FromErr(err)
 	}
 
-	commands := []string{}
+	var commands []string
 
 	// Determine the ID of the next disk.
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
@@ -1782,7 +1782,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
-		diskInterface, _ := block[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 
 		if len(speed) == 0 {
 			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
@@ -2083,7 +2083,7 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m 
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
-		diskInterface, _ := block[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 
 		speedBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
 
@@ -2309,7 +2309,7 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 		return diag.FromErr(err)
 	}
 
-	diags := resourceVirtualEnvironmentVMReadPrimitiveValues(d, vmID, vmConfig, vmStatus)
+	diags := resourceVirtualEnvironmentVMReadPrimitiveValues(d, vmConfig, vmStatus)
 	if diags.HasError() {
 		return diags
 	}
@@ -2534,7 +2534,7 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 	currentDiskList := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	diskMap := map[string]interface{}{}
 	diskObjects := getDiskInfo(vmConfig, d)
-	orderedDiskList := []interface{}{}
+	var orderedDiskList []interface{}
 
 	for di, dd := range diskObjects {
 		disk := map[string]interface{}{}
@@ -2557,7 +2557,7 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 			disk[mkResourceVirtualEnvironmentVMDiskFileID] = dd.FileID
 		}
 
-		disk[mkResourcevirtualEnvironmentVMDiskInterface] = di
+		disk[mkResourceVirtualEnvironmentVMDiskInterface] = di
 
 		diskSize := 0
 
@@ -2607,7 +2607,7 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 		diskMap[di] = disk
 	}
 
-	keyList := []string{}
+	var keyList []string
 
 	for key := range diskMap {
 		keyList = append(keyList, key)
@@ -3032,9 +3032,9 @@ func resourceVirtualEnvironmentVMReadNetworkValues(ctx context.Context, d *schem
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
-	ipv4Addresses := []interface{}{}
-	ipv6Addresses := []interface{}{}
-	networkInterfaceNames := []interface{}{}
+	var ipv4Addresses []interface{}
+	var ipv6Addresses []interface{}
+	var networkInterfaceNames []interface{}
 
 	if started {
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
@@ -3049,7 +3049,7 @@ func resourceVirtualEnvironmentVMReadNetworkValues(ctx context.Context, d *schem
 				return diag.FromErr(err)
 			}
 
-			macAddresses := []interface{}{}
+			var macAddresses []interface{}
 			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(ctx, nodeName, vmID, int(agentTimeout.Seconds()), 5, true)
 
 			if err == nil && networkInterfaces.Result != nil {
@@ -3059,8 +3059,8 @@ func resourceVirtualEnvironmentVMReadNetworkValues(ctx context.Context, d *schem
 				networkInterfaceNames = make([]interface{}, len(*networkInterfaces.Result))
 
 				for ri, rv := range *networkInterfaces.Result {
-					rvIPv4Addresses := []interface{}{}
-					rvIPv6Addresses := []interface{}{}
+					var rvIPv4Addresses []interface{}
+					var rvIPv6Addresses []interface{}
 
 					if rv.IPAddresses != nil {
 						for _, ip := range *rv.IPAddresses {
@@ -3095,7 +3095,7 @@ func resourceVirtualEnvironmentVMReadNetworkValues(ctx context.Context, d *schem
 	return diags
 }
 
-func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) diag.Diagnostics {
+func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) diag.Diagnostics {
 	var diags diag.Diagnostics
 	var err error
 
@@ -3224,7 +3224,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 		},
 	}
 
-	del := []string{}
+	var del []string
 	resource := resourceVirtualEnvironmentVM()
 
 	// Retrieve the entire configuration as we need to process certain values.
@@ -3605,10 +3605,10 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 	}
 
 	// Change the disk locations and/or sizes, if necessary.
-	return resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx, d, m, vmConfig, !bool(template) && rebootRequired)
+	return resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx, d, m, !bool(template) && rebootRequired)
 }
 
-func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, d *schema.ResourceData, m interface{}, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, reboot bool) diag.Diagnostics {
+func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, d *schema.ResourceData, m interface{}, reboot bool) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -3637,8 +3637,8 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, 
 			return diag.FromErr(err)
 		}
 
-		diskMoveBodies := []*proxmox.VirtualEnvironmentVMMoveDiskRequestBody{}
-		diskResizeBodies := []*proxmox.VirtualEnvironmentVMResizeDiskRequestBody{}
+		var diskMoveBodies []*proxmox.VirtualEnvironmentVMMoveDiskRequestBody
+		var diskResizeBodies []*proxmox.VirtualEnvironmentVMResizeDiskRequestBody
 
 		for prefix, diskMap := range diskOldEntries {
 			for oldKey, oldDisk := range diskMap {
