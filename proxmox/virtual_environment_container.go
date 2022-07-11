@@ -5,6 +5,7 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -85,7 +86,7 @@ func (c *VirtualEnvironmentClient) UpdateContainer(nodeName string, vmID int, d 
 }
 
 // WaitForContainerState waits for a container to reach a specific state.
-func (c *VirtualEnvironmentClient) WaitForContainerState(nodeName string, vmID int, state string, timeout int, delay int) error {
+func (c *VirtualEnvironmentClient) WaitForContainerState(ctx context.Context, nodeName string, vmID int, state string, timeout int, delay int) error {
 	state = strings.ToLower(state)
 
 	timeDelay := int64(delay)
@@ -111,13 +112,17 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(nodeName string, vmID i
 		time.Sleep(200 * time.Millisecond)
 
 		timeElapsed = time.Now().Sub(timeStart)
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 	}
 
 	return fmt.Errorf("timeout while waiting for container \"%d\" to enter the state \"%s\"", vmID, state)
 }
 
 // WaitForContainerLock waits for a container lock to be released.
-func (c *VirtualEnvironmentClient) WaitForContainerLock(nodeName string, vmID int, timeout int, delay int, ignoreErrorResponse bool) error {
+func (c *VirtualEnvironmentClient) WaitForContainerLock(ctx context.Context, nodeName string, vmID int, timeout int, delay int, ignoreErrorResponse bool) error {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -141,6 +146,10 @@ func (c *VirtualEnvironmentClient) WaitForContainerLock(nodeName string, vmID in
 		time.Sleep(200 * time.Millisecond)
 
 		timeElapsed = time.Now().Sub(timeStart)
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 	}
 
 	return fmt.Errorf("timeout while waiting for container \"%d\" to become unlocked", vmID)

@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strconv"
 	"strings"
 
@@ -548,29 +550,28 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				ValidateDiagFunc: getVMIDValidator(),
 			},
 		},
-		Create: resourceVirtualEnvironmentContainerCreate,
-		Read:   resourceVirtualEnvironmentContainerRead,
-		Update: resourceVirtualEnvironmentContainerUpdate,
-		Delete: resourceVirtualEnvironmentContainerDelete,
+		CreateContext: resourceVirtualEnvironmentContainerCreate,
+		ReadContext:   resourceVirtualEnvironmentContainerRead,
+		UpdateContext: resourceVirtualEnvironmentContainerUpdate,
+		DeleteContext: resourceVirtualEnvironmentContainerDelete,
 	}
 }
 
-func resourceVirtualEnvironmentContainerCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentContainerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	clone := d.Get(mkResourceVirtualEnvironmentContainerClone).([]interface{})
 
 	if len(clone) > 0 {
-		return resourceVirtualEnvironmentContainerCreateClone(d, m)
+		return resourceVirtualEnvironmentContainerCreateClone(ctx, d, m)
 	}
 
-	return resourceVirtualEnvironmentContainerCreateCustom(d, m)
+	return resourceVirtualEnvironmentContainerCreateCustom(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentContainerCreateClone(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	clone := d.Get(mkResourceVirtualEnvironmentContainerClone).([]interface{})
@@ -595,9 +596,8 @@ func resourceVirtualEnvironmentContainerCreateClone(d *schema.ResourceData, m in
 
 	if vmID == -1 {
 		vmIDNew, err := veClient.GetVMID()
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		vmID = *vmIDNew
@@ -635,16 +635,15 @@ func resourceVirtualEnvironmentContainerCreateClone(d *schema.ResourceData, m in
 	}
 
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.Itoa(vmID))
 
 	// Wait for the container to be created and its configuration lock to be released.
-	err = veClient.WaitForContainerLock(nodeName, vmID, 600, 5, true)
-
+	err = veClient.WaitForContainerLock(ctx, nodeName, vmID, 600, 5, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
@@ -775,9 +774,8 @@ func resourceVirtualEnvironmentContainerCreateClone(d *schema.ResourceData, m in
 
 	if len(networkInterface) == 0 {
 		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(veClient, nodeName, vmID)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -866,36 +864,32 @@ func resourceVirtualEnvironmentContainerCreateClone(d *schema.ResourceData, m in
 	}
 
 	err = veClient.UpdateContainer(nodeName, vmID, updateBody)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Wait for the container's lock to be released.
-	err = veClient.WaitForContainerLock(nodeName, vmID, 600, 5, true)
-
+	err = veClient.WaitForContainerLock(ctx, nodeName, vmID, 600, 5, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentContainerCreateStart(d, m)
+	return resourceVirtualEnvironmentContainerCreateStart(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentContainerCreateCustom(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	resource := resourceVirtualEnvironmentContainer()
 
 	consoleBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	consoleEnabled := proxmox.CustomBool(consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool))
@@ -903,9 +897,8 @@ func resourceVirtualEnvironmentContainerCreateCustom(d *schema.ResourceData, m i
 	consoleTTYCount := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleTTYCount].(int)
 
 	cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentContainerCPUArchitecture].(string)
@@ -915,9 +908,8 @@ func resourceVirtualEnvironmentContainerCreateCustom(d *schema.ResourceData, m i
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
 
 	diskBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerDisk}, 0, true)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
@@ -990,9 +982,8 @@ func resourceVirtualEnvironmentContainerCreateCustom(d *schema.ResourceData, m i
 	}
 
 	memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int)
@@ -1056,7 +1047,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(d *schema.ResourceData, m i
 	operatingSystem := d.Get(mkResourceVirtualEnvironmentContainerOperatingSystem).([]interface{})
 
 	if len(operatingSystem) == 0 {
-		return fmt.Errorf("\"%s\": required field is not set", mkResourceVirtualEnvironmentContainerOperatingSystem)
+		return diag.Errorf("\"%s\": required field is not set", mkResourceVirtualEnvironmentContainerOperatingSystem)
 	}
 
 	operatingSystemBlock := operatingSystem[0].(map[string]interface{})
@@ -1070,9 +1061,8 @@ func resourceVirtualEnvironmentContainerCreateCustom(d *schema.ResourceData, m i
 
 	if vmID == -1 {
 		vmIDNew, err := veClient.GetVMID()
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		vmID = *vmIDNew
@@ -1126,59 +1116,53 @@ func resourceVirtualEnvironmentContainerCreateCustom(d *schema.ResourceData, m i
 	}
 
 	err = veClient.CreateContainer(nodeName, &createBody)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.Itoa(vmID))
 
 	// Wait for the container's lock to be released.
-	err = veClient.WaitForContainerLock(nodeName, vmID, 600, 5, true)
-
+	err = veClient.WaitForContainerLock(ctx, nodeName, vmID, 600, 5, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentContainerCreateStart(d, m)
+	return resourceVirtualEnvironmentContainerCreateStart(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentContainerCreateStart(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentContainerCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	started := d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool)
 	template := d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 
 	if !started || template {
-		return resourceVirtualEnvironmentContainerRead(d, m)
+		return resourceVirtualEnvironmentContainerRead(ctx, d, m)
 	}
 
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Start the container and wait for it to reach a running state before continuing.
 	err = veClient.StartContainer(nodeName, vmID)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	err = veClient.WaitForContainerState(nodeName, vmID, "running", 120, 5)
-
+	err = veClient.WaitForContainerState(ctx, nodeName, vmID, "running", 120, 5)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentContainerRead(d, m)
+	return resourceVirtualEnvironmentContainerRead(ctx, d, m)
 }
 
 func resourceVirtualEnvironmentContainerGetConsoleModeValidator() schema.SchemaValidateDiagFunc {
@@ -1272,19 +1256,19 @@ func resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema
 	}, false))
 }
 
-func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Retrieve the entire configuration in order to compare it to the state.
@@ -1297,8 +1281,7 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
@@ -1308,10 +1291,11 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 
 	if len(clone) == 0 || currentDescription != dvResourceVirtualEnvironmentContainerDescription {
 		if containerConfig.Description != nil {
-			d.Set(mkResourceVirtualEnvironmentContainerDescription, strings.TrimSpace(*containerConfig.Description))
+			err = d.Set(mkResourceVirtualEnvironmentContainerDescription, strings.TrimSpace(*containerConfig.Description))
 		} else {
-			d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
+			err = d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the console configuration to the one stored in the state.
@@ -1342,13 +1326,15 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 
 	if len(clone) > 0 {
 		if len(currentConsole) > 0 {
-			d.Set(mkResourceVirtualEnvironmentContainerConsole, []interface{}{console})
+			err := d.Set(mkResourceVirtualEnvironmentContainerConsole, []interface{}{console})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentConsole) > 0 ||
 		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] != proxmox.CustomBool(dvResourceVirtualEnvironmentContainerConsoleEnabled) ||
 		console[mkResourceVirtualEnvironmentContainerConsoleMode] != dvResourceVirtualEnvironmentContainerConsoleMode ||
 		console[mkResourceVirtualEnvironmentContainerConsoleTTYCount] != dvResourceVirtualEnvironmentContainerConsoleTTYCount {
-		d.Set(mkResourceVirtualEnvironmentContainerConsole, []interface{}{console})
+		err := d.Set(mkResourceVirtualEnvironmentContainerConsole, []interface{}{console})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the CPU configuration to the one stored in the state.
@@ -1379,13 +1365,15 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 
 	if len(clone) > 0 {
 		if len(currentCPU) > 0 {
-			d.Set(mkResourceVirtualEnvironmentContainerCPU, []interface{}{cpu})
+			err := d.Set(mkResourceVirtualEnvironmentContainerCPU, []interface{}{cpu})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentCPU) > 0 ||
 		cpu[mkResourceVirtualEnvironmentContainerCPUArchitecture] != dvResourceVirtualEnvironmentContainerCPUArchitecture ||
 		cpu[mkResourceVirtualEnvironmentContainerCPUCores] != dvResourceVirtualEnvironmentContainerCPUCores ||
 		cpu[mkResourceVirtualEnvironmentContainerCPUUnits] != dvResourceVirtualEnvironmentContainerCPUUnits {
-		d.Set(mkResourceVirtualEnvironmentContainerCPU, []interface{}{cpu})
+		err := d.Set(mkResourceVirtualEnvironmentContainerCPU, []interface{}{cpu})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the disk configuration to the one stored in the state.
@@ -1404,11 +1392,13 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 
 	if len(clone) > 0 {
 		if len(currentDisk) > 0 {
-			d.Set(mkResourceVirtualEnvironmentContainerDiskDatastoreID, []interface{}{disk})
+			err := d.Set(mkResourceVirtualEnvironmentContainerDiskDatastoreID, []interface{}{disk})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentDisk) > 0 ||
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] != dvResourceVirtualEnvironmentContainerDiskDatastoreID {
-		d.Set(mkResourceVirtualEnvironmentContainerDiskDatastoreID, []interface{}{disk})
+		err := d.Set(mkResourceVirtualEnvironmentContainerDiskDatastoreID, []interface{}{disk})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the memory configuration to the one stored in the state.
@@ -1430,12 +1420,14 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 
 	if len(clone) > 0 {
 		if len(currentMemory) > 0 {
-			d.Set(mkResourceVirtualEnvironmentContainerMemory, []interface{}{memory})
+			err := d.Set(mkResourceVirtualEnvironmentContainerMemory, []interface{}{memory})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentMemory) > 0 ||
 		memory[mkResourceVirtualEnvironmentContainerMemoryDedicated] != dvResourceVirtualEnvironmentContainerMemoryDedicated ||
 		memory[mkResourceVirtualEnvironmentContainerMemorySwap] != dvResourceVirtualEnvironmentContainerMemorySwap {
-		d.Set(mkResourceVirtualEnvironmentContainerMemory, []interface{}{memory})
+		err := d.Set(mkResourceVirtualEnvironmentContainerMemory, []interface{}{memory})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the initialization and network interface configuration to the one stored in the state.
@@ -1594,25 +1586,29 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 			}
 
 			if len(initialization) > 0 {
-				d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
+				err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
 			} else {
-				d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
+				err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
 			}
+			diags = append(diags, diag.FromErr(err)...)
 		}
 
 		currentNetworkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 		if len(currentNetworkInterface) > 0 {
-			d.Set(mkResourceVirtualEnvironmentContainerNetworkInterface, networkInterfaceList)
+			err := d.Set(mkResourceVirtualEnvironmentContainerNetworkInterface, networkInterfaceList)
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else {
 		if len(initialization) > 0 {
-			d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
+			err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
 		} else {
-			d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
+			err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
 		}
+		diags = append(diags, diag.FromErr(err)...)
 
-		d.Set(mkResourceVirtualEnvironmentContainerNetworkInterface, networkInterfaceList)
+		err := d.Set(mkResourceVirtualEnvironmentContainerNetworkInterface, networkInterfaceList)
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the operating system configuration to the one stored in the state.
@@ -1635,48 +1631,49 @@ func resourceVirtualEnvironmentContainerRead(d *schema.ResourceData, m interface
 
 	if len(clone) > 0 {
 		if len(currentMemory) > 0 {
-			d.Set(mkResourceVirtualEnvironmentContainerOperatingSystem, []interface{}{operatingSystem})
+			err := d.Set(mkResourceVirtualEnvironmentContainerOperatingSystem, []interface{}{operatingSystem})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentOperatingSystem) > 0 ||
 		operatingSystem[mkResourceVirtualEnvironmentContainerOperatingSystemType] != dvResourceVirtualEnvironmentContainerOperatingSystemType {
-		d.Set(mkResourceVirtualEnvironmentContainerOperatingSystem, []interface{}{operatingSystem})
+		err := d.Set(mkResourceVirtualEnvironmentContainerOperatingSystem, []interface{}{operatingSystem})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentTemplate := d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 
 	if len(clone) == 0 || currentTemplate != dvResourceVirtualEnvironmentContainerTemplate {
 		if containerConfig.Template != nil {
-			d.Set(mkResourceVirtualEnvironmentContainerTemplate, bool(*containerConfig.Template))
+			err = d.Set(mkResourceVirtualEnvironmentContainerTemplate, bool(*containerConfig.Template))
 		} else {
-			d.Set(mkResourceVirtualEnvironmentContainerTemplate, false)
+			err = d.Set(mkResourceVirtualEnvironmentContainerTemplate, false)
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Determine the state of the container in order to update the "started" argument.
 	status, err := veClient.GetContainerStatus(nodeName, vmID)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	d.Set(mkResourceVirtualEnvironmentContainerStarted, status.Status == "running")
+	err = d.Set(mkResourceVirtualEnvironmentContainerStarted, status.Status == "running")
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Prepare the new request object.
@@ -1703,9 +1700,8 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	// Prepare the new console configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerConsole) {
 		consoleBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		consoleEnabled := proxmox.CustomBool(consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool))
@@ -1722,9 +1718,8 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerCPU) {
 		cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentContainerCPUArchitecture].(string)
@@ -1800,9 +1795,8 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerMemory) {
 		memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int)
@@ -1819,9 +1813,8 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 
 	if len(networkInterface) == 0 && len(clone) > 0 {
 		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(veClient, nodeName, vmID)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -1898,9 +1891,8 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerOperatingSystem) {
 		operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerOperatingSystem}, 0, true)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentContainerOperatingSystemType].(string)
@@ -1912,9 +1904,8 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 
 	// Update the configuration now that everything has been prepared.
 	err = veClient.UpdateContainer(nodeName, vmID, &updateBody)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Determine if the state of the container needs to be changed.
@@ -1923,15 +1914,13 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 	if d.HasChange(mkResourceVirtualEnvironmentContainerStarted) && !bool(template) {
 		if started {
 			err = veClient.StartContainer(nodeName, vmID)
-
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 
-			err = veClient.WaitForContainerState(nodeName, vmID, "running", 300, 5)
-
+			err = veClient.WaitForContainerState(ctx, nodeName, vmID, "running", 300, 5)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		} else {
 			forceStop := proxmox.CustomBool(true)
@@ -1941,15 +1930,13 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			})
-
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 
-			err = veClient.WaitForContainerState(nodeName, vmID, "stopped", 300, 5)
-
+			err = veClient.WaitForContainerState(ctx, nodeName, vmID, "stopped", 300, 5)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 
 			rebootRequired = false
@@ -1963,35 +1950,31 @@ func resourceVirtualEnvironmentContainerUpdate(d *schema.ResourceData, m interfa
 		err = veClient.RebootContainer(nodeName, vmID, &proxmox.VirtualEnvironmentContainerRebootRequestBody{
 			Timeout: &rebootTimeout,
 		})
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	return resourceVirtualEnvironmentContainerRead(d, m)
+	return resourceVirtualEnvironmentContainerRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentContainerDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentContainerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Shut down the container before deleting it.
 	status, err := veClient.GetContainerStatus(nodeName, vmID)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if status.Status != "stopped" {
@@ -2002,15 +1985,13 @@ func resourceVirtualEnvironmentContainerDelete(d *schema.ResourceData, m interfa
 			ForceStop: &forceStop,
 			Timeout:   &shutdownTimeout,
 		})
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
-		err = veClient.WaitForContainerState(nodeName, vmID, "stopped", 30, 5)
-
+		err = veClient.WaitForContainerState(ctx, nodeName, vmID, "stopped", 30, 5)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -2022,15 +2003,13 @@ func resourceVirtualEnvironmentContainerDelete(d *schema.ResourceData, m interfa
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
-	err = veClient.WaitForContainerState(nodeName, vmID, "", 60, 2)
-
+	err = veClient.WaitForContainerState(ctx, nodeName, vmID, "", 60, 2)
 	if err == nil {
-		return fmt.Errorf("failed to delete container \"%d\"", vmID)
+		return diag.Errorf("failed to delete container \"%d\"", vmID)
 	}
 
 	d.SetId("")
