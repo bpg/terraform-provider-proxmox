@@ -65,7 +65,7 @@ func resourceVirtualEnvironmentTimeCreate(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceVirtualEnvironmentTimeRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentTimeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -75,7 +75,7 @@ func resourceVirtualEnvironmentTimeRead(_ context.Context, d *schema.ResourceDat
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
-	nodeTime, err := veClient.GetNodeTime(nodeName)
+	nodeTime, err := veClient.GetNodeTime(ctx, nodeName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -110,7 +110,7 @@ func resourceVirtualEnvironmentTimeUpdate(ctx context.Context, d *schema.Resourc
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
 	timeZone := d.Get(mkResourceVirtualEnvironmentTimeTimeZone).(string)
 
-	err = veClient.UpdateNodeTime(nodeName, &proxmox.VirtualEnvironmentNodeUpdateTimeRequestBody{
+	err = veClient.UpdateNodeTime(ctx, nodeName, &proxmox.VirtualEnvironmentNodeUpdateTimeRequestBody{
 		TimeZone: timeZone,
 	})
 	if err != nil {
@@ -120,7 +120,7 @@ func resourceVirtualEnvironmentTimeUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentTimeRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentTimeDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentTimeDelete(ctx context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

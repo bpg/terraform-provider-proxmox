@@ -97,7 +97,7 @@ func resourceVirtualEnvironmentGroupCreate(ctx context.Context, d *schema.Resour
 		ID:      groupID,
 	}
 
-	err = veClient.CreateGroup(body)
+	err = veClient.CreateGroup(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -119,7 +119,7 @@ func resourceVirtualEnvironmentGroupCreate(ctx context.Context, d *schema.Resour
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -128,7 +128,7 @@ func resourceVirtualEnvironmentGroupCreate(ctx context.Context, d *schema.Resour
 	return resourceVirtualEnvironmentGroupRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentGroupRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -138,7 +138,7 @@ func resourceVirtualEnvironmentGroupRead(_ context.Context, d *schema.ResourceDa
 	}
 
 	groupID := d.Id()
-	group, err := veClient.GetGroup(groupID)
+	group, err := veClient.GetGroup(ctx, groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -149,7 +149,7 @@ func resourceVirtualEnvironmentGroupRead(_ context.Context, d *schema.ResourceDa
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL()
+	acl, err := veClient.GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -204,7 +204,7 @@ func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.Resour
 		Comment: &comment,
 	}
 
-	err = veClient.UpdateGroup(groupID, body)
+	err = veClient.UpdateGroup(ctx, groupID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -225,7 +225,7 @@ func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.Resour
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -246,7 +246,7 @@ func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.Resour
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -255,7 +255,7 @@ func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.Resour
 	return resourceVirtualEnvironmentGroupRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentGroupDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentGroupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -278,13 +278,13 @@ func resourceVirtualEnvironmentGroupDelete(_ context.Context, d *schema.Resource
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.DeleteGroup(groupID)
+	err = veClient.DeleteGroup(ctx, groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

@@ -118,7 +118,7 @@ func resourceVirtualEnvironmentHostsCreate(ctx context.Context, d *schema.Resour
 	return diags
 }
 
-func resourceVirtualEnvironmentHostsRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentHostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -128,7 +128,7 @@ func resourceVirtualEnvironmentHostsRead(_ context.Context, d *schema.ResourceDa
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentHostsNodeName).(string)
-	hosts, err := veClient.GetHosts(nodeName)
+	hosts, err := veClient.GetHosts(ctx, nodeName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -219,7 +219,7 @@ func resourceVirtualEnvironmentHostsUpdate(ctx context.Context, d *schema.Resour
 		body.Data += "\n"
 	}
 
-	err = veClient.UpdateHosts(nodeName, &body)
+	err = veClient.UpdateHosts(ctx, nodeName, &body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -227,7 +227,7 @@ func resourceVirtualEnvironmentHostsUpdate(ctx context.Context, d *schema.Resour
 	return resourceVirtualEnvironmentHostsRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentHostsDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentHostsDelete(ctx context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

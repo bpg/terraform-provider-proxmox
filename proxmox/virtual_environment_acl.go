@@ -5,14 +5,15 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"sort"
 )
 
 // GetACL retrieves the access control list.
-func (c *VirtualEnvironmentClient) GetACL() ([]*VirtualEnvironmentACLGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetACL(ctx context.Context) ([]*VirtualEnvironmentACLGetResponseData, error) {
 	resBody := &VirtualEnvironmentACLGetResponseBody{}
-	err := c.DoRequest(hmGET, "access/acl", nil, resBody)
+	err := c.DoRequest(ctx, hmGET, "access/acl", nil, resBody)
 
 	if err != nil {
 		return nil, err
@@ -30,6 +31,6 @@ func (c *VirtualEnvironmentClient) GetACL() ([]*VirtualEnvironmentACLGetResponse
 }
 
 // UpdateACL updates the access control list.
-func (c *VirtualEnvironmentClient) UpdateACL(d *VirtualEnvironmentACLUpdateRequestBody) error {
-	return c.DoRequest(hmPUT, "access/acl", d, nil)
+func (c *VirtualEnvironmentClient) UpdateACL(ctx context.Context, d *VirtualEnvironmentACLUpdateRequestBody) error {
+	return c.DoRequest(ctx, hmPUT, "access/acl", d, nil)
 }

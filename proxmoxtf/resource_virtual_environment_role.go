@@ -61,7 +61,7 @@ func resourceVirtualEnvironmentRoleCreate(ctx context.Context, d *schema.Resourc
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.CreateRole(body)
+	err = veClient.CreateRole(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -71,7 +71,7 @@ func resourceVirtualEnvironmentRoleCreate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentRoleRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentRoleRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -79,7 +79,7 @@ func resourceVirtualEnvironmentRoleRead(_ context.Context, d *schema.ResourceDat
 	}
 
 	roleID := d.Id()
-	role, err := veClient.GetRole(roleID)
+	role, err := veClient.GetRole(ctx, roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -121,7 +121,7 @@ func resourceVirtualEnvironmentRoleUpdate(ctx context.Context, d *schema.Resourc
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.UpdateRole(roleID, body)
+	err = veClient.UpdateRole(ctx, roleID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -129,7 +129,7 @@ func resourceVirtualEnvironmentRoleUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentRoleRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentRoleDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -137,7 +137,7 @@ func resourceVirtualEnvironmentRoleDelete(_ context.Context, d *schema.ResourceD
 	}
 
 	roleID := d.Id()
-	err = veClient.DeleteRole(roleID)
+	err = veClient.DeleteRole(ctx, roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

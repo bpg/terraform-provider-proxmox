@@ -98,7 +98,7 @@ func resourceVirtualEnvironmentPoolCreate(ctx context.Context, d *schema.Resourc
 		ID:      poolID,
 	}
 
-	err = veClient.CreatePool(body)
+	err = veClient.CreatePool(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -108,7 +108,7 @@ func resourceVirtualEnvironmentPoolCreate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentPoolRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentPoolRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -118,7 +118,7 @@ func resourceVirtualEnvironmentPoolRead(_ context.Context, d *schema.ResourceDat
 	}
 
 	poolID := d.Id()
-	pool, err := veClient.GetPool(poolID)
+	pool, err := veClient.GetPool(ctx, poolID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -180,7 +180,7 @@ func resourceVirtualEnvironmentPoolUpdate(ctx context.Context, d *schema.Resourc
 		Comment: &comment,
 	}
 
-	err = veClient.UpdatePool(poolID, body)
+	err = veClient.UpdatePool(ctx, poolID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -188,7 +188,7 @@ func resourceVirtualEnvironmentPoolUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentPoolRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentPoolDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentPoolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -196,7 +196,7 @@ func resourceVirtualEnvironmentPoolDelete(_ context.Context, d *schema.ResourceD
 	}
 
 	poolID := d.Id()
-	err = veClient.DeletePool(poolID)
+	err = veClient.DeletePool(ctx, poolID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

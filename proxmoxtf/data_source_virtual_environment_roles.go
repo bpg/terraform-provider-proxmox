@@ -45,7 +45,7 @@ func dataSourceVirtualEnvironmentRoles() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentRolesRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentRolesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -54,7 +54,7 @@ func dataSourceVirtualEnvironmentRolesRead(_ context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListRoles()
+	list, err := veClient.ListRoles(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

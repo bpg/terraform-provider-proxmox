@@ -68,7 +68,7 @@ func dataSourceVirtualEnvironmentGroup() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentGroupRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -78,12 +78,12 @@ func dataSourceVirtualEnvironmentGroupRead(_ context.Context, d *schema.Resource
 	}
 
 	groupID := d.Get(mkDataSourceVirtualEnvironmentGroupID).(string)
-	group, err := veClient.GetGroup(groupID)
+	group, err := veClient.GetGroup(ctx, groupID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL()
+	acl, err := veClient.GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

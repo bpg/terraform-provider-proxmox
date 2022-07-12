@@ -41,7 +41,7 @@ func dataSourceVirtualEnvironmentClusterAlias() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentAliasRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentAliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -51,7 +51,7 @@ func dataSourceVirtualEnvironmentAliasRead(_ context.Context, d *schema.Resource
 	}
 
 	AliasID := d.Get(mkDataSourceVirtualEnvironmentClusterAliasName).(string)
-	Alias, err := veClient.GetAlias(AliasID)
+	Alias, err := veClient.GetAlias(ctx, AliasID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

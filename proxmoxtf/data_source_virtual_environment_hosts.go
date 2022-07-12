@@ -76,7 +76,7 @@ func dataSourceVirtualEnvironmentHosts() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentHostsRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentHostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -86,7 +86,7 @@ func dataSourceVirtualEnvironmentHostsRead(_ context.Context, d *schema.Resource
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentHostsNodeName).(string)
-	hosts, err := veClient.GetHosts(nodeName)
+	hosts, err := veClient.GetHosts(ctx, nodeName)
 	if err != nil {
 		return diag.FromErr(err)
 	}

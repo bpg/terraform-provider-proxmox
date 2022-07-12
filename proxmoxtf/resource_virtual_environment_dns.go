@@ -89,7 +89,7 @@ func resourceVirtualEnvironmentDNSGetUpdateBody(d *schema.ResourceData) (*proxmo
 	return body, nil
 }
 
-func resourceVirtualEnvironmentDNSRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentDNSRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -99,7 +99,7 @@ func resourceVirtualEnvironmentDNSRead(_ context.Context, d *schema.ResourceData
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentDNSNodeName).(string)
-	dns, err := veClient.GetDNS(nodeName)
+	dns, err := veClient.GetDNS(ctx, nodeName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -145,7 +145,7 @@ func resourceVirtualEnvironmentDNSUpdate(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	err = veClient.UpdateDNS(nodeName, body)
+	err = veClient.UpdateDNS(ctx, nodeName, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -153,7 +153,7 @@ func resourceVirtualEnvironmentDNSUpdate(ctx context.Context, d *schema.Resource
 	return resourceVirtualEnvironmentDNSRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentDNSDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentDNSDelete(ctx context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

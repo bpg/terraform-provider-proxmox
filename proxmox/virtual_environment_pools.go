@@ -5,26 +5,27 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
 	"sort"
 )
 
-// CreatePool creates an pool.
-func (c *VirtualEnvironmentClient) CreatePool(d *VirtualEnvironmentPoolCreateRequestBody) error {
-	return c.DoRequest(hmPOST, "pools", d, nil)
+// CreatePool creates a pool.
+func (c *VirtualEnvironmentClient) CreatePool(ctx context.Context, d *VirtualEnvironmentPoolCreateRequestBody) error {
+	return c.DoRequest(ctx, hmPOST, "pools", d, nil)
 }
 
-// DeletePool deletes an pool.
-func (c *VirtualEnvironmentClient) DeletePool(id string) error {
-	return c.DoRequest(hmDELETE, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, nil)
+// DeletePool deletes a pool.
+func (c *VirtualEnvironmentClient) DeletePool(ctx context.Context, id string) error {
+	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, nil)
 }
 
-// GetPool retrieves an pool.
-func (c *VirtualEnvironmentClient) GetPool(id string) (*VirtualEnvironmentPoolGetResponseData, error) {
+// GetPool retrieves a pool.
+func (c *VirtualEnvironmentClient) GetPool(ctx context.Context, id string) (*VirtualEnvironmentPoolGetResponseData, error) {
 	resBody := &VirtualEnvironmentPoolGetResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, resBody)
 
 	if err != nil {
 		return nil, err
@@ -42,9 +43,9 @@ func (c *VirtualEnvironmentClient) GetPool(id string) (*VirtualEnvironmentPoolGe
 }
 
 // ListPools retrieves a list of pools.
-func (c *VirtualEnvironmentClient) ListPools() ([]*VirtualEnvironmentPoolListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListPools(ctx context.Context) ([]*VirtualEnvironmentPoolListResponseData, error) {
 	resBody := &VirtualEnvironmentPoolListResponseBody{}
-	err := c.DoRequest(hmGET, "pools", nil, resBody)
+	err := c.DoRequest(ctx, hmGET, "pools", nil, resBody)
 
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func (c *VirtualEnvironmentClient) ListPools() ([]*VirtualEnvironmentPoolListRes
 	return resBody.Data, nil
 }
 
-// UpdatePool updates an pool.
-func (c *VirtualEnvironmentClient) UpdatePool(id string, d *VirtualEnvironmentPoolUpdateRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("pools/%s", url.PathEscape(id)), d, nil)
+// UpdatePool updates a pool.
+func (c *VirtualEnvironmentClient) UpdatePool(ctx context.Context, id string, d *VirtualEnvironmentPoolUpdateRequestBody) error {
+	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("pools/%s", url.PathEscape(id)), d, nil)
 }

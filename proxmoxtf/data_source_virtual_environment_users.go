@@ -89,7 +89,7 @@ func dataSourceVirtualEnvironmentUsers() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentUsersRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentUsersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -98,7 +98,7 @@ func dataSourceVirtualEnvironmentUsersRead(_ context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListUsers()
+	list, err := veClient.ListUsers(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

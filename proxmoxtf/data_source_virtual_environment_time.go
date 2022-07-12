@@ -48,7 +48,7 @@ func dataSourceVirtualEnvironmentTime() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentTimeRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentTimeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -58,7 +58,7 @@ func dataSourceVirtualEnvironmentTimeRead(_ context.Context, d *schema.ResourceD
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentTimeNodeName).(string)
-	nodeTime, err := veClient.GetNodeTime(nodeName)
+	nodeTime, err := veClient.GetNodeTime(ctx, nodeName)
 	if err != nil {
 		return diag.FromErr(err)
 	}

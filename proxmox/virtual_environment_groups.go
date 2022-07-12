@@ -5,6 +5,7 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -12,19 +13,19 @@ import (
 )
 
 // CreateGroup creates an access group.
-func (c *VirtualEnvironmentClient) CreateGroup(d *VirtualEnvironmentGroupCreateRequestBody) error {
-	return c.DoRequest(hmPOST, "access/groups", d, nil)
+func (c *VirtualEnvironmentClient) CreateGroup(ctx context.Context, d *VirtualEnvironmentGroupCreateRequestBody) error {
+	return c.DoRequest(ctx, hmPOST, "access/groups", d, nil)
 }
 
 // DeleteGroup deletes an access group.
-func (c *VirtualEnvironmentClient) DeleteGroup(id string) error {
-	return c.DoRequest(hmDELETE, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), nil, nil)
+func (c *VirtualEnvironmentClient) DeleteGroup(ctx context.Context, id string) error {
+	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetGroup retrieves an access group.
-func (c *VirtualEnvironmentClient) GetGroup(id string) (*VirtualEnvironmentGroupGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetGroup(ctx context.Context, id string) (*VirtualEnvironmentGroupGetResponseData, error) {
 	resBody := &VirtualEnvironmentGroupGetResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), nil, resBody)
 
 	if err != nil {
 		return nil, err
@@ -40,9 +41,9 @@ func (c *VirtualEnvironmentClient) GetGroup(id string) (*VirtualEnvironmentGroup
 }
 
 // ListGroups retrieves a list of access groups.
-func (c *VirtualEnvironmentClient) ListGroups() ([]*VirtualEnvironmentGroupListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListGroups(ctx context.Context) ([]*VirtualEnvironmentGroupListResponseData, error) {
 	resBody := &VirtualEnvironmentGroupListResponseBody{}
-	err := c.DoRequest(hmGET, "access/groups", nil, resBody)
+	err := c.DoRequest(ctx, hmGET, "access/groups", nil, resBody)
 
 	if err != nil {
 		return nil, err
@@ -60,6 +61,6 @@ func (c *VirtualEnvironmentClient) ListGroups() ([]*VirtualEnvironmentGroupListR
 }
 
 // UpdateGroup updates an access group.
-func (c *VirtualEnvironmentClient) UpdateGroup(id string, d *VirtualEnvironmentGroupUpdateRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), d, nil)
+func (c *VirtualEnvironmentClient) UpdateGroup(ctx context.Context, id string, d *VirtualEnvironmentGroupUpdateRequestBody) error {
+	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), d, nil)
 }

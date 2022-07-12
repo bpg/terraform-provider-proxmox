@@ -35,7 +35,7 @@ func dataSourceVirtualEnvironmentGroups() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentGroupsRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentGroupsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -44,7 +44,7 @@ func dataSourceVirtualEnvironmentGroupsRead(_ context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListGroups()
+	list, err := veClient.ListGroups(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

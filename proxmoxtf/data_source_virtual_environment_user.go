@@ -106,7 +106,7 @@ func dataSourceVirtualEnvironmentUser() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentUserRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -116,12 +116,12 @@ func dataSourceVirtualEnvironmentUserRead(_ context.Context, d *schema.ResourceD
 	}
 
 	userID := d.Get(mkDataSourceVirtualEnvironmentUserUserID).(string)
-	v, err := veClient.GetUser(userID)
+	v, err := veClient.GetUser(ctx, userID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL()
+	acl, err := veClient.GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

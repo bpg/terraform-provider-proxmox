@@ -117,13 +117,13 @@ func resourceVirtualEnvironmentClusterIPSetCreate(ctx context.Context, d *schema
 		Name:    name,
 	}
 
-	err = veClient.CreateIPSet(body)
+	err = veClient.CreateIPSet(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	for _, v := range IPSetsArray {
-		err = veClient.AddCIDRToIPSet(name, &v)
+		err = veClient.AddCIDRToIPSet(ctx, name, &v)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -133,7 +133,7 @@ func resourceVirtualEnvironmentClusterIPSetCreate(ctx context.Context, d *schema
 	return resourceVirtualEnvironmentClusterIPSetRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterIPSetRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterIPSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -144,7 +144,7 @@ func resourceVirtualEnvironmentClusterIPSetRead(_ context.Context, d *schema.Res
 
 	name := d.Id()
 
-	allIPSets, err := veClient.GetListIPSets()
+	allIPSets, err := veClient.GetListIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -158,7 +158,7 @@ func resourceVirtualEnvironmentClusterIPSetRead(_ context.Context, d *schema.Res
 		}
 	}
 
-	IPSet, err := veClient.GetListIPSetContent(name)
+	IPSet, err := veClient.GetListIPSetContent(ctx, name)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -194,7 +194,7 @@ func resourceVirtualEnvironmentClusterIPSetUpdate(ctx context.Context, d *schema
 		Comment: &comment,
 	}
 
-	err = veClient.UpdateIPSet(body)
+	err = veClient.UpdateIPSet(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -204,7 +204,7 @@ func resourceVirtualEnvironmentClusterIPSetUpdate(ctx context.Context, d *schema
 	return resourceVirtualEnvironmentClusterIPSetRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterIPSetDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterIPSetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
@@ -214,7 +214,7 @@ func resourceVirtualEnvironmentClusterIPSetDelete(_ context.Context, d *schema.R
 
 	name := d.Id()
 
-	IPSetContent, err := veClient.GetListIPSetContent(name)
+	IPSetContent, err := veClient.GetListIPSetContent(ctx, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -222,7 +222,7 @@ func resourceVirtualEnvironmentClusterIPSetDelete(_ context.Context, d *schema.R
 	// PVE requires content of IPSet be cleared before removal
 	if len(IPSetContent) > 0 {
 		for _, IPSet := range IPSetContent {
-			err = veClient.DeleteIPSetContent(name, IPSet.CIDR)
+			err = veClient.DeleteIPSetContent(ctx, name, IPSet.CIDR)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -231,7 +231,7 @@ func resourceVirtualEnvironmentClusterIPSetDelete(_ context.Context, d *schema.R
 		return diags
 	}
 
-	err = veClient.DeleteIPSet(name)
+	err = veClient.DeleteIPSet(ctx, name)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

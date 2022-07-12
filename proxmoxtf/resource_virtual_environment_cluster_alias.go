@@ -67,7 +67,7 @@ func resourceVirtualEnvironmentClusterAliasCreate(ctx context.Context, d *schema
 		CIDR:    cidr,
 	}
 
-	err = veClient.CreateAlias(body)
+	err = veClient.CreateAlias(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -77,7 +77,7 @@ func resourceVirtualEnvironmentClusterAliasCreate(ctx context.Context, d *schema
 	return resourceVirtualEnvironmentClusterAliasRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterAliasRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterAliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -85,7 +85,7 @@ func resourceVirtualEnvironmentClusterAliasRead(_ context.Context, d *schema.Res
 	}
 
 	name := d.Id()
-	alias, err := veClient.GetAlias(name)
+	alias, err := veClient.GetAlias(ctx, name)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -129,7 +129,7 @@ func resourceVirtualEnvironmentClusterAliasUpdate(ctx context.Context, d *schema
 		Comment: &comment,
 	}
 
-	err = veClient.UpdateAlias(previousName, body)
+	err = veClient.UpdateAlias(ctx, previousName, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -139,7 +139,7 @@ func resourceVirtualEnvironmentClusterAliasUpdate(ctx context.Context, d *schema
 	return resourceVirtualEnvironmentClusterAliasRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterAliasDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterAliasDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -147,7 +147,7 @@ func resourceVirtualEnvironmentClusterAliasDelete(_ context.Context, d *schema.R
 	}
 
 	name := d.Id()
-	err = veClient.DeleteAlias(name)
+	err = veClient.DeleteAlias(ctx, name)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

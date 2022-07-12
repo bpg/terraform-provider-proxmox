@@ -183,7 +183,7 @@ func resourceVirtualEnvironmentUserCreate(ctx context.Context, d *schema.Resourc
 		Password:       password,
 	}
 
-	err = veClient.CreateUser(body)
+	err = veClient.CreateUser(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -205,7 +205,7 @@ func resourceVirtualEnvironmentUserCreate(ctx context.Context, d *schema.Resourc
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -214,7 +214,7 @@ func resourceVirtualEnvironmentUserCreate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentUserRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentUserRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -222,7 +222,7 @@ func resourceVirtualEnvironmentUserRead(_ context.Context, d *schema.ResourceDat
 	}
 
 	userID := d.Id()
-	user, err := veClient.GetUser(userID)
+	user, err := veClient.GetUser(ctx, userID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -233,7 +233,7 @@ func resourceVirtualEnvironmentUserRead(_ context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL()
+	acl, err := veClient.GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -365,14 +365,14 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 	}
 
 	userID := d.Id()
-	err = veClient.UpdateUser(userID, body)
+	err = veClient.UpdateUser(ctx, userID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentUserPassword) {
 		password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
-		err = veClient.ChangeUserPassword(userID, password)
+		err = veClient.ChangeUserPassword(ctx, userID, password)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -394,7 +394,7 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -415,7 +415,7 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 
 		if err != nil {
 			return diag.FromErr(err)
@@ -425,7 +425,7 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentUserRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentUserDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentUserDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -448,13 +448,13 @@ func resourceVirtualEnvironmentUserDelete(_ context.Context, d *schema.ResourceD
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.DeleteUser(userID)
+	err = veClient.DeleteUser(ctx, userID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

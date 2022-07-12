@@ -595,7 +595,7 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID()
+		vmIDNew, err := veClient.GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -629,9 +629,9 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = veClient.CloneContainer(cloneNodeName, cloneVMID, cloneBody)
+		err = veClient.CloneContainer(ctx, cloneNodeName, cloneVMID, cloneBody)
 	} else {
-		err = veClient.CloneContainer(nodeName, cloneVMID, cloneBody)
+		err = veClient.CloneContainer(ctx, nodeName, cloneVMID, cloneBody)
 	}
 
 	if err != nil {
@@ -773,7 +773,7 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 {
-		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(veClient, nodeName, vmID)
+		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(ctx, veClient, nodeName, vmID)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -863,7 +863,7 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 		updateBody.Template = &template
 	}
 
-	err = veClient.UpdateContainer(nodeName, vmID, updateBody)
+	err = veClient.UpdateContainer(ctx, nodeName, vmID, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1060,7 +1060,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID()
+		vmIDNew, err := veClient.GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1115,7 +1115,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 		createBody.PoolID = &poolID
 	}
 
-	err = veClient.CreateContainer(nodeName, &createBody)
+	err = veClient.CreateContainer(ctx, nodeName, &createBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1152,7 +1152,7 @@ func resourceVirtualEnvironmentContainerCreateStart(ctx context.Context, d *sche
 	}
 
 	// Start the container and wait for it to reach a running state before continuing.
-	err = veClient.StartContainer(nodeName, vmID)
+	err = veClient.StartContainer(ctx, nodeName, vmID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1182,8 +1182,8 @@ func resourceVirtualEnvironmentContainerGetCPUArchitectureValidator() schema.Sch
 	}, false))
 }
 
-func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(client *proxmox.VirtualEnvironmentClient, nodeName string, vmID int) ([]interface{}, error) {
-	containerInfo, err := client.GetContainer(nodeName, vmID)
+func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(ctx context.Context, client *proxmox.VirtualEnvironmentClient, nodeName string, vmID int) ([]interface{}, error) {
+	containerInfo, err := client.GetContainer(ctx, nodeName, vmID)
 
 	if err != nil {
 		return []interface{}{}, err
@@ -1272,7 +1272,7 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 	}
 
 	// Retrieve the entire configuration in order to compare it to the state.
-	containerConfig, err := veClient.GetContainer(nodeName, vmID)
+	containerConfig, err := veClient.GetContainer(ctx, nodeName, vmID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
@@ -1652,7 +1652,7 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 	}
 
 	// Determine the state of the container in order to update the "started" argument.
-	status, err := veClient.GetContainerStatus(nodeName, vmID)
+	status, err := veClient.GetContainerStatus(ctx, nodeName, vmID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1812,7 +1812,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 && len(clone) > 0 {
-		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(veClient, nodeName, vmID)
+		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(ctx, veClient, nodeName, vmID)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1903,7 +1903,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 	}
 
 	// Update the configuration now that everything has been prepared.
-	err = veClient.UpdateContainer(nodeName, vmID, &updateBody)
+	err = veClient.UpdateContainer(ctx, nodeName, vmID, &updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1913,7 +1913,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	if d.HasChange(mkResourceVirtualEnvironmentContainerStarted) && !bool(template) {
 		if started {
-			err = veClient.StartContainer(nodeName, vmID)
+			err = veClient.StartContainer(ctx, nodeName, vmID)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -1926,7 +1926,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 			forceStop := proxmox.CustomBool(true)
 			shutdownTimeout := 300
 
-			err = veClient.ShutdownContainer(nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+			err = veClient.ShutdownContainer(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			})
@@ -1947,7 +1947,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 	if !bool(template) && rebootRequired {
 		rebootTimeout := 300
 
-		err = veClient.RebootContainer(nodeName, vmID, &proxmox.VirtualEnvironmentContainerRebootRequestBody{
+		err = veClient.RebootContainer(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentContainerRebootRequestBody{
 			Timeout: &rebootTimeout,
 		})
 		if err != nil {
@@ -1972,7 +1972,7 @@ func resourceVirtualEnvironmentContainerDelete(ctx context.Context, d *schema.Re
 	}
 
 	// Shut down the container before deleting it.
-	status, err := veClient.GetContainerStatus(nodeName, vmID)
+	status, err := veClient.GetContainerStatus(ctx, nodeName, vmID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1981,7 +1981,7 @@ func resourceVirtualEnvironmentContainerDelete(ctx context.Context, d *schema.Re
 		forceStop := proxmox.CustomBool(true)
 		shutdownTimeout := 300
 
-		err = veClient.ShutdownContainer(nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+		err = veClient.ShutdownContainer(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
 			ForceStop: &forceStop,
 			Timeout:   &shutdownTimeout,
 		})
@@ -1995,7 +1995,7 @@ func resourceVirtualEnvironmentContainerDelete(ctx context.Context, d *schema.Re
 		}
 	}
 
-	err = veClient.DeleteContainer(nodeName, vmID)
+	err = veClient.DeleteContainer(ctx, nodeName, vmID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

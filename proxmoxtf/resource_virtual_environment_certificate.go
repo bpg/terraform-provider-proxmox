@@ -164,7 +164,7 @@ func resourceVirtualEnvironmentCertificateGetUpdateBody(d *schema.ResourceData) 
 	return body, nil
 }
 
-func resourceVirtualEnvironmentCertificateRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentCertificateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -174,7 +174,7 @@ func resourceVirtualEnvironmentCertificateRead(_ context.Context, d *schema.Reso
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
-	list, err := veClient.ListCertificates(nodeName)
+	list, err := veClient.ListCertificates(ctx, nodeName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -299,7 +299,7 @@ func resourceVirtualEnvironmentCertificateUpdate(ctx context.Context, d *schema.
 		return diag.FromErr(err)
 	}
 
-	err = veClient.UpdateCertificate(nodeName, body)
+	err = veClient.UpdateCertificate(ctx, nodeName, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -307,7 +307,7 @@ func resourceVirtualEnvironmentCertificateUpdate(ctx context.Context, d *schema.
 	return resourceVirtualEnvironmentCertificateRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentCertificateDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentCertificateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -317,7 +317,7 @@ func resourceVirtualEnvironmentCertificateDelete(_ context.Context, d *schema.Re
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
 	restart := proxmox.CustomBool(true)
 
-	err = veClient.DeleteCertificate(nodeName, &proxmox.VirtualEnvironmentCertificateDeleteRequestBody{
+	err = veClient.DeleteCertificate(ctx, nodeName, &proxmox.VirtualEnvironmentCertificateDeleteRequestBody{
 		Restart: &restart,
 	})
 	if err != nil {

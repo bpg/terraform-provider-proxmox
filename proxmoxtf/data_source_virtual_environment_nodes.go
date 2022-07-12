@@ -86,7 +86,7 @@ func dataSourceVirtualEnvironmentNodes() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentNodesRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentNodesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -95,7 +95,7 @@ func dataSourceVirtualEnvironmentNodesRead(_ context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListNodes()
+	list, err := veClient.ListNodes(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -9,7 +9,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -200,8 +199,8 @@ func resourceVirtualEnvironmentFileCreate(ctx context.Context, d *schema.Resourc
 		return diag.FromErr(err)
 	}
 
-	contentType, err := resourceVirtualEnvironmentFileGetContentType(d)
-	diags = append(diags, diag.FromErr(err)...)
+	contentType, dg := resourceVirtualEnvironmentFileGetContentType(d)
+	diags = append(diags, dg...)
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	fileName, err := resourceVirtualEnvironmentFileGetFileName(d)
@@ -388,14 +387,14 @@ func resourceVirtualEnvironmentFileCreate(ctx context.Context, d *schema.Resourc
 		NodeName:    nodeName,
 	}
 
-	_, err = veClient.UploadFileToDatastore(body)
+	_, err = veClient.UploadFileToDatastore(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	volumeID, err := resourceVirtualEnvironmentFileGetVolumeID(d)
-	if err != nil {
-		return diag.FromErr(err)
+	volumeID, diags := resourceVirtualEnvironmentFileGetVolumeID(d)
+	if diags.HasError() {
+		return diags
 	}
 
 	d.SetId(*volumeID)
@@ -403,7 +402,7 @@ func resourceVirtualEnvironmentFileCreate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentFileRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentFileGetContentType(d *schema.ResourceData) (*string, error) {
+func resourceVirtualEnvironmentFileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
 	contentType := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
@@ -417,7 +416,7 @@ func resourceVirtualEnvironmentFileGetContentType(d *schema.ResourceData) (*stri
 		sourceRawBlock := sourceRaw[0].(map[string]interface{})
 		sourceFilePath = sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawFileName].(string)
 	} else {
-		return nil, fmt.Errorf(
+		return nil, diag.Errorf(
 			"missing argument \"%s.%s\" or \"%s\"",
 			mkResourceVirtualEnvironmentFileSourceFile,
 			mkResourceVirtualEnvironmentFileSourceFilePath,
@@ -441,7 +440,7 @@ func resourceVirtualEnvironmentFileGetContentType(d *schema.ResourceData) (*stri
 		}
 
 		if contentType == "" {
-			return nil, fmt.Errorf(
+			return nil, diag.Errorf(
 				"cannot determine the content type of source \"%s\" - Please manually define the \"%s\" argument",
 				sourceFilePath,
 				mkResourceVirtualEnvironmentFileContentType,
@@ -451,11 +450,8 @@ func resourceVirtualEnvironmentFileGetContentType(d *schema.ResourceData) (*stri
 
 	ctValidator := getContentTypeValidator()
 	diags := ctValidator(contentType, cty.GetAttrPath(mkResourceVirtualEnvironmentFileContentType))
-	if diags.HasError() {
-		return nil, errors.New(ErrorDiags(diags).Error())
-	}
 
-	return &contentType, nil
+	return &contentType, diags
 }
 
 func resourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData) (*string, error) {
@@ -502,23 +498,18 @@ func resourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData) (*string,
 	return &sourceFileFileName, nil
 }
 
-func resourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData) (*string, error) {
+func resourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData) (*string, diag.Diagnostics) {
 	fileName, err := resourceVirtualEnvironmentFileGetFileName(d)
-
 	if err != nil {
-		return nil, err
+		return nil, diag.FromErr(err)
 	}
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
-	contentType, err := resourceVirtualEnvironmentFileGetContentType(d)
-
-	if err != nil {
-		return nil, err
-	}
+	contentType, diags := resourceVirtualEnvironmentFileGetContentType(d)
 
 	volumeID := fmt.Sprintf("%s:%s/%s", datastoreID, *contentType, *fileName)
 
-	return &volumeID, nil
+	return &volumeID, diags
 }
 
 func resourceVirtualEnvironmentFileIsURL(d *schema.ResourceData) bool {
@@ -554,7 +545,7 @@ func resourceVirtualEnvironmentFileRead(ctx context.Context, d *schema.ResourceD
 	sourceFileBlock := sourceFile[0].(map[string]interface{})
 	sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 
-	list, err := veClient.ListDatastoreFiles(nodeName, datastoreID)
+	list, err := veClient.ListDatastoreFiles(ctx, nodeName, datastoreID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -688,7 +679,7 @@ func readURL(ctx context.Context, d *schema.ResourceData, sourceFilePath string)
 	return
 }
 
-func resourceVirtualEnvironmentFileDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentFileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -698,7 +689,7 @@ func resourceVirtualEnvironmentFileDelete(_ context.Context, d *schema.ResourceD
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 
-	err = veClient.DeleteDatastoreFile(nodeName, datastoreID, d.Id())
+	err = veClient.DeleteDatastoreFile(ctx, nodeName, datastoreID, d.Id())
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

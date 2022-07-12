@@ -73,7 +73,7 @@ func dataSourceVirtualEnvironmentPool() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentPoolRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -83,7 +83,7 @@ func dataSourceVirtualEnvironmentPoolRead(_ context.Context, d *schema.ResourceD
 	}
 
 	poolID := d.Get(mkDataSourceVirtualEnvironmentPoolPoolID).(string)
-	pool, err := veClient.GetPool(poolID)
+	pool, err := veClient.GetPool(ctx, poolID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

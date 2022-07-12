@@ -34,7 +34,7 @@ func dataSourceVirtualEnvironmentRole() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentRoleRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -42,7 +42,7 @@ func dataSourceVirtualEnvironmentRoleRead(_ context.Context, d *schema.ResourceD
 	}
 
 	roleID := d.Get(mkDataSourceVirtualEnvironmentRoleID).(string)
-	accessRole, err := veClient.GetRole(roleID)
+	accessRole, err := veClient.GetRole(ctx, roleID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

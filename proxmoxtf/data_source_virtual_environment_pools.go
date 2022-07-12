@@ -28,14 +28,14 @@ func dataSourceVirtualEnvironmentPools() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentPoolsRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentPoolsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListPools()
+	list, err := veClient.ListPools(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

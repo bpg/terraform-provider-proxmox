@@ -89,14 +89,14 @@ func dataSourceVirtualEnvironmentDatastores() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The storage type",
 				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeInt},
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 		ReadContext: dataSourceVirtualEnvironmentDatastoresRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentDatastoresRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentDatastoresRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -106,7 +106,7 @@ func dataSourceVirtualEnvironmentDatastoresRead(_ context.Context, d *schema.Res
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDatastoresNodeName).(string)
-	list, err := veClient.ListDatastores(nodeName, nil)
+	list, err := veClient.ListDatastores(ctx, nodeName, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

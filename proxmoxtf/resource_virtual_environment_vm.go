@@ -1083,7 +1083,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID()
+		vmIDNew, err := veClient.GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1367,14 +1367,14 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 
 	updateBody.Delete = del
 
-	err = veClient.UpdateVM(nodeName, vmID, updateBody)
+	err = veClient.UpdateVM(ctx, nodeName, vmID, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 
-	vmConfig, err := veClient.GetVM(nodeName, vmID)
+	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
@@ -1422,7 +1422,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 				diskUpdateBody.SCSIDevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
 			}
 
-			err = veClient.UpdateVM(nodeName, vmID, diskUpdateBody)
+			err = veClient.UpdateVM(ctx, nodeName, vmID, diskUpdateBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -1472,7 +1472,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 		}
 
 		if diskSize > compareNumber {
-			err = veClient.ResizeVMDisk(nodeName, vmID, diskResizeBody)
+			err = veClient.ResizeVMDisk(ctx, nodeName, vmID, diskResizeBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -1607,7 +1607,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID()
+		vmIDNew, err := veClient.GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1722,7 +1722,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 		createBody.PoolID = &poolID
 	}
 
-	err = veClient.CreateVM(nodeName, createBody)
+	err = veClient.CreateVM(ctx, nodeName, createBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2281,7 +2281,7 @@ func resourceVirtualEnvironmentVMRead(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Retrieve the entire configuration in order to compare it to the state.
-	vmConfig, err := veClient.GetVM(nodeName, vmID)
+	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
@@ -2294,7 +2294,7 @@ func resourceVirtualEnvironmentVMRead(ctx context.Context, d *schema.ResourceDat
 		return diag.FromErr(err)
 	}
 
-	vmStatus, err := veClient.GetVMStatus(nodeName, vmID)
+	vmStatus, err := veClient.GetVMStatus(ctx, nodeName, vmID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3228,7 +3228,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 	resource := resourceVirtualEnvironmentVM()
 
 	// Retrieve the entire configuration as we need to process certain values.
-	vmConfig, err := veClient.GetVM(nodeName, vmID)
+	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3573,7 +3573,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 	// Update the configuration now that everything has been prepared.
 	updateBody.Delete = del
 
-	err = veClient.UpdateVM(nodeName, vmID, updateBody)
+	err = veClient.UpdateVM(ctx, nodeName, vmID, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3691,7 +3691,7 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, 
 		}
 
 		for _, reqBody := range diskResizeBodies {
-			err = veClient.ResizeVMDisk(nodeName, vmID, reqBody)
+			err = veClient.ResizeVMDisk(ctx, nodeName, vmID, reqBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -3735,7 +3735,7 @@ func resourceVirtualEnvironmentVMDelete(ctx context.Context, d *schema.ResourceD
 	}
 
 	// Shut down the virtual machine before deleting it.
-	status, err := veClient.GetVMStatus(nodeName, vmID)
+	status, err := veClient.GetVMStatus(ctx, nodeName, vmID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3753,7 +3753,7 @@ func resourceVirtualEnvironmentVMDelete(ctx context.Context, d *schema.ResourceD
 		}
 	}
 
-	err = veClient.DeleteVM(nodeName, vmID)
+	err = veClient.DeleteVM(ctx, nodeName, vmID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||

@@ -6,13 +6,14 @@ package proxmox
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -65,11 +66,14 @@ func NewVirtualEnvironmentClient(endpoint, username, password, otp string, insec
 }
 
 // DoRequest performs a HTTP request against a JSON API endpoint.
-func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody interface{}, responseBody interface{}) error {
+func (c *VirtualEnvironmentClient) DoRequest(ctx context.Context, method, path string, requestBody, responseBody interface{}) error {
 	var reqBodyReader io.Reader
 	var reqContentLength *int64
 
-	log.Printf("[DEBUG] Performing HTTP %s request (path: %s)", method, path)
+	tflog.Debug(ctx, "performing HTTP request", map[string]interface{}{
+		"method": method,
+		"path":   path,
+	})
 
 	modifiedPath := path
 	reqBodyType := ""
@@ -83,17 +87,24 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 			reqBodyType = fmt.Sprintf("multipart/form-data; boundary=%s", multipartData.Boundary)
 			reqContentLength = multipartData.Size
 
-			log.Printf("[DEBUG] Added multipart request body to HTTP %s request (path: %s)", method, modifiedPath)
+			tflog.Debug(ctx, "added multipart request body to HTTP request", map[string]interface{}{
+				"method": method,
+				"path":   modifiedPath,
+			})
+
 		} else if pipedBody {
 			reqBodyReader = pipedBodyReader
 
-			log.Printf("[DEBUG] Added piped request body to HTTP %s request (path: %s)", method, modifiedPath)
+			tflog.Debug(ctx, "added piped request body to HTTP request", map[string]interface{}{
+				"method": method,
+				"path":   modifiedPath,
+			})
 		} else {
 			v, err := query.Values(requestBody)
 
 			if err != nil {
 				fErr := fmt.Errorf("failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
-				log.Printf("[DEBUG] WARNING: %s", fErr.Error())
+				tflog.Warn(ctx, fErr.Error())
 				return fErr
 			}
 
@@ -111,7 +122,11 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 					reqBodyType = "application/x-www-form-urlencoded"
 				}
 
-				log.Printf("[DEBUG] Added request body to HTTP %s request (path: %s) - Body: %s", method, modifiedPath, encodedValues)
+				tflog.Debug(ctx, "added request body to HTTP request", map[string]interface{}{
+					"method":        method,
+					"path":          modifiedPath,
+					"encodedValues": encodedValues,
+				})
 			}
 		}
 	} else {
@@ -122,7 +137,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 
 	if err != nil {
 		fErr := fmt.Errorf("failed to create HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
-		log.Printf("[DEBUG] WARNING: %s", fErr.Error())
+		tflog.Warn(ctx, fErr.Error())
 		return fErr
 	}
 
@@ -139,7 +154,7 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 	err = c.AuthenticateRequest(req)
 
 	if err != nil {
-		log.Printf("[DEBUG] WARNING: %s", err.Error())
+		tflog.Warn(ctx, err.Error())
 		return err
 	}
 
@@ -147,16 +162,22 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 
 	if err != nil {
 		fErr := fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
-		log.Printf("[DEBUG] WARNING: %s", fErr.Error())
+		tflog.Warn(ctx, fErr.Error())
 		return fErr
 	}
 
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			tflog.Error(ctx, "failed to close the response body", map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	}(res.Body)
 
 	err = c.ValidateResponseCode(res)
-
 	if err != nil {
-		log.Printf("[DEBUG] WARNING: %s", err.Error())
+		tflog.Warn(ctx, err.Error())
 		return err
 	}
 
@@ -165,12 +186,14 @@ func (c *VirtualEnvironmentClient) DoRequest(method, path string, requestBody in
 
 		if err != nil {
 			fErr := fmt.Errorf("failed to decode HTTP %s response (path: %s) - Reason: %s", method, modifiedPath, err.Error())
-			log.Printf("[DEBUG] WARNING: %s", fErr.Error())
+			tflog.Warn(ctx, fErr.Error())
 			return fErr
 		}
 	} else {
 		data, _ := ioutil.ReadAll(res.Body)
-		log.Printf("[DEBUG] WARNING: Unhandled HTTP response body: %s", string(data))
+		tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
+			"data": string(data),
+		})
 	}
 
 	return nil

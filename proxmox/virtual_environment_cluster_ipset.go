@@ -5,6 +5,7 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -12,34 +13,34 @@ import (
 )
 
 // CreateIPSet create an IPSet
-func (c *VirtualEnvironmentClient) CreateIPSet(d *VirtualEnvironmentClusterIPSetCreateRequestBody) error {
-	return c.DoRequest(hmPOST, "cluster/firewall/ipset", d, nil)
+func (c *VirtualEnvironmentClient) CreateIPSet(ctx context.Context, d *VirtualEnvironmentClusterIPSetCreateRequestBody) error {
+	return c.DoRequest(ctx, hmPOST, "cluster/firewall/ipset", d, nil)
 }
 
 // AddCIDRToIPSet adds IP or Network to IPSet
-func (c *VirtualEnvironmentClient) AddCIDRToIPSet(id string, d *VirtualEnvironmentClusterIPSetGetResponseData) error {
-	return c.DoRequest(hmPOST, fmt.Sprintf("cluster/firewall/ipset/%s/", url.PathEscape(id)), d, nil)
+func (c *VirtualEnvironmentClient) AddCIDRToIPSet(ctx context.Context, id string, d *VirtualEnvironmentClusterIPSetGetResponseData) error {
+	return c.DoRequest(ctx, hmPOST, fmt.Sprintf("cluster/firewall/ipset/%s/", url.PathEscape(id)), d, nil)
 }
 
 // UpdateIPSet updates an IPSet.
-func (c *VirtualEnvironmentClient) UpdateIPSet(d *VirtualEnvironmentClusterIPSetUpdateRequestBody) error {
-	return c.DoRequest(hmPOST, fmt.Sprint("cluster/firewall/ipset/"), d, nil)
+func (c *VirtualEnvironmentClient) UpdateIPSet(ctx context.Context, d *VirtualEnvironmentClusterIPSetUpdateRequestBody) error {
+	return c.DoRequest(ctx, hmPOST, fmt.Sprint("cluster/firewall/ipset/"), d, nil)
 }
 
 // DeleteIPSet delete an IPSet
-func (c *VirtualEnvironmentClient) DeleteIPSet(id string) error {
-	return c.DoRequest(hmDELETE, fmt.Sprintf("cluster/firewall/ipset/%s", url.PathEscape(id)), nil, nil)
+func (c *VirtualEnvironmentClient) DeleteIPSet(ctx context.Context, id string) error {
+	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("cluster/firewall/ipset/%s", url.PathEscape(id)), nil, nil)
 }
 
 // DeleteIPSetContent remove IP or Network from IPSet.
-func (c *VirtualEnvironmentClient) DeleteIPSetContent(id string, cidr string) error {
-	return c.DoRequest(hmDELETE, fmt.Sprintf("cluster/firewall/ipset/%s/%s", url.PathEscape(id), url.PathEscape(cidr)), nil, nil)
+func (c *VirtualEnvironmentClient) DeleteIPSetContent(ctx context.Context, id string, cidr string) error {
+	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("cluster/firewall/ipset/%s/%s", url.PathEscape(id), url.PathEscape(cidr)), nil, nil)
 }
 
 // GetListIPSetContent retrieve a list of IPSet content
-func (c *VirtualEnvironmentClient) GetListIPSetContent(id string) ([]*VirtualEnvironmentClusterIPSetGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetListIPSetContent(ctx context.Context, id string) ([]*VirtualEnvironmentClusterIPSetGetResponseData, error) {
 	resBody := &VirtualEnvironmentClusterIPSetGetResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("cluster/firewall/ipset/%s", url.PathEscape(id)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("cluster/firewall/ipset/%s", url.PathEscape(id)), nil, resBody)
 
 	if err != nil {
 		return nil, err
@@ -53,9 +54,9 @@ func (c *VirtualEnvironmentClient) GetListIPSetContent(id string) ([]*VirtualEnv
 }
 
 // GetListIPSets retrieves list of IPSets.
-func (c *VirtualEnvironmentClient) GetListIPSets() (*VirtualEnvironmentClusterIPSetListResponseBody, error) {
+func (c *VirtualEnvironmentClient) GetListIPSets(ctx context.Context) (*VirtualEnvironmentClusterIPSetListResponseBody, error) {
 	resBody := &VirtualEnvironmentClusterIPSetListResponseBody{}
-	err := c.DoRequest(hmGET, "cluster/firewall/ipset", nil, resBody)
+	err := c.DoRequest(ctx, hmGET, "cluster/firewall/ipset", nil, resBody)
 
 	if err != nil {
 		return nil, err

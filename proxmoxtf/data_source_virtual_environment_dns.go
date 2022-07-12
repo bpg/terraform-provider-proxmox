@@ -42,7 +42,7 @@ func dataSourceVirtualEnvironmentDNS() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentDNSRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentDNSRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -52,7 +52,7 @@ func dataSourceVirtualEnvironmentDNSRead(_ context.Context, d *schema.ResourceDa
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDNSNodeName).(string)
-	dns, err := veClient.GetDNS(nodeName)
+	dns, err := veClient.GetDNS(ctx, nodeName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
