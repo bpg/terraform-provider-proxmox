@@ -10,7 +10,7 @@ ifeq ($(OS),Windows_NT)
 	TERRAFORM_PLUGIN_CACHE_DIRECTORY=$$(cygpath -u "$(shell pwd -P)")/cache/plugins
 	TERRAFORM_PLUGIN_EXTENSION=.exe
 else
-	TERRAFORM_PLATFORM=$$(terraform -version | awk 'FNR == 2 {print $2}')
+	TERRAFORM_PLATFORM=$$(terraform -version | awk 'FNR == 2 {print $$2}')
 	TERRAFORM_PLUGIN_CACHE_DIRECTORY=$(shell pwd -P)/cache/plugins
 endif
 
