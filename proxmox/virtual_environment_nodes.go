@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"net/url"
 	"sort"
 	"strings"
@@ -17,14 +18,21 @@ import (
 )
 
 // ExecuteNodeCommands executes commands on a given node.
-func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands []string) error {
+func (c *VirtualEnvironmentClient) ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error {
 	sshClient, err := c.OpenNodeShell(nodeName)
 
 	if err != nil {
 		return err
 	}
 
-	defer sshClient.Close()
+	defer func(sshClient *ssh.Client) {
+		err := sshClient.Close()
+		if err != nil {
+			tflog.Error(ctx, "Failed to close ssh client", map[string]interface{}{
+				"error": err,
+			})
+		}
+	}(sshClient)
 
 	sshSession, err := sshClient.NewSession()
 
@@ -32,7 +40,14 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands
 		return err
 	}
 
-	defer sshSession.Close()
+	defer func(sshSession *ssh.Session) {
+		err := sshSession.Close()
+		if err != nil {
+			tflog.Error(ctx, "Failed to close ssh session", map[string]interface{}{
+				"error": err,
+			})
+		}
+	}(sshSession)
 
 	output, err := sshSession.CombinedOutput(
 		fmt.Sprintf(

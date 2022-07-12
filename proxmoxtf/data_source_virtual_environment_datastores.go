@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -90,23 +92,23 @@ func dataSourceVirtualEnvironmentDatastores() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentDatastoresRead,
+		ReadContext: dataSourceVirtualEnvironmentDatastoresRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentDatastoresRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentDatastoresRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDatastoresNodeName).(string)
 	list, err := veClient.ListDatastores(nodeName, nil)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	active := make([]interface{}, len(list))
@@ -171,15 +173,24 @@ func dataSourceVirtualEnvironmentDatastoresRead(d *schema.ResourceData, m interf
 
 	d.SetId(fmt.Sprintf("%s_datastores", nodeName))
 
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresActive, active)
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresContentTypes, contentTypes)
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs, datastoreIDs)
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresEnabled, enabled)
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresShared, shared)
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresSpaceAvailable, spaceAvailable)
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresSpaceTotal, spaceTotal)
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresSpaceUsed, spaceUsed)
-	d.Set(mkDataSourceVirtualEnvironmentDatastoresTypes, types)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresActive, active)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresContentTypes, contentTypes)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresDatastoreIDs, datastoreIDs)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresEnabled, enabled)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresShared, shared)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresSpaceAvailable, spaceAvailable)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresSpaceTotal, spaceTotal)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresSpaceUsed, spaceUsed)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentDatastoresTypes, types)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

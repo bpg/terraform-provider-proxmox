@@ -5,6 +5,8 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -29,22 +31,22 @@ func dataSourceVirtualEnvironmentGroups() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentGroupsRead,
+		ReadContext: dataSourceVirtualEnvironmentGroupsRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentGroupsRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentGroupsRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	list, err := veClient.ListGroups()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comments := make([]interface{}, len(list))
@@ -62,8 +64,10 @@ func dataSourceVirtualEnvironmentGroupsRead(d *schema.ResourceData, m interface{
 
 	d.SetId("groups")
 
-	d.Set(mkDataSourceVirtualEnvironmentGroupsComments, comments)
-	d.Set(mkDataSourceVirtualEnvironmentGroupsGroupIDs, groupIDs)
+	err = d.Set(mkDataSourceVirtualEnvironmentGroupsComments, comments)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentGroupsGroupIDs, groupIDs)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

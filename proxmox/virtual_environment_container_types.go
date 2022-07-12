@@ -219,7 +219,7 @@ type VirtualEnvironmentContainerUpdateRequestBody VirtualEnvironmentContainerCre
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomFeatures struct to a URL vlaue.
 func (r VirtualEnvironmentContainerCustomFeatures) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.FUSE != nil {
 		if *r.FUSE {
@@ -260,7 +260,7 @@ func (r VirtualEnvironmentContainerCustomFeatures) EncodeValues(key string, v *u
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomMountPoint struct to a URL vlaue.
 func (r VirtualEnvironmentContainerCustomMountPoint) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.ACL != nil {
 		if *r.ACL {
@@ -345,7 +345,7 @@ func (r VirtualEnvironmentContainerCustomMountPointArray) EncodeValues(key strin
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomNetworkInterface struct to a URL vlaue.
 func (r VirtualEnvironmentContainerCustomNetworkInterface) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.Bridge != nil {
 		values = append(values, fmt.Sprintf("bridge=%s", *r.Bridge))
@@ -428,7 +428,7 @@ func (r VirtualEnvironmentContainerCustomNetworkInterfaceArray) EncodeValues(key
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomRootFS struct to a URL vlaue.
 func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.ACL != nil {
 		if *r.ACL {
@@ -498,7 +498,7 @@ func (r VirtualEnvironmentContainerCustomSSHKeys) EncodeValues(key string, v *ur
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomStartupBehavior struct to a URL vlaue.
 func (r VirtualEnvironmentContainerCustomStartupBehavior) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.Down != nil {
 		values = append(values, fmt.Sprintf("down=%d", *r.Down))
@@ -547,7 +547,7 @@ func (r *VirtualEnvironmentContainerCustomFeatures) UnmarshalJSON(b []byte) erro
 					a := strings.Split(v[1], ";")
 					r.MountTypes = &a
 				} else {
-					a := []string{}
+					var a []string
 					r.MountTypes = &a
 				}
 			case "nesting":
@@ -590,7 +590,7 @@ func (r *VirtualEnvironmentContainerCustomMountPoint) UnmarshalJSON(b []byte) er
 					a := strings.Split(v[1], ";")
 					r.MountOptions = &a
 				} else {
-					a := []string{}
+					var a []string
 					r.MountOptions = &a
 				}
 			case "mp":
@@ -691,7 +691,7 @@ func (r *VirtualEnvironmentContainerCustomNetworkInterface) UnmarshalJSON(b []by
 
 					r.Trunks = &a
 				} else {
-					a := []int{}
+					var a []int
 					r.Trunks = &a
 				}
 			case "type":
@@ -730,7 +730,7 @@ func (r *VirtualEnvironmentContainerCustomRootFS) UnmarshalJSON(b []byte) error 
 					a := strings.Split(v[1], ";")
 					r.MountOptions = &a
 				} else {
-					a := []string{}
+					var a []string
 					r.MountOptions = &a
 				}
 			case "quota":

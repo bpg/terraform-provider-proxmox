@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 	"time"
 
@@ -112,18 +114,17 @@ func resourceVirtualEnvironmentCertificate() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Create: resourceVirtualEnvironmentCertificateCreate,
-		Read:   resourceVirtualEnvironmentCertificateRead,
-		Update: resourceVirtualEnvironmentCertificateUpdate,
-		Delete: resourceVirtualEnvironmentCertificateDelete,
+		CreateContext: resourceVirtualEnvironmentCertificateCreate,
+		ReadContext:   resourceVirtualEnvironmentCertificateRead,
+		UpdateContext: resourceVirtualEnvironmentCertificateUpdate,
+		DeleteContext: resourceVirtualEnvironmentCertificateDelete,
 	}
 }
 
-func resourceVirtualEnvironmentCertificateCreate(d *schema.ResourceData, m interface{}) error {
-	err := resourceVirtualEnvironmentCertificateUpdate(d, m)
-
-	if err != nil {
-		return err
+func resourceVirtualEnvironmentCertificateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	diags := resourceVirtualEnvironmentCertificateUpdate(ctx, d, m)
+	if diags.HasError() {
+		return diags
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
@@ -133,7 +134,7 @@ func resourceVirtualEnvironmentCertificateCreate(d *schema.ResourceData, m inter
 	return nil
 }
 
-func resourceVirtualEnvironmentCertificateGetUpdateBody(d *schema.ResourceData, m interface{}) (*proxmox.VirtualEnvironmentCertificateUpdateRequestBody, error) {
+func resourceVirtualEnvironmentCertificateGetUpdateBody(d *schema.ResourceData) (*proxmox.VirtualEnvironmentCertificateUpdateRequestBody, error) {
 	certificate := d.Get(mkResourceVirtualEnvironmentCertificateCertificate).(string)
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
 	overwrite := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
@@ -163,23 +164,25 @@ func resourceVirtualEnvironmentCertificateGetUpdateBody(d *schema.ResourceData, 
 	return body, nil
 }
 
-func resourceVirtualEnvironmentCertificateRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentCertificateRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
 	list, err := veClient.ListCertificates(nodeName)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	d.Set(mkResourceVirtualEnvironmentCertificateCertificate, "")
-	d.Set(mkResourceVirtualEnvironmentCertificateCertificateChain, "")
+	err = d.Set(mkResourceVirtualEnvironmentCertificateCertificate, "")
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkResourceVirtualEnvironmentCertificateCertificateChain, "")
+	diags = append(diags, diag.FromErr(err)...)
 
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
 
@@ -200,114 +203,115 @@ func resourceVirtualEnvironmentCertificateRead(d *schema.ResourceData, m interfa
 					newCertificate = *c.Certificates
 				}
 
-				d.Set(mkResourceVirtualEnvironmentCertificateCertificate, newCertificate)
-				d.Set(mkResourceVirtualEnvironmentCertificateCertificateChain, newCertificateChain)
+				err = d.Set(mkResourceVirtualEnvironmentCertificateCertificate, newCertificate)
+				diags = append(diags, diag.FromErr(err)...)
+				err = d.Set(mkResourceVirtualEnvironmentCertificateCertificateChain, newCertificateChain)
+				diags = append(diags, diag.FromErr(err)...)
 			}
 
-			d.Set(mkResourceVirtualEnvironmentCertificateFileName, *c.FileName)
+			err = d.Set(mkResourceVirtualEnvironmentCertificateFileName, *c.FileName)
+			diags = append(diags, diag.FromErr(err)...)
 
 			if c.NotAfter != nil {
 				t := time.Time(*c.NotAfter)
-
-				d.Set(mkResourceVirtualEnvironmentCertificateExpirationDate, t.UTC().Format(time.RFC3339))
+				err = d.Set(mkResourceVirtualEnvironmentCertificateExpirationDate, t.UTC().Format(time.RFC3339))
 			} else {
-				d.Set(mkResourceVirtualEnvironmentCertificateExpirationDate, "")
+				err = d.Set(mkResourceVirtualEnvironmentCertificateExpirationDate, "")
 			}
+			diags = append(diags, diag.FromErr(err)...)
 
 			if c.Issuer != nil {
-				d.Set(mkResourceVirtualEnvironmentCertificateIssuer, *c.Issuer)
+				err = d.Set(mkResourceVirtualEnvironmentCertificateIssuer, *c.Issuer)
 			} else {
-				d.Set(mkResourceVirtualEnvironmentCertificateIssuer, "")
+				err = d.Set(mkResourceVirtualEnvironmentCertificateIssuer, "")
 			}
+			diags = append(diags, diag.FromErr(err)...)
 
 			if c.PublicKeyBits != nil {
-				d.Set(mkResourceVirtualEnvironmentCertificatePublicKeySize, *c.PublicKeyBits)
+				err = d.Set(mkResourceVirtualEnvironmentCertificatePublicKeySize, *c.PublicKeyBits)
 			} else {
-				d.Set(mkResourceVirtualEnvironmentCertificatePublicKeySize, 0)
+				err = d.Set(mkResourceVirtualEnvironmentCertificatePublicKeySize, 0)
 			}
+			diags = append(diags, diag.FromErr(err)...)
 
 			if c.PublicKeyType != nil {
 				pkType := *c.PublicKeyType
-
 				for _, pkt := range []string{"ecdsa", "dsa", "rsa"} {
 					if strings.Contains(pkType, pkt) {
 						pkType = pkt
 					}
 				}
-
-				d.Set(mkResourceVirtualEnvironmentCertificatePublicKeyType, pkType)
+				err = d.Set(mkResourceVirtualEnvironmentCertificatePublicKeyType, pkType)
 			} else {
-				d.Set(mkResourceVirtualEnvironmentCertificatePublicKeyType, "")
+				err = d.Set(mkResourceVirtualEnvironmentCertificatePublicKeyType, "")
 			}
+			diags = append(diags, diag.FromErr(err)...)
 
 			if c.Fingerprint != nil {
-				d.Set(mkResourceVirtualEnvironmentCertificateSSLFingerprint, *c.Fingerprint)
+				err = d.Set(mkResourceVirtualEnvironmentCertificateSSLFingerprint, *c.Fingerprint)
 			} else {
-				d.Set(mkResourceVirtualEnvironmentCertificateSSLFingerprint, "")
+				err = d.Set(mkResourceVirtualEnvironmentCertificateSSLFingerprint, "")
 			}
+			diags = append(diags, diag.FromErr(err)...)
 
 			if c.NotBefore != nil {
 				t := time.Time(*c.NotBefore)
-
-				d.Set(mkResourceVirtualEnvironmentCertificateStartDate, t.UTC().Format(time.RFC3339))
+				err = d.Set(mkResourceVirtualEnvironmentCertificateStartDate, t.UTC().Format(time.RFC3339))
 			} else {
-				d.Set(mkResourceVirtualEnvironmentCertificateStartDate, "")
+				err = d.Set(mkResourceVirtualEnvironmentCertificateStartDate, "")
 			}
+			diags = append(diags, diag.FromErr(err)...)
 
 			if c.Subject != nil {
-				d.Set(mkResourceVirtualEnvironmentCertificateSubject, *c.Subject)
+				err = d.Set(mkResourceVirtualEnvironmentCertificateSubject, *c.Subject)
 			} else {
-				d.Set(mkResourceVirtualEnvironmentCertificateSubject, "")
+				err = d.Set(mkResourceVirtualEnvironmentCertificateSubject, "")
 			}
+			diags = append(diags, diag.FromErr(err)...)
 
 			if c.SubjectAlternativeNames != nil {
 				sanList := make([]interface{}, len(*c.SubjectAlternativeNames))
-
 				for i, san := range *c.SubjectAlternativeNames {
 					sanList[i] = san
 				}
-
-				d.Set(mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames, sanList)
+				err = d.Set(mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames, sanList)
 			} else {
-				d.Set(mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames, []interface{}{})
+				err = d.Set(mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames, []interface{}{})
 			}
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentCertificateUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentCertificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
 
-	body, err := resourceVirtualEnvironmentCertificateGetUpdateBody(d, m)
-
+	body, err := resourceVirtualEnvironmentCertificateGetUpdateBody(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	err = veClient.UpdateCertificate(nodeName, body)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentCertificateRead(d, m)
+	return resourceVirtualEnvironmentCertificateRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentCertificateDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentCertificateDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
@@ -316,9 +320,8 @@ func resourceVirtualEnvironmentCertificateDelete(d *schema.ResourceData, m inter
 	err = veClient.DeleteCertificate(nodeName, &proxmox.VirtualEnvironmentCertificateDeleteRequestBody{
 		Restart: &restart,
 	})
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("")

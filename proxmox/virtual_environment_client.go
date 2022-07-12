@@ -185,7 +185,7 @@ func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) erro
 		err := json.NewDecoder(res.Body).Decode(errRes)
 
 		if err == nil && errRes.Errors != nil {
-			errList := []string{}
+			var errList []string
 
 			for k, v := range *errRes.Errors {
 				errList = append(errList, fmt.Sprintf("%s: %s", k, strings.TrimRight(v, "\n\r")))

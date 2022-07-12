@@ -887,7 +887,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	resource := resourceVirtualEnvironmentContainer()
 
-	consoleBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
+	consoleBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -896,7 +896,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
 	consoleTTYCount := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleTTYCount].(int)
 
-	cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
+	cpuBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -907,7 +907,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
 
-	diskBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerDisk}, 0, true)
+	diskBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerDisk}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -981,7 +981,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 		}
 	}
 
-	memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
+	memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1699,7 +1699,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	// Prepare the new console configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerConsole) {
-		consoleBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
+		consoleBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1717,7 +1717,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerCPU) {
-		cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
+		cpuBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1794,7 +1794,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerMemory) {
-		memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
+		memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1890,7 +1890,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerOperatingSystem) {
-		operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentContainerOperatingSystem}, 0, true)
+		operatingSystem, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerOperatingSystem}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}

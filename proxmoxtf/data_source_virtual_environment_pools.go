@@ -5,6 +5,8 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -22,22 +24,20 @@ func dataSourceVirtualEnvironmentPools() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentPoolsRead,
+		ReadContext: dataSourceVirtualEnvironmentPoolsRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentPoolsRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentPoolsRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	list, err := veClient.ListPools()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	poolIDs := make([]interface{}, len(list))
@@ -48,7 +48,7 @@ func dataSourceVirtualEnvironmentPoolsRead(d *schema.ResourceData, m interface{}
 
 	d.SetId("pools")
 
-	d.Set(mkDataSourceVirtualEnvironmentPoolsPoolIDs, poolIDs)
+	err = d.Set(mkDataSourceVirtualEnvironmentPoolsPoolIDs, poolIDs)
 
-	return nil
+	return diag.FromErr(err)
 }

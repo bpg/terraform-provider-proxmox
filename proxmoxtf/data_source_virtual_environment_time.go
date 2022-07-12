@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -42,29 +44,28 @@ func dataSourceVirtualEnvironmentTime() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		Read: dataSourceVirtualEnvironmentTimeRead,
+		ReadContext: dataSourceVirtualEnvironmentTimeRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentTimeRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentTimeRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentTimeNodeName).(string)
 	nodeTime, err := veClient.GetNodeTime(nodeName)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	localLocation, err := time.LoadLocation(nodeTime.TimeZone)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(fmt.Sprintf("%s_time", nodeName))
@@ -72,9 +73,12 @@ func dataSourceVirtualEnvironmentTimeRead(d *schema.ResourceData, m interface{})
 	localTimeOffset := time.Time(nodeTime.LocalTime).Sub(time.Now().UTC())
 	localTime := time.Time(nodeTime.LocalTime).Add(-localTimeOffset).In(localLocation)
 
-	d.Set(mkDataSourceVirtualEnvironmentTimeLocalTime, localTime.Format(time.RFC3339))
-	d.Set(mkDataSourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
-	d.Set(mkDataSourceVirtualEnvironmentTimeUTCTime, time.Time(nodeTime.UTCTime).Format(time.RFC3339))
+	err = d.Set(mkDataSourceVirtualEnvironmentTimeLocalTime, localTime.Format(time.RFC3339))
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentTimeUTCTime, time.Time(nodeTime.UTCTime).Format(time.RFC3339))
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

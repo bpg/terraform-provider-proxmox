@@ -5,6 +5,8 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -35,34 +37,36 @@ func dataSourceVirtualEnvironmentClusterAlias() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		Read: dataSourceVirtualEnvironmentAliasRead,
+		ReadContext: dataSourceVirtualEnvironmentAliasRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentAliasRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentAliasRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	AliasID := d.Get(mkDataSourceVirtualEnvironmentClusterAliasName).(string)
 	Alias, err := veClient.GetAlias(AliasID)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(AliasID)
 
-	d.Set(mkDataSourceVirtualEnvironmentClusterAliasCIDR, Alias.CIDR)
+	err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasCIDR, Alias.CIDR)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if Alias.Comment != nil {
-		d.Set(mkDataSourceVirtualEnvironmentClusterAliasComment, Alias.Comment)
+		err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasComment, Alias.Comment)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentClusterAliasComment, dvDataVirtualEnvironmentClusterAliasComment)
+		err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasComment, dvDataVirtualEnvironmentClusterAliasComment)
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

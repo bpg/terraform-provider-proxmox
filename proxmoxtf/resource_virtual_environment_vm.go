@@ -1493,7 +1493,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 
 	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 
-	agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
+	agentBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1509,7 +1509,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 
-	cdromBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
+	cdromBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1524,7 +1524,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 		cdromFileID = "cdrom"
 	}
 
-	cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
+	cpuBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1563,7 +1563,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	}
 
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
-	memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
+	memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1581,7 +1581,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 
-	operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
+	operatingSystem, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1861,7 +1861,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 	// Execute the commands on the node and wait for the result.
 	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
 	if len(commands) > 0 {
-		err = veClient.ExecuteNodeCommands(nodeName, commands)
+		err = veClient.ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2085,7 +2085,7 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m 
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 
-		speedBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
+		speedBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
 
 		if err != nil {
 			return diskDeviceObjects, err
@@ -2238,7 +2238,7 @@ func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidat
 func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData, m interface{}) (*proxmox.CustomVGADevice, error) {
 	resource := resourceVirtualEnvironmentVM()
 
-	vgaBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMVGA}, 0, true)
+	vgaBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMVGA}, 0, true)
 
 	if err != nil {
 		return nil, err
@@ -3039,7 +3039,7 @@ func resourceVirtualEnvironmentVMReadNetworkValues(ctx context.Context, d *schem
 	if started {
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
 			resource := resourceVirtualEnvironmentVM()
-			agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
+			agentBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -3280,7 +3280,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 
 	// Prepare the new agent configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMAgent) {
-		agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
+		agentBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3320,7 +3320,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 
 	// Prepare the new CDROM configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCDROM) {
-		cdromBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
+		cdromBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3347,7 +3347,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCPU) {
-		cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
+		cpuBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3488,7 +3488,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMMemory) {
-		memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
+		memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3534,7 +3534,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMOperatingSystem) {
-		operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
+		operatingSystem, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}

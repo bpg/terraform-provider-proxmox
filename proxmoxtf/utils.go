@@ -247,7 +247,7 @@ func getQEMUAgentTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"isa", "virtio"}, false))
 }
 
-func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, m interface{}, k []string, i int, allowDefault bool) (map[string]interface{}, error) {
+func getSchemaBlock(r *schema.Resource, d *schema.ResourceData, k []string, i int, allowDefault bool) (map[string]interface{}, error) {
 	var resourceBlock map[string]interface{}
 	var resourceData interface{}
 	var resourceSchema *schema.Schema

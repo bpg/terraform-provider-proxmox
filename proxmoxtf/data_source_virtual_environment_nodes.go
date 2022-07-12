@@ -5,6 +5,8 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"math"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -80,22 +82,22 @@ func dataSourceVirtualEnvironmentNodes() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentNodesRead,
+		ReadContext: dataSourceVirtualEnvironmentNodesRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentNodesRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentNodesRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	list, err := veClient.ListNodes()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	cpuCount := make([]interface{}, len(list))
@@ -162,15 +164,24 @@ func dataSourceVirtualEnvironmentNodesRead(d *schema.ResourceData, m interface{}
 
 	d.SetId("nodes")
 
-	d.Set(mkDataSourceVirtualEnvironmentNodesCPUCount, cpuCount)
-	d.Set(mkDataSourceVirtualEnvironmentNodesCPUUtilization, cpuUtilization)
-	d.Set(mkDataSourceVirtualEnvironmentNodesMemoryAvailable, memoryAvailable)
-	d.Set(mkDataSourceVirtualEnvironmentNodesMemoryUsed, memoryUsed)
-	d.Set(mkDataSourceVirtualEnvironmentNodesNames, name)
-	d.Set(mkDataSourceVirtualEnvironmentNodesOnline, online)
-	d.Set(mkDataSourceVirtualEnvironmentNodesSSLFingerprints, sslFingerprints)
-	d.Set(mkDataSourceVirtualEnvironmentNodesSupportLevels, supportLevels)
-	d.Set(mkDataSourceVirtualEnvironmentNodesUptime, uptime)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesCPUCount, cpuCount)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesCPUUtilization, cpuUtilization)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesMemoryAvailable, memoryAvailable)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesMemoryUsed, memoryUsed)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesNames, name)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesOnline, online)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesSSLFingerprints, sslFingerprints)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesSupportLevels, supportLevels)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentNodesUptime, uptime)
+	diags = append(diags, diag.FromErr(err)...)
 
 	return nil
 }

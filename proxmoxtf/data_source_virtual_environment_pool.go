@@ -5,6 +5,8 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -67,32 +69,33 @@ func dataSourceVirtualEnvironmentPool() *schema.Resource {
 				Required:    true,
 			},
 		},
-		Read: dataSourceVirtualEnvironmentPoolRead,
+		ReadContext: dataSourceVirtualEnvironmentPoolRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentPoolRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentPoolRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	poolID := d.Get(mkDataSourceVirtualEnvironmentPoolPoolID).(string)
 	pool, err := veClient.GetPool(poolID)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(poolID)
 
 	if pool.Comment != nil {
-		d.Set(mkDataSourceVirtualEnvironmentPoolComment, pool.Comment)
+		err = d.Set(mkDataSourceVirtualEnvironmentPoolComment, pool.Comment)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentPoolComment, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentPoolComment, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	members := make([]interface{}, len(pool.Members))
 
@@ -119,7 +122,8 @@ func dataSourceVirtualEnvironmentPoolRead(d *schema.ResourceData, m interface{})
 		members[i] = values
 	}
 
-	d.Set(mkDataSourceVirtualEnvironmentPoolMembers, members)
+	err = d.Set(mkDataSourceVirtualEnvironmentPoolMembers, members)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

@@ -5,6 +5,8 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -71,19 +73,18 @@ func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
 				Default:     dvResourceVirtualEnvironmentClusterIPSetCIDRComment,
 			},
 		},
-		Create: resourceVirtualEnvironmentClusterIPSetCreate,
-		Read:   resourceVirtualEnvironmentClusterIPSetRead,
-		Update: resourceVirtualEnvironmentClusterIPSetUpdate,
-		Delete: resourceVirtualEnvironmentClusterIPSetDelete,
+		CreateContext: resourceVirtualEnvironmentClusterIPSetCreate,
+		ReadContext:   resourceVirtualEnvironmentClusterIPSetRead,
+		UpdateContext: resourceVirtualEnvironmentClusterIPSetUpdate,
+		DeleteContext: resourceVirtualEnvironmentClusterIPSetDelete,
 	}
 }
 
-func resourceVirtualEnvironmentClusterIPSetCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentClusterIPSetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentClusterIPSetCIDRComment).(string)
@@ -117,52 +118,43 @@ func resourceVirtualEnvironmentClusterIPSetCreate(d *schema.ResourceData, m inte
 	}
 
 	err = veClient.CreateIPSet(body)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	for _, v := range IPSetsArray {
 		err = veClient.AddCIDRToIPSet(name, &v)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	d.SetId(name)
-	return resourceVirtualEnvironmentClusterIPSetRead(d, m)
+	return resourceVirtualEnvironmentClusterIPSetRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterIPSetRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentClusterIPSetRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	name := d.Id()
 
 	allIPSets, err := veClient.GetListIPSets()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	for _, v := range allIPSets.Data {
 		if v.Name == name {
 			err = d.Set(mkResourceVirtualEnvironmentClusterIPSetName, v.Name)
-
-			if err != nil {
-				return err
-			}
-
+			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDRComment, v.Comment)
-
-			if err != nil {
-				return err
-			}
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
@@ -173,23 +165,23 @@ func resourceVirtualEnvironmentClusterIPSetRead(d *schema.ResourceData, m interf
 			d.SetId("")
 			return nil
 		}
-
-		return err
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
 	}
 
 	for key := range IPSet {
-		d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDR, IPSet[key])
+		err := d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDR, IPSet[key])
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentClusterIPSetUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentClusterIPSetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentClusterIPSetCIDRComment).(string)
@@ -203,40 +195,40 @@ func resourceVirtualEnvironmentClusterIPSetUpdate(d *schema.ResourceData, m inte
 	}
 
 	err = veClient.UpdateIPSet(body)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(newName)
 
-	return resourceVirtualEnvironmentClusterIPSetRead(d, m)
+	return resourceVirtualEnvironmentClusterIPSetRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterIPSetDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentClusterIPSetDelete(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return nil
+		return diag.FromErr(err)
 	}
 
 	name := d.Id()
 
 	IPSetContent, err := veClient.GetListIPSetContent(name)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// PVE requires content of IPSet be cleared before removal
 	if len(IPSetContent) > 0 {
 		for _, IPSet := range IPSetContent {
 			err = veClient.DeleteIPSetContent(name, IPSet.CIDR)
-			if err != nil {
-				return err
-			}
+			diags = append(diags, diag.FromErr(err)...)
 		}
+	}
+
+	if diags.HasError() {
+		return diags
 	}
 
 	err = veClient.DeleteIPSet(name)
@@ -247,7 +239,7 @@ func resourceVirtualEnvironmentClusterIPSetDelete(d *schema.ResourceData, m inte
 			return nil
 		}
 
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("")

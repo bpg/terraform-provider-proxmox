@@ -564,7 +564,7 @@ type VirtualEnvironmentVMUpdateRequestBody VirtualEnvironmentVMCreateRequestBody
 
 // EncodeValues converts a CustomAgent struct to a URL vlaue.
 func (r CustomAgent) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.Enabled != nil {
 		if *r.Enabled {
@@ -623,7 +623,7 @@ func (r CustomAudioDevices) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomCloudInitConfig struct to multiple URL vlaues.
 func (r CustomCloudInitConfig) EncodeValues(key string, v *url.Values) error {
 	if r.Files != nil {
-		volumes := []string{}
+		var volumes []string
 
 		if r.Files.MetaVolume != nil {
 			volumes = append(volumes, fmt.Sprintf("meta=%s", *r.Files.MetaVolume))
@@ -643,7 +643,7 @@ func (r CustomCloudInitConfig) EncodeValues(key string, v *url.Values) error {
 	}
 
 	for i, c := range r.IPConfig {
-		config := []string{}
+		var config []string
 
 		if c.GatewayIPv4 != nil {
 			config = append(config, fmt.Sprintf("gw=%s", *c.GatewayIPv4))
@@ -800,7 +800,10 @@ func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 func (r CustomNetworkDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
 		if d.Enabled {
-			d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+			err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -833,7 +836,10 @@ func (r CustomNUMADevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomNUMADevices array to multiple URL values.
 func (r CustomNUMADevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -920,7 +926,7 @@ func (r CustomSharedMemory) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomSMBIOS struct to a URL vlaue.
 func (r CustomSMBIOS) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.Base64 != nil {
 		if *r.Base64 {
@@ -967,7 +973,7 @@ func (r CustomSMBIOS) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomSpiceEnhancements struct to a URL vlaue.
 func (r CustomSpiceEnhancements) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.FolderSharing != nil {
 		if *r.FolderSharing {
@@ -990,7 +996,7 @@ func (r CustomSpiceEnhancements) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomStartupOrder struct to a URL vlaue.
 func (r CustomStartupOrder) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.Order != nil {
 		values = append(values, fmt.Sprintf("order=%d", *r.Order))
@@ -1105,7 +1111,7 @@ func (r CustomUSBDevices) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomVGADevice struct to a URL vlaue.
 func (r CustomVGADevice) EncodeValues(key string, v *url.Values) error {
-	values := []string{}
+	var values []string
 
 	if r.Memory != nil {
 		values = append(values, fmt.Sprintf("memory=%d", *r.Memory))
@@ -1352,7 +1358,7 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 					f := strings.Split(v[1], ";")
 					r.Flags = &f
 				} else {
-					f := []string{}
+					var f []string
 					r.Flags = &f
 				}
 			case "hidden":

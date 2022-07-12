@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -36,34 +38,35 @@ func dataSourceVirtualEnvironmentDNS() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentDNSRead,
+		ReadContext: dataSourceVirtualEnvironmentDNSRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentDNSRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentDNSRead(_ context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDNSNodeName).(string)
 	dns, err := veClient.GetDNS(nodeName)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(fmt.Sprintf("%s_dns", nodeName))
 
 	if dns.SearchDomain != nil {
-		d.Set(mkDataSourceVirtualEnvironmentDNSDomain, *dns.SearchDomain)
+		err = d.Set(mkDataSourceVirtualEnvironmentDNSDomain, *dns.SearchDomain)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentDNSDomain, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentDNSDomain, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
-	servers := []interface{}{}
+	var servers []interface{}
 
 	if dns.Server1 != nil {
 		servers = append(servers, *dns.Server1)
@@ -77,7 +80,8 @@ func dataSourceVirtualEnvironmentDNSRead(d *schema.ResourceData, m interface{}) 
 		servers = append(servers, *dns.Server3)
 	}
 
-	d.Set(mkDataSourceVirtualEnvironmentDNSServers, servers)
+	err = d.Set(mkDataSourceVirtualEnvironmentDNSServers, servers)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }
