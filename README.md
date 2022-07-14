@@ -56,6 +56,25 @@ $ make test
 
 Tests are limited to regression tests, ensuring backwards compatibility.
 
+## Deploying the example resources
+
+There are number of TF examples in the `examples` directory, which can be used to deploy a Container, VM, or other Proxmox resources on your test Proxmox cluster.
+The following assumptions are made about the test Proxmox cluster:
+- It has one node named `pve`
+- The node has local storages named `local` and `local-lvm`
+
+Create `examples/terraform.tfvars` with the following variables:
+
+```sh
+virtual_environment_username = "root@pam"
+virtual_environment_password = "put-your-password-here"
+virtual_environment_endpoint = "https://<your-cluster-endpoint>:8006/"
+```
+
+Then run `make example` to deploy the example resources.
+
+
+
 ## Known issues
 
 ### Disk images cannot be imported by non-PAM accounts
