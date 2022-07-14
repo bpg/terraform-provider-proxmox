@@ -5,12 +5,14 @@
 package proxmoxtf
 
 import (
+	"context"
 	"errors"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"net/url"
 	"os"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -34,7 +36,7 @@ type providerConfiguration struct {
 // Provider returns the object for this provider.
 func Provider() *schema.Provider {
 	return &schema.Provider{
-		ConfigureFunc: providerConfigure,
+		ConfigureContextFunc: providerConfigure,
 		DataSourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_cluster_alias":   dataSourceVirtualEnvironmentClusterAlias(),
 			"proxmox_virtual_environment_cluster_aliases": dataSourceVirtualEnvironmentClusterAliases(),
@@ -87,7 +89,7 @@ func Provider() *schema.Provider {
 
 								if value == "" {
 									return []string{}, []error{
-										errors.New("You must specify an endpoint for the Proxmox Virtual Environment API (valid: https://host:port)"),
+										errors.New("you must specify an endpoint for the Proxmox Virtual Environment API (valid: https://host:port)"),
 									}
 								}
 
@@ -95,7 +97,7 @@ func Provider() *schema.Provider {
 
 								if err != nil {
 									return []string{}, []error{
-										errors.New("You must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port)"),
+										errors.New("you must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port)"),
 									}
 								}
 
@@ -140,7 +142,7 @@ func Provider() *schema.Provider {
 
 								if value == "" {
 									return []string{}, []error{
-										errors.New("You must specify a password for the Proxmox Virtual Environment API"),
+										errors.New("you must specify a password for the Proxmox Virtual Environment API"),
 									}
 								}
 
@@ -160,7 +162,7 @@ func Provider() *schema.Provider {
 
 								if value == "" {
 									return []string{}, []error{
-										errors.New("You must specify a username for the Proxmox Virtual Environment API (valid: username@realm)"),
+										errors.New("you must specify a username for the Proxmox Virtual Environment API (valid: username@realm)"),
 									}
 								}
 
@@ -175,7 +177,7 @@ func Provider() *schema.Provider {
 	}
 }
 
-func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
 	var veClient *proxmox.VirtualEnvironmentClient
 
@@ -192,9 +194,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 			veConfig[mkProviderVirtualEnvironmentOTP].(string),
 			veConfig[mkProviderVirtualEnvironmentInsecure].(bool),
 		)
-
 		if err != nil {
-			return nil, err
+			return nil, diag.FromErr(err)
 		}
 	}
 
@@ -207,7 +208,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 func (c *providerConfiguration) GetVEClient() (*proxmox.VirtualEnvironmentClient, error) {
 	if c.veClient == nil {
-		return nil, errors.New("You must specify the virtual environment details in the provider configuration")
+		return nil, errors.New("you must specify the virtual environment details in the provider configuration")
 	}
 
 	return c.veClient, nil

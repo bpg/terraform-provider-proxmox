@@ -8,9 +8,4 @@
 <!--- If your PR fully resolves and should automatically close the linked issue, use Closes. Otherwise, use Relates --->
 Relates OR Closes #0000
 
-Release note for [CHANGELOG](https://github.com/bpg/terraform-provider-proxmox/blob/main/CHANGELOG.md):
-<!-- If change is not user facing, just write "NONE" in the release-note block below. -->
-
-```release-note
-
-```
+<!--- Release note for [CHANGELOG](https://github.com/bpg/terraform-provider-proxmox/blob/main/CHANGELOG.md) will be created automatically using the PR's title and labels, update them accordingly. --->

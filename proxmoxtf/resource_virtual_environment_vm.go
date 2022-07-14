@@ -5,16 +5,18 @@
 package proxmoxtf
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -42,7 +44,7 @@ const (
 	dvResourceVirtualEnvironmentVMCPUType                           = "qemu64"
 	dvResourceVirtualEnvironmentVMCPUUnits                          = 1024
 	dvResourceVirtualEnvironmentVMDescription                       = ""
-	dvResourcevirtualEnvironmentVMDiskInterface                     = "scsi0"
+	dvResourceVirtualEnvironmentVMDiskInterface                     = "scsi0"
 	dvResourceVirtualEnvironmentVMDiskDatastoreID                   = "local-lvm"
 	dvResourceVirtualEnvironmentVMDiskFileFormat                    = "qcow2"
 	dvResourceVirtualEnvironmentVMDiskFileID                        = ""
@@ -125,7 +127,7 @@ const (
 	mkResourceVirtualEnvironmentVMCPUUnits                          = "units"
 	mkResourceVirtualEnvironmentVMDescription                       = "description"
 	mkResourceVirtualEnvironmentVMDisk                              = "disk"
-	mkResourcevirtualEnvironmentVMDiskInterface                     = "interface"
+	mkResourceVirtualEnvironmentVMDiskInterface                     = "interface"
 	mkResourceVirtualEnvironmentVMDiskDatastoreID                   = "datastore_id"
 	mkResourceVirtualEnvironmentVMDiskFileFormat                    = "file_format"
 	mkResourceVirtualEnvironmentVMDiskFileID                        = "file_id"
@@ -197,7 +199,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentVMRebootAfterCreation: {
 				Type:        schema.TypeBool,
-				Description: "Wether to reboot vm after creation",
+				Description: "Whether to reboot vm after creation",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMRebootAfterCreation,
 			},
@@ -236,11 +238,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMAgentEnabled,
 						},
 						mkResourceVirtualEnvironmentVMAgentTimeout: {
-							Type:         schema.TypeString,
-							Description:  "The maximum amount of time to wait for data from the QEMU agent to become available",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMAgentTimeout,
-							ValidateFunc: getTimeoutValidator(),
+							Type:             schema.TypeString,
+							Description:      "The maximum amount of time to wait for data from the QEMU agent to become available",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMAgentTimeout,
+							ValidateDiagFunc: getTimeoutValidator(),
 						},
 						mkResourceVirtualEnvironmentVMAgentTrim: {
 							Type:        schema.TypeBool,
@@ -249,11 +251,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMAgentTrim,
 						},
 						mkResourceVirtualEnvironmentVMAgentType: {
-							Type:         schema.TypeString,
-							Description:  "The QEMU agent interface type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMAgentType,
-							ValidateFunc: getQEMUAgentTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The QEMU agent interface type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMAgentType,
+							ValidateDiagFunc: getQEMUAgentTypeValidator(),
 						},
 					},
 				},
@@ -270,18 +272,18 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMAudioDeviceDevice: {
-							Type:         schema.TypeString,
-							Description:  "The device",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMAudioDeviceDevice,
-							ValidateFunc: resourceVirtualEnvironmentVMGetAudioDeviceValidator(),
+							Type:             schema.TypeString,
+							Description:      "The device",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMAudioDeviceDevice,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetAudioDeviceValidator(),
 						},
 						mkResourceVirtualEnvironmentVMAudioDeviceDriver: {
-							Type:         schema.TypeString,
-							Description:  "The driver",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMAudioDeviceDriver,
-							ValidateFunc: resourceVirtualEnvironmentVMGetAudioDriverValidator(),
+							Type:             schema.TypeString,
+							Description:      "The driver",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMAudioDeviceDriver,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetAudioDriverValidator(),
 						},
 						mkResourceVirtualEnvironmentVMAudioDeviceEnabled: {
 							Type:        schema.TypeBool,
@@ -295,11 +297,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMBIOS: {
-				Type:         schema.TypeString,
-				Description:  "The BIOS implementation",
-				Optional:     true,
-				Default:      dvResourceVirtualEnvironmentVMBIOS,
-				ValidateFunc: getBIOSValidator(),
+				Type:             schema.TypeString,
+				Description:      "The BIOS implementation",
+				Optional:         true,
+				Default:          dvResourceVirtualEnvironmentVMBIOS,
+				ValidateDiagFunc: getBIOSValidator(),
 			},
 			mkResourceVirtualEnvironmentVMCDROM: {
 				Type:        schema.TypeList,
@@ -322,11 +324,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMCDROMEnabled,
 						},
 						mkResourceVirtualEnvironmentVMCDROMFileID: {
-							Type:         schema.TypeString,
-							Description:  "The file id",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCDROMFileID,
-							ValidateFunc: getFileIDValidator(),
+							Type:             schema.TypeString,
+							Description:      "The file id",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCDROMFileID,
+							ValidateDiagFunc: getFileIDValidator(),
 						},
 					},
 				},
@@ -364,11 +366,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMCloneNodeName,
 						},
 						mkResourceVirtualEnvironmentVMCloneVMID: {
-							Type:         schema.TypeInt,
-							Description:  "The ID of the source VM",
-							Required:     true,
-							ForceNew:     true,
-							ValidateFunc: getVMIDValidator(),
+							Type:             schema.TypeInt,
+							Description:      "The ID of the source VM",
+							Required:         true,
+							ForceNew:         true,
+							ValidateDiagFunc: getVMIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMCloneFull: {
 							Type:        schema.TypeBool,
@@ -402,18 +404,18 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMCPUArchitecture: {
-							Type:         schema.TypeString,
-							Description:  "The CPU architecture",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUArchitecture,
-							ValidateFunc: resourceVirtualEnvironmentVMGetCPUArchitectureValidator(),
+							Type:             schema.TypeString,
+							Description:      "The CPU architecture",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUArchitecture,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetCPUArchitectureValidator(),
 						},
 						mkResourceVirtualEnvironmentVMCPUCores: {
-							Type:         schema.TypeInt,
-							Description:  "The number of CPU cores",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUCores,
-							ValidateFunc: validation.IntBetween(1, 2304),
+							Type:             schema.TypeInt,
+							Description:      "The number of CPU cores",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUCores,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 2304)),
 						},
 						mkResourceVirtualEnvironmentVMCPUFlags: {
 							Type:        schema.TypeList,
@@ -425,32 +427,32 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Elem: &schema.Schema{Type: schema.TypeString},
 						},
 						mkResourceVirtualEnvironmentVMCPUHotplugged: {
-							Type:         schema.TypeInt,
-							Description:  "The number of hotplugged vCPUs",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUHotplugged,
-							ValidateFunc: validation.IntBetween(0, 2304),
+							Type:             schema.TypeInt,
+							Description:      "The number of hotplugged vCPUs",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUHotplugged,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
 						},
 						mkResourceVirtualEnvironmentVMCPUSockets: {
-							Type:         schema.TypeInt,
-							Description:  "The number of CPU sockets",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUSockets,
-							ValidateFunc: validation.IntBetween(1, 16),
+							Type:             schema.TypeInt,
+							Description:      "The number of CPU sockets",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUSockets,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 16)),
 						},
 						mkResourceVirtualEnvironmentVMCPUType: {
-							Type:         schema.TypeString,
-							Description:  "The emulated CPU type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUType,
-							ValidateFunc: getCPUTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The emulated CPU type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUType,
+							ValidateDiagFunc: getCPUTypeValidator(),
 						},
 						mkResourceVirtualEnvironmentVMCPUUnits: {
-							Type:         schema.TypeInt,
-							Description:  "The CPU units",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMCPUUnits,
-							ValidateFunc: validation.IntBetween(2, 262144),
+							Type:             schema.TypeInt,
+							Description:      "The CPU units",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCPUUnits,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(2, 262144)),
 						},
 					},
 				},
@@ -474,14 +476,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							mkResourceVirtualEnvironmentVMDiskDatastoreID: dvResourceVirtualEnvironmentVMDiskDatastoreID,
 							mkResourceVirtualEnvironmentVMDiskFileFormat:  dvResourceVirtualEnvironmentVMDiskFileFormat,
 							mkResourceVirtualEnvironmentVMDiskFileID:      dvResourceVirtualEnvironmentVMDiskFileID,
-							mkResourcevirtualEnvironmentVMDiskInterface:   dvResourcevirtualEnvironmentVMDiskInterface,
+							mkResourceVirtualEnvironmentVMDiskInterface:   dvResourceVirtualEnvironmentVMDiskInterface,
 							mkResourceVirtualEnvironmentVMDiskSize:        dvResourceVirtualEnvironmentVMDiskSize,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourcevirtualEnvironmentVMDiskInterface: {
+						mkResourceVirtualEnvironmentVMDiskInterface: {
 							Type:        schema.TypeString,
 							Description: "The datastore name",
 							Required:    true,
@@ -493,27 +495,27 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
 						},
 						mkResourceVirtualEnvironmentVMDiskFileFormat: {
-							Type:         schema.TypeString,
-							Description:  "The file format",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMDiskFileFormat,
-							ValidateFunc: getFileFormatValidator(),
+							Type:             schema.TypeString,
+							Description:      "The file format",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMDiskFileFormat,
+							ValidateDiagFunc: getFileFormatValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskFileID: {
-							Type:         schema.TypeString,
-							Description:  "The file id for a disk image",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMDiskFileID,
-							ValidateFunc: getFileIDValidator(),
+							Type:             schema.TypeString,
+							Description:      "The file id for a disk image",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMDiskFileID,
+							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskSize: {
-							Type:         schema.TypeInt,
-							Description:  "The disk size in gigabytes",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMDiskSize,
-							ValidateFunc: validation.IntAtLeast(1),
+							Type:             schema.TypeInt,
+							Description:      "The disk size in gigabytes",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMDiskSize,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
 						},
 						mkResourceVirtualEnvironmentVMDiskSpeed: {
 							Type:        schema.TypeList,
@@ -713,20 +715,20 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							MinItems: 0,
 						},
 						mkResourceVirtualEnvironmentVMInitializationUserDataFileID: {
-							Type:         schema.TypeString,
-							Description:  "The ID of a file containing custom user data",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
-							ValidateFunc: getFileIDValidator(),
+							Type:             schema.TypeString,
+							Description:      "The ID of a file containing custom user data",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
+							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationType: {
-							Type:         schema.TypeString,
-							Description:  "The cloud-init configuration format",
-							Optional:     true,
-							ForceNew:     true,
-							Default:      dvResourceVirtualEnvironmentVMInitializationType,
-							ValidateFunc: getCloudInitTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The cloud-init configuration format",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMInitializationType,
+							ValidateDiagFunc: getCloudInitTypeValidator(),
 						},
 					},
 				},
@@ -752,11 +754,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 			},
 			mkResourceVirtualEnvironmentVMKeyboardLayout: {
-				Type:         schema.TypeString,
-				Description:  "The keyboard layout",
-				Optional:     true,
-				Default:      dvResourceVirtualEnvironmentVMKeyboardLayout,
-				ValidateFunc: getKeyboardLayoutValidator(),
+				Type:             schema.TypeString,
+				Description:      "The keyboard layout",
+				Optional:         true,
+				Default:          dvResourceVirtualEnvironmentVMKeyboardLayout,
+				ValidateDiagFunc: getKeyboardLayoutValidator(),
 			},
 			mkResourceVirtualEnvironmentVMMACAddresses: {
 				Type:        schema.TypeList,
@@ -780,25 +782,25 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMMemoryDedicated: {
-							Type:         schema.TypeInt,
-							Description:  "The dedicated memory in megabytes",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMMemoryDedicated,
-							ValidateFunc: validation.IntBetween(64, 268435456),
+							Type:             schema.TypeInt,
+							Description:      "The dedicated memory in megabytes",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMMemoryDedicated,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(64, 268435456)),
 						},
 						mkResourceVirtualEnvironmentVMMemoryFloating: {
-							Type:         schema.TypeInt,
-							Description:  "The floating memory in megabytes (balloon)",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMMemoryFloating,
-							ValidateFunc: validation.IntBetween(0, 268435456),
+							Type:             schema.TypeInt,
+							Description:      "The floating memory in megabytes (balloon)",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMMemoryFloating,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 268435456)),
 						},
 						mkResourceVirtualEnvironmentVMMemoryShared: {
-							Type:         schema.TypeInt,
-							Description:  "The shared memory in megabytes",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMMemoryShared,
-							ValidateFunc: validation.IntBetween(0, 268435456),
+							Type:             schema.TypeInt,
+							Description:      "The shared memory in megabytes",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMMemoryShared,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 268435456)),
 						},
 					},
 				},
@@ -840,14 +842,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 								return new == ""
 							},
-							ValidateFunc: getMACAddressValidator(),
+							ValidateDiagFunc: getMACAddressValidator(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceModel: {
-							Type:         schema.TypeString,
-							Description:  "The model",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMNetworkDeviceModel,
-							ValidateFunc: getNetworkDeviceModelValidator(),
+							Type:             schema.TypeString,
+							Description:      "The model",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMNetworkDeviceModel,
+							ValidateDiagFunc: getNetworkDeviceModelValidator(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit: {
 							Type:        schema.TypeFloat,
@@ -892,11 +894,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMOperatingSystemType: {
-							Type:         schema.TypeString,
-							Description:  "The type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMOperatingSystemType,
-							ValidateFunc: resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMOperatingSystemType,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator(),
 						},
 					},
 				},
@@ -924,11 +926,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMSerialDeviceDevice: {
-							Type:         schema.TypeString,
-							Description:  "The device",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMSerialDeviceDevice,
-							ValidateFunc: resourceVirtualEnvironmentVMGetSerialDeviceValidator(),
+							Type:             schema.TypeString,
+							Description:      "The device",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMSerialDeviceDevice,
+							ValidateDiagFunc: resourceVirtualEnvironmentVMGetSerialDeviceValidator(),
 						},
 					},
 				},
@@ -1015,18 +1017,18 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMVGAEnabled,
 						},
 						mkResourceVirtualEnvironmentVMVGAMemory: {
-							Type:         schema.TypeInt,
-							Description:  "The VGA memory in megabytes (4-512 MB)",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMVGAMemory,
-							ValidateFunc: getVGAMemoryValidator(),
+							Type:             schema.TypeInt,
+							Description:      "The VGA memory in megabytes (4-512 MB)",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMVGAMemory,
+							ValidateDiagFunc: getVGAMemoryValidator(),
 						},
 						mkResourceVirtualEnvironmentVMVGAType: {
-							Type:         schema.TypeString,
-							Description:  "The VGA type",
-							Optional:     true,
-							Default:      dvResourceVirtualEnvironmentVMVGAType,
-							ValidateFunc: getVGATypeValidator(),
+							Type:             schema.TypeString,
+							Description:      "The VGA type",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMVGAType,
+							ValidateDiagFunc: getVGATypeValidator(),
 						},
 					},
 				},
@@ -1034,37 +1036,36 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMVMID: {
-				Type:         schema.TypeInt,
-				Description:  "The VM identifier",
-				Optional:     true,
-				ForceNew:     true,
-				Default:      dvResourceVirtualEnvironmentVMVMID,
-				ValidateFunc: getVMIDValidator(),
+				Type:             schema.TypeInt,
+				Description:      "The VM identifier",
+				Optional:         true,
+				ForceNew:         true,
+				Default:          dvResourceVirtualEnvironmentVMVMID,
+				ValidateDiagFunc: getVMIDValidator(),
 			},
 		},
-		Create: resourceVirtualEnvironmentVMCreate,
-		Read:   resourceVirtualEnvironmentVMRead,
-		Update: resourceVirtualEnvironmentVMUpdate,
-		Delete: resourceVirtualEnvironmentVMDelete,
+		CreateContext: resourceVirtualEnvironmentVMCreate,
+		ReadContext:   resourceVirtualEnvironmentVMRead,
+		UpdateContext: resourceVirtualEnvironmentVMUpdate,
+		DeleteContext: resourceVirtualEnvironmentVMDelete,
 	}
 }
 
-func resourceVirtualEnvironmentVMCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
 
 	if len(clone) > 0 {
-		return resourceVirtualEnvironmentVMCreateClone(d, m)
+		return resourceVirtualEnvironmentVMCreateClone(ctx, d, m)
 	}
 
-	return resourceVirtualEnvironmentVMCreateCustom(d, m)
+	return resourceVirtualEnvironmentVMCreateCustom(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
@@ -1082,12 +1083,10 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID()
-
+		vmIDNew, err := veClient.GetVMID(ctx)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
-
 		vmID = *vmIDNew
 	}
 
@@ -1119,31 +1118,28 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = veClient.CloneVM(cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+		err = veClient.CloneVM(ctx, cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
 	} else {
-		err = veClient.CloneVM(nodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+		err = veClient.CloneVM(ctx, nodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
 	}
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.Itoa(vmID))
 
 	// Wait for the virtual machine to be created and its configuration lock to be released.
-	err = veClient.WaitForVMConfigUnlock(nodeName, vmID, 600, 5, true)
-
+	err = veClient.WaitForVMConfigUnlock(ctx, nodeName, vmID, 600, 5, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
 	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
-	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
-
+	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
@@ -1166,7 +1162,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 	ideDevices := proxmox.CustomStorageDevices{}
 
-	delete := []string{}
+	var del []string
 
 	if acpi != dvResourceVirtualEnvironmentVMACPI {
 		updateBody.ACPI = &acpi
@@ -1267,7 +1263,7 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
 
-		cdromCloudInitEnabled := true
+		const cdromCloudInitEnabled = true
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
 
@@ -1279,10 +1275,9 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 			},
 		}
 
-		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
-
+		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		updateBody.CloudInitConfig = initializationConfig
@@ -1317,20 +1312,19 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	}
 
 	if len(networkDevice) > 0 {
-		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
-
+		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		for i := 0; i < len(updateBody.NetworkDevices); i++ {
 			if !updateBody.NetworkDevices[i].Enabled {
-				delete = append(delete, fmt.Sprintf("net%d", i))
+				del = append(del, fmt.Sprintf("net%d", i))
 			}
 		}
 
 		for i := len(updateBody.NetworkDevices); i < maxResourceVirtualEnvironmentVMNetworkDevices; i++ {
-			delete = append(delete, fmt.Sprintf("net%d", i))
+			del = append(del, fmt.Sprintf("net%d", i))
 		}
 	}
 
@@ -1342,14 +1336,13 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	}
 
 	if len(serialDevice) > 0 {
-		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
-
+		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		for i := len(updateBody.SerialDevices); i < maxResourceVirtualEnvironmentVMSerialDevices; i++ {
-			delete = append(delete, fmt.Sprintf("serial%d", i))
+			del = append(del, fmt.Sprintf("serial%d", i))
 		}
 	}
 
@@ -1364,25 +1357,24 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 	}
 
 	if len(vga) > 0 {
-		vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
-
+		vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		updateBody.VGADevice = vgaDevice
 	}
 
-	updateBody.Delete = delete
+	updateBody.Delete = del
 
-	err = veClient.UpdateVM(nodeName, vmID, updateBody)
+	err = veClient.UpdateVM(ctx, nodeName, vmID, updateBody)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 
-	vmConfig, err := veClient.GetVM(nodeName, vmID)
+	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
@@ -1391,20 +1383,18 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	allDiskInfo := getDiskInfo(vmConfig, d)
-	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
-
+	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, nil)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	for i := range disk {
 		diskBlock := disk[i].(map[string]interface{})
-		diskInterface := diskBlock[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+		diskInterface := diskBlock[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
 		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
 
@@ -1432,23 +1422,21 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 				diskUpdateBody.SCSIDevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
 			}
 
-			err = veClient.UpdateVM(nodeName, vmID, diskUpdateBody)
-
+			err = veClient.UpdateVM(ctx, nodeName, vmID, diskUpdateBody)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 
 			continue
 		}
 
 		compareNumber, err := parseDiskSize(currentDiskInfo.Size)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		if diskSize < compareNumber {
-			return fmt.Errorf("Disk resize fails requests size (%dG) is lower than current size (%s)", diskSize, *currentDiskInfo.Size)
+			return diag.Errorf("disk resize fails requests size (%dG) is lower than current size (%s)", diskSize, *currentDiskInfo.Size)
 		}
 
 		deleteOriginalDisk := proxmox.CustomBool(true)
@@ -1477,59 +1465,53 @@ func resourceVirtualEnvironmentVMCreateClone(d *schema.ResourceData, m interface
 
 		if moveDisk {
 			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
-			err = veClient.MoveVMDisk(nodeName, vmID, diskMoveBody, moveDiskTimeout)
-
+			err = veClient.MoveVMDisk(ctx, nodeName, vmID, diskMoveBody, moveDiskTimeout)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		}
 
 		if diskSize > compareNumber {
-			err = veClient.ResizeVMDisk(nodeName, vmID, diskResizeBody)
-
+			err = veClient.ResizeVMDisk(ctx, nodeName, vmID, diskResizeBody)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		}
 	}
 
-	return resourceVirtualEnvironmentVMCreateStart(d, m)
+	return resourceVirtualEnvironmentVMCreateStart(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	resource := resourceVirtualEnvironmentVM()
 
 	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 
-	agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
-
+	agentBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	agentEnabled := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
 	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
-	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
-
+	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 
-	cdromBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
-
+	cdromBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
@@ -1542,10 +1524,9 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		cdromFileID = "cdrom"
 	}
 
-	cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
-
+	cpuBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentVMCPUArchitecture].(string)
@@ -1557,10 +1538,9 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
-	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
-
+	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, nil)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	virtioDeviceObjects := diskDeviceObjects["virtio"]
@@ -1568,10 +1548,9 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	//ideDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "ide")
 	sataDeviceObjects := diskDeviceObjects["sata"]
 
-	initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
-
+	initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if initializationConfig != nil {
@@ -1584,10 +1563,9 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 	}
 
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
-	memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
-
+	memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
@@ -1596,47 +1574,42 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 
-	networkDeviceObjects, err := resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
-
+	networkDeviceObjects, err := resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 
-	operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
-
+	operatingSystem, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
 
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
 
-	serialDevices, err := resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
-
+	serialDevices, err := resourceVirtualEnvironmentVMGetSerialDeviceList(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	onBoot := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
-	vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
-
+	vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID()
-
+		vmIDNew, err := veClient.GetVMID(ctx)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		vmID = *vmIDNew
@@ -1749,33 +1722,30 @@ func resourceVirtualEnvironmentVMCreateCustom(d *schema.ResourceData, m interfac
 		createBody.PoolID = &poolID
 	}
 
-	err = veClient.CreateVM(nodeName, createBody)
-
+	err = veClient.CreateVM(ctx, nodeName, createBody)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.Itoa(vmID))
 
-	return resourceVirtualEnvironmentVMCreateCustomDisks(d, m)
+	return resourceVirtualEnvironmentVMCreateCustomDisks(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	commands := []string{}
+	var commands []string
 
 	// Determine the ID of the next disk.
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
@@ -1812,15 +1782,13 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
-		diskInterface, _ := block[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 
 		if len(speed) == 0 {
 			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
-
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
-
 			speed = diskSpeedDefault.([]interface{})
 		}
 
@@ -1893,63 +1861,58 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(d *schema.ResourceData, m int
 	// Execute the commands on the node and wait for the result.
 	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
 	if len(commands) > 0 {
-		err = veClient.ExecuteNodeCommands(nodeName, commands)
-
+		err = veClient.ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	return resourceVirtualEnvironmentVMCreateStart(d, m)
+	return resourceVirtualEnvironmentVMCreateStart(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentVMCreateStart(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 	template := d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
 	reboot := d.Get(mkResourceVirtualEnvironmentVMRebootAfterCreation).(bool)
 
 	if !started || template {
-		return resourceVirtualEnvironmentVMRead(d, m)
+		return resourceVirtualEnvironmentVMRead(ctx, d, m)
 	}
 
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Start the virtual machine and wait for it to reach a running state before continuing.
 	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-	err = veClient.StartVM(nodeName, vmID, startVMTimeout)
-
+	err = veClient.StartVM(ctx, nodeName, vmID, startVMTimeout)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if reboot {
 		rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
 
-		err := veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
+		err := veClient.RebootVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
 			Timeout: &rebootTimeout,
-		}, (rebootTimeout + 30))
-
+		}, rebootTimeout+30)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	return resourceVirtualEnvironmentVMRead(d, m)
+	return resourceVirtualEnvironmentVMRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData, m interface{}) (proxmox.CustomAudioDevices, error) {
+func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData) (proxmox.CustomAudioDevices, error) {
 	devices := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
 	list := make(proxmox.CustomAudioDevices, len(devices))
 
@@ -1968,21 +1931,21 @@ func resourceVirtualEnvironmentVMGetAudioDeviceList(d *schema.ResourceData, m in
 	return list, nil
 }
 
-func resourceVirtualEnvironmentVMGetAudioDeviceValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentVMGetAudioDeviceValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"AC97",
 		"ich9-intel-hda",
 		"intel-hda",
-	}, false)
+	}, false))
 }
 
-func resourceVirtualEnvironmentVMGetAudioDriverValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentVMGetAudioDriverValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"spice",
-	}, false)
+	}, false))
 }
 
-func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m interface{}) (*proxmox.CustomCloudInitConfig, error) {
+func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData) (*proxmox.CustomCloudInitConfig, error) {
 	var initializationConfig *proxmox.CustomCloudInitConfig
 
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
@@ -2092,14 +2055,14 @@ func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData, m in
 	return initializationConfig, nil
 }
 
-func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"aarch64",
 		"x86_64",
-	}, false)
+	}, false))
 }
 
-func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m interface{}, disks []interface{}) (map[string]map[string]proxmox.CustomStorageDevice, error) {
+func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, disks []interface{}) (map[string]map[string]proxmox.CustomStorageDevice, error) {
 	var diskDevice []interface{}
 
 	if disks != nil {
@@ -2120,9 +2083,9 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m 
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
-		diskInterface, _ := block[mkResourcevirtualEnvironmentVMDiskInterface].(string)
+		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 
-		speedBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
+		speedBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
 
 		if err != nil {
 			return diskDeviceObjects, err
@@ -2181,7 +2144,7 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m 
 	return diskDeviceObjects, nil
 }
 
-func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData, m interface{}) (proxmox.CustomNetworkDevices, error) {
+func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData) (proxmox.CustomNetworkDevices, error) {
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 	networkDeviceObjects := make(proxmox.CustomNetworkDevices, len(networkDevice))
 
@@ -2222,8 +2185,8 @@ func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData,
 	return networkDeviceObjects, nil
 }
 
-func resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator() schema.SchemaValidateFunc {
-	return validation.StringInSlice([]string{
+func resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"l24",
 		"l26",
 		"other",
@@ -2236,10 +2199,10 @@ func resourceVirtualEnvironmentVMGetOperatingSystemTypeValidator() schema.Schema
 		"win10",
 		"wvista",
 		"wxp",
-	}, false)
+	}, false))
 }
 
-func resourceVirtualEnvironmentVMGetSerialDeviceList(d *schema.ResourceData, m interface{}) (proxmox.CustomSerialDevices, error) {
+func resourceVirtualEnvironmentVMGetSerialDeviceList(d *schema.ResourceData) (proxmox.CustomSerialDevices, error) {
 	device := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
 	list := make(proxmox.CustomSerialDevices, len(device))
 
@@ -2254,8 +2217,8 @@ func resourceVirtualEnvironmentVMGetSerialDeviceList(d *schema.ResourceData, m i
 	return list, nil
 }
 
-func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (s []string, es []error) {
+func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
 		v, ok := i.(string)
 
 		if !ok {
@@ -2269,13 +2232,13 @@ func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidat
 		}
 
 		return
-	}
+	})
 }
 
-func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData, m interface{}) (*proxmox.CustomVGADevice, error) {
+func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData) (*proxmox.CustomVGADevice, error) {
 	resource := resourceVirtualEnvironmentVM()
 
-	vgaBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMVGA}, 0, true)
+	vgaBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMVGA}, 0, true)
 
 	if err != nil {
 		return nil, err
@@ -2304,23 +2267,21 @@ func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData, m in
 	return vgaDevice, nil
 }
 
-func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Retrieve the entire configuration in order to compare it to the state.
-	vmConfig, err := veClient.GetVM(nodeName, vmID)
+	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
@@ -2330,30 +2291,27 @@ func resourceVirtualEnvironmentVMRead(d *schema.ResourceData, m interface{}) err
 			return nil
 		}
 
-		return err
+		return diag.FromErr(err)
 	}
 
-	vmStatus, err := veClient.GetVMStatus(nodeName, vmID)
-
+	vmStatus, err := veClient.GetVMStatus(ctx, nodeName, vmID)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentVMReadCustom(d, m, vmID, vmConfig, vmStatus)
+	return resourceVirtualEnvironmentVMReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
 }
 
-func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) error {
+func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	err = resourceVirtualEnvironmentVMReadPrimitiveValues(d, m, vmID, vmConfig, vmStatus)
-
-	if err != nil {
-		return err
+	diags := resourceVirtualEnvironmentVMReadPrimitiveValues(d, vmConfig, vmStatus)
+	if diags.HasError() {
+		return diags
 	}
 
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
@@ -2398,21 +2356,25 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 			if len(clone) > 0 {
 				if len(currentAgent) > 0 {
-					d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
+					err := d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
+					diags = append(diags, diag.FromErr(err)...)
 				}
 			} else if len(currentAgent) > 0 ||
 				agent[mkResourceVirtualEnvironmentVMAgentEnabled] != dvResourceVirtualEnvironmentVMAgentEnabled ||
 				agent[mkResourceVirtualEnvironmentVMAgentTimeout] != dvResourceVirtualEnvironmentVMAgentTimeout ||
 				agent[mkResourceVirtualEnvironmentVMAgentTrim] != dvResourceVirtualEnvironmentVMAgentTrim ||
 				agent[mkResourceVirtualEnvironmentVMAgentType] != dvResourceVirtualEnvironmentVMAgentType {
-				d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
+				err := d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
+				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(clone) > 0 {
 			if len(currentAgent) > 0 {
-				d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
+				err := d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
+				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else {
-			d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
+			err := d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
@@ -2450,7 +2412,8 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 	}
 
 	if len(clone) == 0 || len(currentAudioDevice) > 0 {
-		d.Set(mkResourceVirtualEnvironmentVMAudioDevice, audioDevices[:audioDevicesCount])
+		err := d.Set(mkResourceVirtualEnvironmentVMAudioDevice, audioDevices[:audioDevicesCount])
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the IDE devices to the CDROM and cloud-init configurations stored in the state.
@@ -2477,11 +2440,13 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 			cdrom[0] = cdromBlock
 
-			d.Set(mkResourceVirtualEnvironmentVMCDROM, cdrom)
+			err := d.Set(mkResourceVirtualEnvironmentVMCDROM, cdrom)
+			diags = append(diags, diag.FromErr(err)...)
 		}
 
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
+		err := d.Set(mkResourceVirtualEnvironmentVMCDROM, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the CPU configuration to the one stored in the state.
@@ -2551,7 +2516,8 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 	if len(clone) > 0 {
 		if len(currentCPU) > 0 {
-			d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
+			err := d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentCPU) > 0 ||
 		cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] != dvResourceVirtualEnvironmentVMCPUArchitecture ||
@@ -2561,13 +2527,14 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 		cpu[mkResourceVirtualEnvironmentVMCPUSockets] != dvResourceVirtualEnvironmentVMCPUSockets ||
 		cpu[mkResourceVirtualEnvironmentVMCPUType] != dvResourceVirtualEnvironmentVMCPUType ||
 		cpu[mkResourceVirtualEnvironmentVMCPUUnits] != dvResourceVirtualEnvironmentVMCPUUnits {
-		d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
+		err := d.Set(mkResourceVirtualEnvironmentVMCPU, []interface{}{cpu})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentDiskList := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	diskMap := map[string]interface{}{}
 	diskObjects := getDiskInfo(vmConfig, d)
-	orderedDiskList := []interface{}{}
+	var orderedDiskList []interface{}
 
 	for di, dd := range diskObjects {
 		disk := map[string]interface{}{}
@@ -2590,15 +2557,14 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 			disk[mkResourceVirtualEnvironmentVMDiskFileID] = dd.FileID
 		}
 
-		disk[mkResourcevirtualEnvironmentVMDiskInterface] = di
+		disk[mkResourceVirtualEnvironmentVMDiskInterface] = di
 
 		diskSize := 0
 
 		var err error
 		diskSize, err = parseDiskSize(dd.Size)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		disk[mkResourceVirtualEnvironmentVMDiskSize] = diskSize
@@ -2641,7 +2607,7 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 		diskMap[di] = disk
 	}
 
-	keyList := []string{}
+	var keyList []string
 
 	for key := range diskMap {
 		keyList = append(keyList, key)
@@ -2655,10 +2621,12 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 	if len(clone) > 0 {
 		if len(currentDiskList) > 0 {
-			d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
+			err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentDiskList) > 0 {
-		d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
+		err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the initialization configuration to the one stored in the state.
@@ -2806,15 +2774,19 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 	if len(clone) > 0 {
 		if len(currentInitialization) > 0 {
 			if len(initialization) > 0 {
-				d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
+				err := d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
+				diags = append(diags, diag.FromErr(err)...)
 			} else {
-				d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+				err := d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+				diags = append(diags, diag.FromErr(err)...)
 			}
 		}
 	} else if len(initialization) > 0 {
-		d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
+		err := d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
+		diags = append(diags, diag.FromErr(err)...)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+		err := d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the memory configuration to the one stored in the state.
@@ -2842,13 +2814,15 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 	if len(clone) > 0 {
 		if len(currentMemory) > 0 {
-			d.Set(mkResourceVirtualEnvironmentVMMemory, []interface{}{memory})
+			err := d.Set(mkResourceVirtualEnvironmentVMMemory, []interface{}{memory})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentMemory) > 0 ||
 		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] != dvResourceVirtualEnvironmentVMMemoryDedicated ||
 		memory[mkResourceVirtualEnvironmentVMMemoryFloating] != dvResourceVirtualEnvironmentVMMemoryFloating ||
 		memory[mkResourceVirtualEnvironmentVMMemoryShared] != dvResourceVirtualEnvironmentVMMemoryShared {
-		d.Set(mkResourceVirtualEnvironmentVMMemory, []interface{}{memory})
+		err := d.Set(mkResourceVirtualEnvironmentVMMemory, []interface{}{memory})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the network devices to those stored in the state.
@@ -2912,14 +2886,18 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 	if len(clone) > 0 {
 		if len(currentNetworkDeviceList) > 0 {
-			d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
-			d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+			err := d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
+			diags = append(diags, diag.FromErr(err)...)
+			err = d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
+		err := d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
+		diags = append(diags, diag.FromErr(err)...)
 
 		if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-			d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+			err := d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
@@ -2936,13 +2914,16 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 	if len(clone) > 0 {
 		if len(currentOperatingSystem) > 0 {
-			d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{operatingSystem})
+			err := d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{operatingSystem})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentOperatingSystem) > 0 ||
 		operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType] != dvResourceVirtualEnvironmentVMOperatingSystemType {
-		d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{operatingSystem})
+		err := d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{operatingSystem})
+		diags = append(diags, diag.FromErr(err)...)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{})
+		err := d.Set(mkResourceVirtualEnvironmentVMOperatingSystem, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the pool ID to the value stored in the state.
@@ -2950,7 +2931,8 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 	if len(clone) == 0 || currentPoolID != dvResourceVirtualEnvironmentVMPoolID {
 		if vmConfig.PoolID != nil {
-			d.Set(mkResourceVirtualEnvironmentVMPoolID, *vmConfig.PoolID)
+			err := d.Set(mkResourceVirtualEnvironmentVMPoolID, *vmConfig.PoolID)
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
@@ -2980,7 +2962,8 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 	currentSerialDevice := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
 
 	if len(clone) == 0 || len(currentSerialDevice) > 0 {
-		d.Set(mkResourceVirtualEnvironmentVMSerialDevice, serialDevices[:serialDevicesCount])
+		err := d.Set(mkResourceVirtualEnvironmentVMSerialDevice, serialDevices[:serialDevicesCount])
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the VGA configuration to the one stored in the state.
@@ -3018,52 +3001,56 @@ func resourceVirtualEnvironmentVMReadCustom(d *schema.ResourceData, m interface{
 
 	if len(clone) > 0 {
 		if len(currentVGA) > 0 {
-			d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{vga})
+			err := d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{vga})
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentVGA) > 0 ||
 		vga[mkResourceVirtualEnvironmentVMVGAEnabled] != dvResourceVirtualEnvironmentVMVGAEnabled ||
 		vga[mkResourceVirtualEnvironmentVMVGAMemory] != dvResourceVirtualEnvironmentVMVGAMemory ||
 		vga[mkResourceVirtualEnvironmentVMVGAType] != dvResourceVirtualEnvironmentVMVGAType {
-		d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{vga})
+		err := d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{vga})
+		diags = append(diags, diag.FromErr(err)...)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{})
+		err := d.Set(mkResourceVirtualEnvironmentVMVGA, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	return resourceVirtualEnvironmentVMReadNetworkValues(d, m, vmID, vmConfig)
+	diags = append(diags, resourceVirtualEnvironmentVMReadNetworkValues(ctx, d, m, vmID, vmConfig)...)
+
+	return diags
 }
 
-func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData) error {
+func resourceVirtualEnvironmentVMReadNetworkValues(ctx context.Context, d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
-	ipv4Addresses := []interface{}{}
-	ipv6Addresses := []interface{}{}
-	networkInterfaceNames := []interface{}{}
+	var ipv4Addresses []interface{}
+	var ipv6Addresses []interface{}
+	var networkInterfaceNames []interface{}
 
 	if started {
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
 			resource := resourceVirtualEnvironmentVM()
-			agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
-
+			agentBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 
 			agentTimeout, err := time.ParseDuration(agentBlock[mkResourceVirtualEnvironmentVMAgentTimeout].(string))
-
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 
-			macAddresses := []interface{}{}
-			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(nodeName, vmID, int(agentTimeout.Seconds()), 5, true)
+			var macAddresses []interface{}
+			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(ctx, nodeName, vmID, int(agentTimeout.Seconds()), 5, true)
 
 			if err == nil && networkInterfaces.Result != nil {
 				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
@@ -3072,8 +3059,8 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 				networkInterfaceNames = make([]interface{}, len(*networkInterfaces.Result))
 
 				for ri, rv := range *networkInterfaces.Result {
-					rvIPv4Addresses := []interface{}{}
-					rvIPv6Addresses := []interface{}{}
+					var rvIPv4Addresses []interface{}
+					var rvIPv6Addresses []interface{}
 
 					if rv.IPAddresses != nil {
 						for _, ip := range *rv.IPAddresses {
@@ -3093,118 +3080,131 @@ func resourceVirtualEnvironmentVMReadNetworkValues(d *schema.ResourceData, m int
 				}
 			}
 
-			d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses)
+			err = d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses)
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
-	d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
-	d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
-	d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
+	err = d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, m interface{}, vmID int, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) error {
+func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData) diag.Diagnostics {
+	var diags diag.Diagnostics
+	var err error
+
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
 	currentACPI := d.Get(mkResourceVirtualEnvironmentVMACPI).(bool)
 
 	if len(clone) == 0 || currentACPI != dvResourceVirtualEnvironmentVMACPI {
 		if vmConfig.ACPI != nil {
-			d.Set(mkResourceVirtualEnvironmentVMACPI, bool(*vmConfig.ACPI))
+			err = d.Set(mkResourceVirtualEnvironmentVMACPI, bool(*vmConfig.ACPI))
 		} else {
 			// Default value of "acpi" is "1" according to the API documentation.
-			d.Set(mkResourceVirtualEnvironmentVMACPI, true)
+			err = d.Set(mkResourceVirtualEnvironmentVMACPI, true)
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentBIOS := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 
 	if len(clone) == 0 || currentBIOS != dvResourceVirtualEnvironmentVMBIOS {
 		if vmConfig.BIOS != nil {
-			d.Set(mkResourceVirtualEnvironmentVMBIOS, *vmConfig.BIOS)
+			err = d.Set(mkResourceVirtualEnvironmentVMBIOS, *vmConfig.BIOS)
 		} else {
 			// Default value of "bios" is "seabios" according to the API documentation.
-			d.Set(mkResourceVirtualEnvironmentVMBIOS, "seabios")
+			err = d.Set(mkResourceVirtualEnvironmentVMBIOS, "seabios")
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentDescription := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 
 	if len(clone) == 0 || currentDescription != dvResourceVirtualEnvironmentVMDescription {
 		if vmConfig.Description != nil {
-			d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
+			err = d.Set(mkResourceVirtualEnvironmentVMDescription, *vmConfig.Description)
 		} else {
 			// Default value of "description" is "" according to the API documentation.
-			d.Set(mkResourceVirtualEnvironmentVMDescription, "")
+			err = d.Set(mkResourceVirtualEnvironmentVMDescription, "")
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentKeyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 
 	if len(clone) == 0 || currentKeyboardLayout != dvResourceVirtualEnvironmentVMKeyboardLayout {
 		if vmConfig.KeyboardLayout != nil {
-			d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, *vmConfig.KeyboardLayout)
+			err = d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, *vmConfig.KeyboardLayout)
 		} else {
 			// Default value of "keyboard" is "" according to the API documentation.
-			d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
+			err = d.Set(mkResourceVirtualEnvironmentVMKeyboardLayout, "")
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentName := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 
 	if len(clone) == 0 || currentName != dvResourceVirtualEnvironmentVMName {
 		if vmConfig.Name != nil {
-			d.Set(mkResourceVirtualEnvironmentVMName, *vmConfig.Name)
+			err = d.Set(mkResourceVirtualEnvironmentVMName, *vmConfig.Name)
 		} else {
 			// Default value of "name" is "" according to the API documentation.
-			d.Set(mkResourceVirtualEnvironmentVMName, "")
+			err = d.Set(mkResourceVirtualEnvironmentVMName, "")
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	if d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool) != true {
-		d.Set(mkResourceVirtualEnvironmentVMStarted, vmStatus.Status == "running")
+		err = d.Set(mkResourceVirtualEnvironmentVMStarted, vmStatus.Status == "running")
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentTabletDevice := d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool)
 
 	if len(clone) == 0 || currentTabletDevice != dvResourceVirtualEnvironmentVMTabletDevice {
 		if vmConfig.TabletDeviceEnabled != nil {
-			d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
+			err = d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
 		} else {
 			// Default value of "tablet" is "1" according to the API documentation.
-			d.Set(mkResourceVirtualEnvironmentVMTabletDevice, true)
+			err = d.Set(mkResourceVirtualEnvironmentVMTabletDevice, true)
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentTemplate := d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
 
 	if len(clone) == 0 || currentTemplate != dvResourceVirtualEnvironmentVMTemplate {
 		if vmConfig.Template != nil {
-			d.Set(mkResourceVirtualEnvironmentVMTemplate, bool(*vmConfig.Template))
+			err = d.Set(mkResourceVirtualEnvironmentVMTemplate, bool(*vmConfig.Template))
 		} else {
 			// Default value of "template" is "0" according to the API documentation.
-			d.Set(mkResourceVirtualEnvironmentVMTemplate, false)
+			err = d.Set(mkResourceVirtualEnvironmentVMTemplate, false)
 		}
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	rebootRequired := false
 
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	updateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
@@ -3224,14 +3224,13 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		},
 	}
 
-	delete := []string{}
+	var del []string
 	resource := resourceVirtualEnvironmentVM()
 
 	// Retrieve the entire configuration as we need to process certain values.
-	vmConfig, err := veClient.GetVM(nodeName, vmID)
-
+	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Prepare the new primitive configuration values.
@@ -3261,7 +3260,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 
 	if name == "" {
-		delete = append(delete, "name")
+		del = append(del, "name")
 	} else {
 		updateBody.Name = &name
 	}
@@ -3281,10 +3280,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new agent configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMAgent) {
-		agentBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
-
+		agentBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMAgent}, 0, true)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		agentEnabled := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
@@ -3302,20 +3300,19 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new audio devices.
 	if d.HasChange(mkResourceVirtualEnvironmentVMAudioDevice) {
-		updateBody.AudioDevices, err = resourceVirtualEnvironmentVMGetAudioDeviceList(d, m)
-
+		updateBody.AudioDevices, err = resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		for i := 0; i < len(updateBody.AudioDevices); i++ {
 			if !updateBody.AudioDevices[i].Enabled {
-				delete = append(delete, fmt.Sprintf("audio%d", i))
+				del = append(del, fmt.Sprintf("audio%d", i))
 			}
 		}
 
 		for i := len(updateBody.AudioDevices); i < maxResourceVirtualEnvironmentVMAudioDevices; i++ {
-			delete = append(delete, fmt.Sprintf("audio%d", i))
+			del = append(del, fmt.Sprintf("audio%d", i))
 		}
 
 		rebootRequired = true
@@ -3323,17 +3320,16 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new CDROM configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCDROM) {
-		cdromBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
-
+		cdromBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMCDROM}, 0, true)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
 
 		if cdromEnabled == false && cdromFileID == "" {
-			delete = append(delete, "ide3")
+			del = append(del, "ide3")
 		}
 
 		if cdromFileID == "" {
@@ -3351,10 +3347,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCPU) {
-		cpuBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
-
+		cpuBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMCPU}, 0, true)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentVMCPUArchitecture].(string)
@@ -3377,7 +3372,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
 		} else {
-			delete = append(delete, "vcpus")
+			del = append(del, "vcpus")
 		}
 
 		cpuFlagsConverted := make([]string, len(cpuFlags))
@@ -3396,10 +3391,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new disk device configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
-		diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
-
+		diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, nil)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		diskDeviceInfo := getDiskInfo(vmConfig, d)
@@ -3411,7 +3405,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 			for key, value := range diskMap {
 				if diskDeviceInfo[key] == nil {
-					return fmt.Errorf("Missing %s device %s", prefix, key)
+					return diag.Errorf("missing %s device %s", prefix, key)
 				}
 
 				tmp := *diskDeviceInfo[key]
@@ -3450,7 +3444,7 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 						// Investigate whether to support IDE mapping.
 					}
 				default:
-					return fmt.Errorf("Device prefix %s not supported", prefix)
+					return diag.Errorf("device prefix %s not supported", prefix)
 				}
 			}
 		}
@@ -3460,10 +3454,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new cloud-init configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMInitialization) {
-		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d, m)
-
+		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		updateBody.CloudInitConfig = initializationConfig
@@ -3495,10 +3488,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMMemory) {
-		memoryBlock, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
-
+		memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
@@ -3522,20 +3514,19 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new network device configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice) {
-		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d, m)
-
+		updateBody.NetworkDevices, err = resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		for i := 0; i < len(updateBody.NetworkDevices); i++ {
 			if !updateBody.NetworkDevices[i].Enabled {
-				delete = append(delete, fmt.Sprintf("net%d", i))
+				del = append(del, fmt.Sprintf("net%d", i))
 			}
 		}
 
 		for i := len(updateBody.NetworkDevices); i < maxResourceVirtualEnvironmentVMNetworkDevices; i++ {
-			delete = append(delete, fmt.Sprintf("net%d", i))
+			del = append(del, fmt.Sprintf("net%d", i))
 		}
 
 		rebootRequired = true
@@ -3543,10 +3534,9 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMOperatingSystem) {
-		operatingSystem, err := getSchemaBlock(resource, d, m, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
-
+		operatingSystem, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMOperatingSystem}, 0, true)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		operatingSystemType := operatingSystem[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
@@ -3558,14 +3548,13 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new serial devices.
 	if d.HasChange(mkResourceVirtualEnvironmentVMSerialDevice) {
-		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d, m)
-
+		updateBody.SerialDevices, err = resourceVirtualEnvironmentVMGetSerialDeviceList(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		for i := len(updateBody.SerialDevices); i < maxResourceVirtualEnvironmentVMSerialDevices; i++ {
-			delete = append(delete, fmt.Sprintf("serial%d", i))
+			del = append(del, fmt.Sprintf("serial%d", i))
 		}
 
 		rebootRequired = true
@@ -3573,22 +3562,20 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 
 	// Prepare the new VGA configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMVGA) {
-		updateBody.VGADevice, err = resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
-
+		updateBody.VGADevice, err = resourceVirtualEnvironmentVMGetVGADeviceObject(d)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		rebootRequired = true
 	}
 
 	// Update the configuration now that everything has been prepared.
-	updateBody.Delete = delete
+	updateBody.Delete = del
 
-	err = veClient.UpdateVM(nodeName, vmID, updateBody)
-
+	err = veClient.UpdateVM(ctx, nodeName, vmID, updateBody)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Determine if the state of the virtual machine state needs to be changed.
@@ -3597,22 +3584,20 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) && !bool(template) {
 		if started {
 			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-			err = veClient.StartVM(nodeName, vmID, startVMTimeout)
-
+			err = veClient.StartVM(ctx, nodeName, vmID, startVMTimeout)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		} else {
 			forceStop := proxmox.CustomBool(true)
 			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
-			err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
+			err = veClient.ShutdownVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
-			}, (shutdownTimeout + 30))
-
+			}, shutdownTimeout+30)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 
 			rebootRequired = false
@@ -3620,49 +3605,45 @@ func resourceVirtualEnvironmentVMUpdate(d *schema.ResourceData, m interface{}) e
 	}
 
 	// Change the disk locations and/or sizes, if necessary.
-	return resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d, m, vmConfig, !bool(template) && rebootRequired)
+	return resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx, d, m, !bool(template) && rebootRequired)
 }
 
-func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceData, m interface{}, vmConfig *proxmox.VirtualEnvironmentVMGetResponseData, reboot bool) error {
+func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, d *schema.ResourceData, m interface{}, reboot bool) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 	template := d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Determine if any of the disks are changing location and/or size, and initiate the necessary actions.
 	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
 		diskOld, diskNew := d.GetChange(mkResourceVirtualEnvironmentVMDisk)
 
-		diskOldEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, diskOld.([]interface{}))
-
+		diskOldEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, diskOld.([]interface{}))
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
-		diskNewEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, diskNew.([]interface{}))
-
+		diskNewEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, diskNew.([]interface{}))
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
-		diskMoveBodies := []*proxmox.VirtualEnvironmentVMMoveDiskRequestBody{}
-		diskResizeBodies := []*proxmox.VirtualEnvironmentVMResizeDiskRequestBody{}
+		var diskMoveBodies []*proxmox.VirtualEnvironmentVMMoveDiskRequestBody
+		var diskResizeBodies []*proxmox.VirtualEnvironmentVMResizeDiskRequestBody
 
 		for prefix, diskMap := range diskOldEntries {
 			for oldKey, oldDisk := range diskMap {
 				if _, present := diskNewEntries[prefix][oldKey]; !present {
-					return fmt.Errorf("Deletion of disks not supported. Please delete disk by hand. Old Interface was %s", *oldDisk.Interface)
+					return diag.Errorf("deletion of disks not supported. Please delete disk by hand. Old Interface was %s", *oldDisk.Interface)
 				}
 
 				if *oldDisk.ID != *diskNewEntries[prefix][oldKey].ID {
@@ -3689,13 +3670,12 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 				forceStop := proxmox.CustomBool(true)
 				shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
-				err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
+				err = veClient.ShutdownVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 					ForceStop: &forceStop,
 					Timeout:   &shutdownTimeout,
-				}, (shutdownTimeout + 30))
-
+				}, shutdownTimeout+30)
 				if err != nil {
-					return err
+					return diag.FromErr(err)
 				}
 			}
 
@@ -3704,27 +3684,24 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 
 		for _, reqBody := range diskMoveBodies {
 			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
-			err = veClient.MoveVMDisk(nodeName, vmID, reqBody, moveDiskTimeout)
-
+			err = veClient.MoveVMDisk(ctx, nodeName, vmID, reqBody, moveDiskTimeout)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		}
 
 		for _, reqBody := range diskResizeBodies {
-			err = veClient.ResizeVMDisk(nodeName, vmID, reqBody)
-
+			err = veClient.ResizeVMDisk(ctx, nodeName, vmID, reqBody)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		}
 
 		if (len(diskMoveBodies) > 0 || len(diskResizeBodies) > 0) && started && !template {
 			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-			err = veClient.StartVM(nodeName, vmID, startVMTimeout)
-
+			err = veClient.StartVM(ctx, nodeName, vmID, startVMTimeout)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 		}
 	}
@@ -3733,55 +3710,50 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(d *schema.ResourceDat
 	if reboot {
 		rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
 
-		err := veClient.RebootVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
+		err := veClient.RebootVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMRebootRequestBody{
 			Timeout: &rebootTimeout,
-		}, (rebootTimeout + 30))
-
+		}, rebootTimeout+30)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	return resourceVirtualEnvironmentVMRead(d, m)
+	return resourceVirtualEnvironmentVMRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentVMDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Shut down the virtual machine before deleting it.
-	status, err := veClient.GetVMStatus(nodeName, vmID)
-
+	status, err := veClient.GetVMStatus(ctx, nodeName, vmID)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if status.Status != "stopped" {
 		forceStop := proxmox.CustomBool(true)
 		shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
-		err = veClient.ShutdownVM(nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
+		err = veClient.ShutdownVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
 			ForceStop: &forceStop,
 			Timeout:   &shutdownTimeout,
-		}, (shutdownTimeout + 30))
-
+		}, shutdownTimeout+30)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.DeleteVM(nodeName, vmID)
+	err = veClient.DeleteVM(ctx, nodeName, vmID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
@@ -3790,15 +3762,13 @@ func resourceVirtualEnvironmentVMDelete(d *schema.ResourceData, m interface{}) e
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
-	err = veClient.WaitForVMState(nodeName, vmID, "", 60, 2)
-
+	err = veClient.WaitForVMState(ctx, nodeName, vmID, "", 60, 2)
 	if err == nil {
-		return fmt.Errorf("Failed to delete VM \"%d\"", vmID)
+		return diag.Errorf("failed to delete VM \"%d\"", vmID)
 	}
 
 	d.SetId("")

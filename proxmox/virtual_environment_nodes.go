@@ -5,8 +5,10 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"net/url"
 	"sort"
 	"strings"
@@ -16,14 +18,21 @@ import (
 )
 
 // ExecuteNodeCommands executes commands on a given node.
-func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands []string) error {
-	sshClient, err := c.OpenNodeShell(nodeName)
+func (c *VirtualEnvironmentClient) ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error {
+	sshClient, err := c.OpenNodeShell(ctx, nodeName)
 
 	if err != nil {
 		return err
 	}
 
-	defer sshClient.Close()
+	defer func(sshClient *ssh.Client) {
+		err := sshClient.Close()
+		if err != nil {
+			tflog.Error(ctx, "Failed to close ssh client", map[string]interface{}{
+				"error": err,
+			})
+		}
+	}(sshClient)
 
 	sshSession, err := sshClient.NewSession()
 
@@ -31,7 +40,14 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands
 		return err
 	}
 
-	defer sshSession.Close()
+	defer func(sshSession *ssh.Session) {
+		err := sshSession.Close()
+		if err != nil {
+			tflog.Error(ctx, "Failed to close ssh session", map[string]interface{}{
+				"error": err,
+			})
+		}
+	}(sshSession)
 
 	output, err := sshSession.CombinedOutput(
 		fmt.Sprintf(
@@ -48,8 +64,8 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(nodeName string, commands
 }
 
 // GetNodeIP retrieves the IP address of a node.
-func (c *VirtualEnvironmentClient) GetNodeIP(nodeName string) (*string, error) {
-	networkDevices, err := c.ListNodeNetworkDevices(nodeName)
+func (c *VirtualEnvironmentClient) GetNodeIP(ctx context.Context, nodeName string) (*string, error) {
+	networkDevices, err := c.ListNodeNetworkDevices(ctx, nodeName)
 
 	if err != nil {
 		return nil, err
@@ -65,7 +81,7 @@ func (c *VirtualEnvironmentClient) GetNodeIP(nodeName string) (*string, error) {
 	}
 
 	if nodeAddress == "" {
-		return nil, fmt.Errorf("Failed to determine the IP address of node \"%s\"", nodeName)
+		return nil, fmt.Errorf("failed to determine the IP address of node \"%s\"", nodeName)
 	}
 
 	nodeAddressParts := strings.Split(nodeAddress, "/")
@@ -74,48 +90,48 @@ func (c *VirtualEnvironmentClient) GetNodeIP(nodeName string) (*string, error) {
 }
 
 // GetNodeTime retrieves the time information for a node.
-func (c *VirtualEnvironmentClient) GetNodeTime(nodeName string) (*VirtualEnvironmentNodeGetTimeResponseData, error) {
+func (c *VirtualEnvironmentClient) GetNodeTime(ctx context.Context, nodeName string) (*VirtualEnvironmentNodeGetTimeResponseData, error) {
 	resBody := &VirtualEnvironmentNodeGetTimeResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), nil, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
 }
 
 // GetNodeTaskStatus retrieves the status of a node task.
-func (c *VirtualEnvironmentClient) GetNodeTaskStatus(nodeName string, upid string) (*VirtualEnvironmentNodeGetTaskStatusResponseData, error) {
+func (c *VirtualEnvironmentClient) GetNodeTaskStatus(ctx context.Context, nodeName string, upid string) (*VirtualEnvironmentNodeGetTaskStatusResponseData, error) {
 	resBody := &VirtualEnvironmentNodeGetTaskStatusResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/tasks/%s/status", url.PathEscape(nodeName), url.PathEscape(upid)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/tasks/%s/status", url.PathEscape(nodeName), url.PathEscape(upid)), nil, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
 }
 
 // ListNodeNetworkDevices retrieves a list of network devices for a specific nodes.
-func (c *VirtualEnvironmentClient) ListNodeNetworkDevices(nodeName string) ([]*VirtualEnvironmentNodeNetworkDeviceListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListNodeNetworkDevices(ctx context.Context, nodeName string) ([]*VirtualEnvironmentNodeNetworkDeviceListResponseData, error) {
 	resBody := &VirtualEnvironmentNodeNetworkDeviceListResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/network", url.PathEscape(nodeName)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/network", url.PathEscape(nodeName)), nil, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -126,16 +142,16 @@ func (c *VirtualEnvironmentClient) ListNodeNetworkDevices(nodeName string) ([]*V
 }
 
 // ListNodes retrieves a list of nodes.
-func (c *VirtualEnvironmentClient) ListNodes() ([]*VirtualEnvironmentNodeListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListNodes(ctx context.Context) ([]*VirtualEnvironmentNodeListResponseData, error) {
 	resBody := &VirtualEnvironmentNodeListResponseBody{}
-	err := c.DoRequest(hmGET, "nodes", nil, resBody)
+	err := c.DoRequest(ctx, hmGET, "nodes", nil, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -146,8 +162,8 @@ func (c *VirtualEnvironmentClient) ListNodes() ([]*VirtualEnvironmentNodeListRes
 }
 
 // OpenNodeShell establishes a new SSH connection to a node.
-func (c *VirtualEnvironmentClient) OpenNodeShell(nodeName string) (*ssh.Client, error) {
-	nodeAddress, err := c.GetNodeIP(nodeName)
+func (c *VirtualEnvironmentClient) OpenNodeShell(ctx context.Context, nodeName string) (*ssh.Client, error) {
+	nodeAddress, err := c.GetNodeIP(ctx, nodeName)
 
 	if err != nil {
 		return nil, err
@@ -171,12 +187,12 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(nodeName string) (*ssh.Client, 
 }
 
 // UpdateNodeTime updates the time on a node.
-func (c *VirtualEnvironmentClient) UpdateNodeTime(nodeName string, d *VirtualEnvironmentNodeUpdateTimeRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), d, nil)
+func (c *VirtualEnvironmentClient) UpdateNodeTime(ctx context.Context, nodeName string, d *VirtualEnvironmentNodeUpdateTimeRequestBody) error {
+	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), d, nil)
 }
 
 // WaitForNodeTask waits for a specific node task to complete.
-func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string, timeout int, delay int) error {
+func (c *VirtualEnvironmentClient) WaitForNodeTask(ctx context.Context, nodeName string, upid string, timeout int, delay int) error {
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
 	timeStart := time.Now()
@@ -184,7 +200,7 @@ func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string,
 
 	for timeElapsed.Seconds() < timeMax {
 		if int64(timeElapsed.Seconds())%timeDelay == 0 {
-			status, err := c.GetNodeTaskStatus(nodeName, upid)
+			status, err := c.GetNodeTaskStatus(ctx, nodeName, upid)
 
 			if err != nil {
 				return err
@@ -192,7 +208,7 @@ func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string,
 
 			if status.Status != "running" {
 				if status.ExitCode != "OK" {
-					return fmt.Errorf("Task \"%s\" on node \"%s\" failed to complete with error: %s", upid, nodeName, status.ExitCode)
+					return fmt.Errorf("task \"%s\" on node \"%s\" failed to complete with error: %s", upid, nodeName, status.ExitCode)
 				}
 				return nil
 			}
@@ -203,7 +219,11 @@ func (c *VirtualEnvironmentClient) WaitForNodeTask(nodeName string, upid string,
 		time.Sleep(200 * time.Millisecond)
 
 		timeElapsed = time.Now().Sub(timeStart)
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 	}
 
-	return fmt.Errorf("Timeout while waiting for task \"%s\" on node \"%s\" to complete", upid, nodeName)
+	return fmt.Errorf("timeout while waiting for task \"%s\" on node \"%s\" to complete", upid, nodeName)
 }

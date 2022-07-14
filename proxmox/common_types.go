@@ -46,7 +46,7 @@ func (r CustomBool) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON converts a JSON value to a boolean.
 func (r *CustomBool) UnmarshalJSON(b []byte) error {
 	s := string(b)
-	*r = CustomBool(s == "1" || s == "true")
+	*r = s == "1" || s == "true"
 
 	return nil
 }

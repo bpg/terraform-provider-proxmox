@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -43,30 +45,34 @@ func dataSourceVirtualEnvironmentVersion() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		Read: dataSourceVirtualEnvironmentVersionRead,
+		ReadContext: dataSourceVirtualEnvironmentVersionRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentVersionRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentVersionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	version, err := veClient.Version()
-
+	version, err := veClient.Version(ctx)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("version")
 
-	d.Set(mkDataSourceVirtualEnvironmentVersionKeyboardLayout, version.Keyboard)
-	d.Set(mkDataSourceVirtualEnvironmentVersionRelease, version.Release)
-	d.Set(mkDataSourceVirtualEnvironmentVersionRepositoryID, version.RepositoryID)
-	d.Set(mkDataSourceVirtualEnvironmentVersionVersion, version.Version)
+	err = d.Set(mkDataSourceVirtualEnvironmentVersionKeyboardLayout, version.Keyboard)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentVersionRelease, version.Release)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentVersionRepositoryID, version.RepositoryID)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentVersionVersion, version.Version)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

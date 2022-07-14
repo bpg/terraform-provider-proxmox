@@ -5,12 +5,14 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
@@ -91,7 +93,7 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				Description:  "The user account's expiration date",
 				Optional:     true,
 				Default:      time.Unix(0, 0).UTC().Format(time.RFC3339),
-				ValidateFunc: validation.ValidateRFC3339TimeString,
+				ValidateFunc: validation.IsRFC3339Time,
 			},
 			mkResourceVirtualEnvironmentUserFirstName: {
 				Type:        schema.TypeString,
@@ -132,28 +134,26 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		Create: resourceVirtualEnvironmentUserCreate,
-		Read:   resourceVirtualEnvironmentUserRead,
-		Update: resourceVirtualEnvironmentUserUpdate,
-		Delete: resourceVirtualEnvironmentUserDelete,
+		CreateContext: resourceVirtualEnvironmentUserCreate,
+		ReadContext:   resourceVirtualEnvironmentUserRead,
+		UpdateContext: resourceVirtualEnvironmentUserUpdate,
+		DeleteContext: resourceVirtualEnvironmentUserDelete,
 	}
 }
 
-func resourceVirtualEnvironmentUserCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentUserCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentUserComment).(string)
 	email := d.Get(mkResourceVirtualEnvironmentUserEmail).(string)
 	enabled := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
 	expirationDate, err := time.Parse(time.RFC3339, d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string))
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	expirationDateCustom := proxmox.CustomTimestamp(expirationDate)
@@ -183,10 +183,9 @@ func resourceVirtualEnvironmentUserCreate(d *schema.ResourceData, m interface{})
 		Password:       password,
 	}
 
-	err = veClient.CreateUser(body)
-
+	err = veClient.CreateUser(ctx, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(userID)
@@ -206,26 +205,24 @@ func resourceVirtualEnvironmentUserCreate(d *schema.ResourceData, m interface{})
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(aclBody)
-
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	return resourceVirtualEnvironmentUserRead(d, m)
+	return resourceVirtualEnvironmentUserRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	userID := d.Id()
-	user, err := veClient.GetUser(userID)
+	user, err := veClient.GetUser(ctx, userID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -233,17 +230,15 @@ func resourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) e
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL()
-
+	acl, err := veClient.GetACL(ctx)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	aclParsed := []interface{}{}
+	var aclParsed []interface{}
 
 	for _, v := range acl {
 		if v.Type == "user" && v.UserOrGroupID == userID {
@@ -263,37 +258,45 @@ func resourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) e
 		}
 	}
 
-	d.Set(mkResourceVirtualEnvironmentUserACL, aclParsed)
+	var diags diag.Diagnostics
+
+	err = d.Set(mkResourceVirtualEnvironmentUserACL, aclParsed)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if user.Comment != nil {
-		d.Set(mkResourceVirtualEnvironmentUserComment, user.Comment)
+		err = d.Set(mkResourceVirtualEnvironmentUserComment, user.Comment)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentUserComment, "")
+		err = d.Set(mkResourceVirtualEnvironmentUserComment, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if user.Email != nil {
-		d.Set(mkResourceVirtualEnvironmentUserEmail, user.Email)
+		err = d.Set(mkResourceVirtualEnvironmentUserEmail, user.Email)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentUserEmail, "")
+		err = d.Set(mkResourceVirtualEnvironmentUserEmail, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if user.Enabled != nil {
-		d.Set(mkResourceVirtualEnvironmentUserEnabled, user.Enabled)
+		err = d.Set(mkResourceVirtualEnvironmentUserEnabled, user.Enabled)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentUserEnabled, true)
+		err = d.Set(mkResourceVirtualEnvironmentUserEnabled, true)
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if user.ExpirationDate != nil {
-		d.Set(mkResourceVirtualEnvironmentUserExpirationDate, time.Time(*user.ExpirationDate).Format(time.RFC3339))
+		err = d.Set(mkResourceVirtualEnvironmentUserExpirationDate, time.Time(*user.ExpirationDate).Format(time.RFC3339))
 	} else {
-		d.Set(mkResourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
+		err = d.Set(mkResourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if user.FirstName != nil {
-		d.Set(mkResourceVirtualEnvironmentUserFirstName, user.FirstName)
+		err = d.Set(mkResourceVirtualEnvironmentUserFirstName, user.FirstName)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentUserFirstName, "")
+		err = d.Set(mkResourceVirtualEnvironmentUserFirstName, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	groups := schema.NewSet(schema.HashString, []interface{}{})
 
@@ -303,38 +306,39 @@ func resourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) e
 		}
 	}
 
-	d.Set(mkResourceVirtualEnvironmentUserGroups, groups)
+	err = d.Set(mkResourceVirtualEnvironmentUserGroups, groups)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if user.Keys != nil {
-		d.Set(mkResourceVirtualEnvironmentUserKeys, user.Keys)
+		err = d.Set(mkResourceVirtualEnvironmentUserKeys, user.Keys)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentUserKeys, "")
+		err = d.Set(mkResourceVirtualEnvironmentUserKeys, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if user.LastName != nil {
-		d.Set(mkResourceVirtualEnvironmentUserLastName, user.LastName)
+		err = d.Set(mkResourceVirtualEnvironmentUserLastName, user.LastName)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentUserLastName, "")
+		err = d.Set(mkResourceVirtualEnvironmentUserLastName, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentUserUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentUserComment).(string)
 	email := d.Get(mkResourceVirtualEnvironmentUserEmail).(string)
 	enabled := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
 	expirationDate, err := time.Parse(time.RFC3339, d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string))
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	expirationDateCustom := proxmox.CustomTimestamp(expirationDate)
@@ -361,18 +365,16 @@ func resourceVirtualEnvironmentUserUpdate(d *schema.ResourceData, m interface{})
 	}
 
 	userID := d.Id()
-	err = veClient.UpdateUser(userID, body)
-
+	err = veClient.UpdateUser(ctx, userID, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentUserPassword) {
 		password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
-		err = veClient.ChangeUserPassword(userID, password)
-
+		err = veClient.ChangeUserPassword(ctx, userID, password)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -392,10 +394,9 @@ func resourceVirtualEnvironmentUserUpdate(d *schema.ResourceData, m interface{})
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(aclBody)
-
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -414,22 +415,21 @@ func resourceVirtualEnvironmentUserUpdate(d *schema.ResourceData, m interface{})
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(aclBody)
+		err := veClient.UpdateACL(ctx, aclBody)
 
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	return resourceVirtualEnvironmentUserRead(d, m)
+	return resourceVirtualEnvironmentUserRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentUserDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentUserDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	aclParsed := d.Get(mkResourceVirtualEnvironmentUserACL).(*schema.Set).List()
@@ -448,14 +448,13 @@ func resourceVirtualEnvironmentUserDelete(d *schema.ResourceData, m interface{})
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(aclBody)
-
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.DeleteUser(userID)
+	err = veClient.DeleteUser(ctx, userID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -463,8 +462,7 @@ func resourceVirtualEnvironmentUserDelete(d *schema.ResourceData, m interface{})
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("")

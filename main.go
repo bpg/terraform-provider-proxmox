@@ -5,15 +5,25 @@
 package main
 
 import (
+	"flag"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
-	"github.com/hashicorp/terraform-plugin-sdk/plugin"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 func main() {
-	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: func() terraform.ResourceProvider {
+	var debug bool
+
+	flag.BoolVar(&debug, "debug", false, "set to true to run the provider with support for debuggers like delve")
+	flag.Parse()
+
+	opts := &plugin.ServeOpts{
+		Debug:        debug,
+		ProviderAddr: "registry.terraform.io/example-namespace/example",
+		ProviderFunc: func() *schema.Provider {
 			return proxmoxtf.Provider()
 		},
-	})
+	}
+
+	plugin.Serve(opts)
 }

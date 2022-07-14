@@ -5,11 +5,13 @@
 package proxmoxtf
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -96,46 +98,45 @@ func resourceVirtualEnvironmentHosts() *schema.Resource {
 				Required:    true,
 			},
 		},
-		Create: resourceVirtualEnvironmentHostsCreate,
-		Read:   resourceVirtualEnvironmentHostsRead,
-		Update: resourceVirtualEnvironmentHostsUpdate,
-		Delete: resourceVirtualEnvironmentHostsDelete,
+		CreateContext: resourceVirtualEnvironmentHostsCreate,
+		ReadContext:   resourceVirtualEnvironmentHostsRead,
+		UpdateContext: resourceVirtualEnvironmentHostsUpdate,
+		DeleteContext: resourceVirtualEnvironmentHostsDelete,
 	}
 }
 
-func resourceVirtualEnvironmentHostsCreate(d *schema.ResourceData, m interface{}) error {
-	err := resourceVirtualEnvironmentHostsUpdate(d, m)
-
-	if err != nil {
-		return err
+func resourceVirtualEnvironmentHostsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	diags := resourceVirtualEnvironmentHostsUpdate(ctx, d, m)
+	if diags.HasError() {
+		return diags
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentHostsNodeName).(string)
 
 	d.SetId(fmt.Sprintf("%s_hosts", nodeName))
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentHostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentHostsNodeName).(string)
-	hosts, err := veClient.GetHosts(nodeName)
-
+	hosts, err := veClient.GetHosts(ctx, nodeName)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	// Parse the entries in the hosts file.
-	addresses := []interface{}{}
-	entries := []interface{}{}
-	hostnames := []interface{}{}
+	var addresses []interface{}
+	var entries []interface{}
+	var hostnames []interface{}
 	lines := strings.Split(hosts.Data, "\n")
 
 	for _, line := range lines {
@@ -152,7 +153,7 @@ func resourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}) 
 
 		addresses = append(addresses, values[0])
 		entry := map[string]interface{}{}
-		hostnamesForAddress := []interface{}{}
+		var hostnamesForAddress []interface{}
 
 		for _, hostname := range values[1:] {
 			if hostname != "" {
@@ -167,27 +168,31 @@ func resourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}) 
 		hostnames = append(hostnames, hostnamesForAddress)
 	}
 
-	d.Set(mkResourceVirtualEnvironmentHostsAddresses, addresses)
+	err = d.Set(mkResourceVirtualEnvironmentHostsAddresses, addresses)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if hosts.Digest != nil {
-		d.Set(mkResourceVirtualEnvironmentHostsDigest, *hosts.Digest)
+		err = d.Set(mkResourceVirtualEnvironmentHostsDigest, *hosts.Digest)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentHostsDigest, "")
+		err = d.Set(mkResourceVirtualEnvironmentHostsDigest, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
-	d.Set(mkResourceVirtualEnvironmentHostsEntries, entries)
-	d.Set(mkResourceVirtualEnvironmentHostsEntry, entries)
-	d.Set(mkResourceVirtualEnvironmentHostsHostnames, hostnames)
+	err = d.Set(mkResourceVirtualEnvironmentHostsEntries, entries)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkResourceVirtualEnvironmentHostsEntry, entries)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkResourceVirtualEnvironmentHostsHostnames, hostnames)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentHostsUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentHostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	entry := d.Get(mkResourceVirtualEnvironmentHostsEntry).([]interface{})
@@ -214,16 +219,15 @@ func resourceVirtualEnvironmentHostsUpdate(d *schema.ResourceData, m interface{}
 		body.Data += "\n"
 	}
 
-	err = veClient.UpdateHosts(nodeName, &body)
-
+	err = veClient.UpdateHosts(ctx, nodeName, &body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentHostsRead(d, m)
+	return resourceVirtualEnvironmentHostsRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentHostsDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentHostsDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

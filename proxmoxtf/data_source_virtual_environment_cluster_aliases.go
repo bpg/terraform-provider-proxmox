@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -22,22 +24,20 @@ func dataSourceVirtualEnvironmentClusterAliases() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentClusterAliasesRead,
+		ReadContext: dataSourceVirtualEnvironmentClusterAliasesRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentClusterAliasesRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentClusterAliasesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListPools()
-
+	list, err := veClient.ListPools(ctx)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	aliasIDs := make([]interface{}, len(list))
@@ -48,7 +48,7 @@ func dataSourceVirtualEnvironmentClusterAliasesRead(d *schema.ResourceData, m in
 
 	d.SetId("aliases")
 
-	d.Set(mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs, aliasIDs)
+	err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs, aliasIDs)
 
-	return nil
+	return diag.FromErr(err)
 }

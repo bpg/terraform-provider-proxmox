@@ -5,10 +5,12 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -41,19 +43,18 @@ func resourceVirtualEnvironmentClusterAlias() *schema.Resource {
 				Default:     dvResourceVirtualEnvironmentClusterAliasComment,
 			},
 		},
-		Create: resourceVirtualEnvironmentClusterAliasCreate,
-		Read:   resourceVirtualEnvironmentClusterAliasRead,
-		Update: resourceVirtualEnvironmentClusterAliasUpdate,
-		Delete: resourceVirtualEnvironmentClusterAliasDelete,
+		CreateContext: resourceVirtualEnvironmentClusterAliasCreate,
+		ReadContext:   resourceVirtualEnvironmentClusterAliasRead,
+		UpdateContext: resourceVirtualEnvironmentClusterAliasUpdate,
+		DeleteContext: resourceVirtualEnvironmentClusterAliasDelete,
 	}
 }
 
-func resourceVirtualEnvironmentClusterAliasCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentClusterAliasCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentClusterAliasComment).(string)
@@ -66,35 +67,32 @@ func resourceVirtualEnvironmentClusterAliasCreate(d *schema.ResourceData, m inte
 		CIDR:    cidr,
 	}
 
-	err = veClient.CreateAlias(body)
-
+	err = veClient.CreateAlias(ctx, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(name)
 
-	return resourceVirtualEnvironmentClusterAliasRead(d, m)
+	return resourceVirtualEnvironmentClusterAliasRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterAliasRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentClusterAliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	name := d.Id()
-	alias, err := veClient.GetAlias(name)
+	alias, err := veClient.GetAlias(ctx, name)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	aliasMap := map[string]interface{}{
@@ -105,21 +103,19 @@ func resourceVirtualEnvironmentClusterAliasRead(d *schema.ResourceData, m interf
 
 	for key, val := range aliasMap {
 		err = d.Set(key, val)
-
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
 	return nil
 }
 
-func resourceVirtualEnvironmentClusterAliasUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentClusterAliasUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentClusterAliasComment).(string)
@@ -133,35 +129,32 @@ func resourceVirtualEnvironmentClusterAliasUpdate(d *schema.ResourceData, m inte
 		Comment: &comment,
 	}
 
-	err = veClient.UpdateAlias(previousName, body)
-
+	err = veClient.UpdateAlias(ctx, previousName, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(newName)
 
-	return resourceVirtualEnvironmentClusterAliasRead(d, m)
+	return resourceVirtualEnvironmentClusterAliasRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterAliasDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentClusterAliasDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return nil
+		return diag.FromErr(err)
 	}
 
 	name := d.Id()
-	err = veClient.DeleteAlias(name)
+	err = veClient.DeleteAlias(ctx, name)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("")

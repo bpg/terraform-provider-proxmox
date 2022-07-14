@@ -5,20 +5,21 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 )
 
 // Version retrieves the version information.
-func (c *VirtualEnvironmentClient) Version() (*VirtualEnvironmentVersionResponseData, error) {
+func (c *VirtualEnvironmentClient) Version(ctx context.Context) (*VirtualEnvironmentVersionResponseData, error) {
 	resBody := &VirtualEnvironmentVersionResponseBody{}
-	err := c.DoRequest(hmGET, "version", nil, resBody)
+	err := c.DoRequest(ctx, hmGET, "version", nil, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil

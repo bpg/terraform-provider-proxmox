@@ -4,10 +4,11 @@
 
 package proxmoxtf
 
+//goland:noinspection ALL
 const (
 	// TerraformProviderName specifies the full name of this provider.
 	TerraformProviderName = "terraform-provider-proxmox"
 
 	// TerraformProviderVersion specifies the version number.
-	TerraformProviderVersion = "0.5.1"
+	TerraformProviderVersion = "0.6.0"
 )

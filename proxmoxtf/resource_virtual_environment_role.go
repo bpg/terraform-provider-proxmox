@@ -5,10 +5,12 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -32,19 +34,18 @@ func resourceVirtualEnvironmentRole() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		Create: resourceVirtualEnvironmentRoleCreate,
-		Read:   resourceVirtualEnvironmentRoleRead,
-		Update: resourceVirtualEnvironmentRoleUpdate,
-		Delete: resourceVirtualEnvironmentRoleDelete,
+		CreateContext: resourceVirtualEnvironmentRoleCreate,
+		ReadContext:   resourceVirtualEnvironmentRoleRead,
+		UpdateContext: resourceVirtualEnvironmentRoleUpdate,
+		DeleteContext: resourceVirtualEnvironmentRoleDelete,
 	}
 }
 
-func resourceVirtualEnvironmentRoleCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).(*schema.Set).List()
@@ -60,27 +61,25 @@ func resourceVirtualEnvironmentRoleCreate(d *schema.ResourceData, m interface{})
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.CreateRole(body)
-
+	err = veClient.CreateRole(ctx, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(roleID)
 
-	return resourceVirtualEnvironmentRoleRead(d, m)
+	return resourceVirtualEnvironmentRoleRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
-	role, err := veClient.GetRole(roleID)
+	role, err := veClient.GetRole(ctx, roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -88,8 +87,7 @@ func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) e
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	privileges := schema.NewSet(schema.HashString, []interface{}{})
@@ -100,17 +98,15 @@ func resourceVirtualEnvironmentRoleRead(d *schema.ResourceData, m interface{}) e
 		}
 	}
 
-	d.Set(mkResourceVirtualEnvironmentRolePrivileges, privileges)
-
-	return nil
+	err = d.Set(mkResourceVirtualEnvironmentRolePrivileges, privileges)
+	return diag.FromErr(err)
 }
 
-func resourceVirtualEnvironmentRoleUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).(*schema.Set).List()
@@ -125,25 +121,23 @@ func resourceVirtualEnvironmentRoleUpdate(d *schema.ResourceData, m interface{})
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.UpdateRole(roleID, body)
-
+	err = veClient.UpdateRole(ctx, roleID, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentRoleRead(d, m)
+	return resourceVirtualEnvironmentRoleRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentRoleDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
-	err = veClient.DeleteRole(roleID)
+	err = veClient.DeleteRole(ctx, roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -151,8 +145,7 @@ func resourceVirtualEnvironmentRoleDelete(d *schema.ResourceData, m interface{})
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("")

@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -39,22 +41,22 @@ func dataSourceVirtualEnvironmentRoles() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentRolesRead,
+		ReadContext: dataSourceVirtualEnvironmentRolesRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentRolesRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentRolesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListRoles()
-
+	list, err := veClient.ListRoles(ctx)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	privileges := make([]interface{}, len(list))
@@ -85,9 +87,12 @@ func dataSourceVirtualEnvironmentRolesRead(d *schema.ResourceData, m interface{}
 
 	d.SetId("roles")
 
-	d.Set(mkDataSourceVirtualEnvironmentRolesPrivileges, privileges)
-	d.Set(mkDataSourceVirtualEnvironmentRolesRoleIDs, roleIDs)
-	d.Set(mkDataSourceVirtualEnvironmentRolesSpecial, special)
+	err = d.Set(mkDataSourceVirtualEnvironmentRolesPrivileges, privileges)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentRolesRoleIDs, roleIDs)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentRolesSpecial, special)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

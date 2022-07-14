@@ -5,7 +5,9 @@
 package proxmoxtf
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -62,34 +64,33 @@ func dataSourceVirtualEnvironmentGroup() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentGroupRead,
+		ReadContext: dataSourceVirtualEnvironmentGroupRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	groupID := d.Get(mkDataSourceVirtualEnvironmentGroupID).(string)
-	group, err := veClient.GetGroup(groupID)
-
+	group, err := veClient.GetGroup(ctx, groupID)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL()
-
+	acl, err := veClient.GetACL(ctx)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(groupID)
 
-	aclParsed := []interface{}{}
+	var aclParsed []interface{}
 
 	for _, v := range acl {
 		if v.Type == "group" && v.UserOrGroupID == groupID {
@@ -109,15 +110,18 @@ func dataSourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}
 		}
 	}
 
-	d.Set(mkDataSourceVirtualEnvironmentGroupACL, aclParsed)
+	err = d.Set(mkDataSourceVirtualEnvironmentGroupACL, aclParsed)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if group.Comment != nil {
-		d.Set(mkDataSourceVirtualEnvironmentGroupComment, group.Comment)
+		err = d.Set(mkDataSourceVirtualEnvironmentGroupComment, group.Comment)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentGroupComment, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentGroupComment, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
-	d.Set(mkDataSourceVirtualEnvironmentGroupMembers, group.Members)
+	err = d.Set(mkDataSourceVirtualEnvironmentGroupMembers, group.Members)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

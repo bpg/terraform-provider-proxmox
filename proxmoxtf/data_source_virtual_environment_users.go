@@ -5,9 +5,11 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -83,22 +85,22 @@ func dataSourceVirtualEnvironmentUsers() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Read: dataSourceVirtualEnvironmentUsersRead,
+		ReadContext: dataSourceVirtualEnvironmentUsersRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentUsersRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentUsersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListUsers()
-
+	list, err := veClient.ListUsers(ctx)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comments := make([]interface{}, len(list))
@@ -171,15 +173,24 @@ func dataSourceVirtualEnvironmentUsersRead(d *schema.ResourceData, m interface{}
 
 	d.SetId("users")
 
-	d.Set(mkDataSourceVirtualEnvironmentUsersComments, comments)
-	d.Set(mkDataSourceVirtualEnvironmentUsersEmails, emails)
-	d.Set(mkDataSourceVirtualEnvironmentUsersEnabled, enabled)
-	d.Set(mkDataSourceVirtualEnvironmentUsersExpirationDates, expirationDates)
-	d.Set(mkDataSourceVirtualEnvironmentUsersFirstNames, firstNames)
-	d.Set(mkDataSourceVirtualEnvironmentUsersGroups, groups)
-	d.Set(mkDataSourceVirtualEnvironmentUsersKeys, keys)
-	d.Set(mkDataSourceVirtualEnvironmentUsersLastNames, lastNames)
-	d.Set(mkDataSourceVirtualEnvironmentUsersUserIDs, userIDs)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersComments, comments)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersEmails, emails)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersEnabled, enabled)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersExpirationDates, expirationDates)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersFirstNames, firstNames)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersGroups, groups)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersKeys, keys)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersLastNames, lastNames)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentUsersUserIDs, userIDs)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

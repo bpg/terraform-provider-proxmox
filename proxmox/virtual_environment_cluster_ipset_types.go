@@ -38,7 +38,7 @@ type VirtualEnvironmentClusterIPSetUpdateRequestBody struct {
 	Name    string  `json:"name" url:"name"`
 }
 
-// VirtualEnvironmentClusterIPSetGetResponseData contains list of IPSets from
+// VirtualEnvironmentClusterIPSetListResponseData contains list of IPSets from
 type VirtualEnvironmentClusterIPSetListResponseData struct {
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	Name    string  `json:"name" url:"name"`

@@ -5,6 +5,7 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -19,8 +20,8 @@ import (
 )
 
 // DeleteDatastoreFile deletes a file in a datastore.
-func (c *VirtualEnvironmentClient) DeleteDatastoreFile(nodeName, datastoreID, volumeID string) error {
-	err := c.DoRequest(hmDELETE, fmt.Sprintf("nodes/%s/storage/%s/content/%s", url.PathEscape(nodeName), url.PathEscape(datastoreID), url.PathEscape(volumeID)), nil, nil)
+func (c *VirtualEnvironmentClient) DeleteDatastoreFile(ctx context.Context, nodeName, datastoreID, volumeID string) error {
+	err := c.DoRequest(ctx, hmDELETE, fmt.Sprintf("nodes/%s/storage/%s/content/%s", url.PathEscape(nodeName), url.PathEscape(datastoreID), url.PathEscape(volumeID)), nil, nil)
 
 	if err != nil {
 		return err
@@ -30,16 +31,16 @@ func (c *VirtualEnvironmentClient) DeleteDatastoreFile(nodeName, datastoreID, vo
 }
 
 // ListDatastoreFiles retrieves a list of the files in a datastore.
-func (c *VirtualEnvironmentClient) ListDatastoreFiles(nodeName, datastoreID string) ([]*VirtualEnvironmentDatastoreFileListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListDatastoreFiles(ctx context.Context, nodeName, datastoreID string) ([]*VirtualEnvironmentDatastoreFileListResponseData, error) {
 	resBody := &VirtualEnvironmentDatastoreFileListResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/storage/%s/content", url.PathEscape(nodeName), url.PathEscape(datastoreID)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/storage/%s/content", url.PathEscape(nodeName), url.PathEscape(datastoreID)), nil, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -50,16 +51,16 @@ func (c *VirtualEnvironmentClient) ListDatastoreFiles(nodeName, datastoreID stri
 }
 
 // ListDatastores retrieves a list of nodes.
-func (c *VirtualEnvironmentClient) ListDatastores(nodeName string, d *VirtualEnvironmentDatastoreListRequestBody) ([]*VirtualEnvironmentDatastoreListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListDatastores(ctx context.Context, nodeName string, d *VirtualEnvironmentDatastoreListRequestBody) ([]*VirtualEnvironmentDatastoreListResponseData, error) {
 	resBody := &VirtualEnvironmentDatastoreListResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/storage", url.PathEscape(nodeName)), d, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/storage", url.PathEscape(nodeName)), d, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -70,7 +71,7 @@ func (c *VirtualEnvironmentClient) ListDatastores(nodeName string, d *VirtualEnv
 }
 
 // UploadFileToDatastore uploads a file to a datastore.
-func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDatastoreUploadRequestBody) (*VirtualEnvironmentDatastoreUploadResponseBody, error) {
+func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d *VirtualEnvironmentDatastoreUploadRequestBody) (*VirtualEnvironmentDatastoreUploadResponseBody, error) {
 	switch d.ContentType {
 	case "iso", "vztmpl":
 		r, w := io.Pipe()
@@ -142,7 +143,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDa
 		}
 
 		resBody := &VirtualEnvironmentDatastoreUploadResponseBody{}
-		err = c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", url.PathEscape(d.NodeName), url.PathEscape(d.DatastoreID)), reqBody, resBody)
+		err = c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", url.PathEscape(d.NodeName), url.PathEscape(d.DatastoreID)), reqBody, resBody)
 
 		if err != nil {
 			return nil, err
@@ -152,7 +153,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDa
 	default:
 		// We need to upload all other files using SFTP due to API limitations.
 		// Hopefully, this will not be required in future releases of Proxmox VE.
-		sshClient, err := c.OpenNodeShell(d.NodeName)
+		sshClient, err := c.OpenNodeShell(ctx, d.NodeName)
 
 		if err != nil {
 			return nil, err
@@ -181,7 +182,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(d *VirtualEnvironmentDa
 		datastorePath := strings.Trim(string(buf), "\000")
 
 		if datastorePath == "" {
-			return nil, errors.New("Failed to determine the datastore path")
+			return nil, errors.New("failed to determine the datastore path")
 		}
 
 		remoteFileDir := datastorePath

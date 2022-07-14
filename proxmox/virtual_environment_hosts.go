@@ -5,28 +5,29 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
 )
 
 // GetHosts retrieves the Hosts configuration for a node.
-func (c *VirtualEnvironmentClient) GetHosts(nodeName string) (*VirtualEnvironmentHostsGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetHosts(ctx context.Context, nodeName string) (*VirtualEnvironmentHostsGetResponseData, error) {
 	resBody := &VirtualEnvironmentHostsGetResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), nil, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
 }
 
 // UpdateHosts updates the Hosts configuration for a node.
-func (c *VirtualEnvironmentClient) UpdateHosts(nodeName string, d *VirtualEnvironmentHostsUpdateRequestBody) error {
-	return c.DoRequest(hmPOST, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), d, nil)
+func (c *VirtualEnvironmentClient) UpdateHosts(ctx context.Context, nodeName string, d *VirtualEnvironmentHostsUpdateRequestBody) error {
+	return c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), d, nil)
 }

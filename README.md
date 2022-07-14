@@ -18,9 +18,9 @@ VM deployment in Proxmox v7.0, and a few other enhancements.
 | 7.x             | 0.4.x \> 0.4.4 <br>0.5.x |
 
 ## Requirements
-- [Terraform](https://www.terraform.io/downloads.html) 0.14+
-- [Go](https://golang.org/doc/install) 1.16+ (to build the provider plugin)
-- [GoReleaser](https://goreleaser.com/install/) 0.155+ (to build the provider plugin)
+- [Terraform](https://www.terraform.io/downloads.html) 1.0+
+- [Go](https://golang.org/doc/install) 1.18+ (to build the provider plugin)
+- [GoReleaser](https://goreleaser.com/install/) v1.10+ (to build the provider plugin)
 
 ## Table of Contents
 - [Building the provider](#building-the-provider)
@@ -56,6 +56,25 @@ $ make test
 
 Tests are limited to regression tests, ensuring backwards compatibility.
 
+## Deploying the example resources
+
+There are number of TF examples in the `examples` directory, which can be used to deploy a Container, VM, or other Proxmox resources on your test Proxmox cluster.
+The following assumptions are made about the test Proxmox cluster:
+- It has one node named `pve`
+- The node has local storages named `local` and `local-lvm`
+
+Create `examples/terraform.tfvars` with the following variables:
+
+```sh
+virtual_environment_username = "root@pam"
+virtual_environment_password = "put-your-password-here"
+virtual_environment_endpoint = "https://<your-cluster-endpoint>:8006/"
+```
+
+Then run `make example` to deploy the example resources.
+
+
+
 ## Known issues
 
 ### Disk images cannot be imported by non-PAM accounts
@@ -78,7 +97,7 @@ resource "proxmox_virtual_environment_file" "vmdk_disk_image" {
 }
 
 resource "proxmox_virtual_environment_vm" "example" {
-  ...
+  //...
 
   disk {
     datastore_id = "datastore-id"
@@ -87,7 +106,7 @@ resource "proxmox_virtual_environment_vm" "example" {
     file_id      = "${proxmox_virtual_environment_file.vmdk_disk_image.id}"
   }
 
-  ...
+  //...
 }
 ```
 

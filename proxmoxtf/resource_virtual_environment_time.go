@@ -5,11 +5,13 @@
 package proxmoxtf
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -43,18 +45,17 @@ func resourceVirtualEnvironmentTime() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		Create: resourceVirtualEnvironmentTimeCreate,
-		Read:   resourceVirtualEnvironmentTimeRead,
-		Update: resourceVirtualEnvironmentTimeUpdate,
-		Delete: resourceVirtualEnvironmentTimeDelete,
+		CreateContext: resourceVirtualEnvironmentTimeCreate,
+		ReadContext:   resourceVirtualEnvironmentTimeRead,
+		UpdateContext: resourceVirtualEnvironmentTimeUpdate,
+		DeleteContext: resourceVirtualEnvironmentTimeDelete,
 	}
 }
 
-func resourceVirtualEnvironmentTimeCreate(d *schema.ResourceData, m interface{}) error {
-	err := resourceVirtualEnvironmentTimeUpdate(d, m)
-
-	if err != nil {
-		return err
+func resourceVirtualEnvironmentTimeCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	diags := resourceVirtualEnvironmentTimeUpdate(ctx, d, m)
+	if diags.HasError() {
+		return diags
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
@@ -64,25 +65,24 @@ func resourceVirtualEnvironmentTimeCreate(d *schema.ResourceData, m interface{})
 	return nil
 }
 
-func resourceVirtualEnvironmentTimeRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentTimeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
-	nodeTime, err := veClient.GetNodeTime(nodeName)
-
+	nodeTime, err := veClient.GetNodeTime(ctx, nodeName)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	localLocation, err := time.LoadLocation(nodeTime.TimeZone)
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(fmt.Sprintf("%s_time", nodeName))
@@ -90,36 +90,37 @@ func resourceVirtualEnvironmentTimeRead(d *schema.ResourceData, m interface{}) e
 	localTimeOffset := time.Time(nodeTime.LocalTime).Sub(time.Now().UTC())
 	localTime := time.Time(nodeTime.LocalTime).Add(-localTimeOffset).In(localLocation)
 
-	d.Set(mkDataSourceVirtualEnvironmentTimeLocalTime, localTime.Format(time.RFC3339))
-	d.Set(mkDataSourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
-	d.Set(mkDataSourceVirtualEnvironmentTimeUTCTime, time.Time(nodeTime.UTCTime).Format(time.RFC3339))
+	err = d.Set(mkDataSourceVirtualEnvironmentTimeLocalTime, localTime.Format(time.RFC3339))
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentTimeUTCTime, time.Time(nodeTime.UTCTime).Format(time.RFC3339))
+	diags = append(diags, diag.FromErr(err)...)
 
 	return nil
 }
 
-func resourceVirtualEnvironmentTimeUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentTimeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
 	timeZone := d.Get(mkResourceVirtualEnvironmentTimeTimeZone).(string)
 
-	err = veClient.UpdateNodeTime(nodeName, &proxmox.VirtualEnvironmentNodeUpdateTimeRequestBody{
+	err = veClient.UpdateNodeTime(ctx, nodeName, &proxmox.VirtualEnvironmentNodeUpdateTimeRequestBody{
 		TimeZone: timeZone,
 	})
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentTimeRead(d, m)
+	return resourceVirtualEnvironmentTimeRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentTimeDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentTimeDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

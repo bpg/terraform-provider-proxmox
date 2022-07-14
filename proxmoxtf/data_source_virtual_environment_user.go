@@ -5,9 +5,11 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -100,34 +102,33 @@ func dataSourceVirtualEnvironmentUser() *schema.Resource {
 				Required:    true,
 			},
 		},
-		Read: dataSourceVirtualEnvironmentUserRead,
+		ReadContext: dataSourceVirtualEnvironmentUserRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	userID := d.Get(mkDataSourceVirtualEnvironmentUserUserID).(string)
-	v, err := veClient.GetUser(userID)
-
+	v, err := veClient.GetUser(ctx, userID)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL()
-
+	acl, err := veClient.GetACL(ctx)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(userID)
 
-	aclParsed := []interface{}{}
+	var aclParsed []interface{}
 
 	for _, v := range acl {
 		if v.Type == "user" && v.UserOrGroupID == userID {
@@ -147,61 +148,69 @@ func dataSourceVirtualEnvironmentUserRead(d *schema.ResourceData, m interface{})
 		}
 	}
 
-	d.Set(mkDataSourceVirtualEnvironmentUserACL, aclParsed)
+	err = d.Set(mkDataSourceVirtualEnvironmentUserACL, aclParsed)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if v.Comment != nil {
-		d.Set(mkDataSourceVirtualEnvironmentUserComment, v.Comment)
+		err = d.Set(mkDataSourceVirtualEnvironmentUserComment, v.Comment)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserComment, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentUserComment, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if v.Email != nil {
-		d.Set(mkDataSourceVirtualEnvironmentUserEmail, v.Email)
+		err = d.Set(mkDataSourceVirtualEnvironmentUserEmail, v.Email)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserEmail, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentUserEmail, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if v.Enabled != nil {
-		d.Set(mkDataSourceVirtualEnvironmentUserEnabled, v.Enabled)
+		err = d.Set(mkDataSourceVirtualEnvironmentUserEnabled, v.Enabled)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserEnabled, true)
+		err = d.Set(mkDataSourceVirtualEnvironmentUserEnabled, true)
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if v.ExpirationDate != nil {
 		t := time.Time(*v.ExpirationDate)
-
 		if t.Unix() > 0 {
-			d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, t.UTC().Format(time.RFC3339))
+			err = d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, t.UTC().Format(time.RFC3339))
 		} else {
-			d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
+			err = d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
 		}
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
+		err = d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if v.FirstName != nil {
-		d.Set(mkDataSourceVirtualEnvironmentUserFirstName, v.FirstName)
+		err = d.Set(mkDataSourceVirtualEnvironmentUserFirstName, v.FirstName)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserFirstName, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentUserFirstName, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if v.Groups != nil {
-		d.Set(mkDataSourceVirtualEnvironmentUserGroups, v.Groups)
+		err = d.Set(mkDataSourceVirtualEnvironmentUserGroups, v.Groups)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserGroups, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentUserGroups, []string{})
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if v.Keys != nil {
-		d.Set(mkDataSourceVirtualEnvironmentUserGroups, v.Keys)
+		err = d.Set(mkDataSourceVirtualEnvironmentUsersKeys, v.Keys)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserGroups, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentUsersKeys, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	if v.LastName != nil {
-		d.Set(mkDataSourceVirtualEnvironmentUserLastName, v.LastName)
+		err = d.Set(mkDataSourceVirtualEnvironmentUserLastName, v.LastName)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentUserLastName, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentUserLastName, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

@@ -5,10 +5,12 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -73,19 +75,18 @@ func resourceVirtualEnvironmentGroup() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		Create: resourceVirtualEnvironmentGroupCreate,
-		Read:   resourceVirtualEnvironmentGroupRead,
-		Update: resourceVirtualEnvironmentGroupUpdate,
-		Delete: resourceVirtualEnvironmentGroupDelete,
+		CreateContext: resourceVirtualEnvironmentGroupCreate,
+		ReadContext:   resourceVirtualEnvironmentGroupRead,
+		UpdateContext: resourceVirtualEnvironmentGroupUpdate,
+		DeleteContext: resourceVirtualEnvironmentGroupDelete,
 	}
 }
 
-func resourceVirtualEnvironmentGroupCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentGroupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentGroupComment).(string)
@@ -96,10 +97,9 @@ func resourceVirtualEnvironmentGroupCreate(d *schema.ResourceData, m interface{}
 		ID:      groupID,
 	}
 
-	err = veClient.CreateGroup(body)
-
+	err = veClient.CreateGroup(ctx, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(groupID)
@@ -119,26 +119,26 @@ func resourceVirtualEnvironmentGroupCreate(d *schema.ResourceData, m interface{}
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(aclBody)
-
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	return resourceVirtualEnvironmentGroupRead(d, m)
+	return resourceVirtualEnvironmentGroupRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	groupID := d.Id()
-	group, err := veClient.GetGroup(groupID)
+	group, err := veClient.GetGroup(ctx, groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -146,17 +146,15 @@ func resourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) 
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL()
-
+	acl, err := veClient.GetACL(ctx)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	aclParsed := []interface{}{}
+	var aclParsed []interface{}
 
 	for _, v := range acl {
 		if v.Type == "group" && v.UserOrGroupID == groupID {
@@ -176,25 +174,27 @@ func resourceVirtualEnvironmentGroupRead(d *schema.ResourceData, m interface{}) 
 		}
 	}
 
-	d.Set(mkResourceVirtualEnvironmentGroupACL, aclParsed)
+	err = d.Set(mkResourceVirtualEnvironmentGroupACL, aclParsed)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if group.Comment != nil {
-		d.Set(mkResourceVirtualEnvironmentGroupComment, group.Comment)
+		err = d.Set(mkResourceVirtualEnvironmentGroupComment, group.Comment)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentGroupComment, "")
+		err = d.Set(mkResourceVirtualEnvironmentGroupComment, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
-	d.Set(mkResourceVirtualEnvironmentGroupMembers, group.Members)
+	err = d.Set(mkResourceVirtualEnvironmentGroupMembers, group.Members)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }
 
-func resourceVirtualEnvironmentGroupUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentGroupComment).(string)
@@ -204,10 +204,9 @@ func resourceVirtualEnvironmentGroupUpdate(d *schema.ResourceData, m interface{}
 		Comment: &comment,
 	}
 
-	err = veClient.UpdateGroup(groupID, body)
-
+	err = veClient.UpdateGroup(ctx, groupID, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	aclArgOld, aclArg := d.GetChange(mkResourceVirtualEnvironmentGroupACL)
@@ -226,10 +225,9 @@ func resourceVirtualEnvironmentGroupUpdate(d *schema.ResourceData, m interface{}
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(aclBody)
-
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
@@ -248,22 +246,20 @@ func resourceVirtualEnvironmentGroupUpdate(d *schema.ResourceData, m interface{}
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(aclBody)
-
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	return resourceVirtualEnvironmentGroupRead(d, m)
+	return resourceVirtualEnvironmentGroupRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentGroupDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentGroupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	aclParsed := d.Get(mkResourceVirtualEnvironmentGroupACL).(*schema.Set).List()
@@ -282,14 +278,13 @@ func resourceVirtualEnvironmentGroupDelete(d *schema.ResourceData, m interface{}
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(aclBody)
-
+		err := veClient.UpdateACL(ctx, aclBody)
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.DeleteGroup(groupID)
+	err = veClient.DeleteGroup(ctx, groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -297,8 +292,7 @@ func resourceVirtualEnvironmentGroupDelete(d *schema.ResourceData, m interface{}
 
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("")

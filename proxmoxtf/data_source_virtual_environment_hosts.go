@@ -5,10 +5,12 @@
 package proxmoxtf
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -70,31 +72,31 @@ func dataSourceVirtualEnvironmentHosts() *schema.Resource {
 				Required:    true,
 			},
 		},
-		Read: dataSourceVirtualEnvironmentHostsRead,
+		ReadContext: dataSourceVirtualEnvironmentHostsRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceVirtualEnvironmentHostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentHostsNodeName).(string)
-	hosts, err := veClient.GetHosts(nodeName)
-
+	hosts, err := veClient.GetHosts(ctx, nodeName)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(fmt.Sprintf("%s_hosts", nodeName))
 
 	// Parse the entries in the hosts file.
-	addresses := []interface{}{}
-	entries := []interface{}{}
-	hostnames := []interface{}{}
+	var addresses []interface{}
+	var entries []interface{}
+	var hostnames []interface{}
 	lines := strings.Split(hosts.Data, "\n")
 
 	for _, line := range lines {
@@ -111,7 +113,7 @@ func dataSourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}
 
 		addresses = append(addresses, values[0])
 		entry := map[string]interface{}{}
-		hostnamesForAddress := []interface{}{}
+		var hostnamesForAddress []interface{}
 
 		for _, hostname := range values[1:] {
 			if hostname != "" {
@@ -126,16 +128,20 @@ func dataSourceVirtualEnvironmentHostsRead(d *schema.ResourceData, m interface{}
 		hostnames = append(hostnames, hostnamesForAddress)
 	}
 
-	d.Set(mkDataSourceVirtualEnvironmentHostsAddresses, addresses)
+	err = d.Set(mkDataSourceVirtualEnvironmentHostsAddresses, addresses)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if hosts.Digest != nil {
-		d.Set(mkDataSourceVirtualEnvironmentHostsDigest, *hosts.Digest)
+		err = d.Set(mkDataSourceVirtualEnvironmentHostsDigest, *hosts.Digest)
 	} else {
-		d.Set(mkDataSourceVirtualEnvironmentHostsDigest, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentHostsDigest, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
-	d.Set(mkDataSourceVirtualEnvironmentHostsEntries, entries)
-	d.Set(mkDataSourceVirtualEnvironmentHostsHostnames, hostnames)
+	err = d.Set(mkDataSourceVirtualEnvironmentHostsEntries, entries)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkDataSourceVirtualEnvironmentHostsHostnames, hostnames)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }

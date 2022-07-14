@@ -5,28 +5,29 @@
 package proxmox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
 )
 
 // GetDNS retrieves the DNS configuration for a node.
-func (c *VirtualEnvironmentClient) GetDNS(nodeName string) (*VirtualEnvironmentDNSGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetDNS(ctx context.Context, nodeName string) (*VirtualEnvironmentDNSGetResponseData, error) {
 	resBody := &VirtualEnvironmentDNSGetResponseBody{}
-	err := c.DoRequest(hmGET, fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)), nil, resBody)
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)), nil, resBody)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("The server did not include a data object in the response")
+		return nil, errors.New("the server did not include a data object in the response")
 	}
 
 	return resBody.Data, nil
 }
 
 // UpdateDNS updates the DNS configuration for a node.
-func (c *VirtualEnvironmentClient) UpdateDNS(nodeName string, d *VirtualEnvironmentDNSUpdateRequestBody) error {
-	return c.DoRequest(hmPUT, fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)), d, nil)
+func (c *VirtualEnvironmentClient) UpdateDNS(ctx context.Context, nodeName string, d *VirtualEnvironmentDNSUpdateRequestBody) error {
+	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)), d, nil)
 }

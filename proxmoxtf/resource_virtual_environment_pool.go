@@ -5,10 +5,12 @@
 package proxmoxtf
 
 import (
+	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -74,19 +76,18 @@ func resourceVirtualEnvironmentPool() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		Create: resourceVirtualEnvironmentPoolCreate,
-		Read:   resourceVirtualEnvironmentPoolRead,
-		Update: resourceVirtualEnvironmentPoolUpdate,
-		Delete: resourceVirtualEnvironmentPoolDelete,
+		CreateContext: resourceVirtualEnvironmentPoolCreate,
+		ReadContext:   resourceVirtualEnvironmentPoolRead,
+		UpdateContext: resourceVirtualEnvironmentPoolUpdate,
+		DeleteContext: resourceVirtualEnvironmentPoolDelete,
 	}
 }
 
-func resourceVirtualEnvironmentPoolCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentPoolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentPoolComment).(string)
@@ -97,43 +98,42 @@ func resourceVirtualEnvironmentPoolCreate(d *schema.ResourceData, m interface{})
 		ID:      poolID,
 	}
 
-	err = veClient.CreatePool(body)
-
+	err = veClient.CreatePool(ctx, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId(poolID)
 
-	return resourceVirtualEnvironmentPoolRead(d, m)
+	return resourceVirtualEnvironmentPoolRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentPoolRead(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	poolID := d.Id()
-	pool, err := veClient.GetPool(poolID)
+	pool, err := veClient.GetPool(ctx, poolID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
-
 			return nil
 		}
-
-		return err
+		return diag.FromErr(err)
 	}
 
 	if pool.Comment != nil {
-		d.Set(mkResourceVirtualEnvironmentPoolComment, pool.Comment)
+		err = d.Set(mkResourceVirtualEnvironmentPoolComment, pool.Comment)
 	} else {
-		d.Set(mkResourceVirtualEnvironmentPoolComment, "")
+		err = d.Set(mkResourceVirtualEnvironmentPoolComment, "")
 	}
+	diags = append(diags, diag.FromErr(err)...)
 
 	members := make([]interface{}, len(pool.Members))
 
@@ -160,17 +160,17 @@ func resourceVirtualEnvironmentPoolRead(d *schema.ResourceData, m interface{}) e
 		members[i] = values
 	}
 
-	d.Set(mkResourceVirtualEnvironmentPoolMembers, members)
+	err = d.Set(mkResourceVirtualEnvironmentPoolMembers, members)
+	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diag.FromErr(err)
 }
 
-func resourceVirtualEnvironmentPoolUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentPoolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	comment := d.Get(mkResourceVirtualEnvironmentPoolComment).(string)
@@ -180,25 +180,23 @@ func resourceVirtualEnvironmentPoolUpdate(d *schema.ResourceData, m interface{})
 		Comment: &comment,
 	}
 
-	err = veClient.UpdatePool(poolID, body)
-
+	err = veClient.UpdatePool(ctx, poolID, body)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return resourceVirtualEnvironmentPoolRead(d, m)
+	return resourceVirtualEnvironmentPoolRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentPoolDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVirtualEnvironmentPoolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
-
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	poolID := d.Id()
-	err = veClient.DeletePool(poolID)
+	err = veClient.DeletePool(ctx, poolID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -207,7 +205,7 @@ func resourceVirtualEnvironmentPoolDelete(d *schema.ResourceData, m interface{})
 			return nil
 		}
 
-		return err
+		return diag.FromErr(err)
 	}
 
 	d.SetId("")

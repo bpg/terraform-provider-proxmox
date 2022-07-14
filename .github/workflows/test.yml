@@ -20,7 +20,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.16'
+          go-version: '1.18'
         id: go
 
       - name: Check out code into the Go module directory
@@ -43,15 +43,15 @@ jobs:
       matrix:
         # list whatever Terraform versions here you would like to support
         terraform:
-          - '0.14.11'
-          - '0.15.5'
-          - '1.1.7'
+          - '1.0.1'
+          - '1.1.9'
+          - '1.2.5'
     steps:
 
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '1.16'
+          go-version: '1.18'
         id: go
 
       - name: Check out code into the Go module directory
