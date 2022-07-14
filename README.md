@@ -18,9 +18,9 @@ VM deployment in Proxmox v7.0, and a few other enhancements.
 | 7.x             | 0.4.x \> 0.4.4 <br>0.5.x |
 
 ## Requirements
-- [Terraform](https://www.terraform.io/downloads.html) 0.14+
-- [Go](https://golang.org/doc/install) 1.16+ (to build the provider plugin)
-- [GoReleaser](https://goreleaser.com/install/) 0.155+ (to build the provider plugin)
+- [Terraform](https://www.terraform.io/downloads.html) 1.0+
+- [Go](https://golang.org/doc/install) 1.18+ (to build the provider plugin)
+- [GoReleaser](https://goreleaser.com/install/) v1.10+ (to build the provider plugin)
 
 ## Table of Contents
 - [Building the provider](#building-the-provider)
