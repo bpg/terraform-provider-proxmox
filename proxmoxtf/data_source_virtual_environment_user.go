@@ -194,14 +194,14 @@ func dataSourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.Resourc
 	if v.Groups != nil {
 		err = d.Set(mkDataSourceVirtualEnvironmentUserGroups, v.Groups)
 	} else {
-		err = d.Set(mkDataSourceVirtualEnvironmentUserGroups, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentUserGroups, []string{})
 	}
 	diags = append(diags, diag.FromErr(err)...)
 
 	if v.Keys != nil {
-		err = d.Set(mkDataSourceVirtualEnvironmentUserGroups, v.Keys)
+		err = d.Set(mkDataSourceVirtualEnvironmentUsersKeys, v.Keys)
 	} else {
-		err = d.Set(mkDataSourceVirtualEnvironmentUserGroups, "")
+		err = d.Set(mkDataSourceVirtualEnvironmentUsersKeys, "")
 	}
 	diags = append(diags, diag.FromErr(err)...)
 

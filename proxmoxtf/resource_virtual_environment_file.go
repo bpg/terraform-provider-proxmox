@@ -583,7 +583,9 @@ func resourceVirtualEnvironmentFileRead(ctx context.Context, d *schema.ResourceD
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
 			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkResourceVirtualEnvironmentFileSourceFileChanged, lastFileModificationDate != fileModificationDate || lastFileSize != fileSize || lastFileTag != fileTag)
+
+			sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChanged] = lastFileModificationDate != fileModificationDate || lastFileSize != fileSize || lastFileTag != fileTag
+			err = d.Set(mkResourceVirtualEnvironmentFileSourceFile, sourceFile)
 			diags = append(diags, diag.FromErr(err)...)
 
 			if diags.HasError() {

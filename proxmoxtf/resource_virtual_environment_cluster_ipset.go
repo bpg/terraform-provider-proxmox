@@ -65,6 +65,8 @@ func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
 						},
 					},
 				},
+				MaxItems: 14,
+				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentClusterIPSetCIDRComment: {
 				Type:        schema.TypeString,
@@ -169,11 +171,20 @@ func resourceVirtualEnvironmentClusterIPSetRead(ctx context.Context, d *schema.R
 		return diags
 	}
 
+	var entries []interface{}
+
 	for key := range IPSet {
-		err := d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDR, IPSet[key])
-		diags = append(diags, diag.FromErr(err)...)
+		entry := map[string]interface{}{}
+
+		entry[mkResourceVirtualEnvironmentClusterIPSetCIDRName] = IPSet[key].CIDR
+		entry[mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch] = IPSet[key].NoMatch
+		entry[mkResourceVirtualEnvironmentClusterIPSetCIDRComment] = IPSet[key].Comment
+
+		entries = append(entries, entry)
 	}
 
+	err = d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDR, entries)
+	diags = append(diags, diag.FromErr(err)...)
 	return diags
 }
 
