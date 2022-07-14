@@ -153,7 +153,7 @@ func resourceVirtualEnvironmentDNSUpdate(ctx context.Context, d *schema.Resource
 	return resourceVirtualEnvironmentDNSRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentDNSDelete(ctx context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentDNSDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

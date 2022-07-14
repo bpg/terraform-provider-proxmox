@@ -78,7 +78,7 @@ resource "proxmox_virtual_environment_file" "vmdk_disk_image" {
 }
 
 resource "proxmox_virtual_environment_vm" "example" {
-  ...
+  //...
 
   disk {
     datastore_id = "datastore-id"
@@ -87,7 +87,7 @@ resource "proxmox_virtual_environment_vm" "example" {
     file_id      = "${proxmox_virtual_environment_file.vmdk_disk_image.id}"
   }
 
-  ...
+  //...
 }
 ```
 

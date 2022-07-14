@@ -227,7 +227,7 @@ func resourceVirtualEnvironmentHostsUpdate(ctx context.Context, d *schema.Resour
 	return resourceVirtualEnvironmentHostsRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentHostsDelete(ctx context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentHostsDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

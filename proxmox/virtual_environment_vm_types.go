@@ -621,7 +621,7 @@ func (r CustomAudioDevices) EncodeValues(key string, v *url.Values) error {
 }
 
 // EncodeValues converts a CustomCloudInitConfig struct to multiple URL vlaues.
-func (r CustomCloudInitConfig) EncodeValues(key string, v *url.Values) error {
+func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
 	if r.Files != nil {
 		var volumes []string
 
@@ -1065,7 +1065,7 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 }
 
 // EncodeValues converts a CustomStorageDevices array to multiple URL values.
-func (r CustomStorageDevices) EncodeValues(key string, v *url.Values) error {
+func (r CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 	for i, d := range r {
 		if d.Enabled {
 			err := d.EncodeValues(i, v)

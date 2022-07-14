@@ -120,7 +120,7 @@ func resourceVirtualEnvironmentTimeUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentTimeRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentTimeDelete(ctx context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentTimeDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

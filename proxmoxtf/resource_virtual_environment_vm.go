@@ -1357,7 +1357,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	}
 
 	if len(vga) > 0 {
-		vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
+		vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1387,7 +1387,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	}
 
 	allDiskInfo := getDiskInfo(vmConfig, d)
-	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
+	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1538,7 +1538,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
-	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
+	diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1599,7 +1599,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
-	vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
+	vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2062,7 +2062,7 @@ func resourceVirtualEnvironmentVMGetCPUArchitectureValidator() schema.SchemaVali
 	}, false))
 }
 
-func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, m interface{}, disks []interface{}) (map[string]map[string]proxmox.CustomStorageDevice, error) {
+func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, disks []interface{}) (map[string]map[string]proxmox.CustomStorageDevice, error) {
 	var diskDevice []interface{}
 
 	if disks != nil {
@@ -2235,7 +2235,7 @@ func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidat
 	})
 }
 
-func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData, m interface{}) (*proxmox.CustomVGADevice, error) {
+func resourceVirtualEnvironmentVMGetVGADeviceObject(d *schema.ResourceData) (*proxmox.CustomVGADevice, error) {
 	resource := resourceVirtualEnvironmentVM()
 
 	vgaBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMVGA}, 0, true)
@@ -3391,7 +3391,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 
 	// Prepare the new disk device configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
-		diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, nil)
+		diskDeviceObjects, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, nil)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3562,7 +3562,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 
 	// Prepare the new VGA configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMVGA) {
-		updateBody.VGADevice, err = resourceVirtualEnvironmentVMGetVGADeviceObject(d, m)
+		updateBody.VGADevice, err = resourceVirtualEnvironmentVMGetVGADeviceObject(d)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3627,12 +3627,12 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, 
 	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
 		diskOld, diskNew := d.GetChange(mkResourceVirtualEnvironmentVMDisk)
 
-		diskOldEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, diskOld.([]interface{}))
+		diskOldEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, diskOld.([]interface{}))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		diskNewEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, m, diskNew.([]interface{}))
+		diskNewEntries, err := resourceVirtualEnvironmentVMGetDiskDeviceObjects(d, diskNew.([]interface{}))
 		if err != nil {
 			return diag.FromErr(err)
 		}
