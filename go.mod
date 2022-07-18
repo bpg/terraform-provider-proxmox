@@ -6,8 +6,8 @@ require (
 	github.com/google/go-querystring v1.1.0
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/terraform-plugin-log v0.5.0
-	github.com/hashicorp/terraform-plugin-sdk/v2 v2.18.0
+	github.com/hashicorp/terraform-plugin-log v0.6.0
+	github.com/hashicorp/terraform-plugin-sdk/v2 v2.19.0
 	github.com/pkg/sftp v1.13.5
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 )
@@ -25,7 +25,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.13.0 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
-	github.com/hashicorp/terraform-plugin-go v0.11.0 // indirect
+	github.com/hashicorp/terraform-plugin-go v0.12.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.0.0-20220623143253-7d51757b572c // indirect
 	github.com/hashicorp/terraform-svchost v0.0.0-20200729002733-f050f53b9734 // indirect
 	github.com/hashicorp/yamux v0.0.0-20211028200310-0bc27b27de87 // indirect
