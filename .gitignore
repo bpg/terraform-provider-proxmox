@@ -32,6 +32,7 @@ modules-dev/
 .*.swp
 .DS_Store
 .idea
+.vscode
 
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
