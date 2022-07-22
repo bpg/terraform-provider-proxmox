@@ -26,7 +26,7 @@ build:
 	rm -f "$(TERRAFORM_PLUGIN_EXECUTABLE)"
 	go build -o "$(TERRAFORM_PLUGIN_EXECUTABLE)"
 
-example: example-build example-init example-apply example-apply example-destroy
+example: example-build example-init example-apply example-destroy
 
 example-apply:
 	export TF_CLI_CONFIG_FILE="$(shell pwd -P)/example.tfrc" \
@@ -36,8 +36,8 @@ example-apply:
 		&& terraform apply -auto-approve
 
 example-build:
+	rm -rf "$(TERRAFORM_PLUGIN_DIRECTORY_EXAMPLE)"
 	mkdir -p "$(TERRAFORM_PLUGIN_DIRECTORY_EXAMPLE)"
-	rm -f "$(TERRAFORM_PLUGIN_EXECUTABLE_EXAMPLE)"
 	go build -o "$(TERRAFORM_PLUGIN_EXECUTABLE_EXAMPLE)"
 
 example-destroy:

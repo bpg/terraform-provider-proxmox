@@ -1832,7 +1832,6 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 			`set -e`,
 			fmt.Sprintf(`datastore_id_image="%s"`, fileIDParts[0]),
 			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
-			fmt.Sprintf(`disk_count="%d"`, diskCount+importedDiskCount),
 			fmt.Sprintf(`disk_index="%d"`, i),
 			fmt.Sprintf(`disk_options="%s"`, diskOptions),
 			fmt.Sprintf(`disk_size="%d"`, size),
@@ -1849,8 +1848,8 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 			`dsp_target="$(echo "$dsi_target" | cut -d ";" -f 1)"`,
 			`cp "${dsp_image}${file_path}" "$file_path_tmp"`,
 			`qemu-img resize "$file_path_tmp" "${disk_size}G"`,
-			`qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format qcow2`,
-			`disk_id="${datastore_id_target}:$([[ -n "$dsp_target" ]] && echo "${vm_id}/" || echo "")vm-${vm_id}-disk-${disk_count}$([[ -n "$dsp_target" ]] && echo ".qcow2" || echo "")${disk_options}"`,
+			`imported_disk="$(qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format qcow2 | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
+			`disk_id="${datastore_id_target}:$([[ -n "$dsp_target" ]] && echo "${vm_id}/" || echo "")$imported_disk$([[ -n "$dsp_target" ]] && echo ".qcow2" || echo "")${disk_options}"`,
 			`qm set "$vm_id" "-${disk_interface}" "$disk_id"`,
 			`rm -f "$file_path_tmp"`,
 		)
