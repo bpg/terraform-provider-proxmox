@@ -4,9 +4,9 @@
 
 [Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.5.3...HEAD)
 
-BREAKING CHANGES:
+BUG FIXES:
 
-- Upgrade the provider codebase to use Terraform SDK v2 [\#91](https://github.com/bpg/terraform-provider-proxmox/pull/91) ([bpg](https://github.com/bpg))
+- Error creating VM with multiple disks on different storages [\#88](https://github.com/bpg/terraform-provider-proxmox/issues/88)
 
 ## [v0.5.3](https://github.com/bpg/terraform-provider-proxmox/tree/v0.5.3) (2022-06-02)
 
