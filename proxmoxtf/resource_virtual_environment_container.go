@@ -46,7 +46,7 @@ const (
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
 	dvResourceVirtualEnvironmentContainerTemplate                          = false
-	dvResourceVirtualEnvironmentContainerCustomRootfsSize                  = ""
+	dvResourceVirtualEnvironmentContainerCustomRootfsSize                  = -1
 	dvResourceVirtualEnvironmentContainerVMID                              = -1
 
 	maxResourceVirtualEnvironmentContainerNetworkInterfaces = 8
