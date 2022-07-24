@@ -85,6 +85,13 @@ func (c *VirtualEnvironmentClient) UpdateContainer(ctx context.Context, nodeName
 	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("nodes/%s/lxc/%d/config", url.PathEscape(nodeName), vmID), d, nil)
 }
 
+// ResizeRootFS resizes the root filestore of container.
+// func (c *VirtualEnvironmentClient) ResizeRootFS(ctx context.Context, nodeName string, vmID int) error {
+// 	containerState := c.WaitForContainerState(ctx, url.PathEscape(nodeName), vmID, "running", 300, 5)
+// 	while containerState = false;
+// 	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("nodes/%s/lxc/%d/resize", url.PathEscape(nodeName), vmID), nil, nil)
+// }
+
 // WaitForContainerState waits for a container to reach a specific state.
 func (c *VirtualEnvironmentClient) WaitForContainerState(ctx context.Context, nodeName string, vmID int, state string, timeout int, delay int) error {
 	state = strings.ToLower(state)

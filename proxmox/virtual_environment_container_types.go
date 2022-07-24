@@ -35,6 +35,7 @@ type VirtualEnvironmentContainerCreateRequestBody struct {
 	CPULimit             *int                                                   `json:"cpulimit,omitempty" url:"cpulimit,omitempty"`
 	CPUUnits             *int                                                   `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
 	DatastoreID          *string                                                `json:"storage,omitempty" url:"storage,omitempty"`
+	DiskSize             *int                                                   `json:"rootfs,omitempty" url:"rootfs,omitempty"`
 	DedicatedMemory      *int                                                   `json:"memory,omitempty" url:"memory,omitempty"`
 	Delete               []string                                               `json:"delete,omitempty" url:"delete,omitempty"`
 	Description          *string                                                `json:"description,omitempty" url:"description,omitempty"`
@@ -54,7 +55,6 @@ type VirtualEnvironmentContainerCreateRequestBody struct {
 	PoolID               *string                                                `json:"pool,omitempty" url:"pool,omitempty"`
 	Protection           *CustomBool                                            `json:"protection,omitempty" url:"protection,omitempty,int"`
 	Restore              *CustomBool                                            `json:"restore,omitempty" url:"restore,omitempty,int"`
-	RootFS               *VirtualEnvironmentContainerCustomRootFS               `json:"rootfs,omitempty" url:"rootfs,omitempty"`
 	SSHKeys              *VirtualEnvironmentContainerCustomSSHKeys              `json:"ssh-public-keys,omitempty" url:"ssh-public-keys,omitempty"`
 	Start                *CustomBool                                            `json:"start,omitempty" url:"start,omitempty,int"`
 	StartOnBoot          *CustomBool                                            `json:"onboot,omitempty" url:"onboot,omitempty,int"`
@@ -426,7 +426,7 @@ func (r VirtualEnvironmentContainerCustomNetworkInterfaceArray) EncodeValues(key
 	return nil
 }
 
-// EncodeValues converts a VirtualEnvironmentContainerCustomRootFS struct to a URL vlaue.
+// EncodeValues converts a VirtualEnvironmentContainerCustomRootFS struct to a URL value.
 func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url.Values) error {
 	var values []string
 

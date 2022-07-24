@@ -88,10 +88,12 @@ func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
 
 	testOptionalArguments(t, diskSchema, []string{
 		mkResourceVirtualEnvironmentContainerDiskDatastoreID,
+		mkResourceVirtualEnvironmentContainerCustomRootfsSize,
 	})
 
 	testValueTypes(t, diskSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentContainerDiskDatastoreID: schema.TypeString,
+		mkResourceVirtualEnvironmentContainerDiskDatastoreID:  schema.TypeString,
+		mkResourceVirtualEnvironmentContainerCustomRootfsSize: schema.TypeString,
 	})
 
 	initializationSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentContainerInitialization)
