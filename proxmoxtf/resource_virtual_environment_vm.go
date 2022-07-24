@@ -49,6 +49,7 @@ const (
 	dvResourceVirtualEnvironmentVMDiskFileFormat                    = "qcow2"
 	dvResourceVirtualEnvironmentVMDiskFileID                        = ""
 	dvResourceVirtualEnvironmentVMDiskSize                          = 8
+	dvResourceVirtualEnvironmentVMDiskIOThread                      = false
 	dvResourceVirtualEnvironmentVMDiskSpeedRead                     = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWrite                    = 0
@@ -132,6 +133,7 @@ const (
 	mkResourceVirtualEnvironmentVMDiskFileFormat                    = "file_format"
 	mkResourceVirtualEnvironmentVMDiskFileID                        = "file_id"
 	mkResourceVirtualEnvironmentVMDiskSize                          = "size"
+	mkResourceVirtualEnvironmentVMDiskIOThread                      = "iothread"
 	mkResourceVirtualEnvironmentVMDiskSpeed                         = "speed"
 	mkResourceVirtualEnvironmentVMDiskSpeedRead                     = "read"
 	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = "read_burstable"
@@ -478,6 +480,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							mkResourceVirtualEnvironmentVMDiskFileID:      dvResourceVirtualEnvironmentVMDiskFileID,
 							mkResourceVirtualEnvironmentVMDiskInterface:   dvResourceVirtualEnvironmentVMDiskInterface,
 							mkResourceVirtualEnvironmentVMDiskSize:        dvResourceVirtualEnvironmentVMDiskSize,
+							mkResourceVirtualEnvironmentVMDiskIOThread:    dvResourceVirtualEnvironmentVMDiskIOThread,
 						},
 					}, nil
 				},
@@ -516,6 +519,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMDiskSize,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
+						},
+						mkResourceVirtualEnvironmentVMDiskIOThread: {
+							Type:        schema.TypeBool,
+							Description: "Whether to use iothreads for this disk drive",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMDiskIOThread,
 						},
 						mkResourceVirtualEnvironmentVMDiskSpeed: {
 							Type:        schema.TypeList,
@@ -1783,6 +1792,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
+		ioThread := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 
 		if len(speed) == 0 {
 			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
@@ -1799,6 +1809,10 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 		speedLimitWriteBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable].(int)
 
 		diskOptions := ""
+
+		if ioThread {
+			diskOptions += ",iothread=1"
+		}
 
 		if speedLimitRead > 0 {
 			diskOptions += fmt.Sprintf(",mbps_rd=%d", speedLimitRead)
@@ -2083,6 +2097,7 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, di
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
+		ioThread := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 
 		speedBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
 
@@ -2102,6 +2117,7 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, di
 		sizeString := fmt.Sprintf("%dG", size)
 		diskDevice.Size = &sizeString
 		diskDevice.SizeInt = &size
+		diskDevice.IOThread = &ioThread
 
 		if len(speedBlock) > 0 {
 			speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
