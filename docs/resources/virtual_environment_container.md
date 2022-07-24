@@ -105,6 +105,7 @@ output "ubuntu_container_public_key" {
 * `description` - (Optional) The description.
 * `disk` - (Optional) A disk.
     * `datastore_id` - (Optional) The identifier for the datastore to create the disk in (defaults to `local-lvm`).
+    * `root_disk_size` - (Optional) Size of the root disk in bytes?.
 * `initialization` - (Optional) The initialization configuration.
     * `dns` - (Optional) The DNS configuration.
         * `domain` - (Optional) The DNS search domain.
