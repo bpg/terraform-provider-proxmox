@@ -163,6 +163,7 @@ type CustomStorageDevice struct {
 	Media                   *string     `json:"media,omitempty" url:"media,omitempty"`
 	Size                    *string     `json:"size,omitempty" url:"size,omitempty"`
 	Format                  *string     `json:"format,omitempty" url:"format,omitempty"`
+	IOThread                *CustomBool `json:"iothread,omitempty" url:"iothread,omitempty,int"`
 	Interface               *string
 	ID                      *string
 	FileID                  *string
@@ -1059,6 +1060,14 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		values = append(values, fmt.Sprintf("size=%s", *r.Size))
 	}
 
+	if r.IOThread != nil {
+		if *r.IOThread {
+			values = append(values, "iothread=1")
+		} else {
+			values = append(values, "iothread=0")
+		}
+	}
+
 	v.Add(key, strings.Join(values, ","))
 
 	return nil
@@ -1588,6 +1597,9 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				r.Size = &v[1]
 			case "format":
 				r.Format = &v[1]
+			case "iothread":
+				bv := CustomBool(v[1] == "1")
+				r.IOThread = &bv
 			}
 		}
 	}
