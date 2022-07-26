@@ -1087,7 +1087,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 		CPUCores:             &cpuCores,
 		CPUUnits:             &cpuUnits,
 		DatastoreID:          &diskDatastoreID,
-		DiskSize:             &rootFSsize,
+		RootFS:               &rootFSsize,
 		DedicatedMemory:      &memoryDedicated,
 		NetworkInterfaces:    networkInterfaceArray,
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
@@ -1400,8 +1400,10 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = "local"
 	}
 
-	if containerConfig.RootFS != nil {
+	if containerConfig.RootFS.DiskSize != nil {
 		disk[mkResourceVirtualEnvironmentContainerCustomRootfsSize] = containerConfig.RootFS.DiskSize
+	} else {
+		disk[mkResourceVirtualEnvironmentContainerCustomRootfsSize] = "4G"
 	}
 
 	currentDisk := d.Get(mkResourceVirtualEnvironmentContainerDisk).([]interface{})
