@@ -80,7 +80,7 @@ type VirtualEnvironmentContainerCustomFeatures struct {
 type VirtualEnvironmentContainerCustomMountPoint struct {
 	ACL          *CustomBool `json:"acl,omitempty" url:"acl,omitempty,int"`
 	Backup       *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	DiskSize     *string     `json:"size,omitempty" url:"size,omitempty"`
+	DiskSize     *int        `json:"size,omitempty" url:"size,omitempty"`
 	Enabled      bool        `json:"-" url:"-"`
 	MountOptions *[]string   `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
 	MountPoint   string      `json:"mp" url:"mp"`
@@ -118,7 +118,7 @@ type VirtualEnvironmentContainerCustomNetworkInterfaceArray []VirtualEnvironment
 // VirtualEnvironmentContainerCustomRootFS contains the values for the "rootfs" property.
 type VirtualEnvironmentContainerCustomRootFS struct {
 	ACL          *CustomBool `json:"acl,omitempty" url:"acl,omitempty,int"`
-	DiskSize     *string     `json:"size,omitempty" url:"size,omitempty"`
+	DiskSize     *int        `json:"size,omitempty" url:"size,omitempty"`
 	MountOptions *[]string   `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
 	Quota        *CustomBool `json:"quota,omitempty" url:"quota,omitempty,int"`
 	ReadOnly     *CustomBool `json:"ro,omitempty" url:"ro,omitempty,int"`
@@ -279,7 +279,7 @@ func (r VirtualEnvironmentContainerCustomMountPoint) EncodeValues(key string, v 
 	}
 
 	if r.DiskSize != nil {
-		values = append(values, fmt.Sprintf("size=%s", *r.DiskSize))
+		values = append(values, "size=%d")
 	}
 
 	if r.MountOptions != nil {
@@ -439,7 +439,7 @@ func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url
 	}
 
 	if r.DiskSize != nil {
-		values = append(values, fmt.Sprintf("size=%s", *r.DiskSize))
+		values = append(values, "size=%d")
 	}
 
 	if r.MountOptions != nil {
@@ -608,7 +608,13 @@ func (r *VirtualEnvironmentContainerCustomMountPoint) UnmarshalJSON(b []byte) er
 				bv := CustomBool(v[1] == "1")
 				r.Shared = &bv
 			case "size":
-				r.DiskSize = &v[1]
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.DiskSize = &iv
 			}
 		}
 	}
@@ -746,7 +752,13 @@ func (r *VirtualEnvironmentContainerCustomRootFS) UnmarshalJSON(b []byte) error 
 				bv := CustomBool(v[1] == "1")
 				r.Shared = &bv
 			case "size":
-				r.DiskSize = &v[1]
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+
+				r.DiskSize = &iv
 			}
 		}
 	}

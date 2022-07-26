@@ -63,6 +63,7 @@ const (
 	mkResourceVirtualEnvironmentContainerCPUArchitecture                   = "architecture"
 	mkResourceVirtualEnvironmentContainerCPUCores                          = "cores"
 	mkResourceVirtualEnvironmentContainerCPUUnits                          = "units"
+	mkResourceVirtualEnvironmentContainerCustomRootfsSize                  = "root_disk_size"
 	mkResourceVirtualEnvironmentContainerDescription                       = "description"
 	mkResourceVirtualEnvironmentContainerDisk                              = "disk"
 	mkResourceVirtualEnvironmentContainerDiskDatastoreID                   = "datastore_id"
@@ -98,7 +99,6 @@ const (
 	mkResourceVirtualEnvironmentContainerOperatingSystemType               = "type"
 	mkResourceVirtualEnvironmentContainerPoolID                            = "pool_id"
 	mkResourceVirtualEnvironmentContainerStarted                           = "started"
-	mkResourceVirtualEnvironmentContainerCustomRootfsSize                  = "root_disk_size"
 	mkResourceVirtualEnvironmentContainerTemplate                          = "template"
 	mkResourceVirtualEnvironmentContainerVMID                              = "vm_id"
 )
@@ -1395,12 +1395,13 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 	if containerConfig.RootFS != nil {
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = volumeParts[0]
-
-		rootSize := strings.Split(*containerConfig.RootFS.DiskSize, ":")
-		disk[mkResourceVirtualEnvironmentContainerCustomRootfsSize] = rootSize
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = "local"
+	}
+
+	if containerConfig.RootFS != nil {
+		disk[mkResourceVirtualEnvironmentContainerCustomRootfsSize] = containerConfig.RootFS.DiskSize
 	}
 
 	currentDisk := d.Get(mkResourceVirtualEnvironmentContainerDisk).([]interface{})
