@@ -35,7 +35,7 @@ type VirtualEnvironmentContainerCreateRequestBody struct {
 	CPULimit             *int                                                   `json:"cpulimit,omitempty" url:"cpulimit,omitempty"`
 	CPUUnits             *int                                                   `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
 	DatastoreID          *string                                                `json:"storage,omitempty" url:"storage,omitempty"`
-	DiskSize             *string                                                `json:"rootfs,omitempty" url:"rootfs,omitempty"`
+	RootFS               *VirtualEnvironmentContainerCustomRootFS               `json:"rootfs,omitempty"`
 	DedicatedMemory      *int                                                   `json:"memory,omitempty" url:"memory,omitempty"`
 	Delete               []string                                               `json:"delete,omitempty" url:"delete,omitempty"`
 	Description          *string                                                `json:"description,omitempty" url:"description,omitempty"`

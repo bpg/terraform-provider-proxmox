@@ -251,7 +251,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentContainerDiskDatastoreID,
 						},
 						mkResourceVirtualEnvironmentContainerCustomRootfsSize: {
-							Type:        schema.TypeInt,
+							Type:        schema.TypeString,
 							Description: "The size of the root disk",
 							Optional:    true,
 							ForceNew:    true,
