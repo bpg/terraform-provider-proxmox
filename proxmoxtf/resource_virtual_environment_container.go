@@ -46,7 +46,7 @@ const (
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
 	dvResourceVirtualEnvironmentContainerTemplate                          = false
-	dvResourceVirtualEnvironmentContainerCustomRootfsSize                  = -1
+	dvResourceVirtualEnvironmentContainerCustomRootfsSize                  = ""
 	dvResourceVirtualEnvironmentContainerVMID                              = -1
 
 	maxResourceVirtualEnvironmentContainerNetworkInterfaces = 8
@@ -923,7 +923,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	}
 
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
-	rootFSsize := diskBlock[mkResourceVirtualEnvironmentContainerCustomRootfsSize].(int)
+	rootFSsize := diskBlock[mkResourceVirtualEnvironmentContainerCustomRootfsSize].(string)
 
 	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
 	initializationDNSDomain := dvResourceVirtualEnvironmentContainerInitializationDNSDomain
