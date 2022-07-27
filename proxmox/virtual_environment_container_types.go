@@ -321,7 +321,7 @@ func (r VirtualEnvironmentContainerCustomMountPoint) EncodeValues(key string, v 
 			values = append(values, "shared=0")
 		}
 	}
-
+	// TODO: We may want to update this to the same standard that we handle the rootfs volumes
 	values = append(values, fmt.Sprintf("volume=%s", r.Volume))
 
 	if len(values) > 0 {
@@ -482,9 +482,6 @@ func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url
 
 	if r.Volume != nil {
 		values = append(values, fmt.Sprintf("volume=%v", r.Volume))
-	}
-
-	if len(values) > 0 {
 		v.Add(key, strings.Join(values, ","))
 	}
 
