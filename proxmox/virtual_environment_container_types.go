@@ -35,7 +35,7 @@ type VirtualEnvironmentContainerCreateRequestBody struct {
 	CPULimit             *int                                                   `json:"cpulimit,omitempty" url:"cpulimit,omitempty"`
 	CPUUnits             *int                                                   `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
 	DatastoreID          *string                                                `json:"storage,omitempty" url:"storage,omitempty"`
-	RootFS               *VirtualEnvironmentContainerCustomRootFS               `json:"rootfs,omitempty"`
+	RootFS               *VirtualEnvironmentContainerCustomRootFS               `json:"rootfs,omitempty" url:"rootfs,omitempty"`
 	DedicatedMemory      *int                                                   `json:"memory,omitempty" url:"memory,omitempty"`
 	Delete               []string                                               `json:"delete,omitempty" url:"delete,omitempty"`
 	Description          *string                                                `json:"description,omitempty" url:"description,omitempty"`
@@ -118,13 +118,13 @@ type VirtualEnvironmentContainerCustomNetworkInterfaceArray []VirtualEnvironment
 // VirtualEnvironmentContainerCustomRootFS contains the values for the "rootfs" property.
 type VirtualEnvironmentContainerCustomRootFS struct {
 	ACL          *CustomBool `json:"acl,omitempty" url:"acl,omitempty,int"`
-	DiskSize     *string     `json:"size,omitempty" url:"size,omitempty"`
+	Size         *string     `json:"size,omitempty" url:"size,omitempty"`
 	MountOptions *[]string   `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
 	Quota        *CustomBool `json:"quota,omitempty" url:"quota,omitempty,int"`
 	ReadOnly     *CustomBool `json:"ro,omitempty" url:"ro,omitempty,int"`
 	Replicate    *CustomBool `json:"replicate,omitempty" url:"replicate,omitempty,int"`
 	Shared       *CustomBool `json:"shared,omitempty" url:"shared,omitempty,int"`
-	Volume       string      `json:"volume" url:"volume"`
+	Volume       *string     `json:"volume" url:"volume"`
 }
 
 // VirtualEnvironmentContainerCustomSSHKeys contains the values for the "ssh-public-keys" property.
@@ -438,8 +438,8 @@ func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url
 		}
 	}
 
-	if r.DiskSize != nil {
-		values = append(values, fmt.Sprintf("size=%s", *r.DiskSize))
+	if r.Size != nil {
+		values = append(values, fmt.Sprintf("size=%s", *r.Size))
 	}
 
 	if r.MountOptions != nil {
@@ -480,7 +480,9 @@ func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url
 		}
 	}
 
-	values = append(values, fmt.Sprintf("volume=%s", r.Volume))
+	if r.Volume != nil {
+		values = append(values, fmt.Sprintf("volume=%v", r.Volume))
+	}
 
 	if len(values) > 0 {
 		v.Add(key, strings.Join(values, ","))
@@ -719,7 +721,7 @@ func (r *VirtualEnvironmentContainerCustomRootFS) UnmarshalJSON(b []byte) error 
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
-			r.Volume = v[0]
+			r.Volume = &v[0]
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "acl":
@@ -746,7 +748,7 @@ func (r *VirtualEnvironmentContainerCustomRootFS) UnmarshalJSON(b []byte) error 
 				bv := CustomBool(v[1] == "1")
 				r.Shared = &bv
 			case "size":
-				r.DiskSize = &v[1]
+				r.Size = &v[1]
 			}
 		}
 	}
