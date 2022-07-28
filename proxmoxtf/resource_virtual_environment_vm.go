@@ -3463,8 +3463,6 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 				}
 			}
 		}
-
-		rebootRequired = true
 	}
 
 	// Prepare the new cloud-init configuration.
@@ -3655,6 +3653,8 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, 
 		var diskMoveBodies []*proxmox.VirtualEnvironmentVMMoveDiskRequestBody
 		var diskResizeBodies []*proxmox.VirtualEnvironmentVMResizeDiskRequestBody
 
+		var shutdownForDisksRequired bool = false
+
 		for prefix, diskMap := range diskOldEntries {
 			for oldKey, oldDisk := range diskMap {
 				if _, present := diskNewEntries[prefix][oldKey]; !present {
@@ -3669,6 +3669,9 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, 
 						Disk:               *oldDisk.Interface,
 						TargetStorage:      *diskNewEntries[prefix][oldKey].ID,
 					})
+
+					// Cannot be done while VM is running.
+					shutdownForDisksRequired = true
 				}
 
 				if *oldDisk.SizeInt <= *diskNewEntries[prefix][oldKey].SizeInt {
@@ -3680,21 +3683,17 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, 
 			}
 		}
 
-		if len(diskMoveBodies) > 0 || len(diskResizeBodies) > 0 {
-			if !template {
-				forceStop := proxmox.CustomBool(true)
-				shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
+		if shutdownForDisksRequired && !template {
+			forceStop := proxmox.CustomBool(true)
+			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
-				err = veClient.ShutdownVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
-					ForceStop: &forceStop,
-					Timeout:   &shutdownTimeout,
-				}, shutdownTimeout+30)
-				if err != nil {
-					return diag.FromErr(err)
-				}
+			err = veClient.ShutdownVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
+				ForceStop: &forceStop,
+				Timeout:   &shutdownTimeout,
+			}, shutdownTimeout+30)
+			if err != nil {
+				return diag.FromErr(err)
 			}
-
-			reboot = false
 		}
 
 		for _, reqBody := range diskMoveBodies {
@@ -3712,12 +3711,15 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(ctx context.Context, 
 			}
 		}
 
-		if (len(diskMoveBodies) > 0 || len(diskResizeBodies) > 0) && started && !template {
+		if shutdownForDisksRequired && started && !template {
 			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
 			err = veClient.StartVM(ctx, nodeName, vmID, startVMTimeout)
 			if err != nil {
 				return diag.FromErr(err)
 			}
+
+			// This concludes an equivalent of a reboot, avoid doing another.
+			reboot = false
 		}
 	}
 
