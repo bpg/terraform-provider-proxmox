@@ -3,6 +3,8 @@ name: Generate CHANGELOG
 on:
 
   pull_request:
+    branches:
+      - master
     types: [ closed ]
 
   release:
