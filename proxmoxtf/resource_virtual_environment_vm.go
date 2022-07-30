@@ -2619,6 +2619,12 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 			disk[mkResourceVirtualEnvironmentVMDiskSpeed] = []interface{}{}
 		}
 
+		if dd.IOThread != nil {
+			disk[mkResourceVirtualEnvironmentVMDiskIOThread] = *dd.IOThread
+		} else {
+			disk[mkResourceVirtualEnvironmentVMDiskIOThread] = false
+		}
+
 		diskMap[di] = disk
 	}
 
