@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"sort"
 	"strconv"
 	"strings"
@@ -1057,6 +1058,17 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 		ReadContext:   resourceVirtualEnvironmentVMRead,
 		UpdateContext: resourceVirtualEnvironmentVMUpdate,
 		DeleteContext: resourceVirtualEnvironmentVMDelete,
+		CustomizeDiff: customdiff.All(
+			customdiff.ComputedIf(mkResourceVirtualEnvironmentVMIPv4Addresses, func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				return d.HasChange(mkResourceVirtualEnvironmentVMStarted) || d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice)
+			}),
+			customdiff.ComputedIf(mkResourceVirtualEnvironmentVMIPv6Addresses, func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				return d.HasChange(mkResourceVirtualEnvironmentVMStarted) || d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice)
+			}),
+			customdiff.ComputedIf(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				return d.HasChange(mkResourceVirtualEnvironmentVMStarted) || d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice)
+			}),
+		),
 	}
 }
 
