@@ -14,6 +14,7 @@ ENHANCEMENTS:
 
 BUG FIXES:
 
+- Powered off VM breaks plan/apply [\#105](https://github.com/bpg/terraform-provider-proxmox/issues/105)
 - Disk resize causes reboot [\#102](https://github.com/bpg/terraform-provider-proxmox/issues/102)
 - Typing error - dvResourceVirtualEnvironmentVMAgentEnabled instead of dvResourceVirtualEnvironmentVMAgentTrim [\#101](https://github.com/bpg/terraform-provider-proxmox/issues/101)
 - Error creating VM with multiple disks on different storages [\#88](https://github.com/bpg/terraform-provider-proxmox/issues/88)
