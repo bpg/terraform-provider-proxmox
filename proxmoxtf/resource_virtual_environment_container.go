@@ -35,7 +35,7 @@ const (
 	dvResourceVirtualEnvironmentContainerCPUUnits                          = 1024
 	dvResourceVirtualEnvironmentContainerDescription                       = ""
 	dvResourceVirtualEnvironmentContainerDiskDatastoreID                   = "local-lvm"
-	dvResourceVirtualEnvironmentContainerDiskRootFSSize                    = ""
+	dvResourceVirtualEnvironmentContainerRootfsSize                        = ""
 	dvResourceVirtualEnvironmentContainerMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentContainerMemorySwap                        = 0
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceBridge            = "vmbr0"
@@ -66,7 +66,8 @@ const (
 	mkResourceVirtualEnvironmentContainerDescription                       = "description"
 	mkResourceVirtualEnvironmentContainerDisk                              = "disk"
 	mkResourceVirtualEnvironmentContainerDiskDatastoreID                   = "datastore_id"
-	mkResourceVirtualEnvironmentContainerDiskRootFSSize                    = "rootfs_size"
+	mkResourceVirtualEnvironmentContainerRootfs                            = "rootfs"
+	mkResourceVirtualEnvironmentContainerRootfsSize                        = "rootfs_size"
 	mkResourceVirtualEnvironmentContainerInitialization                    = "initialization"
 	mkResourceVirtualEnvironmentContainerInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentContainerInitializationDNSDomain           = "domain"
@@ -237,7 +238,6 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 					return []interface{}{
 						map[string]interface{}{
 							mkResourceVirtualEnvironmentContainerDiskDatastoreID: dvResourceVirtualEnvironmentContainerDiskDatastoreID,
-							mkResourceVirtualEnvironmentContainerDiskRootFSSize:  dvResourceVirtualEnvironmentContainerDiskRootFSSize,
 						},
 					}, nil
 				},
@@ -250,12 +250,31 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentContainerDiskDatastoreID,
 						},
-						mkResourceVirtualEnvironmentContainerDiskRootFSSize: {
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentContainerRootfs: {
+				Type:        schema.TypeList,
+				Description: "The root filesystem",
+				Optional:    true,
+				ForceNew:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentContainerRootfsSize: dvResourceVirtualEnvironmentContainerRootfsSize,
+						},
+					}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentContainerRootfsSize: {
 							Type:        schema.TypeString,
 							Description: "The size of the root filesystem",
 							Optional:    true,
 							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentContainerDiskRootFSSize,
+							Default:     dvResourceVirtualEnvironmentContainerRootfsSize,
 						},
 					},
 				},
@@ -923,7 +942,18 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	}
 
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
-	rootFSSize := diskBlock[mkResourceVirtualEnvironmentContainerDiskRootFSSize].(string)
+	// panic: interface conversion: interface {} is []interface {}, not map[string]interface {}
+	rootfs := d.Get(mkResourceVirtualEnvironmentContainerRootfs).(interface{})
+	rootfsMap := rootfs.(map[string]interface{})
+	rootfsObject := proxmox.VirtualEnvironmentContainerCustomRootFS{}
+
+	rootfsSize := rootfsMap[mkResourceVirtualEnvironmentContainerRootfsSize].(string)
+
+	if rootfsSize != "" {
+		rootfsObject.Size = &rootfsSize
+	}
+
+	rootFS := rootfsObject
 
 	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
 	initializationDNSDomain := dvResourceVirtualEnvironmentContainerInitializationDNSDomain
@@ -1077,11 +1107,6 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 		}
 
 		vmID = *vmIDNew
-	}
-
-	rootFS := proxmox.VirtualEnvironmentContainerCustomRootFS{}
-	if rootFSSize != "" {
-		rootFS.Size = &rootFSSize
 	}
 
 	// Attempt to create the resource using the retrieved values.
@@ -1408,9 +1433,9 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 	}
 
 	if containerConfig.RootFS.Size != nil {
-		disk[mkResourceVirtualEnvironmentContainerDiskRootFSSize] = containerConfig.RootFS.Size
+		disk[mkResourceVirtualEnvironmentContainerRootfsSize] = containerConfig.RootFS.Size
 	} else {
-		disk[mkResourceVirtualEnvironmentContainerDiskRootFSSize] = "4G"
+		disk[mkResourceVirtualEnvironmentContainerRootfsSize] = ""
 	}
 
 	currentDisk := d.Get(mkResourceVirtualEnvironmentContainerDisk).([]interface{})

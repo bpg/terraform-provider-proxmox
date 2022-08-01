@@ -105,6 +105,7 @@ output "ubuntu_container_public_key" {
 * `description` - (Optional) The description.
 * `disk` - (Optional) A disk.
     * `datastore_id` - (Optional) The identifier for the datastore to create the disk in (defaults to `local-lvm`).
+* `rootfs` - (Optional) Root Filesystem creation options.
     * `rootfs_size` - (Optional) Size of the root filesystem with storage scale size indicated K, M, G, or T (Kilobytes, Megabytes, Gigabytes, Terrabytes), for example "4G" for 4 Gigabytes.
 * `initialization` - (Optional) The initialization configuration.
     * `dns` - (Optional) The DNS configuration.
