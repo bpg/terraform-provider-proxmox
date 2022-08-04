@@ -67,7 +67,7 @@ const (
 	mkResourceVirtualEnvironmentContainerDisk                              = "disk"
 	mkResourceVirtualEnvironmentContainerDiskDatastoreID                   = "datastore_id"
 	mkResourceVirtualEnvironmentContainerRootfs                            = "rootfs"
-	mkResourceVirtualEnvironmentContainerRootfsSize                        = "rootfs_size"
+	mkResourceVirtualEnvironmentContainerRootfsSize                        = "size"
 	mkResourceVirtualEnvironmentContainerInitialization                    = "initialization"
 	mkResourceVirtualEnvironmentContainerInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentContainerInitializationDNSDomain           = "domain"
@@ -261,11 +261,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkResourceVirtualEnvironmentContainerRootfsSize: dvResourceVirtualEnvironmentContainerRootfsSize,
-						},
-					}, nil
+					return []interface{}{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -275,6 +271,13 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentContainerRootfsSize,
+							// ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+							// 	v := val.(string)
+							// 	if !(strings.Contains(v, "G") || strings.Contains(v, "M") || strings.Contains(v, "n")) {
+							// 		errs = append(errs, fmt.Errorf("disk size must end in G, M, or K, got %s", v))
+							// 	}
+							// 	return
+							// },
 						},
 					},
 				},
@@ -943,7 +946,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
 	// panic: interface conversion: interface {} is []interface {}, not map[string]interface {}
-	rootfs := d.Get(mkResourceVirtualEnvironmentContainerRootfs).(interface{})
+	rootfs := d.Get(mkResourceVirtualEnvironmentContainerRootfs).([]interface{})
 	rootfsMap := rootfs.(map[string]interface{})
 	rootfsObject := proxmox.VirtualEnvironmentContainerCustomRootFS{}
 

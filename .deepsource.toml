@@ -1,0 +1,12 @@
+version = 1
+
+[[analyzers]]
+name = "terraform"
+enabled = true
+
+[[analyzers]]
+name = "go"
+enabled = true
+
+  [analyzers.meta]
+  import_root = "github.com/DacoDev/terraform-provider-proxmox-dacofork"
