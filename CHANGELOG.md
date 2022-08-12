@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased](https://github.com/bpg/terraform-provider-proxmox/tree/HEAD)
+## [v0.6.0](https://github.com/bpg/terraform-provider-proxmox/tree/v0.6.0) (2022-08-09)
 
-[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.5.3...HEAD)
+[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.5.3...v0.6.0)
 
 BREAKING CHANGES:
 
