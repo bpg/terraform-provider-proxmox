@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"net"
 	"net/url"
 	"strings"
 	"sync"
@@ -406,6 +407,18 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(ctx conte
 							missingIP = true
 							break
 						}
+
+						hasGlobalUnicast := false
+						for _, addr := range *nic.IPAddresses {
+							if ip := net.ParseIP(addr.Address); ip != nil && ip.IsGlobalUnicast() {
+								hasGlobalUnicast = true
+							}
+						}
+						if !hasGlobalUnicast {
+							missingIP = true
+							break
+						}
+
 					}
 				}
 
