@@ -16,7 +16,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.11.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/kms v1.11.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.2.0 // indirect
-	github.com/golangci/golangci-lint v1.48.0
+	github.com/golangci/golangci-lint v1.49.0
 	github.com/goreleaser/goreleaser v1.10.3
 	github.com/klauspost/compress v1.15.5 // indirect
 	google.golang.org/api v0.82.0 // indirect
