@@ -156,14 +156,15 @@ type CustomStorageDevice struct {
 	BackupEnabled           *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
 	BurstableReadSpeedMbps  *int        `json:"mbps_rd_max,omitempty" url:"mbps_rd_max,omitempty"`
 	BurstableWriteSpeedMbps *int        `json:"mbps_wr_max,omitempty" url:"mbps_wr_max,omitempty"`
+	Discard                 *string     `json:"discard,omitempty" url:"discard,omitempty"`
 	Enabled                 bool        `json:"-" url:"-"`
 	FileVolume              string      `json:"file" url:"file"`
+	Format                  *string     `json:"format,omitempty" url:"format,omitempty"`
+	IOThread                *CustomBool `json:"iothread,omitempty" url:"iothread,omitempty,int"`
 	MaxReadSpeedMbps        *int        `json:"mbps_rd,omitempty" url:"mbps_rd,omitempty"`
 	MaxWriteSpeedMbps       *int        `json:"mbps_wr,omitempty" url:"mbps_wr,omitempty"`
 	Media                   *string     `json:"media,omitempty" url:"media,omitempty"`
 	Size                    *string     `json:"size,omitempty" url:"size,omitempty"`
-	Format                  *string     `json:"format,omitempty" url:"format,omitempty"`
-	IOThread                *CustomBool `json:"iothread,omitempty" url:"iothread,omitempty,int"`
 	Interface               *string
 	ID                      *string
 	FileID                  *string
@@ -1068,6 +1069,10 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		}
 	}
 
+	if r.Discard != nil && *r.Discard != "" {
+		values = append(values, fmt.Sprintf("discard=%s", *r.Discard))
+	}
+
 	v.Add(key, strings.Join(values, ","))
 
 	return nil
@@ -1600,6 +1605,8 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "iothread":
 				bv := CustomBool(v[1] == "1")
 				r.IOThread = &bv
+			case "discard":
+				r.Discard = &v[1]
 			}
 		}
 	}
