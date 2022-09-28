@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased](https://github.com/bpg/terraform-provider-proxmox/tree/HEAD)
+
+[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.6.1...HEAD)
+
+ENHANCEMENTS:
+
+- Add discard option to vm disk creation [\#122](https://github.com/bpg/terraform-provider-proxmox/issues/122)
+
 ## [v0.6.1](https://github.com/bpg/terraform-provider-proxmox/tree/v0.6.1) (2022-08-15)
 
 [Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.6.0...v0.6.1)
