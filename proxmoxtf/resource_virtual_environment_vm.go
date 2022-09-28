@@ -51,6 +51,7 @@ const (
 	dvResourceVirtualEnvironmentVMDiskFileID                        = ""
 	dvResourceVirtualEnvironmentVMDiskSize                          = 8
 	dvResourceVirtualEnvironmentVMDiskIOThread                      = false
+	dvResourceVirtualEnvironmentVMDiskDiscard                       = ""
 	dvResourceVirtualEnvironmentVMDiskSpeedRead                     = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWrite                    = 0
@@ -135,6 +136,7 @@ const (
 	mkResourceVirtualEnvironmentVMDiskFileID                        = "file_id"
 	mkResourceVirtualEnvironmentVMDiskSize                          = "size"
 	mkResourceVirtualEnvironmentVMDiskIOThread                      = "iothread"
+	mkResourceVirtualEnvironmentVMDiskDiscard                       = "discard"
 	mkResourceVirtualEnvironmentVMDiskSpeed                         = "speed"
 	mkResourceVirtualEnvironmentVMDiskSpeedRead                     = "read"
 	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = "read_burstable"
@@ -482,6 +484,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							mkResourceVirtualEnvironmentVMDiskInterface:   dvResourceVirtualEnvironmentVMDiskInterface,
 							mkResourceVirtualEnvironmentVMDiskSize:        dvResourceVirtualEnvironmentVMDiskSize,
 							mkResourceVirtualEnvironmentVMDiskIOThread:    dvResourceVirtualEnvironmentVMDiskIOThread,
+							mkResourceVirtualEnvironmentVMDiskDiscard:     dvResourceVirtualEnvironmentVMDiskDiscard,
 						},
 					}, nil
 				},
@@ -526,6 +529,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "Whether to use iothreads for this disk drive",
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMDiskIOThread,
+						},
+						mkResourceVirtualEnvironmentVMDiskDiscard: {
+							Type:        schema.TypeString,
+							Description: "Whether to pass discard/trim requests to the underlying storage.",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMDiskDiscard,
 						},
 						mkResourceVirtualEnvironmentVMDiskSpeed: {
 							Type:        schema.TypeList,
@@ -1805,6 +1814,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		ioThread := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
+		discard, _ := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
 
 		if len(speed) == 0 {
 			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
@@ -1824,6 +1834,10 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(ctx context.Context, d *schem
 
 		if ioThread {
 			diskOptions += ",iothread=1"
+		}
+
+		if discard != "" {
+			diskOptions += fmt.Sprintf(",discard=%s", discard)
 		}
 
 		if speedLimitRead > 0 {
@@ -2110,6 +2124,7 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, di
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		ioThread := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
+		discard := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
 
 		speedBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed}, 0, false)
 
@@ -2130,6 +2145,7 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, di
 		diskDevice.Size = &sizeString
 		diskDevice.SizeInt = &size
 		diskDevice.IOThread = &ioThread
+		diskDevice.Discard = &discard
 
 		if len(speedBlock) > 0 {
 			speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
@@ -2635,6 +2651,12 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 			disk[mkResourceVirtualEnvironmentVMDiskIOThread] = *dd.IOThread
 		} else {
 			disk[mkResourceVirtualEnvironmentVMDiskIOThread] = false
+		}
+
+		if dd.Discard != nil {
+			disk[mkResourceVirtualEnvironmentVMDiskDiscard] = *dd.Discard
+		} else {
+			disk[mkResourceVirtualEnvironmentVMDiskDiscard] = ""
 		}
 
 		diskMap[di] = disk
