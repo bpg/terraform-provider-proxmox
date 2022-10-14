@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -1555,6 +1556,11 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 
 		if len(v) == 1 {
 			r.FileVolume = v[0]
+			ext := filepath.Ext(v[0])
+			if ext != "" {
+				format := string([]byte(ext)[1:])
+				r.Format = &format
+			}
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "aio":

@@ -18,6 +18,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 #    interface    = "scsi1"
 #    discard      = "ignore"
 #    iothread     = true
+#    file_format  = "raw"
 #  }
 
   initialization {
