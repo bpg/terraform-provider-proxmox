@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased](https://github.com/bpg/terraform-provider-proxmox/tree/HEAD)
+
+[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.6.2...HEAD)
+
+BUG FIXES:
+
+- disk file\_format state is always qcow2 [\#129](https://github.com/bpg/terraform-provider-proxmox/issues/129)
+
 ## [v0.6.2](https://github.com/bpg/terraform-provider-proxmox/tree/v0.6.2) (2022-09-28)
 
 [Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.6.1...v0.6.2)
