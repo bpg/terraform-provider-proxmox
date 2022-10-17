@@ -1,8 +1,8 @@
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
-NAME=$$(grep TerraformProviderName proxmoxtf/version.go | grep -o -e 'terraform-provider-[a-z]*')
+NAME=terraform-provider-proxmox
 TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
-VERSION=$$(grep TerraformProviderVersion proxmoxtf/version.go | grep -o -e '[0-9]\.[0-9]\.[0-9]')
+VERSION=0.6.2 # x-release-please-version
 VERSION_EXAMPLE=9999.0.0
 
 ifeq ($(OS),Windows_NT)
