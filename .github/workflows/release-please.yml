@@ -1,0 +1,25 @@
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: crazy-max/ghaction-import-gpg@v5
+        id: import_gpg_key
+        with:
+          git_commit_gpgsign: true
+          git_user_signingkey: true
+          gpg_private_key: ${{ secrets.BOT_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.BOT_GPG_PASSPHRASE }}
+
+      - uses: google-github-actions/release-please-action@v3
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          release-type: go
+          extra-files: |
+            Makefile
+          skip-github-release: false
+          include-v-in-tag: true
