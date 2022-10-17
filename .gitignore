@@ -1,5 +1,6 @@
 /example/terraform-provider-*
 /pkg/
+/test/
 /website/.vagrant
 /website/.bundle
 /website/build
@@ -14,6 +15,7 @@ modules-dev/
 
 .terraform/
 .vagrant/
+.run/
 
 *~
 *.backup
