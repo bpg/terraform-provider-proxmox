@@ -1,19 +1,11 @@
 # Changelog
 
-## [0.6.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.6.2...v0.6.3) (2022-10-17)
+## [v0.6.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.6.2...v0.6.3) (2022-10-17)
 
 
 ### Bug Fixes
 
 * Non-default VM disk format is not preserved in TF state ([#134](https://github.com/bpg/terraform-provider-proxmox/issues/134)) ([b09389f](https://github.com/bpg/terraform-provider-proxmox/commit/b09389f0a9c65f8f6ab82ae989d29951dd643ed2))
-
-## [Unreleased](https://github.com/bpg/terraform-provider-proxmox/tree/HEAD)
-
-[Full Changelog](https://github.com/bpg/terraform-provider-proxmox/compare/v0.6.2...HEAD)
-
-BUG FIXES:
-
-- disk file\_format state is always qcow2 [\#129](https://github.com/bpg/terraform-provider-proxmox/issues/129)
 
 ## [v0.6.2](https://github.com/bpg/terraform-provider-proxmox/tree/v0.6.2) (2022-09-28)
 
