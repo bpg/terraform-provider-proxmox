@@ -6,7 +6,7 @@
 # secret. If you would rather own your own GPG handling, please fork this action
 # or use an alternative one for key handling.
 #
-name: release
+name: publish
 on:
   push:
     tags:
