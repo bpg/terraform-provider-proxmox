@@ -9,6 +9,7 @@ jobs:
     steps:
       - uses: google-github-actions/release-please-action@v3
         with:
+          token: ${{ secrets.BOT_TOKEN }}
           release-type: go
           extra-files: |
             Makefile
