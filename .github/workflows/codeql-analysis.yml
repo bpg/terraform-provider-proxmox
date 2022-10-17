@@ -23,6 +23,7 @@ on:
       - 'example/**'
       - '.github/**'
       - 'docs/**'
+      - 'Makefile'
   schedule:
     - cron: '30 9 * * 6'
 
