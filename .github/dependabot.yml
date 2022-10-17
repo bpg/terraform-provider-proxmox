@@ -10,15 +10,24 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: chore
+      include: scope
 
   # Maintain dependencies for build tools
   - package-ecosystem: "gomod"
     directory: "/tools"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: chore
+      include: scope
 
   # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: chore
+      include: scope
