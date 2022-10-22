@@ -2,13 +2,13 @@ pull_request_rules:
   - name: Automatic merge on approval
     conditions:
       - "#approved-reviews-by>=1"
+      - label=automerge
     actions:
       merge:
         method: squash
   - name: automatic approval for bpg's pull requests
     conditions:
       - author=bpg
-      - label=autoapprove
     actions:
       review:
         type: APPROVE
