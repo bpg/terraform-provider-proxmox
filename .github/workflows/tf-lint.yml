@@ -34,4 +34,5 @@ jobs:
         run: tflint --init
 
       - name: Run TFLint
+        working-directory: example
         run: tflint -f compact
