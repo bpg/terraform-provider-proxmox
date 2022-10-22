@@ -5,3 +5,11 @@ pull_request_rules:
     actions:
       merge:
         method: squash
+  - name: automatic approval for bpg's pull requests
+    conditions:
+      - author=bpg
+      - label=autoapprove
+    actions:
+      review:
+        type: APPROVE
+        message: "Auto-approved! :robot:"
