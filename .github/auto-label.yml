@@ -1,0 +1,6 @@
+requestsize:
+  enabled: true
+language:
+  pullrequest: true
+staleness:
+  pullrequest: true
