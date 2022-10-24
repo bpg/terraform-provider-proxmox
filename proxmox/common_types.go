@@ -116,7 +116,7 @@ func (r *CustomLineBreakSeparatedList) UnmarshalJSON(b []byte) error {
 
 // MarshalJSON converts a boolean to a JSON value.
 func (r *CustomPrivileges) MarshalJSON() ([]byte, error) {
-	var privileges map[string]CustomBool
+	privileges := map[string]CustomBool{}
 
 	for _, v := range *r {
 		privileges[v] = true
@@ -135,10 +135,8 @@ func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	switch privileges.(type) {
+	switch s := privileges.(type) {
 	case string:
-		s := privileges.(string)
-
 		if s != "" {
 			*r = strings.Split(s, ",")
 		} else {
@@ -159,9 +157,7 @@ func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
 
 // MarshalJSON converts a boolean to a JSON value.
 func (r CustomTimestamp) MarshalJSON() ([]byte, error) {
-	var timestamp time.Time
-
-	timestamp = time.Time(r)
+	timestamp := time.Time(r)
 	buffer := bytes.NewBufferString(strconv.FormatInt(timestamp.Unix(), 10))
 
 	return buffer.Bytes(), nil

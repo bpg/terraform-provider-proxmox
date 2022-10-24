@@ -97,7 +97,7 @@ func resourceVirtualEnvironmentTimeRead(ctx context.Context, d *schema.ResourceD
 	err = d.Set(mkDataSourceVirtualEnvironmentTimeUTCTime, time.Time(nodeTime.UTCTime).Format(time.RFC3339))
 	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }
 
 func resourceVirtualEnvironmentTimeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -190,7 +189,7 @@ func (c *VirtualEnvironmentClient) DoRequest(ctx context.Context, method, path s
 			return fErr
 		}
 	} else {
-		data, _ := ioutil.ReadAll(res.Body)
+		data, _ := io.ReadAll(res.Body)
 		tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
 			"data": string(data),
 		})

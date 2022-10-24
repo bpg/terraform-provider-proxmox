@@ -38,6 +38,7 @@ func getContentTypeValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+//nolint:unused
 func getCPUFlagsValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		list, ok := i.([]interface{})
@@ -332,6 +333,7 @@ func getVGATypeValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+//nolint:unused
 func getVLANIDsValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		min := 1
@@ -507,7 +509,7 @@ func testComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {
 			t.Fatalf("Error in Schema: Missing definition for \"%s\"", v)
 		}
 
-		if s.Schema[v].Computed != true {
+		if !s.Schema[v].Computed {
 			t.Fatalf("Error in Schema: Attribute \"%s\" is not computed", v)
 		}
 	}
@@ -531,7 +533,7 @@ func testOptionalArguments(t *testing.T, s *schema.Resource, keys []string) {
 			t.Fatalf("Error in Schema: Missing definition for \"%s\"", v)
 		}
 
-		if s.Schema[v].Optional != true {
+		if !s.Schema[v].Optional {
 			t.Fatalf("Error in Schema: Argument \"%s\" is not optional", v)
 		}
 	}
@@ -543,7 +545,7 @@ func testRequiredArguments(t *testing.T, s *schema.Resource, keys []string) {
 			t.Fatalf("Error in Schema: Missing definition for \"%s\"", v)
 		}
 
-		if s.Schema[v].Required != true {
+		if !s.Schema[v].Required {
 			t.Fatalf("Error in Schema: Argument \"%s\" is not required", v)
 		}
 	}

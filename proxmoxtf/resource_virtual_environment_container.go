@@ -859,6 +859,7 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 
+	//nolint:gosimple
 	if template != dvResourceVirtualEnvironmentContainerTemplate {
 		updateBody.Template = &template
 	}
@@ -1642,6 +1643,7 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 
 	currentTemplate := d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 
+	//nolint:gosimple
 	if len(clone) == 0 || currentTemplate != dvResourceVirtualEnvironmentContainerTemplate {
 		if containerConfig.Template != nil {
 			err = d.Set(mkResourceVirtualEnvironmentContainerTemplate, bool(*containerConfig.Template))

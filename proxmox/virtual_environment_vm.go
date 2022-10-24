@@ -432,7 +432,7 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(ctx conte
 
 		time.Sleep(200 * time.Millisecond)
 
-		timeElapsed = time.Now().Sub(timeStart)
+		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
@@ -462,7 +462,7 @@ func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(ctx con
 
 		time.Sleep(200 * time.Millisecond)
 
-		timeElapsed = time.Now().Sub(timeStart)
+		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -496,7 +496,7 @@ func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(ctx context.Context, no
 
 		time.Sleep(200 * time.Millisecond)
 
-		timeElapsed = time.Now().Sub(timeStart)
+		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -531,7 +531,7 @@ func (c *VirtualEnvironmentClient) WaitForVMState(ctx context.Context, nodeName 
 
 		time.Sleep(200 * time.Millisecond)
 
-		timeElapsed = time.Now().Sub(timeStart)
+		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
 			return ctx.Err()

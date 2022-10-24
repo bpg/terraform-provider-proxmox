@@ -163,7 +163,7 @@ func resourceVirtualEnvironmentPoolRead(ctx context.Context, d *schema.ResourceD
 	err = d.Set(mkResourceVirtualEnvironmentPoolMembers, members)
 	diags = append(diags, diag.FromErr(err)...)
 
-	return diag.FromErr(err)
+	return diags
 }
 
 func resourceVirtualEnvironmentPoolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

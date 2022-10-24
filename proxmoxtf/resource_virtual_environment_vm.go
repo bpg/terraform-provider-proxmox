@@ -1194,6 +1194,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 
 	var del []string
 
+	//nolint:gosimple
 	if acpi != dvResourceVirtualEnvironmentVMACPI {
 		updateBody.ACPI = &acpi
 	}
@@ -1378,10 +1379,12 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 
 	updateBody.StartOnBoot = &onBoot
 
+	//nolint:gosimple
 	if tabletDevice != dvResourceVirtualEnvironmentVMTabletDevice {
 		updateBody.TabletDeviceEnabled = &tabletDevice
 	}
 
+	//nolint:gosimple
 	if template != dvResourceVirtualEnvironmentVMTemplate {
 		updateBody.Template = &template
 	}
@@ -3157,6 +3160,7 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
 	currentACPI := d.Get(mkResourceVirtualEnvironmentVMACPI).(bool)
 
+	//nolint:gosimple
 	if len(clone) == 0 || currentACPI != dvResourceVirtualEnvironmentVMACPI {
 		if vmConfig.ACPI != nil {
 			err = d.Set(mkResourceVirtualEnvironmentVMACPI, bool(*vmConfig.ACPI))
@@ -3215,13 +3219,14 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	if d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool) != true {
+	if !d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool) {
 		err = d.Set(mkResourceVirtualEnvironmentVMStarted, vmStatus.Status == "running")
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	currentTabletDevice := d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool)
 
+	//nolint:gosimple
 	if len(clone) == 0 || currentTabletDevice != dvResourceVirtualEnvironmentVMTabletDevice {
 		if vmConfig.TabletDeviceEnabled != nil {
 			err = d.Set(mkResourceVirtualEnvironmentVMTabletDevice, bool(*vmConfig.TabletDeviceEnabled))
@@ -3234,6 +3239,7 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 
 	currentTemplate := d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
 
+	//nolint:gosimple
 	if len(clone) == 0 || currentTemplate != dvResourceVirtualEnvironmentVMTemplate {
 		if vmConfig.Template != nil {
 			err = d.Set(mkResourceVirtualEnvironmentVMTemplate, bool(*vmConfig.Template))
@@ -3383,7 +3389,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
 
-		if cdromEnabled == false && cdromFileID == "" {
+		if !cdromEnabled && cdromFileID == "" {
 			del = append(del, "ide3")
 		}
 

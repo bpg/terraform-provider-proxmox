@@ -218,7 +218,7 @@ func (c *VirtualEnvironmentClient) WaitForNodeTask(ctx context.Context, nodeName
 
 		time.Sleep(200 * time.Millisecond)
 
-		timeElapsed = time.Now().Sub(timeStart)
+		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
 			return ctx.Err()

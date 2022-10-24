@@ -24,7 +24,7 @@ func (c *VirtualEnvironmentClient) AddCIDRToIPSet(ctx context.Context, id string
 
 // UpdateIPSet updates an IPSet.
 func (c *VirtualEnvironmentClient) UpdateIPSet(ctx context.Context, d *VirtualEnvironmentClusterIPSetUpdateRequestBody) error {
-	return c.DoRequest(ctx, hmPOST, fmt.Sprint("cluster/firewall/ipset/"), d, nil)
+	return c.DoRequest(ctx, hmPOST, "cluster/firewall/ipset/", d, nil)
 }
 
 // DeleteIPSet delete an IPSet

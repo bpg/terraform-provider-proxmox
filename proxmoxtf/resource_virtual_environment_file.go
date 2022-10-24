@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -261,7 +260,7 @@ func resourceVirtualEnvironmentFileCreate(ctx context.Context, d *schema.Resourc
 				}
 			}(res.Body)
 
-			tempDownloadedFile, err := ioutil.TempFile("", "download")
+			tempDownloadedFile, err := os.CreateTemp("", "download")
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -330,7 +329,7 @@ func resourceVirtualEnvironmentFileCreate(ctx context.Context, d *schema.Resourc
 			}
 		}
 
-		tempRawFile, err := ioutil.TempFile("", "raw")
+		tempRawFile, err := os.CreateTemp("", "raw")
 		if err != nil {
 			return diag.FromErr(err)
 		}
