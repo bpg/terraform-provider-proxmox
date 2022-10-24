@@ -79,7 +79,7 @@ func dataSourceVirtualEnvironmentNodes() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The uptime in seconds for each node",
 				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
 		},
 		ReadContext: dataSourceVirtualEnvironmentNodesRead,
@@ -183,5 +183,5 @@ func dataSourceVirtualEnvironmentNodesRead(ctx context.Context, d *schema.Resour
 	err = d.Set(mkDataSourceVirtualEnvironmentNodesUptime, uptime)
 	diags = append(diags, diag.FromErr(err)...)
 
-	return nil
+	return diags
 }
