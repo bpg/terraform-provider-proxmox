@@ -3215,7 +3215,7 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	if d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool) != true {
+	if !d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool) {
 		err = d.Set(mkResourceVirtualEnvironmentVMStarted, vmStatus.Status == "running")
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -3383,7 +3383,7 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
 
-		if cdromEnabled == false && cdromFileID == "" {
+		if !cdromEnabled && cdromFileID == "" {
 			del = append(del, "ide3")
 		}
 

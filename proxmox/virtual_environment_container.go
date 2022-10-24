@@ -111,7 +111,7 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(ctx context.Context, no
 
 		time.Sleep(200 * time.Millisecond)
 
-		timeElapsed = time.Now().Sub(timeStart)
+		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -145,7 +145,7 @@ func (c *VirtualEnvironmentClient) WaitForContainerLock(ctx context.Context, nod
 
 		time.Sleep(200 * time.Millisecond)
 
-		timeElapsed = time.Now().Sub(timeStart)
+		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
 			return ctx.Err()

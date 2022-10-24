@@ -980,9 +980,9 @@ func (r CustomSpiceEnhancements) EncodeValues(key string, v *url.Values) error {
 
 	if r.FolderSharing != nil {
 		if *r.FolderSharing {
-			values = append(values, fmt.Sprintf("foldersharing=1"))
+			values = append(values, "foldersharing=1")
 		} else {
-			values = append(values, fmt.Sprintf("foldersharing=0"))
+			values = append(values, "foldersharing=0")
 		}
 	}
 
