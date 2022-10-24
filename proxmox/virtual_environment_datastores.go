@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"io"
 	"mime/multipart"
 	"net/url"
@@ -83,7 +84,13 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 			defer w.Close()
 			defer m.Close()
 
-			m.WriteField("content", d.ContentType)
+			err := m.WriteField("content", d.ContentType)
+			if err != nil {
+				tflog.Error(ctx, "failed to write 'content' field", map[string]interface{}{
+					"error": err,
+				})
+				return
+			}
 
 			part, err := m.CreateFormFile("filename", d.FileName)
 
@@ -108,7 +115,10 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 
 		tempMultipartFileName := tempMultipartFile.Name()
 
-		io.Copy(tempMultipartFile, r)
+		_, err = io.Copy(tempMultipartFile, r)
+		if err != nil {
+			return nil, err
+		}
 
 		err = tempMultipartFile.Close()
 

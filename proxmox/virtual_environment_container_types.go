@@ -210,7 +210,7 @@ type VirtualEnvironmentContainerRebootRequestBody struct {
 
 // VirtualEnvironmentContainerShutdownRequestBody contains the body for a container shutdown request.
 type VirtualEnvironmentContainerShutdownRequestBody struct {
-	ForceStop *CustomBool `json:"forceStop,omitempty,int" url:"forceStop,omitempty,int"`
+	ForceStop *CustomBool `json:"forceStop,omitempty" url:"forceStop,omitempty,int"`
 	Timeout   *int        `json:"timeout,omitempty" url:"timeout,omitempty"`
 }
 

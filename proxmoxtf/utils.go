@@ -38,6 +38,7 @@ func getContentTypeValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+//nolint:unused
 func getCPUFlagsValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		list, ok := i.([]interface{})
@@ -332,6 +333,7 @@ func getVGATypeValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+//nolint:unused
 func getVLANIDsValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		min := 1

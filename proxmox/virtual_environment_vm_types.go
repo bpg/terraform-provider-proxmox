@@ -504,7 +504,7 @@ type VirtualEnvironmentVMListResponseData struct {
 // VirtualEnvironmentVMMoveDiskRequestBody contains the body for a VM move disk request.
 type VirtualEnvironmentVMMoveDiskRequestBody struct {
 	BandwidthLimit      *int        `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
-	DeleteOriginalDisk  *CustomBool `json:"delete,omitempty,int" url:"delete,omitempty,int"`
+	DeleteOriginalDisk  *CustomBool `json:"delete,omitempty" url:"delete,omitempty,int"`
 	Digest              *string     `json:"digest,omitempty" url:"digest,omitempty"`
 	Disk                string      `json:"disk" url:"disk"`
 	TargetStorage       string      `json:"storage" url:"storage"`
@@ -531,14 +531,14 @@ type VirtualEnvironmentVMResizeDiskRequestBody struct {
 	Digest   *string     `json:"digest,omitempty" url:"digest,omitempty"`
 	Disk     string      `json:"disk" url:"disk"`
 	Size     string      `json:"size" url:"size"`
-	SkipLock *CustomBool `json:"skiplock,omitempty,int" url:"skiplock,omitempty,int"`
+	SkipLock *CustomBool `json:"skiplock,omitempty" url:"skiplock,omitempty,int"`
 }
 
 // VirtualEnvironmentVMShutdownRequestBody contains the body for a VM shutdown request.
 type VirtualEnvironmentVMShutdownRequestBody struct {
-	ForceStop  *CustomBool `json:"forceStop,omitempty,int" url:"forceStop,omitempty,int"`
-	KeepActive *CustomBool `json:"keepActive,omitempty,int" url:"keepActive,omitempty,int"`
-	SkipLock   *CustomBool `json:"skipLock,omitempty,int" url:"skipLock,omitempty,int"`
+	ForceStop  *CustomBool `json:"forceStop,omitempty" url:"forceStop,omitempty,int"`
+	KeepActive *CustomBool `json:"keepActive,omitempty" url:"keepActive,omitempty,int"`
+	SkipLock   *CustomBool `json:"skipLock,omitempty" url:"skipLock,omitempty,int"`
 	Timeout    *int        `json:"timeout,omitempty" url:"timeout,omitempty"`
 }
 
