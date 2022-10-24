@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/url"
 	"os"
@@ -101,7 +100,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 
 		// We need to store the multipart content in a temporary file to avoid using high amounts of memory.
 		// This is necessary due to Proxmox VE not supporting chunked transfers in v6.1 and earlier versions.
-		tempMultipartFile, err := ioutil.TempFile("", "multipart")
+		tempMultipartFile, err := os.CreateTemp("", "multipart")
 
 		if err != nil {
 			return nil, err
