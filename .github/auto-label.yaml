@@ -7,4 +7,4 @@ staleness:
 path:
   pullrequest: true
   paths:
-    .: 'docs'
+    docs: 'documentation'

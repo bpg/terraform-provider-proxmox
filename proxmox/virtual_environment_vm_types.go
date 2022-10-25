@@ -48,6 +48,7 @@ type CustomCloudInitFiles struct {
 	MetaVolume    *string `json:"meta,omitempty" url:"meta,omitempty"`
 	NetworkVolume *string `json:"network,omitempty" url:"network,omitempty"`
 	UserVolume    *string `json:"user,omitempty" url:"user,omitempty"`
+	VendorVolume  *string `json:"vendor,omitempty" url:"vendor,omitempty"`
 }
 
 // CustomCloudInitIPConfig handles QEMU cloud-init IP configuration parameters.
@@ -221,7 +222,7 @@ type VirtualEnvironmentVMCloneRequestBody struct {
 	VMIDNew             int         `json:"newid" url:"newid"`
 }
 
-// VirtualEnvironmentVMCreateRequestBody contains the data for an virtual machine create request.
+// VirtualEnvironmentVMCreateRequestBody contains the data for a virtual machine create request.
 type VirtualEnvironmentVMCreateRequestBody struct {
 	ACPI                 *CustomBool                  `json:"acpi,omitempty" url:"acpi,omitempty,int"`
 	Agent                *CustomAgent                 `json:"agent,omitempty" url:"agent,omitempty"`
@@ -623,7 +624,7 @@ func (r CustomAudioDevices) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomCloudInitConfig struct to multiple URL vlaues.
+// EncodeValues converts a CustomCloudInitConfig struct to multiple URL values.
 func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
 	if r.Files != nil {
 		var volumes []string
@@ -638,6 +639,10 @@ func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
 
 		if r.Files.UserVolume != nil {
 			volumes = append(volumes, fmt.Sprintf("user=%s", *r.Files.UserVolume))
+		}
+
+		if r.Files.VendorVolume != nil {
+			volumes = append(volumes, fmt.Sprintf("vendor=%s", *r.Files.VendorVolume))
 		}
 
 		if len(volumes) > 0 {
