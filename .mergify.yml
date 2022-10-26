@@ -1,15 +1,9 @@
 pull_request_rules:
-  - name: Automatic merge on approval
-    conditions:
-      - "#approved-reviews-by>=1"
-      - label=automerge
-    actions:
-      merge:
-        method: squash
-  - name: automatic approval for bpg's pull requests
+  - name: Automatic approval of bpg`s pull requests
     conditions:
       - author=bpg
+      - "#approved-reviews-by=0"
     actions:
       review:
         type: APPROVE
-        message: "Auto-approved! :robot:"
+        message: ":robot: LGTM! *beep* *boop*"
