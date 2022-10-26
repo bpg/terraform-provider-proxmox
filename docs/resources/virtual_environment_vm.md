@@ -170,7 +170,7 @@ output "ubuntu_vm_public_key" {
         * `athlon` - AMD Athlon.
         * `core2duo` - Intel Core 2 Duo.
         * `coreduo` - Intel Core Duo.
-        * `host` - Host passthrough.
+        * `host` - Host pass-through.
         * `kvm32`/`kvm64` - Common KVM processor (32 & 64 bit variants).
         * `max` - Maximum amount of features from host CPU.
         * `pentium` - Intel Pentium (1993).
@@ -196,6 +196,7 @@ output "ubuntu_vm_public_key" {
         * `write` - (Optional) The maximum write speed in megabytes per second.
         * `write_burstable` - (Optional) The maximum burstable write speed in megabytes per second.
     * `iothread` - (Optional) Whether to use iothreads for this disk (defaults to `false`).
+    * `discard` - (Optional) Whether to pass discard/trim requests to the underlying storage. Supported values are `on`/`ignore` (defaults to `ignore`)
 * `initialization` - (Optional) The cloud-init configuration.
     * `datastore_id` - (Optional) The identifier for the datastore to create the cloud-init disk in (defaults
       to `local-lvm`).

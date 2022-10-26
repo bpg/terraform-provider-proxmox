@@ -4,3 +4,7 @@ language:
   pullrequest: true
 staleness:
   pullrequest: true
+path:
+  pullrequest: true
+  paths:
+    .: 'docs'
