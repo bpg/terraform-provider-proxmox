@@ -2,6 +2,7 @@ pull_request_rules:
   - name: Automatic approval of bpg`s pull requests
     conditions:
       - author=bpg
+      - label=autoapprove
       - "#approved-reviews-by=0"
     actions:
       review:
