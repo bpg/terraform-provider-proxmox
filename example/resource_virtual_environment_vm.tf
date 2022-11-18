@@ -8,7 +8,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   disk {
     datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
     file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
-    interface    = "scsi0"
+    interface    = "virtio0"
     discard      = "on"
     iothread     = true
   }
@@ -17,7 +17,6 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 #    datastore_id = "nfs"
 #    interface    = "scsi1"
 #    discard      = "ignore"
-#    iothread     = true
 #    file_format  = "raw"
 #  }
 
@@ -34,13 +33,8 @@ resource "proxmox_virtual_environment_vm" "example_template" {
       }
     }
 
-    user_account {
-      keys     = [trimspace(tls_private_key.example.public_key_openssh)]
-      password = "example"
-      username = "ubuntu"
-    }
-
-    user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+    user_data_file_id = proxmox_virtual_environment_file.user_config.id
+    vendor_data_file_id = proxmox_virtual_environment_file.vendor_config.id
   }
 
   name = "terraform-provider-proxmox-example-template"

@@ -216,6 +216,7 @@ output "ubuntu_vm_public_key" {
         * `username` - (Optional) The SSH username.
     * `user_data_file_id` - (Optional) The identifier for a file containing custom user data (conflicts
       with `user_account`).
+    * `vendor_data_file_id` - (Optional) The identifier for a file containing all vendor data passed to the VM via cloud-init.
 * `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`).
     * `da` - Danish.
     * `de` - German.

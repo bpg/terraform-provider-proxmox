@@ -65,6 +65,7 @@ const (
 	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway = ""
 	dvResourceVirtualEnvironmentVMInitializationUserAccountPassword = ""
 	dvResourceVirtualEnvironmentVMInitializationUserDataFileID      = ""
+	dvResourceVirtualEnvironmentVMInitializationVendorDataFileID    = ""
 	dvResourceVirtualEnvironmentVMInitializationType                = ""
 	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
 	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
@@ -160,6 +161,7 @@ const (
 	mkResourceVirtualEnvironmentVMInitializationUserAccountPassword = "password"
 	mkResourceVirtualEnvironmentVMInitializationUserAccountUsername = "username"
 	mkResourceVirtualEnvironmentVMInitializationUserDataFileID      = "user_data_file_id"
+	mkResourceVirtualEnvironmentVMInitializationVendorDataFileID    = "vendor_data_file_id"
 	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
@@ -739,6 +741,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
+							ValidateDiagFunc: getFileIDValidator(),
+						},
+						mkResourceVirtualEnvironmentVMInitializationVendorDataFileID: {
+							Type:             schema.TypeString,
+							Description:      "The ID of a file containing vendor data",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMInitializationVendorDataFileID,
 							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationType: {
@@ -2087,6 +2097,15 @@ func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData) (*pr
 			}
 		}
 
+		initializationVendorDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID].(string)
+
+		if initializationVendorDataFileID != "" {
+			if initializationConfig.Files == nil {
+				initializationConfig.Files = &proxmox.CustomCloudInitFiles{}
+			}
+			initializationConfig.Files.VendorVolume = &initializationVendorDataFileID
+		}
+
 		initializationType := initializationBlock[mkResourceVirtualEnvironmentVMInitializationType].(string)
 
 		if initializationType != "" {
@@ -2817,8 +2836,14 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 		} else {
 			initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
 		}
+		if vmConfig.CloudInitFiles.VendorVolume != nil {
+			initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = *vmConfig.CloudInitFiles.VendorVolume
+		} else {
+			initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = ""
+		}
 	} else if len(initialization) > 0 {
 		initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
+		initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = ""
 	}
 
 	if vmConfig.CloudInitType != nil {
