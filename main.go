@@ -19,7 +19,7 @@ func main() {
 
 	opts := &plugin.ServeOpts{
 		Debug:        debug,
-		ProviderAddr: "registry.terraform.io/bpg/terraform",
+		ProviderAddr: "registry.terraform.io/bpg/proxmox",
 		ProviderFunc: func() *schema.Provider {
 			return proxmoxtf.Provider()
 		},

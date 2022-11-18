@@ -2,7 +2,7 @@
 # Cloud Config (cloud-init)
 #===============================================================================
 
-resource "proxmox_virtual_environment_file" "cloud_config" {
+resource "proxmox_virtual_environment_file" "user_config" {
   content_type = "snippets"
   datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))
   node_name    = data.proxmox_virtual_environment_datastores.example.node_name
@@ -15,8 +15,6 @@ chpasswd:
     ubuntu:example
   expire: false
 hostname: terraform-provider-proxmox-example
-packages:
-  - qemu-guest-agent
 users:
   - default
   - name: ubuntu
@@ -27,9 +25,30 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
     EOF
 
-    file_name = "terraform-provider-proxmox-example-cloud-config.yaml"
+    file_name = "terraform-provider-proxmox-example-user-config.yaml"
   }
 }
+
+resource "proxmox_virtual_environment_file" "vendor_config" {
+  content_type = "snippets"
+  datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))
+  node_name    = data.proxmox_virtual_environment_datastores.example.node_name
+
+  source_raw {
+    data = <<EOF
+#cloud-config
+runcmd:
+    - apt update
+    - apt install -y qemu-guest-agent
+    - systemctl enable qemu-guest-agent
+    - systemctl start qemu-guest-agent
+    - echo "done" > /tmp/vendor-cloud-init-done
+    EOF
+
+    file_name = "terraform-provider-proxmox-example-vendor-config.yaml"
+  }
+}
+
 
 #===============================================================================
 # Ubuntu Cloud Image
