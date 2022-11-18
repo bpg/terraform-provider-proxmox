@@ -2,7 +2,7 @@ GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 NAME=terraform-provider-proxmox
 TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
-VERSION=0.6.4 # x-release-please-version
+VERSION=0.7.0 # x-release-please-version
 VERSION_EXAMPLE=9999.0.0
 
 ifeq ($(OS),Windows_NT)
