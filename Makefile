@@ -30,7 +30,6 @@ example: example-build example-init example-apply example-destroy
 
 example-apply:
 	export TF_CLI_CONFIG_FILE="$(shell pwd -P)/example.tfrc" \
-		&& export TF_REATTACH_PROVIDERS='{"registry.terraform.io/bpg/proxmox":{"Protocol":"grpc","ProtocolVersion":5,"Pid":17160,"Test":true,"Addr":{"Network":"unix","String":"/var/folders/xx/4plpx_3133lbctp7b7v1yfch0000gn/T/plugin4242783322"}}}' \
 		&& export TF_DISABLE_CHECKPOINT="true" \
 		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
 		&& cd ./example \
