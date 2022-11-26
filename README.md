@@ -3,6 +3,7 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
+[![Conventional Commits](https://img.shields.io/badge/conv%20commits-v1.0.0-ff69b4)](https://www.conventionalcommits.org/en/v1.0.0/#specification)
 
 # Terraform Provider for Proxmox
 A Terraform Provider which adds support for Proxmox solutions.
