@@ -60,6 +60,7 @@ resource "proxmox_virtual_environment_vm" "example" {
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
   pool_id   = proxmox_virtual_environment_pool.example.id
   vm_id     = 2041
+  tags        = ["terraform", "ubuntu"]
 
   clone {
     vm_id = proxmox_virtual_environment_vm.example_template.id

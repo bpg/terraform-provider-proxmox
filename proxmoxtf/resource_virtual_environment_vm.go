@@ -187,6 +187,7 @@ const (
 	mkResourceVirtualEnvironmentVMSerialDeviceDevice                = "device"
 	mkResourceVirtualEnvironmentVMStarted                           = "started"
 	mkResourceVirtualEnvironmentVMTabletDevice                      = "tablet_device"
+	mkResourceVirtualEnvironmentVMTags                              = "tags"
 	mkResourceVirtualEnvironmentVMTemplate                          = "template"
 	mkResourceVirtualEnvironmentVMTimeoutClone                      = "timeout_clone"
 	mkResourceVirtualEnvironmentVMTimeoutMoveDisk                   = "timeout_move_disk"
@@ -981,6 +982,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMTabletDevice,
 			},
+			mkResourceVirtualEnvironmentVMTags: {
+				Type:        schema.TypeList,
+				Description: "Tags of the virtual machine. This is only meta information.",
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			mkResourceVirtualEnvironmentVMTemplate: {
 				Type:        schema.TypeBool,
 				Description: "Whether to create a template",
@@ -1118,6 +1125,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 
 	description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
+	tags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
@@ -1394,6 +1402,11 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 		updateBody.TabletDeviceEnabled = &tabletDevice
 	}
 
+	if len(tags) > 0 {
+		tagString := resourceVirtualEnvironmentVMGetTagsString(d)
+		updateBody.Tags = &tagString
+	}
+
 	//nolint:gosimple
 	if template != dvResourceVirtualEnvironmentVMTemplate {
 		updateBody.Template = &template
@@ -1616,6 +1629,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
 
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
+	tags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
 
 	networkDeviceObjects, err := resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d)
 	if err != nil {
@@ -1755,6 +1769,11 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 
 	if description != "" {
 		createBody.Description = &description
+	}
+
+	if len(tags) > 0 {
+		tagsString := resourceVirtualEnvironmentVMGetTagsString(d)
+		createBody.Tags = &tagsString
 	}
 
 	if name != "" {
@@ -2280,6 +2299,19 @@ func resourceVirtualEnvironmentVMGetSerialDeviceList(d *schema.ResourceData) (pr
 	}
 
 	return list, nil
+}
+
+func resourceVirtualEnvironmentVMGetTagsString(d *schema.ResourceData) string {
+	tags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
+	var sanitizedTags []string
+	for i := 0; i < len(tags); i++ {
+		tag := strings.TrimSpace(tags[i].(string))
+		if len(tag) > 0 {
+			sanitizedTags = append(sanitizedTags, tag)
+		}
+	}
+	sort.Strings(sanitizedTags)
+	return strings.Join(sanitizedTags, ";")
 }
 
 func resourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidateDiagFunc {
@@ -3220,6 +3252,23 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentTags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
+
+	if len(clone) == 0 || len(currentTags) > 0 {
+		var tags []string
+		if vmConfig.Tags != nil {
+			for _, tag := range strings.Split(*vmConfig.Tags, ";") {
+				t := strings.TrimSpace(tag)
+				if len(t) > 0 {
+					tags = append(tags, t)
+				}
+			}
+			sort.Strings(tags)
+		}
+		err = d.Set(mkResourceVirtualEnvironmentVMTags, tags)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	currentKeyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 
 	if len(clone) == 0 || currentKeyboardLayout != dvResourceVirtualEnvironmentVMKeyboardLayout {
@@ -3335,6 +3384,11 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 	if d.HasChange(mkResourceVirtualEnvironmentVMDescription) {
 		description := d.Get(mkResourceVirtualEnvironmentVMDescription).(string)
 		updateBody.Description = &description
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentVMTags) {
+		tagString := resourceVirtualEnvironmentVMGetTagsString(d)
+		updateBody.Tags = &tagString
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) {
