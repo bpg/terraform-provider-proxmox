@@ -24,6 +24,8 @@ You can run all the test cases by invoking `make test`.
 Please create a new PR against the `main` branch which must be based on the
 project's [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
 
+Please follow the [Conventional Commits](https://www.conventionalcommits.org/) specification when naming your commits.
+
 ## Coding conventions
 
 We expect that all code contributions have been formatted using `gofmt`.
