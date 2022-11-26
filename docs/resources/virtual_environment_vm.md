@@ -17,6 +17,7 @@ Manages a virtual machine.
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   name        = "terraform-provider-proxmox-ubuntu-vm"
   description = "Managed by Terraform"
+  tags        = ["terraform", "ubuntu"]
 
   node_name = "first-node"
   vm_id     = 4321
@@ -283,6 +284,7 @@ output "ubuntu_vm_public_key" {
         * `socket` - A unix socket.
 * `started` - (Optional) Whether to start the virtual machine (defaults to `true`).
 * `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults to `true`).
+* `tags` - (Optional) A list of tags of the VM. This is only meta information (defaults to `[]`). Note: Proxmox always sorts the VM tags. If the list in template is not sorted, then Proxmox will always report a difference on the resource. You may use the `ignore_changes` lifecycle meta-argument to ignore changes to this attribute.
 * `template` - (Optional) Whether to create a template (defaults to `false`).
 * `timeout_clone` - (Optional) Timeout for cloning a VM in seconds (defaults to 1800).
 * `timeout_move_disk` - (Optional) Timeout for moving the disk of a VM in seconds (defaults to 1800).
