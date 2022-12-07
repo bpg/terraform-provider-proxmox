@@ -88,6 +88,7 @@ type CustomNetworkDevice struct {
 	Queues     *int        `json:"queues,omitempty" url:"queues,omitempty"`
 	RateLimit  *float64    `json:"rate,omitempty" url:"rate,omitempty"`
 	Tag        *int        `json:"tag,omitempty" url:"tag,omitempty"`
+	MTU        *int        `json:"mtu,omitempty" url:"mtu,omitempty"`
 	Trunks     []int       `json:"trunks,omitempty" url:"trunks,omitempty"`
 }
 
@@ -788,6 +789,9 @@ func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 	if r.Tag != nil {
 		values = append(values, fmt.Sprintf("tag=%d", *r.Tag))
 	}
+	if r.MTU != nil {
+		values = append(values, fmt.Sprintf("mtu=%d", *r.MTU))
+	}
 
 	if len(r.Trunks) > 0 {
 		trunks := make([]string, len(r.Trunks))
@@ -1438,8 +1442,16 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 				if err != nil {
 					return err
 				}
-
 				r.RateLimit = &fv
+
+			case "mtu":
+				iv, err := strconv.Atoi(v[1])
+
+				if err != nil {
+					return err
+				}
+				r.MTU = &iv
+
 			case "tag":
 				iv, err := strconv.Atoi(v[1])
 

@@ -8,12 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -78,6 +79,7 @@ const (
 	dvResourceVirtualEnvironmentVMNetworkDeviceModel                = "virtio"
 	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = 0
 	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID               = 0
+	dvResourceVirtualEnvironmentVMNetworkDeviceMTU                  = 1500
 	dvResourceVirtualEnvironmentVMOperatingSystemType               = "other"
 	dvResourceVirtualEnvironmentVMPoolID                            = ""
 	dvResourceVirtualEnvironmentVMSerialDeviceDevice                = "socket"
@@ -178,6 +180,7 @@ const (
 	mkResourceVirtualEnvironmentVMNetworkDeviceModel                = "model"
 	mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = "rate_limit"
 	mkResourceVirtualEnvironmentVMNetworkDeviceVLANID               = "vlan_id"
+	mkResourceVirtualEnvironmentVMNetworkDeviceMTU                  = "mtu"
 	mkResourceVirtualEnvironmentVMNetworkInterfaceNames             = "network_interface_names"
 	mkResourceVirtualEnvironmentVMNodeName                          = "node_name"
 	mkResourceVirtualEnvironmentVMOperatingSystem                   = "operating_system"
@@ -892,6 +895,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description: "The VLAN identifier",
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceVLANID,
+						},
+						mkResourceVirtualEnvironmentVMNetworkDeviceMTU: {
+							Type:        schema.TypeInt,
+							Description: "Maximum transmission unit (MTU)",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceMTU,
 						},
 					},
 				},
@@ -2246,6 +2255,7 @@ func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData)
 		model, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceModel].(string)
 		rateLimit, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit].(float64)
 		vlanID, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID].(int)
+		mtu, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceMTU].(int)
 
 		device := proxmox.CustomNetworkDevice{
 			Enabled: enabled,
@@ -2266,6 +2276,10 @@ func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData)
 
 		if vlanID != 0 {
 			device.Tag = &vlanID
+		}
+
+		if mtu != 1500 {
+			device.MTU = &mtu
 		}
 
 		networkDeviceObjects[i] = device
@@ -2995,6 +3009,11 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID] = nd.Tag
 			} else {
 				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID] = 0
+			}
+			if nd.MTU != nil {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMTU] = nd.MTU
+			} else {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMTU] = 1500
 			}
 		} else {
 			macAddresses[ni] = ""
