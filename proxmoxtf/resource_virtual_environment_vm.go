@@ -1208,7 +1208,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 		}
 
 		// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
-		err = veClient.WaitForVMConfigUnlock(ctx, nodeName, vmID, 600, 5, true)
+		err = veClient.WaitForVMConfigUnlock(ctx, cloneNodeName, vmID, 600, 5, true)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1220,7 +1220,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 			TargetStorage:  &cloneDatastoreID,
 			WithLocalDisks: &withLocalDisks,
 		}
-		err = veClient.MigrateVM(ctx, cloneNodeName, cloneVMID, migrateBody, cloneTimeout)
+		err = veClient.MigrateVM(ctx, cloneNodeName, vmID, migrateBody, cloneTimeout)
 	} else {
 		err = veClient.CloneVM(ctx, nodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
 	}

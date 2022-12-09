@@ -507,7 +507,7 @@ type VirtualEnvironmentVMMigrateRequestBody struct {
 	OnlineMigration *CustomBool `json:"online,omitempty" url:"online,omitempty"`
 	TargetNode      string      `json:"target" url:"target"`
 	TargetStorage   *string     `json:"targetstorage,omitempty" url:"targetstorage,omitempty"`
-	WithLocalDisks  *CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty"`
+	WithLocalDisks  *CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty,int"`
 }
 
 // VirtualEnvironmentVMMigrateResponseBody contains the body from a VM migrate response.
