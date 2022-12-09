@@ -502,6 +502,19 @@ type VirtualEnvironmentVMListResponseData struct {
 	ACPI *CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
 }
 
+// VirtualEnvironmentVMMigrateRequestBody contains the body for a VM migration request.
+type VirtualEnvironmentVMMigrateRequestBody struct {
+	OnlineMigration *CustomBool `json:"online,omitempty" url:"online,omitempty"`
+	TargetNode      string      `json:"target" url:"target"`
+	TargetStorage   *string     `json:"targetstorage,omitempty" url:"targetstorage,omitempty"`
+	WithLocalDisks  *CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty"`
+}
+
+// VirtualEnvironmentVMMigrateResponseBody contains the body from a VM migrate response.
+type VirtualEnvironmentVMMigrateResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
 // VirtualEnvironmentVMMoveDiskRequestBody contains the body for a VM move disk request.
 type VirtualEnvironmentVMMoveDiskRequestBody struct {
 	BandwidthLimit      *int        `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`

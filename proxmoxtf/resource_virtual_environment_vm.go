@@ -8,12 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -35,6 +36,7 @@ const (
 	dvResourceVirtualEnvironmentVMCDROMEnabled                      = false
 	dvResourceVirtualEnvironmentVMCDROMFileID                       = ""
 	dvResourceVirtualEnvironmentVMCloneDatastoreID                  = ""
+	dvResourceVirtualEnvironmentVMCloneTempDatastoreID              = "local-lvm"
 	dvResourceVirtualEnvironmentVMCloneNodeName                     = ""
 	dvResourceVirtualEnvironmentVMCloneFull                         = true
 	dvResourceVirtualEnvironmentVMCloneRetries                      = 1
@@ -118,6 +120,7 @@ const (
 	mkResourceVirtualEnvironmentVMClone                             = "clone"
 	mkResourceVirtualEnvironmentVMCloneRetries                      = "retries"
 	mkResourceVirtualEnvironmentVMCloneDatastoreID                  = "datastore_id"
+	mkResourceVirtualEnvironmentVMCloneTempDatastoreID              = "temp_datastore_id"
 	mkResourceVirtualEnvironmentVMCloneNodeName                     = "node_name"
 	mkResourceVirtualEnvironmentVMCloneVMID                         = "vm_id"
 	mkResourceVirtualEnvironmentVMCloneFull                         = "full"
@@ -372,6 +375,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentVMCloneNodeName,
+						},
+						mkResourceVirtualEnvironmentVMCloneTempDatastoreID: {
+							Type:        schema.TypeString,
+							Description: "The ID of the temporary datastore which can be used to clone from shared storage to a local one on a different node. Needs to be a local storage on the source node. Uses 'local-lvm' by default.",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentVMCloneTempDatastoreID,
 						},
 						mkResourceVirtualEnvironmentVMCloneVMID: {
 							Type:             schema.TypeInt,
@@ -1120,6 +1130,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	cloneRetries := cloneBlock[mkResourceVirtualEnvironmentVMCloneRetries].(int)
 	cloneDatastoreID := cloneBlock[mkResourceVirtualEnvironmentVMCloneDatastoreID].(string)
 	cloneNodeName := cloneBlock[mkResourceVirtualEnvironmentVMCloneNodeName].(string)
+	cloneTempDatastoreID := cloneBlock[mkResourceVirtualEnvironmentVMCloneTempDatastoreID].(string)
 	cloneVMID := cloneBlock[mkResourceVirtualEnvironmentVMCloneVMID].(int)
 	cloneFull := cloneBlock[mkResourceVirtualEnvironmentVMCloneFull].(bool)
 
@@ -1163,10 +1174,53 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 
 	cloneTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutClone).(int)
 
-	if cloneNodeName != "" && cloneNodeName != nodeName {
+	datastoreStatus, err := veClient.GetDatastoreStatus(ctx, cloneNodeName, cloneDatastoreID)
+
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	// Whether
+	cloneDatastoreShared := proxmox.CustomBool(false)
+	if datastoreStatus.Shared != nil {
+		cloneDatastoreShared = *datastoreStatus.Shared
+	}
+
+	// If the source and the target node are not the same, only clone directly to the target node if
+	//  the target datastore is shared. Directly cloning to non-shared storage on a different node is
+	//  currently not supported by proxmox.
+	if cloneNodeName != "" && cloneNodeName != nodeName && cloneDatastoreShared {
 		cloneBody.TargetNodeName = &nodeName
 
 		err = veClient.CloneVM(ctx, cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+	}
+	// If the source and the target node are not the same and the target datastore is not shared, clone
+	//  to the source node and then migrate to the target node. This is a workaround for missing functionality
+	//  in the proxmox api as recommended per https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
+	if cloneNodeName != "" && cloneNodeName != nodeName && !cloneDatastoreShared {
+		cloneBody.TargetStorage = &cloneTempDatastoreID
+
+		// Temporarily clone to local node
+		err = veClient.CloneVM(ctx, cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
+		err = veClient.WaitForVMConfigUnlock(ctx, nodeName, vmID, 600, 5, true)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Migrate to target node and datastore
+		withLocalDisks := proxmox.CustomBool(true)
+		migrateBody := &proxmox.VirtualEnvironmentVMMigrateRequestBody{
+			TargetNode:     nodeName,
+			TargetStorage:  &cloneDatastoreID,
+			WithLocalDisks: &withLocalDisks,
+		}
+		err = veClient.MigrateVM(ctx, cloneNodeName, cloneVMID, migrateBody, cloneTimeout)
 	} else {
 		err = veClient.CloneVM(ctx, nodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
 	}
