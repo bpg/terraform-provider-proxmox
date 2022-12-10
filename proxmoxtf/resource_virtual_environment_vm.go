@@ -1186,18 +1186,17 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 		cloneDatastoreShared = *datastoreStatus.Shared
 	}
 
-	// If the source and the target node are not the same, only clone directly to the target node if
-	//  the target datastore is shared. Directly cloning to non-shared storage on a different node is
-	//  currently not supported by proxmox.
 	if cloneNodeName != "" && cloneNodeName != nodeName && cloneDatastoreShared {
+		// If the source and the target node are not the same, only clone directly to the target node if
+		//  the target datastore is shared. Directly cloning to non-shared storage on a different node is
+		//  currently not supported by proxmox.
 		cloneBody.TargetNodeName = &nodeName
 
 		err = veClient.CloneVM(ctx, cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
-	}
-	// If the source and the target node are not the same and the target datastore is not shared, clone
-	//  to the source node and then migrate to the target node. This is a workaround for missing functionality
-	//  in the proxmox api as recommended per https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
-	if cloneNodeName != "" && cloneNodeName != nodeName && !cloneDatastoreShared {
+	} else if cloneNodeName != "" && cloneNodeName != nodeName && !cloneDatastoreShared {
+		// If the source and the target node are not the same and the target datastore is not shared, clone
+		//  to the source node and then migrate to the target node. This is a workaround for missing functionality
+		//  in the proxmox api as recommended per https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
 		cloneBody.TargetStorage = &cloneTempDatastoreID
 
 		// Temporarily clone to local node
