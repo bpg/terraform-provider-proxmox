@@ -7,8 +7,6 @@ package proxmoxtf
 import (
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-multierror"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"math"
 	"regexp"
 	"strconv"
@@ -16,6 +14,9 @@ import (
 	"testing"
 	"time"
 	"unicode"
+
+	"github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -461,6 +462,28 @@ func getDiskInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.Reso
 	}
 
 	return storageDevices
+}
+
+// getDiskDatastores returns a list of the used datastores in a VM
+func getDiskDatastores(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) []string {
+	storageDevices := getDiskInfo(vm, d)
+	datastoresSet := map[string]int{}
+
+	for _, diskInfo := range storageDevices {
+		// Ignore empty storage devices and storage devices (like ide) which may not have any media mounted
+		if diskInfo == nil || diskInfo.FileVolume == "none" {
+			continue
+		}
+		fileIDParts := strings.Split(diskInfo.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
+	datastores := []string{}
+	for datastore := range datastoresSet {
+		datastores = append(datastores, datastore)
+	}
+
+	return datastores
 }
 
 func parseDiskSize(size *string) (int, error) {

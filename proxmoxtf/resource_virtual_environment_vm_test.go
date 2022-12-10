@@ -133,7 +133,6 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	testOptionalArguments(t, cloneSchema, []string{
 		mkResourceVirtualEnvironmentVMCloneDatastoreID,
 		mkResourceVirtualEnvironmentVMCloneNodeName,
-		mkResourceVirtualEnvironmentVMCloneTempDatastoreID,
 	})
 
 	testValueTypes(t, cloneSchema, map[string]schema.ValueType{
