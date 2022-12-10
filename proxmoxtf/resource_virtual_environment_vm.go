@@ -1376,7 +1376,12 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 				Media:      &cdromCloudInitMedia,
 			},
 		}
-
+		ciUpdateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{}
+		ciUpdateBody.Delete = append(ciUpdateBody.Delete, "ide2")
+		err = veClient.UpdateVM(ctx, nodeName, vmID, ciUpdateBody)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 		initializationConfig, err := resourceVirtualEnvironmentVMGetCloudInitConfig(d)
 		if err != nil {
 			return diag.FromErr(err)
