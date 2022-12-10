@@ -83,6 +83,13 @@ resource "proxmox_virtual_environment_vm" "example" {
       "echo Welcome to $(hostname)!",
     ]
   }
+
+  initialization {
+    dns {
+      server = "8.8.8.8"
+    }
+  }
+
 }
 
 output "resource_proxmox_virtual_environment_vm_example_id" {
