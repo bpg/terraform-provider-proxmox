@@ -122,6 +122,7 @@ output "ubuntu_vm_public_key" {
     * `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as in the physical drive).
 * `clone` - (Optional) The cloning configuration.
     * `datastore_id` - (Optional) The identifier for the target datastore.
+    * `temp_datastore_id` - (Optional) The ID of the temporary datastore which can be used to clone from shared storage to a local one on a different node. Needs to be a local storage on the source node. Uses 'local-lvm' by default.
     * `node_name` - (Optional) The name of the source node (leave blank, if equal to the `node_name` argument).
     * `retries` - (Optional) Number of retries in Proxmox for clone vm. Sometimes Proxmox errors with timeout when
       creating multiple clones at once.
