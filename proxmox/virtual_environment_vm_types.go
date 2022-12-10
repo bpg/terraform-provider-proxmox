@@ -163,6 +163,7 @@ type CustomStorageDevice struct {
 	FileVolume              string      `json:"file" url:"file"`
 	Format                  *string     `json:"format,omitempty" url:"format,omitempty"`
 	IOThread                *CustomBool `json:"iothread,omitempty" url:"iothread,omitempty,int"`
+	SSD                     *CustomBool `json:"ssd,omitempty" url:"ssd,omitempty,int"`
 	MaxReadSpeedMbps        *int        `json:"mbps_rd,omitempty" url:"mbps_rd,omitempty"`
 	MaxWriteSpeedMbps       *int        `json:"mbps_wr,omitempty" url:"mbps_wr,omitempty"`
 	Media                   *string     `json:"media,omitempty" url:"media,omitempty"`
@@ -1075,6 +1076,14 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		}
 	}
 
+	if r.SSD != nil {
+		if *r.SSD {
+			values = append(values, "ssd=1")
+		} else {
+			values = append(values, "ssd=0")
+		}
+	}
+
 	if r.Discard != nil && *r.Discard != "" {
 		values = append(values, fmt.Sprintf("discard=%s", *r.Discard))
 	}
@@ -1438,8 +1447,8 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 				if err != nil {
 					return err
 				}
-
 				r.RateLimit = &fv
+
 			case "tag":
 				iv, err := strconv.Atoi(v[1])
 
@@ -1618,6 +1627,9 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "iothread":
 				bv := CustomBool(v[1] == "1")
 				r.IOThread = &bv
+			case "ssd":
+				bv := CustomBool(v[1] == "1")
+				r.SSD = &bv
 			case "discard":
 				r.Discard = &v[1]
 			}
