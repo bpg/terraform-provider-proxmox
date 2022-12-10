@@ -31,7 +31,7 @@ func (c *VirtualEnvironmentClient) DeleteDatastoreFile(ctx context.Context, node
 	return nil
 }
 
-// ListDatastoreFiles gets status information for a given datastore.
+// GetDatastoreStatus gets status information for a given datastore.
 func (c *VirtualEnvironmentClient) GetDatastoreStatus(ctx context.Context, nodeName, datastoreID string) (*VirtualEnvironmentDatastoreGetStatusResponseData, error) {
 	resBody := &VirtualEnvironmentDatastoreGetStatusResponseBody{}
 	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/storage/%s/status", url.PathEscape(nodeName), url.PathEscape(datastoreID)), nil, resBody)

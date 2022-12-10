@@ -164,7 +164,7 @@ func (c *VirtualEnvironmentClient) GetVMStatus(ctx context.Context, nodeName str
 	return resBody.Data, nil
 }
 
-// MigrateVMAsync migrates a virtual machine.
+// MigrateVM migrates a virtual machine.
 func (c *VirtualEnvironmentClient) MigrateVM(ctx context.Context, nodeName string, vmID int, d *VirtualEnvironmentVMMigrateRequestBody, timeout int) error {
 	taskID, err := c.MigrateVMAsync(ctx, nodeName, vmID, d)
 
