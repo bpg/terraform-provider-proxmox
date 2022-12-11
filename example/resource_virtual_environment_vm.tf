@@ -39,7 +39,9 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   name = "terraform-provider-proxmox-example-template"
 
-  network_device {}
+  network_device {
+    mtu  = 1450
+  }
 
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
 

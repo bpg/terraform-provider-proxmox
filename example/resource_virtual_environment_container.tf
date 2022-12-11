@@ -26,6 +26,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
 
   network_interface {
     name = "veth0"
+    mtu  = 1450
   }
 
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
