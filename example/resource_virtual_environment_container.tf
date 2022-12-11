@@ -1,6 +1,10 @@
 resource "proxmox_virtual_environment_container" "example_template" {
   description = "Managed by Terraform"
 
+  disk {
+    datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+  }
+
   initialization {
     dns {
       server = "1.1.1.1"
@@ -37,6 +41,10 @@ resource "proxmox_virtual_environment_container" "example_template" {
 }
 
 resource "proxmox_virtual_environment_container" "example" {
+  disk {
+    datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+  }
+
   clone {
     vm_id = proxmox_virtual_environment_container.example_template.id
   }

@@ -1393,12 +1393,12 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 
 	if len(clone) > 0 {
 		if len(currentDisk) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentContainerDiskDatastoreID, []interface{}{disk})
+			err := d.Set(mkResourceVirtualEnvironmentContainerDisk, []interface{}{disk})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentDisk) > 0 ||
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] != dvResourceVirtualEnvironmentContainerDiskDatastoreID {
-		err := d.Set(mkResourceVirtualEnvironmentContainerDiskDatastoreID, []interface{}{disk})
+		err := d.Set(mkResourceVirtualEnvironmentContainerDisk, []interface{}{disk})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
