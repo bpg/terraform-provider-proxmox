@@ -396,6 +396,7 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(ctx conte
 
 			if err == nil && data != nil && data.Result != nil {
 				missingIP := false
+				hasAnyGlobalUnicast := false
 
 				if waitForIP {
 					for _, nic := range *data.Result {
@@ -408,21 +409,15 @@ func (c *VirtualEnvironmentClient) WaitForNetworkInterfacesFromVMAgent(ctx conte
 							break
 						}
 
-						hasGlobalUnicast := false
 						for _, addr := range *nic.IPAddresses {
 							if ip := net.ParseIP(addr.Address); ip != nil && ip.IsGlobalUnicast() {
-								hasGlobalUnicast = true
+								hasAnyGlobalUnicast = true
 							}
 						}
-						if !hasGlobalUnicast {
-							missingIP = true
-							break
-						}
-
 					}
 				}
 
-				if !missingIP {
+				if hasAnyGlobalUnicast || !missingIP {
 					return data, err
 				}
 			}
