@@ -1225,6 +1225,9 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 			}
 
 			err = veClient.MigrateVM(ctx, cloneNodeName, vmID, migrateBody, cloneTimeout)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	} else {
 		err = veClient.CloneVM(ctx, nodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
