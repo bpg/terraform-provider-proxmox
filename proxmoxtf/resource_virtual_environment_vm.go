@@ -8,12 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -1164,9 +1165,70 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	cloneTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutClone).(int)
 
 	if cloneNodeName != "" && cloneNodeName != nodeName {
-		cloneBody.TargetNodeName = &nodeName
+		// Check if any used datastores of the source VM are not shared
+		vmConfig, err := veClient.GetVM(ctx, cloneNodeName, cloneVMID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 
-		err = veClient.CloneVM(ctx, cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+		datastores := getDiskDatastores(vmConfig, d)
+
+		onlySharedDatastores := true
+		for _, datastore := range datastores {
+			datastoreStatus, err := veClient.GetDatastoreStatus(ctx, cloneNodeName, datastore)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			if datastoreStatus.Shared != nil && *datastoreStatus.Shared == proxmox.CustomBool(false) {
+				onlySharedDatastores = false
+				break
+			}
+		}
+
+		if onlySharedDatastores {
+			// If the source and the target node are not the same, only clone directly to the target node if
+			//  all used datastores in the source VM are shared. Directly cloning to non-shared storage
+			//  on a different node is currently not supported by proxmox.
+			cloneBody.TargetNodeName = &nodeName
+			err = veClient.CloneVM(ctx, cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		} else {
+			// If the source and the target node are not the same and any used datastore in the source VM is
+			//  not shared, clone to the source node and then migrate to the target node. This is a workaround
+			//  for missing functionality in the proxmox api as recommended per
+			//  https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
+
+			// Temporarily clone to local node
+			err = veClient.CloneVM(ctx, cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
+			err = veClient.WaitForVMConfigUnlock(ctx, cloneNodeName, vmID, 600, 5, true)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			// Migrate to target node
+			withLocalDisks := proxmox.CustomBool(true)
+			migrateBody := &proxmox.VirtualEnvironmentVMMigrateRequestBody{
+				TargetNode:     nodeName,
+				WithLocalDisks: &withLocalDisks,
+			}
+
+			if cloneDatastoreID != "" {
+				migrateBody.TargetStorage = &cloneDatastoreID
+			}
+
+			err = veClient.MigrateVM(ctx, cloneNodeName, vmID, migrateBody, cloneTimeout)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	} else {
 		err = veClient.CloneVM(ctx, nodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
 	}

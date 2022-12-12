@@ -325,3 +325,7 @@ output "ubuntu_vm_public_key" {
 
 When cloning an existing virtual machine, whether it's a template or not, the resource will only detect changes to the
 arguments which are not set to their default values.
+
+Furthermore, when cloning from one node to a different one, the behavior changes depening on the datastores of the source VM. If at least one non-shared datastore is used, the VM is first cloned to the source node before being migrated to the target node. This circumvents a limitation in the Proxmox clone API. 
+
+**Note:** Because the migration step after the clone tries to preserve the used datastores by their name, it may fail if a datastore used in the source VM is not available on the target node (e.g. `local-lvm` is used on the source node in the VM but no `local-lvm` datastore is availabel on the target node). In this case, it is recommended to set the `datastore_id` argument in the `clone` block to force the migration step to migrate all disks to a specific datastore on the target node. If you need certain disks to be on specific datastores, set the `datastore_id` argument of the disks in the `disks` block to move the disks to the correct datastore after the cloning and migrating succeeded.
