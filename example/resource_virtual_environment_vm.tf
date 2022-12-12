@@ -41,6 +41,10 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   network_device {}
 
+  network_device {
+    vlan_id = 1024
+  }
+
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
 
   operating_system {
