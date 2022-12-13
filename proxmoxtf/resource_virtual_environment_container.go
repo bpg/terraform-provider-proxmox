@@ -43,7 +43,7 @@ const (
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress        = ""
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit         = 0
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceVLANID            = 0
-	dvResourceVirtualEnvironmentContainerNetworkInterfaceMTU               = 1500
+	dvResourceVirtualEnvironmentContainerNetworkInterfaceMTU               = 0
 	dvResourceVirtualEnvironmentContainerOperatingSystemType               = "unmanaged"
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
@@ -840,7 +840,7 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 			networkInterfaceObject.Tag = &vlanID
 		}
 
-		if mtu != 1500 {
+		if mtu != 0 {
 			networkInterfaceObject.MTU = &mtu
 		}
 
@@ -1056,7 +1056,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 		if vlanID != 0 {
 			networkInterfaceObject.Tag = &vlanID
 		}
-		if mtu != 1500 {
+		if mtu != 0 {
 			networkInterfaceObject.MTU = &mtu
 		}
 
@@ -1258,7 +1258,7 @@ func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(ctx context.
 		if nv.MTU != nil {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = *nv.MTU
 		} else {
-			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = 1500
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = 0
 		}
 
 		networkInterfaces = append(networkInterfaces, networkInterface)
@@ -1579,7 +1579,7 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 		if nv.MTU != nil {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = *nv.MTU
 		} else {
-			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = 1500
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = 0
 		}
 
 		networkInterfaceList = append(networkInterfaceList, networkInterface)
@@ -1903,7 +1903,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 				networkInterfaceObject.Tag = &vlanID
 			}
 
-			if mtu != 1500 {
+			if mtu != 0 {
 				networkInterfaceObject.MTU = &mtu
 			}
 

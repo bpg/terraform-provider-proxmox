@@ -127,6 +127,7 @@ output "ubuntu_container_public_key" {
     * `bridge` - (Optional) The name of the network bridge (defaults to `vmbr0`).
     * `enabled` - (Optional) Whether to enable the network device (defaults to `true`).
     * `mac_address` - (Optional) The MAC address.
+    * `mtu` - (Optional) Maximum transfer unit of the interface. Cannot be larger than the bridge's MTU.
     * `name` - (Required) The network interface name.
     * `rate_limit` - (Optional) The rate limit in megabytes per second.
     * `vlan_id` - (Optional) The VLAN identifier.

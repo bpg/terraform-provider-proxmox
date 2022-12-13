@@ -259,6 +259,7 @@ output "ubuntu_vm_public_key" {
         * `rtl8139` - Realtek RTL8139.
         * `virtio` - VirtIO (paravirtualized).
         * `vmxnet3` - VMware vmxnet3.
+    * `mtu` - (Optional) Force MTU, for VirtIO only. Set to 1 to use the bridge MTU. Cannot be larger than the bridge MTU.
     * `rate_limit` - (Optional) The rate limit in megabytes per second.
     * `vlan_id` - (Optional) The VLAN identifier.
 * `node_name` - (Required) The name of the node to assign the virtual machine to.

@@ -80,7 +80,7 @@ const (
 	dvResourceVirtualEnvironmentVMNetworkDeviceModel                = "virtio"
 	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = 0
 	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID               = 0
-	dvResourceVirtualEnvironmentVMNetworkDeviceMTU                  = 1500
+	dvResourceVirtualEnvironmentVMNetworkDeviceMTU                  = 0
 	dvResourceVirtualEnvironmentVMOperatingSystemType               = "other"
 	dvResourceVirtualEnvironmentVMPoolID                            = ""
 	dvResourceVirtualEnvironmentVMSerialDeviceDevice                = "socket"
@@ -2355,7 +2355,7 @@ func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData)
 			device.Tag = &vlanID
 		}
 
-		if mtu != 1500 {
+		if mtu != 0 {
 			device.MTU = &mtu
 		}
 
@@ -3096,7 +3096,7 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 			if nd.MTU != nil {
 				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMTU] = nd.MTU
 			} else {
-				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMTU] = 1500
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMTU] = 0
 			}
 		} else {
 			macAddresses[ni] = ""
