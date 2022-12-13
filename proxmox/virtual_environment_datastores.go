@@ -8,13 +8,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"io"
 	"mime/multipart"
 	"net/url"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/pkg/sftp"
 )
@@ -28,6 +29,22 @@ func (c *VirtualEnvironmentClient) DeleteDatastoreFile(ctx context.Context, node
 	}
 
 	return nil
+}
+
+// GetDatastoreStatus gets status information for a given datastore.
+func (c *VirtualEnvironmentClient) GetDatastoreStatus(ctx context.Context, nodeName, datastoreID string) (*VirtualEnvironmentDatastoreGetStatusResponseData, error) {
+	resBody := &VirtualEnvironmentDatastoreGetStatusResponseBody{}
+	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/storage/%s/status", url.PathEscape(nodeName), url.PathEscape(datastoreID)), nil, resBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("the server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
 }
 
 // ListDatastoreFiles retrieves a list of the files in a datastore.

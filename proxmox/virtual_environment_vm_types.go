@@ -164,6 +164,7 @@ type CustomStorageDevice struct {
 	FileVolume              string      `json:"file" url:"file"`
 	Format                  *string     `json:"format,omitempty" url:"format,omitempty"`
 	IOThread                *CustomBool `json:"iothread,omitempty" url:"iothread,omitempty,int"`
+	SSD                     *CustomBool `json:"ssd,omitempty" url:"ssd,omitempty,int"`
 	MaxReadSpeedMbps        *int        `json:"mbps_rd,omitempty" url:"mbps_rd,omitempty"`
 	MaxWriteSpeedMbps       *int        `json:"mbps_wr,omitempty" url:"mbps_wr,omitempty"`
 	Media                   *string     `json:"media,omitempty" url:"media,omitempty"`
@@ -501,6 +502,19 @@ type VirtualEnvironmentVMListResponseBody struct {
 // VirtualEnvironmentVMListResponseData contains the data from an virtual machine list response.
 type VirtualEnvironmentVMListResponseData struct {
 	ACPI *CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
+}
+
+// VirtualEnvironmentVMMigrateRequestBody contains the body for a VM migration request.
+type VirtualEnvironmentVMMigrateRequestBody struct {
+	OnlineMigration *CustomBool `json:"online,omitempty" url:"online,omitempty"`
+	TargetNode      string      `json:"target" url:"target"`
+	TargetStorage   *string     `json:"targetstorage,omitempty" url:"targetstorage,omitempty"`
+	WithLocalDisks  *CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty,int"`
+}
+
+// VirtualEnvironmentVMMigrateResponseBody contains the body from a VM migrate response.
+type VirtualEnvironmentVMMigrateResponseBody struct {
+	Data *string `json:"data,omitempty"`
 }
 
 // VirtualEnvironmentVMMoveDiskRequestBody contains the body for a VM move disk request.
@@ -1079,6 +1093,14 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		}
 	}
 
+	if r.SSD != nil {
+		if *r.SSD {
+			values = append(values, "ssd=1")
+		} else {
+			values = append(values, "ssd=0")
+		}
+	}
+
 	if r.Discard != nil && *r.Discard != "" {
 		values = append(values, fmt.Sprintf("discard=%s", *r.Discard))
 	}
@@ -1630,6 +1652,9 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "iothread":
 				bv := CustomBool(v[1] == "1")
 				r.IOThread = &bv
+			case "ssd":
+				bv := CustomBool(v[1] == "1")
+				r.SSD = &bv
 			case "discard":
 				r.Discard = &v[1]
 			}

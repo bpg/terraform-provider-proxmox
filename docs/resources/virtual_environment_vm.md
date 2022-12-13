@@ -183,6 +183,7 @@ output "ubuntu_vm_public_key" {
 * `description` - (Optional) The description.
 * `disk` - (Optional) A disk (multiple blocks supported).
     * `datastore_id` - (Optional) The identifier for the datastore to create the disk in (defaults to `local-lvm`).
+    * `discard` - (Optional) Whether to pass discard/trim requests to the underlying storage. Supported values are `on`/`ignore` (defaults to `ignore`)
     * `file_format` - (Optional) The file format (defaults to `qcow2`).
         * `qcow2` - QEMU Disk Image v2.
         * `raw` - Raw Disk Image.
@@ -190,14 +191,14 @@ output "ubuntu_vm_public_key" {
     * `file_id` - (Optional) The file ID for a disk image (experimental - might cause high CPU utilization during
       import, especially with large disk images).
     * `interface` - (Required) The disk interface for Proxmox, currently scsi, sata and virtio are supported.
+    * `iothread` - (Optional) Whether to use iothreads for this disk (defaults to `false`).
     * `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     * `speed` - (Optional) The speed limits.
         * `read` - (Optional) The maximum read speed in megabytes per second.
         * `read_burstable` - (Optional) The maximum burstable read speed in megabytes per second.
         * `write` - (Optional) The maximum write speed in megabytes per second.
         * `write_burstable` - (Optional) The maximum burstable write speed in megabytes per second.
-    * `iothread` - (Optional) Whether to use iothreads for this disk (defaults to `false`).
-    * `discard` - (Optional) Whether to pass discard/trim requests to the underlying storage. Supported values are `on`/`ignore` (defaults to `ignore`)
+    * ssd - (Optional) Whether to use an SSD emulation option for this disk (defaults to `false`). Note that SSD emulation is not supported on VirtIO Block drives.
 * `initialization` - (Optional) The cloud-init configuration.
     * `datastore_id` - (Optional) The identifier for the datastore to create the cloud-init disk in (defaults
       to `local-lvm`).
@@ -325,3 +326,7 @@ output "ubuntu_vm_public_key" {
 
 When cloning an existing virtual machine, whether it's a template or not, the resource will only detect changes to the
 arguments which are not set to their default values.
+
+Furthermore, when cloning from one node to a different one, the behavior changes depening on the datastores of the source VM. If at least one non-shared datastore is used, the VM is first cloned to the source node before being migrated to the target node. This circumvents a limitation in the Proxmox clone API. 
+
+**Note:** Because the migration step after the clone tries to preserve the used datastores by their name, it may fail if a datastore used in the source VM is not available on the target node (e.g. `local-lvm` is used on the source node in the VM but no `local-lvm` datastore is availabel on the target node). In this case, it is recommended to set the `datastore_id` argument in the `clone` block to force the migration step to migrate all disks to a specific datastore on the target node. If you need certain disks to be on specific datastores, set the `datastore_id` argument of the disks in the `disks` block to move the disks to the correct datastore after the cloning and migrating succeeded.
