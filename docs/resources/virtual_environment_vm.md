@@ -185,9 +185,9 @@ output "ubuntu_vm_public_key" {
     * `datastore_id` - (Optional) The identifier for the datastore to create the disk in (defaults to `local-lvm`).
     * `discard` - (Optional) Whether to pass discard/trim requests to the underlying storage. Supported values are `on`/`ignore` (defaults to `ignore`)
     * `file_format` - (Optional) The file format (defaults to `qcow2`).
-      * `qcow2` - QEMU Disk Image v2.
-      * `raw` - Raw Disk Image.
-      * `vmdk` - VMware Disk Image.
+        * `qcow2` - QEMU Disk Image v2.
+        * `raw` - Raw Disk Image.
+        * `vmdk` - VMware Disk Image.
     * `file_id` - (Optional) The file ID for a disk image (experimental - might cause high CPU utilization during
       import, especially with large disk images).
     * `interface` - (Required) The disk interface for Proxmox, currently scsi, sata and virtio are supported.
