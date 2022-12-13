@@ -1,3 +1,7 @@
+locals {
+  datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+}
+
 resource "proxmox_virtual_environment_vm" "example_template" {
   agent {
     enabled = true
@@ -5,14 +9,21 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   description = "Managed by Terraform"
 
-  disk {
-    datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
-    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
-    interface    = "virtio0"
-    discard      = "on"
-    iothread     = true
-  }
+#  disk {
+#    datastore_id = local.datastore_id
+#    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
+#    interface    = "virtio0"
+#    iothread     = true
+#  }
 
+  disk {
+    datastore_id = local.datastore_id
+    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
+    interface    = "scsi0"
+    discard      = "on"
+    ssd          = true
+  }
+#
 #  disk {
 #    datastore_id = "nfs"
 #    interface    = "scsi1"
@@ -21,7 +32,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 #  }
 
   initialization {
-    datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+    datastore_id = local.datastore_id
 
     dns {
       server = "1.1.1.1"

@@ -183,6 +183,7 @@ output "ubuntu_vm_public_key" {
 * `description` - (Optional) The description.
 * `disk` - (Optional) A disk (multiple blocks supported).
     * `datastore_id` - (Optional) The identifier for the datastore to create the disk in (defaults to `local-lvm`).
+    * `discard` - (Optional) Whether to pass discard/trim requests to the underlying storage. Supported values are `on`/`ignore` (defaults to `ignore`)
     * `file_format` - (Optional) The file format (defaults to `qcow2`).
         * `qcow2` - QEMU Disk Image v2.
         * `raw` - Raw Disk Image.
@@ -190,14 +191,14 @@ output "ubuntu_vm_public_key" {
     * `file_id` - (Optional) The file ID for a disk image (experimental - might cause high CPU utilization during
       import, especially with large disk images).
     * `interface` - (Required) The disk interface for Proxmox, currently scsi, sata and virtio are supported.
+    * `iothread` - (Optional) Whether to use iothreads for this disk (defaults to `false`).
     * `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     * `speed` - (Optional) The speed limits.
         * `read` - (Optional) The maximum read speed in megabytes per second.
         * `read_burstable` - (Optional) The maximum burstable read speed in megabytes per second.
         * `write` - (Optional) The maximum write speed in megabytes per second.
         * `write_burstable` - (Optional) The maximum burstable write speed in megabytes per second.
-    * `iothread` - (Optional) Whether to use iothreads for this disk (defaults to `false`).
-    * `discard` - (Optional) Whether to pass discard/trim requests to the underlying storage. Supported values are `on`/`ignore` (defaults to `ignore`)
+    * ssd - (Optional) Whether to use an SSD emulation option for this disk (defaults to `false`). Note that SSD emulation is not supported on VirtIO Block drives.
 * `initialization` - (Optional) The cloud-init configuration.
     * `datastore_id` - (Optional) The identifier for the datastore to create the cloud-init disk in (defaults
       to `local-lvm`).
