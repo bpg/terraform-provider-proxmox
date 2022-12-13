@@ -7,9 +7,10 @@ package proxmoxtf
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -42,6 +43,7 @@ const (
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress        = ""
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit         = 0
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceVLANID            = 0
+	dvResourceVirtualEnvironmentContainerNetworkInterfaceMTU               = 0
 	dvResourceVirtualEnvironmentContainerOperatingSystemType               = "unmanaged"
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
@@ -91,6 +93,7 @@ const (
 	mkResourceVirtualEnvironmentContainerNetworkInterfaceName              = "name"
 	mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit         = "rate_limit"
 	mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID            = "vlan_id"
+	mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU               = "mtu"
 	mkResourceVirtualEnvironmentContainerNodeName                          = "node_name"
 	mkResourceVirtualEnvironmentContainerOperatingSystem                   = "operating_system"
 	mkResourceVirtualEnvironmentContainerOperatingSystemTemplateFileID     = "template_file_id"
@@ -481,6 +484,12 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentContainerNetworkInterfaceVLANID,
 						},
+						mkResourceVirtualEnvironmentVMNetworkDeviceMTU: {
+							Type:        schema.TypeInt,
+							Description: "Maximum transmission unit (MTU)",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceMTU,
+						},
 					},
 				},
 				MaxItems: maxResourceVirtualEnvironmentContainerNetworkInterfaces,
@@ -791,6 +800,7 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 		name := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceName].(string)
 		rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
 		vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
+		mtu, _ := networkInterfaceMap[mkResourceVirtualEnvironmentVMNetworkDeviceMTU].(int)
 
 		if bridge != "" {
 			networkInterfaceObject.Bridge = &bridge
@@ -828,6 +838,10 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 
 		if vlanID != 0 {
 			networkInterfaceObject.Tag = &vlanID
+		}
+
+		if mtu != 0 {
+			networkInterfaceObject.MTU = &mtu
 		}
 
 		networkInterfaceArray[ni] = networkInterfaceObject
@@ -1003,6 +1017,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 		name := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceName].(string)
 		rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
 		vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
+		mtu := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU].(int)
 
 		if bridge != "" {
 			networkInterfaceObject.Bridge = &bridge
@@ -1040,6 +1055,9 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 
 		if vlanID != 0 {
 			networkInterfaceObject.Tag = &vlanID
+		}
+		if mtu != 0 {
+			networkInterfaceObject.MTU = &mtu
 		}
 
 		networkInterfaceArray[ni] = networkInterfaceObject
@@ -1235,6 +1253,12 @@ func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(ctx context.
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID] = *nv.Tag
 		} else {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID] = 0
+		}
+
+		if nv.MTU != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = *nv.MTU
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = 0
 		}
 
 		networkInterfaces = append(networkInterfaces, networkInterface)
@@ -1552,6 +1576,12 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID] = 0
 		}
 
+		if nv.MTU != nil {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = *nv.MTU
+		} else {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU] = 0
+		}
+
 		networkInterfaceList = append(networkInterfaceList, networkInterface)
 	}
 
@@ -1833,6 +1863,7 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 			name := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceName].(string)
 			rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
 			vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
+			mtu := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU].(int)
 
 			if bridge != "" {
 				networkInterfaceObject.Bridge = &bridge
@@ -1870,6 +1901,10 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 			if vlanID != 0 {
 				networkInterfaceObject.Tag = &vlanID
+			}
+
+			if mtu != 0 {
+				networkInterfaceObject.MTU = &mtu
 			}
 
 			networkInterfaceArray[ni] = networkInterfaceObject

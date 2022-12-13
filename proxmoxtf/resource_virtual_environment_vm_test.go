@@ -296,6 +296,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDeviceModel,
 		mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit,
 		mkResourceVirtualEnvironmentVMNetworkDeviceVLANID,
+		mkResourceVirtualEnvironmentVMNetworkDeviceMTU,
 	})
 
 	testValueTypes(t, networkDeviceSchema, map[string]schema.ValueType{
@@ -305,6 +306,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDeviceModel:      schema.TypeString,
 		mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit:  schema.TypeFloat,
 		mkResourceVirtualEnvironmentVMNetworkDeviceVLANID:     schema.TypeInt,
+		mkResourceVirtualEnvironmentVMNetworkDeviceMTU:        schema.TypeInt,
 	})
 
 	operatingSystemSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMOperatingSystem)

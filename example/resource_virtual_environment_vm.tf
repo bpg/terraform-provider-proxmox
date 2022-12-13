@@ -50,7 +50,9 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   name = "terraform-provider-proxmox-example-template"
 
-  network_device {}
+  network_device {
+    mtu  = 1450
+  }
 
   network_device {
     vlan_id = 1024
