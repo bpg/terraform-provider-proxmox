@@ -24,6 +24,23 @@ type VirtualEnvironmentDatastoreFileListResponseData struct {
 	VolumeID       string  `json:"volid"`
 }
 
+// VirtualEnvironmentDatastoreGetStatusResponseBody contains the body from a datastore status get request.
+type VirtualEnvironmentDatastoreGetStatusResponseBody struct {
+	Data *VirtualEnvironmentDatastoreGetStatusResponseData `json:"data,omitempty"`
+}
+
+// VirtualEnvironmentDatastoreGetStatusResponseBody contains the data from a datastore status get request.
+type VirtualEnvironmentDatastoreGetStatusResponseData struct {
+	Active         *CustomBool               `json:"active,omitempty"`
+	AvailableBytes *int64                    `json:"avail,omitempty"`
+	Content        *CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
+	Enabled        *CustomBool               `json:"enabled,omitempty"`
+	Shared         *CustomBool               `json:"shared,omitempty"`
+	TotalBytes     *int64                    `json:"total,omitempty"`
+	Type           *string                   `json:"type,omitempty"`
+	UsedBytes      *int64                    `json:"used,omitempty"`
+}
+
 // VirtualEnvironmentDatastoreListRequestBody contains the body for a datastore list request.
 type VirtualEnvironmentDatastoreListRequestBody struct {
 	ContentTypes CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`

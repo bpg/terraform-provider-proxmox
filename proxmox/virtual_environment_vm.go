@@ -8,12 +8,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"net"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const (
@@ -151,6 +152,39 @@ func (c *VirtualEnvironmentClient) GetVMNetworkInterfacesFromAgent(ctx context.C
 func (c *VirtualEnvironmentClient) GetVMStatus(ctx context.Context, nodeName string, vmID int) (*VirtualEnvironmentVMGetStatusResponseData, error) {
 	resBody := &VirtualEnvironmentVMGetStatusResponseBody{}
 	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/qemu/%d/status/current", url.PathEscape(nodeName), vmID), nil, resBody)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("the server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
+}
+
+// MigrateVM migrates a virtual machine.
+func (c *VirtualEnvironmentClient) MigrateVM(ctx context.Context, nodeName string, vmID int, d *VirtualEnvironmentVMMigrateRequestBody, timeout int) error {
+	taskID, err := c.MigrateVMAsync(ctx, nodeName, vmID, d)
+
+	if err != nil {
+		return err
+	}
+
+	err = c.WaitForNodeTask(ctx, nodeName, *taskID, timeout, 5)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// MigrateVMAsync migrates a virtual machine asynchronously.
+func (c *VirtualEnvironmentClient) MigrateVMAsync(ctx context.Context, nodeName string, vmID int, d *VirtualEnvironmentVMMigrateRequestBody) (*string, error) {
+	resBody := &VirtualEnvironmentVMMigrateResponseBody{}
+	err := c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/qemu/%d/migrate", url.PathEscape(nodeName), vmID), d, resBody)
 
 	if err != nil {
 		return nil, err
