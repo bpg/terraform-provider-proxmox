@@ -2088,7 +2088,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(
 	// Generate the commands required to import the specified disks.
 	importedDiskCount := 0
 
-	for i, d := range disk {
+	for _, d := range disk {
 		block := d.(map[string]interface{})
 
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
@@ -2150,15 +2150,6 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(
 			diskOptions += fmt.Sprintf(",mbps_wr_max=%d", speedLimitWriteBurstable)
 		}
 
-		fileIDParts := strings.Split(fileID, ":")
-		filePath := ""
-
-		if strings.HasPrefix(fileIDParts[1], "iso/") {
-			filePath = fmt.Sprintf("/template/%s", fileIDParts[1])
-		} else {
-			filePath = fmt.Sprintf("/%s", fileIDParts[1])
-		}
-
 		filePathTmp := fmt.Sprintf(
 			"/tmp/vm-%d-disk-%d.%s",
 			vmID,
@@ -2169,26 +2160,21 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(
 		commands = append(
 			commands,
 			`set -e`,
-			fmt.Sprintf(`datastore_id_image="%s"`, fileIDParts[0]),
+			fmt.Sprintf(`file_id="%s"`, fileID),
+			fmt.Sprintf(`file_format="%s"`, fileFormat),
 			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
-			fmt.Sprintf(`disk_index="%d"`, i),
 			fmt.Sprintf(`disk_options="%s"`, diskOptions),
 			fmt.Sprintf(`disk_size="%d"`, size),
 			fmt.Sprintf(`disk_interface="%s"`, diskInterface),
-			fmt.Sprintf(`file_path="%s"`, filePath),
 			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
 			fmt.Sprintf(`vm_id="%d"`, vmID),
-			`getdsi() { local nr='^([A-Za-z0-9_-]+): ([A-Za-z0-9_-]+)$'; local pr='^[[:space:]]+path[[:space:]]+([^[:space:]]+)$'; local dn=""; local dt=""; while IFS='' read -r l || [[ -n "$l" ]]; do if [[ "$l" =~ $nr ]]; then dt="${BASH_REMATCH[1]}"; dn="${BASH_REMATCH[2]}"; elif [[ "$l" =~ $pr ]] && [[ "$dn" == "$1" ]]; then echo "${BASH_REMATCH[1]};${dt}"; break; fi; done < /etc/pve/storage.cfg; }`,
-			`dsi_image="$(getdsi "$datastore_id_image")"`,
-			`dsp_image="$(echo "$dsi_image" | cut -d ";" -f 1)"`,
-			`dst_image="$(echo "$dsi_image" | cut -d ";" -f 2)"`,
-			`if [[ -z "$dsp_image" ]]; then echo "Failed to determine the path for datastore '${datastore_id_image}' (${dsi_image})"; exit 1; fi`,
-			`dsi_target="$(getdsi "$datastore_id_target")"`,
-			`dsp_target="$(echo "$dsi_target" | cut -d ";" -f 1)"`,
-			`cp "${dsp_image}${file_path}" "$file_path_tmp"`,
-			`qemu-img resize "$file_path_tmp" "${disk_size}G"`,
-			`imported_disk="$(qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format qcow2 | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
-			`disk_id="${datastore_id_target}:$([[ -n "$dsp_target" ]] && echo "${vm_id}/" || echo "")$imported_disk$([[ -n "$dsp_target" ]] && echo ".qcow2" || echo "")${disk_options}"`,
+
+			`source_image=$(pvesm path "$file_id")`,
+			`cp "$source_image" "$file_path_tmp"`,
+
+			`qemu-img resize -f "$file_format" "$file_path_tmp" "${disk_size}G"`,
+			`imported_disk="$(qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format $file_format | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
+			`disk_id="${datastore_id_target}:$imported_disk${disk_options}"`,
 			`qm set "$vm_id" "-${disk_interface}" "$disk_id"`,
 			`rm -f "$file_path_tmp"`,
 		)

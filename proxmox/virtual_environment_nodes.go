@@ -41,10 +41,11 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(
 	}
 	defer closeOrLogError(sshSession)
 
+	script := strings.Join(commands, " && \\\n")
 	output, err := sshSession.CombinedOutput(
 		fmt.Sprintf(
 			"/bin/bash -c '%s'",
-			strings.ReplaceAll(strings.Join(commands, " && \\\n"), "'", "'\"'\"'"),
+			strings.ReplaceAll(script, "'", "'\"'\"'"),
 		),
 	)
 	if err != nil {

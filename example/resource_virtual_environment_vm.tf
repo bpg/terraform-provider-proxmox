@@ -23,7 +23,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     discard      = "on"
     ssd          = true
   }
-#
+
 #  disk {
 #    datastore_id = "nfs"
 #    interface    = "scsi1"
