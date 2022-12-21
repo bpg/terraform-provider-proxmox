@@ -23,7 +23,7 @@ import (
 
 const (
 	dvResourceVirtualEnvironmentVMRebootAfterCreation               = false
-	dvResourceVirtualEnvironmentVMOnBoot                            = false
+	dvResourceVirtualEnvironmentVMOnBoot                            = true
 	dvResourceVirtualEnvironmentVMACPI                              = true
 	dvResourceVirtualEnvironmentVMAgentEnabled                      = false
 	dvResourceVirtualEnvironmentVMAgentTimeout                      = "15m"
