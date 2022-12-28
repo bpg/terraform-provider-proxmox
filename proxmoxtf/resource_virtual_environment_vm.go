@@ -186,7 +186,7 @@ const (
 	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
-	mkResourceVirtualEnvironmentVMMachineType                       = "machine_type"
+	mkResourceVirtualEnvironmentVMMachine                           = "machine"
 	mkResourceVirtualEnvironmentVMMACAddresses                      = "mac_addresses"
 	mkResourceVirtualEnvironmentVMMemory                            = "memory"
 	mkResourceVirtualEnvironmentVMMemoryDedicated                   = "dedicated"
@@ -878,9 +878,9 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Default:          dvResourceVirtualEnvironmentVMKeyboardLayout,
 				ValidateDiagFunc: getKeyboardLayoutValidator(),
 			},
-			mkResourceVirtualEnvironmentVMMachineType: {
+			mkResourceVirtualEnvironmentVMMachine: {
 				Type:        schema.TypeString,
-				Description: "The VM type, either default i440fx or q35",
+				Description: "The VM machine type, either default i440fx or q35",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMMachineType,
 			},
@@ -1807,7 +1807,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
 	memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
 
-	machineType := d.Get(mkResourceVirtualEnvironmentVMMachineType).(string)
+	machine := d.Get(mkResourceVirtualEnvironmentVMMachine).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 	tags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
 
@@ -1957,8 +1957,8 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 		createBody.Tags = &tagsString
 	}
 
-	if machineType != "" {
-		createBody.MachineType = &machineType
+	if machine != "" {
+		createBody.Machine = &machine
 	}
 
 	if name != "" {
@@ -3596,13 +3596,13 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	currentMachineType := d.Get(mkResourceVirtualEnvironmentVMMachineType).(string)
+	currentMachine := d.Get(mkResourceVirtualEnvironmentVMMachine).(string)
 
-	if len(clone) == 0 || currentMachineType != dvResourceVirtualEnvironmentVMMachineType {
-		if vmConfig.MachineType != nil {
-			err = d.Set(mkResourceVirtualEnvironmentVMMachineType, *vmConfig.MachineType)
+	if len(clone) == 0 || currentMachine != dvResourceVirtualEnvironmentVMMachineType {
+		if vmConfig.Machine != nil {
+			err = d.Set(mkResourceVirtualEnvironmentVMMachine, *vmConfig.Machine)
 		} else {
-			err = d.Set(mkResourceVirtualEnvironmentVMMachineType, "")
+			err = d.Set(mkResourceVirtualEnvironmentVMMachine, "")
 		}
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -3723,9 +3723,9 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 		rebootRequired = true
 	}
 
-	if d.HasChange(mkResourceVirtualEnvironmentVMMachineType) {
-		machineType := d.Get(mkResourceVirtualEnvironmentVMMachineType).(string)
-		updateBody.MachineType = &machineType
+	if d.HasChange(mkResourceVirtualEnvironmentVMMachine) {
+		machine := d.Get(mkResourceVirtualEnvironmentVMMachine).(string)
+		updateBody.Machine = &machine
 		rebootRequired = true
 	}
 

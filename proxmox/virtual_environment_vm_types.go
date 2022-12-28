@@ -261,7 +261,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	KVMEnabled           *CustomBool                  `json:"kvm,omitempty" url:"kvm,omitempty,int"`
 	LocalTime            *CustomBool                  `json:"localtime,omitempty" url:"localtime,omitempty,int"`
 	Lock                 *string                      `json:"lock,omitempty" url:"lock,omitempty"`
-	MachineType          *string                      `json:"machine,omitempty" url:"machine,omitempty"`
+	Machine              *string                      `json:"machine,omitempty" url:"machine,omitempty"`
 	MigrateDowntime      *float64                     `json:"migrate_downtime,omitempty" url:"migrate_downtime,omitempty"`
 	MigrateSpeed         *int                         `json:"migrate_speed,omitempty" url:"migrate_speed,omitempty"`
 	Name                 *string                      `json:"name,omitempty" url:"name,omitempty"`
@@ -393,7 +393,7 @@ type VirtualEnvironmentVMGetResponseData struct {
 	KVMEnabled           *CustomBool                   `json:"kvm,omitempty"`
 	LocalTime            *CustomBool                   `json:"localtime,omitempty"`
 	Lock                 *string                       `json:"lock,omitempty"`
-	MachineType          *string                       `json:"machine,omitempty"`
+	Machine              *string                       `json:"machine,omitempty"`
 	MigrateDowntime      *float64                      `json:"migrate_downtime,omitempty"`
 	MigrateSpeed         *int                          `json:"migrate_speed,omitempty"`
 	Name                 *string                       `json:"name,omitempty"`

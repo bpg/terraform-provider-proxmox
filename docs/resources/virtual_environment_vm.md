@@ -253,6 +253,9 @@ output "ubuntu_vm_public_key" {
     * `sl` - Slovenian.
     * `sv` - Swedish.
     * `tr` - Turkish.
+* `machine` - (Optional) The VM machine type (defaults to `i440fx`).
+    * `i440fx` - Standard PC (i440FX + PIIX, 1996).
+    * `q35` - Standard PC (Q35 + ICH9, 2009).
 * `memory` - (Optional) The memory configuration.
     * `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`).
     * `floating` - (Optional) The floating memory in megabytes (defaults to `0`).
