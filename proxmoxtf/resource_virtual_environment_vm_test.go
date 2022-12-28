@@ -38,7 +38,9 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDescription,
 		mkResourceVirtualEnvironmentVMDisk,
 		mkResourceVirtualEnvironmentVMInitialization,
+		mkResourceVirtualEnvironmentVMHostPCI,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
+		mkResourceVirtualEnvironmentVMMachineType,
 		mkResourceVirtualEnvironmentVMMemory,
 		mkResourceVirtualEnvironmentVMName,
 		mkResourceVirtualEnvironmentVMNetworkDevice,
@@ -67,10 +69,12 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCPU:                   schema.TypeList,
 		mkResourceVirtualEnvironmentVMDescription:           schema.TypeString,
 		mkResourceVirtualEnvironmentVMDisk:                  schema.TypeList,
+		mkResourceVirtualEnvironmentVMHostPCI:               schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitialization:        schema.TypeList,
 		mkResourceVirtualEnvironmentVMIPv4Addresses:         schema.TypeList,
 		mkResourceVirtualEnvironmentVMIPv6Addresses:         schema.TypeList,
 		mkResourceVirtualEnvironmentVMKeyboardLayout:        schema.TypeString,
+		mkResourceVirtualEnvironmentVMMachineType:           schema.TypeString,
 		mkResourceVirtualEnvironmentVMMemory:                schema.TypeList,
 		mkResourceVirtualEnvironmentVMName:                  schema.TypeString,
 		mkResourceVirtualEnvironmentVMNetworkDevice:         schema.TypeList,
@@ -209,6 +213,25 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationDNS:         schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitializationIPConfig:    schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitializationUserAccount: schema.TypeList,
+	})
+
+	hostPCISchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMHostPCI)
+
+	testOptionalArguments(t, hostPCISchema, []string{
+		mkResourceVirtualEnvironmentVMHostPCIDeviceMDev,
+		mkResourceVirtualEnvironmentVMHostPCIDevicePCIE,
+		mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR,
+		mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile,
+		mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA,
+	})
+
+	testValueTypes(t, hostPCISchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentVMHostPCIDevice:        schema.TypeString,
+		mkResourceVirtualEnvironmentVMHostPCIDeviceMDev:    schema.TypeString,
+		mkResourceVirtualEnvironmentVMHostPCIDevicePCIE:    schema.TypeBool,
+		mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR:  schema.TypeBool,
+		mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile: schema.TypeString,
+		mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA:    schema.TypeBool,
 	})
 
 	initializationDNSSchema := testNestedSchemaExistence(t, initializationSchema, mkResourceVirtualEnvironmentVMInitializationDNS)

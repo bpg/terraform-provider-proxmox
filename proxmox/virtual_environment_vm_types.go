@@ -109,7 +109,7 @@ type CustomNUMADevices []CustomNUMADevice
 // CustomPCIDevice handles QEMU host PCI device mapping parameters.
 type CustomPCIDevice struct {
 	DeviceIDs  []string    `json:"host" url:"host,semicolon"`
-	DevicePath *string     `json:"mdev,omitempty" url:"mdev,omitempty"`
+	MDev       *string     `json:"mdev,omitempty" url:"mdev,omitempty"`
 	PCIExpress *CustomBool `json:"pcie,omitempty" url:"pcie,omitempty,int"`
 	ROMBAR     *CustomBool `json:"rombar,omitempty" url:"rombar,omitempty,int"`
 	ROMFile    *string     `json:"romfile,omitempty" url:"romfile,omitempty"`
@@ -409,7 +409,10 @@ type VirtualEnvironmentVMGetResponseData struct {
 	NUMAEnabled          *CustomBool                   `json:"numa,omitempty"`
 	OSType               *string                       `json:"ostype,omitempty"`
 	Overwrite            *CustomBool                   `json:"force,omitempty"`
-	PCIDevices           *CustomPCIDevices             `json:"hostpci,omitempty"`
+	PCIDevice0           *CustomPCIDevice              `json:"hostpci0,omitempty"`
+	PCIDevice1           *CustomPCIDevice              `json:"hostpci1,omitempty"`
+	PCIDevice2           *CustomPCIDevice              `json:"hostpci2,omitempty"`
+	PCIDevice3           *CustomPCIDevice              `json:"hostpci3,omitempty"`
 	PoolID               *string                       `json:"pool,omitempty" url:"pool,omitempty"`
 	Revert               *string                       `json:"revert,omitempty"`
 	SATADevice0          *CustomStorageDevice          `json:"sata0,omitempty"`
@@ -877,8 +880,8 @@ func (r CustomPCIDevice) EncodeValues(key string, v *url.Values) error {
 		fmt.Sprintf("host=%s", strings.Join(r.DeviceIDs, ";")),
 	}
 
-	if r.DevicePath != nil {
-		values = append(values, fmt.Sprintf("mdev=%s", *r.DevicePath))
+	if r.MDev != nil {
+		values = append(values, fmt.Sprintf("mdev=%s", *r.MDev))
 	}
 
 	if r.PCIExpress != nil {
@@ -1503,6 +1506,46 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 	}
 
 	r.Enabled = true
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomPCIDevice string to an object.
+func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+		if len(v) == 1 {
+			r.DeviceIDs = strings.Split(v[1], ";")
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "host":
+				r.DeviceIDs = strings.Split(v[1], ";")
+			case "mdev":
+				r.MDev = &v[1]
+			case "pcie":
+				bv := CustomBool(v[1] == "1")
+				r.PCIExpress = &bv
+			case "rombar":
+				bv := CustomBool(v[1] == "1")
+				r.ROMBAR = &bv
+			case "romfile":
+				r.ROMFile = &v[1]
+			case "x-vga":
+				bv := CustomBool(v[1] == "1")
+				r.XVGA = &bv
+			}
+		}
+	}
 
 	return nil
 }

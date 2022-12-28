@@ -18,9 +18,10 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 func getBIOSValidator() schema.SchemaValidateDiagFunc {
@@ -517,6 +518,17 @@ func parseDiskSize(size *string) (int, error) {
 		}
 	}
 	return diskSize, err
+}
+
+func getPCIInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) map[string]*proxmox.CustomPCIDevice {
+	pciDevices := map[string]*proxmox.CustomPCIDevice{}
+
+	pciDevices["hostpci0"] = vm.PCIDevice0
+	pciDevices["hostpci1"] = vm.PCIDevice1
+	pciDevices["hostpci2"] = vm.PCIDevice2
+	pciDevices["hostpci3"] = vm.PCIDevice3
+
+	return pciDevices
 }
 
 func getCloudInitTypeValidator() schema.SchemaValidateDiagFunc {
