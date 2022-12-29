@@ -65,7 +65,7 @@ func (c *VirtualEnvironmentClient) CreateVM(ctx context.Context, nodeName string
 
 // DeleteVM deletes a virtual machine.
 func (c *VirtualEnvironmentClient) DeleteVM(ctx context.Context, nodeName string, vmID int) error {
-	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("nodes/%s/qemu/%d", url.PathEscape(nodeName), vmID), nil, nil)
+	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("nodes/%s/qemu/%d?destroy-unreferenced-disks=1&purge=1", url.PathEscape(nodeName), vmID), nil, nil)
 }
 
 // GetVM retrieves a virtual machine.
