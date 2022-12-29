@@ -16,9 +16,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const (
@@ -58,6 +59,13 @@ const (
 	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWrite                    = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable           = 0
+	dvResourceVirtualEnvironmentVMHostPCIDevice                     = ""
+	dvResourceVirtualEnvironmentVMHostPCIDeviceID                   = ""
+	dvResourceVirtualEnvironmentVMHostPCIDeviceMDev                 = ""
+	dvResourceVirtualEnvironmentVMHostPCIDevicePCIE                 = 0
+	dvResourceVirtualEnvironmentVMHostPCIDeviceROMBAR               = 1
+	dvResourceVirtualEnvironmentVMHostPCIDeviceROMFile              = ""
+	dvResourceVirtualEnvironmentVMHostPCIDeviceXVGA                 = 0
 	dvResourceVirtualEnvironmentVMInitializationDatastoreID         = "local-lvm"
 	dvResourceVirtualEnvironmentVMInitializationDNSDomain           = ""
 	dvResourceVirtualEnvironmentVMInitializationDNSServer           = ""
@@ -70,6 +78,7 @@ const (
 	dvResourceVirtualEnvironmentVMInitializationVendorDataFileID    = ""
 	dvResourceVirtualEnvironmentVMInitializationType                = ""
 	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
+	dvResourceVirtualEnvironmentVMMachineType                       = ""
 	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentVMMemoryFloating                    = 0
 	dvResourceVirtualEnvironmentVMMemoryShared                      = 0
@@ -147,6 +156,14 @@ const (
 	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = "read_burstable"
 	mkResourceVirtualEnvironmentVMDiskSpeedWrite                    = "write"
 	mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable           = "write_burstable"
+	mkResourceVirtualEnvironmentVMHostPCI                           = "hostpci"
+	mkResourceVirtualEnvironmentVMHostPCIDevice                     = "device"
+	mkResourceVirtualEnvironmentVMHostPCIDeviceID                   = "id"
+	mkResourceVirtualEnvironmentVMHostPCIDeviceMDev                 = "mdev"
+	mkResourceVirtualEnvironmentVMHostPCIDevicePCIE                 = "pcie"
+	mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR               = "rombar"
+	mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile              = "rom_file"
+	mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA                 = "xvga"
 	mkResourceVirtualEnvironmentVMInitialization                    = "initialization"
 	mkResourceVirtualEnvironmentVMInitializationDatastoreID         = "datastore_id"
 	mkResourceVirtualEnvironmentVMInitializationDNS                 = "dns"
@@ -169,6 +186,7 @@ const (
 	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
+	mkResourceVirtualEnvironmentVMMachine                           = "machine"
 	mkResourceVirtualEnvironmentVMMACAddresses                      = "mac_addresses"
 	mkResourceVirtualEnvironmentVMMemory                            = "memory"
 	mkResourceVirtualEnvironmentVMMemoryDedicated                   = "dedicated"
@@ -795,12 +813,76 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					Elem: &schema.Schema{Type: schema.TypeString},
 				},
 			},
+			mkResourceVirtualEnvironmentVMHostPCI: {
+				Type:        schema.TypeList,
+				Description: "The Host PCI devices mapped to the VM",
+				Optional:    true,
+				ForceNew:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMHostPCIDevice:        dvResourceVirtualEnvironmentVMHostPCIDevice,
+							mkResourceVirtualEnvironmentVMHostPCIDeviceID:      dvResourceVirtualEnvironmentVMHostPCIDeviceID,
+							mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA:    dvResourceVirtualEnvironmentVMHostPCIDeviceXVGA,
+							mkResourceVirtualEnvironmentVMHostPCIDevicePCIE:    dvResourceVirtualEnvironmentVMHostPCIDevicePCIE,
+							mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR:  dvResourceVirtualEnvironmentVMHostPCIDeviceROMBAR,
+							mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile: dvResourceVirtualEnvironmentVMHostPCIDeviceROMFile,
+							mkResourceVirtualEnvironmentVMHostPCIDeviceMDev:    dvResourceVirtualEnvironmentVMHostPCIDeviceMDev,
+						},
+					}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMHostPCIDevice: {
+							Type:        schema.TypeString,
+							Description: "The PCI device name for Proxmox, in form of 'hostpciX' where X is a sequential number from 0 to 3",
+							Required:    true,
+						},
+						mkResourceVirtualEnvironmentVMHostPCIDeviceID: {
+							Type:        schema.TypeString,
+							Description: "The PCI ID of the device, for example 0000:00:1f.0 (or 0000:00:1f.0;0000:00:1f.1 for multiple device functions, or 0000:00:1f for all functions)",
+							Required:    true,
+						},
+						mkResourceVirtualEnvironmentVMHostPCIDeviceMDev: {
+							Type:        schema.TypeString,
+							Description: "The the mediated device to use",
+							Optional:    true,
+						},
+						mkResourceVirtualEnvironmentVMHostPCIDevicePCIE: {
+							Type:        schema.TypeBool,
+							Description: "Tells Proxmox VE to use a PCIe or PCI port. Some guests/device combination require PCIe rather than PCI. PCIe is only available for q35 machine types.",
+							Optional:    true,
+						},
+						mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR: {
+							Type:        schema.TypeBool,
+							Description: "Makes the firmware ROM visible for the guest. Default is true",
+							Optional:    true,
+						},
+						mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile: {
+							Type:        schema.TypeString,
+							Description: "A path to a ROM file for the device to use. This is a relative path under /usr/share/kvm/",
+							Optional:    true,
+						},
+						mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA: {
+							Type:        schema.TypeBool,
+							Description: "Marks the PCI(e) device as the primary GPU of the VM. With this enabled the vga configuration argument will be ignored.",
+							Optional:    true,
+						},
+					},
+				},
+			},
 			mkResourceVirtualEnvironmentVMKeyboardLayout: {
 				Type:             schema.TypeString,
 				Description:      "The keyboard layout",
 				Optional:         true,
 				Default:          dvResourceVirtualEnvironmentVMKeyboardLayout,
 				ValidateDiagFunc: getKeyboardLayoutValidator(),
+			},
+			mkResourceVirtualEnvironmentVMMachine: {
+				Type:        schema.TypeString,
+				Description: "The VM machine type, either default i440fx or q35",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMMachineType,
 			},
 			mkResourceVirtualEnvironmentVMMACAddresses: {
 				Type:        schema.TypeList,
@@ -1273,6 +1355,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
+	hostPCI := d.Get(mkResourceVirtualEnvironmentVMHostPCI).([]interface{})
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	memory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
@@ -1414,6 +1497,13 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 		}
 
 		updateBody.CloudInitConfig = initializationConfig
+	}
+
+	if len(hostPCI) > 0 {
+		updateBody.PCIDevices, err = resourceVirtualEnvironmentVMGetHostPCIDeviceObjects(d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	if len(cdrom) > 0 || len(initialization) > 0 {
@@ -1702,6 +1792,11 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 		cdromCloudInitFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 	}
 
+	pciDeviceObjects, err := resourceVirtualEnvironmentVMGetHostPCIDeviceObjects(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentVMMemory}, 0, true)
 	if err != nil {
@@ -1712,6 +1807,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
 	memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
 
+	machine := d.Get(mkResourceVirtualEnvironmentVMMachine).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 	tags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
 
@@ -1820,6 +1916,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 		KeyboardLayout:      &keyboardLayout,
 		NetworkDevices:      networkDeviceObjects,
 		OSType:              &operatingSystemType,
+		PCIDevices:          pciDeviceObjects,
 		SCSIHardware:        &scsiHardware,
 		SerialDevices:       serialDevices,
 		SharedMemory:        memorySharedObject,
@@ -1858,6 +1955,10 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	if len(tags) > 0 {
 		tagsString := resourceVirtualEnvironmentVMGetTagsString(d)
 		createBody.Tags = &tagsString
+	}
+
+	if machine != "" {
+		createBody.Machine = &machine
 	}
 
 	if name != "" {
@@ -2317,6 +2418,44 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(d *schema.ResourceData, di
 	}
 
 	return diskDeviceObjects, nil
+}
+
+func resourceVirtualEnvironmentVMGetHostPCIDeviceObjects(d *schema.ResourceData) (proxmox.CustomPCIDevices, error) {
+	pciDevice := d.Get(mkResourceVirtualEnvironmentVMHostPCI).([]interface{})
+	pciDeviceObjects := make(proxmox.CustomPCIDevices, len(pciDevice))
+
+	for i, pciDeviceEntry := range pciDevice {
+		block := pciDeviceEntry.(map[string]interface{})
+
+		ids, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceID].(string)
+		mdev, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceMDev].(string)
+		pcie := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDevicePCIE].(bool))
+		rombar := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR].(bool))
+		romfile, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile].(string)
+		xvga := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA].(bool))
+
+		device := proxmox.CustomPCIDevice{
+			DeviceIDs:  strings.Split(ids, ";"),
+			PCIExpress: &pcie,
+			ROMBAR:     &rombar,
+			XVGA:       &xvga,
+		}
+		if ids != "" {
+			device.DeviceIDs = strings.Split(ids, ";")
+		}
+
+		if mdev != "" {
+			device.MDev = &mdev
+		}
+
+		if romfile != "" {
+			device.ROMFile = &romfile
+		}
+
+		pciDeviceObjects[i] = device
+	}
+
+	return pciDeviceObjects, nil
 }
 
 func resourceVirtualEnvironmentVMGetNetworkDeviceObjects(d *schema.ResourceData) (proxmox.CustomNetworkDevices, error) {
@@ -2837,6 +2976,75 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 		}
 	} else if len(currentDiskList) > 0 {
 		err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	currentPCIList := d.Get(mkResourceVirtualEnvironmentVMHostPCI).([]interface{})
+	pciMap := map[string]interface{}{}
+	var orderedPCIList []interface{}
+
+	pciDevices := getPCIInfo(vmConfig, d)
+	for pi, pp := range pciDevices {
+		if (pp == nil) || (pp.DeviceIDs == nil) {
+			continue
+		}
+
+		pci := map[string]interface{}{}
+
+		pci[mkResourceVirtualEnvironmentVMHostPCIDevice] = pi
+		pci[mkResourceVirtualEnvironmentVMHostPCIDeviceID] = strings.Join(pp.DeviceIDs, ";")
+
+		if pp.MDev != nil {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceMDev] = *pp.MDev
+		} else {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceMDev] = ""
+		}
+
+		if pp.PCIExpress != nil {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDevicePCIE] = *pp.PCIExpress
+		} else {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDevicePCIE] = false
+		}
+
+		if pp.ROMBAR != nil {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR] = *pp.ROMBAR
+		} else {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR] = false
+		}
+
+		if pp.ROMFile != nil {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile] = *pp.ROMFile
+		} else {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile] = ""
+		}
+
+		if pp.XVGA != nil {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA] = *pp.XVGA
+		} else {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA] = false
+		}
+
+		pciMap[pi] = pci
+	}
+
+	keyList = []string{}
+	for key := range pciMap {
+		keyList = append(keyList, key)
+	}
+	sort.Strings(keyList)
+
+	for _, k := range keyList {
+		orderedPCIList = append(orderedPCIList, pciMap[k])
+	}
+
+	if len(clone) > 0 {
+		if len(currentPCIList) > 0 {
+			err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else if len(currentPCIList) > 0 {
+		// todo: reordering of devices by PVE may cause an issue here
+		err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3388,6 +3596,17 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentMachine := d.Get(mkResourceVirtualEnvironmentVMMachine).(string)
+
+	if len(clone) == 0 || currentMachine != dvResourceVirtualEnvironmentVMMachineType {
+		if vmConfig.Machine != nil {
+			err = d.Set(mkResourceVirtualEnvironmentVMMachine, *vmConfig.Machine)
+		} else {
+			err = d.Set(mkResourceVirtualEnvironmentVMMachine, "")
+		}
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	currentName := d.Get(mkResourceVirtualEnvironmentVMName).(string)
 
 	if len(clone) == 0 || currentName != dvResourceVirtualEnvironmentVMName {
@@ -3501,6 +3720,12 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 	if d.HasChange(mkResourceVirtualEnvironmentVMKeyboardLayout) {
 		keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 		updateBody.KeyboardLayout = &keyboardLayout
+		rebootRequired = true
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentVMMachine) {
+		machine := d.Get(mkResourceVirtualEnvironmentVMMachine).(string)
+		updateBody.Machine = &machine
 		rebootRequired = true
 	}
 
@@ -3726,6 +3951,16 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 					updateBody.IDEDevices["ide2"] = tmp
 				}
 			}
+		}
+
+		rebootRequired = true
+	}
+
+	// Prepare the new hostpci devices configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMHostPCI) {
+		updateBody.PCIDevices, err = resourceVirtualEnvironmentVMGetHostPCIDeviceObjects(d)
+		if err != nil {
+			return diag.FromErr(err)
 		}
 
 		rebootRequired = true

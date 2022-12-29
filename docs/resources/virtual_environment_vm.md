@@ -198,7 +198,15 @@ output "ubuntu_vm_public_key" {
         * `read_burstable` - (Optional) The maximum burstable read speed in megabytes per second.
         * `write` - (Optional) The maximum write speed in megabytes per second.
         * `write_burstable` - (Optional) The maximum burstable write speed in megabytes per second.
-    * ssd - (Optional) Whether to use an SSD emulation option for this disk (defaults to `false`). Note that SSD emulation is not supported on VirtIO Block drives.
+    * `ssd` - (Optional) Whether to use an SSD emulation option for this disk (defaults to `false`). Note that SSD emulation is not supported on VirtIO Block drives.
+* `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
+    * `device` - (Required) The PCI device name for Proxmox, in form of `hostpciX` where `X` is a sequential number from 0 to 3.
+    * `id` - (Required) The PCI device ID.
+    * `mdev` - (Optional) The mediated device ID to use.
+    * `pcie` - (Optional) Tells Proxmox to use a PCIe or PCI port. Some guests/device combination require PCIe rather than PCI. PCIe is only available for q35 machine types.
+    * `rombar` - (Optional) Makes the firmware ROM visible for the VM (defaults to `true`).
+    * `rom_file` - (Optional) A path to a ROM file for the device to use. This is a relative path under `/usr/share/kvm/`.
+    * `xvga` - (Optional) Marks the PCI(e) device as the primary GPU of the VM. With this enabled the `vga` configuration argument will be ignored.
 * `initialization` - (Optional) The cloud-init configuration.
     * `datastore_id` - (Optional) The identifier for the datastore to create the cloud-init disk in (defaults
       to `local-lvm`).
@@ -245,6 +253,9 @@ output "ubuntu_vm_public_key" {
     * `sl` - Slovenian.
     * `sv` - Swedish.
     * `tr` - Turkish.
+* `machine` - (Optional) The VM machine type (defaults to `i440fx`).
+    * `i440fx` - Standard PC (i440FX + PIIX, 1996).
+    * `q35` - Standard PC (Q35 + ICH9, 2009).
 * `memory` - (Optional) The memory configuration.
     * `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`).
     * `floating` - (Optional) The floating memory in megabytes (defaults to `0`).
