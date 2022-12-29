@@ -161,7 +161,7 @@ const (
 	mkResourceVirtualEnvironmentVMHostPCIDeviceID                   = "id"
 	mkResourceVirtualEnvironmentVMHostPCIDeviceMDev                 = "mdev"
 	mkResourceVirtualEnvironmentVMHostPCIDevicePCIE                 = "pcie"
-	mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR               = "rom_bar"
+	mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR               = "rombar"
 	mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile              = "rom_file"
 	mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA                 = "xvga"
 	mkResourceVirtualEnvironmentVMInitialization                    = "initialization"

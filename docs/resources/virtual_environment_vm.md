@@ -205,7 +205,7 @@ output "ubuntu_vm_public_key" {
     * `mdev` - (Optional) The mediated device ID to use.
     * `pcie` - (Optional) Tells Proxmox to use a PCIe or PCI port. Some guests/device combination require PCIe rather than PCI. PCIe is only available for q35 machine types.
     * `rombar` - (Optional) Makes the firmware ROM visible for the VM (defaults to `true`).
-    * `romfile` - (Optional) A path to a ROM file for the device to use. This is a relative path under `/usr/share/kvm/`.
+    * `rom_file` - (Optional) A path to a ROM file for the device to use. This is a relative path under `/usr/share/kvm/`.
     * `xvga` - (Optional) Marks the PCI(e) device as the primary GPU of the VM. With this enabled the `vga` configuration argument will be ignored.
 * `initialization` - (Optional) The cloud-init configuration.
     * `datastore_id` - (Optional) The identifier for the datastore to create the cloud-init disk in (defaults
