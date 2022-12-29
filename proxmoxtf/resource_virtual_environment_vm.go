@@ -76,6 +76,7 @@ const (
 	dvResourceVirtualEnvironmentVMInitializationUserAccountPassword = ""
 	dvResourceVirtualEnvironmentVMInitializationUserDataFileID      = ""
 	dvResourceVirtualEnvironmentVMInitializationVendorDataFileID    = ""
+	dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID   = ""
 	dvResourceVirtualEnvironmentVMInitializationType                = ""
 	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
 	dvResourceVirtualEnvironmentVMMachineType                       = ""
@@ -183,6 +184,7 @@ const (
 	mkResourceVirtualEnvironmentVMInitializationUserAccountUsername = "username"
 	mkResourceVirtualEnvironmentVMInitializationUserDataFileID      = "user_data_file_id"
 	mkResourceVirtualEnvironmentVMInitializationVendorDataFileID    = "vendor_data_file_id"
+	mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID   = "network_data_file_id"
 	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
@@ -780,6 +782,14 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationVendorDataFileID,
+							ValidateDiagFunc: getFileIDValidator(),
+						},
+						mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID: {
+							Type:             schema.TypeString,
+							Description:      "The ID of a file containing network config",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID,
 							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationType: {
@@ -2315,6 +2325,15 @@ func resourceVirtualEnvironmentVMGetCloudInitConfig(d *schema.ResourceData) (*pr
 			initializationConfig.Files.VendorVolume = &initializationVendorDataFileID
 		}
 
+		initializationNetworkDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID].(string)
+
+		if initializationNetworkDataFileID != "" {
+			if initializationConfig.Files == nil {
+				initializationConfig.Files = &proxmox.CustomCloudInitFiles{}
+			}
+			initializationConfig.Files.NetworkVolume = &initializationNetworkDataFileID
+		}
+
 		initializationType := initializationBlock[mkResourceVirtualEnvironmentVMInitializationType].(string)
 
 		if initializationType != "" {
@@ -3182,6 +3201,11 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 			initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = *vmConfig.CloudInitFiles.VendorVolume
 		} else {
 			initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = ""
+		}
+		if vmConfig.CloudInitFiles.NetworkVolume != nil {
+			initialization[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID] = *vmConfig.CloudInitFiles.NetworkVolume
+		} else {
+			initialization[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID] = ""
 		}
 	} else if len(initialization) > 0 {
 		initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
