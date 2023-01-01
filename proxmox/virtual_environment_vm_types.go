@@ -1310,7 +1310,7 @@ func (r *CustomCloudInitFiles) UnmarshalJSON(b []byte) error {
 			case "meta":
 				r.MetaVolume = &v[1]
 			case "network":
-				r.MetaVolume = &v[1]
+				r.NetworkVolume = &v[1]
 			case "user":
 				r.UserVolume = &v[1]
 			case "vendor":

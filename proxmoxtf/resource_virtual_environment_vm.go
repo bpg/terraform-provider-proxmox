@@ -3210,6 +3210,7 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 	} else if len(initialization) > 0 {
 		initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
 		initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = ""
+		initialization[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID] = ""
 	}
 
 	if vmConfig.CloudInitType != nil {
