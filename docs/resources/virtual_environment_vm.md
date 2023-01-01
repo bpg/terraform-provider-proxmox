@@ -224,6 +224,8 @@ output "ubuntu_vm_public_key" {
         * `keys` - (Optional) The SSH keys.
         * `password` - (Optional) The SSH password.
         * `username` - (Optional) The SSH username.
+    * `network_data_file_id` - (Optional) The identifier for a file containing network configuration data passed to the 
+      VM via cloud-init (conflicts with `ip_config`).
     * `user_data_file_id` - (Optional) The identifier for a file containing custom user data (conflicts
       with `user_account`).
     * `vendor_data_file_id` - (Optional) The identifier for a file containing all vendor data passed to the VM via cloud-init.
