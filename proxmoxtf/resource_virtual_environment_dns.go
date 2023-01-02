@@ -7,6 +7,7 @@ package proxmoxtf
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"

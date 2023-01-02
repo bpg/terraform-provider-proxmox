@@ -1,8 +1,9 @@
 package proxmox
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
