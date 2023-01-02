@@ -3737,6 +3737,11 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 		updateBody.Description = &description
 	}
 
+	if d.HasChange(mkResourceVirtualEnvironmentVMOnBoot) {
+		startOnBoot := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
+		updateBody.StartOnBoot = &startOnBoot
+	}
+
 	if d.HasChange(mkResourceVirtualEnvironmentVMTags) {
 		tagString := resourceVirtualEnvironmentVMGetTagsString(d)
 		updateBody.Tags = &tagString

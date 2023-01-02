@@ -5,8 +5,9 @@
 package proxmoxtf
 
 import (
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // TestDataSourceVirtualEnvironmentDNSInstantiation tests whether the DataSourceVirtualEnvironmentDNS instance can be instantiated.

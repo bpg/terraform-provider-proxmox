@@ -8,11 +8,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"golang.org/x/crypto/ssh"
 )
