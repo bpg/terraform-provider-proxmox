@@ -14,81 +14,81 @@ import (
 
 // VirtualEnvironmentContainerCloneRequestBody contains the data for an container clone request.
 type VirtualEnvironmentContainerCloneRequestBody struct {
-	BandwidthLimit *int        `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
+	BandwidthLimit *int        `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`
 	Description    *string     `json:"description,omitempty" url:"description,omitempty"`
-	FullCopy       *CustomBool `json:"full,omitempty" url:"full,omitempty,int"`
-	Hostname       *string     `json:"hostname,omitempty" url:"hostname,omitempty"`
-	PoolID         *string     `json:"pool,omitempty" url:"pool,omitempty"`
-	SnapshotName   *string     `json:"snapname,omitempty" url:"snapname,omitempty"`
-	TargetNodeName *string     `json:"target,omitempty" url:"target,omitempty"`
-	TargetStorage  *string     `json:"storage,omitempty" url:"storage,omitempty"`
-	VMIDNew        int         `json:"newid" url:"newid"`
+	FullCopy       *CustomBool `json:"full,omitempty"        url:"full,omitempty,int"`
+	Hostname       *string     `json:"hostname,omitempty"    url:"hostname,omitempty"`
+	PoolID         *string     `json:"pool,omitempty"        url:"pool,omitempty"`
+	SnapshotName   *string     `json:"snapname,omitempty"    url:"snapname,omitempty"`
+	TargetNodeName *string     `json:"target,omitempty"      url:"target,omitempty"`
+	TargetStorage  *string     `json:"storage,omitempty"     url:"storage,omitempty"`
+	VMIDNew        int         `json:"newid"                 url:"newid"`
 }
 
 // VirtualEnvironmentContainerCreateRequestBody contains the data for an user create request.
 type VirtualEnvironmentContainerCreateRequestBody struct {
-	BandwidthLimit       *float64                                               `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
-	ConsoleEnabled       *CustomBool                                            `json:"console,omitempty" url:"console,omitempty,int"`
-	ConsoleMode          *string                                                `json:"cmode,omitempty" url:"cmode,omitempty"`
-	CPUArchitecture      *string                                                `json:"arch,omitempty" url:"arch,omitempty"`
-	CPUCores             *int                                                   `json:"cores,omitempty" url:"cores,omitempty"`
-	CPULimit             *int                                                   `json:"cpulimit,omitempty" url:"cpulimit,omitempty"`
-	CPUUnits             *int                                                   `json:"cpuunits,omitempty" url:"cpuunits,omitempty"`
-	DatastoreID          *string                                                `json:"storage,omitempty" url:"storage,omitempty"`
-	DedicatedMemory      *int                                                   `json:"memory,omitempty" url:"memory,omitempty"`
-	Delete               []string                                               `json:"delete,omitempty" url:"delete,omitempty"`
-	Description          *string                                                `json:"description,omitempty" url:"description,omitempty"`
-	DNSDomain            *string                                                `json:"searchdomain,omitempty" url:"searchdomain,omitempty"`
-	DNSServer            *string                                                `json:"nameserver,omitempty" url:"nameserver,omitempty"`
-	Features             *VirtualEnvironmentContainerCustomFeatures             `json:"features,omitempty" url:"features,omitempty"`
-	Force                *CustomBool                                            `json:"force,omitempty" url:"force,omitempty,int"`
-	HookScript           *string                                                `json:"hookscript,omitempty" url:"hookscript,omitempty"`
-	Hostname             *string                                                `json:"hostname,omitempty" url:"hostname,omitempty"`
+	BandwidthLimit       *float64                                               `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
+	ConsoleEnabled       *CustomBool                                            `json:"console,omitempty"              url:"console,omitempty,int"`
+	ConsoleMode          *string                                                `json:"cmode,omitempty"                url:"cmode,omitempty"`
+	CPUArchitecture      *string                                                `json:"arch,omitempty"                 url:"arch,omitempty"`
+	CPUCores             *int                                                   `json:"cores,omitempty"                url:"cores,omitempty"`
+	CPULimit             *int                                                   `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
+	CPUUnits             *int                                                   `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
+	DatastoreID          *string                                                `json:"storage,omitempty"              url:"storage,omitempty"`
+	DedicatedMemory      *int                                                   `json:"memory,omitempty"               url:"memory,omitempty"`
+	Delete               []string                                               `json:"delete,omitempty"               url:"delete,omitempty"`
+	Description          *string                                                `json:"description,omitempty"          url:"description,omitempty"`
+	DNSDomain            *string                                                `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
+	DNSServer            *string                                                `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
+	Features             *VirtualEnvironmentContainerCustomFeatures             `json:"features,omitempty"             url:"features,omitempty"`
+	Force                *CustomBool                                            `json:"force,omitempty"                url:"force,omitempty,int"`
+	HookScript           *string                                                `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
+	Hostname             *string                                                `json:"hostname,omitempty"             url:"hostname,omitempty"`
 	IgnoreUnpackErrors   *CustomBool                                            `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
-	Lock                 *string                                                `json:"lock,omitempty" url:"lock,omitempty,int"`
-	MountPoints          VirtualEnvironmentContainerCustomMountPointArray       `json:"mp,omitempty" url:"mp,omitempty,numbered"`
-	NetworkInterfaces    VirtualEnvironmentContainerCustomNetworkInterfaceArray `json:"net,omitempty" url:"net,omitempty,numbered"`
-	OSTemplateFileVolume *string                                                `json:"ostemplate,omitempty" url:"ostemplate,omitempty"`
-	OSType               *string                                                `json:"ostype,omitempty" url:"ostype,omitempty"`
-	Password             *string                                                `json:"password,omitempty" url:"password,omitempty"`
-	PoolID               *string                                                `json:"pool,omitempty" url:"pool,omitempty"`
-	Protection           *CustomBool                                            `json:"protection,omitempty" url:"protection,omitempty,int"`
-	Restore              *CustomBool                                            `json:"restore,omitempty" url:"restore,omitempty,int"`
-	RootFS               *VirtualEnvironmentContainerCustomRootFS               `json:"rootfs,omitempty" url:"rootfs,omitempty"`
-	SSHKeys              *VirtualEnvironmentContainerCustomSSHKeys              `json:"ssh-public-keys,omitempty" url:"ssh-public-keys,omitempty"`
-	Start                *CustomBool                                            `json:"start,omitempty" url:"start,omitempty,int"`
-	StartOnBoot          *CustomBool                                            `json:"onboot,omitempty" url:"onboot,omitempty,int"`
-	StartupBehavior      *VirtualEnvironmentContainerCustomStartupBehavior      `json:"startup,omitempty" url:"startup,omitempty"`
-	Swap                 *int                                                   `json:"swap,omitempty" url:"swap,omitempty"`
-	Tags                 *string                                                `json:"tags,omitempty" url:"tags,omitempty"`
-	Template             *CustomBool                                            `json:"template,omitempty" url:"template,omitempty,int"`
-	TTY                  *int                                                   `json:"tty,omitempty" url:"tty,omitempty"`
-	Unique               *CustomBool                                            `json:"unique,omitempty" url:"unique,omitempty,int"`
-	Unprivileged         *CustomBool                                            `json:"unprivileged,omitempty" url:"unprivileged,omitempty,int"`
-	VMID                 *int                                                   `json:"vmid,omitempty" url:"vmid,omitempty"`
+	Lock                 *string                                                `json:"lock,omitempty"                 url:"lock,omitempty,int"`
+	MountPoints          VirtualEnvironmentContainerCustomMountPointArray       `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
+	NetworkInterfaces    VirtualEnvironmentContainerCustomNetworkInterfaceArray `json:"net,omitempty"                  url:"net,omitempty,numbered"`
+	OSTemplateFileVolume *string                                                `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
+	OSType               *string                                                `json:"ostype,omitempty"               url:"ostype,omitempty"`
+	Password             *string                                                `json:"password,omitempty"             url:"password,omitempty"`
+	PoolID               *string                                                `json:"pool,omitempty"                 url:"pool,omitempty"`
+	Protection           *CustomBool                                            `json:"protection,omitempty"           url:"protection,omitempty,int"`
+	Restore              *CustomBool                                            `json:"restore,omitempty"              url:"restore,omitempty,int"`
+	RootFS               *VirtualEnvironmentContainerCustomRootFS               `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
+	SSHKeys              *VirtualEnvironmentContainerCustomSSHKeys              `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
+	Start                *CustomBool                                            `json:"start,omitempty"                url:"start,omitempty,int"`
+	StartOnBoot          *CustomBool                                            `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
+	StartupBehavior      *VirtualEnvironmentContainerCustomStartupBehavior      `json:"startup,omitempty"              url:"startup,omitempty"`
+	Swap                 *int                                                   `json:"swap,omitempty"                 url:"swap,omitempty"`
+	Tags                 *string                                                `json:"tags,omitempty"                 url:"tags,omitempty"`
+	Template             *CustomBool                                            `json:"template,omitempty"             url:"template,omitempty,int"`
+	TTY                  *int                                                   `json:"tty,omitempty"                  url:"tty,omitempty"`
+	Unique               *CustomBool                                            `json:"unique,omitempty"               url:"unique,omitempty,int"`
+	Unprivileged         *CustomBool                                            `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
+	VMID                 *int                                                   `json:"vmid,omitempty"                 url:"vmid,omitempty"`
 }
 
 // VirtualEnvironmentContainerCustomFeatures contains the values for the "features" property.
 type VirtualEnvironmentContainerCustomFeatures struct {
-	FUSE       *CustomBool `json:"fuse,omitempty" url:"fuse,omitempty,int"`
-	KeyControl *CustomBool `json:"keyctl,omitempty" url:"keyctl,omitempty,int"`
-	MountTypes *[]string   `json:"mount,omitempty" url:"mount,omitempty"`
+	FUSE       *CustomBool `json:"fuse,omitempty"    url:"fuse,omitempty,int"`
+	KeyControl *CustomBool `json:"keyctl,omitempty"  url:"keyctl,omitempty,int"`
+	MountTypes *[]string   `json:"mount,omitempty"   url:"mount,omitempty"`
 	Nesting    *CustomBool `json:"nesting,omitempty" url:"nesting,omitempty,int"`
 }
 
 // VirtualEnvironmentContainerCustomMountPoint contains the values for the "mp[n]" properties.
 type VirtualEnvironmentContainerCustomMountPoint struct {
-	ACL          *CustomBool `json:"acl,omitempty" url:"acl,omitempty,int"`
-	Backup       *CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	DiskSize     *string     `json:"size,omitempty" url:"size,omitempty"`
-	Enabled      bool        `json:"-" url:"-"`
+	ACL          *CustomBool `json:"acl,omitempty"          url:"acl,omitempty,int"`
+	Backup       *CustomBool `json:"backup,omitempty"       url:"backup,omitempty,int"`
+	DiskSize     *string     `json:"size,omitempty"         url:"size,omitempty"`
+	Enabled      bool        `json:"-"                      url:"-"`
 	MountOptions *[]string   `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
-	MountPoint   string      `json:"mp" url:"mp"`
-	Quota        *CustomBool `json:"quota,omitempty" url:"quota,omitempty,int"`
-	ReadOnly     *CustomBool `json:"ro,omitempty" url:"ro,omitempty,int"`
-	Replicate    *CustomBool `json:"replicate,omitempty" url:"replicate,omitempty,int"`
-	Shared       *CustomBool `json:"shared,omitempty" url:"shared,omitempty,int"`
-	Volume       string      `json:"volume" url:"volume"`
+	MountPoint   string      `json:"mp"                     url:"mp"`
+	Quota        *CustomBool `json:"quota,omitempty"        url:"quota,omitempty,int"`
+	ReadOnly     *CustomBool `json:"ro,omitempty"           url:"ro,omitempty,int"`
+	Replicate    *CustomBool `json:"replicate,omitempty"    url:"replicate,omitempty,int"`
+	Shared       *CustomBool `json:"shared,omitempty"       url:"shared,omitempty,int"`
+	Volume       string      `json:"volume"                 url:"volume"`
 }
 
 // VirtualEnvironmentContainerCustomMountPointArray is an array of VirtualEnvironmentContainerCustomMountPoint.
@@ -96,20 +96,20 @@ type VirtualEnvironmentContainerCustomMountPointArray []VirtualEnvironmentContai
 
 // VirtualEnvironmentContainerCustomNetworkInterface contains the values for the "net[n]" properties.
 type VirtualEnvironmentContainerCustomNetworkInterface struct {
-	Bridge      *string     `json:"bridge,omitempty" url:"bridge,omitempty"`
-	Enabled     bool        `json:"-" url:"-"`
+	Bridge      *string     `json:"bridge,omitempty"   url:"bridge,omitempty"`
+	Enabled     bool        `json:"-"                  url:"-"`
 	Firewall    *CustomBool `json:"firewall,omitempty" url:"firewall,omitempty,int"`
-	IPv4Address *string     `json:"ip,omitempty" url:"ip,omitempty"`
-	IPv4Gateway *string     `json:"gw,omitempty" url:"gw,omitempty"`
-	IPv6Address *string     `json:"ip6,omitempty" url:"ip6,omitempty"`
-	IPv6Gateway *string     `json:"gw6,omitempty" url:"gw6,omitempty"`
-	MACAddress  *string     `json:"hwaddr,omitempty" url:"hwaddr,omitempty"`
-	MTU         *int        `json:"mtu,omitempty" url:"mtu,omitempty"`
-	Name        string      `json:"name" url:"name"`
-	RateLimit   *float64    `json:"rate,omitempty" url:"rate,omitempty"`
-	Tag         *int        `json:"tag,omitempty" url:"tag,omitempty"`
-	Trunks      *[]int      `json:"trunks,omitempty" url:"trunks,omitempty"`
-	Type        *string     `json:"type,omitempty" url:"type,omitempty"`
+	IPv4Address *string     `json:"ip,omitempty"       url:"ip,omitempty"`
+	IPv4Gateway *string     `json:"gw,omitempty"       url:"gw,omitempty"`
+	IPv6Address *string     `json:"ip6,omitempty"      url:"ip6,omitempty"`
+	IPv6Gateway *string     `json:"gw6,omitempty"      url:"gw6,omitempty"`
+	MACAddress  *string     `json:"hwaddr,omitempty"   url:"hwaddr,omitempty"`
+	MTU         *int        `json:"mtu,omitempty"      url:"mtu,omitempty"`
+	Name        string      `json:"name"               url:"name"`
+	RateLimit   *float64    `json:"rate,omitempty"     url:"rate,omitempty"`
+	Tag         *int        `json:"tag,omitempty"      url:"tag,omitempty"`
+	Trunks      *[]int      `json:"trunks,omitempty"   url:"trunks,omitempty"`
+	Type        *string     `json:"type,omitempty"     url:"type,omitempty"`
 }
 
 // VirtualEnvironmentContainerCustomNetworkInterfaceArray is an array of VirtualEnvironmentContainerCustomNetworkInterface.
@@ -117,14 +117,14 @@ type VirtualEnvironmentContainerCustomNetworkInterfaceArray []VirtualEnvironment
 
 // VirtualEnvironmentContainerCustomRootFS contains the values for the "rootfs" property.
 type VirtualEnvironmentContainerCustomRootFS struct {
-	ACL          *CustomBool `json:"acl,omitempty" url:"acl,omitempty,int"`
-	DiskSize     *string     `json:"size,omitempty" url:"size,omitempty"`
+	ACL          *CustomBool `json:"acl,omitempty"          url:"acl,omitempty,int"`
+	DiskSize     *string     `json:"size,omitempty"         url:"size,omitempty"`
 	MountOptions *[]string   `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
-	Quota        *CustomBool `json:"quota,omitempty" url:"quota,omitempty,int"`
-	ReadOnly     *CustomBool `json:"ro,omitempty" url:"ro,omitempty,int"`
-	Replicate    *CustomBool `json:"replicate,omitempty" url:"replicate,omitempty,int"`
-	Shared       *CustomBool `json:"shared,omitempty" url:"shared,omitempty,int"`
-	Volume       string      `json:"volume" url:"volume"`
+	Quota        *CustomBool `json:"quota,omitempty"        url:"quota,omitempty,int"`
+	ReadOnly     *CustomBool `json:"ro,omitempty"           url:"ro,omitempty,int"`
+	Replicate    *CustomBool `json:"replicate,omitempty"    url:"replicate,omitempty,int"`
+	Shared       *CustomBool `json:"shared,omitempty"       url:"shared,omitempty,int"`
+	Volume       string      `json:"volume"                 url:"volume"`
 }
 
 // VirtualEnvironmentContainerCustomSSHKeys contains the values for the "ssh-public-keys" property.
@@ -132,9 +132,9 @@ type VirtualEnvironmentContainerCustomSSHKeys []string
 
 // VirtualEnvironmentContainerCustomStartupBehavior contains the values for the "startup" property.
 type VirtualEnvironmentContainerCustomStartupBehavior struct {
-	Down  *int `json:"down,omitempty" url:"down,omitempty"`
+	Down  *int `json:"down,omitempty"  url:"down,omitempty"`
 	Order *int `json:"order,omitempty" url:"order,omitempty"`
-	Up    *int `json:"up,omitempty" url:"up,omitempty"`
+	Up    *int `json:"up,omitempty"    url:"up,omitempty"`
 }
 
 // VirtualEnvironmentContainerGetResponseBody contains the body from an user get response.
@@ -211,7 +211,7 @@ type VirtualEnvironmentContainerRebootRequestBody struct {
 // VirtualEnvironmentContainerShutdownRequestBody contains the body for a container shutdown request.
 type VirtualEnvironmentContainerShutdownRequestBody struct {
 	ForceStop *CustomBool `json:"forceStop,omitempty" url:"forceStop,omitempty,int"`
-	Timeout   *int        `json:"timeout,omitempty" url:"timeout,omitempty"`
+	Timeout   *int        `json:"timeout,omitempty"   url:"timeout,omitempty"`
 }
 
 // VirtualEnvironmentContainerUpdateRequestBody contains the data for an user update request.
@@ -332,7 +332,10 @@ func (r VirtualEnvironmentContainerCustomMountPoint) EncodeValues(key string, v 
 }
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomMountPointArray array to multiple URL values.
-func (r VirtualEnvironmentContainerCustomMountPointArray) EncodeValues(key string, v *url.Values) error {
+func (r VirtualEnvironmentContainerCustomMountPointArray) EncodeValues(
+	key string,
+	v *url.Values,
+) error {
 	for i, d := range r {
 		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
 		if err != nil {
@@ -344,7 +347,10 @@ func (r VirtualEnvironmentContainerCustomMountPointArray) EncodeValues(key strin
 }
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomNetworkInterface struct to a URL vlaue.
-func (r VirtualEnvironmentContainerCustomNetworkInterface) EncodeValues(key string, v *url.Values) error {
+func (r VirtualEnvironmentContainerCustomNetworkInterface) EncodeValues(
+	key string,
+	v *url.Values,
+) error {
 	var values []string
 
 	if r.Bridge != nil {
@@ -415,7 +421,10 @@ func (r VirtualEnvironmentContainerCustomNetworkInterface) EncodeValues(key stri
 }
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomNetworkInterfaceArray array to multiple URL values.
-func (r VirtualEnvironmentContainerCustomNetworkInterfaceArray) EncodeValues(key string, v *url.Values) error {
+func (r VirtualEnvironmentContainerCustomNetworkInterfaceArray) EncodeValues(
+	key string,
+	v *url.Values,
+) error {
 	for i, d := range r {
 		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
 		if err != nil {
@@ -497,7 +506,10 @@ func (r VirtualEnvironmentContainerCustomSSHKeys) EncodeValues(key string, v *ur
 }
 
 // EncodeValues converts a VirtualEnvironmentContainerCustomStartupBehavior struct to a URL vlaue.
-func (r VirtualEnvironmentContainerCustomStartupBehavior) EncodeValues(key string, v *url.Values) error {
+func (r VirtualEnvironmentContainerCustomStartupBehavior) EncodeValues(
+	key string,
+	v *url.Values,
+) error {
 	var values []string
 
 	if r.Down != nil {
@@ -524,7 +536,6 @@ func (r *VirtualEnvironmentContainerCustomFeatures) UnmarshalJSON(b []byte) erro
 	var s string
 
 	err := json.Unmarshal(b, &s)
-
 	if err != nil {
 		return err
 	}
@@ -565,7 +576,6 @@ func (r *VirtualEnvironmentContainerCustomMountPoint) UnmarshalJSON(b []byte) er
 	var s string
 
 	err := json.Unmarshal(b, &s)
-
 	if err != nil {
 		return err
 	}
@@ -621,7 +631,6 @@ func (r *VirtualEnvironmentContainerCustomNetworkInterface) UnmarshalJSON(b []by
 	var s string
 
 	err := json.Unmarshal(b, &s)
-
 	if err != nil {
 		return err
 	}
@@ -652,7 +661,6 @@ func (r *VirtualEnvironmentContainerCustomNetworkInterface) UnmarshalJSON(b []by
 				r.MACAddress = &v[1]
 			case "mtu":
 				iv, err := strconv.Atoi(v[1])
-
 				if err != nil {
 					return err
 				}
@@ -662,7 +670,6 @@ func (r *VirtualEnvironmentContainerCustomNetworkInterface) UnmarshalJSON(b []by
 				r.Name = v[1]
 			case "rate":
 				fv, err := strconv.ParseFloat(v[1], 64)
-
 				if err != nil {
 					return err
 				}
@@ -670,7 +677,6 @@ func (r *VirtualEnvironmentContainerCustomNetworkInterface) UnmarshalJSON(b []by
 				r.RateLimit = &fv
 			case "tag":
 				iv, err := strconv.Atoi(v[1])
-
 				if err != nil {
 					return err
 				}
@@ -708,7 +714,6 @@ func (r *VirtualEnvironmentContainerCustomRootFS) UnmarshalJSON(b []byte) error 
 	var s string
 
 	err := json.Unmarshal(b, &s)
-
 	if err != nil {
 		return err
 	}
@@ -759,7 +764,6 @@ func (r *VirtualEnvironmentContainerCustomStartupBehavior) UnmarshalJSON(b []byt
 	var s string
 
 	err := json.Unmarshal(b, &s)
-
 	if err != nil {
 		return err
 	}
@@ -773,7 +777,6 @@ func (r *VirtualEnvironmentContainerCustomStartupBehavior) UnmarshalJSON(b []byt
 			switch v[0] {
 			case "down":
 				iv, err := strconv.Atoi(v[1])
-
 				if err != nil {
 					return err
 				}
@@ -781,7 +784,6 @@ func (r *VirtualEnvironmentContainerCustomStartupBehavior) UnmarshalJSON(b []byt
 				r.Down = &iv
 			case "order":
 				iv, err := strconv.Atoi(v[1])
-
 				if err != nil {
 					return err
 				}
@@ -789,7 +791,6 @@ func (r *VirtualEnvironmentContainerCustomStartupBehavior) UnmarshalJSON(b []byt
 				r.Order = &iv
 			case "up":
 				iv, err := strconv.Atoi(v[1])
-
 				if err != nil {
 					return err
 				}

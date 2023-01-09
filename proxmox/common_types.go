@@ -63,7 +63,6 @@ func (r *CustomCommaSeparatedList) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
-
 	if err != nil {
 		return err
 	}
@@ -82,7 +81,6 @@ func (r *CustomInt) UnmarshalJSON(b []byte) error {
 	}
 
 	i, err := strconv.ParseInt(s, 10, 32)
-
 	if err != nil {
 		return err
 	}
@@ -104,7 +102,6 @@ func (r *CustomLineBreakSeparatedList) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
-
 	if err != nil {
 		return err
 	}
@@ -130,7 +127,6 @@ func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
 	var privileges interface{}
 
 	err := json.Unmarshal(b, &privileges)
-
 	if err != nil {
 		return err
 	}
@@ -167,7 +163,6 @@ func (r CustomTimestamp) MarshalJSON() ([]byte, error) {
 func (r *CustomTimestamp) UnmarshalJSON(b []byte) error {
 	s := string(b)
 	i, err := strconv.ParseInt(s, 10, 64)
-
 	if err != nil {
 		return err
 	}

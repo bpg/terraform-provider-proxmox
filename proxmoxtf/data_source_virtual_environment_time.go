@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -49,7 +48,11 @@ func dataSourceVirtualEnvironmentTime() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentTimeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentTimeRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -78,7 +81,10 @@ func dataSourceVirtualEnvironmentTimeRead(ctx context.Context, d *schema.Resourc
 	diags = append(diags, diag.FromErr(err)...)
 	err = d.Set(mkDataSourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
 	diags = append(diags, diag.FromErr(err)...)
-	err = d.Set(mkDataSourceVirtualEnvironmentTimeUTCTime, time.Time(nodeTime.UTCTime).Format(time.RFC3339))
+	err = d.Set(
+		mkDataSourceVirtualEnvironmentTimeUTCTime,
+		time.Time(nodeTime.UTCTime).Format(time.RFC3339),
+	)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags

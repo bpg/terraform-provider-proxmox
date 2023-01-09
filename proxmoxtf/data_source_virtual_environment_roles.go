@@ -46,7 +46,11 @@ func dataSourceVirtualEnvironmentRoles() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentRolesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentRolesRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)

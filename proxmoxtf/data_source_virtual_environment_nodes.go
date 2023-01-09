@@ -9,7 +9,6 @@ import (
 	"math"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -87,7 +86,11 @@ func dataSourceVirtualEnvironmentNodes() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentNodesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentNodesRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)

@@ -10,12 +10,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const (
@@ -215,11 +213,13 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 128)),
 						},
 						mkResourceVirtualEnvironmentContainerCPUUnits: {
-							Type:             schema.TypeInt,
-							Description:      "The CPU units",
-							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentContainerCPUUnits,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 500000)),
+							Type:        schema.TypeInt,
+							Description: "The CPU units",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerCPUUnits,
+							ValidateDiagFunc: validation.ToDiagFunc(
+								validation.IntBetween(0, 500000),
+							),
 						},
 					},
 				},
@@ -402,7 +402,8 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 										Sensitive:   true,
 										Default:     dvResourceVirtualEnvironmentContainerInitializationUserAccountPassword,
 										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-											return len(old) > 0 && strings.ReplaceAll(old, "*", "") == ""
+											return len(old) > 0 &&
+												strings.ReplaceAll(old, "*", "") == ""
 										},
 									},
 								},
@@ -430,18 +431,22 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentContainerMemoryDedicated: {
-							Type:             schema.TypeInt,
-							Description:      "The dedicated memory in megabytes",
-							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentContainerMemoryDedicated,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(16, 268435456)),
+							Type:        schema.TypeInt,
+							Description: "The dedicated memory in megabytes",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerMemoryDedicated,
+							ValidateDiagFunc: validation.ToDiagFunc(
+								validation.IntBetween(16, 268435456),
+							),
 						},
 						mkResourceVirtualEnvironmentContainerMemorySwap: {
-							Type:             schema.TypeInt,
-							Description:      "The swap size in megabytes",
-							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentContainerMemorySwap,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 268435456)),
+							Type:        schema.TypeInt,
+							Description: "The swap size in megabytes",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerMemorySwap,
+							ValidateDiagFunc: validation.ToDiagFunc(
+								validation.IntBetween(0, 268435456),
+							),
 						},
 					},
 				},
@@ -578,7 +583,11 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentContainerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentContainerCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	clone := d.Get(mkResourceVirtualEnvironmentContainerClone).([]interface{})
 
 	if len(clone) > 0 {
@@ -588,7 +597,11 @@ func resourceVirtualEnvironmentContainerCreate(ctx context.Context, d *schema.Re
 	return resourceVirtualEnvironmentContainerCreateCustom(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentContainerCreateClone(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -675,7 +688,9 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 	if len(console) > 0 {
 		consoleBlock := console[0].(map[string]interface{})
 
-		consoleEnabled := proxmox.CustomBool(consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool))
+		consoleEnabled := proxmox.CustomBool(
+			consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
+		)
 		consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
 		consoleTTYCount := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleTTYCount].(int)
 
@@ -731,8 +746,14 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 			if len(ipv4) > 0 {
 				ipv4Block := ipv4[0].(map[string]interface{})
 
-				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string))
-				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string))
+				initializationIPConfigIPv4Address = append(
+					initializationIPConfigIPv4Address,
+					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
+				)
+				initializationIPConfigIPv4Gateway = append(
+					initializationIPConfigIPv4Gateway,
+					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
+				)
 			} else {
 				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, "")
 				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
@@ -743,8 +764,14 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 			if len(ipv6) > 0 {
 				ipv6Block := ipv6[0].(map[string]interface{})
 
-				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string))
-				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string))
+				initializationIPConfigIPv6Address = append(
+					initializationIPConfigIPv6Address,
+					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
+				)
+				initializationIPConfigIPv6Gateway = append(
+					initializationIPConfigIPv6Gateway,
+					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),
+				)
 			} else {
 				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, "")
 				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, "")
@@ -758,7 +785,10 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentContainerInitializationUserAccountKeys].([]interface{})
 
 			if len(keys) > 0 {
-				initializationUserAccountKeys := make(proxmox.VirtualEnvironmentContainerCustomSSHKeys, len(keys))
+				initializationUserAccountKeys := make(
+					proxmox.VirtualEnvironmentContainerCustomSSHKeys,
+					len(keys),
+				)
 
 				for ki, kv := range keys {
 					initializationUserAccountKeys[ki] = kv.(string)
@@ -794,13 +824,21 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 {
-		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(ctx, veClient, nodeName, vmID)
+		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(
+			ctx,
+			veClient,
+			nodeName,
+			vmID,
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	networkInterfaceArray := make(proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray, len(networkInterface))
+	networkInterfaceArray := make(
+		proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+		len(networkInterface),
+	)
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
@@ -904,7 +942,11 @@ func resourceVirtualEnvironmentContainerCreateClone(ctx context.Context, d *sche
 	return resourceVirtualEnvironmentContainerCreateStart(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentContainerCreateCustom(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -914,16 +956,30 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	resource := resourceVirtualEnvironmentContainer()
 
-	consoleBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
+	consoleBlock, err := getSchemaBlock(
+		resource,
+		d,
+		[]string{mkResourceVirtualEnvironmentContainerConsole},
+		0,
+		true,
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	consoleEnabled := proxmox.CustomBool(consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool))
+	consoleEnabled := proxmox.CustomBool(
+		consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
+	)
 	consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
 	consoleTTYCount := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleTTYCount].(int)
 
-	cpuBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
+	cpuBlock, err := getSchemaBlock(
+		resource,
+		d,
+		[]string{mkResourceVirtualEnvironmentContainerCPU},
+		0,
+		true,
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -934,7 +990,13 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
 
-	diskBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerDisk}, 0, true)
+	diskBlock, err := getSchemaBlock(
+		resource,
+		d,
+		[]string{mkResourceVirtualEnvironmentContainerDisk},
+		0,
+		true,
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -982,8 +1044,14 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 			if len(ipv4) > 0 {
 				ipv4Block := ipv4[0].(map[string]interface{})
 
-				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string))
-				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string))
+				initializationIPConfigIPv4Address = append(
+					initializationIPConfigIPv4Address,
+					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
+				)
+				initializationIPConfigIPv4Gateway = append(
+					initializationIPConfigIPv4Gateway,
+					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
+				)
 			} else {
 				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, "")
 				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
@@ -994,8 +1062,14 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 			if len(ipv6) > 0 {
 				ipv6Block := ipv6[0].(map[string]interface{})
 
-				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string))
-				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string))
+				initializationIPConfigIPv6Address = append(
+					initializationIPConfigIPv6Address,
+					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
+				)
+				initializationIPConfigIPv6Gateway = append(
+					initializationIPConfigIPv6Gateway,
+					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),
+				)
 			} else {
 				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, "")
 				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, "")
@@ -1008,7 +1082,10 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 			initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
 
 			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentContainerInitializationUserAccountKeys].([]interface{})
-			initializationUserAccountKeys = make(proxmox.VirtualEnvironmentContainerCustomSSHKeys, len(keys))
+			initializationUserAccountKeys = make(
+				proxmox.VirtualEnvironmentContainerCustomSSHKeys,
+				len(keys),
+			)
 
 			for ki, kv := range keys {
 				initializationUserAccountKeys[ki] = kv.(string)
@@ -1018,7 +1095,13 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 		}
 	}
 
-	memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
+	memoryBlock, err := getSchemaBlock(
+		resource,
+		d,
+		[]string{mkResourceVirtualEnvironmentContainerMemory},
+		0,
+		true,
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1027,7 +1110,10 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int)
 
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
-	networkInterfaceArray := make(proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray, len(networkInterface))
+	networkInterfaceArray := make(
+		proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+		len(networkInterface),
+	)
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
@@ -1088,7 +1174,10 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	operatingSystem := d.Get(mkResourceVirtualEnvironmentContainerOperatingSystem).([]interface{})
 
 	if len(operatingSystem) == 0 {
-		return diag.Errorf("\"%s\": required field is not set", mkResourceVirtualEnvironmentContainerOperatingSystem)
+		return diag.Errorf(
+			"\"%s\": required field is not set",
+			mkResourceVirtualEnvironmentContainerOperatingSystem,
+		)
 	}
 
 	operatingSystemBlock := operatingSystem[0].(map[string]interface{})
@@ -1173,7 +1262,11 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 	return resourceVirtualEnvironmentContainerCreateStart(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentContainerCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentContainerCreateStart(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	started := d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool)
 	template := d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 
@@ -1224,9 +1317,13 @@ func resourceVirtualEnvironmentContainerGetCPUArchitectureValidator() schema.Sch
 	}, false))
 }
 
-func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(ctx context.Context, client *proxmox.VirtualEnvironmentClient, nodeName string, vmID int) ([]interface{}, error) {
+func resourceVirtualEnvironmentContainerGetExistingNetworkInterface(
+	ctx context.Context,
+	client *proxmox.VirtualEnvironmentClient,
+	nodeName string,
+	vmID int,
+) ([]interface{}, error) {
 	containerInfo, err := client.GetContainer(ctx, nodeName, vmID)
-
 	if err != nil {
 		return []interface{}{}, err
 	}
@@ -1304,7 +1401,11 @@ func resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema
 	}, false))
 }
 
-func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentContainerRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -1321,7 +1422,6 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 
 	// Retrieve the entire configuration in order to compare it to the state.
 	containerConfig, err := veClient.GetContainer(ctx, nodeName, vmID)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
 			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
@@ -1339,7 +1439,10 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 
 	if len(clone) == 0 || currentDescription != dvResourceVirtualEnvironmentContainerDescription {
 		if containerConfig.Description != nil {
-			err = d.Set(mkResourceVirtualEnvironmentContainerDescription, strings.TrimSpace(*containerConfig.Description))
+			err = d.Set(
+				mkResourceVirtualEnvironmentContainerDescription,
+				strings.TrimSpace(*containerConfig.Description),
+			)
 		} else {
 			err = d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
 		}
@@ -1507,7 +1610,9 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServer] = ""
 		}
 
-		initialization[mkResourceVirtualEnvironmentContainerInitializationDNS] = []interface{}{initializationDNS}
+		initialization[mkResourceVirtualEnvironmentContainerInitializationDNS] = []interface{}{
+			initializationDNS,
+		}
 	}
 
 	if containerConfig.Hostname != nil {
@@ -1534,7 +1639,8 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 			continue
 		}
 
-		if nv.IPv4Address != nil || nv.IPv4Gateway != nil || nv.IPv6Address != nil || nv.IPv6Gateway != nil {
+		if nv.IPv4Address != nil || nv.IPv4Gateway != nil || nv.IPv6Address != nil ||
+			nv.IPv6Gateway != nil {
 			ipConfig := map[string]interface{}{}
 
 			if nv.IPv4Address != nil || nv.IPv4Gateway != nil {
@@ -1552,7 +1658,9 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway] = ""
 				}
 
-				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4] = []interface{}{ip}
+				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4] = []interface{}{
+					ip,
+				}
 			} else {
 				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4] = []interface{}{}
 			}
@@ -1572,7 +1680,9 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 					ip[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway] = ""
 				}
 
-				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6] = []interface{}{ip}
+				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6] = []interface{}{
+					ip,
+				}
 			} else {
 				ipConfig[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6] = []interface{}{}
 			}
@@ -1651,7 +1761,10 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 			}
 
 			if len(initialization) > 0 {
-				err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
+				err = d.Set(
+					mkResourceVirtualEnvironmentContainerInitialization,
+					[]interface{}{initialization},
+				)
 			} else {
 				err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
 			}
@@ -1661,7 +1774,10 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 		currentNetworkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 		if len(currentNetworkInterface) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentContainerNetworkInterface, networkInterfaceList)
+			err := d.Set(
+				mkResourceVirtualEnvironmentContainerNetworkInterface,
+				networkInterfaceList,
+			)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else {
@@ -1696,7 +1812,10 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 
 	if len(clone) > 0 {
 		if len(currentMemory) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentContainerOperatingSystem, []interface{}{operatingSystem})
+			err := d.Set(
+				mkResourceVirtualEnvironmentContainerOperatingSystem,
+				[]interface{}{operatingSystem},
+			)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentOperatingSystem) > 0 ||
@@ -1710,7 +1829,10 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 	//nolint:gosimple
 	if len(clone) == 0 || currentTemplate != dvResourceVirtualEnvironmentContainerTemplate {
 		if containerConfig.Template != nil {
-			err = d.Set(mkResourceVirtualEnvironmentContainerTemplate, bool(*containerConfig.Template))
+			err = d.Set(
+				mkResourceVirtualEnvironmentContainerTemplate,
+				bool(*containerConfig.Template),
+			)
 		} else {
 			err = d.Set(mkResourceVirtualEnvironmentContainerTemplate, false)
 		}
@@ -1729,7 +1851,11 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 	return diags
 }
 
-func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentContainerUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -1765,12 +1891,20 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	// Prepare the new console configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerConsole) {
-		consoleBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerConsole}, 0, true)
+		consoleBlock, err := getSchemaBlock(
+			resource,
+			d,
+			[]string{mkResourceVirtualEnvironmentContainerConsole},
+			0,
+			true,
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		consoleEnabled := proxmox.CustomBool(consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool))
+		consoleEnabled := proxmox.CustomBool(
+			consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
+		)
 		consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
 		consoleTTYCount := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleTTYCount].(int)
 
@@ -1783,7 +1917,13 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerCPU) {
-		cpuBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerCPU}, 0, true)
+		cpuBlock, err := getSchemaBlock(
+			resource,
+			d,
+			[]string{mkResourceVirtualEnvironmentContainerCPU},
+			0,
+			true,
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1829,8 +1969,14 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 			if len(ipv4) > 0 {
 				ipv4Block := ipv4[0].(map[string]interface{})
 
-				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string))
-				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string))
+				initializationIPConfigIPv4Address = append(
+					initializationIPConfigIPv4Address,
+					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
+				)
+				initializationIPConfigIPv4Gateway = append(
+					initializationIPConfigIPv4Gateway,
+					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
+				)
 			} else {
 				initializationIPConfigIPv4Address = append(initializationIPConfigIPv4Address, "")
 				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
@@ -1841,8 +1987,14 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 			if len(ipv6) > 0 {
 				ipv6Block := ipv6[0].(map[string]interface{})
 
-				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string))
-				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string))
+				initializationIPConfigIPv6Address = append(
+					initializationIPConfigIPv6Address,
+					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
+				)
+				initializationIPConfigIPv6Gateway = append(
+					initializationIPConfigIPv6Gateway,
+					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),
+				)
 			} else {
 				initializationIPConfigIPv6Address = append(initializationIPConfigIPv6Address, "")
 				initializationIPConfigIPv6Gateway = append(initializationIPConfigIPv6Gateway, "")
@@ -1860,7 +2012,13 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerMemory) {
-		memoryBlock, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerMemory}, 0, true)
+		memoryBlock, err := getSchemaBlock(
+			resource,
+			d,
+			[]string{mkResourceVirtualEnvironmentContainerMemory},
+			0,
+			true,
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1878,14 +2036,23 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 && len(clone) > 0 {
-		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(ctx, veClient, nodeName, vmID)
+		networkInterface, err = resourceVirtualEnvironmentContainerGetExistingNetworkInterface(
+			ctx,
+			veClient,
+			nodeName,
+			vmID,
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	if d.HasChange(mkResourceVirtualEnvironmentContainerInitialization) || d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
-		networkInterfaceArray := make(proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray, len(networkInterface))
+	if d.HasChange(mkResourceVirtualEnvironmentContainerInitialization) ||
+		d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
+		networkInterfaceArray := make(
+			proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+			len(networkInterface),
+		)
 
 		for ni, nv := range networkInterface {
 			networkInterfaceMap := nv.(map[string]interface{})
@@ -1961,7 +2128,13 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerOperatingSystem) {
-		operatingSystem, err := getSchemaBlock(resource, d, []string{mkResourceVirtualEnvironmentContainerOperatingSystem}, 0, true)
+		operatingSystem, err := getSchemaBlock(
+			resource,
+			d,
+			[]string{mkResourceVirtualEnvironmentContainerOperatingSystem},
+			0,
+			true,
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2018,9 +2191,14 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 	if !bool(template) && rebootRequired {
 		rebootTimeout := 300
 
-		err = veClient.RebootContainer(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentContainerRebootRequestBody{
-			Timeout: &rebootTimeout,
-		})
+		err = veClient.RebootContainer(
+			ctx,
+			nodeName,
+			vmID,
+			&proxmox.VirtualEnvironmentContainerRebootRequestBody{
+				Timeout: &rebootTimeout,
+			},
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2029,7 +2207,11 @@ func resourceVirtualEnvironmentContainerUpdate(ctx context.Context, d *schema.Re
 	return resourceVirtualEnvironmentContainerRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentContainerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentContainerDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -2052,10 +2234,15 @@ func resourceVirtualEnvironmentContainerDelete(ctx context.Context, d *schema.Re
 		forceStop := proxmox.CustomBool(true)
 		shutdownTimeout := 300
 
-		err = veClient.ShutdownContainer(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
-			ForceStop: &forceStop,
-			Timeout:   &shutdownTimeout,
-		})
+		err = veClient.ShutdownContainer(
+			ctx,
+			nodeName,
+			vmID,
+			&proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+				ForceStop: &forceStop,
+				Timeout:   &shutdownTimeout,
+			},
+		)
 		if err != nil {
 			return diag.FromErr(err)
 		}

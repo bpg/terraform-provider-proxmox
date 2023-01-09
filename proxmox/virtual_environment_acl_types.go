@@ -20,10 +20,10 @@ type VirtualEnvironmentACLGetResponseData struct {
 
 // VirtualEnvironmentACLUpdateRequestBody contains the data for an access control list update request.
 type VirtualEnvironmentACLUpdateRequestBody struct {
-	Delete    *CustomBool `json:"delete,omitempty" url:"delete,omitempty,int"`
-	Groups    []string    `json:"groups,omitempty" url:"groups,omitempty,comma"`
-	Path      string      `json:"path" url:"path"`
+	Delete    *CustomBool `json:"delete,omitempty"    url:"delete,omitempty,int"`
+	Groups    []string    `json:"groups,omitempty"    url:"groups,omitempty,comma"`
+	Path      string      `json:"path"                url:"path"`
 	Propagate *CustomBool `json:"propagate,omitempty" url:"propagate,omitempty,int"`
-	Roles     []string    `json:"roles" url:"roles,comma"`
-	Users     []string    `json:"users,omitempty" url:"users,omitempty,comma"`
+	Roles     []string    `json:"roles"               url:"roles,comma"`
+	Users     []string    `json:"users,omitempty"     url:"users,omitempty,comma"`
 }

@@ -185,7 +185,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDiskSize:        schema.TypeInt,
 	})
 
-	diskSpeedSchema := testNestedSchemaExistence(t, diskSchema, mkResourceVirtualEnvironmentVMDiskSpeed)
+	diskSpeedSchema := testNestedSchemaExistence(
+		t,
+		diskSchema,
+		mkResourceVirtualEnvironmentVMDiskSpeed,
+	)
 
 	testOptionalArguments(t, diskSpeedSchema, []string{
 		mkResourceVirtualEnvironmentVMDiskSpeedRead,
@@ -201,7 +205,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable: schema.TypeInt,
 	})
 
-	initializationSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMInitialization)
+	initializationSchema := testNestedSchemaExistence(
+		t,
+		s,
+		mkResourceVirtualEnvironmentVMInitialization,
+	)
 
 	testOptionalArguments(t, initializationSchema, []string{
 		mkResourceVirtualEnvironmentVMInitializationDatastoreID,
@@ -236,7 +244,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA:    schema.TypeBool,
 	})
 
-	initializationDNSSchema := testNestedSchemaExistence(t, initializationSchema, mkResourceVirtualEnvironmentVMInitializationDNS)
+	initializationDNSSchema := testNestedSchemaExistence(
+		t,
+		initializationSchema,
+		mkResourceVirtualEnvironmentVMInitializationDNS,
+	)
 
 	testOptionalArguments(t, initializationDNSSchema, []string{
 		mkResourceVirtualEnvironmentVMInitializationDNSDomain,
@@ -248,7 +260,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationDNSServer: schema.TypeString,
 	})
 
-	initializationIPConfigSchema := testNestedSchemaExistence(t, initializationSchema, mkResourceVirtualEnvironmentVMInitializationIPConfig)
+	initializationIPConfigSchema := testNestedSchemaExistence(
+		t,
+		initializationSchema,
+		mkResourceVirtualEnvironmentVMInitializationIPConfig,
+	)
 
 	testOptionalArguments(t, initializationIPConfigSchema, []string{
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4,
@@ -260,7 +276,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6: schema.TypeList,
 	})
 
-	initializationIPConfigIPv4Schema := testNestedSchemaExistence(t, initializationIPConfigSchema, mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4)
+	initializationIPConfigIPv4Schema := testNestedSchemaExistence(
+		t,
+		initializationIPConfigSchema,
+		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4,
+	)
 
 	testOptionalArguments(t, initializationIPConfigIPv4Schema, []string{
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address,
@@ -272,7 +292,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway: schema.TypeString,
 	})
 
-	initializationIPConfigIPv6Schema := testNestedSchemaExistence(t, initializationIPConfigSchema, mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6)
+	initializationIPConfigIPv6Schema := testNestedSchemaExistence(
+		t,
+		initializationIPConfigSchema,
+		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6,
+	)
 
 	testOptionalArguments(t, initializationIPConfigIPv6Schema, []string{
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address,
@@ -284,7 +308,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway: schema.TypeString,
 	})
 
-	initializationUserAccountSchema := testNestedSchemaExistence(t, initializationSchema, mkResourceVirtualEnvironmentVMInitializationUserAccount)
+	initializationUserAccountSchema := testNestedSchemaExistence(
+		t,
+		initializationSchema,
+		mkResourceVirtualEnvironmentVMInitializationUserAccount,
+	)
 
 	testOptionalArguments(t, initializationUserAccountSchema, []string{
 		mkResourceVirtualEnvironmentVMInitializationUserAccountKeys,
@@ -312,7 +340,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMMemoryShared:    schema.TypeInt,
 	})
 
-	networkDeviceSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMNetworkDevice)
+	networkDeviceSchema := testNestedSchemaExistence(
+		t,
+		s,
+		mkResourceVirtualEnvironmentVMNetworkDevice,
+	)
 
 	testOptionalArguments(t, networkDeviceSchema, []string{
 		mkResourceVirtualEnvironmentVMNetworkDeviceBridge,
@@ -334,7 +366,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMNetworkDeviceMTU:        schema.TypeInt,
 	})
 
-	operatingSystemSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMOperatingSystem)
+	operatingSystemSchema := testNestedSchemaExistence(
+		t,
+		s,
+		mkResourceVirtualEnvironmentVMOperatingSystem,
+	)
 
 	testOptionalArguments(t, operatingSystemSchema, []string{
 		mkResourceVirtualEnvironmentVMOperatingSystemType,
@@ -344,7 +380,11 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMOperatingSystemType: schema.TypeString,
 	})
 
-	serialDeviceSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMSerialDevice)
+	serialDeviceSchema := testNestedSchemaExistence(
+		t,
+		s,
+		mkResourceVirtualEnvironmentVMSerialDevice,
+	)
 
 	testOptionalArguments(t, serialDeviceSchema, []string{
 		mkResourceVirtualEnvironmentVMSerialDeviceDevice,

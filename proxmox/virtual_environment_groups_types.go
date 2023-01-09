@@ -7,7 +7,7 @@ package proxmox
 // VirtualEnvironmentGroupCreateRequestBody contains the data for an access group create request.
 type VirtualEnvironmentGroupCreateRequestBody struct {
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	ID      string  `json:"groupid" url:"groupid"`
+	ID      string  `json:"groupid"           url:"groupid"`
 }
 
 // VirtualEnvironmentGroupGetResponseBody contains the body from an access group get response.

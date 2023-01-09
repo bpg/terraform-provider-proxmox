@@ -7,8 +7,8 @@ package proxmox
 // VirtualEnvironmentClusterAliasCreateRequestBody contains the data for an alias create request.
 type VirtualEnvironmentClusterAliasCreateRequestBody struct {
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	Name    string  `json:"name" url:"name"`
-	CIDR    string  `json:"cidr" url:"cidr"`
+	Name    string  `json:"name"              url:"name"`
+	CIDR    string  `json:"cidr"              url:"cidr"`
 }
 
 // VirtualEnvironmentClusterAliasGetResponseBody contains the body from an alias get response.
@@ -19,10 +19,10 @@ type VirtualEnvironmentClusterAliasGetResponseBody struct {
 // VirtualEnvironmentClusterAliasGetResponseData contains the data from an alias get response.
 type VirtualEnvironmentClusterAliasGetResponseData struct {
 	Comment   *string `json:"comment,omitempty" url:"comment,omitempty"`
-	Name      string  `json:"name" url:"name"`
-	CIDR      string  `json:"cidr" url:"cidr"`
-	Digest    *string `json:"digest" url:"digest"`
-	IPVersion int     `json:"ipversion" url:"ipversion"`
+	Name      string  `json:"name"              url:"name"`
+	CIDR      string  `json:"cidr"              url:"cidr"`
+	Digest    *string `json:"digest"            url:"digest"`
+	IPVersion int     `json:"ipversion"         url:"ipversion"`
 }
 
 // VirtualEnvironmentClusterAliasListResponseBody contains the data from an alias get response.
@@ -33,6 +33,6 @@ type VirtualEnvironmentClusterAliasListResponseBody struct {
 // VirtualEnvironmentClusterAliasUpdateRequestBody contains the data for an alias update request.
 type VirtualEnvironmentClusterAliasUpdateRequestBody struct {
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	ReName  string  `json:"rename" url:"rename"`
-	CIDR    string  `json:"cidr" url:"cidr"`
+	ReName  string  `json:"rename"            url:"rename"`
+	CIDR    string  `json:"cidr"              url:"cidr"`
 }

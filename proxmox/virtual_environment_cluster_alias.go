@@ -13,20 +13,37 @@ import (
 )
 
 // CreateAlias create an alias
-func (c *VirtualEnvironmentClient) CreateAlias(ctx context.Context, d *VirtualEnvironmentClusterAliasCreateRequestBody) error {
+func (c *VirtualEnvironmentClient) CreateAlias(
+	ctx context.Context,
+	d *VirtualEnvironmentClusterAliasCreateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPOST, "cluster/firewall/aliases", d, nil)
 }
 
 // DeleteAlias delete an alias
 func (c *VirtualEnvironmentClient) DeleteAlias(ctx context.Context, id string) error {
-	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)), nil, nil)
+	return c.DoRequest(
+		ctx,
+		hmDELETE,
+		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)),
+		nil,
+		nil,
+	)
 }
 
 // GetAlias retrieves an alias
-func (c *VirtualEnvironmentClient) GetAlias(ctx context.Context, id string) (*VirtualEnvironmentClusterAliasGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetAlias(
+	ctx context.Context,
+	id string,
+) (*VirtualEnvironmentClusterAliasGetResponseData, error) {
 	resBody := &VirtualEnvironmentClusterAliasGetResponseBody{}
-	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)), nil, resBody)
-
+	err := c.DoRequest(
+		ctx,
+		hmGET,
+		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)),
+		nil,
+		resBody,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -39,10 +56,11 @@ func (c *VirtualEnvironmentClient) GetAlias(ctx context.Context, id string) (*Vi
 }
 
 // ListAliases retrieves a list of aliases.
-func (c *VirtualEnvironmentClient) ListAliases(ctx context.Context) ([]*VirtualEnvironmentClusterAliasGetResponseData, error) {
+func (c *VirtualEnvironmentClient) ListAliases(
+	ctx context.Context,
+) ([]*VirtualEnvironmentClusterAliasGetResponseData, error) {
 	resBody := &VirtualEnvironmentClusterAliasListResponseBody{}
 	err := c.DoRequest(ctx, hmGET, "cluster/firewall/aliases", nil, resBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +77,16 @@ func (c *VirtualEnvironmentClient) ListAliases(ctx context.Context) ([]*VirtualE
 }
 
 // UpdateAlias updates an alias.
-func (c *VirtualEnvironmentClient) UpdateAlias(ctx context.Context, id string, d *VirtualEnvironmentClusterAliasUpdateRequestBody) error {
-	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)), d, nil)
+func (c *VirtualEnvironmentClient) UpdateAlias(
+	ctx context.Context,
+	id string,
+	d *VirtualEnvironmentClusterAliasUpdateRequestBody,
+) error {
+	return c.DoRequest(
+		ctx,
+		hmPUT,
+		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)),
+		d,
+		nil,
+	)
 }

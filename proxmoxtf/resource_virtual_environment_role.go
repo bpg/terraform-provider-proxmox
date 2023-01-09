@@ -8,9 +8,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -42,7 +41,11 @@ func resourceVirtualEnvironmentRole() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentRoleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentRoleCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -72,7 +75,11 @@ func resourceVirtualEnvironmentRoleCreate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentRoleRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentRoleRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -81,7 +88,6 @@ func resourceVirtualEnvironmentRoleRead(ctx context.Context, d *schema.ResourceD
 
 	roleID := d.Id()
 	role, err := veClient.GetRole(ctx, roleID)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -103,7 +109,11 @@ func resourceVirtualEnvironmentRoleRead(ctx context.Context, d *schema.ResourceD
 	return diag.FromErr(err)
 }
 
-func resourceVirtualEnvironmentRoleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentRoleUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -130,7 +140,11 @@ func resourceVirtualEnvironmentRoleUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentRoleRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentRoleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentRoleDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

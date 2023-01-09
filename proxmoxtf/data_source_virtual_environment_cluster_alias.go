@@ -42,7 +42,11 @@ func dataSourceVirtualEnvironmentClusterAlias() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentAliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentAliasRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)

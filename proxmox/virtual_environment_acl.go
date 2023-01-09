@@ -11,10 +11,11 @@ import (
 )
 
 // GetACL retrieves the access control list.
-func (c *VirtualEnvironmentClient) GetACL(ctx context.Context) ([]*VirtualEnvironmentACLGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetACL(
+	ctx context.Context,
+) ([]*VirtualEnvironmentACLGetResponseData, error) {
 	resBody := &VirtualEnvironmentACLGetResponseBody{}
 	err := c.DoRequest(ctx, hmGET, "access/acl", nil, resBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -31,6 +32,9 @@ func (c *VirtualEnvironmentClient) GetACL(ctx context.Context) ([]*VirtualEnviro
 }
 
 // UpdateACL updates the access control list.
-func (c *VirtualEnvironmentClient) UpdateACL(ctx context.Context, d *VirtualEnvironmentACLUpdateRequestBody) error {
+func (c *VirtualEnvironmentClient) UpdateACL(
+	ctx context.Context,
+	d *VirtualEnvironmentACLUpdateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPUT, "access/acl", d, nil)
 }

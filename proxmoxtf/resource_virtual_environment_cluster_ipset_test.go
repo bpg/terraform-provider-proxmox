@@ -55,5 +55,4 @@ func TestResourceVirtualEnvironmentIPSetSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentClusterIPSetCIDRComment: schema.TypeString,
 		mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch: schema.TypeBool,
 	})
-
 }

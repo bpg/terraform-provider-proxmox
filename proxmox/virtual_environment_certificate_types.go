@@ -30,8 +30,8 @@ type VirtualEnvironmentCertificateListResponseData struct {
 
 // VirtualEnvironmentCertificateUpdateRequestBody contains the body for a custom certificate update request.
 type VirtualEnvironmentCertificateUpdateRequestBody struct {
-	Certificates string      `json:"certificates" url:"certificates"`
-	Force        *CustomBool `json:"force,omitempty" url:"force,omitempty,int"`
-	PrivateKey   *string     `json:"key,omitempty" url:"key,omitempty"`
+	Certificates string      `json:"certificates"      url:"certificates"`
+	Force        *CustomBool `json:"force,omitempty"   url:"force,omitempty,int"`
+	PrivateKey   *string     `json:"key,omitempty"     url:"key,omitempty"`
 	Restart      *CustomBool `json:"restart,omitempty" url:"restart,omitempty,int"`
 }

@@ -10,9 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -122,7 +121,11 @@ func resourceVirtualEnvironmentCertificate() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentCertificateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentCertificateCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	diags := resourceVirtualEnvironmentCertificateUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
@@ -135,7 +138,9 @@ func resourceVirtualEnvironmentCertificateCreate(ctx context.Context, d *schema.
 	return nil
 }
 
-func resourceVirtualEnvironmentCertificateGetUpdateBody(d *schema.ResourceData) (*proxmox.VirtualEnvironmentCertificateUpdateRequestBody, error) {
+func resourceVirtualEnvironmentCertificateGetUpdateBody(
+	d *schema.ResourceData,
+) (*proxmox.VirtualEnvironmentCertificateUpdateRequestBody, error) {
 	certificate := d.Get(mkResourceVirtualEnvironmentCertificateCertificate).(string)
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
 	overwrite := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
@@ -165,7 +170,11 @@ func resourceVirtualEnvironmentCertificateGetUpdateBody(d *schema.ResourceData) 
 	return body, nil
 }
 
-func resourceVirtualEnvironmentCertificateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentCertificateRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -206,7 +215,10 @@ func resourceVirtualEnvironmentCertificateRead(ctx context.Context, d *schema.Re
 
 				err = d.Set(mkResourceVirtualEnvironmentCertificateCertificate, newCertificate)
 				diags = append(diags, diag.FromErr(err)...)
-				err = d.Set(mkResourceVirtualEnvironmentCertificateCertificateChain, newCertificateChain)
+				err = d.Set(
+					mkResourceVirtualEnvironmentCertificateCertificateChain,
+					newCertificateChain,
+				)
 				diags = append(diags, diag.FromErr(err)...)
 			}
 
@@ -215,7 +227,10 @@ func resourceVirtualEnvironmentCertificateRead(ctx context.Context, d *schema.Re
 
 			if c.NotAfter != nil {
 				t := time.Time(*c.NotAfter)
-				err = d.Set(mkResourceVirtualEnvironmentCertificateExpirationDate, t.UTC().Format(time.RFC3339))
+				err = d.Set(
+					mkResourceVirtualEnvironmentCertificateExpirationDate,
+					t.UTC().Format(time.RFC3339),
+				)
 			} else {
 				err = d.Set(mkResourceVirtualEnvironmentCertificateExpirationDate, "")
 			}
@@ -257,7 +272,10 @@ func resourceVirtualEnvironmentCertificateRead(ctx context.Context, d *schema.Re
 
 			if c.NotBefore != nil {
 				t := time.Time(*c.NotBefore)
-				err = d.Set(mkResourceVirtualEnvironmentCertificateStartDate, t.UTC().Format(time.RFC3339))
+				err = d.Set(
+					mkResourceVirtualEnvironmentCertificateStartDate,
+					t.UTC().Format(time.RFC3339),
+				)
 			} else {
 				err = d.Set(mkResourceVirtualEnvironmentCertificateStartDate, "")
 			}
@@ -286,7 +304,11 @@ func resourceVirtualEnvironmentCertificateRead(ctx context.Context, d *schema.Re
 	return diags
 }
 
-func resourceVirtualEnvironmentCertificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentCertificateUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -308,7 +330,11 @@ func resourceVirtualEnvironmentCertificateUpdate(ctx context.Context, d *schema.
 	return resourceVirtualEnvironmentCertificateRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentCertificateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentCertificateDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -318,9 +344,13 @@ func resourceVirtualEnvironmentCertificateDelete(ctx context.Context, d *schema.
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
 	restart := proxmox.CustomBool(true)
 
-	err = veClient.DeleteCertificate(ctx, nodeName, &proxmox.VirtualEnvironmentCertificateDeleteRequestBody{
-		Restart: &restart,
-	})
+	err = veClient.DeleteCertificate(
+		ctx,
+		nodeName,
+		&proxmox.VirtualEnvironmentCertificateDeleteRequestBody{
+			Restart: &restart,
+		},
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}

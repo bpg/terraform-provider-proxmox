@@ -7,7 +7,7 @@ package proxmox
 // VirtualEnvironmentPoolCreateRequestBody contains the data for an pool create request.
 type VirtualEnvironmentPoolCreateRequestBody struct {
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	ID      string  `json:"groupid" url:"poolid"`
+	ID      string  `json:"groupid"           url:"poolid"`
 }
 
 // VirtualEnvironmentPoolGetResponseBody contains the body from an pool get response.

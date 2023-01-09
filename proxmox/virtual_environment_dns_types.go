@@ -11,16 +11,16 @@ type VirtualEnvironmentDNSGetResponseBody struct {
 
 // VirtualEnvironmentDNSGetResponseData contains the data from a DNS get response.
 type VirtualEnvironmentDNSGetResponseData struct {
-	Server1      *string `json:"dns1,omitempty" url:"dns1,omitempty"`
-	Server2      *string `json:"dns2,omitempty" url:"dns2,omitempty"`
-	Server3      *string `json:"dns3,omitempty" url:"dns3,omitempty"`
+	Server1      *string `json:"dns1,omitempty"   url:"dns1,omitempty"`
+	Server2      *string `json:"dns2,omitempty"   url:"dns2,omitempty"`
+	Server3      *string `json:"dns3,omitempty"   url:"dns3,omitempty"`
 	SearchDomain *string `json:"search,omitempty" url:"search,omitempty"`
 }
 
 // VirtualEnvironmentDNSUpdateRequestBody contains the body for a DNS update request.
 type VirtualEnvironmentDNSUpdateRequestBody struct {
-	Server1      *string `json:"dns1,omitempty" url:"dns1,omitempty"`
-	Server2      *string `json:"dns2,omitempty" url:"dns2,omitempty"`
-	Server3      *string `json:"dns3,omitempty" url:"dns3,omitempty"`
+	Server1      *string `json:"dns1,omitempty"   url:"dns1,omitempty"`
+	Server2      *string `json:"dns2,omitempty"   url:"dns2,omitempty"`
+	Server3      *string `json:"dns3,omitempty"   url:"dns3,omitempty"`
 	SearchDomain *string `json:"search,omitempty" url:"search,omitempty"`
 }
