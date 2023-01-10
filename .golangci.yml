@@ -9,10 +9,6 @@ issues:
   # Maximum count of issues with the same text. Set to 0 to disable.
   # Default is 3.
   max-same-issues: 0
-  # We want to try and improve the comments in the k6 codebase, so individual
-  # non-golint items from the default exclusion list will gradually be addded
-  # to the exclude-rules below
-  exclude-use-default: false
   exclude-rules:
     # Exclude duplicate code and function length and complexity checking in test
     # files (due to common repeats and long functions in test code)
