@@ -21,10 +21,10 @@ data "proxmox_virtual_environment_time" "first_node_time" {
 
 ## Argument Reference
 
-* `node_name` - (Required) A node name.
+- `node_name` - (Required) A node name.
 
 ## Attribute Reference
 
-* `local_time` - The node's local time.
-* `time_zone` - The node's time zone.
-* `utc_time` - The node's local time formatted as UTC.
+- `local_time` - The node's local time.
+- `time_zone` - The node's time zone.
+- `utc_time` - The node's local time formatted as UTC.

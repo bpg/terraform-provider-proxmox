@@ -31,9 +31,9 @@ data "proxmox_virtual_environment_dns" "first_node_dns_configuration" {
 
 ## Argument Reference
 
-* `domain` - (Required) The DNS search domain.
-* `node_name` - (Required) A node name.
-* `servers` - (Optional) The DNS servers.
+- `domain` - (Required) The DNS search domain.
+- `node_name` - (Required) A node name.
+- `servers` - (Optional) The DNS servers.
 
 ## Attribute Reference
 

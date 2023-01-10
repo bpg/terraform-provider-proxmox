@@ -21,16 +21,16 @@ data "proxmox_virtual_environment_datastores" "first_node" {
 
 ## Argument Reference
 
-* `node_name` - (Required) A node name.
+- `node_name` - (Required) A node name.
 
 ## Attribute Reference
 
-* `active` - Whether the datastore is active.
-* `content_types` - The allowed content types.
-* `datastore_ids` - The datastore identifiers.
-* `enabled` - Whether the datastore is enabled.
-* `shared` - Whether the datastore is shared.
-* `space_available` - The available space in bytes.
-* `space_total` - The total space in bytes.
-* `space_used` - The used space in bytes.
-* `types` - The storage types.
+- `active` - Whether the datastore is active.
+- `content_types` - The allowed content types.
+- `datastore_ids` - The datastore identifiers.
+- `enabled` - Whether the datastore is enabled.
+- `shared` - Whether the datastore is shared.
+- `space_available` - The available space in bytes.
+- `space_total` - The total space in bytes.
+- `space_used` - The used space in bytes.
+- `types` - The storage types.

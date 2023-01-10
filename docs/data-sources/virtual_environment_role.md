@@ -21,8 +21,8 @@ data "proxmox_virtual_environment_role" "operations_role" {
 
 ## Argument Reference
 
-* `role_id` - (Required) The role identifier.
+- `role_id` - (Required) The role identifier.
 
 ## Attribute Reference
 
-* `privileges` - The role privileges
+- `privileges` - The role privileges

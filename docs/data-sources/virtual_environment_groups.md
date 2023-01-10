@@ -23,5 +23,5 @@ There are no arguments available for this data source.
 
 ## Attribute Reference
 
-* `comments` - The group comments.
-* `group_ids` - The group identifiers.
+- `comments` - The group comments.
+- `group_ids` - The group identifiers.

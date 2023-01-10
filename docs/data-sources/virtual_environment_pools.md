@@ -23,4 +23,4 @@ There are no arguments available for this data source.
 
 ## Attribute Reference
 
-* `pool_ids` - The pool identifiers.
+- `pool_ids` - The pool identifiers.

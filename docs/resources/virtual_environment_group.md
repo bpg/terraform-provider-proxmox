@@ -22,13 +22,13 @@ resource "proxmox_virtual_environment_group" "operations_team" {
 
 ## Argument Reference
 
-* `acl` - (Optional) The access control list (multiple blocks supported).
-    * `path` - The path.
-    * `propagate` - Whether to propagate to child paths.
-    * `role_id` - The role identifier.
-* `comment` - (Optional) The group comment.
-* `group_id` - (Required) The group identifier.
+- `acl` - (Optional) The access control list (multiple blocks supported).
+    - `path` - The path.
+    - `propagate` - Whether to propagate to child paths.
+    - `role_id` - The role identifier.
+- `comment` - (Optional) The group comment.
+- `group_id` - (Required) The group identifier.
 
 ## Attribute Reference
 
-* `members` - The group members as a list of `username@realm` entries
+- `members` - The group members as a list of `username@realm` entries

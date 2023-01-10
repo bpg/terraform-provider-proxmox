@@ -15,7 +15,7 @@ Retrieves information about a specific alias.
 
 ```terraform
 data "proxmox_virtual_environment_cluster_alias" "local_network" {
-  name    = "local_network"
+  name = "local_network"
 }
 ```
 
