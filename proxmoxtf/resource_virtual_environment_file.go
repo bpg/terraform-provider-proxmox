@@ -18,11 +18,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const (
@@ -587,7 +588,7 @@ func resourceVirtualEnvironmentFileRead(
 			}
 			diags = append(diags, diag.FromErr(err)...)
 
-			lastFileModificationDate := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
+			lastFileMD := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
 			lastFileSize := int64(d.Get(mkResourceVirtualEnvironmentFileFileSize).(int))
 			lastFileTag := d.Get(mkResourceVirtualEnvironmentFileFileTag).(string)
 
@@ -600,7 +601,7 @@ func resourceVirtualEnvironmentFileRead(
 			err = d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
 			diags = append(diags, diag.FromErr(err)...)
 
-			sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChanged] = lastFileModificationDate != fileModificationDate ||
+			sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChanged] = lastFileMD != fileModificationDate ||
 				lastFileSize != fileSize ||
 				lastFileTag != fileTag
 			err = d.Set(mkResourceVirtualEnvironmentFileSourceFile, sourceFile)

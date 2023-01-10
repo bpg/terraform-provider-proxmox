@@ -6,6 +6,7 @@ package proxmox
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,7 +20,7 @@ const (
 )
 
 // Authenticate authenticates against the specified endpoint.
-func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
+func (c *VirtualEnvironmentClient) Authenticate(ctx context.Context, reset bool) error {
 	if c.authenticationData != nil && !reset {
 		return nil
 	}
@@ -41,7 +42,8 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 		))
 	}
 
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		hmPOST,
 		fmt.Sprintf("%s/%s/access/ticket", c.Endpoint, basePathJSONAPI),
 		reqBody,
@@ -94,8 +96,8 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 }
 
 // AuthenticateRequest adds authentication data to a new request.
-func (c *VirtualEnvironmentClient) AuthenticateRequest(req *http.Request) error {
-	err := c.Authenticate(false)
+func (c *VirtualEnvironmentClient) AuthenticateRequest(ctx context.Context, req *http.Request) error {
+	err := c.Authenticate(ctx, false)
 	if err != nil {
 		return err
 	}

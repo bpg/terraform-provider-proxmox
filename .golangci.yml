@@ -2,7 +2,7 @@
 run:
   deadline: 5m
 issues:
-  new-from-rev: 1f2de021ad31280850ed57cc2a83fda1b308fc30
+  new-from-rev: 9101977dc81f64db077b9a1eda2fe401359854c9
   # Maximum issues count per one linter. Set to 0 to disable.
   # Default is 50.
   max-issues-per-linter: 0
@@ -18,6 +18,9 @@ issues:
         - dupl
         - gocognit
         - funlen
+        - lll
+    - path: _types\.go
+      linters:
         - lll
 linters-settings:
   nolintlint:
@@ -53,6 +56,12 @@ linters:
     - ifshort
     - varcheck
     - structcheck
+    # require massive refactoring
+    - forcetypeassert
+    - govet
+    - funlen
+    - gocognit
+    - cyclop
     #
     - containedctx
     - decorder

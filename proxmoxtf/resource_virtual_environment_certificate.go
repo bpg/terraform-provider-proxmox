@@ -10,9 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const (
@@ -140,7 +141,7 @@ func resourceVirtualEnvironmentCertificateCreate(
 
 func resourceVirtualEnvironmentCertificateGetUpdateBody(
 	d *schema.ResourceData,
-) (*proxmox.VirtualEnvironmentCertificateUpdateRequestBody, error) {
+) *proxmox.VirtualEnvironmentCertificateUpdateRequestBody {
 	certificate := d.Get(mkResourceVirtualEnvironmentCertificateCertificate).(string)
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
 	overwrite := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
@@ -167,7 +168,7 @@ func resourceVirtualEnvironmentCertificateGetUpdateBody(
 		Restart:      &restart,
 	}
 
-	return body, nil
+	return body
 }
 
 func resourceVirtualEnvironmentCertificateRead(
@@ -317,10 +318,7 @@ func resourceVirtualEnvironmentCertificateUpdate(
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
 
-	body, err := resourceVirtualEnvironmentCertificateGetUpdateBody(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	body := resourceVirtualEnvironmentCertificateGetUpdateBody(d)
 
 	err = veClient.UpdateCertificate(ctx, nodeName, body)
 	if err != nil {

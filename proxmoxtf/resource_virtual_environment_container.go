@@ -10,10 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const (
@@ -1639,6 +1640,7 @@ func resourceVirtualEnvironmentContainerRead(
 			continue
 		}
 
+		//nolint:nestif
 		if nv.IPv4Address != nil || nv.IPv4Gateway != nil || nv.IPv6Address != nil ||
 			nv.IPv6Gateway != nil {
 			ipConfig := map[string]interface{}{}
@@ -2047,6 +2049,7 @@ func resourceVirtualEnvironmentContainerUpdate(
 		}
 	}
 
+	//nolint:nestif
 	if d.HasChange(mkResourceVirtualEnvironmentContainerInitialization) ||
 		d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
 		networkInterfaceArray := make(

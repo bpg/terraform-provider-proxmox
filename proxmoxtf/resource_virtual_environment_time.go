@@ -9,9 +9,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const (
@@ -98,12 +99,12 @@ func resourceVirtualEnvironmentTimeRead(
 	localTimeOffset := time.Time(nodeTime.LocalTime).Sub(time.Now().UTC())
 	localTime := time.Time(nodeTime.LocalTime).Add(-localTimeOffset).In(localLocation)
 
-	err = d.Set(mkDataSourceVirtualEnvironmentTimeLocalTime, localTime.Format(time.RFC3339))
+	err = d.Set(mkResourceVirtualEnvironmentTimeLocalTime, localTime.Format(time.RFC3339))
 	diags = append(diags, diag.FromErr(err)...)
-	err = d.Set(mkDataSourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
+	err = d.Set(mkResourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
 	diags = append(diags, diag.FromErr(err)...)
 	err = d.Set(
-		mkDataSourceVirtualEnvironmentTimeUTCTime,
+		mkResourceVirtualEnvironmentTimeUTCTime,
 		time.Time(nodeTime.UTCTime).Format(time.RFC3339),
 	)
 	diags = append(diags, diag.FromErr(err)...)

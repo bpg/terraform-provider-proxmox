@@ -146,17 +146,18 @@ func (c *VirtualEnvironmentClient) DoRequest(
 		reqBodyReader = new(bytes.Buffer)
 	}
 
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(
+		ctx,
 		method,
 		fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, modifiedPath),
 		reqBodyReader,
 	)
 	if err != nil {
 		fErr := fmt.Errorf(
-			"failed to create HTTP %s request (path: %s) - Reason: %s",
+			"failed to create HTTP %s request (path: %s) - Reason: %w",
 			method,
 			modifiedPath,
-			err.Error(),
+			err,
 		)
 		tflog.Warn(ctx, fErr.Error())
 		return fErr
@@ -172,7 +173,7 @@ func (c *VirtualEnvironmentClient) DoRequest(
 		req.Header.Add("Content-Type", reqBodyType)
 	}
 
-	err = c.AuthenticateRequest(req)
+	err = c.AuthenticateRequest(ctx, req)
 
 	if err != nil {
 		tflog.Warn(ctx, err.Error())
@@ -182,10 +183,10 @@ func (c *VirtualEnvironmentClient) DoRequest(
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		fErr := fmt.Errorf(
-			"failed to perform HTTP %s request (path: %s) - Reason: %s",
+			"failed to perform HTTP %s request (path: %s) - Reason: %w",
 			method,
 			modifiedPath,
-			err.Error(),
+			err,
 		)
 		tflog.Warn(ctx, fErr.Error())
 		return fErr
@@ -211,10 +212,10 @@ func (c *VirtualEnvironmentClient) DoRequest(
 
 		if err != nil {
 			fErr := fmt.Errorf(
-				"failed to decode HTTP %s response (path: %s) - Reason: %s",
+				"failed to decode HTTP %s response (path: %s) - Reason: %w",
 				method,
 				modifiedPath,
-				err.Error(),
+				err,
 			)
 			tflog.Warn(ctx, fErr.Error())
 			return fErr
