@@ -30,6 +30,7 @@ const (
 	dvResourceVirtualEnvironmentVMAgentTimeout                      = "15m"
 	dvResourceVirtualEnvironmentVMAgentTrim                         = false
 	dvResourceVirtualEnvironmentVMAgentType                         = "virtio"
+	dvResourceVirtualEnvironmentVMArgs                              = ""
 	dvResourceVirtualEnvironmentVMAudioDeviceDevice                 = "intel-hda"
 	dvResourceVirtualEnvironmentVMAudioDeviceDriver                 = "spice"
 	dvResourceVirtualEnvironmentVMAudioDeviceEnabled                = true
@@ -120,6 +121,7 @@ const (
 	mkResourceVirtualEnvironmentVMAgentTimeout                      = "timeout"
 	mkResourceVirtualEnvironmentVMAgentTrim                         = "trim"
 	mkResourceVirtualEnvironmentVMAgentType                         = "type"
+	mkResourceVirtualEnvironmentVMArgs                              = "args"
 	mkResourceVirtualEnvironmentVMAudioDevice                       = "audio_device"
 	mkResourceVirtualEnvironmentVMAudioDeviceDevice                 = "device"
 	mkResourceVirtualEnvironmentVMAudioDeviceDriver                 = "driver"
@@ -294,6 +296,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentVMArgs: {
+				Type:             schema.TypeString,
+				Description:      "The Args implementation",
+				Optional:         true,
+				Default:          dvResourceVirtualEnvironmentVMArgs,
 			},
 			mkResourceVirtualEnvironmentVMAudioDevice: {
 				Type:        schema.TypeList,
@@ -1356,6 +1364,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
 	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+	args := d.Get(mkResourceVirtualEnvironmentVMArgs).(string)
 	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -1401,6 +1410,10 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		}
+	}
+
+	if args != dvResourceVirtualEnvironmentVMArgs {
+		updateBody.Args = &args
 	}
 
 	if bios != dvResourceVirtualEnvironmentVMBIOS {
@@ -1742,6 +1755,8 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
+	args := d.Get(mkResourceVirtualEnvironmentVMArgs).(string)
+
 	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -1908,6 +1923,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
+		Args:            &args,
 		AudioDevices:    audioDevices,
 		BIOS:            &bios,
 		BootDisk:        &bootDisk,
@@ -2731,6 +2747,16 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 
 	// Compare the audio devices to those stored in the state.
 	currentAudioDevice := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
+
+	// Compare the operating system configuration to the one stored in the state.
+	args := map[string]interface{}{}
+
+	if vmConfig.Args != nil {
+		args[mkResourceVirtualEnvironmentVMArgs] = *vmConfig.Args
+	} else {
+		args[mkResourceVirtualEnvironmentVMArgs] = ""
+	}
+
 
 	audioDevices := make([]interface{}, 1)
 	audioDevicesArray := []*proxmox.CustomAudioDevice{
@@ -3568,6 +3594,19 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentArgs := d.Get(mkResourceVirtualEnvironmentVMArgs).(string)
+
+	if len(clone) == 0 || currentArgs != dvResourceVirtualEnvironmentVMArgs {
+		if vmConfig.Args != nil {
+			err = d.Set(mkResourceVirtualEnvironmentVMArgs, *vmConfig.Args)
+		} else {
+			// Default value of "args" is "" according to the API documentation.
+			err = d.Set(mkResourceVirtualEnvironmentVMArgs, "")
+		}
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+
 	currentBIOS := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 
 	if len(clone) == 0 || currentBIOS != dvResourceVirtualEnvironmentVMBIOS {
@@ -3723,6 +3762,12 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) {
 		acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 		updateBody.ACPI = &acpi
+		rebootRequired = true
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentVMArgs) {
+		args := d.Get(mkResourceVirtualEnvironmentVMArgs).(string)
+		updateBody.Args = &args
 		rebootRequired = true
 	}
 

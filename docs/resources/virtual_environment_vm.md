@@ -106,6 +106,7 @@ output "ubuntu_vm_public_key" {
     * `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
         * `isa` - ISA Serial Port.
         * `virtio` - VirtIO (paravirtualized).
+* `args` - (Optional) The Boot Args implementation.
 * `audio_device` - (Optional) An audio device.
     * `device` - (Optional) The device (defaults to `intel-hda`).
         * `AC97` - Intel 82801AA AC97 Audio.

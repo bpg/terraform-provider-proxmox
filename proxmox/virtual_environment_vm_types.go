@@ -229,6 +229,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	ACPI                 *CustomBool                  `json:"acpi,omitempty" url:"acpi,omitempty,int"`
 	Agent                *CustomAgent                 `json:"agent,omitempty" url:"agent,omitempty"`
 	AllowReboot          *CustomBool                  `json:"reboot,omitempty" url:"reboot,omitempty,int"`
+	Args                 *string                      `json:"args,omitempty" url:"args,omitempty"`
 	AudioDevices         CustomAudioDevices           `json:"audio,omitempty" url:"audio,omitempty"`
 	Autostart            *CustomBool                  `json:"autostart,omitempty" url:"autostart,omitempty,int"`
 	BackupFile           *string                      `json:"archive,omitempty" url:"archive,omitempty"`
@@ -345,6 +346,7 @@ type VirtualEnvironmentVMGetResponseData struct {
 	ACPI                 *CustomBool                   `json:"acpi,omitempty"`
 	Agent                *CustomAgent                  `json:"agent,omitempty"`
 	AllowReboot          *CustomBool                   `json:"reboot,omitempty"`
+	Args                 *string                       `json:"args,omitempty""`
 	AudioDevice          *CustomAudioDevice            `json:"audio0,omitempty"`
 	Autostart            *CustomBool                   `json:"autostart,omitempty"`
 	BackupFile           *string                       `json:"archive,omitempty"`
