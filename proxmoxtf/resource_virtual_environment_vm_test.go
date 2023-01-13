@@ -30,7 +30,6 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	testOptionalArguments(t, s, []string{
 		mkResourceVirtualEnvironmentVMACPI,
 		mkResourceVirtualEnvironmentVMAgent,
-		mkResourceVirtualEnvironmentVMArgs,
 		mkResourceVirtualEnvironmentVMAudioDevice,
 		mkResourceVirtualEnvironmentVMBIOS,
 		mkResourceVirtualEnvironmentVMCDROM,
@@ -41,6 +40,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMInitialization,
 		mkResourceVirtualEnvironmentVMHostPCI,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
+		mkResourceVirtualEnvironmentVMKVMArguments,
 		mkResourceVirtualEnvironmentVMMachine,
 		mkResourceVirtualEnvironmentVMMemory,
 		mkResourceVirtualEnvironmentVMName,
@@ -64,7 +64,6 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 	testValueTypes(t, s, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentVMACPI:                  schema.TypeBool,
 		mkResourceVirtualEnvironmentVMAgent:                 schema.TypeList,
-		mkResourceVirtualEnvironmentVMArgs:                 schema.TypeString,
 		mkResourceVirtualEnvironmentVMAudioDevice:           schema.TypeList,
 		mkResourceVirtualEnvironmentVMBIOS:                  schema.TypeString,
 		mkResourceVirtualEnvironmentVMCDROM:                 schema.TypeList,
@@ -76,6 +75,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMIPv4Addresses:         schema.TypeList,
 		mkResourceVirtualEnvironmentVMIPv6Addresses:         schema.TypeList,
 		mkResourceVirtualEnvironmentVMKeyboardLayout:        schema.TypeString,
+		mkResourceVirtualEnvironmentVMKVMArguments:          schema.TypeString,
 		mkResourceVirtualEnvironmentVMMachine:               schema.TypeString,
 		mkResourceVirtualEnvironmentVMMemory:                schema.TypeList,
 		mkResourceVirtualEnvironmentVMName:                  schema.TypeString,

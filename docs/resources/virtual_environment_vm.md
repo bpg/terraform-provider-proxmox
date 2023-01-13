@@ -106,7 +106,6 @@ output "ubuntu_vm_public_key" {
     * `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
         * `isa` - ISA Serial Port.
         * `virtio` - VirtIO (paravirtualized).
-* `args` - (Optional) The Boot Args implementation.
 * `audio_device` - (Optional) An audio device.
     * `device` - (Optional) The device (defaults to `intel-hda`).
         * `AC97` - Intel 82801AA AC97 Audio.
@@ -256,6 +255,7 @@ output "ubuntu_vm_public_key" {
     * `sl` - Slovenian.
     * `sv` - Swedish.
     * `tr` - Turkish.
+* `kvmarguments` - (Optional) The KVM Argument implementation.
 * `machine` - (Optional) The VM machine type (defaults to `i440fx`).
     * `i440fx` - Standard PC (i440FX + PIIX, 1996).
     * `q35` - Standard PC (Q35 + ICH9, 2009).

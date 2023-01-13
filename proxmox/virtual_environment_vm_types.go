@@ -229,7 +229,6 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	ACPI                 *CustomBool                  `json:"acpi,omitempty" url:"acpi,omitempty,int"`
 	Agent                *CustomAgent                 `json:"agent,omitempty" url:"agent,omitempty"`
 	AllowReboot          *CustomBool                  `json:"reboot,omitempty" url:"reboot,omitempty,int"`
-	Args                 *string                      `json:"args,omitempty" url:"args,omitempty"`
 	AudioDevices         CustomAudioDevices           `json:"audio,omitempty" url:"audio,omitempty"`
 	Autostart            *CustomBool                  `json:"autostart,omitempty" url:"autostart,omitempty,int"`
 	BackupFile           *string                      `json:"archive,omitempty" url:"archive,omitempty"`
@@ -258,7 +257,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	Hugepages            *string                      `json:"hugepages,omitempty" url:"hugepages,omitempty"`
 	IDEDevices           CustomStorageDevices         `json:"ide,omitempty" url:",omitempty"`
 	KeyboardLayout       *string                      `json:"keyboard,omitempty" url:"keyboard,omitempty"`
-	KVMArguments         CustomLineBreakSeparatedList `json:"args,omitempty" url:"args,omitempty,space"`
+	KVMArguments         *string                      `json:"args,omitempty" url:"args,omitempty,space"`
 	KVMEnabled           *CustomBool                  `json:"kvm,omitempty" url:"kvm,omitempty,int"`
 	LocalTime            *CustomBool                  `json:"localtime,omitempty" url:"localtime,omitempty,int"`
 	Lock                 *string                      `json:"lock,omitempty" url:"lock,omitempty"`
@@ -346,7 +345,6 @@ type VirtualEnvironmentVMGetResponseData struct {
 	ACPI                 *CustomBool                   `json:"acpi,omitempty"`
 	Agent                *CustomAgent                  `json:"agent,omitempty"`
 	AllowReboot          *CustomBool                   `json:"reboot,omitempty"`
-	Args                 *string                       `json:"args,omitempty""`
 	AudioDevice          *CustomAudioDevice            `json:"audio0,omitempty"`
 	Autostart            *CustomBool                   `json:"autostart,omitempty"`
 	BackupFile           *string                       `json:"archive,omitempty"`
@@ -391,7 +389,7 @@ type VirtualEnvironmentVMGetResponseData struct {
 	IPConfig6            *CustomCloudInitIPConfig      `json:"ipconfig6,omitempty"`
 	IPConfig7            *CustomCloudInitIPConfig      `json:"ipconfig7,omitempty"`
 	KeyboardLayout       *string                       `json:"keyboard,omitempty"`
-	KVMArguments         *CustomLineBreakSeparatedList `json:"args,omitempty"`
+	KVMArguments         *string                       `json:"args,omitempty"`
 	KVMEnabled           *CustomBool                   `json:"kvm,omitempty"`
 	LocalTime            *CustomBool                   `json:"localtime,omitempty"`
 	Lock                 *string                       `json:"lock,omitempty"`

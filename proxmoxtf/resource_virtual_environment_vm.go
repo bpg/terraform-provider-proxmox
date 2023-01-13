@@ -30,7 +30,6 @@ const (
 	dvResourceVirtualEnvironmentVMAgentTimeout                      = "15m"
 	dvResourceVirtualEnvironmentVMAgentTrim                         = false
 	dvResourceVirtualEnvironmentVMAgentType                         = "virtio"
-	dvResourceVirtualEnvironmentVMArgs                              = ""
 	dvResourceVirtualEnvironmentVMAudioDeviceDevice                 = "intel-hda"
 	dvResourceVirtualEnvironmentVMAudioDeviceDriver                 = "spice"
 	dvResourceVirtualEnvironmentVMAudioDeviceEnabled                = true
@@ -80,6 +79,7 @@ const (
 	dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID   = ""
 	dvResourceVirtualEnvironmentVMInitializationType                = ""
 	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
+	dvResourceVirtualEnvironmentVMKVMArguments                      = ""
 	dvResourceVirtualEnvironmentVMMachineType                       = ""
 	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentVMMemoryFloating                    = 0
@@ -121,7 +121,6 @@ const (
 	mkResourceVirtualEnvironmentVMAgentTimeout                      = "timeout"
 	mkResourceVirtualEnvironmentVMAgentTrim                         = "trim"
 	mkResourceVirtualEnvironmentVMAgentType                         = "type"
-	mkResourceVirtualEnvironmentVMArgs                              = "args"
 	mkResourceVirtualEnvironmentVMAudioDevice                       = "audio_device"
 	mkResourceVirtualEnvironmentVMAudioDeviceDevice                 = "device"
 	mkResourceVirtualEnvironmentVMAudioDeviceDriver                 = "driver"
@@ -190,6 +189,7 @@ const (
 	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
+	mkResourceVirtualEnvironmentVMKVMArguments                      = "kvmarguments"
 	mkResourceVirtualEnvironmentVMMachine                           = "machine"
 	mkResourceVirtualEnvironmentVMMACAddresses                      = "mac_addresses"
 	mkResourceVirtualEnvironmentVMMemory                            = "memory"
@@ -297,11 +297,11 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMArgs: {
+			mkResourceVirtualEnvironmentVMKVMArguments: {
 				Type:             schema.TypeString,
-				Description:      "The Args implementation",
+				Description:      "The args implementation",
 				Optional:         true,
-				Default:          dvResourceVirtualEnvironmentVMArgs,
+				Default:          dvResourceVirtualEnvironmentVMKVMArguments,
 			},
 			mkResourceVirtualEnvironmentVMAudioDevice: {
 				Type:        schema.TypeList,
@@ -1364,13 +1364,13 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
 	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
-	args := d.Get(mkResourceVirtualEnvironmentVMArgs).(string)
 	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
+	kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
 	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
@@ -1412,8 +1412,8 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 		}
 	}
 
-	if args != dvResourceVirtualEnvironmentVMArgs {
-		updateBody.Args = &args
+	if kvmArguments != dvResourceVirtualEnvironmentVMKVMArguments {
+		updateBody.KVMArguments = &kvmArguments
 	}
 
 	if bios != dvResourceVirtualEnvironmentVMBIOS {
@@ -1755,7 +1755,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
-	args := d.Get(mkResourceVirtualEnvironmentVMArgs).(string)
+	kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
 
 	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 	if err != nil {
@@ -1923,7 +1923,6 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
-		Args:            &args,
 		AudioDevices:    audioDevices,
 		BIOS:            &bios,
 		BootDisk:        &bootDisk,
@@ -1940,6 +1939,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 		FloatingMemory:      &memoryFloating,
 		IDEDevices:          ideDevices,
 		KeyboardLayout:      &keyboardLayout,
+		KVMArguments:        &kvmArguments,
 		NetworkDevices:      networkDeviceObjects,
 		OSType:              &operatingSystemType,
 		PCIDevices:          pciDeviceObjects,
@@ -2748,16 +2748,6 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 	// Compare the audio devices to those stored in the state.
 	currentAudioDevice := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
 
-	// Compare the operating system configuration to the one stored in the state.
-	args := map[string]interface{}{}
-
-	if vmConfig.Args != nil {
-		args[mkResourceVirtualEnvironmentVMArgs] = *vmConfig.Args
-	} else {
-		args[mkResourceVirtualEnvironmentVMArgs] = ""
-	}
-
-
 	audioDevices := make([]interface{}, 1)
 	audioDevicesArray := []*proxmox.CustomAudioDevice{
 		vmConfig.AudioDevice,
@@ -3265,6 +3255,16 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	// Compare the operating system configuration to the one stored in the state.
+	kvmArguments := map[string]interface{}{}
+
+	if vmConfig.KVMArguments != nil {
+		kvmArguments[mkResourceVirtualEnvironmentVMKVMArguments] = *vmConfig.KVMArguments
+	} else {
+		kvmArguments[mkResourceVirtualEnvironmentVMKVMArguments] = ""
+	}
+
+
 	// Compare the memory configuration to the one stored in the state.
 	memory := map[string]interface{}{}
 
@@ -3594,14 +3594,14 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	currentArgs := d.Get(mkResourceVirtualEnvironmentVMArgs).(string)
+	currentkvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
 
-	if len(clone) == 0 || currentArgs != dvResourceVirtualEnvironmentVMArgs {
-		if vmConfig.Args != nil {
-			err = d.Set(mkResourceVirtualEnvironmentVMArgs, *vmConfig.Args)
+	if len(clone) == 0 || currentkvmArguments != dvResourceVirtualEnvironmentVMKVMArguments {
+		if vmConfig.KVMArguments != nil {
+			err = d.Set(mkResourceVirtualEnvironmentVMKVMArguments, *vmConfig.KVMArguments)
 		} else {
 			// Default value of "args" is "" according to the API documentation.
-			err = d.Set(mkResourceVirtualEnvironmentVMArgs, "")
+			err = d.Set(mkResourceVirtualEnvironmentVMKVMArguments, "")
 		}
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -3765,9 +3765,9 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 		rebootRequired = true
 	}
 
-	if d.HasChange(mkResourceVirtualEnvironmentVMArgs) {
-		args := d.Get(mkResourceVirtualEnvironmentVMArgs).(string)
-		updateBody.Args = &args
+	if d.HasChange(mkResourceVirtualEnvironmentVMKVMArguments) {
+		kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
+		updateBody.KVMArguments = &kvmArguments
 		rebootRequired = true
 	}
 
