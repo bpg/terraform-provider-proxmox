@@ -189,7 +189,7 @@ const (
 	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
-	mkResourceVirtualEnvironmentVMKVMArguments                      = "kvmarguments"
+	mkResourceVirtualEnvironmentVMKVMArguments                      = "kvm_arguments"
 	mkResourceVirtualEnvironmentVMMachine                           = "machine"
 	mkResourceVirtualEnvironmentVMMACAddresses                      = "mac_addresses"
 	mkResourceVirtualEnvironmentVMMemory                            = "memory"
@@ -298,10 +298,10 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMKVMArguments: {
-				Type:             schema.TypeString,
-				Description:      "The args implementation",
-				Optional:         true,
-				Default:          dvResourceVirtualEnvironmentVMKVMArguments,
+				Type:        schema.TypeString,
+				Description: "The args implementation",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMKVMArguments,
 			},
 			mkResourceVirtualEnvironmentVMAudioDevice: {
 				Type:        schema.TypeList,
@@ -3264,7 +3264,6 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 		kvmArguments[mkResourceVirtualEnvironmentVMKVMArguments] = ""
 	}
 
-
 	// Compare the memory configuration to the one stored in the state.
 	memory := map[string]interface{}{}
 
@@ -3605,7 +3604,6 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		}
 		diags = append(diags, diag.FromErr(err)...)
 	}
-
 
 	currentBIOS := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 

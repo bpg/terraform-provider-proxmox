@@ -255,7 +255,7 @@ output "ubuntu_vm_public_key" {
     * `sl` - Slovenian.
     * `sv` - Swedish.
     * `tr` - Turkish.
-* `kvmarguments` - (Optional) The KVM Argument implementation.
+* `kvm_arguments` - (Optional) Arbitrary arguments passed to kvm.
 * `machine` - (Optional) The VM machine type (defaults to `i440fx`).
     * `i440fx` - Standard PC (i440FX + PIIX, 1996).
     * `q35` - Standard PC (Q35 + ICH9, 2009).
