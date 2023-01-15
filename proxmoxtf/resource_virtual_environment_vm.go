@@ -79,6 +79,7 @@ const (
 	dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID   = ""
 	dvResourceVirtualEnvironmentVMInitializationType                = ""
 	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
+	dvResourceVirtualEnvironmentVMKVMArguments                      = ""
 	dvResourceVirtualEnvironmentVMMachineType                       = ""
 	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentVMMemoryFloating                    = 0
@@ -188,6 +189,7 @@ const (
 	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
+	mkResourceVirtualEnvironmentVMKVMArguments                      = "kvm_arguments"
 	mkResourceVirtualEnvironmentVMMachine                           = "machine"
 	mkResourceVirtualEnvironmentVMMACAddresses                      = "mac_addresses"
 	mkResourceVirtualEnvironmentVMMemory                            = "memory"
@@ -294,6 +296,12 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentVMKVMArguments: {
+				Type:        schema.TypeString,
+				Description: "The args implementation",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMKVMArguments,
 			},
 			mkResourceVirtualEnvironmentVMAudioDevice: {
 				Type:        schema.TypeList,
@@ -1362,6 +1370,7 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 	}
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
+	kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
 	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
@@ -1401,6 +1410,10 @@ func resourceVirtualEnvironmentVMCreateClone(ctx context.Context, d *schema.Reso
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		}
+	}
+
+	if kvmArguments != dvResourceVirtualEnvironmentVMKVMArguments {
+		updateBody.KVMArguments = &kvmArguments
 	}
 
 	if bios != dvResourceVirtualEnvironmentVMBIOS {
@@ -1742,6 +1755,8 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
+	kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
+
 	audioDevices, err := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -1924,6 +1939,7 @@ func resourceVirtualEnvironmentVMCreateCustom(ctx context.Context, d *schema.Res
 		FloatingMemory:      &memoryFloating,
 		IDEDevices:          ideDevices,
 		KeyboardLayout:      &keyboardLayout,
+		KVMArguments:        &kvmArguments,
 		NetworkDevices:      networkDeviceObjects,
 		OSType:              &operatingSystemType,
 		PCIDevices:          pciDeviceObjects,
@@ -3239,6 +3255,15 @@ func resourceVirtualEnvironmentVMReadCustom(ctx context.Context, d *schema.Resou
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	// Compare the operating system configuration to the one stored in the state.
+	kvmArguments := map[string]interface{}{}
+
+	if vmConfig.KVMArguments != nil {
+		kvmArguments[mkResourceVirtualEnvironmentVMKVMArguments] = *vmConfig.KVMArguments
+	} else {
+		kvmArguments[mkResourceVirtualEnvironmentVMKVMArguments] = ""
+	}
+
 	// Compare the memory configuration to the one stored in the state.
 	memory := map[string]interface{}{}
 
@@ -3568,6 +3593,18 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(d *schema.ResourceData, vmC
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentkvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
+
+	if len(clone) == 0 || currentkvmArguments != dvResourceVirtualEnvironmentVMKVMArguments {
+		if vmConfig.KVMArguments != nil {
+			err = d.Set(mkResourceVirtualEnvironmentVMKVMArguments, *vmConfig.KVMArguments)
+		} else {
+			// Default value of "args" is "" according to the API documentation.
+			err = d.Set(mkResourceVirtualEnvironmentVMKVMArguments, "")
+		}
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	currentBIOS := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 
 	if len(clone) == 0 || currentBIOS != dvResourceVirtualEnvironmentVMBIOS {
@@ -3723,6 +3760,12 @@ func resourceVirtualEnvironmentVMUpdate(ctx context.Context, d *schema.ResourceD
 	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) {
 		acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 		updateBody.ACPI = &acpi
+		rebootRequired = true
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentVMKVMArguments) {
+		kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
+		updateBody.KVMArguments = &kvmArguments
 		rebootRequired = true
 	}
 
