@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -83,7 +83,11 @@ func resourceVirtualEnvironmentGroup() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentGroupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentGroupCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -110,7 +114,9 @@ func resourceVirtualEnvironmentGroupCreate(ctx context.Context, d *schema.Resour
 	for _, v := range aclParsed {
 		aclDelete := proxmox.CustomBool(false)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool))
+		aclPropagate := proxmox.CustomBool(
+			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
+		)
 
 		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
 			Delete:    &aclDelete,
@@ -129,7 +135,11 @@ func resourceVirtualEnvironmentGroupCreate(ctx context.Context, d *schema.Resour
 	return resourceVirtualEnvironmentGroupRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentGroupRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -140,7 +150,6 @@ func resourceVirtualEnvironmentGroupRead(ctx context.Context, d *schema.Resource
 
 	groupID := d.Id()
 	group, err := veClient.GetGroup(ctx, groupID)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -191,7 +200,11 @@ func resourceVirtualEnvironmentGroupRead(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentGroupUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -216,7 +229,9 @@ func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.Resour
 	for _, v := range aclParsedOld {
 		aclDelete := proxmox.CustomBool(true)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool))
+		aclPropagate := proxmox.CustomBool(
+			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
+		)
 
 		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
 			Delete:    &aclDelete,
@@ -237,7 +252,9 @@ func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.Resour
 	for _, v := range aclParsed {
 		aclDelete := proxmox.CustomBool(false)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool))
+		aclPropagate := proxmox.CustomBool(
+			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
+		)
 
 		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
 			Delete:    &aclDelete,
@@ -256,7 +273,11 @@ func resourceVirtualEnvironmentGroupUpdate(ctx context.Context, d *schema.Resour
 	return resourceVirtualEnvironmentGroupRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentGroupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentGroupDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -269,7 +290,9 @@ func resourceVirtualEnvironmentGroupDelete(ctx context.Context, d *schema.Resour
 	for _, v := range aclParsed {
 		aclDelete := proxmox.CustomBool(true)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool))
+		aclPropagate := proxmox.CustomBool(
+			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
+		)
 
 		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
 			Delete:    &aclDelete,

@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -53,7 +53,11 @@ func resourceVirtualEnvironmentTime() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentTimeCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentTimeCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	diags := resourceVirtualEnvironmentTimeUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
@@ -66,7 +70,12 @@ func resourceVirtualEnvironmentTimeCreate(ctx context.Context, d *schema.Resourc
 	return nil
 }
 
-func resourceVirtualEnvironmentTimeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+//nolint:dupl
+func resourceVirtualEnvironmentTimeRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -91,17 +100,24 @@ func resourceVirtualEnvironmentTimeRead(ctx context.Context, d *schema.ResourceD
 	localTimeOffset := time.Time(nodeTime.LocalTime).Sub(time.Now().UTC())
 	localTime := time.Time(nodeTime.LocalTime).Add(-localTimeOffset).In(localLocation)
 
-	err = d.Set(mkDataSourceVirtualEnvironmentTimeLocalTime, localTime.Format(time.RFC3339))
+	err = d.Set(mkResourceVirtualEnvironmentTimeLocalTime, localTime.Format(time.RFC3339))
 	diags = append(diags, diag.FromErr(err)...)
-	err = d.Set(mkDataSourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
+	err = d.Set(mkResourceVirtualEnvironmentTimeTimeZone, nodeTime.TimeZone)
 	diags = append(diags, diag.FromErr(err)...)
-	err = d.Set(mkDataSourceVirtualEnvironmentTimeUTCTime, time.Time(nodeTime.UTCTime).Format(time.RFC3339))
+	err = d.Set(
+		mkResourceVirtualEnvironmentTimeUTCTime,
+		time.Time(nodeTime.UTCTime).Format(time.RFC3339),
+	)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
 }
 
-func resourceVirtualEnvironmentTimeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentTimeUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -111,9 +127,13 @@ func resourceVirtualEnvironmentTimeUpdate(ctx context.Context, d *schema.Resourc
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
 	timeZone := d.Get(mkResourceVirtualEnvironmentTimeTimeZone).(string)
 
-	err = veClient.UpdateNodeTime(ctx, nodeName, &proxmox.VirtualEnvironmentNodeUpdateTimeRequestBody{
-		TimeZone: timeZone,
-	})
+	err = veClient.UpdateNodeTime(
+		ctx,
+		nodeName,
+		&proxmox.VirtualEnvironmentNodeUpdateTimeRequestBody{
+			TimeZone: timeZone,
+		},
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -121,7 +141,11 @@ func resourceVirtualEnvironmentTimeUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentTimeRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentTimeDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentTimeDelete(
+	_ context.Context,
+	d *schema.ResourceData,
+	_ interface{},
+) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

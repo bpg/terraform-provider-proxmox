@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const (
@@ -142,7 +142,11 @@ func resourceVirtualEnvironmentUser() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentUserCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentUserCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -152,7 +156,10 @@ func resourceVirtualEnvironmentUserCreate(ctx context.Context, d *schema.Resourc
 	comment := d.Get(mkResourceVirtualEnvironmentUserComment).(string)
 	email := d.Get(mkResourceVirtualEnvironmentUserEmail).(string)
 	enabled := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
-	expirationDate, err := time.Parse(time.RFC3339, d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string))
+	expirationDate, err := time.Parse(
+		time.RFC3339,
+		d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -196,7 +203,9 @@ func resourceVirtualEnvironmentUserCreate(ctx context.Context, d *schema.Resourc
 	for _, v := range aclParsed {
 		aclDelete := proxmox.CustomBool(false)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool))
+		aclPropagate := proxmox.CustomBool(
+			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
+		)
 
 		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
 			Delete:    &aclDelete,
@@ -215,7 +224,11 @@ func resourceVirtualEnvironmentUserCreate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentUserRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentUserRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -224,7 +237,6 @@ func resourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceD
 
 	userID := d.Id()
 	user, err := veClient.GetUser(ctx, userID)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -286,7 +298,10 @@ func resourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceD
 	diags = append(diags, diag.FromErr(err)...)
 
 	if user.ExpirationDate != nil {
-		err = d.Set(mkResourceVirtualEnvironmentUserExpirationDate, time.Time(*user.ExpirationDate).Format(time.RFC3339))
+		err = d.Set(
+			mkResourceVirtualEnvironmentUserExpirationDate,
+			time.Time(*user.ExpirationDate).Format(time.RFC3339),
+		)
 	} else {
 		err = d.Set(mkResourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
 	}
@@ -327,7 +342,11 @@ func resourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceD
 	return diags
 }
 
-func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentUserUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -337,7 +356,10 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 	comment := d.Get(mkResourceVirtualEnvironmentUserComment).(string)
 	email := d.Get(mkResourceVirtualEnvironmentUserEmail).(string)
 	enabled := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
-	expirationDate, err := time.Parse(time.RFC3339, d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string))
+	expirationDate, err := time.Parse(
+		time.RFC3339,
+		d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string),
+	)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -385,7 +407,9 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 	for _, v := range aclParsedOld {
 		aclDelete := proxmox.CustomBool(true)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool))
+		aclPropagate := proxmox.CustomBool(
+			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
+		)
 
 		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
 			Delete:    &aclDelete,
@@ -406,7 +430,9 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 	for _, v := range aclParsed {
 		aclDelete := proxmox.CustomBool(false)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool))
+		aclPropagate := proxmox.CustomBool(
+			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
+		)
 
 		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
 			Delete:    &aclDelete,
@@ -417,7 +443,6 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 		}
 
 		err := veClient.UpdateACL(ctx, aclBody)
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -426,7 +451,11 @@ func resourceVirtualEnvironmentUserUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentUserRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentUserDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentUserDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -439,7 +468,9 @@ func resourceVirtualEnvironmentUserDelete(ctx context.Context, d *schema.Resourc
 	for _, v := range aclParsed {
 		aclDelete := proxmox.CustomBool(true)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool))
+		aclPropagate := proxmox.CustomBool(
+			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
+		)
 
 		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
 			Delete:    &aclDelete,

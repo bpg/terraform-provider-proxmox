@@ -23,6 +23,6 @@ There are no arguments available for this data source.
 
 ## Attribute Reference
 
-* `privileges` - The role privileges.
-* `role_ids` - The role identifiers.
-* `special` - Whether the role is special (built-in).
+- `privileges` - The role privileges.
+- `role_ids` - The role identifiers.
+- `special` - Whether the role is special (built-in).

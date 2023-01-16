@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -84,7 +84,11 @@ func resourceVirtualEnvironmentPool() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentPoolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentPoolCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -109,7 +113,11 @@ func resourceVirtualEnvironmentPoolCreate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentPoolRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentPoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentPoolRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -120,7 +128,6 @@ func resourceVirtualEnvironmentPoolRead(ctx context.Context, d *schema.ResourceD
 
 	poolID := d.Id()
 	pool, err := veClient.GetPool(ctx, poolID)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -167,7 +174,11 @@ func resourceVirtualEnvironmentPoolRead(ctx context.Context, d *schema.ResourceD
 	return diags
 }
 
-func resourceVirtualEnvironmentPoolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentPoolUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -189,7 +200,11 @@ func resourceVirtualEnvironmentPoolUpdate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentPoolRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentPoolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentPoolDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

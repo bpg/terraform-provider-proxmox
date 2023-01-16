@@ -23,7 +23,7 @@ There are no arguments available for this data source.
 
 ## Attribute Reference
 
-* `keyboard_layout` - The keyboard layout.
-* `release` - The release number.
-* `repository_id` - The repository identifier.
-* `version` - The version string.
+- `keyboard_layout` - The keyboard layout.
+- `release` - The release number.
+- `repository_id` - The repository identifier.
+- `version` - The version string.

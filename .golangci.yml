@@ -1,0 +1,90 @@
+# v1.50.1
+run:
+  deadline: 5m
+issues:
+  new-from-rev: 9101977dc81f64db077b9a1eda2fe401359854c9
+  # Maximum issues count per one linter. Set to 0 to disable.
+  # Default is 50.
+  max-issues-per-linter: 0
+  # Maximum count of issues with the same text. Set to 0 to disable.
+  # Default is 3.
+  max-same-issues: 0
+  exclude-rules:
+    # Exclude duplicate code and function length and complexity checking in test
+    # files (due to common repeats and long functions in test code)
+    - path: _(test|gen)\.go
+      linters:
+        - cyclop
+        - dupl
+        - gocognit
+        - funlen
+        - lll
+    - path: _types\.go
+      linters:
+        - lll
+linters-settings:
+  nolintlint:
+    # Disable to ensure that nolint directives don't have a leading space.
+    # Default is true.
+    allow-leading-space: false
+  exhaustive:
+    default-signifies-exhaustive: true
+  govet:
+    check-shadowing: true
+  cyclop:
+    max-complexity: 25
+  maligned:
+    suggest-new: true
+  dupl:
+    threshold: 150
+  goconst:
+    min-len: 10
+    min-occurrences: 4
+  funlen:
+    lines: 80
+    statements: 60
+linters:
+  enable-all: true
+  disable:
+    # deprecated
+    - gocyclo
+    - interfacer
+    - scopelint
+    - maligned
+    - golint
+    - deadcode
+    - ifshort
+    - varcheck
+    - structcheck
+    # require massive refactoring
+    - forcetypeassert
+    - govet
+    - funlen
+    - gocognit
+    - cyclop
+    #
+    - containedctx
+    - decorder
+    - execinquery
+    - exhaustivestruct
+    - exhaustruct
+    - gci
+    - gochecknoinits
+    - godot
+    - godox
+    - goerr113
+    - goheader
+    - gomnd
+    - gomodguard
+    - grouper
+    - ireturn
+    - maintidx
+    - nlreturn
+    - nonamedreturns
+    - nosnakecase
+    - tagliatelle
+    - testpackage
+    - thelper
+    - varnamelen
+    - wsl
+  fast: false

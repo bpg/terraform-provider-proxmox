@@ -21,9 +21,22 @@ import (
 )
 
 // DeleteDatastoreFile deletes a file in a datastore.
-func (c *VirtualEnvironmentClient) DeleteDatastoreFile(ctx context.Context, nodeName, datastoreID, volumeID string) error {
-	err := c.DoRequest(ctx, hmDELETE, fmt.Sprintf("nodes/%s/storage/%s/content/%s", url.PathEscape(nodeName), url.PathEscape(datastoreID), url.PathEscape(volumeID)), nil, nil)
-
+func (c *VirtualEnvironmentClient) DeleteDatastoreFile(
+	ctx context.Context,
+	nodeName, datastoreID, volumeID string,
+) error {
+	err := c.DoRequest(
+		ctx,
+		hmDELETE,
+		fmt.Sprintf(
+			"nodes/%s/storage/%s/content/%s",
+			url.PathEscape(nodeName),
+			url.PathEscape(datastoreID),
+			url.PathEscape(volumeID),
+		),
+		nil,
+		nil,
+	)
 	if err != nil {
 		return err
 	}
@@ -32,10 +45,22 @@ func (c *VirtualEnvironmentClient) DeleteDatastoreFile(ctx context.Context, node
 }
 
 // GetDatastoreStatus gets status information for a given datastore.
-func (c *VirtualEnvironmentClient) GetDatastoreStatus(ctx context.Context, nodeName, datastoreID string) (*VirtualEnvironmentDatastoreGetStatusResponseData, error) {
+func (c *VirtualEnvironmentClient) GetDatastoreStatus(
+	ctx context.Context,
+	nodeName, datastoreID string,
+) (*VirtualEnvironmentDatastoreGetStatusResponseData, error) {
 	resBody := &VirtualEnvironmentDatastoreGetStatusResponseBody{}
-	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/storage/%s/status", url.PathEscape(nodeName), url.PathEscape(datastoreID)), nil, resBody)
-
+	err := c.DoRequest(
+		ctx,
+		hmGET,
+		fmt.Sprintf(
+			"nodes/%s/storage/%s/status",
+			url.PathEscape(nodeName),
+			url.PathEscape(datastoreID),
+		),
+		nil,
+		resBody,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +73,22 @@ func (c *VirtualEnvironmentClient) GetDatastoreStatus(ctx context.Context, nodeN
 }
 
 // ListDatastoreFiles retrieves a list of the files in a datastore.
-func (c *VirtualEnvironmentClient) ListDatastoreFiles(ctx context.Context, nodeName, datastoreID string) ([]*VirtualEnvironmentDatastoreFileListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListDatastoreFiles(
+	ctx context.Context,
+	nodeName, datastoreID string,
+) ([]*VirtualEnvironmentDatastoreFileListResponseData, error) {
 	resBody := &VirtualEnvironmentDatastoreFileListResponseBody{}
-	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/storage/%s/content", url.PathEscape(nodeName), url.PathEscape(datastoreID)), nil, resBody)
-
+	err := c.DoRequest(
+		ctx,
+		hmGET,
+		fmt.Sprintf(
+			"nodes/%s/storage/%s/content",
+			url.PathEscape(nodeName),
+			url.PathEscape(datastoreID),
+		),
+		nil,
+		resBody,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -68,10 +105,19 @@ func (c *VirtualEnvironmentClient) ListDatastoreFiles(ctx context.Context, nodeN
 }
 
 // ListDatastores retrieves a list of nodes.
-func (c *VirtualEnvironmentClient) ListDatastores(ctx context.Context, nodeName string, d *VirtualEnvironmentDatastoreListRequestBody) ([]*VirtualEnvironmentDatastoreListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListDatastores(
+	ctx context.Context,
+	nodeName string,
+	d *VirtualEnvironmentDatastoreListRequestBody,
+) ([]*VirtualEnvironmentDatastoreListResponseData, error) {
 	resBody := &VirtualEnvironmentDatastoreListResponseBody{}
-	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/storage", url.PathEscape(nodeName)), d, resBody)
-
+	err := c.DoRequest(
+		ctx,
+		hmGET,
+		fmt.Sprintf("nodes/%s/storage", url.PathEscape(nodeName)),
+		d,
+		resBody,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +134,10 @@ func (c *VirtualEnvironmentClient) ListDatastores(ctx context.Context, nodeName 
 }
 
 // UploadFileToDatastore uploads a file to a datastore.
-func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d *VirtualEnvironmentDatastoreUploadRequestBody) (*VirtualEnvironmentDatastoreUploadResponseBody, error) {
+func (c *VirtualEnvironmentClient) UploadFileToDatastore(
+	ctx context.Context,
+	d *VirtualEnvironmentDatastoreUploadRequestBody,
+) (*VirtualEnvironmentDatastoreUploadResponseBody, error) {
 	switch d.ContentType {
 	case "iso", "vztmpl":
 		r, w := io.Pipe()
@@ -110,7 +159,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 			}
 
 			part, err := m.CreateFormFile("filename", d.FileName)
-
 			if err != nil {
 				return
 			}
@@ -125,7 +173,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 		// We need to store the multipart content in a temporary file to avoid using high amounts of memory.
 		// This is necessary due to Proxmox VE not supporting chunked transfers in v6.1 and earlier versions.
 		tempMultipartFile, err := os.CreateTemp("", "multipart")
-
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +194,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 
 		// Now that the multipart data is stored in a file, we can go ahead and do a HTTP POST request.
 		fileReader, err := os.Open(tempMultipartFileName)
-
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +201,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 		defer fileReader.Close()
 
 		fileInfo, err := fileReader.Stat()
-
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +214,17 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 		}
 
 		resBody := &VirtualEnvironmentDatastoreUploadResponseBody{}
-		err = c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/storage/%s/upload", url.PathEscape(d.NodeName), url.PathEscape(d.DatastoreID)), reqBody, resBody)
+		err = c.DoRequest(
+			ctx,
+			hmPOST,
+			fmt.Sprintf(
+				"nodes/%s/storage/%s/upload",
+				url.PathEscape(d.NodeName),
+				url.PathEscape(d.DatastoreID),
+			),
+			reqBody,
+			resBody,
+		)
 
 		if err != nil {
 			return nil, err
@@ -180,7 +235,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 		// We need to upload all other files using SFTP due to API limitations.
 		// Hopefully, this will not be required in future releases of Proxmox VE.
 		sshClient, err := c.OpenNodeShell(ctx, d.NodeName)
-
 		if err != nil {
 			return nil, err
 		}
@@ -188,15 +242,16 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 		defer sshClient.Close()
 
 		sshSession, err := sshClient.NewSession()
-
 		if err != nil {
 			return nil, err
 		}
 
 		buf, err := sshSession.CombinedOutput(
-			fmt.Sprintf(`awk "/.+: %s$/,/^$/" /etc/pve/storage.cfg | grep -oP '(?<=path[ ])[^\s]+' | head -c -1`, d.DatastoreID),
+			fmt.Sprintf(
+				`awk "/.+: %s$/,/^$/" /etc/pve/storage.cfg | grep -oP '(?<=path[ ])[^\s]+' | head -c -1`,
+				d.DatastoreID,
+			),
 		)
-
 		if err != nil {
 			sshSession.Close()
 
@@ -220,7 +275,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 
 		remoteFilePath := fmt.Sprintf("%s/%s", remoteFileDir, d.FileName)
 		sftpClient, err := sftp.NewClient(sshClient)
-
 		if err != nil {
 			return nil, err
 		}
@@ -234,7 +288,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(ctx context.Context, d 
 		}
 
 		remoteFile, err := sftpClient.Create(remoteFilePath)
-
 		if err != nil {
 			return nil, err
 		}

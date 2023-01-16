@@ -6,22 +6,22 @@ package proxmox
 
 // VirtualEnvironmentUserChangePasswordRequestBody contains the data for a user password change request.
 type VirtualEnvironmentUserChangePasswordRequestBody struct {
-	ID       string `json:"userid" url:"userid"`
+	ID       string `json:"userid"   url:"userid"`
 	Password string `json:"password" url:"password"`
 }
 
 // VirtualEnvironmentUserCreateRequestBody contains the data for an user create request.
 type VirtualEnvironmentUserCreateRequestBody struct {
-	Comment        *string          `json:"comment,omitempty" url:"comment,omitempty"`
-	Email          *string          `json:"email,omitempty" url:"email,omitempty"`
-	Enabled        *CustomBool      `json:"enable,omitempty" url:"enable,omitempty,int"`
-	ExpirationDate *CustomTimestamp `json:"expire,omitempty" url:"expire,omitempty,unix"`
+	Comment        *string          `json:"comment,omitempty"   url:"comment,omitempty"`
+	Email          *string          `json:"email,omitempty"     url:"email,omitempty"`
+	Enabled        *CustomBool      `json:"enable,omitempty"    url:"enable,omitempty,int"`
+	ExpirationDate *CustomTimestamp `json:"expire,omitempty"    url:"expire,omitempty,unix"`
 	FirstName      *string          `json:"firstname,omitempty" url:"firstname,omitempty"`
-	Groups         []string         `json:"groups,omitempty" url:"groups,omitempty,comma"`
-	ID             string           `json:"userid" url:"userid"`
-	Keys           *string          `json:"keys,omitempty" url:"keys,omitempty"`
-	LastName       *string          `json:"lastname,omitempty" url:"lastname,omitempty"`
-	Password       string           `json:"password" url:"password"`
+	Groups         []string         `json:"groups,omitempty"    url:"groups,omitempty,comma"`
+	ID             string           `json:"userid"              url:"userid"`
+	Keys           *string          `json:"keys,omitempty"      url:"keys,omitempty"`
+	LastName       *string          `json:"lastname,omitempty"  url:"lastname,omitempty"`
+	Password       string           `json:"password"            url:"password"`
 }
 
 // VirtualEnvironmentUserGetResponseBody contains the body from an user get response.
@@ -61,13 +61,13 @@ type VirtualEnvironmentUserListResponseData struct {
 
 // VirtualEnvironmentUserUpdateRequestBody contains the data for an user update request.
 type VirtualEnvironmentUserUpdateRequestBody struct {
-	Append         *CustomBool      `json:"append,omitempty" url:"append,omitempty"`
-	Comment        *string          `json:"comment,omitempty" url:"comment,omitempty"`
-	Email          *string          `json:"email,omitempty" url:"email,omitempty"`
-	Enabled        *CustomBool      `json:"enable,omitempty" url:"enable,omitempty,int"`
-	ExpirationDate *CustomTimestamp `json:"expire,omitempty" url:"expire,omitempty,unix"`
+	Append         *CustomBool      `json:"append,omitempty"    url:"append,omitempty"`
+	Comment        *string          `json:"comment,omitempty"   url:"comment,omitempty"`
+	Email          *string          `json:"email,omitempty"     url:"email,omitempty"`
+	Enabled        *CustomBool      `json:"enable,omitempty"    url:"enable,omitempty,int"`
+	ExpirationDate *CustomTimestamp `json:"expire,omitempty"    url:"expire,omitempty,unix"`
 	FirstName      *string          `json:"firstname,omitempty" url:"firstname,omitempty"`
-	Groups         []string         `json:"groups,omitempty" url:"groups,omitempty,comma"`
-	Keys           *string          `json:"keys,omitempty" url:"keys,omitempty"`
-	LastName       *string          `json:"lastname,omitempty" url:"lastname,omitempty"`
+	Groups         []string         `json:"groups,omitempty"    url:"groups,omitempty,comma"`
+	Keys           *string          `json:"keys,omitempty"      url:"keys,omitempty"`
+	LastName       *string          `json:"lastname,omitempty"  url:"lastname,omitempty"`
 }

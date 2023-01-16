@@ -13,7 +13,10 @@ import (
 )
 
 // CreateRole creates an access role.
-func (c *VirtualEnvironmentClient) CreateRole(ctx context.Context, d *VirtualEnvironmentRoleCreateRequestBody) error {
+func (c *VirtualEnvironmentClient) CreateRole(
+	ctx context.Context,
+	d *VirtualEnvironmentRoleCreateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPOST, "access/roles", d, nil)
 }
 
@@ -23,10 +26,12 @@ func (c *VirtualEnvironmentClient) DeleteRole(ctx context.Context, id string) er
 }
 
 // GetRole retrieves an access role.
-func (c *VirtualEnvironmentClient) GetRole(ctx context.Context, id string) (*CustomPrivileges, error) {
+func (c *VirtualEnvironmentClient) GetRole(
+	ctx context.Context,
+	id string,
+) (*CustomPrivileges, error) {
 	resBody := &VirtualEnvironmentRoleGetResponseBody{}
 	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), nil, resBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +46,11 @@ func (c *VirtualEnvironmentClient) GetRole(ctx context.Context, id string) (*Cus
 }
 
 // ListRoles retrieves a list of access roles.
-func (c *VirtualEnvironmentClient) ListRoles(ctx context.Context) ([]*VirtualEnvironmentRoleListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListRoles(
+	ctx context.Context,
+) ([]*VirtualEnvironmentRoleListResponseData, error) {
 	resBody := &VirtualEnvironmentRoleListResponseBody{}
 	err := c.DoRequest(ctx, hmGET, "access/roles", nil, resBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +73,10 @@ func (c *VirtualEnvironmentClient) ListRoles(ctx context.Context) ([]*VirtualEnv
 }
 
 // UpdateRole updates an access role.
-func (c *VirtualEnvironmentClient) UpdateRole(ctx context.Context, id string, d *VirtualEnvironmentRoleUpdateRequestBody) error {
+func (c *VirtualEnvironmentClient) UpdateRole(
+	ctx context.Context,
+	id string,
+	d *VirtualEnvironmentRoleUpdateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), d, nil)
 }

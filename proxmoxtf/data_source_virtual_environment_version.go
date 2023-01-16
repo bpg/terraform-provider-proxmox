@@ -50,7 +50,11 @@ func dataSourceVirtualEnvironmentVersion() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentVersionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentVersionRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)

@@ -6,6 +6,7 @@ package proxmox
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,7 +20,7 @@ const (
 )
 
 // Authenticate authenticates against the specified endpoint.
-func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
+func (c *VirtualEnvironmentClient) Authenticate(ctx context.Context, reset bool) error {
 	if c.authenticationData != nil && !reset {
 		return nil
 	}
@@ -41,8 +42,12 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 		))
 	}
 
-	req, err := http.NewRequest(hmPOST, fmt.Sprintf("%s/%s/access/ticket", c.Endpoint, basePathJSONAPI), reqBody)
-
+	req, err := http.NewRequestWithContext(
+		ctx,
+		hmPOST,
+		fmt.Sprintf("%s/%s/access/ticket", c.Endpoint, basePathJSONAPI),
+		reqBody,
+	)
 	if err != nil {
 		return errors.New("failed to create authentication request")
 	}
@@ -50,7 +55,6 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	res, err := c.httpClient.Do(req)
-
 	if err != nil {
 		return errors.New("failed to retrieve authentication response")
 	}
@@ -73,7 +77,9 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 	}
 
 	if resBody.Data.CSRFPreventionToken == nil {
-		return errors.New("the server did not include a CSRF prevention token in the authentication response")
+		return errors.New(
+			"the server did not include a CSRF prevention token in the authentication response",
+		)
 	}
 
 	if resBody.Data.Ticket == nil {
@@ -90,9 +96,8 @@ func (c *VirtualEnvironmentClient) Authenticate(reset bool) error {
 }
 
 // AuthenticateRequest adds authentication data to a new request.
-func (c *VirtualEnvironmentClient) AuthenticateRequest(req *http.Request) error {
-	err := c.Authenticate(false)
-
+func (c *VirtualEnvironmentClient) AuthenticateRequest(ctx context.Context, req *http.Request) error {
+	err := c.Authenticate(ctx, false)
 	if err != nil {
 		return err
 	}

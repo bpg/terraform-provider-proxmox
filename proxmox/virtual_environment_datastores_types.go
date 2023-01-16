@@ -45,9 +45,9 @@ type VirtualEnvironmentDatastoreGetStatusResponseData struct {
 type VirtualEnvironmentDatastoreListRequestBody struct {
 	ContentTypes CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
 	Enabled      *CustomBool              `json:"enabled,omitempty" url:"enabled,omitempty,int"`
-	Format       *CustomBool              `json:"format,omitempty" url:"format,omitempty,int"`
+	Format       *CustomBool              `json:"format,omitempty"  url:"format,omitempty,int"`
 	ID           *string                  `json:"storage,omitempty" url:"storage,omitempty"`
-	Target       *string                  `json:"target,omitempty" url:"target,omitempty"`
+	Target       *string                  `json:"target,omitempty"  url:"target,omitempty"`
 }
 
 // VirtualEnvironmentDatastoreListResponseBody contains the body from a datastore list response.

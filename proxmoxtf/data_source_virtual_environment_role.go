@@ -35,7 +35,11 @@ func dataSourceVirtualEnvironmentRole() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentRoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentRoleRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

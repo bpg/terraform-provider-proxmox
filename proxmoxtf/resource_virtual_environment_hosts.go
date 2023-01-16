@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -106,7 +106,11 @@ func resourceVirtualEnvironmentHosts() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentHostsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentHostsCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	diags := resourceVirtualEnvironmentHostsUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
@@ -119,7 +123,11 @@ func resourceVirtualEnvironmentHostsCreate(ctx context.Context, d *schema.Resour
 	return diags
 }
 
-func resourceVirtualEnvironmentHostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentHostsRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -189,7 +197,11 @@ func resourceVirtualEnvironmentHostsRead(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-func resourceVirtualEnvironmentHostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentHostsUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -228,7 +240,11 @@ func resourceVirtualEnvironmentHostsUpdate(ctx context.Context, d *schema.Resour
 	return resourceVirtualEnvironmentHostsRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentHostsDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentHostsDelete(
+	_ context.Context,
+	d *schema.ResourceData,
+	_ interface{},
+) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

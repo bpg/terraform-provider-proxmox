@@ -13,7 +13,10 @@ import (
 )
 
 // CreatePool creates a pool.
-func (c *VirtualEnvironmentClient) CreatePool(ctx context.Context, d *VirtualEnvironmentPoolCreateRequestBody) error {
+func (c *VirtualEnvironmentClient) CreatePool(
+	ctx context.Context,
+	d *VirtualEnvironmentPoolCreateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPOST, "pools", d, nil)
 }
 
@@ -23,10 +26,12 @@ func (c *VirtualEnvironmentClient) DeletePool(ctx context.Context, id string) er
 }
 
 // GetPool retrieves a pool.
-func (c *VirtualEnvironmentClient) GetPool(ctx context.Context, id string) (*VirtualEnvironmentPoolGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetPool(
+	ctx context.Context,
+	id string,
+) (*VirtualEnvironmentPoolGetResponseData, error) {
 	resBody := &VirtualEnvironmentPoolGetResponseBody{}
 	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, resBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +48,11 @@ func (c *VirtualEnvironmentClient) GetPool(ctx context.Context, id string) (*Vir
 }
 
 // ListPools retrieves a list of pools.
-func (c *VirtualEnvironmentClient) ListPools(ctx context.Context) ([]*VirtualEnvironmentPoolListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListPools(
+	ctx context.Context,
+) ([]*VirtualEnvironmentPoolListResponseData, error) {
 	resBody := &VirtualEnvironmentPoolListResponseBody{}
 	err := c.DoRequest(ctx, hmGET, "pools", nil, resBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +69,10 @@ func (c *VirtualEnvironmentClient) ListPools(ctx context.Context) ([]*VirtualEnv
 }
 
 // UpdatePool updates a pool.
-func (c *VirtualEnvironmentClient) UpdatePool(ctx context.Context, id string, d *VirtualEnvironmentPoolUpdateRequestBody) error {
+func (c *VirtualEnvironmentClient) UpdatePool(
+	ctx context.Context,
+	id string,
+	d *VirtualEnvironmentPoolUpdateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("pools/%s", url.PathEscape(id)), d, nil)
 }

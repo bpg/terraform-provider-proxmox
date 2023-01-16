@@ -23,12 +23,12 @@ There are no arguments available for this data source.
 
 ## Attribute Reference
 
-* `cpu_count` - The CPU count for each node.
-* `cpu_utilization` - The CPU utilization on each node.
-* `memory_available` - The memory available on each node.
-* `memory_used` - The memory used on each node.
-* `names` - The node names.
-* `online` - Whether a node is online.
-* `ssl_fingerprints` - The SSL fingerprint for each node.
-* `support_levels` - The support level for each node.
-* `uptime` - The uptime in seconds for each node.
+- `cpu_count` - The CPU count for each node.
+- `cpu_utilization` - The CPU utilization on each node.
+- `memory_available` - The memory available on each node.
+- `memory_used` - The memory used on each node.
+- `names` - The node names.
+- `online` - Whether a node is online.
+- `ssl_fingerprints` - The SSL fingerprint for each node.
+- `support_levels` - The support level for each node.
+- `uptime` - The uptime in seconds for each node.

@@ -11,9 +11,9 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -90,15 +90,18 @@ func Provider() *schema.Provider {
 
 								if value == "" {
 									return []string{}, []error{
-										errors.New("you must specify an endpoint for the Proxmox Virtual Environment API (valid: https://host:port)"),
+										errors.New(
+											"you must specify an endpoint for the Proxmox Virtual Environment API (valid: https://host:port)",
+										),
 									}
 								}
 
 								_, err := url.ParseRequestURI(value)
-
 								if err != nil {
 									return []string{}, []error{
-										errors.New("you must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port)"),
+										errors.New(
+											"you must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port)",
+										),
 									}
 								}
 
@@ -143,7 +146,9 @@ func Provider() *schema.Provider {
 
 								if value == "" {
 									return []string{}, []error{
-										errors.New("you must specify a password for the Proxmox Virtual Environment API"),
+										errors.New(
+											"you must specify a password for the Proxmox Virtual Environment API",
+										),
 									}
 								}
 
@@ -163,7 +168,9 @@ func Provider() *schema.Provider {
 
 								if value == "" {
 									return []string{}, []error{
-										errors.New("you must specify a username for the Proxmox Virtual Environment API (valid: username@realm)"),
+										errors.New(
+											"you must specify a username for the Proxmox Virtual Environment API (valid: username@realm)",
+										),
 									}
 								}
 
@@ -209,7 +216,9 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 func (c *providerConfiguration) GetVEClient() (*proxmox.VirtualEnvironmentClient, error) {
 	if c.veClient == nil {
-		return nil, errors.New("you must specify the virtual environment details in the provider configuration")
+		return nil, errors.New(
+			"you must specify the virtual environment details in the provider configuration",
+		)
 	}
 
 	return c.veClient, nil

@@ -25,8 +25,8 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
 
 ## Argument Reference
 
-* `privileges` - (Required) The role privileges.
-* `role_id` - (Required) The role identifier.
+- `privileges` - (Required) The role privileges.
+- `role_id` - (Required) The role identifier.
 
 ## Attribute Reference
 
