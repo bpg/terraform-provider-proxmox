@@ -258,6 +258,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							Type:             schema.TypeInt,
 							Description:      "The rootfs size in gigabytes",
 							Optional:         true,
+							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentContainerDiskSize,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
 						},
