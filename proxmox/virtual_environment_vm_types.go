@@ -1424,6 +1424,43 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// UnmarshalJSON converts a CustomEFIDisk string to an object.
+func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+
+	if err != nil {
+		return err
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			switch v[0] {
+			case "format":
+				r.Format = &v[1]
+			case "file":
+				r.FileVolume = v[1]
+			case "size":
+				size := strings.ReplaceAll(v[1], "M", "")
+				iv, err := strconv.Atoi(size)
+
+				if err != nil {
+					return err
+				}
+
+				r.DiskSize = &iv
+			}
+		}
+	}
+
+	return nil
+}
+
 // UnmarshalJSON converts a CustomNetworkDevice string to an object.
 func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 	var s string
