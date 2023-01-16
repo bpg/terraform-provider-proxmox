@@ -3,6 +3,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
 
   disk {
     datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+    size         = 10
   }
 
   initialization {

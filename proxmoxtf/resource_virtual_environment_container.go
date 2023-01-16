@@ -12,9 +12,10 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const (
@@ -35,7 +36,8 @@ const (
 	dvResourceVirtualEnvironmentContainerCPUCores                          = 1
 	dvResourceVirtualEnvironmentContainerCPUUnits                          = 1024
 	dvResourceVirtualEnvironmentContainerDescription                       = ""
-	dvResourceVirtualEnvironmentContainerDiskDatastoreID                   = "local-lvm"
+	dvResourceVirtualEnvironmentContainerDiskDatastoreID                   = "local"
+	dvResourceVirtualEnvironmentContainerDiskSize                          = 4
 	dvResourceVirtualEnvironmentContainerMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentContainerMemorySwap                        = 0
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceBridge            = "vmbr0"
@@ -67,6 +69,7 @@ const (
 	mkResourceVirtualEnvironmentContainerDescription                       = "description"
 	mkResourceVirtualEnvironmentContainerDisk                              = "disk"
 	mkResourceVirtualEnvironmentContainerDiskDatastoreID                   = "datastore_id"
+	mkResourceVirtualEnvironmentContainerDiskSize                          = "size"
 	mkResourceVirtualEnvironmentContainerInitialization                    = "initialization"
 	mkResourceVirtualEnvironmentContainerInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentContainerInitializationDNSDomain           = "domain"
@@ -237,7 +240,8 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMDiskDatastoreID: dvResourceVirtualEnvironmentContainerDiskDatastoreID,
+							mkResourceVirtualEnvironmentContainerDiskDatastoreID: dvResourceVirtualEnvironmentContainerDiskDatastoreID,
+							mkResourceVirtualEnvironmentContainerDiskSize:        dvResourceVirtualEnvironmentContainerDiskSize,
 						},
 					}, nil
 				},
@@ -249,6 +253,14 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentContainerDiskDatastoreID,
+						},
+						mkResourceVirtualEnvironmentContainerDiskSize: {
+							Type:             schema.TypeInt,
+							Description:      "The rootfs size in gigabytes",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentContainerDiskSize,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
 						},
 					},
 				},
@@ -929,6 +941,16 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
 
+	var rootFS *proxmox.VirtualEnvironmentContainerCustomRootFS
+	diskSize := diskBlock[mkResourceVirtualEnvironmentContainerDiskSize].(int)
+	if diskSize != dvResourceVirtualEnvironmentContainerDiskSize && diskDatastoreID != "" {
+		// This is a special case where the rootfs size is set to a non-default value at creation time.
+		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
+		rootFS = &proxmox.VirtualEnvironmentContainerCustomRootFS{
+			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+		}
+	}
+
 	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
 	initializationDNSDomain := dvResourceVirtualEnvironmentContainerInitializationDNSDomain
 	initializationDNSServer := dvResourceVirtualEnvironmentContainerInitializationDNSServer
@@ -1099,6 +1121,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(ctx context.Context, d *sch
 		NetworkInterfaces:    networkInterfaceArray,
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
 		OSType:               &operatingSystemType,
+		RootFS:               rootFS,
 		StartOnBoot:          &started,
 		Swap:                 &memorySwap,
 		Template:             &template,
@@ -1309,7 +1332,7 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 		return diag.FromErr(err)
 	}
 
-	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
+	clone := d.Get(mkResourceVirtualEnvironmentContainerClone).([]interface{})
 
 	// Compare the primitive values to those stored in the state.
 	currentDescription := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
@@ -1406,22 +1429,33 @@ func resourceVirtualEnvironmentContainerRead(ctx context.Context, d *schema.Reso
 
 	if containerConfig.RootFS != nil {
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
-
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = volumeParts[0]
+
+		diskSize, err := parseDiskSize(containerConfig.RootFS.DiskSize)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		disk[mkResourceVirtualEnvironmentContainerDiskSize] = diskSize
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = "local"
+		disk[mkResourceVirtualEnvironmentContainerDiskSize] = dvResourceVirtualEnvironmentContainerDiskSize
 	}
 
 	currentDisk := d.Get(mkResourceVirtualEnvironmentContainerDisk).([]interface{})
 
 	if len(clone) > 0 {
 		if len(currentDisk) > 0 {
+			// do not override the rootfs size if it was not changed during the clone operation
+			if currentDisk[0].(map[string]interface{})[mkResourceVirtualEnvironmentContainerDiskSize] == dvResourceVirtualEnvironmentContainerDiskSize {
+				disk[mkResourceVirtualEnvironmentContainerDiskSize] = dvResourceVirtualEnvironmentContainerDiskSize
+			}
 			err := d.Set(mkResourceVirtualEnvironmentContainerDisk, []interface{}{disk})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentDisk) > 0 ||
-		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] != dvResourceVirtualEnvironmentContainerDiskDatastoreID {
+		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] != dvResourceVirtualEnvironmentContainerDiskDatastoreID ||
+		disk[mkResourceVirtualEnvironmentContainerDiskSize] != dvResourceVirtualEnvironmentContainerDiskSize {
 		err := d.Set(mkResourceVirtualEnvironmentContainerDisk, []interface{}{disk})
 		diags = append(diags, diag.FromErr(err)...)
 	}
