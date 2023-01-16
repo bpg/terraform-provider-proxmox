@@ -1551,6 +1551,7 @@ func resourceVirtualEnvironmentContainerRead(
 	if len(clone) > 0 {
 		if len(currentDisk) > 0 {
 			// do not override the rootfs size if it was not changed during the clone operation
+			//nolint:lll
 			if currentDisk[0].(map[string]interface{})[mkResourceVirtualEnvironmentContainerDiskSize] == dvResourceVirtualEnvironmentContainerDiskSize {
 				disk[mkResourceVirtualEnvironmentContainerDiskSize] = dvResourceVirtualEnvironmentContainerDiskSize
 			}

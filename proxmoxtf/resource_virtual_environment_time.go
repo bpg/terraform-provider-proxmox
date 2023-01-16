@@ -70,6 +70,7 @@ func resourceVirtualEnvironmentTimeCreate(
 	return nil
 }
 
+//nolint:dupl
 func resourceVirtualEnvironmentTimeRead(
 	ctx context.Context,
 	d *schema.ResourceData,

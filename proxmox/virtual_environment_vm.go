@@ -695,6 +695,8 @@ func (c *VirtualEnvironmentClient) WaitForNoNetworkInterfacesFromVMAgent(
 }
 
 // WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.
+//
+//nolint:dupl
 func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(
 	ctx context.Context,
 	nodeName string,
@@ -736,6 +738,8 @@ func (c *VirtualEnvironmentClient) WaitForVMConfigUnlock(
 }
 
 // WaitForVMState waits for a virtual machine to reach a specific state.
+//
+//nolint:dupl
 func (c *VirtualEnvironmentClient) WaitForVMState(
 	ctx context.Context,
 	nodeName string,

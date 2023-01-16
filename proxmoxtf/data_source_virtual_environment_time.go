@@ -48,6 +48,7 @@ func dataSourceVirtualEnvironmentTime() *schema.Resource {
 	}
 }
 
+//nolint:dupl
 func dataSourceVirtualEnvironmentTimeRead(
 	ctx context.Context,
 	d *schema.ResourceData,

@@ -182,6 +182,8 @@ func (c *VirtualEnvironmentClient) UpdateContainer(
 }
 
 // WaitForContainerState waits for a container to reach a specific state.
+//
+//nolint:dupl
 func (c *VirtualEnvironmentClient) WaitForContainerState(
 	ctx context.Context,
 	nodeName string,
@@ -228,6 +230,8 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(
 }
 
 // WaitForContainerLock waits for a container lock to be released.
+//
+//nolint:dupl
 func (c *VirtualEnvironmentClient) WaitForContainerLock(
 	ctx context.Context,
 	nodeName string,
