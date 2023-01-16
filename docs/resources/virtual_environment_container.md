@@ -103,8 +103,9 @@ output "ubuntu_container_public_key" {
     * `cores` - (Optional) The number of CPU cores (defaults to `1`).
     * `units` - (Optional) The CPU units (defaults to `1024`).
 * `description` - (Optional) The description.
-* `disk` - (Optional) A disk.
-    * `datastore_id` - (Optional) The identifier for the datastore to create the disk in (defaults to `local-lvm`).
+* `disk` - (Optional) The disk configuration.
+    * `datastore_id` - (Optional) The identifier for the datastore to create the disk in (defaults to `local`).
+    * `size` - (Optional) The size of the root filesystem in gigabytes (defaults to `4`). Requires `datastore_id` to be set.
 * `initialization` - (Optional) The initialization configuration.
     * `dns` - (Optional) The DNS configuration.
         * `domain` - (Optional) The DNS search domain.
