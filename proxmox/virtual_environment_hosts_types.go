@@ -17,6 +17,6 @@ type VirtualEnvironmentHostsGetResponseData struct {
 
 // VirtualEnvironmentHostsUpdateRequestBody contains the body for a hosts update request.
 type VirtualEnvironmentHostsUpdateRequestBody struct {
-	Data   string  `json:"data" url:"data"`
+	Data   string  `json:"data"             url:"data"`
 	Digest *string `json:"digest,omitempty" url:"digest,omitempty"`
 }

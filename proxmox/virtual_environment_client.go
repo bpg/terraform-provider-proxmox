@@ -22,23 +22,33 @@ import (
 )
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
-func NewVirtualEnvironmentClient(endpoint, username, password, otp string, insecure bool) (*VirtualEnvironmentClient, error) {
+func NewVirtualEnvironmentClient(
+	endpoint, username, password, otp string,
+	insecure bool,
+) (*VirtualEnvironmentClient, error) {
 	u, err := url.ParseRequestURI(endpoint)
-
 	if err != nil {
-		return nil, errors.New("you must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port/)")
+		return nil, errors.New(
+			"you must specify a valid endpoint for the Proxmox Virtual Environment API (valid: https://host:port/)",
+		)
 	}
 
 	if u.Scheme != "https" {
-		return nil, errors.New("you must specify a secure endpoint for the Proxmox Virtual Environment API (valid: https://host:port/)")
+		return nil, errors.New(
+			"you must specify a secure endpoint for the Proxmox Virtual Environment API (valid: https://host:port/)",
+		)
 	}
 
 	if password == "" {
-		return nil, errors.New("you must specify a password for the Proxmox Virtual Environment API")
+		return nil, errors.New(
+			"you must specify a password for the Proxmox Virtual Environment API",
+		)
 	}
 
 	if username == "" {
-		return nil, errors.New("you must specify a username for the Proxmox Virtual Environment API")
+		return nil, errors.New(
+			"you must specify a username for the Proxmox Virtual Environment API",
+		)
 	}
 
 	var pOTP *string
@@ -66,7 +76,11 @@ func NewVirtualEnvironmentClient(endpoint, username, password, otp string, insec
 }
 
 // DoRequest performs a HTTP request against a JSON API endpoint.
-func (c *VirtualEnvironmentClient) DoRequest(ctx context.Context, method, path string, requestBody, responseBody interface{}) error {
+func (c *VirtualEnvironmentClient) DoRequest(
+	ctx context.Context,
+	method, path string,
+	requestBody, responseBody interface{},
+) error {
 	var reqBodyReader io.Reader
 	var reqContentLength *int64
 
@@ -101,7 +115,6 @@ func (c *VirtualEnvironmentClient) DoRequest(ctx context.Context, method, path s
 			})
 		} else {
 			v, err := query.Values(requestBody)
-
 			if err != nil {
 				fErr := fmt.Errorf("failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
 				tflog.Warn(ctx, fErr.Error())
@@ -133,10 +146,19 @@ func (c *VirtualEnvironmentClient) DoRequest(ctx context.Context, method, path s
 		reqBodyReader = new(bytes.Buffer)
 	}
 
-	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, modifiedPath), reqBodyReader)
-
+	req, err := http.NewRequestWithContext(
+		ctx,
+		method,
+		fmt.Sprintf("%s/%s/%s", c.Endpoint, basePathJSONAPI, modifiedPath),
+		reqBodyReader,
+	)
 	if err != nil {
-		fErr := fmt.Errorf("failed to create HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+		fErr := fmt.Errorf(
+			"failed to create HTTP %s request (path: %s) - Reason: %w",
+			method,
+			modifiedPath,
+			err,
+		)
 		tflog.Warn(ctx, fErr.Error())
 		return fErr
 	}
@@ -151,7 +173,7 @@ func (c *VirtualEnvironmentClient) DoRequest(ctx context.Context, method, path s
 		req.Header.Add("Content-Type", reqBodyType)
 	}
 
-	err = c.AuthenticateRequest(req)
+	err = c.AuthenticateRequest(ctx, req)
 
 	if err != nil {
 		tflog.Warn(ctx, err.Error())
@@ -159,9 +181,13 @@ func (c *VirtualEnvironmentClient) DoRequest(ctx context.Context, method, path s
 	}
 
 	res, err := c.httpClient.Do(req)
-
 	if err != nil {
-		fErr := fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+		fErr := fmt.Errorf(
+			"failed to perform HTTP %s request (path: %s) - Reason: %w",
+			method,
+			modifiedPath,
+			err,
+		)
 		tflog.Warn(ctx, fErr.Error())
 		return fErr
 	}
@@ -185,7 +211,12 @@ func (c *VirtualEnvironmentClient) DoRequest(ctx context.Context, method, path s
 		err = json.NewDecoder(res.Body).Decode(responseBody)
 
 		if err != nil {
-			fErr := fmt.Errorf("failed to decode HTTP %s response (path: %s) - Reason: %s", method, modifiedPath, err.Error())
+			fErr := fmt.Errorf(
+				"failed to decode HTTP %s response (path: %s) - Reason: %w",
+				method,
+				modifiedPath,
+				err,
+			)
 			tflog.Warn(ctx, fErr.Error())
 			return fErr
 		}

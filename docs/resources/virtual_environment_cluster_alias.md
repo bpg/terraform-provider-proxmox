@@ -16,23 +16,23 @@ We can create aliases to identify an IP address or a network.
 
 ```terraform
 resource "proxmox_virtual_environment_cluster_alias" "local_network" {
-	name    = "local_network"
-	cidr    = "192.168.0.0/23"
-	comment = "Managed by Terraform"
+  name    = "local_network"
+  cidr    = "192.168.0.0/23"
+  comment = "Managed by Terraform"
 }
 
 resource "proxmox_virtual_environment_cluster_alias" "ubuntu_vm" {
-	name    = "ubuntu"
-	cidr    = "192.168.0.1"
-	comment = "Managed by Terraform"
+  name    = "ubuntu"
+  cidr    = "192.168.0.1"
+  comment = "Managed by Terraform"
 }
 ```
 
 ## Argument Reference
 
-* `name` - (Required) Alias name.
-* `cidr` - (Required) Network/IP specification in CIDR format.
-* `comment` - (Optional) Alias comment.
+- `name` - (Required) Alias name.
+- `cidr` - (Required) Network/IP specification in CIDR format.
+- `comment` - (Optional) Alias comment.
 
 ## Attribute Reference
 

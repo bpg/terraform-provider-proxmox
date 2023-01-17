@@ -13,7 +13,10 @@ import (
 )
 
 // CreateGroup creates an access group.
-func (c *VirtualEnvironmentClient) CreateGroup(ctx context.Context, d *VirtualEnvironmentGroupCreateRequestBody) error {
+func (c *VirtualEnvironmentClient) CreateGroup(
+	ctx context.Context,
+	d *VirtualEnvironmentGroupCreateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPOST, "access/groups", d, nil)
 }
 
@@ -23,10 +26,18 @@ func (c *VirtualEnvironmentClient) DeleteGroup(ctx context.Context, id string) e
 }
 
 // GetGroup retrieves an access group.
-func (c *VirtualEnvironmentClient) GetGroup(ctx context.Context, id string) (*VirtualEnvironmentGroupGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetGroup(
+	ctx context.Context,
+	id string,
+) (*VirtualEnvironmentGroupGetResponseData, error) {
 	resBody := &VirtualEnvironmentGroupGetResponseBody{}
-	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), nil, resBody)
-
+	err := c.DoRequest(
+		ctx,
+		hmGET,
+		fmt.Sprintf("access/groups/%s", url.PathEscape(id)),
+		nil,
+		resBody,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +52,11 @@ func (c *VirtualEnvironmentClient) GetGroup(ctx context.Context, id string) (*Vi
 }
 
 // ListGroups retrieves a list of access groups.
-func (c *VirtualEnvironmentClient) ListGroups(ctx context.Context) ([]*VirtualEnvironmentGroupListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListGroups(
+	ctx context.Context,
+) ([]*VirtualEnvironmentGroupListResponseData, error) {
 	resBody := &VirtualEnvironmentGroupListResponseBody{}
 	err := c.DoRequest(ctx, hmGET, "access/groups", nil, resBody)
-
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +73,10 @@ func (c *VirtualEnvironmentClient) ListGroups(ctx context.Context) ([]*VirtualEn
 }
 
 // UpdateGroup updates an access group.
-func (c *VirtualEnvironmentClient) UpdateGroup(ctx context.Context, id string, d *VirtualEnvironmentGroupUpdateRequestBody) error {
+func (c *VirtualEnvironmentClient) UpdateGroup(
+	ctx context.Context,
+	id string,
+	d *VirtualEnvironmentGroupUpdateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), d, nil)
 }

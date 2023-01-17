@@ -12,10 +12,18 @@ import (
 )
 
 // GetHosts retrieves the Hosts configuration for a node.
-func (c *VirtualEnvironmentClient) GetHosts(ctx context.Context, nodeName string) (*VirtualEnvironmentHostsGetResponseData, error) {
+func (c *VirtualEnvironmentClient) GetHosts(
+	ctx context.Context,
+	nodeName string,
+) (*VirtualEnvironmentHostsGetResponseData, error) {
 	resBody := &VirtualEnvironmentHostsGetResponseBody{}
-	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), nil, resBody)
-
+	err := c.DoRequest(
+		ctx,
+		hmGET,
+		fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)),
+		nil,
+		resBody,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +36,10 @@ func (c *VirtualEnvironmentClient) GetHosts(ctx context.Context, nodeName string
 }
 
 // UpdateHosts updates the Hosts configuration for a node.
-func (c *VirtualEnvironmentClient) UpdateHosts(ctx context.Context, nodeName string, d *VirtualEnvironmentHostsUpdateRequestBody) error {
+func (c *VirtualEnvironmentClient) UpdateHosts(
+	ctx context.Context,
+	nodeName string,
+	d *VirtualEnvironmentHostsUpdateRequestBody,
+) error {
 	return c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), d, nil)
 }

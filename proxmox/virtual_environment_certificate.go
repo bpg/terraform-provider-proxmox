@@ -12,15 +12,33 @@ import (
 )
 
 // DeleteCertificate deletes the custom certificate for a node.
-func (c *VirtualEnvironmentClient) DeleteCertificate(ctx context.Context, nodeName string, d *VirtualEnvironmentCertificateDeleteRequestBody) error {
-	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("nodes/%s/certificates/custom", url.PathEscape(nodeName)), d, nil)
+func (c *VirtualEnvironmentClient) DeleteCertificate(
+	ctx context.Context,
+	nodeName string,
+	d *VirtualEnvironmentCertificateDeleteRequestBody,
+) error {
+	return c.DoRequest(
+		ctx,
+		hmDELETE,
+		fmt.Sprintf("nodes/%s/certificates/custom", url.PathEscape(nodeName)),
+		d,
+		nil,
+	)
 }
 
 // ListCertificates retrieves the list of certificates for a node.
-func (c *VirtualEnvironmentClient) ListCertificates(ctx context.Context, nodeName string) (*[]VirtualEnvironmentCertificateListResponseData, error) {
+func (c *VirtualEnvironmentClient) ListCertificates(
+	ctx context.Context,
+	nodeName string,
+) (*[]VirtualEnvironmentCertificateListResponseData, error) {
 	resBody := &VirtualEnvironmentCertificateListResponseBody{}
-	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("nodes/%s/certificates/info", url.PathEscape(nodeName)), nil, resBody)
-
+	err := c.DoRequest(
+		ctx,
+		hmGET,
+		fmt.Sprintf("nodes/%s/certificates/info", url.PathEscape(nodeName)),
+		nil,
+		resBody,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +51,16 @@ func (c *VirtualEnvironmentClient) ListCertificates(ctx context.Context, nodeNam
 }
 
 // UpdateCertificate updates the custom certificate for a node.
-func (c *VirtualEnvironmentClient) UpdateCertificate(ctx context.Context, nodeName string, d *VirtualEnvironmentCertificateUpdateRequestBody) error {
-	return c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/certificates/custom", url.PathEscape(nodeName)), d, nil)
+func (c *VirtualEnvironmentClient) UpdateCertificate(
+	ctx context.Context,
+	nodeName string,
+	d *VirtualEnvironmentCertificateUpdateRequestBody,
+) error {
+	return c.DoRequest(
+		ctx,
+		hmPOST,
+		fmt.Sprintf("nodes/%s/certificates/custom", url.PathEscape(nodeName)),
+		d,
+		nil,
+	)
 }

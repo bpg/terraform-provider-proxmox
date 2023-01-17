@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -83,7 +83,11 @@ func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentClusterIPSetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterIPSetCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -136,7 +140,11 @@ func resourceVirtualEnvironmentClusterIPSetCreate(ctx context.Context, d *schema
 	return resourceVirtualEnvironmentClusterIPSetRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterIPSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterIPSetRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -162,7 +170,6 @@ func resourceVirtualEnvironmentClusterIPSetRead(ctx context.Context, d *schema.R
 	}
 
 	IPSet, err := veClient.GetListIPSetContent(ctx, name)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -189,7 +196,11 @@ func resourceVirtualEnvironmentClusterIPSetRead(ctx context.Context, d *schema.R
 	return diags
 }
 
-func resourceVirtualEnvironmentClusterIPSetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterIPSetUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -216,7 +227,11 @@ func resourceVirtualEnvironmentClusterIPSetUpdate(ctx context.Context, d *schema
 	return resourceVirtualEnvironmentClusterIPSetRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterIPSetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterIPSetDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()

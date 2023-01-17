@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -107,7 +106,11 @@ func dataSourceVirtualEnvironmentUser() *schema.Resource {
 	}
 }
 
-func dataSourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dataSourceVirtualEnvironmentUserRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -176,7 +179,10 @@ func dataSourceVirtualEnvironmentUserRead(ctx context.Context, d *schema.Resourc
 	if v.ExpirationDate != nil {
 		t := time.Time(*v.ExpirationDate)
 		if t.Unix() > 0 {
-			err = d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, t.UTC().Format(time.RFC3339))
+			err = d.Set(
+				mkDataSourceVirtualEnvironmentUserExpirationDate,
+				t.UTC().Format(time.RFC3339),
+			)
 		} else {
 			err = d.Set(mkDataSourceVirtualEnvironmentUserExpirationDate, time.Unix(0, 0).UTC().Format(time.RFC3339))
 		}

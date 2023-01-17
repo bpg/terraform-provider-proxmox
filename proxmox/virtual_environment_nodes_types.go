@@ -92,7 +92,6 @@ type VirtualEnvironmentNodeUpdateTimeRequestBody struct {
 // EncodeValues converts a CustomNodeCommands array to a JSON encoded URL vlaue.
 func (r CustomNodeCommands) EncodeValues(key string, v *url.Values) error {
 	jsonArrayBytes, err := json.Marshal(r)
-
 	if err != nil {
 		return err
 	}

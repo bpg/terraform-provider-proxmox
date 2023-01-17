@@ -46,19 +46,19 @@ resource "tls_self_signed_cert" "proxmox_virtual_environment_certificate" {
 
 ## Argument Reference
 
-* `certificate` - (Required) The PEM encoded certificate.
-* `certificate_chain` - (Optional) The PEM encoded certificate chain.
-* `node_name` - (Required) A node name.
-* `private_key` - (Required) The PEM encoded private key.
+- `certificate` - (Required) The PEM encoded certificate.
+- `certificate_chain` - (Optional) The PEM encoded certificate chain.
+- `node_name` - (Required) A node name.
+- `private_key` - (Required) The PEM encoded private key.
 
 ## Attribute Reference
 
-* `expiration_date` - The expiration date (RFC 3339).
-* `file_name` - The file name.
-* `issuer` - The issuer.
-* `public_key_size` - The public key size.
-* `public_key_type` - The public key type.
-* `ssl_fingerprint` - The SSL fingerprint.
-* `start_date` - The start date (RFC 3339).
-* `subject` - The subject.
-* `subject_alternative_names` - The subject alternative names.
+- `expiration_date` - The expiration date (RFC 3339).
+- `file_name` - The file name.
+- `issuer` - The issuer.
+- `public_key_size` - The public key size.
+- `public_key_type` - The public key type.
+- `ssl_fingerprint` - The SSL fingerprint.
+- `start_date` - The start date (RFC 3339).
+- `subject` - The subject.
+- `subject_alternative_names` - The subject alternative names.

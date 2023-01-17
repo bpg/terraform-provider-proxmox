@@ -7,7 +7,7 @@ package proxmox
 // VirtualEnvironmentRoleCreateRequestBody contains the data for an access group create request.
 type VirtualEnvironmentRoleCreateRequestBody struct {
 	ID         string           `json:"roleid" url:"roleid"`
-	Privileges CustomPrivileges `json:"privs" url:"privs,comma"`
+	Privileges CustomPrivileges `json:"privs"  url:"privs,comma"`
 }
 
 // VirtualEnvironmentRoleGetResponseBody contains the body from an access group get response.

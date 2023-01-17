@@ -21,9 +21,9 @@ import (
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -190,7 +190,11 @@ func resourceVirtualEnvironmentFile() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentFileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentFileCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -314,7 +318,11 @@ func resourceVirtualEnvironmentFileCreate(ctx context.Context, d *schema.Resourc
 			})
 
 			if sourceFileChecksum != calculatedChecksum {
-				return diag.Errorf("the calculated SHA256 checksum \"%s\" does not match source checksum \"%s\"", calculatedChecksum, sourceFileChecksum)
+				return diag.Errorf(
+					"the calculated SHA256 checksum \"%s\" does not match source checksum \"%s\"",
+					calculatedChecksum,
+					sourceFileChecksum,
+				)
 			}
 		}
 	} else if len(sourceRaw) > 0 {
@@ -402,7 +410,9 @@ func resourceVirtualEnvironmentFileCreate(ctx context.Context, d *schema.Resourc
 	return resourceVirtualEnvironmentFileRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentFileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
+func resourceVirtualEnvironmentFileGetContentType(
+	d *schema.ResourceData,
+) (*string, diag.Diagnostics) {
 	contentType := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
@@ -479,7 +489,6 @@ func resourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData) (*string,
 	if sourceFileFileName == "" {
 		if resourceVirtualEnvironmentFileIsURL(d) {
 			downloadURL, err := url.ParseRequestURI(sourceFilePath)
-
 			if err != nil {
 				return nil, err
 			}
@@ -488,7 +497,10 @@ func resourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData) (*string,
 			sourceFileFileName = path[len(path)-1]
 
 			if sourceFileFileName == "" {
-				return nil, fmt.Errorf("failed to determine file name from the URL \"%s\"", sourceFilePath)
+				return nil, fmt.Errorf(
+					"failed to determine file name from the URL \"%s\"",
+					sourceFilePath,
+				)
 			}
 		} else {
 			sourceFileFileName = filepath.Base(sourceFilePath)
@@ -523,10 +535,15 @@ func resourceVirtualEnvironmentFileIsURL(d *schema.ResourceData) bool {
 		return false
 	}
 
-	return strings.HasPrefix(sourceFilePath, "http://") || strings.HasPrefix(sourceFilePath, "https://")
+	return strings.HasPrefix(sourceFilePath, "http://") ||
+		strings.HasPrefix(sourceFilePath, "https://")
 }
 
-func resourceVirtualEnvironmentFileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentFileRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -571,7 +588,7 @@ func resourceVirtualEnvironmentFileRead(ctx context.Context, d *schema.ResourceD
 			}
 			diags = append(diags, diag.FromErr(err)...)
 
-			lastFileModificationDate := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
+			lastFileMD := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
 			lastFileSize := int64(d.Get(mkResourceVirtualEnvironmentFileFileSize).(int))
 			lastFileTag := d.Get(mkResourceVirtualEnvironmentFileFileTag).(string)
 
@@ -584,7 +601,9 @@ func resourceVirtualEnvironmentFileRead(ctx context.Context, d *schema.ResourceD
 			err = d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
 			diags = append(diags, diag.FromErr(err)...)
 
-			sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChanged] = lastFileModificationDate != fileModificationDate || lastFileSize != fileSize || lastFileTag != fileTag
+			sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChanged] = lastFileMD != fileModificationDate ||
+				lastFileSize != fileSize ||
+				lastFileTag != fileTag
 			err = d.Set(mkResourceVirtualEnvironmentFileSourceFile, sourceFile)
 			diags = append(diags, diag.FromErr(err)...)
 
@@ -600,14 +619,17 @@ func resourceVirtualEnvironmentFileRead(ctx context.Context, d *schema.ResourceD
 	return nil
 }
 
-func readFile(ctx context.Context, sourceFilePath string) (fileModificationDate string, fileSize int64, fileTag string, err error) {
+func readFile(
+	ctx context.Context,
+	sourceFilePath string,
+) (fileModificationDate string, fileSize int64, fileTag string, err error) {
 	f, err := os.Open(sourceFilePath)
 	if err != nil {
 		return
 	}
 
 	defer func(f *os.File) {
-		var err = f.Close()
+		err := f.Close()
 		if err != nil {
 			tflog.Error(ctx, "failed to close the file", map[string]interface{}{
 				"error": err.Error(),
@@ -627,14 +649,18 @@ func readFile(ctx context.Context, sourceFilePath string) (fileModificationDate 
 	return fileModificationDate, fileSize, fileTag, nil
 }
 
-func readURL(ctx context.Context, d *schema.ResourceData, sourceFilePath string) (fileSize int64, fileModificationDate string, fileTag string, err error) {
+func readURL(
+	ctx context.Context,
+	d *schema.ResourceData,
+	sourceFilePath string,
+) (fileSize int64, fileModificationDate string, fileTag string, err error) {
 	res, err := http.Head(sourceFilePath)
 	if err != nil {
 		return
 	}
 
 	defer func(Body io.ReadCloser) {
-		var err = Body.Close()
+		err := Body.Close()
 		if err != nil {
 			tflog.Error(ctx, "failed to close the response body", map[string]interface{}{
 				"error": err.Error(),
@@ -681,7 +707,11 @@ func readURL(ctx context.Context, d *schema.ResourceData, sourceFilePath string)
 	return
 }
 
-func resourceVirtualEnvironmentFileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentFileDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

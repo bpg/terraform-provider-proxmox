@@ -53,6 +53,7 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 func strPtr(s string) *string {
 	return &s
 }
+
 func boolPtr(s bool) *CustomBool {
 	customBool := CustomBool(s)
 	return &customBool

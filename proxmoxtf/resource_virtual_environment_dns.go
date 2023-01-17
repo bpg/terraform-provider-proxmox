@@ -9,9 +9,9 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -53,7 +53,11 @@ func resourceVirtualEnvironmentDNS() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentDNSCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentDNSCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	diags := resourceVirtualEnvironmentDNSUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
@@ -66,7 +70,9 @@ func resourceVirtualEnvironmentDNSCreate(ctx context.Context, d *schema.Resource
 	return nil
 }
 
-func resourceVirtualEnvironmentDNSGetUpdateBody(d *schema.ResourceData) (*proxmox.VirtualEnvironmentDNSUpdateRequestBody, error) {
+func resourceVirtualEnvironmentDNSGetUpdateBody(
+	d *schema.ResourceData,
+) *proxmox.VirtualEnvironmentDNSUpdateRequestBody {
 	domain := d.Get(mkResourceVirtualEnvironmentDNSDomain).(string)
 	servers := d.Get(mkResourceVirtualEnvironmentDNSServers).([]interface{})
 
@@ -87,10 +93,14 @@ func resourceVirtualEnvironmentDNSGetUpdateBody(d *schema.ResourceData) (*proxmo
 		}
 	}
 
-	return body, nil
+	return body
 }
 
-func resourceVirtualEnvironmentDNSRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentDNSRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(providerConfiguration)
@@ -132,7 +142,11 @@ func resourceVirtualEnvironmentDNSRead(ctx context.Context, d *schema.ResourceDa
 	return diags
 }
 
-func resourceVirtualEnvironmentDNSUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentDNSUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -141,10 +155,7 @@ func resourceVirtualEnvironmentDNSUpdate(ctx context.Context, d *schema.Resource
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentDNSNodeName).(string)
 
-	body, err := resourceVirtualEnvironmentDNSGetUpdateBody(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	body := resourceVirtualEnvironmentDNSGetUpdateBody(d)
 
 	err = veClient.UpdateDNS(ctx, nodeName, body)
 	if err != nil {
@@ -154,7 +165,11 @@ func resourceVirtualEnvironmentDNSUpdate(ctx context.Context, d *schema.Resource
 	return resourceVirtualEnvironmentDNSRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentDNSDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentDNSDelete(
+	_ context.Context,
+	d *schema.ResourceData,
+	_ interface{},
+) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

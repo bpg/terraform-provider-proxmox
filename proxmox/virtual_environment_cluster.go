@@ -17,7 +17,6 @@ func (c *VirtualEnvironmentClient) GetClusterNextID(ctx context.Context, vmID *i
 
 	resBody := &VirtualEnvironmentClusterNextIDResponseBody{}
 	err := c.DoRequest(ctx, hmGET, "cluster/nextid", reqBody, resBody)
-
 	if err != nil {
 		return nil, err
 	}

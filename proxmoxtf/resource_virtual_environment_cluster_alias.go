@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 const (
@@ -51,7 +51,11 @@ func resourceVirtualEnvironmentClusterAlias() *schema.Resource {
 	}
 }
 
-func resourceVirtualEnvironmentClusterAliasCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterAliasCreate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -78,7 +82,11 @@ func resourceVirtualEnvironmentClusterAliasCreate(ctx context.Context, d *schema
 	return resourceVirtualEnvironmentClusterAliasRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterAliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterAliasRead(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -87,7 +95,6 @@ func resourceVirtualEnvironmentClusterAliasRead(ctx context.Context, d *schema.R
 
 	name := d.Id()
 	alias, err := veClient.GetAlias(ctx, name)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -112,7 +119,11 @@ func resourceVirtualEnvironmentClusterAliasRead(ctx context.Context, d *schema.R
 	return nil
 }
 
-func resourceVirtualEnvironmentClusterAliasUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterAliasUpdate(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -140,7 +151,11 @@ func resourceVirtualEnvironmentClusterAliasUpdate(ctx context.Context, d *schema
 	return resourceVirtualEnvironmentClusterAliasRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterAliasDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceVirtualEnvironmentClusterAliasDelete(
+	ctx context.Context,
+	d *schema.ResourceData,
+	m interface{},
+) diag.Diagnostics {
 	config := m.(providerConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

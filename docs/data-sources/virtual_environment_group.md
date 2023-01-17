@@ -21,13 +21,13 @@ data "proxmox_virtual_environment_group" "operations_team" {
 
 ## Argument Reference
 
-* `group_id` - (Required) The group identifier.
+- `group_id` - (Required) The group identifier.
 
 ## Attribute Reference
 
-* `acl` - The access control list.
-    * `path` - The path.
-    * `propagate` - Whether to propagate to child paths.
-    * `role_id` - The role identifier.
-* `comment` - The group comment.
-* `members` - The group members as a list with `username@realm` entries.
+- `acl` - The access control list.
+  - `path` - The path.
+  - `propagate` - Whether to propagate to child paths.
+  - `role_id` - The role identifier.
+- `comment` - The group comment.
+- `members` - The group members as a list with `username@realm` entries.
