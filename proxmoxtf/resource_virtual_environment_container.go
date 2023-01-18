@@ -1535,7 +1535,7 @@ func resourceVirtualEnvironmentContainerRead(
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = volumeParts[0]
 
-		diskSize, err := parseDiskSize(containerConfig.RootFS.DiskSize)
+		diskSize, err := proxmox.ParseDiskSize(containerConfig.RootFS.DiskSize)
 		if err != nil {
 			return diag.FromErr(err)
 		}

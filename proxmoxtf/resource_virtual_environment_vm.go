@@ -1706,7 +1706,7 @@ func resourceVirtualEnvironmentVMCreateClone(
 			continue
 		}
 
-		compareNumber, err := parseDiskSize(currentDiskInfo.Size)
+		compareNumber, err := proxmox.ParseDiskSize(currentDiskInfo.Size)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3043,7 +3043,7 @@ func resourceVirtualEnvironmentVMReadCustom(
 		diskSize := 0
 
 		var err error
-		diskSize, err = parseDiskSize(dd.Size)
+		diskSize, err = proxmox.ParseDiskSize(dd.Size)
 		if err != nil {
 			return diag.FromErr(err)
 		}

@@ -1426,9 +1426,8 @@ func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
-
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal CustomEFIDisk: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1443,8 +1442,7 @@ func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 			case "file":
 				r.FileVolume = v[1]
 			case "size":
-				iv, err := parseDiskSize(&v[1])
-
+				iv, err := ParseDiskSize(&v[1])
 				if err != nil {
 					return err
 				}

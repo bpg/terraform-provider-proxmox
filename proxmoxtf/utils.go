@@ -7,9 +7,7 @@ package proxmoxtf
 import (
 	"errors"
 	"fmt"
-	"math"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -485,39 +483,6 @@ func getDiskDatastores(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schem
 	}
 
 	return datastores
-}
-
-func parseDiskSize(size *string) (int, error) {
-	var diskSize int
-	var err error
-	if size != nil {
-		if strings.HasSuffix(*size, "T") {
-			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "T"))
-
-			if err != nil {
-				return -1, err
-			}
-
-			diskSize = int(math.Ceil(float64(diskSize) * 1024))
-		} else if strings.HasSuffix(*size, "G") {
-			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "G"))
-
-			if err != nil {
-				return -1, err
-			}
-		} else if strings.HasSuffix(*size, "M") {
-			diskSize, err = strconv.Atoi(strings.TrimSuffix(*size, "M"))
-
-			if err != nil {
-				return -1, err
-			}
-
-			diskSize = int(math.Ceil(float64(diskSize) / 1024))
-		} else {
-			return -1, fmt.Errorf("cannot parse storage size \"%s\"", *size)
-		}
-	}
-	return diskSize, err
 }
 
 func getPCIInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) map[string]*proxmox.CustomPCIDevice {
