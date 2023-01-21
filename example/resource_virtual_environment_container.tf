@@ -40,6 +40,12 @@ resource "proxmox_virtual_environment_container" "example_template" {
   pool_id  = proxmox_virtual_environment_pool.example.id
   template = true
   vm_id    = 2042
+
+  tags = [
+    "container",
+    "example",
+    "terraform",
+  ]
 }
 
 resource "proxmox_virtual_environment_container" "example" {

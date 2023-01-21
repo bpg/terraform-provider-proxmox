@@ -7,6 +7,7 @@ package proxmoxtf
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -102,6 +103,7 @@ const (
 	mkResourceVirtualEnvironmentContainerOperatingSystemType               = "type"
 	mkResourceVirtualEnvironmentContainerPoolID                            = "pool_id"
 	mkResourceVirtualEnvironmentContainerStarted                           = "started"
+	mkResourceVirtualEnvironmentContainerTags                              = "tags"
 	mkResourceVirtualEnvironmentContainerTemplate                          = "template"
 	mkResourceVirtualEnvironmentContainerVMID                              = "vm_id"
 )
@@ -561,6 +563,12 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 					return d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 				},
 			},
+			mkResourceVirtualEnvironmentContainerTags: {
+				Type:        schema.TypeList,
+				Description: "Tags of the container. This is only meta information.",
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			mkResourceVirtualEnvironmentContainerTemplate: {
 				Type:        schema.TypeBool,
 				Description: "Whether to create a template",
@@ -627,6 +635,7 @@ func resourceVirtualEnvironmentContainerCreateClone(
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	poolID := d.Get(mkResourceVirtualEnvironmentContainerPoolID).(string)
+	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
@@ -922,6 +931,11 @@ func resourceVirtualEnvironmentContainerCreateClone(
 		updateBody.OSType = &operatingSystemType
 	}
 
+	if len(tags) > 0 {
+		tagString := resourceVirtualEnvironmentContainerGetTagsString(d)
+		updateBody.Tags = &tagString
+	}
+
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 
 	//nolint:gosimple
@@ -1187,6 +1201,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(
 
 	poolID := d.Get(mkResourceVirtualEnvironmentContainerPoolID).(string)
 	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
+	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
@@ -1245,6 +1260,11 @@ func resourceVirtualEnvironmentContainerCreateCustom(
 
 	if poolID != "" {
 		createBody.PoolID = &poolID
+	}
+
+	if len(tags) > 0 {
+		tagsString := resourceVirtualEnvironmentContainerGetTagsString(d)
+		createBody.Tags = &tagsString
 	}
 
 	err = veClient.CreateContainer(ctx, nodeName, &createBody)
@@ -1400,6 +1420,19 @@ func resourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema
 		"ubuntu",
 		"unmanaged",
 	}, false))
+}
+
+func resourceVirtualEnvironmentContainerGetTagsString(d *schema.ResourceData) string {
+	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
+	var sanitizedTags []string
+	for i := 0; i < len(tags); i++ {
+		tag := strings.TrimSpace(tags[i].(string))
+		if len(tag) > 0 {
+			sanitizedTags = append(sanitizedTags, tag)
+		}
+	}
+	sort.Strings(sanitizedTags)
+	return strings.Join(sanitizedTags, ";")
 }
 
 func resourceVirtualEnvironmentContainerRead(
@@ -1827,6 +1860,23 @@ func resourceVirtualEnvironmentContainerRead(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentTags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
+
+	if len(clone) == 0 || len(currentTags) > 0 {
+		var tags []string
+		if containerConfig.Tags != nil {
+			for _, tag := range strings.Split(*containerConfig.Tags, ";") {
+				t := strings.TrimSpace(tag)
+				if len(t) > 0 {
+					tags = append(tags, t)
+				}
+			}
+			sort.Strings(tags)
+		}
+		err = d.Set(mkResourceVirtualEnvironmentContainerTags, tags)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	currentTemplate := d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 
 	//nolint:gosimple
@@ -2148,6 +2198,11 @@ func resourceVirtualEnvironmentContainerUpdate(
 		updateBody.OSType = &operatingSystemType
 
 		rebootRequired = true
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentContainerTags) {
+		tagString := resourceVirtualEnvironmentContainerGetTagsString(d)
+		updateBody.Tags = &tagString
 	}
 
 	// Update the configuration now that everything has been prepared.
