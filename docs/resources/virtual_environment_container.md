@@ -30,7 +30,7 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     }
 
     user_account {
-      keys     = [
+      keys = [
         trimspace(tls_private_key.ubuntu_container_key.public_key_openssh)
       ]
       password = random_password.ubuntu_container_password.result
@@ -88,8 +88,7 @@ output "ubuntu_container_public_key" {
 - `clone` - (Optional) The cloning configuration.
     - `datastore_id` - (Optional) The identifier for the target datastore.
     - `node_name` - (Optional) The name of the source node (leave blank, if
-      equal
-      to the `node_name` argument).
+      equal to the `node_name` argument).
     - `vm_id` - (Required) The identifier for the source container.
 - `console` - (Optional) The console configuration.
     - `enabled` - (Optional) Whether to enable the console device (defaults
@@ -111,7 +110,8 @@ output "ubuntu_container_public_key" {
 - `disk` - (Optional) The disk configuration.
     - `datastore_id` - (Optional) The identifier for the datastore to create the
       disk in (defaults to `local`).
-    * `size` - (Optional) The size of the root filesystem in gigabytes (defaults to `4`). Requires `datastore_id` to be set.
+      -`size` - (Optional) The size of the root filesystem in gigabytes (
+      defaults to `4`). Requires `datastore_id` to be set.
 - `initialization` - (Optional) The initialization configuration.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
@@ -123,14 +123,12 @@ output "ubuntu_container_public_key" {
             - `address` - (Optional) The IPv4 address (use `dhcp` for
               autodiscovery).
             - `gateway` - (Optional) The IPv4 gateway (must be omitted
-              when `dhcp` is
-              used as the address).
+              when `dhcp` is used as the address).
         - `ipv6` - (Optional) The IPv4 configuration.
             - `address` - (Optional) The IPv6 address (use `dhcp` for
               autodiscovery).
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
-              when `dhcp` is
-              used as the address).
+              when `dhcp` is used as the address).
     - `user_account` - (Optional) The user account configuration.
         - `keys` - (Optional) The SSH keys for the root account.
         - `password` - (Optional) The password for the root account.
@@ -146,8 +144,7 @@ output "ubuntu_container_public_key" {
       to `true`).
     - `mac_address` - (Optional) The MAC address.
     - `mtu` - (Optional) Maximum transfer unit of the interface. Cannot be
-      larger
-      than the bridge's MTU.
+      larger than the bridge's MTU.
     - `name` - (Required) The network interface name.
     - `rate_limit` - (Optional) The rate limit in megabytes per second.
     - `vlan_id` - (Optional) The VLAN identifier.
@@ -166,7 +163,11 @@ output "ubuntu_container_public_key" {
         - `unmanaged` - Unmanaged.
 - `pool_id` - (Optional) The identifier for a pool to assign the container to.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
-- `tags` - (Optional) A list of tags of the container. This is only meta information (defaults to `[]`). Note: Proxmox always sorts the container tags. If the list in template is not sorted, then Proxmox will always report a difference on the resource. You may use the `ignore_changes` lifecycle meta-argument to ignore changes to this attribute.
+- `tags` - (Optional) A list of tags of the container. This is only meta
+  information (defaults to `[]`). Note: Proxmox always sorts the container tags.
+  If the list in template is not sorted, then Proxmox will always report a
+  difference on the resource. You may use the `ignore_changes` lifecycle
+  meta-argument to ignore changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `vm_id` - (Optional) The virtual machine identifier
 
