@@ -166,6 +166,7 @@ output "ubuntu_container_public_key" {
         - `unmanaged` - Unmanaged.
 - `pool_id` - (Optional) The identifier for a pool to assign the container to.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
+- `tags` - (Optional) A list of tags of the container. This is only meta information (defaults to `[]`). Note: Proxmox always sorts the container tags. If the list in template is not sorted, then Proxmox will always report a difference on the resource. You may use the `ignore_changes` lifecycle meta-argument to ignore changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `vm_id` - (Optional) The virtual machine identifier
 
