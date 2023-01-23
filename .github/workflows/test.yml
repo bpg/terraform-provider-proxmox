@@ -31,6 +31,12 @@ jobs:
       - name: Build
         run: go vet . && go build -v .
 
+      - name: Run coverage
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+
   # run acceptance tests in a matrix with Terraform core versions
   test:
     name: Matrix Test
