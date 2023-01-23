@@ -102,8 +102,7 @@ output "ubuntu_vm_public_key" {
     - `enabled` - (Optional) Whether to enable the QEMU agent (defaults
       to `false`).
     - `timeout` - (Optional) The maximum amount of time to wait for data from
-      the
-      QEMU agent to become available ( defaults to `15m`).
+      the QEMU agent to become available ( defaults to `15m`).
     - `trim` - (Optional) Whether to enable the FSTRIM feature in the QEMU agent
       (defaults to `false`).
     - `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
@@ -125,14 +124,14 @@ output "ubuntu_vm_public_key" {
     - `enabled` - (Optional) Whether to enable the CDROM drive (defaults
       to `false`).
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
-      in
-      the physical drive).
+      in the physical drive).
 - `clone` - (Optional) The cloning configuration.
     - `datastore_id` - (Optional) The identifier for the target datastore.
     - `node_name` - (Optional) The name of the source node (leave blank, if
       equal to the `node_name` argument).
     - `retries` - (Optional) Number of retries in Proxmox for clone vm.
-      Sometimes Proxmox errors with timeout when creating multiple clones at once.
+      Sometimes Proxmox errors with timeout when creating multiple clones at
+      once.
     - `vm_id` - (Required) The identifier for the source VM.
 - `cpu` - (Optional) The CPU configuration.
     - `architecture` - (Optional) The CPU architecture (defaults to `x86_64`).
@@ -252,8 +251,7 @@ output "ubuntu_vm_public_key" {
       With this enabled the `vga` configuration argument will be ignored.
 - `initialization` - (Optional) The cloud-init configuration.
     - `datastore_id` - (Optional) The identifier for the datastore to create the
-      cloud-init disk in (defaults
-      to `local-lvm`).
+      cloud-init disk in (defaults to `local-lvm`).
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
         - `server` - (Optional) The DNS server.
@@ -278,8 +276,7 @@ output "ubuntu_vm_public_key" {
       network configuration data passed to the
       VM via cloud-init (conflicts with `ip_config`).
     - `user_data_file_id` - (Optional) The identifier for a file containing
-      custom user data (conflicts
-      with `user_account`).
+      custom user data (conflicts with `user_account`).
     - `vendor_data_file_id` - (Optional) The identifier for a file containing
       all vendor data passed to the VM via cloud-init.
 - `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`).
@@ -309,7 +306,7 @@ output "ubuntu_vm_public_key" {
     - `sv` - Swedish.
     - `tr` - Turkish.
 - `kvm_arguments` - (Optional) Arbitrary arguments passed to kvm.
-* `machine` - (Optional) The VM machine type (defaults to `i440fx`).
+- `machine` - (Optional) The VM machine type (defaults to `i440fx`).
     - `i440fx` - Standard PC (i440FX + PIIX, 1996).
     - `q35` - Standard PC (Q35 + ICH9, 2009).
 - `memory` - (Optional) The memory configuration.
@@ -415,7 +412,7 @@ output "ubuntu_vm_public_key" {
 ## Important Notes
 
 When cloning an existing virtual machine, whether it's a template or not, the
-resource will only detect changes to the arguments which are not set to their 
+resource will only detect changes to the arguments which are not set to their
 default values.
 
 Furthermore, when cloning from one node to a different one, the behavior changes
@@ -427,7 +424,7 @@ API.
 **Note:** Because the migration step after the clone tries to preserve the used
 datastores by their name, it may fail if a datastore used in the source VM is
 not available on the target node (e.g. `local-lvm` is used on the source node in
-the VM but no `local-lvm` datastore is availabel on the target node). In this
+the VM but no `local-lvm` datastore is available on the target node). In this
 case, it is recommended to set the `datastore_id` argument in the `clone` block
 to force the migration step to migrate all disks to a specific datastore on the
 target node. If you need certain disks to be on specific datastores, set
