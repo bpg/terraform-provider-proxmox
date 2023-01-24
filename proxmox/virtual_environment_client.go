@@ -192,7 +192,7 @@ func (c *VirtualEnvironmentClient) DoRequest(
 		return fErr
 	}
 
-	defer CloseOrLogError(ctx, res.Body)
+	defer CloseOrLogError(ctx)(res.Body)
 
 	err = c.ValidateResponseCode(res)
 	if err != nil {

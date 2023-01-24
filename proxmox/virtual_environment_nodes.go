@@ -27,19 +27,19 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(
 	nodeName string,
 	commands []string,
 ) error {
+	closeOrLogError := CloseOrLogError(ctx)
+
 	sshClient, err := c.OpenNodeShell(ctx, nodeName)
 	if err != nil {
 		return err
 	}
-
-	defer CloseOrLogError(ctx, sshClient)
+	defer closeOrLogError(sshClient)
 
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
 		return err
 	}
-
-	defer CloseOrLogError(ctx, sshSession)
+	defer closeOrLogError(sshSession)
 
 	output, err := sshSession.CombinedOutput(
 		fmt.Sprintf(
@@ -210,7 +210,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		if knownhosts.IsHostUnknown(err) {
 			f, ferr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
 			if ferr == nil {
-				defer CloseOrLogError(ctx, f)
+				defer CloseOrLogError(ctx)(f)
 				ferr = knownhosts.WriteKnownHost(f, hostname, remote, key)
 			}
 			if ferr == nil {

@@ -256,7 +256,7 @@ func resourceVirtualEnvironmentFileCreate(
 			if err != nil {
 				return diag.FromErr(err)
 			}
-			defer proxmox.CloseOrLogError(ctx, res.Body)
+			defer proxmox.CloseOrLogError(ctx)(res.Body)
 
 			tempDownloadedFile, err := os.CreateTemp("", "download")
 			if err != nil {
@@ -652,7 +652,7 @@ func readURL(
 		return
 	}
 
-	defer proxmox.CloseOrLogError(ctx, res.Body)
+	defer proxmox.CloseOrLogError(ctx)(res.Body)
 
 	fileSize = res.ContentLength
 	httpLastModified := res.Header.Get("Last-Modified")

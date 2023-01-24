@@ -9,15 +9,14 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-func CloseOrLogError(ctx context.Context, c io.Closer) func(f *os.File) {
-	return func(f *os.File) {
+func CloseOrLogError(ctx context.Context) func(io.Closer) {
+	return func(c io.Closer) {
 		if err := c.Close(); err != nil {
 			tflog.Error(ctx, "Failed to close", map[string]interface{}{
 				"error": err,
