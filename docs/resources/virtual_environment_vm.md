@@ -120,6 +120,8 @@ output "ubuntu_vm_public_key" {
 - `bios` - (Optional) The BIOS implementation (defaults to `seabios`).
     - `ovmf` - OVMF (UEFI).
     - `seabios` - SeaBIOS.
+- `boot_order` - (Optional) Specify the guest boot order (defaults to `c`).
+- `boot_disk` - (Optional) Enable booting from specified disk (deprecated).
 - `cdrom` - (Optional) The CDROM configuration.
     - `enabled` - (Optional) Whether to enable the CDROM drive (defaults
       to `false`).

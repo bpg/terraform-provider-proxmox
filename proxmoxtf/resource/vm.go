@@ -37,6 +37,8 @@ const (
 	dvResourceVirtualEnvironmentVMAudioDeviceDriver                 = "spice"
 	dvResourceVirtualEnvironmentVMAudioDeviceEnabled                = true
 	dvResourceVirtualEnvironmentVMBIOS                              = "seabios"
+	dvResourceVirtualEnvironmentVMBootOrder                         = "c"
+	dvResourceVirtualEnvironmentVMBootDisk                          = "scsi0"
 	dvResourceVirtualEnvironmentVMCDROMEnabled                      = false
 	dvResourceVirtualEnvironmentVMCDROMFileID                       = ""
 	dvResourceVirtualEnvironmentVMCloneDatastoreID                  = ""
@@ -112,6 +114,8 @@ const (
 
 	mkResourceVirtualEnvironmentVMRebootAfterCreation               = "reboot"
 	mkResourceVirtualEnvironmentVMOnBoot                            = "on_boot"
+	mkResourceVirtualEnvironmentVMBootOrder                         = "boot_order"
+	mkResourceVirtualEnvironmentVMBootDisk                          = "boot_disk"
 	mkResourceVirtualEnvironmentVMACPI                              = "acpi"
 	mkResourceVirtualEnvironmentVMAgent                             = "agent"
 	mkResourceVirtualEnvironmentVMAgentEnabled                      = "enabled"
@@ -241,6 +245,18 @@ func VM() *schema.Resource {
 				Description: "Start VM on Node boot",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMOnBoot,
+			},
+			mkResourceVirtualEnvironmentVMBootOrder: {
+				Type:        schema.TypeString,
+				Description: "Specify the guest boot order",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMBootOrder,
+			},
+			mkResourceVirtualEnvironmentVMBootDisk: {
+				Type:        schema.TypeString,
+				Description: "Enable booting from specified disk",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMBootDisk,
 			},
 			mkResourceVirtualEnvironmentVMACPI: {
 				Type:        schema.TypeBool,
@@ -1915,10 +1931,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	var memorySharedObject *proxmox.CustomSharedMemory
 
-	bootDisk := "scsi0"
-	bootOrder := "c"
+	bootDisk := d.Get(mkResourceVirtualEnvironmentVMBootDisk).(string)
+	bootOrder := d.Get(mkResourceVirtualEnvironmentVMBootOrder).(string)
 
-	if cdromEnabled {
+	if cdromEnabled && bootOrder == dvResourceVirtualEnvironmentVMBootOrder {
 		bootOrder = "cd"
 	}
 
