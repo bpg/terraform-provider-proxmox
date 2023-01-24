@@ -15,3 +15,4 @@ jobs:
             Makefile
           skip-github-release: false
           include-v-in-tag: true
+          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
