@@ -5,11 +5,26 @@
 package proxmox
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"math"
+	"os"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
+
+func CloseOrLogError(ctx context.Context, c io.Closer) func(f *os.File) {
+	return func(f *os.File) {
+		if err := c.Close(); err != nil {
+			tflog.Error(ctx, "Failed to close", map[string]interface{}{
+				"error": err,
+			})
+		}
+	}
+}
 
 func ParseDiskSize(size *string) (int, error) {
 	if size == nil {

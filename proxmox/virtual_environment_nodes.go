@@ -8,12 +8,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/skeema/knownhosts"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -29,28 +32,14 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(
 		return err
 	}
 
-	defer func(sshClient *ssh.Client) {
-		err := sshClient.Close()
-		if err != nil {
-			tflog.Error(ctx, "Failed to close ssh client", map[string]interface{}{
-				"error": err,
-			})
-		}
-	}(sshClient)
+	defer CloseOrLogError(ctx, sshClient)
 
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
 		return err
 	}
 
-	defer func(sshSession *ssh.Session) {
-		err := sshSession.Close()
-		if err != nil {
-			tflog.Error(ctx, "Failed to close ssh session", map[string]interface{}{
-				"error": err,
-			})
-		}
-	}(sshSession)
+	defer CloseOrLogError(ctx, sshSession)
 
 	output, err := sshSession.CombinedOutput(
 		fmt.Sprintf(
@@ -203,15 +192,49 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 
 	ur := strings.Split(c.Username, "@")
 
-	sshConfig := &ssh.ClientConfig{
-		User:            ur[0],
-		Auth:            []ssh.AuthMethod{ssh.Password(c.Password)},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	sshHost := fmt.Sprintf("%s:22", *nodeAddress)
+	khPath := fmt.Sprintf("%s/.ssh/known_hosts", os.Getenv("HOME"))
+	kh, err := knownhosts.New(khPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %s: %w", khPath, err)
 	}
 
-	sshClient, err := ssh.Dial("tcp", *nodeAddress+":22", sshConfig)
+	// Create a custom permissive hostkey callback which still errors on hosts
+	// with changed keys, but allows unknown hosts and adds them to known_hosts
+	cb := ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		err := kh(hostname, remote, key)
+		if knownhosts.IsHostKeyChanged(err) {
+			return fmt.Errorf("REMOTE HOST IDENTIFICATION HAS CHANGED for host %s! This may indicate a MitM attack", hostname)
+		}
+
+		if knownhosts.IsHostUnknown(err) {
+			f, ferr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
+			if ferr == nil {
+				defer CloseOrLogError(ctx, f)
+				ferr = knownhosts.WriteKnownHost(f, hostname, remote, key)
+			}
+			if ferr == nil {
+				tflog.Info(ctx, fmt.Sprintf("Added host %s to known_hosts", hostname))
+			} else {
+				tflog.Error(ctx, fmt.Sprintf("Failed to add host %s to known_hosts", hostname), map[string]interface{}{
+					"error": err,
+				})
+			}
+			return nil
+		}
+		return err
+	})
+
+	sshConfig := &ssh.ClientConfig{
+		User:              ur[0],
+		Auth:              []ssh.AuthMethod{ssh.Password(c.Password)},
+		HostKeyCallback:   cb,
+		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
+	}
+
+	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
 	}
 
 	return sshClient, nil

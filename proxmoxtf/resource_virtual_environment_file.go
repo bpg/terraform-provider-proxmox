@@ -256,14 +256,7 @@ func resourceVirtualEnvironmentFileCreate(
 			if err != nil {
 				return diag.FromErr(err)
 			}
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					tflog.Error(ctx, "Failed to close body", map[string]interface{}{
-						"error": err,
-					})
-				}
-			}(res.Body)
+			defer proxmox.CloseOrLogError(ctx, res.Body)
 
 			tempDownloadedFile, err := os.CreateTemp("", "download")
 			if err != nil {
@@ -659,14 +652,7 @@ func readURL(
 		return
 	}
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			tflog.Error(ctx, "failed to close the response body", map[string]interface{}{
-				"error": err.Error(),
-			})
-		}
-	}(res.Body)
+	defer proxmox.CloseOrLogError(ctx, res.Body)
 
 	fileSize = res.ContentLength
 	httpLastModified := res.Header.Get("Last-Modified")
