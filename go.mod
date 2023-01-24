@@ -9,6 +9,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.7.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.24.1
 	github.com/pkg/sftp v1.13.5
+	github.com/skeema/knownhosts v1.1.0
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.5.0
 )

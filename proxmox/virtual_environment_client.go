@@ -192,14 +192,7 @@ func (c *VirtualEnvironmentClient) DoRequest(
 		return fErr
 	}
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			tflog.Error(ctx, "failed to close the response body", map[string]interface{}{
-				"error": err.Error(),
-			})
-		}
-	}(res.Body)
+	defer CloseOrLogError(ctx)(res.Body)
 
 	err = c.ValidateResponseCode(res)
 	if err != nil {

@@ -1,7 +1,11 @@
 package proxmox
 
 import (
+	"context"
+	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseDiskSize(t *testing.T) {
@@ -34,4 +38,34 @@ func TestParseDiskSize(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCloseOrLogError(t *testing.T) {
+	t.Parallel()
+	f := CloseOrLogError(context.Background())
+
+	c := &testCloser{}
+	b := &badCloser{}
+	func() {
+		defer f(c)
+		defer f(b)
+		assert.Equal(t, false, c.isClosed)
+	}()
+
+	assert.Equal(t, true, c.isClosed)
+}
+
+type testCloser struct {
+	isClosed bool
+}
+
+func (t *testCloser) Close() error {
+	t.isClosed = true
+	return nil
+}
+
+type badCloser struct{}
+
+func (t *badCloser) Close() error {
+	return fmt.Errorf("bad")
 }
