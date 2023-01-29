@@ -3754,7 +3754,7 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(
 	currentkvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
 
 	if len(clone) == 0 || currentkvmArguments != dvResourceVirtualEnvironmentVMKVMArguments {
-		if vmConfig.KVMArguments != nil {
+		if vmConfig.KVMArguments != nil && len(strings.TrimSpace(*vmConfig.KVMArguments)) > 0 {
 			err = d.Set(mkResourceVirtualEnvironmentVMKVMArguments, *vmConfig.KVMArguments)
 		} else {
 			// Default value of "args" is "" according to the API documentation.
