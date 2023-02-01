@@ -839,17 +839,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMHostPCIDevice:        dvResourceVirtualEnvironmentVMHostPCIDevice,
-							mkResourceVirtualEnvironmentVMHostPCIDeviceID:      dvResourceVirtualEnvironmentVMHostPCIDeviceID,
-							mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA:    dvResourceVirtualEnvironmentVMHostPCIDeviceXVGA,
-							mkResourceVirtualEnvironmentVMHostPCIDevicePCIE:    dvResourceVirtualEnvironmentVMHostPCIDevicePCIE,
-							mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR:  dvResourceVirtualEnvironmentVMHostPCIDeviceROMBAR,
-							mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile: dvResourceVirtualEnvironmentVMHostPCIDeviceROMFile,
-							mkResourceVirtualEnvironmentVMHostPCIDeviceMDev:    dvResourceVirtualEnvironmentVMHostPCIDeviceMDev,
-						},
-					}, nil
+					return []interface{}{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
