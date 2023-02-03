@@ -169,6 +169,8 @@ output "ubuntu_container_public_key" {
   difference on the resource. You may use the `ignore_changes` lifecycle
   meta-argument to ignore changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
+- `unprivileged` - (Optional) Whether the container runs as unprivileged on
+the host (defaults to `false`).
 - `vm_id` - (Optional) The virtual machine identifier
 
 ## Attribute Reference
