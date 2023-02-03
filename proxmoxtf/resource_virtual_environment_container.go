@@ -50,6 +50,7 @@ const (
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
 	dvResourceVirtualEnvironmentContainerTemplate                          = false
+	dvResourceVirtualEnvironmentContainerUnprivileged                      = false
 	dvResourceVirtualEnvironmentContainerVMID                              = -1
 
 	maxResourceVirtualEnvironmentContainerNetworkInterfaces = 8
@@ -105,6 +106,7 @@ const (
 	mkResourceVirtualEnvironmentContainerStarted                           = "started"
 	mkResourceVirtualEnvironmentContainerTags                              = "tags"
 	mkResourceVirtualEnvironmentContainerTemplate                          = "template"
+	mkResourceVirtualEnvironmentContainerUnprivileged                      = "unprivileged"
 	mkResourceVirtualEnvironmentContainerVMID                              = "vm_id"
 )
 
@@ -575,6 +577,12 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentContainerTemplate,
+			},
+			mkResourceVirtualEnvironmentContainerUnprivileged: {
+				Type:        schema.TypeBool,
+				Description: "Whether the container runs as unprivileged on the host",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentContainerUnprivileged,
 			},
 			mkResourceVirtualEnvironmentContainerVMID: {
 				Type:             schema.TypeInt,
@@ -1203,6 +1211,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(
 	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
 	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
+	unprivileged := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
@@ -1231,6 +1240,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(
 		Swap:                 &memorySwap,
 		Template:             &template,
 		TTY:                  &consoleTTYCount,
+		Unprivileged:         &unprivileged,
 		VMID:                 &vmID,
 	}
 
