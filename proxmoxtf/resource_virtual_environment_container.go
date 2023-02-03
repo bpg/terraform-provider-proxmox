@@ -582,6 +582,7 @@ func resourceVirtualEnvironmentContainer() *schema.Resource {
 				Type:        schema.TypeBool,
 				Description: "Whether the container runs as unprivileged on the host",
 				Optional:    true,
+				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentContainerUnprivileged,
 			},
 			mkResourceVirtualEnvironmentContainerVMID: {
