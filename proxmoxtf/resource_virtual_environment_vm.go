@@ -2488,8 +2488,11 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(
 		diskDevice.Size = &sizeString
 		diskDevice.SizeInt = &size
 		diskDevice.IOThread = &ioThread
-		diskDevice.SSD = &ssd
 		diskDevice.Discard = &discard
+
+		if !strings.HasPrefix(diskInterface, "virtio") {
+			diskDevice.SSD = &ssd
+		}
 
 		if len(speedBlock) > 0 {
 			speedLimitRead := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedRead].(int)
