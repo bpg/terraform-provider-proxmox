@@ -1977,7 +1977,6 @@ func resourceVirtualEnvironmentVMCreateCustom(
 		FloatingMemory:      &memoryFloating,
 		IDEDevices:          ideDevices,
 		KeyboardLayout:      &keyboardLayout,
-		KVMArguments:        &kvmArguments,
 		NetworkDevices:      networkDeviceObjects,
 		OSType:              &operatingSystemType,
 		PCIDevices:          pciDeviceObjects,
@@ -2020,6 +2019,10 @@ func resourceVirtualEnvironmentVMCreateCustom(
 	if len(tags) > 0 {
 		tagsString := resourceVirtualEnvironmentVMGetTagsString(d)
 		createBody.Tags = &tagsString
+	}
+
+	if kvmArguments != "" {
+		createBody.KVMArguments = &kvmArguments
 	}
 
 	if machine != "" {
@@ -3754,6 +3757,7 @@ func resourceVirtualEnvironmentVMReadPrimitiveValues(
 	currentkvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
 
 	if len(clone) == 0 || currentkvmArguments != dvResourceVirtualEnvironmentVMKVMArguments {
+		// PVE API returns "args" as " " if it is set to empty.
 		if vmConfig.KVMArguments != nil && len(strings.TrimSpace(*vmConfig.KVMArguments)) > 0 {
 			err = d.Set(mkResourceVirtualEnvironmentVMKVMArguments, *vmConfig.KVMArguments)
 		} else {
