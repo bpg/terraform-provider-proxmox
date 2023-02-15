@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 )
 
 const (
@@ -66,13 +66,13 @@ func resourceVirtualEnvironmentClusterAliasCreate(
 	name := d.Get(mkResourceVirtualEnvironmentClusterAliasName).(string)
 	cidr := d.Get(mkResourceVirtualEnvironmentClusterAliasCIDR).(string)
 
-	body := &proxmox.VirtualEnvironmentClusterAliasCreateRequestBody{
+	body := &firewall.AliasCreateRequestBody{
 		Comment: &comment,
 		Name:    name,
 		CIDR:    cidr,
 	}
 
-	err = veClient.CreateAlias(ctx, body)
+	err = veClient.API().Cluster().Firewall().CreateAlias(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -94,7 +94,7 @@ func resourceVirtualEnvironmentClusterAliasRead(
 	}
 
 	name := d.Id()
-	alias, err := veClient.GetAlias(ctx, name)
+	alias, err := veClient.API().Cluster().Firewall().GetAlias(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -135,13 +135,13 @@ func resourceVirtualEnvironmentClusterAliasUpdate(
 	newName := d.Get(mkResourceVirtualEnvironmentClusterAliasName).(string)
 	previousName := d.Id()
 
-	body := &proxmox.VirtualEnvironmentClusterAliasUpdateRequestBody{
+	body := &firewall.AliasUpdateRequestBody{
 		ReName:  newName,
 		CIDR:    cidr,
 		Comment: &comment,
 	}
 
-	err = veClient.UpdateAlias(ctx, previousName, body)
+	err = veClient.API().Cluster().Firewall().UpdateAlias(ctx, previousName, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -163,7 +163,7 @@ func resourceVirtualEnvironmentClusterAliasDelete(
 	}
 
 	name := d.Id()
-	err = veClient.DeleteAlias(ctx, name)
+	err = veClient.API().Cluster().Firewall().DeleteAlias(ctx, name)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

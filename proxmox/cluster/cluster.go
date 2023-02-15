@@ -2,21 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-package proxmox
+package cluster
 
 import (
 	"context"
 	"errors"
+	"net/http"
 )
 
-// GetClusterNextID retrieves the next free VM identifier for the cluster.
-func (c *VirtualEnvironmentClient) GetClusterNextID(ctx context.Context, vmID *int) (*int, error) {
-	reqBody := &VirtualEnvironmentClusterNextIDRequestBody{
+// GetNextID retrieves the next free VM identifier for the cluster.
+func (a *API) GetNextID(ctx context.Context, vmID *int) (*int, error) {
+	reqBody := &NextIDRequestBody{
 		VMID: vmID,
 	}
 
-	resBody := &VirtualEnvironmentClusterNextIDResponseBody{}
-	err := c.DoRequest(ctx, hmGET, "cluster/nextid", reqBody, resBody)
+	resBody := &NextIDResponseBody{}
+	err := a.DoRequest(ctx, http.MethodGet, "cluster/nextid", reqBody, resBody)
 	if err != nil {
 		return nil, err
 	}

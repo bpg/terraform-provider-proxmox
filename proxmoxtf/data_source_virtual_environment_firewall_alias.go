@@ -12,37 +12,37 @@ import (
 )
 
 const (
-	dvDataVirtualEnvironmentClusterAliasComment = ""
+	dvDataVirtualEnvironmentFirewallAliasComment = ""
 
-	mkDataSourceVirtualEnvironmentClusterAliasName    = "name"
-	mkDataSourceVirtualEnvironmentClusterAliasCIDR    = "cidr"
-	mkDataSourceVirtualEnvironmentClusterAliasComment = "comment"
+	mkDataSourceVirtualEnvironmentFirewallAliasName    = "name"
+	mkDataSourceVirtualEnvironmentFirewallAliasCIDR    = "cidr"
+	mkDataSourceVirtualEnvironmentFirewallAliasComment = "comment"
 )
 
-func dataSourceVirtualEnvironmentClusterAlias() *schema.Resource {
+func dataSourceVirtualEnvironmentFirewallAlias() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentClusterAliasName: {
+			mkDataSourceVirtualEnvironmentFirewallAliasName: {
 				Type:        schema.TypeString,
 				Description: "Alias name",
 				Required:    true,
 			},
-			mkDataSourceVirtualEnvironmentClusterAliasCIDR: {
+			mkDataSourceVirtualEnvironmentFirewallAliasCIDR: {
 				Type:        schema.TypeString,
 				Description: "IP/CIDR block",
 				Computed:    true,
 			},
-			mkDataSourceVirtualEnvironmentClusterAliasComment: {
+			mkDataSourceVirtualEnvironmentFirewallAliasComment: {
 				Type:        schema.TypeString,
 				Description: "Alias comment",
 				Computed:    true,
 			},
 		},
-		ReadContext: dataSourceVirtualEnvironmentAliasRead,
+		ReadContext: dataSourceVirtualEnvironmentFirewallAliasRead,
 	}
 }
 
-func dataSourceVirtualEnvironmentAliasRead(
+func dataSourceVirtualEnvironmentFirewallAliasRead(
 	ctx context.Context,
 	d *schema.ResourceData,
 	m interface{},
@@ -55,21 +55,21 @@ func dataSourceVirtualEnvironmentAliasRead(
 		return diag.FromErr(err)
 	}
 
-	AliasID := d.Get(mkDataSourceVirtualEnvironmentClusterAliasName).(string)
-	Alias, err := veClient.GetAlias(ctx, AliasID)
+	AliasID := d.Get(mkDataSourceVirtualEnvironmentFirewallAliasName).(string)
+	Alias, err := veClient.API().Cluster().Firewall().GetAlias(ctx, AliasID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(AliasID)
 
-	err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasCIDR, Alias.CIDR)
+	err = d.Set(mkDataSourceVirtualEnvironmentFirewallAliasCIDR, Alias.CIDR)
 	diags = append(diags, diag.FromErr(err)...)
 
 	if Alias.Comment != nil {
-		err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasComment, Alias.Comment)
+		err = d.Set(mkDataSourceVirtualEnvironmentFirewallAliasComment, Alias.Comment)
 	} else {
-		err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasComment, dvDataVirtualEnvironmentClusterAliasComment)
+		err = d.Set(mkDataSourceVirtualEnvironmentFirewallAliasComment, dvDataVirtualEnvironmentFirewallAliasComment)
 	}
 	diags = append(diags, diag.FromErr(err)...)
 

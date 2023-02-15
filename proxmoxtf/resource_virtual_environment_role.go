@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -54,7 +55,7 @@ func resourceVirtualEnvironmentRoleCreate(
 	}
 
 	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).(*schema.Set).List()
-	customPrivileges := make(proxmox.CustomPrivileges, len(privileges))
+	customPrivileges := make(types.CustomPrivileges, len(privileges))
 	roleID := d.Get(mkResourceVirtualEnvironmentRoleRoleID).(string)
 
 	for i, v := range privileges {
@@ -122,7 +123,7 @@ func resourceVirtualEnvironmentRoleUpdate(
 	}
 
 	privileges := d.Get(mkResourceVirtualEnvironmentRolePrivileges).(*schema.Set).List()
-	customPrivileges := make(proxmox.CustomPrivileges, len(privileges))
+	customPrivileges := make(types.CustomPrivileges, len(privileges))
 	roleID := d.Id()
 
 	for i, v := range privileges {

@@ -4,15 +4,17 @@
 
 package proxmox
 
+import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+
 // VirtualEnvironmentRoleCreateRequestBody contains the data for an access group create request.
 type VirtualEnvironmentRoleCreateRequestBody struct {
-	ID         string           `json:"roleid" url:"roleid"`
-	Privileges CustomPrivileges `json:"privs"  url:"privs,comma"`
+	ID         string                 `json:"roleid" url:"roleid"`
+	Privileges types.CustomPrivileges `json:"privs"  url:"privs,comma"`
 }
 
 // VirtualEnvironmentRoleGetResponseBody contains the body from an access group get response.
 type VirtualEnvironmentRoleGetResponseBody struct {
-	Data *CustomPrivileges `json:"data,omitempty"`
+	Data *types.CustomPrivileges `json:"data,omitempty"`
 }
 
 // VirtualEnvironmentRoleListResponseBody contains the body from an access group list response.
@@ -22,12 +24,12 @@ type VirtualEnvironmentRoleListResponseBody struct {
 
 // VirtualEnvironmentRoleListResponseData contains the data from an access group list response.
 type VirtualEnvironmentRoleListResponseData struct {
-	ID         string            `json:"roleid"`
-	Privileges *CustomPrivileges `json:"privs,omitempty"`
-	Special    *CustomBool       `json:"special,omitempty"`
+	ID         string                  `json:"roleid"`
+	Privileges *types.CustomPrivileges `json:"privs,omitempty"`
+	Special    *types.CustomBool       `json:"special,omitempty"`
 }
 
 // VirtualEnvironmentRoleUpdateRequestBody contains the data for an access group update request.
 type VirtualEnvironmentRoleUpdateRequestBody struct {
-	Privileges CustomPrivileges `json:"privs" url:"privs,comma"`
+	Privileges types.CustomPrivileges `json:"privs" url:"privs,comma"`
 }

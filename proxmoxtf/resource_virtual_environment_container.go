@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -685,7 +686,7 @@ func resourceVirtualEnvironmentContainerCreateClone(
 		vmID = *vmIDNew
 	}
 
-	fullCopy := proxmox.CustomBool(true)
+	fullCopy := types.CustomBool(true)
 
 	cloneBody := &proxmox.VirtualEnvironmentContainerCloneRequestBody{
 		FullCopy: &fullCopy,
@@ -736,7 +737,7 @@ func resourceVirtualEnvironmentContainerCreateClone(
 	if len(console) > 0 {
 		consoleBlock := console[0].(map[string]interface{})
 
-		consoleEnabled := proxmox.CustomBool(
+		consoleEnabled := types.CustomBool(
 			consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
 		)
 		consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
@@ -974,7 +975,7 @@ func resourceVirtualEnvironmentContainerCreateClone(
 		updateBody.Tags = &tagString
 	}
 
-	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 
 	//nolint:gosimple
 	if template != dvResourceVirtualEnvironmentContainerTemplate {
@@ -1020,7 +1021,7 @@ func resourceVirtualEnvironmentContainerCreateCustom(
 		return diag.FromErr(err)
 	}
 
-	consoleEnabled := proxmox.CustomBool(
+	consoleEnabled := types.CustomBool(
 		consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
 	)
 	consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
@@ -1254,10 +1255,10 @@ func resourceVirtualEnvironmentContainerCreateCustom(
 	operatingSystemType := operatingSystemBlock[mkResourceVirtualEnvironmentContainerOperatingSystemType].(string)
 
 	poolID := d.Get(mkResourceVirtualEnvironmentContainerPoolID).(string)
-	started := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
+	started := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
 	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
-	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
-	unprivileged := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
+	unprivileged := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
@@ -1572,7 +1573,7 @@ func resourceVirtualEnvironmentContainerRead(
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentConsole) > 0 ||
-		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] != proxmox.CustomBool(dvResourceVirtualEnvironmentContainerConsoleEnabled) ||
+		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] != types.CustomBool(dvResourceVirtualEnvironmentContainerConsoleEnabled) ||
 		console[mkResourceVirtualEnvironmentContainerConsoleMode] != dvResourceVirtualEnvironmentContainerConsoleMode ||
 		console[mkResourceVirtualEnvironmentContainerConsoleTTYCount] != dvResourceVirtualEnvironmentContainerConsoleTTYCount {
 		err := d.Set(mkResourceVirtualEnvironmentContainerConsole, []interface{}{console})
@@ -1993,7 +1994,7 @@ func resourceVirtualEnvironmentContainerUpdate(
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
 	updateBody.Description = &description
 
-	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 
 	if d.HasChange(mkResourceVirtualEnvironmentContainerTemplate) {
 		updateBody.Template = &template
@@ -2012,7 +2013,7 @@ func resourceVirtualEnvironmentContainerUpdate(
 			return diag.FromErr(err)
 		}
 
-		consoleEnabled := proxmox.CustomBool(
+		consoleEnabled := types.CustomBool(
 			consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
 		)
 		consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
@@ -2283,7 +2284,7 @@ func resourceVirtualEnvironmentContainerUpdate(
 				return diag.FromErr(err)
 			}
 		} else {
-			forceStop := proxmox.CustomBool(true)
+			forceStop := types.CustomBool(true)
 			shutdownTimeout := 300
 
 			err = veClient.ShutdownContainer(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
@@ -2347,7 +2348,7 @@ func resourceVirtualEnvironmentContainerDelete(
 	}
 
 	if status.Status != "stopped" {
-		forceStop := proxmox.CustomBool(true)
+		forceStop := types.CustomBool(true)
 		shutdownTimeout := 300
 
 		err = veClient.ShutdownContainer(

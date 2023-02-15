@@ -12,7 +12,7 @@ import (
 
 // TestDataSourceVirtualEnvironmentAliasInstantiation tests whether the DataSourceVirtualEnvironmentAlias instance can be instantiated.
 func TestDataSourceVirtualEnvironmentAliasInstantiation(t *testing.T) {
-	s := dataSourceVirtualEnvironmentClusterAlias()
+	s := dataSourceVirtualEnvironmentFirewallAlias()
 
 	if s == nil {
 		t.Fatalf("Cannot instantiate dataSourceVirtualEnvironmentAlias")
@@ -21,20 +21,20 @@ func TestDataSourceVirtualEnvironmentAliasInstantiation(t *testing.T) {
 
 // TestDataSourceVirtualEnvironmentAliasSchema tests the dataSourceVirtualEnvironmentAlias schema.
 func TestDataSourceVirtualEnvironmentAliasSchema(t *testing.T) {
-	s := dataSourceVirtualEnvironmentClusterAlias()
+	s := dataSourceVirtualEnvironmentFirewallAlias()
 
 	testRequiredArguments(t, s, []string{
-		mkDataSourceVirtualEnvironmentClusterAliasName,
+		mkDataSourceVirtualEnvironmentFirewallAliasName,
 	})
 
 	testComputedAttributes(t, s, []string{
-		mkDataSourceVirtualEnvironmentClusterAliasCIDR,
-		mkDataSourceVirtualEnvironmentClusterAliasComment,
+		mkDataSourceVirtualEnvironmentFirewallAliasCIDR,
+		mkDataSourceVirtualEnvironmentFirewallAliasComment,
 	})
 
 	testValueTypes(t, s, map[string]schema.ValueType{
-		mkDataSourceVirtualEnvironmentClusterAliasName:    schema.TypeString,
-		mkDataSourceVirtualEnvironmentClusterAliasCIDR:    schema.TypeString,
-		mkDataSourceVirtualEnvironmentClusterAliasComment: schema.TypeString,
+		mkDataSourceVirtualEnvironmentFirewallAliasName:    schema.TypeString,
+		mkDataSourceVirtualEnvironmentFirewallAliasCIDR:    schema.TypeString,
+		mkDataSourceVirtualEnvironmentFirewallAliasComment: schema.TypeString,
 	})
 }

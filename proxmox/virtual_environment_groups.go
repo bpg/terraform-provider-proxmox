@@ -17,12 +17,12 @@ func (c *VirtualEnvironmentClient) CreateGroup(
 	ctx context.Context,
 	d *VirtualEnvironmentGroupCreateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPOST, "access/groups", d, nil)
+	return c.DoRequest(ctx, HmPOST, "access/groups", d, nil)
 }
 
 // DeleteGroup deletes an access group.
 func (c *VirtualEnvironmentClient) DeleteGroup(ctx context.Context, id string) error {
-	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), nil, nil)
+	return c.DoRequest(ctx, HmDELETE, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetGroup retrieves an access group.
@@ -33,7 +33,7 @@ func (c *VirtualEnvironmentClient) GetGroup(
 	resBody := &VirtualEnvironmentGroupGetResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		HmGET,
 		fmt.Sprintf("access/groups/%s", url.PathEscape(id)),
 		nil,
 		resBody,
@@ -56,7 +56,7 @@ func (c *VirtualEnvironmentClient) ListGroups(
 	ctx context.Context,
 ) ([]*VirtualEnvironmentGroupListResponseData, error) {
 	resBody := &VirtualEnvironmentGroupListResponseBody{}
-	err := c.DoRequest(ctx, hmGET, "access/groups", nil, resBody)
+	err := c.DoRequest(ctx, HmGET, "access/groups", nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -78,5 +78,5 @@ func (c *VirtualEnvironmentClient) UpdateGroup(
 	id string,
 	d *VirtualEnvironmentGroupUpdateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), d, nil)
+	return c.DoRequest(ctx, HmPUT, fmt.Sprintf("access/groups/%s", url.PathEscape(id)), d, nil)
 }

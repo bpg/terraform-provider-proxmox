@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -155,7 +156,7 @@ func resourceVirtualEnvironmentUserCreate(
 
 	comment := d.Get(mkResourceVirtualEnvironmentUserComment).(string)
 	email := d.Get(mkResourceVirtualEnvironmentUserEmail).(string)
-	enabled := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
+	enabled := types.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
 	expirationDate, err := time.Parse(
 		time.RFC3339,
 		d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string),
@@ -164,7 +165,7 @@ func resourceVirtualEnvironmentUserCreate(
 		return diag.FromErr(err)
 	}
 
-	expirationDateCustom := proxmox.CustomTimestamp(expirationDate)
+	expirationDateCustom := types.CustomTimestamp(expirationDate)
 	firstName := d.Get(mkResourceVirtualEnvironmentUserFirstName).(string)
 	groups := d.Get(mkResourceVirtualEnvironmentUserGroups).(*schema.Set).List()
 	groupsCustom := make([]string, len(groups))
@@ -201,9 +202,9 @@ func resourceVirtualEnvironmentUserCreate(
 	aclParsed := d.Get(mkResourceVirtualEnvironmentUserACL).(*schema.Set).List()
 
 	for _, v := range aclParsed {
-		aclDelete := proxmox.CustomBool(false)
+		aclDelete := types.CustomBool(false)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(
+		aclPropagate := types.CustomBool(
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
@@ -355,7 +356,7 @@ func resourceVirtualEnvironmentUserUpdate(
 
 	comment := d.Get(mkResourceVirtualEnvironmentUserComment).(string)
 	email := d.Get(mkResourceVirtualEnvironmentUserEmail).(string)
-	enabled := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
+	enabled := types.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
 	expirationDate, err := time.Parse(
 		time.RFC3339,
 		d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string),
@@ -364,7 +365,7 @@ func resourceVirtualEnvironmentUserUpdate(
 		return diag.FromErr(err)
 	}
 
-	expirationDateCustom := proxmox.CustomTimestamp(expirationDate)
+	expirationDateCustom := types.CustomTimestamp(expirationDate)
 	firstName := d.Get(mkResourceVirtualEnvironmentUserFirstName).(string)
 	groups := d.Get(mkResourceVirtualEnvironmentUserGroups).(*schema.Set).List()
 	groupsCustom := make([]string, len(groups))
@@ -405,9 +406,9 @@ func resourceVirtualEnvironmentUserUpdate(
 	aclParsedOld := aclArgOld.(*schema.Set).List()
 
 	for _, v := range aclParsedOld {
-		aclDelete := proxmox.CustomBool(true)
+		aclDelete := types.CustomBool(true)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(
+		aclPropagate := types.CustomBool(
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
@@ -428,9 +429,9 @@ func resourceVirtualEnvironmentUserUpdate(
 	aclParsed := aclArg.(*schema.Set).List()
 
 	for _, v := range aclParsed {
-		aclDelete := proxmox.CustomBool(false)
+		aclDelete := types.CustomBool(false)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(
+		aclPropagate := types.CustomBool(
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
@@ -466,9 +467,9 @@ func resourceVirtualEnvironmentUserDelete(
 	userID := d.Id()
 
 	for _, v := range aclParsed {
-		aclDelete := proxmox.CustomBool(true)
+		aclDelete := types.CustomBool(true)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(
+		aclPropagate := types.CustomBool(
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 

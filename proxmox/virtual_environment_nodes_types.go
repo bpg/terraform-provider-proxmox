@@ -7,6 +7,8 @@ package proxmox
 import (
 	"encoding/json"
 	"net/url"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // CustomNodeCommands contains an array of commands to execute.
@@ -24,9 +26,9 @@ type VirtualEnvironmentNodeGetTimeResponseBody struct {
 
 // VirtualEnvironmentNodeGetTimeResponseData contains the data from a node list response.
 type VirtualEnvironmentNodeGetTimeResponseData struct {
-	LocalTime CustomTimestamp `json:"localtime"`
-	TimeZone  string          `json:"timezone"`
-	UTCTime   CustomTimestamp `json:"time"`
+	LocalTime types.CustomTimestamp `json:"localtime"`
+	TimeZone  string                `json:"timezone"`
+	UTCTime   types.CustomTimestamp `json:"time"`
 }
 
 // VirtualEnvironmentNodeGetTaskStatusResponseBody contains the body from a node get task status response.
@@ -66,22 +68,22 @@ type VirtualEnvironmentNodeNetworkDeviceListResponseBody struct {
 
 // VirtualEnvironmentNodeNetworkDeviceListResponseData contains the data from a node network device list response.
 type VirtualEnvironmentNodeNetworkDeviceListResponseData struct {
-	Active      *CustomBool `json:"active,omitempty"`
-	Address     *string     `json:"address,omitempty"`
-	Autostart   *CustomBool `json:"autostart,omitempty"`
-	BridgeFD    *string     `json:"bridge_fd,omitempty"`
-	BridgePorts *string     `json:"bridge_ports,omitempty"`
-	BridgeSTP   *string     `json:"bridge_stp,omitempty"`
-	CIDR        *string     `json:"cidr,omitempty"`
-	Exists      *CustomBool `json:"exists,omitempty"`
-	Families    *[]string   `json:"families,omitempty"`
-	Gateway     *string     `json:"gateway,omitempty"`
-	Iface       string      `json:"iface"`
-	MethodIPv4  *string     `json:"method,omitempty"`
-	MethodIPv6  *string     `json:"method6,omitempty"`
-	Netmask     *string     `json:"netmask,omitempty"`
-	Priority    int         `json:"priority"`
-	Type        string      `json:"type"`
+	Active      *types.CustomBool `json:"active,omitempty"`
+	Address     *string           `json:"address,omitempty"`
+	Autostart   *types.CustomBool `json:"autostart,omitempty"`
+	BridgeFD    *string           `json:"bridge_fd,omitempty"`
+	BridgePorts *string           `json:"bridge_ports,omitempty"`
+	BridgeSTP   *string           `json:"bridge_stp,omitempty"`
+	CIDR        *string           `json:"cidr,omitempty"`
+	Exists      *types.CustomBool `json:"exists,omitempty"`
+	Families    *[]string         `json:"families,omitempty"`
+	Gateway     *string           `json:"gateway,omitempty"`
+	Iface       string            `json:"iface"`
+	MethodIPv4  *string           `json:"method,omitempty"`
+	MethodIPv6  *string           `json:"method6,omitempty"`
+	Netmask     *string           `json:"netmask,omitempty"`
+	Priority    int               `json:"priority"`
+	Type        string            `json:"type"`
 }
 
 // VirtualEnvironmentNodeUpdateTimeRequestBody contains the body for a node time update request.

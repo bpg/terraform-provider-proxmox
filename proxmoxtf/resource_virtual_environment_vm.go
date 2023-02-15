@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -1274,7 +1275,7 @@ func resourceVirtualEnvironmentVMCreateClone(
 		vmID = *vmIDNew
 	}
 
-	fullCopy := proxmox.CustomBool(cloneFull)
+	fullCopy := types.CustomBool(cloneFull)
 
 	cloneBody := &proxmox.VirtualEnvironmentVMCloneRequestBody{
 		FullCopy: &fullCopy,
@@ -1316,7 +1317,7 @@ func resourceVirtualEnvironmentVMCreateClone(
 			}
 
 			if datastoreStatus.Shared != nil &&
-				*datastoreStatus.Shared == proxmox.CustomBool(false) {
+				*datastoreStatus.Shared == types.CustomBool(false) {
 				onlySharedDatastores = false
 				break
 			}
@@ -1357,7 +1358,7 @@ func resourceVirtualEnvironmentVMCreateClone(
 			}
 
 			// Migrate to target node
-			withLocalDisks := proxmox.CustomBool(true)
+			withLocalDisks := types.CustomBool(true)
 			migrateBody := &proxmox.VirtualEnvironmentVMMigrateRequestBody{
 				TargetNode:     nodeName,
 				WithLocalDisks: &withLocalDisks,
@@ -1388,7 +1389,7 @@ func resourceVirtualEnvironmentVMCreateClone(
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
-	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+	acpi := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
 	audioDevices := resourceVirtualEnvironmentVMGetAudioDeviceList(d)
 
@@ -1403,9 +1404,9 @@ func resourceVirtualEnvironmentVMCreateClone(
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 	operatingSystem := d.Get(mkResourceVirtualEnvironmentVMOperatingSystem).([]interface{})
 	serialDevice := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
-	onBoot := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
-	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
-	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
+	onBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
+	tabletDevice := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 	vga := d.Get(mkResourceVirtualEnvironmentVMVGA).([]interface{})
 
 	updateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
@@ -1424,10 +1425,10 @@ func resourceVirtualEnvironmentVMCreateClone(
 	if len(agent) > 0 {
 		agentBlock := agent[0].(map[string]interface{})
 
-		agentEnabled := proxmox.CustomBool(
+		agentEnabled := types.CustomBool(
 			agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool),
 		)
-		agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+		agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
 		updateBody.Agent = &proxmox.CustomAgent{
@@ -1709,7 +1710,7 @@ func resourceVirtualEnvironmentVMCreateClone(
 			)
 		}
 
-		deleteOriginalDisk := proxmox.CustomBool(true)
+		deleteOriginalDisk := types.CustomBool(true)
 
 		diskMoveBody := &proxmox.VirtualEnvironmentVMMoveDiskRequestBody{
 			DeleteOriginalDisk: &deleteOriginalDisk,
@@ -1765,7 +1766,7 @@ func resourceVirtualEnvironmentVMCreateCustom(
 
 	resource := resourceVirtualEnvironmentVM()
 
-	acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+	acpi := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 
 	agentBlock, err := getSchemaBlock(
 		resource,
@@ -1778,10 +1779,10 @@ func resourceVirtualEnvironmentVMCreateCustom(
 		return diag.FromErr(err)
 	}
 
-	agentEnabled := proxmox.CustomBool(
+	agentEnabled := types.CustomBool(
 		agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool),
 	)
-	agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+	agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
 	kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
@@ -1895,9 +1896,9 @@ func resourceVirtualEnvironmentVMCreateCustom(
 
 	serialDevices := resourceVirtualEnvironmentVMGetSerialDeviceList(d)
 
-	onBoot := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
-	tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
-	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
+	onBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
+	tabletDevice := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
 	vgaDevice, err := resourceVirtualEnvironmentVMGetVGADeviceObject(d)
 	if err != nil {
@@ -2102,8 +2103,8 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
-		ioThread := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
-		ssd := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
+		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
+		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard, _ := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
 
 		if len(speed) == 0 {
@@ -2446,8 +2447,8 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
-		ioThread := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
-		ssd := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
+		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
+		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
 
 		speedBlock, err := getSchemaBlock(
@@ -2536,12 +2537,12 @@ func resourceVirtualEnvironmentVMGetHostPCIDeviceObjects(
 
 		ids, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceID].(string)
 		mdev, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceMDev].(string)
-		pcie := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDevicePCIE].(bool))
-		rombar := proxmox.CustomBool(
+		pcie := types.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDevicePCIE].(bool))
+		rombar := types.CustomBool(
 			block[mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR].(bool),
 		)
 		romfile, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile].(string)
-		xvga := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA].(bool))
+		xvga := types.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA].(bool))
 
 		device := proxmox.CustomPCIDevice{
 			DeviceIDs:  strings.Split(ids, ";"),
@@ -2696,7 +2697,7 @@ func resourceVirtualEnvironmentVMGetVGADeviceObject(
 		return nil, err
 	}
 
-	vgaEnabled := proxmox.CustomBool(vgaBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
+	vgaEnabled := types.CustomBool(vgaBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
 	vgaMemory := vgaBlock[mkResourceVirtualEnvironmentVMVGAMemory].(int)
 	vgaType := vgaBlock[mkResourceVirtualEnvironmentVMVGAType].(string)
 
@@ -3917,7 +3918,7 @@ func resourceVirtualEnvironmentVMUpdate(
 
 	// Prepare the new primitive configuration values.
 	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) {
-		acpi := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+		acpi := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 		updateBody.ACPI = &acpi
 		rebootRequired = true
 	}
@@ -3940,7 +3941,7 @@ func resourceVirtualEnvironmentVMUpdate(
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMOnBoot) {
-		startOnBoot := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
+		startOnBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
 		updateBody.StartOnBoot = &startOnBoot
 	}
 
@@ -3970,12 +3971,12 @@ func resourceVirtualEnvironmentVMUpdate(
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
-		tabletDevice := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+		tabletDevice := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 		updateBody.TabletDeviceEnabled = &tabletDevice
 		rebootRequired = true
 	}
 
-	template := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMTemplate) {
 		updateBody.Template = &template
@@ -3995,10 +3996,10 @@ func resourceVirtualEnvironmentVMUpdate(
 			return diag.FromErr(err)
 		}
 
-		agentEnabled := proxmox.CustomBool(
+		agentEnabled := types.CustomBool(
 			agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool),
 		)
-		agentTrim := proxmox.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+		agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
 		updateBody.Agent = &proxmox.CustomAgent{
@@ -4325,7 +4326,7 @@ func resourceVirtualEnvironmentVMUpdate(
 				return diag.FromErr(err)
 			}
 		} else {
-			forceStop := proxmox.CustomBool(true)
+			forceStop := types.CustomBool(true)
 			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 			err = veClient.ShutdownVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
@@ -4404,7 +4405,7 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(
 				}
 
 				if *oldDisk.ID != *diskNewEntries[prefix][oldKey].ID {
-					deleteOriginalDisk := proxmox.CustomBool(true)
+					deleteOriginalDisk := types.CustomBool(true)
 
 					diskMoveBodies = append(
 						diskMoveBodies,
@@ -4432,7 +4433,7 @@ func resourceVirtualEnvironmentVMUpdateDiskLocationAndSize(
 		}
 
 		if shutdownForDisksRequired && !template {
-			forceStop := proxmox.CustomBool(true)
+			forceStop := types.CustomBool(true)
 			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 			err = veClient.ShutdownVM(
@@ -4522,7 +4523,7 @@ func resourceVirtualEnvironmentVMDelete(
 	}
 
 	if status.Status != "stopped" {
-		forceStop := proxmox.CustomBool(true)
+		forceStop := types.CustomBool(true)
 		shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 		err = veClient.ShutdownVM(

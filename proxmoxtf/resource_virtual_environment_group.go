@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -112,9 +113,9 @@ func resourceVirtualEnvironmentGroupCreate(
 	aclParsed := d.Get(mkResourceVirtualEnvironmentGroupACL).(*schema.Set).List()
 
 	for _, v := range aclParsed {
-		aclDelete := proxmox.CustomBool(false)
+		aclDelete := types.CustomBool(false)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(
+		aclPropagate := types.CustomBool(
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
@@ -227,9 +228,9 @@ func resourceVirtualEnvironmentGroupUpdate(
 	aclParsedOld := aclArgOld.(*schema.Set).List()
 
 	for _, v := range aclParsedOld {
-		aclDelete := proxmox.CustomBool(true)
+		aclDelete := types.CustomBool(true)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(
+		aclPropagate := types.CustomBool(
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
@@ -250,9 +251,9 @@ func resourceVirtualEnvironmentGroupUpdate(
 	aclParsed := aclArg.(*schema.Set).List()
 
 	for _, v := range aclParsed {
-		aclDelete := proxmox.CustomBool(false)
+		aclDelete := types.CustomBool(false)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(
+		aclPropagate := types.CustomBool(
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
@@ -288,9 +289,9 @@ func resourceVirtualEnvironmentGroupDelete(
 	groupID := d.Id()
 
 	for _, v := range aclParsed {
-		aclDelete := proxmox.CustomBool(true)
+		aclDelete := types.CustomBool(true)
 		aclEntry := v.(map[string]interface{})
-		aclPropagate := proxmox.CustomBool(
+		aclPropagate := types.CustomBool(
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 

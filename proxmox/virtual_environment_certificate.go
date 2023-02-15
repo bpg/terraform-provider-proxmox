@@ -19,7 +19,7 @@ func (c *VirtualEnvironmentClient) DeleteCertificate(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmDELETE,
+		HmDELETE,
 		fmt.Sprintf("nodes/%s/certificates/custom", url.PathEscape(nodeName)),
 		d,
 		nil,
@@ -34,7 +34,7 @@ func (c *VirtualEnvironmentClient) ListCertificates(
 	resBody := &VirtualEnvironmentCertificateListResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		HmGET,
 		fmt.Sprintf("nodes/%s/certificates/info", url.PathEscape(nodeName)),
 		nil,
 		resBody,
@@ -58,7 +58,7 @@ func (c *VirtualEnvironmentClient) UpdateCertificate(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmPOST,
+		HmPOST,
 		fmt.Sprintf("nodes/%s/certificates/custom", url.PathEscape(nodeName)),
 		d,
 		nil,

@@ -19,7 +19,7 @@ func (c *VirtualEnvironmentClient) GetDNS(
 	resBody := &VirtualEnvironmentDNSGetResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		HmGET,
 		fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)),
 		nil,
 		resBody,
@@ -41,5 +41,5 @@ func (c *VirtualEnvironmentClient) UpdateDNS(
 	nodeName string,
 	d *VirtualEnvironmentDNSUpdateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)), d, nil)
+	return c.DoRequest(ctx, HmPUT, fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)), d, nil)
 }

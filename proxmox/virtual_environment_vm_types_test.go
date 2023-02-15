@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
@@ -54,7 +56,7 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func boolPtr(s bool) *CustomBool {
-	customBool := CustomBool(s)
+func boolPtr(s bool) *types.CustomBool {
+	customBool := types.CustomBool(s)
 	return &customBool
 }

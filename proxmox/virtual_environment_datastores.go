@@ -27,7 +27,7 @@ func (c *VirtualEnvironmentClient) DeleteDatastoreFile(
 ) error {
 	err := c.DoRequest(
 		ctx,
-		hmDELETE,
+		HmDELETE,
 		fmt.Sprintf(
 			"nodes/%s/storage/%s/content/%s",
 			url.PathEscape(nodeName),
@@ -52,7 +52,7 @@ func (c *VirtualEnvironmentClient) GetDatastoreStatus(
 	resBody := &VirtualEnvironmentDatastoreGetStatusResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		HmGET,
 		fmt.Sprintf(
 			"nodes/%s/storage/%s/status",
 			url.PathEscape(nodeName),
@@ -80,7 +80,7 @@ func (c *VirtualEnvironmentClient) ListDatastoreFiles(
 	resBody := &VirtualEnvironmentDatastoreFileListResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		HmGET,
 		fmt.Sprintf(
 			"nodes/%s/storage/%s/content",
 			url.PathEscape(nodeName),
@@ -113,7 +113,7 @@ func (c *VirtualEnvironmentClient) ListDatastores(
 	resBody := &VirtualEnvironmentDatastoreListResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		HmGET,
 		fmt.Sprintf("nodes/%s/storage", url.PathEscape(nodeName)),
 		d,
 		resBody,
@@ -216,7 +216,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 		resBody := &VirtualEnvironmentDatastoreUploadResponseBody{}
 		err = c.DoRequest(
 			ctx,
-			hmPOST,
+			HmPOST,
 			fmt.Sprintf(
 				"nodes/%s/storage/%s/upload",
 				url.PathEscape(d.NodeName),

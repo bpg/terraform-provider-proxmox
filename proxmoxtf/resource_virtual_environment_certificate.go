@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -144,7 +145,7 @@ func resourceVirtualEnvironmentCertificateGetUpdateBody(
 ) *proxmox.VirtualEnvironmentCertificateUpdateRequestBody {
 	certificate := d.Get(mkResourceVirtualEnvironmentCertificateCertificate).(string)
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
-	overwrite := proxmox.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
+	overwrite := types.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
 	privateKey := d.Get(mkResourceVirtualEnvironmentCertificatePrivateKey).(string)
 
 	combinedCertificates := strings.TrimSpace(certificate) + "\n"
@@ -159,7 +160,7 @@ func resourceVirtualEnvironmentCertificateGetUpdateBody(
 		force = true
 	}
 
-	restart := proxmox.CustomBool(true)
+	restart := types.CustomBool(true)
 
 	body := &proxmox.VirtualEnvironmentCertificateUpdateRequestBody{
 		Certificates: combinedCertificates,
@@ -340,7 +341,7 @@ func resourceVirtualEnvironmentCertificateDelete(
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
-	restart := proxmox.CustomBool(true)
+	restart := types.CustomBool(true)
 
 	err = veClient.DeleteCertificate(
 		ctx,

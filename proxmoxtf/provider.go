@@ -39,7 +39,7 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		ConfigureContextFunc: providerConfigure,
 		DataSourcesMap: map[string]*schema.Resource{
-			"proxmox_virtual_environment_cluster_alias":   dataSourceVirtualEnvironmentClusterAlias(),
+			"proxmox_virtual_environment_cluster_alias":   dataSourceVirtualEnvironmentFirewallAlias(),
 			"proxmox_virtual_environment_cluster_aliases": dataSourceVirtualEnvironmentClusterAliases(),
 			"proxmox_virtual_environment_datastores":      dataSourceVirtualEnvironmentDatastores(),
 			"proxmox_virtual_environment_dns":             dataSourceVirtualEnvironmentDNS(),
@@ -59,7 +59,7 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_certificate":   resourceVirtualEnvironmentCertificate(),
 			"proxmox_virtual_environment_cluster_alias": resourceVirtualEnvironmentClusterAlias(),
-			"proxmox_virtual_environment_cluster_ipset": resourceVirtualEnvironmentClusterIPSet(),
+			"proxmox_virtual_environment_cluster_ipset": resourceVirtualEnvironmentFirewallIPSet(),
 			"proxmox_virtual_environment_container":     resourceVirtualEnvironmentContainer(),
 			"proxmox_virtual_environment_dns":           resourceVirtualEnvironmentDNS(),
 			"proxmox_virtual_environment_file":          resourceVirtualEnvironmentFile(),

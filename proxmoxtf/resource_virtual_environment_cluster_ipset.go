@@ -11,30 +11,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
-	dvResourceVirtualEnvironmentClusterIPSetCIDRComment = ""
-	dvResourceVirtualEnvironmentClusterIPSetCIDRNoMatch = false
+	dvResourceVirtualEnvironmentFirewallIPSetCIDRComment = ""
+	dvResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch = false
 
-	mkResourceVirtualEnvironmentClusterIPSetName        = "name"
-	mkResourceVirtualEnvironmentClusterIPSetCIDR        = "cidr"
-	mkResourceVirtualEnvironmentClusterIPSetCIDRName    = "name"
-	mkResourceVirtualEnvironmentClusterIPSetCIDRComment = "comment"
-	mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch = "nomatch"
+	mkResourceVirtualEnvironmentFirewallIPSetName        = "name"
+	mkResourceVirtualEnvironmentFirewallIPSetCIDR        = "cidr"
+	mkResourceVirtualEnvironmentFirewallIPSetCIDRName    = "name"
+	mkResourceVirtualEnvironmentFirewallIPSetCIDRComment = "comment"
+	mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch = "nomatch"
 )
 
-func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
+func resourceVirtualEnvironmentFirewallIPSet() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentClusterIPSetName: {
+			mkResourceVirtualEnvironmentFirewallIPSetName: {
 				Type:        schema.TypeString,
 				Description: "IPSet name",
 				Required:    true,
 				ForceNew:    false,
 			},
-			mkResourceVirtualEnvironmentClusterIPSetCIDR: {
+			mkResourceVirtualEnvironmentFirewallIPSetCIDR: {
 				Type:        schema.TypeList,
 				Description: "List of IP or Networks",
 				Optional:    true,
@@ -44,24 +45,24 @@ func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentClusterIPSetCIDRName: {
+						mkResourceVirtualEnvironmentFirewallIPSetCIDRName: {
 							Type:        schema.TypeString,
 							Description: "Network/IP specification in CIDR format",
 							Required:    true,
 							ForceNew:    true,
 						},
-						mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch: {
+						mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch: {
 							Type:        schema.TypeBool,
 							Description: "No match this IP/CIDR",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentClusterIPSetCIDRNoMatch,
+							Default:     dvResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch,
 							ForceNew:    true,
 						},
-						mkResourceVirtualEnvironmentClusterIPSetCIDRComment: {
+						mkResourceVirtualEnvironmentFirewallIPSetCIDRComment: {
 							Type:        schema.TypeString,
 							Description: "IP/CIDR comment",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentClusterIPSetCIDRComment,
+							Default:     dvResourceVirtualEnvironmentFirewallIPSetCIDRComment,
 							ForceNew:    true,
 						},
 					},
@@ -69,21 +70,21 @@ func resourceVirtualEnvironmentClusterIPSet() *schema.Resource {
 				MaxItems: 14,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentClusterIPSetCIDRComment: {
+			mkResourceVirtualEnvironmentFirewallIPSetCIDRComment: {
 				Type:        schema.TypeString,
 				Description: "IPSet comment",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentClusterIPSetCIDRComment,
+				Default:     dvResourceVirtualEnvironmentFirewallIPSetCIDRComment,
 			},
 		},
-		CreateContext: resourceVirtualEnvironmentClusterIPSetCreate,
-		ReadContext:   resourceVirtualEnvironmentClusterIPSetRead,
-		UpdateContext: resourceVirtualEnvironmentClusterIPSetUpdate,
-		DeleteContext: resourceVirtualEnvironmentClusterIPSetDelete,
+		CreateContext: resourceVirtualEnvironmentFirewallIPSetCreate,
+		ReadContext:   resourceVirtualEnvironmentFirewallIPSetRead,
+		UpdateContext: resourceVirtualEnvironmentFirewallIPSetUpdate,
+		DeleteContext: resourceVirtualEnvironmentFirewallIPSetDelete,
 	}
 }
 
-func resourceVirtualEnvironmentClusterIPSetCreate(
+func resourceVirtualEnvironmentFirewallIPSetCreate(
 	ctx context.Context,
 	d *schema.ResourceData,
 	m interface{},
@@ -94,53 +95,53 @@ func resourceVirtualEnvironmentClusterIPSetCreate(
 		return diag.FromErr(err)
 	}
 
-	comment := d.Get(mkResourceVirtualEnvironmentClusterIPSetCIDRComment).(string)
-	name := d.Get(mkResourceVirtualEnvironmentClusterIPSetName).(string)
+	comment := d.Get(mkResourceVirtualEnvironmentFirewallIPSetCIDRComment).(string)
+	name := d.Get(mkResourceVirtualEnvironmentFirewallIPSetName).(string)
 
-	IPSets := d.Get(mkResourceVirtualEnvironmentClusterIPSetCIDR).([]interface{})
-	IPSetsArray := make(proxmox.VirtualEnvironmentClusterIPSetContent, len(IPSets))
+	IPSets := d.Get(mkResourceVirtualEnvironmentFirewallIPSetCIDR).([]interface{})
+	IPSetsArray := make(firewall.IPSetContent, len(IPSets))
 
 	for i, v := range IPSets {
 		IPSetMap := v.(map[string]interface{})
-		IPSetObject := proxmox.VirtualEnvironmentClusterIPSetGetResponseData{}
+		IPSetObject := firewall.IPSetGetResponseData{}
 
-		cidr := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetCIDRName].(string)
-		noMatch := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch].(bool)
-		comment := IPSetMap[mkResourceVirtualEnvironmentClusterIPSetCIDRComment].(string)
+		cidr := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRName].(string)
+		noMatch := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch].(bool)
+		comment := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRComment].(string)
 
 		IPSetObject.Comment = comment
 		IPSetObject.CIDR = cidr
 
 		if noMatch {
-			noMatchBool := proxmox.CustomBool(true)
+			noMatchBool := types.CustomBool(true)
 			IPSetObject.NoMatch = &noMatchBool
 		}
 
 		IPSetsArray[i] = IPSetObject
 	}
 
-	body := &proxmox.VirtualEnvironmentClusterIPSetCreateRequestBody{
+	body := &firewall.IPSetCreateRequestBody{
 		Comment: comment,
 		Name:    name,
 	}
 
-	err = veClient.CreateIPSet(ctx, body)
+	err = veClient.API().Cluster().Firewall().CreateIPSet(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	for _, v := range IPSetsArray {
-		err = veClient.AddCIDRToIPSet(ctx, name, &v)
+		err = veClient.API().Cluster().Firewall().AddCIDRToIPSet(ctx, name, &v)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	d.SetId(name)
-	return resourceVirtualEnvironmentClusterIPSetRead(ctx, d, m)
+	return resourceVirtualEnvironmentFirewallIPSetRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterIPSetRead(
+func resourceVirtualEnvironmentFirewallIPSetRead(
 	ctx context.Context,
 	d *schema.ResourceData,
 	m interface{},
@@ -155,21 +156,21 @@ func resourceVirtualEnvironmentClusterIPSetRead(
 
 	name := d.Id()
 
-	allIPSets, err := veClient.GetListIPSets(ctx)
+	allIPSets, err := veClient.API().Cluster().Firewall().GetIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	for _, v := range allIPSets.Data {
 		if v.Name == name {
-			err = d.Set(mkResourceVirtualEnvironmentClusterIPSetName, v.Name)
+			err = d.Set(mkResourceVirtualEnvironmentFirewallIPSetName, v.Name)
 			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDRComment, v.Comment)
+			err = d.Set(mkResourceVirtualEnvironmentFirewallIPSetCIDRComment, v.Comment)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
-	IPSet, err := veClient.GetListIPSetContent(ctx, name)
+	IPSet, err := veClient.API().Cluster().Firewall().GetIPSetContent(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -184,19 +185,19 @@ func resourceVirtualEnvironmentClusterIPSetRead(
 	for key := range IPSet {
 		entry := map[string]interface{}{}
 
-		entry[mkResourceVirtualEnvironmentClusterIPSetCIDRName] = IPSet[key].CIDR
-		entry[mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch] = IPSet[key].NoMatch
-		entry[mkResourceVirtualEnvironmentClusterIPSetCIDRComment] = IPSet[key].Comment
+		entry[mkResourceVirtualEnvironmentFirewallIPSetCIDRName] = IPSet[key].CIDR
+		entry[mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch] = IPSet[key].NoMatch
+		entry[mkResourceVirtualEnvironmentFirewallIPSetCIDRComment] = IPSet[key].Comment
 
 		entries = append(entries, entry)
 	}
 
-	err = d.Set(mkResourceVirtualEnvironmentClusterIPSetCIDR, entries)
+	err = d.Set(mkResourceVirtualEnvironmentFirewallIPSetCIDR, entries)
 	diags = append(diags, diag.FromErr(err)...)
 	return diags
 }
 
-func resourceVirtualEnvironmentClusterIPSetUpdate(
+func resourceVirtualEnvironmentFirewallIPSetUpdate(
 	ctx context.Context,
 	d *schema.ResourceData,
 	m interface{},
@@ -207,27 +208,27 @@ func resourceVirtualEnvironmentClusterIPSetUpdate(
 		return diag.FromErr(err)
 	}
 
-	comment := d.Get(mkResourceVirtualEnvironmentClusterIPSetCIDRComment).(string)
-	newName := d.Get(mkResourceVirtualEnvironmentClusterIPSetName).(string)
+	comment := d.Get(mkResourceVirtualEnvironmentFirewallIPSetCIDRComment).(string)
+	newName := d.Get(mkResourceVirtualEnvironmentFirewallIPSetName).(string)
 	previousName := d.Id()
 
-	body := &proxmox.VirtualEnvironmentClusterIPSetUpdateRequestBody{
+	body := &firewall.IPSetUpdateRequestBody{
 		ReName:  previousName,
 		Name:    newName,
 		Comment: &comment,
 	}
 
-	err = veClient.UpdateIPSet(ctx, body)
+	err = veClient.API().Cluster().Firewall().UpdateIPSet(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(newName)
 
-	return resourceVirtualEnvironmentClusterIPSetRead(ctx, d, m)
+	return resourceVirtualEnvironmentFirewallIPSetRead(ctx, d, m)
 }
 
-func resourceVirtualEnvironmentClusterIPSetDelete(
+func resourceVirtualEnvironmentFirewallIPSetDelete(
 	ctx context.Context,
 	d *schema.ResourceData,
 	m interface{},
@@ -241,7 +242,7 @@ func resourceVirtualEnvironmentClusterIPSetDelete(
 
 	name := d.Id()
 
-	IPSetContent, err := veClient.GetListIPSetContent(ctx, name)
+	IPSetContent, err := veClient.API().Cluster().Firewall().GetIPSetContent(ctx, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -249,7 +250,7 @@ func resourceVirtualEnvironmentClusterIPSetDelete(
 	// PVE requires content of IPSet be cleared before removal
 	if len(IPSetContent) > 0 {
 		for _, IPSet := range IPSetContent {
-			err = veClient.DeleteIPSetContent(ctx, name, IPSet.CIDR)
+			err = veClient.API().Cluster().Firewall().DeleteIPSetContent(ctx, name, IPSet.CIDR)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -258,7 +259,7 @@ func resourceVirtualEnvironmentClusterIPSetDelete(
 		return diags
 	}
 
-	err = veClient.DeleteIPSet(ctx, name)
+	err = veClient.API().Cluster().Firewall().DeleteIPSet(ctx, name)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
