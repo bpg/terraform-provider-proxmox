@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.13.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.12.1...v0.13.0) (2023-02-17)
+
+
+### Features
+
+* **vm:** update VM disc import logic ([#241](https://github.com/bpg/terraform-provider-proxmox/issues/241)) ([fcf9810](https://github.com/bpg/terraform-provider-proxmox/commit/fcf98102522821c9dfb4534731747233bd627d38))
+
+
+### Bug Fixes
+
+* **vm:** `proxmox_virtual_environment_file.changed` stored as `true` at file creation ([#240](https://github.com/bpg/terraform-provider-proxmox/issues/240)) ([197c9e5](https://github.com/bpg/terraform-provider-proxmox/commit/197c9e5152fd6524c82977001a759c36c644f8e5))
+
+
+### Miscellaneous
+
+* **deps:** bump activesupport from 6.0.6.1 to 6.1.7.1 in /docs ([#235](https://github.com/bpg/terraform-provider-proxmox/issues/235)) ([ffa39c1](https://github.com/bpg/terraform-provider-proxmox/commit/ffa39c13e0d8283da51980532c83919edcf1cbc6))
+* **deps:** bump github.com/goreleaser/goreleaser from 1.15.1 to 1.15.2 in /tools ([#237](https://github.com/bpg/terraform-provider-proxmox/issues/237)) ([80dfceb](https://github.com/bpg/terraform-provider-proxmox/commit/80dfceba8433379a64a1ff86d174447e229325ab))
+* **deps:** bump github.com/hashicorp/terraform-plugin-log from 0.7.0 to 0.8.0 ([#239](https://github.com/bpg/terraform-provider-proxmox/issues/239)) ([dbe26ed](https://github.com/bpg/terraform-provider-proxmox/commit/dbe26ed58f1ed668e5a059f9659bd12fd6b1a54c))
+* **deps:** bump golang.org/x/crypto from 0.5.0 to 0.6.0 ([#238](https://github.com/bpg/terraform-provider-proxmox/issues/238)) ([2b99349](https://github.com/bpg/terraform-provider-proxmox/commit/2b99349f1fe89e804fb45c439470bd2474068f1c))
+
 ## [0.12.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.12.0...v0.12.1) (2023-02-07)
 
 
