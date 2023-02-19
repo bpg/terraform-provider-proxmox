@@ -33,6 +33,10 @@ type CustomAudioDevice struct {
 // CustomAudioDevices handles QEMU audio device parameters.
 type CustomAudioDevices []CustomAudioDevice
 
+type CustomBoot struct {
+	Order *[]string `json:"order,omitempty" url:"order,omitempty,semicolon"`
+}
+
 // CustomCloudInitConfig handles QEMU cloud-init parameters.
 type CustomCloudInitConfig struct {
 	Files        *CustomCloudInitFiles     `json:"cicustom,omitempty"     url:"cicustom,omitempty"`
@@ -236,18 +240,17 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	BackupFile           *string                        `json:"archive,omitempty"            url:"archive,omitempty"`
 	BandwidthLimit       *int                           `json:"bwlimit,omitempty"            url:"bwlimit,omitempty"`
 	BIOS                 *string                        `json:"bios,omitempty"               url:"bios,omitempty"`
-	BootDisk             *string                        `json:"bootdisk,omitempty"           url:"bootdisk,omitempty"`
-	BootOrder            *string                        `json:"boot,omitempty"               url:"boot,omitempty"`
-	CDROM                *string                        `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
-	CloudInitConfig      *CustomCloudInitConfig         `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
-	CPUArchitecture      *string                        `json:"arch,omitempty"               url:"arch,omitempty"`
-	CPUCores             *int                           `json:"cores,omitempty"              url:"cores,omitempty"`
-	CPUEmulation         *CustomCPUEmulation            `json:"cpu,omitempty"                url:"cpu,omitempty"`
-	CPULimit             *int                           `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
-	CPUSockets           *int                           `json:"sockets,omitempty"            url:"sockets,omitempty"`
-	CPUUnits             *int                           `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
-	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
-	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
+	Boot                 *CustomBoot              `json:"boot,omitempty"               url:"boot,omitempty"`
+	CDROM                *string                  `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
+	CloudInitConfig      *CustomCloudInitConfig   `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
+	CPUArchitecture      *string                  `json:"arch,omitempty"               url:"arch,omitempty"`
+	CPUCores             *int                     `json:"cores,omitempty"              url:"cores,omitempty"`
+	CPUEmulation         *CustomCPUEmulation      `json:"cpu,omitempty"                url:"cpu,omitempty"`
+	CPULimit             *int                     `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
+	CPUSockets           *int                     `json:"sockets,omitempty"            url:"sockets,omitempty"`
+	CPUUnits             *int                     `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
+	DedicatedMemory      *int                     `json:"memory,omitempty"             url:"memory,omitempty"`
+	Delete               []string                 `json:"delete,omitempty"             url:"delete,omitempty,comma"`
 	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"force,omitempty,int"`
 	Description          *string                        `json:"description,omitempty"        url:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                 `json:"efidisk0,omitempty"           url:"efidisk0,omitempty"`
@@ -641,6 +644,14 @@ func (r CustomAudioDevices) EncodeValues(key string, v *url.Values) error {
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+func (r CustomBoot) EncodeValues(key string, v *url.Values) error {
+	if r.Order != nil && len(*r.Order) > 0 {
+		v.Add(key, fmt.Sprintf("order=%s", strings.Join(*r.Order, ";")))
 	}
 
 	return nil
