@@ -15,45 +15,50 @@ import (
 
 // CreateIPSet create an IPSet
 func (a *API) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error {
-	return a.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset", d, nil)
+	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset", d, nil)
+	return fmt.Errorf("error creating IPSet: %w", err)
 }
 
 // AddCIDRToIPSet adds IP or Network to IPSet
 func (a *API) AddCIDRToIPSet(ctx context.Context, id string, d *IPSetGetResponseData) error {
-	return a.DoRequest(
+	err := a.DoRequest(
 		ctx,
 		http.MethodPost,
 		fmt.Sprintf("cluster/firewall/ipset/%s/", url.PathEscape(id)),
 		d,
 		nil,
 	)
+	return fmt.Errorf("error adding CIDR to IPSet: %w", err)
 }
 
 // UpdateIPSet updates an IPSet.
 func (a *API) UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) error {
-	return a.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset/", d, nil)
+	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset/", d, nil)
+	return fmt.Errorf("error updating IPSet: %w", err)
 }
 
 // DeleteIPSet delete an IPSet
 func (a *API) DeleteIPSet(ctx context.Context, id string) error {
-	return a.DoRequest(
+	err := a.DoRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("cluster/firewall/ipset/%s", url.PathEscape(id)),
 		nil,
 		nil,
 	)
+	return fmt.Errorf("error deleting IPSet %s: %w", id, err)
 }
 
 // DeleteIPSetContent remove IP or Network from IPSet.
 func (a *API) DeleteIPSetContent(ctx context.Context, id string, cidr string) error {
-	return a.DoRequest(
+	err := a.DoRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("cluster/firewall/ipset/%s/%s", url.PathEscape(id), url.PathEscape(cidr)),
 		nil,
 		nil,
 	)
+	return fmt.Errorf("error deleting IPSet content %s: %w", id, err)
 }
 
 // GetIPSetContent retrieve a list of IPSet content
@@ -67,7 +72,7 @@ func (a *API) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetRespon
 		resBody,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting IPSet content: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -82,7 +87,7 @@ func (a *API) GetIPSets(ctx context.Context) (*IPSetListResponseBody, error) {
 	resBody := &IPSetListResponseBody{}
 	err := a.DoRequest(ctx, http.MethodGet, "cluster/firewall/ipset", nil, resBody)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting IPSet list: %w", err)
 	}
 
 	if resBody.Data == nil {

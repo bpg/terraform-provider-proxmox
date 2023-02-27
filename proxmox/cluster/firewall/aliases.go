@@ -15,18 +15,20 @@ import (
 
 // CreateAlias create an alias
 func (a *API) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error {
-	return a.DoRequest(ctx, http.MethodPost, "cluster/firewall/aliases", d, nil)
+	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/aliases", d, nil)
+	return fmt.Errorf("error creating alias: %w", err)
 }
 
 // DeleteAlias delete an alias
 func (a *API) DeleteAlias(ctx context.Context, id string) error {
-	return a.DoRequest(
+	err := a.DoRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)),
 		nil,
 		nil,
 	)
+	return fmt.Errorf("error deleting alias %s: %w", id, err)
 }
 
 // GetAlias retrieves an alias
@@ -40,7 +42,7 @@ func (a *API) GetAlias(ctx context.Context, id string) (*AliasGetResponseData, e
 		resBody,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving alias %s: %w", id, err)
 	}
 
 	if resBody.Data == nil {
@@ -55,7 +57,7 @@ func (a *API) ListAliases(ctx context.Context) ([]*AliasGetResponseData, error) 
 	resBody := &AliasListResponseBody{}
 	err := a.DoRequest(ctx, http.MethodGet, "cluster/firewall/aliases", nil, resBody)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving aliases: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -71,11 +73,12 @@ func (a *API) ListAliases(ctx context.Context) ([]*AliasGetResponseData, error) 
 
 // UpdateAlias updates an alias.
 func (a *API) UpdateAlias(ctx context.Context, id string, d *AliasUpdateRequestBody) error {
-	return a.DoRequest(
+	err := a.DoRequest(
 		ctx,
 		http.MethodPut,
 		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)),
 		d,
 		nil,
 	)
+	return fmt.Errorf("error updating alias %s: %w", id, err)
 }
