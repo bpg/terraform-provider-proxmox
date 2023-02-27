@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.25.0
 	github.com/pkg/sftp v1.13.5
 	github.com/skeema/knownhosts v1.1.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.6.0
 )
 
