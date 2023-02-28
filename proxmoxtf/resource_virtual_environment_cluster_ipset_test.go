@@ -10,49 +10,49 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// TestResourceVirtualEnvironmentIPSetInstantiation tests whether the resourceVirtualEnvironmentClusterIPSet
+// TestResourceVirtualEnvironmentIPSetInstantiation tests whether the resourceVirtualEnvironmentFirewallIPSet
 // instance can be instantiated.
 func TestResourceVirtualEnvironmentIPSetInstantiation(t *testing.T) {
-	s := resourceVirtualEnvironmentClusterIPSet()
+	s := resourceVirtualEnvironmentFirewallIPSet()
 
 	if s == nil {
 		t.Fatalf("Cannot instantiate resourceVirtualEnvironmentAlias")
 	}
 }
 
-// TestResourceVirtualEnvironmentIPSetSchema tests the resourceVirtualEnvironmentClusterIPSet schema.
+// TestResourceVirtualEnvironmentIPSetSchema tests the resourceVirtualEnvironmentFirewallIPSet schema.
 func TestResourceVirtualEnvironmentIPSetSchema(t *testing.T) {
-	s := resourceVirtualEnvironmentClusterIPSet()
+	s := resourceVirtualEnvironmentFirewallIPSet()
 
 	testRequiredArguments(t, s, []string{
-		mkResourceVirtualEnvironmentClusterIPSetName,
+		mkResourceVirtualEnvironmentFirewallIPSetName,
 	})
 
 	testOptionalArguments(t, s, []string{
-		mkResourceVirtualEnvironmentClusterIPSetCIDR,
-		mkResourceVirtualEnvironmentClusterIPSetCIDRComment,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDR,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDRComment,
 	})
 
 	testValueTypes(t, s, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentClusterIPSetName:        schema.TypeString,
-		mkResourceVirtualEnvironmentClusterIPSetCIDR:        schema.TypeList,
-		mkResourceVirtualEnvironmentClusterIPSetCIDRComment: schema.TypeString,
+		mkResourceVirtualEnvironmentFirewallIPSetName:        schema.TypeString,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDR:        schema.TypeList,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDRComment: schema.TypeString,
 	})
 
-	IPSetSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentClusterIPSetCIDR)
+	IPSetSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentFirewallIPSetCIDR)
 
 	testRequiredArguments(t, IPSetSchema, []string{
-		mkResourceVirtualEnvironmentClusterIPSetCIDRName,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDRName,
 	})
 
 	testOptionalArguments(t, IPSetSchema, []string{
-		mkResourceVirtualEnvironmentClusterIPSetCIDRComment,
-		mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDRComment,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch,
 	})
 
 	testValueTypes(t, IPSetSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentClusterIPSetCIDRName:    schema.TypeString,
-		mkResourceVirtualEnvironmentClusterIPSetCIDRComment: schema.TypeString,
-		mkResourceVirtualEnvironmentClusterIPSetCIDRNoMatch: schema.TypeBool,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDRName:    schema.TypeString,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDRComment: schema.TypeString,
+		mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch: schema.TypeBool,
 	})
 }
