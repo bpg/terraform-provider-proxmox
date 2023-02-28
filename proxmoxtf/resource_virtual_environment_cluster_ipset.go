@@ -131,7 +131,7 @@ func resourceVirtualEnvironmentFirewallIPSetCreate(
 	}
 
 	for _, v := range IPSetsArray {
-		err = veClient.API().Cluster().Firewall().AddCIDRToIPSet(ctx, name, &v)
+		err = veClient.API().Cluster().Firewall().AddCIDRToIPSet(ctx, name, v)
 		if err != nil {
 			return diag.FromErr(err)
 		}

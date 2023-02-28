@@ -20,12 +20,12 @@ func (a *API) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error 
 }
 
 // AddCIDRToIPSet adds IP or Network to IPSet
-func (a *API) AddCIDRToIPSet(ctx context.Context, id string, d *IPSetGetResponseData) error {
+func (a *API) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseData) error {
 	err := a.DoRequest(
 		ctx,
 		http.MethodPost,
 		fmt.Sprintf("cluster/firewall/ipset/%s/", url.PathEscape(id)),
-		d,
+		&d,
 		nil,
 	)
 	return fmt.Errorf("error adding CIDR to IPSet: %w", err)

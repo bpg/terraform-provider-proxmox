@@ -47,35 +47,31 @@ linters:
   enable-all: true
   disable:
     # deprecated
-    - gocyclo
-    - interfacer
-    - scopelint
-    - maligned
-    - golint
     - deadcode
+    - gocyclo
+    - golint
     - ifshort
-    - varcheck
+    - interfacer
+    - maligned
+    - rowserrcheck
+    - scopelint
     - structcheck
+    - varcheck
+    - wastedassign
     # require massive refactoring
+    - cyclop
     - forcetypeassert
-    - govet
     - funlen
     - gocognit
-    - cyclop
-    #
-    - containedctx
-    - decorder
-    - execinquery
+    - govet
+    # others
     - exhaustivestruct
     - exhaustruct
     - gci
     - gochecknoinits
     - godot
-    - godox
     - goerr113
-    - goheader
     - gomnd
-    - gomodguard
     - grouper
     - ireturn
     - maintidx
