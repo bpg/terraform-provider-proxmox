@@ -50,7 +50,6 @@ const (
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress        = ""
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit         = 0
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceVLANID            = 0
-	dvResourceVirtualEnvironmentContainerNetworkInterfaceMTU               = 0
 	dvResourceVirtualEnvironmentContainerOperatingSystemType               = "unmanaged"
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
@@ -93,7 +92,6 @@ const (
 	mkResourceVirtualEnvironmentContainerInitializationUserAccount         = "user_account"
 	mkResourceVirtualEnvironmentContainerInitializationUserAccountKeys     = "keys"
 	mkResourceVirtualEnvironmentContainerInitializationUserAccountPassword = "password"
-	mkResourceVirtualEnvironmentContainerInitializationUserAccountUsername = "username"
 	mkResourceVirtualEnvironmentContainerMemory                            = "memory"
 	mkResourceVirtualEnvironmentContainerMemoryDedicated                   = "dedicated"
 	mkResourceVirtualEnvironmentContainerMemorySwap                        = "swap"
@@ -117,7 +115,7 @@ const (
 	mkResourceVirtualEnvironmentContainerVMID                              = "vm_id"
 )
 
-func ResourceVirtualEnvironmentContainer() *schema.Resource {
+func Container() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentContainerClone: {
@@ -181,7 +179,7 @@ func ResourceVirtualEnvironmentContainer() *schema.Resource {
 							Description:      "The console mode",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentContainerConsoleMode,
-							ValidateDiagFunc: ResourceVirtualEnvironmentContainerGetConsoleModeValidator(),
+							ValidateDiagFunc: containerGetConsoleModeValidator(),
 						},
 						mkResourceVirtualEnvironmentContainerConsoleTTYCount: {
 							Type:             schema.TypeInt,
@@ -215,7 +213,7 @@ func ResourceVirtualEnvironmentContainer() *schema.Resource {
 							Description:      "The CPU architecture",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentContainerCPUArchitecture,
-							ValidateDiagFunc: ResourceVirtualEnvironmentContainerGetCPUArchitectureValidator(),
+							ValidateDiagFunc: containerGetCPUArchitectureValidator(),
 						},
 						mkResourceVirtualEnvironmentContainerCPUCores: {
 							Type:             schema.TypeInt,
@@ -575,7 +573,7 @@ func ResourceVirtualEnvironmentContainer() *schema.Resource {
 							Description:      "The type",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentContainerOperatingSystemType,
-							ValidateDiagFunc: ResourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator(),
+							ValidateDiagFunc: containerGetOperatingSystemTypeValidator(),
 						},
 					},
 				},
@@ -627,32 +625,24 @@ func ResourceVirtualEnvironmentContainer() *schema.Resource {
 				ValidateDiagFunc: getVMIDValidator(),
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentContainerCreate,
-		ReadContext:   ResourceVirtualEnvironmentContainerRead,
-		UpdateContext: ResourceVirtualEnvironmentContainerUpdate,
-		DeleteContext: ResourceVirtualEnvironmentContainerDelete,
+		CreateContext: containerCreate,
+		ReadContext:   containerRead,
+		UpdateContext: containerUpdate,
+		DeleteContext: containerDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentContainerCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func containerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	clone := d.Get(mkResourceVirtualEnvironmentContainerClone).([]interface{})
 
 	if len(clone) > 0 {
-		return ResourceVirtualEnvironmentContainerCreateClone(ctx, d, m)
+		return containerCreateClone(ctx, d, m)
 	}
 
-	return ResourceVirtualEnvironmentContainerCreateCustom(ctx, d, m)
+	return containerCreateCustom(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentContainerCreateClone(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -876,7 +866,7 @@ func ResourceVirtualEnvironmentContainerCreateClone(
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 {
-		networkInterface, err = ResourceVirtualEnvironmentContainerGetExistingNetworkInterface(
+		networkInterface, err = containerGetExistingNetworkInterface(
 			ctx,
 			veClient,
 			nodeName,
@@ -974,7 +964,7 @@ func ResourceVirtualEnvironmentContainerCreateClone(
 	}
 
 	if len(tags) > 0 {
-		tagString := ResourceVirtualEnvironmentContainerGetTagsString(d)
+		tagString := containerGetTagsString(d)
 		updateBody.Tags = &tagString
 	}
 
@@ -996,14 +986,10 @@ func ResourceVirtualEnvironmentContainerCreateClone(
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentContainerCreateStart(ctx, d, m)
+	return containerCreateStart(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentContainerCreateCustom(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -1011,7 +997,7 @@ func ResourceVirtualEnvironmentContainerCreateCustom(
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
-	resource := ResourceVirtualEnvironmentContainer()
+	resource := Container()
 
 	consoleBlock, err := getSchemaBlock(
 		resource,
@@ -1324,7 +1310,7 @@ func ResourceVirtualEnvironmentContainerCreateCustom(
 	}
 
 	if len(tags) > 0 {
-		tagsString := ResourceVirtualEnvironmentContainerGetTagsString(d)
+		tagsString := containerGetTagsString(d)
 		createBody.Tags = &tagsString
 	}
 
@@ -1341,19 +1327,15 @@ func ResourceVirtualEnvironmentContainerCreateCustom(
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentContainerCreateStart(ctx, d, m)
+	return containerCreateStart(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentContainerCreateStart(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	started := d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool)
 	template := d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 
 	if !started || template {
-		return ResourceVirtualEnvironmentContainerRead(ctx, d, m)
+		return containerRead(ctx, d, m)
 	}
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -1379,10 +1361,10 @@ func ResourceVirtualEnvironmentContainerCreateStart(
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentContainerRead(ctx, d, m)
+	return containerRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentContainerGetConsoleModeValidator() schema.SchemaValidateDiagFunc {
+func containerGetConsoleModeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"console",
 		"shell",
@@ -1390,7 +1372,7 @@ func ResourceVirtualEnvironmentContainerGetConsoleModeValidator() schema.SchemaV
 	}, false))
 }
 
-func ResourceVirtualEnvironmentContainerGetCPUArchitectureValidator() schema.SchemaValidateDiagFunc {
+func containerGetCPUArchitectureValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"amd64",
 		"arm64",
@@ -1399,7 +1381,7 @@ func ResourceVirtualEnvironmentContainerGetCPUArchitectureValidator() schema.Sch
 	}, false))
 }
 
-func ResourceVirtualEnvironmentContainerGetExistingNetworkInterface(
+func containerGetExistingNetworkInterface(
 	ctx context.Context,
 	client *proxmox.VirtualEnvironmentClient,
 	nodeName string,
@@ -1469,7 +1451,7 @@ func ResourceVirtualEnvironmentContainerGetExistingNetworkInterface(
 	return networkInterfaces, nil
 }
 
-func ResourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
+func containerGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"alpine",
 		"archlinux",
@@ -1483,7 +1465,7 @@ func ResourceVirtualEnvironmentContainerGetOperatingSystemTypeValidator() schema
 	}, false))
 }
 
-func ResourceVirtualEnvironmentContainerGetTagsString(d *schema.ResourceData) string {
+func containerGetTagsString(d *schema.ResourceData) string {
 	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	var sanitizedTags []string
 	for i := 0; i < len(tags); i++ {
@@ -1496,11 +1478,7 @@ func ResourceVirtualEnvironmentContainerGetTagsString(d *schema.ResourceData) st
 	return strings.Join(sanitizedTags, ";")
 }
 
-func ResourceVirtualEnvironmentContainerRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -1966,11 +1944,7 @@ func ResourceVirtualEnvironmentContainerRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentContainerUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -1989,7 +1963,7 @@ func ResourceVirtualEnvironmentContainerUpdate(
 	}
 
 	rebootRequired := false
-	resource := ResourceVirtualEnvironmentContainer()
+	resource := Container()
 
 	// Retrieve the clone argument as the update logic varies for clones.
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
@@ -2151,7 +2125,7 @@ func ResourceVirtualEnvironmentContainerUpdate(
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 && len(clone) > 0 {
-		networkInterface, err = ResourceVirtualEnvironmentContainerGetExistingNetworkInterface(
+		networkInterface, err = containerGetExistingNetworkInterface(
 			ctx,
 			veClient,
 			nodeName,
@@ -2263,7 +2237,7 @@ func ResourceVirtualEnvironmentContainerUpdate(
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentContainerTags) {
-		tagString := ResourceVirtualEnvironmentContainerGetTagsString(d)
+		tagString := containerGetTagsString(d)
 		updateBody.Tags = &tagString
 	}
 
@@ -2325,14 +2299,10 @@ func ResourceVirtualEnvironmentContainerUpdate(
 		}
 	}
 
-	return ResourceVirtualEnvironmentContainerRead(ctx, d, m)
+	return containerRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentContainerDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

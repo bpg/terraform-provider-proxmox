@@ -25,7 +25,7 @@ const (
 	mkResourceVirtualEnvironmentTimeUTCTime   = "utc_time"
 )
 
-func ResourceVirtualEnvironmentTime() *schema.Resource {
+func Time() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentTimeLocalTime: {
@@ -49,19 +49,15 @@ func ResourceVirtualEnvironmentTime() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentTimeCreate,
-		ReadContext:   ResourceVirtualEnvironmentTimeRead,
-		UpdateContext: ResourceVirtualEnvironmentTimeUpdate,
-		DeleteContext: ResourceVirtualEnvironmentTimeDelete,
+		CreateContext: timeCreate,
+		ReadContext:   timeRead,
+		UpdateContext: timeUpdate,
+		DeleteContext: timeDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentTimeCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
-	diags := ResourceVirtualEnvironmentTimeUpdate(ctx, d, m)
+func timeCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	diags := timeUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
 	}
@@ -73,12 +69,7 @@ func ResourceVirtualEnvironmentTimeCreate(
 	return nil
 }
 
-//nolint:dupl
-func ResourceVirtualEnvironmentTimeRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -116,11 +107,7 @@ func ResourceVirtualEnvironmentTimeRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentTimeUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func timeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -141,14 +128,10 @@ func ResourceVirtualEnvironmentTimeUpdate(
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentTimeRead(ctx, d, m)
+	return timeRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentTimeDelete(
-	_ context.Context,
-	d *schema.ResourceData,
-	_ interface{},
-) diag.Diagnostics {
+func timeDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

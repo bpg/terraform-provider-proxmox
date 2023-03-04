@@ -44,7 +44,7 @@ const (
 	mkResourceVirtualEnvironmentUserUserID         = "user_id"
 )
 
-func ResourceVirtualEnvironmentUser() *schema.Resource {
+func User() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentUserACL: {
@@ -139,18 +139,14 @@ func ResourceVirtualEnvironmentUser() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentUserCreate,
-		ReadContext:   ResourceVirtualEnvironmentUserRead,
-		UpdateContext: ResourceVirtualEnvironmentUserUpdate,
-		DeleteContext: ResourceVirtualEnvironmentUserDelete,
+		CreateContext: userCreate,
+		ReadContext:   userRead,
+		UpdateContext: userUpdate,
+		DeleteContext: userDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentUserCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -225,14 +221,10 @@ func ResourceVirtualEnvironmentUserCreate(
 		}
 	}
 
-	return ResourceVirtualEnvironmentUserRead(ctx, d, m)
+	return userRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentUserRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -346,11 +338,7 @@ func ResourceVirtualEnvironmentUserRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentUserUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -452,14 +440,10 @@ func ResourceVirtualEnvironmentUserUpdate(
 		}
 	}
 
-	return ResourceVirtualEnvironmentUserRead(ctx, d, m)
+	return userRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentUserDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

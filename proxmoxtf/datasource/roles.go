@@ -46,11 +46,11 @@ func Roles() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
 		},
-		ReadContext: RolesRead,
+		ReadContext: rolesRead,
 	}
 }
 
-func RolesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func rolesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

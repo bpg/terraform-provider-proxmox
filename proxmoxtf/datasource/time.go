@@ -48,11 +48,11 @@ func Time() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		ReadContext: TimeRead,
+		ReadContext: timeRead,
 	}
 }
 
-func TimeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

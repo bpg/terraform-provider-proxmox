@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentHostsInstantiation tests whether the ResourceVirtualEnvironmentHosts instance can be instantiated.
-func TestResourceVirtualEnvironmentHostsInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentHosts()
+// TestHostsInstantiation tests whether the Hosts instance can be instantiated.
+func TestHostsInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Hosts()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentHosts")
+		t.Fatalf("Cannot instantiate Hosts")
 	}
 }
 
-// TestResourceVirtualEnvironmentHostsSchema tests the ResourceVirtualEnvironmentHosts schema.
-func TestResourceVirtualEnvironmentHostsSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentHosts()
+// TestHostsSchema tests the Hosts schema.
+func TestHostsSchema(t *testing.T) {
+	t.Parallel()
+	s := Hosts()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentHostsEntry,

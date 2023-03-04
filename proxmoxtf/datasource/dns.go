@@ -42,11 +42,11 @@ func DNS() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DNSRead,
+		ReadContext: dnsRead,
 	}
 }
 
-func DNSRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

@@ -23,7 +23,7 @@ const (
 	mkResourceVirtualEnvironmentRoleRoleID     = "role_id"
 )
 
-func ResourceVirtualEnvironmentRole() *schema.Resource {
+func Role() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentRolePrivileges: {
@@ -39,18 +39,14 @@ func ResourceVirtualEnvironmentRole() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentRoleCreate,
-		ReadContext:   ResourceVirtualEnvironmentRoleRead,
-		UpdateContext: ResourceVirtualEnvironmentRoleUpdate,
-		DeleteContext: ResourceVirtualEnvironmentRoleDelete,
+		CreateContext: roleCreate,
+		ReadContext:   roleRead,
+		UpdateContext: roleUpdate,
+		DeleteContext: roleDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentRoleCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -77,14 +73,10 @@ func ResourceVirtualEnvironmentRoleCreate(
 
 	d.SetId(roleID)
 
-	return ResourceVirtualEnvironmentRoleRead(ctx, d, m)
+	return roleRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentRoleRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -114,11 +106,7 @@ func ResourceVirtualEnvironmentRoleRead(
 	return diag.FromErr(err)
 }
 
-func ResourceVirtualEnvironmentRoleUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -142,14 +130,10 @@ func ResourceVirtualEnvironmentRoleUpdate(
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentRoleRead(ctx, d, m)
+	return roleRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentRoleDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func roleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

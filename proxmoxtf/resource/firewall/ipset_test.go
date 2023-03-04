@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package resource
+package firewall
 
 import (
 	"testing"
@@ -14,19 +14,21 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentIPSetInstantiation tests whether the ResourceVirtualEnvironmentFirewallIPSet
+// TestIPSetInstantiation tests whether the IPSet
 // instance can be instantiated.
-func TestResourceVirtualEnvironmentIPSetInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentFirewallIPSet()
+func TestIPSetInstantiation(t *testing.T) {
+	t.Parallel()
+	s := IPSet()
 
 	if s == nil {
 		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentAlias")
 	}
 }
 
-// TestResourceVirtualEnvironmentIPSetSchema tests the ResourceVirtualEnvironmentFirewallIPSet schema.
-func TestResourceVirtualEnvironmentIPSetSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentFirewallIPSet()
+// TestIPSetSchema tests the IPSet schema.
+func TestIPSetSchema(t *testing.T) {
+	t.Parallel()
+	s := IPSet()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentFirewallIPSetName,

@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentTimeInstantiation tests whether the ResourceVirtualEnvironmentTime instance can be instantiated.
-func TestResourceVirtualEnvironmentTimeInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentTime()
+// TestTimeInstantiation tests whether the Time instance can be instantiated.
+func TestTimeInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Time()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentTime")
+		t.Fatalf("Cannot instantiate Time")
 	}
 }
 
-// TestResourceVirtualEnvironmentTimeSchema tests the ResourceVirtualEnvironmentTime schema.
-func TestResourceVirtualEnvironmentTimeSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentTime()
+// TestTimeSchema tests the Time schema.
+func TestTimeSchema(t *testing.T) {
+	t.Parallel()
+	s := Time()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentTimeNodeName,

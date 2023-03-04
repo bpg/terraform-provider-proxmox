@@ -14,8 +14,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentVMInstantiation tests whether the VM instance can be instantiated.
-func TestResourceVirtualEnvironmentVMInstantiation(t *testing.T) {
+// TestVMInstantiation tests whether the VM instance can be instantiated.
+func TestVMInstantiation(t *testing.T) {
+	t.Parallel()
 	s := VM()
 
 	if s == nil {
@@ -23,8 +24,9 @@ func TestResourceVirtualEnvironmentVMInstantiation(t *testing.T) {
 	}
 }
 
-// TestResourceVirtualEnvironmentVMSchema tests the VM schema.
-func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
+// TestVMSchema tests the VM schema.
+func TestVMSchema(t *testing.T) {
+	t.Parallel()
 	s := VM()
 
 	test.AssertRequiredArguments(t, s, []string{

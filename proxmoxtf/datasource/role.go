@@ -35,11 +35,11 @@ func Role() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: RoleRead,
+		ReadContext: roleRead,
 	}
 }
 
-func RoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

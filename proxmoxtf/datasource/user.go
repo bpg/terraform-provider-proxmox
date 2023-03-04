@@ -106,11 +106,11 @@ func User() *schema.Resource {
 				Required:    true,
 			},
 		},
-		ReadContext: UserRead,
+		ReadContext: userRead,
 	}
 }
 
-func UserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

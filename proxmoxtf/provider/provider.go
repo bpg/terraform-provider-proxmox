@@ -20,6 +20,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/datasource"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/datasource/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
+	firewall2 "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 )
 
 const (
@@ -59,18 +60,18 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 			"proxmox_virtual_environment_version":         datasource.Version(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"proxmox_virtual_environment_certificate":   resource.ResourceVirtualEnvironmentCertificate(),
-			"proxmox_virtual_environment_cluster_alias": resource.ResourceVirtualEnvironmentClusterAlias(),
-			"proxmox_virtual_environment_cluster_ipset": resource.ResourceVirtualEnvironmentFirewallIPSet(),
-			"proxmox_virtual_environment_container":     resource.ResourceVirtualEnvironmentContainer(),
-			"proxmox_virtual_environment_dns":           resource.ResourceVirtualEnvironmentDNS(),
-			"proxmox_virtual_environment_file":          resource.ResourceVirtualEnvironmentFile(),
-			"proxmox_virtual_environment_group":         resource.ResourceVirtualEnvironmentGroup(),
-			"proxmox_virtual_environment_hosts":         resource.ResourceVirtualEnvironmentHosts(),
-			"proxmox_virtual_environment_pool":          resource.ResourceVirtualEnvironmentPool(),
-			"proxmox_virtual_environment_role":          resource.ResourceVirtualEnvironmentRole(),
-			"proxmox_virtual_environment_time":          resource.ResourceVirtualEnvironmentTime(),
-			"proxmox_virtual_environment_user":          resource.ResourceVirtualEnvironmentUser(),
+			"proxmox_virtual_environment_certificate":   resource.Certificate(),
+			"proxmox_virtual_environment_cluster_alias": firewall2.Alias(),
+			"proxmox_virtual_environment_cluster_ipset": firewall2.IPSet(),
+			"proxmox_virtual_environment_container":     resource.Container(),
+			"proxmox_virtual_environment_dns":           resource.DNS(),
+			"proxmox_virtual_environment_file":          resource.File(),
+			"proxmox_virtual_environment_group":         resource.Group(),
+			"proxmox_virtual_environment_hosts":         resource.Hosts(),
+			"proxmox_virtual_environment_pool":          resource.Pool(),
+			"proxmox_virtual_environment_role":          resource.Role(),
+			"proxmox_virtual_environment_time":          resource.Time(),
+			"proxmox_virtual_environment_user":          resource.User(),
 			"proxmox_virtual_environment_vm":            resource.VM(),
 		},
 		Schema: map[string]*schema.Schema{

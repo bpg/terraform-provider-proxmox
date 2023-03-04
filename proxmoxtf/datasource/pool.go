@@ -74,11 +74,11 @@ func Pool() *schema.Resource {
 				Required:    true,
 			},
 		},
-		ReadContext: PoolRead,
+		ReadContext: poolRead,
 	}
 }
 
-func PoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

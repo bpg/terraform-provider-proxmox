@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentCertificateInstantiation tests whether the ResourceVirtualEnvironmentCertificate instance can be instantiated.
-func TestResourceVirtualEnvironmentCertificateInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentCertificate()
+// TestCertificateInstantiation tests whether the Certificate instance can be instantiated.
+func TestCertificateInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Certificate()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentCertificate")
+		t.Fatalf("Cannot instantiate Certificate")
 	}
 }
 
-// TestResourceVirtualEnvironmentCertificateSchema tests the ResourceVirtualEnvironmentCertificate schema.
-func TestResourceVirtualEnvironmentCertificateSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentCertificate()
+// TestCertificateSchema tests the Certificate schema.
+func TestCertificateSchema(t *testing.T) {
+	t.Parallel()
+	s := Certificate()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentCertificateCertificate,

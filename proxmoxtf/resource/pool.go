@@ -30,7 +30,7 @@ const (
 	mkResourceVirtualEnvironmentPoolPoolID             = "pool_id"
 )
 
-func ResourceVirtualEnvironmentPool() *schema.Resource {
+func Pool() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentPoolComment: {
@@ -80,18 +80,14 @@ func ResourceVirtualEnvironmentPool() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentPoolCreate,
-		ReadContext:   ResourceVirtualEnvironmentPoolRead,
-		UpdateContext: ResourceVirtualEnvironmentPoolUpdate,
-		DeleteContext: ResourceVirtualEnvironmentPoolDelete,
+		CreateContext: poolCreate,
+		ReadContext:   poolRead,
+		UpdateContext: poolUpdate,
+		DeleteContext: poolDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentPoolCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func poolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -113,14 +109,10 @@ func ResourceVirtualEnvironmentPoolCreate(
 
 	d.SetId(poolID)
 
-	return ResourceVirtualEnvironmentPoolRead(ctx, d, m)
+	return poolRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentPoolRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -177,11 +169,7 @@ func ResourceVirtualEnvironmentPoolRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentPoolUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -200,14 +188,10 @@ func ResourceVirtualEnvironmentPoolUpdate(
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentPoolRead(ctx, d, m)
+	return poolRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentPoolDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func poolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

@@ -86,11 +86,11 @@ func Nodes() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
 		},
-		ReadContext: NodesRead,
+		ReadContext: nodesRead,
 	}
 }
 
-func NodesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func nodesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

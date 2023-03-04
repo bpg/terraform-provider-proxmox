@@ -50,11 +50,11 @@ func Version() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		ReadContext: VersionRead,
+		ReadContext: versionRead,
 	}
 }
 
-func VersionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func versionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

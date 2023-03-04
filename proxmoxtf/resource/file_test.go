@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentFileInstantiation tests whether the ResourceVirtualEnvironmentFile instance can be instantiated.
-func TestResourceVirtualEnvironmentFileInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentFile()
+// TestFileInstantiation tests whether the File instance can be instantiated.
+func TestFileInstantiation(t *testing.T) {
+	t.Parallel()
+	s := File()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentFile")
+		t.Fatalf("Cannot instantiate File")
 	}
 }
 
-// TestResourceVirtualEnvironmentFileSchema tests the ResourceVirtualEnvironmentFile schema.
-func TestResourceVirtualEnvironmentFileSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentFile()
+// TestFileSchema tests the File schema.
+func TestFileSchema(t *testing.T) {
+	t.Parallel()
+	s := File()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentFileDatastoreID,

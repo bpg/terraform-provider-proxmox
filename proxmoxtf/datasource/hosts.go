@@ -76,11 +76,11 @@ func Hosts() *schema.Resource {
 				Required:    true,
 			},
 		},
-		ReadContext: HostsRead,
+		ReadContext: hostsRead,
 	}
 }
 
-func HostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

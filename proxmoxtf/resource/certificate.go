@@ -40,7 +40,7 @@ const (
 	mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames = "subject_alternative_names"
 )
 
-func ResourceVirtualEnvironmentCertificate() *schema.Resource {
+func Certificate() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentCertificateCertificate: {
@@ -119,19 +119,15 @@ func ResourceVirtualEnvironmentCertificate() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentCertificateCreate,
-		ReadContext:   ResourceVirtualEnvironmentCertificateRead,
-		UpdateContext: ResourceVirtualEnvironmentCertificateUpdate,
-		DeleteContext: ResourceVirtualEnvironmentCertificateDelete,
+		CreateContext: certificateCreate,
+		ReadContext:   certificateRead,
+		UpdateContext: certificateUpdate,
+		DeleteContext: certificateDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentCertificateCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
-	diags := ResourceVirtualEnvironmentCertificateUpdate(ctx, d, m)
+func certificateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	diags := certificateUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
 	}
@@ -143,9 +139,7 @@ func ResourceVirtualEnvironmentCertificateCreate(
 	return nil
 }
 
-func ResourceVirtualEnvironmentCertificateGetUpdateBody(
-	d *schema.ResourceData,
-) *proxmox.VirtualEnvironmentCertificateUpdateRequestBody {
+func certificateGetUpdateBody(d *schema.ResourceData) *proxmox.VirtualEnvironmentCertificateUpdateRequestBody {
 	certificate := d.Get(mkResourceVirtualEnvironmentCertificateCertificate).(string)
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
 	overwrite := types.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
@@ -175,11 +169,7 @@ func ResourceVirtualEnvironmentCertificateGetUpdateBody(
 	return body
 }
 
-func ResourceVirtualEnvironmentCertificateRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func certificateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -309,11 +299,7 @@ func ResourceVirtualEnvironmentCertificateRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentCertificateUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func certificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -322,21 +308,17 @@ func ResourceVirtualEnvironmentCertificateUpdate(
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
 
-	body := ResourceVirtualEnvironmentCertificateGetUpdateBody(d)
+	body := certificateGetUpdateBody(d)
 
 	err = veClient.UpdateCertificate(ctx, nodeName, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentCertificateRead(ctx, d, m)
+	return certificateRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentCertificateDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func certificateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

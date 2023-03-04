@@ -29,11 +29,11 @@ func Pools() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: PoolsRead,
+		ReadContext: poolsRead,
 	}
 }
 
-func PoolsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func poolsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

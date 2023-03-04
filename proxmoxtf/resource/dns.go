@@ -23,7 +23,7 @@ const (
 	mkResourceVirtualEnvironmentDNSServers  = "servers"
 )
 
-func ResourceVirtualEnvironmentDNS() *schema.Resource {
+func DNS() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentDNSDomain: {
@@ -49,19 +49,15 @@ func ResourceVirtualEnvironmentDNS() *schema.Resource {
 				MaxItems: 3,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentDNSCreate,
-		ReadContext:   ResourceVirtualEnvironmentDNSRead,
-		UpdateContext: ResourceVirtualEnvironmentDNSUpdate,
-		DeleteContext: ResourceVirtualEnvironmentDNSDelete,
+		CreateContext: dnsCreate,
+		ReadContext:   dnsRead,
+		UpdateContext: dnsUpdate,
+		DeleteContext: dnsDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentDNSCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
-	diags := ResourceVirtualEnvironmentDNSUpdate(ctx, d, m)
+func dnsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	diags := dnsUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
 	}
@@ -73,9 +69,7 @@ func ResourceVirtualEnvironmentDNSCreate(
 	return nil
 }
 
-func ResourceVirtualEnvironmentDNSGetUpdateBody(
-	d *schema.ResourceData,
-) *proxmox.VirtualEnvironmentDNSUpdateRequestBody {
+func dnsGetUpdateBody(d *schema.ResourceData) *proxmox.VirtualEnvironmentDNSUpdateRequestBody {
 	domain := d.Get(mkResourceVirtualEnvironmentDNSDomain).(string)
 	servers := d.Get(mkResourceVirtualEnvironmentDNSServers).([]interface{})
 
@@ -99,11 +93,7 @@ func ResourceVirtualEnvironmentDNSGetUpdateBody(
 	return body
 }
 
-func ResourceVirtualEnvironmentDNSRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -145,11 +135,7 @@ func ResourceVirtualEnvironmentDNSRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentDNSUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func dnsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -158,21 +144,17 @@ func ResourceVirtualEnvironmentDNSUpdate(
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentDNSNodeName).(string)
 
-	body := ResourceVirtualEnvironmentDNSGetUpdateBody(d)
+	body := dnsGetUpdateBody(d)
 
 	err = veClient.UpdateDNS(ctx, nodeName, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentDNSRead(ctx, d, m)
+	return dnsRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentDNSDelete(
-	_ context.Context,
-	d *schema.ResourceData,
-	_ interface{},
-) diag.Diagnostics {
+func dnsDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package resource
+package firewall
 
 import (
 	"testing"
@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentAliasInstantiation tests whether the ResourceVirtualEnvironmentAlias instance can be instantiated.
-func TestResourceVirtualEnvironmentAliasInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentClusterAlias()
+// TestAliasInstantiation tests whether the ResourceVirtualEnvironmentAlias instance can be instantiated.
+func TestAliasInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Alias()
 
 	if s == nil {
 		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentAlias")
 	}
 }
 
-// TestResourceVirtualEnvironmentAliasSchema tests the ResourceVirtualEnvironmentAlias schema.
-func TestResourceVirtualEnvironmentAliasSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentClusterAlias()
+// TestAliasSchema tests the ResourceVirtualEnvironmentAlias schema.
+func TestAliasSchema(t *testing.T) {
+	t.Parallel()
+	s := Alias()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentClusterAliasName,

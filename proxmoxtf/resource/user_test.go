@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentUserInstantiation tests whether the ResourceVirtualEnvironmentUser instance can be instantiated.
-func TestResourceVirtualEnvironmentUserInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentUser()
+// TestUserInstantiation tests whether the User instance can be instantiated.
+func TestUserInstantiation(t *testing.T) {
+	t.Parallel()
+	s := User()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentUser")
+		t.Fatalf("Cannot instantiate User")
 	}
 }
 
-// TestResourceVirtualEnvironmentUserSchema tests the ResourceVirtualEnvironmentUser schema.
-func TestResourceVirtualEnvironmentUserSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentUser()
+// TestUserSchema tests the User schema.
+func TestUserSchema(t *testing.T) {
+	t.Parallel()
+	s := User()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentUserPassword,

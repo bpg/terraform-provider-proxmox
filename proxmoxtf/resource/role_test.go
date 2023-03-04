@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentRoleInstantiation tests whether the ResourceVirtualEnvironmentRole instance can be instantiated.
-func TestResourceVirtualEnvironmentRoleInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentRole()
+// TestRoleInstantiation tests whether the Role instance can be instantiated.
+func TestRoleInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Role()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentRole")
+		t.Fatalf("Cannot instantiate Role")
 	}
 }
 
-// TestResourceVirtualEnvironmentRoleSchema tests the ResourceVirtualEnvironmentRole schema.
-func TestResourceVirtualEnvironmentRoleSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentRole()
+// TestRoleSchema tests the Role schema.
+func TestRoleSchema(t *testing.T) {
+	t.Parallel()
+	s := Role()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentRolePrivileges,

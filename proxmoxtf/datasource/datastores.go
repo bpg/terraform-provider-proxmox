@@ -96,11 +96,11 @@ func Datastores() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DatastoresRead,
+		ReadContext: datastoresRead,
 	}
 }
 
-func DatastoresRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func datastoresRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

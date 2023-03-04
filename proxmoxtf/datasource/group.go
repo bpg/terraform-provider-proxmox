@@ -69,11 +69,11 @@ func Group() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: GroupRead,
+		ReadContext: groupRead,
 	}
 }
 
-func GroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

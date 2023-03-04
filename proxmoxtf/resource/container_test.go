@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentContainerInstantiation tests whether the ResourceVirtualEnvironmentContainer instance can be instantiated.
-func TestResourceVirtualEnvironmentContainerInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentContainer()
+// TestContainerInstantiation tests whether the Container instance can be instantiated.
+func TestContainerInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Container()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentContainer")
+		t.Fatalf("Cannot instantiate Container")
 	}
 }
 
-// TestResourceVirtualEnvironmentContainerSchema tests the ResourceVirtualEnvironmentContainer schema.
-func TestResourceVirtualEnvironmentContainerSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentContainer()
+// TestContainerSchema tests the Container schema.
+func TestContainerSchema(t *testing.T) {
+	t.Parallel()
+	s := Container()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentContainerNodeName,

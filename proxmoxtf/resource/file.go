@@ -31,7 +31,6 @@ import (
 
 const (
 	dvResourceVirtualEnvironmentFileContentType        = ""
-	dvResourceVirtualEnvironmentFileSourceData         = ""
 	dvResourceVirtualEnvironmentFileSourceFileChanged  = false
 	dvResourceVirtualEnvironmentFileSourceFileChecksum = ""
 	dvResourceVirtualEnvironmentFileSourceFileFileName = ""
@@ -57,7 +56,7 @@ const (
 	mkResourceVirtualEnvironmentFileSourceRawResize      = "resize"
 )
 
-func ResourceVirtualEnvironmentFile() *schema.Resource {
+func File() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentFileContentType: {
@@ -187,17 +186,13 @@ func ResourceVirtualEnvironmentFile() *schema.Resource {
 				MinItems: 0,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentFileCreate,
-		ReadContext:   ResourceVirtualEnvironmentFileRead,
-		DeleteContext: ResourceVirtualEnvironmentFileDelete,
+		CreateContext: fileCreate,
+		ReadContext:   fileRead,
+		DeleteContext: fileDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentFileCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -206,11 +201,11 @@ func ResourceVirtualEnvironmentFileCreate(
 		return diag.FromErr(err)
 	}
 
-	contentType, dg := ResourceVirtualEnvironmentFileGetContentType(d)
+	contentType, dg := fileGetContentType(d)
 	diags = append(diags, dg...)
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
-	fileName, err := ResourceVirtualEnvironmentFileGetFileName(d)
+	fileName, err := fileGetFileName(d)
 	diags = append(diags, diag.FromErr(err)...)
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
@@ -242,7 +237,7 @@ func ResourceVirtualEnvironmentFileCreate(
 		sourceFileChecksum := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChecksum].(string)
 		sourceFileInsecure := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileInsecure].(bool)
 
-		if ResourceVirtualEnvironmentFileIsURL(d) {
+		if fileIsURL(d) {
 			tflog.Debug(ctx, "Downloading file from URL", map[string]interface{}{
 				"url": sourceFilePath,
 			})
@@ -396,19 +391,17 @@ func ResourceVirtualEnvironmentFileCreate(
 		return diag.FromErr(err)
 	}
 
-	volumeID, diags := ResourceVirtualEnvironmentFileGetVolumeID(d)
+	volumeID, diags := fileGetVolumeID(d)
 	if diags.HasError() {
 		return diags
 	}
 
 	d.SetId(*volumeID)
 
-	return ResourceVirtualEnvironmentFileRead(ctx, d, m)
+	return fileRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentFileGetContentType(
-	d *schema.ResourceData,
-) (*string, diag.Diagnostics) {
+func fileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
 	contentType := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
@@ -460,7 +453,7 @@ func ResourceVirtualEnvironmentFileGetContentType(
 	return &contentType, diags
 }
 
-func ResourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData) (*string, error) {
+func fileGetFileName(d *schema.ResourceData) (*string, error) {
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
 
@@ -483,7 +476,7 @@ func ResourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData) (*string,
 	}
 
 	if sourceFileFileName == "" {
-		if ResourceVirtualEnvironmentFileIsURL(d) {
+		if fileIsURL(d) {
 			downloadURL, err := url.ParseRequestURI(sourceFilePath)
 			if err != nil {
 				return nil, err
@@ -506,21 +499,21 @@ func ResourceVirtualEnvironmentFileGetFileName(d *schema.ResourceData) (*string,
 	return &sourceFileFileName, nil
 }
 
-func ResourceVirtualEnvironmentFileGetVolumeID(d *schema.ResourceData) (*string, diag.Diagnostics) {
-	fileName, err := ResourceVirtualEnvironmentFileGetFileName(d)
+func fileGetVolumeID(d *schema.ResourceData) (*string, diag.Diagnostics) {
+	fileName, err := fileGetFileName(d)
 	if err != nil {
 		return nil, diag.FromErr(err)
 	}
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
-	contentType, diags := ResourceVirtualEnvironmentFileGetContentType(d)
+	contentType, diags := fileGetContentType(d)
 
 	volumeID := fmt.Sprintf("%s:%s/%s", datastoreID, *contentType, *fileName)
 
 	return &volumeID, diags
 }
 
-func ResourceVirtualEnvironmentFileIsURL(d *schema.ResourceData) bool {
+func fileIsURL(d *schema.ResourceData) bool {
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceFilePath := ""
 
@@ -535,11 +528,7 @@ func ResourceVirtualEnvironmentFileIsURL(d *schema.ResourceData) bool {
 		strings.HasPrefix(sourceFilePath, "https://")
 }
 
-func ResourceVirtualEnvironmentFileRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -563,8 +552,8 @@ func ResourceVirtualEnvironmentFileRead(
 		return diag.FromErr(err)
 	}
 
-	fileIsURL := ResourceVirtualEnvironmentFileIsURL(d)
-	fileName, err := ResourceVirtualEnvironmentFileGetFileName(d)
+	fileIsURL := fileIsURL(d)
+	fileName, err := fileGetFileName(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -699,11 +688,7 @@ func readURL(
 	return
 }
 
-func ResourceVirtualEnvironmentFileDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

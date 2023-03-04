@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package resource
+package firewall
 
 import (
 	"context"
@@ -29,7 +29,7 @@ const (
 	mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch = "nomatch"
 )
 
-func ResourceVirtualEnvironmentFirewallIPSet() *schema.Resource {
+func IPSet() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentFirewallIPSetName: {
@@ -80,18 +80,14 @@ func ResourceVirtualEnvironmentFirewallIPSet() *schema.Resource {
 				Default:     dvResourceVirtualEnvironmentFirewallIPSetCIDRComment,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentFirewallIPSetCreate,
-		ReadContext:   ResourceVirtualEnvironmentFirewallIPSetRead,
-		UpdateContext: ResourceVirtualEnvironmentFirewallIPSetUpdate,
-		DeleteContext: ResourceVirtualEnvironmentFirewallIPSetDelete,
+		CreateContext: ipSetCreate,
+		ReadContext:   ipSetRead,
+		UpdateContext: ipSetUpdate,
+		DeleteContext: ipSetDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentFirewallIPSetCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func ipSetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -141,14 +137,10 @@ func ResourceVirtualEnvironmentFirewallIPSetCreate(
 	}
 
 	d.SetId(name)
-	return ResourceVirtualEnvironmentFirewallIPSetRead(ctx, d, m)
+	return ipSetRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentFirewallIPSetRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -183,6 +175,7 @@ func ResourceVirtualEnvironmentFirewallIPSetRead(
 		return diags
 	}
 
+	//nolint:prealloc
 	var entries []interface{}
 
 	for key := range IPSet {
@@ -200,11 +193,7 @@ func ResourceVirtualEnvironmentFirewallIPSetRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentFirewallIPSetUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func ipSetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -228,14 +217,10 @@ func ResourceVirtualEnvironmentFirewallIPSetUpdate(
 
 	d.SetId(newName)
 
-	return ResourceVirtualEnvironmentFirewallIPSetRead(ctx, d, m)
+	return ipSetRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentFirewallIPSetDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func ipSetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package resource
+package firewall
 
 import (
 	"context"
@@ -25,7 +25,7 @@ const (
 	mkResourceVirtualEnvironmentClusterAliasComment = "comment"
 )
 
-func ResourceVirtualEnvironmentClusterAlias() *schema.Resource {
+func Alias() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentClusterAliasName: {
@@ -47,18 +47,14 @@ func ResourceVirtualEnvironmentClusterAlias() *schema.Resource {
 				Default:     dvResourceVirtualEnvironmentClusterAliasComment,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentClusterAliasCreate,
-		ReadContext:   ResourceVirtualEnvironmentClusterAliasRead,
-		UpdateContext: ResourceVirtualEnvironmentClusterAliasUpdate,
-		DeleteContext: ResourceVirtualEnvironmentClusterAliasDelete,
+		CreateContext: aliasCreate,
+		ReadContext:   aliasRead,
+		UpdateContext: aliasUpdate,
+		DeleteContext: aliasDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentClusterAliasCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func aliasCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -82,14 +78,10 @@ func ResourceVirtualEnvironmentClusterAliasCreate(
 
 	d.SetId(name)
 
-	return ResourceVirtualEnvironmentClusterAliasRead(ctx, d, m)
+	return aliasRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentClusterAliasRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func aliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -122,11 +114,7 @@ func ResourceVirtualEnvironmentClusterAliasRead(
 	return nil
 }
 
-func ResourceVirtualEnvironmentClusterAliasUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func aliasUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -151,14 +139,10 @@ func ResourceVirtualEnvironmentClusterAliasUpdate(
 
 	d.SetId(newName)
 
-	return ResourceVirtualEnvironmentClusterAliasRead(ctx, d, m)
+	return aliasRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentClusterAliasDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func aliasDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

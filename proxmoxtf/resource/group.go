@@ -30,7 +30,7 @@ const (
 	mkResourceVirtualEnvironmentGroupMembers      = "members"
 )
 
-func ResourceVirtualEnvironmentGroup() *schema.Resource {
+func Group() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentGroupACL: {
@@ -80,18 +80,14 @@ func ResourceVirtualEnvironmentGroup() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentGroupCreate,
-		ReadContext:   ResourceVirtualEnvironmentGroupRead,
-		UpdateContext: ResourceVirtualEnvironmentGroupUpdate,
-		DeleteContext: ResourceVirtualEnvironmentGroupDelete,
+		CreateContext: groupCreate,
+		ReadContext:   groupRead,
+		UpdateContext: groupUpdate,
+		DeleteContext: groupDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentGroupCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -136,14 +132,10 @@ func ResourceVirtualEnvironmentGroupCreate(
 		}
 	}
 
-	return ResourceVirtualEnvironmentGroupRead(ctx, d, m)
+	return groupRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentGroupRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -204,11 +196,7 @@ func ResourceVirtualEnvironmentGroupRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentGroupUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -274,14 +262,10 @@ func ResourceVirtualEnvironmentGroupUpdate(
 		}
 	}
 
-	return ResourceVirtualEnvironmentGroupRead(ctx, d, m)
+	return groupRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentGroupDelete(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

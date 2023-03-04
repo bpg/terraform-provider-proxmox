@@ -31,7 +31,7 @@ const (
 	mkResourceVirtualEnvironmentHostsNodeName         = "node_name"
 )
 
-func ResourceVirtualEnvironmentHosts() *schema.Resource {
+func Hosts() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentHostsAddresses: {
@@ -102,19 +102,15 @@ func ResourceVirtualEnvironmentHosts() *schema.Resource {
 				Required:    true,
 			},
 		},
-		CreateContext: ResourceVirtualEnvironmentHostsCreate,
-		ReadContext:   ResourceVirtualEnvironmentHostsRead,
-		UpdateContext: ResourceVirtualEnvironmentHostsUpdate,
-		DeleteContext: ResourceVirtualEnvironmentHostsDelete,
+		CreateContext: hostsCreate,
+		ReadContext:   hostsRead,
+		UpdateContext: hostsUpdate,
+		DeleteContext: hostsDelete,
 	}
 }
 
-func ResourceVirtualEnvironmentHostsCreate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
-	diags := ResourceVirtualEnvironmentHostsUpdate(ctx, d, m)
+func hostsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	diags := hostsUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
 	}
@@ -126,11 +122,7 @@ func ResourceVirtualEnvironmentHostsCreate(
 	return diags
 }
 
-func ResourceVirtualEnvironmentHostsRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -200,11 +192,7 @@ func ResourceVirtualEnvironmentHostsRead(
 	return diags
 }
 
-func ResourceVirtualEnvironmentHostsUpdate(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
@@ -240,14 +228,10 @@ func ResourceVirtualEnvironmentHostsUpdate(
 		return diag.FromErr(err)
 	}
 
-	return ResourceVirtualEnvironmentHostsRead(ctx, d, m)
+	return hostsRead(ctx, d, m)
 }
 
-func ResourceVirtualEnvironmentHostsDelete(
-	_ context.Context,
-	d *schema.ResourceData,
-	_ interface{},
-) diag.Diagnostics {
+func hostsDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
 	d.SetId("")
 
 	return nil
