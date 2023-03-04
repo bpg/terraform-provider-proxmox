@@ -22,7 +22,7 @@ const (
 	mkDataSourceVirtualEnvironmentDNSServers  = "servers"
 )
 
-func DataSourceVirtualEnvironmentDNS() *schema.Resource {
+func DNS() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentDNSDomain: {
@@ -42,15 +42,11 @@ func DataSourceVirtualEnvironmentDNS() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentDNSRead,
+		ReadContext: DNSRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentDNSRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func DNSRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

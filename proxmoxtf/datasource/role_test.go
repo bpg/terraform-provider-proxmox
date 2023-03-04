@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentRoleInstantiation tests whether the DataSourceVirtualEnvironmentRole instance can be instantiated.
-func TestDataSourceVirtualEnvironmentRoleInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentRole()
+// TestRoleInstantiation tests whether the Role instance can be instantiated.
+func TestRoleInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Role()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentRole")
+		t.Fatalf("Cannot instantiate Role")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentRoleSchema tests the DataSourceVirtualEnvironmentRole schema.
-func TestDataSourceVirtualEnvironmentRoleSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentRole()
+// TestRoleSchema tests the Role schema.
+func TestRoleSchema(t *testing.T) {
+	t.Parallel()
+	s := Role()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentRoleID,

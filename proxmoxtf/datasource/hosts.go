@@ -27,7 +27,7 @@ const (
 	mkDataSourceVirtualEnvironmentHostsNodeName         = "node_name"
 )
 
-func DataSourceVirtualEnvironmentHosts() *schema.Resource {
+func Hosts() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentHostsAddresses: {
@@ -76,15 +76,11 @@ func DataSourceVirtualEnvironmentHosts() *schema.Resource {
 				Required:    true,
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentHostsRead,
+		ReadContext: HostsRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentHostsRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func HostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

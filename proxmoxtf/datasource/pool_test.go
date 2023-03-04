@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentPoolInstantiation tests whether the DataSourceVirtualEnvironmentPool instance can be instantiated.
-func TestDataSourceVirtualEnvironmentPoolInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentPool()
+// TestPoolInstantiation tests whether the Pool instance can be instantiated.
+func TestPoolInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Pool()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentPool")
+		t.Fatalf("Cannot instantiate Pool")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentPoolSchema tests the DataSourceVirtualEnvironmentPool schema.
-func TestDataSourceVirtualEnvironmentPoolSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentPool()
+// TestPoolSchema tests the Pool schema.
+func TestPoolSchema(t *testing.T) {
+	t.Parallel()
+	s := Pool()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentPoolPoolID,

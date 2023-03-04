@@ -24,7 +24,7 @@ const (
 	mkDataSourceVirtualEnvironmentTimeUTCTime   = "utc_time"
 )
 
-func DataSourceVirtualEnvironmentTime() *schema.Resource {
+func Time() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentTimeLocalTime: {
@@ -48,16 +48,11 @@ func DataSourceVirtualEnvironmentTime() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentTimeRead,
+		ReadContext: TimeRead,
 	}
 }
 
-//nolint:dupl
-func DataSourceVirtualEnvironmentTimeRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func TimeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

@@ -32,7 +32,7 @@ const (
 	mkDataSourceVirtualEnvironmentUserUserID         = "user_id"
 )
 
-func DataSourceVirtualEnvironmentUser() *schema.Resource {
+func User() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentUserACL: {
@@ -106,15 +106,11 @@ func DataSourceVirtualEnvironmentUser() *schema.Resource {
 				Required:    true,
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentUserRead,
+		ReadContext: UserRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentUserRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func UserRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

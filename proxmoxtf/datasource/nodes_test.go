@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentNodesInstantiation tests whether the DataSourceVirtualEnvironmentNodes instance can be instantiated.
-func TestDataSourceVirtualEnvironmentNodesInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentNodes()
+// TestNodesInstantiation tests whether the Nodes instance can be instantiated.
+func TestNodesInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Nodes()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentNodes")
+		t.Fatalf("Cannot instantiate Nodes")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentNodesSchema tests the DataSourceVirtualEnvironmentNodes schema.
-func TestDataSourceVirtualEnvironmentNodesSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentNodes()
+// TestNodesSchema tests the Nodes schema.
+func TestNodesSchema(t *testing.T) {
+	t.Parallel()
+	s := Nodes()
 
 	test.AssertComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentNodesCPUCount,

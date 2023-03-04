@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentDatastoresInstantiation tests whether the DataSourceVirtualEnvironmentDatastores instance can be instantiated.
-func TestDataSourceVirtualEnvironmentDatastoresInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentDatastores()
+// TestDatastoresInstantiation tests whether the Datastores instance can be instantiated.
+func TestDatastoresInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Datastores()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentDatastores")
+		t.Fatalf("Cannot instantiate Datastores")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentDatastoresSchema tests the DataSourceVirtualEnvironmentDatastores schema.
-func TestDataSourceVirtualEnvironmentDatastoresSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentDatastores()
+// TestDatastoresSchema tests the Datastores schema.
+func TestDatastoresSchema(t *testing.T) {
+	t.Parallel()
+	s := Datastores()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentDatastoresNodeName,

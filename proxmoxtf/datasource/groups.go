@@ -20,7 +20,7 @@ const (
 	mkDataSourceVirtualEnvironmentGroupsGroupIDs = "group_ids"
 )
 
-func DataSourceVirtualEnvironmentGroups() *schema.Resource {
+func Groups() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentGroupsComments: {
@@ -36,15 +36,11 @@ func DataSourceVirtualEnvironmentGroups() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentGroupsRead,
+		ReadContext: GroupsRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentGroupsRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func GroupsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

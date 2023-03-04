@@ -19,7 +19,7 @@ const (
 	mkDataSourceVirtualEnvironmentPoolsPoolIDs = "pool_ids"
 )
 
-func DataSourceVirtualEnvironmentPools() *schema.Resource {
+func Pools() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentPoolsPoolIDs: {
@@ -29,15 +29,11 @@ func DataSourceVirtualEnvironmentPools() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentPoolsRead,
+		ReadContext: PoolsRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentPoolsRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func PoolsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

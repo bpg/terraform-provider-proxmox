@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentDNSInstantiation tests whether the DataSourceVirtualEnvironmentDNS instance can be instantiated.
-func TestDataSourceVirtualEnvironmentDNSInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentDNS()
+// TestDNSInstantiation tests whether the DNS instance can be instantiated.
+func TestDNSInstantiation(t *testing.T) {
+	t.Parallel()
+	s := DNS()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentDNS")
+		t.Fatalf("Cannot instantiate DNS")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentDNSSchema tests the DataSourceVirtualEnvironmentDNS schema.
-func TestDataSourceVirtualEnvironmentDNSSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentDNS()
+// TestDNSSchema tests the DNS schema.
+func TestDNSSchema(t *testing.T) {
+	t.Parallel()
+	s := DNS()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentDNSNodeName,

@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentUserInstantiation tests whether the DataSourceVirtualEnvironmentUser instance can be instantiated.
-func TestDataSourceVirtualEnvironmentUserInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentUser()
+// TestUserInstantiation tests whether the User instance can be instantiated.
+func TestUserInstantiation(t *testing.T) {
+	t.Parallel()
+	s := User()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentUser")
+		t.Fatalf("Cannot instantiate User")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentUserSchema tests the DataSourceVirtualEnvironmentUser schema.
-func TestDataSourceVirtualEnvironmentUserSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentUser()
+// TestUserSchema tests the User schema.
+func TestUserSchema(t *testing.T) {
+	t.Parallel()
+	s := User()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentUserUserID,

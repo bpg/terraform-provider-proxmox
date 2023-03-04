@@ -232,7 +232,7 @@ const (
 	mkResourceVirtualEnvironmentVMVMID                              = "vm_id"
 )
 
-func ResourceVirtualEnvironmentVM() *schema.Resource {
+func VM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkResourceVirtualEnvironmentVMRebootAfterCreation: {
@@ -1767,7 +1767,7 @@ func ResourceVirtualEnvironmentVMCreateCustom(
 		return diag.FromErr(err)
 	}
 
-	resource := ResourceVirtualEnvironmentVM()
+	resource := VM()
 
 	acpi := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 
@@ -2084,7 +2084,7 @@ func ResourceVirtualEnvironmentVMCreateCustomDisks(
 	}
 
 	// Retrieve some information about the disk schema.
-	resourceSchema := ResourceVirtualEnvironmentVM().Schema
+	resourceSchema := VM().Schema
 	diskSchemaElem := resourceSchema[mkResourceVirtualEnvironmentVMDisk].Elem
 	diskSchemaResource := diskSchemaElem.(*schema.Resource)
 	diskSpeedResource := diskSchemaResource.Schema[mkResourceVirtualEnvironmentVMDiskSpeed]
@@ -2437,7 +2437,7 @@ func ResourceVirtualEnvironmentVMGetDiskDeviceObjects(
 	}
 
 	diskDeviceObjects := map[string]map[string]proxmox.CustomStorageDevice{}
-	resource := ResourceVirtualEnvironmentVM()
+	resource := VM()
 
 	for _, diskEntry := range diskDevice {
 		diskDevice := proxmox.CustomStorageDevice{
@@ -2687,7 +2687,7 @@ func ResourceVirtualEnvironmentVMGetSerialDeviceValidator() schema.SchemaValidat
 func ResourceVirtualEnvironmentVMGetVGADeviceObject(
 	d *schema.ResourceData,
 ) (*proxmox.CustomVGADevice, error) {
-	resource := ResourceVirtualEnvironmentVM()
+	resource := VM()
 
 	vgaBlock, err := getSchemaBlock(
 		resource,
@@ -3654,7 +3654,7 @@ func ResourceVirtualEnvironmentVMReadNetworkValues(
 
 	if started {
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
-			resource := ResourceVirtualEnvironmentVM()
+			resource := VM()
 			agentBlock, err := getSchemaBlock(
 				resource,
 				d,
@@ -3911,7 +3911,7 @@ func ResourceVirtualEnvironmentVMUpdate(
 	}
 
 	var del []string
-	resource := ResourceVirtualEnvironmentVM()
+	resource := VM()
 
 	// Retrieve the entire configuration as we need to process certain values.
 	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)

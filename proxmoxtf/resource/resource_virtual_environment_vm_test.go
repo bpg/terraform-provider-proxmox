@@ -14,18 +14,18 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestResourceVirtualEnvironmentVMInstantiation tests whether the ResourceVirtualEnvironmentVM instance can be instantiated.
+// TestResourceVirtualEnvironmentVMInstantiation tests whether the VM instance can be instantiated.
 func TestResourceVirtualEnvironmentVMInstantiation(t *testing.T) {
-	s := ResourceVirtualEnvironmentVM()
+	s := VM()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentVM")
+		t.Fatalf("Cannot instantiate VM")
 	}
 }
 
-// TestResourceVirtualEnvironmentVMSchema tests the ResourceVirtualEnvironmentVM schema.
+// TestResourceVirtualEnvironmentVMSchema tests the VM schema.
 func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
-	s := ResourceVirtualEnvironmentVM()
+	s := VM()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentVMNodeName,

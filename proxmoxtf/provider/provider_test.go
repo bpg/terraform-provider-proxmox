@@ -14,19 +14,21 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestProviderInstantiation() tests whether the Provider instance can be instantiated.
+// TestProviderInstantiation() tests whether the ProxmoxVirtualEnvironment instance can be instantiated.
 func TestProviderInstantiation(t *testing.T) {
-	s := Provider()
+	t.Parallel()
+	s := ProxmoxVirtualEnvironment()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate Provider")
+		t.Fatalf("Cannot instantiate ProxmoxVirtualEnvironment")
 	}
 }
 
-// TestProviderSchema() tests the Provider schema.
+// TestProviderSchema() tests the ProxmoxVirtualEnvironment schema.
 func TestProviderSchema(t *testing.T) {
+	t.Parallel()
 	s := &schema.Resource{
-		Schema: Provider().Schema,
+		Schema: ProxmoxVirtualEnvironment().Schema,
 	}
 
 	test.AssertOptionalArguments(t, s, []string{

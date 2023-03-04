@@ -22,7 +22,7 @@ const (
 	mkDataSourceVirtualEnvironmentVersionVersion        = "version"
 )
 
-func DataSourceVirtualEnvironmentVersion() *schema.Resource {
+func Version() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentVersionKeyboardLayout: {
@@ -50,15 +50,11 @@ func DataSourceVirtualEnvironmentVersion() *schema.Resource {
 				ForceNew:    true,
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentVersionRead,
+		ReadContext: VersionRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentVersionRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func VersionRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

@@ -26,7 +26,7 @@ const (
 	mkDataSourceVirtualEnvironmentPoolPoolID             = "pool_id"
 )
 
-func DataSourceVirtualEnvironmentPool() *schema.Resource {
+func Pool() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentPoolComment: {
@@ -74,15 +74,11 @@ func DataSourceVirtualEnvironmentPool() *schema.Resource {
 				Required:    true,
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentPoolRead,
+		ReadContext: PoolRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentPoolRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func PoolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

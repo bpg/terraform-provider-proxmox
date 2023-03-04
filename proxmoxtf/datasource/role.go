@@ -20,7 +20,7 @@ const (
 	mkDataSourceVirtualEnvironmentRolePrivileges = "privileges"
 )
 
-func DataSourceVirtualEnvironmentRole() *schema.Resource {
+func Role() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentRoleID: {
@@ -35,15 +35,11 @@ func DataSourceVirtualEnvironmentRole() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentRoleRead,
+		ReadContext: RoleRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentRoleRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func RoleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {

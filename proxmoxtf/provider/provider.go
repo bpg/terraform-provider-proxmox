@@ -36,27 +36,27 @@ const (
 	mkProviderVirtualEnvironmentUsername = "username"
 )
 
-// Provider returns the object for this provider.
-func Provider() *schema.Provider {
+// ProxmoxVirtualEnvironment returns the object for this provider.
+func ProxmoxVirtualEnvironment() *schema.Provider {
 	return &schema.Provider{
 		ConfigureContextFunc: providerConfigure,
 		DataSourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_cluster_alias":   firewall.DataSourceVirtualEnvironmentFirewallAlias(),
 			"proxmox_virtual_environment_cluster_aliases": firewall.DataSourceVirtualEnvironmentClusterAliases(),
-			"proxmox_virtual_environment_datastores":      datasource.DataSourceVirtualEnvironmentDatastores(),
-			"proxmox_virtual_environment_dns":             datasource.DataSourceVirtualEnvironmentDNS(),
-			"proxmox_virtual_environment_group":           datasource.DataSourceVirtualEnvironmentGroup(),
-			"proxmox_virtual_environment_groups":          datasource.DataSourceVirtualEnvironmentGroups(),
-			"proxmox_virtual_environment_hosts":           datasource.DataSourceVirtualEnvironmentHosts(),
-			"proxmox_virtual_environment_nodes":           datasource.DataSourceVirtualEnvironmentNodes(),
-			"proxmox_virtual_environment_pool":            datasource.DataSourceVirtualEnvironmentPool(),
-			"proxmox_virtual_environment_pools":           datasource.DataSourceVirtualEnvironmentPools(),
-			"proxmox_virtual_environment_role":            datasource.DataSourceVirtualEnvironmentRole(),
-			"proxmox_virtual_environment_roles":           datasource.DataSourceVirtualEnvironmentRoles(),
-			"proxmox_virtual_environment_time":            datasource.DataSourceVirtualEnvironmentTime(),
-			"proxmox_virtual_environment_user":            datasource.DataSourceVirtualEnvironmentUser(),
-			"proxmox_virtual_environment_users":           datasource.DataSourceVirtualEnvironmentUsers(),
-			"proxmox_virtual_environment_version":         datasource.DataSourceVirtualEnvironmentVersion(),
+			"proxmox_virtual_environment_datastores":      datasource.Datastores(),
+			"proxmox_virtual_environment_dns":             datasource.DNS(),
+			"proxmox_virtual_environment_group":           datasource.Group(),
+			"proxmox_virtual_environment_groups":          datasource.Groups(),
+			"proxmox_virtual_environment_hosts":           datasource.Hosts(),
+			"proxmox_virtual_environment_nodes":           datasource.Nodes(),
+			"proxmox_virtual_environment_pool":            datasource.Pool(),
+			"proxmox_virtual_environment_pools":           datasource.Pools(),
+			"proxmox_virtual_environment_role":            datasource.Role(),
+			"proxmox_virtual_environment_roles":           datasource.Roles(),
+			"proxmox_virtual_environment_time":            datasource.Time(),
+			"proxmox_virtual_environment_user":            datasource.User(),
+			"proxmox_virtual_environment_users":           datasource.Users(),
+			"proxmox_virtual_environment_version":         datasource.Version(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_certificate":   resource.ResourceVirtualEnvironmentCertificate(),
@@ -71,7 +71,7 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_role":          resource.ResourceVirtualEnvironmentRole(),
 			"proxmox_virtual_environment_time":          resource.ResourceVirtualEnvironmentTime(),
 			"proxmox_virtual_environment_user":          resource.ResourceVirtualEnvironmentUser(),
-			"proxmox_virtual_environment_vm":            resource.ResourceVirtualEnvironmentVM(),
+			"proxmox_virtual_environment_vm":            resource.VM(),
 		},
 		Schema: map[string]*schema.Schema{
 			mkProviderVirtualEnvironment: {

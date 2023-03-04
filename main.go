@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 		Debug:        debug,
 		ProviderAddr: "registry.terraform.io/bpg/proxmox",
 		ProviderFunc: func() *schema.Provider {
-			return proxmoxtf.Provider()
+			return provider.ProxmoxVirtualEnvironment()
 		},
 	}
 

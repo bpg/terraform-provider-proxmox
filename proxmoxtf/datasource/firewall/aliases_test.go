@@ -14,8 +14,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentAliasesInstantiation tests whether the DataSourceVirtualEnvironmentAliases instance can be instantiated.
-func TestDataSourceVirtualEnvironmentAliasesInstantiation(t *testing.T) {
+// TestAliasesInstantiation tests whether the DataSourceVirtualEnvironmentAliases instance can be instantiated.
+func TestAliasesInstantiation(t *testing.T) {
+	t.Parallel()
 	s := DataSourceVirtualEnvironmentClusterAliases()
 
 	if s == nil {
@@ -23,8 +24,9 @@ func TestDataSourceVirtualEnvironmentAliasesInstantiation(t *testing.T) {
 	}
 }
 
-// TestDataSourceVirtualEnvironmentAliasesSchema tests the DataSourceVirtualEnvironmentAliases schema.
-func TestDataSourceVirtualEnvironmentAliasesSchema(t *testing.T) {
+// TestAliasesSchema tests the DataSourceVirtualEnvironmentAliases schema.
+func TestAliasesSchema(t *testing.T) {
+	t.Parallel()
 	s := DataSourceVirtualEnvironmentClusterAliases()
 
 	test.AssertComputedAttributes(t, s, []string{

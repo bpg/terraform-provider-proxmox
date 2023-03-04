@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentGroupInstantiation tests whether the DataSourceVirtualEnvironmentGroup instance can be instantiated.
-func TestDataSourceVirtualEnvironmentGroupInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentGroup()
+// TestGroupInstantiation tests whether the Group instance can be instantiated.
+func TestGroupInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Group()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentGroup")
+		t.Fatalf("Cannot instantiate Group")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentGroupSchema tests the DataSourceVirtualEnvironmentGroup schema.
-func TestDataSourceVirtualEnvironmentGroupSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentGroup()
+// TestGroupSchema tests the Group schema.
+func TestGroupSchema(t *testing.T) {
+	t.Parallel()
+	s := Group()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentGroupID,

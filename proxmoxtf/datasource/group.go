@@ -25,7 +25,7 @@ const (
 	mkDataSourceVirtualEnvironmentGroupMembers      = "members"
 )
 
-func DataSourceVirtualEnvironmentGroup() *schema.Resource {
+func Group() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentGroupACL: {
@@ -69,15 +69,11 @@ func DataSourceVirtualEnvironmentGroup() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentGroupRead,
+		ReadContext: GroupRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentGroupRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func GroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

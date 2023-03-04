@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentVersionInstantiation tests whether the DataSourceVirtualEnvironmentVersion instance can be instantiated.
-func TestDataSourceVirtualEnvironmentVersionInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentVersion()
+// TestVersionInstantiation tests whether the Version instance can be instantiated.
+func TestVersionInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Version()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentVersion")
+		t.Fatalf("Cannot instantiate Version")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentVersionSchema tests the DataSourceVirtualEnvironmentVersion schema.
-func TestDataSourceVirtualEnvironmentVersionSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentVersion()
+// TestVersionSchema tests the Version schema.
+func TestVersionSchema(t *testing.T) {
+	t.Parallel()
+	s := Version()
 
 	test.AssertComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentVersionKeyboardLayout,

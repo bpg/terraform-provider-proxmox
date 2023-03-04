@@ -30,7 +30,7 @@ const (
 	mkDataSourceVirtualEnvironmentDatastoresTypes          = "types"
 )
 
-func DataSourceVirtualEnvironmentDatastores() *schema.Resource {
+func Datastores() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentDatastoresActive: {
@@ -96,15 +96,11 @@ func DataSourceVirtualEnvironmentDatastores() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentDatastoresRead,
+		ReadContext: DatastoresRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentDatastoresRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func DatastoresRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

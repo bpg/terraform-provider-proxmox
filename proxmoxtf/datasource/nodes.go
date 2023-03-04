@@ -28,7 +28,7 @@ const (
 	mkDataSourceVirtualEnvironmentNodesUptime          = "uptime"
 )
 
-func DataSourceVirtualEnvironmentNodes() *schema.Resource {
+func Nodes() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentNodesCPUCount: {
@@ -86,15 +86,11 @@ func DataSourceVirtualEnvironmentNodes() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeInt},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentNodesRead,
+		ReadContext: NodesRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentNodesRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func NodesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

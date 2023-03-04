@@ -21,7 +21,7 @@ const (
 	mkDataSourceVirtualEnvironmentRolesSpecial    = "special"
 )
 
-func DataSourceVirtualEnvironmentRoles() *schema.Resource {
+func Roles() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentRolesPrivileges: {
@@ -46,15 +46,11 @@ func DataSourceVirtualEnvironmentRoles() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeBool},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentRolesRead,
+		ReadContext: RolesRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentRolesRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func RolesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

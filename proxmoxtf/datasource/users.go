@@ -28,7 +28,7 @@ const (
 	mkDataSourceVirtualEnvironmentUsersUserIDs         = "user_ids"
 )
 
-func DataSourceVirtualEnvironmentUsers() *schema.Resource {
+func Users() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentUsersComments: {
@@ -89,15 +89,11 @@ func DataSourceVirtualEnvironmentUsers() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentUsersRead,
+		ReadContext: UsersRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentUsersRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func UsersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)

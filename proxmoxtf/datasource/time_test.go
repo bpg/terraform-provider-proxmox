@@ -14,18 +14,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestDataSourceVirtualEnvironmentTimeInstantiation tests whether the DataSourceVirtualEnvironmentRoles instance can be instantiated.
-func TestDataSourceVirtualEnvironmentTimeInstantiation(t *testing.T) {
-	s := DataSourceVirtualEnvironmentTime()
+// TestTimeInstantiation tests whether the Roles instance can be instantiated.
+func TestTimeInstantiation(t *testing.T) {
+	t.Parallel()
+	s := Time()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentTime")
+		t.Fatalf("Cannot instantiate Time")
 	}
 }
 
-// TestDataSourceVirtualEnvironmentTimeSchema tests the DataSourceVirtualEnvironmentTime schema.
-func TestDataSourceVirtualEnvironmentTimeSchema(t *testing.T) {
-	s := DataSourceVirtualEnvironmentTime()
+// TestTimeSchema tests the Time schema.
+func TestTimeSchema(t *testing.T) {
+	t.Parallel()
+	s := Time()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentTimeNodeName,
