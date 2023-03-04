@@ -1573,6 +1573,7 @@ func resourceVirtualEnvironmentContainerRead(
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentConsole) > 0 ||
+		//nolint:lll
 		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] != types.CustomBool(dvResourceVirtualEnvironmentContainerConsoleEnabled) ||
 		console[mkResourceVirtualEnvironmentContainerConsoleMode] != dvResourceVirtualEnvironmentContainerConsoleMode ||
 		console[mkResourceVirtualEnvironmentContainerConsoleTTYCount] != dvResourceVirtualEnvironmentContainerConsoleTTYCount {
