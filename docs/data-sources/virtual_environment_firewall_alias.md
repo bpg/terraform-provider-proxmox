@@ -1,7 +1,7 @@
 ---
 layout: page
 title: proxmox_virtual_environment_firewall_alias
-permalink: /data-sources/virtual_environment_cluster_alias
+permalink: /data-sources/virtual_environment_firewall_alias
 nav_order: 1
 parent: Data Sources
 subcategory: Virtual Environment

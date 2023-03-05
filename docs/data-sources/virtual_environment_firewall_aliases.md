@@ -9,7 +9,7 @@ subcategory: Virtual Environment
 
 # Data Source: proxmox_virtual_environment_firewall_aliases
 
-Retrieves the identifiers for all the available aliases.
+Retrieves the names for all the available aliases.
 
 ## Example Usage
 
