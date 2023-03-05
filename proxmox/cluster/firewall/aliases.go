@@ -16,7 +16,10 @@ import (
 // CreateAlias create an alias
 func (a *API) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error {
 	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/aliases", d, nil)
-	return fmt.Errorf("error creating alias: %w", err)
+	if err != nil {
+		return fmt.Errorf("error creating alias: %w", err)
+	}
+	return nil
 }
 
 // DeleteAlias delete an alias
@@ -28,7 +31,10 @@ func (a *API) DeleteAlias(ctx context.Context, id string) error {
 		nil,
 		nil,
 	)
-	return fmt.Errorf("error deleting alias %s: %w", id, err)
+	if err != nil {
+		return fmt.Errorf("error deleting alias %s: %w", id, err)
+	}
+	return nil
 }
 
 // GetAlias retrieves an alias
@@ -80,5 +86,8 @@ func (a *API) UpdateAlias(ctx context.Context, id string, d *AliasUpdateRequestB
 		d,
 		nil,
 	)
-	return fmt.Errorf("error updating alias %s: %w", id, err)
+	if err != nil {
+		return fmt.Errorf("error updating alias %s: %w", id, err)
+	}
+	return nil
 }

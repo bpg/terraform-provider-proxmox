@@ -17,7 +17,7 @@ import (
 // TestAliasInstantiation tests whether the DataSourceVirtualEnvironmentAlias instance can be instantiated.
 func TestAliasInstantiation(t *testing.T) {
 	t.Parallel()
-	s := DataSourceVirtualEnvironmentFirewallAlias()
+	s := Alias()
 
 	if s == nil {
 		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentAlias")
@@ -27,7 +27,7 @@ func TestAliasInstantiation(t *testing.T) {
 // TestAliasSchema tests the DataSourceVirtualEnvironmentAlias schema.
 func TestAliasSchema(t *testing.T) {
 	t.Parallel()
-	s := DataSourceVirtualEnvironmentFirewallAlias()
+	s := Alias()
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentFirewallAliasName,

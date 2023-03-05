@@ -16,35 +16,31 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs = "alias_ids"
+	mkDataSourceVirtualEnvironmentClusterAliasesAliasNames = "alias_names"
 )
 
-func DataSourceVirtualEnvironmentClusterAliases() *schema.Resource {
+func Aliases() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs: {
+			mkDataSourceVirtualEnvironmentClusterAliasesAliasNames: {
 				Type:        schema.TypeList,
 				Description: "Alias IDs",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentClusterAliasesRead,
+		ReadContext: aliasesRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentClusterAliasesRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func aliasesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListPools(ctx)
+	list, err := veClient.API().Cluster().Firewall().ListAliases(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -52,12 +48,12 @@ func DataSourceVirtualEnvironmentClusterAliasesRead(
 	aliasIDs := make([]interface{}, len(list))
 
 	for i, v := range list {
-		aliasIDs[i] = v.ID
+		aliasIDs[i] = v.Name
 	}
 
 	d.SetId("aliases")
 
-	err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs, aliasIDs)
+	err = d.Set(mkDataSourceVirtualEnvironmentClusterAliasesAliasNames, aliasIDs)
 
 	return diag.FromErr(err)
 }

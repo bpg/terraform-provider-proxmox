@@ -16,7 +16,10 @@ import (
 // CreateIPSet create an IPSet
 func (a *API) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error {
 	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset", d, nil)
-	return fmt.Errorf("error creating IPSet: %w", err)
+	if err != nil {
+		return fmt.Errorf("error creating IPSet: %w", err)
+	}
+	return nil
 }
 
 // AddCIDRToIPSet adds IP or Network to IPSet
@@ -28,13 +31,19 @@ func (a *API) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseD
 		&d,
 		nil,
 	)
-	return fmt.Errorf("error adding CIDR to IPSet: %w", err)
+	if err != nil {
+		return fmt.Errorf("error adding CIDR to IPSet: %w", err)
+	}
+	return nil
 }
 
 // UpdateIPSet updates an IPSet.
 func (a *API) UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) error {
 	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset/", d, nil)
-	return fmt.Errorf("error updating IPSet: %w", err)
+	if err != nil {
+		return fmt.Errorf("error updating IPSet: %w", err)
+	}
+	return nil
 }
 
 // DeleteIPSet delete an IPSet
@@ -46,7 +55,10 @@ func (a *API) DeleteIPSet(ctx context.Context, id string) error {
 		nil,
 		nil,
 	)
-	return fmt.Errorf("error deleting IPSet %s: %w", id, err)
+	if err != nil {
+		return fmt.Errorf("error deleting IPSet %s: %w", id, err)
+	}
+	return nil
 }
 
 // DeleteIPSetContent remove IP or Network from IPSet.
@@ -58,7 +70,10 @@ func (a *API) DeleteIPSetContent(ctx context.Context, id string, cidr string) er
 		nil,
 		nil,
 	)
-	return fmt.Errorf("error deleting IPSet content %s: %w", id, err)
+	if err != nil {
+		return fmt.Errorf("error deleting IPSet content %s: %w", id, err)
+	}
+	return nil
 }
 
 // GetIPSetContent retrieve a list of IPSet content

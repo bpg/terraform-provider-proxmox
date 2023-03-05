@@ -4,10 +4,10 @@ resource "proxmox_virtual_environment_firewall_alias" "example" {
   comment = "Managed by Terraform"
 }
 
-output "proxmox_virtual_environment_firewall_alias_example_name" {
+output "resource_proxmox_virtual_environment_firewall_alias_example_name" {
   value = proxmox_virtual_environment_firewall_alias.example.name
 }
 
-output "proxmox_virtual_environment_firewall_alias_example_cidr" {
+output "resource_proxmox_virtual_environment_firewall_alias_example_cidr" {
   value = proxmox_virtual_environment_firewall_alias.example.cidr
 }

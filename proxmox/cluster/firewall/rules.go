@@ -17,7 +17,10 @@ import (
 // CreateRule creates a firewall rule.
 func (a *API) CreateRule(ctx context.Context, d *RuleCreateRequestBody) error {
 	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/rules", d, nil)
-	return fmt.Errorf("error creating firewall rule: %w", err)
+	if err != nil {
+		return fmt.Errorf("error creating firewall rule: %w", err)
+	}
+	return nil
 }
 
 // CreateGroupRule creates a security group firewall rule.
@@ -28,7 +31,10 @@ func (a *API) CreateGroupRule(ctx context.Context, group string, d *RuleCreateRe
 		d,
 		nil,
 	)
-	return fmt.Errorf("error creating security group: %w", err)
+	if err != nil {
+		return fmt.Errorf("error creating security group: %w", err)
+	}
+	return nil
 }
 
 // GetRule retrieves a firewall rule.
@@ -112,7 +118,10 @@ func (a *API) UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBody)
 		d,
 		nil,
 	)
-	return fmt.Errorf("error updating firewall rule %d: %w", pos, err)
+	if err != nil {
+		return fmt.Errorf("error updating firewall rule %d: %w", pos, err)
+	}
+	return nil
 }
 
 // UpdateGroupRule updates a security group firewall rule.
@@ -124,13 +133,19 @@ func (a *API) UpdateGroupRule(ctx context.Context, group string, pos int, d *Rul
 		d,
 		nil,
 	)
-	return fmt.Errorf("error updating firewall rule %d: %w", pos, err)
+	if err != nil {
+		return fmt.Errorf("error updating firewall rule %d: %w", pos, err)
+	}
+	return nil
 }
 
 // DeleteRule deletes a firewall rule.
 func (a *API) DeleteRule(ctx context.Context, pos int) error {
 	err := a.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("cluster/firewall/rules/%d", pos), nil, nil)
-	return fmt.Errorf("error deleting firewall rule %d: %w", pos, err)
+	if err != nil {
+		return fmt.Errorf("error deleting firewall rule %d: %w", pos, err)
+	}
+	return nil
 }
 
 // DeleteGroupRule deletes a security group firewall rule.
@@ -142,5 +157,8 @@ func (a *API) DeleteGroupRule(ctx context.Context, group string, pos int) error 
 		nil,
 		nil,
 	)
-	return fmt.Errorf("error deleting firewall rule %d: %w", pos, err)
+	if err != nil {
+		return fmt.Errorf("error deleting firewall rule %d: %w", pos, err)
+	}
+	return nil
 }

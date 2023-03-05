@@ -18,7 +18,10 @@ import (
 // CreateGroup create new security group.
 func (a *API) CreateGroup(ctx context.Context, d *GroupCreateRequestBody) error {
 	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/groups", d, nil)
-	return fmt.Errorf("error creating security group: %w", err)
+	if err != nil {
+		return fmt.Errorf("error creating security group: %w", err)
+	}
+	return nil
 }
 
 // GetGroup retrieve security group.
@@ -70,7 +73,10 @@ func (a *API) UpdateGroup(ctx context.Context, group string, d *GroupUpdateReque
 		d,
 		nil,
 	)
-	return fmt.Errorf("error updating security group %s: %w", group, err)
+	if err != nil {
+		return fmt.Errorf("error updating security group %s: %w", group, err)
+	}
+	return nil
 }
 
 // DeleteGroup delete security group.
@@ -82,5 +88,8 @@ func (a *API) DeleteGroup(ctx context.Context, group string) error {
 		nil,
 		nil,
 	)
-	return fmt.Errorf("error deleting security group %s: %w", group, err)
+	if err != nil {
+		return fmt.Errorf("error deleting security group %s: %w", group, err)
+	}
+	return nil
 }

@@ -22,8 +22,8 @@ type ProviderConfiguration struct {
 	veClient *proxmox.VirtualEnvironmentClient
 }
 
-func NewProviderConfiguration(veClient *proxmox.VirtualEnvironmentClient) *ProviderConfiguration {
-	return &ProviderConfiguration{
+func NewProviderConfiguration(veClient *proxmox.VirtualEnvironmentClient) ProviderConfiguration {
+	return ProviderConfiguration{
 		veClient: veClient,
 	}
 }

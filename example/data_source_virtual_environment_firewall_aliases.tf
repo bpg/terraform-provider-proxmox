@@ -4,6 +4,6 @@ data "proxmox_virtual_environment_firewall_aliases" "example" {
 
 output "data_proxmox_virtual_environment_firewall_aliases" {
   value = {
-    "alias_ids" = data.proxmox_virtual_environment_firewall_aliases.example.alias_ids
+    "alias_names" = data.proxmox_virtual_environment_firewall_aliases.example.alias_names
   }
 }

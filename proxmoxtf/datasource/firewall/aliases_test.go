@@ -17,7 +17,7 @@ import (
 // TestAliasesInstantiation tests whether the DataSourceVirtualEnvironmentAliases instance can be instantiated.
 func TestAliasesInstantiation(t *testing.T) {
 	t.Parallel()
-	s := DataSourceVirtualEnvironmentClusterAliases()
+	s := Aliases()
 
 	if s == nil {
 		t.Fatalf("Cannot instantiate DataSourceVirtualEnvironmentAliases")
@@ -27,13 +27,13 @@ func TestAliasesInstantiation(t *testing.T) {
 // TestAliasesSchema tests the DataSourceVirtualEnvironmentAliases schema.
 func TestAliasesSchema(t *testing.T) {
 	t.Parallel()
-	s := DataSourceVirtualEnvironmentClusterAliases()
+	s := Aliases()
 
 	test.AssertComputedAttributes(t, s, []string{
-		mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs,
+		mkDataSourceVirtualEnvironmentClusterAliasesAliasNames,
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkDataSourceVirtualEnvironmentClusterAliasesAliasIDs: schema.TypeList,
+		mkDataSourceVirtualEnvironmentClusterAliasesAliasNames: schema.TypeList,
 	})
 }

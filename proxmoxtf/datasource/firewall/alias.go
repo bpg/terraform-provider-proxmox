@@ -23,7 +23,7 @@ const (
 	mkDataSourceVirtualEnvironmentFirewallAliasComment = "comment"
 )
 
-func DataSourceVirtualEnvironmentFirewallAlias() *schema.Resource {
+func Alias() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentFirewallAliasName: {
@@ -42,15 +42,11 @@ func DataSourceVirtualEnvironmentFirewallAlias() *schema.Resource {
 				Computed:    true,
 			},
 		},
-		ReadContext: DataSourceVirtualEnvironmentFirewallAliasRead,
+		ReadContext: aliasRead,
 	}
 }
 
-func DataSourceVirtualEnvironmentFirewallAliasRead(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-) diag.Diagnostics {
+func aliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
