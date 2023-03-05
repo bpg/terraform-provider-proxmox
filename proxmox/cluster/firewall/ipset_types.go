@@ -14,7 +14,7 @@ import (
 
 // IPSetListResponseBody contains the data from an IPSet get response.
 type IPSetListResponseBody struct {
-	Data []*IPSetCreateRequestBody `json:"data,omitempty"`
+	Data []*IPSetListResponseData `json:"data,omitempty"`
 }
 
 // IPSetCreateRequestBody contains the data for an IPSet create request
@@ -32,7 +32,7 @@ type IPSetGetResponseBody struct {
 type IPSetGetResponseData struct {
 	CIDR    string            `json:"cidr"              url:"cidr"`
 	NoMatch *types.CustomBool `json:"nomatch,omitempty" url:"nomatch,omitempty,int"`
-	Comment string            `json:"comment,omitempty" url:"comment,omitempty"`
+	Comment *string           `json:"comment,omitempty" url:"comment,omitempty"`
 }
 
 // IPSetUpdateRequestBody contains the data for an IPSet update request.

@@ -14,33 +14,26 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestAliasInstantiation tests whether the Alias instance can be instantiated.
-func TestAliasInstantiation(t *testing.T) {
+// TestIPSetsInstantiation tests whether the IPSets instance can be instantiated.
+func TestIPSetsInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Alias()
+	s := IPSets()
 
 	if s == nil {
-		t.Fatalf("Cannot instantiate Alias")
+		t.Fatalf("Cannot instantiate IPSets")
 	}
 }
 
-// TestAliasSchema tests the Alias schema.
-func TestAliasSchema(t *testing.T) {
+// TestIPSetsSchema tests the IPSets schema.
+func TestIPSetsSchema(t *testing.T) {
 	t.Parallel()
-	s := Alias()
-
-	test.AssertRequiredArguments(t, s, []string{
-		mkAliasName,
-	})
+	s := IPSets()
 
 	test.AssertComputedAttributes(t, s, []string{
-		mkAliasCIDR,
-		mkAliasComment,
+		mkIPSetsIPSetNames,
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkAliasName:    schema.TypeString,
-		mkAliasCIDR:    schema.TypeString,
-		mkAliasComment: schema.TypeString,
+		mkIPSetsIPSetNames: schema.TypeList,
 	})
 }

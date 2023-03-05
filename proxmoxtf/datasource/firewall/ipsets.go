@@ -17,44 +17,44 @@ import (
 )
 
 const (
-	mkAliasesAliasNames = "alias_names"
+	mkIPSetsIPSetNames = "ipset_names"
 )
 
-func Aliases() *schema.Resource {
+func IPSets() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkAliasesAliasNames: {
+			mkIPSetsIPSetNames: {
 				Type:        schema.TypeList,
-				Description: "Alias Names",
+				Description: "IPSet Names",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
-		ReadContext: aliasesRead,
+		ReadContext: ipSetsRead,
 	}
 }
 
-func aliasesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func ipSetsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 	veClient, err := config.GetVEClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.API().Cluster().Firewall().ListAliases(ctx)
+	list, err := veClient.API().Cluster().Firewall().ListIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	aliasNames := make([]interface{}, len(list))
+	ipSetNames := make([]interface{}, len(list))
 
 	for i, v := range list {
-		aliasNames[i] = v.Name
+		ipSetNames[i] = v.Name
 	}
 
-	d.SetId("aliases")
+	d.SetId("ipsets")
 
-	err = d.Set(mkAliasesAliasNames, aliasNames)
+	err = d.Set(mkIPSetsIPSetNames, ipSetNames)
 
 	return diag.FromErr(err)
 }

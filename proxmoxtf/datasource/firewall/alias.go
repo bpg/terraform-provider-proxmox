@@ -16,27 +16,27 @@ import (
 )
 
 const (
-	dvDataVirtualEnvironmentFirewallAliasComment = ""
+	dvAliasComment = ""
 
-	mkDataSourceVirtualEnvironmentFirewallAliasName    = "name"
-	mkDataSourceVirtualEnvironmentFirewallAliasCIDR    = "cidr"
-	mkDataSourceVirtualEnvironmentFirewallAliasComment = "comment"
+	mkAliasName    = "name"
+	mkAliasCIDR    = "cidr"
+	mkAliasComment = "comment"
 )
 
 func Alias() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentFirewallAliasName: {
+			mkAliasName: {
 				Type:        schema.TypeString,
 				Description: "Alias name",
 				Required:    true,
 			},
-			mkDataSourceVirtualEnvironmentFirewallAliasCIDR: {
+			mkAliasCIDR: {
 				Type:        schema.TypeString,
 				Description: "IP/CIDR block",
 				Computed:    true,
 			},
-			mkDataSourceVirtualEnvironmentFirewallAliasComment: {
+			mkAliasComment: {
 				Type:        schema.TypeString,
 				Description: "Alias comment",
 				Computed:    true,
@@ -55,21 +55,21 @@ func aliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		return diag.FromErr(err)
 	}
 
-	AliasID := d.Get(mkDataSourceVirtualEnvironmentFirewallAliasName).(string)
-	Alias, err := veClient.API().Cluster().Firewall().GetAlias(ctx, AliasID)
+	aliasName := d.Get(mkAliasName).(string)
+	alias, err := veClient.API().Cluster().Firewall().GetAlias(ctx, aliasName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(AliasID)
+	d.SetId(aliasName)
 
-	err = d.Set(mkDataSourceVirtualEnvironmentFirewallAliasCIDR, Alias.CIDR)
+	err = d.Set(mkAliasCIDR, alias.CIDR)
 	diags = append(diags, diag.FromErr(err)...)
 
-	if Alias.Comment != nil {
-		err = d.Set(mkDataSourceVirtualEnvironmentFirewallAliasComment, Alias.Comment)
+	if alias.Comment != nil {
+		err = d.Set(mkAliasComment, alias.Comment)
 	} else {
-		err = d.Set(mkDataSourceVirtualEnvironmentFirewallAliasComment, dvDataVirtualEnvironmentFirewallAliasComment)
+		err = d.Set(mkAliasComment, dvAliasComment)
 	}
 	diags = append(diags, diag.FromErr(err)...)
 

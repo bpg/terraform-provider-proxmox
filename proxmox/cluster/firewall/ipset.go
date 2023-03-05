@@ -97,8 +97,8 @@ func (a *API) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetRespon
 	return resBody.Data, nil
 }
 
-// GetIPSets retrieves list of IPSets.
-func (a *API) GetIPSets(ctx context.Context) (*IPSetListResponseBody, error) {
+// ListIPSets retrieves list of IPSets.
+func (a *API) ListIPSets(ctx context.Context) ([]*IPSetListResponseData, error) {
 	resBody := &IPSetListResponseBody{}
 	err := a.DoRequest(ctx, http.MethodGet, "cluster/firewall/ipset", nil, resBody)
 	if err != nil {
@@ -113,5 +113,5 @@ func (a *API) GetIPSets(ctx context.Context) (*IPSetListResponseBody, error) {
 		return resBody.Data[i].Name < resBody.Data[j].Name
 	})
 
-	return resBody, nil
+	return resBody.Data, nil
 }

@@ -106,9 +106,11 @@ func ipSetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 
 		cidr := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRName].(string)
 		noMatch := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch].(bool)
-		comment := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRComment].(string)
+		comm := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRComment].(string)
 
-		IPSetObject.Comment = comment
+		if comm != "" {
+			IPSetObject.Comment = &comm
+		}
 		IPSetObject.CIDR = cidr
 
 		if noMatch {
@@ -151,12 +153,12 @@ func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 	name := d.Id()
 
-	allIPSets, err := veClient.API().Cluster().Firewall().GetIPSets(ctx)
+	allIPSets, err := veClient.API().Cluster().Firewall().ListIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	for _, v := range allIPSets.Data {
+	for _, v := range allIPSets {
 		if v.Name == name {
 			err = d.Set(mkResourceVirtualEnvironmentFirewallIPSetName, v.Name)
 			diags = append(diags, diag.FromErr(err)...)
