@@ -65,16 +65,16 @@ func (a *API) ListGroups(ctx context.Context) ([]*GroupListResponseData, error) 
 }
 
 // UpdateGroup update security group.
-func (a *API) UpdateGroup(ctx context.Context, group string, d *GroupUpdateRequestBody) error {
+func (a *API) UpdateGroup(ctx context.Context, d *GroupUpdateRequestBody) error {
 	err := a.DoRequest(
 		ctx,
-		http.MethodPut,
-		fmt.Sprintf("cluster/firewall/groups/%s", url.PathEscape(group)),
+		http.MethodPost,
+		"cluster/firewall/groups",
 		d,
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("error updating security group '%s': %w", group, err)
+		return fmt.Errorf("error updating security group: %w", err)
 	}
 	return nil
 }

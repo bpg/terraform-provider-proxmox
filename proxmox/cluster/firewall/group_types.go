@@ -37,8 +37,9 @@ type GroupListResponseBody struct {
 
 // GroupUpdateRequestBody contains the data for a group update request.
 type GroupUpdateRequestBody struct {
+	Group string `json:"group"             url:"group"`
+
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	Group   string  `json:"group"             url:"group"`
-	ReName  string  `json:"rename"            url:"rename"`
+	ReName  *string `json:"rename,omitempty"  url:"rename,omitempty"`
 	Digest  *string `json:"digest,omitempty"  url:"digest,omitempty"`
 }

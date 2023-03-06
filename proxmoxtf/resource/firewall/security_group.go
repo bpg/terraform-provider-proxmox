@@ -420,11 +420,12 @@ func securityGroupUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 	previousName := d.Id()
 
 	body := &firewall.GroupUpdateRequestBody{
-		ReName:  newName,
+		Group:   newName,
+		ReName:  &previousName,
 		Comment: &comment,
 	}
 
-	err = veClient.API().Cluster().Firewall().UpdateGroup(ctx, previousName, body)
+	err = veClient.API().Cluster().Firewall().UpdateGroup(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
