@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
@@ -18,11 +19,7 @@ import (
 // instance can be instantiated.
 func TestIPSetInstantiation(t *testing.T) {
 	t.Parallel()
-	s := IPSet()
-
-	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentAlias")
-	}
+	require.NotNilf(t, IPSet(), "Cannot instantiate IPSet")
 }
 
 // TestIPSetSchema tests the IPSet schema.
@@ -31,34 +28,34 @@ func TestIPSetSchema(t *testing.T) {
 	s := IPSet()
 
 	test.AssertRequiredArguments(t, s, []string{
-		mkResourceVirtualEnvironmentFirewallIPSetName,
+		mkIPSetName,
 	})
 
 	test.AssertOptionalArguments(t, s, []string{
-		mkResourceVirtualEnvironmentFirewallIPSetCIDR,
-		mkResourceVirtualEnvironmentFirewallIPSetCIDRComment,
+		mkIPSetCIDR,
+		mkIPSetCIDRComment,
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentFirewallIPSetName:        schema.TypeString,
-		mkResourceVirtualEnvironmentFirewallIPSetCIDR:        schema.TypeList,
-		mkResourceVirtualEnvironmentFirewallIPSetCIDRComment: schema.TypeString,
+		mkIPSetName:        schema.TypeString,
+		mkIPSetCIDR:        schema.TypeList,
+		mkIPSetCIDRComment: schema.TypeString,
 	})
 
-	IPSetSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentFirewallIPSetCIDR)
+	IPSetSchema := test.AssertNestedSchemaExistence(t, s, mkIPSetCIDR)
 
 	test.AssertRequiredArguments(t, IPSetSchema, []string{
-		mkResourceVirtualEnvironmentFirewallIPSetCIDRName,
+		mkIPSetCIDRName,
 	})
 
 	test.AssertOptionalArguments(t, IPSetSchema, []string{
-		mkResourceVirtualEnvironmentFirewallIPSetCIDRComment,
-		mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch,
+		mkIPSetCIDRComment,
+		mkIPSetCIDRNoMatch,
 	})
 
 	test.AssertValueTypes(t, IPSetSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentFirewallIPSetCIDRName:    schema.TypeString,
-		mkResourceVirtualEnvironmentFirewallIPSetCIDRComment: schema.TypeString,
-		mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch: schema.TypeBool,
+		mkIPSetCIDRName:    schema.TypeString,
+		mkIPSetCIDRComment: schema.TypeString,
+		mkIPSetCIDRNoMatch: schema.TypeBool,
 	})
 }

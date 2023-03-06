@@ -15,11 +15,16 @@ type GroupCreateRequestBody struct {
 
 // GroupGetResponseBody contains the body from a group get response.
 type GroupGetResponseBody struct {
-	Data *GroupGetResponseData `json:"data,omitempty"`
+	Data []*GroupGetResponseData `json:"data,omitempty"`
 }
 
 // GroupGetResponseData contains the data from a group get response.
 type GroupGetResponseData struct {
+	Pos int `json:"pos" url:"pos"`
+}
+
+// GroupListResponseData contains the data from a group list response.
+type GroupListResponseData struct {
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	Group   string  `json:"group"             url:"group"`
 	Digest  string  `json:"digest"            url:"digest"`
@@ -27,7 +32,7 @@ type GroupGetResponseData struct {
 
 // GroupListResponseBody contains the data from a group get response.
 type GroupListResponseBody struct {
-	Data []*GroupGetResponseData `json:"data,omitempty"`
+	Data []*GroupListResponseData `json:"data,omitempty"`
 }
 
 // GroupUpdateRequestBody contains the data for a group update request.

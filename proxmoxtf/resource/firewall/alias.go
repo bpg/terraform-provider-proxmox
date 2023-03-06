@@ -18,33 +18,33 @@ import (
 )
 
 const (
-	dvResourceVirtualEnvironmentClusterAliasComment = ""
+	dvAliasComment = ""
 
-	mkResourceVirtualEnvironmentClusterAliasName    = "name"
-	mkResourceVirtualEnvironmentClusterAliasCIDR    = "cidr"
-	mkResourceVirtualEnvironmentClusterAliasComment = "comment"
+	mkAliasName    = "name"
+	mkAliasCIDR    = "cidr"
+	mkAliasComment = "comment"
 )
 
 func Alias() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentClusterAliasName: {
+			mkAliasName: {
 				Type:        schema.TypeString,
 				Description: "Alias name",
 				Required:    true,
 				ForceNew:    false,
 			},
-			mkResourceVirtualEnvironmentClusterAliasCIDR: {
+			mkAliasCIDR: {
 				Type:        schema.TypeString,
 				Description: "IP/CIDR block",
 				Required:    true,
 				ForceNew:    false,
 			},
-			mkResourceVirtualEnvironmentClusterAliasComment: {
+			mkAliasComment: {
 				Type:        schema.TypeString,
 				Description: "Alias comment",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentClusterAliasComment,
+				Default:     dvAliasComment,
 			},
 		},
 		CreateContext: aliasCreate,
@@ -61,9 +61,9 @@ func aliasCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		return diag.FromErr(err)
 	}
 
-	comment := d.Get(mkResourceVirtualEnvironmentClusterAliasComment).(string)
-	name := d.Get(mkResourceVirtualEnvironmentClusterAliasName).(string)
-	cidr := d.Get(mkResourceVirtualEnvironmentClusterAliasCIDR).(string)
+	comment := d.Get(mkAliasComment).(string)
+	name := d.Get(mkAliasName).(string)
+	cidr := d.Get(mkAliasCIDR).(string)
 
 	body := &firewall.AliasCreateRequestBody{
 		Comment: &comment,
@@ -99,9 +99,9 @@ func aliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	}
 
 	aliasMap := map[string]interface{}{
-		mkResourceVirtualEnvironmentClusterAliasComment: alias.Comment,
-		mkResourceVirtualEnvironmentClusterAliasName:    alias.Name,
-		mkResourceVirtualEnvironmentClusterAliasCIDR:    alias.CIDR,
+		mkAliasComment: alias.Comment,
+		mkAliasName:    alias.Name,
+		mkAliasCIDR:    alias.CIDR,
 	}
 
 	for key, val := range aliasMap {
@@ -121,9 +121,9 @@ func aliasUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		return diag.FromErr(err)
 	}
 
-	comment := d.Get(mkResourceVirtualEnvironmentClusterAliasComment).(string)
-	cidr := d.Get(mkResourceVirtualEnvironmentClusterAliasCIDR).(string)
-	newName := d.Get(mkResourceVirtualEnvironmentClusterAliasName).(string)
+	comment := d.Get(mkAliasComment).(string)
+	cidr := d.Get(mkAliasCIDR).(string)
+	newName := d.Get(mkAliasName).(string)
 	previousName := d.Id()
 
 	body := &firewall.AliasUpdateRequestBody{

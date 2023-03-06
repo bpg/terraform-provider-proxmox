@@ -10,37 +10,34 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-// TestAliasInstantiation tests whether the ResourceVirtualEnvironmentAlias instance can be instantiated.
+// TestAliasInstantiation tests whether the Alias instance can be instantiated.
 func TestAliasInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Alias()
-
-	if s == nil {
-		t.Fatalf("Cannot instantiate ResourceVirtualEnvironmentAlias")
-	}
+	require.NotNilf(t, Alias(), "Cannot instantiate Alias")
 }
 
-// TestAliasSchema tests the ResourceVirtualEnvironmentAlias schema.
+// TestAliasSchema tests the Alias schema.
 func TestAliasSchema(t *testing.T) {
 	t.Parallel()
 	s := Alias()
 
 	test.AssertRequiredArguments(t, s, []string{
-		mkResourceVirtualEnvironmentClusterAliasName,
-		mkResourceVirtualEnvironmentClusterAliasCIDR,
+		mkAliasName,
+		mkAliasCIDR,
 	})
 
 	test.AssertOptionalArguments(t, s, []string{
-		mkResourceVirtualEnvironmentClusterAliasComment,
+		mkAliasComment,
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentClusterAliasName:    schema.TypeString,
-		mkResourceVirtualEnvironmentClusterAliasCIDR:    schema.TypeString,
-		mkResourceVirtualEnvironmentClusterAliasComment: schema.TypeString,
+		mkAliasName:    schema.TypeString,
+		mkAliasCIDR:    schema.TypeString,
+		mkAliasComment: schema.TypeString,
 	})
 }

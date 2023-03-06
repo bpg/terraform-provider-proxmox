@@ -23,32 +23,32 @@ func (a *API) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error 
 }
 
 // DeleteAlias delete an alias
-func (a *API) DeleteAlias(ctx context.Context, id string) error {
+func (a *API) DeleteAlias(ctx context.Context, name string) error {
 	err := a.DoRequest(
 		ctx,
 		http.MethodDelete,
-		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)),
+		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(name)),
 		nil,
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("error deleting alias %s: %w", id, err)
+		return fmt.Errorf("error deleting alias '%s': %w", name, err)
 	}
 	return nil
 }
 
 // GetAlias retrieves an alias
-func (a *API) GetAlias(ctx context.Context, id string) (*AliasGetResponseData, error) {
+func (a *API) GetAlias(ctx context.Context, name string) (*AliasGetResponseData, error) {
 	resBody := &AliasGetResponseBody{}
 	err := a.DoRequest(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)),
+		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(name)),
 		nil,
 		resBody,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving alias %s: %w", id, err)
+		return nil, fmt.Errorf("error retrieving alias '%s': %w", name, err)
 	}
 
 	if resBody.Data == nil {
@@ -78,16 +78,16 @@ func (a *API) ListAliases(ctx context.Context) ([]*AliasGetResponseData, error) 
 }
 
 // UpdateAlias updates an alias.
-func (a *API) UpdateAlias(ctx context.Context, id string, d *AliasUpdateRequestBody) error {
+func (a *API) UpdateAlias(ctx context.Context, name string, d *AliasUpdateRequestBody) error {
 	err := a.DoRequest(
 		ctx,
 		http.MethodPut,
-		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(id)),
+		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(name)),
 		d,
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("error updating alias %s: %w", id, err)
+		return fmt.Errorf("error updating alias '%s': %w", name, err)
 	}
 	return nil
 }

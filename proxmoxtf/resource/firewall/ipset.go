@@ -19,26 +19,26 @@ import (
 )
 
 const (
-	dvResourceVirtualEnvironmentFirewallIPSetCIDRComment = ""
-	dvResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch = false
+	dvIPSetCIDRComment = ""
+	dvIPSetCIDRNoMatch = false
 
-	mkResourceVirtualEnvironmentFirewallIPSetName        = "name"
-	mkResourceVirtualEnvironmentFirewallIPSetCIDR        = "cidr"
-	mkResourceVirtualEnvironmentFirewallIPSetCIDRName    = "name"
-	mkResourceVirtualEnvironmentFirewallIPSetCIDRComment = "comment"
-	mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch = "nomatch"
+	mkIPSetName        = "name"
+	mkIPSetCIDR        = "cidr"
+	mkIPSetCIDRName    = "name"
+	mkIPSetCIDRComment = "comment"
+	mkIPSetCIDRNoMatch = "nomatch"
 )
 
 func IPSet() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentFirewallIPSetName: {
+			mkIPSetName: {
 				Type:        schema.TypeString,
 				Description: "IPSet name",
 				Required:    true,
 				ForceNew:    false,
 			},
-			mkResourceVirtualEnvironmentFirewallIPSetCIDR: {
+			mkIPSetCIDR: {
 				Type:        schema.TypeList,
 				Description: "List of IP or Networks",
 				Optional:    true,
@@ -48,24 +48,24 @@ func IPSet() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentFirewallIPSetCIDRName: {
+						mkIPSetCIDRName: {
 							Type:        schema.TypeString,
 							Description: "Network/IP specification in CIDR format",
 							Required:    true,
 							ForceNew:    true,
 						},
-						mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch: {
+						mkIPSetCIDRNoMatch: {
 							Type:        schema.TypeBool,
 							Description: "No match this IP/CIDR",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch,
+							Default:     dvIPSetCIDRNoMatch,
 							ForceNew:    true,
 						},
-						mkResourceVirtualEnvironmentFirewallIPSetCIDRComment: {
+						mkIPSetCIDRComment: {
 							Type:        schema.TypeString,
 							Description: "IP/CIDR comment",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentFirewallIPSetCIDRComment,
+							Default:     dvIPSetCIDRComment,
 							ForceNew:    true,
 						},
 					},
@@ -73,11 +73,11 @@ func IPSet() *schema.Resource {
 				MaxItems: 14,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentFirewallIPSetCIDRComment: {
+			mkIPSetCIDRComment: {
 				Type:        schema.TypeString,
 				Description: "IPSet comment",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentFirewallIPSetCIDRComment,
+				Default:     dvIPSetCIDRComment,
 			},
 		},
 		CreateContext: ipSetCreate,
@@ -94,31 +94,31 @@ func ipSetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		return diag.FromErr(err)
 	}
 
-	comment := d.Get(mkResourceVirtualEnvironmentFirewallIPSetCIDRComment).(string)
-	name := d.Get(mkResourceVirtualEnvironmentFirewallIPSetName).(string)
+	comment := d.Get(mkIPSetCIDRComment).(string)
+	name := d.Get(mkIPSetName).(string)
 
-	IPSets := d.Get(mkResourceVirtualEnvironmentFirewallIPSetCIDR).([]interface{})
-	IPSetsArray := make(firewall.IPSetContent, len(IPSets))
+	ipSets := d.Get(mkIPSetCIDR).([]interface{})
+	ipSetsArray := make(firewall.IPSetContent, len(ipSets))
 
-	for i, v := range IPSets {
-		IPSetMap := v.(map[string]interface{})
-		IPSetObject := firewall.IPSetGetResponseData{}
+	for i, v := range ipSets {
+		ipSetMap := v.(map[string]interface{})
+		ipSetObject := firewall.IPSetGetResponseData{}
 
-		cidr := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRName].(string)
-		noMatch := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch].(bool)
-		comm := IPSetMap[mkResourceVirtualEnvironmentFirewallIPSetCIDRComment].(string)
+		cidr := ipSetMap[mkIPSetCIDRName].(string)
+		noMatch := ipSetMap[mkIPSetCIDRNoMatch].(bool)
+		comm := ipSetMap[mkIPSetCIDRComment].(string)
 
 		if comm != "" {
-			IPSetObject.Comment = &comm
+			ipSetObject.Comment = &comm
 		}
-		IPSetObject.CIDR = cidr
+		ipSetObject.CIDR = cidr
 
 		if noMatch {
 			noMatchBool := types.CustomBool(true)
-			IPSetObject.NoMatch = &noMatchBool
+			ipSetObject.NoMatch = &noMatchBool
 		}
 
-		IPSetsArray[i] = IPSetObject
+		ipSetsArray[i] = ipSetObject
 	}
 
 	body := &firewall.IPSetCreateRequestBody{
@@ -131,7 +131,7 @@ func ipSetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		return diag.FromErr(err)
 	}
 
-	for _, v := range IPSetsArray {
+	for _, v := range ipSetsArray {
 		err = veClient.API().Cluster().Firewall().AddCIDRToIPSet(ctx, name, v)
 		if err != nil {
 			return diag.FromErr(err)
@@ -160,14 +160,15 @@ func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 	for _, v := range allIPSets {
 		if v.Name == name {
-			err = d.Set(mkResourceVirtualEnvironmentFirewallIPSetName, v.Name)
+			err = d.Set(mkIPSetName, v.Name)
 			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkResourceVirtualEnvironmentFirewallIPSetCIDRComment, v.Comment)
+			err = d.Set(mkIPSetCIDRComment, v.Comment)
 			diags = append(diags, diag.FromErr(err)...)
+			break
 		}
 	}
 
-	IPSet, err := veClient.API().Cluster().Firewall().GetIPSetContent(ctx, name)
+	ipSet, err := veClient.API().Cluster().Firewall().GetIPSetContent(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -180,17 +181,17 @@ func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	//nolint:prealloc
 	var entries []interface{}
 
-	for key := range IPSet {
+	for key := range ipSet {
 		entry := map[string]interface{}{}
 
-		entry[mkResourceVirtualEnvironmentFirewallIPSetCIDRName] = IPSet[key].CIDR
-		entry[mkResourceVirtualEnvironmentFirewallIPSetCIDRNoMatch] = IPSet[key].NoMatch
-		entry[mkResourceVirtualEnvironmentFirewallIPSetCIDRComment] = IPSet[key].Comment
+		entry[mkIPSetCIDRName] = ipSet[key].CIDR
+		entry[mkIPSetCIDRNoMatch] = ipSet[key].NoMatch
+		entry[mkIPSetCIDRComment] = ipSet[key].Comment
 
 		entries = append(entries, entry)
 	}
 
-	err = d.Set(mkResourceVirtualEnvironmentFirewallIPSetCIDR, entries)
+	err = d.Set(mkIPSetCIDR, entries)
 	diags = append(diags, diag.FromErr(err)...)
 	return diags
 }
@@ -202,8 +203,8 @@ func ipSetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		return diag.FromErr(err)
 	}
 
-	comment := d.Get(mkResourceVirtualEnvironmentFirewallIPSetCIDRComment).(string)
-	newName := d.Get(mkResourceVirtualEnvironmentFirewallIPSetName).(string)
+	comment := d.Get(mkIPSetCIDRComment).(string)
+	newName := d.Get(mkIPSetName).(string)
 	previousName := d.Id()
 
 	body := &firewall.IPSetUpdateRequestBody{
