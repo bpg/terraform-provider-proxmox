@@ -26,7 +26,7 @@ const (
 	dvRuleComment  = ""
 	dvRuleDPort    = ""
 	dvRuleDest     = ""
-	dvRuleEnable   = false
+	dvRuleEnable   = true
 	dvRuleIface    = ""
 	dvRuleLog      = "nolog"
 	dvRuleMacro    = ""
