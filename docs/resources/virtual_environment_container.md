@@ -172,6 +172,8 @@ output "ubuntu_container_public_key" {
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on
 the host (defaults to `false`).
 - `vm_id` - (Optional) The virtual machine identifier
+- `features` - (Optional) The container features
+  - `nesting` - (Optional) Whether the container is nested (defaults to `false`)
 
 ## Attribute Reference
 
