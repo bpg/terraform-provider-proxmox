@@ -98,7 +98,7 @@ func getCPUFlagsValidator() schema.SchemaValidateDiagFunc {
 }
 
 func getCPUTypeValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringInSlice([]string{
+	standardTypes := []string{
 		"486",
 		"Broadwell",
 		"Broadwell-IBRS",
@@ -144,7 +144,12 @@ func getCPUTypeValidator() schema.SchemaValidateDiagFunc {
 		"phenom",
 		"qemu32",
 		"qemu64",
-	}, false))
+	}
+
+	return validation.ToDiagFunc(validation.Any(
+		validation.StringInSlice(standardTypes, false),
+		validation.StringMatch(regexp.MustCompile(`^custom-.+$`), "must be a valid custom CPU type"),
+	))
 }
 
 func getFileFormatValidator() schema.SchemaValidateDiagFunc {
