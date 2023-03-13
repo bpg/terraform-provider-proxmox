@@ -205,6 +205,8 @@ output "ubuntu_vm_public_key" {
         - `phenom` - AMD Phenom (2010).
         - `qemu32`/`qemu64` - QEMU Virtual CPU version 2.5+ (32 & 64 bit
           variants).
+        - `custom-<model>` - Custom CPU model. All `custom-<model>` values should be
+          defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
     - `units` - (Optional) The CPU units (defaults to `1024`).
 - `description` - (Optional) The description.
 - `disk` - (Optional) A disk (multiple blocks supported).
