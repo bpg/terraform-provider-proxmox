@@ -98,76 +98,58 @@ func getCPUFlagsValidator() schema.SchemaValidateDiagFunc {
 }
 
 func getCPUTypeValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (warnings []string, errors []error) {
-		ignoreCase := false
-		r, _ := regexp.Compile("^custom-.+")
-		valid := []string{
-			"486",
-			"Broadwell",
-			"Broadwell-IBRS",
-			"Broadwell-noTSX",
-			"Broadwell-noTSX-IBRS",
-			"Cascadelake-Server",
-			"Conroe",
-			"EPYC",
-			"EPYC-IBPB",
-			"Haswell",
-			"Haswell-IBRS",
-			"Haswell-noTSX",
-			"Haswell-noTSX-IBRS",
-			"IvyBridge",
-			"IvyBridge-IBRS",
-			"KnightsMill",
-			"Nehalem",
-			"Nehalem-IBRS",
-			"Opteron_G1",
-			"Opteron_G2",
-			"Opteron_G3",
-			"Opteron_G4",
-			"Opteron_G5",
-			"Penryn",
-			"SandyBridge",
-			"SandyBridge-IBRS",
-			"Skylake-Client",
-			"Skylake-Client-IBRS",
-			"Skylake-Server",
-			"Skylake-Server-IBRS",
-			"Westmere",
-			"Westmere-IBRS",
-			"athlon",
-			"core2duo",
-			"coreduo",
-			"host",
-			"kvm32",
-			"kvm64",
-			"max",
-			"pentium",
-			"pentium2",
-			"pentium3",
-			"phenom",
-			"qemu32",
-			"qemu64",
-		}
+	standardTypes := []string{
+		"486",
+		"Broadwell",
+		"Broadwell-IBRS",
+		"Broadwell-noTSX",
+		"Broadwell-noTSX-IBRS",
+		"Cascadelake-Server",
+		"Conroe",
+		"EPYC",
+		"EPYC-IBPB",
+		"Haswell",
+		"Haswell-IBRS",
+		"Haswell-noTSX",
+		"Haswell-noTSX-IBRS",
+		"IvyBridge",
+		"IvyBridge-IBRS",
+		"KnightsMill",
+		"Nehalem",
+		"Nehalem-IBRS",
+		"Opteron_G1",
+		"Opteron_G2",
+		"Opteron_G3",
+		"Opteron_G4",
+		"Opteron_G5",
+		"Penryn",
+		"SandyBridge",
+		"SandyBridge-IBRS",
+		"Skylake-Client",
+		"Skylake-Client-IBRS",
+		"Skylake-Server",
+		"Skylake-Server-IBRS",
+		"Westmere",
+		"Westmere-IBRS",
+		"athlon",
+		"core2duo",
+		"coreduo",
+		"host",
+		"kvm32",
+		"kvm64",
+		"max",
+		"pentium",
+		"pentium2",
+		"pentium3",
+		"phenom",
+		"qemu32",
+		"qemu64",
+	}
 
-		v, ok := i.(string)
-		if !ok {
-			errors = append(errors, fmt.Errorf("expected type of %s to be string", k))
-			return warnings, errors
-		}
-
-		for _, str := range valid {
-			if v == str || (ignoreCase && strings.EqualFold(v, str)) {
-				return warnings, errors
-			}
-		}
-
-		if r.MatchString(v) {
-			return warnings, errors
-		}
-
-		errors = append(errors, fmt.Errorf("expected %s to be one of %v or a custom cpu model, got %s", k, valid, v))
-		return warnings, errors
-	})
+	return validation.ToDiagFunc(validation.Any(
+		validation.StringInSlice(standardTypes, false),
+		validation.StringMatch(regexp.MustCompile(`^custom-.+$`), "must be a valid custom CPU type"),
+	))
 }
 
 func getFileFormatValidator() schema.SchemaValidateDiagFunc {
