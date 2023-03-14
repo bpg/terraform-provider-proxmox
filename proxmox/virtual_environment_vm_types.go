@@ -1075,6 +1075,10 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		values = append(values, fmt.Sprintf("mbps_wr_max=%d", *r.BurstableWriteSpeedMbps))
 	}
 
+	if r.Format != nil {
+		values = append(values, fmt.Sprintf("format=%s", *r.Format))
+	}
+
 	if r.MaxReadSpeedMbps != nil {
 		values = append(values, fmt.Sprintf("mbps_rd=%d", *r.MaxReadSpeedMbps))
 	}
