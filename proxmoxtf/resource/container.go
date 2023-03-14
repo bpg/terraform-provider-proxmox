@@ -1067,7 +1067,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	nesting := proxmox.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
+	nesting := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
 	features := proxmox.VirtualEnvironmentContainerCustomFeatures{
 		Nesting: &nesting,
 	}

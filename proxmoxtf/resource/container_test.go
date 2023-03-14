@@ -106,13 +106,13 @@ func TestContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerDiskDatastoreID: schema.TypeString,
 	})
 
-	featuresSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentContainerFeatures)
+	featuresSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentContainerFeatures)
 
-	testOptionalArguments(t, featuresSchema, []string{
+	test.AssertOptionalArguments(t, featuresSchema, []string{
 		mkResourceVirtualEnvironmentContainerFeaturesNesting,
 	})
 
-	testValueTypes(t, featuresSchema, map[string]schema.ValueType{
+	test.AssertValueTypes(t, featuresSchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerFeaturesNesting: schema.TypeBool,
 	})
 
