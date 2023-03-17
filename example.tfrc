@@ -1,9 +1,6 @@
 provider_installation {
-  filesystem_mirror {
-    path    = "../cache/plugins"
-    include = ["registry.terraform.io/bpg/proxmox"]
-  }
-  direct {
-    exclude = ["registry.terraform.io/bpg/proxmox"]
-  }
+   dev_overrides {
+     "bpg/proxmox" = "../build"
+   }
+  direct {}
 }
