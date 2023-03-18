@@ -18,7 +18,7 @@ Use the navigation to the left to read about the available resources.
 ```terraform
 provider "proxmox" {
   virtual_environment {
-    endpoint = "https://10.0.0.2"
+    endpoint = "https://10.0.0.2:8006/"
     username = "root@pam"
     password = "the-password-set-during-installation-of-proxmox-ve"
     insecure = true
@@ -83,7 +83,8 @@ Proxmox `provider` block:
 - `virtual_environment` - (Optional) The Proxmox Virtual Environment
   configuration.
   - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment
-    API (can also be sourced from `PROXMOX_VE_ENDPOINT`).
+    API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is
+    `https://<your-cluster-endpoint>:8006/`.
   - `insecure` - (Optional) Whether to skip the TLS verification step (can
     also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults
     to `false`.
@@ -92,4 +93,5 @@ Proxmox `provider` block:
   - `password` - (Required) The password for the Proxmox Virtual Environment
     API (can also be sourced from `PROXMOX_VE_PASSWORD`).
   - `username` - (Required) The username and realm for the Proxmox Virtual
-    Environment API (can also be sourced from `PROXMOX_VE_USERNAME`).
+    Environment API (can also be sourced from `PROXMOX_VE_USERNAME`). For 
+    example, `root@pam`.
