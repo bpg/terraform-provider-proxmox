@@ -205,8 +205,8 @@ output "ubuntu_vm_public_key" {
         - `phenom` - AMD Phenom (2010).
         - `qemu32`/`qemu64` - QEMU Virtual CPU version 2.5+ (32 & 64 bit
           variants).
-        - `custom-<model>` - Custom CPU model. All `custom-<model>` values should be
-          defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
+        - `custom-<model>` - Custom CPU model. All `custom-<model>` values
+          should be defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
     - `units` - (Optional) The CPU units (defaults to `1024`).
 - `description` - (Optional) The description.
 - `disk` - (Optional) A disk (multiple blocks supported).
@@ -222,8 +222,10 @@ output "ubuntu_vm_public_key" {
     - `file_id` - (Optional) The file ID for a disk image (experimental -
       might cause high CPU utilization during import, especially with large
       disk images).
-    - `interface` - (Required) The disk interface for Proxmox, currently scsi,
-      sata and virtio are supported.
+    - `interface` - (Required) The disk interface for Proxmox, currently `scsi`,
+      `sata` and `virtio` interfaces are supported. Append the disk index at
+      the end, for example, `virtio0` for the first virtio disk, `virtio1` for
+      the second, etc.
     - `iothread` - (Optional) Whether to use iothreads for this disk (defaults
       to `false`).
     - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
