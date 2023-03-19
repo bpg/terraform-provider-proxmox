@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const (
@@ -54,22 +56,23 @@ func (c *VirtualEnvironmentClient) Authenticate(ctx context.Context, reset bool)
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
+	tflog.Debug(ctx, "sending authentication request", map[string]interface{}{
+		"path": req.URL.Path,
+	})
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return errors.New("failed to retrieve authentication response")
+		return fmt.Errorf("failed to retrieve authentication response: %w", err)
 	}
 
 	err = c.ValidateResponseCode(res)
-
 	if err != nil {
 		return err
 	}
 
 	resBody := VirtualEnvironmentAuthenticationResponseBody{}
 	err = json.NewDecoder(res.Body).Decode(&resBody)
-
 	if err != nil {
-		return errors.New("failed to decode authentication response")
+		return fmt.Errorf("failed to decode authentication response, %w", err)
 	}
 
 	if resBody.Data == nil {

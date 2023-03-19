@@ -180,6 +180,9 @@ func (c *VirtualEnvironmentClient) DoRequest(
 		return err
 	}
 
+	tflog.Debug(ctx, "sending request", map[string]interface{}{
+		"path": req.URL.Path,
+	})
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		fErr := fmt.Errorf(
