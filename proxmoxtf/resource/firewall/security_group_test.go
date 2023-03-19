@@ -39,7 +39,7 @@ func TestSecurityGroupSchema(t *testing.T) {
 		mkGroupComment: schema.TypeString,
 	})
 
-	ruleSchema := test.AssertNestedSchemaExistence(t, s, mkGroupRule)
+	ruleSchema := test.AssertNestedSchemaExistence(t, s, mkRule)
 
 	test.AssertRequiredArguments(t, ruleSchema, []string{
 		mkRuleAction,
