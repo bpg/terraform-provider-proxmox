@@ -7,7 +7,7 @@ parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: proxmox_virtual_environment_vms
+# Data Source: proxmox_virtual_environment_vm
 
 Retrieves information about a specific VM.
 
