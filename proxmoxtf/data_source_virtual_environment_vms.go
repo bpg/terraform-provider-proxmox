@@ -16,7 +16,6 @@ import (
 const mkDataSourceVirtualEnvironmentVMs = "vms"
 
 func dataSourceVirtualEnvironmentVMs() *schema.Resource {
-
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			mkDataSourceVirtualEnvironmentVMNodeName: {
@@ -72,8 +71,8 @@ func dataSourceVirtualEnvironmentVMsRead(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	var vms []interface{}
-	for _, data := range listData {
+	vms := make([]interface{}, len(listData))
+	for i, data := range listData {
 		vm := map[string]interface{}{
 			mkDataSourceVirtualEnvironmentVMVMID: data.VMID,
 		}
@@ -88,7 +87,7 @@ func dataSourceVirtualEnvironmentVMsRead(ctx context.Context, d *schema.Resource
 			vm[mkDataSourceVirtualEnvironmentVMTags] = tags
 		}
 
-		vms = append(vms, vm)
+		vms[i] = vm
 	}
 
 	err = d.Set(mkDataSourceVirtualEnvironmentVMs, vms)
