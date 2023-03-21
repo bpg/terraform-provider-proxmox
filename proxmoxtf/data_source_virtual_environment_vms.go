@@ -6,6 +6,7 @@ package proxmoxtf
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -16,8 +17,10 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
-const mkDataSourceVirtualEnvironmentVMs = "vms"
-const mkDataSourceVirtualEnvironmentVMsID = "id"
+const (
+	mkDataSourceVirtualEnvironmentVMs   = "vms"
+	mkDataSourceVirtualEnvironmentVMsID = "id"
+)
 
 func dataSourceVirtualEnvironmentVMs() *schema.Resource {
 	return &schema.Resource{
@@ -132,7 +135,11 @@ func dataSourceVirtualEnvironmentVMsRead(ctx context.Context, d *schema.Resource
 	return diags
 }
 
-func getNodeNames(ctx context.Context, d *schema.ResourceData, veClient *proxmox.VirtualEnvironmentClient) ([]string, error) {
+func getNodeNames(
+	ctx context.Context,
+	d *schema.ResourceData,
+	veClient *proxmox.VirtualEnvironmentClient,
+) ([]string, error) {
 	var nodeNames []string
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
 	if nodeName != "" {
@@ -140,7 +147,7 @@ func getNodeNames(ctx context.Context, d *schema.ResourceData, veClient *proxmox
 	} else {
 		nodes, err := veClient.ListNodes(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error listing nodes: %w", err)
 		}
 
 		for _, node := range nodes {
