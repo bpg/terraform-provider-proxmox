@@ -11,42 +11,40 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/exp/slices"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
 const mkDataSourceVirtualEnvironmentVMs = "vms"
+const mkDataSourceVirtualEnvironmentVMsID = "id"
 
 func dataSourceVirtualEnvironmentVMs() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			mkDataSourceVirtualEnvironmentVMsID: {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The data source identifier",
+			},
 			mkDataSourceVirtualEnvironmentVMNodeName: {
 				Type:        schema.TypeString,
+				Optional:    true,
 				Description: "The node name",
-				Required:    true,
+			},
+			mkDataSourceVirtualEnvironmentVMTags: {
+				Type:        schema.TypeList,
+				Description: "Tags of the VM to match",
+				Computed:    true,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			mkDataSourceVirtualEnvironmentVMs: {
 				Type:        schema.TypeList,
 				Description: "VMs",
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkDataSourceVirtualEnvironmentVMName: {
-							Type:        schema.TypeString,
-							Description: "The VM name",
-							Computed:    true,
-						},
-						mkDataSourceVirtualEnvironmentVMTags: {
-							Type:        schema.TypeList,
-							Description: "Tags of the VM",
-							Computed:    true,
-							Optional:    true,
-							Elem:        &schema.Schema{Type: schema.TypeString},
-						},
-						mkDataSourceVirtualEnvironmentVMVMID: {
-							Type:        schema.TypeInt,
-							Description: "The VM identifier",
-							Required:    true,
-						},
-					},
+					Schema: dataSourceVirtualEnvironmentVM().Schema,
 				},
 			},
 		},
@@ -64,36 +62,86 @@ func dataSourceVirtualEnvironmentVMsRead(ctx context.Context, d *schema.Resource
 		return diag.FromErr(err)
 	}
 
-	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
-
-	listData, err := veClient.ListVMs(ctx, nodeName)
+	nodeNames, err := getNodeNames(ctx, d, veClient)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	vms := make([]interface{}, len(listData))
-	for i, data := range listData {
-		vm := map[string]interface{}{
-			mkDataSourceVirtualEnvironmentVMVMID: data.VMID,
+	tagsData := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
+	var filterTags []string
+	for i := 0; i < len(tagsData); i++ {
+		tag := strings.TrimSpace(tagsData[i].(string))
+		if len(tag) > 0 {
+			filterTags = append(filterTags, tag)
+		}
+	}
+	sort.Strings(filterTags)
+
+	var vms []interface{}
+	for _, nodeName := range nodeNames {
+		listData, err := veClient.ListVMs(ctx, nodeName)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
 		}
 
-		if data.Name != nil {
-			vm[mkDataSourceVirtualEnvironmentVMName] = *data.Name
-		}
+		for _, data := range listData {
+			vm := map[string]interface{}{
+				mkDataSourceVirtualEnvironmentVMNodeName: nodeName,
+				mkDataSourceVirtualEnvironmentVMVMID:     data.VMID,
+			}
 
-		if data.Tags != nil && *data.Tags != "" {
-			tags := strings.Split(*data.Tags, ";")
-			sort.Strings(tags)
-			vm[mkDataSourceVirtualEnvironmentVMTags] = tags
-		}
+			if data.Name != nil {
+				vm[mkDataSourceVirtualEnvironmentVMName] = *data.Name
+			} else {
+				vm[mkDataSourceVirtualEnvironmentVMName] = ""
+			}
 
-		vms[i] = vm
+			var tags []string
+			if data.Tags != nil && *data.Tags != "" {
+				tags = strings.Split(*data.Tags, ";")
+				sort.Strings(tags)
+				vm[mkDataSourceVirtualEnvironmentVMTags] = tags
+			}
+
+			if len(filterTags) > 0 {
+				match := true
+				for _, tag := range filterTags {
+					if !slices.Contains(tags, tag) {
+						match = false
+						break
+					}
+				}
+				if !match {
+					continue
+				}
+			}
+
+			vms = append(vms, vm)
+		}
 	}
 
 	err = d.Set(mkDataSourceVirtualEnvironmentVMs, vms)
 	diags = append(diags, diag.FromErr(err)...)
 
-	d.SetId(nodeName)
+	d.SetId(d.Get(mkDataSourceVirtualEnvironmentVMsID).(string))
 
 	return diags
+}
+
+func getNodeNames(ctx context.Context, d *schema.ResourceData, veClient *proxmox.VirtualEnvironmentClient) ([]string, error) {
+	var nodeNames []string
+	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
+	if nodeName != "" {
+		nodeNames = append(nodeNames, nodeName)
+	} else {
+		nodes, err := veClient.ListNodes(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, node := range nodes {
+			nodeNames = append(nodeNames, node.Name)
+		}
+	}
+	return nodeNames, nil
 }
