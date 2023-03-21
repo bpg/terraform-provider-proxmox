@@ -84,6 +84,10 @@ func dataSourceVirtualEnvironmentVMsRead(ctx context.Context, d *schema.Resource
 			diags = append(diags, diag.FromErr(err)...)
 		}
 
+		sort.Slice(listData, func(i, j int) bool {
+			return listData[i].VMID < listData[j].VMID
+		})
+
 		for _, data := range listData {
 			vm := map[string]interface{}{
 				mkDataSourceVirtualEnvironmentVMNodeName: nodeName,
@@ -143,5 +147,7 @@ func getNodeNames(ctx context.Context, d *schema.ResourceData, veClient *proxmox
 			nodeNames = append(nodeNames, node.Name)
 		}
 	}
+
+	sort.Strings(nodeNames)
 	return nodeNames, nil
 }
