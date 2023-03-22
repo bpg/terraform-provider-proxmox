@@ -7,5 +7,5 @@ require (
 	github.com/ProtonMail/go-mime v0.0.0-20220302105931-303f85f7fe0f // indirect
 	github.com/charmbracelet/lipgloss v0.6.1-0.20220911181249-6304a734e792 // indirect
 	github.com/golangci/golangci-lint v1.51.2
-	github.com/goreleaser/goreleaser v1.16.1
+	github.com/goreleaser/goreleaser v1.16.2
 )
