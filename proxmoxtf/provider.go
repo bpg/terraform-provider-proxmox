@@ -55,6 +55,8 @@ func Provider() *schema.Provider {
 			"proxmox_virtual_environment_user":            dataSourceVirtualEnvironmentUser(),
 			"proxmox_virtual_environment_users":           dataSourceVirtualEnvironmentUsers(),
 			"proxmox_virtual_environment_version":         dataSourceVirtualEnvironmentVersion(),
+			"proxmox_virtual_environment_vm":              dataSourceVirtualEnvironmentVM(),
+			"proxmox_virtual_environment_vms":             dataSourceVirtualEnvironmentVMs(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"proxmox_virtual_environment_certificate":   resourceVirtualEnvironmentCertificate(),
