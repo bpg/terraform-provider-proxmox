@@ -9,7 +9,7 @@ subcategory: Virtual Environment
 
 # Data Source: proxmox_virtual_environment_vms
 
-Retrieves information about all VMs on a specific node.
+Retrieves information about all VMs in the Proxmox cluster.
 
 ## Example Usage
 
@@ -21,7 +21,7 @@ data "proxmox_virtual_environment_vms" "ubuntu_vms" {
 
 ## Argument Reference
 
-- `node_name` - (Optional) The node name.
+- `node_name` - (Optional) The node name. 
 - `tags` - (Optional) A list of tags to filter the VMs. The VM must have all
   the tags to be included in the result.
 
