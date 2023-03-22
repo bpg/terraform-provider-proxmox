@@ -33,7 +33,6 @@ func dataSourceVirtualEnvironmentVMs() *schema.Resource {
 			mkDataSourceVirtualEnvironmentVMTags: {
 				Type:        schema.TypeList,
 				Description: "Tags of the VM to match",
-				Computed:    true,
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
