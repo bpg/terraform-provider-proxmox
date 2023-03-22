@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"golang.org/x/exp/slices"
@@ -18,18 +19,12 @@ import (
 )
 
 const (
-	mkDataSourceVirtualEnvironmentVMs   = "vms"
-	mkDataSourceVirtualEnvironmentVMsID = "id"
+	mkDataSourceVirtualEnvironmentVMs = "vms"
 )
 
 func dataSourceVirtualEnvironmentVMs() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentVMsID: {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "The data source identifier",
-			},
 			mkDataSourceVirtualEnvironmentVMNodeName: {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -130,7 +125,7 @@ func dataSourceVirtualEnvironmentVMsRead(ctx context.Context, d *schema.Resource
 	err = d.Set(mkDataSourceVirtualEnvironmentVMs, vms)
 	diags = append(diags, diag.FromErr(err)...)
 
-	d.SetId(d.Get(mkDataSourceVirtualEnvironmentVMsID).(string))
+	d.SetId(uuid.New().String())
 
 	return diags
 }

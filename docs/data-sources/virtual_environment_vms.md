@@ -15,16 +15,12 @@ Retrieves information about all VMs on a specific node.
 
 ```terraform
 data "proxmox_virtual_environment_vms" "ubuntu_vms" {
-  id        = "ubuntu_vms"
   tags      = ["ubuntu"]
 }
 ```
 
 ## Argument Reference
 
-- `id` - (Required) The data source identifier, could be any string. This is
-  used to identify the data source among other data sources of the same type in
-  the terraform state.
 - `node_name` - (Optional) The node name.
 - `tags` - (Optional) A list of tags to filter the VMs. The VM must have all
   the tags to be included in the result.
