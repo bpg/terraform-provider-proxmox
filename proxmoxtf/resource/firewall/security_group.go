@@ -84,7 +84,8 @@ func securityGroupCreate(ctx context.Context, d *schema.ResourceData, m interfac
 
 	diags := ruleCreate(d, func(body *firewall.RuleCreateRequestBody) error {
 		body.Group = &name
-		return veClient.API().Cluster().Firewall().CreateGroupRule(ctx, name, body)
+		e := veClient.API().Cluster().Firewall().CreateGroupRule(ctx, name, body)
+		return fmt.Errorf("error creating rule: %w", e)
 	})
 	if diags.HasError() {
 		return diags
@@ -216,7 +217,8 @@ func securityGroupUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 
 	diags := ruleUpdate(d, func(body *firewall.RuleUpdateRequestBody) error {
 		body.Group = &newName
-		return veClient.API().Cluster().Firewall().UpdateGroupRule(ctx, newName, *body.Pos, body)
+		e := veClient.API().Cluster().Firewall().UpdateGroupRule(ctx, newName, *body.Pos, body)
+		return fmt.Errorf("error updating rule: %w", e)
 	})
 	if diags.HasError() {
 		return diags

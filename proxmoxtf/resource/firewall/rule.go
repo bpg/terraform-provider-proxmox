@@ -164,7 +164,6 @@ func ruleCreate(d *schema.ResourceData, apiCaller func(*firewall.RuleCreateReque
 		}
 
 		err := apiCaller(&ruleBody)
-
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 		}
@@ -285,5 +284,4 @@ func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	if baseRule.SPort != nil {
 		rule[mkRuleSPort] = *baseRule.SPort
 	}
-
 }
