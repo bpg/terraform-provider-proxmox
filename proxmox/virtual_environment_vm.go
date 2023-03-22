@@ -322,8 +322,27 @@ func (c *VirtualEnvironmentClient) MoveVMDiskAsync(
 }
 
 // ListVMs retrieves a list of virtual machines.
-func (c *VirtualEnvironmentClient) ListVMs() ([]*VirtualEnvironmentVMListResponseData, error) {
-	return nil, errors.New("not implemented")
+func (c *VirtualEnvironmentClient) ListVMs(
+	ctx context.Context,
+	nodeName string,
+) ([]*VirtualEnvironmentVMListResponseData, error) {
+	resBody := &VirtualEnvironmentVMListResponseBody{}
+	err := c.DoRequest(
+		ctx,
+		HmGET,
+		fmt.Sprintf("nodes/%s/qemu", url.PathEscape(nodeName)),
+		nil,
+		resBody,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("the server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
 }
 
 // RebootVM reboots a virtual machine.

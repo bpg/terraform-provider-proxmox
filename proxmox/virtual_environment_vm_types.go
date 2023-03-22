@@ -506,7 +506,9 @@ type VirtualEnvironmentVMListResponseBody struct {
 
 // VirtualEnvironmentVMListResponseData contains the data from an virtual machine list response.
 type VirtualEnvironmentVMListResponseData struct {
-	ACPI *types.CustomBool `json:"acpi,omitempty" url:"acpi,omitempty,int"`
+	Name *string `json:"name,omitempty"`
+	Tags *string `json:"tags,omitempty"`
+	VMID int     `json:"vmid,omitempty"`
 }
 
 // VirtualEnvironmentVMMigrateRequestBody contains the body for a VM migration request.
