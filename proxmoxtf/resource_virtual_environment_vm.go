@@ -516,7 +516,6 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					return []interface{}{
 						map[string]interface{}{
 							mkResourceVirtualEnvironmentVMDiskDatastoreID: dvResourceVirtualEnvironmentVMDiskDatastoreID,
-							mkResourceVirtualEnvironmentVMDiskFileFormat:  dvResourceVirtualEnvironmentVMDiskFileFormat,
 							mkResourceVirtualEnvironmentVMDiskFileID:      dvResourceVirtualEnvironmentVMDiskFileID,
 							mkResourceVirtualEnvironmentVMDiskInterface:   dvResourceVirtualEnvironmentVMDiskInterface,
 							mkResourceVirtualEnvironmentVMDiskSize:        dvResourceVirtualEnvironmentVMDiskSize,
@@ -544,7 +543,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description:      "The file format",
 							Optional:         true,
 							ForceNew:         true,
-							Default:          dvResourceVirtualEnvironmentVMDiskFileFormat,
+							Computed:         true,
 							ValidateDiagFunc: getFileFormatValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskFileID: {
@@ -2050,6 +2049,8 @@ func resourceVirtualEnvironmentVMCreateCustom(
 	//    	returned by API calls, particularly read-back to populate the Terraform state.
 	//		Would it be possible to wait for the VM to be fully available, or to wait for the API to report
 	//		the correct state?
+	// time.Sleep(5 * time.Second)
+
 	return resourceVirtualEnvironmentVMCreateCustomDisks(ctx, d, m)
 }
 
@@ -2111,6 +2112,10 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(
 		ioThread := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 		ssd := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard, _ := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
+
+		if fileFormat == "" {
+			return diag.FromErr(fmt.Errorf("the file format of disk %s is not specified", fileID))
+		}
 
 		if len(speed) == 0 {
 			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
@@ -2467,6 +2472,9 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(
 			return diskDeviceObjects, err
 		}
 
+		if fileFormat == "" {
+			fileFormat = dvResourceVirtualEnvironmentVMDiskFileFormat
+		}
 		if fileID != "" {
 			diskDevice.Enabled = false
 		} else {
