@@ -516,7 +516,6 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 					return []interface{}{
 						map[string]interface{}{
 							mkResourceVirtualEnvironmentVMDiskDatastoreID: dvResourceVirtualEnvironmentVMDiskDatastoreID,
-							mkResourceVirtualEnvironmentVMDiskFileFormat:  dvResourceVirtualEnvironmentVMDiskFileFormat,
 							mkResourceVirtualEnvironmentVMDiskFileID:      dvResourceVirtualEnvironmentVMDiskFileID,
 							mkResourceVirtualEnvironmentVMDiskInterface:   dvResourceVirtualEnvironmentVMDiskInterface,
 							mkResourceVirtualEnvironmentVMDiskSize:        dvResourceVirtualEnvironmentVMDiskSize,
@@ -544,7 +543,7 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 							Description:      "The file format",
 							Optional:         true,
 							ForceNew:         true,
-							Default:          dvResourceVirtualEnvironmentVMDiskFileFormat,
+							Computed:         true,
 							ValidateDiagFunc: getFileFormatValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskFileID: {
@@ -2044,6 +2043,14 @@ func resourceVirtualEnvironmentVMCreateCustom(
 
 	d.SetId(strconv.Itoa(vmID))
 
+	// TODO: The VM creation is not atomic, and not synchronous. This means that the VM might not be
+	//   	available immediately after the creation, or its state reported by the API might not be
+	//    	up to date. This is a problem for the following operations, which rely on the VM information
+	//    	returned by API calls, particularly read-back to populate the Terraform state.
+	//		Would it be possible to wait for the VM to be fully available, or to wait for the API to report
+	//		the correct state?
+	// time.Sleep(5 * time.Second)
+
 	return resourceVirtualEnvironmentVMCreateCustomDisks(ctx, d, m)
 }
 
@@ -2105,6 +2112,10 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(
 		ioThread := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 		ssd := proxmox.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard, _ := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
+
+		if fileFormat == "" {
+			fileFormat = dvResourceVirtualEnvironmentVMDiskFileFormat
+		}
 
 		if len(speed) == 0 {
 			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
@@ -2461,6 +2472,9 @@ func resourceVirtualEnvironmentVMGetDiskDeviceObjects(
 			return diskDeviceObjects, err
 		}
 
+		if fileFormat == "" {
+			fileFormat = dvResourceVirtualEnvironmentVMDiskFileFormat
+		}
 		if fileID != "" {
 			diskDevice.Enabled = false
 		} else {
@@ -2776,6 +2790,7 @@ func resourceVirtualEnvironmentVMReadCustom(
 		return diags
 	}
 
+	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
 
 	// Compare the agent configuration to the one stored in the state.
@@ -3012,7 +3027,20 @@ func resourceVirtualEnvironmentVMReadCustom(
 		disk[mkResourceVirtualEnvironmentVMDiskDatastoreID] = fileIDParts[0]
 
 		if dd.Format == nil {
-			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = "qcow2"
+			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = dvResourceVirtualEnvironmentVMDiskFileFormat
+			// disk format may not be returned by config API if it is default for the storage, and that may be different
+			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
+			files, err := veClient.ListDatastoreFiles(ctx, nodeName, fileIDParts[0])
+			if err != nil {
+				diags = append(diags, diag.FromErr(err)...)
+				continue
+			}
+			for _, v := range files {
+				if v.VolumeID == dd.FileVolume {
+					disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = v.FileFormat
+					break
+				}
+			}
 		} else {
 			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = dd.Format
 		}
