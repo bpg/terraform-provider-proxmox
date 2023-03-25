@@ -2114,7 +2114,7 @@ func resourceVirtualEnvironmentVMCreateCustomDisks(
 		discard, _ := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
 
 		if fileFormat == "" {
-			return diag.FromErr(fmt.Errorf("the file format of disk %s is not specified", fileID))
+			fileFormat = dvResourceVirtualEnvironmentVMDiskFileFormat
 		}
 
 		if len(speed) == 0 {
