@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.15.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.14.1...v0.15.0) (2023-03-25)
+
+
+### Features
+
+* **vm:** Add bare minimum VM datasource ([#268](https://github.com/bpg/terraform-provider-proxmox/issues/268)) ([c2d3f46](https://github.com/bpg/terraform-provider-proxmox/commit/c2d3f46474fc0d0603c34596eb81b82c06713b17))
+
+
+### Bug Fixes
+
+* **vm:** Prevent `file_format` override with default `qcow2` in TF state ([#275](https://github.com/bpg/terraform-provider-proxmox/issues/275)) ([17dca98](https://github.com/bpg/terraform-provider-proxmox/commit/17dca987eb240454dbd980ed8f0c4a939e327ff0))
+
+
+### Miscellaneous
+
+* **deps:** bump actions/setup-go from 3 to 4 ([#269](https://github.com/bpg/terraform-provider-proxmox/issues/269)) ([fdb9dc7](https://github.com/bpg/terraform-provider-proxmox/commit/fdb9dc7714f12a1682f47e57ab319753fc18e4f4))
+* **deps:** bump github.com/golangci/golangci-lint from 1.51.2 to 1.52.1 in /tools ([#274](https://github.com/bpg/terraform-provider-proxmox/issues/274)) ([1150163](https://github.com/bpg/terraform-provider-proxmox/commit/1150163b4b66249b79e446cf20f9df54fc204f7c))
+* **deps:** bump github.com/goreleaser/goreleaser from 1.16.1 to 1.16.2 in /tools ([#271](https://github.com/bpg/terraform-provider-proxmox/issues/271)) ([7a0e1db](https://github.com/bpg/terraform-provider-proxmox/commit/7a0e1db6c4a117e0599b4899df781eb3c3fe600f))
+
 ## [0.14.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.14.0...v0.14.1) (2023-03-19)
 
 
