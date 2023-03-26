@@ -15,9 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
 const (
@@ -27,46 +25,34 @@ const (
 	mkGroupComment = "comment"
 )
 
-func SecurityGroup() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			mkGroupName: {
-				Type:        schema.TypeString,
-				Description: "Security group name",
-				Required:    true,
-				ForceNew:    false,
-			},
-			mkGroupComment: {
-				Type:        schema.TypeString,
-				Description: "Security group comment",
-				Optional:    true,
-				Default:     dvGroupComment,
-			},
-			mkRule: {
-				Type:        schema.TypeList,
-				Description: "List of rules",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				ForceNew: true,
-				Elem:     Rule(),
-			},
+func SecurityGroupSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		mkGroupName: {
+			Type:        schema.TypeString,
+			Description: "Security group name",
+			Required:    true,
+			ForceNew:    false,
 		},
-		CreateContext: securityGroupCreate,
-		ReadContext:   securityGroupRead,
-		UpdateContext: securityGroupUpdate,
-		DeleteContext: securityGroupDelete,
+		mkGroupComment: {
+			Type:        schema.TypeString,
+			Description: "Security group comment",
+			Optional:    true,
+			Default:     dvGroupComment,
+		},
+		mkRule: {
+			Type:        schema.TypeList,
+			Description: "List of rules",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			ForceNew: true,
+			Elem:     Rule(),
+		},
 	}
 }
 
-func securityGroupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func SecurityGroupCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkGroupComment).(string)
 	name := d.Get(mkGroupName).(string)
 
@@ -75,7 +61,7 @@ func securityGroupCreate(ctx context.Context, d *schema.ResourceData, m interfac
 		Group:   name,
 	}
 
-	err = veClient.API().Cluster().Firewall().CreateGroup(ctx, body)
+	err := fw.CreateGroup(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -84,8 +70,11 @@ func securityGroupCreate(ctx context.Context, d *schema.ResourceData, m interfac
 
 	diags := ruleCreate(d, func(body *firewall.RuleCreateRequestBody) error {
 		body.Group = &name
-		e := veClient.API().Cluster().Firewall().CreateGroupRule(ctx, name, body)
-		return fmt.Errorf("error creating rule: %w", e)
+		e := fw.CreateGroupRule(ctx, name, body)
+		if e != nil {
+			return fmt.Errorf("error creating rule: %w", e)
+		}
+		return nil
 	})
 	if diags.HasError() {
 		return diags
@@ -97,21 +86,15 @@ func securityGroupCreate(ctx context.Context, d *schema.ResourceData, m interfac
 		return diag.FromErr(err)
 	}
 
-	return securityGroupRead(ctx, d, m)
+	return SecurityGroupRead(ctx, fw, d)
 }
 
-func securityGroupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func SecurityGroupRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
-
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	name := d.Id()
 
-	allGroups, err := veClient.API().Cluster().Firewall().ListGroups(ctx)
+	allGroups, err := fw.ListGroups(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -134,15 +117,15 @@ func securityGroupRead(ctx context.Context, d *schema.ResourceData, m interface{
 			ruleMap := v.(map[string]interface{})
 			pos := ruleMap[mkRulePos].(int)
 
-			err = readGroupRule(ctx, veClient, name, pos, ruleMap)
+			err = readGroupRule(ctx, fw, name, pos, ruleMap)
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		}
 	} else {
-		ruleIDs, err := veClient.API().Cluster().Firewall().GetGroupRules(ctx, name)
+		ruleIDs, err := fw.GetGroupRules(ctx, name)
 		if err != nil {
-			if strings.Contains(err.Error(), "HTTP 404") {
+			if strings.Contains(err.Error(), "no such security group") {
 				d.SetId("")
 				return nil
 			}
@@ -150,7 +133,7 @@ func securityGroupRead(ctx context.Context, d *schema.ResourceData, m interface{
 		}
 		for _, id := range ruleIDs {
 			ruleMap := map[string]interface{}{}
-			err = readGroupRule(ctx, veClient, name, id.Pos, ruleMap)
+			err = readGroupRule(ctx, fw, name, id.Pos, ruleMap)
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
 			} else {
@@ -171,13 +154,16 @@ func securityGroupRead(ctx context.Context, d *schema.ResourceData, m interface{
 
 func readGroupRule(
 	ctx context.Context,
-	client *proxmox.VirtualEnvironmentClient,
+	fw *firewall.API,
 	group string,
 	pos int,
 	ruleMap map[string]interface{},
 ) error {
-	rule, err := client.API().Cluster().Firewall().GetGroupRule(ctx, group, pos)
+	rule, err := fw.GetGroupRule(ctx, group, pos)
 	if err != nil {
+		if strings.Contains(err.Error(), "no such security group") {
+			return nil
+		}
 		return fmt.Errorf("error reading rule %d for group %s: %w", pos, group, err)
 	}
 
@@ -191,13 +177,7 @@ func readGroupRule(
 	return nil
 }
 
-func securityGroupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func SecurityGroupUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkGroupComment).(string)
 	newName := d.Get(mkGroupName).(string)
 	previousName := d.Id()
@@ -208,7 +188,7 @@ func securityGroupUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 		Comment: &comment,
 	}
 
-	err = veClient.API().Cluster().Firewall().UpdateGroup(ctx, body)
+	err := fw.UpdateGroup(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -217,23 +197,17 @@ func securityGroupUpdate(ctx context.Context, d *schema.ResourceData, m interfac
 
 	diags := ruleUpdate(d, func(body *firewall.RuleUpdateRequestBody) error {
 		body.Group = &newName
-		e := veClient.API().Cluster().Firewall().UpdateGroupRule(ctx, newName, *body.Pos, body)
+		e := fw.UpdateGroupRule(ctx, newName, *body.Pos, body)
 		return fmt.Errorf("error updating rule: %w", e)
 	})
 	if diags.HasError() {
 		return diags
 	}
 
-	return securityGroupRead(ctx, d, m)
+	return SecurityGroupRead(ctx, fw, d)
 }
 
-func securityGroupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func SecurityGroupDelete(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	group := d.Id()
 
 	rules := d.Get(mkRule).([]interface{})
@@ -246,15 +220,18 @@ func securityGroupDelete(ctx context.Context, d *schema.ResourceData, m interfac
 	for _, v := range rules {
 		rule := v.(map[string]interface{})
 		pos := rule[mkRulePos].(int)
-		err = veClient.API().Cluster().Firewall().DeleteGroupRule(ctx, group, pos)
+		err := fw.DeleteGroupRule(ctx, group, pos)
 		if err != nil {
+			if strings.Contains(err.Error(), "no such security group") {
+				break
+			}
 			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.API().Cluster().Firewall().DeleteGroup(ctx, group)
+	err := fw.DeleteGroup(ctx, group)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if strings.Contains(err.Error(), "no such security group") {
 			d.SetId("")
 			return nil
 		}

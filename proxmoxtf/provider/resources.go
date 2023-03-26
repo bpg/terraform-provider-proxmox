@@ -11,7 +11,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 )
 
 func createResourceMap() map[string]*schema.Resource {
@@ -19,7 +18,7 @@ func createResourceMap() map[string]*schema.Resource {
 		"proxmox_virtual_environment_certificate":                     resource.Certificate(),
 		"proxmox_virtual_environment_cluster_firewall_alias":          cluster.FirewallAlias(),
 		"proxmox_virtual_environment_cluster_firewall_ipset":          cluster.FirewallIPSet(),
-		"proxmox_virtual_environment_cluster_firewall_security_group": firewall.SecurityGroup(),
+		"proxmox_virtual_environment_cluster_firewall_security_group": cluster.FirewallSecurityGroup(),
 		"proxmox_virtual_environment_container":                       resource.Container(),
 		"proxmox_virtual_environment_dns":                             resource.DNS(),
 		"proxmox_virtual_environment_file":                            resource.File(),

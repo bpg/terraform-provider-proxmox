@@ -2028,7 +2028,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	d.SetId(strconv.Itoa(vmID))
 
-	// TODO: The VM creation is not atomic, and not synchronous. This means that the VM might not be
+	// NOTE: The VM creation is not atomic, and not synchronous. This means that the VM might not be
 	//   	available immediately after the creation, or its state reported by the API might not be
 	//    	up to date. This is a problem for the following operations, which rely on the VM information
 	//    	returned by API calls, particularly read-back to populate the Terraform state.

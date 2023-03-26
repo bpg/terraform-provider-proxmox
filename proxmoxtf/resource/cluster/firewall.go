@@ -25,7 +25,6 @@ func FirewallAlias() *schema.Resource {
 		UpdateContext: invokeFirewallAPI(firewall.AliasUpdate),
 		DeleteContext: invokeFirewallAPI(firewall.AliasDelete),
 	}
-
 }
 
 func FirewallIPSet() *schema.Resource {
@@ -36,10 +35,21 @@ func FirewallIPSet() *schema.Resource {
 		UpdateContext: invokeFirewallAPI(firewall.IPSetUpdate),
 		DeleteContext: invokeFirewallAPI(firewall.IPSetDelete),
 	}
-
 }
 
-func invokeFirewallAPI(f func(context.Context, *fw.API, *schema.ResourceData) diag.Diagnostics) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
+func FirewallSecurityGroup() *schema.Resource {
+	return &schema.Resource{
+		Schema:        firewall.SecurityGroupSchema(),
+		CreateContext: invokeFirewallAPI(firewall.SecurityGroupCreate),
+		ReadContext:   invokeFirewallAPI(firewall.SecurityGroupRead),
+		UpdateContext: invokeFirewallAPI(firewall.SecurityGroupUpdate),
+		DeleteContext: invokeFirewallAPI(firewall.SecurityGroupDelete),
+	}
+}
+
+func invokeFirewallAPI(
+	f func(context.Context, *fw.API, *schema.ResourceData) diag.Diagnostics,
+) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		config := m.(proxmoxtf.ProviderConfiguration)
 		veClient, err := config.GetVEClient()

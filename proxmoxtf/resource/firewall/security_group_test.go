@@ -12,41 +12,41 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestSecurityGroupInstantiation tests whether the SecurityGroup instance can be instantiated.
-func TestSecurityGroupInstantiation(t *testing.T) {
+// TestSecurityGroupSchemaInstantiation tests whether the SecurityGroupSchema instance can be instantiated.
+func TestSecurityGroupSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, SecurityGroup(), "Cannot instantiate SecurityGroup")
+	require.NotNilf(t, SecurityGroupSchema(), "Cannot instantiate SecurityGroupSchema")
 }
 
 // TestSecurityGroupSchema tests the SecurityGroup schema.
 func TestSecurityGroupSchema(t *testing.T) {
 	t.Parallel()
-	s := SecurityGroup()
+	s := SecurityGroupSchema()
 
-	test.AssertRequiredArguments(t, s, []string{
+	structure.AssertRequiredArguments(t, s, []string{
 		mkGroupName,
 	})
 
-	test.AssertOptionalArguments(t, s, []string{
+	structure.AssertOptionalArguments(t, s, []string{
 		mkGroupComment,
 	})
 
-	test.AssertValueTypes(t, s, map[string]schema.ValueType{
+	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkGroupName:    schema.TypeString,
 		mkGroupComment: schema.TypeString,
 	})
 
-	ruleSchema := test.AssertNestedSchemaExistence(t, s, mkRule)
+	ruleSchema := structure.AssertNestedSchemaExistence(t, s, mkRule).Schema
 
-	test.AssertRequiredArguments(t, ruleSchema, []string{
+	structure.AssertRequiredArguments(t, ruleSchema, []string{
 		mkRuleAction,
 		mkRuleType,
 	})
 
-	test.AssertOptionalArguments(t, ruleSchema, []string{
+	structure.AssertOptionalArguments(t, ruleSchema, []string{
 		mkRuleComment,
 		mkRuleDest,
 		mkRuleDPort,
@@ -59,7 +59,7 @@ func TestSecurityGroupSchema(t *testing.T) {
 		mkRuleSPort,
 	})
 
-	test.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
+	structure.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
 		mkRulePos:     schema.TypeInt,
 		mkRuleAction:  schema.TypeString,
 		mkRuleType:    schema.TypeString,
