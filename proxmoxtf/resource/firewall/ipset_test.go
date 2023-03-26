@@ -12,48 +12,48 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestIPSetInstantiation tests whether the IPSet
+// TestIPSetSchemaInstantiation tests whether the IPSetSchema
 // instance can be instantiated.
-func TestIPSetInstantiation(t *testing.T) {
+func TestIPSetSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, IPSet(), "Cannot instantiate IPSet")
+	require.NotNilf(t, IPSetSchema(), "Cannot instantiate IPSetSchema")
 }
 
 // TestIPSetSchema tests the IPSet schema.
 func TestIPSetSchema(t *testing.T) {
 	t.Parallel()
-	s := IPSet()
+	s := IPSetSchema()
 
-	test.AssertRequiredArguments(t, s, []string{
+	structure.AssertRequiredArguments(t, s, []string{
 		mkIPSetName,
 	})
 
-	test.AssertOptionalArguments(t, s, []string{
+	structure.AssertOptionalArguments(t, s, []string{
 		mkIPSetCIDR,
 		mkIPSetCIDRComment,
 	})
 
-	test.AssertValueTypes(t, s, map[string]schema.ValueType{
+	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkIPSetName:        schema.TypeString,
 		mkIPSetCIDR:        schema.TypeList,
 		mkIPSetCIDRComment: schema.TypeString,
 	})
 
-	IPSetSchema := test.AssertNestedSchemaExistence(t, s, mkIPSetCIDR)
+	nested := structure.AssertNestedSchemaExistence(t, s, mkIPSetCIDR).Schema
 
-	test.AssertRequiredArguments(t, IPSetSchema, []string{
+	structure.AssertRequiredArguments(t, nested, []string{
 		mkIPSetCIDRName,
 	})
 
-	test.AssertOptionalArguments(t, IPSetSchema, []string{
+	structure.AssertOptionalArguments(t, nested, []string{
 		mkIPSetCIDRComment,
 		mkIPSetCIDRNoMatch,
 	})
 
-	test.AssertValueTypes(t, IPSetSchema, map[string]schema.ValueType{
+	structure.AssertValueTypes(t, nested, map[string]schema.ValueType{
 		mkIPSetCIDRName:    schema.TypeString,
 		mkIPSetCIDRComment: schema.TypeString,
 		mkIPSetCIDRNoMatch: schema.TypeBool,

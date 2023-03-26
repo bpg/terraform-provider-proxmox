@@ -15,7 +15,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
 const (
@@ -29,71 +28,59 @@ const (
 	mkIPSetCIDRNoMatch = "nomatch"
 )
 
-func IPSet() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			mkIPSetName: {
-				Type:        schema.TypeString,
-				Description: "IPSet name",
-				Required:    true,
-				ForceNew:    false,
+func IPSetSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		mkIPSetName: {
+			Type:        schema.TypeString,
+			Description: "IPSet name",
+			Required:    true,
+			ForceNew:    false,
+		},
+		mkIPSetCIDR: {
+			Type:        schema.TypeList,
+			Description: "List of IP or Networks",
+			Optional:    true,
+			ForceNew:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
 			},
-			mkIPSetCIDR: {
-				Type:        schema.TypeList,
-				Description: "List of IP or Networks",
-				Optional:    true,
-				ForceNew:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkIPSetCIDRName: {
-							Type:        schema.TypeString,
-							Description: "Network/IP specification in CIDR format",
-							Required:    true,
-							ForceNew:    true,
-						},
-						mkIPSetCIDRNoMatch: {
-							Type:        schema.TypeBool,
-							Description: "No match this IP/CIDR",
-							Optional:    true,
-							Default:     dvIPSetCIDRNoMatch,
-							ForceNew:    true,
-						},
-						mkIPSetCIDRComment: {
-							Type:        schema.TypeString,
-							Description: "IP/CIDR comment",
-							Optional:    true,
-							Default:     dvIPSetCIDRComment,
-							ForceNew:    true,
-						},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkIPSetCIDRName: {
+						Type:        schema.TypeString,
+						Description: "Network/IP specification in CIDR format",
+						Required:    true,
+						ForceNew:    true,
+					},
+					mkIPSetCIDRNoMatch: {
+						Type:        schema.TypeBool,
+						Description: "No match this IP/CIDR",
+						Optional:    true,
+						Default:     dvIPSetCIDRNoMatch,
+						ForceNew:    true,
+					},
+					mkIPSetCIDRComment: {
+						Type:        schema.TypeString,
+						Description: "IP/CIDR comment",
+						Optional:    true,
+						Default:     dvIPSetCIDRComment,
+						ForceNew:    true,
 					},
 				},
-				MaxItems: 14,
-				MinItems: 0,
 			},
-			mkIPSetCIDRComment: {
-				Type:        schema.TypeString,
-				Description: "IPSet comment",
-				Optional:    true,
-				Default:     dvIPSetCIDRComment,
-			},
+			MaxItems: 14,
+			MinItems: 0,
 		},
-		CreateContext: ipSetCreate,
-		ReadContext:   ipSetRead,
-		UpdateContext: ipSetUpdate,
-		DeleteContext: ipSetDelete,
+		mkIPSetCIDRComment: {
+			Type:        schema.TypeString,
+			Description: "IPSet comment",
+			Optional:    true,
+			Default:     dvIPSetCIDRComment,
+		},
 	}
 }
 
-func ipSetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func IPSetCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkIPSetCIDRComment).(string)
 	name := d.Get(mkIPSetName).(string)
 
@@ -126,34 +113,29 @@ func ipSetCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		Name:    name,
 	}
 
-	err = veClient.API().Cluster().Firewall().CreateIPSet(ctx, body)
+	err := fw.CreateIPSet(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	for _, v := range ipSetsArray {
-		err = veClient.API().Cluster().Firewall().AddCIDRToIPSet(ctx, name, v)
+		err = fw.AddCIDRToIPSet(ctx, name, v)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	d.SetId(name)
-	return ipSetRead(ctx, d, m)
+
+	return IPSetRead(ctx, fw, d)
 }
 
-func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func IPSetRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
-
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	name := d.Id()
 
-	allIPSets, err := veClient.API().Cluster().Firewall().ListIPSets(ctx)
+	allIPSets, err := fw.ListIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -168,9 +150,9 @@ func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		}
 	}
 
-	ipSet, err := veClient.API().Cluster().Firewall().GetIPSetContent(ctx, name)
+	ipSet, err := fw.GetIPSetContent(ctx, name)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if strings.Contains(err.Error(), "no such IPSet") {
 			d.SetId("")
 			return nil
 		}
@@ -180,7 +162,6 @@ func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 	//nolint:prealloc
 	var entries []interface{}
-
 	for key := range ipSet {
 		entry := map[string]interface{}{}
 
@@ -193,16 +174,11 @@ func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 	err = d.Set(mkIPSetCIDR, entries)
 	diags = append(diags, diag.FromErr(err)...)
+
 	return diags
 }
 
-func ipSetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func IPSetUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkIPSetCIDRComment).(string)
 	newName := d.Get(mkIPSetName).(string)
 	previousName := d.Id()
@@ -213,35 +189,30 @@ func ipSetUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		Comment: &comment,
 	}
 
-	err = veClient.API().Cluster().Firewall().UpdateIPSet(ctx, body)
+	err := fw.UpdateIPSet(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(newName)
 
-	return ipSetRead(ctx, d, m)
+	return IPSetRead(ctx, fw, d)
 }
 
-func ipSetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func IPSetDelete(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	name := d.Id()
 
-	IPSetContent, err := veClient.API().Cluster().Firewall().GetIPSetContent(ctx, name)
+	IPSetContent, err := fw.GetIPSetContent(ctx, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// PVE requires content of IPSet be cleared before removal
 	if len(IPSetContent) > 0 {
-		for _, IPSet := range IPSetContent {
-			err = veClient.API().Cluster().Firewall().DeleteIPSetContent(ctx, name, IPSet.CIDR)
+		for _, ipSet := range IPSetContent {
+			err = fw.DeleteIPSetContent(ctx, name, ipSet.CIDR)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -250,10 +221,9 @@ func ipSetDelete(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		return diags
 	}
 
-	err = veClient.API().Cluster().Firewall().DeleteIPSet(ctx, name)
-
+	err = fw.DeleteIPSet(ctx, name)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if strings.Contains(err.Error(), "no such IPSet") {
 			d.SetId("")
 			return nil
 		}

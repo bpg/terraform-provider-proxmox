@@ -14,53 +14,36 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
 const (
-	dvAliasComment = ""
-
 	mkAliasName    = "name"
 	mkAliasCIDR    = "cidr"
 	mkAliasComment = "comment"
 )
 
-func Alias() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			mkAliasName: {
-				Type:        schema.TypeString,
-				Description: "Alias name",
-				Required:    true,
-				ForceNew:    false,
-			},
-			mkAliasCIDR: {
-				Type:        schema.TypeString,
-				Description: "IP/CIDR block",
-				Required:    true,
-				ForceNew:    false,
-			},
-			mkAliasComment: {
-				Type:        schema.TypeString,
-				Description: "Alias comment",
-				Optional:    true,
-				Default:     dvAliasComment,
-			},
+func AliasSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		mkAliasName: {
+			Type:        schema.TypeString,
+			Description: "Alias name",
+			Required:    true,
 		},
-		CreateContext: aliasCreate,
-		ReadContext:   aliasRead,
-		UpdateContext: aliasUpdate,
-		DeleteContext: aliasDelete,
+		mkAliasCIDR: {
+			Type:        schema.TypeString,
+			Description: "IP/CIDR block",
+			Required:    true,
+		},
+		mkAliasComment: {
+			Type:        schema.TypeString,
+			Description: "Alias comment",
+			Optional:    true,
+			Default:     "",
+		},
 	}
 }
 
-func aliasCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func AliasCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkAliasComment).(string)
 	name := d.Get(mkAliasName).(string)
 	cidr := d.Get(mkAliasCIDR).(string)
@@ -71,27 +54,21 @@ func aliasCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		CIDR:    cidr,
 	}
 
-	err = veClient.API().Cluster().Firewall().CreateAlias(ctx, body)
+	err := fw.CreateAlias(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(name)
 
-	return aliasRead(ctx, d, m)
+	return AliasRead(ctx, fw, d)
 }
 
-func aliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func AliasRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	name := d.Id()
-	alias, err := veClient.API().Cluster().Firewall().GetAlias(ctx, name)
+	alias, err := fw.GetAlias(ctx, name)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if strings.Contains(err.Error(), "no such alias") {
 			d.SetId("")
 			return nil
 		}
@@ -114,13 +91,7 @@ func aliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	return nil
 }
 
-func aliasUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func AliasUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkAliasComment).(string)
 	cidr := d.Get(mkAliasCIDR).(string)
 	newName := d.Get(mkAliasName).(string)
@@ -132,28 +103,21 @@ func aliasUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		Comment: &comment,
 	}
 
-	err = veClient.API().Cluster().Firewall().UpdateAlias(ctx, previousName, body)
+	err := fw.UpdateAlias(ctx, previousName, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(newName)
 
-	return aliasRead(ctx, d, m)
+	return AliasRead(ctx, fw, d)
 }
 
-func aliasDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+func AliasDelete(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	name := d.Id()
-	err = veClient.API().Cluster().Firewall().DeleteAlias(ctx, name)
-
+	err := fw.DeleteAlias(ctx, name)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if strings.Contains(err.Error(), "no such alias") {
 			d.SetId("")
 			return nil
 		}
