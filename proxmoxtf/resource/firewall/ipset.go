@@ -36,6 +36,12 @@ func IPSetSchema() map[string]*schema.Schema {
 			Required:    true,
 			ForceNew:    false,
 		},
+		mkIPSetCIDRComment: {
+			Type:        schema.TypeString,
+			Description: "IPSet comment",
+			Optional:    true,
+			Default:     dvIPSetCIDRComment,
+		},
 		mkIPSetCIDR: {
 			Type:        schema.TypeList,
 			Description: "List of IP or Networks",
@@ -70,12 +76,6 @@ func IPSetSchema() map[string]*schema.Schema {
 			},
 			MaxItems: 14,
 			MinItems: 0,
-		},
-		mkIPSetCIDRComment: {
-			Type:        schema.TypeString,
-			Description: "IPSet comment",
-			Optional:    true,
-			Default:     dvIPSetCIDRComment,
 		},
 	}
 }

@@ -12,26 +12,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestRuleInstantiation tests whether the Rule instance can be instantiated.
-func TestRuleInstantiation(t *testing.T) {
+// TestRuleSchemaInstantiation tests whether the RuleSchema instance can be instantiated.
+func TestRuleSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, Rule(), "Cannot instantiate Rule")
+	require.NotNilf(t, RuleSchema(), "Cannot instantiate Rule")
 }
 
-// TestSecurityGroupSchema tests the SecurityGroup schema.
+// TestRuleSchema tests the RuleSchema.
 func TestRuleSchema(t *testing.T) {
 	t.Parallel()
-	ruleSchema := Rule()
+	ruleSchema := RuleSchema()
 
-	test.AssertRequiredArguments(t, ruleSchema, []string{
+	structure.AssertRequiredArguments(t, ruleSchema, []string{
 		mkRuleAction,
 		mkRuleType,
 	})
 
-	test.AssertOptionalArguments(t, ruleSchema, []string{
+	structure.AssertOptionalArguments(t, ruleSchema, []string{
 		mkRuleComment,
 		mkRuleDest,
 		mkRuleDPort,
@@ -44,7 +44,7 @@ func TestRuleSchema(t *testing.T) {
 		mkRuleSPort,
 	})
 
-	test.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
+	structure.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
 		mkRulePos:     schema.TypeInt,
 		mkRuleAction:  schema.TypeString,
 		mkRuleType:    schema.TypeString,

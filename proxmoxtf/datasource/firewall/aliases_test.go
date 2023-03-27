@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
@@ -17,14 +18,10 @@ import (
 // TestAliasesSchemaInstantiation tests whether the AliasesSchema instance can be instantiated.
 func TestAliasesSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	s := AliasesSchema()
-
-	if s == nil {
-		t.Fatalf("Cannot instantiate Aliases")
-	}
+	require.NotNil(t, AliasesSchema(), "Cannot instantiate AliasesSchema")
 }
 
-// TestAliasesSchema tests the Aliases schema.
+// TestAliasesSchema tests the AliasesSchema.
 func TestAliasesSchema(t *testing.T) {
 	t.Parallel()
 	s := AliasesSchema()

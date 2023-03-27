@@ -15,29 +15,29 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestAliasSchemaInstantiation tests whether the AliasSchema instance can be instantiated.
-func TestAliasSchemaInstantiation(t *testing.T) {
+// TestSecurityGroupSchemaInstantiation tests whether the SecurityGroupSchema instance can be instantiated.
+func TestSecurityGroupSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, AliasSchema(), "Cannot instantiate AliasSchema")
+	require.NotNil(t, SecurityGroupSchema(), "Cannot instantiate SecurityGroupSchema")
 }
 
-// TestAliasSchema tests the AliasSchema.
-func TestAliasSchema(t *testing.T) {
+// TestSecurityGroupSchema tests the SecurityGroupSchema.
+func TestSecurityGroupSchema(t *testing.T) {
 	t.Parallel()
-	s := AliasSchema()
+	s := SecurityGroupSchema()
 
 	structure.AssertRequiredArguments(t, s, []string{
-		mkAliasName,
+		mkSecurityGroupName,
 	})
 
 	structure.AssertComputedAttributes(t, s, []string{
-		mkAliasCIDR,
-		mkAliasComment,
+		mkSecurityGroupComment,
+		mkRule,
 	})
 
 	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkAliasName:    schema.TypeString,
-		mkAliasCIDR:    schema.TypeString,
-		mkAliasComment: schema.TypeString,
+		mkSecurityGroupName:    schema.TypeString,
+		mkSecurityGroupComment: schema.TypeString,
+		mkRule:                 schema.TypeList,
 	})
 }

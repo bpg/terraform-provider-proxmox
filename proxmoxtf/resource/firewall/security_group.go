@@ -47,7 +47,7 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 				return []interface{}{}, nil
 			},
 			ForceNew: true,
-			Elem:     Rule(),
+			Elem:     &schema.Resource{Schema: RuleSchema()},
 		},
 	}
 }

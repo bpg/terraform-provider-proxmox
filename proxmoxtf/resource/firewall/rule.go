@@ -43,109 +43,107 @@ const (
 	mkRuleType    = "type"
 )
 
-func Rule() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			mkRulePos: {
-				Type:        schema.TypeInt,
-				Description: "Rule position",
-				Computed:    true,
-			},
-			mkRuleAction: {
-				Type:        schema.TypeString,
-				Description: "Rule action ('ACCEPT', 'DROP', 'REJECT')",
-				Required:    true,
-				ForceNew:    false,
-			},
-			mkRuleType: {
-				Type:        schema.TypeString,
-				Description: "Rule type ('in', 'out')",
-				Required:    true,
-				ForceNew:    false,
-			},
-			mkRuleComment: {
-				Type:        schema.TypeString,
-				Description: "Rule comment",
-				Optional:    true,
-				Default:     dvRuleComment,
-				ForceNew:    false,
-			},
-			mkRuleDest: {
-				Type: schema.TypeString,
-				Description: "Restrict packet destination address. This can refer to a single IP address, an" +
-					" IP set ('+ipsetname') or an IP alias definition. You can also specify an address range " +
-					"like '20.34.101.207-201.3.9.99', or a list of IP addresses and networks (entries are " +
-					"separated by comma). Please do not mix IPv4 and IPv6 addresses inside such lists.",
-				Optional: true,
-				Default:  dvRuleDest,
-				ForceNew: false,
-			},
-			mkRuleDPort: {
-				Type: schema.TypeString,
-				Description: "Restrict TCP/UDP destination port. You can use service names or simple numbers " +
-					"(0-65535), as defined in '/etc/services'. Port ranges can be specified with '\\d+:\\d+'," +
-					" for example '80:85', and you can use comma separated list to match several ports or ranges.",
-				Optional: true,
-				Default:  dvRuleDPort,
-				ForceNew: false,
-			},
-			mkRuleEnable: {
-				Type:        schema.TypeBool,
-				Description: "Enable rule",
-				Optional:    true,
-				Default:     dvRuleEnable,
-				ForceNew:    false,
-			},
-			mkRuleIFace: {
-				Type: schema.TypeString,
-				Description: "Network interface name. You have to use network configuration key names for VMs" +
-					" and containers ('net\\d+'). Host related rules can use arbitrary strings.",
-				Optional: true,
-				Default:  dvRuleIface,
-				ForceNew: false,
-			},
-			mkRuleLog: {
-				Type: schema.TypeString,
-				Description: "Log level for this rule ('emerg', 'alert', 'crit', 'err', 'warning', 'notice'," +
-					" 'info', 'debug', 'nolog')",
-				Optional: true,
-				Default:  dvRuleLog,
-				ForceNew: false,
-			},
-			mkRuleMacro: {
-				Type:        schema.TypeString,
-				Description: "Use predefined standard macro",
-				Optional:    true,
-				Default:     dvRuleMacro,
-				ForceNew:    false,
-			},
-			mkRuleProto: {
-				Type: schema.TypeString,
-				Description: "Restrict packet protocol. You can use protocol names or simple numbers " +
-					"(0-255), as defined in '/etc/protocols'.",
-				Optional: true,
-				Default:  dvRuleProto,
-				ForceNew: false,
-			},
-			mkRuleSource: {
-				Type: schema.TypeString,
-				Description: "Restrict packet destination address. This can refer to a single IP address, an" +
-					" IP set ('+ipsetname') or an IP alias definition. You can also specify an address range " +
-					"like '20.34.101.207-201.3.9.99', or a list of IP addresses and networks (entries are " +
-					"separated by comma). Please do not mix IPv4 and IPv6 addresses inside such lists.",
-				Optional: true,
-				Default:  dvRuleSource,
-				ForceNew: false,
-			},
-			mkRuleSPort: {
-				Type: schema.TypeString,
-				Description: "Restrict TCP/UDP source port. You can use service names or simple numbers " +
-					"(0-65535), as defined in '/etc/services'. Port ranges can be specified with '\\d+:\\d+'," +
-					" for example '80:85', and you can use comma separated list to match several ports or ranges.",
-				Optional: true,
-				Default:  dvRuleSPort,
-				ForceNew: false,
-			},
+func RuleSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		mkRulePos: {
+			Type:        schema.TypeInt,
+			Description: "Rule position",
+			Computed:    true,
+		},
+		mkRuleAction: {
+			Type:        schema.TypeString,
+			Description: "Rule action ('ACCEPT', 'DROP', 'REJECT')",
+			Required:    true,
+			ForceNew:    false,
+		},
+		mkRuleType: {
+			Type:        schema.TypeString,
+			Description: "Rule type ('in', 'out')",
+			Required:    true,
+			ForceNew:    false,
+		},
+		mkRuleComment: {
+			Type:        schema.TypeString,
+			Description: "Rule comment",
+			Optional:    true,
+			Default:     dvRuleComment,
+			ForceNew:    false,
+		},
+		mkRuleDest: {
+			Type: schema.TypeString,
+			Description: "Restrict packet destination address. This can refer to a single IP address, an" +
+				" IP set ('+ipsetname') or an IP alias definition. You can also specify an address range " +
+				"like '20.34.101.207-201.3.9.99', or a list of IP addresses and networks (entries are " +
+				"separated by comma). Please do not mix IPv4 and IPv6 addresses inside such lists.",
+			Optional: true,
+			Default:  dvRuleDest,
+			ForceNew: false,
+		},
+		mkRuleDPort: {
+			Type: schema.TypeString,
+			Description: "Restrict TCP/UDP destination port. You can use service names or simple numbers " +
+				"(0-65535), as defined in '/etc/services'. Port ranges can be specified with '\\d+:\\d+'," +
+				" for example '80:85', and you can use comma separated list to match several ports or ranges.",
+			Optional: true,
+			Default:  dvRuleDPort,
+			ForceNew: false,
+		},
+		mkRuleEnable: {
+			Type:        schema.TypeBool,
+			Description: "Enable rule",
+			Optional:    true,
+			Default:     dvRuleEnable,
+			ForceNew:    false,
+		},
+		mkRuleIFace: {
+			Type: schema.TypeString,
+			Description: "Network interface name. You have to use network configuration key names for VMs" +
+				" and containers ('net\\d+'). Host related rules can use arbitrary strings.",
+			Optional: true,
+			Default:  dvRuleIface,
+			ForceNew: false,
+		},
+		mkRuleLog: {
+			Type: schema.TypeString,
+			Description: "Log level for this rule ('emerg', 'alert', 'crit', 'err', 'warning', 'notice'," +
+				" 'info', 'debug', 'nolog')",
+			Optional: true,
+			Default:  dvRuleLog,
+			ForceNew: false,
+		},
+		mkRuleMacro: {
+			Type:        schema.TypeString,
+			Description: "Use predefined standard macro",
+			Optional:    true,
+			Default:     dvRuleMacro,
+			ForceNew:    false,
+		},
+		mkRuleProto: {
+			Type: schema.TypeString,
+			Description: "Restrict packet protocol. You can use protocol names or simple numbers " +
+				"(0-255), as defined in '/etc/protocols'.",
+			Optional: true,
+			Default:  dvRuleProto,
+			ForceNew: false,
+		},
+		mkRuleSource: {
+			Type: schema.TypeString,
+			Description: "Restrict packet source address. This can refer to a single IP address, an" +
+				" IP set ('+ipsetname') or an IP alias definition. You can also specify an address range " +
+				"like '20.34.101.207-201.3.9.99', or a list of IP addresses and networks (entries are " +
+				"separated by comma). Please do not mix IPv4 and IPv6 addresses inside such lists.",
+			Optional: true,
+			Default:  dvRuleSource,
+			ForceNew: false,
+		},
+		mkRuleSPort: {
+			Type: schema.TypeString,
+			Description: "Restrict TCP/UDP source port. You can use service names or simple numbers " +
+				"(0-65535), as defined in '/etc/services'. Port ranges can be specified with '\\d+:\\d+'," +
+				" for example '80:85', and you can use comma separated list to match several ports or ranges.",
+			Optional: true,
+			Default:  dvRuleSPort,
+			ForceNew: false,
 		},
 	}
 }

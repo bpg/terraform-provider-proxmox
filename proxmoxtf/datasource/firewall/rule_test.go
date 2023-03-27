@@ -15,38 +15,23 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestSecurityGroupSchemaInstantiation tests whether the SecurityGroupSchema instance can be instantiated.
-func TestSecurityGroupSchemaInstantiation(t *testing.T) {
+// TestRuleInstantiation tests whether the RuleSchema instance can be instantiated.
+func TestRuleSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, SecurityGroupSchema(), "Cannot instantiate SecurityGroupSchema")
+	require.NotNilf(t, RuleSchema(), "Cannot instantiate RuleSchema")
 }
 
-// TestSecurityGroupSchema tests the SecurityGroupSchema.
-func TestSecurityGroupSchema(t *testing.T) {
+// TestRuleSchema tests the RuleSchema.
+func TestRuleSchema(t *testing.T) {
 	t.Parallel()
-	s := SecurityGroupSchema()
-
-	structure.AssertRequiredArguments(t, s, []string{
-		mkGroupName,
-	})
-
-	structure.AssertOptionalArguments(t, s, []string{
-		mkGroupComment,
-	})
-
-	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkGroupName:    schema.TypeString,
-		mkGroupComment: schema.TypeString,
-	})
-
-	ruleSchema := structure.AssertNestedSchemaExistence(t, s, mkRule).Schema
+	ruleSchema := RuleSchema()
 
 	structure.AssertRequiredArguments(t, ruleSchema, []string{
 		mkRuleAction,
 		mkRuleType,
 	})
 
-	structure.AssertOptionalArguments(t, ruleSchema, []string{
+	structure.AssertComputedAttributes(t, ruleSchema, []string{
 		mkRuleComment,
 		mkRuleDest,
 		mkRuleDPort,

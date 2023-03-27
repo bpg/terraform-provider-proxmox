@@ -22,7 +22,7 @@ func TestIPSetSchemaInstantiation(t *testing.T) {
 	require.NotNilf(t, IPSetSchema(), "Cannot instantiate IPSetSchema")
 }
 
-// TestIPSetSchema tests the IPSet schema.
+// TestIPSetSchema tests the IPSetSchema.
 func TestIPSetSchema(t *testing.T) {
 	t.Parallel()
 	s := IPSetSchema()

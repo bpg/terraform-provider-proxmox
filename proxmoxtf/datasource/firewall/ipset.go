@@ -56,7 +56,7 @@ func IPSetSchema() map[string]*schema.Schema {
 					},
 					mkIPSetCIDRComment: {
 						Type:        schema.TypeString,
-						Description: "IPSet comment",
+						Description: "IP/CIDR comment",
 						Computed:    true,
 					},
 				},

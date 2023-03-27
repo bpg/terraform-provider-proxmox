@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
@@ -17,14 +18,10 @@ import (
 // TestIPSetsSchemaInstantiation tests whether the IPSetsSchema instance can be instantiated.
 func TestIPSetsSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	s := IPSetsSchema()
-
-	if s == nil {
-		t.Fatalf("Cannot instantiate IPSets")
-	}
+	require.NotNil(t, IPSetsSchema(), "Cannot instantiate IPSetsSchema")
 }
 
-// TestIPSetsSchema tests the IPSets schema.
+// TestIPSetsSchema tests the IPSetsSchema.
 func TestIPSetsSchema(t *testing.T) {
 	t.Parallel()
 	s := IPSetsSchema()
