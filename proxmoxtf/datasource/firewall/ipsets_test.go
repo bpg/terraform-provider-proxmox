@@ -11,13 +11,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestIPSetsInstantiation tests whether the IPSets instance can be instantiated.
-func TestIPSetsInstantiation(t *testing.T) {
+// TestIPSetsSchemaInstantiation tests whether the IPSetsSchema instance can be instantiated.
+func TestIPSetsSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	s := IPSets()
+	s := IPSetsSchema()
 
 	if s == nil {
 		t.Fatalf("Cannot instantiate IPSets")
@@ -27,13 +27,13 @@ func TestIPSetsInstantiation(t *testing.T) {
 // TestIPSetsSchema tests the IPSets schema.
 func TestIPSetsSchema(t *testing.T) {
 	t.Parallel()
-	s := IPSets()
+	s := IPSetsSchema()
 
-	test.AssertComputedAttributes(t, s, []string{
+	structure.AssertComputedAttributes(t, s, []string{
 		mkIPSetsIPSetNames,
 	})
 
-	test.AssertValueTypes(t, s, map[string]schema.ValueType{
+	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkIPSetsIPSetNames: schema.TypeList,
 	})
 }

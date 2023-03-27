@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 )
 
 const (
@@ -26,62 +26,52 @@ const (
 	mkIPSetCIDRNoMatch = "nomatch"
 )
 
-func IPSet() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			mkIPSetName: {
-				Type:        schema.TypeString,
-				Description: "IPSet name",
-				Required:    true,
-			},
-			mkIPSetCIDRComment: {
-				Type:        schema.TypeString,
-				Description: "IPSet comment",
-				Computed:    true,
-			},
-			mkIPSetCIDR: {
-				Type:        schema.TypeList,
-				Description: "List of IP or Networks",
-				Computed:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkIPSetCIDRName: {
-							Type:        schema.TypeString,
-							Description: "Network/IP specification in CIDR format",
-							Computed:    true,
-						},
-						mkIPSetCIDRNoMatch: {
-							Type:        schema.TypeBool,
-							Description: "No match this IP/CIDR",
-							Computed:    true,
-						},
-						mkIPSetCIDRComment: {
-							Type:        schema.TypeString,
-							Description: "IPSet comment",
-							Computed:    true,
-						},
+func IPSetSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		mkIPSetName: {
+			Type:        schema.TypeString,
+			Description: "IPSet name",
+			Required:    true,
+		},
+		mkIPSetCIDRComment: {
+			Type:        schema.TypeString,
+			Description: "IPSet comment",
+			Computed:    true,
+		},
+		mkIPSetCIDR: {
+			Type:        schema.TypeList,
+			Description: "List of IP or Networks",
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkIPSetCIDRName: {
+						Type:        schema.TypeString,
+						Description: "Network/IP specification in CIDR format",
+						Computed:    true,
+					},
+					mkIPSetCIDRNoMatch: {
+						Type:        schema.TypeBool,
+						Description: "No match this IP/CIDR",
+						Computed:    true,
+					},
+					mkIPSetCIDRComment: {
+						Type:        schema.TypeString,
+						Description: "IPSet comment",
+						Computed:    true,
 					},
 				},
 			},
 		},
-
-		ReadContext: ipSetRead,
 	}
 }
 
-func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func IPSetRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
-
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	ipSetName := d.Get(mkIPSetName).(string)
 	d.SetId(ipSetName)
 
-	ipSetList, err := veClient.API().Cluster().Firewall().ListIPSets(ctx)
+	ipSetList, err := fw.ListIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -97,7 +87,7 @@ func ipSetRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		}
 	}
 
-	content, err := veClient.API().Cluster().Firewall().GetIPSetContent(ctx, ipSetName)
+	content, err := fw.GetIPSetContent(ctx, ipSetName)
 	if err != nil {
 		return diag.FromErr(err)
 	}

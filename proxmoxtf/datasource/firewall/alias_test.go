@@ -11,13 +11,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestAliasInstantiation tests whether the Alias instance can be instantiated.
-func TestAliasInstantiation(t *testing.T) {
+// TestAliasSchemaInstantiation tests whether the AliasSchema instance can be instantiated.
+func TestAliasSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Alias()
+	s := AliasSchema()
 
 	if s == nil {
 		t.Fatalf("Cannot instantiate Alias")
@@ -27,18 +27,18 @@ func TestAliasInstantiation(t *testing.T) {
 // TestAliasSchema tests the Alias schema.
 func TestAliasSchema(t *testing.T) {
 	t.Parallel()
-	s := Alias()
+	s := AliasSchema()
 
-	test.AssertRequiredArguments(t, s, []string{
+	structure.AssertRequiredArguments(t, s, []string{
 		mkAliasName,
 	})
 
-	test.AssertComputedAttributes(t, s, []string{
+	structure.AssertComputedAttributes(t, s, []string{
 		mkAliasCIDR,
 		mkAliasComment,
 	})
 
-	test.AssertValueTypes(t, s, map[string]schema.ValueType{
+	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkAliasName:    schema.TypeString,
 		mkAliasCIDR:    schema.TypeString,
 		mkAliasComment: schema.TypeString,

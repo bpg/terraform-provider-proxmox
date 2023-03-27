@@ -10,38 +10,30 @@ package firewall
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 )
 
 const (
 	mkIPSetsIPSetNames = "ipset_names"
 )
 
-func IPSets() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			mkIPSetsIPSetNames: {
-				Type:        schema.TypeList,
-				Description: "IPSet Names",
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
+func IPSetsSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		mkIPSetsIPSetNames: {
+			Type:        schema.TypeList,
+			Description: "IPSet Names",
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
-		ReadContext: ipSetsRead,
 	}
 }
 
-func ipSetsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	list, err := veClient.API().Cluster().Firewall().ListIPSets(ctx)
+func IPSetsRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+	list, err := fw.ListIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -52,7 +44,7 @@ func ipSetsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		ipSetNames[i] = v.Name
 	}
 
-	d.SetId("ipsets")
+	d.SetId(uuid.New().String())
 
 	err = d.Set(mkIPSetsIPSetNames, ipSetNames)
 

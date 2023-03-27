@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 )
 
 const (
@@ -23,40 +23,31 @@ const (
 	mkAliasComment = "comment"
 )
 
-func Alias() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			mkAliasName: {
-				Type:        schema.TypeString,
-				Description: "Alias name",
-				Required:    true,
-			},
-			mkAliasCIDR: {
-				Type:        schema.TypeString,
-				Description: "IP/CIDR block",
-				Computed:    true,
-			},
-			mkAliasComment: {
-				Type:        schema.TypeString,
-				Description: "Alias comment",
-				Computed:    true,
-			},
+func AliasSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		mkAliasName: {
+			Type:        schema.TypeString,
+			Description: "Alias name",
+			Required:    true,
 		},
-		ReadContext: aliasRead,
+		mkAliasCIDR: {
+			Type:        schema.TypeString,
+			Description: "IP/CIDR block",
+			Computed:    true,
+		},
+		mkAliasComment: {
+			Type:        schema.TypeString,
+			Description: "Alias comment",
+			Computed:    true,
+		},
 	}
 }
 
-func aliasRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func AliasRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	aliasName := d.Get(mkAliasName).(string)
-	alias, err := veClient.API().Cluster().Firewall().GetAlias(ctx, aliasName)
+	alias, err := fw.GetAlias(ctx, aliasName)
 	if err != nil {
 		return diag.FromErr(err)
 	}
