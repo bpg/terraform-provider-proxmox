@@ -17,13 +17,13 @@ jobs:
     timeout-minutes: 5
     steps:
 
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.18'
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+          go-version-file: 'go.mod'
 
       - name: Get dependencies
         run: go mod download
@@ -54,13 +54,13 @@ jobs:
           - '1.4.2'
     steps:
 
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.18'
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+          go-version-file: 'go.mod'
 
       - name: Get dependencies
         run: go mod download

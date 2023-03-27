@@ -24,9 +24,9 @@ other enhancements.
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) 1.1+
-- [Go](https://golang.org/doc/install) 1.18+ (to build the provider plugin)
-- [GoReleaser](https://goreleaser.com/install/) v1.10+ (to build the provider plugin)
+- [Terraform](https://www.terraform.io/downloads.html) 1.2+
+- [Go](https://golang.org/doc/install) 1.19+ (to build the provider plugin)
+- [GoReleaser](https://goreleaser.com/install/) v1.15+ (to build the provider plugin)
 
 ## Table of Contents
 
