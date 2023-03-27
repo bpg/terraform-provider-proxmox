@@ -1,20 +1,20 @@
 ---
 layout: page
-title: proxmox_virtual_environment_firewall_ipset
-permalink: /data-sources/virtual_environment_firewall_ipset
+title: proxmox_virtual_environment_cluster_firewall_ipset
+permalink: /data-sources/virtual_environment_cluster_firewall_ipset
 nav_order: 1
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: proxmox_virtual_environment_firewall_ipset
+# Data Source: proxmox_virtual_environment_cluster_firewall_ipset
 
 Retrieves information about a specific IPSet.
 
 ## Example Usage
 
 ```terraform
-data "proxmox_virtual_environment_firewall_ipset" "local_network" {
+data "proxmox_virtual_environment_cluster_firewall_ipset" "local_network" {
   name = "local_network"
 }
 ```

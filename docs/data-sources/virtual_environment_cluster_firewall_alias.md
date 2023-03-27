@@ -1,20 +1,20 @@
 ---
 layout: page
-title: proxmox_virtual_environment_firewall_alias
-permalink: /data-sources/virtual_environment_firewall_alias
+title: proxmox_virtual_environment_cluster_firewall_alias
+permalink: /data-sources/virtual_environment_cluster_firewall_alias
 nav_order: 1
 parent: Data Sources
 subcategory: Virtual Environment
 ---
 
-# Data Source: proxmox_virtual_environment_firewall_alias
+# Data Source: proxmox_virtual_environment_cluster_firewall_alias
 
 Retrieves information about a specific alias.
 
 ## Example Usage
 
 ```terraform
-data "proxmox_virtual_environment_firewall_alias" "local_network" {
+data "proxmox_virtual_environment_cluster_firewall_alias" "local_network" {
   name = "local_network"
 }
 ```

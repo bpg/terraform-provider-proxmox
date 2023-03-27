@@ -1,22 +1,22 @@
 ---
 layout: page
-title: proxmox_virtual_environment_firewall_security_group
-permalink: /resources/virtual_environment_firewall_security_group
+title: proxmox_virtual_environment_cluster_firewall_security_group
+permalink: /resources/virtual_environment_cluster_firewall_security_group
 nav_order: 3
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: proxmox_virtual_environment_firewall_security_group
+# Resource: proxmox_virtual_environment_cluster_firewall_security_group
 
 A security group is a collection of rules, defined at cluster level, which can be used in 
-all VMs' rules. For example you can define a group named “webserver” with rules to open 
+all VMs' rules. For example, you can define a group named “webserver” with rules to open 
 the http and https ports.
 
 ## Example Usage
 
 ```terraform
-resource "proxmox_virtual_environment_firewall_security_group" "webserver"
+resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserver"
   name    = "webserver"
   comment = "Managed by Terraform"
 
