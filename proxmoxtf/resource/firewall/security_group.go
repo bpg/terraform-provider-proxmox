@@ -19,25 +19,25 @@ import (
 )
 
 const (
-	dvGroupComment = ""
+	dvSecurityGroupComment = ""
 
-	mkGroupName    = "name"
-	mkGroupComment = "comment"
+	mkSecurityGroupName    = "name"
+	mkSecurityGroupComment = "comment"
 )
 
 func SecurityGroupSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		mkGroupName: {
+		mkSecurityGroupName: {
 			Type:        schema.TypeString,
 			Description: "Security group name",
 			Required:    true,
 			ForceNew:    false,
 		},
-		mkGroupComment: {
+		mkSecurityGroupComment: {
 			Type:        schema.TypeString,
 			Description: "Security group comment",
 			Optional:    true,
-			Default:     dvGroupComment,
+			Default:     dvSecurityGroupComment,
 		},
 		mkRule: {
 			Type:        schema.TypeList,
@@ -53,8 +53,8 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 }
 
 func SecurityGroupCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
-	comment := d.Get(mkGroupComment).(string)
-	name := d.Get(mkGroupName).(string)
+	comment := d.Get(mkSecurityGroupComment).(string)
+	name := d.Get(mkSecurityGroupName).(string)
 
 	body := &firewall.GroupCreateRequestBody{
 		Comment: &comment,
@@ -101,9 +101,9 @@ func SecurityGroupRead(ctx context.Context, fw *firewall.API, d *schema.Resource
 
 	for _, v := range allGroups {
 		if v.Group == name {
-			err = d.Set(mkGroupName, v.Group)
+			err = d.Set(mkSecurityGroupName, v.Group)
 			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkGroupComment, v.Comment)
+			err = d.Set(mkSecurityGroupComment, v.Comment)
 			diags = append(diags, diag.FromErr(err)...)
 			break
 		}
@@ -178,8 +178,8 @@ func readGroupRule(
 }
 
 func SecurityGroupUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
-	comment := d.Get(mkGroupComment).(string)
-	newName := d.Get(mkGroupName).(string)
+	comment := d.Get(mkSecurityGroupComment).(string)
+	newName := d.Get(mkSecurityGroupName).(string)
 	previousName := d.Id()
 
 	body := &firewall.GroupUpdateRequestBody{

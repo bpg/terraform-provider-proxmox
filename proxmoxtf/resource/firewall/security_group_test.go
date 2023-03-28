@@ -27,16 +27,16 @@ func TestSecurityGroupSchema(t *testing.T) {
 	s := SecurityGroupSchema()
 
 	structure.AssertRequiredArguments(t, s, []string{
-		mkGroupName,
+		mkSecurityGroupName,
 	})
 
 	structure.AssertOptionalArguments(t, s, []string{
-		mkGroupComment,
+		mkSecurityGroupComment,
 	})
 
 	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkGroupName:    schema.TypeString,
-		mkGroupComment: schema.TypeString,
+		mkSecurityGroupName:    schema.TypeString,
+		mkSecurityGroupComment: schema.TypeString,
 	})
 
 	ruleSchema := structure.AssertNestedSchemaExistence(t, s, mkRule).Schema
