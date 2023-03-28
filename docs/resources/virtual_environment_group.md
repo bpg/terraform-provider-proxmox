@@ -2,7 +2,7 @@
 layout: page
 title: proxmox_virtual_environment_group
 permalink: /resources/virtual_environment_group
-nav_order: 7
+nav_order: 8
 parent: Resources
 subcategory: Virtual Environment
 ---

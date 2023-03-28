@@ -2,7 +2,7 @@
 layout: page
 title: proxmox_virtual_environment_cluster_firewall_security_group
 permalink: /resources/virtual_environment_cluster_firewall_security_group
-nav_order: 3
+nav_order: 4
 parent: Resources
 subcategory: Virtual Environment
 ---
@@ -55,7 +55,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
       You can also specify an address range like `20.34.101.207-201.3.9.99`, or
       a list of IP addresses and networks (entries are separated by comma).
       Please do not mix IPv4 and IPv6 addresses inside such lists.
-    - `dport` - (Optional) "Restrict TCP/UDP destination port. You can use
+    - `dport` - (Optional) Restrict TCP/UDP destination port. You can use
       service names or simple numbers (0-65535), as defined in '/etc/services'.
       Port ranges can be specified with '\d+:\d+', for example `80:85`, and
       you can use comma separated list to match several ports or ranges.
@@ -68,13 +68,13 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
     - `macro`- (Optional) Macro name. Use predefined standard macro.
     - `proto` - (Optional) Restrict packet protocol. You can use protocol names
       or simple numbers (0-255), as defined in '/etc/protocols'.
-    - `source` - (Optional) Restrict packet destination address. This can refer
+    - `source` - (Optional) Restrict packet source address. This can refer
       to a single IP address, an IP set ('+ipsetname') or an IP alias
       definition. You can also specify an address range like 
       `20.34.101.207-201.3.9.99`, or a list of IP addresses and networks (entries
       are separated by comma). Please do not mix IPv4 and IPv6 addresses inside
       such lists.
-    - `sport` - (Optional) "Restrict TCP/UDP destination port. You can use
+    - `sport` - (Optional) Restrict TCP/UDP source port. You can use
       service names or simple numbers (0-65535), as defined in '/etc/services'.
       Port ranges can be specified with '\d+:\d+', for example `80:85`, and
       you can use comma separated list to match several ports or ranges.

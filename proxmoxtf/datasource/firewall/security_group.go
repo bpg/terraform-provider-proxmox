@@ -20,6 +20,7 @@ import (
 const (
 	mkSecurityGroupName    = "name"
 	mkSecurityGroupComment = "comment"
+	mkRules                = "rules"
 )
 
 func SecurityGroupSchema() map[string]*schema.Schema {
@@ -34,7 +35,7 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 			Description: "Security group comment",
 			Computed:    true,
 		},
-		mkRule: {
+		mkRules: {
 			Type:        schema.TypeList,
 			Description: "List of rules",
 			Computed:    true,
@@ -63,36 +64,22 @@ func SecurityGroupRead(ctx context.Context, fw *firewall.API, d *schema.Resource
 		}
 	}
 
-	rules := d.Get(mkRule).([]interface{})
-	//nolint:nestif
-	if len(rules) > 0 {
-		// We have rules in the state, so we need to read them from the API
-		for _, v := range rules {
-			ruleMap := v.(map[string]interface{})
-			pos := ruleMap[mkRulePos].(int)
-
-			err = readGroupRule(ctx, fw, name, pos, ruleMap)
-			if err != nil {
-				diags = append(diags, diag.FromErr(err)...)
-			}
+	rules := d.Get(mkRules).([]interface{})
+	ruleIDs, err := fw.GetGroupRules(ctx, name)
+	if err != nil {
+		if strings.Contains(err.Error(), "no such security group") {
+			d.SetId("")
+			return nil
 		}
-	} else {
-		ruleIDs, err := fw.GetGroupRules(ctx, name)
+		return diag.FromErr(err)
+	}
+	for _, id := range ruleIDs {
+		ruleMap := map[string]interface{}{}
+		err = readGroupRule(ctx, fw, name, id.Pos, ruleMap)
 		if err != nil {
-			if strings.Contains(err.Error(), "no such security group") {
-				d.SetId("")
-				return nil
-			}
-			return diag.FromErr(err)
-		}
-		for _, id := range ruleIDs {
-			ruleMap := map[string]interface{}{}
-			err = readGroupRule(ctx, fw, name, id.Pos, ruleMap)
-			if err != nil {
-				diags = append(diags, diag.FromErr(err)...)
-			} else {
-				rules = append(rules, ruleMap)
-			}
+			diags = append(diags, diag.FromErr(err)...)
+		} else {
+			rules = append(rules, ruleMap)
 		}
 	}
 
@@ -100,7 +87,7 @@ func SecurityGroupRead(ctx context.Context, fw *firewall.API, d *schema.Resource
 		return diags
 	}
 
-	err = d.Set(mkRule, rules)
+	err = d.Set(mkRules, rules)
 	diags = append(diags, diag.FromErr(err)...)
 
 	d.SetId(name)
