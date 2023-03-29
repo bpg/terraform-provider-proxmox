@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	mkRule = "rule"
-
 	mkRuleAction  = "action"
 	mkRuleComment = "comment"
 	mkRuleDPort   = "dport"

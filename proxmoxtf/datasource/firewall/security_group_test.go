@@ -32,12 +32,12 @@ func TestSecurityGroupSchema(t *testing.T) {
 
 	structure.AssertComputedAttributes(t, s, []string{
 		mkSecurityGroupComment,
-		mkRule,
+		mkRules,
 	})
 
 	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkSecurityGroupName:    schema.TypeString,
 		mkSecurityGroupComment: schema.TypeString,
-		mkRule:                 schema.TypeList,
+		mkRules:                schema.TypeList,
 	})
 }

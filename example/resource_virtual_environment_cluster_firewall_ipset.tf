@@ -1,4 +1,4 @@
-resource "proxmox_virtual_environment_firewall_ipset" "example" {
+resource "proxmox_virtual_environment_cluster_firewall_ipset" "example" {
   name    = "local_network"
   comment = "Managed by Terraform"
 
@@ -19,6 +19,6 @@ resource "proxmox_virtual_environment_firewall_ipset" "example" {
   }
 }
 
-output "resource_proxmox_virtual_environment_firewall_ipset" {
-  value = proxmox_virtual_environment_firewall_ipset.example.name
+output "resource_proxmox_virtual_environment_cluster_firewall_ipset" {
+  value = proxmox_virtual_environment_cluster_firewall_ipset.example.name
 }
