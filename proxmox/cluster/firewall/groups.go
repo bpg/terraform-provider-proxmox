@@ -26,27 +26,6 @@ func (c *Client) CreateGroup(ctx context.Context, d *firewall.GroupCreateRequest
 	return nil
 }
 
-// GetGroupRules retrieve positions of defined security group rules.
-func (c *Client) GetGroupRules(ctx context.Context, group string) ([]*firewall.GroupGetResponseData, error) {
-	resBody := &firewall.GroupGetResponseBody{}
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("cluster/firewall/groups/%s", url.PathEscape(group)),
-		nil,
-		resBody,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving security group '%s': %w", group, err)
-	}
-
-	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
-	}
-
-	return resBody.Data, nil
-}
-
 // ListGroups retrieve list of security groups.
 func (c *Client) ListGroups(ctx context.Context) ([]*firewall.GroupListResponseData, error) {
 	resBody := &firewall.GroupListResponseBody{}

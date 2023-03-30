@@ -8,19 +8,23 @@ package cluster
 
 import (
 	"context"
+	"fmt"
+	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	fw "github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 )
 
 const (
 	dvLogRatelimiEnabled = true
 	dvLogRatelimitBurst  = 5
-	dvLogRatelimitRate   = 1
+	dvLogRatelimitRate   = "1/second"
 	dvPolicyIn           = "DROP"
 	dvPolicyOut          = "ACCEPT"
 
@@ -30,10 +34,8 @@ const (
 	mkLogRatelimitEnabled = "enabled"
 	mkLogRatelimitBurst   = "burst"
 	mkLogRatelimitRate    = "rate"
-	mkPolicyIn            = "policy_in"
-	mkPolicyOut           = "policy_out"
-
-	mkRule = "rule"
+	mkPolicyIn            = "input_policy"
+	mkPolicyOut           = "output_policy"
 )
 
 func Firewall() *schema.Resource {
@@ -47,7 +49,7 @@ func Firewall() *schema.Resource {
 			mkEnabled: {
 				Type:        schema.TypeBool,
 				Description: "Enable or disable the firewall cluster-wide",
-				Required:    true,
+				Optional:    true,
 			},
 			mkLogRatelimit: {
 				Type:        schema.TypeList,
@@ -62,28 +64,54 @@ func Firewall() *schema.Resource {
 						},
 					}, nil
 				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkLogRatelimitEnabled: {
+							Type:        schema.TypeBool,
+							Description: "Enable or disable log ratelimiting",
+							Optional:    true,
+							Default:     dvLogRatelimiEnabled,
+						},
+						mkLogRatelimitBurst: {
+							Type:        schema.TypeInt,
+							Description: "Initial burst of packages which will always get logged before the rate is applied",
+							Optional:    true,
+							Default:     dvLogRatelimitBurst,
+						},
+						mkLogRatelimitRate: {
+							Type:             schema.TypeString,
+							Description:      "Frequency with which the burst bucket gets refilled",
+							Optional:         true,
+							Default:          dvLogRatelimitRate,
+							ValidateDiagFunc: validator.FirewallRate(),
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
 			},
 			mkPolicyIn: {
-				Type:        schema.TypeString,
-				Description: "Default policy for incoming traffic",
-				Optional:    true,
-				Default:     dvPolicyIn,
+				Type:             schema.TypeString,
+				Description:      "Default policy for incoming traffic",
+				Optional:         true,
+				Default:          dvPolicyIn,
+				ValidateDiagFunc: validator.FirewallPolicy(),
 			},
 			mkPolicyOut: {
-				Type:        schema.TypeString,
-				Description: "Default policy for outgoing traffic",
-				Optional:    true,
-				Default:     dvPolicyOut,
+				Type:             schema.TypeString,
+				Description:      "Default policy for outgoing traffic",
+				Optional:         true,
+				Default:          dvPolicyOut,
+				ValidateDiagFunc: validator.FirewallPolicy(),
 			},
-			mkRule: {
+			firewall.MkRule: {
 				Type:        schema.TypeList,
 				Description: "List of rules",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{}, nil
 				},
-				ForceNew: true,
-				Elem:     &schema.Resource{Schema: firewall.RuleSchema()},
+				Elem: &schema.Resource{Schema: firewall.RuleSchema()},
 			},
 		},
 		CreateContext: invokeFirewallAPI(firewallCreate),
@@ -93,19 +121,201 @@ func Firewall() *schema.Resource {
 	}
 }
 
-func firewallCreate(_ context.Context, _ fw.API, _ *schema.ResourceData) diag.Diagnostics {
+func firewallCreate(ctx context.Context, api fw.API, d *schema.ResourceData) diag.Diagnostics {
+	diags := setOptions(ctx, api, d)
+	if diags.HasError() {
+		return diags
+	}
+
+	diags = firewall.RuleCreate(d, func(body *fw.RuleCreateRequestBody) error {
+		e := api.CreateRule(ctx, body)
+		if e != nil {
+			return fmt.Errorf("error creating rule: %w", e)
+		}
+		return nil
+	})
+	if diags.HasError() {
+		return diags
+	}
+
+	// reset rules, we re-read them (with proper positions) from the API
+	err := d.Set(firewall.MkRule, nil)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	return firewallRead(ctx, api, d)
+}
+
+func setOptions(ctx context.Context, api fw.API, d *schema.ResourceData) diag.Diagnostics {
+	policyIn := d.Get(mkPolicyIn).(string)
+	policyOut := d.Get(mkPolicyOut).(string)
+	body := &fw.OptionsPutRequestBody{
+		PolicyIn:  &policyIn,
+		PolicyOut: &policyOut,
+	}
+
+	logRatelimit := d.Get(mkLogRatelimit).([]interface{})
+	if len(logRatelimit) > 0 {
+		m := logRatelimit[0].(map[string]interface{})
+		burst := m[mkLogRatelimitBurst].(int)
+		rate := m[mkLogRatelimitRate].(string)
+		rl := fw.CustomLogRateLimit{
+			Enable: types.CustomBool(m[mkLogRatelimitEnabled].(bool)),
+			Burst:  &burst,
+			Rate:   &rate,
+		}
+		body.LogRateLimit = &rl
+	}
+
+	ebtablesBool := types.CustomBool(d.Get(mkEBTables).(bool))
+	body.EBTables = &ebtablesBool
+
+	enabledBool := types.CustomBool(d.Get(mkEnabled).(bool))
+	body.Enable = &enabledBool
+
+	err := api.SetOptions(ctx, body)
+	return diag.FromErr(err)
+}
+
+func firewallRead(ctx context.Context, api fw.API, d *schema.ResourceData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	options, err := api.GetOptions(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if options.EBTables != nil {
+		err = d.Set(mkEBTables, *options.EBTables)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if options.Enable != nil {
+		err = d.Set(mkEnabled, *options.Enable)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if options.LogRateLimit != nil {
+		err = d.Set(mkLogRatelimit, []interface{}{
+			map[string]interface{}{
+				mkLogRatelimitEnabled: options.LogRateLimit.Enable,
+				mkLogRatelimitBurst:   *options.LogRateLimit.Burst,
+				mkLogRatelimitRate:    *options.LogRateLimit.Rate,
+			},
+		})
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if options.PolicyIn != nil {
+		err = d.Set(mkPolicyIn, *options.PolicyIn)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if options.PolicyOut != nil {
+		err = d.Set(mkPolicyOut, *options.PolicyOut)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	d.SetId("cluster-firewall")
+
+	rules := d.Get(firewall.MkRule).([]interface{})
+	//nolint:nestif
+	if len(rules) > 0 {
+		// We have rules in the state, so we need to read them from the API
+		for _, v := range rules {
+			ruleMap := v.(map[string]interface{})
+			pos := ruleMap[firewall.MkRulePos].(int)
+
+			err = readRule(ctx, api, pos, ruleMap)
+			if err != nil {
+				diags = append(diags, diag.FromErr(err)...)
+			}
+		}
+	} else {
+		ruleIDs, err := api.ListRules(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		for _, id := range ruleIDs {
+			ruleMap := map[string]interface{}{}
+			err = readRule(ctx, api, id.Pos, ruleMap)
+			if err != nil {
+				diags = append(diags, diag.FromErr(err)...)
+			} else {
+				rules = append(rules, ruleMap)
+			}
+		}
+	}
+
+	if diags.HasError() {
+		return diags
+	}
+
+	err = d.Set(firewall.MkRule, rules)
+	return diag.FromErr(err)
+}
+
+func readRule(
+	ctx context.Context,
+	api fw.API,
+	pos int,
+	ruleMap map[string]interface{},
+) error {
+	rule, err := api.GetRule(ctx, pos)
+	if err != nil {
+		return fmt.Errorf("error reading rule %d: %w", pos, err)
+	}
+
+	firewall.BaseRuleToMap(&rule.BaseRule, ruleMap)
+
+	// pos in the map should be int!
+	ruleMap[firewall.MkRulePos] = pos
+	ruleMap[firewall.MkRuleAction] = rule.Action
+	ruleMap[firewall.MkRuleType] = rule.Type
+
 	return nil
 }
 
-func firewallRead(_ context.Context, _ fw.API, _ *schema.ResourceData) diag.Diagnostics {
-	return nil
+func firewallUpdate(ctx context.Context, api fw.API, d *schema.ResourceData) diag.Diagnostics {
+	diags := setOptions(ctx, api, d)
+	if diags.HasError() {
+		return diags
+	}
+
+	diags = firewall.RuleUpdate(d, func(body *fw.RuleUpdateRequestBody) error {
+		err := api.UpdateRule(ctx, *body.Pos, body)
+		if err != nil {
+			return fmt.Errorf("error updating rule: %w", err)
+		}
+		return nil
+	})
+	if diags.HasError() {
+		return diags
+	}
+
+	return firewallRead(ctx, api, d)
 }
 
-func firewallUpdate(_ context.Context, _ fw.API, _ *schema.ResourceData) diag.Diagnostics {
-	return nil
-}
+func firewallDelete(ctx context.Context, api fw.API, d *schema.ResourceData) diag.Diagnostics {
+	rules := d.Get(firewall.MkRule).([]interface{})
+	sort.Slice(rules, func(i, j int) bool {
+		ruleI := rules[i].(map[string]interface{})
+		ruleJ := rules[j].(map[string]interface{})
+		return ruleI[firewall.MkRulePos].(int) > ruleJ[firewall.MkRulePos].(int)
+	})
 
-func firewallDelete(_ context.Context, _ fw.API, _ *schema.ResourceData) diag.Diagnostics {
+	for _, v := range rules {
+		rule := v.(map[string]interface{})
+		pos := rule[firewall.MkRulePos].(int)
+		err := api.DeleteRule(ctx, pos)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
+	d.SetId("")
+
 	return nil
 }
 

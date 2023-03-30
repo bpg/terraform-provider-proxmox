@@ -16,9 +16,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
-
 	"github.com/google/go-querystring/query"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 )
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
@@ -57,13 +57,16 @@ func NewVirtualEnvironmentClient(
 		pOTP = &otp
 	}
 
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: insecure,
-			},
+	var transport http.RoundTripper = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: insecure, //nolint:gosec
 		},
 	}
+	if logging.IsDebugOrHigher() {
+		transport = logging.NewLoggingHTTPTransport(transport)
+	}
+
+	httpClient := &http.Client{Transport: transport}
 
 	return &VirtualEnvironmentClient{
 		Endpoint:   strings.TrimRight(u.String(), "/"),
@@ -84,11 +87,6 @@ func (c *VirtualEnvironmentClient) DoRequest(
 	var reqBodyReader io.Reader
 	var reqContentLength *int64
 
-	tflog.Debug(ctx, "performing HTTP request", map[string]interface{}{
-		"method": method,
-		"path":   path,
-	})
-
 	modifiedPath := path
 	reqBodyType := ""
 
@@ -100,19 +98,8 @@ func (c *VirtualEnvironmentClient) DoRequest(
 			reqBodyReader = multipartData.Reader
 			reqBodyType = fmt.Sprintf("multipart/form-data; boundary=%s", multipartData.Boundary)
 			reqContentLength = multipartData.Size
-
-			tflog.Debug(ctx, "added multipart request body to HTTP request", map[string]interface{}{
-				"method": method,
-				"path":   modifiedPath,
-			})
-
 		} else if pipedBody {
 			reqBodyReader = pipedBodyReader
-
-			tflog.Debug(ctx, "added piped request body to HTTP request", map[string]interface{}{
-				"method": method,
-				"path":   modifiedPath,
-			})
 		} else {
 			v, err := query.Values(requestBody)
 			if err != nil {
@@ -134,12 +121,6 @@ func (c *VirtualEnvironmentClient) DoRequest(
 					reqBodyReader = bytes.NewBufferString(encodedValues)
 					reqBodyType = "application/x-www-form-urlencoded"
 				}
-
-				tflog.Debug(ctx, "added request body to HTTP request", map[string]interface{}{
-					"method":        method,
-					"path":          modifiedPath,
-					"encodedValues": encodedValues,
-				})
 			}
 		}
 	} else {
@@ -180,9 +161,6 @@ func (c *VirtualEnvironmentClient) DoRequest(
 		return err
 	}
 
-	tflog.Debug(ctx, "sending request", map[string]interface{}{
-		"path": req.URL.Path,
-	})
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		fErr := fmt.Errorf(

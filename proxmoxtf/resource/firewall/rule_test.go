@@ -27,8 +27,8 @@ func TestRuleSchema(t *testing.T) {
 	ruleSchema := RuleSchema()
 
 	structure.AssertRequiredArguments(t, ruleSchema, []string{
-		mkRuleAction,
-		mkRuleType,
+		MkRuleAction,
+		MkRuleType,
 	})
 
 	structure.AssertOptionalArguments(t, ruleSchema, []string{
@@ -45,9 +45,9 @@ func TestRuleSchema(t *testing.T) {
 	})
 
 	structure.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
-		mkRulePos:     schema.TypeInt,
-		mkRuleAction:  schema.TypeString,
-		mkRuleType:    schema.TypeString,
+		MkRulePos:     schema.TypeInt,
+		MkRuleAction:  schema.TypeString,
+		MkRuleType:    schema.TypeString,
 		mkRuleComment: schema.TypeString,
 		mkRuleDest:    schema.TypeString,
 		mkRuleDPort:   schema.TypeString,

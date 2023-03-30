@@ -11,4 +11,5 @@ type API interface {
 	IPSet
 	Rule
 	SecurityGroup
+	Options
 }

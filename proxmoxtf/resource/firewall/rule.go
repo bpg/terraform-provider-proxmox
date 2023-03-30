@@ -9,9 +9,11 @@ package firewall
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 )
 
 const (
@@ -26,9 +28,9 @@ const (
 	dvRuleSPort   = ""
 	dvRuleSource  = ""
 
-	mkRule = "rule"
+	MkRule = "rule"
 
-	mkRuleAction  = "action"
+	MkRuleAction  = "action"
 	mkRuleComment = "comment"
 	mkRuleDPort   = "dport"
 	mkRuleDest    = "dest"
@@ -36,31 +38,33 @@ const (
 	mkRuleIFace   = "iface"
 	mkRuleLog     = "log"
 	mkRuleMacro   = "macro"
-	mkRulePos     = "pos"
+	MkRulePos     = "pos"
 	mkRuleProto   = "proto"
 	mkRuleSource  = "source"
 	mkRuleSPort   = "sport"
-	mkRuleType    = "type"
+	MkRuleType    = "type"
 )
 
 func RuleSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		mkRulePos: {
+		MkRulePos: {
 			Type:        schema.TypeInt,
 			Description: "Rule position",
 			Computed:    true,
 		},
-		mkRuleAction: {
-			Type:        schema.TypeString,
-			Description: "Rule action ('ACCEPT', 'DROP', 'REJECT')",
-			Required:    true,
-			ForceNew:    false,
+		MkRuleAction: {
+			Type:             schema.TypeString,
+			Description:      "Rule action ('ACCEPT', 'DROP', 'REJECT')",
+			Required:         true,
+			ForceNew:         false,
+			ValidateDiagFunc: validator.FirewallPolicy(),
 		},
-		mkRuleType: {
-			Type:        schema.TypeString,
-			Description: "Rule type ('in', 'out')",
-			Required:    true,
-			ForceNew:    false,
+		MkRuleType: {
+			Type:             schema.TypeString,
+			Description:      "Rule type ('in', 'out')",
+			Required:         true,
+			ForceNew:         false,
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"in", "out"}, true)),
 		},
 		mkRuleComment: {
 			Type:        schema.TypeString,
@@ -148,17 +152,17 @@ func RuleSchema() map[string]*schema.Schema {
 	}
 }
 
-func ruleCreate(d *schema.ResourceData, apiCaller func(*firewall.RuleCreateRequestBody) error) diag.Diagnostics {
+func RuleCreate(d *schema.ResourceData, apiCaller func(*firewall.RuleCreateRequestBody) error) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	rules := d.Get(mkRule).([]interface{})
+	rules := d.Get(MkRule).([]interface{})
 	for i := len(rules) - 1; i >= 0; i-- {
 		rule := rules[i].(map[string]interface{})
 
 		ruleBody := firewall.RuleCreateRequestBody{
 			BaseRule: *mapToBaseRule(rule),
-			Action:   rule[mkRuleAction].(string),
-			Type:     rule[mkRuleType].(string),
+			Action:   rule[MkRuleAction].(string),
+			Type:     rule[MkRuleType].(string),
 		}
 
 		err := apiCaller(&ruleBody)
@@ -170,10 +174,12 @@ func ruleCreate(d *schema.ResourceData, apiCaller func(*firewall.RuleCreateReque
 	return diags
 }
 
-func ruleUpdate(d *schema.ResourceData, apiCaller func(*firewall.RuleUpdateRequestBody) error) diag.Diagnostics {
+func RuleUpdate(d *schema.ResourceData, apiCaller func(*firewall.RuleUpdateRequestBody) error) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	rules := d.Get(mkRule).([]interface{})
+	d.GetChange(MkRule)
+
+	rules := d.Get(MkRule).([]interface{})
 	for i := len(rules) - 1; i >= 0; i-- {
 		rule := rules[i].(map[string]interface{})
 
@@ -181,15 +187,15 @@ func ruleUpdate(d *schema.ResourceData, apiCaller func(*firewall.RuleUpdateReque
 			BaseRule: *mapToBaseRule(rule),
 		}
 
-		pos := rule[mkRulePos].(int)
+		pos := rule[MkRulePos].(int)
 		if pos >= 0 {
 			ruleBody.Pos = &pos
 		}
-		action := rule[mkRuleAction].(string)
+		action := rule[MkRuleAction].(string)
 		if action != "" {
 			ruleBody.Action = &action
 		}
-		rType := rule[mkRuleType].(string)
+		rType := rule[MkRuleType].(string)
 		if rType != "" {
 			ruleBody.Type = &rType
 		}
@@ -251,7 +257,7 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	return baseRule
 }
 
-func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
+func BaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment
 	}

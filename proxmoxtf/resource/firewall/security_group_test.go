@@ -39,11 +39,11 @@ func TestSecurityGroupSchema(t *testing.T) {
 		mkSecurityGroupComment: schema.TypeString,
 	})
 
-	ruleSchema := structure.AssertNestedSchemaExistence(t, s, mkRule).Schema
+	ruleSchema := structure.AssertNestedSchemaExistence(t, s, MkRule).Schema
 
 	structure.AssertRequiredArguments(t, ruleSchema, []string{
-		mkRuleAction,
-		mkRuleType,
+		MkRuleAction,
+		MkRuleType,
 	})
 
 	structure.AssertOptionalArguments(t, ruleSchema, []string{
@@ -60,9 +60,9 @@ func TestSecurityGroupSchema(t *testing.T) {
 	})
 
 	structure.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
-		mkRulePos:     schema.TypeInt,
-		mkRuleAction:  schema.TypeString,
-		mkRuleType:    schema.TypeString,
+		MkRulePos:     schema.TypeInt,
+		MkRuleAction:  schema.TypeString,
+		MkRuleType:    schema.TypeString,
 		mkRuleComment: schema.TypeString,
 		mkRuleDest:    schema.TypeString,
 		mkRuleDPort:   schema.TypeString,

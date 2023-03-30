@@ -13,7 +13,6 @@ type SecurityGroup interface {
 	ListGroups(ctx context.Context) ([]*GroupListResponseData, error)
 	UpdateGroup(ctx context.Context, d *GroupUpdateRequestBody) error
 	DeleteGroup(ctx context.Context, group string) error
-	GetGroupRules(ctx context.Context, group string) ([]*GroupGetResponseData, error)
 }
 
 // GroupCreateRequestBody contains the data for an security group create request.
@@ -21,16 +20,6 @@ type GroupCreateRequestBody struct {
 	Group   string  `json:"group"             url:"group"`
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	Digest  *string `json:"digest,omitempty"  url:"digest,omitempty"`
-}
-
-// GroupGetResponseBody contains the body from a group get response.
-type GroupGetResponseBody struct {
-	Data []*GroupGetResponseData `json:"data,omitempty"`
-}
-
-// GroupGetResponseData contains the data from a group get response.
-type GroupGetResponseData struct {
-	Pos int `json:"pos" url:"pos"`
 }
 
 // GroupListResponseData contains the data from a group list response.

@@ -65,7 +65,7 @@ func SecurityGroupRead(ctx context.Context, fw firewall.API, d *schema.ResourceD
 	}
 
 	rules := d.Get(mkRules).([]interface{})
-	ruleIDs, err := fw.GetGroupRules(ctx, name)
+	ruleIDs, err := fw.ListGroupRules(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such security group") {
 			d.SetId("")

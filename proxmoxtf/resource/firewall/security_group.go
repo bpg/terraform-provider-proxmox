@@ -39,7 +39,7 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     dvSecurityGroupComment,
 		},
-		mkRule: {
+		MkRule: {
 			Type:        schema.TypeList,
 			Description: "List of rules",
 			Optional:    true,
@@ -68,7 +68,7 @@ func SecurityGroupCreate(ctx context.Context, fw firewall.API, d *schema.Resourc
 
 	d.SetId(name)
 
-	diags := ruleCreate(d, func(body *firewall.RuleCreateRequestBody) error {
+	diags := RuleCreate(d, func(body *firewall.RuleCreateRequestBody) error {
 		body.Group = &name
 		e := fw.CreateGroupRule(ctx, name, body)
 		if e != nil {
@@ -81,7 +81,7 @@ func SecurityGroupCreate(ctx context.Context, fw firewall.API, d *schema.Resourc
 	}
 
 	// reset rules, we re-read them (with proper positions) from the API
-	err = d.Set(mkRule, nil)
+	err = d.Set(MkRule, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -109,13 +109,13 @@ func SecurityGroupRead(ctx context.Context, fw firewall.API, d *schema.ResourceD
 		}
 	}
 
-	rules := d.Get(mkRule).([]interface{})
+	rules := d.Get(MkRule).([]interface{})
 	//nolint:nestif
 	if len(rules) > 0 {
 		// We have rules in the state, so we need to read them from the API
 		for _, v := range rules {
 			ruleMap := v.(map[string]interface{})
-			pos := ruleMap[mkRulePos].(int)
+			pos := ruleMap[MkRulePos].(int)
 
 			err = readGroupRule(ctx, fw, name, pos, ruleMap)
 			if err != nil {
@@ -123,7 +123,7 @@ func SecurityGroupRead(ctx context.Context, fw firewall.API, d *schema.ResourceD
 			}
 		}
 	} else {
-		ruleIDs, err := fw.GetGroupRules(ctx, name)
+		ruleIDs, err := fw.ListGroupRules(ctx, name)
 		if err != nil {
 			if strings.Contains(err.Error(), "no such security group") {
 				d.SetId("")
@@ -146,7 +146,7 @@ func SecurityGroupRead(ctx context.Context, fw firewall.API, d *schema.ResourceD
 		return diags
 	}
 
-	err = d.Set(mkRule, rules)
+	err = d.Set(MkRule, rules)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
@@ -167,12 +167,12 @@ func readGroupRule(
 		return fmt.Errorf("error reading rule %d for group %s: %w", pos, group, err)
 	}
 
-	baseRuleToMap(&rule.BaseRule, ruleMap)
+	BaseRuleToMap(&rule.BaseRule, ruleMap)
 
 	// pos in the map should be int!
-	ruleMap[mkRulePos] = pos
-	ruleMap[mkRuleAction] = rule.Action
-	ruleMap[mkRuleType] = rule.Type
+	ruleMap[MkRulePos] = pos
+	ruleMap[MkRuleAction] = rule.Action
+	ruleMap[MkRuleType] = rule.Type
 
 	return nil
 }
@@ -195,10 +195,13 @@ func SecurityGroupUpdate(ctx context.Context, fw firewall.API, d *schema.Resourc
 
 	d.SetId(newName)
 
-	diags := ruleUpdate(d, func(body *firewall.RuleUpdateRequestBody) error {
+	diags := RuleUpdate(d, func(body *firewall.RuleUpdateRequestBody) error {
 		body.Group = &newName
 		e := fw.UpdateGroupRule(ctx, newName, *body.Pos, body)
-		return fmt.Errorf("error updating rule: %w", e)
+		if e != nil {
+			return fmt.Errorf("error updating rule: %w", e)
+		}
+		return nil
 	})
 	if diags.HasError() {
 		return diags
@@ -210,16 +213,16 @@ func SecurityGroupUpdate(ctx context.Context, fw firewall.API, d *schema.Resourc
 func SecurityGroupDelete(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	group := d.Id()
 
-	rules := d.Get(mkRule).([]interface{})
+	rules := d.Get(MkRule).([]interface{})
 	sort.Slice(rules, func(i, j int) bool {
 		ruleI := rules[i].(map[string]interface{})
 		ruleJ := rules[j].(map[string]interface{})
-		return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
+		return ruleI[MkRulePos].(int) > ruleJ[MkRulePos].(int)
 	})
 
 	for _, v := range rules {
 		rule := v.(map[string]interface{})
-		pos := rule[mkRulePos].(int)
+		pos := rule[MkRulePos].(int)
 		err := fw.DeleteGroupRule(ctx, group, pos)
 		if err != nil {
 			if strings.Contains(err.Error(), "no such security group") {
