@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package firewall
 
@@ -11,11 +13,13 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 // CreateIPSet create an IPSet
-func (a *API) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error {
-	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset", d, nil)
+func (c *Client) CreateIPSet(ctx context.Context, d *firewall.IPSetCreateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset", d, nil)
 	if err != nil {
 		return fmt.Errorf("error creating IPSet: %w", err)
 	}
@@ -23,8 +27,8 @@ func (a *API) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error 
 }
 
 // AddCIDRToIPSet adds IP or Network to IPSet
-func (a *API) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseData) error {
-	err := a.DoRequest(
+func (c *Client) AddCIDRToIPSet(ctx context.Context, id string, d firewall.IPSetGetResponseData) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodPost,
 		fmt.Sprintf("cluster/firewall/ipset/%s/", url.PathEscape(id)),
@@ -38,8 +42,8 @@ func (a *API) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseD
 }
 
 // UpdateIPSet updates an IPSet.
-func (a *API) UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) error {
-	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset/", d, nil)
+func (c *Client) UpdateIPSet(ctx context.Context, d *firewall.IPSetUpdateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, "cluster/firewall/ipset/", d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating IPSet: %w", err)
 	}
@@ -47,8 +51,8 @@ func (a *API) UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) error 
 }
 
 // DeleteIPSet delete an IPSet
-func (a *API) DeleteIPSet(ctx context.Context, id string) error {
-	err := a.DoRequest(
+func (c *Client) DeleteIPSet(ctx context.Context, id string) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("cluster/firewall/ipset/%s", url.PathEscape(id)),
@@ -62,8 +66,8 @@ func (a *API) DeleteIPSet(ctx context.Context, id string) error {
 }
 
 // DeleteIPSetContent remove IP or Network from IPSet.
-func (a *API) DeleteIPSetContent(ctx context.Context, id string, cidr string) error {
-	err := a.DoRequest(
+func (c *Client) DeleteIPSetContent(ctx context.Context, id string, cidr string) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("cluster/firewall/ipset/%s/%s", url.PathEscape(id), url.PathEscape(cidr)),
@@ -77,9 +81,9 @@ func (a *API) DeleteIPSetContent(ctx context.Context, id string, cidr string) er
 }
 
 // GetIPSetContent retrieve a list of IPSet content
-func (a *API) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetResponseData, error) {
-	resBody := &IPSetGetResponseBody{}
-	err := a.DoRequest(
+func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*firewall.IPSetGetResponseData, error) {
+	resBody := &firewall.IPSetGetResponseBody{}
+	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("cluster/firewall/ipset/%s", url.PathEscape(id)),
@@ -98,9 +102,9 @@ func (a *API) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetRespon
 }
 
 // ListIPSets retrieves list of IPSets.
-func (a *API) ListIPSets(ctx context.Context) ([]*IPSetListResponseData, error) {
-	resBody := &IPSetListResponseBody{}
-	err := a.DoRequest(ctx, http.MethodGet, "cluster/firewall/ipset", nil, resBody)
+func (c *Client) ListIPSets(ctx context.Context) ([]*firewall.IPSetListResponseData, error) {
+	resBody := &firewall.IPSetListResponseBody{}
+	err := c.DoRequest(ctx, http.MethodGet, "cluster/firewall/ipset", nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error getting IPSet list: %w", err)
 	}

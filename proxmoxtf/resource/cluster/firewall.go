@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	fw "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	fw "github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 )
@@ -93,19 +93,19 @@ func Firewall() *schema.Resource {
 	}
 }
 
-func firewallCreate(_ context.Context, _ *fw.API, _ *schema.ResourceData) diag.Diagnostics {
+func firewallCreate(_ context.Context, _ fw.API, _ *schema.ResourceData) diag.Diagnostics {
 	return nil
 }
 
-func firewallRead(_ context.Context, _ *fw.API, _ *schema.ResourceData) diag.Diagnostics {
+func firewallRead(_ context.Context, _ fw.API, _ *schema.ResourceData) diag.Diagnostics {
 	return nil
 }
 
-func firewallUpdate(_ context.Context, _ *fw.API, _ *schema.ResourceData) diag.Diagnostics {
+func firewallUpdate(_ context.Context, _ fw.API, _ *schema.ResourceData) diag.Diagnostics {
 	return nil
 }
 
-func firewallDelete(_ context.Context, _ *fw.API, _ *schema.ResourceData) diag.Diagnostics {
+func firewallDelete(_ context.Context, _ fw.API, _ *schema.ResourceData) diag.Diagnostics {
 	return nil
 }
 
@@ -140,7 +140,7 @@ func FirewallSecurityGroup() *schema.Resource {
 }
 
 func invokeFirewallAPI(
-	f func(context.Context, *fw.API, *schema.ResourceData) diag.Diagnostics,
+	f func(context.Context, fw.API, *schema.ResourceData) diag.Diagnostics,
 ) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		config := m.(proxmoxtf.ProviderConfiguration)

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -80,7 +80,7 @@ func IPSetSchema() map[string]*schema.Schema {
 	}
 }
 
-func IPSetCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func IPSetCreate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkIPSetCIDRComment).(string)
 	name := d.Get(mkIPSetName).(string)
 
@@ -130,7 +130,7 @@ func IPSetCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) 
 	return IPSetRead(ctx, fw, d)
 }
 
-func IPSetRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name := d.Id()
@@ -178,7 +178,7 @@ func IPSetRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) di
 	return diags
 }
 
-func IPSetUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func IPSetUpdate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkIPSetCIDRComment).(string)
 	newName := d.Get(mkIPSetName).(string)
 	previousName := d.Id()
@@ -199,7 +199,7 @@ func IPSetUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) 
 	return IPSetRead(ctx, fw, d)
 }
 
-func IPSetDelete(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func IPSetDelete(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name := d.Id()

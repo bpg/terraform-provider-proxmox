@@ -1,8 +1,20 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package firewall
+
+import "context"
+
+type Alias interface {
+	CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error
+	DeleteAlias(ctx context.Context, name string) error
+	GetAlias(ctx context.Context, name string) (*AliasGetResponseData, error)
+	ListAliases(ctx context.Context) ([]*AliasGetResponseData, error)
+	UpdateAlias(ctx context.Context, name string, d *AliasUpdateRequestBody) error
+}
 
 // AliasCreateRequestBody contains the data for an alias create request.
 type AliasCreateRequestBody struct {

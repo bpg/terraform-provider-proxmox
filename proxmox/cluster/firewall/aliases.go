@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package firewall
 
@@ -11,11 +13,13 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 // CreateAlias create an alias
-func (a *API) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error {
-	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/aliases", d, nil)
+func (c *Client) CreateAlias(ctx context.Context, d *firewall.AliasCreateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, "cluster/firewall/aliases", d, nil)
 	if err != nil {
 		return fmt.Errorf("error creating alias: %w", err)
 	}
@@ -23,8 +27,8 @@ func (a *API) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error 
 }
 
 // DeleteAlias delete an alias
-func (a *API) DeleteAlias(ctx context.Context, name string) error {
-	err := a.DoRequest(
+func (c *Client) DeleteAlias(ctx context.Context, name string) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(name)),
@@ -38,9 +42,9 @@ func (a *API) DeleteAlias(ctx context.Context, name string) error {
 }
 
 // GetAlias retrieves an alias
-func (a *API) GetAlias(ctx context.Context, name string) (*AliasGetResponseData, error) {
-	resBody := &AliasGetResponseBody{}
-	err := a.DoRequest(
+func (c *Client) GetAlias(ctx context.Context, name string) (*firewall.AliasGetResponseData, error) {
+	resBody := &firewall.AliasGetResponseBody{}
+	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(name)),
@@ -59,9 +63,9 @@ func (a *API) GetAlias(ctx context.Context, name string) (*AliasGetResponseData,
 }
 
 // ListAliases retrieves a list of aliases.
-func (a *API) ListAliases(ctx context.Context) ([]*AliasGetResponseData, error) {
-	resBody := &AliasListResponseBody{}
-	err := a.DoRequest(ctx, http.MethodGet, "cluster/firewall/aliases", nil, resBody)
+func (c *Client) ListAliases(ctx context.Context) ([]*firewall.AliasGetResponseData, error) {
+	resBody := &firewall.AliasListResponseBody{}
+	err := c.DoRequest(ctx, http.MethodGet, "cluster/firewall/aliases", nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving aliases: %w", err)
 	}
@@ -78,8 +82,8 @@ func (a *API) ListAliases(ctx context.Context) ([]*AliasGetResponseData, error) 
 }
 
 // UpdateAlias updates an alias.
-func (a *API) UpdateAlias(ctx context.Context, name string, d *AliasUpdateRequestBody) error {
-	err := a.DoRequest(
+func (c *Client) UpdateAlias(ctx context.Context, name string, d *firewall.AliasUpdateRequestBody) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodPut,
 		fmt.Sprintf("cluster/firewall/aliases/%s", url.PathEscape(name)),

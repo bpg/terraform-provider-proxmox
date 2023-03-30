@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 /**
 * Reference: https://pve.proxmox.com/pve-docs/api-viewer/#/cluster/firewall/ipset
@@ -9,8 +11,20 @@
 package firewall
 
 import (
+	"context"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
+
+type IPSet interface {
+	CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error
+	AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseData) error
+	UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) error
+	DeleteIPSet(ctx context.Context, id string) error
+	DeleteIPSetContent(ctx context.Context, id string, cidr string) error
+	GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetResponseData, error)
+	ListIPSets(ctx context.Context) ([]*IPSetListResponseData, error)
+}
 
 // IPSetListResponseBody contains the data from an IPSet get response.
 type IPSetListResponseBody struct {

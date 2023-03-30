@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 const (
@@ -43,7 +43,7 @@ func AliasSchema() map[string]*schema.Schema {
 	}
 }
 
-func AliasRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func AliasRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	aliasName := d.Get(mkAliasName).(string)

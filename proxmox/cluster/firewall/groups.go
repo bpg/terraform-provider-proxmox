@@ -13,11 +13,13 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 // CreateGroup create new security group.
-func (a *API) CreateGroup(ctx context.Context, d *GroupCreateRequestBody) error {
-	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/groups", d, nil)
+func (c *Client) CreateGroup(ctx context.Context, d *firewall.GroupCreateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, "cluster/firewall/groups", d, nil)
 	if err != nil {
 		return fmt.Errorf("error creating security group: %w", err)
 	}
@@ -25,9 +27,9 @@ func (a *API) CreateGroup(ctx context.Context, d *GroupCreateRequestBody) error 
 }
 
 // GetGroupRules retrieve positions of defined security group rules.
-func (a *API) GetGroupRules(ctx context.Context, group string) ([]*GroupGetResponseData, error) {
-	resBody := &GroupGetResponseBody{}
-	err := a.DoRequest(
+func (c *Client) GetGroupRules(ctx context.Context, group string) ([]*firewall.GroupGetResponseData, error) {
+	resBody := &firewall.GroupGetResponseBody{}
+	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("cluster/firewall/groups/%s", url.PathEscape(group)),
@@ -46,9 +48,9 @@ func (a *API) GetGroupRules(ctx context.Context, group string) ([]*GroupGetRespo
 }
 
 // ListGroups retrieve list of security groups.
-func (a *API) ListGroups(ctx context.Context) ([]*GroupListResponseData, error) {
-	resBody := &GroupListResponseBody{}
-	err := a.DoRequest(ctx, http.MethodGet, "cluster/firewall/groups", nil, resBody)
+func (c *Client) ListGroups(ctx context.Context) ([]*firewall.GroupListResponseData, error) {
+	resBody := &firewall.GroupListResponseBody{}
+	err := c.DoRequest(ctx, http.MethodGet, "cluster/firewall/groups", nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving security groups: %w", err)
 	}
@@ -65,8 +67,8 @@ func (a *API) ListGroups(ctx context.Context) ([]*GroupListResponseData, error) 
 }
 
 // UpdateGroup update security group.
-func (a *API) UpdateGroup(ctx context.Context, d *GroupUpdateRequestBody) error {
-	err := a.DoRequest(
+func (c *Client) UpdateGroup(ctx context.Context, d *firewall.GroupUpdateRequestBody) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodPost,
 		"cluster/firewall/groups",
@@ -80,8 +82,8 @@ func (a *API) UpdateGroup(ctx context.Context, d *GroupUpdateRequestBody) error 
 }
 
 // DeleteGroup delete security group.
-func (a *API) DeleteGroup(ctx context.Context, group string) error {
-	err := a.DoRequest(
+func (c *Client) DeleteGroup(ctx context.Context, group string) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("cluster/firewall/groups/%s", url.PathEscape(group)),

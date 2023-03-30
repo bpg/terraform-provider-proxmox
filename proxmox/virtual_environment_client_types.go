@@ -46,17 +46,17 @@ type VirtualEnvironmentMultiPartData struct {
 }
 
 type API interface {
-	Cluster() *cluster.API
+	Cluster() *cluster.Client
 }
 
 func (c *VirtualEnvironmentClient) API() API {
-	return &api{c}
+	return &client{c}
 }
 
-type api struct {
+type client struct {
 	c *VirtualEnvironmentClient
 }
 
-func (a *api) Cluster() *cluster.API {
-	return &cluster.API{Client: a.c}
+func (c *client) Cluster() *cluster.Client {
+	return &cluster.Client{Client: c.c}
 }

@@ -6,7 +6,24 @@
 
 package firewall
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+import (
+	"context"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+)
+
+type Rule interface {
+	CreateRule(ctx context.Context, d *RuleCreateRequestBody) error
+	CreateGroupRule(ctx context.Context, group string, d *RuleCreateRequestBody) error
+	GetRule(ctx context.Context, pos int) (*RuleGetResponseData, error)
+	GetGroupRule(ctx context.Context, group string, pos int) (*RuleGetResponseData, error)
+	ListRules(ctx context.Context) ([]*RuleListResponseData, error)
+	ListGroupRules(ctx context.Context, group string) ([]*RuleListResponseData, error)
+	UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBody) error
+	UpdateGroupRule(ctx context.Context, group string, pos int, d *RuleUpdateRequestBody) error
+	DeleteRule(ctx context.Context, pos int) error
+	DeleteGroupRule(ctx context.Context, group string, pos int) error
+}
 
 // RuleCreateRequestBody contains the data for a firewall rule create request.
 type RuleCreateRequestBody struct {

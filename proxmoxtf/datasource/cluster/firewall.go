@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	fw "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	fw "github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/datasource/firewall"
 )
@@ -60,7 +60,7 @@ func FirewallSecurityGroups() *schema.Resource {
 }
 
 func invokeFirewallAPI(
-	f func(context.Context, *fw.API, *schema.ResourceData) diag.Diagnostics,
+	f func(context.Context, fw.API, *schema.ResourceData) diag.Diagnostics,
 ) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		config := m.(proxmoxtf.ProviderConfiguration)

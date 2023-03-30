@@ -12,13 +12,13 @@ import (
 )
 
 // GetNextID retrieves the next free VM identifier for the cluster.
-func (a *API) GetNextID(ctx context.Context, vmID *int) (*int, error) {
+func (c *Client) GetNextID(ctx context.Context, vmID *int) (*int, error) {
 	reqBody := &NextIDRequestBody{
 		VMID: vmID,
 	}
 
 	resBody := &NextIDResponseBody{}
-	err := a.DoRequest(ctx, http.MethodGet, "cluster/nextid", reqBody, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, "cluster/nextid", reqBody, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving next VM ID: %w", err)
 	}

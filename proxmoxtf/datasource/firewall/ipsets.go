@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 const (
@@ -31,7 +31,7 @@ func IPSetsSchema() map[string]*schema.Schema {
 	}
 }
 
-func IPSetsRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func IPSetsRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	list, err := fw.ListIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)

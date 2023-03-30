@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 const (
@@ -43,7 +43,7 @@ func AliasSchema() map[string]*schema.Schema {
 	}
 }
 
-func AliasCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func AliasCreate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkAliasComment).(string)
 	name := d.Get(mkAliasName).(string)
 	cidr := d.Get(mkAliasCIDR).(string)
@@ -64,7 +64,7 @@ func AliasCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) 
 	return AliasRead(ctx, fw, d)
 }
 
-func AliasRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func AliasRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	name := d.Id()
 	alias, err := fw.GetAlias(ctx, name)
 	if err != nil {
@@ -91,7 +91,7 @@ func AliasRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) di
 	return nil
 }
 
-func AliasUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func AliasUpdate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkAliasComment).(string)
 	cidr := d.Get(mkAliasCIDR).(string)
 	newName := d.Get(mkAliasName).(string)
@@ -113,7 +113,7 @@ func AliasUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) 
 	return AliasRead(ctx, fw, d)
 }
 
-func AliasDelete(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func AliasDelete(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	name := d.Id()
 	err := fw.DeleteAlias(ctx, name)
 	if err != nil {

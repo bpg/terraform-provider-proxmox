@@ -12,11 +12,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 // CreateRule creates a firewall rule.
-func (a *API) CreateRule(ctx context.Context, d *RuleCreateRequestBody) error {
-	err := a.DoRequest(ctx, http.MethodPost, "cluster/firewall/rules", d, nil)
+func (c *Client) CreateRule(ctx context.Context, d *firewall.RuleCreateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, "cluster/firewall/rules", d, nil)
 	if err != nil {
 		return fmt.Errorf("error creating firewall rule: %w", err)
 	}
@@ -24,8 +26,8 @@ func (a *API) CreateRule(ctx context.Context, d *RuleCreateRequestBody) error {
 }
 
 // CreateGroupRule creates a security group firewall rule.
-func (a *API) CreateGroupRule(ctx context.Context, group string, d *RuleCreateRequestBody) error {
-	err := a.DoRequest(ctx,
+func (c *Client) CreateGroupRule(ctx context.Context, group string, d *firewall.RuleCreateRequestBody) error {
+	err := c.DoRequest(ctx,
 		http.MethodPost,
 		fmt.Sprintf("cluster/firewall/groups/%s", url.PathEscape(group)),
 		d,
@@ -38,9 +40,9 @@ func (a *API) CreateGroupRule(ctx context.Context, group string, d *RuleCreateRe
 }
 
 // GetRule retrieves a firewall rule.
-func (a *API) GetRule(ctx context.Context, pos int) (*RuleGetResponseData, error) {
-	resBody := &RuleGetResponseBody{}
-	err := a.DoRequest(
+func (c *Client) GetRule(ctx context.Context, pos int) (*firewall.RuleGetResponseData, error) {
+	resBody := &firewall.RuleGetResponseBody{}
+	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("cluster/firewall/rules/%d", pos),
@@ -59,9 +61,9 @@ func (a *API) GetRule(ctx context.Context, pos int) (*RuleGetResponseData, error
 }
 
 // GetGroupRule retrieves a security group firewall rule.
-func (a *API) GetGroupRule(ctx context.Context, group string, pos int) (*RuleGetResponseData, error) {
-	resBody := &RuleGetResponseBody{}
-	err := a.DoRequest(
+func (c *Client) GetGroupRule(ctx context.Context, group string, pos int) (*firewall.RuleGetResponseData, error) {
+	resBody := &firewall.RuleGetResponseBody{}
+	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("cluster/firewall/groups/%s/%d", url.PathEscape(group), pos),
@@ -80,9 +82,9 @@ func (a *API) GetGroupRule(ctx context.Context, group string, pos int) (*RuleGet
 }
 
 // ListRules retrieves a list of firewall rules.
-func (a *API) ListRules(ctx context.Context) ([]*RuleListResponseData, error) {
-	resBody := &RuleListResponseBody{}
-	err := a.DoRequest(ctx, http.MethodGet, "cluster/firewall/rules", nil, resBody)
+func (c *Client) ListRules(ctx context.Context) ([]*firewall.RuleListResponseData, error) {
+	resBody := &firewall.RuleListResponseBody{}
+	err := c.DoRequest(ctx, http.MethodGet, "cluster/firewall/rules", nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving firewall rules: %w", err)
 	}
@@ -95,9 +97,9 @@ func (a *API) ListRules(ctx context.Context) ([]*RuleListResponseData, error) {
 }
 
 // ListGroupRules retrieves a list of security group firewall rules.
-func (a *API) ListGroupRules(ctx context.Context, group string) ([]*RuleListResponseData, error) {
-	resBody := &RuleListResponseBody{}
-	err := a.DoRequest(ctx, http.MethodGet, fmt.Sprintf("cluster/firewall/groups/%s", url.PathEscape(group)), nil, resBody)
+func (c *Client) ListGroupRules(ctx context.Context, group string) ([]*firewall.RuleListResponseData, error) {
+	resBody := &firewall.RuleListResponseBody{}
+	err := c.DoRequest(ctx, http.MethodGet, fmt.Sprintf("cluster/firewall/groups/%s", url.PathEscape(group)), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving firewall rules: %w", err)
 	}
@@ -110,8 +112,8 @@ func (a *API) ListGroupRules(ctx context.Context, group string) ([]*RuleListResp
 }
 
 // UpdateRule updates a firewall rule.
-func (a *API) UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBody) error {
-	err := a.DoRequest(
+func (c *Client) UpdateRule(ctx context.Context, pos int, d *firewall.RuleUpdateRequestBody) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodPut,
 		fmt.Sprintf("cluster/firewall/rules/%d", pos),
@@ -125,8 +127,8 @@ func (a *API) UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBody)
 }
 
 // UpdateGroupRule updates a security group firewall rule.
-func (a *API) UpdateGroupRule(ctx context.Context, group string, pos int, d *RuleUpdateRequestBody) error {
-	err := a.DoRequest(
+func (c *Client) UpdateGroupRule(ctx context.Context, group string, pos int, d *firewall.RuleUpdateRequestBody) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodPut,
 		fmt.Sprintf("cluster/firewall/groups/%s/%d", url.PathEscape(group), pos),
@@ -140,8 +142,8 @@ func (a *API) UpdateGroupRule(ctx context.Context, group string, pos int, d *Rul
 }
 
 // DeleteRule deletes a firewall rule.
-func (a *API) DeleteRule(ctx context.Context, pos int) error {
-	err := a.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("cluster/firewall/rules/%d", pos), nil, nil)
+func (c *Client) DeleteRule(ctx context.Context, pos int) error {
+	err := c.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("cluster/firewall/rules/%d", pos), nil, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting firewall rule %d: %w", pos, err)
 	}
@@ -149,8 +151,8 @@ func (a *API) DeleteRule(ctx context.Context, pos int) error {
 }
 
 // DeleteGroupRule deletes a security group firewall rule.
-func (a *API) DeleteGroupRule(ctx context.Context, group string, pos int) error {
-	err := a.DoRequest(
+func (c *Client) DeleteGroupRule(ctx context.Context, group string, pos int) error {
+	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
 		fmt.Sprintf("cluster/firewall/groups/%s/%d", url.PathEscape(group), pos),

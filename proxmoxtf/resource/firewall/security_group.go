@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 const (
@@ -52,7 +52,7 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 	}
 }
 
-func SecurityGroupCreate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupCreate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkSecurityGroupComment).(string)
 	name := d.Get(mkSecurityGroupName).(string)
 
@@ -89,7 +89,7 @@ func SecurityGroupCreate(ctx context.Context, fw *firewall.API, d *schema.Resour
 	return SecurityGroupRead(ctx, fw, d)
 }
 
-func SecurityGroupRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name := d.Id()
@@ -154,7 +154,7 @@ func SecurityGroupRead(ctx context.Context, fw *firewall.API, d *schema.Resource
 
 func readGroupRule(
 	ctx context.Context,
-	fw *firewall.API,
+	fw firewall.API,
 	group string,
 	pos int,
 	ruleMap map[string]interface{},
@@ -177,7 +177,7 @@ func readGroupRule(
 	return nil
 }
 
-func SecurityGroupUpdate(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupUpdate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkSecurityGroupComment).(string)
 	newName := d.Get(mkSecurityGroupName).(string)
 	previousName := d.Id()
@@ -207,7 +207,7 @@ func SecurityGroupUpdate(ctx context.Context, fw *firewall.API, d *schema.Resour
 	return SecurityGroupRead(ctx, fw, d)
 }
 
-func SecurityGroupDelete(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupDelete(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	group := d.Id()
 
 	rules := d.Get(mkRule).([]interface{})

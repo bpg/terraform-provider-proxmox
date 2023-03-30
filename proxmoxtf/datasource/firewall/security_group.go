@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 const (
@@ -44,7 +44,7 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 	}
 }
 
-func SecurityGroupRead(ctx context.Context, fw *firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name := d.Get(mkSecurityGroupName).(string)
@@ -97,7 +97,7 @@ func SecurityGroupRead(ctx context.Context, fw *firewall.API, d *schema.Resource
 
 func readGroupRule(
 	ctx context.Context,
-	fw *firewall.API,
+	fw firewall.API,
 	group string,
 	pos int,
 	ruleMap map[string]interface{},

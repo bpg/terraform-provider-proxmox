@@ -6,6 +6,16 @@
 
 package firewall
 
+import "context"
+
+type SecurityGroup interface {
+	CreateGroup(ctx context.Context, d *GroupCreateRequestBody) error
+	ListGroups(ctx context.Context) ([]*GroupListResponseData, error)
+	UpdateGroup(ctx context.Context, d *GroupUpdateRequestBody) error
+	DeleteGroup(ctx context.Context, group string) error
+	GetGroupRules(ctx context.Context, group string) ([]*GroupGetResponseData, error)
+}
+
 // GroupCreateRequestBody contains the data for an security group create request.
 type GroupCreateRequestBody struct {
 	Group   string  `json:"group"             url:"group"`
