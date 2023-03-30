@@ -17,6 +17,98 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 )
 
+const (
+	dvLogRatelimiEnabled = true
+	dvLogRatelimitBurst  = 5
+	dvLogRatelimitRate   = 1
+	dvPolicyIn           = "DROP"
+	dvPolicyOut          = "ACCEPT"
+
+	mkEBTables            = "ebtables"
+	mkEnabled             = "enabled"
+	mkLogRatelimit        = "log_ratelimit"
+	mkLogRatelimitEnabled = "enabled"
+	mkLogRatelimitBurst   = "burst"
+	mkLogRatelimitRate    = "rate"
+	mkPolicyIn            = "policy_in"
+	mkPolicyOut           = "policy_out"
+
+	mkRule = "rule"
+)
+
+func Firewall() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			mkEBTables: {
+				Type:        schema.TypeBool,
+				Description: "Enable ebtables cluster-wide",
+				Optional:    true,
+			},
+			mkEnabled: {
+				Type:        schema.TypeBool,
+				Description: "Enable or disable the firewall cluster-wide",
+				Required:    true,
+			},
+			mkLogRatelimit: {
+				Type:        schema.TypeList,
+				Description: "Log ratelimiting settings",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{
+						map[string]interface{}{
+							mkLogRatelimitEnabled: dvLogRatelimiEnabled,
+							mkLogRatelimitBurst:   dvLogRatelimitBurst,
+							mkLogRatelimitRate:    dvLogRatelimitRate,
+						},
+					}, nil
+				},
+			},
+			mkPolicyIn: {
+				Type:        schema.TypeString,
+				Description: "Default policy for incoming traffic",
+				Optional:    true,
+				Default:     dvPolicyIn,
+			},
+			mkPolicyOut: {
+				Type:        schema.TypeString,
+				Description: "Default policy for outgoing traffic",
+				Optional:    true,
+				Default:     dvPolicyOut,
+			},
+			mkRule: {
+				Type:        schema.TypeList,
+				Description: "List of rules",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{}, nil
+				},
+				ForceNew: true,
+				Elem:     &schema.Resource{Schema: firewall.RuleSchema()},
+			},
+		},
+		CreateContext: invokeFirewallAPI(firewallCreate),
+		ReadContext:   invokeFirewallAPI(firewallRead),
+		UpdateContext: invokeFirewallAPI(firewallUpdate),
+		DeleteContext: invokeFirewallAPI(firewallDelete),
+	}
+}
+
+func firewallCreate(_ context.Context, _ *fw.API, _ *schema.ResourceData) diag.Diagnostics {
+	return nil
+}
+
+func firewallRead(_ context.Context, _ *fw.API, _ *schema.ResourceData) diag.Diagnostics {
+	return nil
+}
+
+func firewallUpdate(_ context.Context, _ *fw.API, _ *schema.ResourceData) diag.Diagnostics {
+	return nil
+}
+
+func firewallDelete(_ context.Context, _ *fw.API, _ *schema.ResourceData) diag.Diagnostics {
+	return nil
+}
+
 func FirewallAlias() *schema.Resource {
 	return &schema.Resource{
 		Schema:        firewall.AliasSchema(),

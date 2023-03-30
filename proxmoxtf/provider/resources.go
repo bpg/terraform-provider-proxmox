@@ -16,6 +16,7 @@ import (
 func createResourceMap() map[string]*schema.Resource {
 	return map[string]*schema.Resource{
 		"proxmox_virtual_environment_certificate":                     resource.Certificate(),
+		"proxmox_virtual_environment_cluster_firewall":                cluster.Firewall(),
 		"proxmox_virtual_environment_cluster_firewall_alias":          cluster.FirewallAlias(),
 		"proxmox_virtual_environment_cluster_firewall_ipset":          cluster.FirewallIPSet(),
 		"proxmox_virtual_environment_cluster_firewall_security_group": cluster.FirewallSecurityGroup(),
