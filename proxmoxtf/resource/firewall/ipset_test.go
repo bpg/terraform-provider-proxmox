@@ -19,13 +19,13 @@ import (
 // instance can be instantiated.
 func TestIPSetSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, IPSetSchema(), "Cannot instantiate IPSetSchema")
+	require.NotNilf(t, IPSet().Schema, "Cannot instantiate IPSetSchema")
 }
 
 // TestIPSetSchema tests the IPSetSchema.
 func TestIPSetSchema(t *testing.T) {
 	t.Parallel()
-	s := IPSetSchema()
+	s := IPSet().Schema
 
 	structure.AssertRequiredArguments(t, s, []string{
 		mkIPSetName,

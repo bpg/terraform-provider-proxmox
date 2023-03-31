@@ -8,8 +8,6 @@ package firewall
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 const (
@@ -98,35 +96,36 @@ func RuleSchema() map[string]*schema.Schema {
 	}
 }
 
-func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
-	if baseRule.Comment != nil {
-		rule[mkRuleComment] = *baseRule.Comment
-	}
-	if baseRule.Dest != nil {
-		rule[mkRuleDest] = *baseRule.Dest
-	}
-	if baseRule.DPort != nil {
-		rule[mkRuleDPort] = *baseRule.DPort
-	}
-	if baseRule.Enable != nil {
-		rule[mkRuleEnable] = *baseRule.Enable
-	}
-	if baseRule.IFace != nil {
-		rule[mkRuleIFace] = *baseRule.IFace
-	}
-	if baseRule.Log != nil {
-		rule[mkRuleLog] = *baseRule.Log
-	}
-	if baseRule.Macro != nil {
-		rule[mkRuleMacro] = *baseRule.Macro
-	}
-	if baseRule.Proto != nil {
-		rule[mkRuleProto] = *baseRule.Proto
-	}
-	if baseRule.Source != nil {
-		rule[mkRuleSource] = *baseRule.Source
-	}
-	if baseRule.SPort != nil {
-		rule[mkRuleSPort] = *baseRule.SPort
-	}
-}
+//
+// func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
+// 	if baseRule.Comment != nil {
+// 		rule[mkRuleComment] = *baseRule.Comment
+// 	}
+// 	if baseRule.Dest != nil {
+// 		rule[mkRuleDest] = *baseRule.Dest
+// 	}
+// 	if baseRule.DPort != nil {
+// 		rule[mkRuleDPort] = *baseRule.DPort
+// 	}
+// 	if baseRule.Enable != nil {
+// 		rule[mkRuleEnable] = *baseRule.Enable
+// 	}
+// 	if baseRule.IFace != nil {
+// 		rule[mkRuleIFace] = *baseRule.IFace
+// 	}
+// 	if baseRule.Log != nil {
+// 		rule[mkRuleLog] = *baseRule.Log
+// 	}
+// 	if baseRule.Macro != nil {
+// 		rule[mkRuleMacro] = *baseRule.Macro
+// 	}
+// 	if baseRule.Proto != nil {
+// 		rule[mkRuleProto] = *baseRule.Proto
+// 	}
+// 	if baseRule.Source != nil {
+// 		rule[mkRuleSource] = *baseRule.Source
+// 	}
+// 	if baseRule.SPort != nil {
+// 		rule[mkRuleSPort] = *baseRule.SPort
+// 	}
+// }

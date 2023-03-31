@@ -45,19 +45,19 @@ func FirewallIPSets() *schema.Resource {
 	}
 }
 
-func FirewallSecurityGroup() *schema.Resource {
-	return &schema.Resource{
-		Schema:      firewall.SecurityGroupSchema(),
-		ReadContext: invokeFirewallAPI(firewall.SecurityGroupRead),
-	}
-}
-
-func FirewallSecurityGroups() *schema.Resource {
-	return &schema.Resource{
-		Schema:      firewall.SecurityGroupsSchema(),
-		ReadContext: invokeFirewallAPI(firewall.SecurityGroupsRead),
-	}
-}
+// func FirewallSecurityGroup() *schema.Resource {
+// 	return &schema.Resource{
+// 		Schema:      firewall.SecurityGroupSchema(),
+// 		ReadContext: invokeFirewallAPI(firewall.SecurityGroupRead),
+// 	}
+// }
+//
+// func FirewallSecurityGroups() *schema.Resource {
+// 	return &schema.Resource{
+// 		Schema:      firewall.SecurityGroupsSchema(),
+// 		ReadContext: invokeFirewallAPI(firewall.SecurityGroupsRead),
+// 	}
+// }
 
 func invokeFirewallAPI(
 	f func(context.Context, fw.API, *schema.ResourceData) diag.Diagnostics,

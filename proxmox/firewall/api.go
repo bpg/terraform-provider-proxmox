@@ -9,7 +9,7 @@ package firewall
 type API interface {
 	Alias
 	IPSet
-	Rule
-	SecurityGroup
-	Options
+	// Rule
+	// SecurityGroup
+	// Options
 }

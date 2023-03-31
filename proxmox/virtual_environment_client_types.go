@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/vm"
 )
 
 const (
@@ -47,6 +48,7 @@ type VirtualEnvironmentMultiPartData struct {
 
 type API interface {
 	Cluster() *cluster.Client
+	VM(nodeName string, vmID int) *vm.Client
 }
 
 func (c *VirtualEnvironmentClient) API() API {
@@ -59,4 +61,8 @@ type client struct {
 
 func (c *client) Cluster() *cluster.Client {
 	return &cluster.Client{Client: c.c}
+}
+
+func (c *client) VM(nodeName string, vmID int) *vm.Client {
+	return &vm.Client{Client: c.c, NodeName: nodeName, VMID: vmID}
 }

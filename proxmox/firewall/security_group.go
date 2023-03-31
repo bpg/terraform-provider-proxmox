@@ -15,7 +15,7 @@ type SecurityGroup interface {
 	DeleteGroup(ctx context.Context, group string) error
 }
 
-// GroupCreateRequestBody contains the data for an security group create request.
+// GroupCreateRequestBody contains the data for a security group create request.
 type GroupCreateRequestBody struct {
 	Group   string  `json:"group"             url:"group"`
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`

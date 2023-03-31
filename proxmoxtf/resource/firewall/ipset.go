@@ -15,6 +15,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
@@ -28,8 +29,8 @@ const (
 	mkIPSetCIDRNoMatch = "nomatch"
 )
 
-func IPSetSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
+func IPSet() *schema.Resource {
+	s := map[string]*schema.Schema{
 		mkIPSetName: {
 			Type:        schema.TypeString,
 			Description: "IPSet name",
@@ -78,9 +79,19 @@ func IPSetSchema() map[string]*schema.Schema {
 			MinItems: 0,
 		},
 	}
+
+	structure.MergeSchema(s, selectorSchema())
+
+	return &schema.Resource{
+		Schema:        s,
+		CreateContext: selectFirewallAPI(ipSetCreate),
+		ReadContext:   selectFirewallAPI(ipSetRead),
+		UpdateContext: selectFirewallAPI(ipSetUpdate),
+		DeleteContext: selectFirewallAPI(ipSetDelete),
+	}
 }
 
-func IPSetCreate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func ipSetCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkIPSetCIDRComment).(string)
 	name := d.Get(mkIPSetName).(string)
 
@@ -113,13 +124,13 @@ func IPSetCreate(ctx context.Context, fw firewall.API, d *schema.ResourceData) d
 		Name:    name,
 	}
 
-	err := fw.CreateIPSet(ctx, body)
+	err := api.CreateIPSet(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	for _, v := range ipSetsArray {
-		err = fw.AddCIDRToIPSet(ctx, name, v)
+		err = api.AddCIDRToIPSet(ctx, name, v)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -127,15 +138,15 @@ func IPSetCreate(ctx context.Context, fw firewall.API, d *schema.ResourceData) d
 
 	d.SetId(name)
 
-	return IPSetRead(ctx, fw, d)
+	return ipSetRead(ctx, api, d)
 }
 
-func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func ipSetRead(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name := d.Id()
 
-	allIPSets, err := fw.ListIPSets(ctx)
+	allIPSets, err := api.ListIPSets(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -150,7 +161,7 @@ func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 		}
 	}
 
-	ipSet, err := fw.GetIPSetContent(ctx, name)
+	ipSet, err := api.GetIPSetContent(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such IPSet") {
 			d.SetId("")
@@ -178,7 +189,7 @@ func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 	return diags
 }
 
-func IPSetUpdate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func ipSetUpdate(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkIPSetCIDRComment).(string)
 	newName := d.Get(mkIPSetName).(string)
 	previousName := d.Id()
@@ -189,22 +200,22 @@ func IPSetUpdate(ctx context.Context, fw firewall.API, d *schema.ResourceData) d
 		Comment: &comment,
 	}
 
-	err := fw.UpdateIPSet(ctx, body)
+	err := api.UpdateIPSet(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(newName)
 
-	return IPSetRead(ctx, fw, d)
+	return ipSetRead(ctx, api, d)
 }
 
-func IPSetDelete(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func ipSetDelete(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name := d.Id()
 
-	IPSetContent, err := fw.GetIPSetContent(ctx, name)
+	IPSetContent, err := api.GetIPSetContent(ctx, name)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -212,7 +223,7 @@ func IPSetDelete(ctx context.Context, fw firewall.API, d *schema.ResourceData) d
 	// PVE requires content of IPSet be cleared before removal
 	if len(IPSetContent) > 0 {
 		for _, ipSet := range IPSetContent {
-			err = fw.DeleteIPSetContent(ctx, name, ipSet.CIDR)
+			err = api.DeleteIPSetContent(ctx, name, ipSet.CIDR)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -221,7 +232,7 @@ func IPSetDelete(ctx context.Context, fw firewall.API, d *schema.ResourceData) d
 		return diags
 	}
 
-	err = fw.DeleteIPSet(ctx, name)
+	err = api.DeleteIPSet(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such IPSet") {
 			d.SetId("")

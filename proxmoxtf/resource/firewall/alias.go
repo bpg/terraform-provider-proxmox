@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
@@ -22,8 +23,8 @@ const (
 	mkAliasComment = "comment"
 )
 
-func AliasSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
+func Alias() *schema.Resource {
+	s := map[string]*schema.Schema{
 		mkAliasName: {
 			Type:        schema.TypeString,
 			Description: "Alias name",
@@ -41,9 +42,19 @@ func AliasSchema() map[string]*schema.Schema {
 			Default:     "",
 		},
 	}
+
+	structure.MergeSchema(s, selectorSchema())
+
+	return &schema.Resource{
+		Schema:        s,
+		CreateContext: selectFirewallAPI(aliasCreate),
+		ReadContext:   selectFirewallAPI(aliasRead),
+		UpdateContext: selectFirewallAPI(aliasUpdate),
+		DeleteContext: selectFirewallAPI(aliasDelete),
+	}
 }
 
-func AliasCreate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func aliasCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkAliasComment).(string)
 	name := d.Get(mkAliasName).(string)
 	cidr := d.Get(mkAliasCIDR).(string)
@@ -54,19 +65,19 @@ func AliasCreate(ctx context.Context, fw firewall.API, d *schema.ResourceData) d
 		CIDR:    cidr,
 	}
 
-	err := fw.CreateAlias(ctx, body)
+	err := api.CreateAlias(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(name)
 
-	return AliasRead(ctx, fw, d)
+	return aliasRead(ctx, api, d)
 }
 
-func AliasRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func aliasRead(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	name := d.Id()
-	alias, err := fw.GetAlias(ctx, name)
+	alias, err := api.GetAlias(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such alias") {
 			d.SetId("")
@@ -91,7 +102,7 @@ func AliasRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 	return nil
 }
 
-func AliasUpdate(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func aliasUpdate(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkAliasComment).(string)
 	cidr := d.Get(mkAliasCIDR).(string)
 	newName := d.Get(mkAliasName).(string)
@@ -103,19 +114,19 @@ func AliasUpdate(ctx context.Context, fw firewall.API, d *schema.ResourceData) d
 		Comment: &comment,
 	}
 
-	err := fw.UpdateAlias(ctx, previousName, body)
+	err := api.UpdateAlias(ctx, previousName, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(newName)
 
-	return AliasRead(ctx, fw, d)
+	return aliasRead(ctx, api, d)
 }
 
-func AliasDelete(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func aliasDelete(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	name := d.Id()
-	err := fw.DeleteAlias(ctx, name)
+	err := api.DeleteAlias(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such alias") {
 			d.SetId("")

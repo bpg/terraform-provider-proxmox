@@ -31,8 +31,8 @@ func SecurityGroupsSchema() map[string]*schema.Schema {
 	}
 }
 
-func SecurityGroupsRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
-	groups, err := fw.ListGroups(ctx)
+func SecurityGroupsRead(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
+	groups, err := api.ListGroups(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

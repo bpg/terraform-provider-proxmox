@@ -8,8 +8,6 @@ package firewall
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -44,12 +42,12 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 	}
 }
 
-func SecurityGroupRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupRead(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name := d.Get(mkSecurityGroupName).(string)
 
-	allGroups, err := fw.ListGroups(ctx)
+	allGroups, err := api.ListGroups(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -64,58 +62,58 @@ func SecurityGroupRead(ctx context.Context, fw firewall.API, d *schema.ResourceD
 		}
 	}
 
-	rules := d.Get(mkRules).([]interface{})
-	ruleIDs, err := fw.ListGroupRules(ctx, name)
-	if err != nil {
-		if strings.Contains(err.Error(), "no such security group") {
-			d.SetId("")
-			return nil
-		}
-		return diag.FromErr(err)
-	}
-	for _, id := range ruleIDs {
-		ruleMap := map[string]interface{}{}
-		err = readGroupRule(ctx, fw, name, id.Pos, ruleMap)
-		if err != nil {
-			diags = append(diags, diag.FromErr(err)...)
-		} else {
-			rules = append(rules, ruleMap)
-		}
-	}
+	// rules := d.Get(mkRules).([]interface{})
+	// ruleIDs, err := fw.ListGroupRules(ctx, name)
+	// if err != nil {
+	// 	if strings.Contains(err.Error(), "no such security group") {
+	// 		d.SetId("")
+	// 		return nil
+	// 	}
+	// 	return diag.FromErr(err)
+	// }
+	// for _, id := range ruleIDs {
+	// 	ruleMap := map[string]interface{}{}
+	// 	err = readGroupRule(ctx, fw, name, id.Pos, ruleMap)
+	// 	if err != nil {
+	// 		diags = append(diags, diag.FromErr(err)...)
+	// 	} else {
+	// 		rules = append(rules, ruleMap)
+	// 	}
+	// }
 
-	if diags.HasError() {
-		return diags
-	}
+	// if diags.HasError() {
+	// 	return diags
+	// }
 
-	err = d.Set(mkRules, rules)
-	diags = append(diags, diag.FromErr(err)...)
+	// err = d.Set(mkRules, rules)
+	// diags = append(diags, diag.FromErr(err)...)
 
 	d.SetId(name)
 
 	return diags
 }
 
-func readGroupRule(
-	ctx context.Context,
-	fw firewall.API,
-	group string,
-	pos int,
-	ruleMap map[string]interface{},
-) error {
-	rule, err := fw.GetGroupRule(ctx, group, pos)
-	if err != nil {
-		if strings.Contains(err.Error(), "no such security group") {
-			return nil
-		}
-		return fmt.Errorf("error reading rule %d for group %s: %w", pos, group, err)
-	}
-
-	baseRuleToMap(&rule.BaseRule, ruleMap)
-
-	// pos in the map should be int!
-	ruleMap[mkRulePos] = pos
-	ruleMap[mkRuleAction] = rule.Action
-	ruleMap[mkRuleType] = rule.Type
-
-	return nil
-}
+// func readGroupRule(
+// 	ctx context.Context,
+// 	fw firewall.API,
+// 	group string,
+// 	pos int,
+// 	ruleMap map[string]interface{},
+// ) error {
+// 	rule, err := fw.GetGroupRule(ctx, group, pos)
+// 	if err != nil {
+// 		if strings.Contains(err.Error(), "no such security group") {
+// 			return nil
+// 		}
+// 		return fmt.Errorf("error reading rule %d for group %s: %w", pos, group, err)
+// 	}
+//
+// 	baseRuleToMap(&rule.BaseRule, ruleMap)
+//
+// 	// pos in the map should be int!
+// 	ruleMap[mkRulePos] = pos
+// 	ruleMap[mkRuleAction] = rule.Action
+// 	ruleMap[mkRuleType] = rule.Type
+//
+// 	return nil
+// }
