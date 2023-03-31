@@ -46,7 +46,7 @@ func selectFirewallAPI(
 			return diag.FromErr(err)
 		}
 
-		api := veClient.API().Cluster().Firewall()
+		var api firewall.API = veClient.API().Cluster().Firewall()
 		if nn, ok := d.GetOk(mkSelectorNodeName); ok {
 			nodeName := nn.(string)
 			if v, ok := d.GetOk(mkSelectorVMID); ok {

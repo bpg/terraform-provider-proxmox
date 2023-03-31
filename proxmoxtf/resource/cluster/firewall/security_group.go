@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package cluster
+package firewall
 
 import (
 	"context"
@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
-	firewall2 "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 )
 
 const (
@@ -24,8 +23,8 @@ const (
 	mkSecurityGroupComment = "comment"
 )
 
-func SecurityGroupSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
+func SecurityGroup() *schema.Resource {
+	s := map[string]*schema.Schema{
 		mkSecurityGroupName: {
 			Type:        schema.TypeString,
 			Description: "Security group name",
@@ -38,20 +37,28 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     dvSecurityGroupComment,
 		},
-		firewall2.MkRule: {
-			Type:        schema.TypeList,
-			Description: "List of rules",
-			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
-			},
-			ForceNew: true,
-			Elem:     &schema.Resource{Schema: firewall2.RuleSchema()},
-		},
+		// firewall.MkRule: {
+		// 	Type:        schema.TypeList,
+		// 	Description: "List of rules",
+		// 	Optional:    true,
+		// 	DefaultFunc: func() (interface{}, error) {
+		// 		return []interface{}{}, nil
+		// 	},
+		// 	ForceNew: true,
+		// 	Elem:     &schema.Resource{Schema: firewall2.RuleSchema()},
+		// },
+	}
+
+	return &schema.Resource{
+		Schema:        s,
+		CreateContext: selectFirewallAPI(SecurityGroupCreate),
+		ReadContext:   selectFirewallAPI(SecurityGroupRead),
+		UpdateContext: selectFirewallAPI(SecurityGroupUpdate),
+		DeleteContext: selectFirewallAPI(SecurityGroupDelete),
 	}
 }
 
-func SecurityGroupCreate(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkSecurityGroupComment).(string)
 	name := d.Get(mkSecurityGroupName).(string)
 
@@ -88,7 +95,7 @@ func SecurityGroupCreate(ctx context.Context, api firewall.SecurityGroup, d *sch
 	return SecurityGroupRead(ctx, api, d)
 }
 
-func SecurityGroupRead(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupRead(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	name := d.Id()
@@ -176,7 +183,7 @@ func SecurityGroupRead(ctx context.Context, api firewall.SecurityGroup, d *schem
 // 	return nil
 // }
 
-func SecurityGroupUpdate(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupUpdate(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkSecurityGroupComment).(string)
 	newName := d.Get(mkSecurityGroupName).(string)
 	previousName := d.Id()
@@ -209,7 +216,7 @@ func SecurityGroupUpdate(ctx context.Context, api firewall.SecurityGroup, d *sch
 	return SecurityGroupRead(ctx, api, d)
 }
 
-func SecurityGroupDelete(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
+func SecurityGroupDelete(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	group := d.Id()
 	//
 	// rules := d.Get(MkRule).([]interface{})

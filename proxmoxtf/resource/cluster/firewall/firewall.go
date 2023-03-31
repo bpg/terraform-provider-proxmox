@@ -4,7 +4,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package cluster
+package firewall
+
+import (
+	"context"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+)
 
 // const (
 // 	dvLogRatelimiEnabled = true
@@ -347,3 +357,19 @@ package cluster
 // 		return f(ctx, veClient.API().Cluster().Firewall(), d)
 // 	}
 // }
+
+func selectFirewallAPI(
+	f func(context.Context, firewall.API, *schema.ResourceData) diag.Diagnostics,
+) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+		config := m.(proxmoxtf.ProviderConfiguration)
+		veClient, err := config.GetVEClient()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		api := veClient.API().Cluster().Firewall()
+
+		return f(ctx, api, d)
+	}
+}

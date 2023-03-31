@@ -10,6 +10,11 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
+type API interface {
+	firewall.API
+	SecurityGroup
+}
+
 type Client struct {
 	firewall.Client
 }

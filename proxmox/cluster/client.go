@@ -22,7 +22,7 @@ func (c *Client) AddPrefix(path string) string {
 	return fmt.Sprintf("cluster/%s", path)
 }
 
-func (c *Client) Firewall() firewall.API {
+func (c *Client) Firewall() clusterfirewall.API {
 	return &clusterfirewall.Client{
 		Client: firewall.Client{Client: c},
 	}

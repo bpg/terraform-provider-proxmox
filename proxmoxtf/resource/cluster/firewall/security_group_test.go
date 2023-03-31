@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package cluster
+package firewall
 
 import (
 	"testing"
@@ -18,13 +18,13 @@ import (
 // TestSecurityGroupSchemaInstantiation tests whether the SecurityGroupSchema instance can be instantiated.
 func TestSecurityGroupSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, SecurityGroupSchema(), "Cannot instantiate SecurityGroupSchema")
+	require.NotNilf(t, SecurityGroup(), "Cannot instantiate SecurityGroupSchema")
 }
 
 // TestSecurityGroupSchema tests the SecurityGroupSchema.
 func TestSecurityGroupSchema(t *testing.T) {
 	t.Parallel()
-	s := SecurityGroupSchema()
+	s := SecurityGroup().Schema
 
 	structure.AssertRequiredArguments(t, s, []string{
 		mkSecurityGroupName,
