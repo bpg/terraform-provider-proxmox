@@ -6,7 +6,14 @@
 
 package firewall
 
-import "context"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"sort"
+)
 
 type SecurityGroup interface {
 	CreateGroup(ctx context.Context, d *GroupCreateRequestBody) error
@@ -41,4 +48,62 @@ type GroupUpdateRequestBody struct {
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	ReName  *string `json:"rename,omitempty"  url:"rename,omitempty"`
 	Digest  *string `json:"digest,omitempty"  url:"digest,omitempty"`
+}
+
+// CreateGroup create new security group.
+func (c *Client) CreateGroup(ctx context.Context, d *GroupCreateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, c.AddPrefix("firewall/groups"), d, nil)
+	if err != nil {
+		return fmt.Errorf("error creating security group: %w", err)
+	}
+	return nil
+}
+
+// ListGroups retrieve list of security groups.
+func (c *Client) ListGroups(ctx context.Context) ([]*GroupListResponseData, error) {
+	resBody := &GroupListResponseBody{}
+	err := c.DoRequest(ctx, http.MethodGet, c.AddPrefix("firewall/groups"), nil, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving security groups: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("the server did not include a data object in the response")
+	}
+
+	sort.Slice(resBody.Data, func(i, j int) bool {
+		return resBody.Data[i].Group < resBody.Data[j].Group
+	})
+
+	return resBody.Data, nil
+}
+
+// UpdateGroup update security group.
+func (c *Client) UpdateGroup(ctx context.Context, d *GroupUpdateRequestBody) error {
+	err := c.DoRequest(
+		ctx,
+		http.MethodPost,
+		c.AddPrefix("firewall/groups"),
+		d,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error updating security group: %w", err)
+	}
+	return nil
+}
+
+// DeleteGroup delete security group.
+func (c *Client) DeleteGroup(ctx context.Context, group string) error {
+	err := c.DoRequest(
+		ctx,
+		http.MethodDelete,
+		c.AddPrefix(fmt.Sprintf("firewall/groups/%s", url.PathEscape(group))),
+		nil,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error deleting security group '%s': %w", group, err)
+	}
+	return nil
 }

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package firewall
+package cluster
 
 import (
 	"context"
@@ -13,7 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	firewall2 "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 )
 
 const (
@@ -37,7 +38,7 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     dvSecurityGroupComment,
 		},
-		MkRule: {
+		firewall2.MkRule: {
 			Type:        schema.TypeList,
 			Description: "List of rules",
 			Optional:    true,
@@ -45,7 +46,7 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 				return []interface{}{}, nil
 			},
 			ForceNew: true,
-			Elem:     &schema.Resource{Schema: RuleSchema()},
+			Elem:     &schema.Resource{Schema: firewall2.RuleSchema()},
 		},
 	}
 }

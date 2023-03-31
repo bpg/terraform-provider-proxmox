@@ -8,4 +8,6 @@ type Client interface {
 		method, path string,
 		requestBody, responseBody interface{},
 	) error
+
+	AddPrefix(path string) string
 }

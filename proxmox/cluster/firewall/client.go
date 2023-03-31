@@ -6,8 +6,10 @@
 
 package firewall
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
+)
 
 type Client struct {
-	types.Client
+	firewall.Client
 }

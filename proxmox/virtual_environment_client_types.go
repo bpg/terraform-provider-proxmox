@@ -55,6 +55,10 @@ func (c *VirtualEnvironmentClient) API() API {
 	return &client{c}
 }
 
+func (c *VirtualEnvironmentClient) AddPrefix(path string) string {
+	return path
+}
+
 type client struct {
 	c *VirtualEnvironmentClient
 }

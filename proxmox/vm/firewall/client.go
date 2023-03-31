@@ -7,18 +7,9 @@
 package firewall
 
 import (
-	"fmt"
-	"net/url"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 type Client struct {
-	types.Client
-	NodeName string
-	VMID     int
-}
-
-func (c *Client) Prefix() string {
-	return fmt.Sprintf("nodes/%s/qemu/%d", url.PathEscape(c.NodeName), c.VMID)
+	firewall.Client
 }

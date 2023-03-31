@@ -6,10 +6,15 @@
 
 package firewall
 
+import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+
 type API interface {
 	Alias
 	IPSet
 	// Rule
-	// SecurityGroup
 	// Options
+}
+
+type Client struct {
+	types.Client
 }

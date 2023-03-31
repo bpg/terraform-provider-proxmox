@@ -12,6 +12,11 @@ package firewall
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"sort"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -64,3 +69,106 @@ type IPSetListResponseData struct {
 
 // IPSetContent is an array of IPSetGetResponseData.
 type IPSetContent []IPSetGetResponseData
+
+// CreateIPSet create an IPSet
+func (c *Client) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, c.AddPrefix("firewall/ipset"), d, nil)
+	if err != nil {
+		return fmt.Errorf("error creating IPSet: %w", err)
+	}
+	return nil
+}
+
+// AddCIDRToIPSet adds IP or Network to IPSet
+func (c *Client) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseData) error {
+	err := c.DoRequest(
+		ctx,
+		http.MethodPost,
+		c.AddPrefix(fmt.Sprintf("firewall/ipset/%s", url.PathEscape(id))),
+		&d,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error adding CIDR to IPSet: %w", err)
+	}
+	return nil
+}
+
+// UpdateIPSet updates an IPSet.
+func (c *Client) UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, c.AddPrefix("firewall/ipset"), d, nil)
+	if err != nil {
+		return fmt.Errorf("error updating IPSet: %w", err)
+	}
+	return nil
+}
+
+// DeleteIPSet delete an IPSet
+func (c *Client) DeleteIPSet(ctx context.Context, id string) error {
+	err := c.DoRequest(
+		ctx,
+		http.MethodDelete,
+		c.AddPrefix(fmt.Sprintf("firewall/ipset/%s", url.PathEscape(id))),
+		nil,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error deleting IPSet %s: %w", id, err)
+	}
+	return nil
+}
+
+// DeleteIPSetContent remove IP or Network from IPSet.
+func (c *Client) DeleteIPSetContent(ctx context.Context, id string, cidr string) error {
+	err := c.DoRequest(
+		ctx,
+		http.MethodDelete,
+		c.AddPrefix(fmt.Sprintf("firewall/ipset/%s/%s", url.PathEscape(id), url.PathEscape(cidr))),
+		nil,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error deleting IPSet content %s: %w", id, err)
+	}
+	return nil
+}
+
+// GetIPSetContent retrieve a list of IPSet content
+func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetResponseData, error) {
+	resBody := &IPSetGetResponseBody{}
+	err := c.DoRequest(
+		ctx,
+		http.MethodGet,
+		c.AddPrefix(fmt.Sprintf("firewall/ipset/%s", url.PathEscape(id))),
+		nil,
+		resBody,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error getting IPSet content: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("the server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
+}
+
+// ListIPSets retrieves list of IPSets.
+func (c *Client) ListIPSets(ctx context.Context) ([]*IPSetListResponseData, error) {
+	resBody := &IPSetListResponseBody{}
+	err := c.DoRequest(ctx, http.MethodGet, c.AddPrefix("firewall/ipset"), nil, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error getting IPSet list: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("the server did not include a data object in the response")
+	}
+
+	sort.Slice(resBody.Data, func(i, j int) bool {
+		return resBody.Data[i].Name < resBody.Data[j].Name
+	})
+
+	return resBody.Data, nil
+}
