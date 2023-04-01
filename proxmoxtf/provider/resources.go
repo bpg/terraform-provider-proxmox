@@ -16,12 +16,12 @@ import (
 
 func createResourceMap() map[string]*schema.Resource {
 	return map[string]*schema.Resource{
-		"proxmox_virtual_environment_certificate": resource.Certificate(),
-		// "proxmox_virtual_environment_cluster_firewall":                cluster.Firewall(),
+		"proxmox_virtual_environment_certificate":             resource.Certificate(),
 		"proxmox_virtual_environment_firewall_alias":          firewall.Alias(),
 		"proxmox_virtual_environment_firewall_ipset":          firewall.IPSet(),
-		"proxmox_virtual_environment_firewall_rule":           firewall.Rules(),
+		"proxmox_virtual_environment_firewall_rules":          firewall.Rules(),
 		"proxmox_virtual_environment_firewall_security_group": clusterfirewall.SecurityGroup(),
+		"proxmox_virtual_environment_cluster_firewall":        clusterfirewall.Firewall(),
 		"proxmox_virtual_environment_container":               resource.Container(),
 		"proxmox_virtual_environment_dns":                     resource.DNS(),
 		"proxmox_virtual_environment_file":                    resource.File(),

@@ -15,6 +15,7 @@ import (
 type API interface {
 	firewall.API
 	SecurityGroup
+	Options
 	SecurityGroup(group string) firewall.Rule
 }
 
