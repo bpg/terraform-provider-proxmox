@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	mkSelectorNodeName = "node_name"
-	mkSelectorVMID     = "vm_id"
+	mkSelectorNodeName    = "node_name"
+	mkSelectorVMID        = "vm_id"
+	mkSelectorContainerID = "container_id"
 )
 
 func selectorSchema() map[string]*schema.Schema {
@@ -32,6 +33,11 @@ func selectorSchema() map[string]*schema.Schema {
 			Type:        schema.TypeInt,
 			Optional:    true,
 			Description: "The ID of the VM to manage the firewall for.",
+		},
+		mkSelectorContainerID: {
+			Type:        schema.TypeInt,
+			Optional:    true,
+			Description: "The ID of the container to manage the firewall for.",
 		},
 	}
 }
@@ -51,6 +57,8 @@ func selectFirewallAPI(
 			nodeName := nn.(string)
 			if v, ok := d.GetOk(mkSelectorVMID); ok {
 				api = veClient.API().VM(nodeName, v.(int)).Firewall()
+			} else if v, ok := d.GetOk(mkSelectorContainerID); ok {
+				api = veClient.API().Container(nodeName, v.(int)).Firewall()
 			}
 		}
 
