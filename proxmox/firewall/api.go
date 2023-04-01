@@ -11,7 +11,7 @@ import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 type API interface {
 	Alias
 	IPSet
-	// Rule
+	Rule
 	// Options
 }
 

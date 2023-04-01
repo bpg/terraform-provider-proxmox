@@ -32,6 +32,8 @@ func TestIPSetSchema(t *testing.T) {
 	})
 
 	structure.AssertOptionalArguments(t, s, []string{
+		mkSelectorVMID,
+		mkSelectorNodeName,
 		mkIPSetCIDR,
 		mkIPSetCIDRComment,
 	})

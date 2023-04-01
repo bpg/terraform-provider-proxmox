@@ -7,14 +7,40 @@
 package firewall
 
 import (
+	"fmt"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
 type API interface {
 	firewall.API
 	SecurityGroup
+	SecurityGroup(group string) firewall.Rule
 }
 
 type Client struct {
 	firewall.Client
+}
+
+type groupClient struct {
+	firewall.Client
+	Group string
+}
+
+func (c *Client) SecurityGroup(group string) firewall.Rule {
+	// My head really hurts when I'm looking at this code
+	// I'm not sure if this is the best way to do the required
+	// interface composition and method "overrides", but it works.
+	return &Client{
+		Client: firewall.Client{
+			Client: &groupClient{
+				Client: c.Client,
+				Group:  group,
+			},
+		},
+	}
+}
+
+func (c *groupClient) AdjustPath(_ string) string {
+	return fmt.Sprintf("cluster/firewall/groups/%s", c.Group)
 }

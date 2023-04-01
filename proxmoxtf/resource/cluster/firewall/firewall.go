@@ -314,36 +314,6 @@ import (
 // 	return nil
 // }
 
-// func FirewallAlias() *schema.Resource {
-// 	return &schema.Resource{
-// 		Schema:        firewall.AliasSchema(),
-// 		CreateContext: invokeFirewallAPI(firewall.AliasCreate),
-// 		ReadContext:   invokeFirewallAPI(firewall.AliasRead),
-// 		UpdateContext: invokeFirewallAPI(firewall.AliasUpdate),
-// 		DeleteContext: invokeFirewallAPI(firewall.AliasDelete),
-// 	}
-// }
-//
-// func FirewallIPSet() *schema.Resource {
-// 	return &schema.Resource{
-// 		Schema:        firewall.IPSetSchema(),
-// 		CreateContext: invokeFirewallAPI(firewall.IPSetCreate),
-// 		ReadContext:   invokeFirewallAPI(firewall.IPSetRead),
-// 		UpdateContext: invokeFirewallAPI(firewall.IPSetUpdate),
-// 		DeleteContext: invokeFirewallAPI(firewall.IPSetDelete),
-// 	}
-// }
-//
-// func FirewallSecurityGroup() *schema.Resource {
-// 	return &schema.Resource{
-// 		Schema:        firewall.SecurityGroupSchema(),
-// 		CreateContext: invokeFirewallAPI(firewall.SecurityGroupCreate),
-// 		ReadContext:   invokeFirewallAPI(firewall.SecurityGroupRead),
-// 		UpdateContext: invokeFirewallAPI(firewall.SecurityGroupUpdate),
-// 		DeleteContext: invokeFirewallAPI(firewall.SecurityGroupDelete),
-// 	}
-// }
-
 // func invokeFirewallAPI(
 // 	f func(context.Context, fw.API, *schema.ResourceData) diag.Diagnostics,
 // ) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {

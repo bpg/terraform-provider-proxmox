@@ -55,7 +55,7 @@ func (c *VirtualEnvironmentClient) API() API {
 	return &client{c}
 }
 
-func (c *VirtualEnvironmentClient) AddPrefix(path string) string {
+func (c *VirtualEnvironmentClient) AdjustPath(path string) string {
 	return path
 }
 

@@ -9,5 +9,5 @@ type Client interface {
 		requestBody, responseBody interface{},
 	) error
 
-	AddPrefix(path string) string
+	AdjustPath(path string) string
 }

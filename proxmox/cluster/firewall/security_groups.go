@@ -50,9 +50,13 @@ type GroupUpdateRequestBody struct {
 	Digest  *string `json:"digest,omitempty"  url:"digest,omitempty"`
 }
 
+func (c *Client) securityGroupsPath() string {
+	return "cluster/firewall/groups"
+}
+
 // CreateGroup create new security group.
 func (c *Client) CreateGroup(ctx context.Context, d *GroupCreateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.AddPrefix("firewall/groups"), d, nil)
+	err := c.DoRequest(ctx, http.MethodPost, c.securityGroupsPath(), d, nil)
 	if err != nil {
 		return fmt.Errorf("error creating security group: %w", err)
 	}
@@ -62,7 +66,7 @@ func (c *Client) CreateGroup(ctx context.Context, d *GroupCreateRequestBody) err
 // ListGroups retrieve list of security groups.
 func (c *Client) ListGroups(ctx context.Context) ([]*GroupListResponseData, error) {
 	resBody := &GroupListResponseBody{}
-	err := c.DoRequest(ctx, http.MethodGet, c.AddPrefix("firewall/groups"), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, c.securityGroupsPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving security groups: %w", err)
 	}
@@ -83,7 +87,7 @@ func (c *Client) UpdateGroup(ctx context.Context, d *GroupUpdateRequestBody) err
 	err := c.DoRequest(
 		ctx,
 		http.MethodPost,
-		c.AddPrefix("firewall/groups"),
+		c.securityGroupsPath(),
 		d,
 		nil,
 	)
@@ -98,7 +102,7 @@ func (c *Client) DeleteGroup(ctx context.Context, group string) error {
 	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
-		c.AddPrefix(fmt.Sprintf("firewall/groups/%s", url.PathEscape(group))),
+		fmt.Sprintf("%s/%s", c.securityGroupsPath(), url.PathEscape(group)),
 		nil,
 		nil,
 	)

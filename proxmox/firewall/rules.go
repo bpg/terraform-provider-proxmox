@@ -8,21 +8,23 @@ package firewall
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type Rule interface {
+	GetStableID() string
 	CreateRule(ctx context.Context, d *RuleCreateRequestBody) error
-	CreateGroupRule(ctx context.Context, group string, d *RuleCreateRequestBody) error
 	GetRule(ctx context.Context, pos int) (*RuleGetResponseData, error)
-	GetGroupRule(ctx context.Context, group string, pos int) (*RuleGetResponseData, error)
 	ListRules(ctx context.Context) ([]*RuleListResponseData, error)
-	ListGroupRules(ctx context.Context, group string) ([]*RuleListResponseData, error)
 	UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBody) error
-	UpdateGroupRule(ctx context.Context, group string, pos int, d *RuleUpdateRequestBody) error
 	DeleteRule(ctx context.Context, pos int) error
-	DeleteGroupRule(ctx context.Context, group string, pos int) error
 }
 
 // RuleCreateRequestBody contains the data for a firewall rule create request.
@@ -84,4 +86,89 @@ type BaseRule struct {
 	Proto    *string           `json:"proto,omitempty"     url:"proto,omitempty"`
 	Source   *string           `json:"source,omitempty"    url:"source,omitempty"`
 	SPort    *string           `json:"sport,omitempty"     url:"sport,omitempty"`
+}
+
+// "cluster/firewall/groups/%s" -> "cluster/firewall/rules"
+
+func (c *Client) rulesPath() string {
+	return c.AdjustPath("firewall/rules")
+}
+
+func (c *Client) GetStableID() string {
+	return "rule-" + strconv.Itoa(schema.HashString(c.rulesPath()))
+}
+
+// CreateRule creates a firewall rule.
+func (c *Client) CreateRule(ctx context.Context, d *RuleCreateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPost, c.rulesPath(), d, nil)
+	if err != nil {
+		return fmt.Errorf("error creating firewall rule: %w", err)
+	}
+	return nil
+}
+
+// GetRule retrieves a firewall rule.
+func (c *Client) GetRule(ctx context.Context, pos int) (*RuleGetResponseData, error) {
+	resBody := &RuleGetResponseBody{}
+	err := c.DoRequest(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("%s/%d", c.rulesPath(), pos),
+		nil,
+		resBody,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving firewall rule %d: %w", pos, err)
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("the server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
+}
+
+// ListRules retrieves a list of firewall rules.
+func (c *Client) ListRules(ctx context.Context) ([]*RuleListResponseData, error) {
+	resBody := &RuleListResponseBody{}
+	err := c.DoRequest(ctx, http.MethodGet, c.rulesPath(), nil, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving firewall rules: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, errors.New("the server did not include a data object in the response")
+	}
+
+	return resBody.Data, nil
+}
+
+// UpdateRule updates a firewall rule.
+func (c *Client) UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBody) error {
+	err := c.DoRequest(
+		ctx,
+		http.MethodPut,
+		fmt.Sprintf("%s/%d", c.rulesPath(), pos),
+		d,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error updating firewall rule %d: %w", pos, err)
+	}
+	return nil
+}
+
+// DeleteRule deletes a firewall rule.
+func (c *Client) DeleteRule(ctx context.Context, pos int) error {
+	err := c.DoRequest(
+		ctx,
+		http.MethodDelete,
+		fmt.Sprintf("%s/%d", c.rulesPath(), pos),
+		nil,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error deleting firewall rule %d: %w", pos, err)
+	}
+	return nil
 }

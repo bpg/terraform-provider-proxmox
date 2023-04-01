@@ -56,9 +56,13 @@ type AliasUpdateRequestBody struct {
 	CIDR    string  `json:"cidr"              url:"cidr"`
 }
 
+func (c *Client) aliasesPath() string {
+	return c.AdjustPath("firewall/aliases")
+}
+
 // CreateAlias create an alias
 func (c *Client) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.AddPrefix("firewall/aliases"), d, nil)
+	err := c.DoRequest(ctx, http.MethodPost, c.aliasesPath(), d, nil)
 	if err != nil {
 		return fmt.Errorf("error creating alias: %w", err)
 	}
@@ -70,7 +74,7 @@ func (c *Client) DeleteAlias(ctx context.Context, name string) error {
 	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
-		c.AddPrefix(fmt.Sprintf("firewall/aliases/%s", url.PathEscape(name))),
+		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
 		nil,
 		nil,
 	)
@@ -86,7 +90,7 @@ func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseDa
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
-		c.AddPrefix(fmt.Sprintf("firewall/aliases/%s", url.PathEscape(name))),
+		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
 		nil,
 		resBody,
 	)
@@ -104,7 +108,7 @@ func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseDa
 // ListAliases retrieves a list of aliases.
 func (c *Client) ListAliases(ctx context.Context) ([]*AliasGetResponseData, error) {
 	resBody := &AliasListResponseBody{}
-	err := c.DoRequest(ctx, http.MethodGet, c.AddPrefix("firewall/aliases"), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, c.aliasesPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving aliases: %w", err)
 	}
@@ -125,7 +129,7 @@ func (c *Client) UpdateAlias(ctx context.Context, name string, d *AliasUpdateReq
 	err := c.DoRequest(
 		ctx,
 		http.MethodPut,
-		c.AddPrefix(fmt.Sprintf("firewall/aliases/%s", url.PathEscape(name))),
+		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
 		d,
 		nil,
 	)

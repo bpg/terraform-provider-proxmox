@@ -18,17 +18,29 @@ import (
 // TestRuleSchemaInstantiation tests whether the RuleSchema instance can be instantiated.
 func TestRuleSchemaInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, RuleSchema(), "Cannot instantiate Rule")
+	require.NotNilf(t, Rules(), "Cannot instantiate Rules")
 }
 
 // TestRuleSchema tests the RuleSchema.
 func TestRuleSchema(t *testing.T) {
 	t.Parallel()
-	ruleSchema := RuleSchema()
+	rulesSchema := Rules().Schema
+
+	structure.AssertRequiredArguments(t, rulesSchema, []string{
+		mkRule,
+	})
+
+	structure.AssertOptionalArguments(t, rulesSchema, []string{
+		mkSelectorSecurityGroup,
+		mkSelectorVMID,
+		mkSelectorNodeName,
+	})
+
+	ruleSchema := structure.AssertNestedSchemaExistence(t, rulesSchema, mkRule).Schema
 
 	structure.AssertRequiredArguments(t, ruleSchema, []string{
-		MkRuleAction,
-		MkRuleType,
+		mkRuleAction,
+		mkRuleType,
 	})
 
 	structure.AssertOptionalArguments(t, ruleSchema, []string{
@@ -45,9 +57,9 @@ func TestRuleSchema(t *testing.T) {
 	})
 
 	structure.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
-		MkRulePos:     schema.TypeInt,
-		MkRuleAction:  schema.TypeString,
-		MkRuleType:    schema.TypeString,
+		mkRulePos:     schema.TypeInt,
+		mkRuleAction:  schema.TypeString,
+		mkRuleType:    schema.TypeString,
 		mkRuleComment: schema.TypeString,
 		mkRuleDest:    schema.TypeString,
 		mkRuleDPort:   schema.TypeString,

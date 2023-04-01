@@ -70,9 +70,13 @@ type IPSetListResponseData struct {
 // IPSetContent is an array of IPSetGetResponseData.
 type IPSetContent []IPSetGetResponseData
 
+func (c *Client) ipsetPath() string {
+	return c.AdjustPath("firewall/ipset")
+}
+
 // CreateIPSet create an IPSet
 func (c *Client) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.AddPrefix("firewall/ipset"), d, nil)
+	err := c.DoRequest(ctx, http.MethodPost, c.ipsetPath(), d, nil)
 	if err != nil {
 		return fmt.Errorf("error creating IPSet: %w", err)
 	}
@@ -84,7 +88,7 @@ func (c *Client) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetRespon
 	err := c.DoRequest(
 		ctx,
 		http.MethodPost,
-		c.AddPrefix(fmt.Sprintf("firewall/ipset/%s", url.PathEscape(id))),
+		fmt.Sprintf("%s/%s", c.ipsetPath(), url.PathEscape(id)),
 		&d,
 		nil,
 	)
@@ -96,7 +100,7 @@ func (c *Client) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetRespon
 
 // UpdateIPSet updates an IPSet.
 func (c *Client) UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.AddPrefix("firewall/ipset"), d, nil)
+	err := c.DoRequest(ctx, http.MethodPost, c.ipsetPath(), d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating IPSet: %w", err)
 	}
@@ -108,7 +112,7 @@ func (c *Client) DeleteIPSet(ctx context.Context, id string) error {
 	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
-		c.AddPrefix(fmt.Sprintf("firewall/ipset/%s", url.PathEscape(id))),
+		fmt.Sprintf("%s/%s", c.ipsetPath(), url.PathEscape(id)),
 		nil,
 		nil,
 	)
@@ -123,7 +127,7 @@ func (c *Client) DeleteIPSetContent(ctx context.Context, id string, cidr string)
 	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
-		c.AddPrefix(fmt.Sprintf("firewall/ipset/%s/%s", url.PathEscape(id), url.PathEscape(cidr))),
+		fmt.Sprintf("%s/%s/%s", c.ipsetPath(), url.PathEscape(id), url.PathEscape(cidr)),
 		nil,
 		nil,
 	)
@@ -139,7 +143,7 @@ func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetRes
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
-		c.AddPrefix(fmt.Sprintf("firewall/ipset/%s", url.PathEscape(id))),
+		fmt.Sprintf("%s/%s", c.ipsetPath(), url.PathEscape(id)),
 		nil,
 		resBody,
 	)
@@ -157,7 +161,7 @@ func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetRes
 // ListIPSets retrieves list of IPSets.
 func (c *Client) ListIPSets(ctx context.Context) ([]*IPSetListResponseData, error) {
 	resBody := &IPSetListResponseBody{}
-	err := c.DoRequest(ctx, http.MethodGet, c.AddPrefix("firewall/ipset"), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, c.ipsetPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error getting IPSet list: %w", err)
 	}

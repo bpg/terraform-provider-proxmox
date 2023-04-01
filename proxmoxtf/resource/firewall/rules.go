@@ -7,13 +7,19 @@
 package firewall
 
 import (
+	"context"
+	"fmt"
+	"sort"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
@@ -28,9 +34,9 @@ const (
 	dvRuleSPort   = ""
 	dvRuleSource  = ""
 
-	MkRule = "rule"
+	mkRule = "rule"
 
-	MkRuleAction  = "action"
+	mkRuleAction  = "action"
 	mkRuleComment = "comment"
 	mkRuleDPort   = "dport"
 	mkRuleDest    = "dest"
@@ -38,40 +44,39 @@ const (
 	mkRuleIFace   = "iface"
 	mkRuleLog     = "log"
 	mkRuleMacro   = "macro"
-	MkRulePos     = "pos"
+	mkRulePos     = "pos"
 	mkRuleProto   = "proto"
 	mkRuleSource  = "source"
 	mkRuleSPort   = "sport"
-	MkRuleType    = "type"
+	mkRuleType    = "type"
+
+	mkSelectorSecurityGroup = "security_group"
 )
 
-func RuleSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		MkRulePos: {
+func Rules() *schema.Resource {
+	rule := map[string]*schema.Schema{
+		mkRulePos: {
 			Type:        schema.TypeInt,
-			Description: "Rule position",
+			Description: "Rules position",
 			Computed:    true,
 		},
-		MkRuleAction: {
+		mkRuleAction: {
 			Type:             schema.TypeString,
-			Description:      "Rule action ('ACCEPT', 'DROP', 'REJECT')",
+			Description:      "Rules action ('ACCEPT', 'DROP', 'REJECT')",
 			Required:         true,
-			ForceNew:         false,
 			ValidateDiagFunc: validator.FirewallPolicy(),
 		},
-		MkRuleType: {
+		mkRuleType: {
 			Type:             schema.TypeString,
-			Description:      "Rule type ('in', 'out')",
+			Description:      "Rules type ('in', 'out')",
 			Required:         true,
-			ForceNew:         false,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"in", "out"}, true)),
 		},
 		mkRuleComment: {
 			Type:        schema.TypeString,
-			Description: "Rule comment",
+			Description: "Rules comment",
 			Optional:    true,
 			Default:     dvRuleComment,
-			ForceNew:    false,
 		},
 		mkRuleDest: {
 			Type: schema.TypeString,
@@ -81,7 +86,6 @@ func RuleSchema() map[string]*schema.Schema {
 				"separated by comma). Please do not mix IPv4 and IPv6 addresses inside such lists.",
 			Optional: true,
 			Default:  dvRuleDest,
-			ForceNew: false,
 		},
 		mkRuleDPort: {
 			Type: schema.TypeString,
@@ -90,14 +94,12 @@ func RuleSchema() map[string]*schema.Schema {
 				" for example '80:85', and you can use comma separated list to match several ports or ranges.",
 			Optional: true,
 			Default:  dvRuleDPort,
-			ForceNew: false,
 		},
 		mkRuleEnable: {
 			Type:        schema.TypeBool,
 			Description: "Enable rule",
 			Optional:    true,
 			Default:     dvRuleEnable,
-			ForceNew:    false,
 		},
 		mkRuleIFace: {
 			Type: schema.TypeString,
@@ -105,7 +107,6 @@ func RuleSchema() map[string]*schema.Schema {
 				" and containers ('net\\d+'). Host related rules can use arbitrary strings.",
 			Optional: true,
 			Default:  dvRuleIface,
-			ForceNew: false,
 		},
 		mkRuleLog: {
 			Type: schema.TypeString,
@@ -113,14 +114,12 @@ func RuleSchema() map[string]*schema.Schema {
 				" 'info', 'debug', 'nolog')",
 			Optional: true,
 			Default:  dvRuleLog,
-			ForceNew: false,
 		},
 		mkRuleMacro: {
 			Type:        schema.TypeString,
 			Description: "Use predefined standard macro",
 			Optional:    true,
 			Default:     dvRuleMacro,
-			ForceNew:    false,
 		},
 		mkRuleProto: {
 			Type: schema.TypeString,
@@ -128,7 +127,6 @@ func RuleSchema() map[string]*schema.Schema {
 				"(0-255), as defined in '/etc/protocols'.",
 			Optional: true,
 			Default:  dvRuleProto,
-			ForceNew: false,
 		},
 		mkRuleSource: {
 			Type: schema.TypeString,
@@ -138,7 +136,6 @@ func RuleSchema() map[string]*schema.Schema {
 				"separated by comma). Please do not mix IPv4 and IPv6 addresses inside such lists.",
 			Optional: true,
 			Default:  dvRuleSource,
-			ForceNew: false,
 		},
 		mkRuleSPort: {
 			Type: schema.TypeString,
@@ -147,39 +144,127 @@ func RuleSchema() map[string]*schema.Schema {
 				" for example '80:85', and you can use comma separated list to match several ports or ranges.",
 			Optional: true,
 			Default:  dvRuleSPort,
-			ForceNew: false,
 		},
+	}
+
+	s := map[string]*schema.Schema{
+		mkSelectorSecurityGroup: {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "The name of the security group to manage the firewall rule for.",
+		},
+
+		mkRule: {
+			Type:        schema.TypeList,
+			Description: "List of rules",
+			Required:    true,
+			ForceNew:    true,
+			Elem:        &schema.Resource{Schema: rule},
+		},
+	}
+
+	structure.MergeSchema(s, selectorSchema())
+
+	return &schema.Resource{
+		Schema:        s,
+		CreateContext: invokeRuleAPI(ruleCreate),
+		ReadContext:   invokeRuleAPI(ruleRead),
+		UpdateContext: invokeRuleAPI(ruleUpdate),
+		DeleteContext: invokeRuleAPI(ruleDelete),
 	}
 }
 
-func RuleCreate(d *schema.ResourceData, apiCaller func(*firewall.RuleCreateRequestBody) error) diag.Diagnostics {
+func ruleCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	rules := d.Get(MkRule).([]interface{})
+	rules := d.Get(mkRule).([]interface{})
 	for i := len(rules) - 1; i >= 0; i-- {
 		rule := rules[i].(map[string]interface{})
 
 		ruleBody := firewall.RuleCreateRequestBody{
 			BaseRule: *mapToBaseRule(rule),
-			Action:   rule[MkRuleAction].(string),
-			Type:     rule[MkRuleType].(string),
+			Action:   rule[mkRuleAction].(string),
+			Type:     rule[mkRuleType].(string),
 		}
 
-		err := apiCaller(&ruleBody)
+		err := api.CreateRule(ctx, &ruleBody)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if diags.HasError() {
+		return diags
+	}
+
+	// reset rules, we re-read them (with proper positions) from the API
+	err := d.Set(mkRule, nil)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(api.GetStableID())
+
+	return ruleRead(ctx, api, d)
+}
+
+func ruleRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	readRule := func(pos int, ruleMap map[string]interface{}) error {
+		rule, err := api.GetRule(ctx, pos)
 		if err != nil {
+			return fmt.Errorf("error reading rule %d : %w", pos, err)
+		}
+
+		baseRuleToMap(&rule.BaseRule, ruleMap)
+
+		// pos in the map should be int!
+		ruleMap[mkRulePos] = pos
+		ruleMap[mkRuleAction] = rule.Action
+		ruleMap[mkRuleType] = rule.Type
+
+		return nil
+	}
+
+	rules := d.Get(mkRule).([]interface{})
+	if len(rules) > 0 {
+		// We have rules in the state, so we need to read them from the API
+		for _, v := range rules {
+			ruleMap := v.(map[string]interface{})
+			pos := ruleMap[mkRulePos].(int)
+
+			err := readRule(pos, ruleMap)
 			diags = append(diags, diag.FromErr(err)...)
 		}
+	} else {
+		ruleIDs, err := api.ListRules(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		for _, id := range ruleIDs {
+			ruleMap := map[string]interface{}{}
+			err = readRule(id.Pos, ruleMap)
+			if err != nil {
+				diags = append(diags, diag.FromErr(err)...)
+			} else {
+				rules = append(rules, ruleMap)
+			}
+		}
 	}
+
+	if diags.HasError() {
+		return diags
+	}
+
+	err := d.Set(mkRule, rules)
+	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
 }
 
-func RuleUpdate(d *schema.ResourceData, apiCaller func(*firewall.RuleUpdateRequestBody) error) diag.Diagnostics {
+func ruleUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	d.GetChange(MkRule)
-
-	rules := d.Get(MkRule).([]interface{})
+	rules := d.Get(mkRule).([]interface{})
 	for i := len(rules) - 1; i >= 0; i-- {
 		rule := rules[i].(map[string]interface{})
 
@@ -187,23 +272,47 @@ func RuleUpdate(d *schema.ResourceData, apiCaller func(*firewall.RuleUpdateReque
 			BaseRule: *mapToBaseRule(rule),
 		}
 
-		pos := rule[MkRulePos].(int)
+		pos := rule[mkRulePos].(int)
 		if pos >= 0 {
 			ruleBody.Pos = &pos
 		}
-		action := rule[MkRuleAction].(string)
+		action := rule[mkRuleAction].(string)
 		if action != "" {
 			ruleBody.Action = &action
 		}
-		rType := rule[MkRuleType].(string)
+		rType := rule[mkRuleType].(string)
 		if rType != "" {
 			ruleBody.Type = &rType
 		}
 
-		err := apiCaller(&ruleBody)
+		err := api.UpdateRule(ctx, pos, &ruleBody)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 		}
+	}
+
+	if diags.HasError() {
+		return diags
+	}
+
+	return ruleRead(ctx, api, d)
+}
+
+func ruleDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	rules := d.Get(mkRule).([]interface{})
+	sort.Slice(rules, func(i, j int) bool {
+		ruleI := rules[i].(map[string]interface{})
+		ruleJ := rules[j].(map[string]interface{})
+		return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
+	})
+
+	for _, v := range rules {
+		rule := v.(map[string]interface{})
+		pos := rule[mkRulePos].(int)
+		err := api.DeleteRule(ctx, pos)
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	return diags
@@ -257,7 +366,7 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	return baseRule
 }
 
-func BaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
+func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment
 	}
@@ -287,5 +396,26 @@ func BaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	}
 	if baseRule.SPort != nil {
 		rule[mkRuleSPort] = *baseRule.SPort
+	}
+}
+
+func invokeRuleAPI(
+	f func(context.Context, firewall.Rule, *schema.ResourceData) diag.Diagnostics,
+) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+		config := m.(proxmoxtf.ProviderConfiguration)
+		veClient, err := config.GetVEClient()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if v, ok := d.GetOk("security_group"); ok {
+			api := veClient.API().Cluster().Firewall().SecurityGroup(v.(string))
+			return f(ctx, api, d)
+		}
+
+		return selectFirewallAPI(func(ctx context.Context, api firewall.API, data *schema.ResourceData) diag.Diagnostics {
+			return f(ctx, api, data)
+		})(ctx, d, m)
 	}
 }

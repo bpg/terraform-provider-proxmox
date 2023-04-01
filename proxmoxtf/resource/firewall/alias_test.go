@@ -32,6 +32,8 @@ func TestAliasSchema(t *testing.T) {
 	})
 
 	structure.AssertOptionalArguments(t, s, []string{
+		mkSelectorVMID,
+		mkSelectorNodeName,
 		mkAliasComment,
 	})
 
