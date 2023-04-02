@@ -42,6 +42,6 @@ func (c *Client) SecurityGroup(group string) firewall.Rule {
 	}
 }
 
-func (c *groupClient) AdjustPath(_ string) string {
+func (c *groupClient) ExpandPath(_ string) string {
 	return fmt.Sprintf("cluster/firewall/groups/%s", c.Group)
 }

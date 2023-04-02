@@ -18,7 +18,7 @@ type Client struct {
 	types.Client
 }
 
-func (c *Client) AdjustPath(path string) string {
+func (c *Client) ExpandPath(path string) string {
 	return fmt.Sprintf("cluster/%s", path)
 }
 

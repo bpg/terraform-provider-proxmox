@@ -19,8 +19,8 @@ import (
 )
 
 type Options interface {
-	SetOptions(ctx context.Context, d *OptionsPutRequestBody) error
-	GetOptions(ctx context.Context) (*OptionsGetResponseData, error)
+	SetGlobalOptions(ctx context.Context, d *OptionsPutRequestBody) error
+	GetGlobalOptions(ctx context.Context) (*OptionsGetResponseData, error)
 }
 
 type OptionsPutRequestBody struct {
@@ -110,7 +110,7 @@ func (r *CustomLogRateLimit) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (c *Client) SetOptions(ctx context.Context, d *OptionsPutRequestBody) error {
+func (c *Client) SetGlobalOptions(ctx context.Context, d *OptionsPutRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPut, "cluster/firewall/options", d, nil)
 	if err != nil {
 		return fmt.Errorf("error setting optionss: %w", err)
@@ -118,7 +118,7 @@ func (c *Client) SetOptions(ctx context.Context, d *OptionsPutRequestBody) error
 	return nil
 }
 
-func (c *Client) GetOptions(ctx context.Context) (*OptionsGetResponseData, error) {
+func (c *Client) GetGlobalOptions(ctx context.Context) (*OptionsGetResponseData, error) {
 	resBody := &OptionsGetResponseBody{}
 	err := c.DoRequest(ctx, http.MethodGet, "cluster/firewall/options", nil, resBody)
 	if err != nil {

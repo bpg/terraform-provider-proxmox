@@ -12,6 +12,7 @@ type API interface {
 	Alias
 	IPSet
 	Rule
+	Options
 }
 
 type Client struct {

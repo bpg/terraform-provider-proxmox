@@ -28,3 +28,10 @@ func FirewallPolicy() schema.SchemaValidateDiagFunc {
 		false,
 	))
 }
+
+func FirewallLogLevel() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice(
+		[]string{"emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "nolog"},
+		false,
+	))
+}

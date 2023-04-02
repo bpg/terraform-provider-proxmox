@@ -21,7 +21,7 @@ type Client struct {
 	VMID     int
 }
 
-func (c *Client) AdjustPath(path string) string {
+func (c *Client) ExpandPath(path string) string {
 	return fmt.Sprintf("nodes/%s/lxc/%d/%s", url.PathEscape(c.NodeName), c.VMID, path)
 }
 

@@ -9,5 +9,9 @@ type Client interface {
 		requestBody, responseBody interface{},
 	) error
 
-	AdjustPath(path string) string
+	// ExpandPath expands a path relative to the client's base path.
+	// For example, if the client is configured for a VM and the
+	// path is "firewall/options", the returned path will be
+	// "/nodes/<node>/qemu/<vmid>/firewall/options".
+	ExpandPath(path string) string
 }

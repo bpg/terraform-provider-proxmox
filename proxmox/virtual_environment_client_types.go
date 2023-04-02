@@ -57,7 +57,7 @@ func (c *VirtualEnvironmentClient) API() API {
 	return &client{c}
 }
 
-func (c *VirtualEnvironmentClient) AdjustPath(path string) string {
+func (c *VirtualEnvironmentClient) ExpandPath(path string) string {
 	return path
 }
 

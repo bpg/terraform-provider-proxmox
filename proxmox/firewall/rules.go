@@ -19,7 +19,7 @@ import (
 )
 
 type Rule interface {
-	GetStableID() string
+	GetRulesID() string
 	CreateRule(ctx context.Context, d *RuleCreateRequestBody) error
 	GetRule(ctx context.Context, pos int) (*RuleGetResponseData, error)
 	ListRules(ctx context.Context) ([]*RuleListResponseData, error)
@@ -88,13 +88,11 @@ type BaseRule struct {
 	SPort    *string           `json:"sport,omitempty"     url:"sport,omitempty"`
 }
 
-// "cluster/firewall/groups/%s" -> "cluster/firewall/rules"
-
 func (c *Client) rulesPath() string {
-	return c.AdjustPath("firewall/rules")
+	return c.ExpandPath("firewall/rules")
 }
 
-func (c *Client) GetStableID() string {
+func (c *Client) GetRulesID() string {
 	return "rule-" + strconv.Itoa(schema.HashString(c.rulesPath()))
 }
 

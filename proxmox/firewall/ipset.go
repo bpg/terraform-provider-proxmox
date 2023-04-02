@@ -71,7 +71,7 @@ type IPSetListResponseData struct {
 type IPSetContent []IPSetGetResponseData
 
 func (c *Client) ipsetPath() string {
-	return c.AdjustPath("firewall/ipset")
+	return c.ExpandPath("firewall/ipset")
 }
 
 // CreateIPSet create an IPSet

@@ -201,7 +201,7 @@ func ruleCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) 
 		return diag.FromErr(err)
 	}
 
-	d.SetId(api.GetStableID())
+	d.SetId(api.GetRulesID())
 
 	return ruleRead(ctx, api, d)
 }

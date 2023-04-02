@@ -145,20 +145,20 @@ func setOptions(ctx context.Context, api firewall.API, d *schema.ResourceData) d
 	enabledBool := types.CustomBool(d.Get(mkEnabled).(bool))
 	body.Enable = &enabledBool
 
-	err := api.SetOptions(ctx, body)
+	err := api.SetGlobalOptions(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId("cluster-firewall")
 
-	return firewallRead(ctx, api, d)
+	return nil
 }
 
 func firewallRead(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	options, err := api.GetOptions(ctx)
+	options, err := api.GetGlobalOptions(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

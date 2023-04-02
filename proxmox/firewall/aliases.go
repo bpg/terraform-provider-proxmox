@@ -57,7 +57,7 @@ type AliasUpdateRequestBody struct {
 }
 
 func (c *Client) aliasesPath() string {
-	return c.AdjustPath("firewall/aliases")
+	return c.ExpandPath("firewall/aliases")
 }
 
 // CreateAlias create an alias
