@@ -339,6 +339,17 @@ func getVGATypeValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+func getSCSIHardwareValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"lsi",
+		"lsi53c810",
+		"virtio-scsi-pci",
+		"virtio-scsi-single",
+		"megasas",
+		"pvscsi",
+	}, false))
+}
+
 //nolint:unused
 func getVLANIDsValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
