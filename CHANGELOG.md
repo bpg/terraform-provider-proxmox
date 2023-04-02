@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0-rc1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.16.0...v0.17.0-rc1) (2023-04-02)
+
+
+### Features
+
+* Add firewall resources ([#246](https://github.com/bpg/terraform-provider-proxmox/issues/246)) ([98e1cff](https://github.com/bpg/terraform-provider-proxmox/commit/98e1cff7fef0f24d932933bcba56ebc5b6ca7548))
+
 ## [0.16.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.15.0...v0.16.0) (2023-04-02)
 
 
