@@ -361,6 +361,13 @@ output "ubuntu_vm_public_key" {
     - `device` - (Optional) The device (defaults to `socket`).
         - `/dev/*` - A host serial device.
         - `socket` - A unix socket.
+- `scsi_hardware` - (Optional) The SCSI hardware type (defaults to `virtio-scsi-pci`).
+    - `lsi` - LSI Logic SAS1068E.
+    - `lsi53c810` - LSI Logic 53C810.
+    - `virtio-scsi-pci` - VirtIO SCSI.
+    - `virtio-scsi-single` - VirtIO SCSI (single queue).
+    - `megasas` - LSI Logic MegaRAID SAS.
+    - `pvscsi` - VMware Paravirtual SCSI.
 - `started` - (Optional) Whether to start the virtual machine (defaults
   to `true`).
 - `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults
