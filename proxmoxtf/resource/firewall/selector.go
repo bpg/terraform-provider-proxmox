@@ -27,7 +27,7 @@ func selectorSchema() map[string]*schema.Schema {
 		mkSelectorNodeName: {
 			Type:        schema.TypeString,
 			Optional:    true,
-			Description: "The name of the node to manage the firewall for.",
+			Description: "The name of the node.",
 		},
 		mkSelectorVMID: {
 			Type:        schema.TypeInt,
@@ -44,9 +44,8 @@ func selectorSchema() map[string]*schema.Schema {
 
 func selectorSchemaMandatory() map[string]*schema.Schema {
 	s := selectorSchema()
+	s[mkSelectorNodeName].Optional = false
 	s[mkSelectorNodeName].Required = true
-	s[mkSelectorVMID].Required = true
-	s[mkSelectorContainerID].Required = true
 	return s
 }
 

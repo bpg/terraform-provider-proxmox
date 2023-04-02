@@ -33,7 +33,8 @@ resource "proxmox_virtual_environment_firewall_options" "example" {
 ## Argument Reference
 
 - `node_name` - (Required) Node name.
-- `vm_id` - (Required) VM / Container ID.
+- `vm_id` - (Optional) VM ID. Leave empty for cluster level aliases.
+- `container_id` - (Optional) Container ID. Leave empty for cluster level aliases.
 - `dhcp` - (Optional)Enable DHCP.
 - `enabled` - (Optional) Enable or disable the firewall.
 - `ipfilter` - (Optional) Enable default IP filters. This is equivalent to

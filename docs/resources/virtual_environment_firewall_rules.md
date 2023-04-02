@@ -48,7 +48,8 @@ resource "proxmox_virtual_environment_firewall_rules" "inbound" {
 ## Argument Reference
 
 - `node_name` - (Optional) Node name. Leave empty for cluster level aliases.
-- `vm_id` - (Optional) VM / Container ID. Leave empty for cluster level aliases.
+- `vm_id` - (Optional) VM ID. Leave empty for cluster level aliases.
+- `container_id` - (Optional) Container ID. Leave empty for cluster level aliases.
 - `rule` - (Optional) Firewall rule block (multiple blocks supported).
     - `action` - (Required) Rule action (`ACCEPT`, `DROP`, `REJECT`).
     - `type` - (Required) Rule type (`in`, `out`).
