@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 
@@ -19,12 +20,12 @@ func (c *VirtualEnvironmentClient) CreateRole(
 	ctx context.Context,
 	d *VirtualEnvironmentRoleCreateRequestBody,
 ) error {
-	return c.DoRequest(ctx, HmPOST, "access/roles", d, nil)
+	return c.DoRequest(ctx, http.MethodPost, "access/roles", d, nil)
 }
 
 // DeleteRole deletes an access role.
 func (c *VirtualEnvironmentClient) DeleteRole(ctx context.Context, id string) error {
-	return c.DoRequest(ctx, HmDELETE, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), nil, nil)
+	return c.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetRole retrieves an access role.
@@ -33,7 +34,7 @@ func (c *VirtualEnvironmentClient) GetRole(
 	id string,
 ) (*types.CustomPrivileges, error) {
 	resBody := &VirtualEnvironmentRoleGetResponseBody{}
-	err := c.DoRequest(ctx, HmGET, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func (c *VirtualEnvironmentClient) ListRoles(
 	ctx context.Context,
 ) ([]*VirtualEnvironmentRoleListResponseData, error) {
 	resBody := &VirtualEnvironmentRoleListResponseBody{}
-	err := c.DoRequest(ctx, HmGET, "access/roles", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, "access/roles", nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -80,5 +81,5 @@ func (c *VirtualEnvironmentClient) UpdateRole(
 	id string,
 	d *VirtualEnvironmentRoleUpdateRequestBody,
 ) error {
-	return c.DoRequest(ctx, HmPUT, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), d, nil)
+	return c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("access/roles/%s", url.PathEscape(id)), d, nil)
 }

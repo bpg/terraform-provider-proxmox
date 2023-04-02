@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 	"time"
@@ -25,7 +26,7 @@ func (c *VirtualEnvironmentClient) ChangeUserPassword(
 		Password: password,
 	}
 
-	return c.DoRequest(ctx, HmPUT, "access/password", d, nil)
+	return c.DoRequest(ctx, http.MethodPut, "access/password", d, nil)
 }
 
 // CreateUser creates a user.
@@ -33,12 +34,12 @@ func (c *VirtualEnvironmentClient) CreateUser(
 	ctx context.Context,
 	d *VirtualEnvironmentUserCreateRequestBody,
 ) error {
-	return c.DoRequest(ctx, HmPOST, "access/users", d, nil)
+	return c.DoRequest(ctx, http.MethodPost, "access/users", d, nil)
 }
 
 // DeleteUser deletes an  user.
 func (c *VirtualEnvironmentClient) DeleteUser(ctx context.Context, id string) error {
-	return c.DoRequest(ctx, HmDELETE, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, nil)
+	return c.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetUser retrieves a user.
@@ -47,7 +48,7 @@ func (c *VirtualEnvironmentClient) GetUser(
 	id string,
 ) (*VirtualEnvironmentUserGetResponseData, error) {
 	resBody := &VirtualEnvironmentUserGetResponseBody{}
-	err := c.DoRequest(ctx, HmGET, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func (c *VirtualEnvironmentClient) ListUsers(
 	ctx context.Context,
 ) ([]*VirtualEnvironmentUserListResponseData, error) {
 	resBody := &VirtualEnvironmentUserListResponseBody{}
-	err := c.DoRequest(ctx, HmGET, "access/users", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, "access/users", nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -106,5 +107,5 @@ func (c *VirtualEnvironmentClient) UpdateUser(
 	id string,
 	d *VirtualEnvironmentUserUpdateRequestBody,
 ) error {
-	return c.DoRequest(ctx, HmPUT, fmt.Sprintf("access/users/%s", url.PathEscape(id)), d, nil)
+	return c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("access/users/%s", url.PathEscape(id)), d, nil)
 }

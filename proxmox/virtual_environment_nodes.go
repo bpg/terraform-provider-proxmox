@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"sort"
@@ -91,7 +92,7 @@ func (c *VirtualEnvironmentClient) GetNodeTime(
 	resBody := &VirtualEnvironmentNodeGetTimeResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		HmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)),
 		nil,
 		resBody,
@@ -116,7 +117,7 @@ func (c *VirtualEnvironmentClient) GetNodeTaskStatus(
 	resBody := &VirtualEnvironmentNodeGetTaskStatusResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		HmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/tasks/%s/status", url.PathEscape(nodeName), url.PathEscape(upid)),
 		nil,
 		resBody,
@@ -140,7 +141,7 @@ func (c *VirtualEnvironmentClient) ListNodeNetworkDevices(
 	resBody := &VirtualEnvironmentNodeNetworkDeviceListResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		HmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/network", url.PathEscape(nodeName)),
 		nil,
 		resBody,
@@ -165,7 +166,7 @@ func (c *VirtualEnvironmentClient) ListNodes(
 	ctx context.Context,
 ) ([]*VirtualEnvironmentNodeListResponseData, error) {
 	resBody := &VirtualEnvironmentNodeListResponseBody{}
-	err := c.DoRequest(ctx, HmGET, "nodes", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, "nodes", nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +248,7 @@ func (c *VirtualEnvironmentClient) UpdateNodeTime(
 	nodeName string,
 	d *VirtualEnvironmentNodeUpdateTimeRequestBody,
 ) error {
-	return c.DoRequest(ctx, HmPUT, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), d, nil)
+	return c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), d, nil)
 }
 
 // WaitForNodeTask waits for a specific node task to complete.

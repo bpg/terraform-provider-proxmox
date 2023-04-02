@@ -15,11 +15,6 @@ import (
 
 const (
 	basePathJSONAPI = "api2/json"
-	HmDELETE        = "DELETE"
-	HmGET           = "GET"
-	HmHEAD          = "HEAD"
-	HmPOST          = "POST"
-	HmPUT           = "PUT"
 )
 
 // VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.

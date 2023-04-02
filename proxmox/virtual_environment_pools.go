@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 )
@@ -17,12 +18,12 @@ func (c *VirtualEnvironmentClient) CreatePool(
 	ctx context.Context,
 	d *VirtualEnvironmentPoolCreateRequestBody,
 ) error {
-	return c.DoRequest(ctx, HmPOST, "pools", d, nil)
+	return c.DoRequest(ctx, http.MethodPost, "pools", d, nil)
 }
 
 // DeletePool deletes a pool.
 func (c *VirtualEnvironmentClient) DeletePool(ctx context.Context, id string) error {
-	return c.DoRequest(ctx, HmDELETE, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, nil)
+	return c.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetPool retrieves a pool.
@@ -31,7 +32,7 @@ func (c *VirtualEnvironmentClient) GetPool(
 	id string,
 ) (*VirtualEnvironmentPoolGetResponseData, error) {
 	resBody := &VirtualEnvironmentPoolGetResponseBody{}
-	err := c.DoRequest(ctx, HmGET, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func (c *VirtualEnvironmentClient) ListPools(
 	ctx context.Context,
 ) ([]*VirtualEnvironmentPoolListResponseData, error) {
 	resBody := &VirtualEnvironmentPoolListResponseBody{}
-	err := c.DoRequest(ctx, HmGET, "pools", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, "pools", nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -74,5 +75,5 @@ func (c *VirtualEnvironmentClient) UpdatePool(
 	id string,
 	d *VirtualEnvironmentPoolUpdateRequestBody,
 ) error {
-	return c.DoRequest(ctx, HmPUT, fmt.Sprintf("pools/%s", url.PathEscape(id)), d, nil)
+	return c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("pools/%s", url.PathEscape(id)), d, nil)
 }

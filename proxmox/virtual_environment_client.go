@@ -111,7 +111,7 @@ func (c *VirtualEnvironmentClient) DoRequest(
 			encodedValues := v.Encode()
 
 			if encodedValues != "" {
-				if method == HmDELETE || method == HmGET || method == HmHEAD {
+				if method == http.MethodDelete || method == http.MethodGet || method == http.MethodHead {
 					if !strings.Contains(modifiedPath, "?") {
 						modifiedPath = fmt.Sprintf("%s?%s", modifiedPath, encodedValues)
 					} else {

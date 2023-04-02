@@ -3,6 +3,7 @@ package types
 import "context"
 
 type Client interface {
+	// DoRequest performs a request against the Proxmox API.
 	DoRequest(
 		ctx context.Context,
 		method, path string,
