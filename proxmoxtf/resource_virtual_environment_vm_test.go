@@ -52,6 +52,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMTabletDevice,
 		mkResourceVirtualEnvironmentVMTemplate,
 		mkResourceVirtualEnvironmentVMVMID,
+		mkResourceVirtualEnvironmentVMSCSIHardware,
 	})
 
 	testComputedAttributes(t, s, []string{
@@ -89,6 +90,7 @@ func TestResourceVirtualEnvironmentVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMTabletDevice:          schema.TypeBool,
 		mkResourceVirtualEnvironmentVMTemplate:              schema.TypeBool,
 		mkResourceVirtualEnvironmentVMVMID:                  schema.TypeInt,
+		mkResourceVirtualEnvironmentVMSCSIHardware:          schema.TypeString,
 	})
 
 	agentSchema := testNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMAgent)
