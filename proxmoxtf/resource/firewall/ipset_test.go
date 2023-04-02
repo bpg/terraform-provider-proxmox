@@ -15,14 +15,14 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestIPSetSchemaInstantiation tests whether the IPSetSchema
+// TestIPSetInstantiation tests whether the IPSet
 // instance can be instantiated.
-func TestIPSetSchemaInstantiation(t *testing.T) {
+func TestIPSetInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, IPSet().Schema, "Cannot instantiate IPSetSchema")
+	require.NotNilf(t, IPSet(), "Cannot instantiate IPSet")
 }
 
-// TestIPSetSchema tests the IPSetSchema.
+// TestIPSetSchema tests the IPSet Schema.
 func TestIPSetSchema(t *testing.T) {
 	t.Parallel()
 	s := IPSet().Schema

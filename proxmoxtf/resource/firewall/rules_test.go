@@ -15,13 +15,13 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestRuleSchemaInstantiation tests whether the RuleSchema instance can be instantiated.
-func TestRuleSchemaInstantiation(t *testing.T) {
+// TestRuleInstantiation tests whether the Rules instance can be instantiated.
+func TestRuleInstantiation(t *testing.T) {
 	t.Parallel()
 	require.NotNilf(t, Rules(), "Cannot instantiate Rules")
 }
 
-// TestRuleSchema tests the RuleSchema.
+// TestRuleSchema tests the Rules Schema.
 func TestRuleSchema(t *testing.T) {
 	t.Parallel()
 	rulesSchema := Rules().Schema

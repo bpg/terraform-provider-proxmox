@@ -15,13 +15,13 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestAliasSchemaInstantiation tests whether the AliasSchema instance can be instantiated.
-func TestAliasSchemaInstantiation(t *testing.T) {
+// TestAliasInstantiation tests whether the Alias instance can be instantiated.
+func TestAliasInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, Alias(), "Cannot instantiate AliasSchema")
+	require.NotNilf(t, Alias(), "Cannot instantiate Alias")
 }
 
-// TestAliasSchema tests the AliasSchema.
+// TestAliasSchema tests the Alias Schema.
 func TestAliasSchema(t *testing.T) {
 	t.Parallel()
 	s := Alias().Schema

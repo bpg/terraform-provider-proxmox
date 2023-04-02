@@ -16,13 +16,13 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
-// TestSecurityGroupSchemaInstantiation tests whether the SecurityGroupSchema instance can be instantiated.
-func TestSecurityGroupSchemaInstantiation(t *testing.T) {
+// TestSecurityGroupInstantiation tests whether the SecurityGroup instance can be instantiated.
+func TestSecurityGroupInstantiation(t *testing.T) {
 	t.Parallel()
-	require.NotNilf(t, SecurityGroup(), "Cannot instantiate SecurityGroupSchema")
+	require.NotNilf(t, SecurityGroup(), "Cannot instantiate SecurityGroup")
 }
 
-// TestSecurityGroupSchema tests the SecurityGroupSchema.
+// TestSecurityGroupSchema tests the SecurityGroup Schema.
 func TestSecurityGroupSchema(t *testing.T) {
 	t.Parallel()
 	s := SecurityGroup().Schema

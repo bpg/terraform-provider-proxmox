@@ -14,12 +14,6 @@ import (
 
 func createDatasourceMap() map[string]*schema.Resource {
 	return map[string]*schema.Resource{
-		// "proxmox_virtual_environment_cluster_firewall_alias":           cluster.FirewallAlias(),
-		// "proxmox_virtual_environment_cluster_firewall_aliases":         cluster.FirewallAliases(),
-		// "proxmox_virtual_environment_cluster_firewall_ipset":           cluster.FirewallIPSet(),
-		// "proxmox_virtual_environment_cluster_firewall_ipsets":          cluster.FirewallIPSets(),
-		// "proxmox_virtual_environment_cluster_firewall_security_group":  cluster.FirewallSecurityGroup(),
-		// "proxmox_virtual_environment_cluster_firewall_security_groups": cluster.FirewallSecurityGroups(),
 		"proxmox_virtual_environment_datastores": datasource.Datastores(),
 		"proxmox_virtual_environment_dns":        datasource.DNS(),
 		"proxmox_virtual_environment_group":      datasource.Group(),
