@@ -7,6 +7,7 @@ package proxmox
 import (
 	"context"
 	"errors"
+	"net/http"
 	"sort"
 )
 
@@ -15,7 +16,7 @@ func (c *VirtualEnvironmentClient) GetACL(
 	ctx context.Context,
 ) ([]*VirtualEnvironmentACLGetResponseData, error) {
 	resBody := &VirtualEnvironmentACLGetResponseBody{}
-	err := c.DoRequest(ctx, hmGET, "access/acl", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, "access/acl", nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -36,5 +37,5 @@ func (c *VirtualEnvironmentClient) UpdateACL(
 	ctx context.Context,
 	d *VirtualEnvironmentACLUpdateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPUT, "access/acl", d, nil)
+	return c.DoRequest(ctx, http.MethodPut, "access/acl", d, nil)
 }

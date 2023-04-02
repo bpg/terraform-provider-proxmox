@@ -2,7 +2,7 @@
 layout: page
 title: proxmox_virtual_environment_version
 permalink: /data-sources/virtual_environment_version
-nav_order: 16
+nav_order: 20
 parent: Data Sources
 subcategory: Virtual Environment
 ---

@@ -4,6 +4,8 @@
 
 package proxmox
 
+import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+
 // VirtualEnvironmentAuthenticationResponseBody contains the body from an authentication response.
 type VirtualEnvironmentAuthenticationResponseBody struct {
 	Data *VirtualEnvironmentAuthenticationResponseData `json:"data,omitempty"`
@@ -11,11 +13,11 @@ type VirtualEnvironmentAuthenticationResponseBody struct {
 
 // VirtualEnvironmentAuthenticationResponseCapabilities contains the supported capabilities for a session.
 type VirtualEnvironmentAuthenticationResponseCapabilities struct {
-	Access     *CustomPrivileges `json:"access,omitempty"`
-	Datacenter *CustomPrivileges `json:"dc,omitempty"`
-	Nodes      *CustomPrivileges `json:"nodes,omitempty"`
-	Storage    *CustomPrivileges `json:"storage,omitempty"`
-	VMs        *CustomPrivileges `json:"vms,omitempty"`
+	Access     *types.CustomPrivileges `json:"access,omitempty"`
+	Datacenter *types.CustomPrivileges `json:"dc,omitempty"`
+	Nodes      *types.CustomPrivileges `json:"nodes,omitempty"`
+	Storage    *types.CustomPrivileges `json:"storage,omitempty"`
+	VMs        *types.CustomPrivileges `json:"vms,omitempty"`
 }
 
 // VirtualEnvironmentAuthenticationResponseData contains the data from an authentication response.

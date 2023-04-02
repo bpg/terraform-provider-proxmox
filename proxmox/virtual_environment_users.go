@@ -8,9 +8,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"sort"
 	"time"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // ChangeUserPassword changes a user's password.
@@ -23,7 +26,7 @@ func (c *VirtualEnvironmentClient) ChangeUserPassword(
 		Password: password,
 	}
 
-	return c.DoRequest(ctx, hmPUT, "access/password", d, nil)
+	return c.DoRequest(ctx, http.MethodPut, "access/password", d, nil)
 }
 
 // CreateUser creates a user.
@@ -31,12 +34,12 @@ func (c *VirtualEnvironmentClient) CreateUser(
 	ctx context.Context,
 	d *VirtualEnvironmentUserCreateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPOST, "access/users", d, nil)
+	return c.DoRequest(ctx, http.MethodPost, "access/users", d, nil)
 }
 
 // DeleteUser deletes an  user.
 func (c *VirtualEnvironmentClient) DeleteUser(ctx context.Context, id string) error {
-	return c.DoRequest(ctx, hmDELETE, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, nil)
+	return c.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, nil)
 }
 
 // GetUser retrieves a user.
@@ -45,7 +48,7 @@ func (c *VirtualEnvironmentClient) GetUser(
 	id string,
 ) (*VirtualEnvironmentUserGetResponseData, error) {
 	resBody := &VirtualEnvironmentUserGetResponseBody{}
-	err := c.DoRequest(ctx, hmGET, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, fmt.Sprintf("access/users/%s", url.PathEscape(id)), nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +58,7 @@ func (c *VirtualEnvironmentClient) GetUser(
 	}
 
 	if resBody.Data.ExpirationDate != nil {
-		expirationDate := CustomTimestamp(time.Time(*resBody.Data.ExpirationDate).UTC())
+		expirationDate := types.CustomTimestamp(time.Time(*resBody.Data.ExpirationDate).UTC())
 		resBody.Data.ExpirationDate = &expirationDate
 	}
 
@@ -71,7 +74,7 @@ func (c *VirtualEnvironmentClient) ListUsers(
 	ctx context.Context,
 ) ([]*VirtualEnvironmentUserListResponseData, error) {
 	resBody := &VirtualEnvironmentUserListResponseBody{}
-	err := c.DoRequest(ctx, hmGET, "access/users", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, "access/users", nil, resBody)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +89,7 @@ func (c *VirtualEnvironmentClient) ListUsers(
 
 	for i := range resBody.Data {
 		if resBody.Data[i].ExpirationDate != nil {
-			expirationDate := CustomTimestamp(time.Time(*resBody.Data[i].ExpirationDate).UTC())
+			expirationDate := types.CustomTimestamp(time.Time(*resBody.Data[i].ExpirationDate).UTC())
 			resBody.Data[i].ExpirationDate = &expirationDate
 		}
 
@@ -104,5 +107,5 @@ func (c *VirtualEnvironmentClient) UpdateUser(
 	id string,
 	d *VirtualEnvironmentUserUpdateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPUT, fmt.Sprintf("access/users/%s", url.PathEscape(id)), d, nil)
+	return c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("access/users/%s", url.PathEscape(id)), d, nil)
 }

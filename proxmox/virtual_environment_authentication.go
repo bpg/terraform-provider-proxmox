@@ -46,7 +46,7 @@ func (c *VirtualEnvironmentClient) Authenticate(ctx context.Context, reset bool)
 
 	req, err := http.NewRequestWithContext(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("%s/%s/access/ticket", c.Endpoint, basePathJSONAPI),
 		reqBody,
 	)

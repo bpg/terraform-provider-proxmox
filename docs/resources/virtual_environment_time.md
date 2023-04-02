@@ -2,7 +2,7 @@
 layout: page
 title: proxmox_virtual_environment_time
 permalink: /resources/virtual_environment_time
-nav_order: 11
+nav_order: 15
 parent: Resources
 subcategory: Virtual Environment
 ---

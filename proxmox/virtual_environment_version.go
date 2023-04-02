@@ -7,6 +7,7 @@ package proxmox
 import (
 	"context"
 	"errors"
+	"net/http"
 )
 
 // Version retrieves the version information.
@@ -14,7 +15,7 @@ func (c *VirtualEnvironmentClient) Version(
 	ctx context.Context,
 ) (*VirtualEnvironmentVersionResponseData, error) {
 	resBody := &VirtualEnvironmentVersionResponseBody{}
-	err := c.DoRequest(ctx, hmGET, "version", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, "version", nil, resBody)
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -46,7 +47,7 @@ func (c *VirtualEnvironmentClient) CloneVM(
 	for i := 0; i < retries; i++ {
 		err = c.DoRequest(
 			ctx,
-			hmPOST,
+			http.MethodPost,
 			fmt.Sprintf("nodes/%s/qemu/%d/clone", url.PathEscape(nodeName), vmID),
 			d,
 			resBody,
@@ -77,14 +78,14 @@ func (c *VirtualEnvironmentClient) CreateVM(
 	nodeName string,
 	d *VirtualEnvironmentVMCreateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/qemu", url.PathEscape(nodeName)), d, nil)
+	return c.DoRequest(ctx, http.MethodPost, fmt.Sprintf("nodes/%s/qemu", url.PathEscape(nodeName)), d, nil)
 }
 
 // DeleteVM deletes a virtual machine.
 func (c *VirtualEnvironmentClient) DeleteVM(ctx context.Context, nodeName string, vmID int) error {
 	return c.DoRequest(
 		ctx,
-		hmDELETE,
+		http.MethodDelete,
 		fmt.Sprintf(
 			"nodes/%s/qemu/%d?destroy-unreferenced-disks=1&purge=1",
 			url.PathEscape(nodeName),
@@ -104,7 +105,7 @@ func (c *VirtualEnvironmentClient) GetVM(
 	resBody := &VirtualEnvironmentVMGetResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/qemu/%d/config", url.PathEscape(nodeName), vmID),
 		nil,
 		resBody,
@@ -126,7 +127,7 @@ func (c *VirtualEnvironmentClient) GetVMID(ctx context.Context) (*int, error) {
 	defer getVMIDCounterMutex.Unlock()
 
 	if getVMIDCounter < 0 {
-		nextVMID, err := c.GetClusterNextID(ctx, nil)
+		nextVMID, err := c.API().Cluster().GetNextID(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +148,7 @@ func (c *VirtualEnvironmentClient) GetVMID(ctx context.Context) (*int, error) {
 	vmID := getVMIDCounter
 
 	for vmID <= 2147483637 {
-		_, err := c.GetClusterNextID(ctx, &vmID)
+		_, err := c.API().Cluster().GetNextID(ctx, &vmID)
 		if err != nil {
 			vmID += getVMIDStep
 
@@ -175,7 +176,7 @@ func (c *VirtualEnvironmentClient) GetVMNetworkInterfacesFromAgent(
 	resBody := &VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		http.MethodGet,
 		fmt.Sprintf(
 			"nodes/%s/qemu/%d/agent/network-get-interfaces",
 			url.PathEscape(nodeName),
@@ -204,7 +205,7 @@ func (c *VirtualEnvironmentClient) GetVMStatus(
 	resBody := &VirtualEnvironmentVMGetStatusResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/qemu/%d/status/current", url.PathEscape(nodeName), vmID),
 		nil,
 		resBody,
@@ -252,7 +253,7 @@ func (c *VirtualEnvironmentClient) MigrateVMAsync(
 	resBody := &VirtualEnvironmentVMMigrateResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/qemu/%d/migrate", url.PathEscape(nodeName), vmID),
 		d,
 		resBody,
@@ -305,7 +306,7 @@ func (c *VirtualEnvironmentClient) MoveVMDiskAsync(
 	resBody := &VirtualEnvironmentVMMoveDiskResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/qemu/%d/move_disk", url.PathEscape(nodeName), vmID),
 		d,
 		resBody,
@@ -329,7 +330,7 @@ func (c *VirtualEnvironmentClient) ListVMs(
 	resBody := &VirtualEnvironmentVMListResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/qemu", url.PathEscape(nodeName)),
 		nil,
 		resBody,
@@ -377,7 +378,7 @@ func (c *VirtualEnvironmentClient) RebootVMAsync(
 	resBody := &VirtualEnvironmentVMRebootResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/qemu/%d/status/reboot", url.PathEscape(nodeName), vmID),
 		d,
 		resBody,
@@ -408,7 +409,7 @@ func (c *VirtualEnvironmentClient) ResizeVMDisk(
 	for i := 0; i < 5; i++ {
 		err = c.DoRequest(
 			ctx,
-			hmPUT,
+			http.MethodPut,
 			fmt.Sprintf("nodes/%s/qemu/%d/resize", url.PathEscape(nodeName), vmID),
 			d,
 			nil,
@@ -460,7 +461,7 @@ func (c *VirtualEnvironmentClient) ShutdownVMAsync(
 	resBody := &VirtualEnvironmentVMShutdownResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/qemu/%d/status/shutdown", url.PathEscape(nodeName), vmID),
 		d,
 		resBody,
@@ -506,7 +507,7 @@ func (c *VirtualEnvironmentClient) StartVMAsync(
 	resBody := &VirtualEnvironmentVMStartResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/qemu/%d/status/start", url.PathEscape(nodeName), vmID),
 		nil,
 		resBody,
@@ -552,7 +553,7 @@ func (c *VirtualEnvironmentClient) StopVMAsync(
 	resBody := &VirtualEnvironmentVMStopResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/qemu/%d/status/stop", url.PathEscape(nodeName), vmID),
 		nil,
 		resBody,
@@ -577,7 +578,7 @@ func (c *VirtualEnvironmentClient) UpdateVM(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmPUT,
+		http.MethodPut,
 		fmt.Sprintf("nodes/%s/qemu/%d/config", url.PathEscape(nodeName), vmID),
 		d,
 		nil,
@@ -594,7 +595,7 @@ func (c *VirtualEnvironmentClient) UpdateVMAsync(
 	resBody := &VirtualEnvironmentVMUpdateAsyncResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/qemu/%d/config", url.PathEscape(nodeName), vmID),
 		d,
 		resBody,

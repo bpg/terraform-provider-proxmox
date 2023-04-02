@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 )
 
@@ -19,7 +20,7 @@ func (c *VirtualEnvironmentClient) GetHosts(
 	resBody := &VirtualEnvironmentHostsGetResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)),
 		nil,
 		resBody,
@@ -41,5 +42,5 @@ func (c *VirtualEnvironmentClient) UpdateHosts(
 	nodeName string,
 	d *VirtualEnvironmentHostsUpdateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), d, nil)
+	return c.DoRequest(ctx, http.MethodPost, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), d, nil)
 }

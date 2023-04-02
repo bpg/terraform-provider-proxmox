@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -22,7 +23,7 @@ func (c *VirtualEnvironmentClient) CloneContainer(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/lxc/%d/clone", url.PathEscape(nodeName), vmID),
 		d,
 		nil,
@@ -35,7 +36,7 @@ func (c *VirtualEnvironmentClient) CreateContainer(
 	nodeName string,
 	d *VirtualEnvironmentContainerCreateRequestBody,
 ) error {
-	return c.DoRequest(ctx, hmPOST, fmt.Sprintf("nodes/%s/lxc", url.PathEscape(nodeName)), d, nil)
+	return c.DoRequest(ctx, http.MethodPost, fmt.Sprintf("nodes/%s/lxc", url.PathEscape(nodeName)), d, nil)
 }
 
 // DeleteContainer deletes a container.
@@ -46,7 +47,7 @@ func (c *VirtualEnvironmentClient) DeleteContainer(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmDELETE,
+		http.MethodDelete,
 		fmt.Sprintf("nodes/%s/lxc/%d", url.PathEscape(nodeName), vmID),
 		nil,
 		nil,
@@ -62,7 +63,7 @@ func (c *VirtualEnvironmentClient) GetContainer(
 	resBody := &VirtualEnvironmentContainerGetResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/lxc/%d/config", url.PathEscape(nodeName), vmID),
 		nil,
 		resBody,
@@ -87,7 +88,7 @@ func (c *VirtualEnvironmentClient) GetContainerStatus(
 	resBody := &VirtualEnvironmentContainerGetStatusResponseBody{}
 	err := c.DoRequest(
 		ctx,
-		hmGET,
+		http.MethodGet,
 		fmt.Sprintf("nodes/%s/lxc/%d/status/current", url.PathEscape(nodeName), vmID),
 		nil,
 		resBody,
@@ -112,7 +113,7 @@ func (c *VirtualEnvironmentClient) RebootContainer(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/lxc/%d/status/reboot", url.PathEscape(nodeName), vmID),
 		d,
 		nil,
@@ -128,7 +129,7 @@ func (c *VirtualEnvironmentClient) ShutdownContainer(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/lxc/%d/status/shutdown", url.PathEscape(nodeName), vmID),
 		d,
 		nil,
@@ -143,7 +144,7 @@ func (c *VirtualEnvironmentClient) StartContainer(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/lxc/%d/status/start", url.PathEscape(nodeName), vmID),
 		nil,
 		nil,
@@ -158,7 +159,7 @@ func (c *VirtualEnvironmentClient) StopContainer(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmPOST,
+		http.MethodPost,
 		fmt.Sprintf("nodes/%s/lxc/%d/status/stop", url.PathEscape(nodeName), vmID),
 		nil,
 		nil,
@@ -174,7 +175,7 @@ func (c *VirtualEnvironmentClient) UpdateContainer(
 ) error {
 	return c.DoRequest(
 		ctx,
-		hmPUT,
+		http.MethodPut,
 		fmt.Sprintf("nodes/%s/lxc/%d/config", url.PathEscape(nodeName), vmID),
 		d,
 		nil,
