@@ -111,7 +111,7 @@ func Options() *schema.Resource {
 		},
 	}
 
-	structure.MergeSchema(s, selectorSchema())
+	structure.MergeSchema(s, selectorSchemaMandatory())
 
 	return &schema.Resource{
 		Schema:        s,

@@ -2,7 +2,7 @@
 layout: page
 title: proxmox_virtual_environment_pool
 permalink: /resources/virtual_environment_pool
-nav_order: 10
+nav_order: 14
 parent: Resources
 subcategory: Virtual Environment
 ---

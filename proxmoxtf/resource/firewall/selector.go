@@ -42,6 +42,14 @@ func selectorSchema() map[string]*schema.Schema {
 	}
 }
 
+func selectorSchemaMandatory() map[string]*schema.Schema {
+	s := selectorSchema()
+	s[mkSelectorNodeName].Required = true
+	s[mkSelectorVMID].Required = true
+	s[mkSelectorContainerID].Required = true
+	return s
+}
+
 func selectFirewallAPI(
 	f func(context.Context, firewall.API, *schema.ResourceData) diag.Diagnostics,
 ) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {

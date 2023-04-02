@@ -2,19 +2,25 @@
 layout: page
 title: proxmox_virtual_environment_cluster_firewall_ipset
 permalink: /resources/virtual_environment_cluster_firewall_ipset
-nav_order: 3
+nav_order: 8
 parent: Resources
 subcategory: Virtual Environment
 ---
 
 # Resource: proxmox_virtual_environment_cluster_firewall_ipset
 
-An IPSet allows us to group multiple IP addresses, IP subnets and aliases.
+An IPSet allows us to group multiple IP addresses, IP subnets and aliases. Aliases can be
+created on the cluster level, on VM / Container level.
 
 ## Example Usage
 
 ```terraform
 resource "proxmox_virtual_environment_cluster_firewall_ipset" "ipset" {
+  depends_on = [proxmox_virtual_environment_vm.example]
+
+  node_name = proxmox_virtual_environment_vm.example.node_name
+  vm_id     = proxmox_virtual_environment_vm.example.vm_id
+
   name    = "local_network"
   comment = "Managed by Terraform"
 
@@ -38,6 +44,8 @@ resource "proxmox_virtual_environment_cluster_firewall_ipset" "ipset" {
 
 ## Argument Reference
 
+- `node_name` - (Optional) Node name. Leave empty for cluster level aliases.
+- `vm_id` - (Optional) VM / Container ID. Leave empty for cluster level aliases.
 - `name` - (Required) IPSet name.
 - `comment` - (Optional) IPSet comment.
 - `cidr` - (Optional) IP/CIDR block (multiple blocks supported).

@@ -1,25 +1,28 @@
 ---
 layout: page
-title: proxmox_virtual_environment_cluster_firewall_security_group
-permalink: /resources/virtual_environment_cluster_firewall_security_group
-nav_order: 3
+title: proxmox_virtual_environment_firewall_rules
+permalink: /resources/virtual_environment_firewall_rules
+nav_order: 10
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: proxmox_virtual_environment_cluster_firewall_security_group
+# Resource: proxmox_virtual_environment_firewall_rules
 
 A security group is a collection of rules, defined at cluster level, which can
 be used in all VMs' rules. For example, you can define a group named “webserver”
-with rules to open the http and https ports.
+with rules to open the http and https ports. Rules can be created on the cluster
+level, on VM / Container level.
 
 ## Example Usage
 
 ```terraform
-resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserver" {
-  name    = "webserver"
-  comment = "Managed by Terraform"
+resource "proxmox_virtual_environment_firewall_rules" "inbound" {
+  depends_on = [proxmox_virtual_environment_vm.example]
 
+  node_name = proxmox_virtual_environment_vm.example.node_name
+  vm_id     = proxmox_virtual_environment_vm.example.vm_id
+  
   rule {
     type    = "in"
     action  = "ACCEPT"
@@ -44,8 +47,8 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
 
 ## Argument Reference
 
-- `name` - (Required) Security group name.
-- `comment` - (Optional) Security group comment.
+- `node_name` - (Optional) Node name. Leave empty for cluster level aliases.
+- `vm_id` - (Optional) VM / Container ID. Leave empty for cluster level aliases.
 - `rule` - (Optional) Firewall rule block (multiple blocks supported).
     - `action` - (Required) Rule action (`ACCEPT`, `DROP`, `REJECT`).
     - `type` - (Required) Rule type (`in`, `out`).
@@ -72,8 +75,9 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
       to a single IP address, an IP set ('+ipsetname') or an IP alias
       definition. You can also specify an address range like
       `20.34.101.207-201.3.9.99`, or a list of IP addresses and networks (
-      entries are separated by comma). Please do not mix IPv4 and IPv6 addresses
-      inside such lists.
+      entries
+      are separated by comma). Please do not mix IPv4 and IPv6 addresses inside
+      such lists.
     - `sport` - (Optional) Restrict TCP/UDP source port. You can use
       service names or simple numbers (0-65535), as defined in '/etc/services'.
       Port ranges can be specified with '\d+:\d+', for example `80:85`, and
@@ -82,6 +86,4 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
 ## Attribute Reference
 
 - `rule`
-  - `pos` - Position of the rule in the list.
-
-There are no attribute references available for this resource.
+    - `pos` - Position of the rule in the list.

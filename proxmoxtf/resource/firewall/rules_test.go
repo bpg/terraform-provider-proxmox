@@ -27,16 +27,15 @@ func TestRuleSchema(t *testing.T) {
 	rulesSchema := Rules().Schema
 
 	structure.AssertRequiredArguments(t, rulesSchema, []string{
-		mkRule,
+		MkRule,
 	})
 
 	structure.AssertOptionalArguments(t, rulesSchema, []string{
-		mkSelectorSecurityGroup,
 		mkSelectorVMID,
 		mkSelectorNodeName,
 	})
 
-	ruleSchema := structure.AssertNestedSchemaExistence(t, rulesSchema, mkRule).Schema
+	ruleSchema := structure.AssertNestedSchemaExistence(t, rulesSchema, MkRule).Schema
 
 	structure.AssertRequiredArguments(t, ruleSchema, []string{
 		mkRuleAction,

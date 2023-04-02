@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
@@ -39,39 +40,5 @@ func TestSecurityGroupSchema(t *testing.T) {
 		mkSecurityGroupComment: schema.TypeString,
 	})
 
-	// ruleSchema := structure.AssertNestedSchemaExistence(t, s, firewall.MkRule).Schema
-	//
-	// structure.AssertRequiredArguments(t, ruleSchema, []string{
-	// 	firewall.MkRuleAction,
-	// 	firewall.MkRuleType,
-	// })
-	//
-	// structure.AssertOptionalArguments(t, ruleSchema, []string{
-	// 	firewall.mkRuleComment,
-	// 	firewall.mkRuleDest,
-	// 	firewall.mkRuleDPort,
-	// 	firewall.mkRuleEnable,
-	// 	firewall.mkRuleIFace,
-	// 	firewall.mkRuleLog,
-	// 	firewall.mkRuleMacro,
-	// 	firewall.mkRuleProto,
-	// 	firewall.mkRuleSource,
-	// 	firewall.mkRuleSPort,
-	// })
-	//
-	// structure.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
-	// 	firewall.MkRulePos:     schema.TypeInt,
-	// 	firewall.MkRuleAction:  schema.TypeString,
-	// 	firewall.MkRuleType:    schema.TypeString,
-	// 	firewall.mkRuleComment: schema.TypeString,
-	// 	firewall.mkRuleDest:    schema.TypeString,
-	// 	firewall.mkRuleDPort:   schema.TypeString,
-	// 	firewall.mkRuleEnable:  schema.TypeBool,
-	// 	firewall.mkRuleIFace:   schema.TypeString,
-	// 	firewall.mkRuleLog:     schema.TypeString,
-	// 	firewall.mkRuleMacro:   schema.TypeString,
-	// 	firewall.mkRuleProto:   schema.TypeString,
-	// 	firewall.mkRuleSource:  schema.TypeString,
-	// 	firewall.mkRuleSPort:   schema.TypeString,
-	// })
+	structure.AssertNestedSchemaExistence(t, s, firewall.MkRule)
 }

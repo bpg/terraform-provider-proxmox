@@ -17,7 +17,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
@@ -34,7 +33,7 @@ const (
 	dvRuleSPort   = ""
 	dvRuleSource  = ""
 
-	mkRule = "rule"
+	MkRule = "rule"
 
 	mkRuleAction  = "action"
 	mkRuleComment = "comment"
@@ -49,8 +48,6 @@ const (
 	mkRuleSource  = "source"
 	mkRuleSPort   = "sport"
 	mkRuleType    = "type"
-
-	mkSelectorSecurityGroup = "security_group"
 )
 
 func Rules() *schema.Resource {
@@ -148,13 +145,7 @@ func Rules() *schema.Resource {
 	}
 
 	s := map[string]*schema.Schema{
-		mkSelectorSecurityGroup: {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "The name of the security group to manage the firewall rule for.",
-		},
-
-		mkRule: {
+		MkRule: {
 			Type:        schema.TypeList,
 			Description: "List of rules",
 			Required:    true,
@@ -167,17 +158,17 @@ func Rules() *schema.Resource {
 
 	return &schema.Resource{
 		Schema:        s,
-		CreateContext: invokeRuleAPI(ruleCreate),
-		ReadContext:   invokeRuleAPI(ruleRead),
-		UpdateContext: invokeRuleAPI(ruleUpdate),
-		DeleteContext: invokeRuleAPI(ruleDelete),
+		CreateContext: invokeRuleAPI(RulesCreate),
+		ReadContext:   invokeRuleAPI(RulesRead),
+		UpdateContext: invokeRuleAPI(RulesUpdate),
+		DeleteContext: invokeRuleAPI(RulesDelete),
 	}
 }
 
-func ruleCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
+func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	rules := d.Get(mkRule).([]interface{})
+	rules := d.Get(MkRule).([]interface{})
 	for i := len(rules) - 1; i >= 0; i-- {
 		rule := rules[i].(map[string]interface{})
 
@@ -196,17 +187,17 @@ func ruleCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) 
 	}
 
 	// reset rules, we re-read them (with proper positions) from the API
-	err := d.Set(mkRule, nil)
+	err := d.Set(MkRule, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(api.GetRulesID())
 
-	return ruleRead(ctx, api, d)
+	return RulesRead(ctx, api, d)
 }
 
-func ruleRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
+func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	readRule := func(pos int, ruleMap map[string]interface{}) error {
@@ -225,7 +216,7 @@ func ruleRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) di
 		return nil
 	}
 
-	rules := d.Get(mkRule).([]interface{})
+	rules := d.Get(MkRule).([]interface{})
 	if len(rules) > 0 {
 		// We have rules in the state, so we need to read them from the API
 		for _, v := range rules {
@@ -255,16 +246,16 @@ func ruleRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) di
 		return diags
 	}
 
-	err := d.Set(mkRule, rules)
+	err := d.Set(MkRule, rules)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
 }
 
-func ruleUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
+func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	rules := d.Get(mkRule).([]interface{})
+	rules := d.Get(MkRule).([]interface{})
 	for i := len(rules) - 1; i >= 0; i-- {
 		rule := rules[i].(map[string]interface{})
 
@@ -295,13 +286,13 @@ func ruleUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) 
 		return diags
 	}
 
-	return ruleRead(ctx, api, d)
+	return RulesRead(ctx, api, d)
 }
 
-func ruleDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
+func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	rules := d.Get(mkRule).([]interface{})
+	rules := d.Get(MkRule).([]interface{})
 	sort.Slice(rules, func(i, j int) bool {
 		ruleI := rules[i].(map[string]interface{})
 		ruleJ := rules[j].(map[string]interface{})
@@ -403,17 +394,6 @@ func invokeRuleAPI(
 	f func(context.Context, firewall.Rule, *schema.ResourceData) diag.Diagnostics,
 ) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-		config := m.(proxmoxtf.ProviderConfiguration)
-		veClient, err := config.GetVEClient()
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		if v, ok := d.GetOk("security_group"); ok {
-			api := veClient.API().Cluster().Firewall().SecurityGroup(v.(string))
-			return f(ctx, api, d)
-		}
-
 		return selectFirewallAPI(func(ctx context.Context, api firewall.API, data *schema.ResourceData) diag.Diagnostics {
 			return f(ctx, api, data)
 		})(ctx, d, m)
