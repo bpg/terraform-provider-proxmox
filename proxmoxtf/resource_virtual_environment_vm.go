@@ -107,6 +107,7 @@ const (
 	dvResourceVirtualEnvironmentVMVGAMemory                         = 16
 	dvResourceVirtualEnvironmentVMVGAType                           = "std"
 	dvResourceVirtualEnvironmentVMVMID                              = -1
+	dvResourceVirtualEnvironmentVMSCSIHardware                      = "virtio-scsi-pci"
 
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
 	maxResourceVirtualEnvironmentVMNetworkDevices = 8
@@ -226,6 +227,7 @@ const (
 	mkResourceVirtualEnvironmentVMVGAMemory                         = "memory"
 	mkResourceVirtualEnvironmentVMVGAType                           = "type"
 	mkResourceVirtualEnvironmentVMVMID                              = "vm_id"
+	mkResourceVirtualEnvironmentVMSCSIHardware                      = "scsi_hardware"
 )
 
 func resourceVirtualEnvironmentVM() *schema.Resource {
@@ -1194,6 +1196,13 @@ func resourceVirtualEnvironmentVM() *schema.Resource {
 				Default:          dvResourceVirtualEnvironmentVMVMID,
 				ValidateDiagFunc: getVMIDValidator(),
 			},
+			mkResourceVirtualEnvironmentVMSCSIHardware: {
+				Type:             schema.TypeString,
+				Description:      "The SCSI hardware type",
+				Optional:         true,
+				Default:          dvResourceVirtualEnvironmentVMSCSIHardware,
+				ValidateDiagFunc: getSCSIHardwareValidator(),
+			},
 		},
 		CreateContext: resourceVirtualEnvironmentVMCreate,
 		ReadContext:   resourceVirtualEnvironmentVMRead,
@@ -1393,6 +1402,7 @@ func resourceVirtualEnvironmentVMCreateClone(
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 	kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
+	scsiHardware := d.Get(mkResourceVirtualEnvironmentVMSCSIHardware).(string)
 	cdrom := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
@@ -1442,6 +1452,10 @@ func resourceVirtualEnvironmentVMCreateClone(
 
 	if bios != dvResourceVirtualEnvironmentVMBIOS {
 		updateBody.BIOS = &bios
+	}
+
+	if scsiHardware != dvResourceVirtualEnvironmentVMSCSIHardware {
+		updateBody.SCSIHardware = &scsiHardware
 	}
 
 	if len(cdrom) > 0 || len(initialization) > 0 {
@@ -1951,7 +1965,7 @@ func resourceVirtualEnvironmentVMCreateCustom(
 		}
 	}
 
-	scsiHardware := "virtio-scsi-pci"
+	scsiHardware := d.Get(mkResourceVirtualEnvironmentVMSCSIHardware).(string)
 
 	createBody := &proxmox.VirtualEnvironmentVMCreateRequestBody{
 		ACPI: &acpi,
@@ -3647,6 +3661,16 @@ func resourceVirtualEnvironmentVMReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	// Compare SCSI hardware type
+	scsiHardware := d.Get(mkResourceVirtualEnvironmentVMSCSIHardware).(string)
+
+	if len(clone) == 0 || scsiHardware != dvResourceVirtualEnvironmentVMSCSIHardware {
+		if vmConfig.SCSIHardware != nil {
+			err := d.Set(mkResourceVirtualEnvironmentVMSCSIHardware, *vmConfig.SCSIHardware)
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
+
 	diags = append(
 		diags,
 		resourceVirtualEnvironmentVMReadNetworkValues(ctx, d, m, vmID, vmConfig)...)
@@ -4330,6 +4354,14 @@ func resourceVirtualEnvironmentVMUpdate(
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
+		rebootRequired = true
+	}
+
+	// Prepare the new SCSI hardware type
+	if d.HasChange(mkResourceVirtualEnvironmentVMSCSIHardware) {
+		scsiHardware := d.Get(mkResourceVirtualEnvironmentVMSCSIHardware).(string)
+		updateBody.SCSIHardware = &scsiHardware
 
 		rebootRequired = true
 	}
