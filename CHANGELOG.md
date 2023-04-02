@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.15.0...v0.16.0) (2023-04-02)
+
+
+### Features
+
+* Update to Go 1.19 ([#280](https://github.com/bpg/terraform-provider-proxmox/issues/280)) ([8edfe9c](https://github.com/bpg/terraform-provider-proxmox/commit/8edfe9c7c54c9554adca52ffcf31c091f1fce11f))
+* **vm:** Add scsi_hardware field ([#282](https://github.com/bpg/terraform-provider-proxmox/issues/282)) ([f0f31ee](https://github.com/bpg/terraform-provider-proxmox/commit/f0f31eee470dc954fdd5d1c952ea3067a2a68f1b))
+
+
+### Miscellaneous
+
+* add missing docs ([#283](https://github.com/bpg/terraform-provider-proxmox/issues/283)) ([db7afe2](https://github.com/bpg/terraform-provider-proxmox/commit/db7afe2e4a93ae3f97c0533dba0adaf82123c49f))
+* **deps:** bump actions/stale from 7 to 8 ([#276](https://github.com/bpg/terraform-provider-proxmox/issues/276)) ([edd9685](https://github.com/bpg/terraform-provider-proxmox/commit/edd96857e64f73b041ed76a9c1818a864b4a0cca))
+* **deps:** bump github.com/golangci/golangci-lint from 1.52.1 to 1.52.2 in /tools ([#278](https://github.com/bpg/terraform-provider-proxmox/issues/278)) ([d8c1fb3](https://github.com/bpg/terraform-provider-proxmox/commit/d8c1fb3573de553bc2eb26d8e37cdcfe8a78f384))
+* **deps:** bump github.com/hashicorp/terraform-plugin-sdk/v2 from 2.25.0 to 2.26.1 ([#277](https://github.com/bpg/terraform-provider-proxmox/issues/277)) ([b403a49](https://github.com/bpg/terraform-provider-proxmox/commit/b403a4940fd31eacef90deaa11f2696fa7c03910))
+
 ## [0.15.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.14.1...v0.15.0) (2023-03-25)
 
 
