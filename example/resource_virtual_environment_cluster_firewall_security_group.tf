@@ -15,7 +15,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "example"
   rule {
     type    = "in"
     action  = "DROP"
-    comment = "Allow SSH"
+    comment = "Drop SSH"
     dest    = "192.168.1.5"
     dport   = "22"
     proto   = "udp"

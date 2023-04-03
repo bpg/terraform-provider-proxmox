@@ -65,9 +65,10 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
       rules can use arbitrary strings.
     - `log` - (Optional) Log level for this rule (`emerg`, `alert`, `crit`,
       `err`, `warning`, `notice`, `info`, `debug`, `nolog`).
-    - `macro`- (Optional) Macro name. Use predefined standard macro.
+    - `macro`- (Optional) Macro name. Use predefined standard macro
+      from https://pve.proxmox.com/pve-docs/pve-admin-guide.html#_firewall_macro_definitions
     - `proto` - (Optional) Restrict packet protocol. You can use protocol names
-      or simple numbers (0-255), as defined in '/etc/protocols'.
+      as defined in '/etc/protocols'.
     - `source` - (Optional) Restrict packet source address. This can refer
       to a single IP address, an IP set ('+ipsetname') or an IP alias
       definition. You can also specify an address range like
@@ -82,6 +83,6 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
 ## Attribute Reference
 
 - `rule`
-  - `pos` - Position of the rule in the list.
+    - `pos` - Position of the rule in the list.
 
 There are no attribute references available for this resource.

@@ -13,12 +13,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var rateExpression = regexp.MustCompile(`[1-9][0-9]*/(second|minute|hour|day)`)
+var (
+	rateExpression  = regexp.MustCompile(`[1-9][0-9]*/(second|minute|hour|day)`)
+	ifaceExpression = regexp.MustCompile(`net\d+`)
+)
 
 func FirewallRate() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringMatch(
 		rateExpression,
 		"Must be a valid rate expression, e.g. '1/second'",
+	))
+}
+func FirewallIFace() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringMatch(
+		ifaceExpression,
+		"Must be a valid VM/Container iface key, e.g. 'net0'",
 	))
 }
 
