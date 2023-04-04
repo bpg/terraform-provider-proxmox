@@ -37,16 +37,14 @@ func TestRuleSchema(t *testing.T) {
 
 	ruleSchema := structure.AssertNestedSchemaExistence(t, rulesSchema, MkRule).Schema
 
-	structure.AssertRequiredArguments(t, ruleSchema, []string{
+	structure.AssertOptionalArguments(t, ruleSchema, []string{
+		mkSecurityGroup,
 		mkRuleAction,
 		mkRuleType,
-	})
-
-	structure.AssertOptionalArguments(t, ruleSchema, []string{
 		mkRuleComment,
 		mkRuleDest,
 		mkRuleDPort,
-		mkRuleEnable,
+		mkRuleEnabled,
 		mkRuleIFace,
 		mkRuleLog,
 		mkRuleMacro,
@@ -62,7 +60,7 @@ func TestRuleSchema(t *testing.T) {
 		mkRuleComment: schema.TypeString,
 		mkRuleDest:    schema.TypeString,
 		mkRuleDPort:   schema.TypeString,
-		mkRuleEnable:  schema.TypeBool,
+		mkRuleEnabled: schema.TypeBool,
 		mkRuleIFace:   schema.TypeString,
 		mkRuleLog:     schema.TypeString,
 		mkRuleMacro:   schema.TypeString,

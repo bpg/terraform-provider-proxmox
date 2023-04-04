@@ -15,6 +15,11 @@ Manages firewall options on VM / Container level.
 
 ```terraform
 resource "proxmox_virtual_environment_firewall_options" "example" {
+  depends_on = [proxmox_virtual_environment_vm.example]
+
+  node_name = proxmox_virtual_environment_vm.example.node_name
+  vm_id     = proxmox_virtual_environment_vm.example.vm_id
+  
   enabled = false
 
   dhcp          = true

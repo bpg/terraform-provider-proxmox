@@ -22,24 +22,27 @@ import (
 )
 
 const (
-	dvRuleComment = ""
-	dvRuleDPort   = ""
-	dvRuleDest    = ""
-	dvRuleEnable  = true
-	dvRuleIface   = ""
-	dvRuleLog     = "nolog"
-	dvRuleMacro   = ""
-	dvRuleProto   = ""
-	dvRuleSPort   = ""
-	dvRuleSource  = ""
+	dvSecurityGroup = ""
+	dvRuleComment   = ""
+	dvRuleDPort     = ""
+	dvRuleDest      = ""
+	dvRuleEnabled   = true
+	dvRuleIface     = ""
+	dvRuleLog       = ""
+	dvRuleMacro     = ""
+	dvRuleProto     = ""
+	dvRuleSPort     = ""
+	dvRuleSource    = ""
 
 	MkRule = "rule"
+
+	mkSecurityGroup = "security_group"
 
 	mkRuleAction  = "action"
 	mkRuleComment = "comment"
 	mkRuleDPort   = "dport"
 	mkRuleDest    = "dest"
-	mkRuleEnable  = "enable"
+	mkRuleEnabled = "enabled"
 	mkRuleIFace   = "iface"
 	mkRuleLog     = "log"
 	mkRuleMacro   = "macro"
@@ -57,16 +60,23 @@ func Rules() *schema.Resource {
 			Description: "Rules position",
 			Computed:    true,
 		},
+		mkSecurityGroup: {
+			Type:        schema.TypeString,
+			Description: "Security group name",
+			Optional:    true,
+			ForceNew:    true,
+			Default:     dvSecurityGroup,
+		},
 		mkRuleAction: {
 			Type:             schema.TypeString,
 			Description:      "Rules action ('ACCEPT', 'DROP', 'REJECT')",
-			Required:         true,
+			Optional:         true,
 			ValidateDiagFunc: validator.FirewallPolicy(),
 		},
 		mkRuleType: {
 			Type:             schema.TypeString,
 			Description:      "Rules type ('in', 'out')",
-			Required:         true,
+			Optional:         true,
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"in", "out"}, true)),
 		},
 		mkRuleComment: {
@@ -92,18 +102,19 @@ func Rules() *schema.Resource {
 			Optional: true,
 			Default:  dvRuleDPort,
 		},
-		mkRuleEnable: {
+		mkRuleEnabled: {
 			Type:        schema.TypeBool,
 			Description: "Enable rule",
 			Optional:    true,
-			Default:     dvRuleEnable,
+			Default:     dvRuleEnabled,
 		},
 		mkRuleIFace: {
 			Type: schema.TypeString,
 			Description: "Network interface name. You have to use network configuration key names for VMs" +
 				" and containers ('net\\d+'). Host related rules can use arbitrary strings.",
-			Optional: true,
-			Default:  dvRuleIface,
+			Optional:         true,
+			Default:          dvRuleIface,
+			ValidateDiagFunc: validator.FirewallIFace(),
 		},
 		mkRuleLog: {
 			Type: schema.TypeString,
@@ -171,11 +182,29 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	rules := d.Get(MkRule).([]interface{})
 	for i := len(rules) - 1; i >= 0; i-- {
 		rule := rules[i].(map[string]interface{})
+		var ruleBody firewall.RuleCreateRequestBody
 
-		ruleBody := firewall.RuleCreateRequestBody{
-			BaseRule: *mapToBaseRule(rule),
-			Action:   rule[mkRuleAction].(string),
-			Type:     rule[mkRuleType].(string),
+		sg := rule[mkSecurityGroup].(string)
+		if sg != "" {
+			// this is a special case of security group insertion
+			ruleBody = firewall.RuleCreateRequestBody{
+				Action:   sg,
+				Type:     "group",
+				BaseRule: *mapToSecurityGroupBaseRule(rule),
+			}
+		} else {
+			a := rule[mkRuleAction].(string)
+			t := rule[mkRuleType].(string)
+			if a == "" || t == "" {
+				diags = append(diags, diag.Errorf("Either '%s' OR both '%s' and '%s' must be defined for the rule #%d",
+					mkSecurityGroup, mkRuleAction, mkRuleType, i)...)
+				continue
+			}
+			ruleBody = firewall.RuleCreateRequestBody{
+				Action:   a,
+				Type:     t,
+				BaseRule: *mapToBaseRule(rule),
+			}
 		}
 
 		err := api.CreateRule(ctx, &ruleBody)
@@ -206,12 +235,18 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 			return fmt.Errorf("error reading rule %d : %w", pos, err)
 		}
 
-		baseRuleToMap(&rule.BaseRule, ruleMap)
-
 		// pos in the map should be int!
 		ruleMap[mkRulePos] = pos
-		ruleMap[mkRuleAction] = rule.Action
-		ruleMap[mkRuleType] = rule.Type
+
+		if rule.Type == "group" {
+			// this is a special case of security group insertion
+			ruleMap[mkSecurityGroup] = rule.Action
+			securityGroupBaseRuleToMap(&rule.BaseRule, ruleMap)
+		} else {
+			ruleMap[mkRuleAction] = rule.Action
+			ruleMap[mkRuleType] = rule.Type
+			baseRuleToMap(&rule.BaseRule, ruleMap)
+		}
 
 		return nil
 	}
@@ -324,11 +359,9 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	if dport != "" {
 		baseRule.DPort = &dport
 	}
-	enable := rule[mkRuleEnable].(bool)
-	if enable {
-		enableBool := types.CustomBool(true)
-		baseRule.Enable = &enableBool
-	}
+	enableBool := types.CustomBool(rule[mkRuleEnabled].(bool))
+	baseRule.Enable = &enableBool
+
 	iface := rule[mkRuleIFace].(string)
 	if iface != "" {
 		baseRule.IFace = &iface
@@ -356,6 +389,24 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 
 	return baseRule
 }
+func mapToSecurityGroupBaseRule(rule map[string]interface{}) *firewall.BaseRule {
+	baseRule := &firewall.BaseRule{}
+
+	comment := rule[mkRuleComment].(string)
+	if comment != "" {
+		baseRule.Comment = &comment
+	}
+
+	enableBool := types.CustomBool(rule[mkRuleEnabled].(bool))
+	baseRule.Enable = &enableBool
+
+	iface := rule[mkRuleIFace].(string)
+	if iface != "" {
+		baseRule.IFace = &iface
+	}
+
+	return baseRule
+}
 
 func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	if baseRule.Comment != nil {
@@ -368,7 +419,7 @@ func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 		rule[mkRuleDPort] = *baseRule.DPort
 	}
 	if baseRule.Enable != nil {
-		rule[mkRuleEnable] = *baseRule.Enable
+		rule[mkRuleEnabled] = *baseRule.Enable
 	}
 	if baseRule.IFace != nil {
 		rule[mkRuleIFace] = *baseRule.IFace
@@ -387,6 +438,17 @@ func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	}
 	if baseRule.SPort != nil {
 		rule[mkRuleSPort] = *baseRule.SPort
+	}
+}
+func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
+	if baseRule.Comment != nil {
+		rule[mkRuleComment] = *baseRule.Comment
+	}
+	if baseRule.Enable != nil {
+		rule[mkRuleEnabled] = *baseRule.Enable
+	}
+	if baseRule.IFace != nil {
+		rule[mkRuleIFace] = *baseRule.IFace
 	}
 }
 
