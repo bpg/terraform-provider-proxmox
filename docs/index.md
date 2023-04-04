@@ -17,12 +17,10 @@ Use the navigation to the left to read about the available resources.
 
 ```terraform
 provider "proxmox" {
-  virtual_environment {
-    endpoint = "https://10.0.0.2:8006/"
-    username = "root@pam"
-    password = "the-password-set-during-installation-of-proxmox-ve"
-    insecure = true
-  }
+  endpoint = "https://10.0.0.2:8006/"
+  username = "root@pam"
+  password = "the-password-set-during-installation-of-proxmox-ve"
+  insecure = true
 }
 ```
 
@@ -46,10 +44,8 @@ in the Proxmox provider block:
 
 ```terraform
 provider "proxmox" {
-  virtual_environment {
-    username = "username@realm"
-    password = "a-strong-password"
-  }
+  username = "username@realm"
+  password = "a-strong-password"
 }
 ```
 
@@ -60,9 +56,7 @@ and `PROXMOX_VE_PASSWORD`, environment variables, representing your Proxmox
 username, realm and password, respectively:
 
 ```terraform
-provider "proxmox" {
-  virtual_environment {}
-}
+provider "proxmox" {}
 ```
 
 Usage:
@@ -80,18 +74,16 @@ to [generic provider arguments](https://www.terraform.io/docs/configuration/prov
 e.g. `alias` and `version`), the following arguments are supported in the
 Proxmox `provider` block:
 
-- `virtual_environment` - (Optional) The Proxmox Virtual Environment
-  configuration.
-  - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment
-    API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is
-    `https://<your-cluster-endpoint>:8006/`.
-  - `insecure` - (Optional) Whether to skip the TLS verification step (can
-    also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults
-    to `false`.
-  - `otp` - (Optional) The one-time password for the Proxmox Virtual
-    Environment API (can also be sourced from `PROXMOX_VE_OTP`).
-  - `password` - (Required) The password for the Proxmox Virtual Environment
-    API (can also be sourced from `PROXMOX_VE_PASSWORD`).
-  - `username` - (Required) The username and realm for the Proxmox Virtual
-    Environment API (can also be sourced from `PROXMOX_VE_USERNAME`). For 
-    example, `root@pam`.
+- `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment
+  API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is
+  `https://<your-cluster-endpoint>:8006/`.
+- `insecure` - (Optional) Whether to skip the TLS verification step (can
+  also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults
+  to `false`.
+- `otp` - (Optional) The one-time password for the Proxmox Virtual
+  Environment API (can also be sourced from `PROXMOX_VE_OTP`).
+- `password` - (Required) The password for the Proxmox Virtual Environment
+  API (can also be sourced from `PROXMOX_VE_PASSWORD`).
+- `username` - (Required) The username and realm for the Proxmox Virtual
+  Environment API (can also be sourced from `PROXMOX_VE_USERNAME`). For 
+  example, `root@pam`.

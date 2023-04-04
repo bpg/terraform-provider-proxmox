@@ -33,27 +33,37 @@ func TestProviderSchema(t *testing.T) {
 
 	test.AssertOptionalArguments(t, s, []string{
 		mkProviderVirtualEnvironment,
+		mkProviderUsername,
+		mkProviderPassword,
+		mkProviderEndpoint,
+		mkProviderInsecure,
+		mkProviderOTP,
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkProviderVirtualEnvironment: schema.TypeList,
+		mkProviderUsername:           schema.TypeString,
+		mkProviderPassword:           schema.TypeString,
+		mkProviderEndpoint:           schema.TypeString,
+		mkProviderInsecure:           schema.TypeBool,
+		mkProviderOTP:                schema.TypeString,
 	})
 
 	veSchema := test.AssertNestedSchemaExistence(t, s, mkProviderVirtualEnvironment)
 
 	test.AssertOptionalArguments(t, veSchema, []string{
-		mkProviderVirtualEnvironmentEndpoint,
-		mkProviderVirtualEnvironmentInsecure,
-		mkProviderVirtualEnvironmentOTP,
-		mkProviderVirtualEnvironmentPassword,
-		mkProviderVirtualEnvironmentUsername,
+		mkProviderEndpoint,
+		mkProviderInsecure,
+		mkProviderOTP,
+		mkProviderPassword,
+		mkProviderUsername,
 	})
 
 	test.AssertValueTypes(t, veSchema, map[string]schema.ValueType{
-		mkProviderVirtualEnvironmentEndpoint: schema.TypeString,
-		mkProviderVirtualEnvironmentInsecure: schema.TypeBool,
-		mkProviderVirtualEnvironmentOTP:      schema.TypeString,
-		mkProviderVirtualEnvironmentPassword: schema.TypeString,
-		mkProviderVirtualEnvironmentUsername: schema.TypeString,
+		mkProviderEndpoint: schema.TypeString,
+		mkProviderInsecure: schema.TypeBool,
+		mkProviderOTP:      schema.TypeString,
+		mkProviderPassword: schema.TypeString,
+		mkProviderUsername: schema.TypeString,
 	})
 }

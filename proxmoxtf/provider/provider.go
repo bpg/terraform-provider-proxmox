@@ -17,17 +17,14 @@ import (
 )
 
 const (
-	dvProviderVirtualEnvironmentEndpoint = ""
-	dvProviderVirtualEnvironmentOTP      = ""
-	dvProviderVirtualEnvironmentPassword = ""
-	dvProviderVirtualEnvironmentUsername = ""
+	dvProviderOTP = ""
 
-	mkProviderVirtualEnvironment         = "virtual_environment"
-	mkProviderVirtualEnvironmentEndpoint = "endpoint"
-	mkProviderVirtualEnvironmentInsecure = "insecure"
-	mkProviderVirtualEnvironmentOTP      = "otp"
-	mkProviderVirtualEnvironmentPassword = "password"
-	mkProviderVirtualEnvironmentUsername = "username"
+	mkProviderVirtualEnvironment = "virtual_environment"
+	mkProviderEndpoint           = "endpoint"
+	mkProviderInsecure           = "insecure"
+	mkProviderOTP                = "otp"
+	mkProviderPassword           = "password"
+	mkProviderUsername           = "username"
 )
 
 // ProxmoxVirtualEnvironment returns the object for this provider.
@@ -51,15 +48,24 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		veConfig := veConfigBlock[0].(map[string]interface{})
 
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
-			veConfig[mkProviderVirtualEnvironmentEndpoint].(string),
-			veConfig[mkProviderVirtualEnvironmentUsername].(string),
-			veConfig[mkProviderVirtualEnvironmentPassword].(string),
-			veConfig[mkProviderVirtualEnvironmentOTP].(string),
-			veConfig[mkProviderVirtualEnvironmentInsecure].(bool),
+			veConfig[mkProviderEndpoint].(string),
+			veConfig[mkProviderUsername].(string),
+			veConfig[mkProviderPassword].(string),
+			veConfig[mkProviderOTP].(string),
+			veConfig[mkProviderInsecure].(bool),
 		)
-		if err != nil {
-			return nil, diag.FromErr(err)
-		}
+	} else {
+		veClient, err = proxmox.NewVirtualEnvironmentClient(
+			d.Get(mkProviderEndpoint).(string),
+			d.Get(mkProviderUsername).(string),
+			d.Get(mkProviderPassword).(string),
+			d.Get(mkProviderOTP).(string),
+			d.Get(mkProviderInsecure).(bool),
+		)
+	}
+
+	if err != nil {
+		return nil, diag.FromErr(err)
 	}
 
 	config := proxmoxtf.NewProviderConfiguration(veClient)
