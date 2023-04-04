@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.17.0-rc2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.17.0-rc1...v0.17.0-rc2) (2023-04-04)
+
+
+### Bug Fixes
+
+* **firewall:** fw controls bugfixes ([#287](https://github.com/bpg/terraform-provider-proxmox/issues/287)) ([1bfc29e](https://github.com/bpg/terraform-provider-proxmox/commit/1bfc29e2cc3342699f491d0225da474078220ecd))
+
+
+### Miscellaneous
+
+* **deps:** bump activesupport from 7.0.4.2 to 7.0.4.3 in /docs ([#285](https://github.com/bpg/terraform-provider-proxmox/issues/285)) ([fc08e19](https://github.com/bpg/terraform-provider-proxmox/commit/fc08e19f867ef652ae7597e89fd49fb3ecc3a9a8))
+
 ## [0.17.0-rc1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.16.0...v0.17.0-rc1) (2023-04-02)
 
 
