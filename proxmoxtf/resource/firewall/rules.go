@@ -389,6 +389,7 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 
 	return baseRule
 }
+
 func mapToSecurityGroupBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	baseRule := &firewall.BaseRule{}
 
@@ -440,6 +441,7 @@ func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 		rule[mkRuleSPort] = *baseRule.SPort
 	}
 }
+
 func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment

@@ -24,6 +24,7 @@ func FirewallRate() schema.SchemaValidateDiagFunc {
 		"Must be a valid rate expression, e.g. '1/second'",
 	))
 }
+
 func FirewallIFace() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringMatch(
 		ifaceExpression,
