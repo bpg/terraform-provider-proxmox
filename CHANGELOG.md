@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.17.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.17.0-rc2...v0.17.0) (2023-04-07)
+
+
+### Features
+
+* **vm:** add support for `boot_order` argument for VM ([#219](https://github.com/bpg/terraform-provider-proxmox/issues/219)) ([f9e263a](https://github.com/bpg/terraform-provider-proxmox/commit/f9e263ad5edf47fb12f5321af0090d928da50d42))
+
+
+### Bug Fixes
+
+* **provider:** Deprecate `virtual_environment` block ([#288](https://github.com/bpg/terraform-provider-proxmox/issues/288)) ([ed3dfea](https://github.com/bpg/terraform-provider-proxmox/commit/ed3dfeae9907757f42c0cce63fe1f00a4e2ec0a2))
+
+
+### Miscellaneous
+
+* cleanup and fix linter errors ([#290](https://github.com/bpg/terraform-provider-proxmox/issues/290)) ([2fa9229](https://github.com/bpg/terraform-provider-proxmox/commit/2fa922930f6c3b6c1e0c32789b44ef6ab9189e6d))
+
 ## [0.17.0-rc2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.17.0-rc1...v0.17.0-rc2) (2023-04-04)
 
 
