@@ -240,17 +240,17 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	BackupFile           *string                        `json:"archive,omitempty"            url:"archive,omitempty"`
 	BandwidthLimit       *int                           `json:"bwlimit,omitempty"            url:"bwlimit,omitempty"`
 	BIOS                 *string                        `json:"bios,omitempty"               url:"bios,omitempty"`
-	Boot                 *CustomBoot              `json:"boot,omitempty"               url:"boot,omitempty"`
-	CDROM                *string                  `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
-	CloudInitConfig      *CustomCloudInitConfig   `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
-	CPUArchitecture      *string                  `json:"arch,omitempty"               url:"arch,omitempty"`
-	CPUCores             *int                     `json:"cores,omitempty"              url:"cores,omitempty"`
-	CPUEmulation         *CustomCPUEmulation      `json:"cpu,omitempty"                url:"cpu,omitempty"`
-	CPULimit             *int                     `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
-	CPUSockets           *int                     `json:"sockets,omitempty"            url:"sockets,omitempty"`
-	CPUUnits             *int                     `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
-	DedicatedMemory      *int                     `json:"memory,omitempty"             url:"memory,omitempty"`
-	Delete               []string                 `json:"delete,omitempty"             url:"delete,omitempty,comma"`
+	Boot                 *CustomBoot                    `json:"boot,omitempty"               url:"boot,omitempty"`
+	CDROM                *string                        `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
+	CloudInitConfig      *CustomCloudInitConfig         `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
+	CPUArchitecture      *string                        `json:"arch,omitempty"               url:"arch,omitempty"`
+	CPUCores             *int                           `json:"cores,omitempty"              url:"cores,omitempty"`
+	CPUEmulation         *CustomCPUEmulation            `json:"cpu,omitempty"                url:"cpu,omitempty"`
+	CPULimit             *int                           `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
+	CPUSockets           *int                           `json:"sockets,omitempty"            url:"sockets,omitempty"`
+	CPUUnits             *int                           `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
+	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
+	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
 	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"force,omitempty,int"`
 	Description          *string                        `json:"description,omitempty"        url:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                 `json:"efidisk0,omitempty"           url:"efidisk0,omitempty"`
@@ -1303,6 +1303,31 @@ func (r *CustomAudioDevice) UnmarshalJSON(b []byte) error {
 				r.Device = v[1]
 			case "driver":
 				r.Driver = &v[1]
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomBoot string to an object.
+func (r *CustomBoot) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return fmt.Errorf("error unmarshalling CustomBoot: %w", err)
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			if v[0] == "order" {
+				v := strings.Split(strings.TrimSpace(v[1]), ";")
+				r.Order = &v
 			}
 		}
 	}
