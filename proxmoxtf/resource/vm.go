@@ -112,6 +112,7 @@ const (
 
 	mkResourceVirtualEnvironmentVMRebootAfterCreation               = "reboot"
 	mkResourceVirtualEnvironmentVMOnBoot                            = "on_boot"
+	mkResourceVirtualEnvironmentVMBootOrder                         = "boot_order"
 	mkResourceVirtualEnvironmentVMACPI                              = "acpi"
 	mkResourceVirtualEnvironmentVMAgent                             = "agent"
 	mkResourceVirtualEnvironmentVMAgentEnabled                      = "enabled"
@@ -241,6 +242,15 @@ func VM() *schema.Resource {
 				Description: "Start VM on Node boot",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMOnBoot,
+			},
+			mkResourceVirtualEnvironmentVMBootOrder: {
+				Type:        schema.TypeList,
+				Description: "The guest will attempt to boot from devices in the order they appear here",
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{}, nil
+				},
 			},
 			mkResourceVirtualEnvironmentVMACPI: {
 				Type:        schema.TypeBool,
@@ -1915,15 +1925,33 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	var memorySharedObject *proxmox.CustomSharedMemory
 
-	bootDisk := "scsi0"
-	bootOrder := "c"
-
+	var bootOrderConverted []string
 	if cdromEnabled {
-		bootOrder = "cd"
+		bootOrderConverted = []string{"ide3"}
+	}
+	bootOrder := d.Get(mkResourceVirtualEnvironmentVMBootOrder).([]interface{})
+	//nolint:nestif
+	if len(bootOrder) == 0 {
+		if sataDeviceObjects != nil {
+			bootOrderConverted = append(bootOrderConverted, "sata0")
+		}
+		if scsiDeviceObjects != nil {
+			bootOrderConverted = append(bootOrderConverted, "scsi0")
+		}
+		if virtioDeviceObjects != nil {
+			bootOrderConverted = append(bootOrderConverted, "virtio0")
+		}
+		if networkDeviceObjects != nil {
+			bootOrderConverted = append(bootOrderConverted, "net0")
+		}
+	} else {
+		bootOrderConverted = make([]string, len(bootOrder))
+		for i, device := range bootOrder {
+			bootOrderConverted[i] = device.(string)
+		}
 	}
 
 	cpuFlagsConverted := make([]string, len(cpuFlags))
-
 	for fi, flag := range cpuFlags {
 		cpuFlagsConverted[fi] = flag.(string)
 	}
@@ -1959,10 +1987,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
-		AudioDevices:    audioDevices,
-		BIOS:            &bios,
-		BootDisk:        &bootDisk,
-		BootOrder:       &bootOrder,
+		AudioDevices: audioDevices,
+		BIOS:         &bios,
+		Boot: &proxmox.CustomBoot{
+			Order: &bootOrderConverted,
+		},
 		CloudInitConfig: initializationConfig,
 		CPUCores:        &cpuCores,
 		CPUEmulation: &proxmox.CustomCPUEmulation{
@@ -4033,6 +4062,19 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			del = append(del, fmt.Sprintf("audio%d", i))
 		}
 
+		rebootRequired = true
+	}
+
+	// Prepare the new boot configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMBootOrder) {
+		bootOrder := d.Get(mkResourceVirtualEnvironmentVMBootOrder).([]interface{})
+		bootOrderConverted := make([]string, len(bootOrder))
+		for i, device := range bootOrder {
+			bootOrderConverted[i] = device.(string)
+		}
+		updateBody.Boot = &proxmox.CustomBoot{
+			Order: &bootOrderConverted,
+		}
 		rebootRequired = true
 	}
 

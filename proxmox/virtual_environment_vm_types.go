@@ -33,6 +33,10 @@ type CustomAudioDevice struct {
 // CustomAudioDevices handles QEMU audio device parameters.
 type CustomAudioDevices []CustomAudioDevice
 
+type CustomBoot struct {
+	Order *[]string `json:"order,omitempty" url:"order,omitempty,semicolon"`
+}
+
 // CustomCloudInitConfig handles QEMU cloud-init parameters.
 type CustomCloudInitConfig struct {
 	Files        *CustomCloudInitFiles     `json:"cicustom,omitempty"     url:"cicustom,omitempty"`
@@ -236,8 +240,7 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	BackupFile           *string                        `json:"archive,omitempty"            url:"archive,omitempty"`
 	BandwidthLimit       *int                           `json:"bwlimit,omitempty"            url:"bwlimit,omitempty"`
 	BIOS                 *string                        `json:"bios,omitempty"               url:"bios,omitempty"`
-	BootDisk             *string                        `json:"bootdisk,omitempty"           url:"bootdisk,omitempty"`
-	BootOrder            *string                        `json:"boot,omitempty"               url:"boot,omitempty"`
+	Boot                 *CustomBoot                    `json:"boot,omitempty"               url:"boot,omitempty"`
 	CDROM                *string                        `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
 	CloudInitConfig      *CustomCloudInitConfig         `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
 	CPUArchitecture      *string                        `json:"arch,omitempty"               url:"arch,omitempty"`
@@ -641,6 +644,14 @@ func (r CustomAudioDevices) EncodeValues(key string, v *url.Values) error {
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+func (r CustomBoot) EncodeValues(key string, v *url.Values) error {
+	if r.Order != nil && len(*r.Order) > 0 {
+		v.Add(key, fmt.Sprintf("order=%s", strings.Join(*r.Order, ";")))
 	}
 
 	return nil
@@ -1292,6 +1303,31 @@ func (r *CustomAudioDevice) UnmarshalJSON(b []byte) error {
 				r.Device = v[1]
 			case "driver":
 				r.Driver = &v[1]
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomBoot string to an object.
+func (r *CustomBoot) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return fmt.Errorf("error unmarshalling CustomBoot: %w", err)
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			if v[0] == "order" {
+				v := strings.Split(strings.TrimSpace(v[1]), ";")
+				r.Order = &v
 			}
 		}
 	}
