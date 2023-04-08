@@ -194,8 +194,12 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 
 	ur := strings.Split(c.Username, "@")
 
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
+	}
 	sshHost := fmt.Sprintf("%s:22", *nodeAddress)
-	khPath := fmt.Sprintf("%s/.ssh/known_hosts", os.Getenv("HOME"))
+	khPath := fmt.Sprintf("%s/.ssh/known_hosts", homeDir)
 	kh, err := knownhosts.New(khPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read %s: %w", khPath, err)
