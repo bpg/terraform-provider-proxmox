@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -248,9 +249,8 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 		}
 
 		err = tempMultipartFile.Close()
-
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to close temporary file: %w", err)
 		}
 
 		defer func(name string) {
@@ -265,7 +265,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 		// Now that the multipart data is stored in a file, we can go ahead and do a HTTP POST request.
 		fileReader, err := os.Open(tempMultipartFileName)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to open temporary file: %w", err)
 		}
 
 		defer func(fileReader *os.File) {
@@ -279,7 +279,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 
 		fileInfo, err := fileReader.Stat()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get file info: %w", err)
 		}
 
 		fileSize := fileInfo.Size()
@@ -334,12 +334,11 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 		}
 
 		remoteFileDir := *datastore.Path
-		switch d.ContentType {
-		default:
-			remoteFileDir += fmt.Sprintf("/%s", d.ContentType)
+		if d.ContentType != "" {
+			remoteFileDir = filepath.Join(remoteFileDir, d.ContentType)
 		}
 
-		remoteFilePath := fmt.Sprintf("%s/%s", remoteFileDir, d.FileName)
+		remoteFilePath := filepath.Join(remoteFileDir, d.FileName)
 		sftpClient, err := sftp.NewClient(sshClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create SFTP client: %w", err)
