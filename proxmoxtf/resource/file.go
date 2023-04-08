@@ -378,7 +378,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		}
 	}(file)
 
-	body := &proxmox.VirtualEnvironmentDatastoreUploadRequestBody{
+	body := &proxmox.DatastoreUploadRequestBody{
 		ContentType: *contentType,
 		DatastoreID: datastoreID,
 		FileName:    *fileName,
