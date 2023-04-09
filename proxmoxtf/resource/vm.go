@@ -83,6 +83,7 @@ const (
 	dvResourceVirtualEnvironmentVMName                              = ""
 	dvResourceVirtualEnvironmentVMNetworkDeviceBridge               = "vmbr0"
 	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled              = true
+	dvResourceVirtualEnvironmentVMNetworkDeviceFirewall             = false
 	dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress           = ""
 	dvResourceVirtualEnvironmentVMNetworkDeviceModel                = "virtio"
 	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = 0
@@ -198,6 +199,7 @@ const (
 	mkResourceVirtualEnvironmentVMNetworkDevice                     = "network_device"
 	mkResourceVirtualEnvironmentVMNetworkDeviceBridge               = "bridge"
 	mkResourceVirtualEnvironmentVMNetworkDeviceEnabled              = "enabled"
+	mkResourceVirtualEnvironmentVMNetworkDeviceFirewall             = "firewall"
 	mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress           = "mac_address"
 	mkResourceVirtualEnvironmentVMNetworkDeviceModel                = "model"
 	mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = "rate_limit"
@@ -979,6 +981,12 @@ func VM() *schema.Resource {
 						mkResourceVirtualEnvironmentVMNetworkDeviceEnabled: {
 							Type:        schema.TypeBool,
 							Description: "Whether to enable the network device",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceEnabled,
+						},
+						mkResourceVirtualEnvironmentVMNetworkDeviceFirewall: {
+							Type:        schema.TypeBool,
+							Description: "Whether this interface's firewall rules should be used",
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceEnabled,
 						},
@@ -2602,17 +2610,19 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) proxmox.CustomNetworkDevi
 	for i, networkDeviceEntry := range networkDevice {
 		block := networkDeviceEntry.(map[string]interface{})
 
-		bridge, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceBridge].(string)
-		enabled, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled].(bool)
-		macAddress, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress].(string)
-		model, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceModel].(string)
-		rateLimit, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit].(float64)
-		vlanID, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID].(int)
-		mtu, _ := block[mkResourceVirtualEnvironmentVMNetworkDeviceMTU].(int)
+		bridge := block[mkResourceVirtualEnvironmentVMNetworkDeviceBridge].(string)
+		enabled := block[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled].(bool)
+		firewall := types.CustomBool(block[mkResourceVirtualEnvironmentVMNetworkDeviceFirewall].(bool))
+		macAddress := block[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress].(string)
+		model := block[mkResourceVirtualEnvironmentVMNetworkDeviceModel].(string)
+		rateLimit := block[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit].(float64)
+		vlanID := block[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID].(int)
+		mtu := block[mkResourceVirtualEnvironmentVMNetworkDeviceMTU].(int)
 
 		device := proxmox.CustomNetworkDevice{
-			Enabled: enabled,
-			Model:   model,
+			Enabled:  enabled,
+			Firewall: &firewall,
+			Model:    model,
 		}
 
 		if bridge != "" {
@@ -3477,6 +3487,12 @@ func vmReadCustom(
 			}
 
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled] = nd.Enabled
+
+			if nd.Firewall != nil {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceFirewall] = *nd.Firewall
+			} else {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceFirewall] = false
+			}
 
 			if nd.MACAddress != nil {
 				macAddresses[ni] = *nd.MACAddress

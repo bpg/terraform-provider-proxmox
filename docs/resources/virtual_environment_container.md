@@ -142,6 +142,8 @@ output "ubuntu_container_public_key" {
       to `vmbr0`).
     - `enabled` - (Optional) Whether to enable the network device (defaults
       to `true`).
+    - `firewall` - (Optional) Whether this interface's firewall rules should be
+        used (defaults to `false`).
     - `mac_address` - (Optional) The MAC address.
     - `mtu` - (Optional) Maximum transfer unit of the interface. Cannot be
       larger than the bridge's MTU.
@@ -170,10 +172,11 @@ output "ubuntu_container_public_key" {
   meta-argument to ignore changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on
-the host (defaults to `false`).
+  the host (defaults to `false`).
 - `vm_id` - (Optional) The virtual machine identifier
 - `features` - (Optional) The container features
-  - `nesting` - (Optional) Whether the container is nested (defaults to `false`)
+    - `nesting` - (Optional) Whether the container is nested (defaults
+      to `false`)
 
 ## Attribute Reference
 
