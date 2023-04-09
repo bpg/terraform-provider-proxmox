@@ -327,6 +327,8 @@ output "ubuntu_vm_public_key" {
       to `vmbr0`).
     - `enabled` - (Optional) Whether to enable the network device (defaults
       to `true`).
+    - `firewall` - (Optional) Whether this interface's firewall rules should be
+        used (defaults to `false`).
     - `mac_address` - (Optional) The MAC address.
     - `model` - (Optional) The network device model (defaults to `virtio`).
         - `e1000` - Intel E1000.
