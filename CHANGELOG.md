@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.17.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.17.0...v0.17.1) (2023-04-10)
+
+
+### Bug Fixes
+
+* **core:** Error when open SSH session on Windows ([#293](https://github.com/bpg/terraform-provider-proxmox/issues/293)) ([be3995e](https://github.com/bpg/terraform-provider-proxmox/commit/be3995e969e16eac08c3e1d0fbaadb60244a5576))
+* **file:** "Permission denied" error when creating a file by a non-root user ([#291](https://github.com/bpg/terraform-provider-proxmox/issues/291)) ([401b397](https://github.com/bpg/terraform-provider-proxmox/commit/401b39782f857382b30ab71b3e49a8ab44fbac48))
+* **firewall:** Add support for `firewall` flag for LXC/VM net adapters ([#295](https://github.com/bpg/terraform-provider-proxmox/issues/295)) ([f4783f8](https://github.com/bpg/terraform-provider-proxmox/commit/f4783f8cda701b6800403d50840240da6469fd38))
+
 ## [0.17.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.17.0-rc2...v0.17.0) (2023-04-07)
 
 
