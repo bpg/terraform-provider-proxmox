@@ -230,7 +230,8 @@ output "ubuntu_vm_public_key" {
       the second, etc.
     - `iothread` - (Optional) Whether to use iothreads for this disk (defaults
       to `false`).
-    - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
+    - `size` - (Optional) The disk size in gigabytes (defaults to `8`). Valid
+      units are M or MB for megabytes, G or GB for gigabytes and T or TB for terabytes.
     - `speed` - (Optional) The speed limits.
         - `read` - (Optional) The maximum read speed in megabytes per second.
         - `read_burstable` - (Optional) The maximum burstable read speed in
