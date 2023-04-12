@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -25,33 +26,31 @@ func CloseOrLogError(ctx context.Context) func(io.Closer) {
 	}
 }
 
+var sizeregex = regexp.MustCompile(`(?i)^([\d\.]+)\s?(m|mb|g|gb|t|tb|p|pb)?$`)
+
 func ParseDiskSize(size *string) (int, error) {
 	if size == nil {
 		return 0, nil
 	}
 
-	if strings.HasSuffix(*size, "T") {
-		diskSize, err := strconv.Atoi(strings.TrimSuffix(*size, "T"))
+	matches := sizeregex.FindStringSubmatch(*size)
+	if len(matches) > 0 {
+		fsize, err := strconv.ParseFloat(matches[1], 64)
 		if err != nil {
-			return -1, fmt.Errorf("failed to parse disk size: %w", err)
+			return -1, fmt.Errorf("cannot parse disk size \"%s\"", *size)
 		}
-		return int(math.Ceil(float64(diskSize) * 1024)), nil
-	}
-
-	if strings.HasSuffix(*size, "G") {
-		diskSize, err := strconv.Atoi(strings.TrimSuffix(*size, "G"))
-		if err != nil {
-			return -1, fmt.Errorf("failed to parse disk size: %w", err)
+		switch strings.ToLower(matches[2]) {
+		case "m", "mb", "mib":
+			return int(math.Ceil(fsize / 1024)), nil
+		case "g", "gb", "gib":
+			return int(math.Ceil(fsize)), nil
+		case "t", "tb", "tib":
+			return int(math.Ceil(fsize * 1024)), nil
+		case "p", "pb", "pib":
+			return int(math.Ceil(fsize * 1024 * 1024)), nil
+		default:
+			return int(math.Ceil(fsize)), nil
 		}
-		return diskSize, nil
-	}
-
-	if strings.HasSuffix(*size, "M") {
-		diskSize, err := strconv.Atoi(strings.TrimSuffix(*size, "M"))
-		if err != nil {
-			return -1, fmt.Errorf("failed to parse disk size: %w", err)
-		}
-		return int(math.Ceil(float64(diskSize) / 1024)), nil
 	}
 
 	return -1, fmt.Errorf("cannot parse disk size \"%s\"", *size)
