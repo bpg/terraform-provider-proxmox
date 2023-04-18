@@ -196,6 +196,10 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 	}
 
 	ur := strings.Split(c.Username, "@")
+	sshuser := ur[0]
+	if(c.SSHUsername != ""){
+		sshuser = c.SSHUsername
+	}
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -248,7 +252,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 	})
 
 	sshConfig := &ssh.ClientConfig{
-		User:              ur[0],
+		User:              sshuser,
 		Auth:              []ssh.AuthMethod{ssh.Password(c.Password)},
 		HostKeyCallback:   cb,
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
@@ -277,7 +281,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		ag := agent.NewClient(conn)
 
 		sshConfig = &ssh.ClientConfig{
-			User:              ur[0],
+			User:              sshuser,
 			Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers)},
 			HostKeyCallback:   cb,
 			HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),

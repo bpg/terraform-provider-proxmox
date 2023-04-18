@@ -25,6 +25,7 @@ const (
 	mkProviderOTP                = "otp"
 	mkProviderPassword           = "password"
 	mkProviderUsername           = "username"
+	mkProviderSSHUsername        = "sshusername"
 	mkProviderAgent              = "agent"
 )
 
@@ -51,6 +52,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
 			veConfig[mkProviderEndpoint].(string),
 			veConfig[mkProviderUsername].(string),
+			veConfig[mkProviderSSHUsername].(string),
 			veConfig[mkProviderPassword].(string),
 			veConfig[mkProviderOTP].(string),
 			veConfig[mkProviderInsecure].(bool),
@@ -60,6 +62,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
 			d.Get(mkProviderEndpoint).(string),
 			d.Get(mkProviderUsername).(string),
+			d.Get(mkProviderSSHUsername).(string),
 			d.Get(mkProviderPassword).(string),
 			d.Get(mkProviderOTP).(string),
 			d.Get(mkProviderInsecure).(bool),

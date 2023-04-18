@@ -98,6 +98,20 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			},
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
+		mkProviderSSHUsername: {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Used to override the ssh username",
+			DefaultFunc: schema.MultiEnvDefaultFunc(
+				[]string{"PROXMOX_VE_SSHUSERNAME", "PM_VE_SSHUSERNAME"},
+				nil,
+			),
+			AtLeastOneOf: []string{
+				mkProviderSSHUsername,
+				fmt.Sprintf("%s.0.%s", mkProviderVirtualEnvironment, mkProviderSSHUsername),
+			},
+			ValidateFunc: validation.StringIsNotEmpty,
+		},
 		mkProviderAgent: {
 			Type:        schema.TypeBool,
 			Optional:    true,

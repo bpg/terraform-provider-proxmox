@@ -23,7 +23,7 @@ import (
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
 func NewVirtualEnvironmentClient(
-	endpoint, username, password, otp string,
+	endpoint, username, sshusername, password, otp string,
 	insecure bool, agent bool,
 ) (*VirtualEnvironmentClient, error) {
 	u, err := url.ParseRequestURI(endpoint)
@@ -69,13 +69,14 @@ func NewVirtualEnvironmentClient(
 	httpClient := &http.Client{Transport: transport}
 
 	return &VirtualEnvironmentClient{
-		Endpoint:   strings.TrimRight(u.String(), "/"),
-		Insecure:   insecure,
-		OTP:        pOTP,
-		Password:   password,
-		Username:   username,
-		Agent:      agent,
-		httpClient: httpClient,
+		Endpoint:    strings.TrimRight(u.String(), "/"),
+		Insecure:    insecure,
+		OTP:         pOTP,
+		Password:    password,
+		Username:    username,
+		SSHUsername: sshusername,
+		Agent:       agent,
+		httpClient:  httpClient,
 	}, nil
 }
 

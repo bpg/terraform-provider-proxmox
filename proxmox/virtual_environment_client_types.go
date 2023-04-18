@@ -19,12 +19,13 @@ const (
 
 // VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
 type VirtualEnvironmentClient struct {
-	Endpoint string
-	Insecure bool
-	OTP      *string
-	Password string
-	Username string
-	Agent bool
+	Endpoint    string
+	Insecure    bool
+	OTP         *string
+	Password    string
+	Username    string
+	SSHUsername string
+	Agent       bool
 
 	authenticationData *VirtualEnvironmentAuthenticationResponseData
 	httpClient         *http.Client
