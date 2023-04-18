@@ -25,6 +25,7 @@ const (
 	mkProviderOTP                = "otp"
 	mkProviderPassword           = "password"
 	mkProviderUsername           = "username"
+	mkProviderAgent              = "agent"
 )
 
 // ProxmoxVirtualEnvironment returns the object for this provider.
@@ -53,6 +54,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			veConfig[mkProviderPassword].(string),
 			veConfig[mkProviderOTP].(string),
 			veConfig[mkProviderInsecure].(bool),
+			veConfig[mkProviderAgent].(bool),
 		)
 	} else {
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
@@ -61,6 +63,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			d.Get(mkProviderPassword).(string),
 			d.Get(mkProviderOTP).(string),
 			d.Get(mkProviderInsecure).(bool),
+			d.Get(mkProviderAgent).(bool),
 		)
 	}
 

@@ -24,6 +24,7 @@ type VirtualEnvironmentClient struct {
 	OTP      *string
 	Password string
 	Username string
+	Agent bool
 
 	authenticationData *VirtualEnvironmentAuthenticationResponseData
 	httpClient         *http.Client

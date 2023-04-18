@@ -24,7 +24,7 @@ import (
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
 func NewVirtualEnvironmentClient(
 	endpoint, username, password, otp string,
-	insecure bool,
+	insecure bool, agent bool,
 ) (*VirtualEnvironmentClient, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
@@ -74,6 +74,7 @@ func NewVirtualEnvironmentClient(
 		OTP:        pOTP,
 		Password:   password,
 		Username:   username,
+		Agent:      agent,
 		httpClient: httpClient,
 	}, nil
 }

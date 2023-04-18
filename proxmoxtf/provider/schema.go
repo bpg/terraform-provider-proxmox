@@ -98,5 +98,21 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			},
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
+		mkProviderAgent: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Description: "Whether to use ssh-agent as ssh authentication mechanism",
+			DefaultFunc: func() (interface{}, error) {
+				for _, k := range []string{"PROXMOX_VE_AGENT", "PM_VE_AGENT"} {
+					v := os.Getenv(k)
+
+					if v == "true" || v == "1" {
+						return true, nil
+					}
+				}
+
+				return false, nil
+			},
+		},
 	}
 }
