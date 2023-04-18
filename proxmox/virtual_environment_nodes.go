@@ -21,6 +21,7 @@ import (
 	"github.com/skeema/knownhosts"
 
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 // ExecuteNodeCommands executes commands on a given node.
@@ -250,6 +251,30 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		Auth:              []ssh.AuthMethod{ssh.Password(c.Password)},
 		HostKeyCallback:   cb,
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
+	}
+
+	if c.Agent {
+		
+		sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
+
+		if sshAuthSock == "" {
+			return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: environment variable is empty")
+		}
+
+		conn, err := net.Dial("unix", sshAuthSock)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: %v", err)
+		}
+
+		ag := agent.NewClient(conn)
+
+		sshConfig = &ssh.ClientConfig{
+			User:              ur[0],
+			Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers)},
+			HostKeyCallback:   cb,
+			HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
+		}
 	}
 
 	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
