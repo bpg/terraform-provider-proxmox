@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -253,12 +254,18 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
 	}
 
+	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.Agent))
+
 	if c.Agent {
-		
+
+		if runtime.GOOS != "linux" {
+			return nil, fmt.Errorf("ssh agent authentication method is only supported on linux, please remove 'agent = true' from the provider configuration")
+		}
+
 		sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
 
 		if sshAuthSock == "" {
-			return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: environment variable is empty")
+			return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: environment variable is empty, make sure ssh-agent is running or remove 'agent = true' from the provider configuration")
 		}
 
 		conn, err := net.Dial("unix", sshAuthSock)
