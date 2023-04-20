@@ -303,6 +303,10 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	WatchdogDevice       *CustomWatchdogDevice          `json:"watchdog,omitempty"           url:"watchdog,omitempty"`
 }
 
+type VirtualEnvironmentVMCreateResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
 // VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseBody contains the body from a QEMU get network interfaces response.
 type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseBody struct {
 	Data *VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData `json:"data,omitempty"`

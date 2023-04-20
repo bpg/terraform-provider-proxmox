@@ -228,6 +228,8 @@ const (
 	mkResourceVirtualEnvironmentVMVGAType                           = "type"
 	mkResourceVirtualEnvironmentVMVMID                              = "vm_id"
 	mkResourceVirtualEnvironmentVMSCSIHardware                      = "scsi_hardware"
+
+	vmCreateTimeoutSeconds = 10
 )
 
 func VM() *schema.Resource {
@@ -2076,20 +2078,12 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		createBody.PoolID = &poolID
 	}
 
-	err = veClient.CreateVM(ctx, nodeName, createBody)
+	err = veClient.CreateVM(ctx, nodeName, createBody, vmCreateTimeoutSeconds)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	d.SetId(strconv.Itoa(vmID))
-
-	// NOTE: The VM creation is not atomic, and not synchronous. This means that the VM might not be
-	//   	available immediately after the creation, or its state reported by the API might not be
-	//    	up to date. This is a problem for the following operations, which rely on the VM information
-	//    	returned by API calls, particularly read-back to populate the Terraform state.
-	//		Would it be possible to wait for the VM to be fully available, or to wait for the API to report
-	//		the correct state?
-	// time.Sleep(5 * time.Second)
 
 	return vmCreateCustomDisks(ctx, d, m)
 }
