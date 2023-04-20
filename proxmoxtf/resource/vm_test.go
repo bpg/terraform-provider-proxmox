@@ -192,7 +192,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDiskDatastoreID: schema.TypeString,
 		mkResourceVirtualEnvironmentVMDiskFileFormat:  schema.TypeString,
 		mkResourceVirtualEnvironmentVMDiskFileID:      schema.TypeString,
-		mkResourceVirtualEnvironmentVMDiskSize:        schema.TypeInt,
+		mkResourceVirtualEnvironmentVMDiskSize:        schema.TypeString,
 	})
 
 	diskSpeedSchema := test.AssertNestedSchemaExistence(

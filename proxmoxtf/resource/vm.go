@@ -54,7 +54,7 @@ const (
 	dvResourceVirtualEnvironmentVMDiskDatastoreID                   = "local-lvm"
 	dvResourceVirtualEnvironmentVMDiskFileFormat                    = "qcow2"
 	dvResourceVirtualEnvironmentVMDiskFileID                        = ""
-	dvResourceVirtualEnvironmentVMDiskSize                          = 8
+	dvResourceVirtualEnvironmentVMDiskSize                          = "8"
 	dvResourceVirtualEnvironmentVMDiskIOThread                      = false
 	dvResourceVirtualEnvironmentVMDiskSSD                           = false
 	dvResourceVirtualEnvironmentVMDiskDiscard                       = ""
@@ -566,8 +566,8 @@ func VM() *schema.Resource {
 							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMDiskSize: {
-							Type:             schema.TypeInt,
-							Description:      "The disk size in gigabytes",
+							Type:             schema.TypeString,
+							Description:      "The disk size. Units (MB, GB, TB) can be provided. Defaults to Gigabytes.",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMDiskSize,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
@@ -1682,7 +1682,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diskBlock := disk[i].(map[string]interface{})
 		diskInterface := diskBlock[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		diskSizeStr := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(string)
+		diskSize, err := proxmox.ParseDiskSize(&diskSizeStr)
+		if err != nil {
+			return nil
+		}
 
 		currentDiskInfo := allDiskInfo[diskInterface]
 
@@ -2138,12 +2142,17 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
-		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard, _ := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
+		sizeStr, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(string)
+		size, err := proxmox.ParseDiskSize(&sizeStr)
+
+		if err != nil {
+			diag.FromErr(err)
+		}
 
 		if fileFormat == "" {
 			fileFormat = dvResourceVirtualEnvironmentVMDiskFileFormat
@@ -2479,11 +2488,15 @@ func vmGetDiskDeviceObjects(
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
-		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
+		sizeStr, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(string)
+		size, err := proxmox.ParseDiskSize(&sizeStr)
+		if err != nil {
+			return diskDeviceObjects, err
+		}
 
 		speedBlock, err := getSchemaBlock(
 			resource,
@@ -4493,13 +4506,16 @@ func vmUpdateDiskLocationAndSize(
 					// Cannot be done while VM is running.
 					shutdownForDisksRequired = true
 				}
-
-				if *oldDisk.SizeInt <= *diskNewEntries[prefix][oldKey].SizeInt {
+				newSize, err := proxmox.ParseDiskSize(diskNewEntries[prefix][oldKey].Size)
+				if err != nil {
+					return diag.FromErr(err)
+				}
+				if *oldDisk.SizeInt <= newSize {
 					diskResizeBodies = append(
 						diskResizeBodies,
 						&proxmox.VirtualEnvironmentVMResizeDiskRequestBody{
 							Disk: *oldDisk.Interface,
-							Size: *diskNewEntries[prefix][oldKey].Size,
+							Size: fmt.Sprint(newSize),
 						},
 					)
 				}

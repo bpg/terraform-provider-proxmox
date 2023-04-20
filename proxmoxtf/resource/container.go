@@ -41,7 +41,7 @@ const (
 	dvResourceVirtualEnvironmentContainerCPUUnits                          = 1024
 	dvResourceVirtualEnvironmentContainerDescription                       = ""
 	dvResourceVirtualEnvironmentContainerDiskDatastoreID                   = "local"
-	dvResourceVirtualEnvironmentContainerDiskSize                          = 4
+	dvResourceVirtualEnvironmentContainerDiskSize                          = "4"
 	dvResourceVirtualEnvironmentContainerFeaturesNesting                   = false
 	dvResourceVirtualEnvironmentContainerMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentContainerMemorySwap                        = 0
@@ -267,7 +267,7 @@ func Container() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentContainerDiskDatastoreID,
 						},
 						mkResourceVirtualEnvironmentContainerDiskSize: {
-							Type:             schema.TypeInt,
+							Type:             schema.TypeString,
 							Description:      "The rootfs size in gigabytes",
 							Optional:         true,
 							ForceNew:         true,
@@ -1059,8 +1059,12 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
 
 	var rootFS *proxmox.VirtualEnvironmentContainerCustomRootFS
-	diskSize := diskBlock[mkResourceVirtualEnvironmentContainerDiskSize].(int)
-	if diskSize != dvResourceVirtualEnvironmentContainerDiskSize && diskDatastoreID != "" {
+	diskSizeStr := diskBlock[mkResourceVirtualEnvironmentContainerDiskSize].(string)
+	diskSize, err := proxmox.ParseDiskSize(&diskSizeStr)
+	if err != nil {
+		return nil
+	}
+	if diskSizeStr != dvResourceVirtualEnvironmentContainerDiskSize && diskDatastoreID != "" {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &proxmox.VirtualEnvironmentContainerCustomRootFS{
@@ -1633,7 +1637,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = "local"
-		disk[mkResourceVirtualEnvironmentContainerDiskSize] = dvResourceVirtualEnvironmentContainerDiskSize
+		diskPtr := dvResourceVirtualEnvironmentContainerDiskSize
+		disk[mkResourceVirtualEnvironmentContainerDiskSize], _ = proxmox.ParseDiskSize(&diskPtr)
 	}
 
 	currentDisk := d.Get(mkResourceVirtualEnvironmentContainerDisk).([]interface{})
