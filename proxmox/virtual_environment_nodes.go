@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -199,7 +200,20 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
 	}
 	sshHost := fmt.Sprintf("%s:22", *nodeAddress)
-	khPath := fmt.Sprintf("%s/.ssh/known_hosts", homeDir)
+	sshPath := path.Join(homeDir, ".ssh")
+	if _, err = os.Stat(sshPath); os.IsNotExist(err) {
+		e := os.Mkdir(sshPath, 0o700)
+		if e != nil {
+			return nil, fmt.Errorf("failed to create %s: %w", sshPath, e)
+		}
+	}
+	khPath := path.Join(sshPath, "known_hosts")
+	if _, err = os.Stat(khPath); os.IsNotExist(err) {
+		e := os.WriteFile(khPath, []byte{}, 0o600)
+		if e != nil {
+			return nil, fmt.Errorf("failed to create %s: %w", khPath, e)
+		}
+	}
 	kh, err := knownhosts.New(khPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read %s: %w", khPath, err)
@@ -243,6 +257,10 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
 	}
 
+	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
+		"host": sshHost,
+		"user": ur[0],
+	})
 	return sshClient, nil
 }
 
