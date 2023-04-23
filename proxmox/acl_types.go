@@ -1,18 +1,20 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
 import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
-// VirtualEnvironmentACLGetResponseBody contains the body from an access control list response.
-type VirtualEnvironmentACLGetResponseBody struct {
-	Data []*VirtualEnvironmentACLGetResponseData `json:"data,omitempty"`
+// ACLGetResponseBody contains the body from an access control list response.
+type ACLGetResponseBody struct {
+	Data []*ACLGetResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentACLGetResponseData contains the data from an access control list response.
-type VirtualEnvironmentACLGetResponseData struct {
+// ACLGetResponseData contains the data from an access control list response.
+type ACLGetResponseData struct {
 	Path          string            `json:"path"`
 	Propagate     *types.CustomBool `json:"propagate,omitempty"`
 	RoleID        string            `json:"roleid"`
@@ -20,8 +22,8 @@ type VirtualEnvironmentACLGetResponseData struct {
 	UserOrGroupID string            `json:"ugid"`
 }
 
-// VirtualEnvironmentACLUpdateRequestBody contains the data for an access control list update request.
-type VirtualEnvironmentACLUpdateRequestBody struct {
+// ACLUpdateRequestBody contains the data for an access control list update request.
+type ACLUpdateRequestBody struct {
 	Delete    *types.CustomBool `json:"delete,omitempty"    url:"delete,omitempty,int"`
 	Groups    []string          `json:"groups,omitempty"    url:"groups,omitempty,comma"`
 	Path      string            `json:"path"                url:"path"`

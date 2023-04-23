@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -19,7 +21,7 @@ func (c *VirtualEnvironmentClient) CloneContainer(
 	ctx context.Context,
 	nodeName string,
 	vmID int,
-	d *VirtualEnvironmentContainerCloneRequestBody,
+	d *ContainerCloneRequestBody,
 ) error {
 	return c.DoRequest(
 		ctx,
@@ -34,7 +36,7 @@ func (c *VirtualEnvironmentClient) CloneContainer(
 func (c *VirtualEnvironmentClient) CreateContainer(
 	ctx context.Context,
 	nodeName string,
-	d *VirtualEnvironmentContainerCreateRequestBody,
+	d *ContainerCreateRequestBody,
 ) error {
 	return c.DoRequest(ctx, http.MethodPost, fmt.Sprintf("nodes/%s/lxc", url.PathEscape(nodeName)), d, nil)
 }
@@ -59,8 +61,8 @@ func (c *VirtualEnvironmentClient) GetContainer(
 	ctx context.Context,
 	nodeName string,
 	vmID int,
-) (*VirtualEnvironmentContainerGetResponseData, error) {
-	resBody := &VirtualEnvironmentContainerGetResponseBody{}
+) (*ContainerGetResponseData, error) {
+	resBody := &ContainerGetResponseBody{}
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -69,7 +71,7 @@ func (c *VirtualEnvironmentClient) GetContainer(
 		resBody,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving container: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -84,8 +86,8 @@ func (c *VirtualEnvironmentClient) GetContainerStatus(
 	ctx context.Context,
 	nodeName string,
 	vmID int,
-) (*VirtualEnvironmentContainerGetStatusResponseData, error) {
-	resBody := &VirtualEnvironmentContainerGetStatusResponseBody{}
+) (*ContainerGetStatusResponseData, error) {
+	resBody := &ContainerGetStatusResponseBody{}
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -94,7 +96,7 @@ func (c *VirtualEnvironmentClient) GetContainerStatus(
 		resBody,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving container status: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -109,7 +111,7 @@ func (c *VirtualEnvironmentClient) RebootContainer(
 	ctx context.Context,
 	nodeName string,
 	vmID int,
-	d *VirtualEnvironmentContainerRebootRequestBody,
+	d *ContainerRebootRequestBody,
 ) error {
 	return c.DoRequest(
 		ctx,
@@ -125,7 +127,7 @@ func (c *VirtualEnvironmentClient) ShutdownContainer(
 	ctx context.Context,
 	nodeName string,
 	vmID int,
-	d *VirtualEnvironmentContainerShutdownRequestBody,
+	d *ContainerShutdownRequestBody,
 ) error {
 	return c.DoRequest(
 		ctx,
@@ -171,7 +173,7 @@ func (c *VirtualEnvironmentClient) UpdateContainer(
 	ctx context.Context,
 	nodeName string,
 	vmID int,
-	d *VirtualEnvironmentContainerUpdateRequestBody,
+	d *ContainerUpdateRequestBody,
 ) error {
 	return c.DoRequest(
 		ctx,
@@ -183,8 +185,6 @@ func (c *VirtualEnvironmentClient) UpdateContainer(
 }
 
 // WaitForContainerState waits for a container to reach a specific state.
-//
-//nolint:dupl
 func (c *VirtualEnvironmentClient) WaitForContainerState(
 	ctx context.Context,
 	nodeName string,
@@ -204,7 +204,7 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(
 		if int64(timeElapsed.Seconds())%timeDelay == 0 {
 			data, err := c.GetContainerStatus(ctx, nodeName, vmID)
 			if err != nil {
-				return err
+				return fmt.Errorf("error retrieving container status: %w", err)
 			}
 
 			if data.Status == state {
@@ -219,7 +219,7 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(
 		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return fmt.Errorf("context error: %w", ctx.Err())
 		}
 	}
 
@@ -231,8 +231,6 @@ func (c *VirtualEnvironmentClient) WaitForContainerState(
 }
 
 // WaitForContainerLock waits for a container lock to be released.
-//
-//nolint:dupl
 func (c *VirtualEnvironmentClient) WaitForContainerLock(
 	ctx context.Context,
 	nodeName string,
@@ -252,7 +250,7 @@ func (c *VirtualEnvironmentClient) WaitForContainerLock(
 
 			if err != nil {
 				if !ignoreErrorResponse {
-					return err
+					return fmt.Errorf("error retrieving container status: %w", err)
 				}
 			} else if data.Lock == nil || *data.Lock == "" {
 				return nil
@@ -266,7 +264,7 @@ func (c *VirtualEnvironmentClient) WaitForContainerLock(
 		timeElapsed = time.Since(timeStart)
 
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return fmt.Errorf("context error: %w", ctx.Err())
 		}
 	}
 

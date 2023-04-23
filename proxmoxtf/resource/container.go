@@ -694,7 +694,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	fullCopy := types.CustomBool(true)
 
-	cloneBody := &proxmox.VirtualEnvironmentContainerCloneRequestBody{
+	cloneBody := &proxmox.ContainerCloneRequestBody{
 		FullCopy: &fullCopy,
 		VMIDNew:  vmID,
 	}
@@ -736,7 +736,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
-	updateBody := &proxmox.VirtualEnvironmentContainerUpdateRequestBody{}
+	updateBody := &proxmox.ContainerUpdateRequestBody{}
 
 	console := d.Get(mkResourceVirtualEnvironmentContainerConsole).([]interface{})
 
@@ -841,7 +841,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 			if len(keys) > 0 {
 				initializationUserAccountKeys := make(
-					proxmox.VirtualEnvironmentContainerCustomSSHKeys,
+					proxmox.ContainerCustomSSHKeys,
 					len(keys),
 				)
 
@@ -891,13 +891,13 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	networkInterfaceArray := make(
-		proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+		proxmox.ContainerCustomNetworkInterfaceArray,
 		len(networkInterface),
 	)
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
-		networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
+		networkInterfaceObject := proxmox.ContainerCustomNetworkInterface{}
 
 		bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -1063,12 +1063,12 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
 
-	var rootFS *proxmox.VirtualEnvironmentContainerCustomRootFS
+	var rootFS *proxmox.ContainerCustomRootFS
 	diskSize := diskBlock[mkResourceVirtualEnvironmentContainerDiskSize].(int)
 	if diskSize != dvResourceVirtualEnvironmentContainerDiskSize && diskDatastoreID != "" {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
-		rootFS = &proxmox.VirtualEnvironmentContainerCustomRootFS{
+		rootFS = &proxmox.ContainerCustomRootFS{
 			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
 		}
 	}
@@ -1085,7 +1085,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	nesting := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
-	features := proxmox.VirtualEnvironmentContainerCustomFeatures{
+	features := proxmox.ContainerCustomFeatures{
 		Nesting: &nesting,
 	}
 
@@ -1097,7 +1097,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	var initializationIPConfigIPv4Gateway []string
 	var initializationIPConfigIPv6Address []string
 	var initializationIPConfigIPv6Gateway []string
-	initializationUserAccountKeys := proxmox.VirtualEnvironmentContainerCustomSSHKeys{}
+	initializationUserAccountKeys := proxmox.ContainerCustomSSHKeys{}
 	initializationUserAccountPassword := dvResourceVirtualEnvironmentContainerInitializationUserAccountPassword
 
 	if len(initialization) > 0 {
@@ -1159,7 +1159,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentContainerInitializationUserAccountKeys].([]interface{})
 			initializationUserAccountKeys = make(
-				proxmox.VirtualEnvironmentContainerCustomSSHKeys,
+				proxmox.ContainerCustomSSHKeys,
 				len(keys),
 			)
 
@@ -1187,13 +1187,13 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 	networkInterfaceArray := make(
-		proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+		proxmox.ContainerCustomNetworkInterfaceArray,
 		len(networkInterface),
 	)
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
-		networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
+		networkInterfaceObject := proxmox.ContainerCustomNetworkInterface{}
 
 		bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -1277,7 +1277,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	// Attempt to create the resource using the retrieved values.
-	createBody := proxmox.VirtualEnvironmentContainerCreateRequestBody{
+	createBody := proxmox.ContainerCreateRequestBody{
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
@@ -1410,7 +1410,7 @@ func containerGetExistingNetworkInterface(
 	}
 
 	var networkInterfaces []interface{}
-	networkInterfaceArray := []*proxmox.VirtualEnvironmentContainerCustomNetworkInterface{
+	networkInterfaceArray := []*proxmox.ContainerCustomNetworkInterface{
 		containerInfo.NetworkInterface0,
 		containerInfo.NetworkInterface1,
 		containerInfo.NetworkInterface2,
@@ -1714,7 +1714,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	var ipConfigList []interface{}
-	networkInterfaceArray := []*proxmox.VirtualEnvironmentContainerCustomNetworkInterface{
+	networkInterfaceArray := []*proxmox.ContainerCustomNetworkInterface{
 		containerConfig.NetworkInterface0,
 		containerConfig.NetworkInterface1,
 		containerConfig.NetworkInterface2,
@@ -1981,7 +1981,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Prepare the new request object.
-	updateBody := proxmox.VirtualEnvironmentContainerUpdateRequestBody{
+	updateBody := proxmox.ContainerUpdateRequestBody{
 		Delete: []string{},
 	}
 
@@ -2163,13 +2163,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	if d.HasChange(mkResourceVirtualEnvironmentContainerInitialization) ||
 		d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
 		networkInterfaceArray := make(
-			proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+			proxmox.ContainerCustomNetworkInterfaceArray,
 			len(networkInterface),
 		)
 
 		for ni, nv := range networkInterface {
 			networkInterfaceMap := nv.(map[string]interface{})
-			networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
+			networkInterfaceObject := proxmox.ContainerCustomNetworkInterface{}
 
 			bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 			enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -2292,7 +2292,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := 300
 
-			err = veClient.ShutdownContainer(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+			err = veClient.ShutdownContainer(ctx, nodeName, vmID, &proxmox.ContainerShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			})
@@ -2317,7 +2317,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			ctx,
 			nodeName,
 			vmID,
-			&proxmox.VirtualEnvironmentContainerRebootRequestBody{
+			&proxmox.ContainerRebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
 		)
@@ -2356,7 +2356,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 			ctx,
 			nodeName,
 			vmID,
-			&proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+			&proxmox.ContainerShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			},

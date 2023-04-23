@@ -31,7 +31,7 @@ type VirtualEnvironmentClient struct {
 	SSHAgent       bool
 	SSHAgentSocket string
 
-	authenticationData *VirtualEnvironmentAuthenticationResponseData
+	authenticationData *AuthenticationResponseData
 	httpClient         *http.Client
 }
 

@@ -16,7 +16,7 @@ import (
 func (c *VirtualEnvironmentClient) DeleteCertificate(
 	ctx context.Context,
 	nodeName string,
-	d *VirtualEnvironmentCertificateDeleteRequestBody,
+	d *CertificateDeleteRequestBody,
 ) error {
 	return c.DoRequest(
 		ctx,
@@ -31,8 +31,8 @@ func (c *VirtualEnvironmentClient) DeleteCertificate(
 func (c *VirtualEnvironmentClient) ListCertificates(
 	ctx context.Context,
 	nodeName string,
-) (*[]VirtualEnvironmentCertificateListResponseData, error) {
-	resBody := &VirtualEnvironmentCertificateListResponseBody{}
+) (*[]CertificateListResponseData, error) {
+	resBody := &CertificateListResponseBody{}
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -41,7 +41,7 @@ func (c *VirtualEnvironmentClient) ListCertificates(
 		resBody,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving certificate list: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -55,7 +55,7 @@ func (c *VirtualEnvironmentClient) ListCertificates(
 func (c *VirtualEnvironmentClient) UpdateCertificate(
 	ctx context.Context,
 	nodeName string,
-	d *VirtualEnvironmentCertificateUpdateRequestBody,
+	d *CertificateUpdateRequestBody,
 ) error {
 	return c.DoRequest(
 		ctx,

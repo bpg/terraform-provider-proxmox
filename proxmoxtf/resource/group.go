@@ -118,7 +118,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+		aclBody := &proxmox.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Groups:    []string{groupID},
 			Path:      aclEntry[mkResourceVirtualEnvironmentGroupACLPath].(string),
@@ -225,7 +225,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+		aclBody := &proxmox.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Groups:    []string{groupID},
 			Path:      aclEntry[mkResourceVirtualEnvironmentGroupACLPath].(string),
@@ -248,7 +248,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+		aclBody := &proxmox.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Groups:    []string{groupID},
 			Path:      aclEntry[mkResourceVirtualEnvironmentGroupACLPath].(string),
@@ -282,7 +282,7 @@ func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+		aclBody := &proxmox.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Groups:    []string{groupID},
 			Path:      aclEntry[mkResourceVirtualEnvironmentGroupACLPath].(string),

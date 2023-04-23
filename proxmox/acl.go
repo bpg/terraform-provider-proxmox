@@ -1,24 +1,25 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 )
 
 // GetACL retrieves the access control list.
-func (c *VirtualEnvironmentClient) GetACL(
-	ctx context.Context,
-) ([]*VirtualEnvironmentACLGetResponseData, error) {
-	resBody := &VirtualEnvironmentACLGetResponseBody{}
+func (c *VirtualEnvironmentClient) GetACL(ctx context.Context) ([]*ACLGetResponseData, error) {
+	resBody := &ACLGetResponseBody{}
 	err := c.DoRequest(ctx, http.MethodGet, "access/acl", nil, resBody)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get access control list: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -33,9 +34,6 @@ func (c *VirtualEnvironmentClient) GetACL(
 }
 
 // UpdateACL updates the access control list.
-func (c *VirtualEnvironmentClient) UpdateACL(
-	ctx context.Context,
-	d *VirtualEnvironmentACLUpdateRequestBody,
-) error {
+func (c *VirtualEnvironmentClient) UpdateACL(ctx context.Context, d *ACLUpdateRequestBody) error {
 	return c.DoRequest(ctx, http.MethodPut, "access/acl", d, nil)
 }

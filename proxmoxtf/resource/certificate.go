@@ -139,7 +139,7 @@ func certificateCreate(ctx context.Context, d *schema.ResourceData, m interface{
 	return nil
 }
 
-func certificateGetUpdateBody(d *schema.ResourceData) *proxmox.VirtualEnvironmentCertificateUpdateRequestBody {
+func certificateGetUpdateBody(d *schema.ResourceData) *proxmox.CertificateUpdateRequestBody {
 	certificate := d.Get(mkResourceVirtualEnvironmentCertificateCertificate).(string)
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
 	overwrite := types.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
@@ -159,7 +159,7 @@ func certificateGetUpdateBody(d *schema.ResourceData) *proxmox.VirtualEnvironmen
 
 	restart := types.CustomBool(true)
 
-	body := &proxmox.VirtualEnvironmentCertificateUpdateRequestBody{
+	body := &proxmox.CertificateUpdateRequestBody{
 		Certificates: combinedCertificates,
 		Force:        &force,
 		PrivateKey:   &privateKey,
@@ -331,7 +331,7 @@ func certificateDelete(ctx context.Context, d *schema.ResourceData, m interface{
 	err = veClient.DeleteCertificate(
 		ctx,
 		nodeName,
-		&proxmox.VirtualEnvironmentCertificateDeleteRequestBody{
+		&proxmox.CertificateDeleteRequestBody{
 			Restart: &restart,
 		},
 	)

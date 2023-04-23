@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -64,12 +66,14 @@ func (c *VirtualEnvironmentClient) Authenticate(ctx context.Context, reset bool)
 		return fmt.Errorf("failed to retrieve authentication response: %w", err)
 	}
 
+	defer CloseOrLogError(ctx)(res.Body)
+
 	err = c.ValidateResponseCode(res)
 	if err != nil {
 		return err
 	}
 
-	resBody := VirtualEnvironmentAuthenticationResponseBody{}
+	resBody := AuthenticationResponseBody{}
 	err = json.NewDecoder(res.Body).Decode(&resBody)
 	if err != nil {
 		return fmt.Errorf("failed to decode authentication response, %w", err)
@@ -110,7 +114,7 @@ func (c *VirtualEnvironmentClient) AuthenticateRequest(ctx context.Context, req 
 		Value: *c.authenticationData.Ticket,
 	})
 
-	if req.Method != "GET" {
+	if req.Method != http.MethodGet {
 		req.Header.Add("CSRFPreventionToken", *c.authenticationData.CSRFPreventionToken)
 	}
 

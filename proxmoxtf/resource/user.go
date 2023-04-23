@@ -207,7 +207,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+		aclBody := &proxmox.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
 			Propagate: &aclPropagate,
@@ -403,7 +403,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+		aclBody := &proxmox.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
 			Propagate: &aclPropagate,
@@ -426,7 +426,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+		aclBody := &proxmox.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
 			Propagate: &aclPropagate,
@@ -460,7 +460,7 @@ func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.VirtualEnvironmentACLUpdateRequestBody{
+		aclBody := &proxmox.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
 			Propagate: &aclPropagate,

@@ -1,23 +1,25 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
 import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
-// VirtualEnvironmentCertificateDeleteRequestBody contains the data for a custom certificate delete request.
-type VirtualEnvironmentCertificateDeleteRequestBody struct {
+// CertificateDeleteRequestBody contains the data for a custom certificate delete request.
+type CertificateDeleteRequestBody struct {
 	Restart *types.CustomBool `json:"restart,omitempty" url:"restart,omitempty,int"`
 }
 
-// VirtualEnvironmentCertificateListResponseBody contains the body from a certificate list response.
-type VirtualEnvironmentCertificateListResponseBody struct {
-	Data *[]VirtualEnvironmentCertificateListResponseData `json:"data,omitempty"`
+// CertificateListResponseBody contains the body from a certificate list response.
+type CertificateListResponseBody struct {
+	Data *[]CertificateListResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentCertificateListResponseData contains the data from a certificate list response.
-type VirtualEnvironmentCertificateListResponseData struct {
+// CertificateListResponseData contains the data from a certificate list response.
+type CertificateListResponseData struct {
 	Certificates            *string                `json:"pem,omitempty"`
 	FileName                *string                `json:"filename,omitempty"`
 	Fingerprint             *string                `json:"fingerprint,omitempty"`
@@ -30,8 +32,8 @@ type VirtualEnvironmentCertificateListResponseData struct {
 	SubjectAlternativeNames *[]string              `json:"san,omitempty"`
 }
 
-// VirtualEnvironmentCertificateUpdateRequestBody contains the body for a custom certificate update request.
-type VirtualEnvironmentCertificateUpdateRequestBody struct {
+// CertificateUpdateRequestBody contains the body for a custom certificate update request.
+type CertificateUpdateRequestBody struct {
 	Certificates string            `json:"certificates"      url:"certificates"`
 	Force        *types.CustomBool `json:"force,omitempty"   url:"force,omitempty,int"`
 	PrivateKey   *string           `json:"key,omitempty"     url:"key,omitempty"`
