@@ -8,7 +8,9 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -17,16 +19,17 @@ import (
 )
 
 const (
-	dvProviderOTP = ""
-
+	dvProviderOTP                = ""
 	mkProviderVirtualEnvironment = "virtual_environment"
 	mkProviderEndpoint           = "endpoint"
 	mkProviderInsecure           = "insecure"
 	mkProviderOTP                = "otp"
 	mkProviderPassword           = "password"
 	mkProviderUsername           = "username"
-	mkProviderSSHUsername        = "sshusername"
-	mkProviderAgent              = "agent"
+	mkProviderSSH                = "ssh"
+	mkProviderSSHUsername        = "username"
+	mkProviderSSHPassword        = "password"
+	mkProviderSSHAgent           = "agent"
 )
 
 // ProxmoxVirtualEnvironment returns the object for this provider.
@@ -39,34 +42,44 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 	}
 }
 
-func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
 	var veClient *proxmox.VirtualEnvironmentClient
 
 	// Initialize the client for the Virtual Environment, if required.
 	veConfigBlock := d.Get(mkProviderVirtualEnvironment).([]interface{})
 
+	tflog.Info(ctx, fmt.Sprintf("veConfigBlock is  %v", veConfigBlock))
+
 	if len(veConfigBlock) > 0 {
 		veConfig := veConfigBlock[0].(map[string]interface{})
+		veSSHConfig := veConfig[mkProviderSSH].(map[string]interface{})
 
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
 			veConfig[mkProviderEndpoint].(string),
 			veConfig[mkProviderUsername].(string),
-			veConfig[mkProviderSSHUsername].(string),
+			veConfig[mkProviderSSH].(map[string]interface{})[mkProviderSSHUsername].(string),
 			veConfig[mkProviderPassword].(string),
-			veConfig[mkProviderOTP].(string),
 			veConfig[mkProviderInsecure].(bool),
-			veConfig[mkProviderAgent].(bool),
+			veSSHConfig[mkProviderSSHUsername].(string),
+			veSSHConfig[mkProviderSSHPassword].(string),
+			veSSHConfig[mkProviderSSHAgent].(bool),
 		)
 	} else {
+
+		sshconf := d.Get(mkProviderSSH).(*schema.Set).List()[0].(map[string]interface{})
+
+		tflog.Info(ctx, fmt.Sprintf("sshconf is  %v", sshconf))
+
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
 			d.Get(mkProviderEndpoint).(string),
 			d.Get(mkProviderUsername).(string),
-			d.Get(mkProviderSSHUsername).(string),
 			d.Get(mkProviderPassword).(string),
 			d.Get(mkProviderOTP).(string),
 			d.Get(mkProviderInsecure).(bool),
-			d.Get(mkProviderAgent).(bool),
+			sshconf[mkProviderSSHUsername].(string),
+			sshconf[mkProviderSSHPassword].(string),
+			sshconf[mkProviderSSHAgent].(bool),
 		)
 	}
 

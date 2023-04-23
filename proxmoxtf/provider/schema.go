@@ -98,34 +98,50 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			},
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
-		mkProviderSSHUsername: {
-			Type:        schema.TypeString,
+		mkProviderSSH: {
+			Type:        schema.TypeSet,
 			Optional:    true,
-			Description: "Used to override the ssh username",
-			DefaultFunc: schema.MultiEnvDefaultFunc(
-				[]string{"PROXMOX_VE_SSHUSERNAME", "PM_VE_SSHUSERNAME"},
-				nil,
-			),
-			AtLeastOneOf: []string{
-				mkProviderSSHUsername,
-				fmt.Sprintf("%s.0.%s", mkProviderVirtualEnvironment, mkProviderSSHUsername),
-			},
-			ValidateFunc: validation.StringIsNotEmpty,
-		},
-		mkProviderAgent: {
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Description: "Whether to use ssh-agent as ssh authentication mechanism",
-			DefaultFunc: func() (interface{}, error) {
-				for _, k := range []string{"PROXMOX_VE_AGENT", "PM_VE_AGENT"} {
-					v := os.Getenv(k)
+			MaxItems:    1,
+			Description: "SSH configuration used to perform actions not possible by proxmox api like file uploads.",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkProviderSSHUsername: {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: fmt.Sprintf("The username used for ssh credentials, defaults to user specified in '%s'", mkProviderUsername),
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"PROXMOX_VE_SSH_USERNAME", "PM_VE_SSH_USERNAME"},
+							nil,
+						),
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHPassword: {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: fmt.Sprintf("The password used for ssh credentials, defaults to password specified in '%s'", mkProviderPassword),
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"PROXMOX_VE_SSH_PASSWORD", "PM_VE_SSH_PASSWORD"},
+							nil,
+						),
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHAgent: {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Description: "Whether to use ssh-agent as ssh authentication mechanism",
+						DefaultFunc: func() (interface{}, error) {
+							for _, k := range []string{"PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT"} {
+								v := os.Getenv(k)
 
-					if v == "true" || v == "1" {
-						return true, nil
-					}
-				}
+								if v == "true" || v == "1" {
+									return true, nil
+								}
+							}
 
-				return false, nil
+							return false, nil
+						},
+					},
+				},
 			},
 		},
 	}

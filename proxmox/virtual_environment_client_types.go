@@ -25,7 +25,8 @@ type VirtualEnvironmentClient struct {
 	Password    string
 	Username    string
 	SSHUsername string
-	Agent       bool
+	SSHPassword string
+	SSHAgent    bool
 
 	authenticationData *VirtualEnvironmentAuthenticationResponseData
 	httpClient         *http.Client

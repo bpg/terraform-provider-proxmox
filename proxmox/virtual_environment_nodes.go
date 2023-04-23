@@ -195,12 +195,6 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		return nil, err
 	}
 
-	ur := strings.Split(c.Username, "@")
-	sshuser := ur[0]
-	if(c.SSHUsername != ""){
-		sshuser = c.SSHUsername
-	}
-
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
@@ -252,19 +246,15 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 	})
 
 	sshConfig := &ssh.ClientConfig{
-		User:              sshuser,
-		Auth:              []ssh.AuthMethod{ssh.Password(c.Password)},
+		User:              c.SSHUsername,
+		Auth:              []ssh.AuthMethod{ssh.Password(c.SSHPassword)},
 		HostKeyCallback:   cb,
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
 	}
 
-	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.Agent))
+	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.SSHAgent))
 
-	if c.Agent {
-
-		if runtime.GOOS != "linux" {
-			return nil, fmt.Errorf("ssh agent authentication method is only supported on linux, please remove 'agent = true' from the provider configuration")
-		}
+	if c.SSHAgent {
 
 		sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
 
@@ -281,7 +271,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		ag := agent.NewClient(conn)
 
 		sshConfig = &ssh.ClientConfig{
-			User:              sshuser,
+			User:              c.SSHUsername,
 			Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers)},
 			HostKeyCallback:   cb,
 			HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
@@ -295,7 +285,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 
 	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
 		"host": sshHost,
-		"user": ur[0],
+		"user": c.SSHUsername,
 	})
 	return sshClient, nil
 }
