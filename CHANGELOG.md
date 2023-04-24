@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.18.0...v0.18.1) (2023-04-23)
+
+
+### Bug Fixes
+
+* **file:** fix SSH file upload on Windows ([#308](https://github.com/bpg/terraform-provider-proxmox/issues/308)) ([7c9505d](https://github.com/bpg/terraform-provider-proxmox/commit/7c9505d11f7cc99f6052e814f549004fe97e8b49))
+* **firewall:** use correct default value for firewall ([#312](https://github.com/bpg/terraform-provider-proxmox/issues/312)) ([496bda4](https://github.com/bpg/terraform-provider-proxmox/commit/496bda4edcab1e52a3877581828080f62ef525d7))
+
 ## [0.18.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.17.1...v0.18.0) (2023-04-18)
 
 
