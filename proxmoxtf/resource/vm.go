@@ -990,7 +990,7 @@ func VM() *schema.Resource {
 							Type:        schema.TypeBool,
 							Description: "Whether this interface's firewall rules should be used",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceFirewall,
+							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceEnabled,
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress: {
 							Type:        schema.TypeString,
