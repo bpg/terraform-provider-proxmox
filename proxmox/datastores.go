@@ -17,7 +17,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"golang.org/x/crypto/ssh"
@@ -184,13 +183,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 ) (*DatastoreUploadResponseBody, error) {
 	switch d.ContentType {
 	case "iso", "vztmpl":
-		tflog.Debug(ctx, "uploading file to datastore using PVE API", map[string]interface{}{
-			"node_name":    d.NodeName,
-			"datastore_id": d.DatastoreID,
-			"file_name":    d.FileName,
-			"content_type": d.ContentType,
-		})
-
 		r, w := io.Pipe()
 
 		defer func(r *io.PipeReader) {
@@ -235,7 +227,7 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 				return
 			}
 
-			_, err = io.Copy(part, d.File)
+			_, err = io.Copy(part, d.FileReader)
 
 			if err != nil {
 				return
@@ -319,19 +311,6 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 	default:
 		// We need to upload all other files using SFTP due to API limitations.
 		// Hopefully, this will not be required in future releases of Proxmox VE.
-		tflog.Debug(ctx, "uploading file to datastore using SFTP", map[string]interface{}{
-			"node_name":    d.NodeName,
-			"datastore_id": d.DatastoreID,
-			"file_name":    d.FileName,
-			"content_type": d.ContentType,
-		})
-
-		fileInfo, err := d.File.Stat()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get file info: %w", err)
-		}
-		fileSize := fileInfo.Size()
-
 		sshClient, err := c.OpenNodeShell(ctx, d.NodeName)
 		if err != nil {
 			return nil, err
@@ -358,8 +337,8 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 		if d.ContentType != "" {
 			remoteFileDir = filepath.Join(remoteFileDir, d.ContentType)
 		}
-		remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, `/`)
 
+		remoteFilePath := filepath.Join(remoteFileDir, d.FileName)
 		sftpClient, err := sftp.NewClient(sshClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create SFTP client: %w", err)
@@ -393,18 +372,11 @@ func (c *VirtualEnvironmentClient) UploadFileToDatastore(
 			}
 		}(remoteFile)
 
-		bytesUploaded, err := remoteFile.ReadFrom(d.File)
+		_, err = remoteFile.ReadFrom(d.FileReader)
 		if err != nil {
 			return nil, fmt.Errorf("failed to upload file %s: %w", remoteFilePath, err)
 		}
-		if bytesUploaded != fileSize {
-			return nil, fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
-				remoteFilePath, bytesUploaded, fileSize)
-		}
-		tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
-			"remote_file_path": remoteFilePath,
-			"size":             bytesUploaded,
-		})
+
 		return &DatastoreUploadResponseBody{}, nil
 	}
 }

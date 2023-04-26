@@ -5,7 +5,7 @@
 package proxmox
 
 import (
-	"os"
+	"io"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -88,11 +88,11 @@ type DatastoreListResponseData struct {
 
 // DatastoreUploadRequestBody contains the body for a datastore upload request.
 type DatastoreUploadRequestBody struct {
-	ContentType string   `json:"content,omitempty"`
-	DatastoreID string   `json:"storage,omitempty"`
-	FileName    string   `json:"filename,omitempty"`
-	NodeName    string   `json:"node,omitempty"`
-	File        *os.File `json:"-"`
+	ContentType string    `json:"content,omitempty"`
+	DatastoreID string    `json:"storage,omitempty"`
+	FileName    string    `json:"filename,omitempty"`
+	FileReader  io.Reader `json:"-"`
+	NodeName    string    `json:"node,omitempty"`
 }
 
 // DatastoreUploadResponseBody contains the body from a datastore upload response.

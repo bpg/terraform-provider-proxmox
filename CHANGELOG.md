@@ -1,20 +1,5 @@
 # Changelog
 
-## [0.18.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.17.1...v0.18.0) (2023-04-18)
-
-
-### Features
-
-* **vm:** Wait for the VM creation task to complete ([#305](https://github.com/bpg/terraform-provider-proxmox/issues/305)) ([8addb1d](https://github.com/bpg/terraform-provider-proxmox/commit/8addb1d1d547197ab7502b33105a17737c06788a))
-
-
-### Miscellaneous
-
-* **deps:** bump commonmarker from 0.23.8 to 0.23.9 in /docs ([#298](https://github.com/bpg/terraform-provider-proxmox/issues/298)) ([fc4a6e8](https://github.com/bpg/terraform-provider-proxmox/commit/fc4a6e8ace24db9a44102b878f09bd5d30329bd8))
-* **deps:** bump github.com/goreleaser/goreleaser from 1.16.2 to 1.17.1 in /tools ([#303](https://github.com/bpg/terraform-provider-proxmox/issues/303)) ([d24f60a](https://github.com/bpg/terraform-provider-proxmox/commit/d24f60aaa22867d536a35712a0f7d8209a7d1ac2))
-* **deps:** bump golang.org/x/crypto from 0.7.0 to 0.8.0 ([#296](https://github.com/bpg/terraform-provider-proxmox/issues/296)) ([a896b50](https://github.com/bpg/terraform-provider-proxmox/commit/a896b5051ec6103cd8449234102917d9f17a1011))
-* **deps:** bump nokogiri from 1.14.2 to 1.14.3 in /docs ([#299](https://github.com/bpg/terraform-provider-proxmox/issues/299)) ([6722492](https://github.com/bpg/terraform-provider-proxmox/commit/672249246f921eaba7ffa5020c0427bf95c3ed29))
-
 ## [0.17.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.17.0...v0.17.1) (2023-04-10)
 
 

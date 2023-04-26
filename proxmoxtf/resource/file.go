@@ -382,7 +382,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		ContentType: *contentType,
 		DatastoreID: datastoreID,
 		FileName:    *fileName,
-		File:        file,
+		FileReader:  file,
 		NodeName:    nodeName,
 	}
 

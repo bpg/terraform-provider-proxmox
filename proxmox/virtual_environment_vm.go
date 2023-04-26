@@ -77,45 +77,8 @@ func (c *VirtualEnvironmentClient) CreateVM(
 	ctx context.Context,
 	nodeName string,
 	d *VirtualEnvironmentVMCreateRequestBody,
-	timeout int,
 ) error {
-	taskID, err := c.CreateVMAsync(ctx, nodeName, d)
-	if err != nil {
-		return err
-	}
-
-	err = c.WaitForNodeTask(ctx, nodeName, *taskID, timeout, 1)
-
-	if err != nil {
-		return fmt.Errorf("error waiting for VM creation: %w", err)
-	}
-
-	return nil
-}
-
-// CreateVMAsync creates a virtual machine asynchronously.
-func (c *VirtualEnvironmentClient) CreateVMAsync(
-	ctx context.Context,
-	nodeName string,
-	d *VirtualEnvironmentVMCreateRequestBody,
-) (*string, error) {
-	resBody := &VirtualEnvironmentVMCreateResponseBody{}
-	err := c.DoRequest(
-		ctx,
-		http.MethodPost,
-		fmt.Sprintf("nodes/%s/qemu", url.PathEscape(nodeName)),
-		d,
-		resBody,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
-	}
-
-	return resBody.Data, nil
+	return c.DoRequest(ctx, http.MethodPost, fmt.Sprintf("nodes/%s/qemu", url.PathEscape(nodeName)), d, nil)
 }
 
 // DeleteVM deletes a virtual machine.
