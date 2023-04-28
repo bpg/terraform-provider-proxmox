@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"runtime"
 	"sort"
 	"strings"
 	"time"
