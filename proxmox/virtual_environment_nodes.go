@@ -255,27 +255,50 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.SSHAgent))
 
 	if c.SSHAgent {
-
-		sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
-
-		if sshAuthSock == "" {
-			return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: environment variable is empty, make sure ssh-agent is running or remove 'agent = true' from the provider configuration")
-		}
-
-		conn, err := net.Dial("unix", sshAuthSock)
-
+		sshClient, err := c.CreateSSHClientAgent(ctx, cb, kh, sshHost)
 		if err != nil {
-			return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: %v", err)
+			tflog.Error(ctx, "Failed ssh connection through agent, falling back to password authentication", map[string]interface{}{
+				"error": err,
+			})
+		} else {
+			return sshClient, nil
 		}
+	}
 
-		ag := agent.NewClient(conn)
+	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
+	}
 
-		sshConfig = &ssh.ClientConfig{
-			User:              c.SSHUsername,
-			Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers)},
-			HostKeyCallback:   cb,
-			HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
-		}
+	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
+		"host": sshHost,
+		"user": c.SSHUsername,
+	})
+	return sshClient, nil
+}
+
+// CreateSSHClientAgent establishes an ssh connection through the agent authentication mechanism
+func (c *VirtualEnvironmentClient) CreateSSHClientAgent(ctx context.Context, cb ssh.HostKeyCallback, kh knownhosts.HostKeyCallback, sshHost string) (*ssh.Client, error) {
+
+	sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
+
+	if sshAuthSock == "" {
+		return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: environment variable is empty, authentication will fall back to password")
+	}
+
+	conn, err := net.Dial("unix", sshAuthSock)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: %v", err)
+	}
+
+	ag := agent.NewClient(conn)
+
+	sshConfig := &ssh.ClientConfig{
+		User:              c.SSHUsername,
+		Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers), ssh.Password(c.SSHPassword)},
+		HostKeyCallback:   cb,
+		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
 	}
 
 	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
