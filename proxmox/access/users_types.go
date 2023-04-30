@@ -1,19 +1,21 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
-package proxmox
+package access
 
 import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
-// VirtualEnvironmentUserChangePasswordRequestBody contains the data for a user password change request.
-type VirtualEnvironmentUserChangePasswordRequestBody struct {
+// UserChangePasswordRequestBody contains the data for a user password change request.
+type UserChangePasswordRequestBody struct {
 	ID       string `json:"userid"   url:"userid"`
 	Password string `json:"password" url:"password"`
 }
 
-// VirtualEnvironmentUserCreateRequestBody contains the data for an user create request.
-type VirtualEnvironmentUserCreateRequestBody struct {
+// UserCreateRequestBody contains the data for an user create request.
+type UserCreateRequestBody struct {
 	Comment        *string                `json:"comment,omitempty"   url:"comment,omitempty"`
 	Email          *string                `json:"email,omitempty"     url:"email,omitempty"`
 	Enabled        *types.CustomBool      `json:"enable,omitempty"    url:"enable,omitempty,int"`
@@ -26,13 +28,13 @@ type VirtualEnvironmentUserCreateRequestBody struct {
 	Password       string                 `json:"password"            url:"password"`
 }
 
-// VirtualEnvironmentUserGetResponseBody contains the body from an user get response.
-type VirtualEnvironmentUserGetResponseBody struct {
-	Data *VirtualEnvironmentUserGetResponseData `json:"data,omitempty"`
+// UserGetResponseBody contains the body from an user get response.
+type UserGetResponseBody struct {
+	Data *UserGetResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentUserGetResponseData contains the data from an user get response.
-type VirtualEnvironmentUserGetResponseData struct {
+// UserGetResponseData contains the data from an user get response.
+type UserGetResponseData struct {
 	Comment        *string                `json:"comment,omitempty"`
 	Email          *string                `json:"email,omitempty"`
 	Enabled        *types.CustomBool      `json:"enable,omitempty"`
@@ -43,13 +45,13 @@ type VirtualEnvironmentUserGetResponseData struct {
 	LastName       *string                `json:"lastname,omitempty"`
 }
 
-// VirtualEnvironmentUserListResponseBody contains the body from an user list response.
-type VirtualEnvironmentUserListResponseBody struct {
-	Data []*VirtualEnvironmentUserListResponseData `json:"data,omitempty"`
+// UserListResponseBody contains the body from an user list response.
+type UserListResponseBody struct {
+	Data []*UserListResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentUserListResponseData contains the data from an user list response.
-type VirtualEnvironmentUserListResponseData struct {
+// UserListResponseData contains the data from an user list response.
+type UserListResponseData struct {
 	Comment        *string                `json:"comment,omitempty"`
 	Email          *string                `json:"email,omitempty"`
 	Enabled        *types.CustomBool      `json:"enable,omitempty"`
@@ -61,8 +63,8 @@ type VirtualEnvironmentUserListResponseData struct {
 	LastName       *string                `json:"lastname,omitempty"`
 }
 
-// VirtualEnvironmentUserUpdateRequestBody contains the data for an user update request.
-type VirtualEnvironmentUserUpdateRequestBody struct {
+// UserUpdateRequestBody contains the data for an user update request.
+type UserUpdateRequestBody struct {
 	Append         *types.CustomBool      `json:"append,omitempty"    url:"append,omitempty"`
 	Comment        *string                `json:"comment,omitempty"   url:"comment,omitempty"`
 	Email          *string                `json:"email,omitempty"     url:"email,omitempty"`

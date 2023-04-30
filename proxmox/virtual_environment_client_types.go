@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/container"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/vm"
@@ -52,6 +53,7 @@ type API interface {
 	Cluster() *cluster.Client
 	VM(nodeName string, vmID int) *vm.Client
 	Container(nodeName string, vmID int) *container.Client
+	Access() *access.Client
 }
 
 func (c *VirtualEnvironmentClient) API() API {
@@ -76,4 +78,8 @@ func (c *client) VM(nodeName string, vmID int) *vm.Client {
 
 func (c *client) Container(nodeName string, vmID int) *container.Client {
 	return &container.Client{Client: c.c, NodeName: nodeName, VMID: vmID}
+}
+
+func (c *client) Access() *access.Client {
+	return &access.Client{Client: c.c}
 }

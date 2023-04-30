@@ -120,12 +120,12 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	userID := d.Get(mkDataSourceVirtualEnvironmentUserUserID).(string)
-	v, err := veClient.GetUser(ctx, userID)
+	v, err := veClient.API().Access().GetUser(ctx, userID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL(ctx)
+	acl, err := veClient.API().Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

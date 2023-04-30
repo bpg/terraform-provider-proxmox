@@ -47,7 +47,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	roleID := d.Get(mkDataSourceVirtualEnvironmentRoleID).(string)
-	accessRole, err := veClient.GetRole(ctx, roleID)
+	accessRole, err := veClient.API().Access().GetRole(ctx, roleID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -59,7 +59,7 @@ func rolesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListRoles(ctx)
+	list, err := veClient.API().Access().ListRoles(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

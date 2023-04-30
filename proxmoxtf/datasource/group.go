@@ -83,12 +83,12 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	}
 
 	groupID := d.Get(mkDataSourceVirtualEnvironmentGroupID).(string)
-	group, err := veClient.GetGroup(ctx, groupID)
+	group, err := veClient.API().Access().GetGroup(ctx, groupID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL(ctx)
+	acl, err := veClient.API().Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -27,6 +27,10 @@ func (c *Client) aliasesPath() string {
 	return c.ExpandPath("firewall/aliases")
 }
 
+func (c *Client) aliasPath(name string) string {
+	return fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name))
+}
+
 // CreateAlias create an alias
 func (c *Client) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPost, c.aliasesPath(), d, nil)
@@ -38,13 +42,7 @@ func (c *Client) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) err
 
 // DeleteAlias delete an alias
 func (c *Client) DeleteAlias(ctx context.Context, name string) error {
-	err := c.DoRequest(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
-		nil,
-		nil,
-	)
+	err := c.DoRequest(ctx, http.MethodDelete, c.aliasPath(name), nil, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting alias '%s': %w", name, err)
 	}
@@ -54,13 +52,7 @@ func (c *Client) DeleteAlias(ctx context.Context, name string) error {
 // GetAlias retrieves an alias
 func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseData, error) {
 	resBody := &AliasGetResponseBody{}
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
-		nil,
-		resBody,
-	)
+	err := c.DoRequest(ctx, http.MethodGet, c.aliasPath(name), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving alias '%s': %w", name, err)
 	}
@@ -93,13 +85,7 @@ func (c *Client) ListAliases(ctx context.Context) ([]*AliasGetResponseData, erro
 
 // UpdateAlias updates an alias.
 func (c *Client) UpdateAlias(ctx context.Context, name string, d *AliasUpdateRequestBody) error {
-	err := c.DoRequest(
-		ctx,
-		http.MethodPut,
-		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
-		d,
-		nil,
-	)
+	err := c.DoRequest(ctx, http.MethodPut, c.aliasPath(name), d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating alias '%s': %w", name, err)
 	}

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package proxmox
+package access
 
 import (
 	"context"
@@ -14,10 +14,14 @@ import (
 	"sort"
 )
 
+func (c *Client) aclPath() string {
+	return c.ExpandPath("acl")
+}
+
 // GetACL retrieves the access control list.
-func (c *VirtualEnvironmentClient) GetACL(ctx context.Context) ([]*ACLGetResponseData, error) {
+func (c *Client) GetACL(ctx context.Context) ([]*ACLGetResponseData, error) {
 	resBody := &ACLGetResponseBody{}
-	err := c.DoRequest(ctx, http.MethodGet, "access/acl", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, c.aclPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get access control list: %w", err)
 	}
@@ -34,6 +38,10 @@ func (c *VirtualEnvironmentClient) GetACL(ctx context.Context) ([]*ACLGetRespons
 }
 
 // UpdateACL updates the access control list.
-func (c *VirtualEnvironmentClient) UpdateACL(ctx context.Context, d *ACLUpdateRequestBody) error {
-	return c.DoRequest(ctx, http.MethodPut, "access/acl", d, nil)
+func (c *Client) UpdateACL(ctx context.Context, d *ACLUpdateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPut, c.aclPath(), d, nil)
+	if err != nil {
+		return fmt.Errorf("failed to update access control list: %w", err)
+	}
+	return nil
 }

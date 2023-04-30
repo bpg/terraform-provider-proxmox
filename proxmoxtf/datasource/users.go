@@ -102,7 +102,7 @@ func usersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListUsers(ctx)
+	list, err := veClient.API().Access().ListUsers(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

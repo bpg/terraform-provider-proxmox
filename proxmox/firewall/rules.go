@@ -46,6 +46,10 @@ func (c *Client) rulesPath() string {
 	return c.ExpandPath("firewall/rules")
 }
 
+func (c *Client) rulePath(pos int) string {
+	return fmt.Sprintf("%s/%d", c.rulesPath(), pos)
+}
+
 func (c *Client) GetRulesID() string {
 	return "rule-" + strconv.Itoa(schema.HashString(c.rulesPath()))
 }
@@ -62,13 +66,7 @@ func (c *Client) CreateRule(ctx context.Context, d *RuleCreateRequestBody) error
 // GetRule retrieves a firewall rule.
 func (c *Client) GetRule(ctx context.Context, pos int) (*RuleGetResponseData, error) {
 	resBody := &RuleGetResponseBody{}
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("%s/%d", c.rulesPath(), pos),
-		nil,
-		resBody,
-	)
+	err := c.DoRequest(ctx, http.MethodGet, c.rulePath(pos), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving firewall rule %d: %w", pos, err)
 	}
@@ -97,13 +95,7 @@ func (c *Client) ListRules(ctx context.Context) ([]*RuleListResponseData, error)
 
 // UpdateRule updates a firewall rule.
 func (c *Client) UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBody) error {
-	err := c.DoRequest(
-		ctx,
-		http.MethodPut,
-		fmt.Sprintf("%s/%d", c.rulesPath(), pos),
-		d,
-		nil,
-	)
+	err := c.DoRequest(ctx, http.MethodPut, c.rulePath(pos), d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating firewall rule %d: %w", pos, err)
 	}
@@ -112,13 +104,7 @@ func (c *Client) UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBo
 
 // DeleteRule deletes a firewall rule.
 func (c *Client) DeleteRule(ctx context.Context, pos int) error {
-	err := c.DoRequest(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("%s/%d", c.rulesPath(), pos),
-		nil,
-		nil,
-	)
+	err := c.DoRequest(ctx, http.MethodDelete, c.rulePath(pos), nil, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting firewall rule %d: %w", pos, err)
 	}

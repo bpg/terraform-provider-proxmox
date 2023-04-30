@@ -1,23 +1,26 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
 // Version retrieves the version information.
 func (c *VirtualEnvironmentClient) Version(
 	ctx context.Context,
-) (*VirtualEnvironmentVersionResponseData, error) {
-	resBody := &VirtualEnvironmentVersionResponseBody{}
+) (*VersionResponseData, error) {
+	resBody := &VersionResponseBody{}
 	err := c.DoRequest(ctx, http.MethodGet, "version", nil, resBody)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get version information: %w", err)
 	}
 
 	if resBody.Data == nil {

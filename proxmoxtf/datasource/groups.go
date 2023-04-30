@@ -49,7 +49,7 @@ func groupsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListGroups(ctx)
+	list, err := veClient.API().Access().ListGroups(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

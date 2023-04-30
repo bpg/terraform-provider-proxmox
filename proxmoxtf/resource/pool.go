@@ -97,7 +97,7 @@ func poolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	comment := d.Get(mkResourceVirtualEnvironmentPoolComment).(string)
 	poolID := d.Get(mkResourceVirtualEnvironmentPoolPoolID).(string)
 
-	body := &proxmox.VirtualEnvironmentPoolCreateRequestBody{
+	body := &proxmox.PoolCreateRequestBody{
 		Comment: &comment,
 		ID:      poolID,
 	}
@@ -179,7 +179,7 @@ func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	comment := d.Get(mkResourceVirtualEnvironmentPoolComment).(string)
 	poolID := d.Id()
 
-	body := &proxmox.VirtualEnvironmentPoolUpdateRequestBody{
+	body := &proxmox.PoolUpdateRequestBody{
 		Comment: &comment,
 	}
 

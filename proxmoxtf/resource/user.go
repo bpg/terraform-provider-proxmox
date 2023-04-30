@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -178,7 +178,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
 	userID := d.Get(mkResourceVirtualEnvironmentUserUserID).(string)
 
-	body := &proxmox.VirtualEnvironmentUserCreateRequestBody{
+	body := &access.UserCreateRequestBody{
 		Comment:        &comment,
 		Email:          &email,
 		Enabled:        &enabled,
@@ -191,7 +191,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Password:       password,
 	}
 
-	err = veClient.CreateUser(ctx, body)
+	err = veClient.API().Access().CreateUser(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -207,7 +207,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.ACLUpdateRequestBody{
+		aclBody := &access.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
 			Propagate: &aclPropagate,
@@ -215,7 +215,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(ctx, aclBody)
+		err := veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -232,7 +232,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	userID := d.Id()
-	user, err := veClient.GetUser(ctx, userID)
+	user, err := veClient.API().Access().GetUser(ctx, userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -242,7 +242,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL(ctx)
+	acl, err := veClient.API().Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -368,7 +368,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	keys := d.Get(mkResourceVirtualEnvironmentUserKeys).(string)
 	lastName := d.Get(mkResourceVirtualEnvironmentUserLastName).(string)
 
-	body := &proxmox.VirtualEnvironmentUserUpdateRequestBody{
+	body := &access.UserUpdateRequestBody{
 		Comment:        &comment,
 		Email:          &email,
 		Enabled:        &enabled,
@@ -380,14 +380,14 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	}
 
 	userID := d.Id()
-	err = veClient.UpdateUser(ctx, userID, body)
+	err = veClient.API().Access().UpdateUser(ctx, userID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentUserPassword) {
 		password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
-		err = veClient.ChangeUserPassword(ctx, userID, password)
+		err = veClient.API().Access().ChangeUserPassword(ctx, userID, password)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -403,7 +403,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.ACLUpdateRequestBody{
+		aclBody := &access.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
 			Propagate: &aclPropagate,
@@ -411,7 +411,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(ctx, aclBody)
+		err := veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -426,7 +426,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.ACLUpdateRequestBody{
+		aclBody := &access.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
 			Propagate: &aclPropagate,
@@ -434,7 +434,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(ctx, aclBody)
+		err := veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -460,7 +460,7 @@ func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.ACLUpdateRequestBody{
+		aclBody := &access.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
 			Propagate: &aclPropagate,
@@ -468,13 +468,13 @@ func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := veClient.UpdateACL(ctx, aclBody)
+		err := veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.DeleteUser(ctx, userID)
+	err = veClient.API().Access().DeleteUser(ctx, userID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

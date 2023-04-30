@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -97,12 +97,12 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	comment := d.Get(mkResourceVirtualEnvironmentGroupComment).(string)
 	groupID := d.Get(mkResourceVirtualEnvironmentGroupID).(string)
 
-	body := &proxmox.VirtualEnvironmentGroupCreateRequestBody{
+	body := &access.GroupCreateRequestBody{
 		Comment: &comment,
 		ID:      groupID,
 	}
 
-	err = veClient.CreateGroup(ctx, body)
+	err = veClient.API().Access().CreateGroup(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -118,7 +118,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.ACLUpdateRequestBody{
+		aclBody := &access.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Groups:    []string{groupID},
 			Path:      aclEntry[mkResourceVirtualEnvironmentGroupACLPath].(string),
@@ -126,7 +126,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(ctx, aclBody)
+		err := veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -145,7 +145,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	}
 
 	groupID := d.Id()
-	group, err := veClient.GetGroup(ctx, groupID)
+	group, err := veClient.API().Access().GetGroup(ctx, groupID)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -155,7 +155,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.GetACL(ctx)
+	acl, err := veClient.API().Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -206,11 +206,11 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	comment := d.Get(mkResourceVirtualEnvironmentGroupComment).(string)
 	groupID := d.Id()
 
-	body := &proxmox.VirtualEnvironmentGroupUpdateRequestBody{
+	body := &access.GroupUpdateRequestBody{
 		Comment: &comment,
 	}
 
-	err = veClient.UpdateGroup(ctx, groupID, body)
+	err = veClient.API().Access().UpdateGroup(ctx, groupID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -225,7 +225,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.ACLUpdateRequestBody{
+		aclBody := &access.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Groups:    []string{groupID},
 			Path:      aclEntry[mkResourceVirtualEnvironmentGroupACLPath].(string),
@@ -233,7 +233,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(ctx, aclBody)
+		err := veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -248,7 +248,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.ACLUpdateRequestBody{
+		aclBody := &access.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Groups:    []string{groupID},
 			Path:      aclEntry[mkResourceVirtualEnvironmentGroupACLPath].(string),
@@ -256,7 +256,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(ctx, aclBody)
+		err := veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -282,7 +282,7 @@ func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			aclEntry[mkResourceVirtualEnvironmentGroupACLPropagate].(bool),
 		)
 
-		aclBody := &proxmox.ACLUpdateRequestBody{
+		aclBody := &access.ACLUpdateRequestBody{
 			Delete:    &aclDelete,
 			Groups:    []string{groupID},
 			Path:      aclEntry[mkResourceVirtualEnvironmentGroupACLPath].(string),
@@ -290,13 +290,13 @@ func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.UpdateACL(ctx, aclBody)
+		err := veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.DeleteGroup(ctx, groupID)
+	err = veClient.API().Access().DeleteGroup(ctx, groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
