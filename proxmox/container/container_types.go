@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package proxmox
+package container
 
 import (
 	"encoding/json"
@@ -16,8 +16,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
-// ContainerCloneRequestBody contains the data for an container clone request.
-type ContainerCloneRequestBody struct {
+// CloneRequestBody contains the data for an container clone request.
+type CloneRequestBody struct {
 	BandwidthLimit *int              `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`
 	Description    *string           `json:"description,omitempty" url:"description,omitempty"`
 	FullCopy       *types.CustomBool `json:"full,omitempty"        url:"full,omitempty,int"`
@@ -29,59 +29,59 @@ type ContainerCloneRequestBody struct {
 	VMIDNew        int               `json:"newid"                 url:"newid"`
 }
 
-// ContainerCreateRequestBody contains the data for a user create request.
-type ContainerCreateRequestBody struct {
-	BandwidthLimit       *float64                             `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
-	ConsoleEnabled       *types.CustomBool                    `json:"console,omitempty"              url:"console,omitempty,int"`
-	ConsoleMode          *string                              `json:"cmode,omitempty"                url:"cmode,omitempty"`
-	CPUArchitecture      *string                              `json:"arch,omitempty"                 url:"arch,omitempty"`
-	CPUCores             *int                                 `json:"cores,omitempty"                url:"cores,omitempty"`
-	CPULimit             *int                                 `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
-	CPUUnits             *int                                 `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
-	DatastoreID          *string                              `json:"storage,omitempty"              url:"storage,omitempty"`
-	DedicatedMemory      *int                                 `json:"memory,omitempty"               url:"memory,omitempty"`
-	Delete               []string                             `json:"delete,omitempty"               url:"delete,omitempty"`
-	Description          *string                              `json:"description,omitempty"          url:"description,omitempty"`
-	DNSDomain            *string                              `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
-	DNSServer            *string                              `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
-	Features             *ContainerCustomFeatures             `json:"features,omitempty"             url:"features,omitempty"`
-	Force                *types.CustomBool                    `json:"force,omitempty"                url:"force,omitempty,int"`
-	HookScript           *string                              `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
-	Hostname             *string                              `json:"hostname,omitempty"             url:"hostname,omitempty"`
-	IgnoreUnpackErrors   *types.CustomBool                    `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
-	Lock                 *string                              `json:"lock,omitempty"                 url:"lock,omitempty,int"`
-	MountPoints          ContainerCustomMountPointArray       `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
-	NetworkInterfaces    ContainerCustomNetworkInterfaceArray `json:"net,omitempty"                  url:"net,omitempty,numbered"`
-	OSTemplateFileVolume *string                              `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
-	OSType               *string                              `json:"ostype,omitempty"               url:"ostype,omitempty"`
-	Password             *string                              `json:"password,omitempty"             url:"password,omitempty"`
-	PoolID               *string                              `json:"pool,omitempty"                 url:"pool,omitempty"`
-	Protection           *types.CustomBool                    `json:"protection,omitempty"           url:"protection,omitempty,int"`
-	Restore              *types.CustomBool                    `json:"restore,omitempty"              url:"restore,omitempty,int"`
-	RootFS               *ContainerCustomRootFS               `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
-	SSHKeys              *ContainerCustomSSHKeys              `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
-	Start                *types.CustomBool                    `json:"start,omitempty"                url:"start,omitempty,int"`
-	StartOnBoot          *types.CustomBool                    `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
-	StartupBehavior      *ContainerCustomStartupBehavior      `json:"startup,omitempty"              url:"startup,omitempty"`
-	Swap                 *int                                 `json:"swap,omitempty"                 url:"swap,omitempty"`
-	Tags                 *string                              `json:"tags,omitempty"                 url:"tags,omitempty"`
-	Template             *types.CustomBool                    `json:"template,omitempty"             url:"template,omitempty,int"`
-	TTY                  *int                                 `json:"tty,omitempty"                  url:"tty,omitempty"`
-	Unique               *types.CustomBool                    `json:"unique,omitempty"               url:"unique,omitempty,int"`
-	Unprivileged         *types.CustomBool                    `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
-	VMID                 *int                                 `json:"vmid,omitempty"                 url:"vmid,omitempty"`
+// CreateRequestBody contains the data for a user create request.
+type CreateRequestBody struct {
+	BandwidthLimit       *float64                    `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
+	ConsoleEnabled       *types.CustomBool           `json:"console,omitempty"              url:"console,omitempty,int"`
+	ConsoleMode          *string                     `json:"cmode,omitempty"                url:"cmode,omitempty"`
+	CPUArchitecture      *string                     `json:"arch,omitempty"                 url:"arch,omitempty"`
+	CPUCores             *int                        `json:"cores,omitempty"                url:"cores,omitempty"`
+	CPULimit             *int                        `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
+	CPUUnits             *int                        `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
+	DatastoreID          *string                     `json:"storage,omitempty"              url:"storage,omitempty"`
+	DedicatedMemory      *int                        `json:"memory,omitempty"               url:"memory,omitempty"`
+	Delete               []string                    `json:"delete,omitempty"               url:"delete,omitempty"`
+	Description          *string                     `json:"description,omitempty"          url:"description,omitempty"`
+	DNSDomain            *string                     `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
+	DNSServer            *string                     `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
+	Features             *CustomFeatures             `json:"features,omitempty"             url:"features,omitempty"`
+	Force                *types.CustomBool           `json:"force,omitempty"                url:"force,omitempty,int"`
+	HookScript           *string                     `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
+	Hostname             *string                     `json:"hostname,omitempty"             url:"hostname,omitempty"`
+	IgnoreUnpackErrors   *types.CustomBool           `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
+	Lock                 *string                     `json:"lock,omitempty"                 url:"lock,omitempty,int"`
+	MountPoints          CustomMountPointArray       `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
+	NetworkInterfaces    CustomNetworkInterfaceArray `json:"net,omitempty"                  url:"net,omitempty,numbered"`
+	OSTemplateFileVolume *string                     `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
+	OSType               *string                     `json:"ostype,omitempty"               url:"ostype,omitempty"`
+	Password             *string                     `json:"password,omitempty"             url:"password,omitempty"`
+	PoolID               *string                     `json:"pool,omitempty"                 url:"pool,omitempty"`
+	Protection           *types.CustomBool           `json:"protection,omitempty"           url:"protection,omitempty,int"`
+	Restore              *types.CustomBool           `json:"restore,omitempty"              url:"restore,omitempty,int"`
+	RootFS               *CustomRootFS               `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
+	SSHKeys              *CustomSSHKeys              `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
+	Start                *types.CustomBool           `json:"start,omitempty"                url:"start,omitempty,int"`
+	StartOnBoot          *types.CustomBool           `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
+	StartupBehavior      *CustomStartupBehavior      `json:"startup,omitempty"              url:"startup,omitempty"`
+	Swap                 *int                        `json:"swap,omitempty"                 url:"swap,omitempty"`
+	Tags                 *string                     `json:"tags,omitempty"                 url:"tags,omitempty"`
+	Template             *types.CustomBool           `json:"template,omitempty"             url:"template,omitempty,int"`
+	TTY                  *int                        `json:"tty,omitempty"                  url:"tty,omitempty"`
+	Unique               *types.CustomBool           `json:"unique,omitempty"               url:"unique,omitempty,int"`
+	Unprivileged         *types.CustomBool           `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
+	VMID                 *int                        `json:"vmid,omitempty"                 url:"vmid,omitempty"`
 }
 
-// ContainerCustomFeatures contains the values for the "features" property.
-type ContainerCustomFeatures struct {
+// CustomFeatures contains the values for the "features" property.
+type CustomFeatures struct {
 	FUSE       *types.CustomBool `json:"fuse,omitempty"    url:"fuse,omitempty,int"`
 	KeyControl *types.CustomBool `json:"keyctl,omitempty"  url:"keyctl,omitempty,int"`
 	MountTypes *[]string         `json:"mount,omitempty"   url:"mount,omitempty"`
 	Nesting    *types.CustomBool `json:"nesting,omitempty" url:"nesting,omitempty,int"`
 }
 
-// ContainerCustomMountPoint contains the values for the "mp[n]" properties.
-type ContainerCustomMountPoint struct {
+// CustomMountPoint contains the values for the "mp[n]" properties.
+type CustomMountPoint struct {
 	ACL          *types.CustomBool `json:"acl,omitempty"          url:"acl,omitempty,int"`
 	Backup       *types.CustomBool `json:"backup,omitempty"       url:"backup,omitempty,int"`
 	DiskSize     *string           `json:"size,omitempty"         url:"size,omitempty"`
@@ -95,11 +95,11 @@ type ContainerCustomMountPoint struct {
 	Volume       string            `json:"volume"                 url:"volume"`
 }
 
-// ContainerCustomMountPointArray is an array of ContainerCustomMountPoint.
-type ContainerCustomMountPointArray []ContainerCustomMountPoint
+// CustomMountPointArray is an array of CustomMountPoint.
+type CustomMountPointArray []CustomMountPoint
 
-// ContainerCustomNetworkInterface contains the values for the "net[n]" properties.
-type ContainerCustomNetworkInterface struct {
+// CustomNetworkInterface contains the values for the "net[n]" properties.
+type CustomNetworkInterface struct {
 	Bridge      *string           `json:"bridge,omitempty"   url:"bridge,omitempty"`
 	Enabled     bool              `json:"-"                  url:"-"`
 	Firewall    *types.CustomBool `json:"firewall,omitempty" url:"firewall,omitempty,int"`
@@ -116,11 +116,11 @@ type ContainerCustomNetworkInterface struct {
 	Type        *string           `json:"type,omitempty"     url:"type,omitempty"`
 }
 
-// ContainerCustomNetworkInterfaceArray is an array of ContainerCustomNetworkInterface.
-type ContainerCustomNetworkInterfaceArray []ContainerCustomNetworkInterface
+// CustomNetworkInterfaceArray is an array of CustomNetworkInterface.
+type CustomNetworkInterfaceArray []CustomNetworkInterface
 
-// ContainerCustomRootFS contains the values for the "rootfs" property.
-type ContainerCustomRootFS struct {
+// CustomRootFS contains the values for the "rootfs" property.
+type CustomRootFS struct {
 	ACL          *types.CustomBool `json:"acl,omitempty"          url:"acl,omitempty,int"`
 	Size         *types.DiskSize   `json:"size,omitempty"         url:"size,omitempty"`
 	MountOptions *[]string         `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
@@ -131,70 +131,70 @@ type ContainerCustomRootFS struct {
 	Volume       string            `json:"volume"                 url:"volume"`
 }
 
-// ContainerCustomSSHKeys contains the values for the "ssh-public-keys" property.
-type ContainerCustomSSHKeys []string
+// CustomSSHKeys contains the values for the "ssh-public-keys" property.
+type CustomSSHKeys []string
 
-// ContainerCustomStartupBehavior contains the values for the "startup" property.
-type ContainerCustomStartupBehavior struct {
+// CustomStartupBehavior contains the values for the "startup" property.
+type CustomStartupBehavior struct {
 	Down  *int `json:"down,omitempty"  url:"down,omitempty"`
 	Order *int `json:"order,omitempty" url:"order,omitempty"`
 	Up    *int `json:"up,omitempty"    url:"up,omitempty"`
 }
 
-// ContainerGetResponseBody contains the body from a user get response.
-type ContainerGetResponseBody struct {
-	Data *ContainerGetResponseData `json:"data,omitempty"`
+// GetResponseBody contains the body from a user get response.
+type GetResponseBody struct {
+	Data *GetResponseData `json:"data,omitempty"`
 }
 
-// ContainerGetResponseData contains the data from a user get response.
-type ContainerGetResponseData struct {
-	ConsoleEnabled    *types.CustomBool                `json:"console,omitempty"`
-	ConsoleMode       *string                          `json:"cmode,omitempty"`
-	CPUArchitecture   *string                          `json:"arch,omitempty"`
-	CPUCores          *int                             `json:"cores,omitempty"`
-	CPULimit          *int                             `json:"cpulimit,omitempty"`
-	CPUUnits          *int                             `json:"cpuunits,omitempty"`
-	DedicatedMemory   *int                             `json:"memory,omitempty"`
-	Description       *string                          `json:"description,omitempty"`
-	Digest            string                           `json:"digest"`
-	DNSDomain         *string                          `json:"searchdomain,omitempty"`
-	DNSServer         *string                          `json:"nameserver,omitempty"`
-	Features          *ContainerCustomFeatures         `json:"features,omitempty"`
-	HookScript        *string                          `json:"hookscript,omitempty"`
-	Hostname          *string                          `json:"hostname,omitempty"`
-	Lock              *types.CustomBool                `json:"lock,omitempty"`
-	LXCConfiguration  *[][2]string                     `json:"lxc,omitempty"`
-	MountPoint0       ContainerCustomMountPoint        `json:"mp0,omitempty"`
-	MountPoint1       ContainerCustomMountPoint        `json:"mp1,omitempty"`
-	MountPoint2       ContainerCustomMountPoint        `json:"mp2,omitempty"`
-	MountPoint3       ContainerCustomMountPoint        `json:"mp3,omitempty"`
-	NetworkInterface0 *ContainerCustomNetworkInterface `json:"net0,omitempty"`
-	NetworkInterface1 *ContainerCustomNetworkInterface `json:"net1,omitempty"`
-	NetworkInterface2 *ContainerCustomNetworkInterface `json:"net2,omitempty"`
-	NetworkInterface3 *ContainerCustomNetworkInterface `json:"net3,omitempty"`
-	NetworkInterface4 *ContainerCustomNetworkInterface `json:"net4,omitempty"`
-	NetworkInterface5 *ContainerCustomNetworkInterface `json:"net5,omitempty"`
-	NetworkInterface6 *ContainerCustomNetworkInterface `json:"net6,omitempty"`
-	NetworkInterface7 *ContainerCustomNetworkInterface `json:"net7,omitempty"`
-	OSType            *string                          `json:"ostype,omitempty"`
-	Protection        *types.CustomBool                `json:"protection,omitempty"`
-	RootFS            *ContainerCustomRootFS           `json:"rootfs,omitempty"`
-	StartOnBoot       *types.CustomBool                `json:"onboot,omitempty"`
-	StartupBehavior   *ContainerCustomStartupBehavior  `json:"startup,omitempty"`
-	Swap              *int                             `json:"swap,omitempty"`
-	Tags              *string                          `json:"tags,omitempty"`
-	Template          *types.CustomBool                `json:"template,omitempty"`
-	TTY               *int                             `json:"tty,omitempty"`
-	Unprivileged      *types.CustomBool                `json:"unprivileged,omitempty"`
+// GetResponseData contains the data from a user get response.
+type GetResponseData struct {
+	ConsoleEnabled    *types.CustomBool       `json:"console,omitempty"`
+	ConsoleMode       *string                 `json:"cmode,omitempty"`
+	CPUArchitecture   *string                 `json:"arch,omitempty"`
+	CPUCores          *int                    `json:"cores,omitempty"`
+	CPULimit          *int                    `json:"cpulimit,omitempty"`
+	CPUUnits          *int                    `json:"cpuunits,omitempty"`
+	DedicatedMemory   *int                    `json:"memory,omitempty"`
+	Description       *string                 `json:"description,omitempty"`
+	Digest            string                  `json:"digest"`
+	DNSDomain         *string                 `json:"searchdomain,omitempty"`
+	DNSServer         *string                 `json:"nameserver,omitempty"`
+	Features          *CustomFeatures         `json:"features,omitempty"`
+	HookScript        *string                 `json:"hookscript,omitempty"`
+	Hostname          *string                 `json:"hostname,omitempty"`
+	Lock              *types.CustomBool       `json:"lock,omitempty"`
+	LXCConfiguration  *[][2]string            `json:"lxc,omitempty"`
+	MountPoint0       CustomMountPoint        `json:"mp0,omitempty"`
+	MountPoint1       CustomMountPoint        `json:"mp1,omitempty"`
+	MountPoint2       CustomMountPoint        `json:"mp2,omitempty"`
+	MountPoint3       CustomMountPoint        `json:"mp3,omitempty"`
+	NetworkInterface0 *CustomNetworkInterface `json:"net0,omitempty"`
+	NetworkInterface1 *CustomNetworkInterface `json:"net1,omitempty"`
+	NetworkInterface2 *CustomNetworkInterface `json:"net2,omitempty"`
+	NetworkInterface3 *CustomNetworkInterface `json:"net3,omitempty"`
+	NetworkInterface4 *CustomNetworkInterface `json:"net4,omitempty"`
+	NetworkInterface5 *CustomNetworkInterface `json:"net5,omitempty"`
+	NetworkInterface6 *CustomNetworkInterface `json:"net6,omitempty"`
+	NetworkInterface7 *CustomNetworkInterface `json:"net7,omitempty"`
+	OSType            *string                 `json:"ostype,omitempty"`
+	Protection        *types.CustomBool       `json:"protection,omitempty"`
+	RootFS            *CustomRootFS           `json:"rootfs,omitempty"`
+	StartOnBoot       *types.CustomBool       `json:"onboot,omitempty"`
+	StartupBehavior   *CustomStartupBehavior  `json:"startup,omitempty"`
+	Swap              *int                    `json:"swap,omitempty"`
+	Tags              *string                 `json:"tags,omitempty"`
+	Template          *types.CustomBool       `json:"template,omitempty"`
+	TTY               *int                    `json:"tty,omitempty"`
+	Unprivileged      *types.CustomBool       `json:"unprivileged,omitempty"`
 }
 
-// ContainerGetStatusResponseBody contains the body from a container get status response.
-type ContainerGetStatusResponseBody struct {
-	Data *ContainerGetStatusResponseData `json:"data,omitempty"`
+// GetStatusResponseBody contains the body from a container get status response.
+type GetStatusResponseBody struct {
+	Data *GetStatusResponseData `json:"data,omitempty"`
 }
 
-// ContainerGetStatusResponseData contains the data from a container get status response.
-type ContainerGetStatusResponseData struct {
+// GetStatusResponseData contains the data from a container get status response.
+type GetStatusResponseData struct {
 	CPUCount         *float64     `json:"cpus,omitempty"`
 	Lock             *string      `json:"lock,omitempty"`
 	MemoryAllocation *int         `json:"maxmem,omitempty"`
@@ -207,22 +207,22 @@ type ContainerGetStatusResponseData struct {
 	VMID             *int         `json:"vmid,omitempty"`
 }
 
-// ContainerRebootRequestBody contains the body for a container reboot request.
-type ContainerRebootRequestBody struct {
+// RebootRequestBody contains the body for a container reboot request.
+type RebootRequestBody struct {
 	Timeout *int `json:"timeout,omitempty" url:"timeout,omitempty"`
 }
 
-// ContainerShutdownRequestBody contains the body for a container shutdown request.
-type ContainerShutdownRequestBody struct {
+// ShutdownRequestBody contains the body for a container shutdown request.
+type ShutdownRequestBody struct {
 	ForceStop *types.CustomBool `json:"forceStop,omitempty" url:"forceStop,omitempty,int"`
 	Timeout   *int              `json:"timeout,omitempty"   url:"timeout,omitempty"`
 }
 
-// ContainerUpdateRequestBody contains the data for an user update request.
-type ContainerUpdateRequestBody ContainerCreateRequestBody
+// UpdateRequestBody contains the data for an user update request.
+type UpdateRequestBody CreateRequestBody
 
 // EncodeValues converts a ContainerCustomFeatures struct to a URL value.
-func (r *ContainerCustomFeatures) EncodeValues(key string, v *url.Values) error {
+func (r *CustomFeatures) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
 	if r.FUSE != nil {
@@ -262,8 +262,8 @@ func (r *ContainerCustomFeatures) EncodeValues(key string, v *url.Values) error 
 	return nil
 }
 
-// EncodeValues converts a ContainerCustomMountPoint struct to a URL value.
-func (r *ContainerCustomMountPoint) EncodeValues(key string, v *url.Values) error {
+// EncodeValues converts a CustomMountPoint struct to a URL value.
+func (r *CustomMountPoint) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
 	if r.ACL != nil {
@@ -335,8 +335,8 @@ func (r *ContainerCustomMountPoint) EncodeValues(key string, v *url.Values) erro
 	return nil
 }
 
-// EncodeValues converts a ContainerCustomMountPointArray array to multiple URL values.
-func (r ContainerCustomMountPointArray) EncodeValues(
+// EncodeValues converts a CustomMountPointArray array to multiple URL values.
+func (r CustomMountPointArray) EncodeValues(
 	key string,
 	v *url.Values,
 ) error {
@@ -350,8 +350,8 @@ func (r ContainerCustomMountPointArray) EncodeValues(
 	return nil
 }
 
-// EncodeValues converts a ContainerCustomNetworkInterface struct to a URL value.
-func (r *ContainerCustomNetworkInterface) EncodeValues(
+// EncodeValues converts a CustomNetworkInterface struct to a URL value.
+func (r *CustomNetworkInterface) EncodeValues(
 	key string,
 	v *url.Values,
 ) error {
@@ -424,8 +424,8 @@ func (r *ContainerCustomNetworkInterface) EncodeValues(
 	return nil
 }
 
-// EncodeValues converts a ContainerCustomNetworkInterfaceArray array to multiple URL values.
-func (r ContainerCustomNetworkInterfaceArray) EncodeValues(
+// EncodeValues converts a CustomNetworkInterfaceArray array to multiple URL values.
+func (r CustomNetworkInterfaceArray) EncodeValues(
 	key string,
 	v *url.Values,
 ) error {
@@ -439,8 +439,8 @@ func (r ContainerCustomNetworkInterfaceArray) EncodeValues(
 	return nil
 }
 
-// EncodeValues converts a ContainerCustomRootFS struct to a URL value.
-func (r *ContainerCustomRootFS) EncodeValues(key string, v *url.Values) error {
+// EncodeValues converts a CustomRootFS struct to a URL value.
+func (r *CustomRootFS) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
 	if r.ACL != nil {
@@ -502,15 +502,15 @@ func (r *ContainerCustomRootFS) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a ContainerCustomSSHKeys array to a URL value.
-func (r ContainerCustomSSHKeys) EncodeValues(key string, v *url.Values) error {
+// EncodeValues converts a CustomSSHKeys array to a URL value.
+func (r CustomSSHKeys) EncodeValues(key string, v *url.Values) error {
 	v.Add(key, strings.Join(r, "\n"))
 
 	return nil
 }
 
-// EncodeValues converts a ContainerCustomStartupBehavior struct to a URL value.
-func (r *ContainerCustomStartupBehavior) EncodeValues(
+// EncodeValues converts a CustomStartupBehavior struct to a URL value.
+func (r *CustomStartupBehavior) EncodeValues(
 	key string,
 	v *url.Values,
 ) error {
@@ -536,7 +536,7 @@ func (r *ContainerCustomStartupBehavior) EncodeValues(
 }
 
 // UnmarshalJSON converts a ContainerCustomFeatures string to an object.
-func (r *ContainerCustomFeatures) UnmarshalJSON(b []byte) error {
+func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
@@ -575,13 +575,13 @@ func (r *ContainerCustomFeatures) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalJSON converts a ContainerCustomMountPoint string to an object.
-func (r *ContainerCustomMountPoint) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON converts a CustomMountPoint string to an object.
+func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
 	if err != nil {
-		return fmt.Errorf("unable to unmarshal ContainerCustomMountPoint: %w", err)
+		return fmt.Errorf("unable to unmarshal CustomMountPoint: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -630,13 +630,13 @@ func (r *ContainerCustomMountPoint) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalJSON converts a ContainerCustomNetworkInterface string to an object.
-func (r *ContainerCustomNetworkInterface) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON converts a CustomNetworkInterface string to an object.
+func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
 	if err != nil {
-		return fmt.Errorf("unable to unmarshal ContainerCustomNetworkInterface: %w", err)
+		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -713,13 +713,13 @@ func (r *ContainerCustomNetworkInterface) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalJSON converts a ContainerCustomRootFS string to an object.
-func (r *ContainerCustomRootFS) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON converts a CustomRootFS string to an object.
+func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
 	if err != nil {
-		return fmt.Errorf("unable to unmarshal ContainerCustomRootFS: %w", err)
+		return fmt.Errorf("unable to unmarshal CustomRootFS: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -767,13 +767,13 @@ func (r *ContainerCustomRootFS) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalJSON converts a ContainerCustomStartupBehavior string to an object.
-func (r *ContainerCustomStartupBehavior) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON converts a CustomStartupBehavior string to an object.
+func (r *CustomStartupBehavior) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
 	if err != nil {
-		return fmt.Errorf("unable to unmarshal ContainerCustomStartupBehavior: %w", err)
+		return fmt.Errorf("unable to unmarshal CustomStartupBehavior: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")

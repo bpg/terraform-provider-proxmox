@@ -23,39 +23,6 @@ type Alias interface {
 	UpdateAlias(ctx context.Context, name string, d *AliasUpdateRequestBody) error
 }
 
-// AliasCreateRequestBody contains the data for an alias create request.
-type AliasCreateRequestBody struct {
-	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	Name    string  `json:"name"              url:"name"`
-	CIDR    string  `json:"cidr"              url:"cidr"`
-}
-
-// AliasGetResponseBody contains the body from an alias get response.
-type AliasGetResponseBody struct {
-	Data *AliasGetResponseData `json:"data,omitempty"`
-}
-
-// AliasGetResponseData contains the data from an alias get response.
-type AliasGetResponseData struct {
-	Comment   *string `json:"comment,omitempty" url:"comment,omitempty"`
-	Name      string  `json:"name"              url:"name"`
-	CIDR      string  `json:"cidr"              url:"cidr"`
-	Digest    *string `json:"digest"            url:"digest"`
-	IPVersion int     `json:"ipversion"         url:"ipversion"`
-}
-
-// AliasListResponseBody contains the data from an alias get response.
-type AliasListResponseBody struct {
-	Data []*AliasGetResponseData `json:"data,omitempty"`
-}
-
-// AliasUpdateRequestBody contains the data for an alias update request.
-type AliasUpdateRequestBody struct {
-	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	ReName  string  `json:"rename"            url:"rename"`
-	CIDR    string  `json:"cidr"              url:"cidr"`
-}
-
 func (c *Client) aliasesPath() string {
 	return c.ExpandPath("firewall/aliases")
 }

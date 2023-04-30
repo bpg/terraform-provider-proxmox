@@ -69,11 +69,11 @@ func dnsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	return nil
 }
 
-func dnsGetUpdateBody(d *schema.ResourceData) *proxmox.VirtualEnvironmentDNSUpdateRequestBody {
+func dnsGetUpdateBody(d *schema.ResourceData) *proxmox.DNSUpdateRequestBody {
 	domain := d.Get(mkResourceVirtualEnvironmentDNSDomain).(string)
 	servers := d.Get(mkResourceVirtualEnvironmentDNSServers).([]interface{})
 
-	body := &proxmox.VirtualEnvironmentDNSUpdateRequestBody{
+	body := &proxmox.DNSUpdateRequestBody{
 		SearchDomain: &domain,
 	}
 

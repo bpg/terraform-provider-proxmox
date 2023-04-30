@@ -203,7 +203,7 @@ func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	nodeName := d.Get(mkResourceVirtualEnvironmentHostsNodeName).(string)
 
 	// Generate the data for the hosts file based on the specified entries.
-	body := proxmox.VirtualEnvironmentHostsUpdateRequestBody{
+	body := proxmox.HostsUpdateRequestBody{
 		Data: "",
 	}
 

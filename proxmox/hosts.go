@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -13,11 +15,8 @@ import (
 )
 
 // GetHosts retrieves the Hosts configuration for a node.
-func (c *VirtualEnvironmentClient) GetHosts(
-	ctx context.Context,
-	nodeName string,
-) (*VirtualEnvironmentHostsGetResponseData, error) {
-	resBody := &VirtualEnvironmentHostsGetResponseBody{}
+func (c *VirtualEnvironmentClient) GetHosts(ctx context.Context, nodeName string) (*HostsGetResponseData, error) {
+	resBody := &HostsGetResponseBody{}
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -37,10 +36,6 @@ func (c *VirtualEnvironmentClient) GetHosts(
 }
 
 // UpdateHosts updates the Hosts configuration for a node.
-func (c *VirtualEnvironmentClient) UpdateHosts(
-	ctx context.Context,
-	nodeName string,
-	d *VirtualEnvironmentHostsUpdateRequestBody,
-) error {
+func (c *VirtualEnvironmentClient) UpdateHosts(ctx context.Context, nodeName string, d *HostsUpdateRequestBody) error {
 	return c.DoRequest(ctx, http.MethodPost, fmt.Sprintf("nodes/%s/hosts", url.PathEscape(nodeName)), d, nil)
 }

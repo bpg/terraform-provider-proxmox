@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -13,11 +15,8 @@ import (
 )
 
 // GetDNS retrieves the DNS configuration for a node.
-func (c *VirtualEnvironmentClient) GetDNS(
-	ctx context.Context,
-	nodeName string,
-) (*VirtualEnvironmentDNSGetResponseData, error) {
-	resBody := &VirtualEnvironmentDNSGetResponseBody{}
+func (c *VirtualEnvironmentClient) GetDNS(ctx context.Context, nodeName string) (*DNSGetResponseData, error) {
+	resBody := &DNSGetResponseBody{}
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -37,10 +36,6 @@ func (c *VirtualEnvironmentClient) GetDNS(
 }
 
 // UpdateDNS updates the DNS configuration for a node.
-func (c *VirtualEnvironmentClient) UpdateDNS(
-	ctx context.Context,
-	nodeName string,
-	d *VirtualEnvironmentDNSUpdateRequestBody,
-) error {
+func (c *VirtualEnvironmentClient) UpdateDNS(ctx context.Context, nodeName string, d *DNSUpdateRequestBody) error {
 	return c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)), d, nil)
 }

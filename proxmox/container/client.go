@@ -21,8 +21,16 @@ type Client struct {
 	VMID     int
 }
 
+func (c *Client) basePath() string {
+	return fmt.Sprintf("nodes/%s/lxc", url.PathEscape(c.NodeName))
+}
+
 func (c *Client) ExpandPath(path string) string {
-	return fmt.Sprintf("nodes/%s/lxc/%d/%s", url.PathEscape(c.NodeName), c.VMID, path)
+	ep := fmt.Sprintf("%s/%d", c.basePath(), c.VMID)
+	if path != "" {
+		ep = fmt.Sprintf("%s/%s", ep, path)
+	}
+	return ep
 }
 
 func (c *Client) Firewall() firewall.API {
