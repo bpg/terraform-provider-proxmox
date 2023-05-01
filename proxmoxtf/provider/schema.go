@@ -106,9 +106,10 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkProviderSSHUsername: {
-						Type:        schema.TypeString,
-						Optional:    true,
-						Description: fmt.Sprintf("The username used for ssh credentials, defaults to user specified in '%s'", mkProviderUsername),
+						Type:     schema.TypeString,
+						Optional: true,
+						Description: fmt.Sprintf("The username used for ssh credentials, "+
+							"defaults to user specified in '%s'", mkProviderUsername),
 						DefaultFunc: schema.MultiEnvDefaultFunc(
 							[]string{"PROXMOX_VE_SSH_USERNAME", "PM_VE_SSH_USERNAME"},
 							nil,
@@ -116,9 +117,10 @@ func nestedProviderSchema() map[string]*schema.Schema {
 						ValidateFunc: validation.StringIsNotEmpty,
 					},
 					mkProviderSSHPassword: {
-						Type:        schema.TypeString,
-						Optional:    true,
-						Description: fmt.Sprintf("The password used for ssh credentials, defaults to password specified in '%s'", mkProviderPassword),
+						Type:     schema.TypeString,
+						Optional: true,
+						Description: fmt.Sprintf("The password used for ssh credentials, "+
+							"defaults to password specified in '%s'", mkProviderPassword),
 						DefaultFunc: schema.MultiEnvDefaultFunc(
 							[]string{"PROXMOX_VE_SSH_PASSWORD", "PM_VE_SSH_PASSWORD"},
 							nil,

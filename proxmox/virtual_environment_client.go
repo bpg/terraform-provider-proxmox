@@ -85,7 +85,8 @@ func NewVirtualEnvironmentClient(
 
 	if sshAgent && runtime.GOOS != "linux" {
 		return nil, errors.New(
-			"the ssh agent flag is only supported on linux, please set it to 'false' or remove it from your provider configuration",
+			"the ssh agent flag is only supported on linux, please set it to 'false'" +
+				" or remove it from your provider configuration",
 		)
 	}
 

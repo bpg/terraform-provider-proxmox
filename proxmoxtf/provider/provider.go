@@ -66,15 +66,14 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 			veSSHConfig[mkProviderSSHAgent].(bool),
 		)
 	} else {
-
 		sshconf := map[string]interface{}{
-			mkProviderSSHUsername : "",
-			mkProviderSSHPassword : "",
-			mkProviderSSHAgent : false,
+			mkProviderSSHUsername: "",
+			mkProviderSSHPassword: "",
+			mkProviderSSHAgent:    false,
 		}
 
 		sshBlock, sshSet := d.GetOk(mkProviderSSH)
-		
+
 		if sshSet {
 			sshconf = sshBlock.(*schema.Set).List()[0].(map[string]interface{})
 		}

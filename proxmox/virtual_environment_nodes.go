@@ -256,9 +256,11 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 	if c.SSHAgent {
 		sshClient, err := c.CreateSSHClientAgent(ctx, cb, kh, sshHost)
 		if err != nil {
-			tflog.Error(ctx, "Failed ssh connection through agent, falling back to password authentication", map[string]interface{}{
-				"error": err,
-			})
+			tflog.Error(ctx, "Failed ssh connection through agent, "+
+				"falling back to password authentication",
+				map[string]interface{}{
+					"error": err,
+				})
 		} else {
 			return sshClient, nil
 		}
@@ -277,18 +279,21 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 }
 
 // CreateSSHClientAgent establishes an ssh connection through the agent authentication mechanism
-func (c *VirtualEnvironmentClient) CreateSSHClientAgent(ctx context.Context, cb ssh.HostKeyCallback, kh knownhosts.HostKeyCallback, sshHost string) (*ssh.Client, error) {
-
+func (c *VirtualEnvironmentClient) CreateSSHClientAgent(
+	ctx context.Context,
+	cb ssh.HostKeyCallback,
+	kh knownhosts.HostKeyCallback,
+	sshHost string,
+) (*ssh.Client, error) {
 	sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
-
 	if sshAuthSock == "" {
-		return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: environment variable is empty, authentication will fall back to password")
+		return nil, errors.New("failed connecting to SSH_AUTH_SOCK: environment variable is empty, " +
+			"authentication will fall back to password")
 	}
 
 	conn, err := net.Dial("unix", sshAuthSock)
-
 	if err != nil {
-		return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: %v", err)
+		return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: %w", err)
 	}
 
 	ag := agent.NewClient(conn)
