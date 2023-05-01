@@ -71,10 +71,16 @@ fmt:
 init:
 	go get ./...
 
-targets: $(TARGETS)
-
 test:
 	go test -v ./...
+
+lint:
+	go run -modfile=tools/go.mod github.com/golangci/golangci-lint/cmd/golangci-lint run --fix
+
+release-build:
+	go run -modfile=tools/go.mod github.com/goreleaser/goreleaser build --clean --skip-validate
+
+targets: $(TARGETS)
 
 $(TARGETS):
 	GOOS=$@ GOARCH=amd64 CGO_ENABLED=0 go build \
