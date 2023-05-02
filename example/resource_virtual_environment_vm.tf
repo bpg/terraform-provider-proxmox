@@ -42,6 +42,9 @@ resource "proxmox_virtual_environment_vm" "example_template" {
       ipv4 {
         address = "dhcp"
       }
+      ipv6 {
+        address = "dhcp"
+      }
     }
 
     user_data_file_id = proxmox_virtual_environment_file.user_config.id
