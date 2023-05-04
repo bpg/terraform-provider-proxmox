@@ -3295,16 +3295,16 @@ func vmReadCustom(
 			if ipConfig.GatewayIPv6 != nil || ipConfig.IPv6 != nil {
 				ipv6 := map[string]interface{}{}
 
-				if ipConfig.IPv4 != nil {
-					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address] = *ipConfig.IPv6
+				if ipConfig.IPv6 != nil {
+					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address] = *ipConfig.IPv6
 				} else {
-					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address] = ""
+					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address] = ""
 				}
 
-				if ipConfig.GatewayIPv4 != nil {
-					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway] = *ipConfig.GatewayIPv6
+				if ipConfig.GatewayIPv6 != nil {
+					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway] = *ipConfig.GatewayIPv6
 				} else {
-					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway] = ""
+					ipv6[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway] = ""
 				}
 
 				ipConfigItem[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6] = []interface{}{
