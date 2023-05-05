@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.18.1...v0.18.2) (2023-05-05)
+
+
+### Bug Fixes
+
+* **vm,lxc:** Fix tags reordering on plan re-apply ([#322](https://github.com/bpg/terraform-provider-proxmox/issues/322)) ([f0b88e3](https://github.com/bpg/terraform-provider-proxmox/commit/f0b88e336c48d76f5119fba78af9ce8b087d240e))
+* **vm:** Fix IPv6 handling ([#319](https://github.com/bpg/terraform-provider-proxmox/issues/319)) ([97ca22a](https://github.com/bpg/terraform-provider-proxmox/commit/97ca22abbba4bf50895b56324ce3c3e693b46e2f))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/goreleaser/goreleaser from 1.17.1 to 1.17.2 in /tools ([#313](https://github.com/bpg/terraform-provider-proxmox/issues/313)) ([2a03818](https://github.com/bpg/terraform-provider-proxmox/commit/2a03818d4034a6ae9a0ca9153fdb2d3012cd4b97))
+* **deps:** bump github.com/sigstore/rekor from 1.0.1 to 1.1.1 in /tools ([#320](https://github.com/bpg/terraform-provider-proxmox/issues/320)) ([b8184e4](https://github.com/bpg/terraform-provider-proxmox/commit/b8184e47c1af12423202385aeb7eb456e98bb42d))
+* **make:** Add `lint`, `release-build` targets ([#317](https://github.com/bpg/terraform-provider-proxmox/issues/317)) ([aa99290](https://github.com/bpg/terraform-provider-proxmox/commit/aa9929066491765cfe421a7f3ede163b74473149))
+
 ## [0.18.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.18.0...v0.18.1) (2023-04-23)
 
 
