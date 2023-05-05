@@ -685,7 +685,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID(ctx)
+		vmIDNew, err := veClient.API().Cluster().GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1269,7 +1269,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID(ctx)
+		vmIDNew, err := veClient.API().Cluster().GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}

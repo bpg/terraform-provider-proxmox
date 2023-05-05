@@ -17,7 +17,6 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/skeema/knownhosts"
@@ -98,31 +97,6 @@ func (c *VirtualEnvironmentClient) GetNodeTime(
 		ctx,
 		http.MethodGet,
 		fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)),
-		nil,
-		resBody,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
-	}
-
-	return resBody.Data, nil
-}
-
-// GetNodeTaskStatus retrieves the status of a node task.
-func (c *VirtualEnvironmentClient) GetNodeTaskStatus(
-	ctx context.Context,
-	nodeName string,
-	upid string,
-) (*VirtualEnvironmentNodeGetTaskStatusResponseData, error) {
-	resBody := &VirtualEnvironmentNodeGetTaskStatusResponseBody{}
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("nodes/%s/tasks/%s/status", url.PathEscape(nodeName), url.PathEscape(upid)),
 		nil,
 		resBody,
 	)
@@ -325,55 +299,4 @@ func (c *VirtualEnvironmentClient) UpdateNodeTime(
 	d *VirtualEnvironmentNodeUpdateTimeRequestBody,
 ) error {
 	return c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("nodes/%s/time", url.PathEscape(nodeName)), d, nil)
-}
-
-// WaitForNodeTask waits for a specific node task to complete.
-func (c *VirtualEnvironmentClient) WaitForNodeTask(
-	ctx context.Context,
-	nodeName string,
-	upid string,
-	timeout int,
-	delay int,
-) error {
-	timeDelay := int64(delay)
-	timeMax := float64(timeout)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
-
-	for timeElapsed.Seconds() < timeMax {
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
-			status, err := c.GetNodeTaskStatus(ctx, nodeName, upid)
-			if err != nil {
-				return err
-			}
-
-			if status.Status != "running" {
-				if status.ExitCode != "OK" {
-					return fmt.Errorf(
-						"task \"%s\" on node \"%s\" failed to complete with error: %s",
-						upid,
-						nodeName,
-						status.ExitCode,
-					)
-				}
-				return nil
-			}
-
-			time.Sleep(1 * time.Second)
-		}
-
-		time.Sleep(200 * time.Millisecond)
-
-		timeElapsed = time.Since(timeStart)
-
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-	}
-
-	return fmt.Errorf(
-		"timeout while waiting for task \"%s\" on node \"%s\" to complete",
-		upid,
-		nodeName,
-	)
 }

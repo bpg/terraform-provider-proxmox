@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 )
 
 func getBIOSValidator() schema.SchemaValidateDiagFunc {
@@ -444,7 +444,7 @@ func suppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceDa
 	return reflect.DeepEqual(oldEvents, newEvents)
 }
 
-func getDiskInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) map[string]*proxmox.CustomStorageDevice {
+func getDiskInfo(resp *vms.GetResponseData, d *schema.ResourceData) map[string]*vms.CustomStorageDevice {
 	currentDisk := d.Get(mkResourceVirtualEnvironmentVMDisk)
 
 	currentDiskList := currentDisk.([]interface{})
@@ -457,50 +457,50 @@ func getDiskInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.Reso
 		currentDiskMap[diskInterface] = diskMap
 	}
 
-	storageDevices := map[string]*proxmox.CustomStorageDevice{}
+	storageDevices := map[string]*vms.CustomStorageDevice{}
 
-	storageDevices["ide0"] = vm.IDEDevice0
-	storageDevices["ide1"] = vm.IDEDevice1
-	storageDevices["ide2"] = vm.IDEDevice2
+	storageDevices["ide0"] = resp.IDEDevice0
+	storageDevices["ide1"] = resp.IDEDevice1
+	storageDevices["ide2"] = resp.IDEDevice2
 
-	storageDevices["sata0"] = vm.SATADevice0
-	storageDevices["sata1"] = vm.SATADevice1
-	storageDevices["sata2"] = vm.SATADevice2
-	storageDevices["sata3"] = vm.SATADevice3
-	storageDevices["sata4"] = vm.SATADevice4
-	storageDevices["sata5"] = vm.SATADevice5
+	storageDevices["sata0"] = resp.SATADevice0
+	storageDevices["sata1"] = resp.SATADevice1
+	storageDevices["sata2"] = resp.SATADevice2
+	storageDevices["sata3"] = resp.SATADevice3
+	storageDevices["sata4"] = resp.SATADevice4
+	storageDevices["sata5"] = resp.SATADevice5
 
-	storageDevices["scsi0"] = vm.SCSIDevice0
-	storageDevices["scsi1"] = vm.SCSIDevice1
-	storageDevices["scsi2"] = vm.SCSIDevice2
-	storageDevices["scsi3"] = vm.SCSIDevice3
-	storageDevices["scsi4"] = vm.SCSIDevice4
-	storageDevices["scsi5"] = vm.SCSIDevice5
-	storageDevices["scsi6"] = vm.SCSIDevice6
-	storageDevices["scsi7"] = vm.SCSIDevice7
-	storageDevices["scsi8"] = vm.SCSIDevice8
-	storageDevices["scsi9"] = vm.SCSIDevice9
-	storageDevices["scsi10"] = vm.SCSIDevice10
-	storageDevices["scsi11"] = vm.SCSIDevice11
-	storageDevices["scsi12"] = vm.SCSIDevice12
-	storageDevices["scsi13"] = vm.SCSIDevice13
+	storageDevices["scsi0"] = resp.SCSIDevice0
+	storageDevices["scsi1"] = resp.SCSIDevice1
+	storageDevices["scsi2"] = resp.SCSIDevice2
+	storageDevices["scsi3"] = resp.SCSIDevice3
+	storageDevices["scsi4"] = resp.SCSIDevice4
+	storageDevices["scsi5"] = resp.SCSIDevice5
+	storageDevices["scsi6"] = resp.SCSIDevice6
+	storageDevices["scsi7"] = resp.SCSIDevice7
+	storageDevices["scsi8"] = resp.SCSIDevice8
+	storageDevices["scsi9"] = resp.SCSIDevice9
+	storageDevices["scsi10"] = resp.SCSIDevice10
+	storageDevices["scsi11"] = resp.SCSIDevice11
+	storageDevices["scsi12"] = resp.SCSIDevice12
+	storageDevices["scsi13"] = resp.SCSIDevice13
 
-	storageDevices["virtio0"] = vm.VirtualIODevice0
-	storageDevices["virtio1"] = vm.VirtualIODevice1
-	storageDevices["virtio2"] = vm.VirtualIODevice2
-	storageDevices["virtio3"] = vm.VirtualIODevice3
-	storageDevices["virtio4"] = vm.VirtualIODevice4
-	storageDevices["virtio5"] = vm.VirtualIODevice5
-	storageDevices["virtio6"] = vm.VirtualIODevice6
-	storageDevices["virtio7"] = vm.VirtualIODevice7
-	storageDevices["virtio8"] = vm.VirtualIODevice8
-	storageDevices["virtio9"] = vm.VirtualIODevice9
-	storageDevices["virtio10"] = vm.VirtualIODevice10
-	storageDevices["virtio11"] = vm.VirtualIODevice11
-	storageDevices["virtio12"] = vm.VirtualIODevice12
-	storageDevices["virtio13"] = vm.VirtualIODevice13
-	storageDevices["virtio14"] = vm.VirtualIODevice14
-	storageDevices["virtio15"] = vm.VirtualIODevice15
+	storageDevices["virtio0"] = resp.VirtualIODevice0
+	storageDevices["virtio1"] = resp.VirtualIODevice1
+	storageDevices["virtio2"] = resp.VirtualIODevice2
+	storageDevices["virtio3"] = resp.VirtualIODevice3
+	storageDevices["virtio4"] = resp.VirtualIODevice4
+	storageDevices["virtio5"] = resp.VirtualIODevice5
+	storageDevices["virtio6"] = resp.VirtualIODevice6
+	storageDevices["virtio7"] = resp.VirtualIODevice7
+	storageDevices["virtio8"] = resp.VirtualIODevice8
+	storageDevices["virtio9"] = resp.VirtualIODevice9
+	storageDevices["virtio10"] = resp.VirtualIODevice10
+	storageDevices["virtio11"] = resp.VirtualIODevice11
+	storageDevices["virtio12"] = resp.VirtualIODevice12
+	storageDevices["virtio13"] = resp.VirtualIODevice13
+	storageDevices["virtio14"] = resp.VirtualIODevice14
+	storageDevices["virtio15"] = resp.VirtualIODevice15
 
 	for k, v := range storageDevices {
 		if v != nil {
@@ -519,7 +519,7 @@ func getDiskInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.Reso
 }
 
 // getDiskDatastores returns a list of the used datastores in a VM
-func getDiskDatastores(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) []string {
+func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string {
 	storageDevices := getDiskInfo(vm, d)
 	datastoresSet := map[string]int{}
 
@@ -540,13 +540,13 @@ func getDiskDatastores(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schem
 	return datastores
 }
 
-func getPCIInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) map[string]*proxmox.CustomPCIDevice {
-	pciDevices := map[string]*proxmox.CustomPCIDevice{}
+func getPCIInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomPCIDevice {
+	pciDevices := map[string]*vms.CustomPCIDevice{}
 
-	pciDevices["hostpci0"] = vm.PCIDevice0
-	pciDevices["hostpci1"] = vm.PCIDevice1
-	pciDevices["hostpci2"] = vm.PCIDevice2
-	pciDevices["hostpci3"] = vm.PCIDevice3
+	pciDevices["hostpci0"] = resp.PCIDevice0
+	pciDevices["hostpci1"] = resp.PCIDevice1
+	pciDevices["hostpci2"] = resp.PCIDevice2
+	pciDevices["hostpci3"] = resp.PCIDevice3
 
 	return pciDevices
 }

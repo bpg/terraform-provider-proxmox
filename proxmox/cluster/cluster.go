@@ -11,6 +11,20 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+)
+
+const (
+	getVMIDStep = 1
+)
+
+var (
+	//nolint:gochecknoglobals
+	getVMIDCounter = -1
+	//nolint:gochecknoglobals
+	getVMIDCounterMutex = &sync.Mutex{}
 )
 
 // GetNextID retrieves the next free VM identifier for the cluster.
@@ -30,4 +44,50 @@ func (c *Client) GetNextID(ctx context.Context, vmID *int) (*int, error) {
 	}
 
 	return (*int)(resBody.Data), nil
+}
+
+// GetVMID retrieves the next available VM identifier.
+func (c *Client) GetVMID(ctx context.Context) (*int, error) {
+	getVMIDCounterMutex.Lock()
+	defer getVMIDCounterMutex.Unlock()
+
+	if getVMIDCounter < 0 {
+		nextVMID, err := c.GetNextID(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if nextVMID == nil {
+			return nil, errors.New("unable to retrieve the next available VM identifier")
+		}
+
+		getVMIDCounter = *nextVMID + getVMIDStep
+
+		tflog.Debug(ctx, "next VM identifier", map[string]interface{}{
+			"id": *nextVMID,
+		})
+
+		return nextVMID, nil
+	}
+
+	vmID := getVMIDCounter
+
+	for vmID <= 2147483637 {
+		_, err := c.GetNextID(ctx, &vmID)
+		if err != nil {
+			vmID += getVMIDStep
+
+			continue
+		}
+
+		getVMIDCounter = vmID + getVMIDStep
+
+		tflog.Debug(ctx, "next VM identifier", map[string]interface{}{
+			"id": vmID,
+		})
+
+		return &vmID, nil
+	}
+
+	return nil, errors.New("unable to determine the next available VM identifier")
 }

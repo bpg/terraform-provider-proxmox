@@ -25,7 +25,7 @@ func (c *VirtualEnvironmentClient) GetHosts(ctx context.Context, nodeName string
 		resBody,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving hosts configuration: %w", err)
 	}
 
 	if resBody.Data == nil {

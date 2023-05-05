@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -29,18 +31,6 @@ type VirtualEnvironmentNodeGetTimeResponseData struct {
 	LocalTime types.CustomTimestamp `json:"localtime"`
 	TimeZone  string                `json:"timezone"`
 	UTCTime   types.CustomTimestamp `json:"time"`
-}
-
-// VirtualEnvironmentNodeGetTaskStatusResponseBody contains the body from a node get task status response.
-type VirtualEnvironmentNodeGetTaskStatusResponseBody struct {
-	Data *VirtualEnvironmentNodeGetTaskStatusResponseData `json:"data,omitempty"`
-}
-
-// VirtualEnvironmentNodeGetTaskStatusResponseData contains the data from a node get task status response.
-type VirtualEnvironmentNodeGetTaskStatusResponseData struct {
-	PID      int    `json:"pid,omitempty"`
-	Status   string `json:"status,omitempty"`
-	ExitCode string `json:"exitstatus,omitempty"`
 }
 
 // VirtualEnvironmentNodeListResponseBody contains the body from a node list response.

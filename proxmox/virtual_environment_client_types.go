@@ -13,7 +13,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/container"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/vm"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 )
 
 const (
@@ -51,9 +51,9 @@ type VirtualEnvironmentMultiPartData struct {
 
 type API interface {
 	Cluster() *cluster.Client
-	VM(nodeName string, vmID int) *vm.Client
 	Container(nodeName string, vmID int) *container.Client
 	Access() *access.Client
+	Node(nodeName string) *nodes.Client
 }
 
 func (c *VirtualEnvironmentClient) API() API {
@@ -72,14 +72,14 @@ func (c *client) Cluster() *cluster.Client {
 	return &cluster.Client{Client: c.c}
 }
 
-func (c *client) VM(nodeName string, vmID int) *vm.Client {
-	return &vm.Client{Client: c.c, NodeName: nodeName, VMID: vmID}
-}
-
 func (c *client) Container(nodeName string, vmID int) *container.Client {
 	return &container.Client{Client: c.c, NodeName: nodeName, VMID: vmID}
 }
 
 func (c *client) Access() *access.Client {
 	return &access.Client{Client: c.c}
+}
+
+func (c *client) Node(nodeName string) *nodes.Client {
+	return &nodes.Client{Client: c.c, NodeName: nodeName}
 }

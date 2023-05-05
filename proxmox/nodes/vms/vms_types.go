@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package proxmox
+package vms
 
 import (
 	"encoding/json"
@@ -218,8 +218,8 @@ type CustomWatchdogDevice struct {
 	Model  *string `json:"model"            url:"model"`
 }
 
-// VirtualEnvironmentVMCloneRequestBody contains the data for an virtual machine clone request.
-type VirtualEnvironmentVMCloneRequestBody struct {
+// CloneRequestBody contains the data for an virtual machine clone request.
+type CloneRequestBody struct {
 	BandwidthLimit      *int              `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`
 	Description         *string           `json:"description,omitempty" url:"description,omitempty"`
 	FullCopy            *types.CustomBool `json:"full,omitempty"        url:"full,omitempty,int"`
@@ -232,8 +232,8 @@ type VirtualEnvironmentVMCloneRequestBody struct {
 	VMIDNew             int               `json:"newid"                 url:"newid"`
 }
 
-// VirtualEnvironmentVMCreateRequestBody contains the data for a virtual machine create request.
-type VirtualEnvironmentVMCreateRequestBody struct {
+// CreateRequestBody contains the data for a virtual machine create request.
+type CreateRequestBody struct {
 	ACPI                 *types.CustomBool              `json:"acpi,omitempty"               url:"acpi,omitempty,int"`
 	Agent                *CustomAgent                   `json:"agent,omitempty"              url:"agent,omitempty"`
 	AllowReboot          *types.CustomBool              `json:"reboot,omitempty"             url:"reboot,omitempty,int"`
@@ -305,37 +305,37 @@ type VirtualEnvironmentVMCreateRequestBody struct {
 	WatchdogDevice       *CustomWatchdogDevice          `json:"watchdog,omitempty"           url:"watchdog,omitempty"`
 }
 
-type VirtualEnvironmentVMCreateResponseBody struct {
+type CreateResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseBody contains the body from a QEMU get network interfaces response.
-type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseBody struct {
-	Data *VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData `json:"data,omitempty"`
+// GetQEMUNetworkInterfacesResponseBody contains the body from a QEMU get network interfaces response.
+type GetQEMUNetworkInterfacesResponseBody struct {
+	Data *GetQEMUNetworkInterfacesResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData contains the data from a QEMU get network interfaces response.
-type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseData struct {
-	Result *[]VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResult `json:"result,omitempty"`
+// GetQEMUNetworkInterfacesResponseData contains the data from a QEMU get network interfaces response.
+type GetQEMUNetworkInterfacesResponseData struct {
+	Result *[]GetQEMUNetworkInterfacesResponseResult `json:"result,omitempty"`
 }
 
-// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResult contains the result from a QEMU get network interfaces response.
-type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResult struct {
-	MACAddress  string                                                                 `json:"hardware-address"`
-	Name        string                                                                 `json:"name"`
-	Statistics  *VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics  `json:"statistics,omitempty"`
-	IPAddresses *[]VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultIPAddress `json:"ip-addresses,omitempty"`
+// GetQEMUNetworkInterfacesResponseResult contains the result from a QEMU get network interfaces response.
+type GetQEMUNetworkInterfacesResponseResult struct {
+	MACAddress  string                                             `json:"hardware-address"`
+	Name        string                                             `json:"name"`
+	Statistics  *GetQEMUNetworkInterfacesResponseResultStatistics  `json:"statistics,omitempty"`
+	IPAddresses *[]GetQEMUNetworkInterfacesResponseResultIPAddress `json:"ip-addresses,omitempty"`
 }
 
-// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultIPAddress contains the IP address from a QEMU get network interfaces response.
-type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultIPAddress struct {
+// GetQEMUNetworkInterfacesResponseResultIPAddress contains the IP address from a QEMU get network interfaces response.
+type GetQEMUNetworkInterfacesResponseResultIPAddress struct {
 	Address string `json:"ip-address"`
 	Prefix  int    `json:"prefix"`
 	Type    string `json:"ip-address-type"`
 }
 
-// VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics contains the statistics from a QEMU get network interfaces response.
-type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics struct {
+// GetQEMUNetworkInterfacesResponseResultStatistics contains the statistics from a QEMU get network interfaces response.
+type GetQEMUNetworkInterfacesResponseResultStatistics struct {
 	RXBytes   int `json:"rx-bytes"`
 	RXDropped int `json:"rx-dropped"`
 	RXErrors  int `json:"rx-errs"`
@@ -346,13 +346,13 @@ type VirtualEnvironmentVMGetQEMUNetworkInterfacesResponseResultStatistics struct
 	TXPackets int `json:"tx-packets"`
 }
 
-// VirtualEnvironmentVMGetResponseBody contains the body from a virtual machine get response.
-type VirtualEnvironmentVMGetResponseBody struct {
-	Data *VirtualEnvironmentVMGetResponseData `json:"data,omitempty"`
+// GetResponseBody contains the body from a virtual machine get response.
+type GetResponseBody struct {
+	Data *GetResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMGetResponseData contains the data from an virtual machine get response.
-type VirtualEnvironmentVMGetResponseData struct {
+// GetResponseData contains the data from an virtual machine get response.
+type GetResponseData struct {
 	ACPI                 *types.CustomBool               `json:"acpi,omitempty"`
 	Agent                *CustomAgent                    `json:"agent,omitempty"`
 	AllowReboot          *types.CustomBool               `json:"reboot,omitempty"`
@@ -486,13 +486,13 @@ type VirtualEnvironmentVMGetResponseData struct {
 	WatchdogDevice       *CustomWatchdogDevice           `json:"watchdog,omitempty"`
 }
 
-// VirtualEnvironmentVMGetStatusResponseBody contains the body from a VM get status response.
-type VirtualEnvironmentVMGetStatusResponseBody struct {
-	Data *VirtualEnvironmentVMGetStatusResponseData `json:"data,omitempty"`
+// GetStatusResponseBody contains the body from a VM get status response.
+type GetStatusResponseBody struct {
+	Data *GetStatusResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMGetStatusResponseData contains the data from a VM get status response.
-type VirtualEnvironmentVMGetStatusResponseData struct {
+// GetStatusResponseData contains the data from a VM get status response.
+type GetStatusResponseData struct {
 	AgentEnabled     *types.CustomBool `json:"agent,omitempty"`
 	CPUCount         *float64          `json:"cpus,omitempty"`
 	Lock             *string           `json:"lock,omitempty"`
@@ -508,33 +508,33 @@ type VirtualEnvironmentVMGetStatusResponseData struct {
 	VMID             *int              `json:"vmid,omitempty"`
 }
 
-// VirtualEnvironmentVMListResponseBody contains the body from an virtual machine list response.
-type VirtualEnvironmentVMListResponseBody struct {
-	Data []*VirtualEnvironmentVMListResponseData `json:"data,omitempty"`
+// ListResponseBody contains the body from an virtual machine list response.
+type ListResponseBody struct {
+	Data []*ListResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMListResponseData contains the data from an virtual machine list response.
-type VirtualEnvironmentVMListResponseData struct {
+// ListResponseData contains the data from an virtual machine list response.
+type ListResponseData struct {
 	Name *string `json:"name,omitempty"`
 	Tags *string `json:"tags,omitempty"`
 	VMID int     `json:"vmid,omitempty"`
 }
 
-// VirtualEnvironmentVMMigrateRequestBody contains the body for a VM migration request.
-type VirtualEnvironmentVMMigrateRequestBody struct {
+// MigrateRequestBody contains the body for a VM migration request.
+type MigrateRequestBody struct {
 	OnlineMigration *types.CustomBool `json:"online,omitempty"           url:"online,omitempty"`
 	TargetNode      string            `json:"target"                     url:"target"`
 	TargetStorage   *string           `json:"targetstorage,omitempty"    url:"targetstorage,omitempty"`
 	WithLocalDisks  *types.CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty,int"`
 }
 
-// VirtualEnvironmentVMMigrateResponseBody contains the body from a VM migrate response.
-type VirtualEnvironmentVMMigrateResponseBody struct {
+// MigrateResponseBody contains the body from a VM migrate response.
+type MigrateResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMMoveDiskRequestBody contains the body for a VM move disk request.
-type VirtualEnvironmentVMMoveDiskRequestBody struct {
+// MoveDiskRequestBody contains the body for a VM move disk request.
+type MoveDiskRequestBody struct {
 	BandwidthLimit      *int              `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
 	DeleteOriginalDisk  *types.CustomBool `json:"delete,omitempty"  url:"delete,omitempty,int"`
 	Digest              *string           `json:"digest,omitempty"  url:"digest,omitempty"`
@@ -543,59 +543,59 @@ type VirtualEnvironmentVMMoveDiskRequestBody struct {
 	TargetStorageFormat *string           `json:"format,omitempty"  url:"format,omitempty"`
 }
 
-// VirtualEnvironmentVMMoveDiskResponseBody contains the body from a VM move disk response.
-type VirtualEnvironmentVMMoveDiskResponseBody struct {
+// MoveDiskResponseBody contains the body from a VM move disk response.
+type MoveDiskResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMRebootRequestBody contains the body for a VM reboot request.
-type VirtualEnvironmentVMRebootRequestBody struct {
+// RebootRequestBody contains the body for a VM reboot request.
+type RebootRequestBody struct {
 	Timeout *int `json:"timeout,omitempty" url:"timeout,omitempty"`
 }
 
-// VirtualEnvironmentVMRebootResponseBody contains the body from a VM reboot response.
-type VirtualEnvironmentVMRebootResponseBody struct {
+// RebootResponseBody contains the body from a VM reboot response.
+type RebootResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMResizeDiskRequestBody contains the body for a VM resize disk request.
-type VirtualEnvironmentVMResizeDiskRequestBody struct {
+// ResizeDiskRequestBody contains the body for a VM resize disk request.
+type ResizeDiskRequestBody struct {
 	Digest   *string           `json:"digest,omitempty"   url:"digest,omitempty"`
 	Disk     string            `json:"disk"               url:"disk"`
 	Size     types.DiskSize    `json:"size"               url:"size"`
 	SkipLock *types.CustomBool `json:"skiplock,omitempty" url:"skiplock,omitempty,int"`
 }
 
-// VirtualEnvironmentVMShutdownRequestBody contains the body for a VM shutdown request.
-type VirtualEnvironmentVMShutdownRequestBody struct {
+// ShutdownRequestBody contains the body for a VM shutdown request.
+type ShutdownRequestBody struct {
 	ForceStop  *types.CustomBool `json:"forceStop,omitempty"  url:"forceStop,omitempty,int"`
 	KeepActive *types.CustomBool `json:"keepActive,omitempty" url:"keepActive,omitempty,int"`
 	SkipLock   *types.CustomBool `json:"skipLock,omitempty"   url:"skipLock,omitempty,int"`
 	Timeout    *int              `json:"timeout,omitempty"    url:"timeout,omitempty"`
 }
 
-// VirtualEnvironmentVMShutdownResponseBody contains the body from a VM shutdown response.
-type VirtualEnvironmentVMShutdownResponseBody struct {
+// ShutdownResponseBody contains the body from a VM shutdown response.
+type ShutdownResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMStartResponseBody contains the body from a VM start response.
-type VirtualEnvironmentVMStartResponseBody struct {
+// StartResponseBody contains the body from a VM start response.
+type StartResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMStopResponseBody contains the body from a VM stop response.
-type VirtualEnvironmentVMStopResponseBody struct {
+// StopResponseBody contains the body from a VM stop response.
+type StopResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMUpdateAsyncResponseBody contains the body from a VM async update response.
-type VirtualEnvironmentVMUpdateAsyncResponseBody struct {
+// UpdateAsyncResponseBody contains the body from a VM async update response.
+type UpdateAsyncResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentVMUpdateRequestBody contains the data for an virtual machine update request.
-type VirtualEnvironmentVMUpdateRequestBody VirtualEnvironmentVMCreateRequestBody
+// UpdateRequestBody contains the data for an virtual machine update request.
+type UpdateRequestBody CreateRequestBody
 
 // EncodeValues converts a CustomAgent struct to a URL vlaue.
 func (r CustomAgent) EncodeValues(key string, v *url.Values) error {
@@ -665,6 +665,7 @@ func (r CustomBoot) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomCloudInitConfig struct to multiple URL values.
 func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
+	//nolint:nestif
 	if r.Files != nil {
 		var volumes []string
 
@@ -1259,9 +1260,8 @@ func (r CustomWatchdogDevice) EncodeValues(key string, v *url.Values) error {
 func (r *CustomAgent) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("error unmarshalling CustomAgent: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1293,9 +1293,8 @@ func (r *CustomAgent) UnmarshalJSON(b []byte) error {
 func (r *CustomAudioDevice) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("error unmarshalling CustomAudioDevice: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1320,8 +1319,7 @@ func (r *CustomAudioDevice) UnmarshalJSON(b []byte) error {
 func (r *CustomBoot) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err := json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("error unmarshalling CustomBoot: %w", err)
 	}
 
@@ -1345,9 +1343,8 @@ func (r *CustomBoot) UnmarshalJSON(b []byte) error {
 func (r *CustomCloudInitFiles) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("error unmarshalling CustomCloudInitFiles: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1376,9 +1373,8 @@ func (r *CustomCloudInitFiles) UnmarshalJSON(b []byte) error {
 func (r *CustomCloudInitIPConfig) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("error unmarshalling CustomCloudInitIPConfig: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1407,15 +1403,13 @@ func (r *CustomCloudInitIPConfig) UnmarshalJSON(b []byte) error {
 func (r *CustomCloudInitSSHKeys) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("error unmarshalling CustomCloudInitSSHKeys: %w", err)
 	}
 
-	s, err = url.QueryUnescape(s)
-
+	s, err := url.QueryUnescape(s)
 	if err != nil {
-		return err
+		return fmt.Errorf("error unescaping CustomCloudInitSSHKeys: %w", err)
 	}
 
 	if s != "" {
@@ -1431,9 +1425,8 @@ func (r *CustomCloudInitSSHKeys) UnmarshalJSON(b []byte) error {
 func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("error unmarshalling CustomCPUEmulation: %w", err)
 	}
 
 	if s == "" {
@@ -1475,8 +1468,7 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err := json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("failed to unmarshal CustomEFIDisk: %w", err)
 	}
 
@@ -1508,9 +1500,8 @@ func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomNetworkDevice: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1518,6 +1509,7 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 	for _, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
+		//nolint:nestif
 		if len(v) == 2 {
 			switch v[0] {
 			case "bridge":
@@ -1535,28 +1527,28 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 			case "queues":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to parse queues: %w", err)
 				}
 
 				r.Queues = &iv
 			case "rate":
 				fv, err := strconv.ParseFloat(v[1], 64)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to parse rate: %w", err)
 				}
 				r.RateLimit = &fv
 
 			case "mtu":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to parse mtu: %w", err)
 				}
 				r.MTU = &iv
 
 			case "tag":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to parse tag: %w", err)
 				}
 
 				r.Tag = &iv
@@ -1567,7 +1559,7 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 				for i, trunk := range trunks {
 					iv, err := strconv.Atoi(trunk)
 					if err != nil {
-						return err
+						return fmt.Errorf("failed to parse trunk %d: %w", i, err)
 					}
 
 					r.Trunks[i] = iv
@@ -1588,9 +1580,8 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomPCIDevice: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1627,9 +1618,8 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 func (r *CustomSharedMemory) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomSharedMemory: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1642,10 +1632,10 @@ func (r *CustomSharedMemory) UnmarshalJSON(b []byte) error {
 			case "name":
 				r.Name = &v[1]
 			case "size":
+				var err error
 				r.Size, err = strconv.Atoi(v[1])
-
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to parse shared memory size: %w", err)
 				}
 			}
 		}
@@ -1658,9 +1648,8 @@ func (r *CustomSharedMemory) UnmarshalJSON(b []byte) error {
 func (r *CustomSMBIOS) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomSMBIOS: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1698,9 +1687,8 @@ func (r *CustomSMBIOS) UnmarshalJSON(b []byte) error {
 func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomStorageDevice: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -1708,6 +1696,7 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	for _, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
+		//nolint:nestif
 		if len(v) == 1 {
 			r.FileVolume = v[0]
 			ext := filepath.Ext(v[0])
@@ -1727,28 +1716,28 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "mbps_rd":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to convert mbps_rd to int: %w", err)
 				}
 
 				r.MaxReadSpeedMbps = &iv
 			case "mbps_rd_max":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to convert mbps_rd_max to int: %w", err)
 				}
 
 				r.BurstableReadSpeedMbps = &iv
 			case "mbps_wr":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to convert mbps_wr to int: %w", err)
 				}
 
 				r.MaxWriteSpeedMbps = &iv
 			case "mbps_wr_max":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to convert mbps_wr_max to int: %w", err)
 				}
 
 				r.BurstableWriteSpeedMbps = &iv
@@ -1783,9 +1772,8 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 func (r *CustomVGADevice) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomVGADevice: %w", err)
 	}
 
 	if s == "" {
@@ -1804,7 +1792,7 @@ func (r *CustomVGADevice) UnmarshalJSON(b []byte) error {
 			case "memory":
 				m, err := strconv.Atoi(v[1])
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to convert memory to int: %w", err)
 				}
 
 				r.Memory = &m
@@ -1821,9 +1809,8 @@ func (r *CustomVGADevice) UnmarshalJSON(b []byte) error {
 func (r *CustomWatchdogDevice) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return err
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomWatchdogDevice: %w", err)
 	}
 
 	if s == "" {

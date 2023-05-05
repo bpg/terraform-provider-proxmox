@@ -67,7 +67,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
 	vmID := d.Get(mkDataSourceVirtualEnvironmentVMVMID).(int)
 
-	vmStatus, err := veClient.GetVMStatus(ctx, nodeName, vmID)
+	vmStatus, err := veClient.API().Node(nodeName).VM(vmID).GetVMStatus(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
 			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {

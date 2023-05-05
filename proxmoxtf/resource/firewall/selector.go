@@ -63,7 +63,7 @@ func selectFirewallAPI(
 		if nn, ok := d.GetOk(mkSelectorNodeName); ok {
 			nodeName := nn.(string)
 			if v, ok := d.GetOk(mkSelectorVMID); ok {
-				api = veClient.API().VM(nodeName, v.(int)).Firewall()
+				api = veClient.API().Node(nodeName).VM(v.(int)).Firewall()
 			} else if v, ok := d.GetOk(mkSelectorContainerID); ok {
 				api = veClient.API().Container(nodeName, v.(int)).Firewall()
 			}

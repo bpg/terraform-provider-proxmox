@@ -4,29 +4,28 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package vm
+package nodes
 
 import (
 	"fmt"
 	"net/url"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	vmfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/vm/firewall"
 )
 
 type Client struct {
 	types.Client
 	NodeName string
-	VMID     int
 }
 
 func (c *Client) ExpandPath(path string) string {
-	return fmt.Sprintf("nodes/%s/qemu/%d/%s", url.PathEscape(c.NodeName), c.VMID, path)
+	return fmt.Sprintf("nodes/%s/%s", url.PathEscape(c.NodeName), path)
 }
 
-func (c *Client) Firewall() firewall.API {
-	return &vmfirewall.Client{
-		Client: firewall.Client{Client: c},
+func (c *Client) VM(vmID int) *vms.Client {
+	return &vms.Client{
+		Client: c,
+		VMID:   vmID,
 	}
 }
