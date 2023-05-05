@@ -1117,10 +1117,12 @@ func VM() *schema.Resource {
 				Default:     dvResourceVirtualEnvironmentVMTabletDevice,
 			},
 			mkResourceVirtualEnvironmentVMTags: {
-				Type:        schema.TypeList,
-				Description: "Tags of the virtual machine. This is only meta information.",
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Type:                  schema.TypeList,
+				Description:           "Tags of the virtual machine. This is only meta information.",
+				Optional:              true,
+				Elem:                  &schema.Schema{Type: schema.TypeString},
+				DiffSuppressFunc:      suppressIfListsAreEqualIgnoringOrder,
+				DiffSuppressOnRefresh: true,
 			},
 			mkResourceVirtualEnvironmentVMTemplate: {
 				Type:        schema.TypeBool,

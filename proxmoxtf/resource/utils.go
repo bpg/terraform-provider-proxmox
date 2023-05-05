@@ -9,7 +9,9 @@ package resource
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -404,6 +406,42 @@ func getVMIDValidator() schema.SchemaValidateDiagFunc {
 
 		return
 	})
+}
+
+// suppressIfListsAreEqualIgnoringOrder is a customdiff.SuppressionFunc that suppresses
+// changes to a list if the old and new lists are equal, ignoring the order of the
+// elements.
+// It will be called for each list item, so it is not super efficient. It is
+// recommended to use it only for small lists.
+// Ref: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
+func suppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceData) bool {
+	// the key is a path to the list item, not the list itself, e.g. "tags.0"
+	lastDotIndex := strings.LastIndex(key, ".")
+	if lastDotIndex != -1 {
+		key = key[:lastDotIndex]
+	}
+	oldData, newData := d.GetChange(key)
+	if oldData == nil || newData == nil {
+		return false
+	}
+	oldArray := oldData.([]interface{})
+	newArray := newData.([]interface{})
+	if len(oldArray) != len(newArray) {
+		return false
+	}
+
+	oldEvents := make([]string, len(oldArray))
+	newEvents := make([]string, len(newArray))
+	for i, oldEvt := range oldArray {
+		oldEvents[i] = fmt.Sprint(oldEvt)
+	}
+	for j, newEvt := range newArray {
+		newEvents[j] = fmt.Sprint(newEvt)
+	}
+
+	sort.Strings(oldEvents)
+	sort.Strings(newEvents)
+	return reflect.DeepEqual(oldEvents, newEvents)
 }
 
 func getDiskInfo(vm *proxmox.VirtualEnvironmentVMGetResponseData, d *schema.ResourceData) map[string]*proxmox.CustomStorageDevice {
