@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -69,11 +69,11 @@ func dnsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	return nil
 }
 
-func dnsGetUpdateBody(d *schema.ResourceData) *proxmox.DNSUpdateRequestBody {
+func dnsGetUpdateBody(d *schema.ResourceData) *nodes.DNSUpdateRequestBody {
 	domain := d.Get(mkResourceVirtualEnvironmentDNSDomain).(string)
 	servers := d.Get(mkResourceVirtualEnvironmentDNSServers).([]interface{})
 
-	body := &proxmox.DNSUpdateRequestBody{
+	body := &nodes.DNSUpdateRequestBody{
 		SearchDomain: &domain,
 	}
 
@@ -103,7 +103,9 @@ func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentDNSNodeName).(string)
-	dns, err := veClient.GetDNS(ctx, nodeName)
+	api := veClient.API().Node(nodeName)
+
+	dns, err := api.GetDNS(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -143,10 +145,11 @@ func dnsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentDNSNodeName).(string)
+	api := veClient.API().Node(nodeName)
 
 	body := dnsGetUpdateBody(d)
 
-	err = veClient.UpdateDNS(ctx, nodeName, body)
+	err = api.UpdateDNS(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package proxmox
+package nodes
 
 // HostsGetResponseBody contains the body from a hosts get response.
 type HostsGetResponseBody struct {

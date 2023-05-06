@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/container"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -695,7 +695,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	fullCopy := types.CustomBool(true)
 
-	cloneBody := &container.CloneRequestBody{
+	cloneBody := &containers.CloneRequestBody{
 		FullCopy: &fullCopy,
 		VMIDNew:  vmID,
 	}
@@ -719,9 +719,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = veClient.API().Container(cloneNodeName, cloneVMID).CloneContainer(ctx, cloneBody)
+		err = veClient.API().Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	} else {
-		err = veClient.API().Container(nodeName, cloneVMID).CloneContainer(ctx, cloneBody)
+		err = veClient.API().Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	}
 
 	if err != nil {
@@ -730,14 +730,16 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	d.SetId(strconv.Itoa(vmID))
 
+	api := veClient.API().Node(nodeName).Container(vmID)
+
 	// Wait for the container to be created and its configuration lock to be released.
-	err = veClient.API().Container(nodeName, vmID).WaitForContainerLock(ctx, 600, 5, true)
+	err = api.WaitForContainerLock(ctx, 600, 5, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
-	updateBody := &container.UpdateRequestBody{}
+	updateBody := &containers.UpdateRequestBody{}
 
 	console := d.Get(mkResourceVirtualEnvironmentContainerConsole).([]interface{})
 
@@ -842,7 +844,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 			if len(keys) > 0 {
 				initializationUserAccountKeys := make(
-					container.CustomSSHKeys,
+					containers.CustomSSHKeys,
 					len(keys),
 				)
 
@@ -892,13 +894,13 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	networkInterfaceArray := make(
-		container.CustomNetworkInterfaceArray,
+		containers.CustomNetworkInterfaceArray,
 		len(networkInterface),
 	)
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
-		networkInterfaceObject := container.CustomNetworkInterface{}
+		networkInterfaceObject := containers.CustomNetworkInterface{}
 
 		bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -993,13 +995,13 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.Template = &template
 	}
 
-	err = veClient.API().Container(nodeName, vmID).UpdateContainer(ctx, updateBody)
+	err = api.UpdateContainer(ctx, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Wait for the container's lock to be released.
-	err = veClient.API().Container(nodeName, vmID).WaitForContainerLock(ctx, 600, 5, true)
+	err = api.WaitForContainerLock(ctx, 600, 5, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1064,12 +1066,12 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
 
-	var rootFS *container.CustomRootFS
+	var rootFS *containers.CustomRootFS
 	diskSize := diskBlock[mkResourceVirtualEnvironmentContainerDiskSize].(int)
 	if diskSize != dvResourceVirtualEnvironmentContainerDiskSize && diskDatastoreID != "" {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
-		rootFS = &container.CustomRootFS{
+		rootFS = &containers.CustomRootFS{
 			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
 		}
 	}
@@ -1086,7 +1088,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	nesting := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
-	features := container.CustomFeatures{
+	features := containers.CustomFeatures{
 		Nesting: &nesting,
 	}
 
@@ -1098,7 +1100,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	var initializationIPConfigIPv4Gateway []string
 	var initializationIPConfigIPv6Address []string
 	var initializationIPConfigIPv6Gateway []string
-	initializationUserAccountKeys := container.CustomSSHKeys{}
+	initializationUserAccountKeys := containers.CustomSSHKeys{}
 	initializationUserAccountPassword := dvResourceVirtualEnvironmentContainerInitializationUserAccountPassword
 
 	if len(initialization) > 0 {
@@ -1160,7 +1162,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentContainerInitializationUserAccountKeys].([]interface{})
 			initializationUserAccountKeys = make(
-				container.CustomSSHKeys,
+				containers.CustomSSHKeys,
 				len(keys),
 			)
 
@@ -1188,13 +1190,13 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 	networkInterfaceArray := make(
-		container.CustomNetworkInterfaceArray,
+		containers.CustomNetworkInterfaceArray,
 		len(networkInterface),
 	)
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
-		networkInterfaceObject := container.CustomNetworkInterface{}
+		networkInterfaceObject := containers.CustomNetworkInterface{}
 
 		bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -1278,7 +1280,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	// Attempt to create the resource using the retrieved values.
-	createBody := container.CreateRequestBody{
+	createBody := containers.CreateRequestBody{
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
@@ -1332,7 +1334,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Tags = &tagsString
 	}
 
-	err = veClient.API().Container(nodeName, 0).CreateContainer(ctx, &createBody)
+	err = veClient.API().Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1340,7 +1342,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(strconv.Itoa(vmID))
 
 	// Wait for the container's lock to be released.
-	err = veClient.API().Container(nodeName, vmID).WaitForContainerLock(ctx, 600, 5, true)
+	err = veClient.API().Node(nodeName).Container(vmID).WaitForContainerLock(ctx, 600, 5, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1368,7 +1370,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	api := veClient.API().Container(nodeName, vmID)
+	api := veClient.API().Node(nodeName).Container(vmID)
 
 	// Start the container and wait for it to reach a running state before continuing.
 	err = api.StartContainer(ctx)
@@ -1407,13 +1409,13 @@ func containerGetExistingNetworkInterface(
 	nodeName string,
 	vmID int,
 ) ([]interface{}, error) {
-	containerInfo, err := client.API().Container(nodeName, vmID).GetContainer(ctx)
+	containerInfo, err := client.API().Node(nodeName).Container(vmID).GetContainer(ctx)
 	if err != nil {
 		return []interface{}{}, err
 	}
 
 	var networkInterfaces []interface{}
-	networkInterfaceArray := []*container.CustomNetworkInterface{
+	networkInterfaceArray := []*containers.CustomNetworkInterface{
 		containerInfo.NetworkInterface0,
 		containerInfo.NetworkInterface1,
 		containerInfo.NetworkInterface2,
@@ -1518,7 +1520,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(err)
 	}
 
-	api := veClient.API().Container(nodeName, vmID)
+	api := veClient.API().Node(nodeName).Container(vmID)
 
 	// Retrieve the entire configuration in order to compare it to the state.
 	containerConfig, err := api.GetContainer(ctx)
@@ -1719,7 +1721,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	var ipConfigList []interface{}
-	networkInterfaceArray := []*container.CustomNetworkInterface{
+	networkInterfaceArray := []*containers.CustomNetworkInterface{
 		containerConfig.NetworkInterface0,
 		containerConfig.NetworkInterface1,
 		containerConfig.NetworkInterface2,
@@ -1985,10 +1987,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		return diag.FromErr(err)
 	}
 
-	api := veClient.API().Container(nodeName, vmID)
+	api := veClient.API().Node(nodeName).Container(vmID)
 
 	// Prepare the new request object.
-	updateBody := container.UpdateRequestBody{
+	updateBody := containers.UpdateRequestBody{
 		Delete: []string{},
 	}
 
@@ -2170,13 +2172,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	if d.HasChange(mkResourceVirtualEnvironmentContainerInitialization) ||
 		d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
 		networkInterfaceArray := make(
-			container.CustomNetworkInterfaceArray,
+			containers.CustomNetworkInterfaceArray,
 			len(networkInterface),
 		)
 
 		for ni, nv := range networkInterface {
 			networkInterfaceMap := nv.(map[string]interface{})
-			networkInterfaceObject := container.CustomNetworkInterface{}
+			networkInterfaceObject := containers.CustomNetworkInterface{}
 
 			bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 			enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -2299,7 +2301,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := 300
 
-			err = api.ShutdownContainer(ctx, &container.ShutdownRequestBody{
+			err = api.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			})
@@ -2322,7 +2324,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 		err = api.RebootContainer(
 			ctx,
-			&container.RebootRequestBody{
+			&containers.RebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
 		)
@@ -2347,7 +2349,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 		return diag.FromErr(err)
 	}
 
-	api := veClient.API().Container(nodeName, vmID)
+	api := veClient.API().Node(nodeName).Container(vmID)
 
 	// Shut down the container before deleting it.
 	status, err := api.GetContainerStatus(ctx)
@@ -2361,7 +2363,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 
 		err = api.ShutdownContainer(
 			ctx,
-			&container.ShutdownRequestBody{
+			&containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			},

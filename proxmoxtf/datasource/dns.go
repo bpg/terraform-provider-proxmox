@@ -56,7 +56,9 @@ func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDNSNodeName).(string)
-	dns, err := veClient.GetDNS(ctx, nodeName)
+	api := veClient.API().Node(nodeName)
+
+	dns, err := api.GetDNS(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

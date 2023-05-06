@@ -62,10 +62,11 @@ func selectFirewallAPI(
 		var api firewall.API = veClient.API().Cluster().Firewall()
 		if nn, ok := d.GetOk(mkSelectorNodeName); ok {
 			nodeName := nn.(string)
+			nodeAPI := veClient.API().Node(nodeName)
 			if v, ok := d.GetOk(mkSelectorVMID); ok {
-				api = veClient.API().Node(nodeName).VM(v.(int)).Firewall()
+				api = nodeAPI.VM(v.(int)).Firewall()
 			} else if v, ok := d.GetOk(mkSelectorContainerID); ok {
-				api = veClient.API().Container(nodeName, v.(int)).Firewall()
+				api = nodeAPI.Container(v.(int)).Firewall()
 			}
 		}
 

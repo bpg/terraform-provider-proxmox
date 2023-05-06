@@ -12,7 +12,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/container"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 )
 
@@ -51,7 +50,6 @@ type VirtualEnvironmentMultiPartData struct {
 
 type API interface {
 	Cluster() *cluster.Client
-	Container(nodeName string, vmID int) *container.Client
 	Access() *access.Client
 	Node(nodeName string) *nodes.Client
 }
@@ -70,10 +68,6 @@ type client struct {
 
 func (c *client) Cluster() *cluster.Client {
 	return &cluster.Client{Client: c.c}
-}
-
-func (c *client) Container(nodeName string, vmID int) *container.Client {
-	return &container.Client{Client: c.c, NodeName: nodeName, VMID: vmID}
 }
 
 func (c *client) Access() *access.Client {

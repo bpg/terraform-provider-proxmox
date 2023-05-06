@@ -4,28 +4,21 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package proxmox
+package nodes
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 )
 
 // GetDNS retrieves the DNS configuration for a node.
-func (c *VirtualEnvironmentClient) GetDNS(ctx context.Context, nodeName string) (*DNSGetResponseData, error) {
+func (c *Client) GetDNS(ctx context.Context) (*DNSGetResponseData, error) {
 	resBody := &DNSGetResponseBody{}
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)),
-		nil,
-		resBody,
-	)
+	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("dns"), nil, resBody)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving DNS configuration: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -36,6 +29,10 @@ func (c *VirtualEnvironmentClient) GetDNS(ctx context.Context, nodeName string) 
 }
 
 // UpdateDNS updates the DNS configuration for a node.
-func (c *VirtualEnvironmentClient) UpdateDNS(ctx context.Context, nodeName string, d *DNSUpdateRequestBody) error {
-	return c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("nodes/%s/dns", url.PathEscape(nodeName)), d, nil)
+func (c *Client) UpdateDNS(ctx context.Context, d *DNSUpdateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("dns"), d, nil)
+	if err != nil {
+		return fmt.Errorf("error updating DNS configuration: %w", err)
+	}
+	return nil
 }

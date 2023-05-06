@@ -14,9 +14,7 @@ import (
 )
 
 // Version retrieves the version information.
-func (c *VirtualEnvironmentClient) Version(
-	ctx context.Context,
-) (*VersionResponseData, error) {
+func (c *VirtualEnvironmentClient) Version(ctx context.Context) (*VersionResponseData, error) {
 	resBody := &VersionResponseBody{}
 	err := c.DoRequest(ctx, http.MethodGet, "version", nil, resBody)
 	if err != nil {

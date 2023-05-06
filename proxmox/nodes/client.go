@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -21,6 +22,13 @@ type Client struct {
 
 func (c *Client) ExpandPath(path string) string {
 	return fmt.Sprintf("nodes/%s/%s", url.PathEscape(c.NodeName), path)
+}
+
+func (c *Client) Container(vmID int) *containers.Client {
+	return &containers.Client{
+		Client: c,
+		VMID:   vmID,
+	}
 }
 
 func (c *Client) VM(vmID int) *vms.Client {

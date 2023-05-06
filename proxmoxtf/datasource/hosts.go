@@ -90,7 +90,9 @@ func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentHostsNodeName).(string)
-	hosts, err := veClient.GetHosts(ctx, nodeName)
+	api := veClient.API().Node(nodeName)
+
+	hosts, err := api.GetHosts(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

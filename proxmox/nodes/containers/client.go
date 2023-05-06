@@ -4,25 +4,23 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package container
+package containers
 
 import (
 	"fmt"
-	"net/url"
 
-	containerfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/container/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
+	containerfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type Client struct {
 	types.Client
-	NodeName string
-	VMID     int
+	VMID int
 }
 
 func (c *Client) basePath() string {
-	return fmt.Sprintf("nodes/%s/lxc", url.PathEscape(c.NodeName))
+	return c.Client.ExpandPath("lxc")
 }
 
 func (c *Client) ExpandPath(path string) string {
