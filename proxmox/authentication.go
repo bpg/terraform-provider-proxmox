@@ -70,7 +70,7 @@ func (c *VirtualEnvironmentClient) Authenticate(ctx context.Context, reset bool)
 
 	err = c.ValidateResponseCode(res)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to authenticate: %w", err)
 	}
 
 	resBody := AuthenticationResponseBody{}
@@ -106,7 +106,7 @@ func (c *VirtualEnvironmentClient) Authenticate(ctx context.Context, reset bool)
 func (c *VirtualEnvironmentClient) AuthenticateRequest(ctx context.Context, req *http.Request) error {
 	err := c.Authenticate(ctx, false)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to authenticate: %w", err)
 	}
 
 	req.AddCookie(&http.Cookie{

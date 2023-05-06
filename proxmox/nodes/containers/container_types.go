@@ -341,9 +341,8 @@ func (r CustomMountPointArray) EncodeValues(
 	v *url.Values,
 ) error {
 	for i, d := range r {
-		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
-		if err != nil {
-			return err
+		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+			return fmt.Errorf("failed to encode CustomMountPointArray: %w", err)
 		}
 	}
 
@@ -430,9 +429,8 @@ func (r CustomNetworkInterfaceArray) EncodeValues(
 	v *url.Values,
 ) error {
 	for i, d := range r {
-		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
-		if err != nil {
-			return err
+		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+			return fmt.Errorf("failed to encode CustomNetworkInterfaceArray: %w", err)
 		}
 	}
 

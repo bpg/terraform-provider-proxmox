@@ -645,9 +645,8 @@ func (r CustomAudioDevice) EncodeValues(key string, v *url.Values) error {
 func (r CustomAudioDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
 		if d.Enabled {
-			err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
-			if err != nil {
-				return err
+			if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+				return fmt.Errorf("unable to encode audio device %d: %w", i, err)
 			}
 		}
 	}
@@ -854,9 +853,8 @@ func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 func (r CustomNetworkDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
 		if d.Enabled {
-			err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
-			if err != nil {
-				return err
+			if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+				return fmt.Errorf("failed to encode network device %d: %w", i, err)
 			}
 		}
 	}
@@ -890,9 +888,8 @@ func (r CustomNUMADevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomNUMADevices array to multiple URL values.
 func (r CustomNUMADevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
-		if err != nil {
-			return err
+		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+			return fmt.Errorf("failed to encode NUMA device %d: %w", i, err)
 		}
 	}
 
@@ -945,9 +942,8 @@ func (r CustomPCIDevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomPCIDevices array to multiple URL values.
 func (r CustomPCIDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
-		if err != nil {
-			return err
+		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+			return fmt.Errorf("failed to encode PCI device %d: %w", i, err)
 		}
 	}
 
@@ -1144,11 +1140,10 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomStorageDevices array to multiple URL values.
 func (r CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
-	for i, d := range r {
+	for s, d := range r {
 		if d.Enabled {
-			err := d.EncodeValues(i, v)
-			if err != nil {
-				return err
+			if err := d.EncodeValues(s, v); err != nil {
+				return fmt.Errorf("error encoding storage device %s: %w", s, err)
 			}
 		}
 	}
@@ -1178,9 +1173,8 @@ func (r CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 // EncodeValues converts a CustomUSBDevices array to multiple URL values.
 func (r CustomUSBDevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
-		err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
-		if err != nil {
-			return err
+		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+			return fmt.Errorf("error encoding USB device %d: %w", i, err)
 		}
 	}
 
@@ -1231,9 +1225,8 @@ func (r CustomVirtualIODevice) EncodeValues(key string, v *url.Values) error {
 func (r CustomVirtualIODevices) EncodeValues(key string, v *url.Values) error {
 	for i, d := range r {
 		if d.Enabled {
-			err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v)
-			if err != nil {
-				return err
+			if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+				return fmt.Errorf("error encoding virtual IO device %d: %w", i, err)
 			}
 		}
 	}
