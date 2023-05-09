@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -8,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,9 +27,10 @@ func CloseOrLogError(ctx context.Context) func(io.Closer) {
 	}
 }
 
-// Regex used to identify size strings. Case insensitive. Covers megabytes, gigabytes and terabytes
-var sizeRegex = regexp.MustCompile(`(?i)^([\d\.]+)\s?(m|mb|mib|g|gb|gib|t|tb|tib)?$`)
+// Regex used to identify size strings. Case-insensitive. Covers megabytes, gigabytes and terabytes
+var sizeRegex = regexp.MustCompile(`(?i)^(\d+)(m|mb|mib|g|gb|gib|t|tb|tib)$`)
 
+// ParseDiskSize parses a disk size string into a number of gigabytes
 func ParseDiskSize(size *string) (int, error) {
 	if size == nil {
 		return 0, nil
@@ -36,19 +38,17 @@ func ParseDiskSize(size *string) (int, error) {
 
 	matches := sizeRegex.FindStringSubmatch(*size)
 	if len(matches) > 0 {
-		fsize, err := strconv.ParseFloat(matches[1], 64)
+		fsize, err := strconv.Atoi(matches[1])
 		if err != nil {
-			return -1, fmt.Errorf("cannot parse disk size \"%s\"", *size)
+			return -1, fmt.Errorf("cannot parse disk size \"%s\": %w", *size, err)
 		}
 		switch strings.ToLower(matches[2]) {
 		case "m", "mb", "mib":
-			return int(math.Ceil(fsize / 1024)), nil
+			return fsize / 1024, nil
 		case "g", "gb", "gib":
-			return int(math.Ceil(fsize)), nil
+			return fsize, nil
 		case "t", "tb", "tib":
-			return int(math.Ceil(fsize * 1024)), nil
-		default:
-			return int(math.Ceil(fsize)), nil
+			return fsize * 1024, nil
 		}
 	}
 
