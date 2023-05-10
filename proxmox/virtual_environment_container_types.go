@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -120,7 +122,7 @@ type VirtualEnvironmentContainerCustomNetworkInterfaceArray []VirtualEnvironment
 // VirtualEnvironmentContainerCustomRootFS contains the values for the "rootfs" property.
 type VirtualEnvironmentContainerCustomRootFS struct {
 	ACL          *types.CustomBool `json:"acl,omitempty"          url:"acl,omitempty,int"`
-	DiskSize     *string           `json:"size,omitempty"         url:"size,omitempty"`
+	Size         *types.DiskSize   `json:"size,omitempty"         url:"size,omitempty"`
 	MountOptions *[]string         `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
 	Quota        *types.CustomBool `json:"quota,omitempty"        url:"quota,omitempty,int"`
 	ReadOnly     *types.CustomBool `json:"ro,omitempty"           url:"ro,omitempty,int"`
@@ -449,8 +451,8 @@ func (r VirtualEnvironmentContainerCustomRootFS) EncodeValues(key string, v *url
 		}
 	}
 
-	if r.DiskSize != nil {
-		values = append(values, fmt.Sprintf("size=%s", *r.DiskSize))
+	if r.Size != nil {
+		values = append(values, fmt.Sprintf("size=%s", *r.Size))
 	}
 
 	if r.MountOptions != nil {
@@ -753,7 +755,11 @@ func (r *VirtualEnvironmentContainerCustomRootFS) UnmarshalJSON(b []byte) error 
 				bv := types.CustomBool(v[1] == "1")
 				r.Shared = &bv
 			case "size":
-				r.DiskSize = &v[1]
+				r.Size = new(types.DiskSize)
+				err := r.Size.UnmarshalJSON([]byte(v[1]))
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal disk size: %w", err)
+				}
 			}
 		}
 	}

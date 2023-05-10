@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package types
 
@@ -151,7 +153,7 @@ func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON converts a boolean to a JSON value.
+// MarshalJSON converts a timestamp to a JSON value.
 func (r CustomTimestamp) MarshalJSON() ([]byte, error) {
 	timestamp := time.Time(r)
 	buffer := bytes.NewBufferString(strconv.FormatInt(timestamp.Unix(), 10))
@@ -159,7 +161,7 @@ func (r CustomTimestamp) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// UnmarshalJSON converts a JSON value to a boolean.
+// UnmarshalJSON converts a JSON value to a timestamp.
 func (r *CustomTimestamp) UnmarshalJSON(b []byte) error {
 	s := string(b)
 	i, err := strconv.ParseInt(s, 10, 64)
