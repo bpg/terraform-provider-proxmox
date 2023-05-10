@@ -1720,12 +1720,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			continue
 		}
 
-		compareNumber, err := proxmox.ParseDiskSize(currentDiskInfo.Size)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		if diskSize < compareNumber {
+		if diskSize < currentDiskInfo.Size.ToGigabytes() {
 			return diag.Errorf(
 				"disk resize fails requests size (%dG) is lower than current size (%s)",
 				diskSize,
@@ -1743,7 +1738,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		diskResizeBody := &proxmox.VirtualEnvironmentVMResizeDiskRequestBody{
 			Disk: diskInterface,
-			Size: fmt.Sprintf("%dG", diskSize),
+			Size: types.DiskSizeFromGigabytes(diskSize),
 		}
 
 		moveDisk := false
@@ -1765,7 +1760,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			}
 		}
 
-		if diskSize > compareNumber {
+		if diskSize > currentDiskInfo.Size.ToGigabytes() {
 			err = veClient.ResizeVMDisk(ctx, nodeName, vmID, diskResizeBody)
 			if err != nil {
 				return diag.FromErr(err)
@@ -2505,8 +2500,8 @@ func vmGetDiskDeviceObjects(
 		diskDevice.Interface = &diskInterface
 		diskDevice.Format = &fileFormat
 		diskDevice.FileID = &fileID
-		sizeString := fmt.Sprintf("%dG", size)
-		diskDevice.Size = &sizeString
+		diskSize := types.DiskSizeFromGigabytes(size)
+		diskDevice.Size = &diskSize
 		diskDevice.SizeInt = &size
 		diskDevice.IOThread = &ioThread
 		diskDevice.Discard = &discard
@@ -3060,16 +3055,7 @@ func vmReadCustom(
 		}
 
 		disk[mkResourceVirtualEnvironmentVMDiskInterface] = di
-
-		diskSize := 0
-
-		var err error
-		diskSize, err = proxmox.ParseDiskSize(dd.Size)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		disk[mkResourceVirtualEnvironmentVMDiskSize] = diskSize
+		disk[mkResourceVirtualEnvironmentVMDiskSize] = dd.Size.ToGigabytes()
 
 		if dd.BurstableReadSpeedMbps != nil ||
 			dd.BurstableWriteSpeedMbps != nil ||

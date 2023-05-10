@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -78,9 +80,9 @@ type CustomCPUEmulation struct {
 
 // CustomEFIDisk handles QEMU EFI disk parameters.
 type CustomEFIDisk struct {
-	DiskSize   *int    `json:"size,omitempty"   url:"size,omitempty"`
-	FileVolume string  `json:"file"             url:"file"`
-	Format     *string `json:"format,omitempty" url:"format,omitempty"`
+	Size       *types.DiskSize `json:"size,omitempty"   url:"size,omitempty"`
+	FileVolume string          `json:"file"             url:"file"`
+	Format     *string         `json:"format,omitempty" url:"format,omitempty"`
 }
 
 // CustomNetworkDevice handles QEMU network device parameters.
@@ -174,7 +176,7 @@ type CustomStorageDevice struct {
 	MaxReadSpeedMbps        *int              `json:"mbps_rd,omitempty"     url:"mbps_rd,omitempty"`
 	MaxWriteSpeedMbps       *int              `json:"mbps_wr,omitempty"     url:"mbps_wr,omitempty"`
 	Media                   *string           `json:"media,omitempty"       url:"media,omitempty"`
-	Size                    *string           `json:"size,omitempty"        url:"size,omitempty"`
+	Size                    *types.DiskSize   `json:"size,omitempty"        url:"size,omitempty"`
 	Interface               *string
 	ID                      *string
 	FileID                  *string
@@ -560,7 +562,7 @@ type VirtualEnvironmentVMRebootResponseBody struct {
 type VirtualEnvironmentVMResizeDiskRequestBody struct {
 	Digest   *string           `json:"digest,omitempty"   url:"digest,omitempty"`
 	Disk     string            `json:"disk"               url:"disk"`
-	Size     string            `json:"size"               url:"size"`
+	Size     types.DiskSize    `json:"size"               url:"size"`
 	SkipLock *types.CustomBool `json:"skiplock,omitempty" url:"skiplock,omitempty,int"`
 }
 
@@ -778,8 +780,8 @@ func (r CustomEFIDisk) EncodeValues(key string, v *url.Values) error {
 		values = append(values, fmt.Sprintf("format=%s", *r.Format))
 	}
 
-	if r.DiskSize != nil {
-		values = append(values, fmt.Sprintf("size=%d", *r.DiskSize))
+	if r.Size != nil {
+		values = append(values, fmt.Sprintf("size=%s", *r.Size))
 	}
 
 	v.Add(key, strings.Join(values, ","))
@@ -1490,12 +1492,11 @@ func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 			case "file":
 				r.FileVolume = v[1]
 			case "size":
-				iv, err := ParseDiskSize(&v[1])
+				r.Size = new(types.DiskSize)
+				err := r.Size.UnmarshalJSON([]byte(v[1]))
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to unmarshal disk size: %w", err)
 				}
-
-				r.DiskSize = &iv
 			}
 		}
 	}
@@ -1754,7 +1755,11 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "media":
 				r.Media = &v[1]
 			case "size":
-				r.Size = &v[1]
+				r.Size = new(types.DiskSize)
+				err := r.Size.UnmarshalJSON([]byte(v[1]))
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal disk size: %w", err)
+				}
 			case "format":
 				r.Format = &v[1]
 			case "iothread":

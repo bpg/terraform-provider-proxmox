@@ -1626,12 +1626,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if containerConfig.RootFS != nil {
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = volumeParts[0]
-
-		diskSize, err := proxmox.ParseDiskSize(containerConfig.RootFS.DiskSize)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		disk[mkResourceVirtualEnvironmentContainerDiskSize] = diskSize
+		disk[mkResourceVirtualEnvironmentContainerDiskSize] = containerConfig.RootFS.Size.ToGigabytes()
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkResourceVirtualEnvironmentContainerDiskDatastoreID] = "local"

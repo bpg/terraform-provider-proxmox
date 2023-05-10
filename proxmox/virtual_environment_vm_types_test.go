@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package proxmox
 
 import (
@@ -9,6 +15,7 @@ import (
 )
 
 func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
+	ds8gig := types.DiskSizeFromGigabytes(8)
 	tests := []struct {
 		name    string
 		line    string
@@ -19,25 +26,25 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			name: "simple volume",
 			line: `"local-lvm:vm-2041-disk-0,discard=on,ssd=1,iothread=1,size=8G"`,
 			want: &CustomStorageDevice{
-				Discard:    strPtr("on"),
+				Discard:    types.StrPtr("on"),
 				Enabled:    true,
 				FileVolume: "local-lvm:vm-2041-disk-0",
-				IOThread:   boolPtr(true),
-				Size:       strPtr("8G"),
-				SSD:        boolPtr(true),
+				IOThread:   types.BoolPtr(true),
+				Size:       &ds8gig,
+				SSD:        types.BoolPtr(true),
 			},
 		},
 		{
 			name: "raw volume type",
 			line: `"nfs:2041/vm-2041-disk-0.raw,discard=ignore,ssd=1,iothread=1,size=8G"`,
 			want: &CustomStorageDevice{
-				Discard:    strPtr("ignore"),
+				Discard:    types.StrPtr("ignore"),
 				Enabled:    true,
 				FileVolume: "nfs:2041/vm-2041-disk-0.raw",
-				Format:     strPtr("raw"),
-				IOThread:   boolPtr(true),
-				Size:       strPtr("8G"),
-				SSD:        boolPtr(true),
+				Format:     types.StrPtr("raw"),
+				IOThread:   types.BoolPtr(true),
+				Size:       &ds8gig,
+				SSD:        types.BoolPtr(true),
 			},
 		},
 	}
@@ -50,13 +57,4 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			require.Equal(t, tt.want, r)
 		})
 	}
-}
-
-func strPtr(s string) *string {
-	return &s
-}
-
-func boolPtr(s bool) *types.CustomBool {
-	customBool := types.CustomBool(s)
-	return &customBool
 }
