@@ -6,10 +6,12 @@
 
 package types
 
+// StrPtr returns a pointer to a string.
 func StrPtr(s string) *string {
 	return &s
 }
 
+// BoolPtr returns a pointer to a bool.
 func BoolPtr(s bool) *CustomBool {
 	customBool := CustomBool(s)
 	return &customBool

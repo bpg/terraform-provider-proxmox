@@ -15,25 +15,29 @@ import (
 	"strings"
 )
 
-// Regex used to identify size strings. Case-insensitive. Covers megabytes, gigabytes and terabytes
+// Regex used to identify size strings. Case-insensitive. Covers megabytes, gigabytes and terabytes.
 var sizeRegex = regexp.MustCompile(`(?i)^(\d+(\.\d+)?)(k|kb|kib|m|mb|mib|g|gb|gib|t|tb|tib)?$`)
 
 // DiskSize allows a JSON integer value to also be a string. This is mapped to `<DiskSize>` data type in Proxmox API.
 // Represents a disk size in bytes.
 type DiskSize int64
 
+// String returns the string representation of the disk size.
 func (r DiskSize) String() string {
 	return formatDiskSize(int64(r))
 }
 
-func (r DiskSize) ToGigabytes() int {
+// InGigabytes returns the disk size in gigabytes.
+func (r DiskSize) InGigabytes() int {
 	return int(int64(r) / 1024 / 1024 / 1024)
 }
 
+// DiskSizeFromGigabytes creates a DiskSize from gigabytes.
 func DiskSizeFromGigabytes(size int) DiskSize {
 	return DiskSize(size * 1024 * 1024 * 1024)
 }
 
+// MarshalJSON marshals a disk size into a Proxmox API `<DiskSize>` string.
 func (r DiskSize) MarshalJSON() ([]byte, error) {
 	bytes, err := json.Marshal(formatDiskSize(int64(r)))
 	if err != nil {
@@ -42,6 +46,7 @@ func (r DiskSize) MarshalJSON() ([]byte, error) {
 	return bytes, nil
 }
 
+// UnmarshalJSON unmarshals a disk size from a Proxmox API `<DiskSize>` string.
 func (r *DiskSize) UnmarshalJSON(b []byte) error {
 	s := string(b)
 

@@ -1720,7 +1720,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			continue
 		}
 
-		if diskSize < currentDiskInfo.Size.ToGigabytes() {
+		if diskSize < currentDiskInfo.Size.InGigabytes() {
 			return diag.Errorf(
 				"disk resize fails requests size (%dG) is lower than current size (%s)",
 				diskSize,
@@ -1760,7 +1760,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			}
 		}
 
-		if diskSize > currentDiskInfo.Size.ToGigabytes() {
+		if diskSize > currentDiskInfo.Size.InGigabytes() {
 			err = veClient.ResizeVMDisk(ctx, nodeName, vmID, diskResizeBody)
 			if err != nil {
 				return diag.FromErr(err)
@@ -3055,7 +3055,7 @@ func vmReadCustom(
 		}
 
 		disk[mkResourceVirtualEnvironmentVMDiskInterface] = di
-		disk[mkResourceVirtualEnvironmentVMDiskSize] = dd.Size.ToGigabytes()
+		disk[mkResourceVirtualEnvironmentVMDiskSize] = dd.Size.InGigabytes()
 
 		if dd.BurstableReadSpeedMbps != nil ||
 			dd.BurstableWriteSpeedMbps != nil ||
