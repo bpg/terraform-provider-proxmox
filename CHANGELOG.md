@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.19.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.18.2...v0.19.0) (2023-05-11)
+
+
+### Features
+
+* **vm,lxc:** Improved support for different disk size units ([#326](https://github.com/bpg/terraform-provider-proxmox/issues/326)) ([4be9914](https://github.com/bpg/terraform-provider-proxmox/commit/4be9914757cb9fee38f1c2c08772daca364b1ac9))
+
+
+### Bug Fixes
+
+* **vm,lxc:** Add validation for non-empty tags ([#330](https://github.com/bpg/terraform-provider-proxmox/issues/330)) ([8359c03](https://github.com/bpg/terraform-provider-proxmox/commit/8359c03aa8069d8816e0802e41fb36a220040673))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/goreleaser/goreleaser from 1.17.2 to 1.18.1 in /tools ([#324](https://github.com/bpg/terraform-provider-proxmox/issues/324)) ([aea079e](https://github.com/bpg/terraform-provider-proxmox/commit/aea079e0b11e2f1a07b734ed1edde3c468518429))
+* **deps:** bump github.com/goreleaser/goreleaser from 1.18.1 to 1.18.2 in /tools ([#327](https://github.com/bpg/terraform-provider-proxmox/issues/327)) ([d94a4ce](https://github.com/bpg/terraform-provider-proxmox/commit/d94a4ce7cf86974b93987904d430130108d9984c))
+
 ## [0.18.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.18.1...v0.18.2) (2023-05-05)
 
 
