@@ -605,10 +605,13 @@ func Container() *schema.Resource {
 				},
 			},
 			mkResourceVirtualEnvironmentContainerTags: {
-				Type:                  schema.TypeList,
-				Description:           "Tags of the container. This is only meta information.",
-				Optional:              true,
-				Elem:                  &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeList,
+				Description: "Tags of the container. This is only meta information.",
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validation.StringIsNotEmpty,
+				},
 				DiffSuppressFunc:      suppressIfListsAreEqualIgnoringOrder,
 				DiffSuppressOnRefresh: true,
 			},
