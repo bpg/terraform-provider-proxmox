@@ -13,7 +13,7 @@ type IPSetListResponseBody struct {
 	Data []*IPSetListResponseData `json:"data,omitempty"`
 }
 
-// IPSetCreateRequestBody contains the data for an IPSet create request
+// IPSetCreateRequestBody contains the data for an IPSet create request.
 type IPSetCreateRequestBody struct {
 	Comment string `json:"comment,omitempty" url:"comment,omitempty"`
 	Name    string `json:"name"              url:"name"`
@@ -38,7 +38,7 @@ type IPSetUpdateRequestBody struct {
 	Name    string  `json:"name"              url:"name"`
 }
 
-// IPSetListResponseData contains list of IPSets from
+// IPSetListResponseData contains list of IPSets from.
 type IPSetListResponseData struct {
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	Name    string  `json:"name"              url:"name"`

@@ -233,7 +233,7 @@ const (
 	vmCreateTimeoutSeconds = 10
 )
 
-// VM returns a resource that manages VMs
+// VM returns a resource that manages VMs.
 func VM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

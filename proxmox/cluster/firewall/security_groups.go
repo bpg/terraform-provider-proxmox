@@ -15,7 +15,7 @@ import (
 	"sort"
 )
 
-// SecurityGroup is an interface for the Proxmox security group API
+// SecurityGroup is an interface for the Proxmox security group API.
 type SecurityGroup interface {
 	CreateGroup(ctx context.Context, d *GroupCreateRequestBody) error
 	ListGroups(ctx context.Context) ([]*GroupListResponseData, error)

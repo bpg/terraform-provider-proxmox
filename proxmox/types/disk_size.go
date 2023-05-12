@@ -59,7 +59,7 @@ func (r *DiskSize) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// parseDiskSize parses a disk size string into a number of bytes
+// parseDiskSize parses a disk size string into a number of bytes.
 func parseDiskSize(size *string) (int64, error) {
 	if size == nil {
 		return 0, nil

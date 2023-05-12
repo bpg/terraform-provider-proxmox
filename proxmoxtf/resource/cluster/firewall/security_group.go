@@ -133,7 +133,7 @@ func SecurityGroupUpdate(ctx context.Context, api clusterfirewall.API, d *schema
 	return SecurityGroupRead(ctx, api, d)
 }
 
-// SecurityGroupDelete deletes a security group
+// SecurityGroupDelete deletes a security group.
 func SecurityGroupDelete(ctx context.Context, api clusterfirewall.API, d *schema.ResourceData) diag.Diagnostics {
 	group := d.Id()
 

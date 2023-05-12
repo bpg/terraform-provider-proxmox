@@ -26,7 +26,7 @@ const (
 	mkRuleType    = "type"
 )
 
-// RuleSchema returns the schema for the firewall rule data source
+// RuleSchema returns the schema for the firewall rule data source.
 func RuleSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkRulePos: {

@@ -12,19 +12,19 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
-// ProviderConfiguration is the configuration for the provider
+// ProviderConfiguration is the configuration for the provider.
 type ProviderConfiguration struct {
 	veClient *proxmox.VirtualEnvironmentClient
 }
 
-// NewProviderConfiguration creates a new provider configuration
+// NewProviderConfiguration creates a new provider configuration.
 func NewProviderConfiguration(veClient *proxmox.VirtualEnvironmentClient) ProviderConfiguration {
 	return ProviderConfiguration{
 		veClient: veClient,
 	}
 }
 
-// GetVEClient returns the virtual environment client
+// GetVEClient returns the virtual environment client.
 func (c *ProviderConfiguration) GetVEClient() (*proxmox.VirtualEnvironmentClient, error) {
 	if c.veClient == nil {
 		return nil, errors.New(

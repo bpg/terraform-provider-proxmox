@@ -14,17 +14,17 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
-// Client is an interface for accessing the Proxmox cluster API
+// Client is an interface for accessing the Proxmox cluster API.
 type Client struct {
 	types.Client
 }
 
-// ExpandPath expands a relative path to a full cluster API path
+// ExpandPath expands a relative path to a full cluster API path.
 func (c *Client) ExpandPath(path string) string {
 	return fmt.Sprintf("cluster/%s", path)
 }
 
-// Firewall returns a client for managing the cluster firewall
+// Firewall returns a client for managing the cluster firewall.
 func (c *Client) Firewall() clusterfirewall.API {
 	return &clusterfirewall.Client{
 		Client: firewall.Client{Client: c},

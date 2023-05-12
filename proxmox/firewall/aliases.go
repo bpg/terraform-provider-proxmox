@@ -15,7 +15,7 @@ import (
 	"sort"
 )
 
-// Alias is an interface for managing firewall aliases
+// Alias is an interface for managing firewall aliases.
 type Alias interface {
 	CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error
 	DeleteAlias(ctx context.Context, name string) error
@@ -32,7 +32,7 @@ func (c *Client) aliasPath(name string) string {
 	return fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name))
 }
 
-// CreateAlias create an alias
+// CreateAlias create an alias.
 func (c *Client) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPost, c.aliasesPath(), d, nil)
 	if err != nil {
@@ -41,7 +41,7 @@ func (c *Client) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) err
 	return nil
 }
 
-// DeleteAlias delete an alias
+// DeleteAlias delete an alias.
 func (c *Client) DeleteAlias(ctx context.Context, name string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.aliasPath(name), nil, nil)
 	if err != nil {
@@ -50,7 +50,7 @@ func (c *Client) DeleteAlias(ctx context.Context, name string) error {
 	return nil
 }
 
-// GetAlias retrieves an alias
+// GetAlias retrieves an alias.
 func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseData, error) {
 	resBody := &AliasGetResponseBody{}
 	err := c.DoRequest(ctx, http.MethodGet, c.aliasPath(name), nil, resBody)

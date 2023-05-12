@@ -19,7 +19,7 @@ import (
 	"sort"
 )
 
-// IPSet is an interface for managing IP sets
+// IPSet is an interface for managing IP sets.
 type IPSet interface {
 	CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error
 	AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseData) error
@@ -34,7 +34,7 @@ func (c *Client) ipsetPath() string {
 	return c.ExpandPath("firewall/ipset")
 }
 
-// CreateIPSet create an IPSet
+// CreateIPSet create an IPSet.
 func (c *Client) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPost, c.ipsetPath(), d, nil)
 	if err != nil {
@@ -43,7 +43,7 @@ func (c *Client) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) err
 	return nil
 }
 
-// AddCIDRToIPSet adds IP or Network to IPSet
+// AddCIDRToIPSet adds IP or Network to IPSet.
 func (c *Client) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseData) error {
 	err := c.DoRequest(
 		ctx,
@@ -67,7 +67,7 @@ func (c *Client) UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) err
 	return nil
 }
 
-// DeleteIPSet delete an IPSet
+// DeleteIPSet delete an IPSet.
 func (c *Client) DeleteIPSet(ctx context.Context, id string) error {
 	err := c.DoRequest(
 		ctx,
@@ -97,7 +97,7 @@ func (c *Client) DeleteIPSetContent(ctx context.Context, id string, cidr string)
 	return nil
 }
 
-// GetIPSetContent retrieve a list of IPSet content
+// GetIPSetContent retrieve a list of IPSet content.
 func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetResponseData, error) {
 	resBody := &IPSetGetResponseBody{}
 	err := c.DoRequest(

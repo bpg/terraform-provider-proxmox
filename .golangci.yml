@@ -77,7 +77,6 @@ linters:
     - exhaustruct
     - gci
     - gochecknoinits
-    - godot
     - goerr113
     - gomnd
     - grouper

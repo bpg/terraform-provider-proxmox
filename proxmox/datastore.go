@@ -43,7 +43,7 @@ $ pvesh get /storage/local
 │ storage │ local                                     │
 ├─────────┼───────────────────────────────────────────┤
 │ type    │ dir                                       │
-└─────────┴───────────────────────────────────────────┘
+└─────────┴───────────────────────────────────────────┘.
 */
 func (c *VirtualEnvironmentClient) GetDatastore(
 	ctx context.Context,

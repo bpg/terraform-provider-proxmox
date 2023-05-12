@@ -10,7 +10,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
-// Client is an interface for accessing the Proxmox container firewall API
+// Client is an interface for accessing the Proxmox container firewall API.
 type Client struct {
 	firewall.Client
 }

@@ -178,7 +178,7 @@ func Rules() *schema.Resource {
 	}
 }
 
-// RulesCreate creates new firewall rules
+// RulesCreate creates new firewall rules.
 func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -329,7 +329,7 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	return RulesRead(ctx, api, d)
 }
 
-// RulesDelete deletes all rules
+// RulesDelete deletes all rules.
 func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 

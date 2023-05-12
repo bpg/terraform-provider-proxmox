@@ -15,7 +15,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
-// Client is an interface for accessing the Proxmox VM API
+// Client is an interface for accessing the Proxmox VM API.
 type Client struct {
 	types.Client
 	VMID int
@@ -25,7 +25,7 @@ func (c *Client) basePath() string {
 	return c.Client.ExpandPath("qemu")
 }
 
-// ExpandPath expands a relative path to a full VM API path
+// ExpandPath expands a relative path to a full VM API path.
 func (c *Client) ExpandPath(path string) string {
 	ep := fmt.Sprintf("%s/%d", c.basePath(), c.VMID)
 	if path != "" {
@@ -34,14 +34,14 @@ func (c *Client) ExpandPath(path string) string {
 	return ep
 }
 
-// Tasks returns a client for managing VM tasks
+// Tasks returns a client for managing VM tasks.
 func (c *Client) Tasks() *tasks.Client {
 	return &tasks.Client{
 		Client: c.Client,
 	}
 }
 
-// Firewall returns a client for managing the VM firewall
+// Firewall returns a client for managing the VM firewall.
 func (c *Client) Firewall() firewall.API {
 	return &vmfirewall.Client{
 		Client: firewall.Client{Client: c},
