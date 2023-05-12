@@ -18,6 +18,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
+// Rule is an interface for the Proxmox firewall rule API
 type Rule interface {
 	GetRulesID() string
 	CreateRule(ctx context.Context, d *RuleCreateRequestBody) error
@@ -27,6 +28,7 @@ type Rule interface {
 	DeleteRule(ctx context.Context, pos int) error
 }
 
+// BaseRule is the base struct for firewall rules
 type BaseRule struct {
 	Comment  *string           `json:"comment,omitempty"   url:"comment,omitempty"`
 	Dest     *string           `json:"dest,omitempty"      url:"dest,omitempty"`
@@ -50,6 +52,7 @@ func (c *Client) rulePath(pos int) string {
 	return fmt.Sprintf("%s/%d", c.rulesPath(), pos)
 }
 
+// GetRulesID returns the ID of the rules object
 func (c *Client) GetRulesID() string {
 	return "rule-" + strconv.Itoa(schema.HashString(c.rulesPath()))
 }

@@ -29,6 +29,7 @@ const (
 	mkIPSetCIDRNoMatch = "nomatch"
 )
 
+// IPSet returns a resource to manage IP sets.
 func IPSet() *schema.Resource {
 	s := map[string]*schema.Schema{
 		mkIPSetName: {

@@ -23,6 +23,7 @@ const (
 	mkResourceVirtualEnvironmentRoleRoleID     = "role_id"
 )
 
+// Role returns a resource that manages roles.
 func Role() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

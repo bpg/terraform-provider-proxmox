@@ -19,6 +19,7 @@ import (
 	"sort"
 )
 
+// IPSet is an interface for managing IP sets
 type IPSet interface {
 	CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) error
 	AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetResponseData) error

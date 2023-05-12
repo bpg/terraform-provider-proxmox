@@ -34,6 +34,7 @@ const (
 	dvRuleSPort     = ""
 	dvRuleSource    = ""
 
+	// MkRule defines the name of the rule resource in the schema.
 	MkRule = "rule"
 
 	mkSecurityGroup = "security_group"
@@ -53,6 +54,7 @@ const (
 	mkRuleType    = "type"
 )
 
+// Rules returns a resource that manages firewall rules.
 func Rules() *schema.Resource {
 	rule := map[string]*schema.Schema{
 		mkRulePos: {
@@ -176,6 +178,7 @@ func Rules() *schema.Resource {
 	}
 }
 
+// RulesCreate creates new firewall rules
 func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -226,6 +229,7 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	return RulesRead(ctx, api, d)
 }
 
+// RulesRead reads rules from the API and updates the state.
 func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -287,6 +291,7 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 	return diags
 }
 
+// RulesUpdate updates rules.
 func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -324,6 +329,7 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	return RulesRead(ctx, api, d)
 }
 
+// RulesDelete deletes all rules
 func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 

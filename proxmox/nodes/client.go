@@ -15,15 +15,18 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
+// Client is an interface for accessing the Proxmox node API
 type Client struct {
 	types.Client
 	NodeName string
 }
 
+// ExpandPath expands a relative path to a full node API path
 func (c *Client) ExpandPath(path string) string {
 	return fmt.Sprintf("nodes/%s/%s", url.PathEscape(c.NodeName), path)
 }
 
+// Container returns a client for managing a specific container
 func (c *Client) Container(vmID int) *containers.Client {
 	return &containers.Client{
 		Client: c,
@@ -31,6 +34,7 @@ func (c *Client) Container(vmID int) *containers.Client {
 	}
 }
 
+// VM returns a client for managing a specific VM
 func (c *Client) VM(vmID int) *vms.Client {
 	return &vms.Client{
 		Client: c,

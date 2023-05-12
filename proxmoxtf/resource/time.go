@@ -25,6 +25,7 @@ const (
 	mkResourceVirtualEnvironmentTimeUTCTime   = "utc_time"
 )
 
+// Time returns a resource that manages time settings for a node.
 func Time() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

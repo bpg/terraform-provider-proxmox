@@ -12,11 +12,13 @@ import (
 	"net/http"
 )
 
+// Options is an interface for managing global firewall options.
 type Options interface {
 	SetGlobalOptions(ctx context.Context, d *OptionsPutRequestBody) error
 	GetGlobalOptions(ctx context.Context) (*OptionsGetResponseData, error)
 }
 
+// SetGlobalOptions sets the global firewall options.
 func (c *Client) SetGlobalOptions(ctx context.Context, d *OptionsPutRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPut, "cluster/firewall/options", d, nil)
 	if err != nil {
@@ -25,6 +27,7 @@ func (c *Client) SetGlobalOptions(ctx context.Context, d *OptionsPutRequestBody)
 	return nil
 }
 
+// GetGlobalOptions retrieves the global firewall options.
 func (c *Client) GetGlobalOptions(ctx context.Context) (*OptionsGetResponseData, error) {
 	resBody := &OptionsGetResponseBody{}
 	err := c.DoRequest(ctx, http.MethodGet, "cluster/firewall/options", nil, resBody)

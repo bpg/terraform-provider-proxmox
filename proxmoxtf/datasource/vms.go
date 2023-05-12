@@ -25,6 +25,7 @@ const (
 	mkDataSourceVirtualEnvironmentVMs = "vms"
 )
 
+// VMs returns a resource for the Proxmox VMs.
 func VMs() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

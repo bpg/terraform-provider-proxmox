@@ -14,6 +14,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
+// Client is an interface for accessing the Proxmox container API
 type Client struct {
 	types.Client
 	VMID int
@@ -23,6 +24,7 @@ func (c *Client) basePath() string {
 	return c.Client.ExpandPath("lxc")
 }
 
+// ExpandPath expands a relative path to a full container API path
 func (c *Client) ExpandPath(path string) string {
 	ep := fmt.Sprintf("%s/%d", c.basePath(), c.VMID)
 	if path != "" {
@@ -31,6 +33,7 @@ func (c *Client) ExpandPath(path string) string {
 	return ep
 }
 
+// Firewall returns a client for managing the container firewall
 func (c *Client) Firewall() firewall.API {
 	return &containerfirewall.Client{
 		Client: firewall.Client{Client: c},

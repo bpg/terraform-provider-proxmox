@@ -20,6 +20,7 @@ const (
 	mkAliasesAliasNames = "alias_names"
 )
 
+// AliasesSchema defines the schema for the Aliases data source.
 func AliasesSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkAliasesAliasNames: {
@@ -31,6 +32,7 @@ func AliasesSchema() map[string]*schema.Schema {
 	}
 }
 
+// AliasesRead reads the aliases.
 func AliasesRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	list, err := fw.ListAliases(ctx)
 	if err != nil {

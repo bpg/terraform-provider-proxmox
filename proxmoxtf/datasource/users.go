@@ -28,6 +28,7 @@ const (
 	mkDataSourceVirtualEnvironmentUsersUserIDs         = "user_ids"
 )
 
+// Users returns a resource for the Proxmox users.
 func Users() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

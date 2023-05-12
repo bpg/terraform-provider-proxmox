@@ -23,6 +23,7 @@ const (
 	mkAliasComment = "comment"
 )
 
+// Alias returns a resource to manage aliases.
 func Alias() *schema.Resource {
 	s := map[string]*schema.Schema{
 		mkAliasName: {

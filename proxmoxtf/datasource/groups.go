@@ -20,6 +20,7 @@ const (
 	mkDataSourceVirtualEnvironmentGroupsGroupIDs = "group_ids"
 )
 
+// Groups returns a resource for the Proxmox user groups
 func Groups() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

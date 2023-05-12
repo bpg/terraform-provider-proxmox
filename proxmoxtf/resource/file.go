@@ -56,6 +56,7 @@ const (
 	mkResourceVirtualEnvironmentFileSourceRawResize      = "resize"
 )
 
+// File returns a resource that manages files on a node.
 func File() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

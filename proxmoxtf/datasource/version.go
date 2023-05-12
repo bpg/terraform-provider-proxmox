@@ -22,6 +22,7 @@ const (
 	mkDataSourceVirtualEnvironmentVersionVersion        = "version"
 )
 
+// Version returns a resource for the Proxmox version.
 func Version() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

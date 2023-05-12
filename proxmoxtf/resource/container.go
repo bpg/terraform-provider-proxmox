@@ -118,6 +118,7 @@ const (
 	mkResourceVirtualEnvironmentContainerVMID                              = "vm_id"
 )
 
+// Container returns a resource that manages a container.
 func Container() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

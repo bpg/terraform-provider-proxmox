@@ -17,6 +17,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/datasource/firewall"
 )
 
+// FirewallAlias returns a resource that represents a single firewall alias.
 func FirewallAlias() *schema.Resource {
 	return &schema.Resource{
 		Schema:      firewall.AliasSchema(),
@@ -24,6 +25,7 @@ func FirewallAlias() *schema.Resource {
 	}
 }
 
+// FirewallAliases returns a resource that represents firewall aliases.
 func FirewallAliases() *schema.Resource {
 	return &schema.Resource{
 		Schema:      firewall.AliasesSchema(),
@@ -31,6 +33,7 @@ func FirewallAliases() *schema.Resource {
 	}
 }
 
+// FirewallIPSet returns a resource that represents a single firewall IP set.
 func FirewallIPSet() *schema.Resource {
 	return &schema.Resource{
 		Schema:      firewall.IPSetSchema(),
@@ -38,26 +41,13 @@ func FirewallIPSet() *schema.Resource {
 	}
 }
 
+// FirewallIPSets returns a resource that represents firewall IP sets.
 func FirewallIPSets() *schema.Resource {
 	return &schema.Resource{
 		Schema:      firewall.IPSetsSchema(),
 		ReadContext: invokeFirewallAPI(firewall.IPSetsRead),
 	}
 }
-
-// func FirewallSecurityGroup() *schema.Resource {
-// 	return &schema.Resource{
-// 		Schema:      firewall.SecurityGroupSchema(),
-// 		ReadContext: invokeFirewallAPI(firewall.SecurityGroupRead),
-// 	}
-// }
-//
-// func FirewallSecurityGroups() *schema.Resource {
-// 	return &schema.Resource{
-// 		Schema:      firewall.SecurityGroupsSchema(),
-// 		ReadContext: invokeFirewallAPI(firewall.SecurityGroupsRead),
-// 	}
-// }
 
 func invokeFirewallAPI(
 	f func(context.Context, fw.API, *schema.ResourceData) diag.Diagnostics,

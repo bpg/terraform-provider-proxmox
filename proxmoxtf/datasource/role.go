@@ -20,6 +20,7 @@ const (
 	mkDataSourceVirtualEnvironmentRolePrivileges = "privileges"
 )
 
+// Role returns a resource for a single user role.
 func Role() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

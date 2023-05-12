@@ -25,6 +25,7 @@ const (
 	mkDataSourceVirtualEnvironmentVMVMID     = "vm_id"
 )
 
+// VM returns a resource for a single Proxmox VM.
 func VM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

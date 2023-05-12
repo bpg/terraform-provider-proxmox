@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
+// CloseOrLogError closes the given io.Closer and logs any error.
 func CloseOrLogError(ctx context.Context) func(io.Closer) {
 	return func(c io.Closer) {
 		if err := c.Close(); err != nil {

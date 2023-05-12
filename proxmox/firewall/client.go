@@ -8,6 +8,7 @@ package firewall
 
 import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
+// API is an interface for the Proxmox firewall API
 type API interface {
 	Alias
 	IPSet
@@ -15,6 +16,7 @@ type API interface {
 	Options
 }
 
+// Client is an interface for accessing the Proxmox firewall API
 type Client struct {
 	types.Client
 }

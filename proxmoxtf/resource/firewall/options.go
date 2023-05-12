@@ -41,6 +41,7 @@ const (
 	mkRadv        = "radv"
 )
 
+// Options returns a resource to manage firewall options.
 func Options() *schema.Resource {
 	s := map[string]*schema.Schema{
 		mkDHCP: {

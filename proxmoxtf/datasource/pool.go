@@ -26,6 +26,7 @@ const (
 	mkDataSourceVirtualEnvironmentPoolPoolID             = "pool_id"
 )
 
+// Pool returns a resource for a single Proxmox pool.
 func Pool() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

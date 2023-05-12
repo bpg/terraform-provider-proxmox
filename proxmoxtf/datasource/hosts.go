@@ -27,6 +27,7 @@ const (
 	mkDataSourceVirtualEnvironmentHostsNodeName         = "node_name"
 )
 
+// Hosts returns a resource for the Proxmox hosts.
 func Hosts() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

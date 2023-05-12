@@ -44,6 +44,7 @@ const (
 	mkResourceVirtualEnvironmentUserUserID         = "user_id"
 )
 
+// User returns a resource that manages a user in the Proxmox VE access control list.
 func User() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

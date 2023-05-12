@@ -35,6 +35,7 @@ type CustomAudioDevice struct {
 // CustomAudioDevices handles QEMU audio device parameters.
 type CustomAudioDevices []CustomAudioDevice
 
+// CustomBoot handles QEMU boot parameters.
 type CustomBoot struct {
 	Order *[]string `json:"order,omitempty" url:"order,omitempty,semicolon"`
 }
@@ -305,6 +306,7 @@ type CreateRequestBody struct {
 	WatchdogDevice       *CustomWatchdogDevice          `json:"watchdog,omitempty"           url:"watchdog,omitempty"`
 }
 
+// CreateResponseBody contains the body from a create response.
 type CreateResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
@@ -654,6 +656,7 @@ func (r CustomAudioDevices) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
+// EncodeValues converts a CustomBoot struct to multiple URL values.
 func (r CustomBoot) EncodeValues(key string, v *url.Values) error {
 	if r.Order != nil && len(*r.Order) > 0 {
 		v.Add(key, fmt.Sprintf("order=%s", strings.Join(*r.Order, ";")))

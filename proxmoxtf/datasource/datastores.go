@@ -30,6 +30,7 @@ const (
 	mkDataSourceVirtualEnvironmentDatastoresTypes          = "types"
 )
 
+// Datastores returns a resource for the Proxmox data store.
 func Datastores() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

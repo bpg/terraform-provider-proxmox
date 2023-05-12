@@ -21,6 +21,7 @@ const (
 	mkRules                = "rules"
 )
 
+// SecurityGroupSchema defines the schema for the security group data source.
 func SecurityGroupSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkSecurityGroupName: {
@@ -42,6 +43,7 @@ func SecurityGroupSchema() map[string]*schema.Schema {
 	}
 }
 
+// SecurityGroupRead reads the security group.
 func SecurityGroupRead(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 

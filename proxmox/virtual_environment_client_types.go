@@ -48,16 +48,19 @@ type VirtualEnvironmentMultiPartData struct {
 	Size     *int64
 }
 
+// API is the interface for the Proxmox Virtual Environment API.
 type API interface {
 	Cluster() *cluster.Client
 	Access() *access.Client
 	Node(nodeName string) *nodes.Client
 }
 
+// API returns an API client for the Proxmox Virtual Environment API.
 func (c *VirtualEnvironmentClient) API() API {
 	return &client{c}
 }
 
+// ExpandPath expands the given path to an absolute path.
 func (c *VirtualEnvironmentClient) ExpandPath(path string) string {
 	return path
 }

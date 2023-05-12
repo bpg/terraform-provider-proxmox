@@ -18,6 +18,7 @@ var (
 	ifaceExpression = regexp.MustCompile(`net\d+`)
 )
 
+// FirewallRate returns a schema validation function for a firewall rate.
 func FirewallRate() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringMatch(
 		rateExpression,
@@ -25,6 +26,7 @@ func FirewallRate() schema.SchemaValidateDiagFunc {
 	))
 }
 
+// FirewallIFace returns a schema validation function for a firewall iface.
 func FirewallIFace() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringMatch(
 		ifaceExpression,
@@ -32,6 +34,7 @@ func FirewallIFace() schema.SchemaValidateDiagFunc {
 	))
 }
 
+// FirewallPolicy returns a schema validation function for a firewall policy.
 func FirewallPolicy() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice(
 		[]string{"ACCEPT", "REJECT", "DROP"},
@@ -39,6 +42,7 @@ func FirewallPolicy() schema.SchemaValidateDiagFunc {
 	))
 }
 
+// FirewallLogLevel returns a schema validation function for a firewall log level.
 func FirewallLogLevel() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice(
 		[]string{"emerg", "alert", "crit", "err", "warning", "notice", "info", "debug", "nolog"},

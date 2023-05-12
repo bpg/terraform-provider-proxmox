@@ -31,6 +31,7 @@ const (
 	mkResourceVirtualEnvironmentHostsNodeName         = "node_name"
 )
 
+// Hosts returns a resource that manages hosts settings for a node.
 func Hosts() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

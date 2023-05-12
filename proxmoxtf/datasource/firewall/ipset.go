@@ -26,6 +26,7 @@ const (
 	mkIPSetCIDRNoMatch = "nomatch"
 )
 
+// IPSetSchema defines the schema for the IPSet.
 func IPSetSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkIPSetName: {
@@ -65,6 +66,7 @@ func IPSetSchema() map[string]*schema.Schema {
 	}
 }
 
+// IPSetRead reads the IPSet.
 func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 

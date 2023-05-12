@@ -23,6 +23,7 @@ const (
 	mkResourceVirtualEnvironmentDNSServers  = "servers"
 )
 
+// DNS returns a resource that manages DNS settings for a node.
 func DNS() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

@@ -8,6 +8,7 @@ package firewall
 
 import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
+// OptionsPutRequestBody is the request body for the PUT /cluster/firewall/options API call
 type OptionsPutRequestBody struct {
 	DHCP        *types.CustomBool `json:"dhcp,omitempty"          url:"dhcp,omitempty,int"`
 	Enable      *types.CustomBool `json:"enable,omitempty"        url:"enable,omitempty,int"`
@@ -21,10 +22,12 @@ type OptionsPutRequestBody struct {
 	RAdv        *types.CustomBool `json:"radv,omitempty"          url:"radv,omitempty,int"`
 }
 
+// OptionsGetResponseBody is the response body for the GET /cluster/firewall/options API call
 type OptionsGetResponseBody struct {
 	Data *OptionsGetResponseData `json:"data,omitempty"`
 }
 
+// OptionsGetResponseData is the data field of the response body for the GET /cluster/firewall/options API call
 type OptionsGetResponseData struct {
 	DHCP        *types.CustomBool `json:"dhcp"          url:"dhcp,int"`
 	Enable      *types.CustomBool `json:"enable"        url:"enable,int"`

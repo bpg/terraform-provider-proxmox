@@ -12,10 +12,12 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
+// Client is an interface for performing requests against the Proxmox 'access' API.
 type Client struct {
 	types.Client
 }
 
+// ExpandPath expands a path relative to the client's base path.
 func (c *Client) ExpandPath(path string) string {
 	return fmt.Sprintf("access/%s", path)
 }

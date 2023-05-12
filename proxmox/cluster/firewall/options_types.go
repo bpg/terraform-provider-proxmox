@@ -16,6 +16,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
+// OptionsPutRequestBody is the request body for the PUT /cluster/firewall/options API call
 type OptionsPutRequestBody struct {
 	EBTables     *types.CustomBool   `json:"ebtables,omitempty"      url:"ebtables,omitempty,int"`
 	Enable       *types.CustomBool   `json:"enable,omitempty"        url:"enable,omitempty,int"`
@@ -24,16 +25,19 @@ type OptionsPutRequestBody struct {
 	PolicyOut    *string             `json:"policy_out,omitempty"    url:"policy_out,omitempty"`
 }
 
+// CustomLogRateLimit is a custom type for the log_ratelimit field of the firewall optionss
 type CustomLogRateLimit struct {
 	Enable types.CustomBool `json:"enable,omitempty" url:"enable,omitempty,int"`
 	Burst  *int             `json:"burst,omitempty"  url:"burst,omitempty,int"`
 	Rate   *string          `json:"rate,omitempty"   url:"rate,omitempty"`
 }
 
+// OptionsGetResponseBody is the response body for the GET /cluster/firewall/options API call
 type OptionsGetResponseBody struct {
 	Data *OptionsGetResponseData `json:"data,omitempty"`
 }
 
+// OptionsGetResponseData is the data field of the response body for the GET /cluster/firewall/options API call
 type OptionsGetResponseData struct {
 	EBTables     *types.CustomBool   `json:"ebtables"      url:"ebtables, int"`
 	Enable       *types.CustomBool   `json:"enable"        url:"enable,int"`
@@ -65,6 +69,7 @@ func (r *CustomLogRateLimit) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
+// UnmarshalJSON unmarshals a CustomLogRateLimit struct from JSON.
 func (r *CustomLogRateLimit) UnmarshalJSON(b []byte) error {
 	var s string
 

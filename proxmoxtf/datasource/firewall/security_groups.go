@@ -20,6 +20,7 @@ const (
 	mkSecurityGroupsSecurityGroupNames = "security_group_names"
 )
 
+// SecurityGroupsSchema defines the schema for the security groups.
 func SecurityGroupsSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkSecurityGroupsSecurityGroupNames: {
@@ -31,6 +32,7 @@ func SecurityGroupsSchema() map[string]*schema.Schema {
 	}
 }
 
+// SecurityGroupsRead reads the security groups.
 func SecurityGroupsRead(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
 	groups, err := api.ListGroups(ctx)
 	if err != nil {

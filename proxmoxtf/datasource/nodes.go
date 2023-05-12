@@ -28,6 +28,7 @@ const (
 	mkDataSourceVirtualEnvironmentNodesUptime          = "uptime"
 )
 
+// Nodes returns a resource for the Proxmox nodes.
 func Nodes() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

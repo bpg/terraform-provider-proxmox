@@ -30,6 +30,7 @@ const (
 	mkResourceVirtualEnvironmentPoolPoolID             = "pool_id"
 )
 
+// Pool returns a resource that manages pools.
 func Pool() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

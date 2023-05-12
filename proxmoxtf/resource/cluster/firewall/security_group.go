@@ -25,6 +25,7 @@ const (
 	mkSecurityGroupComment = "comment"
 )
 
+// SecurityGroup returns a resource to manage security groups.
 func SecurityGroup() *schema.Resource {
 	s := map[string]*schema.Schema{
 		mkSecurityGroupName: {
@@ -52,6 +53,7 @@ func SecurityGroup() *schema.Resource {
 	}
 }
 
+// SecurityGroupCreate creates a new security group.
 func SecurityGroupCreate(ctx context.Context, api clusterfirewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkSecurityGroupComment).(string)
 	name := d.Get(mkSecurityGroupName).(string)
@@ -76,6 +78,7 @@ func SecurityGroupCreate(ctx context.Context, api clusterfirewall.API, d *schema
 	return SecurityGroupRead(ctx, api, d)
 }
 
+// SecurityGroupRead reads the security group from the API and updates the state.
 func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -103,6 +106,7 @@ func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.R
 	return firewall.RulesRead(ctx, api.SecurityGroup(name), d)
 }
 
+// SecurityGroupUpdate updates a security group.
 func SecurityGroupUpdate(ctx context.Context, api clusterfirewall.API, d *schema.ResourceData) diag.Diagnostics {
 	comment := d.Get(mkSecurityGroupComment).(string)
 	newName := d.Get(mkSecurityGroupName).(string)
@@ -129,6 +133,7 @@ func SecurityGroupUpdate(ctx context.Context, api clusterfirewall.API, d *schema
 	return SecurityGroupRead(ctx, api, d)
 }
 
+// SecurityGroupDelete deletes a security group
 func SecurityGroupDelete(ctx context.Context, api clusterfirewall.API, d *schema.ResourceData) diag.Diagnostics {
 	group := d.Id()
 

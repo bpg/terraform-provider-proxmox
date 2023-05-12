@@ -23,6 +23,7 @@ const (
 	mkAliasComment = "comment"
 )
 
+// AliasSchema defines the schema for the alias.
 func AliasSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkAliasName: {
@@ -43,6 +44,7 @@ func AliasSchema() map[string]*schema.Schema {
 	}
 }
 
+// AliasRead reads the alias.
 func AliasRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 

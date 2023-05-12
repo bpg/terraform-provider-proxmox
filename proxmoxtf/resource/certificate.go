@@ -40,6 +40,7 @@ const (
 	mkResourceVirtualEnvironmentCertificateSubjectAlternativeNames = "subject_alternative_names"
 )
 
+// Certificate returns a resource that manages a certificate.
 func Certificate() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

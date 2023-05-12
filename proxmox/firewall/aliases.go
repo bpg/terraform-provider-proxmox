@@ -15,6 +15,7 @@ import (
 	"sort"
 )
 
+// Alias is an interface for managing firewall aliases
 type Alias interface {
 	CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error
 	DeleteAlias(ctx context.Context, name string) error

@@ -30,6 +30,7 @@ const (
 	mkResourceVirtualEnvironmentGroupMembers      = "members"
 )
 
+// Group returns a resource that manages a group in the Proxmox VE access control list.
 func Group() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

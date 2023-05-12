@@ -35,6 +35,7 @@ const (
 	mkPolicyOut           = "output_policy"
 )
 
+// Firewall returns a resource to manage firewall options.
 func Firewall() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

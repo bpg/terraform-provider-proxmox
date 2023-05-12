@@ -21,6 +21,7 @@ const (
 	mkDataSourceVirtualEnvironmentRolesSpecial    = "special"
 )
 
+// Roles returns a resource for the user roles.
 func Roles() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

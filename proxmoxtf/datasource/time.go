@@ -24,6 +24,7 @@ const (
 	mkDataSourceVirtualEnvironmentTimeUTCTime   = "utc_time"
 )
 
+// Time returns a resource for the Proxmox time.
 func Time() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{

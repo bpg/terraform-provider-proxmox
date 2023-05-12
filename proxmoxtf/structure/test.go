@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// AssertComputedAttributes asserts that the given keys are present in the schema and are computed.
 func AssertComputedAttributes(t *testing.T, s map[string]*schema.Schema, keys []string) {
 	for _, v := range keys {
 		require.NotNil(t, s[v], "Error in Schema: Missing definition for \"%s\"", v)
@@ -21,6 +22,7 @@ func AssertComputedAttributes(t *testing.T, s map[string]*schema.Schema, keys []
 	}
 }
 
+// AssertNestedSchemaExistence asserts that the given key is present in the schema and is a nested schema.
 func AssertNestedSchemaExistence(t *testing.T, s map[string]*schema.Schema, key string) *schema.Resource {
 	sh, ok := s[key].Elem.(*schema.Resource)
 
@@ -33,6 +35,7 @@ func AssertNestedSchemaExistence(t *testing.T, s map[string]*schema.Schema, key 
 	return sh
 }
 
+// AssertOptionalArguments asserts that the given keys are present in the schema and are optional.
 func AssertOptionalArguments(t *testing.T, s map[string]*schema.Schema, keys []string) {
 	for _, v := range keys {
 		require.NotNil(t, s[v], "Error in Schema: Missing definition for \"%s\"", v)
@@ -40,6 +43,7 @@ func AssertOptionalArguments(t *testing.T, s map[string]*schema.Schema, keys []s
 	}
 }
 
+// AssertRequiredArguments asserts that the given keys are present in the schema and are required.
 func AssertRequiredArguments(t *testing.T, s map[string]*schema.Schema, keys []string) {
 	for _, v := range keys {
 		require.NotNil(t, s[v], "Error in Schema: Missing definition for \"%s\"", v)
@@ -47,6 +51,7 @@ func AssertRequiredArguments(t *testing.T, s map[string]*schema.Schema, keys []s
 	}
 }
 
+// AssertValueTypes asserts that the given keys are present in the schema and are of the given type.
 func AssertValueTypes(t *testing.T, s map[string]*schema.Schema, f map[string]schema.ValueType) {
 	for fn, ft := range f {
 		require.NotNil(t, s[fn], "Error in Schema: Missing definition for \"%s\"", fn)
