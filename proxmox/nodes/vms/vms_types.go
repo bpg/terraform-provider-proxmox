@@ -833,6 +833,7 @@ func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 	if r.Tag != nil {
 		values = append(values, fmt.Sprintf("tag=%d", *r.Tag))
 	}
+
 	if r.MTU != nil {
 		values = append(values, fmt.Sprintf("mtu=%d", *r.MTU))
 	}
@@ -1481,6 +1482,7 @@ func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 				r.FileVolume = v[1]
 			case "size":
 				r.Size = new(types.DiskSize)
+
 				err := r.Size.UnmarshalJSON([]byte(v[1]))
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)
@@ -1532,6 +1534,7 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 				if err != nil {
 					return fmt.Errorf("failed to parse rate: %w", err)
 				}
+
 				r.RateLimit = &fv
 
 			case "mtu":
@@ -1539,6 +1542,7 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 				if err != nil {
 					return fmt.Errorf("failed to parse mtu: %w", err)
 				}
+
 				r.MTU = &iv
 
 			case "tag":
@@ -1629,6 +1633,7 @@ func (r *CustomSharedMemory) UnmarshalJSON(b []byte) error {
 				r.Name = &v[1]
 			case "size":
 				var err error
+
 				r.Size, err = strconv.Atoi(v[1])
 				if err != nil {
 					return fmt.Errorf("failed to parse shared memory size: %w", err)
@@ -1695,6 +1700,7 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 		//nolint:nestif
 		if len(v) == 1 {
 			r.FileVolume = v[0]
+
 			ext := filepath.Ext(v[0])
 			if ext != "" {
 				format := string([]byte(ext)[1:])

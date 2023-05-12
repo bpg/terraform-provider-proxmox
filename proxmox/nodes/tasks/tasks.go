@@ -8,16 +8,18 @@ package tasks
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // GetTaskStatus retrieves the status of a task.
 func (c *Client) GetTaskStatus(ctx context.Context, upid string) (*GetTaskStatusResponseData, error) {
 	resBody := &GetTaskStatusResponseBody{}
+
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -30,7 +32,7 @@ func (c *Client) GetTaskStatus(ctx context.Context, upid string) (*GetTaskStatus
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -58,6 +60,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, timeout, delay in
 						status.ExitCode,
 					)
 				}
+
 				return nil
 			}
 

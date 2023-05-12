@@ -58,6 +58,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	veClient, err := config.GetVEClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -68,8 +69,9 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 		return diag.FromErr(err)
 	}
 
-	tagsData := d.Get(mkDataSourceVirtualEnvironmentVMTags).([]interface{})
 	var filterTags []string
+
+	tagsData := d.Get(mkDataSourceVirtualEnvironmentVMTags).([]interface{})
 	for i := 0; i < len(tagsData); i++ {
 		tag := strings.TrimSpace(tagsData[i].(string))
 		if len(tag) > 0 {
@@ -79,6 +81,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	sort.Strings(filterTags)
 
 	var vms []interface{}
+
 	for _, nodeName := range nodeNames {
 		listData, err := veClient.API().Node(nodeName).VM(0).ListVMs(ctx)
 		if err != nil {
@@ -110,12 +113,14 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 
 			if len(filterTags) > 0 {
 				match := true
+
 				for _, tag := range filterTags {
 					if !slices.Contains(tags, tag) {
 						match = false
 						break
 					}
 				}
+
 				if !match {
 					continue
 				}
@@ -139,6 +144,7 @@ func getNodeNames(
 	veClient *proxmox.VirtualEnvironmentClient,
 ) ([]string, error) {
 	var nodeNames []string
+
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
 	if nodeName != "" {
 		nodeNames = append(nodeNames, nodeName)
@@ -154,5 +160,6 @@ func getNodeNames(
 	}
 
 	sort.Strings(nodeNames)
+
 	return nodeNames, nil
 }

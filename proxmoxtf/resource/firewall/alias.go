@@ -78,12 +78,14 @@ func aliasCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) 
 
 func aliasRead(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	name := d.Id()
+
 	alias, err := api.GetAlias(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such alias") {
 			d.SetId("")
 			return nil
 		}
+
 		return diag.FromErr(err)
 	}
 
@@ -127,12 +129,14 @@ func aliasUpdate(ctx context.Context, api firewall.API, d *schema.ResourceData) 
 
 func aliasDelete(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	name := d.Id()
+
 	err := api.DeleteAlias(ctx, name)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such alias") {
 			d.SetId("")
 			return nil
 		}
+
 		return diag.FromErr(err)
 	}
 

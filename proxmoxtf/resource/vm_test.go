@@ -17,8 +17,8 @@ import (
 // TestVMInstantiation tests whether the VM instance can be instantiated.
 func TestVMInstantiation(t *testing.T) {
 	t.Parallel()
-	s := VM()
 
+	s := VM()
 	if s == nil {
 		t.Fatalf("Cannot instantiate VM")
 	}
@@ -27,6 +27,7 @@ func TestVMInstantiation(t *testing.T) {
 // TestVMSchema tests the VM schema.
 func TestVMSchema(t *testing.T) {
 	t.Parallel()
+
 	s := VM()
 
 	test.AssertRequiredArguments(t, s, []string{

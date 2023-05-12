@@ -183,9 +183,11 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	var diags diag.Diagnostics
 
 	rules := d.Get(MkRule).([]interface{})
+
 	for i := len(rules) - 1; i >= 0; i-- {
-		rule := rules[i].(map[string]interface{})
 		var ruleBody firewall.RuleCreateRequestBody
+
+		rule := rules[i].(map[string]interface{})
 
 		sg := rule[mkSecurityGroup].(string)
 		if sg != "" {
@@ -307,10 +309,12 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		if pos >= 0 {
 			ruleBody.Pos = &pos
 		}
+
 		action := rule[mkRuleAction].(string)
 		if action != "" {
 			ruleBody.Action = &action
 		}
+
 		rType := rule[mkRuleType].(string)
 		if rType != "" {
 			ruleBody.Type = &rType
@@ -357,14 +361,17 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	if comment != "" {
 		baseRule.Comment = &comment
 	}
+
 	dest := rule[mkRuleDest].(string)
 	if dest != "" {
 		baseRule.Dest = &dest
 	}
+
 	dport := rule[mkRuleDPort].(string)
 	if dport != "" {
 		baseRule.DPort = &dport
 	}
+
 	enableBool := types.CustomBool(rule[mkRuleEnabled].(bool))
 	baseRule.Enable = &enableBool
 
@@ -372,22 +379,27 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	if iface != "" {
 		baseRule.IFace = &iface
 	}
+
 	log := rule[mkRuleLog].(string)
 	if log != "" {
 		baseRule.Log = &log
 	}
+
 	macro := rule[mkRuleMacro].(string)
 	if macro != "" {
 		baseRule.Macro = &macro
 	}
+
 	proto := rule[mkRuleProto].(string)
 	if proto != "" {
 		baseRule.Proto = &proto
 	}
+
 	source := rule[mkRuleSource].(string)
 	if source != "" {
 		baseRule.Source = &source
 	}
+
 	sport := rule[mkRuleSPort].(string)
 	if sport != "" {
 		baseRule.SPort = &sport
@@ -419,30 +431,39 @@ func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment
 	}
+
 	if baseRule.Dest != nil {
 		rule[mkRuleDest] = *baseRule.Dest
 	}
+
 	if baseRule.DPort != nil {
 		rule[mkRuleDPort] = *baseRule.DPort
 	}
+
 	if baseRule.Enable != nil {
 		rule[mkRuleEnabled] = *baseRule.Enable
 	}
+
 	if baseRule.IFace != nil {
 		rule[mkRuleIFace] = *baseRule.IFace
 	}
+
 	if baseRule.Log != nil {
 		rule[mkRuleLog] = *baseRule.Log
 	}
+
 	if baseRule.Macro != nil {
 		rule[mkRuleMacro] = *baseRule.Macro
 	}
+
 	if baseRule.Proto != nil {
 		rule[mkRuleProto] = *baseRule.Proto
 	}
+
 	if baseRule.Source != nil {
 		rule[mkRuleSource] = *baseRule.Source
 	}
+
 	if baseRule.SPort != nil {
 		rule[mkRuleSPort] = *baseRule.SPort
 	}
@@ -452,9 +473,11 @@ func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]int
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment
 	}
+
 	if baseRule.Enable != nil {
 		rule[mkRuleEnabled] = *baseRule.Enable
 	}
+
 	if baseRule.IFace != nil {
 		rule[mkRuleIFace] = *baseRule.IFace
 	}

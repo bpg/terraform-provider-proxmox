@@ -77,6 +77,7 @@ func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	for _, ipSet := range ipSetList {
 		if ipSet.Name == ipSetName {
 			if ipSet.Comment != nil {
@@ -84,7 +85,9 @@ func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 			} else {
 				err = d.Set(mkIPSetCIDRComment, dvIPSetCIDRComment)
 			}
+
 			diags = append(diags, diag.FromErr(err)...)
+
 			break
 		}
 	}

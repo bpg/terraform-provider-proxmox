@@ -420,27 +420,33 @@ func suppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceDa
 	if lastDotIndex != -1 {
 		key = key[:lastDotIndex]
 	}
+
 	oldData, newData := d.GetChange(key)
 	if oldData == nil || newData == nil {
 		return false
 	}
+
 	oldArray := oldData.([]interface{})
 	newArray := newData.([]interface{})
+
 	if len(oldArray) != len(newArray) {
 		return false
 	}
 
 	oldEvents := make([]string, len(oldArray))
 	newEvents := make([]string, len(newArray))
+
 	for i, oldEvt := range oldArray {
 		oldEvents[i] = fmt.Sprint(oldEvt)
 	}
+
 	for j, newEvt := range newArray {
 		newEvents[j] = fmt.Sprint(newEvt)
 	}
 
 	sort.Strings(oldEvents)
 	sort.Strings(newEvents)
+
 	return reflect.DeepEqual(oldEvents, newEvents)
 }
 

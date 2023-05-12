@@ -8,7 +8,6 @@ package vms
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -16,12 +15,15 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // CloneVM clones a virtual machine.
 func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, timeout int) error {
-	resBody := &MoveDiskResponseBody{}
 	var err error
+
+	resBody := &MoveDiskResponseBody{}
 
 	// just a guard in case someone sets retries to 0 unknowingly
 	if retries <= 0 {
@@ -36,20 +38,21 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, 
 		}
 
 		if resBody.Data == nil {
-			return errors.New("the server did not include a data object in the response")
+			return types.ErrNoDataObjectInResponse
 		}
 
 		err = c.Tasks().WaitForTask(ctx, *resBody.Data, timeout, 5)
-
 		if err == nil {
 			return nil
 		}
+
 		time.Sleep(10 * time.Second)
 	}
 
 	if err != nil {
 		return fmt.Errorf("error waiting for VM clone: %w", err)
 	}
+
 	return nil
 }
 
@@ -72,13 +75,14 @@ func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody, timeout int
 // CreateVMAsync creates a virtual machine asynchronously.
 func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*string, error) {
 	resBody := &CreateResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating VM: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -90,19 +94,21 @@ func (c *Client) DeleteVM(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error deleting VM: %w", err)
 	}
+
 	return nil
 }
 
 // GetVM retrieves a virtual machine.
 func (c *Client) GetVM(ctx context.Context) (*GetResponseData, error) {
 	resBody := &GetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("config"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving VM: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -111,13 +117,14 @@ func (c *Client) GetVM(ctx context.Context) (*GetResponseData, error) {
 // GetVMNetworkInterfacesFromAgent retrieves the network interfaces reported by the QEMU agent.
 func (c *Client) GetVMNetworkInterfacesFromAgent(ctx context.Context) (*GetQEMUNetworkInterfacesResponseData, error) {
 	resBody := &GetQEMUNetworkInterfacesResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("agent/network-get-interfaces"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving VM network interfaces from agent: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -126,13 +133,14 @@ func (c *Client) GetVMNetworkInterfacesFromAgent(ctx context.Context) (*GetQEMUN
 // GetVMStatus retrieves the status for a virtual machine.
 func (c *Client) GetVMStatus(ctx context.Context) (*GetStatusResponseData, error) {
 	resBody := &GetStatusResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("status/current"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving VM status: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -156,13 +164,14 @@ func (c *Client) MigrateVM(ctx context.Context, d *MigrateRequestBody, timeout i
 // MigrateVMAsync migrates a virtual machine asynchronously.
 func (c *Client) MigrateVMAsync(ctx context.Context, d *MigrateRequestBody) (*string, error) {
 	resBody := &MigrateResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("migrate"), d, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error migrating VM: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -191,13 +200,14 @@ func (c *Client) MoveVMDisk(ctx context.Context, d *MoveDiskRequestBody, timeout
 // MoveVMDiskAsync moves a virtual machine disk asynchronously.
 func (c *Client) MoveVMDiskAsync(ctx context.Context, d *MoveDiskRequestBody) (*string, error) {
 	resBody := &MoveDiskResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("move_disk"), d, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error moving VM disk: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -206,13 +216,14 @@ func (c *Client) MoveVMDiskAsync(ctx context.Context, d *MoveDiskRequestBody) (*
 // ListVMs retrieves a list of virtual machines.
 func (c *Client) ListVMs(ctx context.Context) ([]*ListResponseData, error) {
 	resBody := &ListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.basePath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving VMs: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -236,13 +247,14 @@ func (c *Client) RebootVM(ctx context.Context, d *RebootRequestBody, timeout int
 // RebootVMAsync reboots a virtual machine asynchronously.
 func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*string, error) {
 	resBody := &RebootResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/reboot"), d, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error rebooting VM: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -251,10 +263,12 @@ func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*stri
 // ResizeVMDisk resizes a virtual machine disk.
 func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) error {
 	var err error
+
 	tflog.Debug(ctx, "resize disk", map[string]interface{}{
 		"disk": d.Disk,
 		"size": d.Size,
 	})
+
 	for i := 0; i < 5; i++ {
 		err = c.DoRequest(
 			ctx,
@@ -266,6 +280,7 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) err
 		if err == nil {
 			return nil
 		}
+
 		tflog.Debug(ctx, "resize disk failed", map[string]interface{}{
 			"retry": i,
 		})
@@ -275,9 +290,11 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) err
 			return fmt.Errorf("error resizing VM disk: %w", ctx.Err())
 		}
 	}
+
 	if err != nil {
 		return fmt.Errorf("error resizing VM disk: %w", err)
 	}
+
 	return nil
 }
 
@@ -299,13 +316,14 @@ func (c *Client) ShutdownVM(ctx context.Context, d *ShutdownRequestBody, timeout
 // ShutdownVMAsync shuts down a virtual machine asynchronously.
 func (c *Client) ShutdownVMAsync(ctx context.Context, d *ShutdownRequestBody) (*string, error) {
 	resBody := &ShutdownResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/shutdown"), d, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error shutting down VM: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -319,7 +337,6 @@ func (c *Client) StartVM(ctx context.Context, timeout int) error {
 	}
 
 	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
-
 	if err != nil {
 		return fmt.Errorf("error waiting for VM start: %w", err)
 	}
@@ -330,13 +347,14 @@ func (c *Client) StartVM(ctx context.Context, timeout int) error {
 // StartVMAsync starts a virtual machine asynchronously.
 func (c *Client) StartVMAsync(ctx context.Context) (*string, error) {
 	resBody := &StartResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error starting VM: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -360,13 +378,14 @@ func (c *Client) StopVM(ctx context.Context, timeout int) error {
 // StopVMAsync stops a virtual machine asynchronously.
 func (c *Client) StopVMAsync(ctx context.Context) (*string, error) {
 	resBody := &StopResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/stop"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error stopping VM: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -378,19 +397,21 @@ func (c *Client) UpdateVM(ctx context.Context, d *UpdateRequestBody) error {
 	if err != nil {
 		return fmt.Errorf("error updating VM: %w", err)
 	}
+
 	return nil
 }
 
 // UpdateVMAsync updates a virtual machine asynchronously.
 func (c *Client) UpdateVMAsync(ctx context.Context, d *UpdateRequestBody) (*string, error) {
 	resBody := &UpdateAsyncResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("config"), d, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error updating VM: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil

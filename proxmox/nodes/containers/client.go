@@ -30,6 +30,7 @@ func (c *Client) ExpandPath(path string) string {
 	if path != "" {
 		ep = fmt.Sprintf("%s/%s", ep, path)
 	}
+
 	return ep
 }
 

@@ -1569,9 +1569,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		initializationConfig := vmGetCloudInitConfig(d)
 
-		updateBody.CloudInitConfig = initializationConfig
+		updateBody.CloudInitConfig = vmGetCloudInitConfig(d)
 	}
 
 	if len(hostPCI) > 0 {
@@ -1941,18 +1940,22 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	if cdromEnabled {
 		bootOrderConverted = []string{"ide3"}
 	}
+
 	bootOrder := d.Get(mkResourceVirtualEnvironmentVMBootOrder).([]interface{})
 	//nolint:nestif
 	if len(bootOrder) == 0 {
 		if sataDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "sata0")
 		}
+
 		if scsiDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "scsi0")
 		}
+
 		if virtioDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "virtio0")
 		}
+
 		if networkDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "net0")
 		}
@@ -3047,6 +3050,7 @@ func vmReadCustom(
 				diags = append(diags, diag.FromErr(err)...)
 				continue
 			}
+
 			for _, v := range files {
 				if v.VolumeID == dd.FileVolume {
 					disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = v.FileFormat
@@ -3720,8 +3724,8 @@ func vmReadNetworkValues(
 			}
 
 			var macAddresses []interface{}
-			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, int(agentTimeout.Seconds()), 5, true)
 
+			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, int(agentTimeout.Seconds()), 5, true)
 			if err == nil && networkInterfaces.Result != nil {
 				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
 				ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))
@@ -3797,6 +3801,7 @@ func vmReadPrimitiveValues(
 			// Default value of "args" is "" according to the API documentation.
 			err = d.Set(mkResourceVirtualEnvironmentVMKVMArguments, "")
 		}
+
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3948,6 +3953,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	var del []string
+
 	resource := VM()
 
 	// Retrieve the entire configuration as we need to process certain values.
@@ -4072,9 +4078,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if d.HasChange(mkResourceVirtualEnvironmentVMBootOrder) {
 		bootOrder := d.Get(mkResourceVirtualEnvironmentVMBootOrder).([]interface{})
 		bootOrderConverted := make([]string, len(bootOrder))
+
 		for i, device := range bootOrder {
 			bootOrderConverted[i] = device.(string)
 		}
+
 		updateBody.Boot = &vms.CustomBoot{
 			Order: &bootOrderConverted,
 		}
@@ -4454,6 +4462,7 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		var diskMoveBodies []*vms.MoveDiskRequestBody
+
 		var diskResizeBodies []*vms.ResizeDiskRequestBody
 
 		shutdownForDisksRequired := false

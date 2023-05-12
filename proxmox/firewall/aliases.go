@@ -8,11 +8,12 @@ package firewall
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Alias is an interface for managing firewall aliases.
@@ -38,6 +39,7 @@ func (c *Client) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) err
 	if err != nil {
 		return fmt.Errorf("error creating alias: %w", err)
 	}
+
 	return nil
 }
 
@@ -47,19 +49,21 @@ func (c *Client) DeleteAlias(ctx context.Context, name string) error {
 	if err != nil {
 		return fmt.Errorf("error deleting alias '%s': %w", name, err)
 	}
+
 	return nil
 }
 
 // GetAlias retrieves an alias.
 func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseData, error) {
 	resBody := &AliasGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.aliasPath(name), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving alias '%s': %w", name, err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -68,13 +72,14 @@ func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseDa
 // ListAliases retrieves a list of aliases.
 func (c *Client) ListAliases(ctx context.Context) ([]*AliasGetResponseData, error) {
 	resBody := &AliasListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.aliasesPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving aliases: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -90,5 +95,6 @@ func (c *Client) UpdateAlias(ctx context.Context, name string, d *AliasUpdateReq
 	if err != nil {
 		return fmt.Errorf("error updating alias '%s': %w", name, err)
 	}
+
 	return nil
 }

@@ -17,8 +17,8 @@ import (
 // TestContainerInstantiation tests whether the Container instance can be instantiated.
 func TestContainerInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Container()
 
+	s := Container()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Container")
 	}
@@ -27,6 +27,7 @@ func TestContainerInstantiation(t *testing.T) {
 // TestContainerSchema tests the Container schema.
 func TestContainerSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Container()
 
 	test.AssertRequiredArguments(t, s, []string{

@@ -17,8 +17,8 @@ import (
 // TestNodesInstantiation tests whether the Nodes instance can be instantiated.
 func TestNodesInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Nodes()
 
+	s := Nodes()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Nodes")
 	}
@@ -27,6 +27,7 @@ func TestNodesInstantiation(t *testing.T) {
 // TestNodesSchema tests the Nodes schema.
 func TestNodesSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Nodes()
 
 	test.AssertComputedAttributes(t, s, []string{

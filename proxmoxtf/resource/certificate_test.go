@@ -17,8 +17,8 @@ import (
 // TestCertificateInstantiation tests whether the Certificate instance can be instantiated.
 func TestCertificateInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Certificate()
 
+	s := Certificate()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Certificate")
 	}
@@ -27,6 +27,7 @@ func TestCertificateInstantiation(t *testing.T) {
 // TestCertificateSchema tests the Certificate schema.
 func TestCertificateSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Certificate()
 
 	test.AssertRequiredArguments(t, s, []string{

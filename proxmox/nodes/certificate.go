@@ -8,9 +8,10 @@ package nodes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // DeleteCertificate deletes the custom certificate for a node.
@@ -19,19 +20,21 @@ func (c *Client) DeleteCertificate(ctx context.Context, d *CertificateDeleteRequ
 	if err != nil {
 		return fmt.Errorf("error deleting certificate: %w", err)
 	}
+
 	return nil
 }
 
 // ListCertificates retrieves the list of certificates for a node.
 func (c *Client) ListCertificates(ctx context.Context) (*[]CertificateListResponseData, error) {
 	resBody := &CertificateListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("certificates/info"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving certificate list: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -43,5 +46,6 @@ func (c *Client) UpdateCertificate(ctx context.Context, d *CertificateUpdateRequ
 	if err != nil {
 		return fmt.Errorf("error updating certificate: %w", err)
 	}
+
 	return nil
 }

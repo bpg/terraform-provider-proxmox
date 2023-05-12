@@ -60,6 +60,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	veClient, err := config.GetVEClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -85,9 +86,11 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	} else {
 		err = d.Set(mkDataSourceVirtualEnvironmentVMName, "")
 	}
+
 	diags = append(diags, diag.FromErr(err)...)
 
 	var tags []string
+
 	if vmStatus.Tags != nil {
 		for _, tag := range strings.Split(*vmStatus.Tags, ";") {
 			t := strings.TrimSpace(tag)
@@ -95,8 +98,10 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 				tags = append(tags, t)
 			}
 		}
+
 		sort.Strings(tags)
 	}
+
 	err = d.Set(mkDataSourceVirtualEnvironmentVMTags, tags)
 	diags = append(diags, diag.FromErr(err)...)
 

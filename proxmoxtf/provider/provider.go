@@ -43,6 +43,7 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 
 func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
+
 	var veClient *proxmox.VirtualEnvironmentClient
 
 	// Legacy configuration, wrapped in the deprecated `virtual_environment` block

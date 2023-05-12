@@ -8,10 +8,11 @@ package access
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func (c *Client) aclPath() string {
@@ -21,13 +22,14 @@ func (c *Client) aclPath() string {
 // GetACL retrieves the access control list.
 func (c *Client) GetACL(ctx context.Context) ([]*ACLGetResponseData, error) {
 	resBody := &ACLGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.aclPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get access control list: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -43,5 +45,6 @@ func (c *Client) UpdateACL(ctx context.Context, d *ACLUpdateRequestBody) error {
 	if err != nil {
 		return fmt.Errorf("failed to update access control list: %w", err)
 	}
+
 	return nil
 }

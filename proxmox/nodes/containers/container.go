@@ -8,11 +8,12 @@ package containers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // CloneContainer clones a container.
@@ -21,6 +22,7 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error 
 	if err != nil {
 		return fmt.Errorf("error cloning container: %w", err)
 	}
+
 	return nil
 }
 
@@ -30,6 +32,7 @@ func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) erro
 	if err != nil {
 		return fmt.Errorf("error creating container: %w", err)
 	}
+
 	return nil
 }
 
@@ -39,19 +42,21 @@ func (c *Client) DeleteContainer(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error deleting container: %w", err)
 	}
+
 	return nil
 }
 
 // GetContainer retrieves a container.
 func (c *Client) GetContainer(ctx context.Context) (*GetResponseData, error) {
 	resBody := &GetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("config"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving container: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -60,13 +65,14 @@ func (c *Client) GetContainer(ctx context.Context) (*GetResponseData, error) {
 // GetContainerStatus retrieves the status for a container.
 func (c *Client) GetContainerStatus(ctx context.Context) (*GetStatusResponseData, error) {
 	resBody := &GetStatusResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("status/current"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving container status: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -78,6 +84,7 @@ func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) erro
 	if err != nil {
 		return fmt.Errorf("error rebooting container: %w", err)
 	}
+
 	return nil
 }
 
@@ -87,6 +94,7 @@ func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) 
 	if err != nil {
 		return fmt.Errorf("error shutting down container: %w", err)
 	}
+
 	return nil
 }
 
@@ -96,6 +104,7 @@ func (c *Client) StartContainer(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error starting container: %w", err)
 	}
+
 	return nil
 }
 
@@ -105,6 +114,7 @@ func (c *Client) StopContainer(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error stopping container: %w", err)
 	}
+
 	return nil
 }
 
@@ -114,6 +124,7 @@ func (c *Client) UpdateContainer(ctx context.Context, d *UpdateRequestBody) erro
 	if err != nil {
 		return fmt.Errorf("error updating container: %w", err)
 	}
+
 	return nil
 }
 

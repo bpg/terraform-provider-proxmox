@@ -17,8 +17,8 @@ import (
 // TestProviderInstantiation() tests whether the ProxmoxVirtualEnvironment instance can be instantiated.
 func TestProviderInstantiation(t *testing.T) {
 	t.Parallel()
-	s := ProxmoxVirtualEnvironment()
 
+	s := ProxmoxVirtualEnvironment()
 	if s == nil {
 		t.Fatalf("Cannot instantiate ProxmoxVirtualEnvironment")
 	}
@@ -27,6 +27,7 @@ func TestProviderInstantiation(t *testing.T) {
 // TestProviderSchema() tests the ProxmoxVirtualEnvironment schema.
 func TestProviderSchema(t *testing.T) {
 	t.Parallel()
+
 	s := &schema.Resource{
 		Schema: ProxmoxVirtualEnvironment().Schema,
 	}

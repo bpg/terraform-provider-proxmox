@@ -46,6 +46,7 @@ func selectorSchemaMandatory() map[string]*schema.Schema {
 	s := selectorSchema()
 	s[mkSelectorNodeName].Optional = false
 	s[mkSelectorNodeName].Required = true
+
 	return s
 }
 
@@ -54,15 +55,18 @@ func selectFirewallAPI(
 ) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		config := m.(proxmoxtf.ProviderConfiguration)
+
 		veClient, err := config.GetVEClient()
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
 		var api firewall.API = veClient.API().Cluster().Firewall()
+
 		if nn, ok := d.GetOk(mkSelectorNodeName); ok {
 			nodeName := nn.(string)
 			nodeAPI := veClient.API().Node(nodeName)
+
 			if v, ok := d.GetOk(mkSelectorVMID); ok {
 				api = nodeAPI.VM(v.(int)).Firewall()
 			} else if v, ok := d.GetOk(mkSelectorContainerID); ok {

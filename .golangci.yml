@@ -89,5 +89,4 @@ linters:
     - testpackage
     - thelper
     - varnamelen
-    - wsl
   fast: false

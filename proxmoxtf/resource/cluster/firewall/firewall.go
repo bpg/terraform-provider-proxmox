@@ -218,6 +218,7 @@ func selectFirewallAPI(
 ) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		config := m.(proxmoxtf.ProviderConfiguration)
+
 		veClient, err := config.GetVEClient()
 		if err != nil {
 			return diag.FromErr(err)

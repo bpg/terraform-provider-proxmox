@@ -24,6 +24,7 @@ func TestAliasesSchemaInstantiation(t *testing.T) {
 // TestAliasesSchema tests the AliasesSchema.
 func TestAliasesSchema(t *testing.T) {
 	t.Parallel()
+
 	s := AliasesSchema()
 
 	structure.AssertComputedAttributes(t, s, []string{

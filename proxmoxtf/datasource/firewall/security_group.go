@@ -60,6 +60,7 @@ func SecurityGroupRead(ctx context.Context, api firewall.SecurityGroup, d *schem
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkSecurityGroupComment, v.Comment)
 			diags = append(diags, diag.FromErr(err)...)
+
 			break
 		}
 	}

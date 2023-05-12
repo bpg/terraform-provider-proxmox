@@ -12,11 +12,12 @@ package firewall
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // IPSet is an interface for managing IP sets.
@@ -40,6 +41,7 @@ func (c *Client) CreateIPSet(ctx context.Context, d *IPSetCreateRequestBody) err
 	if err != nil {
 		return fmt.Errorf("error creating IPSet: %w", err)
 	}
+
 	return nil
 }
 
@@ -55,6 +57,7 @@ func (c *Client) AddCIDRToIPSet(ctx context.Context, id string, d IPSetGetRespon
 	if err != nil {
 		return fmt.Errorf("error adding CIDR to IPSet: %w", err)
 	}
+
 	return nil
 }
 
@@ -64,6 +67,7 @@ func (c *Client) UpdateIPSet(ctx context.Context, d *IPSetUpdateRequestBody) err
 	if err != nil {
 		return fmt.Errorf("error updating IPSet: %w", err)
 	}
+
 	return nil
 }
 
@@ -79,6 +83,7 @@ func (c *Client) DeleteIPSet(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("error deleting IPSet %s: %w", id, err)
 	}
+
 	return nil
 }
 
@@ -94,12 +99,14 @@ func (c *Client) DeleteIPSetContent(ctx context.Context, id string, cidr string)
 	if err != nil {
 		return fmt.Errorf("error deleting IPSet content %s: %w", id, err)
 	}
+
 	return nil
 }
 
 // GetIPSetContent retrieve a list of IPSet content.
 func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetResponseData, error) {
 	resBody := &IPSetGetResponseBody{}
+
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -112,7 +119,7 @@ func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetRes
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -121,13 +128,14 @@ func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetRes
 // ListIPSets retrieves list of IPSets.
 func (c *Client) ListIPSets(ctx context.Context) ([]*IPSetListResponseData, error) {
 	resBody := &IPSetListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ipsetPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error getting IPSet list: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

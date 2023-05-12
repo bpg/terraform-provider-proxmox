@@ -16,10 +16,12 @@ import (
 
 func TestCloseOrLogError(t *testing.T) {
 	t.Parallel()
+
 	f := CloseOrLogError(context.Background())
 
 	c := &testCloser{}
 	b := &badCloser{}
+
 	func() {
 		defer f(c)
 		defer f(b)

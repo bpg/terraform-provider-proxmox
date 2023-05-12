@@ -8,21 +8,23 @@ package proxmox
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Version retrieves the version information.
 func (c *VirtualEnvironmentClient) Version(ctx context.Context) (*VersionResponseData, error) {
 	resBody := &VersionResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, "version", nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get version information: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil

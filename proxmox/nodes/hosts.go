@@ -8,21 +8,23 @@ package nodes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // GetHosts retrieves the Hosts configuration for a node.
 func (c *Client) GetHosts(ctx context.Context) (*HostsGetResponseData, error) {
 	resBody := &HostsGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("hosts"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving hosts configuration: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -34,5 +36,6 @@ func (c *Client) UpdateHosts(ctx context.Context, d *HostsUpdateRequestBody) err
 	if err != nil {
 		return fmt.Errorf("error updating hosts configuration: %w", err)
 	}
+
 	return nil
 }

@@ -8,7 +8,6 @@ package access
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -37,6 +36,7 @@ func (c *Client) ChangeUserPassword(ctx context.Context, id, password string) er
 	if err != nil {
 		return fmt.Errorf("error changing user password: %w", err)
 	}
+
 	return nil
 }
 
@@ -46,6 +46,7 @@ func (c *Client) CreateUser(ctx context.Context, d *UserCreateRequestBody) error
 	if err != nil {
 		return fmt.Errorf("error creating user: %w", err)
 	}
+
 	return nil
 }
 
@@ -55,19 +56,21 @@ func (c *Client) DeleteUser(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("error deleting user: %w", err)
 	}
+
 	return nil
 }
 
 // GetUser retrieves a user.
 func (c *Client) GetUser(ctx context.Context, id string) (*UserGetResponseData, error) {
 	resBody := &UserGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.userPath(id), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving user: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	if resBody.Data.ExpirationDate != nil {
@@ -85,13 +88,14 @@ func (c *Client) GetUser(ctx context.Context, id string) (*UserGetResponseData, 
 // ListUsers retrieves a list of users.
 func (c *Client) ListUsers(ctx context.Context) ([]*UserListResponseData, error) {
 	resBody := &UserListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.usersPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error listing users: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -118,5 +122,6 @@ func (c *Client) UpdateUser(ctx context.Context, id string, d *UserUpdateRequest
 	if err != nil {
 		return fmt.Errorf("error updating user: %w", err)
 	}
+
 	return nil
 }

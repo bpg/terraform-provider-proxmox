@@ -809,6 +809,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 					initializationIPConfigIPv4Address,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
 				)
+
 				initializationIPConfigIPv4Gateway = append(
 					initializationIPConfigIPv4Gateway,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
@@ -827,6 +828,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 					initializationIPConfigIPv6Address,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
 				)
+
 				initializationIPConfigIPv6Gateway = append(
 					initializationIPConfigIPv6Gateway,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),
@@ -1068,6 +1070,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
 
 	var rootFS *containers.CustomRootFS
+
 	diskSize := diskBlock[mkResourceVirtualEnvironmentContainerDiskSize].(int)
 	if diskSize != dvResourceVirtualEnvironmentContainerDiskSize && diskDatastoreID != "" {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
@@ -1101,6 +1104,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	var initializationIPConfigIPv4Gateway []string
 	var initializationIPConfigIPv6Address []string
 	var initializationIPConfigIPv6Gateway []string
+
 	initializationUserAccountKeys := containers.CustomSSHKeys{}
 	initializationUserAccountPassword := dvResourceVirtualEnvironmentContainerInitializationUserAccountPassword
 
@@ -1128,6 +1132,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 					initializationIPConfigIPv4Address,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
 				)
+
 				initializationIPConfigIPv4Gateway = append(
 					initializationIPConfigIPv4Gateway,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
@@ -1146,6 +1151,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 					initializationIPConfigIPv6Address,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
 				)
+
 				initializationIPConfigIPv6Gateway = append(
 					initializationIPConfigIPv6Gateway,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),
@@ -1416,6 +1422,7 @@ func containerGetExistingNetworkInterface(
 	}
 
 	var networkInterfaces []interface{}
+
 	networkInterfaceArray := []*containers.CustomNetworkInterface{
 		containerInfo.NetworkInterface0,
 		containerInfo.NetworkInterface1,
@@ -1494,15 +1501,18 @@ func containerGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 }
 
 func containerGetTagsString(d *schema.ResourceData) string {
-	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	var sanitizedTags []string
+
+	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	for i := 0; i < len(tags); i++ {
 		tag := strings.TrimSpace(tags[i].(string))
 		if len(tag) > 0 {
 			sanitizedTags = append(sanitizedTags, tag)
 		}
 	}
+
 	sort.Strings(sanitizedTags)
+
 	return strings.Join(sanitizedTags, ";")
 }
 
@@ -1722,6 +1732,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	var ipConfigList []interface{}
+
 	networkInterfaceArray := []*containers.CustomNetworkInterface{
 		containerConfig.NetworkInterface0,
 		containerConfig.NetworkInterface1,
@@ -1732,6 +1743,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		containerConfig.NetworkInterface6,
 		containerConfig.NetworkInterface7,
 	}
+
 	var networkInterfaceList []interface{}
 
 	for _, nv := range networkInterfaceArray {
@@ -1935,6 +1947,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(clone) == 0 || len(currentTags) > 0 {
 		var tags []string
+
 		if containerConfig.Tags != nil {
 			for _, tag := range strings.Split(*containerConfig.Tags, ";") {
 				t := strings.TrimSpace(tag)
@@ -1942,8 +1955,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 					tags = append(tags, t)
 				}
 			}
+
 			sort.Strings(tags)
 		}
+
 		err = d.Set(mkResourceVirtualEnvironmentContainerTags, tags)
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -2095,6 +2110,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 					initializationIPConfigIPv4Address,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
 				)
+
 				initializationIPConfigIPv4Gateway = append(
 					initializationIPConfigIPv4Gateway,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
@@ -2113,6 +2129,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 					initializationIPConfigIPv6Address,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
 				)
+
 				initializationIPConfigIPv6Gateway = append(
 					initializationIPConfigIPv6Gateway,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),

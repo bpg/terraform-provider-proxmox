@@ -17,8 +17,8 @@ import (
 // TestTimeInstantiation tests whether the Roles instance can be instantiated.
 func TestTimeInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Time()
 
+	s := Time()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Time")
 	}
@@ -27,6 +27,7 @@ func TestTimeInstantiation(t *testing.T) {
 // TestTimeSchema tests the Time schema.
 func TestTimeSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Time()
 
 	test.AssertRequiredArguments(t, s, []string{

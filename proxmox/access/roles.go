@@ -8,7 +8,6 @@ package access
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -31,6 +30,7 @@ func (c *Client) CreateRole(ctx context.Context, d *RoleCreateRequestBody) error
 	if err != nil {
 		return fmt.Errorf("error creating role: %w", err)
 	}
+
 	return nil
 }
 
@@ -40,19 +40,21 @@ func (c *Client) DeleteRole(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("error deleting role: %w", err)
 	}
+
 	return nil
 }
 
 // GetRole retrieves an access role.
 func (c *Client) GetRole(ctx context.Context, id string) (*types.CustomPrivileges, error) {
 	resBody := &RoleGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.rolePath(id), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error getting role: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Strings(*resBody.Data)
@@ -63,13 +65,14 @@ func (c *Client) GetRole(ctx context.Context, id string) (*types.CustomPrivilege
 // ListRoles retrieves a list of access roles.
 func (c *Client) ListRoles(ctx context.Context) ([]*RoleListResponseData, error) {
 	resBody := &RoleListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.rolesPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error listing roles: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -91,5 +94,6 @@ func (c *Client) UpdateRole(ctx context.Context, id string, d *RoleUpdateRequest
 	if err != nil {
 		return fmt.Errorf("error updating role: %w", err)
 	}
+
 	return nil
 }

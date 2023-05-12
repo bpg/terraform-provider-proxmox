@@ -49,6 +49,7 @@ func AliasRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 	var diags diag.Diagnostics
 
 	aliasName := d.Get(mkAliasName).(string)
+
 	alias, err := fw.GetAlias(ctx, aliasName)
 	if err != nil {
 		return diag.FromErr(err)
@@ -64,6 +65,7 @@ func AliasRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 	} else {
 		err = d.Set(mkAliasComment, dvAliasComment)
 	}
+
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags

@@ -17,8 +17,8 @@ import (
 // TestHostsInstantiation tests whether the Hosts instance can be instantiated.
 func TestHostsInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Hosts()
 
+	s := Hosts()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Hosts")
 	}
@@ -27,6 +27,7 @@ func TestHostsInstantiation(t *testing.T) {
 // TestHostsSchema tests the Hosts schema.
 func TestHostsSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Hosts()
 
 	test.AssertRequiredArguments(t, s, []string{

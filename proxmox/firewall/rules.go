@@ -8,7 +8,6 @@ package firewall
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -63,19 +62,21 @@ func (c *Client) CreateRule(ctx context.Context, d *RuleCreateRequestBody) error
 	if err != nil {
 		return fmt.Errorf("error creating firewall rule: %w", err)
 	}
+
 	return nil
 }
 
 // GetRule retrieves a firewall rule.
 func (c *Client) GetRule(ctx context.Context, pos int) (*RuleGetResponseData, error) {
 	resBody := &RuleGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.rulePath(pos), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving firewall rule %d: %w", pos, err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -84,13 +85,14 @@ func (c *Client) GetRule(ctx context.Context, pos int) (*RuleGetResponseData, er
 // ListRules retrieves a list of firewall rules.
 func (c *Client) ListRules(ctx context.Context) ([]*RuleListResponseData, error) {
 	resBody := &RuleListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.rulesPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving firewall rules: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -102,6 +104,7 @@ func (c *Client) UpdateRule(ctx context.Context, pos int, d *RuleUpdateRequestBo
 	if err != nil {
 		return fmt.Errorf("error updating firewall rule %d: %w", pos, err)
 	}
+
 	return nil
 }
 
@@ -111,5 +114,6 @@ func (c *Client) DeleteRule(ctx context.Context, pos int) error {
 	if err != nil {
 		return fmt.Errorf("error deleting firewall rule %d: %w", pos, err)
 	}
+
 	return nil
 }

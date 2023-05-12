@@ -14,6 +14,8 @@ import (
 	"sync"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -34,13 +36,14 @@ func (c *Client) GetNextID(ctx context.Context, vmID *int) (*int, error) {
 	}
 
 	resBody := &NextIDResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, "cluster/nextid", reqBody, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving next VM ID: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return (*int)(resBody.Data), nil

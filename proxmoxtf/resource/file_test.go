@@ -17,8 +17,8 @@ import (
 // TestFileInstantiation tests whether the File instance can be instantiated.
 func TestFileInstantiation(t *testing.T) {
 	t.Parallel()
-	s := File()
 
+	s := File()
 	if s == nil {
 		t.Fatalf("Cannot instantiate File")
 	}
@@ -27,6 +27,7 @@ func TestFileInstantiation(t *testing.T) {
 // TestFileSchema tests the File schema.
 func TestFileSchema(t *testing.T) {
 	t.Parallel()
+
 	s := File()
 
 	test.AssertRequiredArguments(t, s, []string{

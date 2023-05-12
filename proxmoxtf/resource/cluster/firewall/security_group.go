@@ -95,6 +95,7 @@ func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.R
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkSecurityGroupComment, v.Comment)
 			diags = append(diags, diag.FromErr(err)...)
+
 			break
 		}
 	}
@@ -148,6 +149,7 @@ func SecurityGroupDelete(ctx context.Context, api clusterfirewall.API, d *schema
 			d.SetId("")
 			return nil
 		}
+
 		return diag.FromErr(err)
 	}
 

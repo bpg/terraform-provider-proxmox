@@ -71,6 +71,7 @@ func NewVirtualEnvironmentClient(
 			InsecureSkipVerify: insecure, //nolint:gosec
 		},
 	}
+
 	if logging.IsDebugOrHigher() {
 		transport = logging.NewLoggingHTTPTransport(transport)
 	}

@@ -17,8 +17,8 @@ import (
 // TestDNSInstantiation tests whether the DNS instance can be instantiated.
 func TestDNSInstantiation(t *testing.T) {
 	t.Parallel()
-	s := DNS()
 
+	s := DNS()
 	if s == nil {
 		t.Fatalf("Cannot instantiate DNS")
 	}
@@ -27,6 +27,7 @@ func TestDNSInstantiation(t *testing.T) {
 // TestDNSSchema tests the DNS schema.
 func TestDNSSchema(t *testing.T) {
 	t.Parallel()
+
 	s := DNS()
 
 	test.AssertRequiredArguments(t, s, []string{

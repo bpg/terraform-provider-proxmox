@@ -13,6 +13,8 @@ import (
 	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Options is an interface for the Proxmox firewall options API.
@@ -37,19 +39,21 @@ func (c *Client) SetOptions(ctx context.Context, d *OptionsPutRequestBody) error
 	if err != nil {
 		return fmt.Errorf("error setting optionss: %w", err)
 	}
+
 	return nil
 }
 
 // GetOptions retrieves the options object.
 func (c *Client) GetOptions(ctx context.Context) (*OptionsGetResponseData, error) {
 	resBody := &OptionsGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.optionsPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving options: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, fmt.Errorf("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil

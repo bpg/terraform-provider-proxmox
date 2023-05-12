@@ -17,8 +17,8 @@ import (
 // TestUsersInstantiation tests whether the Users instance can be instantiated.
 func TestUsersInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Users()
 
+	s := Users()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Users")
 	}
@@ -27,6 +27,7 @@ func TestUsersInstantiation(t *testing.T) {
 // TestUsersSchema tests the Users schema.
 func TestUsersSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Users()
 
 	test.AssertComputedAttributes(t, s, []string{

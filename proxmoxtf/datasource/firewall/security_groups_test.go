@@ -24,6 +24,7 @@ func TestSecurityGroupsSchemaInstantiation(t *testing.T) {
 // TestSecurityGroupsSchema tests the SecurityGroupsSchema.
 func TestSecurityGroupsSchema(t *testing.T) {
 	t.Parallel()
+
 	s := SecurityGroupsSchema()
 
 	structure.AssertComputedAttributes(t, s, []string{

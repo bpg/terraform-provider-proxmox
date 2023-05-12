@@ -255,6 +255,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			if err != nil {
 				return diag.FromErr(err)
 			}
+
 			defer proxmox.CloseOrLogError(ctx)(res.Body)
 
 			tempDownloadedFile, err := os.CreateTemp("", "download")
@@ -592,6 +593,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			if lastFileMD != "" && lastFileSize != 0 && lastFileTag != "" {
 				changed = lastFileMD != fileModificationDate || lastFileSize != fileSize || lastFileTag != fileTag
 			}
+
 			sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChanged] = changed
 			err = d.Set(mkResourceVirtualEnvironmentFileSourceFile, sourceFile)
 			diags = append(diags, diag.FromErr(err)...)

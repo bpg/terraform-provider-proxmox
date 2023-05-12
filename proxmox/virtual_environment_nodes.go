@@ -23,6 +23,8 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // ExecuteNodeCommands executes commands on a given node.
@@ -37,12 +39,14 @@ func (c *VirtualEnvironmentClient) ExecuteNodeCommands(
 	if err != nil {
 		return err
 	}
+
 	defer closeOrLogError(sshClient)
 
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
 		return err
 	}
+
 	defer closeOrLogError(sshSession)
 
 	script := strings.Join(commands, " && \\\n")
@@ -105,7 +109,7 @@ func (c *VirtualEnvironmentClient) GetNodeTime(
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -129,7 +133,7 @@ func (c *VirtualEnvironmentClient) ListNodeNetworkDevices(
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -150,7 +154,7 @@ func (c *VirtualEnvironmentClient) ListNodes(
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -174,7 +178,9 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
 	}
+
 	sshHost := fmt.Sprintf("%s:22", *nodeAddress)
+
 	sshPath := path.Join(homeDir, ".ssh")
 	if _, err = os.Stat(sshPath); os.IsNotExist(err) {
 		e := os.Mkdir(sshPath, 0o700)
@@ -182,6 +188,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 			return nil, fmt.Errorf("failed to create %s: %w", sshPath, e)
 		}
 	}
+
 	khPath := path.Join(sshPath, "known_hosts")
 	if _, err = os.Stat(khPath); os.IsNotExist(err) {
 		e := os.WriteFile(khPath, []byte{}, 0o600)
@@ -189,6 +196,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 			return nil, fmt.Errorf("failed to create %s: %w", khPath, e)
 		}
 	}
+
 	kh, err := knownhosts.New(khPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read %s: %w", khPath, err)
@@ -289,6 +297,7 @@ func (c *VirtualEnvironmentClient) CreateSSHClientAgent(
 		"host": sshHost,
 		"user": c.SSHUsername,
 	})
+
 	return sshClient, nil
 }
 

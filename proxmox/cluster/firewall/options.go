@@ -10,6 +10,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Options is an interface for managing global firewall options.
@@ -24,19 +26,21 @@ func (c *Client) SetGlobalOptions(ctx context.Context, d *OptionsPutRequestBody)
 	if err != nil {
 		return fmt.Errorf("error setting optionss: %w", err)
 	}
+
 	return nil
 }
 
 // GetGlobalOptions retrieves the global firewall options.
 func (c *Client) GetGlobalOptions(ctx context.Context) (*OptionsGetResponseData, error) {
 	resBody := &OptionsGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, "cluster/firewall/options", nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving options: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, fmt.Errorf("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil

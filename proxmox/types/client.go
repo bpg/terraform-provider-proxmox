@@ -6,7 +6,13 @@
 
 package types
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+// ErrNoDataObjectInResponse is returned when the server does not include a data object in the response.
+var ErrNoDataObjectInResponse = errors.New("the server did not include a data object in the response")
 
 // Client is an interface for performing requests against the Proxmox API.
 type Client interface {

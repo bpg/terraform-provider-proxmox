@@ -23,6 +23,8 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/pkg/sftp"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // GetDatastore retrieves information about a datastore.
@@ -50,6 +52,7 @@ func (c *VirtualEnvironmentClient) GetDatastore(
 	datastoreID string,
 ) (*DatastoreGetResponseData, error) {
 	resBody := &DatastoreGetResponseBody{}
+
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -94,6 +97,7 @@ func (c *VirtualEnvironmentClient) GetDatastoreStatus(
 	nodeName, datastoreID string,
 ) (*DatastoreGetStatusResponseData, error) {
 	resBody := &DatastoreGetStatusResponseBody{}
+
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -110,7 +114,7 @@ func (c *VirtualEnvironmentClient) GetDatastoreStatus(
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -122,6 +126,7 @@ func (c *VirtualEnvironmentClient) ListDatastoreFiles(
 	nodeName, datastoreID string,
 ) ([]*DatastoreFileListResponseData, error) {
 	resBody := &DatastoreFileListResponseBody{}
+
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -138,7 +143,7 @@ func (c *VirtualEnvironmentClient) ListDatastoreFiles(
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -155,6 +160,7 @@ func (c *VirtualEnvironmentClient) ListDatastores(
 	d *DatastoreListRequestBody,
 ) ([]*DatastoreListResponseData, error) {
 	resBody := &DatastoreListResponseBody{}
+
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -167,7 +173,7 @@ func (c *VirtualEnvironmentClient) ListDatastores(
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -207,6 +213,7 @@ func (c *VirtualEnvironmentClient) sftpUpload(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file info: %w", err)
 	}
+
 	fileSize := fileInfo.Size()
 
 	sshClient, err := c.OpenNodeShell(ctx, d.NodeName)
@@ -227,6 +234,7 @@ func (c *VirtualEnvironmentClient) sftpUpload(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datastore: %w", err)
 	}
+
 	if datastore.Path == nil || *datastore.Path == "" {
 		return nil, errors.New("failed to determine the datastore path")
 	}
@@ -235,6 +243,7 @@ func (c *VirtualEnvironmentClient) sftpUpload(
 	if d.ContentType != "" {
 		remoteFileDir = filepath.Join(remoteFileDir, d.ContentType)
 	}
+
 	remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, `/`)
 
 	sftpClient, err := sftp.NewClient(sshClient)
@@ -274,14 +283,17 @@ func (c *VirtualEnvironmentClient) sftpUpload(
 	if err != nil {
 		return nil, fmt.Errorf("failed to upload file %s: %w", remoteFilePath, err)
 	}
+
 	if bytesUploaded != fileSize {
 		return nil, fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
 			remoteFilePath, bytesUploaded, fileSize)
 	}
+
 	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
 		"remote_file_path": remoteFilePath,
 		"size":             bytesUploaded,
 	})
+
 	return &DatastoreUploadResponseBody{}, nil
 }
 
@@ -332,6 +344,7 @@ func (c *VirtualEnvironmentClient) apiUpload(
 			tflog.Error(ctx, "failed to write 'content' field", map[string]interface{}{
 				"error": err,
 			})
+
 			return
 		}
 

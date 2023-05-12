@@ -8,11 +8,12 @@ package access
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func (c *Client) groupsPath() string {
@@ -29,6 +30,7 @@ func (c *Client) CreateGroup(ctx context.Context, d *GroupCreateRequestBody) err
 	if err != nil {
 		return fmt.Errorf("failed to create access group: %w", err)
 	}
+
 	return nil
 }
 
@@ -38,19 +40,21 @@ func (c *Client) DeleteGroup(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("failed to delete access group: %w", err)
 	}
+
 	return nil
 }
 
 // GetGroup retrieves an access group.
 func (c *Client) GetGroup(ctx context.Context, id string) (*GroupGetResponseData, error) {
 	resBody := &GroupGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.groupPath(id), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get access group: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Strings(resBody.Data.Members)
@@ -61,13 +65,14 @@ func (c *Client) GetGroup(ctx context.Context, id string) (*GroupGetResponseData
 // ListGroups retrieves a list of access groups.
 func (c *Client) ListGroups(ctx context.Context) ([]*GroupListResponseData, error) {
 	resBody := &GroupListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.groupsPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list access groups: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -83,5 +88,6 @@ func (c *Client) UpdateGroup(ctx context.Context, id string, d *GroupUpdateReque
 	if err != nil {
 		return fmt.Errorf("failed to update access group: %w", err)
 	}
+
 	return nil
 }

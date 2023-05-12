@@ -8,21 +8,23 @@ package nodes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // GetDNS retrieves the DNS configuration for a node.
 func (c *Client) GetDNS(ctx context.Context) (*DNSGetResponseData, error) {
 	resBody := &DNSGetResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("dns"), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving DNS configuration: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, types.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -34,5 +36,6 @@ func (c *Client) UpdateDNS(ctx context.Context, d *DNSUpdateRequestBody) error {
 	if err != nil {
 		return fmt.Errorf("error updating DNS configuration: %w", err)
 	}
+
 	return nil
 }
