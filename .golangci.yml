@@ -87,6 +87,5 @@ linters:
     - nosnakecase
     - tagliatelle
     - testpackage
-    - thelper
     - varnamelen
   fast: false

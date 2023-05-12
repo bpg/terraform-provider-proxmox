@@ -16,6 +16,8 @@ import (
 
 // AssertComputedAttributes checks that the given schema has the given computed attributes.
 func AssertComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {
+	t.Helper()
+
 	for _, v := range keys {
 		require.NotNil(t, s.Schema[v], "Error in Schema: Missing definition for \"%s\"", v)
 		assert.True(t, s.Schema[v].Computed, "Error in Schema: Attribute \"%s\" is not computed", v)
@@ -24,6 +26,8 @@ func AssertComputedAttributes(t *testing.T, s *schema.Resource, keys []string) {
 
 // AssertNestedSchemaExistence checks that the given schema has a nested schema for the given key.
 func AssertNestedSchemaExistence(t *testing.T, s *schema.Resource, key string) *schema.Resource {
+	t.Helper()
+
 	sh, ok := s.Schema[key].Elem.(*schema.Resource)
 
 	if !ok {
@@ -37,6 +41,8 @@ func AssertNestedSchemaExistence(t *testing.T, s *schema.Resource, key string) *
 
 // AssertOptionalArguments checks that the given schema has the given optional arguments.
 func AssertOptionalArguments(t *testing.T, s *schema.Resource, keys []string) {
+	t.Helper()
+
 	for _, v := range keys {
 		require.NotNil(t, s.Schema[v], "Error in Schema: Missing definition for \"%s\"", v)
 		assert.True(t, s.Schema[v].Optional, "Error in Schema: Argument \"%s\" is not optional", v)
@@ -45,6 +51,8 @@ func AssertOptionalArguments(t *testing.T, s *schema.Resource, keys []string) {
 
 // AssertRequiredArguments checks that the given schema has the given required arguments.
 func AssertRequiredArguments(t *testing.T, s *schema.Resource, keys []string) {
+	t.Helper()
+
 	for _, v := range keys {
 		require.NotNil(t, s.Schema[v], "Error in Schema: Missing definition for \"%s\"", v)
 		assert.True(t, s.Schema[v].Required, "Error in Schema: Argument \"%s\" is not required", v)
@@ -53,6 +61,8 @@ func AssertRequiredArguments(t *testing.T, s *schema.Resource, keys []string) {
 
 // AssertValueTypes checks that the given schema has the given value types for the given fields.
 func AssertValueTypes(t *testing.T, s *schema.Resource, f map[string]schema.ValueType) {
+	t.Helper()
+
 	for fn, ft := range f {
 		require.NotNil(t, s.Schema[fn], "Error in Schema: Missing definition for \"%s\"", fn)
 		assert.Equal(t, ft, s.Schema[fn].Type, "Error in Schema: Argument or attribute \"%s\" is not of type \"%v\"", fn, ft)
