@@ -632,9 +632,9 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", err)
+	er := json.Unmarshal(b, &s)
+	if er != nil {
+		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", er)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -686,6 +686,7 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 
 				r.Tag = &iv
 			case "trunks":
+				var err error
 				if v[1] != "" {
 					trunks := strings.Split(v[1], ";")
 					a := make([]int, len(trunks))

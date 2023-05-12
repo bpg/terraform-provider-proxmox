@@ -222,10 +222,10 @@ func (c *VirtualEnvironmentClient) sftpUpload(
 	}
 
 	defer func(sshClient *ssh.Client) {
-		err := sshClient.Close()
-		if err != nil {
+		e := sshClient.Close()
+		if e != nil {
 			tflog.Error(ctx, "failed to close SSH client", map[string]interface{}{
-				"error": err,
+				"error": e,
 			})
 		}
 	}(sshClient)
@@ -252,10 +252,10 @@ func (c *VirtualEnvironmentClient) sftpUpload(
 	}
 
 	defer func(sftpClient *sftp.Client) {
-		err := sftpClient.Close()
-		if err != nil {
+		e := sftpClient.Close()
+		if e != nil {
 			tflog.Error(ctx, "failed to close SFTP client", map[string]interface{}{
-				"error": err,
+				"error": e,
 			})
 		}
 	}(sftpClient)
@@ -271,10 +271,10 @@ func (c *VirtualEnvironmentClient) sftpUpload(
 	}
 
 	defer func(remoteFile *sftp.File) {
-		err := remoteFile.Close()
-		if err != nil {
+		e := remoteFile.Close()
+		if e != nil {
 			tflog.Error(ctx, "failed to close remote file", map[string]interface{}{
-				"error": err,
+				"error": e,
 			})
 		}
 	}(remoteFile)
@@ -380,10 +380,10 @@ func (c *VirtualEnvironmentClient) apiUpload(
 	}
 
 	defer func(name string) {
-		err := os.Remove(name)
-		if err != nil {
+		e := os.Remove(name)
+		if e != nil {
 			tflog.Error(ctx, "failed to remove temporary file", map[string]interface{}{
-				"error": err,
+				"error": e,
 			})
 		}
 	}(tempMultipartFileName)
@@ -395,10 +395,10 @@ func (c *VirtualEnvironmentClient) apiUpload(
 	}
 
 	defer func(fileReader *os.File) {
-		err := fileReader.Close()
-		if err != nil {
+		e := fileReader.Close()
+		if e != nil {
 			tflog.Error(ctx, "failed to close file reader", map[string]interface{}{
-				"error": err,
+				"error": e,
 			})
 		}
 	}(fileReader)

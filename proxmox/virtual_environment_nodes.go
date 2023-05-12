@@ -205,12 +205,12 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 	// Create a custom permissive hostkey callback which still errors on hosts
 	// with changed keys, but allows unknown hosts and adds them to known_hosts
 	cb := ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-		err := kh(hostname, remote, key)
-		if knownhosts.IsHostKeyChanged(err) {
+		kherr := kh(hostname, remote, key)
+		if knownhosts.IsHostKeyChanged(kherr) {
 			return fmt.Errorf("REMOTE HOST IDENTIFICATION HAS CHANGED for host %s! This may indicate a MitM attack", hostname)
 		}
 
-		if knownhosts.IsHostUnknown(err) {
+		if knownhosts.IsHostUnknown(kherr) {
 			f, ferr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
 			if ferr == nil {
 				defer CloseOrLogError(ctx)(f)
@@ -220,12 +220,12 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 				tflog.Info(ctx, fmt.Sprintf("Added host %s to known_hosts", hostname))
 			} else {
 				tflog.Error(ctx, fmt.Sprintf("Failed to add host %s to known_hosts", hostname), map[string]interface{}{
-					"error": err,
+					"error": kherr,
 				})
 			}
 			return nil
 		}
-		return err
+		return kherr
 	})
 
 	sshConfig := &ssh.ClientConfig{

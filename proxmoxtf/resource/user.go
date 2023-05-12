@@ -469,7 +469,7 @@ func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := veClient.API().Access().UpdateACL(ctx, aclBody)
+		err = veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}

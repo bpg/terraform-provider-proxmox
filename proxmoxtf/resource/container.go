@@ -686,9 +686,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.API().Cluster().GetVMID(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		vmIDNew, e := veClient.API().Cluster().GetVMID(ctx)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		vmID = *vmIDNew
@@ -1278,9 +1278,9 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.API().Cluster().GetVMID(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		vmIDNew, e := veClient.API().Cluster().GetVMID(ctx)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		vmID = *vmIDNew
@@ -1520,29 +1520,32 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	veClient, e := config.GetVEClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
-	vmID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
+
+	vmID, e := strconv.Atoi(d.Id())
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	api := veClient.API().Node(nodeName).Container(vmID)
 
 	// Retrieve the entire configuration in order to compare it to the state.
-	containerConfig, err := api.GetContainer(ctx)
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") ||
-			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
+	containerConfig, e := api.GetContainer(ctx)
+	if e != nil {
+		if strings.Contains(e.Error(), "HTTP 404") ||
+			(strings.Contains(e.Error(), "HTTP 500") && strings.Contains(e.Error(), "does not exist")) {
 			d.SetId("")
 
 			return nil
 		}
-		return diag.FromErr(err)
+
+		return diag.FromErr(e)
 	}
 
 	clone := d.Get(mkResourceVirtualEnvironmentContainerClone).([]interface{})
@@ -1552,14 +1555,15 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(clone) == 0 || currentDescription != dvResourceVirtualEnvironmentContainerDescription {
 		if containerConfig.Description != nil {
-			err = d.Set(
+			e = d.Set(
 				mkResourceVirtualEnvironmentContainerDescription,
 				strings.TrimSpace(*containerConfig.Description),
 			)
 		} else {
-			err = d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
+			e = d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
 		}
-		diags = append(diags, diag.FromErr(err)...)
+
+		diags = append(diags, diag.FromErr(e)...)
 	}
 
 	// Compare the console configuration to the one stored in the state.
@@ -1880,14 +1884,15 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			}
 
 			if len(initialization) > 0 {
-				err = d.Set(
+				e = d.Set(
 					mkResourceVirtualEnvironmentContainerInitialization,
 					[]interface{}{initialization},
 				)
 			} else {
-				err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
+				e = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
 			}
-			diags = append(diags, diag.FromErr(err)...)
+
+			diags = append(diags, diag.FromErr(e)...)
 		}
 
 		currentNetworkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
@@ -1901,11 +1906,11 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	} else {
 		if len(initialization) > 0 {
-			err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
+			e = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
 		} else {
-			err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
+			e = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
 		}
-		diags = append(diags, diag.FromErr(err)...)
+		diags = append(diags, diag.FromErr(e)...)
 
 		err := d.Set(mkResourceVirtualEnvironmentContainerNetworkInterface, networkInterfaceList)
 		diags = append(diags, diag.FromErr(err)...)
@@ -1959,8 +1964,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			sort.Strings(tags)
 		}
 
-		err = d.Set(mkResourceVirtualEnvironmentContainerTags, tags)
-		diags = append(diags, diag.FromErr(err)...)
+		e = d.Set(mkResourceVirtualEnvironmentContainerTags, tags)
+		diags = append(diags, diag.FromErr(e)...)
 	}
 
 	currentTemplate := d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
@@ -1968,39 +1973,42 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	//nolint:gosimple
 	if len(clone) == 0 || currentTemplate != dvResourceVirtualEnvironmentContainerTemplate {
 		if containerConfig.Template != nil {
-			err = d.Set(
+			e = d.Set(
 				mkResourceVirtualEnvironmentContainerTemplate,
 				bool(*containerConfig.Template),
 			)
 		} else {
-			err = d.Set(mkResourceVirtualEnvironmentContainerTemplate, false)
+			e = d.Set(mkResourceVirtualEnvironmentContainerTemplate, false)
 		}
-		diags = append(diags, diag.FromErr(err)...)
+
+		diags = append(diags, diag.FromErr(e)...)
 	}
 
 	// Determine the state of the container in order to update the "started" argument.
-	status, err := api.GetContainerStatus(ctx)
-	if err != nil {
-		return diag.FromErr(err)
+	status, e := api.GetContainerStatus(ctx)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
-	err = d.Set(mkResourceVirtualEnvironmentContainerStarted, status.Status == "running")
-	diags = append(diags, diag.FromErr(err)...)
+	e = d.Set(mkResourceVirtualEnvironmentContainerStarted, status.Status == "running")
+	diags = append(diags, diag.FromErr(e)...)
 
 	return diags
 }
 
 func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	veClient, e := config.GetVEClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
-	vmID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
+
+	vmID, e := strconv.Atoi(d.Id())
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	api := veClient.API().Node(nodeName).Container(vmID)
@@ -2175,14 +2183,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 && len(clone) > 0 {
-		networkInterface, err = containerGetExistingNetworkInterface(
+		networkInterface, e = containerGetExistingNetworkInterface(
 			ctx,
 			veClient,
 			nodeName,
 			vmID,
 		)
-		if err != nil {
-			return diag.FromErr(err)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 	}
 
@@ -2296,9 +2304,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Update the configuration now that everything has been prepared.
-	err = api.UpdateContainer(ctx, &updateBody)
-	if err != nil {
-		return diag.FromErr(err)
+	e = api.UpdateContainer(ctx, &updateBody)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	// Determine if the state of the container needs to be changed.
@@ -2306,30 +2314,30 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	if d.HasChange(mkResourceVirtualEnvironmentContainerStarted) && !bool(template) {
 		if started {
-			err = api.StartContainer(ctx)
-			if err != nil {
-				return diag.FromErr(err)
+			e = api.StartContainer(ctx)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
-			err = api.WaitForContainerState(ctx, "running", 300, 5)
-			if err != nil {
-				return diag.FromErr(err)
+			e = api.WaitForContainerState(ctx, "running", 300, 5)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 		} else {
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := 300
 
-			err = api.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
+			e = api.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			})
-			if err != nil {
-				return diag.FromErr(err)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
-			err = api.WaitForContainerState(ctx, "stopped", 300, 5)
-			if err != nil {
-				return diag.FromErr(err)
+			e = api.WaitForContainerState(ctx, "stopped", 300, 5)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
 			rebootRequired = false
@@ -2340,14 +2348,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	if !bool(template) && rebootRequired {
 		rebootTimeout := 300
 
-		err = api.RebootContainer(
+		e = api.RebootContainer(
 			ctx,
 			&containers.RebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
 		)
-		if err != nil {
-			return diag.FromErr(err)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 	}
 

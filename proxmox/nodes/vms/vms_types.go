@@ -1327,8 +1327,8 @@ func (r *CustomBoot) UnmarshalJSON(b []byte) error {
 
 		if len(v) == 2 {
 			if v[0] == "order" {
-				v := strings.Split(strings.TrimSpace(v[1]), ";")
-				r.Order = &v
+				o := strings.Split(strings.TrimSpace(v[1]), ";")
+				r.Order = &o
 			}
 		}
 	}

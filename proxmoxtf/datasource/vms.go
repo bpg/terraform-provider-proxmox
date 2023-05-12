@@ -83,9 +83,9 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	var vms []interface{}
 
 	for _, nodeName := range nodeNames {
-		listData, err := veClient.API().Node(nodeName).VM(0).ListVMs(ctx)
-		if err != nil {
-			diags = append(diags, diag.FromErr(err)...)
+		listData, e := veClient.API().Node(nodeName).VM(0).ListVMs(ctx)
+		if e != nil {
+			diags = append(diags, diag.FromErr(e)...)
 		}
 
 		sort.Slice(listData, func(i, j int) bool {

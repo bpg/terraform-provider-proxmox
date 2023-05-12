@@ -291,7 +291,7 @@ func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.API().Access().UpdateACL(ctx, aclBody)
+		err = veClient.API().Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}

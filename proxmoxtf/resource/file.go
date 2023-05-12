@@ -610,6 +610,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return nil
 }
 
+//nolint:nonamedreturns
 func readFile(
 	ctx context.Context,
 	sourceFilePath string,
@@ -620,10 +621,10 @@ func readFile(
 	}
 
 	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
+		e := f.Close()
+		if e != nil {
 			tflog.Error(ctx, "failed to close the file", map[string]interface{}{
-				"error": err.Error(),
+				"error": e.Error(),
 			})
 		}
 	}(f)
@@ -640,6 +641,7 @@ func readFile(
 	return fileModificationDate, fileSize, fileTag, nil
 }
 
+//nolint:nonamedreturns
 func readURL(
 	ctx context.Context,
 	d *schema.ResourceData,

@@ -61,6 +61,7 @@ linters:
     - ifshort
     - interfacer
     - maligned
+    - nosnakecase
     - rowserrcheck
     - scopelint
     - structcheck
@@ -71,20 +72,15 @@ linters:
     - forcetypeassert
     - funlen
     - gocognit
-    - govet
     # others
     - exhaustivestruct
     - exhaustruct
     - gci
-    - gochecknoinits
     - goerr113
     - gomnd
-    - grouper
     - ireturn
     - maintidx
     - nlreturn
-    - nonamedreturns
-    - nosnakecase
     - tagliatelle
     - testpackage
     - varnamelen

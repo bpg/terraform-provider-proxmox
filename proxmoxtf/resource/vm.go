@@ -1270,9 +1270,10 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	veClient, e := config.GetVEClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
@@ -1395,10 +1396,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			}
 		}
 	} else {
-		err = veClient.API().Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
+		e = veClient.API().Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
 	}
-	if err != nil {
-		return diag.FromErr(err)
+
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	d.SetId(strconv.Itoa(vmID))
@@ -1406,9 +1408,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	vmAPI := veClient.API().Node(nodeName).VM(vmID)
 
 	// Wait for the virtual machine to be created and its configuration lock to be released.
-	err = vmAPI.WaitForVMConfigUnlock(ctx, 600, 5, true)
-	if err != nil {
-		return diag.FromErr(err)
+	e = vmAPI.WaitForVMConfigUnlock(ctx, 600, 5, true)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
@@ -1565,9 +1567,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 		ciUpdateBody := &vms.UpdateRequestBody{}
 		ciUpdateBody.Delete = append(ciUpdateBody.Delete, "ide2")
-		err = vmAPI.UpdateVM(ctx, ciUpdateBody)
-		if err != nil {
-			return diag.FromErr(err)
+
+		e = vmAPI.UpdateVM(ctx, ciUpdateBody)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		updateBody.CloudInitConfig = vmGetCloudInitConfig(d)
@@ -1662,28 +1665,30 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	updateBody.Delete = del
 
-	err = vmAPI.UpdateVM(ctx, updateBody)
-	if err != nil {
-		return diag.FromErr(err)
+	e = vmAPI.UpdateVM(ctx, updateBody)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 
-	vmConfig, err := vmAPI.GetVM(ctx)
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") ||
-			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
+	vmConfig, e := vmAPI.GetVM(ctx)
+	if e != nil {
+		if strings.Contains(e.Error(), "HTTP 404") ||
+			(strings.Contains(e.Error(), "HTTP 500") && strings.Contains(e.Error(), "does not exist")) {
 			d.SetId("")
 
 			return nil
 		}
-		return diag.FromErr(err)
+
+		return diag.FromErr(e)
 	}
 
 	allDiskInfo := getDiskInfo(vmConfig, d)
-	diskDeviceObjects, err := vmGetDiskDeviceObjects(d, nil)
-	if err != nil {
-		return diag.FromErr(err)
+
+	diskDeviceObjects, e := vmGetDiskDeviceObjects(d, nil)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	for i := range disk {
@@ -1716,9 +1721,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 				diskUpdateBody.SCSIDevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
 			}
 
-			err = vmAPI.UpdateVM(ctx, diskUpdateBody)
-			if err != nil {
-				return diag.FromErr(err)
+			e = vmAPI.UpdateVM(ctx, diskUpdateBody)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
 			continue
@@ -1758,16 +1763,17 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		if moveDisk {
 			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
-			err = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
-			if err != nil {
-				return diag.FromErr(err)
+
+			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 		}
 
 		if diskSize > currentDiskInfo.Size.InGigabytes() {
-			err = vmAPI.ResizeVMDisk(ctx, diskResizeBody)
-			if err != nil {
-				return diag.FromErr(err)
+			e = vmAPI.ResizeVMDisk(ctx, diskResizeBody)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 		}
 	}
@@ -1926,9 +1932,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.API().Cluster().GetVMID(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		vmIDNew, e := veClient.API().Cluster().GetVMID(ctx)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		vmID = *vmIDNew
@@ -3687,9 +3693,10 @@ func vmReadNetworkValues(
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	veClient, e := config.GetVEClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
@@ -3759,12 +3766,12 @@ func vmReadNetworkValues(
 		}
 	}
 
-	err = d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
-	diags = append(diags, diag.FromErr(err)...)
-	err = d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
-	diags = append(diags, diag.FromErr(err)...)
-	err = d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
-	diags = append(diags, diag.FromErr(err)...)
+	e = d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
+	diags = append(diags, diag.FromErr(e)...)
+	e = d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
+	diags = append(diags, diag.FromErr(e)...)
+	e = d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
+	diags = append(diags, diag.FromErr(e)...)
 
 	return diags
 }
@@ -3920,17 +3927,18 @@ func vmReadPrimitiveValues(
 
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	veClient, e := config.GetVEClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	rebootRequired := false
 
-	vmID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
+	vmID, e := strconv.Atoi(d.Id())
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	vmAPI := veClient.API().Node(nodeName).VM(vmID)
@@ -3957,9 +3965,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	resource := VM()
 
 	// Retrieve the entire configuration as we need to process certain values.
-	vmConfig, err := vmAPI.GetVM(ctx)
-	if err != nil {
-		return diag.FromErr(err)
+	vmConfig, e := vmAPI.GetVM(ctx)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	// Prepare the new primitive configuration values.
@@ -4271,10 +4279,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Prepare the new hostpci devices configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMHostPCI) {
 		updateBody.PCIDevices = vmGetHostPCIDeviceObjects(d)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
 		rebootRequired = true
 	}
 
@@ -4360,9 +4364,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new VGA configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMVGA) {
-		updateBody.VGADevice, err = vmGetVGADeviceObject(d)
-		if err != nil {
-			return diag.FromErr(err)
+		updateBody.VGADevice, e = vmGetVGADeviceObject(d)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		rebootRequired = true
@@ -4379,9 +4383,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Update the configuration now that everything has been prepared.
 	updateBody.Delete = del
 
-	err = vmAPI.UpdateVM(ctx, updateBody)
-	if err != nil {
-		return diag.FromErr(err)
+	e = vmAPI.UpdateVM(ctx, updateBody)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	// Determine if the state of the virtual machine state needs to be changed.
@@ -4390,20 +4394,21 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) && !bool(template) {
 		if started {
 			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-			err = vmAPI.StartVM(ctx, startVMTimeout)
-			if err != nil {
-				return diag.FromErr(err)
+
+			e = vmAPI.StartVM(ctx, startVMTimeout)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 		} else {
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
-			err = vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
+			e = vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			}, shutdownTimeout+30)
-			if err != nil {
-				return diag.FromErr(err)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
 			rebootRequired = false
