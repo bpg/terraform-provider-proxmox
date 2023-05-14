@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.19.0...v0.19.1) (2023-05-14)
+
+
+### Bug Fixes
+
+* **vm:** Regression: cannot create disks larger than 99G ([#335](https://github.com/bpg/terraform-provider-proxmox/issues/335)) ([79e5a8e](https://github.com/bpg/terraform-provider-proxmox/commit/79e5a8ebb07d9c7858a32dbef280dfab5e78c19e))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/docker/distribution from 2.8.1+incompatible to 2.8.2+incompatible in /tools ([#331](https://github.com/bpg/terraform-provider-proxmox/issues/331)) ([37a1234](https://github.com/bpg/terraform-provider-proxmox/commit/37a1234bb05cb57229d276ec568096043c2073e0))
+
 ## [0.19.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.18.2...v0.19.0) (2023-05-11)
 
 
