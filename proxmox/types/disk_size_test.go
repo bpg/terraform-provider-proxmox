@@ -6,7 +6,11 @@
 
 package types
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestParseDiskSize(t *testing.T) {
 	t.Parallel()
@@ -60,7 +64,7 @@ func TestFormatDiskSize(t *testing.T) {
 	}{
 		{"handle 0 size", 0, "0"},
 		{"handle bytes", 1001, "1001"},
-		{"handle kilobytes", 1234, "1.2K"},
+		{"handle kilobytes", 1234, "1.21K"},
 		{"handle megabytes", 2097152, "2M"},
 		{"handle gigabytes", 2147483648, "2G"},
 		{"handle terabytes", 2199023255552, "2T"},
@@ -71,6 +75,36 @@ func TestFormatDiskSize(t *testing.T) {
 			t.Parallel()
 			if got := formatDiskSize(tt.size); got != tt.want {
 				t.Errorf("formatDiskSize() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestToFromGigabytes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		size int
+		want string
+	}{
+		{"handle 0 size", 0, "0"},
+		{"handle 99 GB", 99, "99G"},
+		{"handle 100 GB", 100, "100G"},
+		{"handle 101 GB", 101, "101G"},
+		{"handle 1023 GB", 1023, "1023G"},
+		{"handle 1024 GB", 1024, "1T"},
+		{"handle 1025 GB", 1025, "1.01T"},
+	}
+	for _, test := range tests {
+		tt := test
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			ds := DiskSizeFromGigabytes(tt.size)
+			gb := ds.InGigabytes()
+			assert.Equal(t, tt.size, gb)
+			if got := ds.String(); got != tt.want {
+				t.Errorf("DiskSize.String() = %v, want %v", got, tt.want)
 			}
 		})
 	}

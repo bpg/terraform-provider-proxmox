@@ -97,17 +97,21 @@ func formatDiskSize(size int64) string {
 		return fmt.Sprintf("%d", size)
 	}
 
+	round := func(f float64) string {
+		return strconv.FormatFloat(math.Ceil(f*100)/100, 'f', -1, 64)
+	}
+
 	if size < 1024*1024 {
-		return fmt.Sprintf("%.2gK", float64(size)/1024)
+		return round(float64(size)/1024) + "K"
 	}
 
 	if size < 1024*1024*1024 {
-		return fmt.Sprintf("%.2gM", float64(size)/1024/1024)
+		return round(float64(size)/1024/1024) + "M"
 	}
 
 	if size < 1024*1024*1024*1024 {
-		return fmt.Sprintf("%.2gG", float64(size)/1024/1024/1024)
+		return round(float64(size)/1024/1024/1024) + "G"
 	}
 
-	return fmt.Sprintf("%.2gT", float64(size)/1024/1024/1024/1024)
+	return round(float64(size)/1024/1024/1024/1024) + "T"
 }
