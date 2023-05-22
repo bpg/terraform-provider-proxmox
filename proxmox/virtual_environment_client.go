@@ -27,7 +27,7 @@ import (
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
 func NewVirtualEnvironmentClient(
 	endpoint, username, password, otp string,
-	insecure bool, sshUsername string, sshPassword string, sshAgent bool,
+	insecure bool, sshUsername string, sshPassword string, sshAgent bool, sshAgentSocket string,
 ) (*VirtualEnvironmentClient, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
@@ -93,15 +93,16 @@ func NewVirtualEnvironmentClient(
 	}
 
 	return &VirtualEnvironmentClient{
-		Endpoint:    strings.TrimRight(u.String(), "/"),
-		Insecure:    insecure,
-		OTP:         pOTP,
-		Password:    password,
-		Username:    username,
-		SSHUsername: sshUsername,
-		SSHAgent:    sshAgent,
-		SSHPassword: sshPassword,
-		httpClient:  httpClient,
+		Endpoint:       strings.TrimRight(u.String(), "/"),
+		Insecure:       insecure,
+		OTP:            pOTP,
+		Password:       password,
+		Username:       username,
+		SSHUsername:    sshUsername,
+		SSHPassword:    sshPassword,
+		SSHAgent:       sshAgent,
+		SSHAgentSocket: sshAgentSocket,
+		httpClient:     httpClient,
 	}, nil
 }
 

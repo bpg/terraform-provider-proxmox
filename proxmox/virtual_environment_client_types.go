@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -19,14 +21,15 @@ const (
 
 // VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
 type VirtualEnvironmentClient struct {
-	Endpoint    string
-	Insecure    bool
-	OTP         *string
-	Password    string
-	Username    string
-	SSHUsername string
-	SSHPassword string
-	SSHAgent    bool
+	Endpoint       string
+	Insecure       bool
+	OTP            *string
+	Password       string
+	Username       string
+	SSHUsername    string
+	SSHPassword    string
+	SSHAgent       bool
+	SSHAgentSocket string
 
 	authenticationData *VirtualEnvironmentAuthenticationResponseData
 	httpClient         *http.Client

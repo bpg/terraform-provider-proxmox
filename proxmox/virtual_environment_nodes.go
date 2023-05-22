@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -285,15 +287,14 @@ func (c *VirtualEnvironmentClient) CreateSSHClientAgent(
 	kh knownhosts.HostKeyCallback,
 	sshHost string,
 ) (*ssh.Client, error) {
-	sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
-	if sshAuthSock == "" {
-		return nil, errors.New("failed connecting to SSH_AUTH_SOCK: environment variable is empty, " +
+	if c.SSHAgentSocket == "" {
+		return nil, errors.New("failed connecting to SSH agent socket: the socket file is not defined, " +
 			"authentication will fall back to password")
 	}
 
-	conn, err := net.Dial("unix", sshAuthSock)
+	conn, err := net.Dial("unix", c.SSHAgentSocket)
 	if err != nil {
-		return nil, fmt.Errorf("failed connecting to SSH_AUTH_SOCK: %w", err)
+		return nil, fmt.Errorf("failed connecting to SSH auth socket '%s': %w", c.SSHAgentSocket, err)
 	}
 
 	ag := agent.NewClient(conn)
