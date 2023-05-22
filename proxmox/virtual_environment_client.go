@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -83,9 +85,9 @@ func NewVirtualEnvironmentClient(
 		sshPassword = password
 	}
 
-	if sshAgent && runtime.GOOS != "linux" {
+	if sshAgent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
 		return nil, errors.New(
-			"the ssh agent flag is only supported on linux, please set it to 'false'" +
+			"the ssh agent flag is only supported on POSIX systems, please set it to 'false'" +
 				" or remove it from your provider configuration",
 		)
 	}
