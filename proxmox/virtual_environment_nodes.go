@@ -237,8 +237,9 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 
 	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.SSHAgent))
 
+	var sshClient *ssh.Client
 	if c.SSHAgent {
-		sshClient, err := c.CreateSSHClientAgent(ctx, cb, kh, sshHost)
+		sshClient, err = c.CreateSSHClientAgent(ctx, cb, kh, sshHost)
 		if err != nil {
 			tflog.Error(ctx, "Failed ssh connection through agent, "+
 				"falling back to password authentication",
@@ -250,7 +251,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		}
 	}
 
-	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
+	sshClient, err = ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
 	}
@@ -259,10 +260,11 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		"host": sshHost,
 		"user": c.SSHUsername,
 	})
+
 	return sshClient, nil
 }
 
-// CreateSSHClientAgent establishes an ssh connection through the agent authentication mechanism
+// CreateSSHClientAgent establishes an ssh connection through the agent authentication mechanism.
 func (c *VirtualEnvironmentClient) CreateSSHClientAgent(
 	ctx context.Context,
 	cb ssh.HostKeyCallback,
