@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.20.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.19.1...v0.20.0) (2023-05-22)
+
+
+### Features
+
+* bump Go to 1.20 to resolve MacOS DNS resolution issues ([#342](https://github.com/bpg/terraform-provider-proxmox/issues/342)) ([1c920de](https://github.com/bpg/terraform-provider-proxmox/commit/1c920de71d4e07bd7a29700cdffd4e6b319f95c3))
+* SSH-Agent Support ([#306](https://github.com/bpg/terraform-provider-proxmox/issues/306)) ([9fa9242](https://github.com/bpg/terraform-provider-proxmox/commit/9fa92423b5b3960ee7f46fb66fc18d12fcc8af29))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/skeema/knownhosts from 1.1.0 to 1.1.1 ([#336](https://github.com/bpg/terraform-provider-proxmox/issues/336)) ([0d8e6d3](https://github.com/bpg/terraform-provider-proxmox/commit/0d8e6d31584b418677c5e8579d9e41649e9790a7))
+* **deps:** bump github.com/stretchr/testify from 1.8.2 to 1.8.3 ([#343](https://github.com/bpg/terraform-provider-proxmox/issues/343)) ([fc1e03f](https://github.com/bpg/terraform-provider-proxmox/commit/fc1e03f0949ee730a8c14cf2346a053d8f1a28e2))
+* **deps:** bump golang.org/x/crypto from 0.8.0 to 0.9.0 ([#337](https://github.com/bpg/terraform-provider-proxmox/issues/337)) ([b1cb49c](https://github.com/bpg/terraform-provider-proxmox/commit/b1cb49cf7a829a6112ce6e7d363e7bf537e5c52c))
+
 ## [0.19.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.19.0...v0.19.1) (2023-05-14)
 
 
