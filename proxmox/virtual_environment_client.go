@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -14,6 +16,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 
 	"github.com/google/go-querystring/query"
@@ -24,7 +27,7 @@ import (
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
 func NewVirtualEnvironmentClient(
 	endpoint, username, password, otp string,
-	insecure bool,
+	insecure bool, sshUsername string, sshPassword string, sshAgent bool, sshAgentSocket string,
 ) (*VirtualEnvironmentClient, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
@@ -51,6 +54,12 @@ func NewVirtualEnvironmentClient(
 		)
 	}
 
+	if !strings.Contains(username, "@") {
+		return nil, errors.New(
+			"make sure the username for the Proxmox Virtual Environment API ends in '@pve or @pam'",
+		)
+	}
+
 	var pOTP *string
 
 	if otp != "" {
@@ -68,13 +77,32 @@ func NewVirtualEnvironmentClient(
 
 	httpClient := &http.Client{Transport: transport}
 
+	if sshUsername == "" {
+		sshUsername = strings.Split(username, "@")[0]
+	}
+
+	if sshPassword == "" {
+		sshPassword = password
+	}
+
+	if sshAgent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
+		return nil, errors.New(
+			"the ssh agent flag is only supported on POSIX systems, please set it to 'false'" +
+				" or remove it from your provider configuration",
+		)
+	}
+
 	return &VirtualEnvironmentClient{
-		Endpoint:   strings.TrimRight(u.String(), "/"),
-		Insecure:   insecure,
-		OTP:        pOTP,
-		Password:   password,
-		Username:   username,
-		httpClient: httpClient,
+		Endpoint:       strings.TrimRight(u.String(), "/"),
+		Insecure:       insecure,
+		OTP:            pOTP,
+		Password:       password,
+		Username:       username,
+		SSHUsername:    sshUsername,
+		SSHPassword:    sshPassword,
+		SSHAgent:       sshAgent,
+		SSHAgentSocket: sshAgentSocket,
+		httpClient:     httpClient,
 	}, nil
 }
 

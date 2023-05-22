@@ -1,6 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package proxmox
 
@@ -21,6 +23,7 @@ import (
 	"github.com/skeema/knownhosts"
 
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 // ExecuteNodeCommands executes commands on a given node.
@@ -193,8 +196,6 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 		return nil, err
 	}
 
-	ur := strings.Split(c.Username, "@")
-
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
@@ -246,8 +247,61 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 	})
 
 	sshConfig := &ssh.ClientConfig{
-		User:              ur[0],
-		Auth:              []ssh.AuthMethod{ssh.Password(c.Password)},
+		User:              c.SSHUsername,
+		Auth:              []ssh.AuthMethod{ssh.Password(c.SSHPassword)},
+		HostKeyCallback:   cb,
+		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
+	}
+
+	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.SSHAgent))
+
+	if c.SSHAgent {
+		sshClient, err := c.CreateSSHClientAgent(ctx, cb, kh, sshHost)
+		if err != nil {
+			tflog.Error(ctx, "Failed ssh connection through agent, "+
+				"falling back to password authentication",
+				map[string]interface{}{
+					"error": err,
+				})
+		} else {
+			return sshClient, nil
+		}
+	}
+
+	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
+	}
+
+	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
+		"host": sshHost,
+		"user": c.SSHUsername,
+	})
+	return sshClient, nil
+}
+
+// CreateSSHClientAgent establishes an ssh connection through the agent authentication mechanism
+func (c *VirtualEnvironmentClient) CreateSSHClientAgent(
+	ctx context.Context,
+	cb ssh.HostKeyCallback,
+	kh knownhosts.HostKeyCallback,
+	sshHost string,
+) (*ssh.Client, error) {
+	if c.SSHAgentSocket == "" {
+		return nil, errors.New("failed connecting to SSH agent socket: the socket file is not defined, " +
+			"authentication will fall back to password")
+	}
+
+	conn, err := net.Dial("unix", c.SSHAgentSocket)
+	if err != nil {
+		return nil, fmt.Errorf("failed connecting to SSH auth socket '%s': %w", c.SSHAgentSocket, err)
+	}
+
+	ag := agent.NewClient(conn)
+
+	sshConfig := &ssh.ClientConfig{
+		User:              c.SSHUsername,
+		Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers), ssh.Password(c.SSHPassword)},
 		HostKeyCallback:   cb,
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
 	}
@@ -259,7 +313,7 @@ func (c *VirtualEnvironmentClient) OpenNodeShell(
 
 	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
 		"host": sshHost,
-		"user": ur[0],
+		"user": c.SSHUsername,
 	})
 	return sshClient, nil
 }

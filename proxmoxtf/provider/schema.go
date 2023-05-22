@@ -98,5 +98,64 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			},
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
+		mkProviderSSH: {
+			Type:        schema.TypeSet,
+			Optional:    true,
+			MaxItems:    1,
+			Description: "The SSH connection configuration to a Proxmox node",
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkProviderSSHUsername: {
+						Type:     schema.TypeString,
+						Optional: true,
+						Description: fmt.Sprintf("The username used for the SSH connection, "+
+							"defaults to the user specified in '%s'", mkProviderUsername),
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"PROXMOX_VE_SSH_USERNAME", "PM_VE_SSH_USERNAME"},
+							nil,
+						),
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHPassword: {
+						Type:     schema.TypeString,
+						Optional: true,
+						Description: fmt.Sprintf("The password used for the SSH connection, "+
+							"defaults to the password specified in '%s'", mkProviderPassword),
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"PROXMOX_VE_SSH_PASSWORD", "PM_VE_SSH_PASSWORD"},
+							nil,
+						),
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHAgent: {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Description: "Whether to use the SSH agent for the SSH authentication. Defaults to false",
+						DefaultFunc: func() (interface{}, error) {
+							for _, k := range []string{"PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT"} {
+								v := os.Getenv(k)
+
+								if v == "true" || v == "1" {
+									return true, nil
+								}
+							}
+
+							return false, nil
+						},
+					},
+					mkProviderSSHAgentSocket: {
+						Type:     schema.TypeString,
+						Optional: true,
+						Description: "The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` " +
+							"environment variable",
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK"},
+							nil,
+						),
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+				},
+			},
+		},
 	}
 }

@@ -17,14 +17,18 @@ import (
 )
 
 const (
-	dvProviderOTP = ""
-
+	dvProviderOTP                = ""
 	mkProviderVirtualEnvironment = "virtual_environment"
 	mkProviderEndpoint           = "endpoint"
 	mkProviderInsecure           = "insecure"
 	mkProviderOTP                = "otp"
 	mkProviderPassword           = "password"
 	mkProviderUsername           = "username"
+	mkProviderSSH                = "ssh"
+	mkProviderSSHUsername        = "username"
+	mkProviderSSHPassword        = "password"
+	mkProviderSSHAgent           = "agent"
+	mkProviderSSHAgentSocket     = "agent_socket"
 )
 
 // ProxmoxVirtualEnvironment returns the object for this provider.
@@ -41,26 +45,46 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	var err error
 	var veClient *proxmox.VirtualEnvironmentClient
 
-	// Initialize the client for the Virtual Environment, if required.
+	// Legacy configuration, wrapped in the deprecated `virtual_environment` block
 	veConfigBlock := d.Get(mkProviderVirtualEnvironment).([]interface{})
-
 	if len(veConfigBlock) > 0 {
 		veConfig := veConfigBlock[0].(map[string]interface{})
+		veSSHConfig := veConfig[mkProviderSSH].(map[string]interface{})
 
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
 			veConfig[mkProviderEndpoint].(string),
 			veConfig[mkProviderUsername].(string),
+			veConfig[mkProviderSSH].(map[string]interface{})[mkProviderSSHUsername].(string),
 			veConfig[mkProviderPassword].(string),
-			veConfig[mkProviderOTP].(string),
 			veConfig[mkProviderInsecure].(bool),
+			veSSHConfig[mkProviderSSHUsername].(string),
+			veSSHConfig[mkProviderSSHPassword].(string),
+			veSSHConfig[mkProviderSSHAgent].(bool),
+			veSSHConfig[mkProviderSSHAgentSocket].(string),
 		)
 	} else {
+		sshconf := map[string]interface{}{
+			mkProviderSSHUsername:    "",
+			mkProviderSSHPassword:    "",
+			mkProviderSSHAgent:       false,
+			mkProviderSSHAgentSocket: "",
+		}
+
+		sshBlock, sshSet := d.GetOk(mkProviderSSH)
+		if sshSet {
+			sshconf = sshBlock.(*schema.Set).List()[0].(map[string]interface{})
+		}
+
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
 			d.Get(mkProviderEndpoint).(string),
 			d.Get(mkProviderUsername).(string),
 			d.Get(mkProviderPassword).(string),
 			d.Get(mkProviderOTP).(string),
 			d.Get(mkProviderInsecure).(bool),
+			sshconf[mkProviderSSHUsername].(string),
+			sshconf[mkProviderSSHPassword].(string),
+			sshconf[mkProviderSSHAgent].(bool),
+			sshconf[mkProviderSSHAgentSocket].(string),
 		)
 	}
 
