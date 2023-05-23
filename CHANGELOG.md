@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.20.0...v0.20.1) (2023-05-23)
+
+
+### Bug Fixes
+
+* **vm:** Regression: wait for 'net.IsGlobalUnicast' IP address  ([#100](https://github.com/bpg/terraform-provider-proxmox/issues/100)) ([#345](https://github.com/bpg/terraform-provider-proxmox/issues/345)) ([20131b0](https://github.com/bpg/terraform-provider-proxmox/commit/20131b0ffcad256835256fb28bf177c20d344482))
+
 ## [0.20.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.19.1...v0.20.0) (2023-05-22)
 
 
