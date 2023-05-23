@@ -435,7 +435,6 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 			data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
 
 			if err == nil && data != nil && data.Result != nil {
-				missingIP := false
 				hasAnyGlobalUnicast := false
 
 				if waitForIP {
@@ -446,7 +445,6 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 
 						if nic.IPAddresses == nil ||
 							(nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
-							missingIP = true
 							break
 						}
 
@@ -458,7 +456,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 					}
 				}
 
-				if hasAnyGlobalUnicast || !missingIP {
+				if hasAnyGlobalUnicast {
 					return data, err
 				}
 			}
