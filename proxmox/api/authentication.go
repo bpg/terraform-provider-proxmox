@@ -20,11 +20,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
 )
 
-const (
-	// DefaultRootAccount contains the default username and realm for the root account.
-	defaultRootAccount = "root@pam"
-)
-
 // Authenticate authenticates against the specified endpoint.
 func (c *client) Authenticate(ctx context.Context, reset bool) error {
 	if c.authenticationData != nil && !reset {

@@ -413,7 +413,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 		remoteFileDir := *datastore.Path
 
-		return diag.FromErr(capi.SSHAPI().NodeUpload(ctx, nodeAddress, remoteFileDir, request))
+		return diag.FromErr(capi.SSH().NodeUpload(ctx, nodeAddress, remoteFileDir, request))
 	}
 
 	if err != nil {

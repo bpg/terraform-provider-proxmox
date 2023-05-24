@@ -37,11 +37,11 @@ type API interface {
 	// Version returns a client for getting the version of the Proxmox Virtual Environment API.
 	Version() *version.Client
 
-	// RESTAPI returns a lower-lever REST API client.
-	RESTAPI() api.Client
+	// REST returns a lower-lever REST API client.
+	REST() api.Client
 
-	// SSHAPI returns a lower-lever SSH client.
-	SSHAPI() ssh.Client
+	// SSH returns a lower-lever SSH client.
+	SSH() ssh.Client
 }
 
 // Client is an implementation of the Proxmox Virtual Environment API.
@@ -85,12 +85,12 @@ func (c *Client) Version() *version.Client {
 	return &version.Client{Client: c.a}
 }
 
-// RESTAPI returns a lower-lever REST API client.
-func (c *Client) RESTAPI() api.Client {
+// REST returns a lower-lever REST API client.
+func (c *Client) REST() api.Client {
 	return c.a
 }
 
-// SSHAPI returns a lower-lever SSH client.s.
-func (c *Client) SSHAPI() ssh.Client {
+// SSH returns a lower-lever SSH client.s.
+func (c *Client) SSH() ssh.Client {
 	return c.s
 }

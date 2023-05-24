@@ -31,41 +31,19 @@ func NewProviderConfiguration(
 	}
 }
 
-// GetAPIClient returns the virtual environment client.
-// Deprecated: Use API() instead.
-func (c *ProviderConfiguration) GetAPIClient() (api.Client, error) {
+// GetAPI returns the Proxmox API client.
+func (c *ProviderConfiguration) GetAPI() (proxmox.API, error) {
 	if c.apiClient == nil {
 		return nil, errors.New(
 			"you must specify the API access details in the provider configuration",
 		)
 	}
 
-	return c.apiClient, nil
-}
-
-// GetSSHClient returns the SSH client.
-// Deprecated: Use API() instead.
-func (c *ProviderConfiguration) GetSSHClient() (ssh.Client, error) {
 	if c.sshClient == nil {
 		return nil, errors.New(
 			"you must specify the SSH access details in the provider configuration",
 		)
 	}
 
-	return c.sshClient, nil
-}
-
-// GetAPI returns the Proxmox API client.
-func (c *ProviderConfiguration) GetAPI() (proxmox.API, error) {
-	a, err := c.GetAPIClient()
-	if err != nil {
-		return nil, err
-	}
-
-	s, err := c.GetSSHClient()
-	if err != nil {
-		return nil, err
-	}
-
-	return proxmox.NewClient(a, s), nil
+	return proxmox.NewClient(c.apiClient, c.sshClient), nil
 }

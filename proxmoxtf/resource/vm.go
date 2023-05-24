@@ -1531,7 +1531,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if api.RESTAPI().IsRoot() ||
+		if api.REST().IsRoot() ||
 			cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
@@ -2050,7 +2050,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-	if api.RESTAPI().IsRoot() ||
+	if api.REST().IsRoot() ||
 		cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 		createBody.CPUArchitecture = &cpuArchitecture
 	}
@@ -2238,12 +2238,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 			return diag.FromErr(err)
 		}
 
-		sshClient, err := config.GetSSHClient()
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		err = sshClient.ExecuteNodeCommands(ctx, nodeAddress, commands)
+		err = api.SSH().ExecuteNodeCommands(ctx, nodeAddress, commands)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2968,7 +2963,7 @@ func vmReadCustom(
 	} else {
 		// Default value of "arch" is "" according to the API documentation.
 		// However, assume the provider's default value as a workaround when the root account is not being used.
-		if !api.RESTAPI().IsRoot() {
+		if !api.REST().IsRoot() {
 			cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = dvResourceVirtualEnvironmentVMCPUArchitecture
 		} else {
 			cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = ""
@@ -4163,7 +4158,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if api.RESTAPI().IsRoot() ||
+		if api.REST().IsRoot() ||
 			cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}

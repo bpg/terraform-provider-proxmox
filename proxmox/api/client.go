@@ -236,7 +236,7 @@ func (c *client) ExpandPath(path string) string {
 }
 
 func (c *client) IsRoot() bool {
-	return c.username == defaultRootAccount
+	return c.username == "root@pam"
 }
 
 // validateResponseCode ensures that a response is valid.
