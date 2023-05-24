@@ -24,7 +24,9 @@ import (
 )
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
-func NewVirtualEnvironmentClient(endpoint, username, password, otp string, insecure bool) (*VirtualEnvironmentClient, error) {
+func NewVirtualEnvironmentClient(
+	endpoint, username, password, otp string, insecure bool,
+) (*VirtualEnvironmentClient, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
