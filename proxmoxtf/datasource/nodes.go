@@ -100,7 +100,7 @@ func nodesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListNodes(ctx)
+	list, err := veClient.API().Node("").ListNodes(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -8,21 +8,15 @@ package proxmox
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"golang.org/x/crypto/ssh"
-
-	"github.com/pkg/sftp"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -183,121 +177,8 @@ func (c *VirtualEnvironmentClient) ListDatastores(
 	return resBody.Data, nil
 }
 
-// UploadFileToDatastore uploads a file to a datastore.
-func (c *VirtualEnvironmentClient) UploadFileToDatastore(
-	ctx context.Context,
-	d *DatastoreUploadRequestBody,
-) (*DatastoreUploadResponseBody, error) {
-	switch d.ContentType {
-	case "iso", "vztmpl":
-		return c.apiUpload(ctx, d)
-	default:
-		return c.sftpUpload(ctx, d)
-	}
-}
-
-func (c *VirtualEnvironmentClient) sftpUpload(
-	ctx context.Context,
-	d *DatastoreUploadRequestBody,
-) (*DatastoreUploadResponseBody, error) {
-	// We need to upload all other files using SFTP due to API limitations.
-	// Hopefully, this will not be required in future releases of Proxmox VE.
-	tflog.Debug(ctx, "uploading file to datastore using SFTP", map[string]interface{}{
-		"node_name":    d.NodeName,
-		"datastore_id": d.DatastoreID,
-		"file_name":    d.FileName,
-		"content_type": d.ContentType,
-	})
-
-	fileInfo, err := d.File.Stat()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get file info: %w", err)
-	}
-
-	fileSize := fileInfo.Size()
-
-	sshClient, err := c.OpenNodeShell(ctx, d.NodeName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func(sshClient *ssh.Client) {
-		e := sshClient.Close()
-		if e != nil {
-			tflog.Error(ctx, "failed to close SSH client", map[string]interface{}{
-				"error": e,
-			})
-		}
-	}(sshClient)
-
-	datastore, err := c.GetDatastore(ctx, d.DatastoreID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get datastore: %w", err)
-	}
-
-	if datastore.Path == nil || *datastore.Path == "" {
-		return nil, errors.New("failed to determine the datastore path")
-	}
-
-	remoteFileDir := *datastore.Path
-	if d.ContentType != "" {
-		remoteFileDir = filepath.Join(remoteFileDir, d.ContentType)
-	}
-
-	remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, `/`)
-
-	sftpClient, err := sftp.NewClient(sshClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create SFTP client: %w", err)
-	}
-
-	defer func(sftpClient *sftp.Client) {
-		e := sftpClient.Close()
-		if e != nil {
-			tflog.Error(ctx, "failed to close SFTP client", map[string]interface{}{
-				"error": e,
-			})
-		}
-	}(sftpClient)
-
-	err = sftpClient.MkdirAll(remoteFileDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create directory %s: %w", remoteFileDir, err)
-	}
-
-	remoteFile, err := sftpClient.Create(remoteFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create file %s: %w", remoteFilePath, err)
-	}
-
-	defer func(remoteFile *sftp.File) {
-		e := remoteFile.Close()
-		if e != nil {
-			tflog.Error(ctx, "failed to close remote file", map[string]interface{}{
-				"error": e,
-			})
-		}
-	}(remoteFile)
-
-	bytesUploaded, err := remoteFile.ReadFrom(d.File)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upload file %s: %w", remoteFilePath, err)
-	}
-
-	if bytesUploaded != fileSize {
-		return nil, fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
-			remoteFilePath, bytesUploaded, fileSize)
-	}
-
-	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
-		"remote_file_path": remoteFilePath,
-		"size":             bytesUploaded,
-	})
-
-	return &DatastoreUploadResponseBody{}, nil
-}
-
-func (c *VirtualEnvironmentClient) apiUpload(
+// APIUpload uploads a file to a datastore using the Proxmox API.
+func (c *VirtualEnvironmentClient) APIUpload(
 	ctx context.Context,
 	d *DatastoreUploadRequestBody,
 ) (*DatastoreUploadResponseBody, error) {

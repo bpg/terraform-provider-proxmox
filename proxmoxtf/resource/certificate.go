@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/node"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -140,7 +140,7 @@ func certificateCreate(ctx context.Context, d *schema.ResourceData, m interface{
 	return nil
 }
 
-func certificateGetUpdateBody(d *schema.ResourceData) *nodes.CertificateUpdateRequestBody {
+func certificateGetUpdateBody(d *schema.ResourceData) *node.CertificateUpdateRequestBody {
 	certificate := d.Get(mkResourceVirtualEnvironmentCertificateCertificate).(string)
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
 	overwrite := types.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
@@ -160,7 +160,7 @@ func certificateGetUpdateBody(d *schema.ResourceData) *nodes.CertificateUpdateRe
 
 	restart := types.CustomBool(true)
 
-	body := &nodes.CertificateUpdateRequestBody{
+	body := &node.CertificateUpdateRequestBody{
 		Certificates: combinedCertificates,
 		Force:        &force,
 		PrivateKey:   &privateKey,
@@ -336,7 +336,7 @@ func certificateDelete(ctx context.Context, d *schema.ResourceData, m interface{
 
 	err = api.DeleteCertificate(
 		ctx,
-		&nodes.CertificateDeleteRequestBody{
+		&node.CertificateDeleteRequestBody{
 			Restart: &restart,
 		},
 	)

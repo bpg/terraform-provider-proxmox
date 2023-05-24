@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/node/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -2096,13 +2096,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 }
 
 func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -2232,7 +2225,26 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 	// Execute the commands on the node and wait for the result.
 	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
 	if len(commands) > 0 {
-		err = veClient.ExecuteNodeCommands(ctx, nodeName, commands)
+		config := m.(proxmoxtf.ProviderConfiguration)
+
+		veClient, err := config.GetVEClient()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+
+		nodeAddress, err := veClient.API().Node(nodeName).GetIP(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		sshClient, err := config.GetSSHClient()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		err = sshClient.ExecuteNodeCommands(ctx, nodeAddress, commands)
 		if err != nil {
 			return diag.FromErr(err)
 		}

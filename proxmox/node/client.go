@@ -4,14 +4,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package nodes
+package node
 
 import (
 	"fmt"
 	"net/url"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/node/containers"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/node/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 

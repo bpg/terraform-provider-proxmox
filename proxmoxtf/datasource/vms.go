@@ -149,7 +149,7 @@ func getNodeNames(
 	if nodeName != "" {
 		nodeNames = append(nodeNames, nodeName)
 	} else {
-		nodes, err := veClient.ListNodes(ctx)
+		nodes, err := veClient.API().Node(nodeName).ListNodes(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error listing nodes: %w", err)
 		}

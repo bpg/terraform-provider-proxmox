@@ -196,12 +196,6 @@ func File() *schema.Resource {
 func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	contentType, dg := fileGetContentType(d)
 	diags = append(diags, dg...)
 
@@ -388,7 +382,46 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		NodeName:    nodeName,
 	}
 
-	_, err = veClient.UploadFileToDatastore(ctx, body)
+	config := m.(proxmoxtf.ProviderConfiguration)
+
+	veClient, err := config.GetVEClient()
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	switch body.ContentType {
+	case "iso", "vztmpl":
+		_, err = veClient.APIUpload(ctx, body)
+		if err != nil {
+			return diag.Errorf("failed to upload file: %s", err)
+		}
+	default:
+		// For all other content types, we need to upload the file to the node's
+		// datastore using SFTP.
+		nodeAddress, err2 := veClient.API().Node(nodeName).GetIP(ctx)
+		if err2 != nil {
+			return diag.Errorf("failed to get node IP: %s", err2)
+		}
+
+		datastore, err2 := veClient.GetDatastore(ctx, body.DatastoreID)
+		if err2 != nil {
+			return diag.Errorf("failed to get datastore: %s", err2)
+		}
+
+		if datastore.Path == nil || *datastore.Path == "" {
+			return diag.Errorf("failed to determine the datastore path")
+		}
+
+		remoteFileDir := *datastore.Path
+
+		sshClient, err2 := config.GetSSHClient()
+		if err2 != nil {
+			return diag.Errorf("failed to get SSH client: %s", err2)
+		}
+
+		return diag.FromErr(sshClient.SFTPUpload(ctx, nodeAddress, remoteFileDir, d))
+	}
+
 	if err != nil {
 		return diag.FromErr(err)
 	}

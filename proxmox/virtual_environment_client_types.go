@@ -12,7 +12,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/node"
 )
 
 const (
@@ -21,15 +21,11 @@ const (
 
 // VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
 type VirtualEnvironmentClient struct {
-	Endpoint       string
-	Insecure       bool
-	OTP            *string
-	Password       string
-	Username       string
-	SSHUsername    string
-	SSHPassword    string
-	SSHAgent       bool
-	SSHAgentSocket string
+	Endpoint string
+	Insecure bool
+	OTP      *string
+	Password string
+	Username string
 
 	authenticationData *AuthenticationResponseData
 	httpClient         *http.Client
@@ -52,7 +48,7 @@ type VirtualEnvironmentMultiPartData struct {
 type API interface {
 	Cluster() *cluster.Client
 	Access() *access.Client
-	Node(nodeName string) *nodes.Client
+	Node(nodeName string) *node.Client
 }
 
 // API returns an API client for the Proxmox Virtual Environment API.
@@ -77,6 +73,6 @@ func (c *client) Access() *access.Client {
 	return &access.Client{Client: c.c}
 }
 
-func (c *client) Node(nodeName string) *nodes.Client {
-	return &nodes.Client{Client: c.c, NodeName: nodeName}
+func (c *client) Node(nodeName string) *node.Client {
+	return &node.Client{Client: c.c, NodeName: nodeName}
 }

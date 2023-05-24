@@ -10,8 +10,8 @@ import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
-	vmfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/node/tasks"
+	vmfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/node/vms/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 

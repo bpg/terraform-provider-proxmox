@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/node"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -70,11 +70,11 @@ func dnsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	return nil
 }
 
-func dnsGetUpdateBody(d *schema.ResourceData) *nodes.DNSUpdateRequestBody {
+func dnsGetUpdateBody(d *schema.ResourceData) *node.DNSUpdateRequestBody {
 	domain := d.Get(mkResourceVirtualEnvironmentDNSDomain).(string)
 	servers := d.Get(mkResourceVirtualEnvironmentDNSServers).([]interface{})
 
-	body := &nodes.DNSUpdateRequestBody{
+	body := &node.DNSUpdateRequestBody{
 		SearchDomain: &domain,
 	}
 

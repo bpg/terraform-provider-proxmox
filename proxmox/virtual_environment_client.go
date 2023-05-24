@@ -16,7 +16,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"runtime"
 	"strings"
 
 	"github.com/google/go-querystring/query"
@@ -25,10 +24,7 @@ import (
 )
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
-func NewVirtualEnvironmentClient(
-	endpoint, username, password, otp string,
-	insecure bool, sshUsername string, sshPassword string, sshAgent bool, sshAgentSocket string,
-) (*VirtualEnvironmentClient, error) {
+func NewVirtualEnvironmentClient(endpoint, username, password, otp string, insecure bool) (*VirtualEnvironmentClient, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
@@ -78,32 +74,13 @@ func NewVirtualEnvironmentClient(
 
 	httpClient := &http.Client{Transport: transport}
 
-	if sshUsername == "" {
-		sshUsername = strings.Split(username, "@")[0]
-	}
-
-	if sshPassword == "" {
-		sshPassword = password
-	}
-
-	if sshAgent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
-		return nil, errors.New(
-			"the ssh agent flag is only supported on POSIX systems, please set it to 'false'" +
-				" or remove it from your provider configuration",
-		)
-	}
-
 	return &VirtualEnvironmentClient{
-		Endpoint:       strings.TrimRight(u.String(), "/"),
-		Insecure:       insecure,
-		OTP:            pOTP,
-		Password:       password,
-		Username:       username,
-		SSHUsername:    sshUsername,
-		SSHPassword:    sshPassword,
-		SSHAgent:       sshAgent,
-		SSHAgentSocket: sshAgentSocket,
-		httpClient:     httpClient,
+		Endpoint:   strings.TrimRight(u.String(), "/"),
+		Insecure:   insecure,
+		OTP:        pOTP,
+		Password:   password,
+		Username:   username,
+		httpClient: httpClient,
 	}, nil
 }
 

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package nodes
+package node
 
 // DNSGetResponseBody contains the body from a DNS get response.
 type DNSGetResponseBody struct {

@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -46,11 +47,13 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	var veClient *proxmox.VirtualEnvironmentClient
 
+	var sshClient types.SSHClient
+
 	// Legacy configuration, wrapped in the deprecated `virtual_environment` block
 	veConfigBlock := d.Get(mkProviderVirtualEnvironment).([]interface{})
+	//nolint:nestif
 	if len(veConfigBlock) > 0 {
 		veConfig := veConfigBlock[0].(map[string]interface{})
-		veSSHConfig := veConfig[mkProviderSSH].(map[string]interface{})
 
 		veClient, err = proxmox.NewVirtualEnvironmentClient(
 			veConfig[mkProviderEndpoint].(string),
@@ -58,12 +61,35 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			veConfig[mkProviderSSH].(map[string]interface{})[mkProviderSSHUsername].(string),
 			veConfig[mkProviderPassword].(string),
 			veConfig[mkProviderInsecure].(bool),
+		)
+		if err != nil {
+			return nil, diag.Errorf("error creating virtual environment client: %s", err)
+		}
+
+		veSSHConfig := veConfig[mkProviderSSH].(map[string]interface{})
+
+		sshClient, err = proxmox.NewSSHClient(
+			veClient,
 			veSSHConfig[mkProviderSSHUsername].(string),
 			veSSHConfig[mkProviderSSHPassword].(string),
 			veSSHConfig[mkProviderSSHAgent].(bool),
 			veSSHConfig[mkProviderSSHAgentSocket].(string),
 		)
+		if err != nil {
+			return nil, diag.Errorf("error creating SSH client: %s", err)
+		}
 	} else {
+		veClient, err = proxmox.NewVirtualEnvironmentClient(
+			d.Get(mkProviderEndpoint).(string),
+			d.Get(mkProviderUsername).(string),
+			d.Get(mkProviderPassword).(string),
+			d.Get(mkProviderOTP).(string),
+			d.Get(mkProviderInsecure).(bool),
+		)
+		if err != nil {
+			return nil, diag.Errorf("error creating virtual environment client: %s", err)
+		}
+
 		sshconf := map[string]interface{}{
 			mkProviderSSHUsername:    "",
 			mkProviderSSHPassword:    "",
@@ -76,24 +102,19 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			sshconf = sshBlock.(*schema.Set).List()[0].(map[string]interface{})
 		}
 
-		veClient, err = proxmox.NewVirtualEnvironmentClient(
-			d.Get(mkProviderEndpoint).(string),
-			d.Get(mkProviderUsername).(string),
-			d.Get(mkProviderPassword).(string),
-			d.Get(mkProviderOTP).(string),
-			d.Get(mkProviderInsecure).(bool),
+		sshClient, err = proxmox.NewSSHClient(
+			veClient,
 			sshconf[mkProviderSSHUsername].(string),
 			sshconf[mkProviderSSHPassword].(string),
 			sshconf[mkProviderSSHAgent].(bool),
 			sshconf[mkProviderSSHAgentSocket].(string),
 		)
+		if err != nil {
+			return nil, diag.Errorf("error creating SSH client: %s", err)
+		}
 	}
 
-	if err != nil {
-		return nil, diag.FromErr(err)
-	}
-
-	config := proxmoxtf.NewProviderConfiguration(veClient)
+	config := proxmoxtf.NewProviderConfiguration(veClient, sshClient)
 
 	return config, nil
 }

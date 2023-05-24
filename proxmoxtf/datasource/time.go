@@ -63,7 +63,7 @@ func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentTimeNodeName).(string)
-	nodeTime, err := veClient.GetNodeTime(ctx, nodeName)
+	nodeTime, err := veClient.API().Node(nodeName).GetTime(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

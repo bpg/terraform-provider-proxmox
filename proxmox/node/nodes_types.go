@@ -4,42 +4,43 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package proxmox
+package node
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
-// CustomNodeCommands contains an array of commands to execute.
-type CustomNodeCommands []string
+// CustomCommands contains an array of commands to execute.
+type CustomCommands []string
 
-// VirtualEnvironmentNodeExecuteRequestBody contains the data for a node execute request.
-type VirtualEnvironmentNodeExecuteRequestBody struct {
-	Commands CustomNodeCommands `json:"commands" url:"commands"`
+// ExecuteRequestBody contains the data for a node execute request.
+type ExecuteRequestBody struct {
+	Commands CustomCommands `json:"commands" url:"commands"`
 }
 
-// VirtualEnvironmentNodeGetTimeResponseBody contains the body from a node time zone get response.
-type VirtualEnvironmentNodeGetTimeResponseBody struct {
-	Data *VirtualEnvironmentNodeGetTimeResponseData `json:"data,omitempty"`
+// GetTimeResponseBody contains the body from a node time zone get response.
+type GetTimeResponseBody struct {
+	Data *GetTimeResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentNodeGetTimeResponseData contains the data from a node list response.
-type VirtualEnvironmentNodeGetTimeResponseData struct {
+// GetTimeResponseData contains the data from a node list response.
+type GetTimeResponseData struct {
 	LocalTime types.CustomTimestamp `json:"localtime"`
 	TimeZone  string                `json:"timezone"`
 	UTCTime   types.CustomTimestamp `json:"time"`
 }
 
-// VirtualEnvironmentNodeListResponseBody contains the body from a node list response.
-type VirtualEnvironmentNodeListResponseBody struct {
-	Data []*VirtualEnvironmentNodeListResponseData `json:"data,omitempty"`
+// ListResponseBody contains the body from a node list response.
+type ListResponseBody struct {
+	Data []*ListResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentNodeListResponseData contains the data from a node list response.
-type VirtualEnvironmentNodeListResponseData struct {
+// ListResponseData contains the data from a node list response.
+type ListResponseData struct {
 	CPUCount        *int     `json:"maxcpu,omitempty"`
 	CPUUtilization  *float64 `json:"cpu,omitempty"`
 	MemoryAvailable *int     `json:"maxmem,omitempty"`
@@ -51,13 +52,13 @@ type VirtualEnvironmentNodeListResponseData struct {
 	Uptime          *int     `json:"uptime"`
 }
 
-// VirtualEnvironmentNodeNetworkDeviceListResponseBody contains the body from a node network device list response.
-type VirtualEnvironmentNodeNetworkDeviceListResponseBody struct {
-	Data []*VirtualEnvironmentNodeNetworkDeviceListResponseData `json:"data,omitempty"`
+// NetworkDeviceListResponseBody contains the body from a node network device list response.
+type NetworkDeviceListResponseBody struct {
+	Data []*NetworkDeviceListResponseData `json:"data,omitempty"`
 }
 
-// VirtualEnvironmentNodeNetworkDeviceListResponseData contains the data from a node network device list response.
-type VirtualEnvironmentNodeNetworkDeviceListResponseData struct {
+// NetworkDeviceListResponseData contains the data from a node network device list response.
+type NetworkDeviceListResponseData struct {
 	Active      *types.CustomBool `json:"active,omitempty"`
 	Address     *string           `json:"address,omitempty"`
 	Autostart   *types.CustomBool `json:"autostart,omitempty"`
@@ -76,16 +77,16 @@ type VirtualEnvironmentNodeNetworkDeviceListResponseData struct {
 	Type        string            `json:"type"`
 }
 
-// VirtualEnvironmentNodeUpdateTimeRequestBody contains the body for a node time update request.
-type VirtualEnvironmentNodeUpdateTimeRequestBody struct {
+// UpdateTimeRequestBody contains the body for a node time update request.
+type UpdateTimeRequestBody struct {
 	TimeZone string `json:"timezone" url:"timezone"`
 }
 
-// EncodeValues converts a CustomNodeCommands array to a JSON encoded URL vlaue.
-func (r CustomNodeCommands) EncodeValues(key string, v *url.Values) error {
+// EncodeValues converts a CustomCommands array to a JSON encoded URL value.
+func (r CustomCommands) EncodeValues(key string, v *url.Values) error {
 	jsonArrayBytes, err := json.Marshal(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("error marshalling CustomCommands array: %w", err)
 	}
 
 	v.Add(key, string(jsonArrayBytes))

@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
-	containerfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers/firewall"
+	containerfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/node/containers/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 

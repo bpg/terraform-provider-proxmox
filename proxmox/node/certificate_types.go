@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package nodes
+package node
 
 import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 

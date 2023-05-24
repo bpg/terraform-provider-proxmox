@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/node"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -207,7 +207,7 @@ func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	api := veClient.API().Node(nodeName)
 
 	// Generate the data for the hosts file based on the specified entries.
-	body := nodes.HostsUpdateRequestBody{
+	body := node.HostsUpdateRequestBody{
 		Data: "",
 	}
 
