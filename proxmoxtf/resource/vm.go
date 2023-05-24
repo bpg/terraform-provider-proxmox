@@ -1335,9 +1335,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		onlySharedDatastores := true
 		for _, datastore := range datastores {
-			datastoreStatus, err := veClient.GetDatastoreStatus(ctx, cloneNodeName, datastore)
-			if err != nil {
-				return diag.FromErr(err)
+			datastoreStatus, err2 := veClient.API().Node(cloneNodeName).GetDatastoreStatus(ctx, datastore)
+			if err2 != nil {
+				return diag.FromErr(err2)
 			}
 
 			if datastoreStatus.Shared != nil && !*datastoreStatus.Shared {
@@ -3063,7 +3063,7 @@ func vmReadCustom(
 			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = dvResourceVirtualEnvironmentVMDiskFileFormat
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			files, err := veClient.ListDatastoreFiles(ctx, nodeName, fileIDParts[0])
+			files, err := veClient.API().Node(nodeName).ListDatastoreFiles(ctx, fileIDParts[0])
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
 				continue

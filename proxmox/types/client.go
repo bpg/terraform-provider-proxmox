@@ -9,6 +9,8 @@ package types
 import (
 	"context"
 	"errors"
+	"io"
+	"os"
 )
 
 // ErrNoDataObjectInResponse is returned when the server does not include a data object in the response.
@@ -28,4 +30,24 @@ type Client interface {
 	// path is "firewall/options", the returned path will be
 	// "/nodes/<node>/qemu/<vmid>/firewall/options".
 	ExpandPath(path string) string
+}
+
+// MultiPartData enables multipart uploads in DoRequest.
+type MultiPartData struct {
+	Boundary string
+	Reader   io.Reader
+	Size     *int64
+}
+
+// ErrorResponseBody contains the body of an error response.
+type ErrorResponseBody struct {
+	Data   *string            `json:"data"`
+	Errors *map[string]string `json:"errors"`
+}
+
+// FileUploadRequest is a request for uploading a file.
+type FileUploadRequest struct {
+	ContentType string
+	FileName    string
+	File        *os.File
 }

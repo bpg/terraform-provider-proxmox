@@ -7,7 +7,6 @@
 package proxmox
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
@@ -29,19 +28,6 @@ type VirtualEnvironmentClient struct {
 
 	authenticationData *AuthenticationResponseData
 	httpClient         *http.Client
-}
-
-// VirtualEnvironmentErrorResponseBody contains the body of an error response.
-type VirtualEnvironmentErrorResponseBody struct {
-	Data   *string
-	Errors *map[string]string
-}
-
-// VirtualEnvironmentMultiPartData enables multipart uploads in DoRequest.
-type VirtualEnvironmentMultiPartData struct {
-	Boundary string
-	Reader   io.Reader
-	Size     *int64
 }
 
 // API is the interface for the Proxmox Virtual Environment API.

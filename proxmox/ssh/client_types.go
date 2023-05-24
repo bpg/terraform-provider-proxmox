@@ -8,7 +8,8 @@ package ssh
 
 import (
 	"context"
-	"os"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Client is an interface for performing SSH requests against the Proxmox Nodes.
@@ -22,13 +23,6 @@ type Client interface {
 	// NodeUpload uploads a file to a node.
 	NodeUpload(
 		ctx context.Context, nodeAddress string,
-		remoteFileDir string, fileUploadRequest *FileUploadRequest,
+		remoteFileDir string, fileUploadRequest *types.FileUploadRequest,
 	) error
-}
-
-// FileUploadRequest is a request for uploading a file over SFTP.
-type FileUploadRequest struct {
-	ContentType string
-	FileName    string
-	File        *os.File
 }

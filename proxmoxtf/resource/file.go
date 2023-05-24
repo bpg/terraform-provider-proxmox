@@ -25,9 +25,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -383,17 +382,15 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		return diag.FromErr(err)
 	}
 
+	request := &types.FileUploadRequest{
+		ContentType: *contentType,
+		FileName:    *fileName,
+		File:        file,
+	}
+
 	switch *contentType {
 	case "iso", "vztmpl":
-		body := &proxmox.DatastoreUploadRequestBody{
-			ContentType: *contentType,
-			DatastoreID: datastoreID,
-			FileName:    *fileName,
-			File:        file,
-			NodeName:    nodeName,
-		}
-
-		_, err = veClient.APIUpload(ctx, body)
+		_, err = veClient.API().Node(nodeName).APIUpload(ctx, datastoreID, request)
 		if err != nil {
 			return diag.Errorf("failed to upload file: %s", err)
 		}
@@ -421,13 +418,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			return diag.Errorf("failed to get SSH client: %s", err2)
 		}
 
-		request := ssh.FileUploadRequest{
-			ContentType: *contentType,
-			FileName:    *fileName,
-			File:        file,
-		}
-
-		return diag.FromErr(sshClient.NodeUpload(ctx, nodeAddress, remoteFileDir, &request))
+		return diag.FromErr(sshClient.NodeUpload(ctx, nodeAddress, remoteFileDir, request))
 	}
 
 	if err != nil {
@@ -590,7 +581,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	sourceFileBlock := sourceFile[0].(map[string]interface{})
 	sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 
-	list, err := veClient.ListDatastoreFiles(ctx, nodeName, datastoreID)
+	list, err := veClient.API().Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -744,7 +735,7 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 
-	err = veClient.DeleteDatastoreFile(ctx, nodeName, datastoreID, d.Id())
+	err = veClient.API().Node(nodeName).DeleteDatastoreFile(ctx, datastoreID, d.Id())
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
@@ -101,7 +102,7 @@ func (c *VirtualEnvironmentClient) DoRequest(
 	reqBodyType := ""
 
 	if requestBody != nil {
-		multipartData, multipart := requestBody.(*VirtualEnvironmentMultiPartData)
+		multipartData, multipart := requestBody.(*types.MultiPartData)
 		pipedBodyReader, pipedBody := requestBody.(*io.PipeReader)
 
 		if multipart {
@@ -219,7 +220,7 @@ func (c *VirtualEnvironmentClient) ValidateResponseCode(res *http.Response) erro
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		status := strings.TrimPrefix(res.Status, fmt.Sprintf("%d ", res.StatusCode))
 
-		errRes := &VirtualEnvironmentErrorResponseBody{}
+		errRes := &types.ErrorResponseBody{}
 		err := json.NewDecoder(res.Body).Decode(errRes)
 
 		if err == nil && errRes.Errors != nil {

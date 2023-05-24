@@ -111,7 +111,7 @@ func datastoresRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDatastoresNodeName).(string)
-	list, err := veClient.ListDatastores(ctx, nodeName, nil)
+	list, err := veClient.API().Node(nodeName).ListDatastores(ctx, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

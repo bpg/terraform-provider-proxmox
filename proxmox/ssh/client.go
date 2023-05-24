@@ -24,6 +24,7 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type client struct {
@@ -86,7 +87,7 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeAddress string, co
 
 func (c *client) NodeUpload(
 	ctx context.Context, nodeAddress string, remoteFileDir string,
-	d *FileUploadRequest,
+	d *types.FileUploadRequest,
 ) error {
 	// We need to upload all other files using SFTP due to API limitations.
 	// Hopefully, this will not be required in future releases of Proxmox VE.
