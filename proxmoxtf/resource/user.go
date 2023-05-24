@@ -149,7 +149,7 @@ func User() *schema.Resource {
 
 func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -192,7 +192,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Password:       password,
 	}
 
-	err = veClient.API().Access().CreateUser(ctx, body)
+	err = api.Access().CreateUser(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -216,7 +216,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := veClient.API().Access().UpdateACL(ctx, aclBody)
+		err := api.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -227,13 +227,13 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	userID := d.Id()
-	user, err := veClient.API().Access().GetUser(ctx, userID)
+	user, err := api.Access().GetUser(ctx, userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -243,7 +243,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.API().Access().GetACL(ctx)
+	acl, err := api.Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -341,7 +341,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -381,14 +381,14 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	}
 
 	userID := d.Id()
-	err = veClient.API().Access().UpdateUser(ctx, userID, body)
+	err = api.Access().UpdateUser(ctx, userID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentUserPassword) {
 		password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
-		err = veClient.API().Access().ChangeUserPassword(ctx, userID, password)
+		err = api.Access().ChangeUserPassword(ctx, userID, password)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -412,7 +412,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := veClient.API().Access().UpdateACL(ctx, aclBody)
+		err := api.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -435,7 +435,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := veClient.API().Access().UpdateACL(ctx, aclBody)
+		err := api.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -446,7 +446,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -469,13 +469,13 @@ func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err = veClient.API().Access().UpdateACL(ctx, aclBody)
+		err = api.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.API().Access().DeleteUser(ctx, userID)
+	err = api.Access().DeleteUser(ctx, userID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

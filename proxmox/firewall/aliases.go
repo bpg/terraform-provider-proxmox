@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 // Alias is an interface for managing firewall aliases.
@@ -63,7 +63,7 @@ func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseDa
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -79,7 +79,7 @@ func (c *Client) ListAliases(ctx context.Context) ([]*AliasGetResponseData, erro
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

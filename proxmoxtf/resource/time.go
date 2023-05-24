@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/node"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -74,13 +74,13 @@ func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
-	nodeTime, err := veClient.API().Node(nodeName).GetTime(ctx)
+	nodeTime, err := api.Node(nodeName).GetTime(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -110,7 +110,7 @@ func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func timeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -118,9 +118,9 @@ func timeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
 	timeZone := d.Get(mkResourceVirtualEnvironmentTimeTimeZone).(string)
 
-	err = veClient.API().Node(nodeName).UpdateTime(
+	err = api.Node(nodeName).UpdateTime(
 		ctx,
-		&node.UpdateTimeRequestBody{
+		&nodes.UpdateTimeRequestBody{
 			TimeZone: timeZone,
 		},
 	)

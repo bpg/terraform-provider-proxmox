@@ -78,18 +78,18 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	groupID := d.Get(mkDataSourceVirtualEnvironmentGroupID).(string)
-	group, err := veClient.API().Access().GetGroup(ctx, groupID)
+	group, err := api.Access().GetGroup(ctx, groupID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.API().Access().GetACL(ctx)
+	acl, err := api.Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

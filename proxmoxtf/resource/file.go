@@ -25,8 +25,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -377,12 +377,12 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	veClient, err := config.GetVEClient()
+	capi, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	request := &types.FileUploadRequest{
+	request := &api.FileUploadRequest{
 		ContentType: *contentType,
 		FileName:    *fileName,
 		File:        file,
@@ -390,19 +390,19 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	switch *contentType {
 	case "iso", "vztmpl":
-		_, err = veClient.API().Node(nodeName).APIUpload(ctx, datastoreID, request)
+		_, err = capi.Node(nodeName).APIUpload(ctx, datastoreID, request)
 		if err != nil {
 			return diag.Errorf("failed to upload file: %s", err)
 		}
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
-		nodeAddress, err2 := veClient.API().Node(nodeName).GetIP(ctx)
+		nodeAddress, err2 := capi.Node(nodeName).GetIP(ctx)
 		if err2 != nil {
 			return diag.Errorf("failed to get node IP: %s", err2)
 		}
 
-		datastore, err2 := veClient.GetDatastore(ctx, datastoreID)
+		datastore, err2 := capi.Storage().GetDatastore(ctx, datastoreID)
 		if err2 != nil {
 			return diag.Errorf("failed to get datastore: %s", err2)
 		}
@@ -413,12 +413,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 		remoteFileDir := *datastore.Path
 
-		sshClient, err2 := config.GetSSHClient()
-		if err2 != nil {
-			return diag.Errorf("failed to get SSH client: %s", err2)
-		}
-
-		return diag.FromErr(sshClient.NodeUpload(ctx, nodeAddress, remoteFileDir, request))
+		return diag.FromErr(capi.SSHAPI().NodeUpload(ctx, nodeAddress, remoteFileDir, request))
 	}
 
 	if err != nil {
@@ -564,7 +559,7 @@ func fileIsURL(d *schema.ResourceData) bool {
 
 func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	capi, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -581,7 +576,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	sourceFileBlock := sourceFile[0].(map[string]interface{})
 	sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 
-	list, err := veClient.API().Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
+	list, err := capi.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -727,7 +722,7 @@ func readURL(
 
 func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	capi, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -735,7 +730,7 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 
-	err = veClient.API().Node(nodeName).DeleteDatastoreFile(ctx, datastoreID, d.Id())
+	err = capi.Node(nodeName).DeleteDatastoreFile(ctx, datastoreID, d.Id())
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

@@ -14,6 +14,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -70,7 +71,7 @@ func (c *Client) GetUser(ctx context.Context, id string) (*UserGetResponseData, 
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	if resBody.Data.ExpirationDate != nil {
@@ -95,7 +96,7 @@ func (c *Client) ListUsers(ctx context.Context) ([]*UserListResponseData, error)
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

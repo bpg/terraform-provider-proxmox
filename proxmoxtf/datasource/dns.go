@@ -51,15 +51,14 @@ func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDNSNodeName).(string)
-	api := veClient.API().Node(nodeName)
 
-	dns, err := api.GetDNS(ctx)
+	dns, err := api.Node(nodeName).GetDNS(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

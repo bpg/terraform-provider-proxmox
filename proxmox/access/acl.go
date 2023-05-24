@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 func (c *Client) aclPath() string {
@@ -29,7 +29,7 @@ func (c *Client) GetACL(ctx context.Context) ([]*ACLGetResponseData, error) {
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

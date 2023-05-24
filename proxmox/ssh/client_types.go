@@ -9,7 +9,7 @@ package ssh
 import (
 	"context"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 // Client is an interface for performing SSH requests against the Proxmox Nodes.
@@ -23,6 +23,6 @@ type Client interface {
 	// NodeUpload uploads a file to a node.
 	NodeUpload(
 		ctx context.Context, nodeAddress string,
-		remoteFileDir string, fileUploadRequest *types.FileUploadRequest,
+		remoteFileDir string, fileUploadRequest *api.FileUploadRequest,
 	) error
 }

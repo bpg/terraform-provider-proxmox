@@ -90,7 +90,7 @@ func Group() *schema.Resource {
 
 func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -103,7 +103,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		ID:      groupID,
 	}
 
-	err = veClient.API().Access().CreateGroup(ctx, body)
+	err = api.Access().CreateGroup(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -127,7 +127,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.API().Access().UpdateACL(ctx, aclBody)
+		err := api.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -140,13 +140,13 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	groupID := d.Id()
-	group, err := veClient.API().Access().GetGroup(ctx, groupID)
+	group, err := api.Access().GetGroup(ctx, groupID)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -156,7 +156,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		return diag.FromErr(err)
 	}
 
-	acl, err := veClient.API().Access().GetACL(ctx)
+	acl, err := api.Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -199,7 +199,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -211,7 +211,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		Comment: &comment,
 	}
 
-	err = veClient.API().Access().UpdateGroup(ctx, groupID, body)
+	err = api.Access().UpdateGroup(ctx, groupID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -234,7 +234,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.API().Access().UpdateACL(ctx, aclBody)
+		err := api.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -257,7 +257,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := veClient.API().Access().UpdateACL(ctx, aclBody)
+		err := api.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -268,7 +268,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 
 func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -291,13 +291,13 @@ func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err = veClient.API().Access().UpdateACL(ctx, aclBody)
+		err = api.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.API().Access().DeleteGroup(ctx, groupID)
+	err = api.Access().DeleteGroup(ctx, groupID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

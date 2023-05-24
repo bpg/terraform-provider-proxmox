@@ -49,7 +49,7 @@ func Role() *schema.Resource {
 
 func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -67,7 +67,7 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.API().Access().CreateRole(ctx, body)
+	err = api.Access().CreateRole(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -79,13 +79,13 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
-	role, err := veClient.API().Access().GetRole(ctx, roleID)
+	role, err := api.Access().GetRole(ctx, roleID)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -109,7 +109,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -126,7 +126,7 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.API().Access().UpdateRole(ctx, roleID, body)
+	err = api.Access().UpdateRole(ctx, roleID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -136,13 +136,13 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
-	err = veClient.API().Access().DeleteRole(ctx, roleID)
+	err = api.Access().DeleteRole(ctx, roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

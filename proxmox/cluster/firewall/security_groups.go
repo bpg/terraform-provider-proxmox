@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 // SecurityGroup is an interface for the Proxmox security group API.
@@ -48,7 +48,7 @@ func (c *Client) ListGroups(ctx context.Context) ([]*GroupListResponseData, erro
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

@@ -17,7 +17,7 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 // IPSet is an interface for managing IP sets.
@@ -119,7 +119,7 @@ func (c *Client) GetIPSetContent(ctx context.Context, id string) ([]*IPSetGetRes
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -135,7 +135,7 @@ func (c *Client) ListIPSets(ctx context.Context) ([]*IPSetListResponseData, erro
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

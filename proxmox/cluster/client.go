@@ -9,14 +9,14 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Client is an interface for accessing the Proxmox cluster API.
 type Client struct {
-	types.Client
+	api.Client
 }
 
 // ExpandPath expands a relative path to a full cluster API path.

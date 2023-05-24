@@ -20,8 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/node/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -1271,7 +1270,7 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	veClient, e := config.GetVEClient()
+	api, e := config.GetAPI()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -1292,7 +1291,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.API().Cluster().GetVMID(ctx)
+		vmIDNew, err := api.Cluster().GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1326,7 +1325,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		// Check if any used datastores of the source VM are not shared
-		vmConfig, err := veClient.API().Node(cloneNodeName).VM(cloneVMID).GetVM(ctx)
+		vmConfig, err := api.Node(cloneNodeName).VM(cloneVMID).GetVM(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1335,7 +1334,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		onlySharedDatastores := true
 		for _, datastore := range datastores {
-			datastoreStatus, err2 := veClient.API().Node(cloneNodeName).GetDatastoreStatus(ctx, datastore)
+			datastoreStatus, err2 := api.Node(cloneNodeName).GetDatastoreStatus(ctx, datastore)
 			if err2 != nil {
 				return diag.FromErr(err2)
 			}
@@ -1351,7 +1350,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			//  all used datastores in the source VM are shared. Directly cloning to non-shared storage
 			//  on a different node is currently not supported by proxmox.
 			cloneBody.TargetNodeName = &nodeName
-			err = veClient.API().Node(cloneNodeName).VM(cloneVMID).CloneVM(
+			err = api.Node(cloneNodeName).VM(cloneVMID).CloneVM(
 				ctx,
 				cloneRetries,
 				cloneBody,
@@ -1367,14 +1366,14 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			//  https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
 
 			// Temporarily clone to local node
-			err = veClient.API().Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
+			err = api.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
 
-			err = veClient.API().Node(cloneNodeName).VM(vmID).WaitForVMConfigUnlock(ctx, 600, 5, true)
+			err = api.Node(cloneNodeName).VM(vmID).WaitForVMConfigUnlock(ctx, 600, 5, true)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -1390,13 +1389,13 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 				migrateBody.TargetStorage = &cloneDatastoreID
 			}
 
-			err = veClient.API().Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody, cloneTimeout)
+			err = api.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody, cloneTimeout)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 		}
 	} else {
-		e = veClient.API().Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
+		e = api.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
 	}
 
 	if e != nil {
@@ -1405,7 +1404,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	d.SetId(strconv.Itoa(vmID))
 
-	vmAPI := veClient.API().Node(nodeName).VM(vmID)
+	vmAPI := api.Node(nodeName).VM(vmID)
 
 	// Wait for the virtual machine to be created and its configuration lock to be released.
 	e = vmAPI.WaitForVMConfigUnlock(ctx, 600, 5, true)
@@ -1532,7 +1531,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if veClient.Username == proxmox.DefaultRootAccount ||
+		if api.RESTAPI().IsRoot() ||
 			cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
@@ -1783,7 +1782,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1932,7 +1931,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, e := veClient.API().Cluster().GetVMID(ctx)
+		vmIDNew, e := api.Cluster().GetVMID(ctx)
 		if e != nil {
 			return diag.FromErr(e)
 		}
@@ -2051,7 +2050,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-	if veClient.Username == proxmox.DefaultRootAccount ||
+	if api.RESTAPI().IsRoot() ||
 		cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 		createBody.CPUArchitecture = &cpuArchitecture
 	}
@@ -2085,7 +2084,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		createBody.PoolID = &poolID
 	}
 
-	err = veClient.API().Node(nodeName).VM(0).CreateVM(ctx, createBody, vmCreateTimeoutSeconds)
+	err = api.Node(nodeName).VM(0).CreateVM(ctx, createBody, vmCreateTimeoutSeconds)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2227,14 +2226,14 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 	if len(commands) > 0 {
 		config := m.(proxmoxtf.ProviderConfiguration)
 
-		veClient, err := config.GetVEClient()
+		api, err := config.GetAPI()
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
 		nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 
-		nodeAddress, err := veClient.API().Node(nodeName).GetIP(ctx)
+		nodeAddress, err := api.Node(nodeName).GetIP(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2263,7 +2262,7 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2274,7 +2273,7 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(err)
 	}
 
-	vmAPI := veClient.API().Node(nodeName).VM(vmID)
+	vmAPI := api.Node(nodeName).VM(vmID)
 
 	// Start the virtual machine and wait for it to reach a running state before continuing.
 	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
@@ -2770,7 +2769,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) 
 
 func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2781,7 +2780,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 		return diag.FromErr(err)
 	}
 
-	vmAPI := veClient.API().Node(nodeName).VM(vmID)
+	vmAPI := api.Node(nodeName).VM(vmID)
 
 	// Retrieve the entire configuration in order to compare it to the state.
 	vmConfig, err := vmAPI.GetVM(ctx)
@@ -2813,7 +2812,7 @@ func vmReadCustom(
 	vmStatus *vms.GetStatusResponseData,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2969,7 +2968,7 @@ func vmReadCustom(
 	} else {
 		// Default value of "arch" is "" according to the API documentation.
 		// However, assume the provider's default value as a workaround when the root account is not being used.
-		if veClient.Username != proxmox.DefaultRootAccount {
+		if !api.RESTAPI().IsRoot() {
 			cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = dvResourceVirtualEnvironmentVMCPUArchitecture
 		} else {
 			cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = ""
@@ -3063,7 +3062,7 @@ func vmReadCustom(
 			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = dvResourceVirtualEnvironmentVMDiskFileFormat
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			files, err := veClient.API().Node(nodeName).ListDatastoreFiles(ctx, fileIDParts[0])
+			files, err := api.Node(nodeName).ListDatastoreFiles(ctx, fileIDParts[0])
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
 				continue
@@ -3706,14 +3705,14 @@ func vmReadNetworkValues(
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	veClient, e := config.GetVEClient()
+	api, e := config.GetAPI()
 	if e != nil {
 		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 
-	vmAPI := veClient.API().Node(nodeName).VM(vmID)
+	vmAPI := api.Node(nodeName).VM(vmID)
 
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
@@ -3940,7 +3939,7 @@ func vmReadPrimitiveValues(
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	veClient, e := config.GetVEClient()
+	api, e := config.GetAPI()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -3953,7 +3952,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(e)
 	}
 
-	vmAPI := veClient.API().Node(nodeName).VM(vmID)
+	vmAPI := api.Node(nodeName).VM(vmID)
 
 	updateBody := &vms.UpdateRequestBody{
 		IDEDevices: vms.CustomStorageDevices{
@@ -4164,7 +4163,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if veClient.Username == proxmox.DefaultRootAccount ||
+		if api.RESTAPI().IsRoot() ||
 			cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
@@ -4443,7 +4442,7 @@ func vmUpdateDiskLocationAndSize(
 	reboot bool,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -4456,7 +4455,7 @@ func vmUpdateDiskLocationAndSize(
 		return diag.FromErr(err)
 	}
 
-	vmAPI := veClient.API().Node(nodeName).VM(vmID)
+	vmAPI := api.Node(nodeName).VM(vmID)
 
 	// Determine if any of the disks are changing location and/or size, and initiate the necessary actions.
 	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
@@ -4586,7 +4585,7 @@ func vmUpdateDiskLocationAndSize(
 
 func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -4597,7 +4596,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	vmAPI := veClient.API().Node(nodeName).VM(vmID)
+	vmAPI := api.Node(nodeName).VM(vmID)
 
 	// Shut down the virtual machine before deleting it.
 	status, err := vmAPI.GetVMStatus(ctx)

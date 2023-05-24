@@ -45,12 +45,12 @@ func groupsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.API().Access().ListGroups(ctx)
+	list, err := api.Access().ListGroups(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

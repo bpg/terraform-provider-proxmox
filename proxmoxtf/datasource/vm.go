@@ -61,7 +61,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -69,7 +69,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
 	vmID := d.Get(mkDataSourceVirtualEnvironmentVMVMID).(int)
 
-	vmStatus, err := veClient.API().Node(nodeName).VM(vmID).GetVMStatus(ctx)
+	vmStatus, err := api.Node(nodeName).VM(vmID).GetVMStatus(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
 			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {

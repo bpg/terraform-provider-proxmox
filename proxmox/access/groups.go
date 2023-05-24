@@ -13,7 +13,7 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 func (c *Client) groupsPath() string {
@@ -54,7 +54,7 @@ func (c *Client) GetGroup(ctx context.Context, id string) (*GroupGetResponseData
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	sort.Strings(resBody.Data.Members)
@@ -72,7 +72,7 @@ func (c *Client) ListGroups(ctx context.Context) ([]*GroupListResponseData, erro
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {

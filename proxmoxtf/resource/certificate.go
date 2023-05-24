@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/node"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -140,7 +140,7 @@ func certificateCreate(ctx context.Context, d *schema.ResourceData, m interface{
 	return nil
 }
 
-func certificateGetUpdateBody(d *schema.ResourceData) *node.CertificateUpdateRequestBody {
+func certificateGetUpdateBody(d *schema.ResourceData) *nodes.CertificateUpdateRequestBody {
 	certificate := d.Get(mkResourceVirtualEnvironmentCertificateCertificate).(string)
 	certificateChain := d.Get(mkResourceVirtualEnvironmentCertificateCertificateChain).(string)
 	overwrite := types.CustomBool(d.Get(mkResourceVirtualEnvironmentCertificateOverwrite).(bool))
@@ -160,7 +160,7 @@ func certificateGetUpdateBody(d *schema.ResourceData) *node.CertificateUpdateReq
 
 	restart := types.CustomBool(true)
 
-	body := &node.CertificateUpdateRequestBody{
+	body := &nodes.CertificateUpdateRequestBody{
 		Certificates: combinedCertificates,
 		Force:        &force,
 		PrivateKey:   &privateKey,
@@ -174,15 +174,14 @@ func certificateRead(ctx context.Context, d *schema.ResourceData, m interface{})
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
-	api := veClient.API().Node(nodeName)
 
-	list, err := api.ListCertificates(ctx)
+	list, err := api.Node(nodeName).ListCertificates(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -304,17 +303,16 @@ func certificateRead(ctx context.Context, d *schema.ResourceData, m interface{})
 
 func certificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
-	api := veClient.API().Node(nodeName)
 
 	body := certificateGetUpdateBody(d)
 
-	err = api.UpdateCertificate(ctx, body)
+	err = api.Node(nodeName).UpdateCertificate(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -324,19 +322,18 @@ func certificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 
 func certificateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentCertificateNodeName).(string)
-	api := veClient.API().Node(nodeName)
 
 	restart := types.CustomBool(true)
 
-	err = api.DeleteCertificate(
+	err = api.Node(nodeName).DeleteCertificate(
 		ctx,
-		&node.CertificateDeleteRequestBody{
+		&nodes.CertificateDeleteRequestBody{
 			Restart: &restart,
 		},
 	)

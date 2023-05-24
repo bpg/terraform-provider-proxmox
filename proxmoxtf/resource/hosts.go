@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/node"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -127,15 +127,14 @@ func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentHostsNodeName).(string)
-	api := veClient.API().Node(nodeName)
 
-	hosts, err := api.GetHosts(ctx)
+	hosts, err := api.Node(nodeName).GetHosts(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -197,17 +196,16 @@ func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	entry := d.Get(mkResourceVirtualEnvironmentHostsEntry).([]interface{})
 	nodeName := d.Get(mkResourceVirtualEnvironmentHostsNodeName).(string)
-	api := veClient.API().Node(nodeName)
 
 	// Generate the data for the hosts file based on the specified entries.
-	body := node.HostsUpdateRequestBody{
+	body := nodes.HostsUpdateRequestBody{
 		Data: "",
 	}
 
@@ -227,7 +225,7 @@ func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		body.Data += "\n"
 	}
 
-	err = api.UpdateHosts(ctx, &body)
+	err = api.Node(nodeName).UpdateHosts(ctx, &body)
 	if err != nil {
 		return diag.FromErr(err)
 	}

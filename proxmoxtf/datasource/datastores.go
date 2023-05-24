@@ -105,13 +105,13 @@ func datastoresRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDatastoresNodeName).(string)
-	list, err := veClient.API().Node(nodeName).ListDatastores(ctx, nil)
+	list, err := api.Node(nodeName).ListDatastores(ctx, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

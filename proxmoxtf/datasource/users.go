@@ -98,12 +98,12 @@ func usersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.API().Access().ListUsers(ctx)
+	list, err := api.Access().ListUsers(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

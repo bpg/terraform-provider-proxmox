@@ -9,12 +9,12 @@ package access
 import (
 	"fmt"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 // Client is an interface for performing requests against the Proxmox 'access' API.
 type Client struct {
-	types.Client
+	api.Client
 }
 
 // ExpandPath expands a path relative to the client's base path.

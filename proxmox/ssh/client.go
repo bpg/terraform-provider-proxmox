@@ -23,8 +23,8 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type client struct {
@@ -34,8 +34,8 @@ type client struct {
 	agentSocket string
 }
 
-// NewSSHClient creates a new SSH client.
-func NewSSHClient(username string, password string, agent bool, agentSocket string) (Client, error) {
+// NewClient creates a new SSH client.
+func NewClient(username string, password string, agent bool, agentSocket string) (Client, error) {
 	//goland:noinspection GoBoolExpressions
 	if agent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
 		return nil, errors.New(
@@ -87,7 +87,7 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeAddress string, co
 
 func (c *client) NodeUpload(
 	ctx context.Context, nodeAddress string, remoteFileDir string,
-	d *types.FileUploadRequest,
+	d *api.FileUploadRequest,
 ) error {
 	// We need to upload all other files using SFTP due to API limitations.
 	// Hopefully, this will not be required in future releases of Proxmox VE.

@@ -56,24 +56,24 @@ func selectFirewallAPI(
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		config := m.(proxmoxtf.ProviderConfiguration)
 
-		veClient, err := config.GetVEClient()
+		api, err := config.GetAPI()
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		var api firewall.API = veClient.API().Cluster().Firewall()
+		var fwAPI firewall.API = api.Cluster().Firewall()
 
 		if nn, ok := d.GetOk(mkSelectorNodeName); ok {
 			nodeName := nn.(string)
-			nodeAPI := veClient.API().Node(nodeName)
+			nodeAPI := api.Node(nodeName)
 
 			if v, ok := d.GetOk(mkSelectorVMID); ok {
-				api = nodeAPI.VM(v.(int)).Firewall()
+				fwAPI = nodeAPI.VM(v.(int)).Firewall()
 			} else if v, ok := d.GetOk(mkSelectorContainerID); ok {
-				api = nodeAPI.Container(v.(int)).Firewall()
+				fwAPI = nodeAPI.Container(v.(int)).Firewall()
 			}
 		}
 
-		return f(ctx, api, d)
+		return f(ctx, fwAPI, d)
 	}
 }

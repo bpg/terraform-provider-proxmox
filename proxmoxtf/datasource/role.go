@@ -42,13 +42,13 @@ func Role() *schema.Resource {
 
 func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Get(mkDataSourceVirtualEnvironmentRoleID).(string)
-	accessRole, err := veClient.API().Access().GetRole(ctx, roleID)
+	accessRole, err := api.Access().GetRole(ctx, roleID)
 	if err != nil {
 		return diag.FromErr(err)
 	}

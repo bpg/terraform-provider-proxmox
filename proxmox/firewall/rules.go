@@ -14,6 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -76,7 +77,7 @@ func (c *Client) GetRule(ctx context.Context, pos int) (*RuleGetResponseData, er
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -92,7 +93,7 @@ func (c *Client) ListRules(ctx context.Context) ([]*RuleListResponseData, error)
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil

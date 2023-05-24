@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 // Options is an interface for managing global firewall options.
@@ -40,7 +40,7 @@ func (c *Client) GetGlobalOptions(ctx context.Context) (*OptionsGetResponseData,
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil

@@ -95,12 +95,12 @@ func nodesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.API().Node("").ListNodes(ctx)
+	list, err := api.Node("").ListNodes(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

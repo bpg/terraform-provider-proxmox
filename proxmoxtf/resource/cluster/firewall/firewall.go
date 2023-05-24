@@ -219,13 +219,11 @@ func selectFirewallAPI(
 	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		config := m.(proxmoxtf.ProviderConfiguration)
 
-		veClient, err := config.GetVEClient()
+		api, err := config.GetAPI()
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		api := veClient.API().Cluster().Firewall()
-
-		return f(ctx, api, d)
+		return f(ctx, api.Cluster().Firewall(), d)
 	}
 }

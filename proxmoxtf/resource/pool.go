@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -90,7 +90,7 @@ func Pool() *schema.Resource {
 
 func poolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -98,12 +98,12 @@ func poolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	comment := d.Get(mkResourceVirtualEnvironmentPoolComment).(string)
 	poolID := d.Get(mkResourceVirtualEnvironmentPoolPoolID).(string)
 
-	body := &proxmox.PoolCreateRequestBody{
+	body := &pools.PoolCreateRequestBody{
 		Comment: &comment,
 		ID:      poolID,
 	}
 
-	err = veClient.CreatePool(ctx, body)
+	err = api.Pool().CreatePool(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -117,13 +117,13 @@ func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	poolID := d.Id()
-	pool, err := veClient.GetPool(ctx, poolID)
+	pool, err := api.Pool().GetPool(ctx, poolID)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -172,7 +172,7 @@ func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -180,11 +180,11 @@ func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	comment := d.Get(mkResourceVirtualEnvironmentPoolComment).(string)
 	poolID := d.Id()
 
-	body := &proxmox.PoolUpdateRequestBody{
+	body := &pools.PoolUpdateRequestBody{
 		Comment: &comment,
 	}
 
-	err = veClient.UpdatePool(ctx, poolID, body)
+	err = api.Pool().UpdatePool(ctx, poolID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -194,13 +194,13 @@ func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func poolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetAPI()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	poolID := d.Id()
-	err = veClient.DeletePool(ctx, poolID)
+	err = api.Pool().DeletePool(ctx, poolID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -46,7 +46,7 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
 
-	var veClient *proxmox.VirtualEnvironmentClient
+	var apiClient api.Client
 
 	var sshClient ssh.Client
 
@@ -59,7 +59,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		username := veConfig[mkProviderUsername].(string)
 		password := veConfig[mkProviderPassword].(string)
 
-		veClient, err = proxmox.NewVirtualEnvironmentClient(
+		apiClient, err = api.NewClient(
 			veConfig[mkProviderEndpoint].(string),
 			username,
 			password,
@@ -82,7 +82,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			sshPassword = password
 		}
 
-		sshClient, err = ssh.NewSSHClient(
+		sshClient, err = ssh.NewClient(
 			sshUsername,
 			sshPassword,
 			veSSHConfig[mkProviderSSHAgent].(bool),
@@ -94,7 +94,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	} else {
 		username := d.Get(mkProviderUsername).(string)
 		password := d.Get(mkProviderPassword).(string)
-		veClient, err = proxmox.NewVirtualEnvironmentClient(
+		apiClient, err = api.NewClient(
 			d.Get(mkProviderEndpoint).(string),
 			username,
 			password,
@@ -117,7 +117,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			sshconf = sshBlock.(*schema.Set).List()[0].(map[string]interface{})
 		}
 
-		sshClient, err = ssh.NewSSHClient(
+		sshClient, err = ssh.NewClient(
 			sshconf[mkProviderSSHUsername].(string),
 			sshconf[mkProviderSSHPassword].(string),
 			sshconf[mkProviderSSHAgent].(bool),
@@ -128,7 +128,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		}
 	}
 
-	config := proxmoxtf.NewProviderConfiguration(veClient, sshClient)
+	config := proxmoxtf.NewProviderConfiguration(apiClient, sshClient)
 
 	return config, nil
 }

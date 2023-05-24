@@ -15,7 +15,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
 const (
@@ -43,7 +43,7 @@ func (c *Client) GetNextID(ctx context.Context, vmID *int) (*int, error) {
 	}
 
 	if resBody.Data == nil {
-		return nil, types.ErrNoDataObjectInResponse
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	return (*int)(resBody.Data), nil
