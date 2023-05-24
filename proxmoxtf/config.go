@@ -10,19 +10,19 @@ import (
 	"errors"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 )
 
 // ProviderConfiguration is the configuration for the provider.
 type ProviderConfiguration struct {
 	veClient  *proxmox.VirtualEnvironmentClient
-	sshClient types.SSHClient
+	sshClient ssh.Client
 }
 
 // NewProviderConfiguration creates a new provider configuration.
 func NewProviderConfiguration(
 	veClient *proxmox.VirtualEnvironmentClient,
-	sshClient types.SSHClient,
+	sshClient ssh.Client,
 ) ProviderConfiguration {
 	return ProviderConfiguration{
 		veClient:  veClient,
@@ -42,7 +42,7 @@ func (c *ProviderConfiguration) GetVEClient() (*proxmox.VirtualEnvironmentClient
 }
 
 // GetSSHClient returns the SSH client.
-func (c *ProviderConfiguration) GetSSHClient() (types.SSHClient, error) {
+func (c *ProviderConfiguration) GetSSHClient() (ssh.Client, error) {
 	if c.sshClient == nil {
 		return nil, errors.New(
 			"you must specify the SSH access details in the provider configuration",

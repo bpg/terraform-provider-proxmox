@@ -21,6 +21,8 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
 )
 
 // NewVirtualEnvironmentClient creates and initializes a VirtualEnvironmentClient instance.
@@ -181,7 +183,7 @@ func (c *VirtualEnvironmentClient) DoRequest(
 		return fErr
 	}
 
-	defer CloseOrLogError(ctx)(res.Body)
+	defer helper.CloseOrLogError(ctx)(res.Body)
 
 	err = c.ValidateResponseCode(res)
 	if err != nil {

@@ -26,6 +26,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -250,7 +252,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 				return diag.FromErr(err)
 			}
 
-			defer proxmox.CloseOrLogError(ctx)(res.Body)
+			defer helper.CloseOrLogError(ctx)(res.Body)
 
 			tempDownloadedFile, err := os.CreateTemp("", "download")
 			if err != nil {
@@ -374,14 +376,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		}
 	}(file)
 
-	body := &proxmox.DatastoreUploadRequestBody{
-		ContentType: *contentType,
-		DatastoreID: datastoreID,
-		FileName:    *fileName,
-		File:        file,
-		NodeName:    nodeName,
-	}
-
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	veClient, err := config.GetVEClient()
@@ -389,8 +383,16 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	switch body.ContentType {
+	switch *contentType {
 	case "iso", "vztmpl":
+		body := &proxmox.DatastoreUploadRequestBody{
+			ContentType: *contentType,
+			DatastoreID: datastoreID,
+			FileName:    *fileName,
+			File:        file,
+			NodeName:    nodeName,
+		}
+
 		_, err = veClient.APIUpload(ctx, body)
 		if err != nil {
 			return diag.Errorf("failed to upload file: %s", err)
@@ -403,7 +405,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			return diag.Errorf("failed to get node IP: %s", err2)
 		}
 
-		datastore, err2 := veClient.GetDatastore(ctx, body.DatastoreID)
+		datastore, err2 := veClient.GetDatastore(ctx, datastoreID)
 		if err2 != nil {
 			return diag.Errorf("failed to get datastore: %s", err2)
 		}
@@ -419,7 +421,13 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			return diag.Errorf("failed to get SSH client: %s", err2)
 		}
 
-		return diag.FromErr(sshClient.SFTPUpload(ctx, nodeAddress, remoteFileDir, d))
+		request := ssh.FileUploadRequest{
+			ContentType: *contentType,
+			FileName:    *fileName,
+			File:        file,
+		}
+
+		return diag.FromErr(sshClient.NodeUpload(ctx, nodeAddress, remoteFileDir, &request))
 	}
 
 	if err != nil {
@@ -685,7 +693,7 @@ func readURL(
 		return
 	}
 
-	defer proxmox.CloseOrLogError(ctx)(res.Body)
+	defer helper.CloseOrLogError(ctx)(res.Body)
 
 	fileSize = res.ContentLength
 	httpLastModified := res.Header.Get("Last-Modified")

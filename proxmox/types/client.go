@@ -29,16 +29,3 @@ type Client interface {
 	// "/nodes/<node>/qemu/<vmid>/firewall/options".
 	ExpandPath(path string) string
 }
-
-// SSHClient is an interface for performing SSH requests against the Proxmox Nodes.
-type SSHClient interface {
-	SFTPUpload(
-		ctx context.Context, nodeAddress string,
-		remoteFileDir string, uploadRequestBody interface{},
-	) error
-
-	ExecuteNodeCommands(
-		ctx context.Context, nodeAddress string,
-		commands []string,
-	) error
-}

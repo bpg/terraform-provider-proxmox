@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package proxmox
+package ssh
 
 import (
 	"context"
@@ -23,10 +23,10 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
 )
 
-type sshClient struct {
+type client struct {
 	username    string
 	password    string
 	agent       bool
@@ -34,18 +34,8 @@ type sshClient struct {
 }
 
 // NewSSHClient creates a new SSH client.
-func NewSSHClient(
-	c *VirtualEnvironmentClient,
-	username string, password string, agent bool, agentSocket string,
-) (types.SSHClient, error) {
-	if username == "" {
-		username = strings.Split(c.Username, "@")[0]
-	}
-
-	if password == "" {
-		password = c.Password
-	}
-
+func NewSSHClient(username string, password string, agent bool, agentSocket string) (Client, error) {
+	//goland:noinspection GoBoolExpressions
 	if agent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
 		return nil, errors.New(
 			"the ssh agent flag is only supported on POSIX systems, please set it to 'false'" +
@@ -53,150 +43,19 @@ func NewSSHClient(
 		)
 	}
 
-	return &sshClient{
+	return &client{
 		username:    username,
 		password:    password,
-		agent:       false,
+		agent:       agent,
 		agentSocket: agentSocket,
 	}, nil
 }
 
-// OpenNodeShell establishes a new SSH connection to a node.
-func (c *sshClient) OpenNodeShell(ctx context.Context, nodeAddress string) (*ssh.Client, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
-	}
-
-	sshHost := fmt.Sprintf("%s:22", nodeAddress)
-
-	sshPath := path.Join(homeDir, ".ssh")
-	if _, err = os.Stat(sshPath); os.IsNotExist(err) {
-		e := os.Mkdir(sshPath, 0o700)
-		if e != nil {
-			return nil, fmt.Errorf("failed to create %s: %w", sshPath, e)
-		}
-	}
-
-	khPath := path.Join(sshPath, "known_hosts")
-	if _, err = os.Stat(khPath); os.IsNotExist(err) {
-		e := os.WriteFile(khPath, []byte{}, 0o600)
-		if e != nil {
-			return nil, fmt.Errorf("failed to create %s: %w", khPath, e)
-		}
-	}
-
-	kh, err := knownhosts.New(khPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read %s: %w", khPath, err)
-	}
-
-	// Create a custom permissive hostkey callback which still errors on hosts
-	// with changed keys, but allows unknown hosts and adds them to known_hosts
-	cb := ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-		kherr := kh(hostname, remote, key)
-		if knownhosts.IsHostKeyChanged(kherr) {
-			return fmt.Errorf("REMOTE HOST IDENTIFICATION HAS CHANGED for host %s! This may indicate a MitM attack", hostname)
-		}
-
-		if knownhosts.IsHostUnknown(kherr) {
-			f, ferr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
-			if ferr == nil {
-				defer CloseOrLogError(ctx)(f)
-				ferr = knownhosts.WriteKnownHost(f, hostname, remote, key)
-			}
-			if ferr == nil {
-				tflog.Info(ctx, fmt.Sprintf("Added host %s to known_hosts", hostname))
-			} else {
-				tflog.Error(ctx, fmt.Sprintf("Failed to add host %s to known_hosts", hostname), map[string]interface{}{
-					"error": kherr,
-				})
-			}
-			return nil
-		}
-		return kherr
-	})
-
-	sshConfig := &ssh.ClientConfig{
-		User:              c.username,
-		Auth:              []ssh.AuthMethod{ssh.Password(c.password)},
-		HostKeyCallback:   cb,
-		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
-	}
-
-	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.agent))
-
-	var sshClient *ssh.Client
-	if c.agent {
-		sshClient, err = c.createSSHClientAgent(ctx, cb, kh, sshHost)
-		if err != nil {
-			tflog.Error(ctx, "Failed ssh connection through agent, "+
-				"falling back to password authentication",
-				map[string]interface{}{
-					"error": err,
-				})
-		} else {
-			return sshClient, nil
-		}
-	}
-
-	sshClient, err = ssh.Dial("tcp", sshHost, sshConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
-	}
-
-	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
-		"host": sshHost,
-		"user": c.username,
-	})
-
-	return sshClient, nil
-}
-
-// createSSHClientAgent establishes an ssh connection through the agent authentication mechanism.
-func (c *sshClient) createSSHClientAgent(
-	ctx context.Context,
-	cb ssh.HostKeyCallback,
-	kh knownhosts.HostKeyCallback,
-	sshHost string,
-) (*ssh.Client, error) {
-	if c.agentSocket == "" {
-		return nil, errors.New("failed connecting to SSH agent socket: the socket file is not defined, " +
-			"authentication will fall back to password")
-	}
-
-	conn, err := net.Dial("unix", c.agentSocket)
-	if err != nil {
-		return nil, fmt.Errorf("failed connecting to SSH auth socket '%s': %w", c.agentSocket, err)
-	}
-
-	ag := agent.NewClient(conn)
-
-	sshConfig := &ssh.ClientConfig{
-		User:              c.username,
-		Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers), ssh.Password(c.password)},
-		HostKeyCallback:   cb,
-		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
-	}
-
-	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
-	}
-
-	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
-		"host": sshHost,
-		"user": c.username,
-	})
-
-	return sshClient, nil
-}
-
 // ExecuteNodeCommands executes commands on a given node.
-func (c *sshClient) ExecuteNodeCommands(ctx context.Context, nodeAddress string, commands []string) error {
-	closeOrLogError := CloseOrLogError(ctx)
+func (c *client) ExecuteNodeCommands(ctx context.Context, nodeAddress string, commands []string) error {
+	closeOrLogError := helper.CloseOrLogError(ctx)
 
-	sshClient, err := c.OpenNodeShell(ctx, nodeAddress)
+	sshClient, err := c.openNodeShell(ctx, nodeAddress)
 	if err != nil {
 		return err
 	}
@@ -225,17 +84,13 @@ func (c *sshClient) ExecuteNodeCommands(ctx context.Context, nodeAddress string,
 	return nil
 }
 
-func (c *sshClient) SFTPUpload(
+func (c *client) NodeUpload(
 	ctx context.Context, nodeAddress string, remoteFileDir string,
-	uploadRequestBody interface{},
+	d *FileUploadRequest,
 ) error {
-	d := uploadRequestBody.(*DatastoreUploadRequestBody)
-
 	// We need to upload all other files using SFTP due to API limitations.
 	// Hopefully, this will not be required in future releases of Proxmox VE.
 	tflog.Debug(ctx, "uploading file to datastore using SFTP", map[string]interface{}{
-		"node_name":    d.NodeName,
-		"datastore_id": d.DatastoreID,
 		"file_name":    d.FileName,
 		"content_type": d.ContentType,
 	})
@@ -247,7 +102,7 @@ func (c *sshClient) SFTPUpload(
 
 	fileSize := fileInfo.Size()
 
-	sshClient, err := c.OpenNodeShell(ctx, nodeAddress)
+	sshClient, err := c.openNodeShell(ctx, nodeAddress)
 	if err != nil {
 		return fmt.Errorf("failed to open SSH client: %w", err)
 	}
@@ -316,4 +171,135 @@ func (c *sshClient) SFTPUpload(
 	})
 
 	return nil
+}
+
+// openNodeShell establishes a new SSH connection to a node.
+func (c *client) openNodeShell(ctx context.Context, nodeAddress string) (*ssh.Client, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
+	}
+
+	sshHost := fmt.Sprintf("%s:22", nodeAddress)
+
+	sshPath := path.Join(homeDir, ".ssh")
+	if _, err = os.Stat(sshPath); os.IsNotExist(err) {
+		e := os.Mkdir(sshPath, 0o700)
+		if e != nil {
+			return nil, fmt.Errorf("failed to create %s: %w", sshPath, e)
+		}
+	}
+
+	khPath := path.Join(sshPath, "known_hosts")
+	if _, err = os.Stat(khPath); os.IsNotExist(err) {
+		e := os.WriteFile(khPath, []byte{}, 0o600)
+		if e != nil {
+			return nil, fmt.Errorf("failed to create %s: %w", khPath, e)
+		}
+	}
+
+	kh, err := knownhosts.New(khPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %s: %w", khPath, err)
+	}
+
+	// Create a custom permissive hostkey callback which still errors on hosts
+	// with changed keys, but allows unknown hosts and adds them to known_hosts
+	cb := ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		kherr := kh(hostname, remote, key)
+		if knownhosts.IsHostKeyChanged(kherr) {
+			return fmt.Errorf("REMOTE HOST IDENTIFICATION HAS CHANGED for host %s! This may indicate a MitM attack", hostname)
+		}
+
+		if knownhosts.IsHostUnknown(kherr) {
+			f, ferr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
+			if ferr == nil {
+				defer helper.CloseOrLogError(ctx)(f)
+				ferr = knownhosts.WriteKnownHost(f, hostname, remote, key)
+			}
+			if ferr == nil {
+				tflog.Info(ctx, fmt.Sprintf("Added host %s to known_hosts", hostname))
+			} else {
+				tflog.Error(ctx, fmt.Sprintf("Failed to add host %s to known_hosts", hostname), map[string]interface{}{
+					"error": kherr,
+				})
+			}
+			return nil
+		}
+		return kherr
+	})
+
+	sshConfig := &ssh.ClientConfig{
+		User:              c.username,
+		Auth:              []ssh.AuthMethod{ssh.Password(c.password)},
+		HostKeyCallback:   cb,
+		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
+	}
+
+	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.agent))
+
+	var sshClient *ssh.Client
+	if c.agent {
+		sshClient, err = c.createSSHClientAgent(ctx, cb, kh, sshHost)
+		if err != nil {
+			tflog.Error(ctx, "Failed ssh connection through agent, "+
+				"falling back to password authentication",
+				map[string]interface{}{
+					"error": err,
+				})
+		} else {
+			return sshClient, nil
+		}
+	}
+
+	sshClient, err = ssh.Dial("tcp", sshHost, sshConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
+	}
+
+	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
+		"host": sshHost,
+		"user": c.username,
+	})
+
+	return sshClient, nil
+}
+
+// createSSHClientAgent establishes an ssh connection through the agent authentication mechanism.
+func (c *client) createSSHClientAgent(
+	ctx context.Context,
+	cb ssh.HostKeyCallback,
+	kh knownhosts.HostKeyCallback,
+	sshHost string,
+) (*ssh.Client, error) {
+	if c.agentSocket == "" {
+		return nil, errors.New("failed connecting to SSH agent socket: the socket file is not defined, " +
+			"authentication will fall back to password")
+	}
+
+	conn, err := net.Dial("unix", c.agentSocket)
+	if err != nil {
+		return nil, fmt.Errorf("failed connecting to SSH auth socket '%s': %w", c.agentSocket, err)
+	}
+
+	ag := agent.NewClient(conn)
+
+	sshConfig := &ssh.ClientConfig{
+		User:              c.username,
+		Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers), ssh.Password(c.password)},
+		HostKeyCallback:   cb,
+		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
+	}
+
+	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
+	}
+
+	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
+		"host": sshHost,
+		"user": c.username,
+	})
+
+	return sshClient, nil
 }

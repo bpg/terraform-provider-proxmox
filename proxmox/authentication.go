@@ -16,6 +16,8 @@ import (
 	"net/url"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
 )
 
 const (
@@ -66,7 +68,7 @@ func (c *VirtualEnvironmentClient) Authenticate(ctx context.Context, reset bool)
 		return fmt.Errorf("failed to retrieve authentication response: %w", err)
 	}
 
-	defer CloseOrLogError(ctx)(res.Body)
+	defer helper.CloseOrLogError(ctx)(res.Body)
 
 	err = c.ValidateResponseCode(res)
 	if err != nil {
