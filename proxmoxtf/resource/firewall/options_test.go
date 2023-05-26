@@ -24,6 +24,7 @@ func TestOptionsInstantiation(t *testing.T) {
 // TestOptionsSchema tests the Options Schema.
 func TestOptionsSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Options().Schema
 
 	structure.AssertOptionalArguments(t, s, []string{

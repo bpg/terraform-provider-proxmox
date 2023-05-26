@@ -25,6 +25,7 @@ const (
 	mkDataSourceVirtualEnvironmentVMs = "vms"
 )
 
+// VMs returns a resource for the Proxmox VMs.
 func VMs() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -57,18 +58,20 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	nodeNames, err := getNodeNames(ctx, d, veClient)
+	nodeNames, err := getNodeNames(ctx, d, api)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	var filterTags []string
 
 	tagsData := d.Get(mkDataSourceVirtualEnvironmentVMTags).([]interface{})
-	var filterTags []string
 	for i := 0; i < len(tagsData); i++ {
 		tag := strings.TrimSpace(tagsData[i].(string))
 		if len(tag) > 0 {
@@ -78,10 +81,11 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	sort.Strings(filterTags)
 
 	var vms []interface{}
+
 	for _, nodeName := range nodeNames {
-		listData, err := veClient.ListVMs(ctx, nodeName)
-		if err != nil {
-			diags = append(diags, diag.FromErr(err)...)
+		listData, e := api.Node(nodeName).VM(0).ListVMs(ctx)
+		if e != nil {
+			diags = append(diags, diag.FromErr(e)...)
 		}
 
 		sort.Slice(listData, func(i, j int) bool {
@@ -109,12 +113,14 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 
 			if len(filterTags) > 0 {
 				match := true
+
 				for _, tag := range filterTags {
 					if !slices.Contains(tags, tag) {
 						match = false
 						break
 					}
 				}
+
 				if !match {
 					continue
 				}
@@ -132,17 +138,14 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	return diags
 }
 
-func getNodeNames(
-	ctx context.Context,
-	d *schema.ResourceData,
-	veClient *proxmox.VirtualEnvironmentClient,
-) ([]string, error) {
+func getNodeNames(ctx context.Context, d *schema.ResourceData, api proxmox.Client) ([]string, error) {
 	var nodeNames []string
+
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
 	if nodeName != "" {
 		nodeNames = append(nodeNames, nodeName)
 	} else {
-		nodes, err := veClient.ListNodes(ctx)
+		nodes, err := api.Node(nodeName).ListNodes(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error listing nodes: %w", err)
 		}
@@ -153,5 +156,6 @@ func getNodeNames(
 	}
 
 	sort.Strings(nodeNames)
+
 	return nodeNames, nil
 }

@@ -27,6 +27,7 @@ const (
 	mkDataSourceVirtualEnvironmentHostsNodeName         = "node_name"
 )
 
+// Hosts returns a resource for the Proxmox hosts.
 func Hosts() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -84,13 +85,14 @@ func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentHostsNodeName).(string)
-	hosts, err := veClient.GetHosts(ctx, nodeName)
+
+	hosts, err := api.Node(nodeName).GetHosts(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

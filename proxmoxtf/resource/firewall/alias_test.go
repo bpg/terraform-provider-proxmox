@@ -24,6 +24,7 @@ func TestAliasInstantiation(t *testing.T) {
 // TestAliasSchema tests the Alias Schema.
 func TestAliasSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Alias().Schema
 
 	structure.AssertRequiredArguments(t, s, []string{

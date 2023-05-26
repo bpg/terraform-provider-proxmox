@@ -10,24 +10,40 @@ import (
 	"errors"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 )
 
+// ProviderConfiguration is the configuration for the provider.
 type ProviderConfiguration struct {
-	veClient *proxmox.VirtualEnvironmentClient
+	apiClient api.Client
+	sshClient ssh.Client
 }
 
-func NewProviderConfiguration(veClient *proxmox.VirtualEnvironmentClient) ProviderConfiguration {
+// NewProviderConfiguration creates a new provider configuration.
+func NewProviderConfiguration(
+	apiClient api.Client,
+	sshClient ssh.Client,
+) ProviderConfiguration {
 	return ProviderConfiguration{
-		veClient: veClient,
+		apiClient: apiClient,
+		sshClient: sshClient,
 	}
 }
 
-func (c *ProviderConfiguration) GetVEClient() (*proxmox.VirtualEnvironmentClient, error) {
-	if c.veClient == nil {
+// GetClient returns the Proxmox API client.
+func (c *ProviderConfiguration) GetClient() (proxmox.Client, error) {
+	if c.apiClient == nil {
 		return nil, errors.New(
-			"you must specify the virtual environment details in the provider configuration",
+			"you must specify the API access details in the provider configuration",
 		)
 	}
 
-	return c.veClient, nil
+	if c.sshClient == nil {
+		return nil, errors.New(
+			"you must specify the SSH access details in the provider configuration",
+		)
+	}
+
+	return proxmox.NewClient(c.apiClient, c.sshClient), nil
 }

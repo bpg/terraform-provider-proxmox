@@ -24,6 +24,7 @@ func TestRuleSchemaInstantiation(t *testing.T) {
 // TestRuleSchema tests the RuleSchema.
 func TestRuleSchema(t *testing.T) {
 	t.Parallel()
+
 	ruleSchema := RuleSchema()
 
 	structure.AssertRequiredArguments(t, ruleSchema, []string{

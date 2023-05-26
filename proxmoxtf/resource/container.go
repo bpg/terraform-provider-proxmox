@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -117,6 +117,7 @@ const (
 	mkResourceVirtualEnvironmentContainerVMID                              = "vm_id"
 )
 
+// Container returns a resource that manages a container.
 func Container() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -657,7 +658,7 @@ func containerCreate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -684,9 +685,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		vmIDNew, e := api.Cluster().GetVMID(ctx)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		vmID = *vmIDNew
@@ -694,7 +695,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	fullCopy := types.CustomBool(true)
 
-	cloneBody := &proxmox.VirtualEnvironmentContainerCloneRequestBody{
+	cloneBody := &containers.CloneRequestBody{
 		FullCopy: &fullCopy,
 		VMIDNew:  vmID,
 	}
@@ -718,9 +719,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = veClient.CloneContainer(ctx, cloneNodeName, cloneVMID, cloneBody)
+		err = api.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	} else {
-		err = veClient.CloneContainer(ctx, nodeName, cloneVMID, cloneBody)
+		err = api.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	}
 
 	if err != nil {
@@ -729,14 +730,16 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	d.SetId(strconv.Itoa(vmID))
 
+	containerAPI := api.Node(nodeName).Container(vmID)
+
 	// Wait for the container to be created and its configuration lock to be released.
-	err = veClient.WaitForContainerLock(ctx, nodeName, vmID, 600, 5, true)
+	err = containerAPI.WaitForContainerLock(ctx, 600, 5, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
-	updateBody := &proxmox.VirtualEnvironmentContainerUpdateRequestBody{}
+	updateBody := &containers.UpdateRequestBody{}
 
 	console := d.Get(mkResourceVirtualEnvironmentContainerConsole).([]interface{})
 
@@ -805,6 +808,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 					initializationIPConfigIPv4Address,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
 				)
+
 				initializationIPConfigIPv4Gateway = append(
 					initializationIPConfigIPv4Gateway,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
@@ -823,6 +827,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 					initializationIPConfigIPv6Address,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
 				)
+
 				initializationIPConfigIPv6Gateway = append(
 					initializationIPConfigIPv6Gateway,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),
@@ -841,7 +846,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 			if len(keys) > 0 {
 				initializationUserAccountKeys := make(
-					proxmox.VirtualEnvironmentContainerCustomSSHKeys,
+					containers.CustomSSHKeys,
 					len(keys),
 				)
 
@@ -879,25 +884,20 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 {
-		networkInterface, err = containerGetExistingNetworkInterface(
-			ctx,
-			veClient,
-			nodeName,
-			vmID,
-		)
+		networkInterface, err = containerGetExistingNetworkInterface(ctx, containerAPI)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
 	networkInterfaceArray := make(
-		proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+		containers.CustomNetworkInterfaceArray,
 		len(networkInterface),
 	)
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
-		networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
+		networkInterfaceObject := containers.CustomNetworkInterface{}
 
 		bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -992,13 +992,13 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.Template = &template
 	}
 
-	err = veClient.UpdateContainer(ctx, nodeName, vmID, updateBody)
+	err = containerAPI.UpdateContainer(ctx, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	// Wait for the container's lock to be released.
-	err = veClient.WaitForContainerLock(ctx, nodeName, vmID, 600, 5, true)
+	err = containerAPI.WaitForContainerLock(ctx, 600, 5, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1008,7 +1008,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1063,12 +1063,13 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	diskDatastoreID := diskBlock[mkResourceVirtualEnvironmentContainerDiskDatastoreID].(string)
 
-	var rootFS *proxmox.VirtualEnvironmentContainerCustomRootFS
+	var rootFS *containers.CustomRootFS
+
 	diskSize := diskBlock[mkResourceVirtualEnvironmentContainerDiskSize].(int)
 	if diskSize != dvResourceVirtualEnvironmentContainerDiskSize && diskDatastoreID != "" {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
-		rootFS = &proxmox.VirtualEnvironmentContainerCustomRootFS{
+		rootFS = &containers.CustomRootFS{
 			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
 		}
 	}
@@ -1085,7 +1086,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	nesting := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
-	features := proxmox.VirtualEnvironmentContainerCustomFeatures{
+	features := containers.CustomFeatures{
 		Nesting: &nesting,
 	}
 
@@ -1097,7 +1098,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	var initializationIPConfigIPv4Gateway []string
 	var initializationIPConfigIPv6Address []string
 	var initializationIPConfigIPv6Gateway []string
-	initializationUserAccountKeys := proxmox.VirtualEnvironmentContainerCustomSSHKeys{}
+
+	initializationUserAccountKeys := containers.CustomSSHKeys{}
 	initializationUserAccountPassword := dvResourceVirtualEnvironmentContainerInitializationUserAccountPassword
 
 	if len(initialization) > 0 {
@@ -1124,6 +1126,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 					initializationIPConfigIPv4Address,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
 				)
+
 				initializationIPConfigIPv4Gateway = append(
 					initializationIPConfigIPv4Gateway,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
@@ -1142,6 +1145,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 					initializationIPConfigIPv6Address,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
 				)
+
 				initializationIPConfigIPv6Gateway = append(
 					initializationIPConfigIPv6Gateway,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),
@@ -1159,7 +1163,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentContainerInitializationUserAccountKeys].([]interface{})
 			initializationUserAccountKeys = make(
-				proxmox.VirtualEnvironmentContainerCustomSSHKeys,
+				containers.CustomSSHKeys,
 				len(keys),
 			)
 
@@ -1187,13 +1191,13 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 	networkInterfaceArray := make(
-		proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+		containers.CustomNetworkInterfaceArray,
 		len(networkInterface),
 	)
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
-		networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
+		networkInterfaceObject := containers.CustomNetworkInterface{}
 
 		bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -1268,16 +1272,16 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		vmIDNew, e := api.Cluster().GetVMID(ctx)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		vmID = *vmIDNew
 	}
 
 	// Attempt to create the resource using the retrieved values.
-	createBody := proxmox.VirtualEnvironmentContainerCreateRequestBody{
+	createBody := containers.CreateRequestBody{
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
 		CPUArchitecture:      &cpuArchitecture,
@@ -1331,7 +1335,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Tags = &tagsString
 	}
 
-	err = veClient.CreateContainer(ctx, nodeName, &createBody)
+	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1339,7 +1343,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(strconv.Itoa(vmID))
 
 	// Wait for the container's lock to be released.
-	err = veClient.WaitForContainerLock(ctx, nodeName, vmID, 600, 5, true)
+	err = api.Node(nodeName).Container(vmID).WaitForContainerLock(ctx, 600, 5, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1356,7 +1360,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1367,13 +1371,15 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
+	containerAPI := api.Node(nodeName).Container(vmID)
+
 	// Start the container and wait for it to reach a running state before continuing.
-	err = veClient.StartContainer(ctx, nodeName, vmID)
+	err = containerAPI.StartContainer(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	err = veClient.WaitForContainerState(ctx, nodeName, vmID, "running", 120, 5)
+	err = containerAPI.WaitForContainerState(ctx, "running", 120, 5)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1400,17 +1406,16 @@ func containerGetCPUArchitectureValidator() schema.SchemaValidateDiagFunc {
 
 func containerGetExistingNetworkInterface(
 	ctx context.Context,
-	client *proxmox.VirtualEnvironmentClient,
-	nodeName string,
-	vmID int,
+	containerAPI *containers.Client,
 ) ([]interface{}, error) {
-	containerInfo, err := client.GetContainer(ctx, nodeName, vmID)
+	containerInfo, err := containerAPI.GetContainer(ctx)
 	if err != nil {
 		return []interface{}{}, err
 	}
 
 	var networkInterfaces []interface{}
-	networkInterfaceArray := []*proxmox.VirtualEnvironmentContainerCustomNetworkInterface{
+
+	networkInterfaceArray := []*containers.CustomNetworkInterface{
 		containerInfo.NetworkInterface0,
 		containerInfo.NetworkInterface1,
 		containerInfo.NetworkInterface2,
@@ -1488,15 +1493,18 @@ func containerGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 }
 
 func containerGetTagsString(d *schema.ResourceData) string {
-	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	var sanitizedTags []string
+
+	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	for i := 0; i < len(tags); i++ {
 		tag := strings.TrimSpace(tags[i].(string))
 		if len(tag) > 0 {
 			sanitizedTags = append(sanitizedTags, tag)
 		}
 	}
+
 	sort.Strings(sanitizedTags)
+
 	return strings.Join(sanitizedTags, ";")
 }
 
@@ -1504,27 +1512,32 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	api, e := config.GetClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
-	vmID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
+
+	vmID, e := strconv.Atoi(d.Id())
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
+	containerAPI := api.Node(nodeName).Container(vmID)
+
 	// Retrieve the entire configuration in order to compare it to the state.
-	containerConfig, err := veClient.GetContainer(ctx, nodeName, vmID)
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") ||
-			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
+	containerConfig, e := containerAPI.GetContainer(ctx)
+	if e != nil {
+		if strings.Contains(e.Error(), "HTTP 404") ||
+			(strings.Contains(e.Error(), "HTTP 500") && strings.Contains(e.Error(), "does not exist")) {
 			d.SetId("")
 
 			return nil
 		}
-		return diag.FromErr(err)
+
+		return diag.FromErr(e)
 	}
 
 	clone := d.Get(mkResourceVirtualEnvironmentContainerClone).([]interface{})
@@ -1534,14 +1547,15 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(clone) == 0 || currentDescription != dvResourceVirtualEnvironmentContainerDescription {
 		if containerConfig.Description != nil {
-			err = d.Set(
+			e = d.Set(
 				mkResourceVirtualEnvironmentContainerDescription,
 				strings.TrimSpace(*containerConfig.Description),
 			)
 		} else {
-			err = d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
+			e = d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
 		}
-		diags = append(diags, diag.FromErr(err)...)
+
+		diags = append(diags, diag.FromErr(e)...)
 	}
 
 	// Compare the console configuration to the one stored in the state.
@@ -1714,7 +1728,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	var ipConfigList []interface{}
-	networkInterfaceArray := []*proxmox.VirtualEnvironmentContainerCustomNetworkInterface{
+
+	networkInterfaceArray := []*containers.CustomNetworkInterface{
 		containerConfig.NetworkInterface0,
 		containerConfig.NetworkInterface1,
 		containerConfig.NetworkInterface2,
@@ -1724,6 +1739,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		containerConfig.NetworkInterface6,
 		containerConfig.NetworkInterface7,
 	}
+
 	var networkInterfaceList []interface{}
 
 	for _, nv := range networkInterfaceArray {
@@ -1860,14 +1876,15 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			}
 
 			if len(initialization) > 0 {
-				err = d.Set(
+				e = d.Set(
 					mkResourceVirtualEnvironmentContainerInitialization,
 					[]interface{}{initialization},
 				)
 			} else {
-				err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
+				e = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
 			}
-			diags = append(diags, diag.FromErr(err)...)
+
+			diags = append(diags, diag.FromErr(e)...)
 		}
 
 		currentNetworkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
@@ -1881,11 +1898,11 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	} else {
 		if len(initialization) > 0 {
-			err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
+			e = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{initialization})
 		} else {
-			err = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
+			e = d.Set(mkResourceVirtualEnvironmentContainerInitialization, []interface{}{})
 		}
-		diags = append(diags, diag.FromErr(err)...)
+		diags = append(diags, diag.FromErr(e)...)
 
 		err := d.Set(mkResourceVirtualEnvironmentContainerNetworkInterface, networkInterfaceList)
 		diags = append(diags, diag.FromErr(err)...)
@@ -1927,6 +1944,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(clone) == 0 || len(currentTags) > 0 {
 		var tags []string
+
 		if containerConfig.Tags != nil {
 			for _, tag := range strings.Split(*containerConfig.Tags, ";") {
 				t := strings.TrimSpace(tag)
@@ -1934,10 +1952,12 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 					tags = append(tags, t)
 				}
 			}
+
 			sort.Strings(tags)
 		}
-		err = d.Set(mkResourceVirtualEnvironmentContainerTags, tags)
-		diags = append(diags, diag.FromErr(err)...)
+
+		e = d.Set(mkResourceVirtualEnvironmentContainerTags, tags)
+		diags = append(diags, diag.FromErr(e)...)
 	}
 
 	currentTemplate := d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
@@ -1945,43 +1965,48 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	//nolint:gosimple
 	if len(clone) == 0 || currentTemplate != dvResourceVirtualEnvironmentContainerTemplate {
 		if containerConfig.Template != nil {
-			err = d.Set(
+			e = d.Set(
 				mkResourceVirtualEnvironmentContainerTemplate,
 				bool(*containerConfig.Template),
 			)
 		} else {
-			err = d.Set(mkResourceVirtualEnvironmentContainerTemplate, false)
+			e = d.Set(mkResourceVirtualEnvironmentContainerTemplate, false)
 		}
-		diags = append(diags, diag.FromErr(err)...)
+
+		diags = append(diags, diag.FromErr(e)...)
 	}
 
 	// Determine the state of the container in order to update the "started" argument.
-	status, err := veClient.GetContainerStatus(ctx, nodeName, vmID)
-	if err != nil {
-		return diag.FromErr(err)
+	status, e := containerAPI.GetContainerStatus(ctx)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
-	err = d.Set(mkResourceVirtualEnvironmentContainerStarted, status.Status == "running")
-	diags = append(diags, diag.FromErr(err)...)
+	e = d.Set(mkResourceVirtualEnvironmentContainerStarted, status.Status == "running")
+	diags = append(diags, diag.FromErr(e)...)
 
 	return diags
 }
 
 func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	api, e := config.GetClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
-	vmID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
+
+	vmID, e := strconv.Atoi(d.Id())
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
+	containerAPI := api.Node(nodeName).Container(vmID)
+
 	// Prepare the new request object.
-	updateBody := proxmox.VirtualEnvironmentContainerUpdateRequestBody{
+	updateBody := containers.UpdateRequestBody{
 		Delete: []string{},
 	}
 
@@ -2085,6 +2110,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 					initializationIPConfigIPv4Address,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Address].(string),
 				)
+
 				initializationIPConfigIPv4Gateway = append(
 					initializationIPConfigIPv4Gateway,
 					ipv4Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4Gateway].(string),
@@ -2103,6 +2129,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 					initializationIPConfigIPv6Address,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Address].(string),
 				)
+
 				initializationIPConfigIPv6Gateway = append(
 					initializationIPConfigIPv6Gateway,
 					ipv6Block[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6Gateway].(string),
@@ -2148,14 +2175,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
 
 	if len(networkInterface) == 0 && len(clone) > 0 {
-		networkInterface, err = containerGetExistingNetworkInterface(
-			ctx,
-			veClient,
-			nodeName,
-			vmID,
-		)
-		if err != nil {
-			return diag.FromErr(err)
+		networkInterface, e = containerGetExistingNetworkInterface(ctx, containerAPI)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 	}
 
@@ -2163,13 +2185,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	if d.HasChange(mkResourceVirtualEnvironmentContainerInitialization) ||
 		d.HasChange(mkResourceVirtualEnvironmentContainerNetworkInterface) {
 		networkInterfaceArray := make(
-			proxmox.VirtualEnvironmentContainerCustomNetworkInterfaceArray,
+			containers.CustomNetworkInterfaceArray,
 			len(networkInterface),
 		)
 
 		for ni, nv := range networkInterface {
 			networkInterfaceMap := nv.(map[string]interface{})
-			networkInterfaceObject := proxmox.VirtualEnvironmentContainerCustomNetworkInterface{}
+			networkInterfaceObject := containers.CustomNetworkInterface{}
 
 			bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 			enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
@@ -2269,9 +2291,9 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Update the configuration now that everything has been prepared.
-	err = veClient.UpdateContainer(ctx, nodeName, vmID, &updateBody)
-	if err != nil {
-		return diag.FromErr(err)
+	e = containerAPI.UpdateContainer(ctx, &updateBody)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	// Determine if the state of the container needs to be changed.
@@ -2279,30 +2301,30 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	if d.HasChange(mkResourceVirtualEnvironmentContainerStarted) && !bool(template) {
 		if started {
-			err = veClient.StartContainer(ctx, nodeName, vmID)
-			if err != nil {
-				return diag.FromErr(err)
+			e = containerAPI.StartContainer(ctx)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
-			err = veClient.WaitForContainerState(ctx, nodeName, vmID, "running", 300, 5)
-			if err != nil {
-				return diag.FromErr(err)
+			e = containerAPI.WaitForContainerState(ctx, "running", 300, 5)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 		} else {
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := 300
 
-			err = veClient.ShutdownContainer(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+			e = containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			})
-			if err != nil {
-				return diag.FromErr(err)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
-			err = veClient.WaitForContainerState(ctx, nodeName, vmID, "stopped", 300, 5)
-			if err != nil {
-				return diag.FromErr(err)
+			e = containerAPI.WaitForContainerState(ctx, "stopped", 300, 5)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
 			rebootRequired = false
@@ -2313,16 +2335,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	if !bool(template) && rebootRequired {
 		rebootTimeout := 300
 
-		err = veClient.RebootContainer(
+		e = containerAPI.RebootContainer(
 			ctx,
-			nodeName,
-			vmID,
-			&proxmox.VirtualEnvironmentContainerRebootRequestBody{
+			&containers.RebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
 		)
-		if err != nil {
-			return diag.FromErr(err)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 	}
 
@@ -2331,7 +2351,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2342,8 +2362,10 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 		return diag.FromErr(err)
 	}
 
+	containerAPI := api.Node(nodeName).Container(vmID)
+
 	// Shut down the container before deleting it.
-	status, err := veClient.GetContainerStatus(ctx, nodeName, vmID)
+	status, err := containerAPI.GetContainerStatus(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2352,11 +2374,9 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 		forceStop := types.CustomBool(true)
 		shutdownTimeout := 300
 
-		err = veClient.ShutdownContainer(
+		err = containerAPI.ShutdownContainer(
 			ctx,
-			nodeName,
-			vmID,
-			&proxmox.VirtualEnvironmentContainerShutdownRequestBody{
+			&containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			},
@@ -2365,13 +2385,13 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.FromErr(err)
 		}
 
-		err = veClient.WaitForContainerState(ctx, nodeName, vmID, "stopped", 30, 5)
+		err = containerAPI.WaitForContainerState(ctx, "stopped", 30, 5)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = veClient.DeleteContainer(ctx, nodeName, vmID)
+	err = containerAPI.DeleteContainer(ctx)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
@@ -2383,7 +2403,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
-	err = veClient.WaitForContainerState(ctx, nodeName, vmID, "", 60, 2)
+	err = containerAPI.WaitForContainerState(ctx, "", 60, 2)
 	if err == nil {
 		return diag.Errorf("failed to delete container \"%d\"", vmID)
 	}

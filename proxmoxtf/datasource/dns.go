@@ -22,6 +22,7 @@ const (
 	mkDataSourceVirtualEnvironmentDNSServers  = "servers"
 )
 
+// DNS returns a resource for DNS settings on a node.
 func DNS() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -50,13 +51,14 @@ func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDNSNodeName).(string)
-	dns, err := veClient.GetDNS(ctx, nodeName)
+
+	dns, err := api.Node(nodeName).GetDNS(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

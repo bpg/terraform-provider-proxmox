@@ -17,8 +17,8 @@ import (
 // TestDatastoresInstantiation tests whether the Datastores instance can be instantiated.
 func TestDatastoresInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Datastores()
 
+	s := Datastores()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Datastores")
 	}
@@ -27,6 +27,7 @@ func TestDatastoresInstantiation(t *testing.T) {
 // TestDatastoresSchema tests the Datastores schema.
 func TestDatastoresSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Datastores()
 
 	test.AssertRequiredArguments(t, s, []string{

@@ -9,6 +9,9 @@ issues:
   # Maximum count of issues with the same text. Set to 0 to disable.
   # Default is 3.
   max-same-issues: 0
+  include:
+    - EXC0012
+    - EXC0014
   exclude-rules:
     # Exclude duplicate code and function length and complexity checking in test
     # files (due to common repeats and long functions in test code)
@@ -43,6 +46,11 @@ linters-settings:
   funlen:
     lines: 80
     statements: 60
+  errcheck:
+    check-blank: true
+    ignoretests: true
+  revive:
+    exported: ["checkPrivateReceivers"]
 linters:
   enable-all: true
   disable:
@@ -53,6 +61,7 @@ linters:
     - ifshort
     - interfacer
     - maligned
+    - nosnakecase
     - rowserrcheck
     - scopelint
     - structcheck
@@ -63,24 +72,16 @@ linters:
     - forcetypeassert
     - funlen
     - gocognit
-    - govet
     # others
     - exhaustivestruct
     - exhaustruct
     - gci
-    - gochecknoinits
-    - godot
     - goerr113
     - gomnd
-    - grouper
     - ireturn
     - maintidx
     - nlreturn
-    - nonamedreturns
-    - nosnakecase
     - tagliatelle
     - testpackage
-    - thelper
     - varnamelen
-    - wsl
   fast: false

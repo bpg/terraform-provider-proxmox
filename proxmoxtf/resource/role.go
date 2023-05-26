@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -23,6 +23,7 @@ const (
 	mkResourceVirtualEnvironmentRoleRoleID     = "role_id"
 )
 
+// Role returns a resource that manages roles.
 func Role() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -48,7 +49,7 @@ func Role() *schema.Resource {
 
 func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -61,12 +62,12 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		customPrivileges[i] = v.(string)
 	}
 
-	body := &proxmox.VirtualEnvironmentRoleCreateRequestBody{
+	body := &access.RoleCreateRequestBody{
 		ID:         roleID,
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.CreateRole(ctx, body)
+	err = api.Access().CreateRole(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -78,13 +79,13 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
-	role, err := veClient.GetRole(ctx, roleID)
+	role, err := api.Access().GetRole(ctx, roleID)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {
 			d.SetId("")
@@ -108,7 +109,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -121,11 +122,11 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		customPrivileges[i] = v.(string)
 	}
 
-	body := &proxmox.VirtualEnvironmentRoleUpdateRequestBody{
+	body := &access.RoleUpdateRequestBody{
 		Privileges: customPrivileges,
 	}
 
-	err = veClient.UpdateRole(ctx, roleID, body)
+	err = api.Access().UpdateRole(ctx, roleID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -135,13 +136,13 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
-	err = veClient.DeleteRole(ctx, roleID)
+	err = api.Access().DeleteRole(ctx, roleID)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

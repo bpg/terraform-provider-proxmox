@@ -24,6 +24,7 @@ const (
 	mkDataSourceVirtualEnvironmentTimeUTCTime   = "utc_time"
 )
 
+// Time returns a resource for the Proxmox time.
 func Time() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -56,13 +57,13 @@ func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentTimeNodeName).(string)
-	nodeTime, err := veClient.GetNodeTime(ctx, nodeName)
+	nodeTime, err := api.Node(nodeName).GetTime(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -23,6 +23,7 @@ const (
 	mkResourceVirtualEnvironmentDNSServers  = "servers"
 )
 
+// DNS returns a resource that manages DNS settings for a node.
 func DNS() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -69,11 +70,11 @@ func dnsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	return nil
 }
 
-func dnsGetUpdateBody(d *schema.ResourceData) *proxmox.VirtualEnvironmentDNSUpdateRequestBody {
+func dnsGetUpdateBody(d *schema.ResourceData) *nodes.DNSUpdateRequestBody {
 	domain := d.Get(mkResourceVirtualEnvironmentDNSDomain).(string)
 	servers := d.Get(mkResourceVirtualEnvironmentDNSServers).([]interface{})
 
-	body := &proxmox.VirtualEnvironmentDNSUpdateRequestBody{
+	body := &nodes.DNSUpdateRequestBody{
 		SearchDomain: &domain,
 	}
 
@@ -97,13 +98,14 @@ func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentDNSNodeName).(string)
-	dns, err := veClient.GetDNS(ctx, nodeName)
+
+	dns, err := api.Node(nodeName).GetDNS(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -137,7 +139,7 @@ func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 
 func dnsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -146,7 +148,7 @@ func dnsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 	body := dnsGetUpdateBody(d)
 
-	err = veClient.UpdateDNS(ctx, nodeName, body)
+	err = api.Node(nodeName).UpdateDNS(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}

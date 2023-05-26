@@ -20,6 +20,7 @@ const (
 	mkDataSourceVirtualEnvironmentGroupsGroupIDs = "group_ids"
 )
 
+// Groups returns a resource for the Proxmox user groups.
 func Groups() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -44,12 +45,12 @@ func groupsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListGroups(ctx)
+	list, err := api.Access().ListGroups(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -17,8 +17,8 @@ import (
 // TestRoleInstantiation tests whether the Role instance can be instantiated.
 func TestRoleInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Role()
 
+	s := Role()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Role")
 	}
@@ -27,6 +27,7 @@ func TestRoleInstantiation(t *testing.T) {
 // TestRoleSchema tests the Role schema.
 func TestRoleSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Role()
 
 	test.AssertRequiredArguments(t, s, []string{

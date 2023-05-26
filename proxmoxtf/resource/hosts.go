@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -31,6 +31,7 @@ const (
 	mkResourceVirtualEnvironmentHostsNodeName         = "node_name"
 )
 
+// Hosts returns a resource that manages hosts settings for a node.
 func Hosts() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -126,13 +127,14 @@ func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentHostsNodeName).(string)
-	hosts, err := veClient.GetHosts(ctx, nodeName)
+
+	hosts, err := api.Node(nodeName).GetHosts(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -194,7 +196,7 @@ func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -203,7 +205,7 @@ func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	nodeName := d.Get(mkResourceVirtualEnvironmentHostsNodeName).(string)
 
 	// Generate the data for the hosts file based on the specified entries.
-	body := proxmox.VirtualEnvironmentHostsUpdateRequestBody{
+	body := nodes.HostsUpdateRequestBody{
 		Data: "",
 	}
 
@@ -223,7 +225,7 @@ func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		body.Data += "\n"
 	}
 
-	err = veClient.UpdateHosts(ctx, nodeName, &body)
+	err = api.Node(nodeName).UpdateHosts(ctx, &body)
 	if err != nil {
 		return diag.FromErr(err)
 	}

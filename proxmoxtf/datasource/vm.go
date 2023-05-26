@@ -25,6 +25,7 @@ const (
 	mkDataSourceVirtualEnvironmentVMVMID     = "vm_id"
 )
 
+// VM returns a resource for a single Proxmox VM.
 func VM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -59,7 +60,8 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -67,7 +69,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
 	vmID := d.Get(mkDataSourceVirtualEnvironmentVMVMID).(int)
 
-	vmStatus, err := veClient.GetVMStatus(ctx, nodeName, vmID)
+	vmStatus, err := api.Node(nodeName).VM(vmID).GetVMStatus(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
 			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
@@ -84,9 +86,11 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	} else {
 		err = d.Set(mkDataSourceVirtualEnvironmentVMName, "")
 	}
+
 	diags = append(diags, diag.FromErr(err)...)
 
 	var tags []string
+
 	if vmStatus.Tags != nil {
 		for _, tag := range strings.Split(*vmStatus.Tags, ";") {
 			t := strings.TrimSpace(tag)
@@ -94,8 +98,10 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 				tags = append(tags, t)
 			}
 		}
+
 		sort.Strings(tags)
 	}
+
 	err = d.Set(mkDataSourceVirtualEnvironmentVMTags, tags)
 	diags = append(diags, diag.FromErr(err)...)
 

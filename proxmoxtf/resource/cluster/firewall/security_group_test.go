@@ -25,6 +25,7 @@ func TestSecurityGroupInstantiation(t *testing.T) {
 // TestSecurityGroupSchema tests the SecurityGroup Schema.
 func TestSecurityGroupSchema(t *testing.T) {
 	t.Parallel()
+
 	s := SecurityGroup().Schema
 
 	structure.AssertRequiredArguments(t, s, []string{

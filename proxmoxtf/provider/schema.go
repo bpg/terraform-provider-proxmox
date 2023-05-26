@@ -99,7 +99,7 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
 		mkProviderSSH: {
-			Type:        schema.TypeSet,
+			Type:        schema.TypeList,
 			Optional:    true,
 			MaxItems:    1,
 			Description: "The SSH connection configuration to a Proxmox node",

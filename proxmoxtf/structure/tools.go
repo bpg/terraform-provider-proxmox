@@ -13,12 +13,13 @@ import (
 )
 
 // MergeSchema merges the map[string]*schema.Schema from src into dst. Safety
-// against conflicts is enforced by panicing.
+// against conflicts is enforced by panicking.
 func MergeSchema(dst, src map[string]*schema.Schema) {
 	for k, v := range src {
 		if _, ok := dst[k]; ok {
 			panic(fmt.Errorf("conflicting schema key: %s", k))
 		}
+
 		dst[k] = v
 	}
 }

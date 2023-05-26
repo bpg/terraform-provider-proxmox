@@ -21,6 +21,7 @@ const (
 	mkDataSourceVirtualEnvironmentRolesSpecial    = "special"
 )
 
+// Roles returns a resource for the user roles.
 func Roles() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -54,12 +55,12 @@ func rolesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListRoles(ctx)
+	list, err := api.Access().ListRoles(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

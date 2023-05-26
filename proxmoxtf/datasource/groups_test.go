@@ -17,8 +17,8 @@ import (
 // TestGroupsInstantiation tests whether the Groups instance can be instantiated.
 func TestGroupsInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Groups()
 
+	s := Groups()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Groups")
 	}
@@ -27,6 +27,7 @@ func TestGroupsInstantiation(t *testing.T) {
 // TestGroupsSchema tests the Groups schema.
 func TestGroupsSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Groups()
 
 	test.AssertComputedAttributes(t, s, []string{

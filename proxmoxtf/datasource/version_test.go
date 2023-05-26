@@ -17,8 +17,8 @@ import (
 // TestVersionInstantiation tests whether the Version instance can be instantiated.
 func TestVersionInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Version()
 
+	s := Version()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Version")
 	}
@@ -27,6 +27,7 @@ func TestVersionInstantiation(t *testing.T) {
 // TestVersionSchema tests the Version schema.
 func TestVersionSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Version()
 
 	test.AssertComputedAttributes(t, s, []string{

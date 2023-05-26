@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -232,6 +232,7 @@ const (
 	vmCreateTimeoutSeconds = 10
 )
 
+// VM returns a resource that manages VMs.
 func VM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -1268,9 +1269,10 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	api, e := config.GetClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
@@ -1289,7 +1291,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID(ctx)
+		vmIDNew, err := api.Cluster().GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1298,7 +1300,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	fullCopy := types.CustomBool(cloneFull)
 
-	cloneBody := &proxmox.VirtualEnvironmentVMCloneRequestBody{
+	cloneBody := &vms.CloneRequestBody{
 		FullCopy: &fullCopy,
 		VMIDNew:  vmID,
 	}
@@ -1323,7 +1325,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		// Check if any used datastores of the source VM are not shared
-		vmConfig, err := veClient.GetVM(ctx, cloneNodeName, cloneVMID)
+		vmConfig, err := api.Node(cloneNodeName).VM(cloneVMID).GetVM(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1332,13 +1334,12 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		onlySharedDatastores := true
 		for _, datastore := range datastores {
-			datastoreStatus, err := veClient.GetDatastoreStatus(ctx, cloneNodeName, datastore)
-			if err != nil {
-				return diag.FromErr(err)
+			datastoreStatus, err2 := api.Node(cloneNodeName).GetDatastoreStatus(ctx, datastore)
+			if err2 != nil {
+				return diag.FromErr(err2)
 			}
 
-			if datastoreStatus.Shared != nil &&
-				*datastoreStatus.Shared == types.CustomBool(false) {
+			if datastoreStatus.Shared != nil && !*datastoreStatus.Shared {
 				onlySharedDatastores = false
 				break
 			}
@@ -1349,10 +1350,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			//  all used datastores in the source VM are shared. Directly cloning to non-shared storage
 			//  on a different node is currently not supported by proxmox.
 			cloneBody.TargetNodeName = &nodeName
-			err = veClient.CloneVM(
+			err = api.Node(cloneNodeName).VM(cloneVMID).CloneVM(
 				ctx,
-				cloneNodeName,
-				cloneVMID,
 				cloneRetries,
 				cloneBody,
 				cloneTimeout,
@@ -1367,20 +1366,21 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			//  https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
 
 			// Temporarily clone to local node
-			err = veClient.CloneVM(ctx, cloneNodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+			err = api.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
-			err = veClient.WaitForVMConfigUnlock(ctx, cloneNodeName, vmID, 600, 5, true)
+
+			err = api.Node(cloneNodeName).VM(vmID).WaitForVMConfigUnlock(ctx, 600, 5, true)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			// Migrate to target node
 			withLocalDisks := types.CustomBool(true)
-			migrateBody := &proxmox.VirtualEnvironmentVMMigrateRequestBody{
+			migrateBody := &vms.MigrateRequestBody{
 				TargetNode:     nodeName,
 				WithLocalDisks: &withLocalDisks,
 			}
@@ -1389,24 +1389,27 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 				migrateBody.TargetStorage = &cloneDatastoreID
 			}
 
-			err = veClient.MigrateVM(ctx, cloneNodeName, vmID, migrateBody, cloneTimeout)
+			err = api.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody, cloneTimeout)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 		}
 	} else {
-		err = veClient.CloneVM(ctx, nodeName, cloneVMID, cloneRetries, cloneBody, cloneTimeout)
+		e = api.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
 	}
-	if err != nil {
-		return diag.FromErr(err)
+
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	d.SetId(strconv.Itoa(vmID))
 
+	vmAPI := api.Node(nodeName).VM(vmID)
+
 	// Wait for the virtual machine to be created and its configuration lock to be released.
-	err = veClient.WaitForVMConfigUnlock(ctx, nodeName, vmID, 600, 5, true)
-	if err != nil {
-		return diag.FromErr(err)
+	e = vmAPI.WaitForVMConfigUnlock(ctx, 600, 5, true)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
@@ -1431,11 +1434,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 	vga := d.Get(mkResourceVirtualEnvironmentVMVGA).([]interface{})
 
-	updateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
+	updateBody := &vms.UpdateRequestBody{
 		AudioDevices: audioDevices,
 	}
 
-	ideDevices := proxmox.CustomStorageDevices{}
+	ideDevices := vms.CustomStorageDevices{}
 
 	var del []string
 
@@ -1453,7 +1456,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
-		updateBody.Agent = &proxmox.CustomAgent{
+		updateBody.Agent = &vms.CustomAgent{
 			Enabled:         &agentEnabled,
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
@@ -1473,17 +1476,17 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(cdrom) > 0 || len(initialization) > 0 {
-		ideDevices = proxmox.CustomStorageDevices{
-			"ide0": proxmox.CustomStorageDevice{
+		ideDevices = vms.CustomStorageDevices{
+			"ide0": vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide1": proxmox.CustomStorageDevice{
+			"ide1": vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide2": proxmox.CustomStorageDevice{
+			"ide2": vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide3": proxmox.CustomStorageDevice{
+			"ide3": vms.CustomStorageDevice{
 				Enabled: false,
 			},
 		}
@@ -1501,8 +1504,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		cdromMedia := "cdrom"
 
-		ideDevices = proxmox.CustomStorageDevices{
-			"ide3": proxmox.CustomStorageDevice{
+		ideDevices = vms.CustomStorageDevices{
+			"ide3": vms.CustomStorageDevice{
 				Enabled:    cdromEnabled,
 				FileVolume: cdromFileID,
 				Media:      &cdromMedia,
@@ -1528,13 +1531,13 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if veClient.Username == proxmox.DefaultRootAccount ||
+		if api.API().IsRoot() ||
 			cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
 
 		updateBody.CPUCores = &cpuCores
-		updateBody.CPUEmulation = &proxmox.CustomCPUEmulation{
+		updateBody.CPUEmulation = &vms.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		}
@@ -1554,22 +1557,22 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
 
-		ideDevices = proxmox.CustomStorageDevices{
-			"ide2": proxmox.CustomStorageDevice{
+		ideDevices = vms.CustomStorageDevices{
+			"ide2": vms.CustomStorageDevice{
 				Enabled:    cdromCloudInitEnabled,
 				FileVolume: cdromCloudInitFileID,
 				Media:      &cdromCloudInitMedia,
 			},
 		}
-		ciUpdateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{}
+		ciUpdateBody := &vms.UpdateRequestBody{}
 		ciUpdateBody.Delete = append(ciUpdateBody.Delete, "ide2")
-		err = veClient.UpdateVM(ctx, nodeName, vmID, ciUpdateBody)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-		initializationConfig := vmGetCloudInitConfig(d)
 
-		updateBody.CloudInitConfig = initializationConfig
+		e = vmAPI.UpdateVM(ctx, ciUpdateBody)
+		if e != nil {
+			return diag.FromErr(e)
+		}
+
+		updateBody.CloudInitConfig = vmGetCloudInitConfig(d)
 	}
 
 	if len(hostPCI) > 0 {
@@ -1597,7 +1600,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if memoryShared > 0 {
 			memorySharedName := fmt.Sprintf("vm-%d-ivshmem", vmID)
 
-			updateBody.SharedMemory = &proxmox.CustomSharedMemory{
+			updateBody.SharedMemory = &vms.CustomSharedMemory{
 				Name: &memorySharedName,
 				Size: memoryShared,
 			}
@@ -1661,28 +1664,30 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	updateBody.Delete = del
 
-	err = veClient.UpdateVM(ctx, nodeName, vmID, updateBody)
-	if err != nil {
-		return diag.FromErr(err)
+	e = vmAPI.UpdateVM(ctx, updateBody)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 
-	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") ||
-			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
+	vmConfig, e := vmAPI.GetVM(ctx)
+	if e != nil {
+		if strings.Contains(e.Error(), "HTTP 404") ||
+			(strings.Contains(e.Error(), "HTTP 500") && strings.Contains(e.Error(), "does not exist")) {
 			d.SetId("")
 
 			return nil
 		}
-		return diag.FromErr(err)
+
+		return diag.FromErr(e)
 	}
 
 	allDiskInfo := getDiskInfo(vmConfig, d)
-	diskDeviceObjects, err := vmGetDiskDeviceObjects(d, nil)
-	if err != nil {
-		return diag.FromErr(err)
+
+	diskDeviceObjects, e := vmGetDiskDeviceObjects(d, nil)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	for i := range disk {
@@ -1694,30 +1699,30 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		currentDiskInfo := allDiskInfo[diskInterface]
 
 		if currentDiskInfo == nil {
-			diskUpdateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{}
+			diskUpdateBody := &vms.UpdateRequestBody{}
 			prefix := diskDigitPrefix(diskInterface)
 
 			switch prefix {
 			case "virtio":
 				if diskUpdateBody.VirtualIODevices == nil {
-					diskUpdateBody.VirtualIODevices = proxmox.CustomStorageDevices{}
+					diskUpdateBody.VirtualIODevices = vms.CustomStorageDevices{}
 				}
 				diskUpdateBody.VirtualIODevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
 			case "sata":
 				if diskUpdateBody.SATADevices == nil {
-					diskUpdateBody.SATADevices = proxmox.CustomStorageDevices{}
+					diskUpdateBody.SATADevices = vms.CustomStorageDevices{}
 				}
 				diskUpdateBody.SATADevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
 			case "scsi":
 				if diskUpdateBody.SCSIDevices == nil {
-					diskUpdateBody.SCSIDevices = proxmox.CustomStorageDevices{}
+					diskUpdateBody.SCSIDevices = vms.CustomStorageDevices{}
 				}
 				diskUpdateBody.SCSIDevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
 			}
 
-			err = veClient.UpdateVM(ctx, nodeName, vmID, diskUpdateBody)
-			if err != nil {
-				return diag.FromErr(err)
+			e = vmAPI.UpdateVM(ctx, diskUpdateBody)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
 			continue
@@ -1733,13 +1738,13 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		deleteOriginalDisk := types.CustomBool(true)
 
-		diskMoveBody := &proxmox.VirtualEnvironmentVMMoveDiskRequestBody{
+		diskMoveBody := &vms.MoveDiskRequestBody{
 			DeleteOriginalDisk: &deleteOriginalDisk,
 			Disk:               diskInterface,
 			TargetStorage:      dataStoreID,
 		}
 
-		diskResizeBody := &proxmox.VirtualEnvironmentVMResizeDiskRequestBody{
+		diskResizeBody := &vms.ResizeDiskRequestBody{
 			Disk: diskInterface,
 			Size: types.DiskSizeFromGigabytes(diskSize),
 		}
@@ -1757,16 +1762,17 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		if moveDisk {
 			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
-			err = veClient.MoveVMDisk(ctx, nodeName, vmID, diskMoveBody, moveDiskTimeout)
-			if err != nil {
-				return diag.FromErr(err)
+
+			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 		}
 
 		if diskSize > currentDiskInfo.Size.InGigabytes() {
-			err = veClient.ResizeVMDisk(ctx, nodeName, vmID, diskResizeBody)
-			if err != nil {
-				return diag.FromErr(err)
+			e = vmAPI.ResizeVMDisk(ctx, diskResizeBody)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 		}
 	}
@@ -1776,7 +1782,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1925,32 +1931,36 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, err := veClient.GetVMID(ctx)
-		if err != nil {
-			return diag.FromErr(err)
+		vmIDNew, e := api.Cluster().GetVMID(ctx)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		vmID = *vmIDNew
 	}
 
-	var memorySharedObject *proxmox.CustomSharedMemory
+	var memorySharedObject *vms.CustomSharedMemory
 
 	var bootOrderConverted []string
 	if cdromEnabled {
 		bootOrderConverted = []string{"ide3"}
 	}
+
 	bootOrder := d.Get(mkResourceVirtualEnvironmentVMBootOrder).([]interface{})
 	//nolint:nestif
 	if len(bootOrder) == 0 {
 		if sataDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "sata0")
 		}
+
 		if scsiDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "scsi0")
 		}
+
 		if virtioDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "virtio0")
 		}
+
 		if networkDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "net0")
 		}
@@ -1967,13 +1977,13 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	ideDevice2Media := "cdrom"
-	ideDevices := proxmox.CustomStorageDevices{
-		"ide2": proxmox.CustomStorageDevice{
+	ideDevices := vms.CustomStorageDevices{
+		"ide2": vms.CustomStorageDevice{
 			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
 		},
-		"ide3": proxmox.CustomStorageDevice{
+		"ide3": vms.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &ideDevice2Media,
@@ -1982,7 +1992,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if memoryShared > 0 {
 		memorySharedName := fmt.Sprintf("vm-%d-ivshmem", vmID)
-		memorySharedObject = &proxmox.CustomSharedMemory{
+		memorySharedObject = &vms.CustomSharedMemory{
 			Name: &memorySharedName,
 			Size: memoryShared,
 		}
@@ -1990,21 +2000,21 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	scsiHardware := d.Get(mkResourceVirtualEnvironmentVMSCSIHardware).(string)
 
-	createBody := &proxmox.VirtualEnvironmentVMCreateRequestBody{
+	createBody := &vms.CreateRequestBody{
 		ACPI: &acpi,
-		Agent: &proxmox.CustomAgent{
+		Agent: &vms.CustomAgent{
 			Enabled:         &agentEnabled,
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
 		AudioDevices: audioDevices,
 		BIOS:         &bios,
-		Boot: &proxmox.CustomBoot{
+		Boot: &vms.CustomBoot{
 			Order: &bootOrderConverted,
 		},
 		CloudInitConfig: initializationConfig,
 		CPUCores:        &cpuCores,
-		CPUEmulation: &proxmox.CustomCPUEmulation{
+		CPUEmulation: &vms.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		},
@@ -2040,7 +2050,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-	if veClient.Username == proxmox.DefaultRootAccount ||
+	if api.API().IsRoot() ||
 		cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 		createBody.CPUArchitecture = &cpuArchitecture
 	}
@@ -2074,7 +2084,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		createBody.PoolID = &poolID
 	}
 
-	err = veClient.CreateVM(ctx, nodeName, createBody, vmCreateTimeoutSeconds)
+	err = api.Node(nodeName).VM(0).CreateVM(ctx, createBody, vmCreateTimeoutSeconds)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2085,13 +2095,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 }
 
 func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
@@ -2221,7 +2224,21 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 	// Execute the commands on the node and wait for the result.
 	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
 	if len(commands) > 0 {
-		err = veClient.ExecuteNodeCommands(ctx, nodeName, commands)
+		config := m.(proxmoxtf.ProviderConfiguration)
+
+		api, err := config.GetClient()
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+
+		nodeAddress, err := api.Node(nodeName).GetIP(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		err = api.SSH().ExecuteNodeCommands(ctx, nodeAddress, commands)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2240,7 +2257,7 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2251,9 +2268,11 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(err)
 	}
 
+	vmAPI := api.Node(nodeName).VM(vmID)
+
 	// Start the virtual machine and wait for it to reach a running state before continuing.
 	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-	err = veClient.StartVM(ctx, nodeName, vmID, startVMTimeout)
+	err = vmAPI.StartVM(ctx, startVMTimeout)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2261,11 +2280,9 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if reboot {
 		rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
 
-		err := veClient.RebootVM(
+		err := vmAPI.RebootVM(
 			ctx,
-			nodeName,
-			vmID,
-			&proxmox.VirtualEnvironmentVMRebootRequestBody{
+			&vms.RebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
 			rebootTimeout+30,
@@ -2278,9 +2295,9 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	return vmRead(ctx, d, m)
 }
 
-func vmGetAudioDeviceList(d *schema.ResourceData) proxmox.CustomAudioDevices {
+func vmGetAudioDeviceList(d *schema.ResourceData) vms.CustomAudioDevices {
 	devices := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
-	list := make(proxmox.CustomAudioDevices, len(devices))
+	list := make(vms.CustomAudioDevices, len(devices))
 
 	for i, v := range devices {
 		block := v.(map[string]interface{})
@@ -2311,14 +2328,14 @@ func vmGetAudioDriverValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-func vmGetCloudInitConfig(d *schema.ResourceData) *proxmox.CustomCloudInitConfig {
-	var initializationConfig *proxmox.CustomCloudInitConfig
+func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
+	var initializationConfig *vms.CustomCloudInitConfig
 
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 
 	if len(initialization) > 0 {
 		initializationBlock := initialization[0].(map[string]interface{})
-		initializationConfig = &proxmox.CustomCloudInitConfig{}
+		initializationConfig = &vms.CustomCloudInitConfig{}
 		initializationDNS := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDNS].([]interface{})
 
 		if len(initializationDNS) > 0 {
@@ -2338,7 +2355,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *proxmox.CustomCloudInitConfig
 
 		initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentVMInitializationIPConfig].([]interface{})
 		initializationConfig.IPConfig = make(
-			[]proxmox.CustomCloudInitIPConfig,
+			[]vms.CustomCloudInitIPConfig,
 			len(initializationIPConfig),
 		)
 
@@ -2386,7 +2403,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *proxmox.CustomCloudInitConfig
 			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountKeys].([]interface{})
 
 			if len(keys) > 0 {
-				sshKeys := make(proxmox.CustomCloudInitSSHKeys, len(keys))
+				sshKeys := make(vms.CustomCloudInitSSHKeys, len(keys))
 
 				for i, k := range keys {
 					sshKeys[i] = k.(string)
@@ -2409,7 +2426,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *proxmox.CustomCloudInitConfig
 		initializationUserDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationUserDataFileID].(string)
 
 		if initializationUserDataFileID != "" {
-			initializationConfig.Files = &proxmox.CustomCloudInitFiles{
+			initializationConfig.Files = &vms.CustomCloudInitFiles{
 				UserVolume: &initializationUserDataFileID,
 			}
 		}
@@ -2418,7 +2435,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *proxmox.CustomCloudInitConfig
 
 		if initializationVendorDataFileID != "" {
 			if initializationConfig.Files == nil {
-				initializationConfig.Files = &proxmox.CustomCloudInitFiles{}
+				initializationConfig.Files = &vms.CustomCloudInitFiles{}
 			}
 			initializationConfig.Files.VendorVolume = &initializationVendorDataFileID
 		}
@@ -2427,7 +2444,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *proxmox.CustomCloudInitConfig
 
 		if initializationNetworkDataFileID != "" {
 			if initializationConfig.Files == nil {
-				initializationConfig.Files = &proxmox.CustomCloudInitFiles{}
+				initializationConfig.Files = &vms.CustomCloudInitFiles{}
 			}
 			initializationConfig.Files.NetworkVolume = &initializationNetworkDataFileID
 		}
@@ -2452,7 +2469,7 @@ func vmGetCPUArchitectureValidator() schema.SchemaValidateDiagFunc {
 func vmGetDiskDeviceObjects(
 	d *schema.ResourceData,
 	disks []interface{},
-) (map[string]map[string]proxmox.CustomStorageDevice, error) {
+) (map[string]map[string]vms.CustomStorageDevice, error) {
 	var diskDevice []interface{}
 
 	if disks != nil {
@@ -2461,11 +2478,11 @@ func vmGetDiskDeviceObjects(
 		diskDevice = d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	}
 
-	diskDeviceObjects := map[string]map[string]proxmox.CustomStorageDevice{}
+	diskDeviceObjects := map[string]map[string]vms.CustomStorageDevice{}
 	resource := VM()
 
 	for _, diskEntry := range diskDevice {
-		diskDevice := proxmox.CustomStorageDevice{
+		diskDevice := vms.CustomStorageDevice{
 			Enabled: true,
 		}
 
@@ -2548,7 +2565,7 @@ func vmGetDiskDeviceObjects(
 		}
 
 		if _, present := diskDeviceObjects[baseDiskInterface]; !present {
-			diskDeviceObjects[baseDiskInterface] = map[string]proxmox.CustomStorageDevice{}
+			diskDeviceObjects[baseDiskInterface] = map[string]vms.CustomStorageDevice{}
 		}
 
 		diskDeviceObjects[baseDiskInterface][diskInterface] = diskDevice
@@ -2557,9 +2574,9 @@ func vmGetDiskDeviceObjects(
 	return diskDeviceObjects, nil
 }
 
-func vmGetHostPCIDeviceObjects(d *schema.ResourceData) proxmox.CustomPCIDevices {
+func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 	pciDevice := d.Get(mkResourceVirtualEnvironmentVMHostPCI).([]interface{})
-	pciDeviceObjects := make(proxmox.CustomPCIDevices, len(pciDevice))
+	pciDeviceObjects := make(vms.CustomPCIDevices, len(pciDevice))
 
 	for i, pciDeviceEntry := range pciDevice {
 		block := pciDeviceEntry.(map[string]interface{})
@@ -2573,7 +2590,7 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) proxmox.CustomPCIDevices 
 		romfile, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile].(string)
 		xvga := types.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA].(bool))
 
-		device := proxmox.CustomPCIDevice{
+		device := vms.CustomPCIDevice{
 			DeviceIDs:  strings.Split(ids, ";"),
 			PCIExpress: &pcie,
 			ROMBAR:     &rombar,
@@ -2597,9 +2614,9 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) proxmox.CustomPCIDevices 
 	return pciDeviceObjects
 }
 
-func vmGetNetworkDeviceObjects(d *schema.ResourceData) proxmox.CustomNetworkDevices {
+func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices {
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
-	networkDeviceObjects := make(proxmox.CustomNetworkDevices, len(networkDevice))
+	networkDeviceObjects := make(vms.CustomNetworkDevices, len(networkDevice))
 
 	for i, networkDeviceEntry := range networkDevice {
 		block := networkDeviceEntry.(map[string]interface{})
@@ -2613,7 +2630,7 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) proxmox.CustomNetworkDevi
 		vlanID := block[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID].(int)
 		mtu := block[mkResourceVirtualEnvironmentVMNetworkDeviceMTU].(int)
 
-		device := proxmox.CustomNetworkDevice{
+		device := vms.CustomNetworkDevice{
 			Enabled:  enabled,
 			Firewall: &firewall,
 			Model:    model,
@@ -2662,9 +2679,9 @@ func vmGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-func vmGetSerialDeviceList(d *schema.ResourceData) proxmox.CustomSerialDevices {
+func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
 	device := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
-	list := make(proxmox.CustomSerialDevices, len(device))
+	list := make(vms.CustomSerialDevices, len(device))
 
 	for i, v := range device {
 		block := v.(map[string]interface{})
@@ -2708,7 +2725,7 @@ func vmGetSerialDeviceValidator() schema.SchemaValidateDiagFunc {
 	})
 }
 
-func vmGetVGADeviceObject(d *schema.ResourceData) (*proxmox.CustomVGADevice, error) {
+func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) {
 	resource := VM()
 
 	vgaBlock, err := getSchemaBlock(
@@ -2726,7 +2743,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*proxmox.CustomVGADevice, err
 	vgaMemory := vgaBlock[mkResourceVirtualEnvironmentVMVGAMemory].(int)
 	vgaType := vgaBlock[mkResourceVirtualEnvironmentVMVGAType].(string)
 
-	vgaDevice := &proxmox.CustomVGADevice{}
+	vgaDevice := &vms.CustomVGADevice{}
 
 	if vgaEnabled {
 		if vgaMemory > 0 {
@@ -2737,7 +2754,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*proxmox.CustomVGADevice, err
 	} else {
 		vgaType = "none"
 
-		vgaDevice = &proxmox.CustomVGADevice{
+		vgaDevice = &vms.CustomVGADevice{
 			Type: &vgaType,
 		}
 	}
@@ -2747,7 +2764,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*proxmox.CustomVGADevice, err
 
 func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2758,8 +2775,10 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 		return diag.FromErr(err)
 	}
 
+	vmAPI := api.Node(nodeName).VM(vmID)
+
 	// Retrieve the entire configuration in order to compare it to the state.
-	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
+	vmConfig, err := vmAPI.GetVM(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
 			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
@@ -2771,7 +2790,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 		return diag.FromErr(err)
 	}
 
-	vmStatus, err := veClient.GetVMStatus(ctx, nodeName, vmID)
+	vmStatus, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2784,11 +2803,11 @@ func vmReadCustom(
 	d *schema.ResourceData,
 	m interface{},
 	vmID int,
-	vmConfig *proxmox.VirtualEnvironmentVMGetResponseData,
-	vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData,
+	vmConfig *vms.GetResponseData,
+	vmStatus *vms.GetStatusResponseData,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2869,7 +2888,7 @@ func vmReadCustom(
 	currentAudioDevice := d.Get(mkResourceVirtualEnvironmentVMAudioDevice).([]interface{})
 
 	audioDevices := make([]interface{}, 1)
-	audioDevicesArray := []*proxmox.CustomAudioDevice{
+	audioDevicesArray := []*vms.CustomAudioDevice{
 		vmConfig.AudioDevice,
 	}
 	audioDevicesCount := 0
@@ -2903,7 +2922,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	// Compare the IDE devices to the CDROM and cloud-init configurations stored in the state.
+	// Compare the IDE devices to the CD-ROM and cloud-init configurations stored in the state.
 	if vmConfig.IDEDevice3 != nil {
 		cdrom := make([]interface{}, 1)
 		cdromBlock := map[string]interface{}{}
@@ -2944,7 +2963,7 @@ func vmReadCustom(
 	} else {
 		// Default value of "arch" is "" according to the API documentation.
 		// However, assume the provider's default value as a workaround when the root account is not being used.
-		if veClient.Username != proxmox.DefaultRootAccount {
+		if !api.API().IsRoot() {
 			cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = dvResourceVirtualEnvironmentVMCPUArchitecture
 		} else {
 			cpu[mkResourceVirtualEnvironmentVMCPUArchitecture] = ""
@@ -3038,11 +3057,12 @@ func vmReadCustom(
 			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = dvResourceVirtualEnvironmentVMDiskFileFormat
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			files, err := veClient.ListDatastoreFiles(ctx, nodeName, fileIDParts[0])
+			files, err := api.Node(nodeName).ListDatastoreFiles(ctx, fileIDParts[0])
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
 				continue
 			}
+
 			for _, v := range files {
 				if v.VolumeID == dd.FileVolume {
 					disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = v.FileFormat
@@ -3243,7 +3263,7 @@ func vmReadCustom(
 	}
 
 	ipConfigLast := -1
-	ipConfigObjects := []*proxmox.CustomCloudInitIPConfig{
+	ipConfigObjects := []*vms.CustomCloudInitIPConfig{
 		vmConfig.IPConfig0,
 		vmConfig.IPConfig1,
 		vmConfig.IPConfig2,
@@ -3448,7 +3468,7 @@ func vmReadCustom(
 	macAddresses := make([]interface{}, 8)
 	networkDeviceLast := -1
 	networkDeviceList := make([]interface{}, 8)
-	networkDeviceObjects := []*proxmox.CustomNetworkDevice{
+	networkDeviceObjects := []*vms.CustomNetworkDevice{
 		vmConfig.NetworkDevice0,
 		vmConfig.NetworkDevice1,
 		vmConfig.NetworkDevice2,
@@ -3674,17 +3694,21 @@ func vmReadNetworkValues(
 	d *schema.ResourceData,
 	m interface{},
 	vmID int,
-	vmConfig *proxmox.VirtualEnvironmentVMGetResponseData,
+	vmConfig *vms.GetResponseData,
 ) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	api, e := config.GetClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+
+	vmAPI := api.Node(nodeName).VM(vmID)
+
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
 	var ipv4Addresses []interface{}
@@ -3713,15 +3737,8 @@ func vmReadNetworkValues(
 			}
 
 			var macAddresses []interface{}
-			networkInterfaces, err := veClient.WaitForNetworkInterfacesFromVMAgent(
-				ctx,
-				nodeName,
-				vmID,
-				int(agentTimeout.Seconds()),
-				5,
-				true,
-			)
 
+			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, int(agentTimeout.Seconds()), 5, true)
 			if err == nil && networkInterfaces.Result != nil {
 				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
 				ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))
@@ -3755,20 +3772,20 @@ func vmReadNetworkValues(
 		}
 	}
 
-	err = d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
-	diags = append(diags, diag.FromErr(err)...)
-	err = d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
-	diags = append(diags, diag.FromErr(err)...)
-	err = d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
-	diags = append(diags, diag.FromErr(err)...)
+	e = d.Set(mkResourceVirtualEnvironmentVMIPv4Addresses, ipv4Addresses)
+	diags = append(diags, diag.FromErr(e)...)
+	e = d.Set(mkResourceVirtualEnvironmentVMIPv6Addresses, ipv6Addresses)
+	diags = append(diags, diag.FromErr(e)...)
+	e = d.Set(mkResourceVirtualEnvironmentVMNetworkInterfaceNames, networkInterfaceNames)
+	diags = append(diags, diag.FromErr(e)...)
 
 	return diags
 }
 
 func vmReadPrimitiveValues(
 	d *schema.ResourceData,
-	vmConfig *proxmox.VirtualEnvironmentVMGetResponseData,
-	vmStatus *proxmox.VirtualEnvironmentVMGetStatusResponseData,
+	vmConfig *vms.GetResponseData,
+	vmStatus *vms.GetStatusResponseData,
 ) diag.Diagnostics {
 	var diags diag.Diagnostics
 	var err error
@@ -3797,6 +3814,7 @@ func vmReadPrimitiveValues(
 			// Default value of "args" is "" according to the API documentation.
 			err = d.Set(mkResourceVirtualEnvironmentVMKVMArguments, "")
 		}
+
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3915,43 +3933,47 @@ func vmReadPrimitiveValues(
 
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
-	if err != nil {
-		return diag.FromErr(err)
+
+	api, e := config.GetClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	rebootRequired := false
 
-	vmID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
+	vmID, e := strconv.Atoi(d.Id())
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
-	updateBody := &proxmox.VirtualEnvironmentVMUpdateRequestBody{
-		IDEDevices: proxmox.CustomStorageDevices{
-			"ide0": proxmox.CustomStorageDevice{
+	vmAPI := api.Node(nodeName).VM(vmID)
+
+	updateBody := &vms.UpdateRequestBody{
+		IDEDevices: vms.CustomStorageDevices{
+			"ide0": vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide1": proxmox.CustomStorageDevice{
+			"ide1": vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide2": proxmox.CustomStorageDevice{
+			"ide2": vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide3": proxmox.CustomStorageDevice{
+			"ide3": vms.CustomStorageDevice{
 				Enabled: false,
 			},
 		},
 	}
 
 	var del []string
+
 	resource := VM()
 
 	// Retrieve the entire configuration as we need to process certain values.
-	vmConfig, err := veClient.GetVM(ctx, nodeName, vmID)
-	if err != nil {
-		return diag.FromErr(err)
+	vmConfig, e := vmAPI.GetVM(ctx)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	// Prepare the new primitive configuration values.
@@ -4040,7 +4062,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
-		updateBody.Agent = &proxmox.CustomAgent{
+		updateBody.Agent = &vms.CustomAgent{
 			Enabled:         &agentEnabled,
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
@@ -4070,16 +4092,18 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if d.HasChange(mkResourceVirtualEnvironmentVMBootOrder) {
 		bootOrder := d.Get(mkResourceVirtualEnvironmentVMBootOrder).([]interface{})
 		bootOrderConverted := make([]string, len(bootOrder))
+
 		for i, device := range bootOrder {
 			bootOrderConverted[i] = device.(string)
 		}
-		updateBody.Boot = &proxmox.CustomBoot{
+
+		updateBody.Boot = &vms.CustomBoot{
 			Order: &bootOrderConverted,
 		}
 		rebootRequired = true
 	}
 
-	// Prepare the new CDROM configuration.
+	// Prepare the new CD-ROM configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCDROM) {
 		cdromBlock, err := getSchemaBlock(
 			resource,
@@ -4105,7 +4129,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		cdromMedia := "cdrom"
 
-		updateBody.IDEDevices["ide3"] = proxmox.CustomStorageDevice{
+		updateBody.IDEDevices["ide3"] = vms.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
@@ -4134,7 +4158,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if veClient.Username == proxmox.DefaultRootAccount ||
+		if api.API().IsRoot() ||
 			cpuArchitecture != dvResourceVirtualEnvironmentVMCPUArchitecture {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
@@ -4155,7 +4179,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			cpuFlagsConverted[fi] = flag.(string)
 		}
 
-		updateBody.CPUEmulation = &proxmox.CustomCPUEmulation{
+		updateBody.CPUEmulation = &vms.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		}
@@ -4192,7 +4216,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				case "virtio":
 					{
 						if updateBody.VirtualIODevices == nil {
-							updateBody.VirtualIODevices = proxmox.CustomStorageDevices{}
+							updateBody.VirtualIODevices = vms.CustomStorageDevices{}
 						}
 
 						updateBody.VirtualIODevices[key] = tmp
@@ -4200,7 +4224,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				case "sata":
 					{
 						if updateBody.SATADevices == nil {
-							updateBody.SATADevices = proxmox.CustomStorageDevices{}
+							updateBody.SATADevices = vms.CustomStorageDevices{}
 						}
 
 						updateBody.SATADevices[key] = tmp
@@ -4208,7 +4232,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				case "scsi":
 					{
 						if updateBody.SCSIDevices == nil {
-							updateBody.SCSIDevices = proxmox.CustomStorageDevices{}
+							updateBody.SCSIDevices = vms.CustomStorageDevices{}
 						}
 
 						updateBody.SCSIDevices[key] = tmp
@@ -4237,7 +4261,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 			cdromMedia := "cdrom"
 
-			updateBody.IDEDevices["ide2"] = proxmox.CustomStorageDevice{
+			updateBody.IDEDevices["ide2"] = vms.CustomStorageDevice{
 				Enabled:    true,
 				FileVolume: fmt.Sprintf("%s:cloudinit", initializationDatastoreID),
 				Media:      &cdromMedia,
@@ -4261,10 +4285,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Prepare the new hostpci devices configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMHostPCI) {
 		updateBody.PCIDevices = vmGetHostPCIDeviceObjects(d)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
 		rebootRequired = true
 	}
 
@@ -4291,7 +4311,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		if memoryShared > 0 {
 			memorySharedName := fmt.Sprintf("vm-%d-ivshmem", vmID)
 
-			updateBody.SharedMemory = &proxmox.CustomSharedMemory{
+			updateBody.SharedMemory = &vms.CustomSharedMemory{
 				Name: &memorySharedName,
 				Size: memoryShared,
 			}
@@ -4350,9 +4370,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new VGA configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMVGA) {
-		updateBody.VGADevice, err = vmGetVGADeviceObject(d)
-		if err != nil {
-			return diag.FromErr(err)
+		updateBody.VGADevice, e = vmGetVGADeviceObject(d)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 
 		rebootRequired = true
@@ -4369,9 +4389,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Update the configuration now that everything has been prepared.
 	updateBody.Delete = del
 
-	err = veClient.UpdateVM(ctx, nodeName, vmID, updateBody)
-	if err != nil {
-		return diag.FromErr(err)
+	e = vmAPI.UpdateVM(ctx, updateBody)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	// Determine if the state of the virtual machine state needs to be changed.
@@ -4380,20 +4400,21 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) && !bool(template) {
 		if started {
 			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-			err = veClient.StartVM(ctx, nodeName, vmID, startVMTimeout)
-			if err != nil {
-				return diag.FromErr(err)
+
+			e = vmAPI.StartVM(ctx, startVMTimeout)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 		} else {
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
-			err = veClient.ShutdownVM(ctx, nodeName, vmID, &proxmox.VirtualEnvironmentVMShutdownRequestBody{
+			e = vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			}, shutdownTimeout+30)
-			if err != nil {
-				return diag.FromErr(err)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
 			rebootRequired = false
@@ -4416,7 +4437,7 @@ func vmUpdateDiskLocationAndSize(
 	reboot bool,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -4428,6 +4449,8 @@ func vmUpdateDiskLocationAndSize(
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	vmAPI := api.Node(nodeName).VM(vmID)
 
 	// Determine if any of the disks are changing location and/or size, and initiate the necessary actions.
 	if d.HasChange(mkResourceVirtualEnvironmentVMDisk) {
@@ -4449,8 +4472,9 @@ func vmUpdateDiskLocationAndSize(
 			return diag.FromErr(err)
 		}
 
-		var diskMoveBodies []*proxmox.VirtualEnvironmentVMMoveDiskRequestBody
-		var diskResizeBodies []*proxmox.VirtualEnvironmentVMResizeDiskRequestBody
+		var diskMoveBodies []*vms.MoveDiskRequestBody
+
+		var diskResizeBodies []*vms.ResizeDiskRequestBody
 
 		shutdownForDisksRequired := false
 
@@ -4468,7 +4492,7 @@ func vmUpdateDiskLocationAndSize(
 
 					diskMoveBodies = append(
 						diskMoveBodies,
-						&proxmox.VirtualEnvironmentVMMoveDiskRequestBody{
+						&vms.MoveDiskRequestBody{
 							DeleteOriginalDisk: &deleteOriginalDisk,
 							Disk:               *oldDisk.Interface,
 							TargetStorage:      *diskNewEntries[prefix][oldKey].ID,
@@ -4482,7 +4506,7 @@ func vmUpdateDiskLocationAndSize(
 				if *oldDisk.SizeInt <= *diskNewEntries[prefix][oldKey].SizeInt {
 					diskResizeBodies = append(
 						diskResizeBodies,
-						&proxmox.VirtualEnvironmentVMResizeDiskRequestBody{
+						&vms.ResizeDiskRequestBody{
 							Disk: *oldDisk.Interface,
 							Size: *diskNewEntries[prefix][oldKey].Size,
 						},
@@ -4495,11 +4519,9 @@ func vmUpdateDiskLocationAndSize(
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
-			err = veClient.ShutdownVM(
+			err = vmAPI.ShutdownVM(
 				ctx,
-				nodeName,
-				vmID,
-				&proxmox.VirtualEnvironmentVMShutdownRequestBody{
+				&vms.ShutdownRequestBody{
 					ForceStop: &forceStop,
 					Timeout:   &shutdownTimeout,
 				},
@@ -4512,14 +4534,14 @@ func vmUpdateDiskLocationAndSize(
 
 		for _, reqBody := range diskMoveBodies {
 			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
-			err = veClient.MoveVMDisk(ctx, nodeName, vmID, reqBody, moveDiskTimeout)
+			err = vmAPI.MoveVMDisk(ctx, reqBody, moveDiskTimeout)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 		}
 
 		for _, reqBody := range diskResizeBodies {
-			err = veClient.ResizeVMDisk(ctx, nodeName, vmID, reqBody)
+			err = vmAPI.ResizeVMDisk(ctx, reqBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -4527,7 +4549,7 @@ func vmUpdateDiskLocationAndSize(
 
 		if shutdownForDisksRequired && started && !template {
 			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-			err = veClient.StartVM(ctx, nodeName, vmID, startVMTimeout)
+			err = vmAPI.StartVM(ctx, startVMTimeout)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -4541,11 +4563,9 @@ func vmUpdateDiskLocationAndSize(
 	if reboot {
 		rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
 
-		err := veClient.RebootVM(
+		err := vmAPI.RebootVM(
 			ctx,
-			nodeName,
-			vmID,
-			&proxmox.VirtualEnvironmentVMRebootRequestBody{
+			&vms.RebootRequestBody{
 				Timeout: &rebootTimeout,
 			},
 			rebootTimeout+30,
@@ -4560,7 +4580,7 @@ func vmUpdateDiskLocationAndSize(
 
 func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -4571,8 +4591,10 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
+	vmAPI := api.Node(nodeName).VM(vmID)
+
 	// Shut down the virtual machine before deleting it.
-	status, err := veClient.GetVMStatus(ctx, nodeName, vmID)
+	status, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -4581,11 +4603,9 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		forceStop := types.CustomBool(true)
 		shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
-		err = veClient.ShutdownVM(
+		err = vmAPI.ShutdownVM(
 			ctx,
-			nodeName,
-			vmID,
-			&proxmox.VirtualEnvironmentVMShutdownRequestBody{
+			&vms.ShutdownRequestBody{
 				ForceStop: &forceStop,
 				Timeout:   &shutdownTimeout,
 			},
@@ -4596,7 +4616,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 	}
 
-	err = veClient.DeleteVM(ctx, nodeName, vmID)
+	err = vmAPI.DeleteVM(ctx)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") ||
@@ -4609,7 +4629,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
-	err = veClient.WaitForVMState(ctx, nodeName, vmID, "", 60, 2)
+	err = vmAPI.WaitForVMState(ctx, "", 60, 2)
 	if err == nil {
 		return diag.Errorf("failed to delete VM \"%d\"", vmID)
 	}

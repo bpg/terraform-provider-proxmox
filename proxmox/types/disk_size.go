@@ -43,6 +43,7 @@ func (r DiskSize) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal disk size: %w", err)
 	}
+
 	return bytes, nil
 }
 
@@ -54,12 +55,13 @@ func (r *DiskSize) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
+
 	*r = DiskSize(size)
 
 	return nil
 }
 
-// parseDiskSize parses a disk size string into a number of bytes
+// parseDiskSize parses a disk size string into a number of bytes.
 func parseDiskSize(size *string) (int64, error) {
 	if size == nil {
 		return 0, nil
@@ -71,6 +73,7 @@ func parseDiskSize(size *string) (int64, error) {
 		if err != nil {
 			return -1, fmt.Errorf("cannot parse disk size \"%s\": %w", *size, err)
 		}
+
 		switch strings.ToLower(matches[3]) {
 		case "k", "kb", "kib":
 			fsize *= 1024

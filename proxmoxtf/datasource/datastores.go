@@ -30,6 +30,7 @@ const (
 	mkDataSourceVirtualEnvironmentDatastoresTypes          = "types"
 )
 
+// Datastores returns a resource for the Proxmox data store.
 func Datastores() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -104,13 +105,13 @@ func datastoresRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentDatastoresNodeName).(string)
-	list, err := veClient.ListDatastores(ctx, nodeName, nil)
+	list, err := api.Node(nodeName).ListDatastores(ctx, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}

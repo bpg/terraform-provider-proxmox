@@ -9,19 +9,22 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
+// Client is an interface for accessing the Proxmox cluster API.
 type Client struct {
-	types.Client
+	api.Client
 }
 
+// ExpandPath expands a relative path to a full cluster API path.
 func (c *Client) ExpandPath(path string) string {
 	return fmt.Sprintf("cluster/%s", path)
 }
 
+// Firewall returns a client for managing the cluster firewall.
 func (c *Client) Firewall() clusterfirewall.API {
 	return &clusterfirewall.Client{
 		Client: firewall.Client{Client: c},

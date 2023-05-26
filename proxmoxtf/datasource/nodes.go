@@ -28,6 +28,7 @@ const (
 	mkDataSourceVirtualEnvironmentNodesUptime          = "uptime"
 )
 
+// Nodes returns a resource for the Proxmox nodes.
 func Nodes() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -94,12 +95,12 @@ func nodesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListNodes(ctx)
+	list, err := api.Node("").ListNodes(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

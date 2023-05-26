@@ -17,8 +17,8 @@ import (
 // TestPoolInstantiation tests whether the Pool instance can be instantiated.
 func TestPoolInstantiation(t *testing.T) {
 	t.Parallel()
-	s := Pool()
 
+	s := Pool()
 	if s == nil {
 		t.Fatalf("Cannot instantiate Pool")
 	}
@@ -27,6 +27,7 @@ func TestPoolInstantiation(t *testing.T) {
 // TestPoolSchema tests the Pool schema.
 func TestPoolSchema(t *testing.T) {
 	t.Parallel()
+
 	s := Pool()
 
 	test.AssertRequiredArguments(t, s, []string{

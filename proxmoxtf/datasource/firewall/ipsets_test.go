@@ -24,6 +24,7 @@ func TestIPSetsSchemaInstantiation(t *testing.T) {
 // TestIPSetsSchema tests the IPSetsSchema.
 func TestIPSetsSchema(t *testing.T) {
 	t.Parallel()
+
 	s := IPSetsSchema()
 
 	structure.AssertComputedAttributes(t, s, []string{

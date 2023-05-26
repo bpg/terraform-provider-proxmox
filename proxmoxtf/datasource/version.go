@@ -22,6 +22,7 @@ const (
 	mkDataSourceVirtualEnvironmentVersionVersion        = "version"
 )
 
+// Version returns a resource for the Proxmox version.
 func Version() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -58,12 +59,12 @@ func versionRead(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	version, err := veClient.Version(ctx)
+	version, err := api.Version().Version(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

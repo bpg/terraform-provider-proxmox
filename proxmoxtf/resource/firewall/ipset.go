@@ -29,6 +29,7 @@ const (
 	mkIPSetCIDRNoMatch = "nomatch"
 )
 
+// IPSet returns a resource to manage IP sets.
 func IPSet() *schema.Resource {
 	s := map[string]*schema.Schema{
 		mkIPSetName: {
@@ -104,11 +105,12 @@ func ipSetCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) 
 
 		cidr := ipSetMap[mkIPSetCIDRName].(string)
 		noMatch := ipSetMap[mkIPSetCIDRNoMatch].(bool)
-		comm := ipSetMap[mkIPSetCIDRComment].(string)
 
+		comm := ipSetMap[mkIPSetCIDRComment].(string)
 		if comm != "" {
 			ipSetObject.Comment = &comm
 		}
+
 		ipSetObject.CIDR = cidr
 
 		if noMatch {
@@ -157,6 +159,7 @@ func ipSetRead(ctx context.Context, api firewall.API, d *schema.ResourceData) di
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkIPSetCIDRComment, v.Comment)
 			diags = append(diags, diag.FromErr(err)...)
+
 			break
 		}
 	}
@@ -167,12 +170,15 @@ func ipSetRead(ctx context.Context, api firewall.API, d *schema.ResourceData) di
 			d.SetId("")
 			return nil
 		}
+
 		diags = append(diags, diag.FromErr(err)...)
+
 		return diags
 	}
 
 	//nolint:prealloc
 	var entries []interface{}
+
 	for key := range ipSet {
 		entry := map[string]interface{}{}
 

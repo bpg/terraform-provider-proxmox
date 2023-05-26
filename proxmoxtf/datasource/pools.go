@@ -19,6 +19,7 @@ const (
 	mkDataSourceVirtualEnvironmentPoolsPoolIDs = "pool_ids"
 )
 
+// Pools returns a resource for the Proxmox pools.
 func Pools() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -35,12 +36,12 @@ func Pools() *schema.Resource {
 
 func poolsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListPools(ctx)
+	list, err := api.Pool().ListPools(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

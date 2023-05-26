@@ -8,13 +8,15 @@ package firewall
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
+// Alias is an interface for managing firewall aliases.
 type Alias interface {
 	CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error
 	DeleteAlias(ctx context.Context, name string) error
@@ -23,83 +25,45 @@ type Alias interface {
 	UpdateAlias(ctx context.Context, name string, d *AliasUpdateRequestBody) error
 }
 
-// AliasCreateRequestBody contains the data for an alias create request.
-type AliasCreateRequestBody struct {
-	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	Name    string  `json:"name"              url:"name"`
-	CIDR    string  `json:"cidr"              url:"cidr"`
-}
-
-// AliasGetResponseBody contains the body from an alias get response.
-type AliasGetResponseBody struct {
-	Data *AliasGetResponseData `json:"data,omitempty"`
-}
-
-// AliasGetResponseData contains the data from an alias get response.
-type AliasGetResponseData struct {
-	Comment   *string `json:"comment,omitempty" url:"comment,omitempty"`
-	Name      string  `json:"name"              url:"name"`
-	CIDR      string  `json:"cidr"              url:"cidr"`
-	Digest    *string `json:"digest"            url:"digest"`
-	IPVersion int     `json:"ipversion"         url:"ipversion"`
-}
-
-// AliasListResponseBody contains the data from an alias get response.
-type AliasListResponseBody struct {
-	Data []*AliasGetResponseData `json:"data,omitempty"`
-}
-
-// AliasUpdateRequestBody contains the data for an alias update request.
-type AliasUpdateRequestBody struct {
-	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
-	ReName  string  `json:"rename"            url:"rename"`
-	CIDR    string  `json:"cidr"              url:"cidr"`
-}
-
 func (c *Client) aliasesPath() string {
 	return c.ExpandPath("firewall/aliases")
 }
 
-// CreateAlias create an alias
+func (c *Client) aliasPath(name string) string {
+	return fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name))
+}
+
+// CreateAlias create an alias.
 func (c *Client) CreateAlias(ctx context.Context, d *AliasCreateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPost, c.aliasesPath(), d, nil)
 	if err != nil {
 		return fmt.Errorf("error creating alias: %w", err)
 	}
+
 	return nil
 }
 
-// DeleteAlias delete an alias
+// DeleteAlias delete an alias.
 func (c *Client) DeleteAlias(ctx context.Context, name string) error {
-	err := c.DoRequest(
-		ctx,
-		http.MethodDelete,
-		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
-		nil,
-		nil,
-	)
+	err := c.DoRequest(ctx, http.MethodDelete, c.aliasPath(name), nil, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting alias '%s': %w", name, err)
 	}
+
 	return nil
 }
 
-// GetAlias retrieves an alias
+// GetAlias retrieves an alias.
 func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseData, error) {
 	resBody := &AliasGetResponseBody{}
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
-		nil,
-		resBody,
-	)
+
+	err := c.DoRequest(ctx, http.MethodGet, c.aliasPath(name), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving alias '%s': %w", name, err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	return resBody.Data, nil
@@ -108,13 +72,14 @@ func (c *Client) GetAlias(ctx context.Context, name string) (*AliasGetResponseDa
 // ListAliases retrieves a list of aliases.
 func (c *Client) ListAliases(ctx context.Context) ([]*AliasGetResponseData, error) {
 	resBody := &AliasListResponseBody{}
+
 	err := c.DoRequest(ctx, http.MethodGet, c.aliasesPath(), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving aliases: %w", err)
 	}
 
 	if resBody.Data == nil {
-		return nil, errors.New("the server did not include a data object in the response")
+		return nil, api.ErrNoDataObjectInResponse
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
@@ -126,15 +91,10 @@ func (c *Client) ListAliases(ctx context.Context) ([]*AliasGetResponseData, erro
 
 // UpdateAlias updates an alias.
 func (c *Client) UpdateAlias(ctx context.Context, name string, d *AliasUpdateRequestBody) error {
-	err := c.DoRequest(
-		ctx,
-		http.MethodPut,
-		fmt.Sprintf("%s/%s", c.aliasesPath(), url.PathEscape(name)),
-		d,
-		nil,
-	)
+	err := c.DoRequest(ctx, http.MethodPut, c.aliasPath(name), d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating alias '%s': %w", name, err)
 	}
+
 	return nil
 }

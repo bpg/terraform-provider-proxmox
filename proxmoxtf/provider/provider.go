@@ -8,11 +8,13 @@ package provider
 
 import (
 	"context"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -43,56 +45,79 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 
 func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
-	var veClient *proxmox.VirtualEnvironmentClient
+
+	var apiClient api.Client
+
+	var sshClient ssh.Client
+
+	var username, password string
 
 	// Legacy configuration, wrapped in the deprecated `virtual_environment` block
 	veConfigBlock := d.Get(mkProviderVirtualEnvironment).([]interface{})
 	if len(veConfigBlock) > 0 {
 		veConfig := veConfigBlock[0].(map[string]interface{})
-		veSSHConfig := veConfig[mkProviderSSH].(map[string]interface{})
 
-		veClient, err = proxmox.NewVirtualEnvironmentClient(
+		username = veConfig[mkProviderUsername].(string)
+		password = veConfig[mkProviderPassword].(string)
+
+		apiClient, err = api.NewClient(
 			veConfig[mkProviderEndpoint].(string),
-			veConfig[mkProviderUsername].(string),
-			veConfig[mkProviderSSH].(map[string]interface{})[mkProviderSSHUsername].(string),
-			veConfig[mkProviderPassword].(string),
+			username,
+			password,
+			veConfig[mkProviderOTP].(string),
 			veConfig[mkProviderInsecure].(bool),
-			veSSHConfig[mkProviderSSHUsername].(string),
-			veSSHConfig[mkProviderSSHPassword].(string),
-			veSSHConfig[mkProviderSSHAgent].(bool),
-			veSSHConfig[mkProviderSSHAgentSocket].(string),
 		)
 	} else {
-		sshconf := map[string]interface{}{
-			mkProviderSSHUsername:    "",
-			mkProviderSSHPassword:    "",
-			mkProviderSSHAgent:       false,
-			mkProviderSSHAgentSocket: "",
-		}
+		username = d.Get(mkProviderUsername).(string)
+		password = d.Get(mkProviderPassword).(string)
 
-		sshBlock, sshSet := d.GetOk(mkProviderSSH)
-		if sshSet {
-			sshconf = sshBlock.(*schema.Set).List()[0].(map[string]interface{})
-		}
-
-		veClient, err = proxmox.NewVirtualEnvironmentClient(
+		apiClient, err = api.NewClient(
 			d.Get(mkProviderEndpoint).(string),
-			d.Get(mkProviderUsername).(string),
-			d.Get(mkProviderPassword).(string),
+			username,
+			password,
 			d.Get(mkProviderOTP).(string),
 			d.Get(mkProviderInsecure).(bool),
-			sshconf[mkProviderSSHUsername].(string),
-			sshconf[mkProviderSSHPassword].(string),
-			sshconf[mkProviderSSHAgent].(bool),
-			sshconf[mkProviderSSHAgentSocket].(string),
 		)
 	}
 
 	if err != nil {
-		return nil, diag.FromErr(err)
+		return nil, diag.Errorf("error creating virtual environment client: %s", err)
 	}
 
-	config := proxmoxtf.NewProviderConfiguration(veClient)
+	sshConf := map[string]interface{}{}
+
+	sshBlock := d.Get(mkProviderSSH).([]interface{})
+	if len(sshBlock) > 0 {
+		sshConf = sshBlock[0].(map[string]interface{})
+	}
+
+	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
+		sshConf[mkProviderSSHUsername] = strings.Split(username, "@")[0]
+	}
+
+	if v, ok := sshConf[mkProviderSSHPassword]; !ok || v.(string) == "" {
+		sshConf[mkProviderSSHPassword] = password
+	}
+
+	if _, ok := sshConf[mkProviderSSHAgent]; !ok {
+		sshConf[mkProviderSSHAgent] = false
+	}
+
+	if _, ok := sshConf[mkProviderSSHAgentSocket]; !ok {
+		sshConf[mkProviderSSHAgentSocket] = ""
+	}
+
+	sshClient, err = ssh.NewClient(
+		sshConf[mkProviderSSHUsername].(string),
+		sshConf[mkProviderSSHPassword].(string),
+		sshConf[mkProviderSSHAgent].(bool),
+		sshConf[mkProviderSSHAgentSocket].(string),
+	)
+	if err != nil {
+		return nil, diag.Errorf("error creating SSH client: %s", err)
+	}
+
+	config := proxmoxtf.NewProviderConfiguration(apiClient, sshClient)
 
 	return config, nil
 }

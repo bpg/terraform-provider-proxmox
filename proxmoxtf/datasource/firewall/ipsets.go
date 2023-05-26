@@ -20,6 +20,7 @@ const (
 	mkIPSetsIPSetNames = "ipset_names"
 )
 
+// IPSetsSchema defines the schema for the IP sets.
 func IPSetsSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkIPSetsIPSetNames: {
@@ -31,6 +32,7 @@ func IPSetsSchema() map[string]*schema.Schema {
 	}
 }
 
+// IPSetsRead reads the IP sets.
 func IPSetsRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	list, err := fw.ListIPSets(ctx)
 	if err != nil {

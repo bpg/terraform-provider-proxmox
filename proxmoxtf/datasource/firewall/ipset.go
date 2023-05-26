@@ -26,6 +26,7 @@ const (
 	mkIPSetCIDRNoMatch = "nomatch"
 )
 
+// IPSetSchema defines the schema for the IPSet.
 func IPSetSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkIPSetName: {
@@ -65,6 +66,7 @@ func IPSetSchema() map[string]*schema.Schema {
 	}
 }
 
+// IPSetRead reads the IPSet.
 func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -75,6 +77,7 @@ func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
 	for _, ipSet := range ipSetList {
 		if ipSet.Name == ipSetName {
 			if ipSet.Comment != nil {
@@ -82,7 +85,9 @@ func IPSetRead(ctx context.Context, fw firewall.API, d *schema.ResourceData) dia
 			} else {
 				err = d.Set(mkIPSetCIDRComment, dvIPSetCIDRComment)
 			}
+
 			diags = append(diags, diag.FromErr(err)...)
+
 			break
 		}
 	}

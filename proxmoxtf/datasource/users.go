@@ -28,6 +28,7 @@ const (
 	mkDataSourceVirtualEnvironmentUsersUserIDs         = "user_ids"
 )
 
+// Users returns a resource for the Proxmox users.
 func Users() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -97,12 +98,12 @@ func usersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	list, err := veClient.ListUsers(ctx)
+	list, err := api.Access().ListUsers(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}

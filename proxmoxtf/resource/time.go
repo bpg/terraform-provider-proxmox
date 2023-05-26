@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -25,6 +25,7 @@ const (
 	mkResourceVirtualEnvironmentTimeUTCTime   = "utc_time"
 )
 
+// Time returns a resource that manages time settings for a node.
 func Time() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -73,13 +74,13 @@ func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
-	nodeTime, err := veClient.GetNodeTime(ctx, nodeName)
+	nodeTime, err := api.Node(nodeName).GetTime(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -109,7 +110,7 @@ func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func timeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	veClient, err := config.GetVEClient()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -117,10 +118,9 @@ func timeUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	nodeName := d.Get(mkResourceVirtualEnvironmentTimeNodeName).(string)
 	timeZone := d.Get(mkResourceVirtualEnvironmentTimeTimeZone).(string)
 
-	err = veClient.UpdateNodeTime(
+	err = api.Node(nodeName).UpdateTime(
 		ctx,
-		nodeName,
-		&proxmox.VirtualEnvironmentNodeUpdateTimeRequestBody{
+		&nodes.UpdateTimeRequestBody{
 			TimeZone: timeZone,
 		},
 	)
