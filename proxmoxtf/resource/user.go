@@ -149,7 +149,7 @@ func User() *schema.Resource {
 
 func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -227,7 +227,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -341,7 +341,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -446,7 +446,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}

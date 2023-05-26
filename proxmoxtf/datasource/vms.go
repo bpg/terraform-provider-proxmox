@@ -59,7 +59,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -138,7 +138,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	return diags
 }
 
-func getNodeNames(ctx context.Context, d *schema.ResourceData, api proxmox.API) ([]string, error) {
+func getNodeNames(ctx context.Context, d *schema.ResourceData, api proxmox.Client) ([]string, error) {
 	var nodeNames []string
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)

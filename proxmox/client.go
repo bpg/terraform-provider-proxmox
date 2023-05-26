@@ -17,8 +17,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 )
 
-// API is the interface for the Proxmox Virtual Environment API.
-type API interface {
+// Client defines a client interface for the Proxmox Virtual Environment API.
+type Client interface {
 	// Access returns a client for managing access control.
 	Access() *access.Client
 
@@ -44,53 +44,52 @@ type API interface {
 	SSH() ssh.Client
 }
 
-// Client is an implementation of the Proxmox Virtual Environment API.
-type Client struct {
+type client struct {
 	a api.Client
 	s ssh.Client
 }
 
 // NewClient creates a new API client.
-func NewClient(a api.Client, s ssh.Client) *Client {
-	return &Client{a: a, s: s}
+func NewClient(a api.Client, s ssh.Client) Client {
+	return &client{a: a, s: s}
 }
 
 // Access returns a client for managing access control.
-func (c *Client) Access() *access.Client {
+func (c *client) Access() *access.Client {
 	return &access.Client{Client: c.a}
 }
 
 // Cluster returns a client for managing the cluster.
-func (c *Client) Cluster() *cluster.Client {
+func (c *client) Cluster() *cluster.Client {
 	return &cluster.Client{Client: c.a}
 }
 
 // Node returns a client for managing resources on a specific node.
-func (c *Client) Node(nodeName string) *nodes.Client {
+func (c *client) Node(nodeName string) *nodes.Client {
 	return &nodes.Client{Client: c.a, NodeName: nodeName}
 }
 
 // Pool returns a client for managing resource pools.
-func (c *Client) Pool() *pools.Client {
+func (c *client) Pool() *pools.Client {
 	return &pools.Client{Client: c.a}
 }
 
 // Storage returns a client for managing storage.
-func (c *Client) Storage() *storage.Client {
+func (c *client) Storage() *storage.Client {
 	return &storage.Client{Client: c.a}
 }
 
 // Version returns a client for getting the version of the Proxmox Virtual Environment API.
-func (c *Client) Version() *version.Client {
+func (c *client) Version() *version.Client {
 	return &version.Client{Client: c.a}
 }
 
 // REST returns a lower-lever REST API client.
-func (c *Client) REST() api.Client {
+func (c *client) REST() api.Client {
 	return c.a
 }
 
 // SSH returns a lower-lever SSH client.s.
-func (c *Client) SSH() ssh.Client {
+func (c *client) SSH() ssh.Client {
 	return c.s
 }

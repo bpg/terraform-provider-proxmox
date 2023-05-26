@@ -1270,7 +1270,7 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetAPI()
+	api, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -1782,7 +1782,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2226,7 +2226,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 	if len(commands) > 0 {
 		config := m.(proxmoxtf.ProviderConfiguration)
 
-		api, err := config.GetAPI()
+		api, err := config.GetClient()
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2257,7 +2257,7 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2764,7 +2764,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) 
 
 func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2807,7 +2807,7 @@ func vmReadCustom(
 	vmStatus *vms.GetStatusResponseData,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3700,7 +3700,7 @@ func vmReadNetworkValues(
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetAPI()
+	api, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -3934,7 +3934,7 @@ func vmReadPrimitiveValues(
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetAPI()
+	api, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -4437,7 +4437,7 @@ func vmUpdateDiskLocationAndSize(
 	reboot bool,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -4580,7 +4580,7 @@ func vmUpdateDiskLocationAndSize(
 
 func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}

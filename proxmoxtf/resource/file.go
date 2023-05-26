@@ -377,7 +377,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	capi, err := config.GetAPI()
+	capi, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -556,7 +556,7 @@ func fileIsURL(d *schema.ResourceData) bool {
 
 func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	capi, err := config.GetAPI()
+	capi, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -719,7 +719,7 @@ func readURL(
 
 func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	capi, err := config.GetAPI()
+	capi, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}

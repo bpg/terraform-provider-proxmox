@@ -658,7 +658,7 @@ func containerCreate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1008,7 +1008,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1360,7 +1360,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1513,7 +1513,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetAPI()
+	api, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -1991,7 +1991,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetAPI()
+	api, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -2351,7 +2351,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}

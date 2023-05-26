@@ -90,7 +90,7 @@ func Group() *schema.Resource {
 
 func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -140,7 +140,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -199,7 +199,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -268,7 +268,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 
 func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetAPI()
+	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}

@@ -31,8 +31,8 @@ func NewProviderConfiguration(
 	}
 }
 
-// GetAPI returns the Proxmox API client.
-func (c *ProviderConfiguration) GetAPI() (proxmox.API, error) {
+// GetClient returns the Proxmox API client.
+func (c *ProviderConfiguration) GetClient() (proxmox.Client, error) {
 	if c.apiClient == nil {
 		return nil, errors.New(
 			"you must specify the API access details in the provider configuration",
