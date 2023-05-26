@@ -24,7 +24,7 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 type client struct {
@@ -54,7 +54,7 @@ func NewClient(username string, password string, agent bool, agentSocket string)
 
 // ExecuteNodeCommands executes commands on a given node.
 func (c *client) ExecuteNodeCommands(ctx context.Context, nodeAddress string, commands []string) error {
-	closeOrLogError := helper.CloseOrLogError(ctx)
+	closeOrLogError := utils.CloseOrLogError(ctx)
 
 	sshClient, err := c.openNodeShell(ctx, nodeAddress)
 	if err != nil {
@@ -215,7 +215,7 @@ func (c *client) openNodeShell(ctx context.Context, nodeAddress string) (*ssh.Cl
 		if knownhosts.IsHostUnknown(kherr) {
 			f, ferr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
 			if ferr == nil {
-				defer helper.CloseOrLogError(ctx)(f)
+				defer utils.CloseOrLogError(ctx)(f)
 				ferr = knownhosts.WriteKnownHost(f, hostname, remote, key)
 			}
 			if ferr == nil {

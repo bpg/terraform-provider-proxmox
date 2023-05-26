@@ -14,7 +14,7 @@ type UserChangePasswordRequestBody struct {
 	Password string `json:"password" url:"password"`
 }
 
-// UserCreateRequestBody contains the data for an user create request.
+// UserCreateRequestBody contains the data for a user create request.
 type UserCreateRequestBody struct {
 	Comment        *string                `json:"comment,omitempty"   url:"comment,omitempty"`
 	Email          *string                `json:"email,omitempty"     url:"email,omitempty"`
@@ -28,7 +28,7 @@ type UserCreateRequestBody struct {
 	Password       string                 `json:"password"            url:"password"`
 }
 
-// UserGetResponseBody contains the body from an user get response.
+// UserGetResponseBody contains the body from a user get response.
 type UserGetResponseBody struct {
 	Data *UserGetResponseData `json:"data,omitempty"`
 }
@@ -45,7 +45,7 @@ type UserGetResponseData struct {
 	LastName       *string                `json:"lastname,omitempty"`
 }
 
-// UserListResponseBody contains the body from an user list response.
+// UserListResponseBody contains the body from a user list response.
 type UserListResponseBody struct {
 	Data []*UserListResponseData `json:"data,omitempty"`
 }

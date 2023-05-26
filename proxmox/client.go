@@ -37,8 +37,8 @@ type Client interface {
 	// Version returns a client for getting the version of the Proxmox Virtual Environment API.
 	Version() *version.Client
 
-	// REST returns a lower-lever REST API client.
-	REST() api.Client
+	// API returns a lower-lever REST API client.
+	API() api.Client
 
 	// SSH returns a lower-lever SSH client.
 	SSH() ssh.Client
@@ -84,8 +84,8 @@ func (c *client) Version() *version.Client {
 	return &version.Client{Client: c.a}
 }
 
-// REST returns a lower-lever REST API client.
-func (c *client) REST() api.Client {
+// API returns a lower-lever REST API client.
+func (c *client) API() api.Client {
 	return c.a
 }
 

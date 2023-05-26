@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
@@ -199,7 +199,7 @@ func (c *client) DoRequest(
 		return fErr
 	}
 
-	defer helper.CloseOrLogError(ctx)(res.Body)
+	defer utils.CloseOrLogError(ctx)(res.Body)
 
 	err = c.validateResponseCode(res)
 	if err != nil {

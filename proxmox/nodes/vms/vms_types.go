@@ -510,7 +510,7 @@ type GetStatusResponseData struct {
 	VMID             *int              `json:"vmid,omitempty"`
 }
 
-// ListResponseBody contains the body from an virtual machine list response.
+// ListResponseBody contains the body from a virtual machine list response.
 type ListResponseBody struct {
 	Data []*ListResponseData `json:"data,omitempty"`
 }

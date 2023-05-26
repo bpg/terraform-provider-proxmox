@@ -22,11 +22,11 @@ type ProviderConfiguration struct {
 
 // NewProviderConfiguration creates a new provider configuration.
 func NewProviderConfiguration(
-	veClient api.Client,
+	apiClient api.Client,
 	sshClient ssh.Client,
 ) ProviderConfiguration {
 	return ProviderConfiguration{
-		apiClient: veClient,
+		apiClient: apiClient,
 		sshClient: sshClient,
 	}
 }

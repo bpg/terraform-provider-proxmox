@@ -26,8 +26,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
@@ -251,7 +251,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 				return diag.FromErr(err)
 			}
 
-			defer helper.CloseOrLogError(ctx)(res.Body)
+			defer utils.CloseOrLogError(ctx)(res.Body)
 
 			tempDownloadedFile, err := os.CreateTemp("", "download")
 			if err != nil {
@@ -676,7 +676,7 @@ func readURL(
 		return
 	}
 
-	defer helper.CloseOrLogError(ctx)(res.Body)
+	defer utils.CloseOrLogError(ctx)(res.Body)
 
 	fileSize = res.ContentLength
 	httpLastModified := res.Header.Get("Last-Modified")

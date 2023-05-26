@@ -23,7 +23,7 @@ type PoolGetResponseData struct {
 	Members []VirtualEnvironmentPoolGetResponseMembers `json:"members,omitempty"`
 }
 
-// VirtualEnvironmentPoolGetResponseMembers contains the members data from an pool get response.
+// VirtualEnvironmentPoolGetResponseMembers contains the members data from a pool get response.
 type VirtualEnvironmentPoolGetResponseMembers struct {
 	ID          string  `json:"id"`
 	Node        string  `json:"node"`

@@ -17,7 +17,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helper"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 // Authenticate authenticates against the specified endpoint.
@@ -63,7 +63,7 @@ func (c *client) Authenticate(ctx context.Context, reset bool) error {
 		return fmt.Errorf("failed to retrieve authentication response: %w", err)
 	}
 
-	defer helper.CloseOrLogError(ctx)(res.Body)
+	defer utils.CloseOrLogError(ctx)(res.Body)
 
 	err = c.validateResponseCode(res)
 	if err != nil {
