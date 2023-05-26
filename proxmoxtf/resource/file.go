@@ -391,9 +391,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	switch *contentType {
 	case "iso", "vztmpl":
 		_, err = capi.Node(nodeName).APIUpload(ctx, datastoreID, request)
-		if err != nil {
-			return diag.Errorf("failed to upload file: %s", err)
-		}
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
@@ -413,7 +410,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 		remoteFileDir := *datastore.Path
 
-		return diag.FromErr(capi.SSH().NodeUpload(ctx, nodeAddress, remoteFileDir, request))
+		err = capi.SSH().NodeUpload(ctx, nodeAddress, remoteFileDir, request)
 	}
 
 	if err != nil {

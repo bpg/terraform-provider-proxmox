@@ -50,14 +50,15 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	var sshClient ssh.Client
 
+	var username, password string
+
 	// Legacy configuration, wrapped in the deprecated `virtual_environment` block
 	veConfigBlock := d.Get(mkProviderVirtualEnvironment).([]interface{})
-	//nolint:nestif
 	if len(veConfigBlock) > 0 {
 		veConfig := veConfigBlock[0].(map[string]interface{})
 
-		username := veConfig[mkProviderUsername].(string)
-		password := veConfig[mkProviderPassword].(string)
+		username = veConfig[mkProviderUsername].(string)
+		password = veConfig[mkProviderPassword].(string)
 
 		apiClient, err = api.NewClient(
 			veConfig[mkProviderEndpoint].(string),
@@ -66,34 +67,10 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			veConfig[mkProviderOTP].(string),
 			veConfig[mkProviderInsecure].(bool),
 		)
-		if err != nil {
-			return nil, diag.Errorf("error creating virtual environment client: %s", err)
-		}
-
-		veSSHConfig := veConfig[mkProviderSSH].(map[string]interface{})
-
-		sshUsername := veSSHConfig[mkProviderSSHUsername].(string)
-		if sshUsername == "" {
-			sshUsername = strings.Split(username, "@")[0]
-		}
-
-		sshPassword := veSSHConfig[mkProviderSSHPassword].(string)
-		if sshPassword == "" {
-			sshPassword = password
-		}
-
-		sshClient, err = ssh.NewClient(
-			sshUsername,
-			sshPassword,
-			veSSHConfig[mkProviderSSHAgent].(bool),
-			veSSHConfig[mkProviderSSHAgentSocket].(string),
-		)
-		if err != nil {
-			return nil, diag.Errorf("error creating SSH client: %s", err)
-		}
 	} else {
-		username := d.Get(mkProviderUsername).(string)
-		password := d.Get(mkProviderPassword).(string)
+		username = d.Get(mkProviderUsername).(string)
+		password = d.Get(mkProviderPassword).(string)
+
 		apiClient, err = api.NewClient(
 			d.Get(mkProviderEndpoint).(string),
 			username,
@@ -101,31 +78,43 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			d.Get(mkProviderOTP).(string),
 			d.Get(mkProviderInsecure).(bool),
 		)
-		if err != nil {
-			return nil, diag.Errorf("error creating virtual environment client: %s", err)
-		}
+	}
 
-		sshconf := map[string]interface{}{
-			mkProviderSSHUsername:    username,
-			mkProviderSSHPassword:    password,
-			mkProviderSSHAgent:       false,
-			mkProviderSSHAgentSocket: "",
-		}
+	if err != nil {
+		return nil, diag.Errorf("error creating virtual environment client: %s", err)
+	}
 
-		sshBlock, sshSet := d.GetOk(mkProviderSSH)
-		if sshSet {
-			sshconf = sshBlock.(*schema.Set).List()[0].(map[string]interface{})
-		}
+	sshConf := map[string]interface{}{}
 
-		sshClient, err = ssh.NewClient(
-			sshconf[mkProviderSSHUsername].(string),
-			sshconf[mkProviderSSHPassword].(string),
-			sshconf[mkProviderSSHAgent].(bool),
-			sshconf[mkProviderSSHAgentSocket].(string),
-		)
-		if err != nil {
-			return nil, diag.Errorf("error creating SSH client: %s", err)
-		}
+	sshBlock := d.Get(mkProviderSSH).([]interface{})
+	if len(sshBlock) > 0 {
+		sshConf = sshBlock[0].(map[string]interface{})
+	}
+
+	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
+		sshConf[mkProviderSSHUsername] = strings.Split(username, "@")[0]
+	}
+
+	if v, ok := sshConf[mkProviderSSHPassword]; !ok || v.(string) == "" {
+		sshConf[mkProviderSSHPassword] = password
+	}
+
+	if _, ok := sshConf[mkProviderSSHAgent]; !ok {
+		sshConf[mkProviderSSHAgent] = false
+	}
+
+	if _, ok := sshConf[mkProviderSSHAgentSocket]; !ok {
+		sshConf[mkProviderSSHAgentSocket] = ""
+	}
+
+	sshClient, err = ssh.NewClient(
+		sshConf[mkProviderSSHUsername].(string),
+		sshConf[mkProviderSSHPassword].(string),
+		sshConf[mkProviderSSHAgent].(bool),
+		sshConf[mkProviderSSHAgentSocket].(string),
+	)
+	if err != nil {
+		return nil, diag.Errorf("error creating SSH client: %s", err)
 	}
 
 	config := proxmoxtf.NewProviderConfiguration(apiClient, sshClient)
