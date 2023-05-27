@@ -26,6 +26,7 @@ const (
 	mkProviderOTP                = "otp"
 	mkProviderPassword           = "password"
 	mkProviderUsername           = "username"
+	mkProviderAPIToken           = "api_token"
 	mkProviderSSH                = "ssh"
 	mkProviderSSHUsername        = "username"
 	mkProviderSSHPassword        = "password"
@@ -43,46 +44,61 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 	}
 }
 
-func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
+	var diags diag.Diagnostics
 
 	var apiClient api.Client
 
 	var sshClient ssh.Client
 
-	var username, password string
+	var creds *api.Credentials
+	var conn *api.Connection
 
 	// Legacy configuration, wrapped in the deprecated `virtual_environment` block
 	veConfigBlock := d.Get(mkProviderVirtualEnvironment).([]interface{})
 	if len(veConfigBlock) > 0 {
 		veConfig := veConfigBlock[0].(map[string]interface{})
-
-		username = veConfig[mkProviderUsername].(string)
-		password = veConfig[mkProviderPassword].(string)
-
-		apiClient, err = api.NewClient(
-			veConfig[mkProviderEndpoint].(string),
-			username,
-			password,
+		creds, err = api.NewCredentials(
+			veConfig[mkProviderUsername].(string),
+			veConfig[mkProviderPassword].(string),
 			veConfig[mkProviderOTP].(string),
+			"",
+		)
+		diags = append(diags, diag.FromErr(err)...)
+
+		conn, err = api.NewConnection(
+			veConfig[mkProviderEndpoint].(string),
 			veConfig[mkProviderInsecure].(bool),
 		)
-	} else {
-		username = d.Get(mkProviderUsername).(string)
-		password = d.Get(mkProviderPassword).(string)
+		diags = append(diags, diag.FromErr(err)...)
 
-		apiClient, err = api.NewClient(
-			d.Get(mkProviderEndpoint).(string),
-			username,
-			password,
+	} else {
+		creds, err = api.NewCredentials(
+			d.Get(mkProviderUsername).(string),
+			d.Get(mkProviderPassword).(string),
 			d.Get(mkProviderOTP).(string),
+			d.Get(mkProviderAPIToken).(string),
+		)
+		diags = append(diags, diag.FromErr(err)...)
+
+		conn, err = api.NewConnection(
+			d.Get(mkProviderEndpoint).(string),
 			d.Get(mkProviderInsecure).(bool),
 		)
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	apiClient, err = api.NewClient(ctx, creds, conn)
 	if err != nil {
 		return nil, diag.Errorf("error creating virtual environment client: %s", err)
 	}
+
+	// ////////////////////////////////////////////////////////////////////////////////////
 
 	sshConf := map[string]interface{}{}
 
@@ -92,11 +108,11 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	}
 
 	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
-		sshConf[mkProviderSSHUsername] = strings.Split(username, "@")[0]
+		sshConf[mkProviderSSHUsername] = strings.Split(creds.Username, "@")[0]
 	}
 
 	if v, ok := sshConf[mkProviderSSHPassword]; !ok || v.(string) == "" {
-		sshConf[mkProviderSSHPassword] = password
+		sshConf[mkProviderSSHPassword] = creds.Password
 	}
 
 	if _, ok := sshConf[mkProviderSSHAgent]; !ok {

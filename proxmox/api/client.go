@@ -29,22 +29,13 @@ const (
 	basePathJSONAPI = "api2/json"
 )
 
-// VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
-type client struct {
-	endpoint string
-	insecure bool
-	otp      *string
-	password string
-	username string
-
-	authenticationData *AuthenticationResponseData
-	httpClient         *http.Client
+type Connection struct {
+	// TODO: should be private
+	Endpoint   string
+	httpClient *http.Client
 }
 
-// NewClient creates and initializes a VirtualEnvironmentClient instance.
-func NewClient(
-	endpoint, username, password, otp string, insecure bool,
-) (Client, error) {
+func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
@@ -58,30 +49,6 @@ func NewClient(
 		)
 	}
 
-	if password == "" {
-		return nil, errors.New(
-			"you must specify a password for the Proxmox Virtual Environment API",
-		)
-	}
-
-	if username == "" {
-		return nil, errors.New(
-			"you must specify a username for the Proxmox Virtual Environment API",
-		)
-	}
-
-	if !strings.Contains(username, "@") {
-		return nil, errors.New(
-			"make sure the username for the Proxmox Virtual Environment API ends in '@pve or @pam'",
-		)
-	}
-
-	var pOTP *string
-
-	if otp != "" {
-		pOTP = &otp
-	}
-
 	var transport http.RoundTripper = &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: insecure, //nolint:gosec
@@ -92,15 +59,44 @@ func NewClient(
 		transport = logging.NewLoggingHTTPTransport(transport)
 	}
 
-	httpClient := &http.Client{Transport: transport}
+	return &Connection{
+		Endpoint:   strings.TrimRight(u.String(), "/"),
+		httpClient: &http.Client{Transport: transport},
+	}, nil
+}
+
+// VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
+type client struct {
+	conn *Connection
+	auth Authenticator
+}
+
+// NewClient creates and initializes a VirtualEnvironmentClient instance.
+func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Client, error) {
+	if creds == nil {
+		return nil, errors.New("credentials must not be nil")
+	}
+
+	if conn == nil {
+		return nil, errors.New("connection must not be nil")
+	}
+
+	var auth Authenticator
+	var err error
+
+	if creds.APIToken != nil {
+		auth, err = NewTokenAuthenticator(*creds.APIToken)
+	} else {
+		auth, err = NewTicketAuthenticator(ctx, conn, creds)
+	}
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &client{
-		endpoint:   strings.TrimRight(u.String(), "/"),
-		insecure:   insecure,
-		otp:        pOTP,
-		password:   password,
-		username:   username,
-		httpClient: httpClient,
+		conn: conn,
+		auth: auth,
 	}, nil
 }
 
@@ -156,7 +152,7 @@ func (c *client) DoRequest(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		method,
-		fmt.Sprintf("%s/%s/%s", c.endpoint, basePathJSONAPI, modifiedPath),
+		fmt.Sprintf("%s/%s/%s", c.conn.Endpoint, basePathJSONAPI, modifiedPath),
 		reqBodyReader,
 	)
 	if err != nil {
@@ -180,14 +176,13 @@ func (c *client) DoRequest(
 		req.Header.Add("Content-Type", reqBodyType)
 	}
 
-	err = c.AuthenticateRequest(ctx, req)
-
+	err = c.auth.AuthenticateRequest(req)
 	if err != nil {
 		tflog.Warn(ctx, err.Error())
 		return err
 	}
 
-	res, err := c.httpClient.Do(req)
+	res, err := c.conn.httpClient.Do(req)
 	if err != nil {
 		fErr := fmt.Errorf(
 			"failed to perform HTTP %s request (path: %s) - Reason: %w",
@@ -201,7 +196,7 @@ func (c *client) DoRequest(
 
 	defer utils.CloseOrLogError(ctx)(res.Body)
 
-	err = c.validateResponseCode(res)
+	err = validateResponseCode(res)
 	if err != nil {
 		tflog.Warn(ctx, err.Error())
 		return err
@@ -236,11 +231,11 @@ func (c *client) ExpandPath(path string) string {
 }
 
 func (c *client) IsRoot() bool {
-	return c.username == "root@pam"
+	return c.auth.IsRoot()
 }
 
 // validateResponseCode ensures that a response is valid.
-func (c *client) validateResponseCode(res *http.Response) error {
+func validateResponseCode(res *http.Response) error {
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		status := strings.TrimPrefix(res.Status, fmt.Sprintf("%d ", res.StatusCode))
 

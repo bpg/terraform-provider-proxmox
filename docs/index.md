@@ -91,10 +91,42 @@ provider "proxmox" {
 ```
 
 If no `ssh` block is provided, the provider will attempt to connect to the
-target node using the credentials provided in the `username` and `password` fields.
+target node using the credentials provided in the `username` and `password`
+fields.
 Note that the target node is identified by the `node` argument in the resource,
 and may be different from the Proxmox API endpoint. Please refer to the
 section below for all the available arguments in the `ssh` block.
+
+### API Token authentication
+
+API Token authentication can be used to authenticate with the Proxmox API
+without the need to provide a password. In combination with the `ssh` block,
+this allows for a fully password-less authentication.
+
+To create an API Token, log in to the Proxmox web interface, and navigate to
+`Datacenter` > `Permissions` > `API Tokens`. Click on `Add` to create a new
+token. You can then use the `token` field in the `provider` block to provide
+the token:
+
+```terraform
+provider "proxmox" {
+  endpoint = var.virtual_environment_endpoint
+  api_token = "root@pam!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  insecure = true
+  ssh {
+    agent = true
+    username = "root"
+  }
+}
+```
+
+> Note1: The `username` field in the `ssh` block is required when using API
+> Token authentication. This is because provider needs to know which user to use
+> for the SSH connection.
+
+> Note2: Not all Proxmox API operations are supported via API Token. You may see errors like
+> `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config`
+> when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
 
 ## Argument Reference
 
@@ -116,6 +148,9 @@ Proxmox `provider` block:
 - `username` - (Required) The username and realm for the Proxmox Virtual
   Environment API (can also be sourced from `PROXMOX_VE_USERNAME`). For
   example, `root@pam`.
+- `api_token` - (Optional) The API Token for the Proxmox Virtual
+  Environment API (can also be sourced from `PROXMOX_VE_API_TOKEN`). For
+  example, `root@pam!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 - `ssh` - (Optional) The SSH connection configuration to a Proxmox node. This is
   a
   block, whose fields are documented below.

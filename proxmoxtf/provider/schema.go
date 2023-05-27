@@ -9,6 +9,7 @@ package provider
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -73,6 +74,7 @@ func nestedProviderSchema() map[string]*schema.Schema {
 		mkProviderPassword: {
 			Type:        schema.TypeString,
 			Optional:    true,
+			Sensitive:   true,
 			Description: "The password for the Proxmox Virtual Environment API",
 			DefaultFunc: schema.MultiEnvDefaultFunc(
 				[]string{"PROXMOX_VE_PASSWORD", "PM_VE_PASSWORD"},
@@ -81,6 +83,7 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			AtLeastOneOf: []string{
 				mkProviderPassword,
 				fmt.Sprintf("%s.0.%s", mkProviderVirtualEnvironment, mkProviderPassword),
+				mkProviderAPIToken,
 			},
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
@@ -95,8 +98,23 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			AtLeastOneOf: []string{
 				mkProviderUsername,
 				fmt.Sprintf("%s.0.%s", mkProviderVirtualEnvironment, mkProviderUsername),
+				mkProviderAPIToken,
 			},
 			ValidateFunc: validation.StringIsNotEmpty,
+		},
+		mkProviderAPIToken: {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "The API token for the Proxmox Virtual Environment API",
+			DefaultFunc: schema.MultiEnvDefaultFunc(
+				[]string{"PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN"},
+				nil,
+			),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
+				regexp.MustCompile(`^\S+@\w+!\S+=([a-zA-Z0-9-]+)$`),
+				"Must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'",
+			)),
 		},
 		mkProviderSSH: {
 			Type:        schema.TypeList,
@@ -117,8 +135,9 @@ func nestedProviderSchema() map[string]*schema.Schema {
 						ValidateFunc: validation.StringIsNotEmpty,
 					},
 					mkProviderSSHPassword: {
-						Type:     schema.TypeString,
-						Optional: true,
+						Type:      schema.TypeString,
+						Optional:  true,
+						Sensitive: true,
 						Description: fmt.Sprintf("The password used for the SSH connection, "+
 							"defaults to the password specified in '%s'", mkProviderPassword),
 						DefaultFunc: schema.MultiEnvDefaultFunc(
