@@ -13,6 +13,8 @@ import (
 
 const rootUsername = "root@pam"
 
+// Credentials is a struct that holds the credentials for the Proxmox Virtual
+// Environment API.
 type Credentials struct {
 	Username string
 	Password string
@@ -20,6 +22,7 @@ type Credentials struct {
 	APIToken *string
 }
 
+// NewCredentials creates a new Credentials struct.
 func NewCredentials(username, password, otp, apiToken string) (*Credentials, error) {
 	if apiToken != "" {
 		return &Credentials{

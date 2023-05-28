@@ -16,6 +16,8 @@ type tokenAuthenticator struct {
 	token    string
 }
 
+// NewTokenAuthenticator creates a new authenticator that uses a PVE API Token
+// for authentication.
 func NewTokenAuthenticator(token string) (Authenticator, error) {
 	return &tokenAuthenticator{
 		username: strings.Split(token, "!")[0],

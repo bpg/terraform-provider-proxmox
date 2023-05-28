@@ -40,7 +40,7 @@ func NewTicketAuthenticator(ctx context.Context, conn *Connection, creds *Creden
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		fmt.Sprintf("%s/%s/access/ticket", conn.Endpoint, basePathJSONAPI),
+		fmt.Sprintf("%s/%s/access/ticket", conn.endpoint, basePathJSONAPI),
 		bytes.NewBufferString(reqStr),
 	)
 	if err != nil {
@@ -52,6 +52,8 @@ func NewTicketAuthenticator(ctx context.Context, conn *Connection, creds *Creden
 	tflog.Debug(ctx, "sending authentication request", map[string]interface{}{
 		"path": req.URL.Path,
 	})
+
+	//nolint:bodyclose
 	res, err := conn.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve authentication response: %w", err)
@@ -65,6 +67,7 @@ func NewTicketAuthenticator(ctx context.Context, conn *Connection, creds *Creden
 	}
 
 	resBody := AuthenticationResponseBody{}
+
 	err = json.NewDecoder(res.Body).Decode(&resBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode authentication response, %w", err)
@@ -91,7 +94,6 @@ func NewTicketAuthenticator(ctx context.Context, conn *Connection, creds *Creden
 	return &ticketAuthenticator{
 		authenticationData: resBody.Data,
 	}, nil
-
 }
 
 func (t *ticketAuthenticator) IsRoot() bool {

@@ -29,12 +29,13 @@ const (
 	basePathJSONAPI = "api2/json"
 )
 
+// Connection represents a connection to the Proxmox Virtual Environment API.
 type Connection struct {
-	// TODO: should be private
-	Endpoint   string
+	endpoint   string
 	httpClient *http.Client
 }
 
+// NewConnection creates and initializes a Connection instance.
 func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
@@ -60,7 +61,7 @@ func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 	}
 
 	return &Connection{
-		Endpoint:   strings.TrimRight(u.String(), "/"),
+		endpoint:   strings.TrimRight(u.String(), "/"),
 		httpClient: &http.Client{Transport: transport},
 	}, nil
 }
@@ -82,6 +83,7 @@ func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Clien
 	}
 
 	var auth Authenticator
+
 	var err error
 
 	if creds.APIToken != nil {
@@ -107,31 +109,35 @@ func (c *client) DoRequest(
 	requestBody, responseBody interface{},
 ) error {
 	var reqBodyReader io.Reader
+
 	var reqContentLength *int64
 
 	modifiedPath := path
 	reqBodyType := ""
 
+	//nolint:nestif
 	if requestBody != nil {
 		multipartData, multipart := requestBody.(*MultiPartData)
 		pipedBodyReader, pipedBody := requestBody.(*io.PipeReader)
 
-		if multipart {
+		switch {
+		case multipart:
 			reqBodyReader = multipartData.Reader
 			reqBodyType = fmt.Sprintf("multipart/form-data; boundary=%s", multipartData.Boundary)
 			reqContentLength = multipartData.Size
-		} else if pipedBody {
+		case pipedBody:
 			reqBodyReader = pipedBodyReader
-		} else {
+		default:
 			v, err := query.Values(requestBody)
 			if err != nil {
-				fErr := fmt.Errorf("failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
-				tflog.Warn(ctx, fErr.Error())
-				return fErr
+				return fmt.Errorf("failed to encode HTTP %s request (path: %s) - Reason: %w",
+					method,
+					modifiedPath,
+					err,
+				)
 			}
 
 			encodedValues := v.Encode()
-
 			if encodedValues != "" {
 				if method == http.MethodDelete || method == http.MethodGet || method == http.MethodHead {
 					if !strings.Contains(modifiedPath, "?") {
@@ -152,18 +158,16 @@ func (c *client) DoRequest(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		method,
-		fmt.Sprintf("%s/%s/%s", c.conn.Endpoint, basePathJSONAPI, modifiedPath),
+		fmt.Sprintf("%s/%s/%s", c.conn.endpoint, basePathJSONAPI, modifiedPath),
 		reqBodyReader,
 	)
 	if err != nil {
-		fErr := fmt.Errorf(
+		return fmt.Errorf(
 			"failed to create HTTP %s request (path: %s) - Reason: %w",
 			method,
 			modifiedPath,
 			err,
 		)
-		tflog.Warn(ctx, fErr.Error())
-		return fErr
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -178,45 +182,50 @@ func (c *client) DoRequest(
 
 	err = c.auth.AuthenticateRequest(req)
 	if err != nil {
-		tflog.Warn(ctx, err.Error())
-		return err
-	}
-
-	res, err := c.conn.httpClient.Do(req)
-	if err != nil {
-		fErr := fmt.Errorf(
-			"failed to perform HTTP %s request (path: %s) - Reason: %w",
+		return fmt.Errorf("failed to authenticate HTTP %s request (path: %s) - Reason: %w",
 			method,
 			modifiedPath,
 			err,
 		)
-		tflog.Warn(ctx, fErr.Error())
-		return fErr
+	}
+
+	//nolint:bodyclose
+	res, err := c.conn.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %w",
+			method,
+			modifiedPath,
+			err,
+		)
 	}
 
 	defer utils.CloseOrLogError(ctx)(res.Body)
 
 	err = validateResponseCode(res)
 	if err != nil {
-		tflog.Warn(ctx, err.Error())
 		return err
 	}
 
 	if responseBody != nil {
 		err = json.NewDecoder(res.Body).Decode(responseBody)
-
 		if err != nil {
-			fErr := fmt.Errorf(
+			return fmt.Errorf(
 				"failed to decode HTTP %s response (path: %s) - Reason: %w",
 				method,
 				modifiedPath,
 				err,
 			)
-			tflog.Warn(ctx, fErr.Error())
-			return fErr
 		}
 	} else {
-		data, _ := io.ReadAll(res.Body)
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to read HTTP %s response body (path: %s) - Reason: %w",
+				method,
+				modifiedPath,
+				err,
+			)
+		}
 		tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
 			"data": string(data),
 		})

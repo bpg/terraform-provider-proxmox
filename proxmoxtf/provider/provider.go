@@ -46,6 +46,7 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
+
 	var diags diag.Diagnostics
 
 	var apiClient api.Client
@@ -53,6 +54,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	var sshClient ssh.Client
 
 	var creds *api.Credentials
+
 	var conn *api.Connection
 
 	// Legacy configuration, wrapped in the deprecated `virtual_environment` block
@@ -72,7 +74,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 			veConfig[mkProviderInsecure].(bool),
 		)
 		diags = append(diags, diag.FromErr(err)...)
-
 	} else {
 		creds, err = api.NewCredentials(
 			d.Get(mkProviderUsername).(string),

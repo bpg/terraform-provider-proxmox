@@ -10,6 +10,9 @@ import (
 	"net/http"
 )
 
+// Authenticator is an interface for adding authentication data to a request.
+// The authenticator is also aware of the authentication context, e.g. if it
+// is configured to use the root user.
 type Authenticator interface {
 	// IsRoot returns true if the authenticator is configured to use the root
 	IsRoot() bool
