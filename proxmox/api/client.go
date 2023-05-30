@@ -29,22 +29,14 @@ const (
 	basePathJSONAPI = "api2/json"
 )
 
-// VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
-type client struct {
-	endpoint string
-	insecure bool
-	otp      *string
-	password string
-	username string
-
-	authenticationData *AuthenticationResponseData
-	httpClient         *http.Client
+// Connection represents a connection to the Proxmox Virtual Environment API.
+type Connection struct {
+	endpoint   string
+	httpClient *http.Client
 }
 
-// NewClient creates and initializes a VirtualEnvironmentClient instance.
-func NewClient(
-	endpoint, username, password, otp string, insecure bool,
-) (Client, error) {
+// NewConnection creates and initializes a Connection instance.
+func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
@@ -58,30 +50,6 @@ func NewClient(
 		)
 	}
 
-	if password == "" {
-		return nil, errors.New(
-			"you must specify a password for the Proxmox Virtual Environment API",
-		)
-	}
-
-	if username == "" {
-		return nil, errors.New(
-			"you must specify a username for the Proxmox Virtual Environment API",
-		)
-	}
-
-	if !strings.Contains(username, "@") {
-		return nil, errors.New(
-			"make sure the username for the Proxmox Virtual Environment API ends in '@pve or @pam'",
-		)
-	}
-
-	var pOTP *string
-
-	if otp != "" {
-		pOTP = &otp
-	}
-
 	var transport http.RoundTripper = &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: insecure, //nolint:gosec
@@ -92,15 +60,45 @@ func NewClient(
 		transport = logging.NewLoggingHTTPTransport(transport)
 	}
 
-	httpClient := &http.Client{Transport: transport}
+	return &Connection{
+		endpoint:   strings.TrimRight(u.String(), "/"),
+		httpClient: &http.Client{Transport: transport},
+	}, nil
+}
+
+// VirtualEnvironmentClient implements an API client for the Proxmox Virtual Environment API.
+type client struct {
+	conn *Connection
+	auth Authenticator
+}
+
+// NewClient creates and initializes a VirtualEnvironmentClient instance.
+func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Client, error) {
+	if creds == nil {
+		return nil, errors.New("credentials must not be nil")
+	}
+
+	if conn == nil {
+		return nil, errors.New("connection must not be nil")
+	}
+
+	var auth Authenticator
+
+	var err error
+
+	if creds.APIToken != nil {
+		auth, err = NewTokenAuthenticator(*creds.APIToken)
+	} else {
+		auth, err = NewTicketAuthenticator(ctx, conn, creds)
+	}
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &client{
-		endpoint:   strings.TrimRight(u.String(), "/"),
-		insecure:   insecure,
-		otp:        pOTP,
-		password:   password,
-		username:   username,
-		httpClient: httpClient,
+		conn: conn,
+		auth: auth,
 	}, nil
 }
 
@@ -111,31 +109,35 @@ func (c *client) DoRequest(
 	requestBody, responseBody interface{},
 ) error {
 	var reqBodyReader io.Reader
+
 	var reqContentLength *int64
 
 	modifiedPath := path
 	reqBodyType := ""
 
+	//nolint:nestif
 	if requestBody != nil {
 		multipartData, multipart := requestBody.(*MultiPartData)
 		pipedBodyReader, pipedBody := requestBody.(*io.PipeReader)
 
-		if multipart {
+		switch {
+		case multipart:
 			reqBodyReader = multipartData.Reader
 			reqBodyType = fmt.Sprintf("multipart/form-data; boundary=%s", multipartData.Boundary)
 			reqContentLength = multipartData.Size
-		} else if pipedBody {
+		case pipedBody:
 			reqBodyReader = pipedBodyReader
-		} else {
+		default:
 			v, err := query.Values(requestBody)
 			if err != nil {
-				fErr := fmt.Errorf("failed to encode HTTP %s request (path: %s) - Reason: %s", method, modifiedPath, err.Error())
-				tflog.Warn(ctx, fErr.Error())
-				return fErr
+				return fmt.Errorf("failed to encode HTTP %s request (path: %s) - Reason: %w",
+					method,
+					modifiedPath,
+					err,
+				)
 			}
 
 			encodedValues := v.Encode()
-
 			if encodedValues != "" {
 				if method == http.MethodDelete || method == http.MethodGet || method == http.MethodHead {
 					if !strings.Contains(modifiedPath, "?") {
@@ -156,18 +158,16 @@ func (c *client) DoRequest(
 	req, err := http.NewRequestWithContext(
 		ctx,
 		method,
-		fmt.Sprintf("%s/%s/%s", c.endpoint, basePathJSONAPI, modifiedPath),
+		fmt.Sprintf("%s/%s/%s", c.conn.endpoint, basePathJSONAPI, modifiedPath),
 		reqBodyReader,
 	)
 	if err != nil {
-		fErr := fmt.Errorf(
+		return fmt.Errorf(
 			"failed to create HTTP %s request (path: %s) - Reason: %w",
 			method,
 			modifiedPath,
 			err,
 		)
-		tflog.Warn(ctx, fErr.Error())
-		return fErr
 	}
 
 	req.Header.Add("Accept", "application/json")
@@ -180,48 +180,52 @@ func (c *client) DoRequest(
 		req.Header.Add("Content-Type", reqBodyType)
 	}
 
-	err = c.AuthenticateRequest(ctx, req)
-
+	err = c.auth.AuthenticateRequest(req)
 	if err != nil {
-		tflog.Warn(ctx, err.Error())
-		return err
-	}
-
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		fErr := fmt.Errorf(
-			"failed to perform HTTP %s request (path: %s) - Reason: %w",
+		return fmt.Errorf("failed to authenticate HTTP %s request (path: %s) - Reason: %w",
 			method,
 			modifiedPath,
 			err,
 		)
-		tflog.Warn(ctx, fErr.Error())
-		return fErr
+	}
+
+	//nolint:bodyclose
+	res, err := c.conn.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %w",
+			method,
+			modifiedPath,
+			err,
+		)
 	}
 
 	defer utils.CloseOrLogError(ctx)(res.Body)
 
-	err = c.validateResponseCode(res)
+	err = validateResponseCode(res)
 	if err != nil {
-		tflog.Warn(ctx, err.Error())
 		return err
 	}
 
 	if responseBody != nil {
 		err = json.NewDecoder(res.Body).Decode(responseBody)
-
 		if err != nil {
-			fErr := fmt.Errorf(
+			return fmt.Errorf(
 				"failed to decode HTTP %s response (path: %s) - Reason: %w",
 				method,
 				modifiedPath,
 				err,
 			)
-			tflog.Warn(ctx, fErr.Error())
-			return fErr
 		}
 	} else {
-		data, _ := io.ReadAll(res.Body)
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to read HTTP %s response body (path: %s) - Reason: %w",
+				method,
+				modifiedPath,
+				err,
+			)
+		}
 		tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
 			"data": string(data),
 		})
@@ -236,11 +240,11 @@ func (c *client) ExpandPath(path string) string {
 }
 
 func (c *client) IsRoot() bool {
-	return c.username == "root@pam"
+	return c.auth.IsRoot()
 }
 
 // validateResponseCode ensures that a response is valid.
-func (c *client) validateResponseCode(res *http.Response) error {
+func validateResponseCode(res *http.Response) error {
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		status := strings.TrimPrefix(res.Status, fmt.Sprintf("%d ", res.StatusCode))
 
