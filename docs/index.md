@@ -95,12 +95,13 @@ target node using the credentials provided in the `username` and `password`
 fields.
 Note that the target node is identified by the `node` argument in the resource,
 and may be different from the Proxmox API endpoint. Please refer to the
-section below for all the available arguments in the `ssh` block.
+"Argument Reference" section below for all the available arguments in the `ssh`
+block.
 
 #### Node IP address used for SSH connection
 
 In order to make the SSH connection, the provider needs to know the IP address
-of the node specified in the resource. The provider will attempt to resolve the
+of the target node. The provider will attempt to resolve the
 node name to an IP address using Proxmox API to enumerate the node network
 interfaces, and use the first one that is not a loopback interface. In some
 cases this may not be the desired behavior, for example when the node has
@@ -108,20 +109,21 @@ multiple network interfaces, and the one that should be used for SSH is not the
 first one.
 
 To override the node IP address used for SSH connection, you can use the
-optional
-`node` blocks in the `ssh` block. For example:
+optional `node` blocks in the `ssh` block. For example:
 
 ```terraform
+provider "proxmox" {
+  // ...
   ssh {
-  agent    = true
-  username = "root"
-  node {
-    name    = "pve1"
-    address = "192.168.10.1"
-  }
-  node {
-    name    = "pve2"
-    address = "192.168.10.2"
+    // ...
+    node {
+      name    = "pve1"
+      address = "192.168.10.1"
+    }
+    node {
+      name    = "pve2"
+      address = "192.168.10.2"
+    }
   }
 }
 
@@ -138,8 +140,7 @@ To create an API Token, log in to the Proxmox web interface, and navigate to
 token. You can then use the `api_token` field in the `provider` block to provide
 the token. `api_token` can also be sourced from `PROXMOX_VE_API_TOKEN`
 environment variable. The token authentication is taking precedence over the
-password authentication, so you can still provide the username / password to be
-used as a fallback.
+password authentication.
 
 ```terraform
 provider "proxmox" {
