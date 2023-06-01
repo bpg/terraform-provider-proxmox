@@ -97,6 +97,36 @@ Note that the target node is identified by the `node` argument in the resource,
 and may be different from the Proxmox API endpoint. Please refer to the
 section below for all the available arguments in the `ssh` block.
 
+#### Node IP address used for SSH connection
+
+In order to make the SSH connection, the provider needs to know the IP address
+of the node specified in the resource. The provider will attempt to resolve the
+node name to an IP address using Proxmox API to enumerate the node network
+interfaces, and use the first one that is not a loopback interface. In some
+cases this may not be the desired behavior, for example when the node has
+multiple network interfaces, and the one that should be used for SSH is not the
+first one.
+
+To override the node IP address used for SSH connection, you can use the
+optional
+`node` blocks in the `ssh` block. For example:
+
+```terraform
+  ssh {
+  agent    = true
+  username = "root"
+  node {
+    name    = "pve1"
+    address = "192.168.10.1"
+  }
+  node {
+    name    = "pve2"
+    address = "192.168.10.2"
+  }
+}
+
+```
+
 ### API Token authentication
 
 API Token authentication can be used to authenticate with the Proxmox API
@@ -160,8 +190,7 @@ Proxmox `provider` block:
   Environment API (can also be sourced from `PROXMOX_VE_API_TOKEN`). For
   example, `root@pam!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 - `ssh` - (Optional) The SSH connection configuration to a Proxmox node. This is
-  a
-  block, whose fields are documented below.
+  a block, whose fields are documented below.
     - `username` - (Optional) The username to use for the SSH connection.
       Defaults to the username used for the Proxmox API connection. Can also be
       sourced from `PROXMOX_VE_SSH_USERNAME`. Required when using API Token.
@@ -174,3 +203,7 @@ Proxmox `provider` block:
     - `agent_socket` - (Optional) The path to the SSH agent socket.
       Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can
       also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
+    - `node` - (Optional) The node configuration for the SSH connection. Can be
+      specified multiple times to provide configuration fo multiple nodes.
+        - `name` - (Required) The name of the node.
+        - `address` - (Required) The IP address of the node.
