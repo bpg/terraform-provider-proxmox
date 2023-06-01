@@ -27,15 +27,30 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
+// Client is an interface for performing SSH requests against the Proxmox Nodes.
+type Client interface {
+	// ExecuteNodeCommands executes a command on a node.
+	ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error
+
+	// NodeUpload uploads a file to a node.
+	NodeUpload(ctx context.Context, nodeName string,
+		remoteFileDir string, fileUploadRequest *api.FileUploadRequest) error
+}
+
 type client struct {
 	username    string
 	password    string
 	agent       bool
 	agentSocket string
+	nodeLookup  NodeResolver
 }
 
 // NewClient creates a new SSH client.
-func NewClient(username string, password string, agent bool, agentSocket string) (Client, error) {
+func NewClient(
+	username string, password string,
+	agent bool, agentSocket string,
+	nodeLookup NodeResolver,
+) (Client, error) {
 	//goland:noinspection GoBoolExpressions
 	if agent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
 		return nil, errors.New(
@@ -44,19 +59,34 @@ func NewClient(username string, password string, agent bool, agentSocket string)
 		)
 	}
 
+	if nodeLookup == nil {
+		return nil, errors.New("node lookup is required")
+	}
+
 	return &client{
 		username:    username,
 		password:    password,
 		agent:       agent,
 		agentSocket: agentSocket,
+		nodeLookup:  nodeLookup,
 	}, nil
 }
 
 // ExecuteNodeCommands executes commands on a given node.
-func (c *client) ExecuteNodeCommands(ctx context.Context, nodeAddress string, commands []string) error {
+func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error {
+	ip, err := c.nodeLookup.Resolve(ctx, nodeName)
+	if err != nil {
+		return fmt.Errorf("failed to find node endpoint: %w", err)
+	}
+
+	tflog.Debug(ctx, "executing commands on the node using SSH", map[string]interface{}{
+		"node_address": ip,
+		"commands":     commands,
+	})
+
 	closeOrLogError := utils.CloseOrLogError(ctx)
 
-	sshClient, err := c.openNodeShell(ctx, nodeAddress)
+	sshClient, err := c.openNodeShell(ctx, ip)
 	if err != nil {
 		return err
 	}
@@ -86,12 +116,19 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeAddress string, co
 }
 
 func (c *client) NodeUpload(
-	ctx context.Context, nodeAddress string, remoteFileDir string,
+	ctx context.Context,
+	nodeName string,
+	remoteFileDir string,
 	d *api.FileUploadRequest,
 ) error {
-	// We need to upload all other files using SFTP due to API limitations.
-	// Hopefully, this will not be required in future releases of Proxmox VE.
-	tflog.Debug(ctx, "uploading file to datastore using SFTP", map[string]interface{}{
+	ip, err := c.nodeLookup.Resolve(ctx, nodeName)
+	if err != nil {
+		return fmt.Errorf("failed to find node endpoint: %w", err)
+	}
+
+	tflog.Debug(ctx, "uploading file to the node datastore using SFTP", map[string]interface{}{
+		"node_address": ip,
+		"remote_dir":   remoteFileDir,
 		"file_name":    d.FileName,
 		"content_type": d.ContentType,
 	})
@@ -103,7 +140,7 @@ func (c *client) NodeUpload(
 
 	fileSize := fileInfo.Size()
 
-	sshClient, err := c.openNodeShell(ctx, nodeAddress)
+	sshClient, err := c.openNodeShell(ctx, ip)
 	if err != nil {
 		return fmt.Errorf("failed to open SSH client: %w", err)
 	}
@@ -237,7 +274,7 @@ func (c *client) openNodeShell(ctx context.Context, nodeAddress string) (*ssh.Cl
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
 	}
 
-	tflog.Info(ctx, fmt.Sprintf("Agent is set to %t", c.agent))
+	tflog.Info(ctx, fmt.Sprintf("agent is set to %t", c.agent))
 
 	var sshClient *ssh.Client
 	if c.agent {

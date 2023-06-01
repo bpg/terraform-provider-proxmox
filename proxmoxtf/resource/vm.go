@@ -2233,12 +2233,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 
 		nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 
-		nodeAddress, err := api.Node(nodeName).GetIP(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		err = api.SSH().ExecuteNodeCommands(ctx, nodeAddress, commands)
+		err = api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
 			return diag.FromErr(err)
 		}

@@ -15,6 +15,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+const (
+	dvProviderOTP                = ""
+	mkProviderVirtualEnvironment = "virtual_environment"
+	mkProviderEndpoint           = "endpoint"
+	mkProviderInsecure           = "insecure"
+	mkProviderOTP                = "otp"
+	mkProviderPassword           = "password"
+	mkProviderUsername           = "username"
+	mkProviderAPIToken           = "api_token"
+	mkProviderSSH                = "ssh"
+	mkProviderSSHUsername        = "username"
+	mkProviderSSHPassword        = "password"
+	mkProviderSSHAgent           = "agent"
+	mkProviderSSHAgentSocket     = "agent_socket"
+
+	mkProviderSSHNode        = "node"
+	mkProviderSSHNodeName    = "name"
+	mkProviderSSHNodeAddress = "address"
+)
+
 func createSchema() map[string]*schema.Schema {
 	providerSchema := nestedProviderSchema()
 	providerSchema[mkProviderVirtualEnvironment] = &schema.Schema{
@@ -172,6 +192,29 @@ func nestedProviderSchema() map[string]*schema.Schema {
 							nil,
 						),
 						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHNode: {
+						Type:        schema.TypeList,
+						Optional:    true,
+						MinItems:    0,
+						MaxItems:    1,
+						Description: "Overrides for SSH connection configuration to a Proxmox node",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								mkProviderSSHNodeName: {
+									Type:         schema.TypeString,
+									Required:     true,
+									Description:  "The name of the node to connect to",
+									ValidateFunc: validation.StringIsNotEmpty,
+								},
+								mkProviderSSHNodeAddress: {
+									Type:         schema.TypeString,
+									Required:     true,
+									Description:  "The address that should be used to connect to the node",
+									ValidateFunc: validation.IsIPAddress,
+								},
+							},
+						},
 					},
 				},
 			},

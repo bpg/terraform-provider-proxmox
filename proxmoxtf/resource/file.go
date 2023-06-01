@@ -394,11 +394,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
-		nodeAddress, err2 := capi.Node(nodeName).GetIP(ctx)
-		if err2 != nil {
-			return diag.Errorf("failed to get node IP: %s", err2)
-		}
-
 		datastore, err2 := capi.Storage().GetDatastore(ctx, datastoreID)
 		if err2 != nil {
 			return diag.Errorf("failed to get datastore: %s", err2)
@@ -410,7 +405,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 		remoteFileDir := *datastore.Path
 
-		err = capi.SSH().NodeUpload(ctx, nodeAddress, remoteFileDir, request)
+		err = capi.SSH().NodeUpload(ctx, nodeName, remoteFileDir, request)
 	}
 
 	if err != nil {
