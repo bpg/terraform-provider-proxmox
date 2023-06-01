@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.21.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.20.1...v0.21.0) (2023-06-01)
+
+
+### Features
+
+* API client cleanup and refactoring ([#323](https://github.com/bpg/terraform-provider-proxmox/issues/323)) ([1f006aa](https://github.com/bpg/terraform-provider-proxmox/commit/1f006aa82bc79125a63543dbbf765629692b7b38))
+* **core:** Add ability to override node IP used for SSH connection ([80c94a5](https://github.com/bpg/terraform-provider-proxmox/commit/80c94a51262df7c5cd49a938f58c7fd09a1a3540))
+* **core:** Add API Token authentication ([#350](https://github.com/bpg/terraform-provider-proxmox/issues/350)) ([ab54aa1](https://github.com/bpg/terraform-provider-proxmox/commit/ab54aa1092534c323b85c46571de33bee80ae950))
+
+
+### Bug Fixes
+
+* **vm:** Make mac_address computed, fix [#339](https://github.com/bpg/terraform-provider-proxmox/issues/339) ([#354](https://github.com/bpg/terraform-provider-proxmox/issues/354)) ([e15c4a6](https://github.com/bpg/terraform-provider-proxmox/commit/e15c4a678409a378ce10ed47fb73051e9dcdae61))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/goreleaser/nfpm/v2 from 2.28.0 to 2.29.0 in /tools ([#347](https://github.com/bpg/terraform-provider-proxmox/issues/347)) ([2358557](https://github.com/bpg/terraform-provider-proxmox/commit/23585570ab379948edab12fff85542a8aadf1792))
+* **deps:** bump github.com/sigstore/rekor from 1.1.1 to 1.2.0 in /tools ([#349](https://github.com/bpg/terraform-provider-proxmox/issues/349)) ([6e59360](https://github.com/bpg/terraform-provider-proxmox/commit/6e593607bb40419d27cfeebfc3d7c11ea1061828))
+
 ## [0.20.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.20.0...v0.20.1) (2023-05-23)
 
 
