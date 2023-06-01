@@ -8,30 +8,16 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
-)
-
-const (
-	dvProviderOTP                = ""
-	mkProviderVirtualEnvironment = "virtual_environment"
-	mkProviderEndpoint           = "endpoint"
-	mkProviderInsecure           = "insecure"
-	mkProviderOTP                = "otp"
-	mkProviderPassword           = "password"
-	mkProviderUsername           = "username"
-	mkProviderAPIToken           = "api_token"
-	mkProviderSSH                = "ssh"
-	mkProviderSSHUsername        = "username"
-	mkProviderSSHPassword        = "password"
-	mkProviderSSHAgent           = "agent"
-	mkProviderSSHAgentSocket     = "agent_socket"
 )
 
 // ProxmoxVirtualEnvironment returns the object for this provider.
@@ -124,11 +110,24 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		sshConf[mkProviderSSHAgentSocket] = ""
 	}
 
+	nodeOverrides := map[string]string{}
+
+	if ns, ok := sshConf[mkProviderSSHNode]; ok {
+		for _, n := range ns.([]interface{}) {
+			node := n.(map[string]interface{})
+			nodeOverrides[node[mkProviderSSHNodeName].(string)] = node[mkProviderSSHNodeAddress].(string)
+		}
+	}
+
 	sshClient, err = ssh.NewClient(
 		sshConf[mkProviderSSHUsername].(string),
 		sshConf[mkProviderSSHPassword].(string),
 		sshConf[mkProviderSSHAgent].(bool),
 		sshConf[mkProviderSSHAgentSocket].(string),
+		&apiResolverWithOverrides{
+			ar:        apiResolver{c: apiClient},
+			overrides: nodeOverrides,
+		},
 	)
 	if err != nil {
 		return nil, diag.Errorf("error creating SSH client: %s", err)
@@ -137,4 +136,32 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	config := proxmoxtf.NewProviderConfiguration(apiClient, sshClient)
 
 	return config, nil
+}
+
+type apiResolver struct {
+	c api.Client
+}
+
+func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, error) {
+	nc := &nodes.Client{Client: r.c, NodeName: nodeName}
+
+	ip, err := nc.GetIP(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get node IP: %w", err)
+	}
+
+	return ip, nil
+}
+
+type apiResolverWithOverrides struct {
+	ar        apiResolver
+	overrides map[string]string
+}
+
+func (r *apiResolverWithOverrides) Resolve(ctx context.Context, nodeName string) (string, error) {
+	if ip, ok := r.overrides[nodeName]; ok {
+		return ip, nil
+	}
+
+	return r.ar.Resolve(ctx, nodeName)
 }

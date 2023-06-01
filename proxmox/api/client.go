@@ -25,9 +25,31 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
+// ErrNoDataObjectInResponse is returned when the server does not include a data object in the response.
+var ErrNoDataObjectInResponse = errors.New("the server did not include a data object in the response")
+
 const (
 	basePathJSONAPI = "api2/json"
 )
+
+// Client is an interface for performing requests against the Proxmox API.
+type Client interface {
+	// DoRequest performs a request against the Proxmox API.
+	DoRequest(
+		ctx context.Context,
+		method, path string,
+		requestBody, responseBody interface{},
+	) error
+
+	// ExpandPath expands a path relative to the client's base path.
+	// For example, if the client is configured for a VM and the
+	// path is "firewall/options", the returned path will be
+	// "/nodes/<node>/qemu/<vmid>/firewall/options".
+	ExpandPath(path string) string
+
+	// IsRoot returns true if the client is configured with the root user.
+	IsRoot() bool
+}
 
 // Connection represents a connection to the Proxmox Virtual Environment API.
 type Connection struct {
