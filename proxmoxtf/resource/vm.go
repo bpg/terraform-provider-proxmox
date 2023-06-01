@@ -84,7 +84,6 @@ const (
 	dvResourceVirtualEnvironmentVMNetworkDeviceBridge               = "vmbr0"
 	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled              = true
 	dvResourceVirtualEnvironmentVMNetworkDeviceFirewall             = false
-	dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress           = ""
 	dvResourceVirtualEnvironmentVMNetworkDeviceModel                = "virtio"
 	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = 0
 	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID               = 0
@@ -994,13 +993,10 @@ func VM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceFirewall,
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress: {
-							Type:        schema.TypeString,
-							Description: "The MAC address",
-							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceMACAddress,
-							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-								return new == ""
-							},
+							Type:             schema.TypeString,
+							Description:      "The MAC address",
+							Optional:         true,
+							Computed:         true,
 							ValidateDiagFunc: getMACAddressValidator(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceModel: {
