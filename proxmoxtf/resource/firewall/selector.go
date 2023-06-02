@@ -30,14 +30,16 @@ func selectorSchema() map[string]*schema.Schema {
 			Description: "The name of the node.",
 		},
 		mkSelectorVMID: {
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Description: "The ID of the VM to manage the firewall for.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Description:  "The ID of the VM to manage the firewall for.",
+			RequiredWith: []string{mkSelectorNodeName},
 		},
 		mkSelectorContainerID: {
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Description: "The ID of the container to manage the firewall for.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Description:  "The ID of the container to manage the firewall for.",
+			RequiredWith: []string{mkSelectorNodeName},
 		},
 	}
 }
@@ -46,6 +48,9 @@ func selectorSchemaMandatory() map[string]*schema.Schema {
 	s := selectorSchema()
 	s[mkSelectorNodeName].Optional = false
 	s[mkSelectorNodeName].Required = true
+	// required attributes can't be included in RequiredWith
+	s[mkSelectorVMID].RequiredWith = nil
+	s[mkSelectorContainerID].RequiredWith = nil
 
 	return s
 }
