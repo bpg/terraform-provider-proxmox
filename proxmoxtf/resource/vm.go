@@ -1679,9 +1679,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	allDiskInfo := getDiskInfo(vmConfig, d)
+	allDiskInfo := getDiskInfo(vmConfig, d) // from the cloned VM
 
-	diskDeviceObjects, e := vmGetDiskDeviceObjects(d, nil)
+	diskDeviceObjects, e := vmGetDiskDeviceObjects(d, nil) // from the resource config
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -1691,29 +1691,33 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diskInterface := diskBlock[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
 		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		prefix := diskDigitPrefix(diskInterface)
 
 		currentDiskInfo := allDiskInfo[diskInterface]
+		configuredDiskInfo := diskDeviceObjects[prefix][diskInterface]
 
 		if currentDiskInfo == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
-			prefix := diskDigitPrefix(diskInterface)
 
 			switch prefix {
 			case "virtio":
 				if diskUpdateBody.VirtualIODevices == nil {
 					diskUpdateBody.VirtualIODevices = vms.CustomStorageDevices{}
 				}
-				diskUpdateBody.VirtualIODevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
+
+				diskUpdateBody.VirtualIODevices[diskInterface] = configuredDiskInfo
 			case "sata":
 				if diskUpdateBody.SATADevices == nil {
 					diskUpdateBody.SATADevices = vms.CustomStorageDevices{}
 				}
-				diskUpdateBody.SATADevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
+
+				diskUpdateBody.SATADevices[diskInterface] = configuredDiskInfo
 			case "scsi":
 				if diskUpdateBody.SCSIDevices == nil {
 					diskUpdateBody.SCSIDevices = vms.CustomStorageDevices{}
 				}
-				diskUpdateBody.SCSIDevices[diskInterface] = diskDeviceObjects[prefix][diskInterface]
+
+				diskUpdateBody.SCSIDevices[diskInterface] = configuredDiskInfo
 			}
 
 			e = vmAPI.UpdateVM(ctx, diskUpdateBody)
