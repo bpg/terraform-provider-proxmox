@@ -103,7 +103,6 @@ const (
 	dvResourceVirtualEnvironmentVMVGAEnabled                        = true
 	dvResourceVirtualEnvironmentVMVGAMemory                         = 16
 	dvResourceVirtualEnvironmentVMVGAType                           = "std"
-	dvResourceVirtualEnvironmentVMVMID                              = -1
 	dvResourceVirtualEnvironmentVMSCSIHardware                      = "virtio-scsi-pci"
 
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
@@ -1208,11 +1207,12 @@ func VM() *schema.Resource {
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentVMVMID: {
-				Type:             schema.TypeInt,
-				Description:      "The VM identifier",
-				Optional:         true,
-				ForceNew:         true,
-				Default:          dvResourceVirtualEnvironmentVMVMID,
+				Type:        schema.TypeInt,
+				Description: "The VM identifier",
+				Optional:    true,
+				Computed:    true,
+				// "ForceNew: true" handled in CustomizeDiff, making sure VMs with legacy configs with vm_id = -1
+				// do not require re-creation.
 				ValidateDiagFunc: getVMIDValidator(),
 			},
 			mkResourceVirtualEnvironmentVMSCSIHardware: {
@@ -1247,6 +1247,16 @@ func VM() *schema.Resource {
 				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
 					return d.HasChange(mkResourceVirtualEnvironmentVMStarted) ||
 						d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice)
+				},
+			),
+			customdiff.ForceNewIf(
+				mkResourceVirtualEnvironmentVMVMID,
+				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+					newValue := d.Get(mkResourceVirtualEnvironmentVMVMID)
+
+					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
+					// (automatic fix from -1 to actual vm_id must not re-create VM)
+					return strconv.Itoa(newValue.(int)) != d.Id()
 				},
 			),
 		),
@@ -1284,14 +1294,21 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	tags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	poolID := d.Get(mkResourceVirtualEnvironmentVMPoolID).(string)
-	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
+	vmIDUntyped, hasVMID := d.GetOk(mkResourceVirtualEnvironmentVMVMID)
+	vmID := vmIDUntyped.(int)
 
-	if vmID == -1 {
+	if !hasVMID {
 		vmIDNew, err := api.Cluster().GetVMID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		vmID = *vmIDNew
+		err = d.Set(mkResourceVirtualEnvironmentVMVMID, vmID)
+
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	fullCopy := types.CustomBool(cloneFull)
@@ -1928,15 +1945,21 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		return diag.FromErr(err)
 	}
 
-	vmID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int)
+	vmIDUntyped, hasVMID := d.GetOk(mkResourceVirtualEnvironmentVMVMID)
+	vmID := vmIDUntyped.(int)
 
-	if vmID == -1 {
+	if !hasVMID {
 		vmIDNew, e := api.Cluster().GetVMID(ctx)
 		if e != nil {
 			return diag.FromErr(e)
 		}
 
 		vmID = *vmIDNew
+		e = d.Set(mkResourceVirtualEnvironmentVMVMID, vmID)
+
+		if e != nil {
+			return diag.FromErr(e)
+		}
 	}
 
 	var memorySharedObject *vms.CustomSharedMemory
@@ -2810,6 +2833,18 @@ func vmReadCustom(
 	diags := vmReadPrimitiveValues(d, vmConfig, vmStatus)
 	if diags.HasError() {
 		return diags
+	}
+
+	// Fix terraform.tfstate, by replacing '-1' (the old default value) with actual vm_id value
+	if storedVMID := d.Get(mkResourceVirtualEnvironmentVMVMID).(int); storedVMID == -1 {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary: fmt.Sprintf("VM %s has stored legacy vm_id %d, setting vm_id to its correct value %d.",
+				d.Id(), storedVMID, vmID),
+		})
+
+		err = d.Set(mkResourceVirtualEnvironmentVMVMID, vmID)
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
