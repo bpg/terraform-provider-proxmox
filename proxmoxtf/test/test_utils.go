@@ -39,6 +39,16 @@ func AssertNestedSchemaExistence(t *testing.T, s *schema.Resource, key string) *
 	return sh
 }
 
+// AssertListMaxItems checks that the given schema attribute has given expected MaxItems value.
+func AssertListMaxItems(t *testing.T, s *schema.Resource, key string, expectedMaxItems int) {
+	t.Helper()
+
+	require.NotNil(t, s.Schema[key], "Error in Schema: Missing definition for \"%s\"", key)
+	assert.Equal(t, s.Schema[key].MaxItems, expectedMaxItems,
+		"Error in Schema: Argument \"%s\" has \"MaxItems: %#v\", but value %#v is expected!",
+		key, s.Schema[key].MaxItems, expectedMaxItems)
+}
+
 // AssertOptionalArguments checks that the given schema has the given optional arguments.
 func AssertOptionalArguments(t *testing.T, s *schema.Resource, keys []string) {
 	t.Helper()

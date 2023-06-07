@@ -58,6 +58,7 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderOTP,
 		mkProviderPassword,
 		mkProviderUsername,
+		mkProviderSSH,
 	})
 
 	test.AssertValueTypes(t, veSchema, map[string]schema.ValueType{
@@ -66,5 +67,11 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderOTP:      schema.TypeString,
 		mkProviderPassword: schema.TypeString,
 		mkProviderUsername: schema.TypeString,
+		mkProviderSSH:      schema.TypeList,
 	})
+
+	providerSSHSchema := test.AssertNestedSchemaExistence(t, s, mkProviderSSH)
+
+	// do not limit number of nodes in the cluster
+	test.AssertListMaxItems(t, providerSSHSchema, mkProviderSSHNode, 0)
 }
