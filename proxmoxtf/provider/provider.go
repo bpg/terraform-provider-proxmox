@@ -145,12 +145,27 @@ type apiResolver struct {
 func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, error) {
 	nc := &nodes.Client{Client: r.c, NodeName: nodeName}
 
-	ip, err := nc.GetIP(ctx)
+	networkDevices, err := nc.ListNetworkDevices(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get node IP: %w", err)
+		return "", fmt.Errorf("failed to list network devices of node \"%s\": %w", nc.NodeName, err)
 	}
 
-	return ip, nil
+	nodeAddress := ""
+
+	for _, d := range networkDevices {
+		if d.Address != nil {
+			nodeAddress = *d.Address
+			break
+		}
+	}
+
+	if nodeAddress == "" {
+		return "", fmt.Errorf("failed to determine the IP address of node \"%s\"", nc.NodeName)
+	}
+
+	nodeAddressParts := strings.Split(nodeAddress, "/")
+
+	return nodeAddressParts[0], nil
 }
 
 type apiResolverWithOverrides struct {
