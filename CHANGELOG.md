@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.21.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.21.0...v0.21.1) (2023-06-07)
+
+
+### Bug Fixes
+
+* **core:** Do not limit cluster size to 1 in provider's `ssh` config ([#369](https://github.com/bpg/terraform-provider-proxmox/issues/369)) ([926382c](https://github.com/bpg/terraform-provider-proxmox/commit/926382c155169f1be07cba26b3fda0572fdc1002))
+* **doc:** Update documentation for resource `proxmox_virtual_environment_firewall_ipset` ([#366](https://github.com/bpg/terraform-provider-proxmox/issues/366)) ([0aa33f0](https://github.com/bpg/terraform-provider-proxmox/commit/0aa33f0929c4b9588cce8bcde67d297137c4ddc0))
+* **firewall:** Improve firewall resources argument validation ([#359](https://github.com/bpg/terraform-provider-proxmox/issues/359)) ([8c1f246](https://github.com/bpg/terraform-provider-proxmox/commit/8c1f246b5a6288195dce25ab2417ae5218b7888d))
+* **vm:** fix incorrect disk interface ref when reading VM info from PVE ([#365](https://github.com/bpg/terraform-provider-proxmox/issues/365)) ([de3935d](https://github.com/bpg/terraform-provider-proxmox/commit/de3935d462cd074ae8f1bfa2ead655efec8256b7))
+* **vm:** Make `vm_id` computed ([#367](https://github.com/bpg/terraform-provider-proxmox/issues/367)) ([2a5abb1](https://github.com/bpg/terraform-provider-proxmox/commit/2a5abb10fc43603d2c786ad806cba056886c7f29))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/golangci/golangci-lint from 1.52.2 to 1.53.2 in /tools ([#363](https://github.com/bpg/terraform-provider-proxmox/issues/363)) ([a546a82](https://github.com/bpg/terraform-provider-proxmox/commit/a546a8292803d9645bdba48e2aa2d6c845c70a0a))
+* **deps:** bump github.com/hashicorp/terraform-plugin-log from 0.8.0 to 0.9.0 ([#362](https://github.com/bpg/terraform-provider-proxmox/issues/362)) ([170ec8a](https://github.com/bpg/terraform-provider-proxmox/commit/170ec8ad924cc4bb9683ec87cbd39d8f1e8a1ee3))
+* **deps:** bump github.com/stretchr/testify from 1.8.3 to 1.8.4 ([#361](https://github.com/bpg/terraform-provider-proxmox/issues/361)) ([46e0f8f](https://github.com/bpg/terraform-provider-proxmox/commit/46e0f8f6e79ba0c859507aee97aaf3be931640cd))
+* **doc:** project documentation update ([#356](https://github.com/bpg/terraform-provider-proxmox/issues/356)) ([9587c63](https://github.com/bpg/terraform-provider-proxmox/commit/9587c6383c37be894f6ca5a8d8f3edbb1826c219))
+
 ## [0.21.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.20.1...v0.21.0) (2023-06-01)
 
 
