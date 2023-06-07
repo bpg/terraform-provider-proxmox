@@ -173,7 +173,7 @@ output "ubuntu_container_public_key" {
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on
   the host (defaults to `false`).
-- `vm_id` - (Optional) The virtual machine identifier
+- `vm_id` - (Optional) The container identifier
 - `features` - (Optional) The container features
     - `nesting` - (Optional) Whether the container is nested (defaults
       to `false`)

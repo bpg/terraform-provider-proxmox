@@ -72,7 +72,8 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   serial_device {}
 
   template = true
-  vm_id    = 2040
+
+  // use auto-generated vm_id
 }
 
 resource "proxmox_virtual_environment_vm" "example" {
