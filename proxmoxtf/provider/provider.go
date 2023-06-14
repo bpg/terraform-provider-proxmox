@@ -61,7 +61,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	apiClient, err = api.NewClient(ctx, creds, conn)
+	apiClient, err = api.NewClient(creds, conn)
 	if err != nil {
 		return nil, diag.Errorf("error creating virtual environment client: %s", err)
 	}

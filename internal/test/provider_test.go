@@ -19,7 +19,6 @@ const (
 	// It is also possible to use the PROXMOX_VE_ environment variables instead,.
 	ProviderConfig = `
 provider "proxmox" {
-  endpoint  = "https://localhost:8006"  
   username = "root@pam"
   password = "password"
   insecure = true

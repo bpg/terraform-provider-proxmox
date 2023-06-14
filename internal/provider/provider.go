@@ -30,8 +30,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
+	// Ensure the implementation satisfies the expected interfaces.
 	_ provider.Provider = &proxmoxProvider{}
 )
 
@@ -73,7 +73,8 @@ type proxmoxProviderModel struct {
 }
 
 func (p *proxmoxProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "proxmox"
+	// resp.TypeName = "proxmox"
+	resp.TypeName = "proxmox_virtual_environment"
 	resp.Version = p.version
 }
 
@@ -88,7 +89,7 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
 						regexp.MustCompile(`^\S+@\w+!\S+=([a-zA-Z0-9-]+)$`),
-						"Must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'",
+						`must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'`,
 					),
 				},
 			},

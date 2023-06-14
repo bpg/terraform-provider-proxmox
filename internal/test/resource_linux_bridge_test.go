@@ -13,6 +13,8 @@ import (
 )
 
 func TestInterfaceLinuxBridgeResource(t *testing.T) {
+	resourceName := "proxmox_virtual_environment_network_linux_bridge.test"
+
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: AccTestProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -21,62 +23,16 @@ func TestInterfaceLinuxBridgeResource(t *testing.T) {
 				Config: ProviderConfig + `
 resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 	node_name = "pve"
-	iface = "test"
+	iface = "vmbr99"
+	comment = "created by terraform"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					// Verify number of items
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_network_linux_bridge.test", "iface", "test"),
-					// // Verify first order item
-					// resource.TestCheckResourceAttr("hashicups_order.test", "items.0.quantity", "2"),
-					// resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.id", "1"),
-					// // Verify first coffee item has Computed attributes filled.
-					// resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.description", ""),
-					// resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.image", "/hashicorp.png"),
-					// resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.name", "HCP Aeropress"),
-					// resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.price", "200"),
-					// resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.teaser", "Automation in a cup"),
-					// // Verify dynamic values have any value set in the state.
-					// resource.TestCheckResourceAttrSet("hashicups_order.test", "id"),
-					// resource.TestCheckResourceAttrSet("hashicups_order.test", "last_updated"),
+					resource.TestCheckResourceAttr(resourceName, "iface", "vmbr99"),
+					resource.TestCheckResourceAttr(resourceName, "comment", "created by terraform"),
+					resource.TestCheckResourceAttr(resourceName, "bridge_vlan_aware", "true"),
 				),
 			},
-			// 			// ImportState testing
-			// 			{
-			// 				ResourceName:      "hashicups_order.test",
-			// 				ImportState:       true,
-			// 				ImportStateVerify: true,
-			// 				// The last_updated attribute does not exist in the HashiCups
-			// 				// API, therefore there is no value for it during import.
-			// 				ImportStateVerifyIgnore: []string{"last_updated"},
-			// 			},
-			// 			// Update and Read testing
-			// 			{
-			// 				Config: ProviderConfig + `
-			// resource "hashicups_order" "test" {
-			//   items = [
-			//     {
-			//       coffee = {
-			//         id = 2
-			//       }
-			//       quantity = 2
-			//     },
-			//   ]
-			// }
-			// `,
-			// 				Check: resource.ComposeAggregateTestCheckFunc(
-			// 					// Verify first order item updated
-			// 					resource.TestCheckResourceAttr("hashicups_order.test", "items.0.quantity", "2"),
-			// 					resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.id", "2"),
-			// 					// Verify first coffee item has Computed attributes updated.
-			// 					resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.description", ""),
-			// 					resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.image", "/packer.png"),
-			// 					resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.name", "Packer Spiced Latte"),
-			// 					resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.price", "350"),
-			// 					resource.TestCheckResourceAttr("hashicups_order.test", "items.0.coffee.teaser", "Packed with goodness to spice up your images"),
-			// 				),
-			// 			},
-			// 			// Delete testing automatically occurs in TestCase
 		},
 	})
 }

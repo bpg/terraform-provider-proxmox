@@ -40,7 +40,10 @@ func (c *Client) ListNetworkInterfaces(ctx context.Context) ([]*NetworkInterface
 func (c *Client) CreateNetworkInterface(ctx context.Context, d *NetworkInterfaceCreateUpdateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("network"), d, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create network interface for node \"%s\": %w", c.NodeName, err)
+		return fmt.Errorf(
+			"failed to create network interface \"%s\" for node \"%s\": %w",
+			d.Iface, c.NodeName, err,
+		)
 	}
 
 	return nil
@@ -80,7 +83,9 @@ func (c *Client) UpdateNetworkInterface(
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update network interface for node \"%s\": %w", c.NodeName, err)
+		return fmt.Errorf("failed to update network interface \"%s\" for node \"%s\": %w",
+			d.Iface, c.NodeName, err,
+		)
 	}
 
 	return nil
@@ -96,7 +101,9 @@ func (c *Client) DeleteNetworkInterface(ctx context.Context, iface string) error
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to delete network interface for node \"%s\": %w", c.NodeName, err)
+		return fmt.Errorf("failed to delete network interface \"%s\" for node \"%s\": %w",
+			iface, c.NodeName, err,
+		)
 	}
 
 	return nil
