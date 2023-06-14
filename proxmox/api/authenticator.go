@@ -7,6 +7,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 )
 
@@ -18,5 +19,5 @@ type Authenticator interface {
 	IsRoot() bool
 
 	// AuthenticateRequest adds authentication data to a new request.
-	AuthenticateRequest(req *http.Request) error
+	AuthenticateRequest(ctx context.Context, req *http.Request) error
 }

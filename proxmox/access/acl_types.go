@@ -6,7 +6,9 @@
 
 package access
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
+)
 
 // ACLGetResponseBody contains the body from an access control list response.
 type ACLGetResponseBody struct {

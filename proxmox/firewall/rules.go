@@ -14,8 +14,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Rule is an interface for the Proxmox firewall rule API.

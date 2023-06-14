@@ -7,7 +7,7 @@
 package nodes
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
 )
 
 // DatastoreFileListResponseBody contains the body from a datastore content list response.

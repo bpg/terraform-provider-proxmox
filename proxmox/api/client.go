@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -83,8 +84,11 @@ func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 	}
 
 	return &Connection{
-		endpoint:   strings.TrimRight(u.String(), "/"),
-		httpClient: &http.Client{Transport: transport},
+		endpoint: strings.TrimRight(u.String(), "/"),
+		httpClient: &http.Client{
+			Transport: transport,
+			Timeout:   5 * time.Second, // TODO: configurable?
+		},
 	}, nil
 }
 
@@ -95,7 +99,7 @@ type client struct {
 }
 
 // NewClient creates and initializes a VirtualEnvironmentClient instance.
-func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Client, error) {
+func NewClient(creds *Credentials, conn *Connection) (Client, error) {
 	if creds == nil {
 		return nil, errors.New("credentials must not be nil")
 	}
@@ -111,7 +115,7 @@ func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Clien
 	if creds.APIToken != nil {
 		auth, err = NewTokenAuthenticator(*creds.APIToken)
 	} else {
-		auth, err = NewTicketAuthenticator(ctx, conn, creds)
+		auth, err = NewTicketAuthenticator(conn, creds)
 	}
 
 	if err != nil {
@@ -202,7 +206,7 @@ func (c *client) DoRequest(
 		req.Header.Add("Content-Type", reqBodyType)
 	}
 
-	err = c.auth.AuthenticateRequest(req)
+	err = c.auth.AuthenticateRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to authenticate HTTP %s request (path: %s) - Reason: %w",
 			method,

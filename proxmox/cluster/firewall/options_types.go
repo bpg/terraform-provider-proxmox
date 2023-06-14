@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
 )
 
 // OptionsPutRequestBody is the request body for the PUT /cluster/firewall/options API call.

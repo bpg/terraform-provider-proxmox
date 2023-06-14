@@ -33,7 +33,6 @@ func TestProviderSchema(t *testing.T) {
 	}
 
 	test.AssertOptionalArguments(t, s, []string{
-		mkProviderVirtualEnvironment,
 		mkProviderUsername,
 		mkProviderPassword,
 		mkProviderEndpoint,
@@ -42,32 +41,11 @@ func TestProviderSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkProviderVirtualEnvironment: schema.TypeList,
-		mkProviderUsername:           schema.TypeString,
-		mkProviderPassword:           schema.TypeString,
-		mkProviderEndpoint:           schema.TypeString,
-		mkProviderInsecure:           schema.TypeBool,
-		mkProviderOTP:                schema.TypeString,
-	})
-
-	veSchema := test.AssertNestedSchemaExistence(t, s, mkProviderVirtualEnvironment)
-
-	test.AssertOptionalArguments(t, veSchema, []string{
-		mkProviderEndpoint,
-		mkProviderInsecure,
-		mkProviderOTP,
-		mkProviderPassword,
-		mkProviderUsername,
-		mkProviderSSH,
-	})
-
-	test.AssertValueTypes(t, veSchema, map[string]schema.ValueType{
+		mkProviderUsername: schema.TypeString,
+		mkProviderPassword: schema.TypeString,
 		mkProviderEndpoint: schema.TypeString,
 		mkProviderInsecure: schema.TypeBool,
 		mkProviderOTP:      schema.TypeString,
-		mkProviderPassword: schema.TypeString,
-		mkProviderUsername: schema.TypeString,
-		mkProviderSSH:      schema.TypeList,
 	})
 
 	providerSSHSchema := test.AssertNestedSchemaExistence(t, s, mkProviderSSH)

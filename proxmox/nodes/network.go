@@ -16,13 +16,13 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
-// ListNetworkDevices retrieves a list of network devices for a specific nodes.
-func (c *Client) ListNetworkDevices(ctx context.Context) ([]*NetworkDeviceListResponseData, error) {
-	resBody := &NetworkDeviceListResponseBody{}
+// ListNetworkInterfaces retrieves a list of network interfaces for a specific nodes.
+func (c *Client) ListNetworkInterfaces(ctx context.Context) ([]*NetworkInterfaceListResponseData, error) {
+	resBody := &NetworkInterfaceListResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("network"), nil, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get network devices for node \"%s\": %w", c.NodeName, err)
+		return nil, fmt.Errorf("failed to get network interfaces for node \"%s\": %w", c.NodeName, err)
 	}
 
 	if resBody.Data == nil {
@@ -36,11 +36,11 @@ func (c *Client) ListNetworkDevices(ctx context.Context) ([]*NetworkDeviceListRe
 	return resBody.Data, nil
 }
 
-// CreateNetworkDevice creates a network device for a specific node.
-func (c *Client) CreateNetworkDevice(ctx context.Context, d *NetworkDeviceCreateUpdateRequestBody) error {
+// CreateNetworkInterface creates a network interface for a specific node.
+func (c *Client) CreateNetworkInterface(ctx context.Context, d *NetworkInterfaceCreateUpdateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("network"), d, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create network device for node \"%s\": %w", c.NodeName, err)
+		return fmt.Errorf("failed to create network interface for node \"%s\": %w", c.NodeName, err)
 	}
 
 	return nil
@@ -66,8 +66,12 @@ func (c *Client) RevertNetworkConfiguration(ctx context.Context) error {
 	return nil
 }
 
-// UpdateNetworkDevice updates a network device for a specific node.
-func (c *Client) UpdateNetworkDevice(ctx context.Context, iface string, d *NetworkDeviceCreateUpdateRequestBody) error {
+// UpdateNetworkInterface updates a network interface for a specific node.
+func (c *Client) UpdateNetworkInterface(
+	ctx context.Context,
+	iface string,
+	d *NetworkInterfaceCreateUpdateRequestBody,
+) error {
 	err := c.DoRequest(
 		ctx,
 		http.MethodPut,
@@ -76,14 +80,14 @@ func (c *Client) UpdateNetworkDevice(ctx context.Context, iface string, d *Netwo
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update network device for node \"%s\": %w", c.NodeName, err)
+		return fmt.Errorf("failed to update network interface for node \"%s\": %w", c.NodeName, err)
 	}
 
 	return nil
 }
 
-// DeleteNetworkDevice deletes a network device configuration for a specific node.
-func (c *Client) DeleteNetworkDevice(ctx context.Context, iface string) error {
+// DeleteNetworkInterface deletes a network interface configuration for a specific node.
+func (c *Client) DeleteNetworkInterface(ctx context.Context, iface string) error {
 	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
@@ -92,7 +96,7 @@ func (c *Client) DeleteNetworkDevice(ctx context.Context, iface string) error {
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to delete network device for node \"%s\": %w", c.NodeName, err)
+		return fmt.Errorf("failed to delete network interface for node \"%s\": %w", c.NodeName, err)
 	}
 
 	return nil

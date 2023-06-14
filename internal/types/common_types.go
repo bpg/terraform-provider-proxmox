@@ -53,6 +53,10 @@ func (r *CustomBool) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (r CustomBool) Pointer() *CustomBool {
+	return &r
+}
+
 // MarshalJSON converts a boolean to a JSON value.
 func (r *CustomCommaSeparatedList) MarshalJSON() ([]byte, error) {
 	s := strings.Join(*r, ",")

@@ -6,7 +6,9 @@
 
 package api
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
+)
 
 // AuthenticationResponseBody contains the body from an authentication response.
 type AuthenticationResponseBody struct {

@@ -15,14 +15,15 @@ import (
 	"strconv"
 	"strings"
 
+	types2 "github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // CustomAgent handles QEMU agent parameters.
 type CustomAgent struct {
-	Enabled         *types.CustomBool `json:"enabled,omitempty"   url:"enabled,int"`
-	TrimClonedDisks *types.CustomBool `json:"fstrim_cloned_disks" url:"fstrim_cloned_disks,int"`
-	Type            *string           `json:"type"                url:"type"`
+	Enabled         *types2.CustomBool `json:"enabled,omitempty"   url:"enabled,int"`
+	TrimClonedDisks *types2.CustomBool `json:"fstrim_cloned_disks" url:"fstrim_cloned_disks,int"`
+	Type            *string            `json:"type"                url:"type"`
 }
 
 // CustomAudioDevice handles QEMU audio parameters.
@@ -73,10 +74,10 @@ type CustomCloudInitSSHKeys []string
 
 // CustomCPUEmulation handles QEMU CPU emulation parameters.
 type CustomCPUEmulation struct {
-	Flags      *[]string         `json:"flags,omitempty"        url:"flags,omitempty,semicolon"`
-	Hidden     *types.CustomBool `json:"hidden,omitempty"       url:"hidden,omitempty,int"`
-	HVVendorID *string           `json:"hv-vendor-id,omitempty" url:"hv-vendor-id,omitempty"`
-	Type       string            `json:"cputype,omitempty"      url:"cputype,omitempty"`
+	Flags      *[]string          `json:"flags,omitempty"        url:"flags,omitempty,semicolon"`
+	Hidden     *types2.CustomBool `json:"hidden,omitempty"       url:"hidden,omitempty,int"`
+	HVVendorID *string            `json:"hv-vendor-id,omitempty" url:"hv-vendor-id,omitempty"`
+	Type       string             `json:"cputype,omitempty"      url:"cputype,omitempty"`
 }
 
 // CustomEFIDisk handles QEMU EFI disk parameters.
@@ -88,17 +89,17 @@ type CustomEFIDisk struct {
 
 // CustomNetworkDevice handles QEMU network device parameters.
 type CustomNetworkDevice struct {
-	Model      string            `json:"model"               url:"model"`
-	Bridge     *string           `json:"bridge,omitempty"    url:"bridge,omitempty"`
-	Enabled    bool              `json:"-"                   url:"-"`
-	Firewall   *types.CustomBool `json:"firewall,omitempty"  url:"firewall,omitempty,int"`
-	LinkDown   *types.CustomBool `json:"link_down,omitempty" url:"link_down,omitempty,int"`
-	MACAddress *string           `json:"macaddr,omitempty"   url:"macaddr,omitempty"`
-	Queues     *int              `json:"queues,omitempty"    url:"queues,omitempty"`
-	RateLimit  *float64          `json:"rate,omitempty"      url:"rate,omitempty"`
-	Tag        *int              `json:"tag,omitempty"       url:"tag,omitempty"`
-	MTU        *int              `json:"mtu,omitempty"       url:"mtu,omitempty"`
-	Trunks     []int             `json:"trunks,omitempty"    url:"trunks,omitempty"`
+	Model      string             `json:"model"               url:"model"`
+	Bridge     *string            `json:"bridge,omitempty"    url:"bridge,omitempty"`
+	Enabled    bool               `json:"-"                   url:"-"`
+	Firewall   *types2.CustomBool `json:"firewall,omitempty"  url:"firewall,omitempty,int"`
+	LinkDown   *types2.CustomBool `json:"link_down,omitempty" url:"link_down,omitempty,int"`
+	MACAddress *string            `json:"macaddr,omitempty"   url:"macaddr,omitempty"`
+	Queues     *int               `json:"queues,omitempty"    url:"queues,omitempty"`
+	RateLimit  *float64           `json:"rate,omitempty"      url:"rate,omitempty"`
+	Tag        *int               `json:"tag,omitempty"       url:"tag,omitempty"`
+	MTU        *int               `json:"mtu,omitempty"       url:"mtu,omitempty"`
+	Trunks     []int              `json:"trunks,omitempty"    url:"trunks,omitempty"`
 }
 
 // CustomNetworkDevices handles QEMU network device parameters.
@@ -117,12 +118,12 @@ type CustomNUMADevices []CustomNUMADevice
 
 // CustomPCIDevice handles QEMU host PCI device mapping parameters.
 type CustomPCIDevice struct {
-	DeviceIDs  []string          `json:"host"              url:"host,semicolon"`
-	MDev       *string           `json:"mdev,omitempty"    url:"mdev,omitempty"`
-	PCIExpress *types.CustomBool `json:"pcie,omitempty"    url:"pcie,omitempty,int"`
-	ROMBAR     *types.CustomBool `json:"rombar,omitempty"  url:"rombar,omitempty,int"`
-	ROMFile    *string           `json:"romfile,omitempty" url:"romfile,omitempty"`
-	XVGA       *types.CustomBool `json:"x-vga,omitempty"   url:"x-vga,omitempty,int"`
+	DeviceIDs  []string           `json:"host"              url:"host,semicolon"`
+	MDev       *string            `json:"mdev,omitempty"    url:"mdev,omitempty"`
+	PCIExpress *types2.CustomBool `json:"pcie,omitempty"    url:"pcie,omitempty,int"`
+	ROMBAR     *types2.CustomBool `json:"rombar,omitempty"  url:"rombar,omitempty,int"`
+	ROMFile    *string            `json:"romfile,omitempty" url:"romfile,omitempty"`
+	XVGA       *types2.CustomBool `json:"x-vga,omitempty"   url:"x-vga,omitempty,int"`
 }
 
 // CustomPCIDevices handles QEMU host PCI device mapping parameters.
@@ -139,20 +140,20 @@ type CustomSharedMemory struct {
 
 // CustomSMBIOS handles QEMU SMBIOS parameters.
 type CustomSMBIOS struct {
-	Base64       *types.CustomBool `json:"base64,omitempty"       url:"base64,omitempty"`
-	Family       *string           `json:"family,omitempty"       url:"family,omitempty"`
-	Manufacturer *string           `json:"manufacturer,omitempty" url:"manufacturer,omitempty"`
-	Product      *string           `json:"product,omitempty"      url:"product,omitempty"`
-	Serial       *string           `json:"serial,omitempty"       url:"serial,omitempty"`
-	SKU          *string           `json:"sku,omitempty"          url:"sku,omitempty"`
-	UUID         *string           `json:"uuid,omitempty"         url:"uuid,omitempty"`
-	Version      *string           `json:"version,omitempty"      url:"version,omitempty"`
+	Base64       *types2.CustomBool `json:"base64,omitempty"       url:"base64,omitempty"`
+	Family       *string            `json:"family,omitempty"       url:"family,omitempty"`
+	Manufacturer *string            `json:"manufacturer,omitempty" url:"manufacturer,omitempty"`
+	Product      *string            `json:"product,omitempty"      url:"product,omitempty"`
+	Serial       *string            `json:"serial,omitempty"       url:"serial,omitempty"`
+	SKU          *string            `json:"sku,omitempty"          url:"sku,omitempty"`
+	UUID         *string            `json:"uuid,omitempty"         url:"uuid,omitempty"`
+	Version      *string            `json:"version,omitempty"      url:"version,omitempty"`
 }
 
 // CustomSpiceEnhancements handles QEMU spice enhancement parameters.
 type CustomSpiceEnhancements struct {
-	FolderSharing  *types.CustomBool `json:"foldersharing,omitempty"  url:"foldersharing,omitempty"`
-	VideoStreaming *string           `json:"videostreaming,omitempty" url:"videostreaming,omitempty"`
+	FolderSharing  *types2.CustomBool `json:"foldersharing,omitempty"  url:"foldersharing,omitempty"`
+	VideoStreaming *string            `json:"videostreaming,omitempty" url:"videostreaming,omitempty"`
 }
 
 // CustomStartupOrder handles QEMU startup order parameters.
@@ -164,20 +165,20 @@ type CustomStartupOrder struct {
 
 // CustomStorageDevice handles QEMU SATA device parameters.
 type CustomStorageDevice struct {
-	AIO                     *string           `json:"aio,omitempty"         url:"aio,omitempty"`
-	BackupEnabled           *types.CustomBool `json:"backup,omitempty"      url:"backup,omitempty,int"`
-	BurstableReadSpeedMbps  *int              `json:"mbps_rd_max,omitempty" url:"mbps_rd_max,omitempty"`
-	BurstableWriteSpeedMbps *int              `json:"mbps_wr_max,omitempty" url:"mbps_wr_max,omitempty"`
-	Discard                 *string           `json:"discard,omitempty"     url:"discard,omitempty"`
-	Enabled                 bool              `json:"-"                     url:"-"`
-	FileVolume              string            `json:"file"                  url:"file"`
-	Format                  *string           `json:"format,omitempty"      url:"format,omitempty"`
-	IOThread                *types.CustomBool `json:"iothread,omitempty"    url:"iothread,omitempty,int"`
-	SSD                     *types.CustomBool `json:"ssd,omitempty"         url:"ssd,omitempty,int"`
-	MaxReadSpeedMbps        *int              `json:"mbps_rd,omitempty"     url:"mbps_rd,omitempty"`
-	MaxWriteSpeedMbps       *int              `json:"mbps_wr,omitempty"     url:"mbps_wr,omitempty"`
-	Media                   *string           `json:"media,omitempty"       url:"media,omitempty"`
-	Size                    *types.DiskSize   `json:"size,omitempty"        url:"size,omitempty"`
+	AIO                     *string            `json:"aio,omitempty"         url:"aio,omitempty"`
+	BackupEnabled           *types2.CustomBool `json:"backup,omitempty"      url:"backup,omitempty,int"`
+	BurstableReadSpeedMbps  *int               `json:"mbps_rd_max,omitempty" url:"mbps_rd_max,omitempty"`
+	BurstableWriteSpeedMbps *int               `json:"mbps_wr_max,omitempty" url:"mbps_wr_max,omitempty"`
+	Discard                 *string            `json:"discard,omitempty"     url:"discard,omitempty"`
+	Enabled                 bool               `json:"-"                     url:"-"`
+	FileVolume              string             `json:"file"                  url:"file"`
+	Format                  *string            `json:"format,omitempty"      url:"format,omitempty"`
+	IOThread                *types2.CustomBool `json:"iothread,omitempty"    url:"iothread,omitempty,int"`
+	SSD                     *types2.CustomBool `json:"ssd,omitempty"         url:"ssd,omitempty,int"`
+	MaxReadSpeedMbps        *int               `json:"mbps_rd,omitempty"     url:"mbps_rd,omitempty"`
+	MaxWriteSpeedMbps       *int               `json:"mbps_wr,omitempty"     url:"mbps_wr,omitempty"`
+	Media                   *string            `json:"media,omitempty"       url:"media,omitempty"`
+	Size                    *types.DiskSize    `json:"size,omitempty"        url:"size,omitempty"`
 	Interface               *string
 	ID                      *string
 	FileID                  *string
@@ -189,8 +190,8 @@ type CustomStorageDevices map[string]CustomStorageDevice
 
 // CustomUSBDevice handles QEMU USB device parameters.
 type CustomUSBDevice struct {
-	HostDevice string            `json:"host"           url:"host"`
-	USB3       *types.CustomBool `json:"usb3,omitempty" url:"usb3,omitempty,int"`
+	HostDevice string             `json:"host"           url:"host"`
+	USB3       *types2.CustomBool `json:"usb3,omitempty" url:"usb3,omitempty,int"`
 }
 
 // CustomUSBDevices handles QEMU USB device parameters.
@@ -204,10 +205,10 @@ type CustomVGADevice struct {
 
 // CustomVirtualIODevice handles QEMU VirtIO device parameters.
 type CustomVirtualIODevice struct {
-	AIO           *string           `json:"aio,omitempty"    url:"aio,omitempty"`
-	BackupEnabled *types.CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
-	Enabled       bool              `json:"-"                url:"-"`
-	FileVolume    string            `json:"file"             url:"file"`
+	AIO           *string            `json:"aio,omitempty"    url:"aio,omitempty"`
+	BackupEnabled *types2.CustomBool `json:"backup,omitempty" url:"backup,omitempty,int"`
+	Enabled       bool               `json:"-"                url:"-"`
+	FileVolume    string             `json:"file"             url:"file"`
 }
 
 // CustomVirtualIODevices handles QEMU VirtIO device parameters.
@@ -221,89 +222,89 @@ type CustomWatchdogDevice struct {
 
 // CloneRequestBody contains the data for an virtual machine clone request.
 type CloneRequestBody struct {
-	BandwidthLimit      *int              `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`
-	Description         *string           `json:"description,omitempty" url:"description,omitempty"`
-	FullCopy            *types.CustomBool `json:"full,omitempty"        url:"full,omitempty,int"`
-	Name                *string           `json:"name,omitempty"        url:"name,omitempty"`
-	PoolID              *string           `json:"pool,omitempty"        url:"pool,omitempty"`
-	SnapshotName        *string           `json:"snapname,omitempty"    url:"snapname,omitempty"`
-	TargetNodeName      *string           `json:"target,omitempty"      url:"target,omitempty"`
-	TargetStorage       *string           `json:"storage,omitempty"     url:"storage,omitempty"`
-	TargetStorageFormat *string           `json:"format,omitempty"      url:"format,omitempty"`
-	VMIDNew             int               `json:"newid"                 url:"newid"`
+	BandwidthLimit      *int               `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`
+	Description         *string            `json:"description,omitempty" url:"description,omitempty"`
+	FullCopy            *types2.CustomBool `json:"full,omitempty"        url:"full,omitempty,int"`
+	Name                *string            `json:"name,omitempty"        url:"name,omitempty"`
+	PoolID              *string            `json:"pool,omitempty"        url:"pool,omitempty"`
+	SnapshotName        *string            `json:"snapname,omitempty"    url:"snapname,omitempty"`
+	TargetNodeName      *string            `json:"target,omitempty"      url:"target,omitempty"`
+	TargetStorage       *string            `json:"storage,omitempty"     url:"storage,omitempty"`
+	TargetStorageFormat *string            `json:"format,omitempty"      url:"format,omitempty"`
+	VMIDNew             int                `json:"newid"                 url:"newid"`
 }
 
 // CreateRequestBody contains the data for a virtual machine create request.
 type CreateRequestBody struct {
-	ACPI                 *types.CustomBool              `json:"acpi,omitempty"               url:"acpi,omitempty,int"`
-	Agent                *CustomAgent                   `json:"agent,omitempty"              url:"agent,omitempty"`
-	AllowReboot          *types.CustomBool              `json:"reboot,omitempty"             url:"reboot,omitempty,int"`
-	AudioDevices         CustomAudioDevices             `json:"audio,omitempty"              url:"audio,omitempty"`
-	Autostart            *types.CustomBool              `json:"autostart,omitempty"          url:"autostart,omitempty,int"`
-	BackupFile           *string                        `json:"archive,omitempty"            url:"archive,omitempty"`
-	BandwidthLimit       *int                           `json:"bwlimit,omitempty"            url:"bwlimit,omitempty"`
-	BIOS                 *string                        `json:"bios,omitempty"               url:"bios,omitempty"`
-	Boot                 *CustomBoot                    `json:"boot,omitempty"               url:"boot,omitempty"`
-	CDROM                *string                        `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
-	CloudInitConfig      *CustomCloudInitConfig         `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
-	CPUArchitecture      *string                        `json:"arch,omitempty"               url:"arch,omitempty"`
-	CPUCores             *int                           `json:"cores,omitempty"              url:"cores,omitempty"`
-	CPUEmulation         *CustomCPUEmulation            `json:"cpu,omitempty"                url:"cpu,omitempty"`
-	CPULimit             *int                           `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
-	CPUSockets           *int                           `json:"sockets,omitempty"            url:"sockets,omitempty"`
-	CPUUnits             *int                           `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
-	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
-	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
-	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"force,omitempty,int"`
-	Description          *string                        `json:"description,omitempty"        url:"description,omitempty"`
-	EFIDisk              *CustomEFIDisk                 `json:"efidisk0,omitempty"           url:"efidisk0,omitempty"`
-	FloatingMemory       *int                           `json:"balloon,omitempty"            url:"balloon,omitempty"`
-	FloatingMemoryShares *int                           `json:"shares,omitempty"             url:"shares,omitempty"`
-	Freeze               *types.CustomBool              `json:"freeze,omitempty"             url:"freeze,omitempty,int"`
-	HookScript           *string                        `json:"hookscript,omitempty"         url:"hookscript,omitempty"`
-	Hotplug              types.CustomCommaSeparatedList `json:"hotplug,omitempty"            url:"hotplug,omitempty,comma"`
-	Hugepages            *string                        `json:"hugepages,omitempty"          url:"hugepages,omitempty"`
-	IDEDevices           CustomStorageDevices           `json:"ide,omitempty"                url:",omitempty"`
-	KeyboardLayout       *string                        `json:"keyboard,omitempty"           url:"keyboard,omitempty"`
-	KVMArguments         *string                        `json:"args,omitempty"               url:"args,omitempty,space"`
-	KVMEnabled           *types.CustomBool              `json:"kvm,omitempty"                url:"kvm,omitempty,int"`
-	LocalTime            *types.CustomBool              `json:"localtime,omitempty"          url:"localtime,omitempty,int"`
-	Lock                 *string                        `json:"lock,omitempty"               url:"lock,omitempty"`
-	Machine              *string                        `json:"machine,omitempty"            url:"machine,omitempty"`
-	MigrateDowntime      *float64                       `json:"migrate_downtime,omitempty"   url:"migrate_downtime,omitempty"`
-	MigrateSpeed         *int                           `json:"migrate_speed,omitempty"      url:"migrate_speed,omitempty"`
-	Name                 *string                        `json:"name,omitempty"               url:"name,omitempty"`
-	NetworkDevices       CustomNetworkDevices           `json:"net,omitempty"                url:"net,omitempty"`
-	NUMADevices          CustomNUMADevices              `json:"numa_devices,omitempty"       url:"numa,omitempty"`
-	NUMAEnabled          *types.CustomBool              `json:"numa,omitempty"               url:"numa,omitempty,int"`
-	OSType               *string                        `json:"ostype,omitempty"             url:"ostype,omitempty"`
-	Overwrite            *types.CustomBool              `json:"force,omitempty"              url:"force,omitempty,int"`
-	PCIDevices           CustomPCIDevices               `json:"hostpci,omitempty"            url:"hostpci,omitempty"`
-	PoolID               *string                        `json:"pool,omitempty"               url:"pool,omitempty"`
-	Revert               *string                        `json:"revert,omitempty"             url:"revert,omitempty"`
-	SATADevices          CustomStorageDevices           `json:"sata,omitempty"               url:"sata,omitempty"`
-	SCSIDevices          CustomStorageDevices           `json:"scsi,omitempty"               url:"scsi,omitempty"`
-	SCSIHardware         *string                        `json:"scsihw,omitempty"             url:"scsihw,omitempty"`
-	SerialDevices        CustomSerialDevices            `json:"serial,omitempty"             url:"serial,omitempty"`
-	SharedMemory         *CustomSharedMemory            `json:"ivshmem,omitempty"            url:"ivshmem,omitempty"`
-	SkipLock             *types.CustomBool              `json:"skiplock,omitempty"           url:"skiplock,omitempty,int"`
-	SMBIOS               *CustomSMBIOS                  `json:"smbios1,omitempty"            url:"smbios1,omitempty"`
-	SpiceEnhancements    *CustomSpiceEnhancements       `json:"spice_enhancements,omitempty" url:"spice_enhancements,omitempty"`
-	StartDate            *string                        `json:"startdate,omitempty"          url:"startdate,omitempty"`
-	StartOnBoot          *types.CustomBool              `json:"onboot,omitempty"             url:"onboot,omitempty,int"`
-	StartupOrder         *CustomStartupOrder            `json:"startup,omitempty"            url:"startup,omitempty"`
-	TabletDeviceEnabled  *types.CustomBool              `json:"tablet,omitempty"             url:"tablet,omitempty,int"`
-	Tags                 *string                        `json:"tags,omitempty"               url:"tags,omitempty"`
-	Template             *types.CustomBool              `json:"template,omitempty"           url:"template,omitempty,int"`
-	TimeDriftFixEnabled  *types.CustomBool              `json:"tdf,omitempty"                url:"tdf,omitempty,int"`
-	USBDevices           CustomUSBDevices               `json:"usb,omitempty"                url:"usb,omitempty"`
-	VGADevice            *CustomVGADevice               `json:"vga,omitempty"                url:"vga,omitempty"`
-	VirtualCPUCount      *int                           `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
-	VirtualIODevices     CustomStorageDevices           `json:"virtio,omitempty"             url:"virtio,omitempty"`
-	VMGenerationID       *string                        `json:"vmgenid,omitempty"            url:"vmgenid,omitempty"`
-	VMID                 *int                           `json:"vmid,omitempty"               url:"vmid,omitempty"`
-	VMStateDatastoreID   *string                        `json:"vmstatestorage,omitempty"     url:"vmstatestorage,omitempty"`
-	WatchdogDevice       *CustomWatchdogDevice          `json:"watchdog,omitempty"           url:"watchdog,omitempty"`
+	ACPI                 *types2.CustomBool              `json:"acpi,omitempty"               url:"acpi,omitempty,int"`
+	Agent                *CustomAgent                    `json:"agent,omitempty"              url:"agent,omitempty"`
+	AllowReboot          *types2.CustomBool              `json:"reboot,omitempty"             url:"reboot,omitempty,int"`
+	AudioDevices         CustomAudioDevices              `json:"audio,omitempty"              url:"audio,omitempty"`
+	Autostart            *types2.CustomBool              `json:"autostart,omitempty"          url:"autostart,omitempty,int"`
+	BackupFile           *string                         `json:"archive,omitempty"            url:"archive,omitempty"`
+	BandwidthLimit       *int                            `json:"bwlimit,omitempty"            url:"bwlimit,omitempty"`
+	BIOS                 *string                         `json:"bios,omitempty"               url:"bios,omitempty"`
+	Boot                 *CustomBoot                     `json:"boot,omitempty"               url:"boot,omitempty"`
+	CDROM                *string                         `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
+	CloudInitConfig      *CustomCloudInitConfig          `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
+	CPUArchitecture      *string                         `json:"arch,omitempty"               url:"arch,omitempty"`
+	CPUCores             *int                            `json:"cores,omitempty"              url:"cores,omitempty"`
+	CPUEmulation         *CustomCPUEmulation             `json:"cpu,omitempty"                url:"cpu,omitempty"`
+	CPULimit             *int                            `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
+	CPUSockets           *int                            `json:"sockets,omitempty"            url:"sockets,omitempty"`
+	CPUUnits             *int                            `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
+	DedicatedMemory      *int                            `json:"memory,omitempty"             url:"memory,omitempty"`
+	Delete               []string                        `json:"delete,omitempty"             url:"delete,omitempty,comma"`
+	DeletionProtection   *types2.CustomBool              `json:"protection,omitempty"         url:"force,omitempty,int"`
+	Description          *string                         `json:"description,omitempty"        url:"description,omitempty"`
+	EFIDisk              *CustomEFIDisk                  `json:"efidisk0,omitempty"           url:"efidisk0,omitempty"`
+	FloatingMemory       *int                            `json:"balloon,omitempty"            url:"balloon,omitempty"`
+	FloatingMemoryShares *int                            `json:"shares,omitempty"             url:"shares,omitempty"`
+	Freeze               *types2.CustomBool              `json:"freeze,omitempty"             url:"freeze,omitempty,int"`
+	HookScript           *string                         `json:"hookscript,omitempty"         url:"hookscript,omitempty"`
+	Hotplug              types2.CustomCommaSeparatedList `json:"hotplug,omitempty"            url:"hotplug,omitempty,comma"`
+	Hugepages            *string                         `json:"hugepages,omitempty"          url:"hugepages,omitempty"`
+	IDEDevices           CustomStorageDevices            `json:"ide,omitempty"                url:",omitempty"`
+	KeyboardLayout       *string                         `json:"keyboard,omitempty"           url:"keyboard,omitempty"`
+	KVMArguments         *string                         `json:"args,omitempty"               url:"args,omitempty,space"`
+	KVMEnabled           *types2.CustomBool              `json:"kvm,omitempty"                url:"kvm,omitempty,int"`
+	LocalTime            *types2.CustomBool              `json:"localtime,omitempty"          url:"localtime,omitempty,int"`
+	Lock                 *string                         `json:"lock,omitempty"               url:"lock,omitempty"`
+	Machine              *string                         `json:"machine,omitempty"            url:"machine,omitempty"`
+	MigrateDowntime      *float64                        `json:"migrate_downtime,omitempty"   url:"migrate_downtime,omitempty"`
+	MigrateSpeed         *int                            `json:"migrate_speed,omitempty"      url:"migrate_speed,omitempty"`
+	Name                 *string                         `json:"name,omitempty"               url:"name,omitempty"`
+	NetworkDevices       CustomNetworkDevices            `json:"net,omitempty"                url:"net,omitempty"`
+	NUMADevices          CustomNUMADevices               `json:"numa_devices,omitempty"       url:"numa,omitempty"`
+	NUMAEnabled          *types2.CustomBool              `json:"numa,omitempty"               url:"numa,omitempty,int"`
+	OSType               *string                         `json:"ostype,omitempty"             url:"ostype,omitempty"`
+	Overwrite            *types2.CustomBool              `json:"force,omitempty"              url:"force,omitempty,int"`
+	PCIDevices           CustomPCIDevices                `json:"hostpci,omitempty"            url:"hostpci,omitempty"`
+	PoolID               *string                         `json:"pool,omitempty"               url:"pool,omitempty"`
+	Revert               *string                         `json:"revert,omitempty"             url:"revert,omitempty"`
+	SATADevices          CustomStorageDevices            `json:"sata,omitempty"               url:"sata,omitempty"`
+	SCSIDevices          CustomStorageDevices            `json:"scsi,omitempty"               url:"scsi,omitempty"`
+	SCSIHardware         *string                         `json:"scsihw,omitempty"             url:"scsihw,omitempty"`
+	SerialDevices        CustomSerialDevices             `json:"serial,omitempty"             url:"serial,omitempty"`
+	SharedMemory         *CustomSharedMemory             `json:"ivshmem,omitempty"            url:"ivshmem,omitempty"`
+	SkipLock             *types2.CustomBool              `json:"skiplock,omitempty"           url:"skiplock,omitempty,int"`
+	SMBIOS               *CustomSMBIOS                   `json:"smbios1,omitempty"            url:"smbios1,omitempty"`
+	SpiceEnhancements    *CustomSpiceEnhancements        `json:"spice_enhancements,omitempty" url:"spice_enhancements,omitempty"`
+	StartDate            *string                         `json:"startdate,omitempty"          url:"startdate,omitempty"`
+	StartOnBoot          *types2.CustomBool              `json:"onboot,omitempty"             url:"onboot,omitempty,int"`
+	StartupOrder         *CustomStartupOrder             `json:"startup,omitempty"            url:"startup,omitempty"`
+	TabletDeviceEnabled  *types2.CustomBool              `json:"tablet,omitempty"             url:"tablet,omitempty,int"`
+	Tags                 *string                         `json:"tags,omitempty"               url:"tags,omitempty"`
+	Template             *types2.CustomBool              `json:"template,omitempty"           url:"template,omitempty,int"`
+	TimeDriftFixEnabled  *types2.CustomBool              `json:"tdf,omitempty"                url:"tdf,omitempty,int"`
+	USBDevices           CustomUSBDevices                `json:"usb,omitempty"                url:"usb,omitempty"`
+	VGADevice            *CustomVGADevice                `json:"vga,omitempty"                url:"vga,omitempty"`
+	VirtualCPUCount      *int                            `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
+	VirtualIODevices     CustomStorageDevices            `json:"virtio,omitempty"             url:"virtio,omitempty"`
+	VMGenerationID       *string                         `json:"vmgenid,omitempty"            url:"vmgenid,omitempty"`
+	VMID                 *int                            `json:"vmid,omitempty"               url:"vmid,omitempty"`
+	VMStateDatastoreID   *string                         `json:"vmstatestorage,omitempty"     url:"vmstatestorage,omitempty"`
+	WatchdogDevice       *CustomWatchdogDevice           `json:"watchdog,omitempty"           url:"watchdog,omitempty"`
 }
 
 // CreateResponseBody contains the body from a create response.
@@ -355,137 +356,137 @@ type GetResponseBody struct {
 
 // GetResponseData contains the data from an virtual machine get response.
 type GetResponseData struct {
-	ACPI                 *types.CustomBool               `json:"acpi,omitempty"`
-	Agent                *CustomAgent                    `json:"agent,omitempty"`
-	AllowReboot          *types.CustomBool               `json:"reboot,omitempty"`
-	AudioDevice          *CustomAudioDevice              `json:"audio0,omitempty"`
-	Autostart            *types.CustomBool               `json:"autostart,omitempty"`
-	BackupFile           *string                         `json:"archive,omitempty"`
-	BandwidthLimit       *int                            `json:"bwlimit,omitempty"`
-	BIOS                 *string                         `json:"bios,omitempty"`
-	BootDisk             *string                         `json:"bootdisk,omitempty"`
-	BootOrder            *string                         `json:"boot,omitempty"`
-	CDROM                *string                         `json:"cdrom,omitempty"`
-	CloudInitDNSDomain   *string                         `json:"searchdomain,omitempty"`
-	CloudInitDNSServer   *string                         `json:"nameserver,omitempty"`
-	CloudInitFiles       *CustomCloudInitFiles           `json:"cicustom,omitempty"`
-	CloudInitPassword    *string                         `json:"cipassword,omitempty"`
-	CloudInitSSHKeys     *CustomCloudInitSSHKeys         `json:"sshkeys,omitempty"`
-	CloudInitType        *string                         `json:"citype,omitempty"`
-	CloudInitUsername    *string                         `json:"ciuser,omitempty"`
-	CPUArchitecture      *string                         `json:"arch,omitempty"`
-	CPUCores             *int                            `json:"cores,omitempty"`
-	CPUEmulation         *CustomCPUEmulation             `json:"cpu,omitempty"`
-	CPULimit             *int                            `json:"cpulimit,omitempty"`
-	CPUSockets           *int                            `json:"sockets,omitempty"`
-	CPUUnits             *int                            `json:"cpuunits,omitempty"`
-	DedicatedMemory      *int                            `json:"memory,omitempty"`
-	DeletionProtection   *types.CustomBool               `json:"protection,omitempty"`
-	Description          *string                         `json:"description,omitempty"`
-	EFIDisk              *CustomEFIDisk                  `json:"efidisk0,omitempty"`
-	FloatingMemory       *int                            `json:"balloon,omitempty"`
-	FloatingMemoryShares *int                            `json:"shares,omitempty"`
-	Freeze               *types.CustomBool               `json:"freeze,omitempty"`
-	HookScript           *string                         `json:"hookscript,omitempty"`
-	Hotplug              *types.CustomCommaSeparatedList `json:"hotplug,omitempty"`
-	Hugepages            *string                         `json:"hugepages,omitempty"`
-	IDEDevice0           *CustomStorageDevice            `json:"ide0,omitempty"`
-	IDEDevice1           *CustomStorageDevice            `json:"ide1,omitempty"`
-	IDEDevice2           *CustomStorageDevice            `json:"ide2,omitempty"`
-	IDEDevice3           *CustomStorageDevice            `json:"ide3,omitempty"`
-	IPConfig0            *CustomCloudInitIPConfig        `json:"ipconfig0,omitempty"`
-	IPConfig1            *CustomCloudInitIPConfig        `json:"ipconfig1,omitempty"`
-	IPConfig2            *CustomCloudInitIPConfig        `json:"ipconfig2,omitempty"`
-	IPConfig3            *CustomCloudInitIPConfig        `json:"ipconfig3,omitempty"`
-	IPConfig4            *CustomCloudInitIPConfig        `json:"ipconfig4,omitempty"`
-	IPConfig5            *CustomCloudInitIPConfig        `json:"ipconfig5,omitempty"`
-	IPConfig6            *CustomCloudInitIPConfig        `json:"ipconfig6,omitempty"`
-	IPConfig7            *CustomCloudInitIPConfig        `json:"ipconfig7,omitempty"`
-	KeyboardLayout       *string                         `json:"keyboard,omitempty"`
-	KVMArguments         *string                         `json:"args,omitempty"`
-	KVMEnabled           *types.CustomBool               `json:"kvm,omitempty"`
-	LocalTime            *types.CustomBool               `json:"localtime,omitempty"`
-	Lock                 *string                         `json:"lock,omitempty"`
-	Machine              *string                         `json:"machine,omitempty"`
-	MigrateDowntime      *float64                        `json:"migrate_downtime,omitempty"`
-	MigrateSpeed         *int                            `json:"migrate_speed,omitempty"`
-	Name                 *string                         `json:"name,omitempty"`
-	NetworkDevice0       *CustomNetworkDevice            `json:"net0,omitempty"`
-	NetworkDevice1       *CustomNetworkDevice            `json:"net1,omitempty"`
-	NetworkDevice2       *CustomNetworkDevice            `json:"net2,omitempty"`
-	NetworkDevice3       *CustomNetworkDevice            `json:"net3,omitempty"`
-	NetworkDevice4       *CustomNetworkDevice            `json:"net4,omitempty"`
-	NetworkDevice5       *CustomNetworkDevice            `json:"net5,omitempty"`
-	NetworkDevice6       *CustomNetworkDevice            `json:"net6,omitempty"`
-	NetworkDevice7       *CustomNetworkDevice            `json:"net7,omitempty"`
-	NUMADevices          *CustomNUMADevices              `json:"numa_devices,omitempty"`
-	NUMAEnabled          *types.CustomBool               `json:"numa,omitempty"`
-	OSType               *string                         `json:"ostype,omitempty"`
-	Overwrite            *types.CustomBool               `json:"force,omitempty"`
-	PCIDevice0           *CustomPCIDevice                `json:"hostpci0,omitempty"`
-	PCIDevice1           *CustomPCIDevice                `json:"hostpci1,omitempty"`
-	PCIDevice2           *CustomPCIDevice                `json:"hostpci2,omitempty"`
-	PCIDevice3           *CustomPCIDevice                `json:"hostpci3,omitempty"`
-	PoolID               *string                         `json:"pool,omitempty"               url:"pool,omitempty"`
-	Revert               *string                         `json:"revert,omitempty"`
-	SATADevice0          *CustomStorageDevice            `json:"sata0,omitempty"`
-	SATADevice1          *CustomStorageDevice            `json:"sata1,omitempty"`
-	SATADevice2          *CustomStorageDevice            `json:"sata2,omitempty"`
-	SATADevice3          *CustomStorageDevice            `json:"sata3,omitempty"`
-	SATADevice4          *CustomStorageDevice            `json:"sata4,omitempty"`
-	SATADevice5          *CustomStorageDevice            `json:"sata5,omitempty"`
-	SCSIDevice0          *CustomStorageDevice            `json:"scsi0,omitempty"`
-	SCSIDevice1          *CustomStorageDevice            `json:"scsi1,omitempty"`
-	SCSIDevice2          *CustomStorageDevice            `json:"scsi2,omitempty"`
-	SCSIDevice3          *CustomStorageDevice            `json:"scsi3,omitempty"`
-	SCSIDevice4          *CustomStorageDevice            `json:"scsi4,omitempty"`
-	SCSIDevice5          *CustomStorageDevice            `json:"scsi5,omitempty"`
-	SCSIDevice6          *CustomStorageDevice            `json:"scsi6,omitempty"`
-	SCSIDevice7          *CustomStorageDevice            `json:"scsi7,omitempty"`
-	SCSIDevice8          *CustomStorageDevice            `json:"scsi8,omitempty"`
-	SCSIDevice9          *CustomStorageDevice            `json:"scsi9,omitempty"`
-	SCSIDevice10         *CustomStorageDevice            `json:"scsi10,omitempty"`
-	SCSIDevice11         *CustomStorageDevice            `json:"scsi11,omitempty"`
-	SCSIDevice12         *CustomStorageDevice            `json:"scsi12,omitempty"`
-	SCSIDevice13         *CustomStorageDevice            `json:"scsi13,omitempty"`
-	SCSIHardware         *string                         `json:"scsihw,omitempty"`
-	SerialDevice0        *string                         `json:"serial0,omitempty"`
-	SerialDevice1        *string                         `json:"serial1,omitempty"`
-	SerialDevice2        *string                         `json:"serial2,omitempty"`
-	SerialDevice3        *string                         `json:"serial3,omitempty"`
-	SharedMemory         *CustomSharedMemory             `json:"ivshmem,omitempty"`
-	SkipLock             *types.CustomBool               `json:"skiplock,omitempty"`
-	SMBIOS               *CustomSMBIOS                   `json:"smbios1,omitempty"`
-	SpiceEnhancements    *CustomSpiceEnhancements        `json:"spice_enhancements,omitempty"`
-	StartDate            *string                         `json:"startdate,omitempty"`
-	StartOnBoot          *types.CustomBool               `json:"onboot,omitempty"`
-	StartupOrder         *CustomStartupOrder             `json:"startup,omitempty"`
-	TabletDeviceEnabled  *types.CustomBool               `json:"tablet,omitempty"`
-	Tags                 *string                         `json:"tags,omitempty"`
-	Template             *types.CustomBool               `json:"template,omitempty"`
-	TimeDriftFixEnabled  *types.CustomBool               `json:"tdf,omitempty"`
-	USBDevices           *CustomUSBDevices               `json:"usb,omitempty"`
-	VGADevice            *CustomVGADevice                `json:"vga,omitempty"`
-	VirtualCPUCount      *int                            `json:"vcpus,omitempty"`
-	VirtualIODevice0     *CustomStorageDevice            `json:"virtio0,omitempty"`
-	VirtualIODevice1     *CustomStorageDevice            `json:"virtio1,omitempty"`
-	VirtualIODevice2     *CustomStorageDevice            `json:"virtio2,omitempty"`
-	VirtualIODevice3     *CustomStorageDevice            `json:"virtio3,omitempty"`
-	VirtualIODevice4     *CustomStorageDevice            `json:"virtio4,omitempty"`
-	VirtualIODevice5     *CustomStorageDevice            `json:"virtio5,omitempty"`
-	VirtualIODevice6     *CustomStorageDevice            `json:"virtio6,omitempty"`
-	VirtualIODevice7     *CustomStorageDevice            `json:"virtio7,omitempty"`
-	VirtualIODevice8     *CustomStorageDevice            `json:"virtio8,omitempty"`
-	VirtualIODevice9     *CustomStorageDevice            `json:"virtio9,omitempty"`
-	VirtualIODevice10    *CustomStorageDevice            `json:"virtio10,omitempty"`
-	VirtualIODevice11    *CustomStorageDevice            `json:"virtio11,omitempty"`
-	VirtualIODevice12    *CustomStorageDevice            `json:"virtio12,omitempty"`
-	VirtualIODevice13    *CustomStorageDevice            `json:"virtio13,omitempty"`
-	VirtualIODevice14    *CustomStorageDevice            `json:"virtio14,omitempty"`
-	VirtualIODevice15    *CustomStorageDevice            `json:"virtio15,omitempty"`
-	VMGenerationID       *string                         `json:"vmgenid,omitempty"`
-	VMStateDatastoreID   *string                         `json:"vmstatestorage,omitempty"`
-	WatchdogDevice       *CustomWatchdogDevice           `json:"watchdog,omitempty"`
+	ACPI                 *types2.CustomBool               `json:"acpi,omitempty"`
+	Agent                *CustomAgent                     `json:"agent,omitempty"`
+	AllowReboot          *types2.CustomBool               `json:"reboot,omitempty"`
+	AudioDevice          *CustomAudioDevice               `json:"audio0,omitempty"`
+	Autostart            *types2.CustomBool               `json:"autostart,omitempty"`
+	BackupFile           *string                          `json:"archive,omitempty"`
+	BandwidthLimit       *int                             `json:"bwlimit,omitempty"`
+	BIOS                 *string                          `json:"bios,omitempty"`
+	BootDisk             *string                          `json:"bootdisk,omitempty"`
+	BootOrder            *string                          `json:"boot,omitempty"`
+	CDROM                *string                          `json:"cdrom,omitempty"`
+	CloudInitDNSDomain   *string                          `json:"searchdomain,omitempty"`
+	CloudInitDNSServer   *string                          `json:"nameserver,omitempty"`
+	CloudInitFiles       *CustomCloudInitFiles            `json:"cicustom,omitempty"`
+	CloudInitPassword    *string                          `json:"cipassword,omitempty"`
+	CloudInitSSHKeys     *CustomCloudInitSSHKeys          `json:"sshkeys,omitempty"`
+	CloudInitType        *string                          `json:"citype,omitempty"`
+	CloudInitUsername    *string                          `json:"ciuser,omitempty"`
+	CPUArchitecture      *string                          `json:"arch,omitempty"`
+	CPUCores             *int                             `json:"cores,omitempty"`
+	CPUEmulation         *CustomCPUEmulation              `json:"cpu,omitempty"`
+	CPULimit             *int                             `json:"cpulimit,omitempty"`
+	CPUSockets           *int                             `json:"sockets,omitempty"`
+	CPUUnits             *int                             `json:"cpuunits,omitempty"`
+	DedicatedMemory      *int                             `json:"memory,omitempty"`
+	DeletionProtection   *types2.CustomBool               `json:"protection,omitempty"`
+	Description          *string                          `json:"description,omitempty"`
+	EFIDisk              *CustomEFIDisk                   `json:"efidisk0,omitempty"`
+	FloatingMemory       *int                             `json:"balloon,omitempty"`
+	FloatingMemoryShares *int                             `json:"shares,omitempty"`
+	Freeze               *types2.CustomBool               `json:"freeze,omitempty"`
+	HookScript           *string                          `json:"hookscript,omitempty"`
+	Hotplug              *types2.CustomCommaSeparatedList `json:"hotplug,omitempty"`
+	Hugepages            *string                          `json:"hugepages,omitempty"`
+	IDEDevice0           *CustomStorageDevice             `json:"ide0,omitempty"`
+	IDEDevice1           *CustomStorageDevice             `json:"ide1,omitempty"`
+	IDEDevice2           *CustomStorageDevice             `json:"ide2,omitempty"`
+	IDEDevice3           *CustomStorageDevice             `json:"ide3,omitempty"`
+	IPConfig0            *CustomCloudInitIPConfig         `json:"ipconfig0,omitempty"`
+	IPConfig1            *CustomCloudInitIPConfig         `json:"ipconfig1,omitempty"`
+	IPConfig2            *CustomCloudInitIPConfig         `json:"ipconfig2,omitempty"`
+	IPConfig3            *CustomCloudInitIPConfig         `json:"ipconfig3,omitempty"`
+	IPConfig4            *CustomCloudInitIPConfig         `json:"ipconfig4,omitempty"`
+	IPConfig5            *CustomCloudInitIPConfig         `json:"ipconfig5,omitempty"`
+	IPConfig6            *CustomCloudInitIPConfig         `json:"ipconfig6,omitempty"`
+	IPConfig7            *CustomCloudInitIPConfig         `json:"ipconfig7,omitempty"`
+	KeyboardLayout       *string                          `json:"keyboard,omitempty"`
+	KVMArguments         *string                          `json:"args,omitempty"`
+	KVMEnabled           *types2.CustomBool               `json:"kvm,omitempty"`
+	LocalTime            *types2.CustomBool               `json:"localtime,omitempty"`
+	Lock                 *string                          `json:"lock,omitempty"`
+	Machine              *string                          `json:"machine,omitempty"`
+	MigrateDowntime      *float64                         `json:"migrate_downtime,omitempty"`
+	MigrateSpeed         *int                             `json:"migrate_speed,omitempty"`
+	Name                 *string                          `json:"name,omitempty"`
+	NetworkDevice0       *CustomNetworkDevice             `json:"net0,omitempty"`
+	NetworkDevice1       *CustomNetworkDevice             `json:"net1,omitempty"`
+	NetworkDevice2       *CustomNetworkDevice             `json:"net2,omitempty"`
+	NetworkDevice3       *CustomNetworkDevice             `json:"net3,omitempty"`
+	NetworkDevice4       *CustomNetworkDevice             `json:"net4,omitempty"`
+	NetworkDevice5       *CustomNetworkDevice             `json:"net5,omitempty"`
+	NetworkDevice6       *CustomNetworkDevice             `json:"net6,omitempty"`
+	NetworkDevice7       *CustomNetworkDevice             `json:"net7,omitempty"`
+	NUMADevices          *CustomNUMADevices               `json:"numa_devices,omitempty"`
+	NUMAEnabled          *types2.CustomBool               `json:"numa,omitempty"`
+	OSType               *string                          `json:"ostype,omitempty"`
+	Overwrite            *types2.CustomBool               `json:"force,omitempty"`
+	PCIDevice0           *CustomPCIDevice                 `json:"hostpci0,omitempty"`
+	PCIDevice1           *CustomPCIDevice                 `json:"hostpci1,omitempty"`
+	PCIDevice2           *CustomPCIDevice                 `json:"hostpci2,omitempty"`
+	PCIDevice3           *CustomPCIDevice                 `json:"hostpci3,omitempty"`
+	PoolID               *string                          `json:"pool,omitempty"               url:"pool,omitempty"`
+	Revert               *string                          `json:"revert,omitempty"`
+	SATADevice0          *CustomStorageDevice             `json:"sata0,omitempty"`
+	SATADevice1          *CustomStorageDevice             `json:"sata1,omitempty"`
+	SATADevice2          *CustomStorageDevice             `json:"sata2,omitempty"`
+	SATADevice3          *CustomStorageDevice             `json:"sata3,omitempty"`
+	SATADevice4          *CustomStorageDevice             `json:"sata4,omitempty"`
+	SATADevice5          *CustomStorageDevice             `json:"sata5,omitempty"`
+	SCSIDevice0          *CustomStorageDevice             `json:"scsi0,omitempty"`
+	SCSIDevice1          *CustomStorageDevice             `json:"scsi1,omitempty"`
+	SCSIDevice2          *CustomStorageDevice             `json:"scsi2,omitempty"`
+	SCSIDevice3          *CustomStorageDevice             `json:"scsi3,omitempty"`
+	SCSIDevice4          *CustomStorageDevice             `json:"scsi4,omitempty"`
+	SCSIDevice5          *CustomStorageDevice             `json:"scsi5,omitempty"`
+	SCSIDevice6          *CustomStorageDevice             `json:"scsi6,omitempty"`
+	SCSIDevice7          *CustomStorageDevice             `json:"scsi7,omitempty"`
+	SCSIDevice8          *CustomStorageDevice             `json:"scsi8,omitempty"`
+	SCSIDevice9          *CustomStorageDevice             `json:"scsi9,omitempty"`
+	SCSIDevice10         *CustomStorageDevice             `json:"scsi10,omitempty"`
+	SCSIDevice11         *CustomStorageDevice             `json:"scsi11,omitempty"`
+	SCSIDevice12         *CustomStorageDevice             `json:"scsi12,omitempty"`
+	SCSIDevice13         *CustomStorageDevice             `json:"scsi13,omitempty"`
+	SCSIHardware         *string                          `json:"scsihw,omitempty"`
+	SerialDevice0        *string                          `json:"serial0,omitempty"`
+	SerialDevice1        *string                          `json:"serial1,omitempty"`
+	SerialDevice2        *string                          `json:"serial2,omitempty"`
+	SerialDevice3        *string                          `json:"serial3,omitempty"`
+	SharedMemory         *CustomSharedMemory              `json:"ivshmem,omitempty"`
+	SkipLock             *types2.CustomBool               `json:"skiplock,omitempty"`
+	SMBIOS               *CustomSMBIOS                    `json:"smbios1,omitempty"`
+	SpiceEnhancements    *CustomSpiceEnhancements         `json:"spice_enhancements,omitempty"`
+	StartDate            *string                          `json:"startdate,omitempty"`
+	StartOnBoot          *types2.CustomBool               `json:"onboot,omitempty"`
+	StartupOrder         *CustomStartupOrder              `json:"startup,omitempty"`
+	TabletDeviceEnabled  *types2.CustomBool               `json:"tablet,omitempty"`
+	Tags                 *string                          `json:"tags,omitempty"`
+	Template             *types2.CustomBool               `json:"template,omitempty"`
+	TimeDriftFixEnabled  *types2.CustomBool               `json:"tdf,omitempty"`
+	USBDevices           *CustomUSBDevices                `json:"usb,omitempty"`
+	VGADevice            *CustomVGADevice                 `json:"vga,omitempty"`
+	VirtualCPUCount      *int                             `json:"vcpus,omitempty"`
+	VirtualIODevice0     *CustomStorageDevice             `json:"virtio0,omitempty"`
+	VirtualIODevice1     *CustomStorageDevice             `json:"virtio1,omitempty"`
+	VirtualIODevice2     *CustomStorageDevice             `json:"virtio2,omitempty"`
+	VirtualIODevice3     *CustomStorageDevice             `json:"virtio3,omitempty"`
+	VirtualIODevice4     *CustomStorageDevice             `json:"virtio4,omitempty"`
+	VirtualIODevice5     *CustomStorageDevice             `json:"virtio5,omitempty"`
+	VirtualIODevice6     *CustomStorageDevice             `json:"virtio6,omitempty"`
+	VirtualIODevice7     *CustomStorageDevice             `json:"virtio7,omitempty"`
+	VirtualIODevice8     *CustomStorageDevice             `json:"virtio8,omitempty"`
+	VirtualIODevice9     *CustomStorageDevice             `json:"virtio9,omitempty"`
+	VirtualIODevice10    *CustomStorageDevice             `json:"virtio10,omitempty"`
+	VirtualIODevice11    *CustomStorageDevice             `json:"virtio11,omitempty"`
+	VirtualIODevice12    *CustomStorageDevice             `json:"virtio12,omitempty"`
+	VirtualIODevice13    *CustomStorageDevice             `json:"virtio13,omitempty"`
+	VirtualIODevice14    *CustomStorageDevice             `json:"virtio14,omitempty"`
+	VirtualIODevice15    *CustomStorageDevice             `json:"virtio15,omitempty"`
+	VMGenerationID       *string                          `json:"vmgenid,omitempty"`
+	VMStateDatastoreID   *string                          `json:"vmstatestorage,omitempty"`
+	WatchdogDevice       *CustomWatchdogDevice            `json:"watchdog,omitempty"`
 }
 
 // GetStatusResponseBody contains the body from a VM get status response.
@@ -495,19 +496,19 @@ type GetStatusResponseBody struct {
 
 // GetStatusResponseData contains the data from a VM get status response.
 type GetStatusResponseData struct {
-	AgentEnabled     *types.CustomBool `json:"agent,omitempty"`
-	CPUCount         *float64          `json:"cpus,omitempty"`
-	Lock             *string           `json:"lock,omitempty"`
-	MemoryAllocation *int              `json:"maxmem,omitempty"`
-	Name             *string           `json:"name,omitempty"`
-	PID              *int              `json:"pid,omitempty"`
-	QMPStatus        *string           `json:"qmpstatus,omitempty"`
-	RootDiskSize     *int              `json:"maxdisk,omitempty"`
-	SpiceSupport     *types.CustomBool `json:"spice,omitempty"`
-	Status           string            `json:"status,omitempty"`
-	Tags             *string           `json:"tags,omitempty"`
-	Uptime           *int              `json:"uptime,omitempty"`
-	VMID             *int              `json:"vmid,omitempty"`
+	AgentEnabled     *types2.CustomBool `json:"agent,omitempty"`
+	CPUCount         *float64           `json:"cpus,omitempty"`
+	Lock             *string            `json:"lock,omitempty"`
+	MemoryAllocation *int               `json:"maxmem,omitempty"`
+	Name             *string            `json:"name,omitempty"`
+	PID              *int               `json:"pid,omitempty"`
+	QMPStatus        *string            `json:"qmpstatus,omitempty"`
+	RootDiskSize     *int               `json:"maxdisk,omitempty"`
+	SpiceSupport     *types2.CustomBool `json:"spice,omitempty"`
+	Status           string             `json:"status,omitempty"`
+	Tags             *string            `json:"tags,omitempty"`
+	Uptime           *int               `json:"uptime,omitempty"`
+	VMID             *int               `json:"vmid,omitempty"`
 }
 
 // ListResponseBody contains the body from a virtual machine list response.
@@ -524,10 +525,10 @@ type ListResponseData struct {
 
 // MigrateRequestBody contains the body for a VM migration request.
 type MigrateRequestBody struct {
-	OnlineMigration *types.CustomBool `json:"online,omitempty"           url:"online,omitempty"`
-	TargetNode      string            `json:"target"                     url:"target"`
-	TargetStorage   *string           `json:"targetstorage,omitempty"    url:"targetstorage,omitempty"`
-	WithLocalDisks  *types.CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty,int"`
+	OnlineMigration *types2.CustomBool `json:"online,omitempty"           url:"online,omitempty"`
+	TargetNode      string             `json:"target"                     url:"target"`
+	TargetStorage   *string            `json:"targetstorage,omitempty"    url:"targetstorage,omitempty"`
+	WithLocalDisks  *types2.CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty,int"`
 }
 
 // MigrateResponseBody contains the body from a VM migrate response.
@@ -537,12 +538,12 @@ type MigrateResponseBody struct {
 
 // MoveDiskRequestBody contains the body for a VM move disk request.
 type MoveDiskRequestBody struct {
-	BandwidthLimit      *int              `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
-	DeleteOriginalDisk  *types.CustomBool `json:"delete,omitempty"  url:"delete,omitempty,int"`
-	Digest              *string           `json:"digest,omitempty"  url:"digest,omitempty"`
-	Disk                string            `json:"disk"              url:"disk"`
-	TargetStorage       string            `json:"storage"           url:"storage"`
-	TargetStorageFormat *string           `json:"format,omitempty"  url:"format,omitempty"`
+	BandwidthLimit      *int               `json:"bwlimit,omitempty" url:"bwlimit,omitempty"`
+	DeleteOriginalDisk  *types2.CustomBool `json:"delete,omitempty"  url:"delete,omitempty,int"`
+	Digest              *string            `json:"digest,omitempty"  url:"digest,omitempty"`
+	Disk                string             `json:"disk"              url:"disk"`
+	TargetStorage       string             `json:"storage"           url:"storage"`
+	TargetStorageFormat *string            `json:"format,omitempty"  url:"format,omitempty"`
 }
 
 // MoveDiskResponseBody contains the body from a VM move disk response.
@@ -562,18 +563,18 @@ type RebootResponseBody struct {
 
 // ResizeDiskRequestBody contains the body for a VM resize disk request.
 type ResizeDiskRequestBody struct {
-	Digest   *string           `json:"digest,omitempty"   url:"digest,omitempty"`
-	Disk     string            `json:"disk"               url:"disk"`
-	Size     types.DiskSize    `json:"size"               url:"size"`
-	SkipLock *types.CustomBool `json:"skiplock,omitempty" url:"skiplock,omitempty,int"`
+	Digest   *string            `json:"digest,omitempty"   url:"digest,omitempty"`
+	Disk     string             `json:"disk"               url:"disk"`
+	Size     types.DiskSize     `json:"size"               url:"size"`
+	SkipLock *types2.CustomBool `json:"skiplock,omitempty" url:"skiplock,omitempty,int"`
 }
 
 // ShutdownRequestBody contains the body for a VM shutdown request.
 type ShutdownRequestBody struct {
-	ForceStop  *types.CustomBool `json:"forceStop,omitempty"  url:"forceStop,omitempty,int"`
-	KeepActive *types.CustomBool `json:"keepActive,omitempty" url:"keepActive,omitempty,int"`
-	SkipLock   *types.CustomBool `json:"skipLock,omitempty"   url:"skipLock,omitempty,int"`
-	Timeout    *int              `json:"timeout,omitempty"    url:"timeout,omitempty"`
+	ForceStop  *types2.CustomBool `json:"forceStop,omitempty"  url:"forceStop,omitempty,int"`
+	KeepActive *types2.CustomBool `json:"keepActive,omitempty" url:"keepActive,omitempty,int"`
+	SkipLock   *types2.CustomBool `json:"skipLock,omitempty"   url:"skipLock,omitempty,int"`
+	Timeout    *int               `json:"timeout,omitempty"    url:"timeout,omitempty"`
 }
 
 // ShutdownResponseBody contains the body from a VM shutdown response.
@@ -1267,15 +1268,15 @@ func (r *CustomAgent) UnmarshalJSON(b []byte) error {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
-			enabled := types.CustomBool(v[0] == "1")
+			enabled := types2.CustomBool(v[0] == "1")
 			r.Enabled = &enabled
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "enabled":
-				enabled := types.CustomBool(v[1] == "1")
+				enabled := types2.CustomBool(v[1] == "1")
 				r.Enabled = &enabled
 			case "fstrim_cloned_disks":
-				fstrim := types.CustomBool(v[1] == "1")
+				fstrim := types2.CustomBool(v[1] == "1")
 				r.TrimClonedDisks = &fstrim
 			case "type":
 				r.Type = &v[1]
@@ -1450,7 +1451,7 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 					r.Flags = &f
 				}
 			case "hidden":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.Hidden = &bv
 			case "hv-vendor-id":
 				r.HVVendorID = &v[1]
@@ -1513,10 +1514,10 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 			case "bridge":
 				r.Bridge = &v[1]
 			case "firewall":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.Firewall = &bv
 			case "link_down":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.LinkDown = &bv
 			case "macaddr":
 				r.MACAddress = &v[1]
@@ -1597,15 +1598,15 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 			case "mdev":
 				r.MDev = &v[1]
 			case "pcie":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.PCIExpress = &bv
 			case "rombar":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.ROMBAR = &bv
 			case "romfile":
 				r.ROMFile = &v[1]
 			case "x-vga":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.XVGA = &bv
 			}
 		}
@@ -1661,7 +1662,7 @@ func (r *CustomSMBIOS) UnmarshalJSON(b []byte) error {
 		if len(v) == 2 {
 			switch v[0] {
 			case "base64":
-				base64 := types.CustomBool(v[1] == "1")
+				base64 := types2.CustomBool(v[1] == "1")
 				r.Base64 = &base64
 			case "family":
 				r.Family = &v[1]
@@ -1711,7 +1712,7 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "aio":
 				r.AIO = &v[1]
 			case "backup":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.BackupEnabled = &bv
 			case "file":
 				r.FileVolume = v[1]
@@ -1754,10 +1755,10 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "format":
 				r.Format = &v[1]
 			case "iothread":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.IOThread = &bv
 			case "ssd":
-				bv := types.CustomBool(v[1] == "1")
+				bv := types2.CustomBool(v[1] == "1")
 				r.SSD = &bv
 			case "discard":
 				r.Discard = &v[1]

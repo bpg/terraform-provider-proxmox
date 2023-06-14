@@ -7,6 +7,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strings"
 )
@@ -29,7 +30,7 @@ func (t *tokenAuthenticator) IsRoot() bool {
 	return t.username == rootUsername
 }
 
-func (t *tokenAuthenticator) AuthenticateRequest(req *http.Request) error {
+func (t *tokenAuthenticator) AuthenticateRequest(ctx context.Context, req *http.Request) error {
 	req.Header.Set("Authorization", "PVEAPIToken="+t.token)
 	return nil
 }
