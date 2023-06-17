@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
@@ -32,4 +33,10 @@ func (v IPv4Value) Equal(o attr.Value) bool {
 
 func (v IPv4Value) Type(ctx context.Context) attr.Type {
 	return IPv4Type{}
+}
+
+func NewIPv4PointerValue(value *string) IPv4Value {
+	return IPv4Value{
+		StringValue: types.StringPointerValue(value),
+	}
 }

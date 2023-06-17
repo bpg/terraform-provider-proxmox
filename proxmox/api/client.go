@@ -252,12 +252,25 @@ func (c *client) DoRequest(
 				err,
 			)
 		}
-		tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
-			"data": string(data),
-		})
+		if len(data) > 0 {
+			dr := dataResponse{}
+
+			if err2 := json.NewDecoder(bytes.NewReader(data)).Decode(&dr); err2 == nil {
+				if dr.Data == nil {
+					return nil
+				}
+			}
+			tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
+				"data": dr.Data,
+			})
+		}
 	}
 
 	return nil
+}
+
+type dataResponse struct {
+	Data interface{} `json:"data"`
 }
 
 // ExpandPath expands the given path to an absolute path.

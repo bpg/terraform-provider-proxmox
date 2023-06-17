@@ -24,11 +24,13 @@ func TestInterfaceLinuxBridgeResource(t *testing.T) {
 resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 	node_name = "pve"
 	iface = "vmbr99"
+	address = "3.3.3.3/24"
 	comment = "created by terraform"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "iface", "vmbr99"),
+					resource.TestCheckResourceAttr(resourceName, "address", "3.3.3.3/24"),
 					resource.TestCheckResourceAttr(resourceName, "comment", "created by terraform"),
 					resource.TestCheckResourceAttr(resourceName, "bridge_vlan_aware", "true"),
 				),

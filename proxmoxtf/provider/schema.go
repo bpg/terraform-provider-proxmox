@@ -69,7 +69,7 @@ func createSchema() map[string]*schema.Schema {
 				"Please use the `api_token` attribute instead.",
 			DefaultFunc: schema.MultiEnvDefaultFunc(
 				[]string{"PROXMOX_VE_OTP", "PM_VE_OTP"},
-				dvProviderOTP,
+				nil,
 			),
 		},
 		mkProviderPassword: {

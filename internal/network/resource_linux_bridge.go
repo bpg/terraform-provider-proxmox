@@ -10,10 +10,10 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -25,7 +25,6 @@ import (
 
 	pvetypes "github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 )
 
 // NewInterfaceLinuxBridgeResource creates a new resource for managing Linux Bridge network interfaces.
@@ -43,20 +42,6 @@ func (r *linuxBridgeResource) Metadata(
 	resp *resource.MetadataResponse,
 ) {
 	resp.TypeName = req.ProviderTypeName + "_network_linux_bridge"
-}
-
-type linuxBridgeResourceModel struct {
-	// Base attributes
-	ID        types.String           `tfsdk:"id"`
-	NodeName  types.String           `tfsdk:"node_name"`
-	Iface     types.String           `tfsdk:"iface"`
-	Address   pvetypes.IPv4CIDRValue `tfsdk:"address"`
-	Gateway   pvetypes.IPv4CIDRValue `tfsdk:"gateway"`
-	Autostart types.Bool             `tfsdk:"autostart"`
-	Comment   types.String           `tfsdk:"comment"`
-	// Linux bridge attributes
-	BridgePorts     []types.String `tfsdk:"bridge_ports"`
-	BridgeVLANAware types.Bool     `tfsdk:"bridge_vlan_aware"`
 }
 
 // Schema defines the schema for the resource.
@@ -89,6 +74,9 @@ func (r *linuxBridgeResource) Schema(
 						`must be "vmbrN", where N is a number between 0 and 9999`,
 					),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"address": schema.StringAttribute{
 				Description: "The interface IPv4/CIDR address.",
@@ -97,7 +85,7 @@ func (r *linuxBridgeResource) Schema(
 			},
 			"gateway": schema.StringAttribute{
 				Description: "Default gateway address.",
-				CustomType:  pvetypes.IPv4CIDRType{},
+				CustomType:  pvetypes.IPv4Type{},
 				Optional:    true,
 			},
 			"autostart": schema.BoolAttribute{
@@ -158,40 +146,7 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	body := &nodes.NetworkInterfaceCreateUpdateRequestBody{
-		Iface:     plan.Iface.ValueString(),
-		Type:      "bridge",
-		Autostart: pvetypes.CustomBool(plan.Autostart.ValueBool()).Pointer(),
-	}
-
-	if !plan.Address.IsUnknown() {
-		body.CIDR = plan.Address.ValueStringPointer()
-	}
-
-	if !plan.Gateway.IsUnknown() {
-		body.Gateway = plan.Gateway.ValueStringPointer()
-	}
-
-	if !plan.Comment.IsUnknown() {
-		body.Comments = plan.Comment.ValueStringPointer()
-	}
-
-	var sanitizedPorts []string
-
-	for i := 0; i < len(plan.BridgePorts); i++ {
-		port := strings.TrimSpace(plan.BridgePorts[i].ValueString())
-		if len(port) > 0 {
-			sanitizedPorts = append(sanitizedPorts, port)
-		}
-	}
-	sort.Strings(sanitizedPorts)
-	bridgePorts := strings.Join(sanitizedPorts, " ")
-
-	if len(bridgePorts) > 0 {
-		body.BridgePorts = &bridgePorts
-	}
-
-	body.BridgeVLANAware = pvetypes.CustomBool(plan.BridgeVLANAware.ValueBool()).Pointer()
+	body := plan.exportToNetworkInterfaceCreateUpdateBody()
 
 	err := r.client.Node(plan.NodeName.ValueString()).CreateNetworkInterface(ctx, body)
 	if err != nil {
@@ -205,13 +160,9 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 
 	plan.ID = types.StringValue(plan.NodeName.ValueString() + ":" + plan.Iface.ValueString())
 
-	err = r.read(ctx, &plan)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reading Linux Bridge interface",
-			"Could not read Linux Bridge, unexpected error: "+err.Error(),
-		)
+	r.read(ctx, &plan, resp.Diagnostics)
 
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -223,10 +174,15 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 	}
 }
 
-func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResourceModel) error {
+func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResourceModel, diags diag.Diagnostics) {
 	ifaces, err := r.client.Node(model.NodeName.ValueString()).ListNetworkInterfaces(ctx)
 	if err != nil {
-		return fmt.Errorf("error listing network interfaces: %w", err)
+		diags.AddError(
+			"Error listing network interfaces",
+			"Could not list network interfaces, unexpected error: "+err.Error(),
+		)
+
+		return
 	}
 
 	for _, iface := range ifaces {
@@ -234,39 +190,75 @@ func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResour
 			continue
 		}
 
-		if iface.CIDR != nil {
-			model.Address = pvetypes.NewIPv4CIDRPointerValue(iface.CIDR)
+		err = model.importFromNetworkInterfaceList(ctx, iface)
+		if err != nil {
+			diags.AddError(
+				"Error converting network interface to a model",
+				"Could not import network interface from API response, unexpected error: "+err.Error(),
+			)
+
+			return
 		}
 
-		if iface.Gateway != nil {
-			model.Gateway = pvetypes.NewIPv4CIDRPointerValue(iface.Gateway)
-		}
-
-		if iface.Autostart != nil {
-			model.Autostart = types.BoolPointerValue(iface.Autostart.PointerBool())
-		}
-
-		if iface.Comments != nil {
-			model.Comment = types.StringValue(strings.TrimSpace(*iface.Comments))
-		}
-
-		if iface.BridgeVLANAware != nil {
-			model.BridgeVLANAware = types.BoolPointerValue(iface.BridgeVLANAware.PointerBool())
-		}
-
-		// model.BridgePorts = types.NewStringListValue(strings.Split(iface.BridgePorts, " "))
 		break
 	}
-
-	return nil
 }
 
 // Read reads a Linux Bridge interface.
 func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	// Get current state
+	var state linuxBridgeResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	r.read(ctx, &state, resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	diags = resp.State.Set(ctx, state)
+	resp.Diagnostics.Append(diags...)
 }
 
 // Update updates a Linux Bridge interface.
 func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan linuxBridgeResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	body := plan.exportToNetworkInterfaceCreateUpdateBody()
+
+	err := r.client.Node(plan.NodeName.ValueString()).UpdateNetworkInterface(ctx, plan.Iface.ValueString(), body)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating Linux Bridge interface",
+			"Could not update Linux Bridge, unexpected error: "+err.Error(),
+		)
+
+		return
+	}
+
+	r.read(ctx, &plan, resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
 // Delete deletes a Linux Bridge interface.
@@ -281,10 +273,19 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 
 	err := r.client.Node(state.NodeName.ValueString()).DeleteNetworkInterface(ctx, state.Iface.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error deleting Linux Bridge interface",
-			"Could not delete Linux Bridge, unexpected error: "+err.Error(),
-		)
+		if strings.Contains(err.Error(), "interface does not exist") {
+			resp.Diagnostics.AddWarning(
+				"Linux Bridge interface does not exist",
+				fmt.Sprintf("Could not delete Linux Bridge '%s', interface does not exist, "+
+					"or has already been deleted outside of Terraform.", state.Iface.ValueString()),
+			)
+		} else {
+			resp.Diagnostics.AddError(
+				"Error deleting Linux Bridge interface",
+				fmt.Sprintf("Could not delete Linux Bridge '%s', unexpected error: %s",
+					state.Iface.ValueString(), err.Error()),
+			)
+		}
 
 		return
 	}
