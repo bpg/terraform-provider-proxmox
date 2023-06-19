@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -26,6 +27,7 @@ type linuxBridgeResourceModel struct {
 	Address   pvetypes.IPv4CIDRValue `tfsdk:"address"`
 	Gateway   pvetypes.IPv4Value     `tfsdk:"gateway"`
 	Autostart types.Bool             `tfsdk:"autostart"`
+	MTU       types.Int64            `tfsdk:"mtu"`
 	Comment   types.String           `tfsdk:"comment"`
 	// Linux bridge attributes
 	BridgePorts     []types.String `tfsdk:"bridge_ports"`
@@ -40,17 +42,14 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 		Autostart: pvetypes.CustomBool(m.Autostart.ValueBool()).Pointer(),
 	}
 
-	if !m.Address.IsUnknown() {
-		body.CIDR = m.Address.ValueStringPointer()
+	body.CIDR = m.Address.ValueStringPointer()
+	body.Gateway = m.Gateway.ValueStringPointer()
+
+	if !m.MTU.IsUnknown() {
+		body.MTU = m.MTU.ValueInt64Pointer()
 	}
 
-	if !m.Gateway.IsUnknown() {
-		body.Gateway = m.Gateway.ValueStringPointer()
-	}
-
-	if !m.Comment.IsUnknown() {
-		body.Comments = m.Comment.ValueStringPointer()
-	}
+	body.Comments = m.Comment.ValueStringPointer()
 
 	var sanitizedPorts []string
 
@@ -79,7 +78,26 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 	m.Address = pvetypes.NewIPv4CIDRPointerValue(iface.CIDR)
 	m.Gateway = pvetypes.NewIPv4PointerValue(iface.Gateway)
 	m.Autostart = types.BoolPointerValue(iface.Autostart.PointerBool())
-	m.BridgeVLANAware = types.BoolPointerValue(iface.BridgeVLANAware.PointerBool())
+
+	if iface.MTU != nil {
+		if v, err := strconv.Atoi(*iface.MTU); err == nil {
+			m.MTU = types.Int64Value(int64(v))
+		}
+	} else {
+		m.MTU = types.Int64Null()
+	}
+
+	if iface.Comments != nil {
+		m.Comment = types.StringValue(strings.TrimSpace(*iface.Comments))
+	} else {
+		m.Comment = types.StringNull()
+	}
+
+	if iface.BridgeVLANAware != nil {
+		m.BridgeVLANAware = types.BoolPointerValue(iface.BridgeVLANAware.PointerBool())
+	} else {
+		m.BridgeVLANAware = types.BoolValue(false)
+	}
 
 	if iface.BridgePorts != nil && len(*iface.BridgePorts) > 0 {
 		ports, diags := types.ListValueFrom(ctx, types.StringType, strings.Split(*iface.BridgePorts, " "))
@@ -91,12 +109,6 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 		if diags.HasError() {
 			return fmt.Errorf("failed to build bridge ports list: %s", *iface.BridgePorts)
 		}
-	}
-
-	if iface.Comments != nil {
-		m.Comment = types.StringValue(strings.TrimSpace(*iface.Comments))
-	} else {
-		m.Comment = types.StringNull()
 	}
 
 	return nil

@@ -26,6 +26,7 @@ resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 	iface = "vmbr99"
 	address = "3.3.3.3/24"
 	comment = "created by terraform"
+	mtu = 1499
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -33,6 +34,36 @@ resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 					resource.TestCheckResourceAttr(resourceName, "address", "3.3.3.3/24"),
 					resource.TestCheckResourceAttr(resourceName, "comment", "created by terraform"),
 					resource.TestCheckResourceAttr(resourceName, "bridge_vlan_aware", "true"),
+					resource.TestCheckResourceAttr(resourceName, "mtu", "1499"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			// ImportState testing
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				// ImportStateVerifyIgnore: []string{"last_updated"},
+			},
+			// Update testing
+			{
+				Config: ProviderConfig + `
+resource "proxmox_virtual_environment_network_linux_bridge" "test" {	
+	node_name = "pve"
+	iface = "vmbr99"
+	address = "1.1.1.1/24"
+	comment = "updated by terraform"
+	bridge_vlan_aware = false
+	mtu = null
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "iface", "vmbr99"),
+					resource.TestCheckResourceAttr(resourceName, "address", "1.1.1.1/24"),
+					resource.TestCheckResourceAttr(resourceName, "comment", "updated by terraform"),
+					resource.TestCheckResourceAttr(resourceName, "bridge_vlan_aware", "false"),
+					resource.TestCheckNoResourceAttr(resourceName, "mtu"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 		},

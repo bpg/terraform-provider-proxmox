@@ -36,6 +36,7 @@ type NetworkInterfaceListResponseData struct {
 	Iface           string            `json:"iface"`
 	MethodIPv4      *string           `json:"method,omitempty"`
 	MethodIPv6      *string           `json:"method6,omitempty"`
+	MTU             *string           `json:"mtu,omitempty"`
 	Netmask         *string           `json:"netmask,omitempty"`
 	Priority        int               `json:"priority"`
 	Type            string            `json:"type"`
@@ -60,7 +61,8 @@ type NetworkInterfaceCreateUpdateRequestBody struct {
 	Comments6          *string           `json:"comments6,omitempty"             url:"comments6,omitempty"`
 	Gateway            *string           `json:"gateway,omitempty"               url:"gateway,omitempty"`
 	Gateway6           *string           `json:"gateway6,omitempty"              url:"gateway6,omitempty"`
-	MTU                *int              `json:"mtu,omitempty"                   url:"mtu,omitempty"`
+	Delete             *[]string         `json:"delete,omitempty"                url:"delete,omitempty"`
+	MTU                *int64            `json:"mtu,omitempty"                   url:"mtu,omitempty"`
 	Netmask            *string           `json:"netmask,omitempty"               url:"netmask,omitempty"`
 	Netmask6           *string           `json:"netmask6,omitempty"              url:"netmask6,omitempty"`
 	OVSBonds           *string           `json:"ovs_bonds,omitempty"             url:"ovs_bonds,omitempty"`

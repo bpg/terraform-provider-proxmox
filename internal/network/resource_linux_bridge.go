@@ -14,7 +14,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -25,6 +24,12 @@ import (
 
 	pvetypes "github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+)
+
+var (
+	_ resource.Resource                = &linuxBridgeResource{}
+	_ resource.ResourceWithConfigure   = &linuxBridgeResource{}
+	_ resource.ResourceWithImportState = &linuxBridgeResource{}
 )
 
 // NewInterfaceLinuxBridgeResource creates a new resource for managing Linux Bridge network interfaces.
@@ -88,11 +93,26 @@ func (r *linuxBridgeResource) Schema(
 				CustomType:  pvetypes.IPv4Type{},
 				Optional:    true,
 			},
+			"address6": schema.StringAttribute{
+				Description: "The interface IPv6/CIDR address.",
+				CustomType:  pvetypes.IPv6CIDRType{},
+				Optional:    true,
+			},
+			"gateway6": schema.StringAttribute{
+				Description: "Default IPv6 gateway address.",
+				CustomType:  pvetypes.IPv6Type{},
+				Optional:    true,
+			},
 			"autostart": schema.BoolAttribute{
 				Description: "Automatically start interface on boot.",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
+			},
+			"mtu": schema.Int64Attribute{
+				Description: "The interface MTU.",
+				Optional:    true,
+				Computed:    true,
 			},
 			"comment": schema.StringAttribute{
 				Description: "Comment for the interface.",
@@ -160,7 +180,7 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 
 	plan.ID = types.StringValue(plan.NodeName.ValueString() + ":" + plan.Iface.ValueString())
 
-	r.read(ctx, &plan, resp.Diagnostics)
+	r.read(ctx, &plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -174,7 +194,7 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 	}
 }
 
-func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResourceModel, diags diag.Diagnostics) {
+func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResourceModel, diags *diag.Diagnostics) {
 	ifaces, err := r.client.Node(model.NodeName.ValueString()).ListNetworkInterfaces(ctx)
 	if err != nil {
 		diags.AddError(
@@ -215,7 +235,7 @@ func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	r.read(ctx, &state, resp.Diagnostics)
+	r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -227,15 +247,33 @@ func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest
 
 // Update updates a Linux Bridge interface.
 func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan linuxBridgeResourceModel
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	var plan, state linuxBridgeResourceModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	body := plan.exportToNetworkInterfaceCreateUpdateBody()
+
+	var toDelete []string
+
+	if !plan.MTU.Equal(state.MTU) && (plan.MTU.IsUnknown() || plan.MTU.ValueInt64() == 0) {
+		toDelete = append(toDelete, "mtu")
+		body.MTU = nil
+	}
+
+	// BridgeVLANAware is computed, will never be null
+	if !plan.BridgeVLANAware.Equal(state.BridgeVLANAware) && !plan.BridgeVLANAware.ValueBool() {
+		toDelete = append(toDelete, "bridge_vlan_aware")
+		body.BridgeVLANAware = nil
+	}
+
+	if len(toDelete) > 0 {
+		body.Delete = &toDelete
+	}
 
 	err := r.client.Node(plan.NodeName.ValueString()).UpdateNetworkInterface(ctx, plan.Iface.ValueString(), body)
 	if err != nil {
@@ -247,18 +285,13 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	r.read(ctx, &plan, resp.Diagnostics)
+	r.read(ctx, &plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(diags...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
 // Delete deletes a Linux Bridge interface.
@@ -292,6 +325,30 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 }
 
 func (r *linuxBridgeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Retrieve import ID and save to id attribute
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	idParts := strings.Split(req.ID, ":")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: node_name:iface. Got: %q", req.ID),
+		)
+
+		return
+	}
+
+	nodeName := idParts[0]
+	iface := idParts[1]
+
+	state := linuxBridgeResourceModel{
+		ID:       types.StringValue(req.ID),
+		NodeName: types.StringValue(nodeName),
+		Iface:    types.StringValue(iface),
+	}
+	r.read(ctx, &state, &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	diags := resp.State.Set(ctx, state)
+	resp.Diagnostics.Append(diags...)
 }

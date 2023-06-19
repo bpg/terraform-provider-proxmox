@@ -40,7 +40,7 @@ func (t IPv4CIDRType) String() string {
 }
 
 func (t IPv4CIDRType) ValueFromString(
-	ctx context.Context, in basetypes.StringValue,
+	_ context.Context, in basetypes.StringValue,
 ) (basetypes.StringValuable, diag.Diagnostics) {
 	value := IPv4CIDRValue{
 		StringValue: in,
