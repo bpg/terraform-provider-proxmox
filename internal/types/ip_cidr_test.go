@@ -14,30 +14,36 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
-func Test_IPv4TypeValueFromTerraform(t *testing.T) {
+func Test_IPCIDRTypeValueFromTerraform(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
 		val         tftypes.Value
-		expected    func(val IPv4Value) bool
+		expected    func(val IPCIDRValue) bool
 		expectError bool
 	}{
 		"null value": {
 			val: tftypes.NewValue(tftypes.String, nil),
-			expected: func(val IPv4Value) bool {
+			expected: func(val IPCIDRValue) bool {
 				return val.IsNull()
 			},
 		},
 		"unknown value": {
 			val: tftypes.NewValue(tftypes.String, tftypes.UnknownValue),
-			expected: func(val IPv4Value) bool {
+			expected: func(val IPCIDRValue) bool {
 				return val.IsUnknown()
 			},
 		},
-		"valid IPV4": {
-			val: tftypes.NewValue(tftypes.String, "1.2.3.4"),
-			expected: func(val IPv4Value) bool {
-				return val.ValueString() == "1.2.3.4"
+		"valid IPv4/CIDR": {
+			val: tftypes.NewValue(tftypes.String, "1.2.3.4/32"),
+			expected: func(val IPCIDRValue) bool {
+				return val.ValueString() == "1.2.3.4/32"
+			},
+		},
+		"valid IPv6/CIDR": {
+			val: tftypes.NewValue(tftypes.String, "2001:db8::/32"),
+			expected: func(val IPCIDRValue) bool {
+				return val.ValueString() == "2001:db8::/32"
 			},
 		},
 	}
@@ -48,7 +54,7 @@ func Test_IPv4TypeValueFromTerraform(t *testing.T) {
 			t.Parallel()
 
 			ctx := context.TODO()
-			val, err := IPv4Type{}.ValueFromTerraform(ctx, test.val)
+			val, err := IPCIDRType{}.ValueFromTerraform(ctx, test.val)
 
 			if err == nil && test.expectError {
 				t.Fatal("expected error, got no error")
@@ -57,14 +63,14 @@ func Test_IPv4TypeValueFromTerraform(t *testing.T) {
 				t.Fatalf("got unexpected error: %s", err)
 			}
 
-			if !test.expected(val.(IPv4Value)) {
+			if !test.expected(val.(IPCIDRValue)) {
 				t.Errorf("unexpected result")
 			}
 		})
 	}
 }
 
-func Test_IPv4TypeValidate(t *testing.T) {
+func Test_IPCIDRTypeValidate(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
@@ -83,11 +89,22 @@ func Test_IPv4TypeValidate(t *testing.T) {
 		"null string": {
 			val: tftypes.NewValue(tftypes.String, nil),
 		},
-		"valid string": {
-			val: tftypes.NewValue(tftypes.String, "1.2.3.4"),
+		"valid IPv4 string": {
+			val: tftypes.NewValue(tftypes.String, "1.2.3.4/32"),
+		},
+		"valid IPv6 string": {
+			val: tftypes.NewValue(tftypes.String, "2001:db8::/32"),
 		},
 		"invalid string": {
 			val:         tftypes.NewValue(tftypes.String, "not ok"),
+			expectError: true,
+		},
+		"invalid IPv4 string no CIDR": {
+			val:         tftypes.NewValue(tftypes.String, "1.2.3.4"),
+			expectError: true,
+		},
+		"invalid IPv6 string no CIDR": {
+			val:         tftypes.NewValue(tftypes.String, "2001:db8::"),
 			expectError: true,
 		},
 	}
@@ -99,7 +116,7 @@ func Test_IPv4TypeValidate(t *testing.T) {
 
 			ctx := context.TODO()
 
-			diags := IPv4Type{}.Validate(ctx, test.val, path.Root("test"))
+			diags := IPCIDRType{}.Validate(ctx, test.val, path.Root("test"))
 
 			if !diags.HasError() && test.expectError {
 				t.Fatal("expected error, got no error")

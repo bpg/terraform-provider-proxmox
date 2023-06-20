@@ -19,14 +19,16 @@ import (
 )
 
 // Ensure the implementation satisfies the expected interfaces.
-var _ basetypes.StringTypable = IPv4CIDRType{}
+var _ basetypes.StringTypable = IPAddrType{}
 
-type IPv4CIDRType struct {
+// IPAddrType is a type that represents an IP address.
+type IPAddrType struct {
 	basetypes.StringType
 }
 
-func (t IPv4CIDRType) Equal(o attr.Type) bool {
-	other, ok := o.(IPv4CIDRType)
+// Equal returns true if the two types are equal.
+func (t IPAddrType) Equal(o attr.Type) bool {
+	other, ok := o.(IPAddrType)
 
 	if !ok {
 		return false
@@ -35,21 +37,24 @@ func (t IPv4CIDRType) Equal(o attr.Type) bool {
 	return t.StringType.Equal(other.StringType)
 }
 
-func (t IPv4CIDRType) String() string {
-	return "IPv4CIDRType"
+// String returns a string representation of the type.
+func (t IPAddrType) String() string {
+	return "IPAddrType"
 }
 
-func (t IPv4CIDRType) ValueFromString(
+// ValueFromString converts a string value to a StringValuable.
+func (t IPAddrType) ValueFromString(
 	_ context.Context, in basetypes.StringValue,
 ) (basetypes.StringValuable, diag.Diagnostics) {
-	value := IPv4CIDRValue{
+	value := IPAddrValue{
 		StringValue: in,
 	}
 
 	return value, nil
 }
 
-func (t IPv4CIDRType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+// ValueFromTerraform converts a Terraform value to a StringValuable.
+func (t IPAddrType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.StringType.ValueFromTerraform(ctx, in)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error converting Terraform value to StringValue: %w", err)
@@ -68,11 +73,13 @@ func (t IPv4CIDRType) ValueFromTerraform(ctx context.Context, in tftypes.Value) 
 	return stringValuable, nil
 }
 
-func (t IPv4CIDRType) ValueType(_ context.Context) attr.Value {
-	return IPv4CIDRValue{}
+// ValueType returns the underlying value type.
+func (t IPAddrType) ValueType(_ context.Context) attr.Value {
+	return IPAddrValue{}
 }
 
-func (t IPv4CIDRType) Validate(_ context.Context, value tftypes.Value, valuePath path.Path) diag.Diagnostics {
+// Validate ensures the value is valid IP address.
+func (t IPAddrType) Validate(_ context.Context, value tftypes.Value, valuePath path.Path) diag.Diagnostics {
 	if value.IsNull() || !value.IsKnown() {
 		return nil
 	}
@@ -95,14 +102,13 @@ func (t IPv4CIDRType) Validate(_ context.Context, value tftypes.Value, valuePath
 		return diags
 	}
 
-	if _, _, err := net.ParseCIDR(valueString); err != nil {
+	if ip := net.ParseIP(valueString); ip == nil {
 		diags.AddAttributeError(
 			valuePath,
-			"Invalid IPv4/CIDR String Value",
-			"An unexpected error occurred while converting a string value that was expected to be IPv4/CIDR.\n\n"+
+			"Invalid IP String Value",
+			"An unexpected error occurred while converting a string value that was expected to be IPv4/IPv6.\n\n"+
 				"Path: "+valuePath.String()+"\n"+
-				"Given Value: "+valueString+"\n"+
-				"Error: "+err.Error(),
+				"Given Value: "+valueString,
 		)
 
 		return diags

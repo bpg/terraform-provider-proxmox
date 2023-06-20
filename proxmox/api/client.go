@@ -30,7 +30,8 @@ import (
 var ErrNoDataObjectInResponse = errors.New("the server did not include a data object in the response")
 
 const (
-	basePathJSONAPI = "api2/json"
+	httpClientTimeout = 5 * time.Second
+	basePathJSONAPI   = "api2/json"
 )
 
 // Client is an interface for performing requests against the Proxmox API.
@@ -87,7 +88,7 @@ func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 		endpoint: strings.TrimRight(u.String(), "/"),
 		httpClient: &http.Client{
 			Transport: transport,
-			Timeout:   5 * time.Second, // TODO: configurable?
+			Timeout:   httpClientTimeout,
 		},
 	}, nil
 }
@@ -232,6 +233,7 @@ func (c *client) DoRequest(
 		return err
 	}
 
+	//nolint:nestif
 	if responseBody != nil {
 		err = json.NewDecoder(res.Body).Decode(responseBody)
 		if err != nil {

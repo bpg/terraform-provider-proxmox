@@ -13,6 +13,8 @@ import (
 )
 
 func TestInterfaceLinuxBridgeResource(t *testing.T) {
+	t.Parallel()
+
 	resourceName := "proxmox_virtual_environment_network_linux_bridge.test"
 
 	resource.Test(t, resource.TestCase{
@@ -52,6 +54,7 @@ resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 	node_name = "pve"
 	iface = "vmbr99"
 	address = "1.1.1.1/24"
+	address6 = "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"
 	comment = "updated by terraform"
 	bridge_vlan_aware = false
 	mtu = null
@@ -60,6 +63,7 @@ resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "iface", "vmbr99"),
 					resource.TestCheckResourceAttr(resourceName, "address", "1.1.1.1/24"),
+					resource.TestCheckResourceAttr(resourceName, "address6", "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"),
 					resource.TestCheckResourceAttr(resourceName, "comment", "updated by terraform"),
 					resource.TestCheckResourceAttr(resourceName, "bridge_vlan_aware", "false"),
 					resource.TestCheckNoResourceAttr(resourceName, "mtu"),

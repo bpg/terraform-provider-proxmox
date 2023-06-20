@@ -21,14 +21,16 @@ import (
 
 type linuxBridgeResourceModel struct {
 	// Base attributes
-	ID        types.String           `tfsdk:"id"`
-	NodeName  types.String           `tfsdk:"node_name"`
-	Iface     types.String           `tfsdk:"iface"`
-	Address   pvetypes.IPv4CIDRValue `tfsdk:"address"`
-	Gateway   pvetypes.IPv4Value     `tfsdk:"gateway"`
-	Autostart types.Bool             `tfsdk:"autostart"`
-	MTU       types.Int64            `tfsdk:"mtu"`
-	Comment   types.String           `tfsdk:"comment"`
+	ID        types.String         `tfsdk:"id"`
+	NodeName  types.String         `tfsdk:"node_name"`
+	Iface     types.String         `tfsdk:"iface"`
+	Address   pvetypes.IPCIDRValue `tfsdk:"address"`
+	Gateway   pvetypes.IPAddrValue `tfsdk:"gateway"`
+	Address6  pvetypes.IPCIDRValue `tfsdk:"address6"`
+	Gateway6  pvetypes.IPAddrValue `tfsdk:"gateway6"`
+	Autostart types.Bool           `tfsdk:"autostart"`
+	MTU       types.Int64          `tfsdk:"mtu"`
+	Comment   types.String         `tfsdk:"comment"`
 	// Linux bridge attributes
 	BridgePorts     []types.String `tfsdk:"bridge_ports"`
 	BridgeVLANAware types.Bool     `tfsdk:"bridge_vlan_aware"`
@@ -44,6 +46,8 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 
 	body.CIDR = m.Address.ValueStringPointer()
 	body.Gateway = m.Gateway.ValueStringPointer()
+	body.CIDR6 = m.Address6.ValueStringPointer()
+	body.Gateway6 = m.Gateway6.ValueStringPointer()
 
 	if !m.MTU.IsUnknown() {
 		body.MTU = m.MTU.ValueInt64Pointer()
@@ -75,8 +79,10 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 	ctx context.Context,
 	iface *nodes.NetworkInterfaceListResponseData,
 ) error {
-	m.Address = pvetypes.NewIPv4CIDRPointerValue(iface.CIDR)
-	m.Gateway = pvetypes.NewIPv4PointerValue(iface.Gateway)
+	m.Address = pvetypes.NewIPCIDRPointerValue(iface.CIDR)
+	m.Gateway = pvetypes.NewIPAddrPointerValue(iface.Gateway)
+	m.Address6 = pvetypes.NewIPCIDRPointerValue(iface.CIDR6)
+	m.Gateway6 = pvetypes.NewIPAddrPointerValue(iface.Gateway6)
 	m.Autostart = types.BoolPointerValue(iface.Autostart.PointerBool())
 
 	if iface.MTU != nil {

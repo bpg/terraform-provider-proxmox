@@ -15,14 +15,16 @@ import (
 )
 
 // Ensure the implementation satisfies the expected interfaces.
-var _ basetypes.StringValuable = IPv4CIDRValue{}
+var _ basetypes.StringValuable = IPAddrValue{}
 
-type IPv4CIDRValue struct {
+// IPAddrValue is a type that represents an IP address value.
+type IPAddrValue struct {
 	basetypes.StringValue
 }
 
-func (v IPv4CIDRValue) Equal(o attr.Value) bool {
-	other, ok := o.(IPv4CIDRValue)
+// Equal returns true if the two values are equal.
+func (v IPAddrValue) Equal(o attr.Value) bool {
+	other, ok := o.(IPAddrValue)
 
 	if !ok {
 		return false
@@ -31,18 +33,14 @@ func (v IPv4CIDRValue) Equal(o attr.Value) bool {
 	return v.StringValue.Equal(other.StringValue)
 }
 
-func (v IPv4CIDRValue) Type(_ context.Context) attr.Type {
-	return IPv4CIDRType{}
+// Type returns the type of the value.
+func (v IPAddrValue) Type(_ context.Context) attr.Type {
+	return IPAddrType{}
 }
 
-func NewIPv4CIDRValue(value string) IPv4CIDRValue {
-	return IPv4CIDRValue{
-		StringValue: types.StringValue(value),
-	}
-}
-
-func NewIPv4CIDRPointerValue(value *string) IPv4CIDRValue {
-	return IPv4CIDRValue{
+// NewIPAddrPointerValue returns a new IPAddrValue from a string pointer.
+func NewIPAddrPointerValue(value *string) IPAddrValue {
+	return IPAddrValue{
 		StringValue: types.StringPointerValue(value),
 	}
 }

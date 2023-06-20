@@ -14,36 +14,38 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
-func Test_IPv4CIDRTypeValueFromTerraform(t *testing.T) {
+func Test_IPAddrTypeValueFromTerraform(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
 		val         tftypes.Value
-		expected    func(val IPv4CIDRValue) bool
+		expected    func(val IPAddrValue) bool
 		expectError bool
 	}{
 		"null value": {
 			val: tftypes.NewValue(tftypes.String, nil),
-			expected: func(val IPv4CIDRValue) bool {
+			expected: func(val IPAddrValue) bool {
 				return val.IsNull()
 			},
 		},
 		"unknown value": {
 			val: tftypes.NewValue(tftypes.String, tftypes.UnknownValue),
-			expected: func(val IPv4CIDRValue) bool {
+			expected: func(val IPAddrValue) bool {
 				return val.IsUnknown()
 			},
 		},
-		"valid IPV4/CIDR": {
-			val: tftypes.NewValue(tftypes.String, "1.2.3.4/32"),
-			expected: func(val IPv4CIDRValue) bool {
-				return val.ValueString() == "1.2.3.4/32"
+		"valid IPv4": {
+			val: tftypes.NewValue(tftypes.String, "1.2.3.4"),
+			expected: func(val IPAddrValue) bool {
+				return val.ValueString() == "1.2.3.4"
 			},
 		},
-		// "invalid IPV4/CIDR": {
-		// 	val:         tftypes.NewValue(tftypes.String, "not ok"),
-		// 	expectError: true,
-		// },
+		"valid IPv6": {
+			val: tftypes.NewValue(tftypes.String, "2001:0db8:85a3:0000:0000:8a2e:0370:7334"),
+			expected: func(val IPAddrValue) bool {
+				return val.ValueString() == "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+			},
+		},
 	}
 
 	for name, test := range tests {
@@ -52,7 +54,7 @@ func Test_IPv4CIDRTypeValueFromTerraform(t *testing.T) {
 			t.Parallel()
 
 			ctx := context.TODO()
-			val, err := IPv4CIDRType{}.ValueFromTerraform(ctx, test.val)
+			val, err := IPAddrType{}.ValueFromTerraform(ctx, test.val)
 
 			if err == nil && test.expectError {
 				t.Fatal("expected error, got no error")
@@ -61,14 +63,14 @@ func Test_IPv4CIDRTypeValueFromTerraform(t *testing.T) {
 				t.Fatalf("got unexpected error: %s", err)
 			}
 
-			if !test.expected(val.(IPv4CIDRValue)) {
+			if !test.expected(val.(IPAddrValue)) {
 				t.Errorf("unexpected result")
 			}
 		})
 	}
 }
 
-func Test_IPv4CIDRTypeValidate(t *testing.T) {
+func Test_IPAddrTypeValidate(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
@@ -87,15 +89,14 @@ func Test_IPv4CIDRTypeValidate(t *testing.T) {
 		"null string": {
 			val: tftypes.NewValue(tftypes.String, nil),
 		},
-		"valid string": {
-			val: tftypes.NewValue(tftypes.String, "1.2.3.4/32"),
+		"valid IPv4 string": {
+			val: tftypes.NewValue(tftypes.String, "1.2.3.4"),
+		},
+		"valid IPv6 string": {
+			val: tftypes.NewValue(tftypes.String, "2001:0db8:85a3:0000:0000:8a2e:0370:7334"),
 		},
 		"invalid string": {
 			val:         tftypes.NewValue(tftypes.String, "not ok"),
-			expectError: true,
-		},
-		"invalid string no CIDR": {
-			val:         tftypes.NewValue(tftypes.String, "1.2.3.4"),
 			expectError: true,
 		},
 	}
@@ -107,7 +108,7 @@ func Test_IPv4CIDRTypeValidate(t *testing.T) {
 
 			ctx := context.TODO()
 
-			diags := IPv4CIDRType{}.Validate(ctx, test.val, path.Root("test"))
+			diags := IPAddrType{}.Validate(ctx, test.val, path.Root("test"))
 
 			if !diags.HasError() && test.expectError {
 				t.Fatal("expected error, got no error")

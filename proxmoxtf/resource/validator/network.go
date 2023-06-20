@@ -15,15 +15,18 @@ import (
 
 // VLANIDsValidator returns a schema validation function for VLAN IDs.
 func VLANIDsValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
+	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		min := 1
 		max := 4094
+
+		var ws []string
+		var es []error
 
 		list, ok := i.([]interface{})
 
 		if !ok {
 			es = append(es, fmt.Errorf("expected type of %s to be []interface{}", k))
-			return
+			return ws, es
 		}
 
 		for li, lv := range list {
@@ -31,35 +34,20 @@ func VLANIDsValidator() schema.SchemaValidateDiagFunc {
 
 			if !ok {
 				es = append(es, fmt.Errorf("expected type of %s[%d] to be int", k, li))
-				return
+				return ws, es
 			}
 
 			if v != -1 {
 				if v < min || v > max {
 					es = append(es, fmt.Errorf("expected %s[%d] to be in the range (%d - %d), got %d", k, li, min, max, v))
-					return
+					return ws, es
 				}
 			}
 		}
 
-		return
+		return ws, es
 	})
 }
-
-// // NodeNetworkInterfaceType returns a schema validation function for a node network interface type.
-// func NodeNetworkInterfaceType() schema.SchemaValidateDiagFunc {
-// 	return validation.ToDiagFunc(validation.StringInSlice([]string{
-// 		"bridge",
-// 		"bond",
-// 		"eth",
-// 		"alias",
-// 		"vlan",
-// 		"OVSBridge",
-// 		"OVSBond",
-// 		"OVSPort",
-// 		"OVSIntPort",
-// 	}, false))
-// }
 
 // NodeNetworkInterfaceBondingModes returns a schema validation function for a node network interface bonding mode.
 func NodeNetworkInterfaceBondingModes() schema.SchemaValidateDiagFunc {

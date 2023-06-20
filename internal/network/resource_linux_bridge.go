@@ -85,22 +85,22 @@ func (r *linuxBridgeResource) Schema(
 			},
 			"address": schema.StringAttribute{
 				Description: "The interface IPv4/CIDR address.",
-				CustomType:  pvetypes.IPv4CIDRType{},
+				CustomType:  pvetypes.IPCIDRType{},
 				Optional:    true,
 			},
 			"gateway": schema.StringAttribute{
 				Description: "Default gateway address.",
-				CustomType:  pvetypes.IPv4Type{},
+				CustomType:  pvetypes.IPAddrType{},
 				Optional:    true,
 			},
 			"address6": schema.StringAttribute{
 				Description: "The interface IPv6/CIDR address.",
-				CustomType:  pvetypes.IPv6CIDRType{},
+				CustomType:  pvetypes.IPCIDRType{},
 				Optional:    true,
 			},
 			"gateway6": schema.StringAttribute{
 				Description: "Default IPv6 gateway address.",
-				CustomType:  pvetypes.IPv6Type{},
+				CustomType:  pvetypes.IPAddrType{},
 				Optional:    true,
 			},
 			"autostart": schema.BoolAttribute{
@@ -324,7 +324,11 @@ func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteReq
 	}
 }
 
-func (r *linuxBridgeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *linuxBridgeResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
 	idParts := strings.Split(req.ID, ":")
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(

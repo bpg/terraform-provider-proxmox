@@ -30,10 +30,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-var (
-	// Ensure the implementation satisfies the expected interfaces.
-	_ provider.Provider = &proxmoxProvider{}
-)
+// Ensure the implementation satisfies the expected interfaces.
+var _ provider.Provider = &proxmoxProvider{}
 
 // New is a helper function to simplify provider server and testing implementation.
 func New(version string) func() provider.Provider {
@@ -173,7 +171,11 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 	}
 }
 
-func (p *proxmoxProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+func (p *proxmoxProvider) Configure(
+	ctx context.Context,
+	req provider.ConfigureRequest,
+	resp *provider.ConfigureResponse,
+) {
 	tflog.Info(ctx, "Configuring the Proxmox provider...")
 
 	// Retrieve provider data from configuration
@@ -350,12 +352,8 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 	}
 }
 
-func (p *proxmoxProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
-		// func() datasource.DataSource {
-		// 	return nil
-		// },
-	}
+func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{}
 }
 
 type apiResolver struct {

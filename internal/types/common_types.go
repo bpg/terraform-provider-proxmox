@@ -53,10 +53,12 @@ func (r *CustomBool) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Pointer returns a pointers.
 func (r CustomBool) Pointer() *CustomBool {
 	return &r
 }
 
+// PointerBool returns a pointer to a boolean.
 func (r *CustomBool) PointerBool() *bool {
 	return (*bool)(r)
 }

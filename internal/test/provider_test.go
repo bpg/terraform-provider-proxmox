@@ -31,6 +31,8 @@ provider "proxmox" {
 // acceptance testing. The factory function will be invoked for every Terraform
 // CLI command executed to create a provider server to which the CLI can
 // reattach.
+//
+//nolint:gochecknoglobals
 var AccTestProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
 	"proxmox": providerserver.NewProtocol6WithError(provider.New("test")()),
 }
