@@ -56,7 +56,7 @@ func (r *linuxBridgeResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages an Linux Bridge network interface in a Proxmox VE node.",
+		Description: "Manages a Linux Bridge network interface in a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			// Base attributes
 			"id": schema.StringAttribute{

@@ -30,7 +30,8 @@ import (
 var ErrNoDataObjectInResponse = errors.New("the server did not include a data object in the response")
 
 const (
-	httpClientTimeout = 5 * time.Second
+	// the large timeout is to allow for large file uploads
+	httpClientTimeout = 5 * time.Minute
 	basePathJSONAPI   = "api2/json"
 )
 
