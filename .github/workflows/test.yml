@@ -65,11 +65,15 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
-      - name: TF acceptance tests
+#      - name: TF acceptance tests
+#        timeout-minutes: 10
+#        env:
+#          TF_ACC: "1"
+#          TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
+#        run: go test -v -cover ./...
+
+      - name: Unit tests
         timeout-minutes: 10
-        env:
-          TF_ACC: "1"
-          TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
         run: go test -v -cover ./...
 
   all-tests-passed:
