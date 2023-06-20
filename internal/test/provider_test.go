@@ -22,6 +22,9 @@ provider "proxmox" {
   username = "root@pam"
   password = "password"
   insecure = true
+  ssh {
+    agent = true
+  }
 }
 `
 	// such as updating the Makefile and running the testing through that tool.

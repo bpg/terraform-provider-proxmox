@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestInterfaceLinuxBridgeResource(t *testing.T) {
+func Test_InterfaceLinuxBridgeResource(t *testing.T) {
 	t.Parallel()
 
 	resourceName := "proxmox_virtual_environment_network_linux_bridge.test"

@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -57,7 +58,7 @@ type proxmoxProviderModel struct {
 	OTP      types.String `tfsdk:"otp"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
-	SSH      *struct {
+	SSH      []struct {
 		Agent       types.Bool   `tfsdk:"agent"`
 		AgentSocket types.String `tfsdk:"agent_socket"`
 		Password    types.String `tfsdk:"password"`
@@ -119,8 +120,12 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 			},
 		},
 		Blocks: map[string]schema.Block{
+			// have to define it as a list due to backwards compatibility
 			"ssh": schema.ListNestedBlock{
 				Description: "The SSH configuration for the Proxmox nodes.",
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"agent": schema.BoolAttribute{
@@ -292,24 +297,24 @@ func (p *proxmoxProvider) Configure(
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
 	nodeOverrides := map[string]string{}
 
-	if config.SSH != nil {
-		if !config.SSH.Username.IsNull() {
-			sshUsername = config.SSH.Username.ValueString()
+	if len(config.SSH) > 0 {
+		if !config.SSH[0].Username.IsNull() {
+			sshUsername = config.SSH[0].Username.ValueString()
 		}
 
-		if !config.SSH.Password.IsNull() {
-			sshPassword = config.SSH.Password.ValueString()
+		if !config.SSH[0].Password.IsNull() {
+			sshPassword = config.SSH[0].Password.ValueString()
 		}
 
-		if !config.SSH.Agent.IsNull() {
-			sshAgent = config.SSH.Agent.ValueBool()
+		if !config.SSH[0].Agent.IsNull() {
+			sshAgent = config.SSH[0].Agent.ValueBool()
 		}
 
-		if !config.SSH.AgentSocket.IsNull() {
-			sshAgentSocket = config.SSH.AgentSocket.ValueString()
+		if !config.SSH[0].AgentSocket.IsNull() {
+			sshAgentSocket = config.SSH[0].AgentSocket.ValueString()
 		}
 
-		for _, n := range config.SSH.Nodes {
+		for _, n := range config.SSH[0].Nodes {
 			nodeOverrides[n.Name.ValueString()] = n.Address.ValueString()
 		}
 	}

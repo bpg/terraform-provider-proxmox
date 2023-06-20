@@ -62,7 +62,7 @@ func (t *ticketAuthenticator) authenticate(ctx context.Context) (*Authentication
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	tflog.Debug(ctx, "sending authentication request", map[string]interface{}{
+	tflog.Debug(ctx, "Sending authentication request", map[string]interface{}{
 		"path": req.URL.Path,
 	})
 
