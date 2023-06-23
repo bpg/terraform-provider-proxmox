@@ -18,8 +18,8 @@ resource "proxmox_virtual_environment_firewall_alias" "vm_alias" {
 resource "proxmox_virtual_environment_firewall_alias" "container_alias" {
   depends_on = [proxmox_virtual_environment_container.example]
 
-  node_name = proxmox_virtual_environment_container.example.node_name
-  container_id    = proxmox_virtual_environment_container.example.vm_id
+  node_name    = proxmox_virtual_environment_container.example.node_name
+  container_id = proxmox_virtual_environment_container.example.vm_id
 
   name    = "container-alias"
   cidr    = "192.168.2.0/23"

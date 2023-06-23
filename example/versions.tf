@@ -9,7 +9,7 @@ terraform {
       version = "3.1.0"
     }
     proxmox = {
-      source  = "bpg/proxmox"
+      source = "bpg/proxmox"
     }
   }
 }

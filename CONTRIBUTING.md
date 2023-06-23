@@ -35,7 +35,20 @@ We expect that all commit messages follow the
 
 Please use the `scope` field to indicate the area of the codebase that is being
 changed. For example, `vm` for changes in the Virtual Machine resource, or
-`lcx` for changes in the Container resource:
+`lcx` for changes in the Container resource.
+
+Common scopes are:
+
+- `vm` - Virtual Machine resources
+- `lcx` - Container resources
+- `provider` - Provider configuration and resources
+- `core` - Core libraries and utilities
+- `docs` - Documentation
+- `ci` - Continuous Integration / Actions / GitHub Workflows
+
+Please use lowercase for the description and do not end it with a period.
+
+For example:
 
 ```
 feat(vm): add support for the `clone` operation
@@ -56,7 +69,7 @@ well.
 We use automated release management orchestrated
 by https://github.com/googleapis/release-please GitHub Action. The action
 creates a new release PR with the changelog and bumps the version based on the
-commit messages. The release PR is merged by the maintainers. 
+commit messages. The release PR is merged by the maintainers.
 
 The release will be published to the GitHub Releases page and the Terraform
 Registry.

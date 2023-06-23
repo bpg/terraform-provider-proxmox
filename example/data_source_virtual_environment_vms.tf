@@ -1,6 +1,6 @@
 data "proxmox_virtual_environment_vms" "example" {
   depends_on = [proxmox_virtual_environment_vm.example]
-  tags = ["ubuntu"]
+  tags       = ["ubuntu"]
 
   lifecycle {
     postcondition {

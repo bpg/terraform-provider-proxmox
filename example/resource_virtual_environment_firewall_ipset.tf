@@ -38,8 +38,8 @@ resource "proxmox_virtual_environment_firewall_ipset" "vm_ipset" {
 resource "proxmox_virtual_environment_firewall_ipset" "container_ipset" {
   depends_on = [proxmox_virtual_environment_container.example]
 
-  node_name = proxmox_virtual_environment_container.example.node_name
-  container_id    = proxmox_virtual_environment_container.example.vm_id
+  node_name    = proxmox_virtual_environment_container.example.node_name
+  container_id = proxmox_virtual_environment_container.example.vm_id
 
   name    = "container-ipset"
   comment = "Managed by Terraform"
