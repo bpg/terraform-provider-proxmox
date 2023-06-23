@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
 )
 
 // CustomCommands contains an array of commands to execute.
@@ -50,31 +50,6 @@ type ListResponseData struct {
 	Status          *string  `json:"status"`
 	SupportLevel    *string  `json:"level,omitempty"`
 	Uptime          *int     `json:"uptime"`
-}
-
-// NetworkDeviceListResponseBody contains the body from a node network device list response.
-type NetworkDeviceListResponseBody struct {
-	Data []*NetworkDeviceListResponseData `json:"data,omitempty"`
-}
-
-// NetworkDeviceListResponseData contains the data from a node network device list response.
-type NetworkDeviceListResponseData struct {
-	Active      *types.CustomBool `json:"active,omitempty"`
-	Address     *string           `json:"address,omitempty"`
-	Autostart   *types.CustomBool `json:"autostart,omitempty"`
-	BridgeFD    *string           `json:"bridge_fd,omitempty"`
-	BridgePorts *string           `json:"bridge_ports,omitempty"`
-	BridgeSTP   *string           `json:"bridge_stp,omitempty"`
-	CIDR        *string           `json:"cidr,omitempty"`
-	Exists      *types.CustomBool `json:"exists,omitempty"`
-	Families    *[]string         `json:"families,omitempty"`
-	Gateway     *string           `json:"gateway,omitempty"`
-	Iface       string            `json:"iface"`
-	MethodIPv4  *string           `json:"method,omitempty"`
-	MethodIPv6  *string           `json:"method6,omitempty"`
-	Netmask     *string           `json:"netmask,omitempty"`
-	Priority    int               `json:"priority"`
-	Type        string            `json:"type"`
 }
 
 // UpdateTimeRequestBody contains the body for a node time update request.

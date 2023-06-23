@@ -9,12 +9,12 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   description = "Managed by Terraform"
 
-#  disk {
-#    datastore_id = local.datastore_id
-#    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
-#    interface    = "virtio0"
-#    iothread     = true
-#  }
+  #  disk {
+  #    datastore_id = local.datastore_id
+  #    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
+  #    interface    = "virtio0"
+  #    iothread     = true
+  #  }
 
   disk {
     datastore_id = local.datastore_id
@@ -24,12 +24,12 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     ssd          = true
   }
 
-#  disk {
-#    datastore_id = "nfs"
-#    interface    = "scsi1"
-#    discard      = "ignore"
-#    file_format  = "raw"
-#  }
+  #  disk {
+  #    datastore_id = "nfs"
+  #    interface    = "scsi1"
+  #    discard      = "ignore"
+  #    file_format  = "raw"
+  #  }
 
   initialization {
     datastore_id = local.datastore_id
@@ -47,14 +47,14 @@ resource "proxmox_virtual_environment_vm" "example_template" {
       #}
     }
 
-    user_data_file_id = proxmox_virtual_environment_file.user_config.id
+    user_data_file_id   = proxmox_virtual_environment_file.user_config.id
     vendor_data_file_id = proxmox_virtual_environment_file.vendor_config.id
   }
 
   name = "terraform-provider-proxmox-example-template"
 
   network_device {
-    mtu  = 1450
+    mtu = 1450
   }
 
   network_device {
@@ -81,7 +81,7 @@ resource "proxmox_virtual_environment_vm" "example" {
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
   pool_id   = proxmox_virtual_environment_pool.example.id
   vm_id     = 2041
-  tags        = ["terraform", "ubuntu"]
+  tags      = ["terraform", "ubuntu"]
 
   clone {
     vm_id = proxmox_virtual_environment_vm.example_template.id
@@ -105,13 +105,13 @@ resource "proxmox_virtual_environment_vm" "example" {
     ]
   }
 
-# While overwriting the initialization block when cloning a template is possible, it is not recommended.
-# This will cause the coned VM to be reinitialized each time on re-apply.
-#  initialization {
-#    dns {
-#      server = "8.8.8.8"
-#    }
-#  }
+  # While overwriting the initialization block when cloning a template is possible, it is not recommended.
+  # This will cause the coned VM to be reinitialized each time on re-apply.
+  #  initialization {
+  #    dns {
+  #      server = "8.8.8.8"
+  #    }
+  #  }
 
 }
 

@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -29,7 +30,9 @@ import (
 var ErrNoDataObjectInResponse = errors.New("the server did not include a data object in the response")
 
 const (
-	basePathJSONAPI = "api2/json"
+	// the large timeout is to allow for large file uploads.
+	httpClientTimeout = 5 * time.Minute
+	basePathJSONAPI   = "api2/json"
 )
 
 // Client is an interface for performing requests against the Proxmox API.
@@ -83,8 +86,11 @@ func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 	}
 
 	return &Connection{
-		endpoint:   strings.TrimRight(u.String(), "/"),
-		httpClient: &http.Client{Transport: transport},
+		endpoint: strings.TrimRight(u.String(), "/"),
+		httpClient: &http.Client{
+			Transport: transport,
+			Timeout:   httpClientTimeout,
+		},
 	}, nil
 }
 
@@ -95,7 +101,7 @@ type client struct {
 }
 
 // NewClient creates and initializes a VirtualEnvironmentClient instance.
-func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Client, error) {
+func NewClient(creds *Credentials, conn *Connection) (Client, error) {
 	if creds == nil {
 		return nil, errors.New("credentials must not be nil")
 	}
@@ -111,7 +117,7 @@ func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Clien
 	if creds.APIToken != nil {
 		auth, err = NewTokenAuthenticator(*creds.APIToken)
 	} else {
-		auth, err = NewTicketAuthenticator(ctx, conn, creds)
+		auth, err = NewTicketAuthenticator(conn, creds)
 	}
 
 	if err != nil {
@@ -202,7 +208,7 @@ func (c *client) DoRequest(
 		req.Header.Add("Content-Type", reqBodyType)
 	}
 
-	err = c.auth.AuthenticateRequest(req)
+	err = c.auth.AuthenticateRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to authenticate HTTP %s request (path: %s) - Reason: %w",
 			method,
@@ -228,6 +234,7 @@ func (c *client) DoRequest(
 		return err
 	}
 
+	//nolint:nestif
 	if responseBody != nil {
 		err = json.NewDecoder(res.Body).Decode(responseBody)
 		if err != nil {
@@ -248,12 +255,25 @@ func (c *client) DoRequest(
 				err,
 			)
 		}
-		tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
-			"data": string(data),
-		})
+		if len(data) > 0 {
+			dr := dataResponse{}
+
+			if err2 := json.NewDecoder(bytes.NewReader(data)).Decode(&dr); err2 == nil {
+				if dr.Data == nil {
+					return nil
+				}
+			}
+			tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
+				"data": dr.Data,
+			})
+		}
 	}
 
 	return nil
+}
+
+type dataResponse struct {
+	Data interface{} `json:"data"`
 }
 
 // ExpandPath expands the given path to an absolute path.

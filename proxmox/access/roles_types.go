@@ -6,7 +6,9 @@
 
 package access
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
+)
 
 // RoleCreateRequestBody contains the data for an access group create request.
 type RoleCreateRequestBody struct {

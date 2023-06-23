@@ -58,8 +58,8 @@ resource "proxmox_virtual_environment_firewall_rules" "vm_rules" {
 resource "proxmox_virtual_environment_firewall_rules" "container_rules" {
   depends_on = [proxmox_virtual_environment_container.example]
 
-  node_name = proxmox_virtual_environment_container.example.node_name
-  container_id    = proxmox_virtual_environment_container.example.vm_id
+  node_name    = proxmox_virtual_environment_container.example.node_name
+  container_id = proxmox_virtual_environment_container.example.vm_id
 
   rule {
     type    = "in"

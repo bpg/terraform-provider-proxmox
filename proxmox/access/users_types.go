@@ -6,7 +6,9 @@
 
 package access
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
+)
 
 // UserChangePasswordRequestBody contains the data for a user password change request.
 type UserChangePasswordRequestBody struct {

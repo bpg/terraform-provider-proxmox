@@ -34,8 +34,8 @@ resource "proxmox_virtual_environment_firewall_options" "vm_options" {
 resource "proxmox_virtual_environment_firewall_options" "container_options" {
   depends_on = [proxmox_virtual_environment_container.example]
 
-  node_name = proxmox_virtual_environment_container.example.node_name
-  container_id    = proxmox_virtual_environment_container.example.vm_id
+  node_name    = proxmox_virtual_environment_container.example.node_name
+  container_id = proxmox_virtual_environment_container.example.vm_id
 
   dhcp          = false
   enabled       = false

@@ -26,9 +26,9 @@ type RuleGetResponseData struct {
 	BaseRule
 
 	// NOTE: This is `int` in the PVE API docs, but it's actually a string in the response.
-	Pos    string `json:"pos"     url:"pos"`
-	Action string `json:"action"  url:"action"`
-	Type   string `json:"type"    url:"type"`
+	Pos    string `json:"pos"    url:"pos"`
+	Action string `json:"action" url:"action"`
+	Type   string `json:"type"   url:"type"`
 }
 
 // RuleListResponseBody contains the data from a firewall rule get response.

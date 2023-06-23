@@ -6,7 +6,9 @@
 
 package nodes
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
+)
 
 // CertificateDeleteRequestBody contains the data for a custom certificate delete request.
 type CertificateDeleteRequestBody struct {

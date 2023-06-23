@@ -352,39 +352,6 @@ func getSCSIHardwareValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-//nolint:unused
-func getVLANIDsValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
-		min := 1
-		max := 4094
-
-		list, ok := i.([]interface{})
-
-		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be []interface{}", k))
-			return
-		}
-
-		for li, lv := range list {
-			v, ok := lv.(int)
-
-			if !ok {
-				es = append(es, fmt.Errorf("expected type of %s[%d] to be int", k, li))
-				return
-			}
-
-			if v != -1 {
-				if v < min || v > max {
-					es = append(es, fmt.Errorf("expected %s[%d] to be in the range (%d - %d), got %d", k, li, min, max, v))
-					return
-				}
-			}
-		}
-
-		return
-	})
-}
-
 func getVMIDValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
 		min := 100

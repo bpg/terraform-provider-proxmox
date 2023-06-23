@@ -7,7 +7,6 @@
 package provider
 
 import (
-	"fmt"
 	"os"
 	"regexp"
 
@@ -16,19 +15,18 @@ import (
 )
 
 const (
-	dvProviderOTP                = ""
-	mkProviderVirtualEnvironment = "virtual_environment"
-	mkProviderEndpoint           = "endpoint"
-	mkProviderInsecure           = "insecure"
-	mkProviderOTP                = "otp"
-	mkProviderPassword           = "password"
-	mkProviderUsername           = "username"
-	mkProviderAPIToken           = "api_token"
-	mkProviderSSH                = "ssh"
-	mkProviderSSHUsername        = "username"
-	mkProviderSSHPassword        = "password"
-	mkProviderSSHAgent           = "agent"
-	mkProviderSSHAgentSocket     = "agent_socket"
+	dvProviderOTP            = ""
+	mkProviderEndpoint       = "endpoint"
+	mkProviderInsecure       = "insecure"
+	mkProviderOTP            = "otp"
+	mkProviderPassword       = "password"
+	mkProviderUsername       = "username"
+	mkProviderAPIToken       = "api_token"
+	mkProviderSSH            = "ssh"
+	mkProviderSSHUsername    = "username"
+	mkProviderSSHPassword    = "password"
+	mkProviderSSHAgent       = "agent"
+	mkProviderSSHAgentSocket = "agent_socket"
 
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"
@@ -36,40 +34,21 @@ const (
 )
 
 func createSchema() map[string]*schema.Schema {
-	providerSchema := nestedProviderSchema()
-	providerSchema[mkProviderVirtualEnvironment] = &schema.Schema{
-		Type:     schema.TypeList,
-		Optional: true,
-		Elem: &schema.Resource{
-			Schema: nestedProviderSchema(),
-		},
-		MaxItems:   1,
-		Deprecated: "Move attributes out of virtual_environment block",
-	}
-
-	return providerSchema
-}
-
-func nestedProviderSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkProviderEndpoint: {
 			Type:        schema.TypeString,
 			Optional:    true,
-			Description: "The endpoint for the Proxmox Virtual Environment API",
+			Description: "The endpoint for the Proxmox VE API.",
 			DefaultFunc: schema.MultiEnvDefaultFunc(
 				[]string{"PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT"},
 				nil,
 			),
-			AtLeastOneOf: []string{
-				mkProviderEndpoint,
-				fmt.Sprintf("%s.0.%s", mkProviderVirtualEnvironment, mkProviderEndpoint),
-			},
 			ValidateFunc: validation.IsURLWithHTTPorHTTPS,
 		},
 		mkProviderInsecure: {
 			Type:        schema.TypeBool,
 			Optional:    true,
-			Description: "Whether to skip the TLS verification step",
+			Description: "Whether to skip the TLS verification step.",
 			DefaultFunc: func() (interface{}, error) {
 				for _, k := range []string{"PROXMOX_VE_INSECURE", "PM_VE_INSECURE"} {
 					v := os.Getenv(k)
@@ -85,24 +64,25 @@ func nestedProviderSchema() map[string]*schema.Schema {
 		mkProviderOTP: {
 			Type:        schema.TypeString,
 			Optional:    true,
-			Description: "The one-time password for the Proxmox Virtual Environment API",
+			Description: "The one-time password for the Proxmox VE API.",
+			Deprecated: "The `otp` attribute is deprecated and will be removed in a future release. " +
+				"Please use the `api_token` attribute instead.",
 			DefaultFunc: schema.MultiEnvDefaultFunc(
 				[]string{"PROXMOX_VE_OTP", "PM_VE_OTP"},
-				dvProviderOTP,
+				nil,
 			),
 		},
 		mkProviderPassword: {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   true,
-			Description: "The password for the Proxmox Virtual Environment API",
+			Description: "The password for the Proxmox VE API.",
 			DefaultFunc: schema.MultiEnvDefaultFunc(
 				[]string{"PROXMOX_VE_PASSWORD", "PM_VE_PASSWORD"},
 				nil,
 			),
 			AtLeastOneOf: []string{
 				mkProviderPassword,
-				fmt.Sprintf("%s.0.%s", mkProviderVirtualEnvironment, mkProviderPassword),
 				mkProviderAPIToken,
 			},
 			ValidateFunc: validation.StringIsNotEmpty,
@@ -110,14 +90,13 @@ func nestedProviderSchema() map[string]*schema.Schema {
 		mkProviderUsername: {
 			Type:        schema.TypeString,
 			Optional:    true,
-			Description: "The username for the Proxmox Virtual Environment API",
+			Description: "The username for the Proxmox VE API.",
 			DefaultFunc: schema.MultiEnvDefaultFunc(
 				[]string{"PROXMOX_VE_USERNAME", "PM_VE_USERNAME"},
 				nil,
 			),
 			AtLeastOneOf: []string{
 				mkProviderUsername,
-				fmt.Sprintf("%s.0.%s", mkProviderVirtualEnvironment, mkProviderUsername),
 				mkProviderAPIToken,
 			},
 			ValidateFunc: validation.StringIsNotEmpty,
@@ -126,7 +105,7 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Sensitive:   true,
-			Description: "The API token for the Proxmox Virtual Environment API",
+			Description: "The API token for the Proxmox VE API.",
 			DefaultFunc: schema.MultiEnvDefaultFunc(
 				[]string{"PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN"},
 				nil,
@@ -140,14 +119,15 @@ func nestedProviderSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Optional:    true,
 			MaxItems:    1,
-			Description: "The SSH connection configuration to a Proxmox node",
+			Description: "The SSH configuration for the Proxmox nodes.",
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkProviderSSHUsername: {
 						Type:     schema.TypeString,
 						Optional: true,
-						Description: fmt.Sprintf("The username used for the SSH connection, "+
-							"defaults to the user specified in '%s'", mkProviderUsername),
+						Description: "The username used for the SSH connection. " +
+							"Defaults to the value of the `username` field of the " +
+							"`provider` block.",
 						DefaultFunc: schema.MultiEnvDefaultFunc(
 							[]string{"PROXMOX_VE_SSH_USERNAME", "PM_VE_SSH_USERNAME"},
 							nil,
@@ -158,8 +138,9 @@ func nestedProviderSchema() map[string]*schema.Schema {
 						Type:      schema.TypeString,
 						Optional:  true,
 						Sensitive: true,
-						Description: fmt.Sprintf("The password used for the SSH connection, "+
-							"defaults to the password specified in '%s'", mkProviderPassword),
+						Description: "The password used for the SSH connection. " +
+							"Defaults to the value of the `password` field of the " +
+							"`provider` block.",
 						DefaultFunc: schema.MultiEnvDefaultFunc(
 							[]string{"PROXMOX_VE_SSH_PASSWORD", "PM_VE_SSH_PASSWORD"},
 							nil,
@@ -167,9 +148,10 @@ func nestedProviderSchema() map[string]*schema.Schema {
 						ValidateFunc: validation.StringIsNotEmpty,
 					},
 					mkProviderSSHAgent: {
-						Type:        schema.TypeBool,
-						Optional:    true,
-						Description: "Whether to use the SSH agent for the SSH authentication. Defaults to false",
+						Type:     schema.TypeBool,
+						Optional: true,
+						Description: "Whether to use the SSH agent for authentication. " +
+							"Defaults to `false`.",
 						DefaultFunc: func() (interface{}, error) {
 							for _, k := range []string{"PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT"} {
 								v := os.Getenv(k)
@@ -186,7 +168,7 @@ func nestedProviderSchema() map[string]*schema.Schema {
 						Type:     schema.TypeString,
 						Optional: true,
 						Description: "The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` " +
-							"environment variable",
+							"environment variable.",
 						DefaultFunc: schema.MultiEnvDefaultFunc(
 							[]string{"SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK"},
 							nil,
@@ -197,19 +179,19 @@ func nestedProviderSchema() map[string]*schema.Schema {
 						Type:        schema.TypeList,
 						Optional:    true,
 						MinItems:    0,
-						Description: "Overrides for SSH connection configuration to a Proxmox node",
+						Description: "Overrides for SSH connection configuration for a Proxmox VE node.",
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
 								mkProviderSSHNodeName: {
 									Type:         schema.TypeString,
 									Required:     true,
-									Description:  "The name of the node to connect to",
+									Description:  "The name of the Proxmox VE node.",
 									ValidateFunc: validation.StringIsNotEmpty,
 								},
 								mkProviderSSHNodeAddress: {
 									Type:         schema.TypeString,
 									Required:     true,
-									Description:  "The address that should be used to connect to the node",
+									Description:  "The address of the Proxmox VE node.",
 									ValidateFunc: validation.IsIPAddress,
 								},
 							},

@@ -30,7 +30,7 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 	}
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
 
 	var diags diag.Diagnostics
@@ -43,44 +43,25 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	var conn *api.Connection
 
-	// Legacy configuration, wrapped in the deprecated `virtual_environment` block
-	veConfigBlock := d.Get(mkProviderVirtualEnvironment).([]interface{})
-	if len(veConfigBlock) > 0 {
-		veConfig := veConfigBlock[0].(map[string]interface{})
-		creds, err = api.NewCredentials(
-			veConfig[mkProviderUsername].(string),
-			veConfig[mkProviderPassword].(string),
-			veConfig[mkProviderOTP].(string),
-			"",
-		)
-		diags = append(diags, diag.FromErr(err)...)
+	creds, err = api.NewCredentials(
+		d.Get(mkProviderUsername).(string),
+		d.Get(mkProviderPassword).(string),
+		d.Get(mkProviderOTP).(string),
+		d.Get(mkProviderAPIToken).(string),
+	)
+	diags = append(diags, diag.FromErr(err)...)
 
-		conn, err = api.NewConnection(
-			veConfig[mkProviderEndpoint].(string),
-			veConfig[mkProviderInsecure].(bool),
-		)
-		diags = append(diags, diag.FromErr(err)...)
-	} else {
-		creds, err = api.NewCredentials(
-			d.Get(mkProviderUsername).(string),
-			d.Get(mkProviderPassword).(string),
-			d.Get(mkProviderOTP).(string),
-			d.Get(mkProviderAPIToken).(string),
-		)
-		diags = append(diags, diag.FromErr(err)...)
-
-		conn, err = api.NewConnection(
-			d.Get(mkProviderEndpoint).(string),
-			d.Get(mkProviderInsecure).(bool),
-		)
-		diags = append(diags, diag.FromErr(err)...)
-	}
+	conn, err = api.NewConnection(
+		d.Get(mkProviderEndpoint).(string),
+		d.Get(mkProviderInsecure).(bool),
+	)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if diags.HasError() {
 		return nil, diags
 	}
 
-	apiClient, err = api.NewClient(ctx, creds, conn)
+	apiClient, err = api.NewClient(creds, conn)
 	if err != nil {
 		return nil, diag.Errorf("error creating virtual environment client: %s", err)
 	}
@@ -145,12 +126,27 @@ type apiResolver struct {
 func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, error) {
 	nc := &nodes.Client{Client: r.c, NodeName: nodeName}
 
-	ip, err := nc.GetIP(ctx)
+	networkDevices, err := nc.ListNetworkInterfaces(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get node IP: %w", err)
+		return "", fmt.Errorf("failed to list network devices of node \"%s\": %w", nc.NodeName, err)
 	}
 
-	return ip, nil
+	nodeAddress := ""
+
+	for _, d := range networkDevices {
+		if d.Address != nil {
+			nodeAddress = *d.Address
+			break
+		}
+	}
+
+	if nodeAddress == "" {
+		return "", fmt.Errorf("failed to determine the IP address of node \"%s\"", nc.NodeName)
+	}
+
+	nodeAddressParts := strings.Split(nodeAddress, "/")
+
+	return nodeAddressParts[0], nil
 }
 
 type apiResolverWithOverrides struct {

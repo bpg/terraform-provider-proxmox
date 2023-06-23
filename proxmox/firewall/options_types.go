@@ -6,7 +6,9 @@
 
 package firewall
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
+)
 
 // OptionsPutRequestBody is the request body for the PUT /cluster/firewall/options API call.
 type OptionsPutRequestBody struct {

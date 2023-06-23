@@ -73,6 +73,7 @@ linters:
     - funlen
     - gocognit
     # others
+    - depguard
     - exhaustivestruct
     - exhaustruct
     - gci

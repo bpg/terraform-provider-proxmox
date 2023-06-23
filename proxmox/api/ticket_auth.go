@@ -21,12 +21,14 @@ import (
 )
 
 type ticketAuthenticator struct {
-	authenticationData *AuthenticationResponseData
+	conn        *Connection
+	authRequest string
+	authData    *AuthenticationResponseData
 }
 
 // NewTicketAuthenticator returns a new ticket authenticator.
-func NewTicketAuthenticator(ctx context.Context, conn *Connection, creds *Credentials) (Authenticator, error) {
-	reqStr := fmt.Sprintf(
+func NewTicketAuthenticator(conn *Connection, creds *Credentials) (Authenticator, error) {
+	authRequest := fmt.Sprintf(
 		"username=%s&password=%s",
 		url.QueryEscape(creds.Username),
 		url.QueryEscape(creds.Password),
@@ -34,14 +36,25 @@ func NewTicketAuthenticator(ctx context.Context, conn *Connection, creds *Creden
 
 	// OTP is optional, and probably doesn't make much sense for most provider users.
 	if creds.OTP != nil {
-		reqStr = fmt.Sprintf("%s&otp=%s", reqStr, url.QueryEscape(*creds.OTP))
+		authRequest = fmt.Sprintf("%s&otp=%s", authRequest, url.QueryEscape(*creds.OTP))
+	}
+
+	return &ticketAuthenticator{
+		conn:        conn,
+		authRequest: authRequest,
+	}, nil
+}
+
+func (t *ticketAuthenticator) authenticate(ctx context.Context) (*AuthenticationResponseData, error) {
+	if t.authData != nil {
+		return t.authData, nil
 	}
 
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		fmt.Sprintf("%s/%s/access/ticket", conn.endpoint, basePathJSONAPI),
-		bytes.NewBufferString(reqStr),
+		fmt.Sprintf("%s/%s/access/ticket", t.conn.endpoint, basePathJSONAPI),
+		bytes.NewBufferString(t.authRequest),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authentication request: %w", err)
@@ -49,12 +62,12 @@ func NewTicketAuthenticator(ctx context.Context, conn *Connection, creds *Creden
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
-	tflog.Debug(ctx, "sending authentication request", map[string]interface{}{
+	tflog.Debug(ctx, "Sending authentication request", map[string]interface{}{
 		"path": req.URL.Path,
 	})
 
 	//nolint:bodyclose
-	res, err := conn.httpClient.Do(req)
+	res, err := t.conn.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve authentication response: %w", err)
 	}
@@ -91,28 +104,29 @@ func NewTicketAuthenticator(ctx context.Context, conn *Connection, creds *Creden
 		return nil, errors.New("the server did not include the username in the authentication response")
 	}
 
-	return &ticketAuthenticator{
-		authenticationData: resBody.Data,
-	}, nil
+	t.authData = resBody.Data
+
+	return resBody.Data, nil
 }
 
 func (t *ticketAuthenticator) IsRoot() bool {
-	return t.authenticationData.Username == rootUsername
+	return t.authData != nil && t.authData.Username == rootUsername
 }
 
 // AuthenticateRequest adds authentication data to a new request.
-func (t *ticketAuthenticator) AuthenticateRequest(req *http.Request) error {
-	if t.authenticationData == nil {
-		return errors.New("failed to authenticate: no ticket")
+func (t *ticketAuthenticator) AuthenticateRequest(ctx context.Context, req *http.Request) error {
+	a, err := t.authenticate(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to authenticate: %w", err)
 	}
 
 	req.AddCookie(&http.Cookie{
 		Name:  "PVEAuthCookie",
-		Value: *t.authenticationData.Ticket,
+		Value: *a.Ticket,
 	})
 
 	if req.Method != http.MethodGet {
-		req.Header.Add("CSRFPreventionToken", *t.authenticationData.CSRFPreventionToken)
+		req.Header.Add("CSRFPreventionToken", *a.CSRFPreventionToken)
 	}
 
 	return nil

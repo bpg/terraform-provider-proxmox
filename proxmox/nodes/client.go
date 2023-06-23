@@ -12,6 +12,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 )
 
@@ -39,5 +40,12 @@ func (c *Client) VM(vmID int) *vms.Client {
 	return &vms.Client{
 		Client: c,
 		VMID:   vmID,
+	}
+}
+
+// Tasks returns a client for managing VM tasks.
+func (c *Client) Tasks() *tasks.Client {
+	return &tasks.Client{
+		Client: c,
 	}
 }
