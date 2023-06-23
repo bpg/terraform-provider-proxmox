@@ -353,7 +353,8 @@ func (p *proxmoxProvider) Configure(
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		providerResource.NewInterfaceLinuxBridgeResource,
+		providerResource.NewLinuxBridgeResource,
+		providerResource.NewLinuxVLANResource,
 	}
 }
 

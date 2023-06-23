@@ -39,9 +39,9 @@ func (c *Client) GetTaskStatus(ctx context.Context, upid string) (*GetTaskStatus
 }
 
 // WaitForTask waits for a specific task to complete.
-func (c *Client) WaitForTask(ctx context.Context, upid string, timeout, delay int) error {
-	timeDelay := int64(delay)
-	timeMax := float64(timeout)
+func (c *Client) WaitForTask(ctx context.Context, upid string, timeoutSec, delaySec int) error {
+	timeDelay := int64(delaySec)
+	timeMax := float64(timeoutSec)
 	timeStart := time.Now()
 	timeElapsed := timeStart.Sub(timeStart)
 
@@ -80,7 +80,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, timeout, delay in
 	}
 
 	return fmt.Errorf(
-		"timeout while waiting for task \"%s\" to complete",
+		"timeoutSec while waiting for task \"%s\" to complete",
 		upid,
 	)
 }

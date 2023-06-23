@@ -1,40 +1,35 @@
 ---
 layout: page
-title: proxmox_virtual_environment_network_linux_bridge
-permalink: /resources/virtual_environment_network_linux_bridge
+title: proxmox_virtual_environment_network_linux_vlan
+permalink: /resources/virtual_environment_network_linux_vlan
 nav_order: 13
 parent: Resources
 subcategory: Virtual Environment
 ---
 
-# Resource: proxmox_virtual_environment_network_linux_bridge
+# Resource: proxmox_virtual_environment_network_linux_vlan
 
-Manages a Linux Bridge network interface in a Proxmox VE node.
+Manages a Linux VLAN network interface in a Proxmox VE node.
 
 ## Example Usage
 
 ```terraform
-resource "proxmox_virtual_environment_network_linux_bridge" "bridge99" {
+resource "proxmox_virtual_environment_network_linux_vlan" "vlan21" {
   node_name = "pve"
-  iface     = "vmbr99"
-  address   = "3.3.3.3/24"
+  iface     = "ens18.21"
   comment   = "created by terraform"
-  mtu       = 1499
 }
 ```
 
 ## Argument Reference
 
 - `node_name` - (Required) The name of the node to manage the interface on.
-- `name` - (Required) The interface name. Must be "vmbrN", where N is a number
-  between 0 and 9999.
+- `name` - (Required) The interface name. Add the VLAN tag number to an
+  existing interface name, e.g. "ens18.21".
 
 - `address` - (Optional) The interface IPv4/CIDR address.
 - `address6` - (Optional) The interface IPv6/CIDR address.
 - `autostart` - (Optional) Automatically start interface on boot (defaults
-  to `true`).
-- `ports` - (Optional) Specify the list of the interface bridge ports.
-- `vlan_aware` - (Optional) Whether the interface bridge is VLAN aware (defaults
   to `true`).
 - `comment` - (Optional) Comment for the interface.
 - `gateway` - (Optional) Default gateway address.
@@ -44,3 +39,5 @@ resource "proxmox_virtual_environment_network_linux_bridge" "bridge99" {
 ### Read-Only
 
 - `id` (String) A unique identifier with format '<node name>:<iface>'
+- `interface` (String) The VLAN raw device.
+- `vlan` (Number) The VLAN tag

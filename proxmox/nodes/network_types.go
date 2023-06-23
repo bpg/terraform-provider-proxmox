@@ -38,6 +38,8 @@ type NetworkInterfaceListResponseData struct {
 	MethodIPv6      *string           `json:"method6,omitempty"`
 	MTU             *string           `json:"mtu,omitempty"`
 	Netmask         *string           `json:"netmask,omitempty"`
+	VLANID          *string           `json:"vlan-id,omitempty"`
+	VLANRawDevice   *string           `json:"vlan-raw-device,omitempty"`
 	Priority        int               `json:"priority"`
 	Type            string            `json:"type"`
 }
@@ -71,6 +73,11 @@ type NetworkInterfaceCreateUpdateRequestBody struct {
 	OVSPorts           *string           `json:"ovs_ports,omitempty"             url:"ovs_ports,omitempty"`
 	OVSTag             *string           `json:"ovs_tag,omitempty"               url:"ovs_tag,omitempty"`
 	Slaves             *string           `json:"slaves,omitempty"                url:"slaves,omitempty"`
-	VLANID             *int              `json:"vlan_id,omitempty"               url:"vlan_id,omitempty"`
-	VLANRawDevice      *string           `json:"vlan_raw_device,omitempty"       url:"vlan_raw_device,omitempty"`
+	VLANID             *int64            `json:"vlan_id,omitempty"               url:"vlan_id,omitempty"`
+	VLANRawDevice      *string           `json:"vlan-raw-device,omitempty"       url:"vlan-raw-device,omitempty"`
+}
+
+// ReloadNetworkResponseBody contains the body from a node network reload response.
+type ReloadNetworkResponseBody struct {
+	Data *string `json:"data,omitempty"`
 }

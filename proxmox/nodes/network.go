@@ -16,6 +16,10 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
+const (
+	networkReloadTimeoutSec = 5
+)
+
 // ListNetworkInterfaces retrieves a list of network interfaces for a specific nodes.
 func (c *Client) ListNetworkInterfaces(ctx context.Context) ([]*NetworkInterfaceListResponseData, error) {
 	resBody := &NetworkInterfaceListResponseBody{}
@@ -51,9 +55,20 @@ func (c *Client) CreateNetworkInterface(ctx context.Context, d *NetworkInterface
 
 // ReloadNetworkConfiguration reloads the network configuration for a specific node.
 func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("network"), nil, nil)
+	resBody := &ReloadNetworkResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("network"), nil, resBody)
 	if err != nil {
 		return fmt.Errorf("failed to reload network configuration for node \"%s\": %w", c.NodeName, err)
+	}
+
+	if resBody.Data == nil {
+		return api.ErrNoDataObjectInResponse
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *resBody.Data, networkReloadTimeoutSec, 1)
+	if err == nil {
+		return nil
 	}
 
 	return nil
