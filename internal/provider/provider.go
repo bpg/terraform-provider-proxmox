@@ -23,7 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	providerResource "github.com/bpg/terraform-provider-proxmox/internal/network"
+	"github.com/bpg/terraform-provider-proxmox/internal/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
@@ -253,11 +253,6 @@ func (p *proxmoxProvider) Configure(
 		return
 	}
 
-	// ctx = tflog.SetField(ctx, "hashicups_host", host)
-	// ctx = tflog.SetField(ctx, "hashicups_username", username)
-	// ctx = tflog.SetField(ctx, "hashicups_password", password)
-	// ctx = tflog.MaskFieldValuesWithFieldKeys(ctx, "hashicups_password")
-
 	// Create the Proxmox VE API client
 
 	creds, err := api.NewCredentials(username, password, "", apiToken)
@@ -353,8 +348,8 @@ func (p *proxmoxProvider) Configure(
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		providerResource.NewLinuxBridgeResource,
-		providerResource.NewLinuxVLANResource,
+		network.NewLinuxBridgeResource,
+		network.NewLinuxVLANResource,
 	}
 }
 
