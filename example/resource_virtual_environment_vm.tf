@@ -49,6 +49,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
     user_data_file_id   = proxmox_virtual_environment_file.user_config.id
     vendor_data_file_id = proxmox_virtual_environment_file.vendor_config.id
+    meta_data_file_id   = proxmox_virtual_environment_file.meta_config.id
   }
 
   name = "terraform-provider-proxmox-example-template"

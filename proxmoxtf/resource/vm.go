@@ -74,6 +74,7 @@ const (
 	dvResourceVirtualEnvironmentVMInitializationUserDataFileID      = ""
 	dvResourceVirtualEnvironmentVMInitializationVendorDataFileID    = ""
 	dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID   = ""
+	dvResourceVirtualEnvironmentVMInitializationMetaDataFileID      = ""
 	dvResourceVirtualEnvironmentVMInitializationType                = ""
 	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
 	dvResourceVirtualEnvironmentVMKVMArguments                      = ""
@@ -184,6 +185,7 @@ const (
 	mkResourceVirtualEnvironmentVMInitializationUserDataFileID      = "user_data_file_id"
 	mkResourceVirtualEnvironmentVMInitializationVendorDataFileID    = "vendor_data_file_id"
 	mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID   = "network_data_file_id"
+	mkResourceVirtualEnvironmentVMInitializationMetaDataFileID      = "meta_data_file_id"
 	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
 	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
 	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
@@ -812,6 +814,14 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID,
+							ValidateDiagFunc: getFileIDValidator(),
+						},
+						mkResourceVirtualEnvironmentVMInitializationMetaDataFileID: {
+							Type:             schema.TypeString,
+							Description:      "The ID of a file containing meta data config",
+							Optional:         true,
+							ForceNew:         true,
+							Default:          dvResourceVirtualEnvironmentVMInitializationMetaDataFileID,
 							ValidateDiagFunc: getFileIDValidator(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationType: {
@@ -2456,6 +2466,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 			if initializationConfig.Files == nil {
 				initializationConfig.Files = &vms.CustomCloudInitFiles{}
 			}
+
 			initializationConfig.Files.VendorVolume = &initializationVendorDataFileID
 		}
 
@@ -2465,7 +2476,19 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 			if initializationConfig.Files == nil {
 				initializationConfig.Files = &vms.CustomCloudInitFiles{}
 			}
+
 			initializationConfig.Files.NetworkVolume = &initializationNetworkDataFileID
+		}
+
+		//nolint:lll
+		initializationMetaDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationMetaDataFileID].(string)
+
+		if initializationMetaDataFileID != "" {
+			if initializationConfig.Files == nil {
+				initializationConfig.Files = &vms.CustomCloudInitFiles{}
+			}
+
+			initializationConfig.Files.MetaVolume = &initializationMetaDataFileID
 		}
 
 		initializationType := initializationBlock[mkResourceVirtualEnvironmentVMInitializationType].(string)
@@ -3403,20 +3426,29 @@ func vmReadCustom(
 		} else {
 			initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
 		}
+
 		if vmConfig.CloudInitFiles.VendorVolume != nil {
 			initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = *vmConfig.CloudInitFiles.VendorVolume
 		} else {
 			initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = ""
 		}
+
 		if vmConfig.CloudInitFiles.NetworkVolume != nil {
 			initialization[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID] = *vmConfig.CloudInitFiles.NetworkVolume
 		} else {
 			initialization[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID] = ""
 		}
+
+		if vmConfig.CloudInitFiles.MetaVolume != nil {
+			initialization[mkResourceVirtualEnvironmentVMInitializationMetaDataFileID] = *vmConfig.CloudInitFiles.MetaVolume
+		} else {
+			initialization[mkResourceVirtualEnvironmentVMInitializationMetaDataFileID] = ""
+		}
 	} else if len(initialization) > 0 {
 		initialization[mkResourceVirtualEnvironmentVMInitializationUserDataFileID] = ""
 		initialization[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID] = ""
 		initialization[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID] = ""
+		initialization[mkResourceVirtualEnvironmentVMInitializationMetaDataFileID] = ""
 	}
 
 	if vmConfig.CloudInitType != nil {

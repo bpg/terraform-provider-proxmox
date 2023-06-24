@@ -279,12 +279,14 @@ output "ubuntu_vm_public_key" {
         - `password` - (Optional) The SSH password.
         - `username` - (Optional) The SSH username.
     - `network_data_file_id` - (Optional) The identifier for a file containing
-      network configuration data passed to the
-      VM via cloud-init (conflicts with `ip_config`).
+      network configuration data passed to the VM via cloud-init (conflicts
+      with `ip_config`).
     - `user_data_file_id` - (Optional) The identifier for a file containing
       custom user data (conflicts with `user_account`).
     - `vendor_data_file_id` - (Optional) The identifier for a file containing
-      all vendor data passed to the VM via cloud-init.
+      all vendor data passed to the VM via cloud-init. 
+    - `meta_data_file_id` - (Optional) The identifier for a file containing
+      all meta data passed to the VM via cloud-init.
 - `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`).
     - `da` - Danish.
     - `de` - German.
@@ -328,7 +330,7 @@ output "ubuntu_vm_public_key" {
     - `enabled` - (Optional) Whether to enable the network device (defaults
       to `true`).
     - `firewall` - (Optional) Whether this interface's firewall rules should be
-        used (defaults to `false`).
+      used (defaults to `false`).
     - `mac_address` - (Optional) The MAC address.
     - `model` - (Optional) The network device model (defaults to `virtio`).
         - `e1000` - Intel E1000.
