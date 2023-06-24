@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.22.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.21.1...v0.22.0) (2023-06-24)
+
+
+### Features
+
+* **vm:** add network device resources ([#376](https://github.com/bpg/terraform-provider-proxmox/issues/376)) ([343e804](https://github.com/bpg/terraform-provider-proxmox/commit/343e8045c125a4e216443855be3fc794e56399cd))
+* **vm:** add support for meta-data in cloud-init ([#378](https://github.com/bpg/terraform-provider-proxmox/issues/378)) ([7aa25b8](https://github.com/bpg/terraform-provider-proxmox/commit/7aa25b8d058ae6f1807252fb731fab0aec3a4814))
+
+
+### Bug Fixes
+
+* **file:** add check for supported content types when uploading file to a storage ([#379](https://github.com/bpg/terraform-provider-proxmox/issues/379)) ([4e1ce30](https://github.com/bpg/terraform-provider-proxmox/commit/4e1ce30619ccf7db141874f4daa5873ca9f012f1))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/golangci/golangci-lint from 1.53.2 to 1.53.3 in /tools ([#375](https://github.com/bpg/terraform-provider-proxmox/issues/375)) ([2863aa6](https://github.com/bpg/terraform-provider-proxmox/commit/2863aa6e2d1a472259c8f60bd63a934c0161f598))
+* **deps:** bump golang.org/x/crypto from 0.9.0 to 0.10.0 ([#374](https://github.com/bpg/terraform-provider-proxmox/issues/374)) ([f6e20bd](https://github.com/bpg/terraform-provider-proxmox/commit/f6e20bd787977b99b9d934bb6ba4d7d06244ef42))
+* **deps:** bump goreleaser/goreleaser-action from 4.2.0 to 4.3.0 ([#371](https://github.com/bpg/terraform-provider-proxmox/issues/371)) ([e3a62d7](https://github.com/bpg/terraform-provider-proxmox/commit/e3a62d79ad0fc319d4f57c9ae12cfae14f8e25f6))
+
 ## [0.21.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.21.0...v0.21.1) (2023-06-07)
 
 
