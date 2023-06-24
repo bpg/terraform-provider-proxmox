@@ -80,7 +80,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, timeoutSec, delay
 	}
 
 	return fmt.Errorf(
-		"timeoutSec while waiting for task \"%s\" to complete",
+		"timeout while waiting for task \"%s\" to complete",
 		upid,
 	)
 }

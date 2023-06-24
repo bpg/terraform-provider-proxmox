@@ -50,6 +50,20 @@ runcmd:
 }
 
 
+resource "proxmox_virtual_environment_file" "meta_config" {
+  content_type = "snippets"
+  datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))
+  node_name    = data.proxmox_virtual_environment_datastores.example.node_name
+
+  source_raw {
+    data = <<EOF
+local-hostname: myhost.internal
+    EOF
+
+    file_name = "meta-config.yaml"
+  }
+}
+
 #===============================================================================
 # Ubuntu Cloud Image
 #===============================================================================
