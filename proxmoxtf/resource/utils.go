@@ -506,6 +506,11 @@ func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string
 		datastoresSet[fileIDParts[0]] = 1
 	}
 
+	if vm.EFIDisk != nil {
+		fileIDParts := strings.Split(vm.EFIDisk.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
 	datastores := []string{}
 	for datastore := range datastoresSet {
 		datastores = append(datastores, datastore)

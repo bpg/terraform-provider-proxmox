@@ -45,6 +45,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDescription,
 		mkResourceVirtualEnvironmentVMDisk,
+		mkResourceVirtualEnvironmentVMEfiDisk,
 		mkResourceVirtualEnvironmentVMInitialization,
 		mkResourceVirtualEnvironmentVMHostPCI,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
@@ -80,6 +81,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCPU:                   schema.TypeList,
 		mkResourceVirtualEnvironmentVMDescription:           schema.TypeString,
 		mkResourceVirtualEnvironmentVMDisk:                  schema.TypeList,
+		mkResourceVirtualEnvironmentVMEfiDisk:               schema.TypeList,
 		mkResourceVirtualEnvironmentVMHostPCI:               schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitialization:        schema.TypeList,
 		mkResourceVirtualEnvironmentVMIPv4Addresses:         schema.TypeList,
@@ -214,6 +216,20 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable:  schema.TypeInt,
 		mkResourceVirtualEnvironmentVMDiskSpeedWrite:          schema.TypeInt,
 		mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable: schema.TypeInt,
+	})
+
+	efiDiskSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMEfiDisk)
+
+	test.AssertOptionalArguments(t, efiDiskSchema, []string{
+		mkResourceVirtualEnvironmentVMEfiDiskDatastoreID,
+		mkResourceVirtualEnvironmentVMEfiDiskFileFormat,
+		mkResourceVirtualEnvironmentVMEfiDiskSize,
+	})
+
+	test.AssertValueTypes(t, efiDiskSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentVMEfiDiskDatastoreID: schema.TypeString,
+		mkResourceVirtualEnvironmentVMEfiDiskFileFormat:  schema.TypeString,
+		mkResourceVirtualEnvironmentVMEfiDiskSize:        schema.TypeString,
 	})
 
 	initializationSchema := test.AssertNestedSchemaExistence(

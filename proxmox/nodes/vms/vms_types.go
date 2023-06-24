@@ -1472,15 +1472,19 @@ func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 
 	pairs := strings.Split(s, ",")
 
-	for _, p := range pairs {
+	for i, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 1 && i == 0 {
+			r.FileVolume = v[0]
+		}
 
 		if len(v) == 2 {
 			switch v[0] {
-			case "format":
-				r.Format = &v[1]
 			case "file":
 				r.FileVolume = v[1]
+			case "format":
+				r.Format = &v[1]
 			case "size":
 				r.Size = new(types.DiskSize)
 

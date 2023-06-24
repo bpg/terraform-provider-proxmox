@@ -27,9 +27,19 @@ func (r DiskSize) String() string {
 	return formatDiskSize(int64(r))
 }
 
+// InMegabytes returns the disk size in megabytes.
+func (r DiskSize) InMegabytes() int {
+	return int(int64(r) / 1024 / 1024)
+}
+
 // InGigabytes returns the disk size in gigabytes.
 func (r DiskSize) InGigabytes() int {
 	return int(int64(r) / 1024 / 1024 / 1024)
+}
+
+// DiskSizeFromMegabytes creates a DiskSize from megabytes.
+func DiskSizeFromMegabytes(size int) DiskSize {
+	return DiskSize(size * 1024 * 1024)
 }
 
 // DiskSizeFromGigabytes creates a DiskSize from gigabytes.
