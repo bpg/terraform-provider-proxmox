@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func getBIOSValidator() schema.SchemaValidateDiagFunc {
@@ -178,6 +179,28 @@ func getFileIDValidator() schema.SchemaValidateDiagFunc {
 
 			if !ok {
 				es = append(es, fmt.Errorf("expected %s to be a valid file identifier (datastore-name:iso/some-file.img), got %s", k, v))
+				return
+			}
+		}
+
+		return
+	})
+}
+
+func getFileSizeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
+		v, ok := i.(string)
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		if v != "" {
+			_, err := types.ParseDiskSize(v)
+
+			if err != nil {
+				es = append(es, fmt.Errorf("expected %s to be a valid file size (100, 1M, 1G), got %s", k, v))
 				return
 			}
 		}

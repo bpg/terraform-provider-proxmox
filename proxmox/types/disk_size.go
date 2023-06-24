@@ -24,7 +24,7 @@ type DiskSize int64
 
 // String returns the string representation of the disk size.
 func (r DiskSize) String() string {
-	return formatDiskSize(int64(r))
+	return FormatDiskSize(r)
 }
 
 // InMegabytes returns the disk size in megabytes.
@@ -49,7 +49,7 @@ func DiskSizeFromGigabytes(size int) DiskSize {
 
 // MarshalJSON marshals a disk size into a Proxmox API `<DiskSize>` string.
 func (r DiskSize) MarshalJSON() ([]byte, error) {
-	bytes, err := json.Marshal(formatDiskSize(int64(r)))
+	bytes, err := json.Marshal(FormatDiskSize(r))
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal disk size: %w", err)
 	}
@@ -61,27 +61,23 @@ func (r DiskSize) MarshalJSON() ([]byte, error) {
 func (r *DiskSize) UnmarshalJSON(b []byte) error {
 	s := string(b)
 
-	size, err := parseDiskSize(&s)
+	size, err := ParseDiskSize(s)
 	if err != nil {
 		return err
 	}
 
-	*r = DiskSize(size)
+	*r = size
 
 	return nil
 }
 
 // parseDiskSize parses a disk size string into a number of bytes.
-func parseDiskSize(size *string) (int64, error) {
-	if size == nil {
-		return 0, nil
-	}
-
-	matches := sizeRegex.FindStringSubmatch(*size)
+func ParseDiskSize(size string) (DiskSize, error) {
+	matches := sizeRegex.FindStringSubmatch(size)
 	if len(matches) > 0 {
 		fsize, err := strconv.ParseFloat(matches[1], 64)
 		if err != nil {
-			return -1, fmt.Errorf("cannot parse disk size \"%s\": %w", *size, err)
+			return -1, fmt.Errorf("cannot parse disk size \"%s\": %w", size, err)
 		}
 
 		switch strings.ToLower(matches[3]) {
@@ -95,13 +91,13 @@ func parseDiskSize(size *string) (int64, error) {
 			fsize = fsize * 1024 * 1024 * 1024 * 1024
 		}
 
-		return int64(math.Ceil(fsize)), nil
+		return DiskSize(math.Ceil(fsize)), nil
 	}
 
-	return -1, fmt.Errorf("cannot parse disk size \"%s\"", *size)
+	return -1, fmt.Errorf("cannot parse disk size \"%s\"", size)
 }
 
-func formatDiskSize(size int64) string {
+func FormatDiskSize(size DiskSize) string {
 	if size < 0 {
 		return ""
 	}
