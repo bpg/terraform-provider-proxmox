@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/exp/slices"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -403,6 +404,18 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			return diag.Errorf("failed to determine the datastore path")
 		}
 
+		_, found := slices.BinarySearch(datastore.Content, *contentType)
+		if !found {
+			diags = append(diags, diag.Diagnostics{
+				diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary: fmt.Sprintf("the datastore %q does not support content type %q",
+						*datastore.Storage, *contentType,
+					),
+				},
+			}...)
+		}
+
 		remoteFileDir := *datastore.Path
 
 		err = capi.SSH().NodeUpload(ctx, nodeName, remoteFileDir, request)
@@ -412,14 +425,21 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	volumeID, diags := fileGetVolumeID(d)
+	volumeID, di := fileGetVolumeID(d)
+	diags = append(diags, di...)
 	if diags.HasError() {
 		return diags
 	}
 
 	d.SetId(*volumeID)
 
-	return fileRead(ctx, d, m)
+	diags = append(diags, fileRead(ctx, d, m)...)
+
+	if d.Id() == "" {
+		diags = append(diags, diag.Errorf("failed to read file from %q", *volumeID)...)
+	}
+
+	return diags
 }
 
 func fileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
