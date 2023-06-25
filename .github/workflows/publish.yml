@@ -17,15 +17,6 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Short Lived OAuth App Token
-        uses: actions/create-github-app-token@f2acddfb5195534d487896a656232b016a682f3c # v1.9.0
-        id: app-token
-        with:
-          app-id: "${{ secrets.BOT_APP_ID }}"
-          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
-          owner: "${{ github.repository_owner }}"
-          repositories: "${{ github.event.repository.name }}"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -45,4 +36,5 @@ jobs:
           args: release --clean
         env:
           GPG_FINGERPRINT: "${{ steps.import_gpg.outputs.fingerprint }}"
-          GITHUB_TOKEN: "${{ steps.app-token.outputs.token }}"
+          # GitHub sets this automatically
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
