@@ -643,6 +643,22 @@ func Container() *schema.Resource {
 		ReadContext:   containerRead,
 		UpdateContext: containerUpdate,
 		DeleteContext: containerDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+				node, id, err := parseImportIdWithNodeName(d.Id())
+				if err != nil {
+					return nil, err
+				}
+
+				d.SetId(id)
+				err = d.Set(mkResourceVirtualEnvironmentVMNodeName, node)
+				if err != nil {
+					return nil, err
+				}
+
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 	}
 }
 

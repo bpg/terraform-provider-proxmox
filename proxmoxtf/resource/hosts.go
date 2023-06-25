@@ -107,6 +107,18 @@ func Hosts() *schema.Resource {
 		ReadContext:   hostsRead,
 		UpdateContext: hostsUpdate,
 		DeleteContext: hostsDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+				err := d.Set(mkResourceVirtualEnvironmentVMNodeName, d.Id())
+				if err != nil {
+					return nil, err
+				}
+
+				d.SetId("")
+
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 	}
 }
 

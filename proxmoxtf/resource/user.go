@@ -144,6 +144,9 @@ func User() *schema.Resource {
 		ReadContext:   userRead,
 		UpdateContext: userUpdate,
 		DeleteContext: userDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
 }
 
