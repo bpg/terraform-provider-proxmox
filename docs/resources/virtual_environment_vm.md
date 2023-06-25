@@ -165,6 +165,7 @@ output "ubuntu_vm_public_key" {
           protection for AMD models.
     - `hotplugged` - (Optional) The number of hotplugged vCPUs (defaults
       to `0`).
+    - `numa` - (Boolean) Enable/disable NUMA. (default to `false`)
     - `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
     - `type` - (Optional) The emulated CPU type (defaults to `qemu64`).
         - `486` - Intel 486.
@@ -241,6 +242,10 @@ output "ubuntu_vm_public_key" {
     - `ssd` - (Optional) Whether to use an SSD emulation option for this disk (
       defaults to `false`). Note that SSD emulation is not supported on VirtIO
       Block drives.
+- `efi_disk` - (Optional) The efi disk device (required if `bios` is set to `ovmf`)
+    - `datastore_id` (String) The datastore id
+    - `file_format` (String) The file format
+    - `size` (String) The disk size in megabytes
 - `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
     - `device` - (Required) The PCI device name for Proxmox, in form
       of `hostpciX` where `X` is a sequential number from 0 to 3.
