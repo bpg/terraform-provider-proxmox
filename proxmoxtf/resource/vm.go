@@ -1873,8 +1873,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	for i := range efiDisk {
 		diskBlock := efiDisk[i].(map[string]interface{})
 		diskInterface := "efidisk0"
-		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMEfiDiskDatastoreID].(string)
+		size := diskBlock[mkResourceVirtualEnvironmentVMEfiDiskSize].(string)
 
 		currentDiskInfo := vmConfig.EFIDisk
 		configuredDiskInfo := efiDiskInfo
@@ -1892,7 +1892,12 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			continue
 		}
 
-		if diskSize != currentDiskInfo.Size.InMegabytes() {
+		diskSize, err := types.ParseDiskSize(size)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if &diskSize != currentDiskInfo.Size {
 			return diag.Errorf(
 				"resizing of efidisks is not supported.",
 			)
