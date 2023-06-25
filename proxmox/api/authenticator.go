@@ -18,6 +18,10 @@ type Authenticator interface {
 	// IsRoot returns true if the authenticator is configured to use the root
 	IsRoot() bool
 
+	// IsRootTicket returns true if the authenticator is configured to use the root directly using a login ticket.
+	// (root using token is weaker, cannot change VM arch)
+	IsRootTicket() bool
+
 	// AuthenticateRequest adds authentication data to a new request.
 	AuthenticateRequest(ctx context.Context, req *http.Request) error
 }
