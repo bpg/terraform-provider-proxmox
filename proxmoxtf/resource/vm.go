@@ -661,7 +661,7 @@ func VM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMEfiDisk: {
 				Type:        schema.TypeList,
-				Description: "The disk devices",
+				Description: "The efidisk device",
 				Optional:    true,
 				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
