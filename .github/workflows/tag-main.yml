@@ -1,0 +1,23 @@
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+name: tag commits on main
+jobs:
+  tag:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: create tag
+        uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/v0.0.0-${context.sha}`,
+              sha: context.sha
+            })
