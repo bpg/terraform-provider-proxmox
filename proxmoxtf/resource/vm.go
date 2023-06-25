@@ -47,6 +47,7 @@ const (
 	dvResourceVirtualEnvironmentVMCPUArchitecture                   = "x86_64"
 	dvResourceVirtualEnvironmentVMCPUCores                          = 1
 	dvResourceVirtualEnvironmentVMCPUHotplugged                     = 0
+	dvResourceVirtualEnvironmentVMCPUNUMA                           = false
 	dvResourceVirtualEnvironmentVMCPUSockets                        = 1
 	dvResourceVirtualEnvironmentVMCPUType                           = "qemu64"
 	dvResourceVirtualEnvironmentVMCPUUnits                          = 1024
@@ -142,6 +143,7 @@ const (
 	mkResourceVirtualEnvironmentVMCPUCores                          = "cores"
 	mkResourceVirtualEnvironmentVMCPUFlags                          = "flags"
 	mkResourceVirtualEnvironmentVMCPUHotplugged                     = "hotplugged"
+	mkResourceVirtualEnvironmentVMCPUNUMA                           = "numa"
 	mkResourceVirtualEnvironmentVMCPUSockets                        = "sockets"
 	mkResourceVirtualEnvironmentVMCPUType                           = "type"
 	mkResourceVirtualEnvironmentVMCPUUnits                          = "units"
@@ -494,6 +496,12 @@ func VM() *schema.Resource {
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMCPUHotplugged,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
+						},
+						mkResourceVirtualEnvironmentVMCPUNUMA: {
+							Type:        schema.TypeBool,
+							Description: "Enable/disable NUMA.",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMCPUNUMA,
 						},
 						mkResourceVirtualEnvironmentVMCPUSockets: {
 							Type:             schema.TypeInt,
@@ -1593,6 +1601,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
+		cpuNUMA := types2.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
@@ -1614,6 +1623,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		}
+		updateBody.NUMAEnabled = &cpuNUMA
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
 
@@ -1991,6 +2001,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 	cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
+	cpuNUMA := types2.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 	cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 	cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
@@ -2197,6 +2208,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		IDEDevices:          ideDevices,
 		KeyboardLayout:      &keyboardLayout,
 		NetworkDevices:      networkDeviceObjects,
+		NUMAEnabled:         &cpuNUMA,
 		OSType:              &operatingSystemType,
 		PCIDevices:          pciDeviceObjects,
 		SCSIHardware:        &scsiHardware,
@@ -3235,6 +3247,13 @@ func vmReadCustom(
 	} else {
 		// Default value of "vcpus" is "1" according to the API documentation.
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = 0
+	}
+
+	if vmConfig.NUMAEnabled != nil {
+		cpu[mkResourceVirtualEnvironmentVMCPUNUMA] = *vmConfig.NUMAEnabled
+	} else {
+		// Default value of "numa" is "false" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentVMCPUNUMA] = false
 	}
 
 	if vmConfig.CPUSockets != nil {
@@ -4464,6 +4483,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
+		cpuNUMA := types2.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
@@ -4477,6 +4497,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
+		updateBody.NUMAEnabled = &cpuNUMA
 
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
