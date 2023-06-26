@@ -70,7 +70,7 @@ func main() {
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 
 	err = tf6server.Serve(
-		"registry.terraform.io/bpg/proxmox",
+		"registry.terraform.io/ForsakenHarmony/proxmox",
 		muxServer.ProviderServer,
 		serveOpts...,
 	)
