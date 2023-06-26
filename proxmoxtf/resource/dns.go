@@ -56,9 +56,9 @@ func DNS() *schema.Resource {
 		DeleteContext: dnsDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				err := d.Set(mkResourceVirtualEnvironmentVMNodeName, d.Id())
+				err := d.Set(mkResourceVirtualEnvironmentDNSNodeName, d.Id())
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
 				}
 
 				d.SetId("")

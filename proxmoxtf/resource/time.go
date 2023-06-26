@@ -56,9 +56,9 @@ func Time() *schema.Resource {
 		DeleteContext: timeDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				err := d.Set(mkResourceVirtualEnvironmentVMNodeName, d.Id())
+				err := d.Set(mkResourceVirtualEnvironmentTimeNodeName, d.Id())
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
 				}
 
 				d.SetId("")

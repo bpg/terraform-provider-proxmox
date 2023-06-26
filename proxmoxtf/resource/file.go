@@ -195,21 +195,21 @@ func File() *schema.Resource {
 		DeleteContext: fileDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				node, datastore, volumeId, err := fileParseImportId(d.Id())
+				node, datastore, volumeID, err := fileParseImportID(d.Id())
 				if err != nil {
 					return nil, err
 				}
 
-				d.SetId(volumeId)
+				d.SetId(volumeID)
 
 				err = d.Set(mkResourceVirtualEnvironmentFileNodeName, node)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
 				}
 
 				err = d.Set(mkResourceVirtualEnvironmentFileDatastoreID, datastore)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
 				}
 
 				return []*schema.ResourceData{d}, nil
@@ -218,7 +218,7 @@ func File() *schema.Resource {
 	}
 }
 
-func fileParseImportId(id string) (string, string, string, error) {
+func fileParseImportID(id string) (string, string, string, error) {
 	parts := strings.SplitN(id, "/", 4)
 
 	if len(parts) != 4 || parts[0] == "" || parts[1] == "" || parts[2] == "" || parts[3] == "" {

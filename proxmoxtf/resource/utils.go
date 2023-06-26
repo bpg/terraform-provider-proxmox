@@ -581,7 +581,7 @@ func (diags ErrorDiags) Error() string {
 	return multierror.ListFormatFunc(diags.Errors())
 }
 
-func parseImportIdWithNodeName(id string) (string, string, error) {
+func parseImportIDWithNodeName(id string) (string, string, error) {
 	parts := strings.SplitN(id, "/", 2)
 
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {

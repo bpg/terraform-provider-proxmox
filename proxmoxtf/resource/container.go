@@ -645,15 +645,15 @@ func Container() *schema.Resource {
 		DeleteContext: containerDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				node, id, err := parseImportIdWithNodeName(d.Id())
+				node, id, err := parseImportIDWithNodeName(d.Id())
 				if err != nil {
 					return nil, err
 				}
 
 				d.SetId(id)
-				err = d.Set(mkResourceVirtualEnvironmentVMNodeName, node)
+				err = d.Set(mkResourceVirtualEnvironmentContainerNodeName, node)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
 				}
 
 				return []*schema.ResourceData{d}, nil
