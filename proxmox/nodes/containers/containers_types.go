@@ -164,10 +164,14 @@ type GetResponseData struct {
 	Hostname          *string                 `json:"hostname,omitempty"`
 	Lock              *types.CustomBool       `json:"lock,omitempty"`
 	LXCConfiguration  *[][2]string            `json:"lxc,omitempty"`
-	MountPoint0       CustomMountPoint        `json:"mp0,omitempty"`
-	MountPoint1       CustomMountPoint        `json:"mp1,omitempty"`
-	MountPoint2       CustomMountPoint        `json:"mp2,omitempty"`
-	MountPoint3       CustomMountPoint        `json:"mp3,omitempty"`
+	MountPoint0       *CustomMountPoint       `json:"mp0,omitempty"`
+	MountPoint1       *CustomMountPoint       `json:"mp1,omitempty"`
+	MountPoint2       *CustomMountPoint       `json:"mp2,omitempty"`
+	MountPoint3       *CustomMountPoint       `json:"mp3,omitempty"`
+	MountPoint4       *CustomMountPoint       `json:"mp4,omitempty"`
+	MountPoint5       *CustomMountPoint       `json:"mp5,omitempty"`
+	MountPoint6       *CustomMountPoint       `json:"mp6,omitempty"`
+	MountPoint7       *CustomMountPoint       `json:"mp7,omitempty"`
 	NetworkInterface0 *CustomNetworkInterface `json:"net0,omitempty"`
 	NetworkInterface1 *CustomNetworkInterface `json:"net1,omitempty"`
 	NetworkInterface2 *CustomNetworkInterface `json:"net2,omitempty"`
@@ -288,7 +292,7 @@ func (r *CustomMountPoint) EncodeValues(key string, v *url.Values) error {
 
 	if r.MountOptions != nil {
 		if len(*r.MountOptions) > 0 {
-			values = append(values, fmt.Sprintf("mount=%s", strings.Join(*r.MountOptions, ";")))
+			values = append(values, fmt.Sprintf("mountoptions=%s", strings.Join(*r.MountOptions, ";")))
 		}
 	}
 

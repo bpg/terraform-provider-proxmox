@@ -40,6 +40,7 @@ func TestContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerDisk,
 		mkResourceVirtualEnvironmentContainerInitialization,
 		mkResourceVirtualEnvironmentContainerMemory,
+		mkResourceVirtualEnvironmentContainerMountPoint,
 		mkResourceVirtualEnvironmentContainerOperatingSystem,
 		mkResourceVirtualEnvironmentContainerPoolID,
 		mkResourceVirtualEnvironmentContainerStarted,
@@ -56,6 +57,7 @@ func TestContainerSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentContainerDisk:            schema.TypeList,
 		mkResourceVirtualEnvironmentContainerInitialization:  schema.TypeList,
 		mkResourceVirtualEnvironmentContainerMemory:          schema.TypeList,
+		mkResourceVirtualEnvironmentContainerMountPoint:      schema.TypeList,
 		mkResourceVirtualEnvironmentContainerOperatingSystem: schema.TypeList,
 		mkResourceVirtualEnvironmentContainerPoolID:          schema.TypeString,
 		mkResourceVirtualEnvironmentContainerStarted:         schema.TypeBool,
@@ -227,6 +229,32 @@ func TestContainerSchema(t *testing.T) {
 	test.AssertValueTypes(t, memorySchema, map[string]schema.ValueType{
 		mkResourceVirtualEnvironmentContainerMemoryDedicated: schema.TypeInt,
 		mkResourceVirtualEnvironmentContainerMemorySwap:      schema.TypeInt,
+	})
+
+	mountPointSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentContainerMountPoint)
+
+	test.AssertOptionalArguments(t, mountPointSchema, []string{
+		mkResourceVirtualEnvironmentContainerMountPointACL,
+		mkResourceVirtualEnvironmentContainerMountPointBackup,
+		mkResourceVirtualEnvironmentContainerMountPointMountOptions,
+		mkResourceVirtualEnvironmentContainerMountPointQuota,
+		mkResourceVirtualEnvironmentContainerMountPointReadOnly,
+		mkResourceVirtualEnvironmentContainerMountPointReplicate,
+		mkResourceVirtualEnvironmentContainerMountPointShared,
+		mkResourceVirtualEnvironmentContainerMountPointSize,
+	})
+
+	test.AssertValueTypes(t, mountPointSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentContainerMountPointACL:          schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerMountPointBackup:       schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerMountPointMountOptions: schema.TypeList,
+		mkResourceVirtualEnvironmentContainerMountPointPath:         schema.TypeString,
+		mkResourceVirtualEnvironmentContainerMountPointQuota:        schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerMountPointReadOnly:     schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerMountPointReplicate:    schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerMountPointShared:       schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerMountPointSize:         schema.TypeString,
+		mkResourceVirtualEnvironmentContainerMountPointVolume:       schema.TypeString,
 	})
 
 	networkInterfaceSchema := test.AssertNestedSchemaExistence(

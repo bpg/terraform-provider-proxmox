@@ -136,6 +136,17 @@ output "ubuntu_container_public_key" {
     - `dedicated` - (Optional) The dedicated memory in megabytes (defaults
       to `512`).
     - `swap` - (Optional) The swap size in megabytes (defaults to `0`).
+- `mount_point`
+    - `acl` (Boolean) Explicitly enable or disable ACL support
+    - `backup` (Boolean) Whether to include the mount point in backups (only used for volume mount points)
+    - `mount_options` (List of String) Extra mount options.
+    - `path` (Required) Path to the mount point as seen from inside the container
+    - `quota` (Boolean) Enable user quotas inside the container (not supported with zfs subvolumes)
+    - `read_only` (Boolean) Read-only mount point
+    - `replicate` (Boolean) Will include this volume to a storage replica job
+    - `shared` (Boolean) Mark this non-volume mount point as available on all nodes
+    - `size` (String) Volume size (read only value)
+    - `volume` (Required) Volume, device or directory to mount into the container
 - `network_interface` - (Optional) A network interface (multiple blocks
   supported).
     - `bridge` - (Optional) The name of the network bridge (defaults

@@ -45,6 +45,13 @@ const (
 	dvResourceVirtualEnvironmentContainerFeaturesNesting                   = false
 	dvResourceVirtualEnvironmentContainerMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentContainerMemorySwap                        = 0
+	dvResourceVirtualEnvironmentContainerMountPointACL                     = false
+	dvResourceVirtualEnvironmentContainerMountPointBackup                  = true
+	dvResourceVirtualEnvironmentContainerMountPointQuota                   = false
+	dvResourceVirtualEnvironmentContainerMountPointReadOnly                = false
+	dvResourceVirtualEnvironmentContainerMountPointReplicate               = true
+	dvResourceVirtualEnvironmentContainerMountPointShared                  = false
+	dvResourceVirtualEnvironmentContainerMountPointSize                    = ""
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceBridge            = "vmbr0"
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceEnabled           = true
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceFirewall          = false
@@ -96,6 +103,17 @@ const (
 	mkResourceVirtualEnvironmentContainerMemory                            = "memory"
 	mkResourceVirtualEnvironmentContainerMemoryDedicated                   = "dedicated"
 	mkResourceVirtualEnvironmentContainerMemorySwap                        = "swap"
+	mkResourceVirtualEnvironmentContainerMountPoint                        = "mount_point"
+	mkResourceVirtualEnvironmentContainerMountPointACL                     = "acl"
+	mkResourceVirtualEnvironmentContainerMountPointBackup                  = "backup"
+	mkResourceVirtualEnvironmentContainerMountPointMountOptions            = "mount_options"
+	mkResourceVirtualEnvironmentContainerMountPointPath                    = "path"
+	mkResourceVirtualEnvironmentContainerMountPointQuota                   = "quota"
+	mkResourceVirtualEnvironmentContainerMountPointReadOnly                = "read_only"
+	mkResourceVirtualEnvironmentContainerMountPointReplicate               = "replicate"
+	mkResourceVirtualEnvironmentContainerMountPointShared                  = "shared"
+	mkResourceVirtualEnvironmentContainerMountPointSize                    = "size"
+	mkResourceVirtualEnvironmentContainerMountPointVolume                  = "volume"
 	mkResourceVirtualEnvironmentContainerNetworkInterface                  = "network_interface"
 	mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge            = "bridge"
 	mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled           = "enabled"
@@ -490,6 +508,78 @@ func Container() *schema.Resource {
 					},
 				},
 				MaxItems: 1,
+				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentContainerMountPoint: {
+				Type:        schema.TypeList,
+				Description: "A mount point",
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentContainerMountPointACL: {
+							Type:        schema.TypeBool,
+							Description: "Explicitly enable or disable ACL support",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerMountPointACL,
+						},
+						mkResourceVirtualEnvironmentContainerMountPointBackup: {
+							Type:        schema.TypeBool,
+							Description: "Whether to include the mount point in backups (only used for volume mount points)",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerMountPointBackup,
+						},
+						mkResourceVirtualEnvironmentContainerMountPointMountOptions: {
+							Type:        schema.TypeList,
+							Description: "Extra mount options.",
+							Optional:    true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						mkResourceVirtualEnvironmentContainerMountPointPath: {
+							Type:        schema.TypeString,
+							Description: "Path to the mount point as seen from inside the container",
+							Required:    true,
+						},
+						mkResourceVirtualEnvironmentContainerMountPointQuota: {
+							Type:        schema.TypeBool,
+							Description: "Enable user quotas inside the container (not supported with zfs subvolumes)",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerMountPointQuota,
+						},
+						mkResourceVirtualEnvironmentContainerMountPointReadOnly: {
+							Type:        schema.TypeBool,
+							Description: "Read-only mount point",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerMountPointReadOnly,
+						},
+						mkResourceVirtualEnvironmentContainerMountPointReplicate: {
+							Type:        schema.TypeBool,
+							Description: "Will include this volume to a storage replica job",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerMountPointReplicate,
+						},
+						mkResourceVirtualEnvironmentContainerMountPointShared: {
+							Type:        schema.TypeBool,
+							Description: "Mark this non-volume mount point as available on all nodes",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerMountPointShared,
+						},
+						mkResourceVirtualEnvironmentContainerMountPointSize: {
+							Type:             schema.TypeString,
+							Description:      "Volume size (read only value)",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentContainerMountPointSize,
+							ValidateDiagFunc: getFileSizeValidator(),
+						},
+						mkResourceVirtualEnvironmentContainerMountPointVolume: {
+							Type:        schema.TypeString,
+							Description: "Volume, device or directory to mount into the container",
+							Required:    true,
+						},
+					},
+				},
+				MaxItems: 8,
 				MinItems: 0,
 			},
 			mkResourceVirtualEnvironmentContainerNetworkInterface: {
@@ -1205,11 +1295,49 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int)
 	memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int)
 
+	mountPoint := d.Get(mkResourceVirtualEnvironmentContainerMountPoint).([]interface{})
+	mountPointArray := make(containers.CustomMountPointArray, 0, len(mountPoint))
+
+	for _, mp := range mountPoint {
+		mountPointMap := mp.(map[string]interface{})
+		mountPointObject := containers.CustomMountPoint{}
+
+		acl := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointACL].(bool))
+		backup := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointBackup].(bool))
+		mountOptions := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointMountOptions].([]interface{})
+		path := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointPath].(string)
+		quota := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointQuota].(bool))
+		readOnly := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReadOnly].(bool))
+		replicate := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReplicate].(bool))
+		shared := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointShared].(bool))
+		size := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointSize].(string)
+		volume := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointVolume].(string)
+
+		mountPointObject.ACL = &acl
+		mountPointObject.Backup = &backup
+		mountPointObject.MountPoint = path
+		mountPointObject.Quota = &quota
+		mountPointObject.ReadOnly = &readOnly
+		mountPointObject.Replicate = &replicate
+		mountPointObject.ReadOnly = &shared
+		mountPointObject.DiskSize = &size
+		mountPointObject.Volume = volume
+
+		if len(mountOptions) > 0 {
+			mountOptionsArray := make([]string, 0, len(mountPoint))
+
+			for _, option := range mountOptions {
+				mountOptionsArray = append(mountOptionsArray, option.(string))
+			}
+
+			mountPointObject.MountOptions = &mountOptionsArray
+		}
+
+		mountPointArray = append(mountPointArray, mountPointObject)
+	}
+
 	networkInterface := d.Get(mkResourceVirtualEnvironmentContainerNetworkInterface).([]interface{})
-	networkInterfaceArray := make(
-		containers.CustomNetworkInterfaceArray,
-		len(networkInterface),
-	)
+	networkInterfaceArray := make(containers.CustomNetworkInterfaceArray, len(networkInterface))
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
@@ -1306,6 +1434,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
 		Features:             &features,
+		MountPoints:          mountPointArray,
 		NetworkInterfaces:    networkInterfaceArray,
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
 		OSType:               &operatingSystemType,
@@ -1744,6 +1873,93 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		initialization[mkResourceVirtualEnvironmentContainerInitializationHostname] = ""
 	}
 
+	mountPointArray := []*containers.CustomMountPoint{
+		containerConfig.MountPoint0,
+		containerConfig.MountPoint1,
+		containerConfig.MountPoint2,
+		containerConfig.MountPoint3,
+		containerConfig.MountPoint4,
+		containerConfig.MountPoint5,
+		containerConfig.MountPoint6,
+		containerConfig.MountPoint7,
+	}
+
+	mountPointList := make([]interface{}, 0, len(mountPointArray))
+
+	for _, mp := range mountPointArray {
+		if mp == nil {
+			continue
+		}
+
+		mountPoint := map[string]interface{}{}
+
+		if mp.ACL != nil {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointACL] = *mp.ACL
+		} else {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointACL] = false
+		}
+
+		if mp.Backup != nil {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointBackup] = *mp.Backup
+		} else {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointBackup] = true
+		}
+
+		if mp.MountOptions != nil {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointMountOptions] = *mp.MountOptions
+		} else {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointMountOptions] = []string{}
+		}
+
+		mountPoint[mkResourceVirtualEnvironmentContainerMountPointPath] = mp.MountPoint
+
+		if mp.Quota != nil {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointQuota] = *mp.Quota
+		} else {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointQuota] = false
+		}
+
+		if mp.ReadOnly != nil {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointReadOnly] = *mp.ReadOnly
+		} else {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointReadOnly] = false
+		}
+
+		if mp.Replicate != nil {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointReplicate] = *mp.Replicate
+		} else {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointReplicate] = true
+		}
+
+		if mp.Shared != nil {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointShared] = *mp.Shared
+		} else {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointShared] = false
+		}
+
+		if mp.DiskSize != nil {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointSize] = *mp.DiskSize
+		} else {
+			mountPoint[mkResourceVirtualEnvironmentContainerMountPointSize] = ""
+		}
+
+		mountPoint[mkResourceVirtualEnvironmentContainerMountPointVolume] = mp.Volume
+
+		mountPointList = append(mountPointList, mountPoint)
+	}
+
+	currentMountPoint := d.Get(mkResourceVirtualEnvironmentContainerMountPoint).([]interface{})
+
+	if len(clone) > 0 {
+		if len(currentMountPoint) > 0 {
+			err := d.Set(mkResourceVirtualEnvironmentContainerMountPoint, mountPointList)
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else if len(mountPointList) > 0 {
+		err := d.Set(mkResourceVirtualEnvironmentContainerMountPoint, mountPointList)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	var ipConfigList []interface{}
 
 	networkInterfaceArray := []*containers.CustomNetworkInterface{
@@ -1944,7 +2160,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(clone) > 0 {
-		if len(currentMemory) > 0 {
+		if len(currentOperatingSystem) > 0 {
 			err := d.Set(
 				mkResourceVirtualEnvironmentContainerOperatingSystem,
 				[]interface{}{operatingSystem},
@@ -2184,6 +2400,57 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.Swap = &memorySwap
+
+		rebootRequired = true
+	}
+
+	// Prepare the new mount point configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentContainerMountPoint) {
+		mountPoint := d.Get(mkResourceVirtualEnvironmentContainerMountPoint).([]interface{})
+		mountPointArray := make(
+			containers.CustomMountPointArray,
+			len(mountPoint),
+		)
+
+		for i, mp := range mountPoint {
+			mountPointMap := mp.(map[string]interface{})
+			mountPointObject := containers.CustomMountPoint{}
+
+			acl := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointACL].(bool))
+			backup := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointBackup].(bool))
+			mountOptions := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointMountOptions].([]interface{})
+			path := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointPath].(string)
+			quota := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointQuota].(bool))
+			readOnly := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReadOnly].(bool))
+			replicate := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReplicate].(bool))
+			shared := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointShared].(bool))
+			size := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointSize].(string)
+			volume := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointVolume].(string)
+
+			mountPointObject.ACL = &acl
+			mountPointObject.Backup = &backup
+			mountPointObject.MountPoint = path
+			mountPointObject.Quota = &quota
+			mountPointObject.ReadOnly = &readOnly
+			mountPointObject.Replicate = &replicate
+			mountPointObject.ReadOnly = &shared
+			mountPointObject.DiskSize = &size
+			mountPointObject.Volume = volume
+
+			if len(mountOptions) > 0 {
+				mountOptionsArray := make([]string, 0, len(mountPoint))
+
+				for _, option := range mountOptions {
+					mountOptionsArray = append(mountOptionsArray, option.(string))
+				}
+
+				mountPointObject.MountOptions = &mountOptionsArray
+			}
+
+			mountPointArray[i] = mountPointObject
+		}
+
+		updateBody.MountPoints = mountPointArray
 
 		rebootRequired = true
 	}
