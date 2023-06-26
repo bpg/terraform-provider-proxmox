@@ -37,11 +37,6 @@ func (r DiskSize) InGigabytes() int {
 	return int(int64(r) / 1024 / 1024 / 1024)
 }
 
-// DiskSizeFromMegabytes creates a DiskSize from megabytes.
-func DiskSizeFromMegabytes(size int) DiskSize {
-	return DiskSize(size * 1024 * 1024)
-}
-
 // DiskSizeFromGigabytes creates a DiskSize from gigabytes.
 func DiskSizeFromGigabytes(size int) DiskSize {
 	return DiskSize(size * 1024 * 1024 * 1024)
@@ -71,7 +66,7 @@ func (r *DiskSize) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// parseDiskSize parses a disk size string into a number of bytes.
+// ParseDiskSize parses a disk size string into a number of bytes.
 func ParseDiskSize(size string) (DiskSize, error) {
 	matches := sizeRegex.FindStringSubmatch(size)
 	if len(matches) > 0 {
@@ -97,6 +92,7 @@ func ParseDiskSize(size string) (DiskSize, error) {
 	return -1, fmt.Errorf("cannot parse disk size \"%s\"", size)
 }
 
+// FormatDiskSize turns a number of bytes into a disk size string.
 func FormatDiskSize(size DiskSize) string {
 	if size < 0 {
 		return ""

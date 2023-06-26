@@ -1851,14 +1851,14 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if moveDisk {
 			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
 
-			e := vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
+			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
 			if e != nil {
 				return diag.FromErr(e)
 			}
 		}
 
 		if diskSize > currentDiskInfo.Size.InGigabytes() {
-			e := vmAPI.ResizeVMDisk(ctx, diskResizeBody)
+			e = vmAPI.ResizeVMDisk(ctx, diskResizeBody)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -2016,8 +2016,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		return diag.FromErr(err)
 	}
 
-	efiDiskBlock := d.Get(mkResourceVirtualEnvironmentVMEfiDisk).([]interface{})
 	var efiDisk *vms.CustomEFIDisk
+
+	efiDiskBlock := d.Get(mkResourceVirtualEnvironmentVMEfiDisk).([]interface{})
 	if len(efiDiskBlock) > 0 {
 		block := efiDiskBlock[0].(map[string]interface{})
 
@@ -2029,6 +2030,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			fileFormat = dvResourceVirtualEnvironmentVMEfiDiskFileFormat
 		}
 
+		//nolint:govet
 		diskSize, err := types.ParseDiskSize(size)
 		if err != nil {
 			return diag.FromErr(err)
@@ -2790,12 +2792,12 @@ func vmGetEfiDisk(d *schema.ResourceData, disk []interface{}) (*vms.CustomEFIDis
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMEfiDiskFileFormat].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMEfiDiskSize].(string)
 
-		efiDiskConfig.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+		efiDiskConfig.FileVolume = fmt.Sprintf("%s:%s", datastoreID, size)
 		efiDiskConfig.Format = &fileFormat
 
 		diskSize, err := types.ParseDiskSize(size)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parsing efi disk size: %w", err)
 		}
 
 		efiDiskConfig.Size = &diskSize
@@ -3435,6 +3437,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	//nolint:nestif
 	if vmConfig.EFIDisk != nil {
 		efiDisk := map[string]interface{}{}
 
@@ -3470,11 +3473,9 @@ func vmReadCustom(
 
 		currentEfiDisk := d.Get(mkResourceVirtualEnvironmentVMEfiDisk).([]interface{})
 
-		if len(clone) > 0 {
-			if len(currentEfiDisk) > 0 {
-				err := d.Set(mkResourceVirtualEnvironmentVMEfiDisk, []interface{}{efiDisk})
-				diags = append(diags, diag.FromErr(err)...)
-			}
+		if len(clone) > 0 && len(currentEfiDisk) > 0 {
+			err := d.Set(mkResourceVirtualEnvironmentVMEfiDisk, []interface{}{efiDisk})
+			diags = append(diags, diag.FromErr(err)...)
 		} else if len(currentEfiDisk) > 0 ||
 			efiDisk[mkResourceVirtualEnvironmentVMEfiDiskDatastoreID] != dvResourceVirtualEnvironmentVMEfiDiskDatastoreID ||
 			efiDisk[mkResourceVirtualEnvironmentVMEfiDiskSize] != dvResourceVirtualEnvironmentVMEfiDiskSize ||
@@ -4616,15 +4617,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				Media:      &cdromMedia,
 			}
 
-			if vmConfig.IDEDevice2 != nil {
-				if strings.Contains(
+			if vmConfig.IDEDevice2 != nil &&
+				strings.Contains(
 					vmConfig.IDEDevice2.FileVolume,
 					fmt.Sprintf("vm-%d-cloudinit", vmID),
 				) {
-					tmp := updateBody.IDEDevices["ide2"]
-					tmp.Enabled = true
-					updateBody.IDEDevices["ide2"] = tmp
-				}
+				tmp := updateBody.IDEDevices["ide2"]
+				tmp.Enabled = true
+				updateBody.IDEDevices["ide2"] = tmp
 			}
 		}
 
@@ -4825,6 +4825,7 @@ func vmUpdateDiskLocationAndSize(
 		if d.HasChange(mkResourceVirtualEnvironmentVMEfiDisk) {
 			diskOld, diskNew := d.GetChange(mkResourceVirtualEnvironmentVMEfiDisk)
 
+			//nolint:govet
 			oldEfiDisk, err := vmGetEfiDiskAsStorageDevice(d, diskOld.([]interface{}))
 			if err != nil {
 				return diag.FromErr(err)
