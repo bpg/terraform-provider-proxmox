@@ -35,12 +35,12 @@ We expect that all commit messages follow the
 
 Please use the `scope` field to indicate the area of the codebase that is being
 changed. For example, `vm` for changes in the Virtual Machine resource, or
-`lcx` for changes in the Container resource.
+`lxc` for changes in the Container resource.
 
 Common scopes are:
 
 - `vm` - Virtual Machine resources
-- `lcx` - Container resources
+- `lxc` - Container resources
 - `provider` - Provider configuration and resources
 - `core` - Core libraries and utilities
 - `docs` - Documentation
