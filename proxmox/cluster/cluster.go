@@ -95,12 +95,12 @@ func (c *Client) GetVMID(ctx context.Context) (*int, error) {
 	return nil, errors.New("unable to determine the next available VM identifier")
 }
 
-// Get current resources for cluster
-func (c *Client) GetClusterResources(ctx context.Context, resourceType string) ([]*ClusterResourcesListResponseData, error) {
-	reqBody := &ClusterResourcesListRequestBody{
+// GetClusterResources retrieves current resources for cluster.
+func (c *Client) GetClusterResources(ctx context.Context, resourceType string) ([]*ResourcesListResponseData, error) {
+	reqBody := &ResourcesListRequestBody{
 		Type: resourceType,
 	}
-	resBody := &ClusterResourcesListBody{}
+	resBody := &ResourcesListBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, "cluster/resources", reqBody, resBody)
 	if err != nil {
@@ -114,7 +114,8 @@ func (c *Client) GetClusterResources(ctx context.Context, resourceType string) (
 	return resBody.Data, nil
 }
 
-func (c *Client) GetClusterResourcesVM(ctx context.Context) ([]*ClusterResourcesListResponseData, error) {
+// GetClusterResourcesVM retrieves current VM resources for cluster.
+func (c *Client) GetClusterResourcesVM(ctx context.Context) ([]*ResourcesListResponseData, error) {
 	vmResources, err := c.GetClusterResources(ctx, "vm")
 	if err != nil {
 		return nil, err
@@ -127,11 +128,13 @@ func (c *Client) GetClusterResourcesVM(ctx context.Context) ([]*ClusterResources
 	return vmResources, nil
 }
 
+// GetVMNodeName gets node for specified vmid.
 func (c *Client) GetVMNodeName(ctx context.Context, vmID int) (*string, error) {
 	allClusterVM, err := c.GetClusterResourcesVM(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	if allClusterVM == nil {
 		return nil, api.ErrNoDataObjectInResponse
 	}
@@ -141,5 +144,6 @@ func (c *Client) GetVMNodeName(ctx context.Context, vmID int) (*string, error) {
 			return &v.NodeName, nil
 		}
 	}
+
 	return nil, errors.New("unable to determine node name for VM identifier")
 }

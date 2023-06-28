@@ -20,26 +20,27 @@ type NextIDResponseBody struct {
 	Data *types.CustomInt `json:"data,omitempty"`
 }
 
-// ClusterResourcesListBody contains the body from a cluste resource list response.
-type ClusterResourcesListBody struct {
-	Data []*ClusterResourcesListResponseData `json:"data,omitempty"`
+// ResourcesListBody contains the body from a cluste resource list response.
+type ResourcesListBody struct {
+	Data []*ResourcesListResponseData `json:"data,omitempty"`
 }
 
-type ClusterResourcesListRequestBody struct {
+// ResourcesListRequestBody contains the body params to cluster resource list request.
+type ResourcesListRequestBody struct {
 	Type string `json:"type"  url:"type"`
 }
 
-// ClusterResourcesListResponseData contains the data from a cluster resource list body response
-type ClusterResourcesListResponseData struct {
+// ResourcesListResponseData contains the data from a cluster resource list body response.
+type ResourcesListResponseData struct {
 	Type       string  `json:"type"`
 	ID         string  `json:"id"`
 	CgroupMode int     `json:"cgroup-mode,omitempty"`
 	Content    int     `json:"content,omitempty"`
-	Cpu        float64 `json:"cpu,omitempty"`
+	CPU        float64 `json:"cpu,omitempty"`
 	Disk       int     `json:"disk,omitempty"`
 	HaState    string  `json:"hastate,omitempty"`
 	Level      string  `json:"level,omitempty"`
-	MaxCpu     float64 `json:"maxcpu,omitempty"`
+	MaxCPU     float64 `json:"maxcpu,omitempty"`
 	MaxDisk    int     `json:"maxdisk,omitempty"`
 	MaxMem     int     `json:"maxmem,omitempty"`
 	Mem        int     `json:"mem,omitempty"`
