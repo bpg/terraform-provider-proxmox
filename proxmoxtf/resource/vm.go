@@ -2811,11 +2811,21 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 		return diag.FromErr(err)
 	}
 
-	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	vmNodeName, err := api.Cluster().GetVMNodeName(ctx, vmID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	if vmNodeName != d.Get(mkResourceVirtualEnvironmentVMNodeName) {
+		d.Set(mkResourceVirtualEnvironmentVMNodeName, vmNodeName)
+	}
+
+	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 
 	vmAPI := api.Node(nodeName).VM(vmID)
 
