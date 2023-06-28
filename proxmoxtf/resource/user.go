@@ -251,6 +251,11 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
+	var diags diag.Diagnostics
+
+	err = d.Set(mkResourceVirtualEnvironmentUserUserID, userID)
+	diags = append(diags, diag.FromErr(err)...)
+
 	var aclParsed []interface{}
 
 	for _, v := range acl {
@@ -270,8 +275,6 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			aclParsed = append(aclParsed, aclEntry)
 		}
 	}
-
-	var diags diag.Diagnostics
 
 	err = d.Set(mkResourceVirtualEnvironmentUserACL, aclParsed)
 	diags = append(diags, diag.FromErr(err)...)
