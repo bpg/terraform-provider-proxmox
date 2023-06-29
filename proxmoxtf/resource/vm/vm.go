@@ -599,7 +599,6 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The efidisk device",
 			Optional:    true,
-			ForceNew:    true,
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{}, nil
 			},
