@@ -187,6 +187,7 @@ func getFileIDValidator() schema.SchemaValidateDiagFunc {
 	})
 }
 
+//nolint:unused
 func getFileSizeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)
