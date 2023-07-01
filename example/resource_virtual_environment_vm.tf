@@ -9,6 +9,16 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   description = "Managed by Terraform"
 
+  cpu {
+    numa = true
+  }
+
+  efi_disk {
+    datastore_id      = local.datastore_id
+    file_format       = "raw"
+    type              = "4m"
+  }
+
   #  disk {
   #    datastore_id = local.datastore_id
   #    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
