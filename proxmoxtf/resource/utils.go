@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func getBIOSValidator() schema.SchemaValidateDiagFunc {
@@ -183,6 +184,29 @@ func getFileIDValidator() schema.SchemaValidateDiagFunc {
 		}
 
 		return
+	})
+}
+
+//nolint:unused
+func getFileSizeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
+		v, ok := i.(string)
+		var es []error
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return nil, es
+		}
+
+		if v != "" {
+			_, err := types.ParseDiskSize(v)
+			if err != nil {
+				es = append(es, fmt.Errorf("expected %s to be a valid file size (100, 1M, 1G), got %s", k, v))
+				return nil, es
+			}
+		}
+
+		return []string{}, es
 	})
 }
 
@@ -503,6 +527,11 @@ func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string
 			continue
 		}
 		fileIDParts := strings.Split(diskInfo.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
+	if vm.EFIDisk != nil {
+		fileIDParts := strings.Split(vm.EFIDisk.FileVolume, ":")
 		datastoresSet[fileIDParts[0]] = 1
 	}
 
