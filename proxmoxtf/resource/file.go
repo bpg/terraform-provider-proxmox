@@ -17,6 +17,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -404,13 +405,15 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			return diag.Errorf("failed to determine the datastore path")
 		}
 
+		sort.Strings(datastore.Content)
+
 		_, found := slices.BinarySearch(datastore.Content, *contentType)
 		if !found {
 			diags = append(diags, diag.Diagnostics{
 				diag.Diagnostic{
 					Severity: diag.Warning,
-					Summary: fmt.Sprintf("the datastore %q does not support content type %q",
-						*datastore.Storage, *contentType,
+					Summary: fmt.Sprintf("the datastore %q does not support content type %q; supported content types are: %v",
+						*datastore.Storage, *contentType, datastore.Content,
 					),
 				},
 			}...)

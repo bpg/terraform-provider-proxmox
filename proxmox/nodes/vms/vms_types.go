@@ -82,9 +82,10 @@ type CustomCPUEmulation struct {
 
 // CustomEFIDisk handles QEMU EFI disk parameters.
 type CustomEFIDisk struct {
-	Size       *types.DiskSize `json:"size,omitempty"   url:"size,omitempty"`
-	FileVolume string          `json:"file"             url:"file"`
-	Format     *string         `json:"format,omitempty" url:"format,omitempty"`
+	FileVolume      string             `json:"file"                        url:"file"`
+	Format          *string            `json:"format,omitempty"            url:"format,omitempty"`
+	Type            *string            `json:"efitype,omitempty"           url:"efitype,omitempty"`
+	PreEnrolledKeys *types2.CustomBool `json:"pre-enrolled-keys,omitempty" url:"pre-enrolled-keys,omitempty,int"`
 }
 
 // CustomNetworkDevice handles QEMU network device parameters.
@@ -784,8 +785,16 @@ func (r CustomEFIDisk) EncodeValues(key string, v *url.Values) error {
 		values = append(values, fmt.Sprintf("format=%s", *r.Format))
 	}
 
-	if r.Size != nil {
-		values = append(values, fmt.Sprintf("size=%s", *r.Size))
+	if r.Type != nil {
+		values = append(values, fmt.Sprintf("efitype=%s", *r.Type))
+	}
+
+	if r.PreEnrolledKeys != nil {
+		if *r.PreEnrolledKeys {
+			values = append(values, "pre-enrolled-keys=1")
+		} else {
+			values = append(values, "pre-enrolled-keys=0")
+		}
 	}
 
 	v.Add(key, strings.Join(values, ","))
@@ -1472,22 +1481,25 @@ func (r *CustomEFIDisk) UnmarshalJSON(b []byte) error {
 
 	pairs := strings.Split(s, ",")
 
-	for _, p := range pairs {
+	for i, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 1 && i == 0 {
+			r.FileVolume = v[0]
+		}
 
 		if len(v) == 2 {
 			switch v[0] {
-			case "format":
-				r.Format = &v[1]
 			case "file":
 				r.FileVolume = v[1]
-			case "size":
-				r.Size = new(types.DiskSize)
-
-				err := r.Size.UnmarshalJSON([]byte(v[1]))
-				if err != nil {
-					return fmt.Errorf("failed to unmarshal disk size: %w", err)
-				}
+			case "format":
+				r.Format = &v[1]
+			case "efitype":
+				t := strings.ToLower(v[1])
+				r.Type = &t
+			case "pre-enrolled-keys":
+				bv := types2.CustomBool(v[1] == "1")
+				r.PreEnrolledKeys = &bv
 			}
 		}
 	}

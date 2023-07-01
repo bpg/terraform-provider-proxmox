@@ -165,6 +165,7 @@ output "ubuntu_vm_public_key" {
           protection for AMD models.
     - `hotplugged` - (Optional) The number of hotplugged vCPUs (defaults
       to `0`).
+    - `numa` - (Boolean) Enable/disable NUMA. (default to `false`)
     - `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
     - `type` - (Optional) The emulated CPU type (defaults to `qemu64`).
         - `486` - Intel 486.
@@ -241,6 +242,19 @@ output "ubuntu_vm_public_key" {
     - `ssd` - (Optional) Whether to use an SSD emulation option for this disk (
       defaults to `false`). Note that SSD emulation is not supported on VirtIO
       Block drives.
+- `efi_disk` - (Optional) The efi disk device (required if `bios` is set
+  to `ovmf`)
+    - `datastore_id` (Optional) The identifier for the datastore to create
+      the disk in (defaults to `local-lvm`).
+    - `file_format` (Optional) The file format.
+    - `type` (Optional) Size and type of the OVMF EFI disk. `4m` is newer and
+      recommended, and required for Secure Boot. For backwards compatibility
+      use `2m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
+      to `2m`).
+    - `pre_enrolled_keys` (Optional) Use am EFI vars template with
+      distribution-specific and Microsoft Standard keys enrolled, if used with
+      EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
+      to `false`).
 - `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
     - `device` - (Required) The PCI device name for Proxmox, in form
       of `hostpciX` where `X` is a sequential number from 0 to 3.
@@ -284,7 +298,7 @@ output "ubuntu_vm_public_key" {
     - `user_data_file_id` - (Optional) The identifier for a file containing
       custom user data (conflicts with `user_account`).
     - `vendor_data_file_id` - (Optional) The identifier for a file containing
-      all vendor data passed to the VM via cloud-init. 
+      all vendor data passed to the VM via cloud-init.
     - `meta_data_file_id` - (Optional) The identifier for a file containing
       all meta data passed to the VM via cloud-init.
 - `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`).
