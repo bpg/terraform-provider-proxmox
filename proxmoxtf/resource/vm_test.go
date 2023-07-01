@@ -45,6 +45,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCPU,
 		mkResourceVirtualEnvironmentVMDescription,
 		mkResourceVirtualEnvironmentVMDisk,
+		mkResourceVirtualEnvironmentVMEFIDisk,
 		mkResourceVirtualEnvironmentVMInitialization,
 		mkResourceVirtualEnvironmentVMHostPCI,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
@@ -80,6 +81,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCPU:                   schema.TypeList,
 		mkResourceVirtualEnvironmentVMDescription:           schema.TypeString,
 		mkResourceVirtualEnvironmentVMDisk:                  schema.TypeList,
+		mkResourceVirtualEnvironmentVMEFIDisk:               schema.TypeList,
 		mkResourceVirtualEnvironmentVMHostPCI:               schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitialization:        schema.TypeList,
 		mkResourceVirtualEnvironmentVMIPv4Addresses:         schema.TypeList,
@@ -165,6 +167,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCPUCores,
 		mkResourceVirtualEnvironmentVMCPUFlags,
 		mkResourceVirtualEnvironmentVMCPUHotplugged,
+		mkResourceVirtualEnvironmentVMCPUNUMA,
 		mkResourceVirtualEnvironmentVMCPUSockets,
 		mkResourceVirtualEnvironmentVMCPUType,
 		mkResourceVirtualEnvironmentVMCPUUnits,
@@ -175,6 +178,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMCPUCores:        schema.TypeInt,
 		mkResourceVirtualEnvironmentVMCPUFlags:        schema.TypeList,
 		mkResourceVirtualEnvironmentVMCPUHotplugged:   schema.TypeInt,
+		mkResourceVirtualEnvironmentVMCPUNUMA:         schema.TypeBool,
 		mkResourceVirtualEnvironmentVMCPUSockets:      schema.TypeInt,
 		mkResourceVirtualEnvironmentVMCPUType:         schema.TypeString,
 		mkResourceVirtualEnvironmentVMCPUUnits:        schema.TypeInt,
@@ -214,6 +218,20 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable:  schema.TypeInt,
 		mkResourceVirtualEnvironmentVMDiskSpeedWrite:          schema.TypeInt,
 		mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable: schema.TypeInt,
+	})
+
+	efiDiskSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMEFIDisk)
+
+	test.AssertOptionalArguments(t, efiDiskSchema, []string{
+		mkResourceVirtualEnvironmentVMEFIDiskDatastoreID,
+		mkResourceVirtualEnvironmentVMEFIDiskFileFormat,
+		mkResourceVirtualEnvironmentVMEFIDiskType,
+	})
+
+	test.AssertValueTypes(t, efiDiskSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentVMEFIDiskDatastoreID: schema.TypeString,
+		mkResourceVirtualEnvironmentVMEFIDiskFileFormat:  schema.TypeString,
+		mkResourceVirtualEnvironmentVMEFIDiskType:        schema.TypeString,
 	})
 
 	initializationSchema := test.AssertNestedSchemaExistence(
