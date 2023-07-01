@@ -116,19 +116,10 @@ func (c *Client) GetClusterResources(ctx context.Context, resourceType string) (
 
 // GetClusterResourcesVM retrieves current VM resources for cluster.
 func (c *Client) GetClusterResourcesVM(ctx context.Context) ([]*ResourcesListResponseData, error) {
-	vmResources, err := c.GetClusterResources(ctx, "vm")
-	if err != nil {
-		return nil, err
-	}
-
-	if vmResources == nil {
-		return nil, api.ErrNoDataObjectInResponse
-	}
-
-	return vmResources, nil
+	return c.GetClusterResources(ctx, "vm")
 }
 
-// GetVMNodeName gets node for specified vmid.
+// GetVMNodeName gets node for specified vmID.
 func (c *Client) GetVMNodeName(ctx context.Context, vmID int) (*string, error) {
 	allClusterVM, err := c.GetClusterResourcesVM(ctx)
 	if err != nil {
