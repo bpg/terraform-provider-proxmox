@@ -113,6 +113,10 @@ func (t *ticketAuthenticator) IsRoot() bool {
 	return t.authData != nil && t.authData.Username == rootUsername
 }
 
+func (t *ticketAuthenticator) IsRootTicket() bool {
+	return t.IsRoot()
+}
+
 // AuthenticateRequest adds authentication data to a new request.
 func (t *ticketAuthenticator) AuthenticateRequest(ctx context.Context, req *http.Request) error {
 	a, err := t.authenticate(ctx)

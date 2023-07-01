@@ -30,6 +30,11 @@ func (t *tokenAuthenticator) IsRoot() bool {
 	return t.username == rootUsername
 }
 
+func (t *tokenAuthenticator) IsRootTicket() bool {
+	// Logged using a token, therefore not a ticket login
+	return false
+}
+
 func (t *tokenAuthenticator) AuthenticateRequest(_ context.Context, req *http.Request) error {
 	req.Header.Set("Authorization", "PVEAPIToken="+t.token)
 	return nil
