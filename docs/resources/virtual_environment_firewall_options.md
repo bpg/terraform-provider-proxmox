@@ -19,8 +19,6 @@ resource "proxmox_virtual_environment_firewall_options" "example" {
 
   node_name = proxmox_virtual_environment_vm.example.node_name
   vm_id     = proxmox_virtual_environment_vm.example.vm_id
-  
-  enabled = false
 
   dhcp          = true
   enabled       = false
@@ -29,7 +27,7 @@ resource "proxmox_virtual_environment_firewall_options" "example" {
   log_level_out = "info"
   macfilter     = false
   ndp           = true
-  input_policy  = "ACCEPT
+  input_policy  = "ACCEPT"
   output_policy = "ACCEPT"
   radv          = true
 }
