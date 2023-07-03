@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	types2 "github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -3042,6 +3043,12 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 
 	vmNodeName, err := api.Cluster().GetVMNodeName(ctx, vmID)
 	if err != nil {
+		if errors.Is(err, cluster.ErrVMDoesNotExist) {
+			d.SetId("")
+
+			return nil
+		}
+
 		return diag.FromErr(err)
 	}
 

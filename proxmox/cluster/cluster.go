@@ -22,6 +22,9 @@ const (
 	getVMIDStep = 1
 )
 
+// ErrVMDoesNotExist is returned when the VM identifier cannot be found on any cluster node.
+var ErrVMDoesNotExist = errors.New("unable to find VM identifier on any cluster node")
+
 var (
 	//nolint:gochecknoglobals
 	getVMIDCounter = -1
@@ -136,5 +139,5 @@ func (c *Client) GetVMNodeName(ctx context.Context, vmID int) (*string, error) {
 		}
 	}
 
-	return nil, errors.New("unable to determine node name for VM identifier")
+	return nil, ErrVMDoesNotExist
 }
