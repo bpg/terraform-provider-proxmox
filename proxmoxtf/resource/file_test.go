@@ -7,10 +7,10 @@
 package resource
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
