@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
 )
 
 func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
