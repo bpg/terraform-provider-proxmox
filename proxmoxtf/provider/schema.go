@@ -36,30 +36,15 @@ const (
 func createSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		mkProviderEndpoint: {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "The endpoint for the Proxmox VE API.",
-			DefaultFunc: schema.MultiEnvDefaultFunc(
-				[]string{"PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT"},
-				nil,
-			),
+			Type:         schema.TypeString,
+			Optional:     true,
+			Description:  "The endpoint for the Proxmox VE API.",
 			ValidateFunc: validation.IsURLWithHTTPorHTTPS,
 		},
 		mkProviderInsecure: {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Description: "Whether to skip the TLS verification step.",
-			DefaultFunc: func() (interface{}, error) {
-				for _, k := range []string{"PROXMOX_VE_INSECURE", "PM_VE_INSECURE"} {
-					v := os.Getenv(k)
-
-					if v == "true" || v == "1" {
-						return true, nil
-					}
-				}
-
-				return false, nil
-			},
 		},
 		mkProviderOTP: {
 			Type:        schema.TypeString,
@@ -67,38 +52,18 @@ func createSchema() map[string]*schema.Schema {
 			Description: "The one-time password for the Proxmox VE API.",
 			Deprecated: "The `otp` attribute is deprecated and will be removed in a future release. " +
 				"Please use the `api_token` attribute instead.",
-			DefaultFunc: schema.MultiEnvDefaultFunc(
-				[]string{"PROXMOX_VE_OTP", "PM_VE_OTP"},
-				nil,
-			),
 		},
 		mkProviderPassword: {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Sensitive:   true,
-			Description: "The password for the Proxmox VE API.",
-			DefaultFunc: schema.MultiEnvDefaultFunc(
-				[]string{"PROXMOX_VE_PASSWORD", "PM_VE_PASSWORD"},
-				nil,
-			),
-			AtLeastOneOf: []string{
-				mkProviderPassword,
-				mkProviderAPIToken,
-			},
+			Type:         schema.TypeString,
+			Optional:     true,
+			Sensitive:    true,
+			Description:  "The password for the Proxmox VE API.",
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
 		mkProviderUsername: {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "The username for the Proxmox VE API.",
-			DefaultFunc: schema.MultiEnvDefaultFunc(
-				[]string{"PROXMOX_VE_USERNAME", "PM_VE_USERNAME"},
-				nil,
-			),
-			AtLeastOneOf: []string{
-				mkProviderUsername,
-				mkProviderAPIToken,
-			},
+			Type:         schema.TypeString,
+			Optional:     true,
+			Description:  "The username for the Proxmox VE API.",
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
 		mkProviderAPIToken: {
@@ -106,10 +71,6 @@ func createSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Sensitive:   true,
 			Description: "The API token for the Proxmox VE API.",
-			DefaultFunc: schema.MultiEnvDefaultFunc(
-				[]string{"PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN"},
-				nil,
-			),
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
 				regexp.MustCompile(`^\S+@\w+!\S+=([a-zA-Z0-9-]+)$`),
 				"Must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'",
