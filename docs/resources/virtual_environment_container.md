@@ -181,3 +181,11 @@ output "ubuntu_container_public_key" {
 ## Attribute Reference
 
 There are no additional attributes available for this resource.
+
+## Import
+
+Instances can be imported using the `node_name` and the `vm_id`, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_container.ubuntu_container first-node/1234
+```

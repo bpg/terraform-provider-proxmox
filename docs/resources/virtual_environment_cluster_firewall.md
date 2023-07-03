@@ -43,3 +43,15 @@ resource "proxmox_virtual_environment_cluster_firewall" "example" {
 ## Attribute Reference
 
 There are no additional attributes available for this resource.
+
+## Important Notes
+
+Be careful not to use this resource multiple times for the same node.
+
+## Import
+
+Instances can be imported without an ID, but you still need to pass one, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_cluster_firewall.example example
+```

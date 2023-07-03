@@ -86,3 +86,11 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
     - `pos` - Position of the rule in the list.
 
 There are no attribute references available for this resource.
+
+## Import
+
+Instances can be imported using the `name`, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_cluster_firewall_security_group.webserver webserver
+```

@@ -31,3 +31,11 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
 ## Attribute Reference
 
 There are no additional attributes available for this resource.
+
+## Import
+
+Instances can be imported using the `role_id`, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_role.operations_monitoring operations-monitoring
+```

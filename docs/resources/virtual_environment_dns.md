@@ -42,3 +42,11 @@ There are no additional attributes available for this resource.
 ## Important Notes
 
 Be careful not to use this resource multiple times for the same node.
+
+## Import
+
+Instances can be imported using the `node_name`, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_dns.first_node first-node
+```
