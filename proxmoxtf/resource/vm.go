@@ -20,10 +20,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	types2 "github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -1396,7 +1395,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
-	fullCopy := types2.CustomBool(cloneFull)
+	fullCopy := types.CustomBool(cloneFull)
 
 	cloneBody := &vms.CloneRequestBody{
 		FullCopy: &fullCopy,
@@ -1477,7 +1476,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			}
 
 			// Migrate to target node
-			withLocalDisks := types2.CustomBool(true)
+			withLocalDisks := types.CustomBool(true)
 			migrateBody := &vms.MigrateRequestBody{
 				TargetNode:     nodeName,
 				WithLocalDisks: &withLocalDisks,
@@ -1511,7 +1510,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
-	acpi := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+	acpi := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
 	audioDevices := vmGetAudioDeviceList(d)
 
@@ -1527,9 +1526,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 	operatingSystem := d.Get(mkResourceVirtualEnvironmentVMOperatingSystem).([]interface{})
 	serialDevice := d.Get(mkResourceVirtualEnvironmentVMSerialDevice).([]interface{})
-	onBoot := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
-	tabletDevice := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
-	template := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
+	onBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
+	tabletDevice := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 	vga := d.Get(mkResourceVirtualEnvironmentVMVGA).([]interface{})
 
 	updateBody := &vms.UpdateRequestBody{
@@ -1548,10 +1547,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if len(agent) > 0 {
 		agentBlock := agent[0].(map[string]interface{})
 
-		agentEnabled := types2.CustomBool(
+		agentEnabled := types.CustomBool(
 			agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool),
 		)
-		agentTrim := types2.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+		agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
 		updateBody.Agent = &vms.CustomAgent{
@@ -1618,7 +1617,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
-		cpuNUMA := types2.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
+		cpuNUMA := types.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
@@ -1841,7 +1840,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			)
 		}
 
-		deleteOriginalDisk := types2.CustomBool(true)
+		deleteOriginalDisk := types.CustomBool(true)
 
 		diskMoveBody := &vms.MoveDiskRequestBody{
 			DeleteOriginalDisk: &deleteOriginalDisk,
@@ -1912,7 +1911,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			)
 		}
 
-		deleteOriginalDisk := types2.CustomBool(true)
+		deleteOriginalDisk := types.CustomBool(true)
 
 		diskMoveBody := &vms.MoveDiskRequestBody{
 			DeleteOriginalDisk: &deleteOriginalDisk,
@@ -1953,7 +1952,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	resource := VM()
 
-	acpi := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+	acpi := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 
 	agentBlock, err := getSchemaBlock(
 		resource,
@@ -1966,10 +1965,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		return diag.FromErr(err)
 	}
 
-	agentEnabled := types2.CustomBool(
+	agentEnabled := types.CustomBool(
 		agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool),
 	)
-	agentTrim := types2.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+	agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
 	kvmArguments := d.Get(mkResourceVirtualEnvironmentVMKVMArguments).(string)
@@ -2015,7 +2014,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 	cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
-	cpuNUMA := types2.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
+	cpuNUMA := types.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 	cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 	cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
 
@@ -2034,7 +2033,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMEFIDiskDatastoreID].(string)
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMEFIDiskFileFormat].(string)
 		efiType, _ := block[mkResourceVirtualEnvironmentVMEFIDiskType].(string)
-		preEnrolledKeys := types2.CustomBool(block[mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys].(bool))
+		preEnrolledKeys := types.CustomBool(block[mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys].(bool))
 
 		if fileFormat == "" {
 			fileFormat = dvResourceVirtualEnvironmentVMEFIDiskFileFormat
@@ -2107,9 +2106,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	serialDevices := vmGetSerialDeviceList(d)
 
-	onBoot := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
-	tabletDevice := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
-	template := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
+	onBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
+	tabletDevice := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
 	vgaDevice, err := vmGetVGADeviceObject(d)
 	if err != nil {
@@ -2334,8 +2333,8 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		speed := block[mkResourceVirtualEnvironmentVMDiskSpeed].([]interface{})
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
-		ioThread := types2.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
-		ssd := types2.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
+		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
+		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard, _ := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
 
 		if fileFormat == "" {
@@ -2696,8 +2695,8 @@ func vmGetDiskDeviceObjects(
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
-		ioThread := types2.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
-		ssd := types2.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
+		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
+		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
 
 		speedBlock, err := getSchemaBlock(
@@ -2796,7 +2795,7 @@ func vmGetEfiDisk(d *schema.ResourceData, disk []interface{}) *vms.CustomEFIDisk
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMEFIDiskDatastoreID].(string)
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMEFIDiskFileFormat].(string)
 		efiType, _ := block[mkResourceVirtualEnvironmentVMEFIDiskType].(string)
-		preEnrolledKeys := types2.CustomBool(block[mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys].(bool))
+		preEnrolledKeys := types.CustomBool(block[mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys].(bool))
 
 		// special case for efi disk, the size is ignored, see docs for more info
 		efiDiskConfig.FileVolume = fmt.Sprintf("%s:1", datastoreID)
@@ -2850,12 +2849,12 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 
 		ids, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceID].(string)
 		mdev, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceMDev].(string)
-		pcie := types2.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDevicePCIE].(bool))
-		rombar := types2.CustomBool(
+		pcie := types.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDevicePCIE].(bool))
+		rombar := types.CustomBool(
 			block[mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR].(bool),
 		)
 		romfile, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile].(string)
-		xvga := types2.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA].(bool))
+		xvga := types.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA].(bool))
 
 		device := vms.CustomPCIDevice{
 			DeviceIDs:  strings.Split(ids, ";"),
@@ -2890,7 +2889,7 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices 
 
 		bridge := block[mkResourceVirtualEnvironmentVMNetworkDeviceBridge].(string)
 		enabled := block[mkResourceVirtualEnvironmentVMNetworkDeviceEnabled].(bool)
-		firewall := types2.CustomBool(block[mkResourceVirtualEnvironmentVMNetworkDeviceFirewall].(bool))
+		firewall := types.CustomBool(block[mkResourceVirtualEnvironmentVMNetworkDeviceFirewall].(bool))
 		macAddress := block[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress].(string)
 		model := block[mkResourceVirtualEnvironmentVMNetworkDeviceModel].(string)
 		rateLimit := block[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit].(float64)
@@ -3006,7 +3005,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) 
 		return nil, err
 	}
 
-	vgaEnabled := types2.CustomBool(vgaBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
+	vgaEnabled := types.CustomBool(vgaBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool))
 	vgaMemory := vgaBlock[mkResourceVirtualEnvironmentVMVGAMemory].(int)
 	vgaType := vgaBlock[mkResourceVirtualEnvironmentVMVGAType].(string)
 
@@ -4346,7 +4345,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new primitive configuration values.
 	if d.HasChange(mkResourceVirtualEnvironmentVMACPI) {
-		acpi := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
+		acpi := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 		updateBody.ACPI = &acpi
 		rebootRequired = true
 	}
@@ -4369,7 +4368,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMOnBoot) {
-		startOnBoot := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
+		startOnBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
 		updateBody.StartOnBoot = &startOnBoot
 	}
 
@@ -4399,12 +4398,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMTabletDevice) {
-		tabletDevice := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
+		tabletDevice := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 		updateBody.TabletDeviceEnabled = &tabletDevice
 		rebootRequired = true
 	}
 
-	template := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMTemplate) {
 		updateBody.Template = &template
@@ -4424,10 +4423,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			return diag.FromErr(err)
 		}
 
-		agentEnabled := types2.CustomBool(
+		agentEnabled := types.CustomBool(
 			agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool),
 		)
-		agentTrim := types2.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
+		agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
 		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
 
 		updateBody.Agent = &vms.CustomAgent{
@@ -4521,7 +4520,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
-		cpuNUMA := types2.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
+		cpuNUMA := types.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
 		cpuUnits := cpuBlock[mkResourceVirtualEnvironmentVMCPUUnits].(int)
@@ -4784,7 +4783,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				return diag.FromErr(e)
 			}
 		} else {
-			forceStop := types2.CustomBool(true)
+			forceStop := types.CustomBool(true)
 			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 			e = vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
@@ -4897,7 +4896,7 @@ func vmUpdateDiskLocationAndSize(
 				}
 
 				if *oldDisk.ID != *diskNewEntries[prefix][oldKey].ID {
-					deleteOriginalDisk := types2.CustomBool(true)
+					deleteOriginalDisk := types.CustomBool(true)
 
 					diskMoveBodies = append(
 						diskMoveBodies,
@@ -4925,7 +4924,7 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		if shutdownForDisksRequired && !template {
-			forceStop := types2.CustomBool(true)
+			forceStop := types.CustomBool(true)
 			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 			err = vmAPI.ShutdownVM(
@@ -5009,7 +5008,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	if status.Status != "stopped" {
-		forceStop := types2.CustomBool(true)
+		forceStop := types.CustomBool(true)
 		shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
 		err = vmAPI.ShutdownVM(
