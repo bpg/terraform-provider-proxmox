@@ -7,7 +7,6 @@
 package resource
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -15,9 +14,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-
-	"github.com/hashicorp/go-multierror"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -561,32 +557,12 @@ func getCloudInitTypeValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-type ErrorDiags diag.Diagnostics
-
-func (diags ErrorDiags) Errors() []error {
-	var es []error
-	for i := range diags {
-		if diags[i].Severity == diag.Error {
-			s := fmt.Sprintf("Error: %s", diags[i].Summary)
-			if diags[i].Detail != "" {
-				s = fmt.Sprintf("%s: %s", s, diags[i].Detail)
-			}
-			es = append(es, errors.New(s))
-		}
-	}
-	return es
-}
-
-func (diags ErrorDiags) Error() string {
-	return multierror.ListFormatFunc(diags.Errors())
-}
-
 func parseImportIDWithNodeName(id string) (string, string, error) {
-	parts := strings.SplitN(id, "/", 2)
+	nodeName, id, found := strings.Cut(id, "/")
 
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return "", "", fmt.Errorf("unexpected format of ID (%s), expected node/vm_id", id)
+	if !found {
+		return "", "", fmt.Errorf("unexpected format of ID (%s), expected node/id", id)
 	}
 
-	return parts[0], parts[1], nil
+	return nodeName, id, nil
 }

@@ -107,6 +107,9 @@ func Firewall() *schema.Resource {
 		ReadContext:   selectFirewallAPI(firewallRead),
 		UpdateContext: selectFirewallAPI(firewallUpdate),
 		DeleteContext: selectFirewallAPI(firewallDelete),
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
 }
 
