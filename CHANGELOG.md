@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.23.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.22.0...v0.23.0) (2023-07-03)
+
+
+### Features
+
+* **vm:** efi disk, cpu numa ([#384](https://github.com/bpg/terraform-provider-proxmox/issues/384)) ([e9a74e9](https://github.com/bpg/terraform-provider-proxmox/commit/e9a74e90374570dee4af93fed4454209157bcbb7))
+
+
+### Bug Fixes
+
+* **docs:** minor firewall options page improvement ([#396](https://github.com/bpg/terraform-provider-proxmox/issues/396)) ([b0b5fa1](https://github.com/bpg/terraform-provider-proxmox/commit/b0b5fa153253102ecf4bcae896426296188f83be))
+* **file:** spurious unsupported content type warning ([#395](https://github.com/bpg/terraform-provider-proxmox/issues/395)) ([4da2b68](https://github.com/bpg/terraform-provider-proxmox/commit/4da2b682de1f2c7f456c6f7c7bc06048881cb8b9))
+* **lxc:** add support for 'nixos' ([#387](https://github.com/bpg/terraform-provider-proxmox/issues/387)) ([23a5194](https://github.com/bpg/terraform-provider-proxmox/commit/23a519475d2eddf2f2145166ff2593c60c807f53))
+* **provider:** better handling of root@pam token ([#386](https://github.com/bpg/terraform-provider-proxmox/issues/386)) ([03eaf72](https://github.com/bpg/terraform-provider-proxmox/commit/03eaf72767082ca4b5642538f64730dc9c4e34aa))
+* **provider:** config environment variables handling caused "rpc error" ([#397](https://github.com/bpg/terraform-provider-proxmox/issues/397)) ([d748a7d](https://github.com/bpg/terraform-provider-proxmox/commit/d748a7de7b16fd792e6e3d8d6b60a951f6031ac3))
+* **vm:** do not error on `read` at state refresh if VM is missing ([#398](https://github.com/bpg/terraform-provider-proxmox/issues/398)) ([253a59e](https://github.com/bpg/terraform-provider-proxmox/commit/253a59ece6c8f505362d7cd40f62a076b7caa590))
+* **vm:** search for vm in cluster resources before calling node api ([#393](https://github.com/bpg/terraform-provider-proxmox/issues/393)) ([99fda9c](https://github.com/bpg/terraform-provider-proxmox/commit/99fda9cbcdbd2f254cd4c8e48559a0f7ce7a3b01))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework from 1.3.0 to 1.3.1 ([#381](https://github.com/bpg/terraform-provider-proxmox/issues/381)) ([c1219ec](https://github.com/bpg/terraform-provider-proxmox/commit/c1219ecd3c5bb3ef3c728b479056f5309a02b6a8))
+* **deps:** bump github.com/hashicorp/terraform-plugin-go from 0.15.0 to 0.16.0 ([#380](https://github.com/bpg/terraform-provider-proxmox/issues/380)) ([9146703](https://github.com/bpg/terraform-provider-proxmox/commit/91467037d56bcf612c32648c0fcb5ceb2df547df))
+
 ## [0.22.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.21.1...v0.22.0) (2023-06-24)
 
 
