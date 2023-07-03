@@ -18,6 +18,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 // ProxmoxVirtualEnvironment returns the object for this provider.
@@ -43,18 +44,42 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	var conn *api.Connection
 
-	creds, err = api.NewCredentials(
-		d.Get(mkProviderUsername).(string),
-		d.Get(mkProviderPassword).(string),
-		d.Get(mkProviderOTP).(string),
-		d.Get(mkProviderAPIToken).(string),
-	)
+	// Check environment variables
+	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN")
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT")
+	insecure := utils.GetAnyBoolEnv("PROXMOX_VE_INSECURE", "PM_VE_INSECURE")
+	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME", "PM_VE_USERNAME")
+	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD", "PM_VE_PASSWORD")
+	otp := utils.GetAnyStringEnv("PROXMOX_VE_OTP", "PM_VE_OTP")
+
+	if v, ok := d.GetOk(mkProviderAPIToken); ok {
+		apiToken = v.(string)
+	}
+
+	if v, ok := d.GetOk(mkProviderEndpoint); ok {
+		endpoint = v.(string)
+	}
+
+	if v, ok := d.GetOk(mkProviderInsecure); ok {
+		insecure = v.(bool)
+	}
+
+	if v, ok := d.GetOk(mkProviderUsername); ok {
+		username = v.(string)
+	}
+
+	if v, ok := d.GetOk(mkProviderPassword); ok {
+		password = v.(string)
+	}
+
+	if v, ok := d.GetOk(mkProviderOTP); ok {
+		otp = v.(string)
+	}
+
+	creds, err = api.NewCredentials(username, password, otp, apiToken)
 	diags = append(diags, diag.FromErr(err)...)
 
-	conn, err = api.NewConnection(
-		d.Get(mkProviderEndpoint).(string),
-		d.Get(mkProviderInsecure).(bool),
-	)
+	conn, err = api.NewConnection(endpoint, insecure)
 	diags = append(diags, diag.FromErr(err)...)
 
 	if diags.HasError() {
@@ -75,20 +100,33 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		sshConf = sshBlock[0].(map[string]interface{})
 	}
 
+	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME", "PM_VE_SSH_USERNAME")
+	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD", "PM_VE_SSH_PASSWORD")
+	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT")
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+
 	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
-		sshConf[mkProviderSSHUsername] = strings.Split(creds.Username, "@")[0]
+		if sshUsername != "" {
+			sshConf[mkProviderSSHUsername] = sshUsername
+		} else {
+			sshConf[mkProviderSSHUsername] = strings.Split(creds.Username, "@")[0]
+		}
 	}
 
 	if v, ok := sshConf[mkProviderSSHPassword]; !ok || v.(string) == "" {
-		sshConf[mkProviderSSHPassword] = creds.Password
+		if sshPassword != "" {
+			sshConf[mkProviderSSHPassword] = sshPassword
+		} else {
+			sshConf[mkProviderSSHPassword] = creds.Password
+		}
 	}
 
 	if _, ok := sshConf[mkProviderSSHAgent]; !ok {
-		sshConf[mkProviderSSHAgent] = false
+		sshConf[mkProviderSSHAgent] = sshAgent
 	}
 
 	if _, ok := sshConf[mkProviderSSHAgentSocket]; !ok {
-		sshConf[mkProviderSSHAgentSocket] = ""
+		sshConf[mkProviderSSHAgentSocket] = sshAgentSocket
 	}
 
 	nodeOverrides := map[string]string{}
