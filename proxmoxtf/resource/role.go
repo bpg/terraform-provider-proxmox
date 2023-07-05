@@ -44,6 +44,9 @@ func Role() *schema.Resource {
 		ReadContext:   roleRead,
 		UpdateContext: roleUpdate,
 		DeleteContext: roleDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
 }
 

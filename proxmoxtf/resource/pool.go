@@ -85,6 +85,9 @@ func Pool() *schema.Resource {
 		ReadContext:   poolRead,
 		UpdateContext: poolUpdate,
 		DeleteContext: poolDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
 }
 

@@ -470,3 +470,11 @@ to force the migration step to migrate all disks to a specific datastore on the
 target node. If you need certain disks to be on specific datastores, set
 the `datastore_id` argument of the disks in the `disks` block to move the disks
 to the correct datastore after the cloning and migrating succeeded.
+
+## Import
+
+Instances can be imported using the `node_name` and the `vm_id`, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_vm.ubuntu_vm first-node/4321
+```

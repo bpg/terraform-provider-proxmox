@@ -70,7 +70,7 @@ EOF
     - `file_name` - (Optional) The file name to use instead of the source file
       name.
     - `insecure` - (Optional) Whether to skip the TLS verification step for
-      HTTPSsources (defaults to `false`).
+      HTTPS sources (defaults to `false`).
     - `path` - (Required) A path to a local file or a URL.
 - `source_raw` - (Optional) The raw source (conflicts with `source_file`).
     - `data` - (Required) The raw data.
@@ -93,3 +93,11 @@ file locally before uploading it.
 You must ensure that you have at least `Size-in-MB * 2 + 1` MB of storage space
 available (twice the size plus overhead because a multipart payload needs to be
 created as another temporary file).
+
+## Import
+
+Instances can be imported using the `node_name`, `datastore_id`, `content_type` and the `file_name`, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_file.cloud_config pve/local/snippets/example.cloud-config.yaml
+```

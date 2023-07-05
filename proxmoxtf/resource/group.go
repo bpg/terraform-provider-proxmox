@@ -85,6 +85,9 @@ func Group() *schema.Resource {
 		ReadContext:   groupRead,
 		UpdateContext: groupUpdate,
 		DeleteContext: groupDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
 }
 
