@@ -180,8 +180,12 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	keys := d.Get(mkResourceVirtualEnvironmentUserKeys).(string)
 	lastName := d.Get(mkResourceVirtualEnvironmentUserLastName).(string)
-	password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
 	userID := d.Get(mkResourceVirtualEnvironmentUserUserID).(string)
+
+	var password *string
+	if passwordVal := d.Get(mkResourceVirtualEnvironmentUserPassword).(string); passwordVal != "" {
+		password = &passwordVal
+	}
 
 	body := &access.UserCreateRequestBody{
 		Comment:        &comment,

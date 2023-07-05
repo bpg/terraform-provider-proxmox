@@ -27,7 +27,7 @@ type UserCreateRequestBody struct {
 	ID             string            `json:"userid"              url:"userid"`
 	Keys           *string           `json:"keys,omitempty"      url:"keys,omitempty"`
 	LastName       *string           `json:"lastname,omitempty"  url:"lastname,omitempty"`
-	Password       string            `json:"password"            url:"password,omitempty"`
+	Password       *string                `json:"password,omitempty"  url:"password,omitempty"`
 }
 
 // UserGetResponseBody contains the body from a user get response.
