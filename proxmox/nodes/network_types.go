@@ -21,7 +21,7 @@ type NetworkInterfaceListResponseData struct {
 	Address         *string           `json:"address,omitempty"`
 	Address6        *string           `json:"address6,omitempty"`
 	Autostart       *types.CustomBool `json:"autostart,omitempty"`
-	BridgeFD        *string           `json:"bridge_fd,omitempty"`
+	BridgeFD        *int              `json:"bridge_fd,omitempty"`
 	BridgePorts     *string           `json:"bridge_ports,omitempty"`
 	BridgeSTP       *string           `json:"bridge_stp,omitempty"`
 	BridgeVIDs      *string           `json:"bridge_vids,omitempty"`
