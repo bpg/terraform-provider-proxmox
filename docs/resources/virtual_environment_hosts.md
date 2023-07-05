@@ -42,3 +42,15 @@ resource "proxmox_virtual_environment_hosts" "first_node_host_entries" {
 - `entries` - The host entries (conversion of `addresses` and `hostnames` into
   objects).
 - `hostnames` - The hostnames associated with each of the IP addresses.
+
+## Important Notes
+
+Be careful not to use this resource multiple times for the same node.
+
+## Import
+
+Instances can be imported using the `node_name`, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_hosts.first_node_host_entries first-node
+```

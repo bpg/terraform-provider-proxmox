@@ -50,6 +50,9 @@ func SecurityGroup() *schema.Resource {
 		ReadContext:   selectFirewallAPI(SecurityGroupRead),
 		UpdateContext: selectFirewallAPI(SecurityGroupUpdate),
 		DeleteContext: selectFirewallAPI(SecurityGroupDelete),
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 	}
 }
 

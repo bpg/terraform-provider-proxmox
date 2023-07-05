@@ -32,3 +32,11 @@ resource "proxmox_virtual_environment_group" "operations_team" {
 ## Attribute Reference
 
 - `members` - The group members as a list of `username@realm` entries
+
+## Import
+
+Instances can be imported using the `group_id`, e.g.,
+
+```bash
+$ terraform import proxmox_virtual_environment_group.operations_team operations-team
+```

@@ -193,7 +193,39 @@ func File() *schema.Resource {
 		CreateContext: fileCreate,
 		ReadContext:   fileRead,
 		DeleteContext: fileDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+				node, datastore, volumeID, err := fileParseImportID(d.Id())
+				if err != nil {
+					return nil, err
+				}
+
+				d.SetId(volumeID)
+
+				err = d.Set(mkResourceVirtualEnvironmentFileNodeName, node)
+				if err != nil {
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
+				}
+
+				err = d.Set(mkResourceVirtualEnvironmentFileDatastoreID, datastore)
+				if err != nil {
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
+				}
+
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 	}
+}
+
+func fileParseImportID(id string) (string, string, string, error) {
+	parts := strings.SplitN(id, "/", 4)
+
+	if len(parts) != 4 || parts[0] == "" || parts[1] == "" || parts[2] == "" || parts[3] == "" {
+		return "", "", "", fmt.Errorf("unexpected format of ID (%s), expected node/datastore_id/content_type/file_name", id)
+	}
+
+	return parts[0], parts[1], strings.Join(parts[2:], "/"), nil
 }
 
 func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

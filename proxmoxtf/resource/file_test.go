@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
@@ -97,4 +98,42 @@ func TestFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileSourceRawFileName: schema.TypeString,
 		mkResourceVirtualEnvironmentFileSourceRawResize:   schema.TypeInt,
 	})
+}
+
+func Test_fileParseImportID(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                string
+		value               string
+		valid               bool
+		expectedNodeName    string
+		expectedDatastoreID string
+		expectedVolumeID    string
+	}{
+		{"empty", "", false, "", "", ""},
+		{"missing slash", "invalid", false, "", "", ""},
+		{"missing parts", "invalid/invalid/invalid", false, "", "", ""},
+		{"valid", "node/datastore_id/content_type/file_name", true, "node", "datastore_id", "content_type/file_name"},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			require := require.New(t)
+
+			nodeName, datastoreID, volumeID, err := fileParseImportID(tt.value)
+
+			if !tt.valid {
+				require.Error(err)
+				return
+			}
+
+			require.Nil(err)
+			require.Equal(tt.expectedNodeName, nodeName)
+			require.Equal(tt.expectedDatastoreID, datastoreID)
+			require.Equal(tt.expectedVolumeID, volumeID)
+		})
+	}
 }

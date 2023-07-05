@@ -8,6 +8,8 @@ package resource
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func Test_getCPUTypeValidator(t *testing.T) {
@@ -29,11 +31,51 @@ func Test_getCPUTypeValidator(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			require := require.New(t)
+
 			f := getCPUTypeValidator()
 			res := f(tt.value, nil)
-			if !res.HasError() != tt.valid {
-				t.Errorf("validate: '%s', want %v got %v", tt.value, tt.valid, res)
+
+			if tt.valid {
+				require.Empty(res, "validate: '%s'", tt.value)
+			} else {
+				require.NotEmpty(res, "validate: '%s'", tt.value)
 			}
+		})
+	}
+}
+
+func Test_parseImportIDWIthNodeName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		value            string
+		valid            bool
+		expectedNodeName string
+		expectedID       string
+	}{
+		{"empty", "", false, "", ""},
+		{"missing slash", "invalid", false, "", ""},
+		{"valid", "host/id", true, "host", "id"},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			require := require.New(t)
+
+			nodeName, id, err := parseImportIDWithNodeName(tt.value)
+
+			if !tt.valid {
+				require.Error(err)
+				return
+			}
+
+			require.Nil(err)
+			require.Equal(tt.expectedNodeName, nodeName)
+			require.Equal(tt.expectedID, id)
 		})
 	}
 }
