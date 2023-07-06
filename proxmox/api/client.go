@@ -114,7 +114,7 @@ type client struct {
 }
 
 // NewClient creates and initializes a VirtualEnvironmentClient instance.
-func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Client, error) {
+func NewClient(creds *Credentials, conn *Connection) (Client, error) {
 	if creds == nil {
 		return nil, errors.New("credentials must not be nil")
 	}
@@ -135,11 +135,6 @@ func NewClient(ctx context.Context, creds *Credentials, conn *Connection) (Clien
 
 	if err != nil {
 		return nil, err
-	}
-
-	err = auth.AuthenticateRequest(ctx, &http.Request{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute initial authentication: %w", err)
 	}
 
 	return &client{
