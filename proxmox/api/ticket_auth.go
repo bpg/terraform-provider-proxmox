@@ -56,6 +56,8 @@ func (t *ticketAuthenticator) authenticate(ctx context.Context) (*Authentication
 		return t.authData, nil
 	}
 
+	tflog.Debug(ctx, "requesting authentication ticket for request")
+
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
