@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -127,7 +128,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					Node:     types.StrPtr(accTestNodeName),
 					Storage:  types.StrPtr(accTestStorageName),
 					URL:      types.StrPtr(fakeFileISO),
-				}, 600)
+				}, 10*time.Minute)
 				require.NoError(t, err)
 				t.Cleanup(func() {
 					err := getNodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")

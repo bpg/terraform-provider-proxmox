@@ -8,7 +8,9 @@ package vms
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -17,13 +19,15 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // CloneVM clones a virtual machine.
-func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, timeout int) error {
+func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, timeout time.Duration) error {
 	var err error
 
 	resBody := &MoveDiskResponseBody{}
@@ -43,7 +47,7 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, 
 			return api.ErrNoDataObjectInResponse
 		}
 
-		err = c.Tasks().WaitForTask(ctx, *resBody.Data, timeout, 5)
+		err = c.Tasks().WaitForTask(ctx, *resBody.Data, timeout, 5*time.Second)
 		if err == nil {
 			return nil
 		}
@@ -59,13 +63,13 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, 
 }
 
 // CreateVM creates a virtual machine.
-func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody, timeout int) error {
+func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody, timeout time.Duration) error {
 	taskID, err := c.CreateVMAsync(ctx, d)
 	if err != nil {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 1)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 1*time.Second)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM creation: %w", err)
 	}
@@ -148,13 +152,13 @@ func (c *Client) GetVMStatus(ctx context.Context) (*GetStatusResponseData, error
 }
 
 // MigrateVM migrates a virtual machine.
-func (c *Client) MigrateVM(ctx context.Context, d *MigrateRequestBody, timeout int) error {
+func (c *Client) MigrateVM(ctx context.Context, d *MigrateRequestBody, timeout time.Duration) error {
 	taskID, err := c.MigrateVMAsync(ctx, d)
 	if err != nil {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5*time.Second)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM migration: %w", err)
 	}
@@ -179,7 +183,7 @@ func (c *Client) MigrateVMAsync(ctx context.Context, d *MigrateRequestBody) (*st
 }
 
 // MoveVMDisk moves a virtual machine disk.
-func (c *Client) MoveVMDisk(ctx context.Context, d *MoveDiskRequestBody, timeout int) error {
+func (c *Client) MoveVMDisk(ctx context.Context, d *MoveDiskRequestBody, timeout time.Duration) error {
 	taskID, err := c.MoveVMDiskAsync(ctx, d)
 	if err != nil {
 		if strings.Contains(err.Error(), "you can't move to the same storage with same format") {
@@ -190,7 +194,7 @@ func (c *Client) MoveVMDisk(ctx context.Context, d *MoveDiskRequestBody, timeout
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5*time.Second)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM disk move: %w", err)
 	}
@@ -231,13 +235,13 @@ func (c *Client) ListVMs(ctx context.Context) ([]*ListResponseData, error) {
 }
 
 // RebootVM reboots a virtual machine.
-func (c *Client) RebootVM(ctx context.Context, d *RebootRequestBody, timeout int) error {
+func (c *Client) RebootVM(ctx context.Context, d *RebootRequestBody, timeout time.Duration) error {
 	taskID, err := c.RebootVMAsync(ctx, d)
 	if err != nil {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5*time.Second)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM reboot: %w", err)
 	}
@@ -262,7 +266,7 @@ func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*stri
 }
 
 // ResizeVMDisk resizes a virtual machine disk.
-func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody, timeout int) error {
+func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody, timeout time.Duration) error {
 	err := retry.Do(func() error {
 		taskID, err := c.ResizeVMDiskAsync(ctx, d)
 		if err != nil {
@@ -270,7 +274,7 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody, tim
 		}
 
 		//nolint:wrapcheck
-		return c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+		return c.Tasks().WaitForTask(ctx, *taskID, timeout, 5*time.Second)
 	},
 		retry.Attempts(3),
 		retry.Delay(1*time.Second),
@@ -303,13 +307,13 @@ func (c *Client) ResizeVMDiskAsync(ctx context.Context, d *ResizeDiskRequestBody
 }
 
 // ShutdownVM shuts down a virtual machine.
-func (c *Client) ShutdownVM(ctx context.Context, d *ShutdownRequestBody, timeout int) error {
+func (c *Client) ShutdownVM(ctx context.Context, d *ShutdownRequestBody, timeout time.Duration) error {
 	taskID, err := c.ShutdownVMAsync(ctx, d)
 	if err != nil {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5*time.Second)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM shutdown: %w", err)
 	}
@@ -335,13 +339,13 @@ func (c *Client) ShutdownVMAsync(ctx context.Context, d *ShutdownRequestBody) (*
 
 // StartVM starts a virtual machine.
 // Returns the task log if the VM had warnings at startup, or fails to start.
-func (c *Client) StartVM(ctx context.Context, timeout int) ([]string, error) {
+func (c *Client) StartVM(ctx context.Context, timeout time.Duration) ([]string, error) {
 	taskID, err := c.StartVMAsync(ctx, timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5*time.Second)
 	if err != nil {
 		log, e := c.Tasks().GetTaskLog(ctx, *taskID)
 		if e != nil {
@@ -364,9 +368,11 @@ func (c *Client) StartVM(ctx context.Context, timeout int) ([]string, error) {
 }
 
 // StartVMAsync starts a virtual machine asynchronously.
-func (c *Client) StartVMAsync(ctx context.Context, timeout int) (*string, error) {
+func (c *Client) StartVMAsync(ctx context.Context, timeout time.Duration) (*string, error) {
+	timeoutSeconds := math.Round(timeout.Seconds())
+
 	reqBody := &StartRequestBody{
-		TimeoutSeconds: &timeout,
+		TimeoutSeconds: types.IntPtr(int(timeoutSeconds)),
 	}
 	resBody := &StartResponseBody{}
 
@@ -383,13 +389,13 @@ func (c *Client) StartVMAsync(ctx context.Context, timeout int) (*string, error)
 }
 
 // StopVM stops a virtual machine.
-func (c *Client) StopVM(ctx context.Context, timeout int) error {
+func (c *Client) StopVM(ctx context.Context, timeout time.Duration) error {
 	taskID, err := c.StopVMAsync(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5*time.Second)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM stop: %w", err)
 	}
@@ -442,26 +448,19 @@ func (c *Client) UpdateVMAsync(ctx context.Context, d *UpdateRequestBody) (*stri
 // WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
 func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	ctx context.Context,
-	timeout int, // time in seconds to wait until giving up
-	delay int, // the delay in seconds between requests to the agent
+	timeout time.Duration, // time in seconds to wait until giving up
+	delay time.Duration, // the delay in seconds between requests to the agent
 	waitForIP bool, // whether or not to block until an IP is found, or just block until the interfaces are published
 ) (*GetQEMUNetworkInterfacesResponseData, error) {
-	delaySeconds := int64(delay)
-	timeMaxSeconds := float64(timeout)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 
-	for timeElapsed.Seconds() < timeMaxSeconds {
-		timeElapsed = time.Since(timeStart)
+	b := backoff.WithContext(backoff.NewConstantBackOff(delay), ctx)
 
-		// check if terraform wants to shut us down (we try to poll the ctx every 200ms)
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("error waiting for VM network interfaces: %w", ctx.Err())
-		}
-
+	data, err := backoff.RetryWithData(func() (*GetQEMUNetworkInterfacesResponseData, error) {
 		select {
 		case <-ch:
 			{
@@ -470,165 +469,132 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 
 				tflog.Warn(ctx, msg)
 
-				return nil, fmt.Errorf(msg)
+				return nil, backoff.Permanent(fmt.Errorf(msg))
 			}
 		default:
 		}
 
-		// sleep another 200 milliseconds if we haven't delayed enough since our last call
-		if int64(timeElapsed.Seconds())%delaySeconds != 0 {
-			time.Sleep(200 * time.Millisecond)
-			continue
-		}
-
 		// request the network interfaces from the agent
 		data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-		// tick ahead and continue if we got an error from the api
-		if err != nil || data == nil || data.Result == nil {
-			time.Sleep(1 * time.Second)
-			continue
+		if data == nil || data.Result == nil {
+			return nil, errors.New("not ready")
+		}
+
+		if !waitForIP {
+			// if not waiting for an IP, and the agent sent us an interface, return
+			if len(*data.Result) > 0 {
+				return data, err
+			}
+
+			return nil, errors.New("not ready")
 		}
 
 		// If we're waiting for an IP, check if we have one yet; if not then keep looping
-		if waitForIP {
-			for _, nic := range *data.Result {
-				// skip the loopback interface
-				if nic.Name == "lo" {
-					continue
-				}
-
-				// skip the interface if it has no IP addresses
-				if nic.IPAddresses == nil ||
-					(nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
-					continue
-				}
-
-				// return if the interface has any global unicast addresses
-				for _, addr := range *nic.IPAddresses {
-					if ip := net.ParseIP(addr.Address); ip != nil && ip.IsGlobalUnicast() {
-						return data, err
-					}
-				}
+		for _, nic := range *data.Result {
+			// skip the loopback interface
+			if nic.Name == "lo" {
+				continue
 			}
 
-			// no IP address has come through the agent yet
-			time.Sleep(1 * time.Second)
-			continue //nolint
-		}
-
-		// if not waiting for an IP, and the agent sent us an interface, return
-		if data.Result != nil && len(*data.Result) > 0 {
-			return data, err
-		}
-
-		// we didn't get any interfaces so tick ahead to keep looping
-		time.Sleep(1 * time.Second)
-	}
-
-	return nil, fmt.Errorf(
-		"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces",
-		c.VMID,
-	)
-}
-
-// WaitForNoNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to unpublish the network interfaces.
-func (c *Client) WaitForNoNetworkInterfacesFromVMAgent(ctx context.Context, timeout int, delay int) error {
-	timeDelay := int64(delay)
-	timeMax := float64(timeout)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
-
-	for timeElapsed.Seconds() < timeMax {
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
-			_, err := c.GetVMNetworkInterfacesFromAgent(ctx)
-			if err == nil {
-				return nil
+			// skip the interface if it has no IP addresses
+			if nic.IPAddresses == nil ||
+				(nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
+				continue
 			}
 
-			time.Sleep(1 * time.Second)
+			// return if the interface has any global unicast addresses
+			for _, addr := range *nic.IPAddresses {
+				if ip := net.ParseIP(addr.Address); ip != nil && ip.IsGlobalUnicast() {
+					return data, err
+				}
+			}
 		}
 
-		time.Sleep(200 * time.Millisecond)
-
-		timeElapsed = time.Since(timeStart)
-
-		if ctx.Err() != nil {
-			return fmt.Errorf("error waiting for VM network interfaces: %w", ctx.Err())
-		}
+		return nil, errors.New("not ready")
+	}, b)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error waiting for the QEMU agent on VM \"%d\" to publish the network interfaces: %w",
+			c.VMID,
+			err,
+		)
 	}
 
-	return fmt.Errorf(
-		"timeout while waiting for the QEMU agent on VM \"%d\" to unpublish the network interfaces",
-		c.VMID,
-	)
+	return data, nil
 }
 
 // WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.
-func (c *Client) WaitForVMConfigUnlock(ctx context.Context, timeout int, delay int, ignoreErrorResponse bool) error {
-	timeDelay := int64(delay)
-	timeMax := float64(timeout)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
+func (c *Client) WaitForVMConfigUnlock(
+	ctx context.Context,
+	timeout time.Duration,
+	delay time.Duration,
+	ignoreErrorResponse bool,
+) error {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
-	for timeElapsed.Seconds() < timeMax {
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
-			data, err := c.GetVMStatus(ctx)
+	b := backoff.WithContext(backoff.NewConstantBackOff(delay), ctx)
 
-			if err != nil {
-				if !ignoreErrorResponse {
-					return err
-				}
-			} else if data.Lock == nil || *data.Lock == "" {
-				return nil
+	err := backoff.Retry(func() error {
+		data, err := c.GetVMStatus(ctx)
+		if err != nil {
+			if !ignoreErrorResponse {
+				return backoff.Permanent(err)
 			}
 
-			time.Sleep(1 * time.Second)
+			return err
 		}
 
-		time.Sleep(200 * time.Millisecond)
-
-		timeElapsed = time.Since(timeStart)
-
-		if ctx.Err() != nil {
-			return fmt.Errorf("error waiting for VM configuration to become unlocked: %w", ctx.Err())
+		if data.Lock == nil || *data.Lock == "" {
+			return nil
 		}
+
+		return errors.New("not ready")
+	}, b)
+	if err != nil {
+		return fmt.Errorf(
+			"error waiting for VM \"%d\" configuration to become unlocked: %w",
+			c.VMID,
+			err,
+		)
 	}
 
-	return fmt.Errorf("timeout while waiting for VM \"%d\" configuration to become unlocked", c.VMID)
+	return nil
 }
 
 // WaitForVMStatus waits for a virtual machine to reach a specific status.
-func (c *Client) WaitForVMStatus(ctx context.Context, state string, timeout int, delay int) error {
+func (c *Client) WaitForVMStatus(ctx context.Context, state string, timeout time.Duration, delay time.Duration) error {
 	state = strings.ToLower(state)
 
-	timeDelay := int64(delay)
-	timeMax := float64(timeout)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
-	for timeElapsed.Seconds() < timeMax {
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
-			data, err := c.GetVMStatus(ctx)
-			if err != nil {
-				return err
-			}
+	b := backoff.WithContext(backoff.NewConstantBackOff(delay), ctx)
 
-			if data.Status == state {
-				return nil
-			}
-
-			time.Sleep(1 * time.Second)
+	err := backoff.Retry(func() error {
+		data, err := c.GetVMStatus(ctx)
+		if err != nil {
+			return backoff.Permanent(err)
 		}
 
-		time.Sleep(200 * time.Millisecond)
-
-		timeElapsed = time.Since(timeStart)
-
-		if ctx.Err() != nil {
-			return fmt.Errorf("error waiting for VM state: %w", ctx.Err())
+		if data.Status == state {
+			return nil
 		}
+
+		return errors.New("not ready")
+	}, b)
+	if err != nil {
+		return fmt.Errorf(
+			"error waiting for VM \"%d\" to enter state \"%s\": %w",
+			c.VMID,
+			state,
+			err,
+		)
 	}
 
-	return fmt.Errorf("timeout while waiting for VM \"%d\" to enter the state \"%s\"", c.VMID, state)
+	return nil
 }

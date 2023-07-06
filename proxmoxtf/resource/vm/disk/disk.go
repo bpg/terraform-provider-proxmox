@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -186,7 +187,8 @@ func CreateClone(
 			}
 		}
 
-		timeout := d.Get(MkTimeoutMoveDisk).(int)
+		timeoutSeconds := d.Get(MkTimeoutMoveDisk).(int)
+		timeout := time.Duration(timeoutSeconds) * time.Second
 
 		if moveDisk {
 			err := vmAPI.MoveVMDisk(ctx, diskMoveBody, timeout)

@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -397,7 +398,7 @@ func (r *downloadFileResource) Create(
 	err = storageClient.DownloadFileByURL(
 		ctx,
 		&downloadFileReq,
-		plan.UploadTimeout.ValueInt64(),
+		time.Duration(plan.UploadTimeout.ValueInt64())*time.Second,
 	)
 
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
@@ -413,7 +414,7 @@ func (r *downloadFileResource) Create(
 		err = storageClient.DownloadFileByURL(
 			ctx,
 			&downloadFileReq,
-			plan.UploadTimeout.ValueInt64(),
+			time.Duration(plan.UploadTimeout.ValueInt64())*time.Second,
 		)
 	}
 

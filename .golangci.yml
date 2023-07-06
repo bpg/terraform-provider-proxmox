@@ -45,6 +45,19 @@ linters-settings:
     statements: 60
   errcheck:
     check-blank: true
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - errors.Join(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - .WithMessagef(
+      - .WithStack(
+      # backoff
+      - .Permanent(
 linters:
   enable-all: true
   disable:

@@ -241,7 +241,7 @@ func ReadNetworkValues(
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
 			var macAddresses []interface{}
 
-			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, int(agentTimeout.Seconds()), 5, true)
+			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, agentTimeout, 5*time.Second, true)
 			if err == nil && networkInterfaces.Result != nil {
 				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
 				ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))

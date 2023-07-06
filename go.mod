@@ -7,6 +7,7 @@ toolchain go1.22.0
 require (
 	github.com/avast/retry-go/v4 v4.5.1
 	github.com/brianvoe/gofakeit/v7 v7.0.2
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0

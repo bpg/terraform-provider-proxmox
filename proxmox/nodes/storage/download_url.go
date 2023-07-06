@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -18,7 +19,7 @@ import (
 func (c *Client) DownloadFileByURL(
 	ctx context.Context,
 	d *DownloadURLPostRequestBody,
-	uploadTimeout int64,
+	uploadTimeout time.Duration,
 ) error {
 	resBody := &DownloadURLResponseBody{}
 
@@ -31,7 +32,7 @@ func (c *Client) DownloadFileByURL(
 		return api.ErrNoDataObjectInResponse
 	}
 
-	taskErr := c.Tasks().WaitForTask(ctx, *resBody.TaskID, int(uploadTimeout), 5)
+	taskErr := c.Tasks().WaitForTask(ctx, *resBody.TaskID, uploadTimeout, 5*time.Second)
 	if taskErr != nil {
 		err = fmt.Errorf(
 			"error download file to datastore %s: failed waiting for url download - %w",

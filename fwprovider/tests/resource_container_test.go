@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -99,7 +100,7 @@ func testAccResourceContainerCreateCheck(t *testing.T) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
 		func(*terraform.State) error {
-			err := getNodesClient().Container(accTestContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			err := getNodesClient().Container(accTestContainerID).WaitForContainerStatus(context.Background(), "running", 10*time.Second, 1*time.Second)
 			require.NoError(t, err, "container did not start")
 
 			return nil
@@ -131,7 +132,7 @@ func testAccResourceContainerCreateCloneCheck(t *testing.T) resource.TestCheckFu
 
 	return resource.ComposeTestCheckFunc(
 		func(*terraform.State) error {
-			err := getNodesClient().Container(accCloneContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			err := getNodesClient().Container(accCloneContainerID).WaitForContainerStatus(context.Background(), "running", 10*time.Second, 1*time.Second)
 			require.NoError(t, err, "container did not start")
 
 			return nil

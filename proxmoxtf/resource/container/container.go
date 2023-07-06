@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -977,7 +978,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	containerAPI := api.Node(nodeName).Container(vmID)
 
 	// Wait for the container to be created and its configuration lock to be released.
-	err = containerAPI.WaitForContainerLock(ctx, 600, 5, true)
+	err = containerAPI.WaitForContainerLock(ctx, 10*time.Minute, 5*time.Second, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1264,7 +1265,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Wait for the container's lock to be released.
-	err = containerAPI.WaitForContainerLock(ctx, 600, 5, true)
+	err = containerAPI.WaitForContainerLock(ctx, 10*time.Minute, 5*time.Second, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1625,7 +1626,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
 	vmID := d.Get(mkVMID).(int)
-	createTimeout := d.Get(mkTimeoutCreate).(int)
+	createTimeoutSeconds := d.Get(mkTimeoutCreate).(int)
+	createTimeout := time.Duration(createTimeoutSeconds) * time.Second
 
 	if vmID == -1 {
 		vmIDNew, e := api.Cluster().GetVMID(ctx)
@@ -1706,7 +1708,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(strconv.Itoa(vmID))
 
 	// Wait for the container's lock to be released.
-	err = api.Node(nodeName).Container(vmID).WaitForContainerLock(ctx, 600, 5, true)
+	err = api.Node(nodeName).Container(vmID).WaitForContainerLock(ctx, 10*time.Minute, 5*time.Second, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1738,7 +1740,8 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := api.Node(nodeName).Container(vmID)
 
-	startTimeout := d.Get(mkTimeoutStart).(int)
+	startTimeoutSeconds := d.Get(mkTimeoutStart).(int)
+	startTimeout := time.Duration(startTimeoutSeconds) * time.Second
 
 	// Start the container and wait for it to reach a running state before continuing.
 	err = containerAPI.StartContainer(ctx, startTimeout)
@@ -2941,7 +2944,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	if d.HasChange(mkStarted) && !bool(template) {
 		if started {
-			e = containerAPI.StartContainer(ctx, 60)
+			e = containerAPI.StartContainer(ctx, 60*time.Second)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -2957,7 +2960,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 				return diag.FromErr(e)
 			}
 
-			e = containerAPI.WaitForContainerStatus(ctx, "stopped", 300, 5)
+			e = containerAPI.WaitForContainerStatus(ctx, "stopped", 5*time.Minute, 5*time.Second)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -3022,7 +3025,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.FromErr(err)
 		}
 
-		err = containerAPI.WaitForContainerStatus(ctx, "stopped", 30, 5)
+		err = containerAPI.WaitForContainerStatus(ctx, "stopped", 30*time.Second, 5*time.Second)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3040,7 +3043,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
-	err = containerAPI.WaitForContainerStatus(ctx, "", 60, 2)
+	err = containerAPI.WaitForContainerStatus(ctx, "", 1*time.Minute, 2*time.Second)
 	if err == nil {
 		return diag.Errorf("failed to delete container \"%d\"", vmID)
 	}

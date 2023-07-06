@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
@@ -99,11 +101,9 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 }
 
 // WaitForTask waits for a specific task to complete.
-func (c *Client) WaitForTask(ctx context.Context, upid string, timeoutSec, delaySec int) error {
-	timeDelay := int64(delaySec)
-	timeMax := float64(timeoutSec)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
+func (c *Client) WaitForTask(ctx context.Context, upid string, timeout, delay time.Duration) error {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	isCriticalError := func(err error) bool {
 		var target *api.HTTPError
@@ -119,42 +119,35 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, timeoutSec, delay
 		return err != nil
 	}
 
-	for timeElapsed.Seconds() < timeMax {
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
-			status, err := c.GetTaskStatus(ctx, upid)
-			if isCriticalError(err) {
-				return err
-			}
+	b := backoff.WithContext(backoff.NewConstantBackOff(delay), ctx)
 
-			if status.Status != "running" {
-				if status.ExitCode != "OK" {
-					return fmt.Errorf(
-						"task \"%s\" failed to complete with exit code: %s",
-						upid,
-						status.ExitCode,
-					)
-				}
-
-				return nil
-			}
-
-			time.Sleep(1 * time.Second)
+	err := backoff.Retry(func() error {
+		status, err := c.GetTaskStatus(ctx, upid)
+		if isCriticalError(err) {
+			return backoff.Permanent(err)
 		}
 
-		time.Sleep(200 * time.Millisecond)
+		if status.Status != "running" {
+			if status.ExitCode != "OK" {
+				return backoff.Permanent(fmt.Errorf(
+					"task \"%s\" failed to complete with exit code: %s",
+					upid,
+					status.ExitCode,
+				))
+			}
 
-		timeElapsed = time.Since(timeStart)
-
-		if ctx.Err() != nil {
-			return fmt.Errorf(
-				"context error while waiting for task \"%s\" to complete: %w",
-				upid, ctx.Err(),
-			)
+			return nil
 		}
+
+		return errors.New("not ready")
+	}, b)
+	if err != nil {
+		return fmt.Errorf(
+			"error waiting for task \"%s\" to complete: %w",
+			upid,
+			err,
+		)
 	}
 
-	return fmt.Errorf(
-		"timeout while waiting for task \"%s\" to complete",
-		upid,
-	)
+	return nil
 }
