@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -238,6 +239,11 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 	readRule := func(pos int, ruleMap map[string]interface{}) error {
 		rule, err := api.GetRule(ctx, pos)
 		if err != nil {
+			if strings.Contains(err.Error(), "no rule at position") {
+				// this is not an error, the rule does not exist
+				return nil
+			}
+
 			return fmt.Errorf("error reading rule %d : %w", pos, err)
 		}
 
@@ -277,7 +283,7 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 			err = readRule(id.Pos, ruleMap)
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
-			} else {
+			} else if len(ruleMap) > 0 {
 				rules = append(rules, ruleMap)
 			}
 		}
@@ -347,7 +353,14 @@ func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	for _, v := range rules {
 		rule := v.(map[string]interface{})
 		pos := rule[mkRulePos].(int)
-		err := api.DeleteRule(ctx, pos)
+
+		_, err := api.GetRule(ctx, pos)
+		if err != nil {
+			// if the rule is not found / can't be retrieved, we can safely ignore it
+			continue
+		}
+
+		err = api.DeleteRule(ctx, pos)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
