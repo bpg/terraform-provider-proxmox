@@ -20,6 +20,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 )
 
 const (
@@ -149,7 +150,7 @@ func Container() *schema.Resource {
 							Description:      "The ID of the source container",
 							Required:         true,
 							ForceNew:         true,
-							ValidateDiagFunc: getVMIDValidator(),
+							ValidateDiagFunc: validator.VMID(),
 						},
 					},
 				},
@@ -636,7 +637,7 @@ func Container() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				Default:          dvResourceVirtualEnvironmentContainerVMID,
-				ValidateDiagFunc: getVMIDValidator(),
+				ValidateDiagFunc: validator.VMID(),
 			},
 		},
 		CreateContext: containerCreate,

@@ -400,29 +400,6 @@ func getSCSIHardwareValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-func getVMIDValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
-		min := 100
-		max := 2147483647
-
-		v, ok := i.(int)
-
-		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be int", k))
-			return
-		}
-
-		if v != -1 {
-			if v < min || v > max {
-				es = append(es, fmt.Errorf("expected %s to be in the range (%d - %d), got %d", k, min, max, v))
-				return
-			}
-		}
-
-		return
-	})
-}
-
 // suppressIfListsAreEqualIgnoringOrder is a customdiff.SuppressionFunc that suppresses
 // changes to a list if the old and new lists are equal, ignoring the order of the
 // elements.
