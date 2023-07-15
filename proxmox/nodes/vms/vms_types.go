@@ -1696,6 +1696,46 @@ func (r *CustomSMBIOS) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// UnmarshalJSON converts a CustomStartupOrder string to an object.
+func (r *CustomStartupOrder) UnmarshalJSON(b []byte) error {
+	var s string
+
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomStartupOrder: %w", err)
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 2 {
+			switch v[0] {
+			case "order":
+				order, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to parse int: %w", err)
+				}
+				r.Order = &order
+			case "up":
+				up, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to parse int: %w", err)
+				}
+				r.Up = &up
+			case "down":
+				down, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to parse int: %w", err)
+				}
+				r.Down = &down
+			}
+		}
+	}
+
+	return nil
+}
+
 // UnmarshalJSON converts a CustomStorageDevice string to an object.
 func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	var s string
