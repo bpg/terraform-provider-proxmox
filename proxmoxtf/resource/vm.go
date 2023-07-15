@@ -24,6 +24,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 )
 
 const (
@@ -436,7 +437,7 @@ func VM() *schema.Resource {
 							Description:      "The ID of the source VM",
 							Required:         true,
 							ForceNew:         true,
-							ValidateDiagFunc: getVMIDValidator(),
+							ValidateDiagFunc: validator.VMID(),
 						},
 						mkResourceVirtualEnvironmentVMCloneFull: {
 							Type:        schema.TypeBool,
@@ -1297,7 +1298,7 @@ func VM() *schema.Resource {
 				Computed:    true,
 				// "ForceNew: true" handled in CustomizeDiff, making sure VMs with legacy configs with vm_id = -1
 				// do not require re-creation.
-				ValidateDiagFunc: getVMIDValidator(),
+				ValidateDiagFunc: validator.VMID(),
 			},
 			mkResourceVirtualEnvironmentVMSCSIHardware: {
 				Type:             schema.TypeString,
