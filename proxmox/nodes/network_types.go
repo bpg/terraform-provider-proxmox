@@ -17,11 +17,14 @@ type NetworkInterfaceListResponseBody struct {
 
 // NetworkInterfaceListResponseData contains the data from a node network interface list response.
 type NetworkInterfaceListResponseData struct {
+	// There seems to be inconsistency in the APIs between certain versions of Proxmox.
+	// See https://github.com/bpg/terraform-provider-proxmox/issues/410
+	// BridgeFD        *int              `json:"bridge_fd,omitempty"`
+
 	Active          *types.CustomBool `json:"active,omitempty"`
 	Address         *string           `json:"address,omitempty"`
 	Address6        *string           `json:"address6,omitempty"`
 	Autostart       *types.CustomBool `json:"autostart,omitempty"`
-	BridgeFD        *int              `json:"bridge_fd,omitempty"`
 	BridgePorts     *string           `json:"bridge_ports,omitempty"`
 	BridgeSTP       *string           `json:"bridge_stp,omitempty"`
 	BridgeVIDs      *string           `json:"bridge_vids,omitempty"`

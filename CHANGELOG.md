@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.24.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.24.1...v0.24.2) (2023-07-16)
+
+
+### Bug Fixes
+
+* **vm:** do not reboot VM on config change if it is not running ([#430](https://github.com/bpg/terraform-provider-proxmox/issues/430)) ([0281bc8](https://github.com/bpg/terraform-provider-proxmox/commit/0281bc83e2d64fdfe2782feb6f21395706dbcc32))
+
+## [0.24.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.24.0...v0.24.1) (2023-07-16)
+
+
+### Bug Fixes
+
+* **firewall:** add VM / container ID validation to firewall rules ([#424](https://github.com/bpg/terraform-provider-proxmox/issues/424)) ([6a3bc03](https://github.com/bpg/terraform-provider-proxmox/commit/6a3bc034706cef4190651118bfc2e8f62de8aecd))
+* **vm:** add `interface` argument to `cdrom` block ([#429](https://github.com/bpg/terraform-provider-proxmox/issues/429)) ([b86fa23](https://github.com/bpg/terraform-provider-proxmox/commit/b86fa239ddd29f0cfc60d66ac4cede39b0167985))
+* **vm:** add missing unmarshal for vm custom startup order ([#428](https://github.com/bpg/terraform-provider-proxmox/issues/428)) ([e59b06e](https://github.com/bpg/terraform-provider-proxmox/commit/e59b06e5195da90da837f5b660e6b76cca9fd632))
+
+## [0.24.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.23.0...v0.24.0) (2023-07-09)
+
+
+### Features
+
+* add import support for a lot of resources ([#390](https://github.com/bpg/terraform-provider-proxmox/issues/390)) ([4147ff6](https://github.com/bpg/terraform-provider-proxmox/commit/4147ff6a29500dd47cd905a0239abdc28cffc596))
+* **vm:** add more valid cpu types ([#411](https://github.com/bpg/terraform-provider-proxmox/issues/411)) ([e9a9fd7](https://github.com/bpg/terraform-provider-proxmox/commit/e9a9fd76dae22be24767cdf44cb9668f96c9ea90))
+
+
+### Bug Fixes
+
+* **firewall:** ignore non-existent rules at read/delete ([#415](https://github.com/bpg/terraform-provider-proxmox/issues/415)) ([fc3bbc3](https://github.com/bpg/terraform-provider-proxmox/commit/fc3bbc3d92466fc069db69619b5f1a7f338fc391))
+* **node:** fix error when listing network interfaces of a node ([#412](https://github.com/bpg/terraform-provider-proxmox/issues/412)) ([16ee6a9](https://github.com/bpg/terraform-provider-proxmox/commit/16ee6a9f955f0452b80ba4ee88667edd4bd34fde))
+* **node:** ignore field `bridge_fd` when listing network interfaces of a node ([#414](https://github.com/bpg/terraform-provider-proxmox/issues/414)) ([01a8456](https://github.com/bpg/terraform-provider-proxmox/commit/01a845636ae7242ea78b52365468f496fc52372b))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/goreleaser/goreleaser from 1.18.2 to 1.19.1 in /tools ([#403](https://github.com/bpg/terraform-provider-proxmox/issues/403)) ([0597217](https://github.com/bpg/terraform-provider-proxmox/commit/059721741ac5508bb98a1ca50b83a67e6a86c206))
+* **deps:** bump github.com/goreleaser/goreleaser from 1.19.1 to 1.19.2 in /tools ([#417](https://github.com/bpg/terraform-provider-proxmox/issues/417)) ([7240715](https://github.com/bpg/terraform-provider-proxmox/commit/72407157614179f4368698235f957ead68dd51b1))
+* **deps:** bump github.com/hashicorp/terraform-plugin-docs from 0.15.0 to 0.16.0 in /tools ([#418](https://github.com/bpg/terraform-provider-proxmox/issues/418)) ([6a309ac](https://github.com/bpg/terraform-provider-proxmox/commit/6a309ac4abec72e54529a84e17a360763110dfaa))
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework from 1.3.1 to 1.3.2 ([#401](https://github.com/bpg/terraform-provider-proxmox/issues/401)) ([908713a](https://github.com/bpg/terraform-provider-proxmox/commit/908713a08493e46796438c7bc5585efab25fc4e0))
+* **deps:** bump github.com/hashicorp/terraform-plugin-go from 0.16.0 to 0.17.0 ([#399](https://github.com/bpg/terraform-provider-proxmox/issues/399)) ([24ee318](https://github.com/bpg/terraform-provider-proxmox/commit/24ee318cc33a0faad76045644ac03394a13c7605))
+* **deps:** bump github.com/hashicorp/terraform-plugin-go from 0.17.0 to 0.18.0 ([#408](https://github.com/bpg/terraform-provider-proxmox/issues/408)) ([f494525](https://github.com/bpg/terraform-provider-proxmox/commit/f49452543c6c88f90fb46d245b39ea9942eca5ea))
+* **deps:** bump github.com/hashicorp/terraform-plugin-mux from 0.10.0 to 0.11.1 ([#400](https://github.com/bpg/terraform-provider-proxmox/issues/400)) ([1a6cfb2](https://github.com/bpg/terraform-provider-proxmox/commit/1a6cfb2cf1039694e594b45cb79ac5bba7810383))
+* **deps:** bump github.com/hashicorp/terraform-plugin-sdk/v2 from 2.26.1 to 2.27.0 ([#402](https://github.com/bpg/terraform-provider-proxmox/issues/402)) ([af56c4b](https://github.com/bpg/terraform-provider-proxmox/commit/af56c4b2a75b6611e6dbcddc755a00ccddfd5248))
+* **deps:** bump golang.org/x/crypto from 0.10.0 to 0.11.0 ([#416](https://github.com/bpg/terraform-provider-proxmox/issues/416)) ([5e173e0](https://github.com/bpg/terraform-provider-proxmox/commit/5e173e0bc9d2d7219e385e8b64ae82b3fcfdb42f))
+* **refactoring:** remove accidentally added `types2` import alias ([#409](https://github.com/bpg/terraform-provider-proxmox/issues/409)) ([feac6b0](https://github.com/bpg/terraform-provider-proxmox/commit/feac6b0128520a16c4ecd4850d4f73e311ec1f7b))
+
 ## [0.23.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.22.0...v0.23.0) (2023-07-03)
 
 

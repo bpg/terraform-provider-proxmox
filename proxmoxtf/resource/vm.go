@@ -24,6 +24,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 )
 
 const (
@@ -40,6 +41,7 @@ const (
 	dvResourceVirtualEnvironmentVMBIOS                              = "seabios"
 	dvResourceVirtualEnvironmentVMCDROMEnabled                      = false
 	dvResourceVirtualEnvironmentVMCDROMFileID                       = ""
+	dvResourceVirtualEnvironmentVMCDROMInterface                    = "ide3"
 	dvResourceVirtualEnvironmentVMCloneDatastoreID                  = ""
 	dvResourceVirtualEnvironmentVMCloneNodeName                     = ""
 	dvResourceVirtualEnvironmentVMCloneFull                         = true
@@ -133,6 +135,7 @@ const (
 	mkResourceVirtualEnvironmentVMCDROM                             = "cdrom"
 	mkResourceVirtualEnvironmentVMCDROMEnabled                      = "enabled"
 	mkResourceVirtualEnvironmentVMCDROMFileID                       = "file_id"
+	mkResourceVirtualEnvironmentVMCDROMInterface                    = "interface"
 	mkResourceVirtualEnvironmentVMClone                             = "clone"
 	mkResourceVirtualEnvironmentVMCloneRetries                      = "retries"
 	mkResourceVirtualEnvironmentVMCloneDatastoreID                  = "datastore_id"
@@ -376,8 +379,9 @@ func VM() *schema.Resource {
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMCDROMEnabled: dvResourceVirtualEnvironmentVMCDROMEnabled,
-							mkResourceVirtualEnvironmentVMCDROMFileID:  dvResourceVirtualEnvironmentVMCDROMFileID,
+							mkResourceVirtualEnvironmentVMCDROMEnabled:   dvResourceVirtualEnvironmentVMCDROMEnabled,
+							mkResourceVirtualEnvironmentVMCDROMFileID:    dvResourceVirtualEnvironmentVMCDROMFileID,
+							mkResourceVirtualEnvironmentVMCDROMInterface: dvResourceVirtualEnvironmentVMCDROMInterface,
 						},
 					}, nil
 				},
@@ -395,6 +399,13 @@ func VM() *schema.Resource {
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMCDROMFileID,
 							ValidateDiagFunc: getFileIDValidator(),
+						},
+						mkResourceVirtualEnvironmentVMCDROMInterface: {
+							Type:             schema.TypeString,
+							Description:      "The CDROM interface",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMCDROMInterface,
+							ValidateDiagFunc: getIDEInterfaceValidator(),
 						},
 					},
 				},
@@ -436,7 +447,7 @@ func VM() *schema.Resource {
 							Description:      "The ID of the source VM",
 							Required:         true,
 							ForceNew:         true,
-							ValidateDiagFunc: getVMIDValidator(),
+							ValidateDiagFunc: validator.VMID(),
 						},
 						mkResourceVirtualEnvironmentVMCloneFull: {
 							Type:        schema.TypeBool,
@@ -1297,7 +1308,7 @@ func VM() *schema.Resource {
 				Computed:    true,
 				// "ForceNew: true" handled in CustomizeDiff, making sure VMs with legacy configs with vm_id = -1
 				// do not require re-creation.
-				ValidateDiagFunc: getVMIDValidator(),
+				ValidateDiagFunc: validator.VMID(),
 			},
 			mkResourceVirtualEnvironmentVMSCSIHardware: {
 				Type:             schema.TypeString,
@@ -1610,6 +1621,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
+		cdromInterface := cdromBlock[mkResourceVirtualEnvironmentVMCDROMInterface].(string)
 
 		if cdromFileID == "" {
 			cdromFileID = "cdrom"
@@ -1618,7 +1630,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cdromMedia := "cdrom"
 
 		ideDevices = vms.CustomStorageDevices{
-			"ide3": vms.CustomStorageDevice{
+			cdromInterface: vms.CustomStorageDevice{
 				Enabled:    cdromEnabled,
 				FileVolume: cdromFileID,
 				Media:      &cdromMedia,
@@ -2006,6 +2018,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 	cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
+	cdromInterface := cdromBlock[mkResourceVirtualEnvironmentVMCDROMInterface].(string)
 
 	cdromCloudInitEnabled := false
 	cdromCloudInitFileID := ""
@@ -2152,7 +2165,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	var bootOrderConverted []string
 	if cdromEnabled {
-		bootOrderConverted = []string{"ide3"}
+		bootOrderConverted = []string{cdromInterface}
 	}
 
 	bootOrder := d.Get(mkResourceVirtualEnvironmentVMBootOrder).([]interface{})
@@ -2192,7 +2205,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
 		},
-		"ide3": vms.CustomStorageDevice{
+		cdromInterface: vms.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &ideDevice2Media,
@@ -3235,24 +3248,43 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	// Compare the IDE devices to the CD-ROM and cloud-init configurations stored in the state.
-	if vmConfig.IDEDevice3 != nil {
+	// Compare the IDE devices to the CDROM configurations stored in the state.
+	currentInterface := dvResourceVirtualEnvironmentVMCDROMInterface
+	cdromIDEDevice := vmConfig.IDEDevice3
+
+	currentCDROM := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
+	if len(currentCDROM) > 0 {
+		currentBlock := currentCDROM[0].(map[string]interface{})
+		currentInterface = currentBlock[mkResourceVirtualEnvironmentVMCDROMInterface].(string)
+	}
+
+	switch currentInterface {
+	case "ide0":
+		cdromIDEDevice = vmConfig.IDEDevice0
+	case "ide1":
+		cdromIDEDevice = vmConfig.IDEDevice1
+	case "ide2":
+		cdromIDEDevice = vmConfig.IDEDevice2
+	}
+
+	//nolint:nestif
+	if cdromIDEDevice != nil {
 		cdrom := make([]interface{}, 1)
 		cdromBlock := map[string]interface{}{}
-		currentCDROM := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 
 		if len(clone) == 0 || len(currentCDROM) > 0 {
-			cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = vmConfig.IDEDevice3.Enabled
-			cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = vmConfig.IDEDevice3.FileVolume
+			cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = cdromIDEDevice.Enabled
+			cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = cdromIDEDevice.FileVolume
+			cdromBlock[mkResourceVirtualEnvironmentVMCDROMInterface] = currentInterface
 
 			if len(currentCDROM) > 0 {
-				isCurrentCDROMFileId := currentCDROM[0].(map[string]interface{})
+				currentBlock := currentCDROM[0].(map[string]interface{})
 
-				if isCurrentCDROMFileId[mkResourceVirtualEnvironmentVMCDROMFileID] == "" {
+				if currentBlock[mkResourceVirtualEnvironmentVMCDROMFileID] == "" {
 					cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = ""
 				}
 
-				if isCurrentCDROMFileId[mkResourceVirtualEnvironmentVMCDROMEnabled] == false {
+				if currentBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] == false {
 					cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled] = false
 				}
 			}
@@ -4501,9 +4533,27 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
 		cdromFileID := cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID].(string)
+		cdromInterface := cdromBlock[mkResourceVirtualEnvironmentVMCDROMInterface].(string)
+
+		old, _ := d.GetChange(mkResourceVirtualEnvironmentVMCDROM)
+
+		if len(old.([]interface{})) > 0 {
+			oldList := old.([]interface{})[0]
+			oldBlock := oldList.(map[string]interface{})
+
+			// If the interface is not set, use the default, for backward compatibility.
+			oldInterface, ok := oldBlock[mkResourceVirtualEnvironmentVMCDROMInterface].(string)
+			if !ok || oldInterface == "" {
+				oldInterface = dvResourceVirtualEnvironmentVMCDROMInterface
+			}
+
+			if oldInterface != cdromInterface {
+				del = append(del, oldInterface)
+			}
+		}
 
 		if !cdromEnabled && cdromFileID == "" {
-			del = append(del, "ide3")
+			del = append(del, cdromInterface)
 		}
 
 		if cdromFileID == "" {
@@ -4512,7 +4562,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		cdromMedia := "cdrom"
 
-		updateBody.IDEDevices["ide3"] = vms.CustomStorageDevice{
+		updateBody.IDEDevices[cdromInterface] = vms.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
@@ -4985,17 +5035,24 @@ func vmUpdateDiskLocationAndSize(
 
 	// Perform a regular reboot in case it's necessary and haven't already been done.
 	if reboot {
-		rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
-
-		err := vmAPI.RebootVM(
-			ctx,
-			&vms.RebootRequestBody{
-				Timeout: &rebootTimeout,
-			},
-			rebootTimeout+30,
-		)
+		vmStatus, err := vmAPI.GetVMStatus(ctx)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		if vmStatus.Status != "stopped" {
+			rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
+
+			err := vmAPI.RebootVM(
+				ctx,
+				&vms.RebootRequestBody{
+					Timeout: &rebootTimeout,
+				},
+				rebootTimeout+30,
+			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 

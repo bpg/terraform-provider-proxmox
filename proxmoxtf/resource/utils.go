@@ -399,27 +399,13 @@ func getSCSIHardwareValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-func getVMIDValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
-		min := 100
-		max := 2147483647
-
-		v, ok := i.(int)
-
-		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be int", k))
-			return
-		}
-
-		if v != -1 {
-			if v < min || v > max {
-				es = append(es, fmt.Errorf("expected %s to be in the range (%d - %d), got %d", k, min, max, v))
-				return
-			}
-		}
-
-		return
-	})
+func getIDEInterfaceValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"ide0",
+		"ide1",
+		"ide2",
+		"ide3",
+	}, false))
 }
 
 // suppressIfListsAreEqualIgnoringOrder is a customdiff.SuppressionFunc that suppresses
@@ -482,6 +468,7 @@ func getDiskInfo(resp *vms.GetResponseData, d *schema.ResourceData) map[string]*
 	storageDevices["ide0"] = resp.IDEDevice0
 	storageDevices["ide1"] = resp.IDEDevice1
 	storageDevices["ide2"] = resp.IDEDevice2
+	storageDevices["ide3"] = resp.IDEDevice3
 
 	storageDevices["sata0"] = resp.SATADevice0
 	storageDevices["sata1"] = resp.SATADevice1

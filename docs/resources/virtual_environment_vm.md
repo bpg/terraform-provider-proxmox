@@ -127,6 +127,9 @@ output "ubuntu_vm_public_key" {
       to `false`).
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
       in the physical drive).
+    - `interface` - (Optional) A hardware interface to connect CDROM drive to,
+      must be `ideN` (defaults to `ide3`). Note that `q35` machine type only
+      supports `ide0` and `ide2`.
 - `clone` - (Optional) The cloning configuration.
     - `datastore_id` - (Optional) The identifier for the target datastore.
     - `node_name` - (Optional) The name of the source node (leave blank, if
@@ -167,16 +170,17 @@ output "ubuntu_vm_public_key" {
       to `0`).
     - `numa` - (Boolean) Enable/disable NUMA. (default to `false`)
     - `sockets` - (Optional) The number of CPU sockets (defaults to `1`).
-    - `type` - (Optional) The emulated CPU type, it's recommended to use `x86-64-v2-AES` (defaults to `qemu64`).
+    - `type` - (Optional) The emulated CPU type, it's recommended to
+      use `x86-64-v2-AES` (defaults to `qemu64`).
         - `486` - Intel 486.
-        - `Broadwell`/`Broadwell-IBRS`/`Broadwell-noTSX`/`Broadwell-noTSX-IBRS` - Intel Core Processor (Broadwell,
-          2014).
+        - `Broadwell`/`Broadwell-IBRS`/`Broadwell-noTSX`/`Broadwell-noTSX-IBRS` -
+          Intel Core Processor (Broadwell, 2014).
         - `Cascadelake-Server`/`Cascadelake-Server-noTSX`/`Cascadelake-Server-v2`/`Cascadelake-Server-v4`/`Cascadelake-Server-v5` -
-          Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (
-          2019).
+          Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (2019).
         - `Conroe` - Intel Celeron_4x0 (Conroe/Merom Class Core 2, 2006).
         - `Cooperlake`/`Cooperlake-v2`
-        - `EPYC`/`EPYC-IBPB`/`EPYC-Milan`/`EPYC-Rome`/`EPYC-Rome-v2`/`EPYC-v3` - AMD EPYC Processor (2017).
+        - `EPYC`/`EPYC-IBPB`/`EPYC-Milan`/`EPYC-Rome`/`EPYC-Rome-v2`/`EPYC-v3` -
+          AMD EPYC Processor (2017).
         - `Haswell`/`Haswell-IBRS`/`Haswell-noTSX`/`Haswell-noTSX-IBRS` - Intel
           Core Processor (Haswell, 2013).
         - `Icelake-Client`/`Icelake-Client-noTSX`
@@ -195,12 +199,10 @@ output "ubuntu_vm_public_key" {
         - `SandyBridge`/`SandyBridge-IBRS` - Intel Xeon E312xx (Sandy Bridge,
           2011).
         - `SapphireRapids`
-        - `Skylake-Client`/`Skylake-Client-IBRS`/`Skylake-Client-noTSX-IBRS`/`Skylake-Client-v4` - Intel Core
-          Processor (
-          Skylake, 2015).
+        - `Skylake-Client`/`Skylake-Client-IBRS`/`Skylake-Client-noTSX-IBRS`/`Skylake-Client-v4` -
+          Intel Core Processor (Skylake, 2015).
         - `Skylake-Server`/`Skylake-Server-IBRS`/`Skylake-Server-noTSX-IBRS`/`Skylake-Server-v4`/`Skylake-Server-v5` -
-          Intel Xeon Processor (
-          Skylake, 2016).
+          Intel Xeon Processor (Skylake, 2016).
         - `Westmere`/`Westmere-IBRS` - Intel Westmere E56xx/L56xx/X56xx (
           Nehalem-C, 2010).
         - `athlon` - AMD Athlon.
@@ -215,7 +217,8 @@ output "ubuntu_vm_public_key" {
         - `phenom` - AMD Phenom (2010).
         - `qemu32`/`qemu64` - QEMU Virtual CPU version 2.5+ (32 & 64 bit
           variants).
-        - `x86-64-v2`/`x86-64-v2-AES`/`x86-64-v3`/`x86-64-v4` See https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels
+        - `x86-64-v2`/`x86-64-v2-AES`/`x86-64-v3`/`x86-64-v4`
+          See https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels
         - `custom-<model>` - Custom CPU model. All `custom-<model>` values
           should be defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
     - `units` - (Optional) The CPU units (defaults to `1024`).
