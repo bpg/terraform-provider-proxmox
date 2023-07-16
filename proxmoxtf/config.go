@@ -9,31 +9,31 @@ package proxmoxtf
 import (
 	"errors"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	"github.com/bpg/proxmox-api"
+	"github.com/bpg/proxmox-api/rest"
+	"github.com/bpg/proxmox-api/ssh"
 )
 
 // ProviderConfiguration is the configuration for the provider.
 type ProviderConfiguration struct {
-	apiClient api.Client
-	sshClient ssh.Client
+	restClient rest.Client
+	sshClient  ssh.Client
 }
 
 // NewProviderConfiguration creates a new provider configuration.
 func NewProviderConfiguration(
-	apiClient api.Client,
+	restClient rest.Client,
 	sshClient ssh.Client,
 ) ProviderConfiguration {
 	return ProviderConfiguration{
-		apiClient: apiClient,
-		sshClient: sshClient,
+		restClient: restClient,
+		sshClient:  sshClient,
 	}
 }
 
 // GetClient returns the Proxmox API client.
 func (c *ProviderConfiguration) GetClient() (proxmox.Client, error) {
-	if c.apiClient == nil {
+	if c.restClient == nil {
 		return nil, errors.New(
 			"you must specify the API access details in the provider configuration",
 		)
@@ -45,5 +45,5 @@ func (c *ProviderConfiguration) GetClient() (proxmox.Client, error) {
 		)
 	}
 
-	return proxmox.NewClient(c.apiClient, c.sshClient), nil
+	return proxmox.NewClient(c.restClient, c.sshClient), nil
 }

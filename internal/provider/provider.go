@@ -23,11 +23,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/proxmox-api"
+	"github.com/bpg/proxmox-api/nodes"
+	"github.com/bpg/proxmox-api/rest"
+	"github.com/bpg/proxmox-api/ssh"
+
 	"github.com/bpg/terraform-provider-proxmox/internal/network"
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -255,7 +256,7 @@ func (p *proxmoxProvider) Configure(
 
 	// Create the Proxmox VE API client
 
-	creds, err := api.NewCredentials(username, password, "", apiToken)
+	creds, err := rest.NewCredentials(username, password, "", apiToken)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Proxmox VE API credentials",
@@ -263,7 +264,7 @@ func (p *proxmoxProvider) Configure(
 		)
 	}
 
-	conn, err := api.NewConnection(
+	conn, err := rest.NewConnection(
 		endpoint,
 		insecure,
 	)
@@ -278,7 +279,7 @@ func (p *proxmoxProvider) Configure(
 		return
 	}
 
-	apiClient, err := api.NewClient(creds, conn)
+	restClient, err := rest.NewClient(creds, conn)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Proxmox VE API client",
@@ -325,7 +326,7 @@ func (p *proxmoxProvider) Configure(
 	sshClient, err := ssh.NewClient(
 		sshUsername, sshPassword, sshAgent, sshAgentSocket,
 		&apiResolverWithOverrides{
-			ar:        apiResolver{c: apiClient},
+			ar:        apiResolver{c: restClient},
 			overrides: nodeOverrides,
 		},
 	)
@@ -340,7 +341,7 @@ func (p *proxmoxProvider) Configure(
 		return
 	}
 
-	client := proxmox.NewClient(apiClient, sshClient)
+	client := proxmox.NewClient(restClient, sshClient)
 
 	resp.ResourceData = client
 	resp.DataSourceData = client
@@ -358,7 +359,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 }
 
 type apiResolver struct {
-	c api.Client
+	c rest.Client
 }
 
 func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, error) {

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
 // TestSecurityGroupSchemaInstantiation tests whether the SecurityGroupSchema instance can be instantiated.
@@ -25,18 +25,18 @@ func TestSecurityGroupSchemaInstantiation(t *testing.T) {
 func TestSecurityGroupSchema(t *testing.T) {
 	t.Parallel()
 
-	s := SecurityGroupSchema()
+	r := schema.Resource{Schema: SecurityGroupSchema()}
 
-	structure.AssertRequiredArguments(t, s, []string{
+	test.AssertRequiredArguments(t, &r, []string{
 		mkSecurityGroupName,
 	})
 
-	structure.AssertComputedAttributes(t, s, []string{
+	test.AssertComputedAttributes(t, &r, []string{
 		mkSecurityGroupComment,
 		mkRules,
 	})
 
-	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
+	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
 		mkSecurityGroupName:    schema.TypeString,
 		mkSecurityGroupComment: schema.TypeString,
 		mkRules:                schema.TypeList,

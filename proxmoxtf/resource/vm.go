@@ -20,11 +20,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/proxmox-api/cluster"
+	"github.com/bpg/proxmox-api/nodes/vms"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+
+	"github.com/bpg/proxmox-api/types"
 )
 
 const (

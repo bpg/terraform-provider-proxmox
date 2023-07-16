@@ -11,12 +11,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bpg/proxmox-api/rest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	"github.com/bpg/proxmox-api/nodes"
+	"github.com/bpg/proxmox-api/ssh"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -36,13 +37,13 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	var diags diag.Diagnostics
 
-	var apiClient api.Client
+	var restClient rest.Client
 
 	var sshClient ssh.Client
 
-	var creds *api.Credentials
+	var creds *rest.Credentials
 
-	var conn *api.Connection
+	var conn *rest.Connection
 
 	// Check environment variables
 	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN")
@@ -76,17 +77,17 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		otp = v.(string)
 	}
 
-	creds, err = api.NewCredentials(username, password, otp, apiToken)
+	creds, err = rest.NewCredentials(username, password, otp, apiToken)
 	diags = append(diags, diag.FromErr(err)...)
 
-	conn, err = api.NewConnection(endpoint, insecure)
+	conn, err = rest.NewConnection(endpoint, insecure)
 	diags = append(diags, diag.FromErr(err)...)
 
 	if diags.HasError() {
 		return nil, diags
 	}
 
-	apiClient, err = api.NewClient(creds, conn)
+	restClient, err = rest.NewClient(creds, conn)
 	if err != nil {
 		return nil, diag.Errorf("error creating virtual environment client: %s", err)
 	}
@@ -144,7 +145,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		sshConf[mkProviderSSHAgent].(bool),
 		sshConf[mkProviderSSHAgentSocket].(string),
 		&apiResolverWithOverrides{
-			ar:        apiResolver{c: apiClient},
+			ar:        apiResolver{c: restClient},
 			overrides: nodeOverrides,
 		},
 	)
@@ -152,13 +153,13 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		return nil, diag.Errorf("error creating SSH client: %s", err)
 	}
 
-	config := proxmoxtf.NewProviderConfiguration(apiClient, sshClient)
+	config := proxmoxtf.NewProviderConfiguration(restClient, sshClient)
 
 	return config, nil
 }
 
 type apiResolver struct {
-	c api.Client
+	c rest.Client
 }
 
 func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, error) {

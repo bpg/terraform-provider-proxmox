@@ -13,7 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
+	clusterfirewall "github.com/bpg/proxmox-api/cluster/firewall"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )

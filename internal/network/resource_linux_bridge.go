@@ -24,9 +24,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	pvetypes "github.com/bpg/terraform-provider-proxmox/internal/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
+	"github.com/bpg/proxmox-api"
+	"github.com/bpg/proxmox-api/nodes"
+
+	pvetypes "github.com/bpg/proxmox-api/types"
+
+	nettypes "github.com/bpg/terraform-provider-proxmox/internal/network/types"
 )
 
 var (
@@ -40,10 +43,10 @@ type linuxBridgeResourceModel struct {
 	ID        types.String         `tfsdk:"id"`
 	NodeName  types.String         `tfsdk:"node_name"`
 	Name      types.String         `tfsdk:"name"`
-	Address   pvetypes.IPCIDRValue `tfsdk:"address"`
-	Gateway   pvetypes.IPAddrValue `tfsdk:"gateway"`
-	Address6  pvetypes.IPCIDRValue `tfsdk:"address6"`
-	Gateway6  pvetypes.IPAddrValue `tfsdk:"gateway6"`
+	Address   nettypes.IPCIDRValue `tfsdk:"address"`
+	Gateway   nettypes.IPAddrValue `tfsdk:"gateway"`
+	Address6  nettypes.IPCIDRValue `tfsdk:"address6"`
+	Gateway6  nettypes.IPAddrValue `tfsdk:"gateway6"`
 	Autostart types.Bool           `tfsdk:"autostart"`
 	MTU       types.Int64          `tfsdk:"mtu"`
 	Comment   types.String         `tfsdk:"comment"`
@@ -95,10 +98,10 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 	ctx context.Context,
 	iface *nodes.NetworkInterfaceListResponseData,
 ) error {
-	m.Address = pvetypes.NewIPCIDRPointerValue(iface.CIDR)
-	m.Gateway = pvetypes.NewIPAddrPointerValue(iface.Gateway)
-	m.Address6 = pvetypes.NewIPCIDRPointerValue(iface.CIDR6)
-	m.Gateway6 = pvetypes.NewIPAddrPointerValue(iface.Gateway6)
+	m.Address = nettypes.NewIPCIDRPointerValue(iface.CIDR)
+	m.Gateway = nettypes.NewIPAddrPointerValue(iface.Gateway)
+	m.Address6 = nettypes.NewIPCIDRPointerValue(iface.CIDR6)
+	m.Gateway6 = nettypes.NewIPAddrPointerValue(iface.Gateway6)
 	m.Autostart = types.BoolPointerValue(iface.Autostart.PointerBool())
 
 	if iface.MTU != nil {
@@ -189,22 +192,22 @@ func (r *linuxBridgeResource) Schema(
 			},
 			"address": schema.StringAttribute{
 				Description: "The interface IPv4/CIDR address.",
-				CustomType:  pvetypes.IPCIDRType{},
+				CustomType:  nettypes.IPCIDRType{},
 				Optional:    true,
 			},
 			"gateway": schema.StringAttribute{
 				Description: "Default gateway address.",
-				CustomType:  pvetypes.IPAddrType{},
+				CustomType:  nettypes.IPAddrType{},
 				Optional:    true,
 			},
 			"address6": schema.StringAttribute{
 				Description: "The interface IPv6/CIDR address.",
-				CustomType:  pvetypes.IPCIDRType{},
+				CustomType:  nettypes.IPCIDRType{},
 				Optional:    true,
 			},
 			"gateway6": schema.StringAttribute{
 				Description: "Default IPv6 gateway address.",
-				CustomType:  pvetypes.IPAddrType{},
+				CustomType:  nettypes.IPAddrType{},
 				Optional:    true,
 			},
 			"autostart": schema.BoolAttribute{

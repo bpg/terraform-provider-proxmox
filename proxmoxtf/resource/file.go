@@ -21,13 +21,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bpg/proxmox-api/rest"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"golang.org/x/exp/slices"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -416,7 +416,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	request := &api.FileUploadRequest{
+	request := &rest.FileUploadRequest{
 		ContentType: *contentType,
 		FileName:    *fileName,
 		File:        file,

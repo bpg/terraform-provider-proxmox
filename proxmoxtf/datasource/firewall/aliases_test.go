@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
 // TestAliasesSchemaInstantiation tests whether the AliasesSchema instance can be instantiated.
@@ -25,13 +25,13 @@ func TestAliasesSchemaInstantiation(t *testing.T) {
 func TestAliasesSchema(t *testing.T) {
 	t.Parallel()
 
-	s := AliasesSchema()
+	r := schema.Resource{Schema: AliasesSchema()}
 
-	structure.AssertComputedAttributes(t, s, []string{
+	test.AssertComputedAttributes(t, &r, []string{
 		mkAliasesAliasNames,
 	})
 
-	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
+	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
 		mkAliasesAliasNames: schema.TypeList,
 	})
 }

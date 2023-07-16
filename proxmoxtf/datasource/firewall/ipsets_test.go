@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
 // TestIPSetsSchemaInstantiation tests whether the IPSetsSchema instance can be instantiated.
@@ -25,13 +25,13 @@ func TestIPSetsSchemaInstantiation(t *testing.T) {
 func TestIPSetsSchema(t *testing.T) {
 	t.Parallel()
 
-	s := IPSetsSchema()
+	r := schema.Resource{Schema: IPSetsSchema()}
 
-	structure.AssertComputedAttributes(t, s, []string{
+	test.AssertComputedAttributes(t, &r, []string{
 		mkIPSetsIPSetNames,
 	})
 
-	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
+	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
 		mkIPSetsIPSetNames: schema.TypeList,
 	})
 }

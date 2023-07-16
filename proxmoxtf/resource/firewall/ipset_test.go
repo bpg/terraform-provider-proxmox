@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
 // TestIPSetInstantiation tests whether the IPSet
@@ -26,37 +26,37 @@ func TestIPSetInstantiation(t *testing.T) {
 func TestIPSetSchema(t *testing.T) {
 	t.Parallel()
 
-	s := IPSet().Schema
+	r := IPSet()
 
-	structure.AssertRequiredArguments(t, s, []string{
+	test.AssertRequiredArguments(t, r, []string{
 		mkIPSetName,
 	})
 
-	structure.AssertOptionalArguments(t, s, []string{
+	test.AssertOptionalArguments(t, r, []string{
 		mkSelectorVMID,
 		mkSelectorNodeName,
 		mkIPSetCIDR,
 		mkIPSetCIDRComment,
 	})
 
-	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
+	test.AssertValueTypes(t, r, map[string]schema.ValueType{
 		mkIPSetName:        schema.TypeString,
 		mkIPSetCIDR:        schema.TypeList,
 		mkIPSetCIDRComment: schema.TypeString,
 	})
 
-	nested := structure.AssertNestedSchemaExistence(t, s, mkIPSetCIDR).Schema
+	nested := test.AssertNestedSchemaExistence(t, r, mkIPSetCIDR)
 
-	structure.AssertRequiredArguments(t, nested, []string{
+	test.AssertRequiredArguments(t, nested, []string{
 		mkIPSetCIDRName,
 	})
 
-	structure.AssertOptionalArguments(t, nested, []string{
+	test.AssertOptionalArguments(t, nested, []string{
 		mkIPSetCIDRComment,
 		mkIPSetCIDRNoMatch,
 	})
 
-	structure.AssertValueTypes(t, nested, map[string]schema.ValueType{
+	test.AssertValueTypes(t, nested, map[string]schema.ValueType{
 		mkIPSetCIDRName:    schema.TypeString,
 		mkIPSetCIDRComment: schema.TypeString,
 		mkIPSetCIDRNoMatch: schema.TypeBool,

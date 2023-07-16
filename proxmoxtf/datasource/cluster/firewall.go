@@ -12,7 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	fw "github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
+	fw "github.com/bpg/proxmox-api/firewall"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/datasource/firewall"
 )
