@@ -400,6 +400,15 @@ func getSCSIHardwareValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+func getIDEInterfaceValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"ide0",
+		"ide1",
+		"ide2",
+		"ide3",
+	}, false))
+}
+
 // suppressIfListsAreEqualIgnoringOrder is a customdiff.SuppressionFunc that suppresses
 // changes to a list if the old and new lists are equal, ignoring the order of the
 // elements.
@@ -460,6 +469,7 @@ func getDiskInfo(resp *vms.GetResponseData, d *schema.ResourceData) map[string]*
 	storageDevices["ide0"] = resp.IDEDevice0
 	storageDevices["ide1"] = resp.IDEDevice1
 	storageDevices["ide2"] = resp.IDEDevice2
+	storageDevices["ide3"] = resp.IDEDevice3
 
 	storageDevices["sata0"] = resp.SATADevice0
 	storageDevices["sata1"] = resp.SATADevice1
