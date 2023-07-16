@@ -174,11 +174,9 @@ output "ubuntu_vm_public_key" {
       use `x86-64-v2-AES` (defaults to `qemu64`).
         - `486` - Intel 486.
         - `Broadwell`/`Broadwell-IBRS`/`Broadwell-noTSX`/`Broadwell-noTSX-IBRS` -
-          Intel Core Processor (Broadwell,
-          2014).
+          Intel Core Processor (Broadwell, 2014).
         - `Cascadelake-Server`/`Cascadelake-Server-noTSX`/`Cascadelake-Server-v2`/`Cascadelake-Server-v4`/`Cascadelake-Server-v5` -
-          Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (
-          2019).
+          Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (2019).
         - `Conroe` - Intel Celeron_4x0 (Conroe/Merom Class Core 2, 2006).
         - `Cooperlake`/`Cooperlake-v2`
         - `EPYC`/`EPYC-IBPB`/`EPYC-Milan`/`EPYC-Rome`/`EPYC-Rome-v2`/`EPYC-v3` -
@@ -204,8 +202,7 @@ output "ubuntu_vm_public_key" {
         - `Skylake-Client`/`Skylake-Client-IBRS`/`Skylake-Client-noTSX-IBRS`/`Skylake-Client-v4` -
           Intel Core Processor (Skylake, 2015).
         - `Skylake-Server`/`Skylake-Server-IBRS`/`Skylake-Server-noTSX-IBRS`/`Skylake-Server-v4`/`Skylake-Server-v5` -
-          Intel Xeon Processor (
-          Skylake, 2016).
+          Intel Xeon Processor (Skylake, 2016).
         - `Westmere`/`Westmere-IBRS` - Intel Westmere E56xx/L56xx/X56xx (
           Nehalem-C, 2010).
         - `athlon` - AMD Athlon.
