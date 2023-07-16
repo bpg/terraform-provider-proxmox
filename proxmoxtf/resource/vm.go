@@ -5035,17 +5035,24 @@ func vmUpdateDiskLocationAndSize(
 
 	// Perform a regular reboot in case it's necessary and haven't already been done.
 	if reboot {
-		rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
-
-		err := vmAPI.RebootVM(
-			ctx,
-			&vms.RebootRequestBody{
-				Timeout: &rebootTimeout,
-			},
-			rebootTimeout+30,
-		)
+		vmStatus, err := vmAPI.GetVMStatus(ctx)
 		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		if vmStatus.Status != "stopped" {
+			rebootTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutReboot).(int)
+
+			err := vmAPI.RebootVM(
+				ctx,
+				&vms.RebootRequestBody{
+					Timeout: &rebootTimeout,
+				},
+				rebootTimeout+30,
+			)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 		}
 	}
 
