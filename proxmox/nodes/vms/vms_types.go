@@ -1716,18 +1716,21 @@ func (r *CustomStartupOrder) UnmarshalJSON(b []byte) error {
 				if err != nil {
 					return fmt.Errorf("failed to parse int: %w", err)
 				}
+
 				r.Order = &order
 			case "up":
 				up, err := strconv.Atoi(v[1])
 				if err != nil {
 					return fmt.Errorf("failed to parse int: %w", err)
 				}
+
 				r.Up = &up
 			case "down":
 				down, err := strconv.Atoi(v[1])
 				if err != nil {
 					return fmt.Errorf("failed to parse int: %w", err)
 				}
+
 				r.Down = &down
 			}
 		}
