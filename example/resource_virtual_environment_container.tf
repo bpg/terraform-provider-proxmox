@@ -6,6 +6,11 @@ resource "proxmox_virtual_environment_container" "example_template" {
     size         = 10
   }
 
+  mount_point {
+    volume = "/mnt/bindmounts/shared"
+    path    = "/shared"
+  }
+
   initialization {
     dns {
       server = "1.1.1.1"
