@@ -84,7 +84,7 @@ type CustomFeatures struct {
 type CustomMountPoint struct {
 	ACL          *types.CustomBool `json:"acl,omitempty"          url:"acl,omitempty,int"`
 	Backup       *types.CustomBool `json:"backup,omitempty"       url:"backup,omitempty,int"`
-	DiskSize     *string           `json:"size,omitempty"         url:"size,omitempty"`
+	DiskSize     *string           `json:"size,omitempty"         url:"size,omitempty"` // read-only
 	Enabled      bool              `json:"-"                      url:"-"`
 	MountOptions *[]string         `json:"mountoptions,omitempty" url:"mountoptions,omitempty"`
 	MountPoint   string            `json:"mp"                     url:"mp"`
@@ -139,6 +139,11 @@ type CustomStartupBehavior struct {
 	Down  *int `json:"down,omitempty"  url:"down,omitempty"`
 	Order *int `json:"order,omitempty" url:"order,omitempty"`
 	Up    *int `json:"up,omitempty"    url:"up,omitempty"`
+}
+
+// CreateResponseBody contains the body from a container create response.
+type CreateResponseBody struct {
+	Data *string `json:"data,omitempty"`
 }
 
 // GetResponseBody contains the body from a user get response.
@@ -209,6 +214,11 @@ type GetStatusResponseData struct {
 	Tags             *string      `json:"tags,omitempty"`
 	Uptime           *int         `json:"uptime,omitempty"`
 	VMID             *int         `json:"vmid,omitempty"`
+}
+
+// StartResponseBody contains the body from a container start response.
+type StartResponseBody struct {
+	Data *string `json:"data,omitempty"`
 }
 
 // RebootRequestBody contains the body for a container reboot request.
@@ -315,7 +325,7 @@ func (r *CustomMountPoint) EncodeValues(key string, v *url.Values) error {
 	}
 
 	if r.Replicate != nil {
-		if *r.ReadOnly {
+		if *r.Replicate {
 			values = append(values, "replicate=1")
 		} else {
 			values = append(values, "replicate=0")

@@ -568,7 +568,7 @@ func Container() *schema.Resource {
 						},
 						mkResourceVirtualEnvironmentContainerMountPointSize: {
 							Type:             schema.TypeString,
-							Description:      "Volume size (read only value)",
+							Description:      "Volume size (only used for volume mount points)",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentContainerMountPointSize,
 							ValidateDiagFunc: getFileSizeValidator(),
@@ -1320,9 +1320,20 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		mountPointObject.Quota = &quota
 		mountPointObject.ReadOnly = &readOnly
 		mountPointObject.Replicate = &replicate
-		mountPointObject.ReadOnly = &shared
-		mountPointObject.DiskSize = &size
-		mountPointObject.Volume = volume
+		mountPointObject.Shared = &shared
+
+		if len(size) > 0 {
+			var ds types.DiskSize
+
+			ds, err = types.ParseDiskSize(size)
+			if err != nil {
+				return diag.Errorf("invalid disk size: %s", err.Error())
+			}
+
+			mountPointObject.Volume = fmt.Sprintf("%s:%d", volume, ds.InGigabytes())
+		} else {
+			mountPointObject.Volume = volume
+		}
 
 		if len(mountOptions) > 0 {
 			mountOptionsArray := make([]string, 0, len(mountPoint))
@@ -1481,7 +1492,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Tags = &tagsString
 	}
 
-	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
+	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody, 60)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1520,7 +1531,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 	containerAPI := api.Node(nodeName).Container(vmID)
 
 	// Start the container and wait for it to reach a running state before continuing.
-	err = containerAPI.StartContainer(ctx)
+	err = containerAPI.StartContainer(ctx, 60)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2425,7 +2436,6 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			readOnly := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReadOnly].(bool))
 			replicate := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReplicate].(bool))
 			shared := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointShared].(bool))
-			size := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointSize].(string)
 			volume := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointVolume].(string)
 
 			mountPointObject.ACL = &acl
@@ -2434,8 +2444,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			mountPointObject.Quota = &quota
 			mountPointObject.ReadOnly = &readOnly
 			mountPointObject.Replicate = &replicate
-			mountPointObject.ReadOnly = &shared
-			mountPointObject.DiskSize = &size
+			mountPointObject.Shared = &shared
 			mountPointObject.Volume = volume
 
 			if len(mountOptions) > 0 {
@@ -2586,7 +2595,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	if d.HasChange(mkResourceVirtualEnvironmentContainerStarted) && !bool(template) {
 		if started {
-			e = containerAPI.StartContainer(ctx)
+			e = containerAPI.StartContainer(ctx, 60)
 			if e != nil {
 				return diag.FromErr(e)
 			}

@@ -12,6 +12,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	containerfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 )
 
 // Client is an interface for accessing the Proxmox container API.
@@ -32,6 +33,13 @@ func (c *Client) ExpandPath(path string) string {
 	}
 
 	return ep
+}
+
+// Tasks returns a client for managing container tasks.
+func (c *Client) Tasks() *tasks.Client {
+	return &tasks.Client{
+		Client: c.Client,
+	}
 }
 
 // Firewall returns a client for managing the container firewall.
