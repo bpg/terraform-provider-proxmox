@@ -27,13 +27,34 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error 
 }
 
 // CreateContainer creates a container.
-func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, nil)
+func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody, timeout int) error {
+	taskID, err := c.CreateContainerAsync(ctx, d)
 	if err != nil {
-		return fmt.Errorf("error creating container: %w", err)
+		return err
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	if err != nil {
+		return fmt.Errorf("error waiting for container created: %w", err)
 	}
 
 	return nil
+}
+
+// CreateContainerAsync creates a container asynchronously.
+func (c *Client) CreateContainerAsync(ctx context.Context, d *CreateRequestBody) (*string, error) {
+	resBody := &CreateResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error creating container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // DeleteContainer deletes a container.
@@ -99,13 +120,34 @@ func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) 
 }
 
 // StartContainer starts a container.
-func (c *Client) StartContainer(ctx context.Context) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), nil, nil)
+func (c *Client) StartContainer(ctx context.Context, timeout int) error {
+	taskID, err := c.StartContainerAsync(ctx)
 	if err != nil {
-		return fmt.Errorf("error starting container: %w", err)
+		return err
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	if err != nil {
+		return fmt.Errorf("error waiting for container start: %w", err)
 	}
 
 	return nil
+}
+
+// StartContainerAsync starts a container asynchronously.
+func (c *Client) StartContainerAsync(ctx context.Context) (*string, error) {
+	resBody := &StartResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), nil, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error starting container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // StopContainer stops a container immediately.

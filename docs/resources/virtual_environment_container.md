@@ -45,6 +45,12 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     template_file_id = proxmox_virtual_environment_file.ubuntu_container_template.id
     type             = "ubuntu"
   }
+
+  mount_point {
+    volume = "/mnt/bindmounts/shared"
+    path   = "/shared"
+  }
+
 }
 
 resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
@@ -136,6 +142,23 @@ output "ubuntu_container_public_key" {
     - `dedicated` - (Optional) The dedicated memory in megabytes (defaults
       to `512`).
     - `swap` - (Optional) The swap size in megabytes (defaults to `0`).
+- `mount_point`
+    - `acl` (Optional) Explicitly enable or disable ACL support.
+    - `backup` (Optional) Whether to include the mount point in backups (only
+      used for volume mount points).
+    - `mount_options` (Optional) List of extra mount options.
+    - `path` (Required) Path to the mount point as seen from inside the
+      container.
+    - `quota` (Optional) Enable user quotas inside the container (not supported
+      with ZFS subvolumes).
+    - `read_only` (Optional) Read-only mount point.
+    - `replicate` (Optional) Will include this volume to a storage replica job.
+    - `shared` (Optional) Mark this non-volume mount point as available on all
+      nodes.
+    - `size` (Optional) Volume size (only for ZFS storage backed mount points).
+      Can be specified with a unit suffix (e.g. `10G`).
+    - `volume` (Required) Volume, device or directory to mount into the
+      container.
 - `network_interface` - (Optional) A network interface (multiple blocks
   supported).
     - `bridge` - (Optional) The name of the network bridge (defaults
@@ -143,7 +166,7 @@ output "ubuntu_container_public_key" {
     - `enabled` - (Optional) Whether to enable the network device (defaults
       to `true`).
     - `firewall` - (Optional) Whether this interface's firewall rules should be
-        used (defaults to `false`).
+      used (defaults to `false`).
     - `mac_address` - (Optional) The MAC address.
     - `mtu` - (Optional) Maximum transfer unit of the interface. Cannot be
       larger than the bridge's MTU.

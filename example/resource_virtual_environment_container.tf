@@ -62,6 +62,11 @@ resource "proxmox_virtual_environment_container" "example" {
     hostname = "terraform-provider-proxmox-example-lxc"
   }
 
+  mount_point {
+    volume = "/mnt/bindmounts/shared"
+    path    = "/shared"
+  }
+
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
   pool_id   = proxmox_virtual_environment_pool.example.id
   vm_id     = 2043
