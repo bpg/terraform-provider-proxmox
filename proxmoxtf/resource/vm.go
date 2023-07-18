@@ -3397,7 +3397,7 @@ func vmReadCustom(
 	for di, dd := range diskObjects {
 		disk := map[string]interface{}{}
 
-		if dd == nil || strings.HasPrefix(di, "ide") {
+		if dd == nil || dd.FileVolume == "none" || strings.HasPrefix(di, "ide") {
 			continue
 		}
 
