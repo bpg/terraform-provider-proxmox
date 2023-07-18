@@ -679,8 +679,7 @@ func VM() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{},
-					}, nil
+					return []interface{}{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
