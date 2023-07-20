@@ -679,14 +679,7 @@ func VM() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMEFIDiskDatastoreID:     dvResourceVirtualEnvironmentVMEFIDiskDatastoreID,
-							mkResourceVirtualEnvironmentVMEFIDiskType:            dvResourceVirtualEnvironmentVMEFIDiskType,
-							mkResourceVirtualEnvironmentVMEFIDiskFileFormat:      dvResourceVirtualEnvironmentVMEFIDiskFileFormat,
-							mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys: dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys,
-						},
-					}, nil
+					return []interface{}{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
