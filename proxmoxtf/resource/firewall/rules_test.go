@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
 // TestRuleInstantiation tests whether the Rules instance can be instantiated.
@@ -25,20 +25,20 @@ func TestRuleInstantiation(t *testing.T) {
 func TestRuleSchema(t *testing.T) {
 	t.Parallel()
 
-	rulesSchema := Rules().Schema
+	rules := Rules()
 
-	structure.AssertRequiredArguments(t, rulesSchema, []string{
+	test.AssertRequiredArguments(t, rules, []string{
 		MkRule,
 	})
 
-	structure.AssertOptionalArguments(t, rulesSchema, []string{
+	test.AssertOptionalArguments(t, rules, []string{
 		mkSelectorVMID,
 		mkSelectorNodeName,
 	})
 
-	ruleSchema := structure.AssertNestedSchemaExistence(t, rulesSchema, MkRule).Schema
+	nested := test.AssertNestedSchemaExistence(t, rules, MkRule)
 
-	structure.AssertOptionalArguments(t, ruleSchema, []string{
+	test.AssertOptionalArguments(t, nested, []string{
 		mkSecurityGroup,
 		mkRuleAction,
 		mkRuleType,
@@ -54,7 +54,7 @@ func TestRuleSchema(t *testing.T) {
 		mkRuleSPort,
 	})
 
-	structure.AssertValueTypes(t, ruleSchema, map[string]schema.ValueType{
+	test.AssertValueTypes(t, nested, map[string]schema.ValueType{
 		mkRulePos:     schema.TypeInt,
 		mkRuleAction:  schema.TypeString,
 		mkRuleType:    schema.TypeString,

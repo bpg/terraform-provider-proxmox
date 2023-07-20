@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
 // TestIPSetSchemaInstantiation tests whether the IPSetSchema instance can be instantiated.
@@ -25,32 +25,32 @@ func TestIPSetSchemaInstantiation(t *testing.T) {
 func TestIPSetSchema(t *testing.T) {
 	t.Parallel()
 
-	s := IPSetSchema()
+	r := schema.Resource{Schema: IPSetSchema()}
 
-	structure.AssertRequiredArguments(t, s, []string{
+	test.AssertRequiredArguments(t, &r, []string{
 		mkIPSetName,
 	})
 
-	structure.AssertComputedAttributes(t, s, []string{
+	test.AssertComputedAttributes(t, &r, []string{
 		mkIPSetCIDR,
 		mkIPSetCIDRComment,
 	})
 
-	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
+	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
 		mkIPSetName:        schema.TypeString,
 		mkIPSetCIDR:        schema.TypeList,
 		mkIPSetCIDRComment: schema.TypeString,
 	})
 
-	cirdSchema := structure.AssertNestedSchemaExistence(t, s, mkIPSetCIDR).Schema
+	cird := test.AssertNestedSchemaExistence(t, &r, mkIPSetCIDR)
 
-	structure.AssertComputedAttributes(t, cirdSchema, []string{
+	test.AssertComputedAttributes(t, cird, []string{
 		mkIPSetCIDRName,
 		mkIPSetCIDRNoMatch,
 		mkIPSetCIDRComment,
 	})
 
-	structure.AssertValueTypes(t, cirdSchema, map[string]schema.ValueType{
+	test.AssertValueTypes(t, cird, map[string]schema.ValueType{
 		mkIPSetCIDRName:    schema.TypeString,
 		mkIPSetCIDRNoMatch: schema.TypeBool,
 		mkIPSetCIDRComment: schema.TypeString,

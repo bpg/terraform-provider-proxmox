@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
 // TestSecurityGroupInstantiation tests whether the SecurityGroup instance can be instantiated.
@@ -26,20 +26,20 @@ func TestSecurityGroupInstantiation(t *testing.T) {
 func TestSecurityGroupSchema(t *testing.T) {
 	t.Parallel()
 
-	s := SecurityGroup().Schema
+	s := SecurityGroup()
 
-	structure.AssertRequiredArguments(t, s, []string{
+	test.AssertRequiredArguments(t, s, []string{
 		mkSecurityGroupName,
 	})
 
-	structure.AssertOptionalArguments(t, s, []string{
+	test.AssertOptionalArguments(t, s, []string{
 		mkSecurityGroupComment,
 	})
 
-	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
+	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkSecurityGroupName:    schema.TypeString,
 		mkSecurityGroupComment: schema.TypeString,
 	})
 
-	structure.AssertNestedSchemaExistence(t, s, firewall.MkRule)
+	test.AssertNestedSchemaExistence(t, s, firewall.MkRule)
 }

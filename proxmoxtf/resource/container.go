@@ -21,6 +21,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
@@ -571,7 +572,7 @@ func Container() *schema.Resource {
 							Description:      "Volume size (only used for volume mount points)",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentContainerMountPointSize,
-							ValidateDiagFunc: getFileSizeValidator(),
+							ValidateDiagFunc: validator.FileSize(),
 						},
 						mkResourceVirtualEnvironmentContainerMountPointVolume: {
 							Type:        schema.TypeString,
@@ -618,7 +619,7 @@ func Container() *schema.Resource {
 							DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 								return new == ""
 							},
-							ValidateDiagFunc: getMACAddressValidator(),
+							ValidateDiagFunc: validator.MACAddress(),
 						},
 						mkResourceVirtualEnvironmentContainerNetworkInterfaceName: {
 							Type:        schema.TypeString,
@@ -666,7 +667,7 @@ func Container() *schema.Resource {
 							Description:      "The ID of an OS template file",
 							Required:         true,
 							ForceNew:         true,
-							ValidateDiagFunc: getFileIDValidator(),
+							ValidateDiagFunc: validator.FileID(),
 						},
 						mkResourceVirtualEnvironmentContainerOperatingSystemType: {
 							Type:             schema.TypeString,
@@ -704,7 +705,7 @@ func Container() *schema.Resource {
 					Type:         schema.TypeString,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
-				DiffSuppressFunc:      suppressIfListsAreEqualIgnoringOrder,
+				DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
 				DiffSuppressOnRefresh: true,
 			},
 			mkResourceVirtualEnvironmentContainerTemplate: {
@@ -1123,7 +1124,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	nodeName := d.Get(mkResourceVirtualEnvironmentContainerNodeName).(string)
 	resource := Container()
 
-	consoleBlock, err := getSchemaBlock(
+	consoleBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentContainerConsole},
@@ -1140,7 +1141,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
 	consoleTTYCount := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleTTYCount].(int)
 
-	cpuBlock, err := getSchemaBlock(
+	cpuBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentContainerCPU},
@@ -1157,7 +1158,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
 
-	diskBlock, err := getSchemaBlock(
+	diskBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentContainerDisk},
@@ -1181,7 +1182,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	featuresBlock, err := getSchemaBlock(
+	featuresBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentContainerFeatures},
@@ -1282,7 +1283,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	memoryBlock, err := getSchemaBlock(
+	memoryBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentContainerMemory},
@@ -2273,7 +2274,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	// Prepare the new console configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerConsole) {
-		consoleBlock, err := getSchemaBlock(
+		consoleBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentContainerConsole},
@@ -2299,7 +2300,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerCPU) {
-		cpuBlock, err := getSchemaBlock(
+		cpuBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentContainerCPU},
@@ -2396,7 +2397,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerMemory) {
-		memoryBlock, err := getSchemaBlock(
+		memoryBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentContainerMemory},
@@ -2561,7 +2562,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentContainerOperatingSystem) {
-		operatingSystem, err := getSchemaBlock(
+		operatingSystem, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentContainerOperatingSystem},
