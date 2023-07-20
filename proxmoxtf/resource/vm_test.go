@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
@@ -436,4 +437,39 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMVGAMemory:  schema.TypeInt,
 		mkResourceVirtualEnvironmentVMVGAType:    schema.TypeString,
 	})
+}
+
+func Test_parseImportIDWIthNodeName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		value            string
+		valid            bool
+		expectedNodeName string
+		expectedID       string
+	}{
+		{"empty", "", false, "", ""},
+		{"missing slash", "invalid", false, "", ""},
+		{"valid", "host/id", true, "host", "id"},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			require := require.New(t)
+
+			nodeName, id, err := parseImportIDWithNodeName(tt.value)
+
+			if !tt.valid {
+				require.Error(err)
+				return
+			}
+
+			require.Nil(err)
+			require.Equal(tt.expectedNodeName, nodeName)
+			require.Equal(tt.expectedID, id)
+		})
+	}
 }

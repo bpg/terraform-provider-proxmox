@@ -8,6 +8,7 @@ package validator
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -73,4 +74,27 @@ func NodeNetworkInterfaceBondingTransmitHashPolicies() schema.SchemaValidateDiag
 		"layer2+3",
 		"layer3+4",
 	}, false))
+}
+
+func MACAddress() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
+		v, ok := i.(string)
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return
+		}
+
+		if v != "" {
+			r := regexp.MustCompile(`^[A-Z\d]{2}(:[A-Z\d]{2}){5}$`)
+			ok := r.MatchString(v)
+
+			if !ok {
+				es = append(es, fmt.Errorf("expected %s to be a valid MAC address (A0:B1:C2:D3:E4:F5), got %s", k, v))
+				return
+			}
+		}
+
+		return
+	})
 }

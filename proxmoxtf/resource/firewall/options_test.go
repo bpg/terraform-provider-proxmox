@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
 // TestOptionsInstantiation tests whether the Options instance can be instantiated.
@@ -25,9 +25,9 @@ func TestOptionsInstantiation(t *testing.T) {
 func TestOptionsSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Options().Schema
+	s := Options()
 
-	structure.AssertOptionalArguments(t, s, []string{
+	test.AssertOptionalArguments(t, s, []string{
 		mkDHCP,
 		mkEnabled,
 		mkIPFilter,
@@ -40,7 +40,7 @@ func TestOptionsSchema(t *testing.T) {
 		mkRadv,
 	})
 
-	structure.AssertValueTypes(t, s, map[string]schema.ValueType{
+	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkDHCP:        schema.TypeBool,
 		mkEnabled:     schema.TypeBool,
 		mkIPFilter:    schema.TypeBool,

@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
@@ -25,6 +26,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
@@ -305,7 +307,7 @@ func VM() *schema.Resource {
 							Description:      "The maximum amount of time to wait for data from the QEMU agent to become available",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMAgentTimeout,
-							ValidateDiagFunc: getTimeoutValidator(),
+							ValidateDiagFunc: validator.Timeout(),
 						},
 						mkResourceVirtualEnvironmentVMAgentTrim: {
 							Type:        schema.TypeBool,
@@ -318,7 +320,7 @@ func VM() *schema.Resource {
 							Description:      "The QEMU agent interface type",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMAgentType,
-							ValidateDiagFunc: getQEMUAgentTypeValidator(),
+							ValidateDiagFunc: validator.QEMUAgentType(),
 						},
 					},
 				},
@@ -370,7 +372,7 @@ func VM() *schema.Resource {
 				Description:      "The BIOS implementation",
 				Optional:         true,
 				Default:          dvResourceVirtualEnvironmentVMBIOS,
-				ValidateDiagFunc: getBIOSValidator(),
+				ValidateDiagFunc: validator.BIOS(),
 			},
 			mkResourceVirtualEnvironmentVMCDROM: {
 				Type:        schema.TypeList,
@@ -398,14 +400,14 @@ func VM() *schema.Resource {
 							Description:      "The file id",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMCDROMFileID,
-							ValidateDiagFunc: getFileIDValidator(),
+							ValidateDiagFunc: validator.FileID(),
 						},
 						mkResourceVirtualEnvironmentVMCDROMInterface: {
 							Type:             schema.TypeString,
 							Description:      "The CDROM interface",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMCDROMInterface,
-							ValidateDiagFunc: getIDEInterfaceValidator(),
+							ValidateDiagFunc: validator.IDEInterface(),
 						},
 					},
 				},
@@ -529,7 +531,7 @@ func VM() *schema.Resource {
 							Description:      "The emulated CPU type",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMCPUType,
-							ValidateDiagFunc: getCPUTypeValidator(),
+							ValidateDiagFunc: validator.CPUType(),
 						},
 						mkResourceVirtualEnvironmentVMCPUUnits: {
 							Type:        schema.TypeInt,
@@ -588,7 +590,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Computed:         true,
-							ValidateDiagFunc: getFileFormatValidator(),
+							ValidateDiagFunc: validator.FileFormat(),
 						},
 						mkResourceVirtualEnvironmentVMDiskFileID: {
 							Type:             schema.TypeString,
@@ -596,7 +598,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMDiskFileID,
-							ValidateDiagFunc: getFileIDValidator(),
+							ValidateDiagFunc: validator.FileID(),
 						},
 						mkResourceVirtualEnvironmentVMDiskSize: {
 							Type:             schema.TypeInt,
@@ -702,7 +704,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Computed:         true,
-							ValidateDiagFunc: getFileFormatValidator(),
+							ValidateDiagFunc: validator.FileFormat(),
 						},
 						mkResourceVirtualEnvironmentVMEFIDiskType: {
 							Type:        schema.TypeString,
@@ -882,7 +884,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
-							ValidateDiagFunc: getFileIDValidator(),
+							ValidateDiagFunc: validator.FileID(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationVendorDataFileID: {
 							Type:             schema.TypeString,
@@ -890,7 +892,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationVendorDataFileID,
-							ValidateDiagFunc: getFileIDValidator(),
+							ValidateDiagFunc: validator.FileID(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID: {
 							Type:             schema.TypeString,
@@ -898,7 +900,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID,
-							ValidateDiagFunc: getFileIDValidator(),
+							ValidateDiagFunc: validator.FileID(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationMetaDataFileID: {
 							Type:             schema.TypeString,
@@ -906,7 +908,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationMetaDataFileID,
-							ValidateDiagFunc: getFileIDValidator(),
+							ValidateDiagFunc: validator.FileID(),
 						},
 						mkResourceVirtualEnvironmentVMInitializationType: {
 							Type:             schema.TypeString,
@@ -914,7 +916,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationType,
-							ValidateDiagFunc: getCloudInitTypeValidator(),
+							ValidateDiagFunc: validator.CloudInitType(),
 						},
 					},
 				},
@@ -992,7 +994,7 @@ func VM() *schema.Resource {
 				Description:      "The keyboard layout",
 				Optional:         true,
 				Default:          dvResourceVirtualEnvironmentVMKeyboardLayout,
-				ValidateDiagFunc: getKeyboardLayoutValidator(),
+				ValidateDiagFunc: validator.KeyboardLayout(),
 			},
 			mkResourceVirtualEnvironmentVMMachine: {
 				Type:        schema.TypeString,
@@ -1091,14 +1093,14 @@ func VM() *schema.Resource {
 							Description:      "The MAC address",
 							Optional:         true,
 							Computed:         true,
-							ValidateDiagFunc: getMACAddressValidator(),
+							ValidateDiagFunc: validator.MACAddress(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceModel: {
 							Type:             schema.TypeString,
 							Description:      "The model",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMNetworkDeviceModel,
-							ValidateDiagFunc: getNetworkDeviceModelValidator(),
+							ValidateDiagFunc: validator.NetworkDeviceModel(),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit: {
 							Type:        schema.TypeFloat,
@@ -1215,7 +1217,7 @@ func VM() *schema.Resource {
 					Type:         schema.TypeString,
 					ValidateFunc: validation.StringIsNotEmpty,
 				},
-				DiffSuppressFunc:      suppressIfListsAreEqualIgnoringOrder,
+				DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
 				DiffSuppressOnRefresh: true,
 			},
 			mkResourceVirtualEnvironmentVMTemplate: {
@@ -1287,14 +1289,14 @@ func VM() *schema.Resource {
 							Description:      "The VGA memory in megabytes (4-512 MB)",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMVGAMemory,
-							ValidateDiagFunc: getVGAMemoryValidator(),
+							ValidateDiagFunc: validator.VGAMemory(),
 						},
 						mkResourceVirtualEnvironmentVMVGAType: {
 							Type:             schema.TypeString,
 							Description:      "The VGA type",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMVGAType,
-							ValidateDiagFunc: getVGATypeValidator(),
+							ValidateDiagFunc: validator.VGAType(),
 						},
 					},
 				},
@@ -1315,7 +1317,7 @@ func VM() *schema.Resource {
 				Description:      "The SCSI hardware type",
 				Optional:         true,
 				Default:          dvResourceVirtualEnvironmentVMSCSIHardware,
-				ValidateDiagFunc: getSCSIHardwareValidator(),
+				ValidateDiagFunc: validator.SCSIHardware(),
 			},
 		},
 		CreateContext: vmCreate,
@@ -1982,7 +1984,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	acpi := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMACPI).(bool))
 
-	agentBlock, err := getSchemaBlock(
+	agentBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentVMAgent},
@@ -2005,7 +2007,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	bios := d.Get(mkResourceVirtualEnvironmentVMBIOS).(string)
 
-	cdromBlock, err := getSchemaBlock(
+	cdromBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentVMCDROM},
@@ -2027,7 +2029,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		cdromFileID = "cdrom"
 	}
 
-	cpuBlock, err := getSchemaBlock(
+	cpuBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentVMCPU},
@@ -2095,7 +2097,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	pciDeviceObjects := vmGetHostPCIDeviceObjects(d)
 
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
-	memoryBlock, err := getSchemaBlock(
+	memoryBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentVMMemory},
@@ -2118,7 +2120,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
 
-	operatingSystem, err := getSchemaBlock(
+	operatingSystem, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentVMOperatingSystem},
@@ -2728,7 +2730,7 @@ func vmGetDiskDeviceObjects(
 		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
 
-		speedBlock, err := getSchemaBlock(
+		speedBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentVMDisk, mkResourceVirtualEnvironmentVMDiskSpeed},
@@ -3023,7 +3025,7 @@ func vmGetSerialDeviceValidator() schema.SchemaValidateDiagFunc {
 func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) {
 	resource := VM()
 
-	vgaBlock, err := getSchemaBlock(
+	vgaBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
 		[]string{mkResourceVirtualEnvironmentVMVGA},
@@ -4133,7 +4135,7 @@ func vmReadNetworkValues(
 	if started {
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
 			resource := VM()
-			agentBlock, err := getSchemaBlock(
+			agentBlock, err := structure.GetSchemaBlock(
 				resource,
 				d,
 				[]string{mkResourceVirtualEnvironmentVMAgent},
@@ -4460,7 +4462,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new agent configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMAgent) {
-		agentBlock, err := getSchemaBlock(
+		agentBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentVMAgent},
@@ -4520,7 +4522,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new CD-ROM configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCDROM) {
-		cdromBlock, err := getSchemaBlock(
+		cdromBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentVMCDROM},
@@ -4571,7 +4573,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMCPU) {
-		cpuBlock, err := getSchemaBlock(
+		cpuBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentVMCPU},
@@ -4733,7 +4735,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMMemory) {
-		memoryBlock, err := getSchemaBlock(
+		memoryBlock, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentVMMemory},
@@ -4782,7 +4784,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMOperatingSystem) {
-		operatingSystem, err := getSchemaBlock(
+		operatingSystem, err := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkResourceVirtualEnvironmentVMOperatingSystem},
@@ -5118,4 +5120,137 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	d.SetId("")
 
 	return nil
+}
+
+func diskDigitPrefix(s string) string {
+	for i, r := range s {
+		if unicode.IsDigit(r) {
+			return s[:i]
+		}
+	}
+	return s
+}
+
+func getDiskInfo(resp *vms.GetResponseData, d *schema.ResourceData) map[string]*vms.CustomStorageDevice {
+	currentDisk := d.Get(mkResourceVirtualEnvironmentVMDisk)
+
+	currentDiskList := currentDisk.([]interface{})
+	currentDiskMap := map[string]map[string]interface{}{}
+
+	for _, v := range currentDiskList {
+		diskMap := v.(map[string]interface{})
+		diskInterface := diskMap[mkResourceVirtualEnvironmentVMDiskInterface].(string)
+
+		currentDiskMap[diskInterface] = diskMap
+	}
+
+	storageDevices := map[string]*vms.CustomStorageDevice{}
+
+	storageDevices["ide0"] = resp.IDEDevice0
+	storageDevices["ide1"] = resp.IDEDevice1
+	storageDevices["ide2"] = resp.IDEDevice2
+	storageDevices["ide3"] = resp.IDEDevice3
+
+	storageDevices["sata0"] = resp.SATADevice0
+	storageDevices["sata1"] = resp.SATADevice1
+	storageDevices["sata2"] = resp.SATADevice2
+	storageDevices["sata3"] = resp.SATADevice3
+	storageDevices["sata4"] = resp.SATADevice4
+	storageDevices["sata5"] = resp.SATADevice5
+
+	storageDevices["scsi0"] = resp.SCSIDevice0
+	storageDevices["scsi1"] = resp.SCSIDevice1
+	storageDevices["scsi2"] = resp.SCSIDevice2
+	storageDevices["scsi3"] = resp.SCSIDevice3
+	storageDevices["scsi4"] = resp.SCSIDevice4
+	storageDevices["scsi5"] = resp.SCSIDevice5
+	storageDevices["scsi6"] = resp.SCSIDevice6
+	storageDevices["scsi7"] = resp.SCSIDevice7
+	storageDevices["scsi8"] = resp.SCSIDevice8
+	storageDevices["scsi9"] = resp.SCSIDevice9
+	storageDevices["scsi10"] = resp.SCSIDevice10
+	storageDevices["scsi11"] = resp.SCSIDevice11
+	storageDevices["scsi12"] = resp.SCSIDevice12
+	storageDevices["scsi13"] = resp.SCSIDevice13
+
+	storageDevices["virtio0"] = resp.VirtualIODevice0
+	storageDevices["virtio1"] = resp.VirtualIODevice1
+	storageDevices["virtio2"] = resp.VirtualIODevice2
+	storageDevices["virtio3"] = resp.VirtualIODevice3
+	storageDevices["virtio4"] = resp.VirtualIODevice4
+	storageDevices["virtio5"] = resp.VirtualIODevice5
+	storageDevices["virtio6"] = resp.VirtualIODevice6
+	storageDevices["virtio7"] = resp.VirtualIODevice7
+	storageDevices["virtio8"] = resp.VirtualIODevice8
+	storageDevices["virtio9"] = resp.VirtualIODevice9
+	storageDevices["virtio10"] = resp.VirtualIODevice10
+	storageDevices["virtio11"] = resp.VirtualIODevice11
+	storageDevices["virtio12"] = resp.VirtualIODevice12
+	storageDevices["virtio13"] = resp.VirtualIODevice13
+	storageDevices["virtio14"] = resp.VirtualIODevice14
+	storageDevices["virtio15"] = resp.VirtualIODevice15
+
+	for k, v := range storageDevices {
+		if v != nil {
+			if currentDiskMap[k] != nil {
+				if currentDiskMap[k][mkResourceVirtualEnvironmentVMDiskFileID] != nil {
+					fileID := currentDiskMap[k][mkResourceVirtualEnvironmentVMDiskFileID].(string)
+					v.FileID = &fileID
+				}
+			}
+			// defensive copy of the loop variable
+			iface := k
+			v.Interface = &iface
+		}
+	}
+
+	return storageDevices
+}
+
+// getDiskDatastores returns a list of the used datastores in a VM
+func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string {
+	storageDevices := getDiskInfo(vm, d)
+	datastoresSet := map[string]int{}
+
+	for _, diskInfo := range storageDevices {
+		// Ignore empty storage devices and storage devices (like ide) which may not have any media mounted
+		if diskInfo == nil || diskInfo.FileVolume == "none" {
+			continue
+		}
+		fileIDParts := strings.Split(diskInfo.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
+	if vm.EFIDisk != nil {
+		fileIDParts := strings.Split(vm.EFIDisk.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
+	datastores := []string{}
+	for datastore := range datastoresSet {
+		datastores = append(datastores, datastore)
+	}
+
+	return datastores
+}
+
+func getPCIInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomPCIDevice {
+	pciDevices := map[string]*vms.CustomPCIDevice{}
+
+	pciDevices["hostpci0"] = resp.PCIDevice0
+	pciDevices["hostpci1"] = resp.PCIDevice1
+	pciDevices["hostpci2"] = resp.PCIDevice2
+	pciDevices["hostpci3"] = resp.PCIDevice3
+
+	return pciDevices
+}
+
+func parseImportIDWithNodeName(id string) (string, string, error) {
+	nodeName, id, found := strings.Cut(id, "/")
+
+	if !found {
+		return "", "", fmt.Errorf("unexpected format of ID (%s), expected node/id", id)
+	}
+
+	return nodeName, id, nil
 }
