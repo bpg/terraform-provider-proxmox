@@ -5121,6 +5121,7 @@ func diskDigitPrefix(s string) string {
 			return s[:i]
 		}
 	}
+
 	return s
 }
 
@@ -5200,7 +5201,7 @@ func getDiskInfo(resp *vms.GetResponseData, d *schema.ResourceData) map[string]*
 	return storageDevices
 }
 
-// getDiskDatastores returns a list of the used datastores in a VM
+// getDiskDatastores returns a list of the used datastores in a VM.
 func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string {
 	storageDevices := getDiskInfo(vm, d)
 	datastoresSet := map[string]int{}
@@ -5210,6 +5211,7 @@ func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string
 		if diskInfo == nil || diskInfo.FileVolume == "none" {
 			continue
 		}
+
 		fileIDParts := strings.Split(diskInfo.FileVolume, ":")
 		datastoresSet[fileIDParts[0]] = 1
 	}

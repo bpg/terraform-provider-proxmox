@@ -27,9 +27,18 @@ func MergeSchema(dst, src map[string]*schema.Schema) {
 	}
 }
 
-func GetSchemaBlock(r *schema.Resource, d *schema.ResourceData, k []string, i int, allowDefault bool) (map[string]interface{}, error) {
+// GetSchemaBlock returns a map[string]interface{} of a nested resource by key(s) from a schema.ResourceData.
+func GetSchemaBlock(
+	r *schema.Resource,
+	d *schema.ResourceData,
+	k []string,
+	i int,
+	allowDefault bool,
+) (map[string]interface{}, error) {
 	var resourceBlock map[string]interface{}
+
 	var resourceData interface{}
+
 	var resourceSchema *schema.Schema
 
 	for ki, kv := range k {
@@ -55,9 +64,8 @@ func GetSchemaBlock(r *schema.Resource, d *schema.ResourceData, k []string, i in
 	if len(list) == 0 {
 		if allowDefault {
 			listDefault, err := resourceSchema.DefaultValue()
-
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to get default value for %s: %w", strings.Join(k, "."), err)
 			}
 
 			list = listDefault.([]interface{})

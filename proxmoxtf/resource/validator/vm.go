@@ -42,6 +42,7 @@ func VMID() schema.SchemaValidateDiagFunc {
 	})
 }
 
+// BIOS returns a schema validation function for a BIOS type.
 func BIOS() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"ovmf",
@@ -49,6 +50,7 @@ func BIOS() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// ContentType returns a schema validation function for a content type on a storage device.
 func ContentType() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"backup",
@@ -58,6 +60,7 @@ func ContentType() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// CPUType returns a schema validation function for a CPU type.
 func CPUType() schema.SchemaValidateDiagFunc {
 	standardTypes := []string{
 		"486",
@@ -141,14 +144,17 @@ func CPUType() schema.SchemaValidateDiagFunc {
 	))
 }
 
+// NetworkDeviceModel is a schema validation function for network device models.
 func NetworkDeviceModel() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"e1000", "rtl8139", "virtio", "vmxnet3"}, false))
 }
 
+// QEMUAgentType is a schema validation function for QEMU agent types.
 func QEMUAgentType() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"isa", "virtio"}, false))
 }
 
+// KeyboardLayout is a schema validation function for keyboard layouts.
 func KeyboardLayout() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"da",
@@ -179,30 +185,35 @@ func KeyboardLayout() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// Timeout is a schema validation function for timeouts.
 func Timeout() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
+	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)
+
+		var ws []string
+		var es []error
 
 		if !ok {
 			es = append(es, fmt.Errorf("expected type of %s to be string", k))
-			return
+			return ws, es
 		}
 
 		_, err := time.ParseDuration(v)
-
 		if err != nil {
 			es = append(es, fmt.Errorf("expected value of %s to be a duration - got: %s", k, v))
-			return
+			return ws, es
 		}
 
-		return
+		return ws, es
 	})
 }
 
+// VGAMemory is a schema validation function for VGA memory sizes.
 func VGAMemory() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.IntBetween(4, 512))
 }
 
+// VGAType is a schema validation function for VGA device types.
 func VGAType() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"cirrus",
@@ -220,6 +231,7 @@ func VGAType() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// SCSIHardware is a schema validation function for SCSI hardware.
 func SCSIHardware() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"lsi",
@@ -231,6 +243,7 @@ func SCSIHardware() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// IDEInterface is a schema validation function for IDE interfaces.
 func IDEInterface() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"ide0",
@@ -240,6 +253,7 @@ func IDEInterface() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// CloudInitType is a schema validation function for cloud-init types.
 func CloudInitType() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"configdrive2",

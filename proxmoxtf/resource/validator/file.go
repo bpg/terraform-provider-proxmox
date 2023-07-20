@@ -16,6 +16,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/internal/types"
 )
 
+// FileFormat returns a schema validation function for a file format.
 func FileFormat() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"qcow2",
@@ -24,13 +25,17 @@ func FileFormat() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// FileID returns a schema validation function for a file identifier.
 func FileID() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (ws []string, es []error) {
+	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)
+
+		var ws []string
+		var es []error
 
 		if !ok {
 			es = append(es, fmt.Errorf("expected type of %s to be string", k))
-			return
+			return ws, es
 		}
 
 		if v != "" {
@@ -38,15 +43,18 @@ func FileID() schema.SchemaValidateDiagFunc {
 			ok := r.MatchString(v)
 
 			if !ok {
-				es = append(es, fmt.Errorf("expected %s to be a valid file identifier (datastore-name:iso/some-file.img), got %s", k, v))
-				return
+				es = append(es, fmt.Errorf(
+					"expected %s to be a valid file identifier (datastore-name:iso/some-file.img), got %s", k, v,
+				))
+				return ws, es
 			}
 		}
 
-		return
+		return ws, es
 	})
 }
 
+// FileSize is a schema validation function for file size.
 func FileSize() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)
