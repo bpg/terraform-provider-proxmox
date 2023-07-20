@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.25.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.24.2...v0.25.0) (2023-07-20)
+
+
+### Features
+
+* **lxc:** add support for lxc mount points ([#394](https://github.com/bpg/terraform-provider-proxmox/issues/394)) ([beef9b1](https://github.com/bpg/terraform-provider-proxmox/commit/beef9b1219dc078cc7a3adeae9e6162235c603f8))
+
+
+### Bug Fixes
+
+* **vm:** Don't add an extra efi_disk entry ([#435](https://github.com/bpg/terraform-provider-proxmox/issues/435)) ([6781c03](https://github.com/bpg/terraform-provider-proxmox/commit/6781c03ca1eb794ed9e5ab322e1b73d57969b721))
+* **vm:** fix for the api call upon empty disks ([#436](https://github.com/bpg/terraform-provider-proxmox/issues/436)) ([aea9846](https://github.com/bpg/terraform-provider-proxmox/commit/aea9846c6f5399d721458f21e94f253922103432))
+
+
+### Miscellaneous
+
+* cleanup resource validators & utility code ([#438](https://github.com/bpg/terraform-provider-proxmox/issues/438)) ([b2a27f3](https://github.com/bpg/terraform-provider-proxmox/commit/b2a27f3ccfa6e318d2243bae2c855f47e5523240))
+* **deps:** bump github.com/hashicorp/terraform-plugin-mux from 0.11.1 to 0.11.2 ([#432](https://github.com/bpg/terraform-provider-proxmox/issues/432)) ([4324b29](https://github.com/bpg/terraform-provider-proxmox/commit/4324b294239bca04de550027402deabe1e6f1615))
+* **deps:** bump github.com/skeema/knownhosts from 1.1.1 to 1.2.0 ([#433](https://github.com/bpg/terraform-provider-proxmox/issues/433)) ([b9ee3ae](https://github.com/bpg/terraform-provider-proxmox/commit/b9ee3ae10d942b3700fa057553471c9ed47ce4d4))
+
 ## [0.24.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.24.1...v0.24.2) (2023-07-16)
 
 
