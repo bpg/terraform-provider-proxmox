@@ -39,7 +39,10 @@ provider "proxmox" {
 `
 )
 
+// AccMuxProviders returns a map of mux servers for the acceptance tests.
 func AccMuxProviders(ctx context.Context, t *testing.T) map[string]func() (tfprotov6.ProviderServer, error) {
+	t.Helper()
+
 	// Init sdkV2 provider
 	sdkV2Provider, err := tf5to6server.UpgradeServer(
 		ctx,

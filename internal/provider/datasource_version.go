@@ -53,7 +53,7 @@ func (d *versionDatasource) Metadata(
 // Schema defines the schema for the data source.
 func (d *versionDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieve the API version details.",
+		Description: "Retrieves API version details.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "Placeholder identifier attribute.",

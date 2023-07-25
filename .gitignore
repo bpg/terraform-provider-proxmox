@@ -12,6 +12,7 @@ bin/
 cache/
 dist/
 modules-dev/
+docs-gen/
 
 .terraform/
 .vagrant/

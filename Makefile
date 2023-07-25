@@ -23,6 +23,7 @@ clean:
 	rm -rf ./dist
 	rm -rf ./cache
 	rm -rf ./build
+	rm -rf ./docs-gen
 
 build:
 	mkdir -p "$(TERRAFORM_PLUGIN_OUTPUT_DIRECTORY)"
@@ -80,6 +81,10 @@ lint:
 release-build:
 	go run -modfile=tools/go.mod github.com/goreleaser/goreleaser build --clean --skip-validate
 
+docs:
+	@mkdir -p ./docs-gen
+	@cd ./tools && go generate tools.go
+
 targets: $(TARGETS)
 
 $(TARGETS):
@@ -90,4 +95,4 @@ $(TARGETS):
 		-j "dist/$(NAME)_v$(VERSION)-custom_$@_amd64.zip" \
 		"dist/$@/$(NAME)_v$(VERSION)-custom"
 
-.PHONY: clean build example example-apply example-destroy example-init example-plan fmt init targets test $(TARGETS)
+.PHONY: clean build example example-apply example-destroy example-init example-plan fmt init targets test docs $(TARGETS)
