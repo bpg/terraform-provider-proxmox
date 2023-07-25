@@ -13,7 +13,7 @@ type ResponseBody struct {
 
 // ResponseData contains the data from a version response.
 type ResponseData struct {
-	Keyboard     string `json:"keyboard"`
+	Console      string `json:"console"`
 	Release      string `json:"release"`
 	RepositoryID string `json:"repoid"`
 	Version      string `json:"version"`

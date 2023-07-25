@@ -354,7 +354,9 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 }
 
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		NewVersionDataSource,
+	}
 }
 
 type apiResolver struct {

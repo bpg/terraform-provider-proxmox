@@ -31,6 +31,10 @@ import (
 // can be customized.
 //go:generate go run -modfile=tools/go.mod github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
+// these will be set by the goreleaser configuration
+// to appropriate values for the compiled binary.
+var version = "dev"
+
 func main() {
 	ctx := context.Background()
 
@@ -52,7 +56,7 @@ func main() {
 	}
 
 	providers := []func() tfprotov6.ProviderServer{
-		providerserver.NewProtocol6(newProvider.New("dev")()),
+		providerserver.NewProtocol6(newProvider.New(version)()),
 		func() tfprotov6.ProviderServer {
 			return upgradedSdkServer
 		},
