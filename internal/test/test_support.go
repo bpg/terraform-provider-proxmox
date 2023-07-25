@@ -67,8 +67,11 @@ func AccMuxProviders(ctx context.Context, t *testing.T) map[string]func() (tfpro
 	// Init mux servers
 	muxServers := map[string]func() (tfprotov6.ProviderServer, error){
 		"proxmox": func() (tfprotov6.ProviderServer, error) {
-			muxServer, err := tf6muxserver.NewMuxServer(ctx, providers...)
-			return muxServer, fmt.Errorf("failed to create mux server: %w", err)
+			muxServer, e := tf6muxserver.NewMuxServer(ctx, providers...)
+			if e != nil {
+				return nil, fmt.Errorf("failed to create mux server: %w", e)
+			}
+			return muxServer, nil
 		},
 	}
 

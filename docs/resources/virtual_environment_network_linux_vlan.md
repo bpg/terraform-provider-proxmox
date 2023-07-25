@@ -45,3 +45,13 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
 - `id` (String) A unique identifier with format '<node name>:<iface>'
 - `interface` (String) The VLAN raw device.
 - `vlan` (Number) The VLAN tag
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+# Interfaces can be imported using the `node_name:iface` format, e.g.,
+
+terraform import proxmox_virtual_environment_network_linux_vlan.vlan99 pve:vlan99
+```

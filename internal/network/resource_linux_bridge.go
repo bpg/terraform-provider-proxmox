@@ -464,7 +464,7 @@ func (r *linuxBridgeResource) ImportState(
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: node_name:iface. Got: %q", req.ID),
+			fmt.Sprintf("Expected import identifier with format: `node_name:iface`. Got: %q", req.ID),
 		)
 
 		return

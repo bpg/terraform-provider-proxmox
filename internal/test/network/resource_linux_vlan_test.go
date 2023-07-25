@@ -15,7 +15,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/internal/test"
 )
 
-func Test_LinuxVLANResource(t *testing.T) {
+func TestLinuxVLANResource(t *testing.T) {
 	t.Parallel()
 
 	accProviders := test.AccMuxProviders(context.Background(), t)

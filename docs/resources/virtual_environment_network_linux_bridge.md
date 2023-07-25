@@ -55,3 +55,13 @@ resource "proxmox_virtual_environment_network_linux_bridge" "vmbr99" {
 ### Read-Only
 
 - `id` (String) A unique identifier with format '<node name>:<iface>'
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+# Interfaces can be imported using the `node_name:iface` format, e.g.,
+
+terraform import proxmox_virtual_environment_network_linux_bridge.vmbr99 pve:vmbr99
+```
