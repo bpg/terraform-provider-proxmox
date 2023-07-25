@@ -30,16 +30,16 @@ func TestLinuxVLANResource(t *testing.T) {
 				Config: test.ProviderConfig + `
 resource "proxmox_virtual_environment_network_linux_vlan" "test" {
 	node_name = "pve"
-	name = "ens18.33"
+	name = "eno0.33"
 	comment = "created by terraform"
 	mtu = 1499
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", "ens18.33"),
+					resource.TestCheckResourceAttr(resourceName, "name", "eno0.33"),
 					resource.TestCheckResourceAttr(resourceName, "comment", "created by terraform"),
 					resource.TestCheckResourceAttr(resourceName, "vlan", "33"),
-					resource.TestCheckResourceAttr(resourceName, "interface", "ens18"),
+					resource.TestCheckResourceAttr(resourceName, "interface", "eno0"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -54,7 +54,7 @@ resource "proxmox_virtual_environment_network_linux_vlan" "test" {
 				Config: test.ProviderConfig + `
 resource "proxmox_virtual_environment_network_linux_vlan" "test" {
 	node_name = "pve"
-	name = "ens18.33"
+	name = "eno0.33"
 	address = "1.1.1.1/24"
 	address6 = "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"
 	comment = "updated by terraform"
@@ -62,12 +62,12 @@ resource "proxmox_virtual_environment_network_linux_vlan" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", "ens18.33"),
+					resource.TestCheckResourceAttr(resourceName, "name", "eno0.33"),
 					resource.TestCheckResourceAttr(resourceName, "address", "1.1.1.1/24"),
 					resource.TestCheckResourceAttr(resourceName, "address6", "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"),
 					resource.TestCheckResourceAttr(resourceName, "comment", "updated by terraform"),
 					resource.TestCheckResourceAttr(resourceName, "vlan", "33"),
-					resource.TestCheckResourceAttr(resourceName, "interface", "ens18"),
+					resource.TestCheckResourceAttr(resourceName, "interface", "eno0"),
 					resource.TestCheckNoResourceAttr(resourceName, "mtu"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
