@@ -29,3 +29,5 @@ import (
 // Temporary: while migrating to the TF framework, we need to copy the generated docs to the right place
 // for the resources / data sources that have been migrated.
 //go:generate cp ../docs-gen/data-sources/virtual_environment_version.md ../docs/data-sources/
+//go:generate cp ../docs-gen/resources/virtual_environment_network_linux_bridge.md ../docs/resources/
+//go:generate cp ../docs-gen/resources/virtual_environment_network_linux_vlan.md ../docs/resources/

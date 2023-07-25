@@ -175,8 +175,9 @@ func (r *linuxBridgeResource) Schema(
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
-				Description: "The interface name.",
-				Required:    true,
+				Description:         "The interface name.",
+				MarkdownDescription: "The interface name. Must be `vmbrN`, where N is a number between 0 and 9999.",
+				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
 						regexp.MustCompile(`^vmbr(\d{1,4})$`),
@@ -208,7 +209,7 @@ func (r *linuxBridgeResource) Schema(
 				Optional:    true,
 			},
 			"autostart": schema.BoolAttribute{
-				Description: "Automatically start interface on boot.",
+				Description: "Automatically start interface on boot (defaults to `true`).",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
@@ -229,7 +230,7 @@ func (r *linuxBridgeResource) Schema(
 				ElementType: types.StringType,
 			},
 			"vlan_aware": schema.BoolAttribute{
-				Description: "Whether the interface bridge is VLAN aware.",
+				Description: "Whether the interface bridge is VLAN aware (defaults to `true`).",
 				Optional:    true,
 				Computed:    true,
 			},
