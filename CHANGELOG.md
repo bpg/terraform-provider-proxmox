@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.26.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.25.0...v0.26.0) (2023-07-29)
+
+
+### Features
+
+* **core:** migrate `version` datasource to TF plugin framework ([#440](https://github.com/bpg/terraform-provider-proxmox/issues/440)) ([a9a7329](https://github.com/bpg/terraform-provider-proxmox/commit/a9a7329d9fef42466f6fe2a7eeff9645100459c6))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework from 1.3.2 to 1.3.3 ([#439](https://github.com/bpg/terraform-provider-proxmox/issues/439)) ([d82a08d](https://github.com/bpg/terraform-provider-proxmox/commit/d82a08dcb434e3b2aa0241332aeb3b43eac372d1))
+* **docs:** Update README.md  ([#442](https://github.com/bpg/terraform-provider-proxmox/issues/442)) ([8e2d180](https://github.com/bpg/terraform-provider-proxmox/commit/8e2d18053f0fca807ecd81cbf2c4a3b5169f0d49))
+
 ## [0.25.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.24.2...v0.25.0) (2023-07-20)
 
 
