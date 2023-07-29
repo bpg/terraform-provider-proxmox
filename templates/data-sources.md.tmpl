@@ -1,0 +1,20 @@
+---
+layout: page
+title: {{.Name}}
+parent: Data Sources
+subcategory: Virtual Environment
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Type}}: {{.Name}}
+
+{{ .Description | trimspace }}
+
+{{ if .HasExample -}}
+## Example Usage
+
+{{ printf "{{tffile %q}}" .ExampleFile }}
+{{- end }}
+
+{{ .SchemaMarkdown | trimspace }}

@@ -23,13 +23,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 )
 
-// If you do not have terraform installed, you can remove the formatting command, but it's suggested to
-// ensure the documentation is formatted properly.
-//go:generate terraform fmt -recursive ./example/
-
-// Run the docs generation tool, check its repository for more information on how it works and how docs
-// can be customized.
-//go:generate go run -modfile=tools/go.mod github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+// these will be set by the goreleaser configuration
+// to appropriate values for the compiled binary.
+var version = "dev"
 
 func main() {
 	ctx := context.Background()
@@ -52,7 +48,7 @@ func main() {
 	}
 
 	providers := []func() tfprotov6.ProviderServer{
-		providerserver.NewProtocol6(newProvider.New("dev")()),
+		providerserver.NewProtocol6(newProvider.New(version)()),
 		func() tfprotov6.ProviderServer {
 			return upgradedSdkServer
 		},

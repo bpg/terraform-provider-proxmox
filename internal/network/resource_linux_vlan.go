@@ -155,8 +155,9 @@ func (r *linuxVLANResource) Schema(
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
-				Description: "The interface name.",
-				Required:    true,
+				Description:         "The interface name.",
+				MarkdownDescription: "The interface name. Add the VLAN tag number to an existing interface name, e.g. `ens18.21`",
+				Required:            true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(3),
 				},
@@ -185,7 +186,7 @@ func (r *linuxVLANResource) Schema(
 				Optional:    true,
 			},
 			"autostart": schema.BoolAttribute{
-				Description: "Automatically start interface on boot.",
+				Description: "Automatically start interface on boot (defaults to `true`).",
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),

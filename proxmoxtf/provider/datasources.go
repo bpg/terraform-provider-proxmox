@@ -27,7 +27,6 @@ func createDatasourceMap() map[string]*schema.Resource {
 		"proxmox_virtual_environment_time":       datasource.Time(),
 		"proxmox_virtual_environment_user":       datasource.User(),
 		"proxmox_virtual_environment_users":      datasource.Users(),
-		"proxmox_virtual_environment_version":    datasource.Version(),
 		"proxmox_virtual_environment_vm":         datasource.VM(),
 		"proxmox_virtual_environment_vms":        datasource.VMs(),
 	}
