@@ -24,8 +24,9 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 	}{
 		{
 			name: "simple volume",
-			line: `"local-lvm:vm-2041-disk-0,discard=on,ssd=1,iothread=1,size=8G"`,
+			line: `"local-lvm:vm-2041-disk-0,discard=on,ssd=1,iothread=1,size=8G,cache=writeback"`,
 			want: &CustomStorageDevice{
+				Cache:      types.StrPtr("writeback"),
 				Discard:    types.StrPtr("on"),
 				Enabled:    true,
 				FileVolume: "local-lvm:vm-2041-disk-0",

@@ -31,6 +31,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
     interface    = "scsi0"
     discard      = "on"
+    cache        = "writeback"
     ssd          = true
   }
 

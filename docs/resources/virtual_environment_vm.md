@@ -224,6 +224,14 @@ output "ubuntu_vm_public_key" {
     - `units` - (Optional) The CPU units (defaults to `1024`).
 - `description` - (Optional) The description.
 - `disk` - (Optional) A disk (multiple blocks supported).
+    - `cache` - (Optional) The cache type (defaults to `none`).
+        - `none` - No cache.
+        - `directsync` - Write to the host cache and wait for completion.
+        - `writethrough` - Write to the host cache, but write through to
+          the guest.
+        - `writeback` - Write to the host cache, but write back to the
+          guest when possible.
+        - `unsafe` - Write directly to the disk bypassing the host cache.
     - `datastore_id` - (Optional) The identifier for the datastore to create
       the disk in (defaults to `local-lvm`).
     - `discard` - (Optional) Whether to pass discard/trim requests to the

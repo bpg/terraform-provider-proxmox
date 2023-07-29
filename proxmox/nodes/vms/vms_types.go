@@ -168,6 +168,7 @@ type CustomStorageDevice struct {
 	AIO                     *string           `json:"aio,omitempty"         url:"aio,omitempty"`
 	BackupEnabled           *types.CustomBool `json:"backup,omitempty"      url:"backup,omitempty,int"`
 	BurstableReadSpeedMbps  *int              `json:"mbps_rd_max,omitempty" url:"mbps_rd_max,omitempty"`
+	Cache                   *string           `json:"cache,omitempty"       url:"cache,omitempty"`
 	BurstableWriteSpeedMbps *int              `json:"mbps_wr_max,omitempty" url:"mbps_wr_max,omitempty"`
 	Discard                 *string           `json:"discard,omitempty"     url:"discard,omitempty"`
 	Enabled                 bool              `json:"-"                     url:"-"`
@@ -1146,6 +1147,10 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		values = append(values, fmt.Sprintf("discard=%s", *r.Discard))
 	}
 
+	if r.Cache != nil && *r.Cache != "" {
+		values = append(values, fmt.Sprintf("cache=%s", *r.Cache))
+	}
+
 	v.Add(key, strings.Join(values, ","))
 
 	return nil
@@ -1765,11 +1770,14 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			switch v[0] {
 			case "aio":
 				r.AIO = &v[1]
+
 			case "backup":
 				bv := types.CustomBool(v[1] == "1")
 				r.BackupEnabled = &bv
+
 			case "file":
 				r.FileVolume = v[1]
+
 			case "mbps_rd":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
@@ -1800,22 +1808,30 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				r.BurstableWriteSpeedMbps = &iv
 			case "media":
 				r.Media = &v[1]
+
 			case "size":
 				r.Size = new(types.DiskSize)
 				err := r.Size.UnmarshalJSON([]byte(v[1]))
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)
 				}
+
 			case "format":
 				r.Format = &v[1]
+
 			case "iothread":
 				bv := types.CustomBool(v[1] == "1")
 				r.IOThread = &bv
+
 			case "ssd":
 				bv := types.CustomBool(v[1] == "1")
 				r.SSD = &bv
+
 			case "discard":
 				r.Discard = &v[1]
+
+			case "cache":
+				r.Cache = &v[1]
 			}
 		}
 	}
