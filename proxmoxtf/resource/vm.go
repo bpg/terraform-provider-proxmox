@@ -64,6 +64,7 @@ const (
 	dvResourceVirtualEnvironmentVMDiskIOThread                      = false
 	dvResourceVirtualEnvironmentVMDiskSSD                           = false
 	dvResourceVirtualEnvironmentVMDiskDiscard                       = ""
+	dvResourceVirtualEnvironmentVMDiskCache                         = ""
 	dvResourceVirtualEnvironmentVMDiskSpeedRead                     = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWrite                    = 0
@@ -163,6 +164,7 @@ const (
 	mkResourceVirtualEnvironmentVMDiskIOThread                      = "iothread"
 	mkResourceVirtualEnvironmentVMDiskSSD                           = "ssd"
 	mkResourceVirtualEnvironmentVMDiskDiscard                       = "discard"
+	mkResourceVirtualEnvironmentVMDiskCache                         = "cache"
 	mkResourceVirtualEnvironmentVMDiskSpeed                         = "speed"
 	mkResourceVirtualEnvironmentVMDiskSpeedRead                     = "read"
 	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = "read_burstable"
@@ -568,6 +570,7 @@ func VM() *schema.Resource {
 							mkResourceVirtualEnvironmentVMDiskIOThread:    dvResourceVirtualEnvironmentVMDiskIOThread,
 							mkResourceVirtualEnvironmentVMDiskSSD:         dvResourceVirtualEnvironmentVMDiskSSD,
 							mkResourceVirtualEnvironmentVMDiskDiscard:     dvResourceVirtualEnvironmentVMDiskDiscard,
+							mkResourceVirtualEnvironmentVMDiskCache:       dvResourceVirtualEnvironmentVMDiskCache,
 						},
 					}, nil
 				},
@@ -624,6 +627,21 @@ func VM() *schema.Resource {
 							Description: "Whether to pass discard/trim requests to the underlying storage.",
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMDiskDiscard,
+						},
+						mkResourceVirtualEnvironmentVMDiskCache: {
+							Type:        schema.TypeString,
+							Description: "The drive’s cache mode",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMDiskCache,
+							ValidateDiagFunc: validation.ToDiagFunc(
+								validation.StringInSlice([]string{
+									"none",
+									"writethrough",
+									"writeback",
+									"unsafe",
+									"directsync",
+								}, false),
+							),
 						},
 						mkResourceVirtualEnvironmentVMDiskSpeed: {
 							Type:        schema.TypeList,
@@ -2360,6 +2378,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard, _ := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
+		cache, _ := block[mkResourceVirtualEnvironmentVMDiskCache].(string)
 
 		if fileFormat == "" {
 			fileFormat = dvResourceVirtualEnvironmentVMDiskFileFormat
@@ -2391,6 +2410,10 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 
 		if discard != "" {
 			diskOptions += fmt.Sprintf(",discard=%s", discard)
+		}
+
+		if cache != "" {
+			diskOptions += fmt.Sprintf(",cache=%s", cache)
 		}
 
 		if speedLimitRead > 0 {
@@ -2722,6 +2745,7 @@ func vmGetDiskDeviceObjects(
 		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
 		discard := block[mkResourceVirtualEnvironmentVMDiskDiscard].(string)
+		cache := block[mkResourceVirtualEnvironmentVMDiskCache].(string)
 
 		speedBlock, err := structure.GetSchemaBlock(
 			resource,
@@ -2752,6 +2776,7 @@ func vmGetDiskDeviceObjects(
 		diskDevice.SizeInt = &size
 		diskDevice.IOThread = &ioThread
 		diskDevice.Discard = &discard
+		diskDevice.Cache = &cache
 
 		if !strings.HasPrefix(diskInterface, "virtio") {
 			diskDevice.SSD = &ssd
@@ -3478,6 +3503,12 @@ func vmReadCustom(
 			disk[mkResourceVirtualEnvironmentVMDiskDiscard] = *dd.Discard
 		} else {
 			disk[mkResourceVirtualEnvironmentVMDiskDiscard] = ""
+		}
+
+		if dd.Cache != nil {
+			disk[mkResourceVirtualEnvironmentVMDiskCache] = *dd.Cache
+		} else {
+			disk[mkResourceVirtualEnvironmentVMDiskCache] = ""
 		}
 
 		diskMap[di] = disk
