@@ -10,33 +10,28 @@
 
 A Terraform Provider which adds support for Proxmox solutions.
 
-This repository is a fork of <https://github.com/danitso/terraform-provider-proxmox>
-with several critical fixes to unblock VM deployment in Proxmox v7.0, and several
-other enhancements.
+This repository is a fork
+of <https://github.com/danitso/terraform-provider-proxmox>
+which is no longer maintained.
 
-## Compatibility Matrix
+## Compatibility promise
 
-| Proxmox version | Provider version |
-| --------------- | ---------------- |
-| 6.x             | \<= 0.4.4        |
-| 7.x             | \>= 0.4.5        |
+This provider is compatible with the latest version of Proxmox VE (currently
+8.0). While it may work with older 7.x versions, it is not guaranteed to do so.
+
+While provider is on version 0.x, it is not guaranteed to be backwards
+compatible with all previous minor versions. However, we will try to keep the
+backwards compatibility between provider versions as much as possible.
 
 ## Requirements
 
 - [Terraform](https://www.terraform.io/downloads.html) 1.2+
 - [Go](https://golang.org/doc/install) 1.20+ (to build the provider plugin)
-- [GoReleaser](https://goreleaser.com/install/) v1.15+ (to build the provider plugin)
-
-## Table of Contents
-
-- [Building the provider](#building-the-provider)
-- [Using the provider](#using-the-provider)
-- [Testing the provider](#testing-the-provider)
-- [Known issues](#known-issues)
 
 ## Building the provider
 
-- Clone the repository to `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
+- Clone the repository
+  to `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
 
   ```sh
   mkdir -p "${GOPATH}/src/github.com/bpg"
@@ -53,7 +48,8 @@ other enhancements.
 
 ## Using the provider
 
-You can find the latest release and its documentation in the [Terraform Registry](https://registry.terraform.io/providers/bpg/proxmox/latest).
+You can find the latest release and its documentation in
+the [Terraform Registry](https://registry.terraform.io/providers/bpg/proxmox/latest).
 
 ## Testing the provider
 
@@ -68,8 +64,8 @@ Tests are limited to regression tests, ensuring backwards compatibility.
 ## Deploying the example resources
 
 There are number of TF examples in the `examples` directory, which can be used
-to deploy a Container, VM, or other Proxmox resources on your test Proxmox cluster.
-The following assumptions are made about the test Proxmox cluster:
+to deploy a Container, VM, or other Proxmox resources on your test Proxmox
+cluster. The following assumptions are made about the test Proxmox cluster:
 
 - It has one node named `pve`
 - The node has local storages named `local` and `local-lvm`
@@ -83,6 +79,15 @@ virtual_environment_endpoint = "https://<your-cluster-endpoint>:8006/"
 ```
 
 Then run `make example` to deploy the example resources.
+
+## Future work
+
+The provider is using the
+legacy [Terraform SDKv2](https://developer.hashicorp.com/terraform/plugin/sdkv2),
+which is considered legacy and is in maintenance mode.
+The work has started to migrate the provider to the
+new [Terraform Plugin Framework](https://www.terraform.io/docs/extend/plugin-sdk.html),
+with aim to release it as a new major version **1.0**.
 
 ## Known issues
 
