@@ -2,5 +2,5 @@
 well as documentation examples. The examples are not meant to be used in
 production.
 
-NOTE: during migration to TF plugin framework, examples of migrated resources /
+NOTE: during migration to the TF plugin framework, examples of migrated resources /
 data sources will be moving from `/example` to `/examples` folder

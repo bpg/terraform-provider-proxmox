@@ -4,7 +4,6 @@ about: Create a report to help us improve
 title: ""
 labels: 'bug'
 assignees: ''
-
 ---
 
 **Describe the bug**
@@ -31,5 +30,5 @@ If applicable, add screenshots to help explain your problem.
 Add any other context about the problem here.
 - Provider version (ideally it should be the latest version):
 - Terraform version:
-- OS (where you run Terraform from)):
+- OS (where you run Terraform from):
 - Debug logs (`TF_LOG=DEBUG terraform apply`):

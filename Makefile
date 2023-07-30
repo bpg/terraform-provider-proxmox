@@ -23,7 +23,6 @@ clean:
 	rm -rf ./dist
 	rm -rf ./cache
 	rm -rf ./build
-	rm -rf ./docs-gen
 
 build:
 	mkdir -p "$(TERRAFORM_PLUGIN_OUTPUT_DIRECTORY)"
@@ -82,7 +81,7 @@ release-build:
 	go run -modfile=tools/go.mod github.com/goreleaser/goreleaser build --clean --skip-validate
 
 docs:
-	@mkdir -p ./docs-gen
+	@mkdir -p ./build/docs-gen
 	@cd ./tools && go generate tools.go
 
 targets: $(TARGETS)

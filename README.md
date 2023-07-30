@@ -82,8 +82,8 @@ Then run `make example` to deploy the example resources.
 
 ## Future work
 
-The provider is using the
-legacy [Terraform SDKv2](https://developer.hashicorp.com/terraform/plugin/sdkv2),
+The provider is using
+the [Terraform SDKv2](https://developer.hashicorp.com/terraform/plugin/sdkv2),
 which is considered legacy and is in maintenance mode.
 The work has started to migrate the provider to the
 new [Terraform Plugin Framework](https://www.terraform.io/docs/extend/plugin-sdk.html),
