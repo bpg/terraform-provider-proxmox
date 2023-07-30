@@ -26,6 +26,12 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     enabled = true
   }
 
+  startup {
+    order      = "3"
+    up_delay   = "60"
+    down_delay = "60"
+  }
+  
   disk {
     datastore_id = "local-lvm"
     file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
@@ -410,6 +416,13 @@ output "ubuntu_vm_public_key" {
     - `pvscsi` - VMware Paravirtual SCSI.
 - `started` - (Optional) Whether to start the virtual machine (defaults
   to `true`).
+- `startup` - (Optional) Defines startup and shutdown behavior of the VM.
+    - `order` - (Required) A non-negative number defining the general startup
+      order.
+    - `up` - (Optional) A non-negative number defining the delay in seconds
+      before the next VM is started.
+    - `down` - (Optional) A non-negative number defining the delay in seconds
+      before the next VM is shut down.
 - `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults
   to `true`).
 - `tags` - (Optional) A list of tags of the VM. This is only meta information (

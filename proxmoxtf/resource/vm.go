@@ -104,6 +104,9 @@ const (
 	dvResourceVirtualEnvironmentVMPoolID                            = ""
 	dvResourceVirtualEnvironmentVMSerialDeviceDevice                = "socket"
 	dvResourceVirtualEnvironmentVMStarted                           = true
+	dvResourceVirtualEnvironmentVMStartupOrder                      = -1
+	dvResourceVirtualEnvironmentVMStartupUpDelay                    = -1
+	dvResourceVirtualEnvironmentVMStartupDownDelay                  = -1
 	dvResourceVirtualEnvironmentVMTabletDevice                      = true
 	dvResourceVirtualEnvironmentVMTemplate                          = false
 	dvResourceVirtualEnvironmentVMTimeoutClone                      = 1800
@@ -232,6 +235,10 @@ const (
 	mkResourceVirtualEnvironmentVMSerialDevice                      = "serial_device"
 	mkResourceVirtualEnvironmentVMSerialDeviceDevice                = "device"
 	mkResourceVirtualEnvironmentVMStarted                           = "started"
+	mkResourceVirtualEnvironmentVMStartup                           = "startup"
+	mkResourceVirtualEnvironmentVMStartupOrder                      = "order"
+	mkResourceVirtualEnvironmentVMStartupUpDelay                    = "up_delay"
+	mkResourceVirtualEnvironmentVMStartupDownDelay                  = "down_delay"
 	mkResourceVirtualEnvironmentVMTabletDevice                      = "tablet_device"
 	mkResourceVirtualEnvironmentVMTags                              = "tags"
 	mkResourceVirtualEnvironmentVMTemplate                          = "template"
@@ -1214,6 +1221,47 @@ func VM() *schema.Resource {
 					return d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
 				},
 			},
+			mkResourceVirtualEnvironmentVMStartup: {
+				Type:        schema.TypeList,
+				Description: "Defines startup and shutdown behavior of the VM",
+				Optional:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{
+						map[string]interface{}{
+							mkResourceVirtualEnvironmentVMStartupOrder: dvResourceVirtualEnvironmentVMStartupOrder,
+							mkResourceVirtualEnvironmentVMVGAMemory:    dvResourceVirtualEnvironmentVMVGAMemory,
+							mkResourceVirtualEnvironmentVMVGAType:      dvResourceVirtualEnvironmentVMVGAType,
+						},
+					}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMStartupOrder: {
+							Type:        schema.TypeInt,
+							Description: "A non-negative number defining the general startup order",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMStartupOrder,
+						},
+						mkResourceVirtualEnvironmentVMStartupUpDelay: {
+							Type:             schema.TypeInt,
+							Description:      "A non-negative number defining the delay in seconds before the next VM is started",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMStartupUpDelay,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+						mkResourceVirtualEnvironmentVMStartupDownDelay: {
+							Type:             schema.TypeInt,
+							Description:      "A non-negative number defining the delay in seconds before the next VM is shut down",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMStartupDownDelay,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
+
 			mkResourceVirtualEnvironmentVMTabletDevice: {
 				Type:        schema.TypeBool,
 				Description: "Whether to enable the USB tablet device",
@@ -1778,6 +1826,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	updateBody.StartOnBoot = &onBoot
 
+	updateBody.StartupOrder = vmGetStartupOrder(d)
+
 	//nolint:gosimple
 	if tabletDevice != dvResourceVirtualEnvironmentVMTabletDevice {
 		updateBody.TabletDeviceEnabled = &tabletDevice
@@ -2148,6 +2198,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	serialDevices := vmGetSerialDeviceList(d)
 
+	startupOrder := vmGetStartupOrder(d)
+
 	onBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
 	tabletDevice := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTabletDevice).(bool))
 	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool))
@@ -2268,6 +2320,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		SerialDevices:       serialDevices,
 		SharedMemory:        memorySharedObject,
 		StartOnBoot:         &onBoot,
+		StartupOrder:        startupOrder,
 		TabletDeviceEnabled: &tabletDevice,
 		Template:            &template,
 		VGADevice:           vgaDevice,
@@ -3007,6 +3060,33 @@ func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
 	}
 
 	return list
+}
+
+func vmGetStartupOrder(d *schema.ResourceData) *vms.CustomStartupOrder {
+	startup := d.Get(mkResourceVirtualEnvironmentVMStartup).([]interface{})
+	if len(startup) > 0 {
+		startupBlock := startup[0].(map[string]interface{})
+		startupOrder := startupBlock[mkResourceVirtualEnvironmentVMStartupOrder].(int)
+		startupUpDelay := startupBlock[mkResourceVirtualEnvironmentVMStartupUpDelay].(int)
+		startupDownDelay := startupBlock[mkResourceVirtualEnvironmentVMStartupDownDelay].(int)
+
+		order := vms.CustomStartupOrder{}
+
+		if startupUpDelay >= 0 {
+			order.Up = &startupUpDelay
+		}
+
+		if startupDownDelay >= 0 {
+			order.Down = &startupDownDelay
+		}
+
+		if startupOrder >= 0 {
+			order.Order = &startupOrder
+			return &order
+		}
+	}
+
+	return nil
 }
 
 func vmGetTagsString(d *schema.ResourceData) string {
@@ -4061,6 +4141,53 @@ func vmReadCustom(
 
 	if len(clone) == 0 || len(currentSerialDevice) > 0 {
 		err := d.Set(mkResourceVirtualEnvironmentVMSerialDevice, serialDevices[:serialDevicesCount])
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	// Compare the startup order to the one stored in the state.
+	startup := map[string]interface{}{}
+
+	//nolint:nestif
+	if vmConfig.StartupOrder != nil {
+		if vmConfig.StartupOrder.Order != nil {
+			startup[mkResourceVirtualEnvironmentVMStartupOrder] = *vmConfig.StartupOrder.Order
+		} else {
+			startup[mkResourceVirtualEnvironmentVMStartupOrder] = dvResourceVirtualEnvironmentVMStartupOrder
+		}
+
+		if vmConfig.StartupOrder.Up != nil {
+			startup[mkResourceVirtualEnvironmentVMStartupUpDelay] = *vmConfig.StartupOrder.Up
+		} else {
+			startup[mkResourceVirtualEnvironmentVMStartupUpDelay] = dvResourceVirtualEnvironmentVMStartupUpDelay
+		}
+
+		if vmConfig.StartupOrder.Down != nil {
+			startup[mkResourceVirtualEnvironmentVMStartupDownDelay] = *vmConfig.StartupOrder.Down
+		} else {
+			startup[mkResourceVirtualEnvironmentVMStartupDownDelay] = dvResourceVirtualEnvironmentVMStartupDownDelay
+		}
+	} else {
+		startup[mkResourceVirtualEnvironmentVMStartupOrder] = dvResourceVirtualEnvironmentVMStartupOrder
+		startup[mkResourceVirtualEnvironmentVMStartupUpDelay] = dvResourceVirtualEnvironmentVMStartupUpDelay
+		startup[mkResourceVirtualEnvironmentVMStartupDownDelay] = dvResourceVirtualEnvironmentVMStartupDownDelay
+	}
+
+	currentStartup := d.Get(mkResourceVirtualEnvironmentVMStartup).([]interface{})
+
+	//nolint:gocritic
+	if len(clone) > 0 {
+		if len(currentStartup) > 0 {
+			err := d.Set(mkResourceVirtualEnvironmentVMStartup, []interface{}{startup})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else if len(currentStartup) > 0 ||
+		startup[mkResourceVirtualEnvironmentVMStartupOrder] != mkResourceVirtualEnvironmentVMStartupOrder ||
+		startup[mkResourceVirtualEnvironmentVMStartupUpDelay] != dvResourceVirtualEnvironmentVMStartupUpDelay ||
+		startup[mkResourceVirtualEnvironmentVMStartupDownDelay] != dvResourceVirtualEnvironmentVMStartupDownDelay {
+		err := d.Set(mkResourceVirtualEnvironmentVMStartup, []interface{}{startup})
+		diags = append(diags, diag.FromErr(err)...)
+	} else {
+		err := d.Set(mkResourceVirtualEnvironmentVMStartup, []interface{}{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
