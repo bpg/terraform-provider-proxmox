@@ -1225,15 +1225,6 @@ func VM() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "Defines startup and shutdown behavior of the VM",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMStartupOrder: dvResourceVirtualEnvironmentVMStartupOrder,
-							mkResourceVirtualEnvironmentVMVGAMemory:    dvResourceVirtualEnvironmentVMVGAMemory,
-							mkResourceVirtualEnvironmentVMVGAType:      dvResourceVirtualEnvironmentVMVGAType,
-						},
-					}, nil
-				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkResourceVirtualEnvironmentVMStartupOrder: {
@@ -3657,9 +3648,11 @@ func vmReadCustom(
 
 		currentEfiDisk := d.Get(mkResourceVirtualEnvironmentVMEFIDisk).([]interface{})
 
-		if len(clone) > 0 && len(currentEfiDisk) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentVMEFIDisk, []interface{}{efiDisk})
-			diags = append(diags, diag.FromErr(err)...)
+		if len(clone) > 0 {
+			if len(currentEfiDisk) > 0 {
+				err := d.Set(mkResourceVirtualEnvironmentVMEFIDisk, []interface{}{efiDisk})
+				diags = append(diags, diag.FromErr(err)...)
+			}
 		} else if len(currentEfiDisk) > 0 ||
 			efiDisk[mkResourceVirtualEnvironmentVMEFIDiskDatastoreID] != dvResourceVirtualEnvironmentVMEFIDiskDatastoreID ||
 			efiDisk[mkResourceVirtualEnvironmentVMEFIDiskType] != dvResourceVirtualEnvironmentVMEFIDiskType ||
@@ -4145,10 +4138,12 @@ func vmReadCustom(
 	}
 
 	// Compare the startup order to the one stored in the state.
-	startup := map[string]interface{}{}
+	var startup map[string]interface{}
 
 	//nolint:nestif
 	if vmConfig.StartupOrder != nil {
+		startup = map[string]interface{}{}
+
 		if vmConfig.StartupOrder.Order != nil {
 			startup[mkResourceVirtualEnvironmentVMStartupOrder] = *vmConfig.StartupOrder.Order
 		} else {
@@ -4166,10 +4161,6 @@ func vmReadCustom(
 		} else {
 			startup[mkResourceVirtualEnvironmentVMStartupDownDelay] = dvResourceVirtualEnvironmentVMStartupDownDelay
 		}
-	} else {
-		startup[mkResourceVirtualEnvironmentVMStartupOrder] = dvResourceVirtualEnvironmentVMStartupOrder
-		startup[mkResourceVirtualEnvironmentVMStartupUpDelay] = dvResourceVirtualEnvironmentVMStartupUpDelay
-		startup[mkResourceVirtualEnvironmentVMStartupDownDelay] = dvResourceVirtualEnvironmentVMStartupDownDelay
 	}
 
 	currentStartup := d.Get(mkResourceVirtualEnvironmentVMStartup).([]interface{})
@@ -4962,6 +4953,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 
 		rebootRequired = true
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentVMStartup) {
+		updateBody.StartupOrder = vmGetStartupOrder(d)
 	}
 
 	// Prepare the new VGA configuration.
