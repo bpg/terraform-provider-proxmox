@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.27.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.26.0...v0.27.0) (2023-07-30)
+
+
+### Features
+
+* **vm:** add support for disk `cache` option ([#443](https://github.com/bpg/terraform-provider-proxmox/issues/443)) ([cfe3d96](https://github.com/bpg/terraform-provider-proxmox/commit/cfe3d96576b521cb294f217fb3f7caf45347e58e))
+* **vm:** add support for start/shutdown order configuration ([#445](https://github.com/bpg/terraform-provider-proxmox/issues/445)) ([b045746](https://github.com/bpg/terraform-provider-proxmox/commit/b045746a94d2717b69fc48234b9ece101b53bdcd))
+
+
+### Bug Fixes
+
+* **vm:** cloned VM with `efi_disk` got re-created at re-apply ([#447](https://github.com/bpg/terraform-provider-proxmox/issues/447)) ([c1e7cea](https://github.com/bpg/terraform-provider-proxmox/commit/c1e7cea21ed7d49375de8850f9cd3737d485c3d2))
+
+
+### Miscellaneous
+
+* update dependencies, cleanup docs ([#446](https://github.com/bpg/terraform-provider-proxmox/issues/446)) ([a3b95c8](https://github.com/bpg/terraform-provider-proxmox/commit/a3b95c80536c7b69ab5b4c10e434d410ec5e05e5))
+
 ## [0.26.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.25.0...v0.26.0) (2023-07-29)
 
 
