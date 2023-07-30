@@ -13,10 +13,16 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     numa = true
   }
 
+  startup {
+    order      = "3"
+    up_delay   = "60"
+    down_delay = "60"
+  }
+
   efi_disk {
-    datastore_id      = local.datastore_id
-    file_format       = "raw"
-    type              = "4m"
+    datastore_id = local.datastore_id
+    file_format  = "raw"
+    type         = "4m"
   }
 
   #  disk {
