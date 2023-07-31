@@ -35,7 +35,6 @@ func TestGroupSchema(t *testing.T) {
 	})
 
 	test.AssertOptionalArguments(t, s, []string{
-		mkResourceVirtualEnvironmentGroupACL,
 		mkResourceVirtualEnvironmentGroupComment,
 	})
 
@@ -44,26 +43,8 @@ func TestGroupSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentGroupACL:     schema.TypeSet,
 		mkResourceVirtualEnvironmentGroupComment: schema.TypeString,
 		mkResourceVirtualEnvironmentGroupID:      schema.TypeString,
 		mkResourceVirtualEnvironmentGroupMembers: schema.TypeSet,
-	})
-
-	aclSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentGroupACL)
-
-	test.AssertRequiredArguments(t, aclSchema, []string{
-		mkResourceVirtualEnvironmentGroupACLPath,
-		mkResourceVirtualEnvironmentGroupACLRoleID,
-	})
-
-	test.AssertOptionalArguments(t, aclSchema, []string{
-		mkResourceVirtualEnvironmentGroupACLPropagate,
-	})
-
-	test.AssertValueTypes(t, aclSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentGroupACLPath:      schema.TypeString,
-		mkResourceVirtualEnvironmentGroupACLPropagate: schema.TypeBool,
-		mkResourceVirtualEnvironmentGroupACLRoleID:    schema.TypeString,
 	})
 }

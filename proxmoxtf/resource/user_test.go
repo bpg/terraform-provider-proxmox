@@ -35,7 +35,6 @@ func TestUserSchema(t *testing.T) {
 	})
 
 	test.AssertOptionalArguments(t, s, []string{
-		mkResourceVirtualEnvironmentUserACL,
 		mkResourceVirtualEnvironmentUserComment,
 		mkResourceVirtualEnvironmentUserEmail,
 		mkResourceVirtualEnvironmentUserEnabled,
@@ -48,7 +47,6 @@ func TestUserSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentUserACL:            schema.TypeSet,
 		mkResourceVirtualEnvironmentUserComment:        schema.TypeString,
 		mkResourceVirtualEnvironmentUserEmail:          schema.TypeString,
 		mkResourceVirtualEnvironmentUserEnabled:        schema.TypeBool,
@@ -59,22 +57,5 @@ func TestUserSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentUserLastName:       schema.TypeString,
 		mkResourceVirtualEnvironmentUserPassword:       schema.TypeString,
 		mkResourceVirtualEnvironmentUserUserID:         schema.TypeString,
-	})
-
-	aclSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentUserACL)
-
-	test.AssertRequiredArguments(t, aclSchema, []string{
-		mkResourceVirtualEnvironmentUserACLPath,
-		mkResourceVirtualEnvironmentUserACLRoleID,
-	})
-
-	test.AssertOptionalArguments(t, aclSchema, []string{
-		mkResourceVirtualEnvironmentUserACLPropagate,
-	})
-
-	test.AssertValueTypes(t, aclSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentUserACLPath:      schema.TypeString,
-		mkResourceVirtualEnvironmentUserACLPropagate: schema.TypeBool,
-		mkResourceVirtualEnvironmentUserACLRoleID:    schema.TypeString,
 	})
 }

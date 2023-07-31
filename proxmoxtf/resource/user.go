@@ -28,10 +28,6 @@ const (
 	dvResourceVirtualEnvironmentUserKeys      = ""
 	dvResourceVirtualEnvironmentUserLastName  = ""
 
-	mkResourceVirtualEnvironmentUserACL            = "acl"
-	mkResourceVirtualEnvironmentUserACLPath        = "path"
-	mkResourceVirtualEnvironmentUserACLPropagate   = "propagate"
-	mkResourceVirtualEnvironmentUserACLRoleID      = "role_id"
 	mkResourceVirtualEnvironmentUserComment        = "comment"
 	mkResourceVirtualEnvironmentUserEmail          = "email"
 	mkResourceVirtualEnvironmentUserEnabled        = "enabled"
@@ -48,34 +44,6 @@ const (
 func User() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentUserACL: {
-				Type:        schema.TypeSet,
-				Description: "The access control list",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentUserACLPath: {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "The path",
-						},
-						mkResourceVirtualEnvironmentUserACLPropagate: {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Description: "Whether to propagate to child paths",
-							Default:     false,
-						},
-						mkResourceVirtualEnvironmentUserACLRoleID: {
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "The role id",
-						},
-					},
-				},
-			},
 			mkResourceVirtualEnvironmentUserComment: {
 				Type:        schema.TypeString,
 				Description: "The user comment",
@@ -207,29 +175,6 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	d.SetId(userID)
 
-	aclParsed := d.Get(mkResourceVirtualEnvironmentUserACL).(*schema.Set).List()
-
-	for _, v := range aclParsed {
-		aclDelete := types.CustomBool(false)
-		aclEntry := v.(map[string]interface{})
-		aclPropagate := types.CustomBool(
-			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
-		)
-
-		aclBody := &access.ACLUpdateRequestBody{
-			Delete:    &aclDelete,
-			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
-			Propagate: &aclPropagate,
-			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentUserACLRoleID].(string)},
-			Users:     []string{userID},
-		}
-
-		err := api.Access().UpdateACL(ctx, aclBody)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
 	return userRead(ctx, d, m)
 }
 
@@ -251,37 +196,9 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	acl, err := api.Access().GetACL(ctx)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	var diags diag.Diagnostics
 
 	err = d.Set(mkResourceVirtualEnvironmentUserUserID, userID)
-	diags = append(diags, diag.FromErr(err)...)
-
-	var aclParsed []interface{}
-
-	for _, v := range acl {
-		if v.Type == "user" && v.UserOrGroupID == userID {
-			aclEntry := map[string]interface{}{}
-
-			aclEntry[mkResourceVirtualEnvironmentUserACLPath] = v.Path
-
-			if v.Propagate != nil {
-				aclEntry[mkResourceVirtualEnvironmentUserACLPropagate] = bool(*v.Propagate)
-			} else {
-				aclEntry[mkResourceVirtualEnvironmentUserACLPropagate] = false
-			}
-
-			aclEntry[mkResourceVirtualEnvironmentUserACLRoleID] = v.RoleID
-
-			aclParsed = append(aclParsed, aclEntry)
-		}
-	}
-
-	err = d.Set(mkResourceVirtualEnvironmentUserACL, aclParsed)
 	diags = append(diags, diag.FromErr(err)...)
 
 	if user.Comment != nil {
@@ -405,53 +322,6 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		}
 	}
 
-	aclArgOld, aclArg := d.GetChange(mkResourceVirtualEnvironmentUserACL)
-	aclParsedOld := aclArgOld.(*schema.Set).List()
-
-	for _, v := range aclParsedOld {
-		aclDelete := types.CustomBool(true)
-		aclEntry := v.(map[string]interface{})
-		aclPropagate := types.CustomBool(
-			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
-		)
-
-		aclBody := &access.ACLUpdateRequestBody{
-			Delete:    &aclDelete,
-			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
-			Propagate: &aclPropagate,
-			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentUserACLRoleID].(string)},
-			Users:     []string{userID},
-		}
-
-		err := api.Access().UpdateACL(ctx, aclBody)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
-	aclParsed := aclArg.(*schema.Set).List()
-
-	for _, v := range aclParsed {
-		aclDelete := types.CustomBool(false)
-		aclEntry := v.(map[string]interface{})
-		aclPropagate := types.CustomBool(
-			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
-		)
-
-		aclBody := &access.ACLUpdateRequestBody{
-			Delete:    &aclDelete,
-			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
-			Propagate: &aclPropagate,
-			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentUserACLRoleID].(string)},
-			Users:     []string{userID},
-		}
-
-		err := api.Access().UpdateACL(ctx, aclBody)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
-
 	return userRead(ctx, d, m)
 }
 
@@ -462,29 +332,7 @@ func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	aclParsed := d.Get(mkResourceVirtualEnvironmentUserACL).(*schema.Set).List()
 	userID := d.Id()
-
-	for _, v := range aclParsed {
-		aclDelete := types.CustomBool(true)
-		aclEntry := v.(map[string]interface{})
-		aclPropagate := types.CustomBool(
-			aclEntry[mkResourceVirtualEnvironmentUserACLPropagate].(bool),
-		)
-
-		aclBody := &access.ACLUpdateRequestBody{
-			Delete:    &aclDelete,
-			Path:      aclEntry[mkResourceVirtualEnvironmentUserACLPath].(string),
-			Propagate: &aclPropagate,
-			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentUserACLRoleID].(string)},
-			Users:     []string{userID},
-		}
-
-		err = api.Access().UpdateACL(ctx, aclBody)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
 
 	err = api.Access().DeleteUser(ctx, userID)
 
