@@ -94,8 +94,18 @@ test:
 
 .PHONY: testacc
 testacc:
-	@# explicitly add TF_ACC=1 to trigger the acceptance tests, `testacc.env` might be missing or incomplete  
+	@# explicitly add TF_ACC=1 to trigger the acceptance tests, `testacc.env` might be missing or incomplete
 	@TF_ACC=1 env $$(cat testacc.env | xargs) go test -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/tests/...
+
+TEST_COUNT?=1
+PKG_NAME=fwprovider/tests/...
+ACCTEST_TIMEOUT?=180m
+ACCTEST_PARALLELISM?=20
+
+# make testacc-pkg PKG_NAME=fwprovider/tests/... TESTARGS='-run=TestAccAcl_User'
+.PHONY: testacc-pkg
+testacc-pkg:
+	TF_ACC=1 go test ./$(PKG_NAME) -v -count $(TEST_COUNT) -parallel $(ACCTEST_PARALLELISM) $(TESTARGS) -timeout $(ACCTEST_TIMEOUT)
 
 .PHONY: lint
 lint:

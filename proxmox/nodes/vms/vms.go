@@ -23,7 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // CloneVM clones a virtual machine.
@@ -273,7 +273,6 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody, tim
 			return err
 		}
 
-		//nolint:wrapcheck
 		return c.Tasks().WaitForTask(ctx, *taskID, timeout, 5*time.Second)
 	},
 		retry.Attempts(3),
@@ -372,7 +371,7 @@ func (c *Client) StartVMAsync(ctx context.Context, timeout time.Duration) (*stri
 	timeoutSeconds := math.Round(timeout.Seconds())
 
 	reqBody := &StartRequestBody{
-		TimeoutSeconds: types.IntPtr(int(timeoutSeconds)),
+		TimeoutSeconds: ptr.Ptr(int(timeoutSeconds)),
 	}
 	resBody := &StartResponseBody{}
 

@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // CustomBool allows a JSON boolean value to also be an integer.
@@ -37,6 +39,11 @@ type CustomPrivileges []string
 
 // CustomTimestamp allows a JSON boolean value to also be a unix timestamp.
 type CustomTimestamp time.Time
+
+// CustomBoolPtr creates a pointer to a CustomBool.
+func CustomBoolPtr(b bool) *CustomBool {
+	return ptr.Ptr(CustomBool(b))
+}
 
 // MarshalJSON converts a boolean to a JSON value.
 func (r CustomBool) MarshalJSON() ([]byte, error) {
@@ -77,15 +84,6 @@ func (r CustomBool) ToValue() types.Bool {
 // FromValue sets the numeric boolean based on the value of a Terraform attribute.
 func (r *CustomBool) FromValue(tfValue types.Bool) {
 	*r = CustomBool(tfValue.ValueBool())
-}
-
-// Copy returns a copy of the boolean.
-func (r *CustomBool) Copy() *CustomBool {
-	if r == nil {
-		return nil
-	}
-
-	return BoolPtr(bool(*r))
 }
 
 // MarshalJSON converts a boolean to a JSON value.
