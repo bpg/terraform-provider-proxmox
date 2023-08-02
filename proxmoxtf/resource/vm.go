@@ -64,7 +64,7 @@ const (
 	dvResourceVirtualEnvironmentVMDiskIOThread                      = false
 	dvResourceVirtualEnvironmentVMDiskSSD                           = false
 	dvResourceVirtualEnvironmentVMDiskDiscard                       = ""
-	dvResourceVirtualEnvironmentVMDiskCache                         = ""
+	dvResourceVirtualEnvironmentVMDiskCache                         = "none"
 	dvResourceVirtualEnvironmentVMDiskSpeedRead                     = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedWrite                    = 0
