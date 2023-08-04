@@ -7,8 +7,7 @@
     "README.md"
   ],
   "imageSize": 100,
-  "badgeTemplate": "[![All Contributors](https://img.shields.io/badge/all_contributors%2D<%= contributors.length %>%2Dorange.svg)](#contributors-)",
-  "commit": true,
+  "commit": false,
   "commitConvention": "angular",
   "contributors": [
     {
@@ -54,7 +53,9 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/972298?v=4",
       "profile": "https://github.com/otopetrik",
       "contributions": [
-        "code"
+        "code",
+        "question",
+        "bug"
       ]
     },
     {
