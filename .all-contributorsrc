@@ -3,10 +3,24 @@
   "projectOwner": "bpg",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "files": ["README.md"],
+  "files": [
+    "README.md"
+  ],
   "imageSize": 100,
   "commit": false,
   "contributorsPerLine": 7,
   "contributorsSortAlphabetically": false,
-  "contributors": []
+  "contributors": [
+    {
+      "login": "danitso-dp",
+      "name": "Dan R. Petersen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7096448?v=4",
+      "profile": "https://danitso.com/",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular"
 }
