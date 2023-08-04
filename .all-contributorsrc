@@ -326,9 +326,20 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "si458",
+      "name": "Simon Smith",
+      "avatar_url": "https://avatars.githubusercontent.com/u/765314?v=4",
+      "profile": "https://www.si458.co.uk",
+      "contributions": [
+        "bug",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
-  "skipCi": true,
-  "linkToUsage": true
+  "skipCi": false,
+  "linkToUsage": true,
+  "commitType": "docs"
 }
