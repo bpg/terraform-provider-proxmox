@@ -5,7 +5,7 @@
 [![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors%2D35%2Dorange.svg)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors%2D36%2Dorange.svg)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Conventional Commits](https://img.shields.io/badge/conventional%20commits-v1.0.0-ff69b4)](https://www.conventionalcommits.org/en/v1.0.0/)
 [![Buy Me A Coffee](https://img.shields.io/badge/-buy%20me%20a%20coffee-5F7FFF?logo=buymeacoffee&labelColor=gray&logoColor=FFDD00)](https://www.buymeacoffee.com/bpgca)
@@ -187,6 +187,9 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mleone87"><img src="https://avatars.githubusercontent.com/u/807457?v=4?s=100" width="100px;" alt="mleone87"/><br /><sub><b>mleone87</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=mleone87" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://thiscute.world/en/"><img src="https://avatars.githubusercontent.com/u/22363274?v=4?s=100" width="100px;" alt="Ryan Yin"/><br /><sub><b>Ryan Yin</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ryan4yin" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/zoop-btc"><img src="https://avatars.githubusercontent.com/u/101409458?v=4?s=100" width="100px;" alt="zoop"/><br /><sub><b>zoop</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=zoop-btc" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.si458.co.uk"><img src="https://avatars.githubusercontent.com/u/765314?v=4?s=100" width="100px;" alt="Simon Smith"/><br /><sub><b>Simon Smith</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Asi458" title="Bug reports">🐛</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=si458" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
   <tfoot>
