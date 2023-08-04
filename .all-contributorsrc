@@ -339,7 +339,7 @@
     }
   ],
   "contributorsPerLine": 7,
-  "skipCi": true,
+  "skipCi": false,
   "linkToUsage": true,
   "commitType": "docs"
 }
