@@ -140,6 +140,13 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/bpg"><img src="https://avatars.githubusercontent.com/u/627562?v=4?s=100" width="100px;" alt="Pavel Boldyrev"/><br /><sub><b>Pavel Boldyrev</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=bpg" title="Code">💻</a> <a href="#maintenance-bpg" title="Maintenance">🚧</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
