@@ -1,0 +1,12 @@
+{
+  "projectName": "terraform-provider-proxmox",
+  "projectOwner": "bpg",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": ["README.md"],
+  "imageSize": 100,
+  "commit": false,
+  "contributorsPerLine": 7,
+  "contributorsSortAlphabetically": false,
+  "contributors": []
+}
