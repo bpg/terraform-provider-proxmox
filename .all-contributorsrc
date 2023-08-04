@@ -3,10 +3,24 @@
   "projectOwner": "bpg",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "files": ["README.md"],
+  "files": [
+    "README.md"
+  ],
   "imageSize": 100,
   "commit": false,
   "contributorsPerLine": 7,
   "contributorsSortAlphabetically": false,
-  "contributors": []
+  "contributors": [
+    {
+      "login": "luhahn",
+      "name": "Lucas Hahn",
+      "avatar_url": "https://avatars.githubusercontent.com/u/61747797?v=4",
+      "profile": "https://github.com/luhahn",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular"
 }
