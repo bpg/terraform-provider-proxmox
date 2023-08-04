@@ -140,7 +140,7 @@ type CustomSharedMemory struct {
 
 // CustomSMBIOS handles QEMU SMBIOS parameters.
 type CustomSMBIOS struct {
-	Base64       *types.CustomBool `json:"base64,omitempty"       url:"base64,omitempty"`
+	Base64       *types.CustomBool `json:"base64,omitempty"       url:"base64,omitempty,int"`
 	Family       *string           `json:"family,omitempty"       url:"family,omitempty"`
 	Manufacturer *string           `json:"manufacturer,omitempty" url:"manufacturer,omitempty"`
 	Product      *string           `json:"product,omitempty"      url:"product,omitempty"`
@@ -1673,7 +1673,7 @@ func (r *CustomSMBIOS) UnmarshalJSON(b []byte) error {
 	pairs := strings.Split(s, ",")
 
 	for _, p := range pairs {
-		v := strings.Split(strings.TrimSpace(p), "=")
+		v := strings.SplitN(strings.TrimSpace(p), "=", 2)
 
 		if len(v) == 2 {
 			switch v[0] {

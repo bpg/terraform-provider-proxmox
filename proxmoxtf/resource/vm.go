@@ -8,6 +8,7 @@ package resource
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"sort"
@@ -16,6 +17,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -103,6 +105,12 @@ const (
 	dvResourceVirtualEnvironmentVMOperatingSystemType               = "other"
 	dvResourceVirtualEnvironmentVMPoolID                            = ""
 	dvResourceVirtualEnvironmentVMSerialDeviceDevice                = "socket"
+	dvResourceVirtualEnvironmentVMSMBIOSFamily                      = ""
+	dvResourceVirtualEnvironmentVMSMBIOSManufacturer                = ""
+	dvResourceVirtualEnvironmentVMSMBIOSProduct                     = ""
+	dvResourceVirtualEnvironmentVMSMBIOSSKU                         = ""
+	dvResourceVirtualEnvironmentVMSMBIOSSerial                      = ""
+	dvResourceVirtualEnvironmentVMSMBIOSVersion                     = ""
 	dvResourceVirtualEnvironmentVMStarted                           = true
 	dvResourceVirtualEnvironmentVMStartupOrder                      = -1
 	dvResourceVirtualEnvironmentVMStartupUpDelay                    = -1
@@ -234,6 +242,14 @@ const (
 	mkResourceVirtualEnvironmentVMPoolID                            = "pool_id"
 	mkResourceVirtualEnvironmentVMSerialDevice                      = "serial_device"
 	mkResourceVirtualEnvironmentVMSerialDeviceDevice                = "device"
+	mkResourceVirtualEnvironmentVMSMBIOS                            = "smbios"
+	mkResourceVirtualEnvironmentVMSMBIOSFamily                      = "family"
+	mkResourceVirtualEnvironmentVMSMBIOSManufacturer                = "manufacturer"
+	mkResourceVirtualEnvironmentVMSMBIOSProduct                     = "product"
+	mkResourceVirtualEnvironmentVMSMBIOSSKU                         = "sku"
+	mkResourceVirtualEnvironmentVMSMBIOSSerial                      = "serial"
+	mkResourceVirtualEnvironmentVMSMBIOSUUID                        = "uuid"
+	mkResourceVirtualEnvironmentVMSMBIOSVersion                     = "version"
 	mkResourceVirtualEnvironmentVMStarted                           = "started"
 	mkResourceVirtualEnvironmentVMStartup                           = "startup"
 	mkResourceVirtualEnvironmentVMStartupOrder                      = "order"
@@ -1212,6 +1228,59 @@ func VM() *schema.Resource {
 				MaxItems: maxResourceVirtualEnvironmentVMSerialDevices,
 				MinItems: 0,
 			},
+			mkResourceVirtualEnvironmentVMSMBIOS: {
+				Type:        schema.TypeList,
+				Description: "Specifies SMBIOS (type1) settings for the VM",
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMSMBIOSFamily: {
+							Type:        schema.TypeString,
+							Description: "Sets SMBIOS family string",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMSMBIOSFamily,
+						},
+						mkResourceVirtualEnvironmentVMSMBIOSManufacturer: {
+							Type:        schema.TypeString,
+							Description: "Sets SMBIOS manufacturer",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMSMBIOSManufacturer,
+						},
+						mkResourceVirtualEnvironmentVMSMBIOSProduct: {
+							Type:        schema.TypeString,
+							Description: "Sets SMBIOS product ID",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMSMBIOSProduct,
+						},
+						mkResourceVirtualEnvironmentVMSMBIOSSerial: {
+							Type:        schema.TypeString,
+							Description: "Sets SMBIOS serial number",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMSMBIOSSerial,
+						},
+						mkResourceVirtualEnvironmentVMSMBIOSSKU: {
+							Type:        schema.TypeString,
+							Description: "Sets SMBIOS SKU",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMSMBIOSSKU,
+						},
+						mkResourceVirtualEnvironmentVMSMBIOSUUID: {
+							Type:        schema.TypeString,
+							Description: "Sets SMBIOS UUID",
+							Optional:    true,
+							Computed:    true,
+						},
+						mkResourceVirtualEnvironmentVMSMBIOSVersion: {
+							Type:        schema.TypeString,
+							Description: "Sets SMBIOS version",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMSMBIOSVersion,
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
 			mkResourceVirtualEnvironmentVMStarted: {
 				Type:        schema.TypeBool,
 				Description: "Whether to start the virtual machine",
@@ -1252,7 +1321,6 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-
 			mkResourceVirtualEnvironmentVMTabletDevice: {
 				Type:        schema.TypeBool,
 				Description: "Whether to enable the USB tablet device",
@@ -2189,6 +2257,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	serialDevices := vmGetSerialDeviceList(d)
 
+	smbios := vmGetSMBIOS(d)
+	if smbios != nil && (smbios.UUID == nil || *smbios.UUID == "") {
+		smbios.UUID = types.StrPtr(uuid.New().String())
+	}
+
 	startupOrder := vmGetStartupOrder(d)
 
 	onBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentVMOnBoot).(bool))
@@ -2311,6 +2384,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		SerialDevices:       serialDevices,
 		SharedMemory:        memorySharedObject,
 		StartOnBoot:         &onBoot,
+		SMBIOS:              smbios,
 		StartupOrder:        startupOrder,
 		TabletDeviceEnabled: &tabletDevice,
 		Template:            &template,
@@ -3051,6 +3125,63 @@ func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
 	}
 
 	return list
+}
+
+func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
+	smbiosSections := d.Get(mkResourceVirtualEnvironmentVMSMBIOS).([]interface{})
+	if len(smbiosSections) > 0 {
+		smbiosBlock := smbiosSections[0].(map[string]interface{})
+		b64 := types.CustomBool(true)
+		family, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSFamily].(string)
+		manufacturer, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSManufacturer].(string)
+		product, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSProduct].(string)
+		serial, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSSerial].(string)
+		sku, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSSKU].(string)
+		version, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSVersion].(string)
+		uuid, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSUUID].(string)
+
+		smbios := vms.CustomSMBIOS{
+			Base64: &b64,
+		}
+
+		if family != "" {
+			v := base64.StdEncoding.EncodeToString([]byte(family))
+			smbios.Family = &v
+		}
+
+		if manufacturer != "" {
+			v := base64.StdEncoding.EncodeToString([]byte(manufacturer))
+			smbios.Manufacturer = &v
+		}
+
+		if product != "" {
+			v := base64.StdEncoding.EncodeToString([]byte(product))
+			smbios.Product = &v
+		}
+
+		if serial != "" {
+			v := base64.StdEncoding.EncodeToString([]byte(serial))
+			smbios.Serial = &v
+		}
+
+		if sku != "" {
+			v := base64.StdEncoding.EncodeToString([]byte(sku))
+			smbios.SKU = &v
+		}
+
+		if version != "" {
+			v := base64.StdEncoding.EncodeToString([]byte(version))
+			smbios.Version = &v
+		}
+
+		if uuid != "" {
+			smbios.UUID = &uuid
+		}
+
+		return &smbios
+	}
+
+	return nil
 }
 
 func vmGetStartupOrder(d *schema.ResourceData) *vms.CustomStartupOrder {
@@ -4137,6 +4268,84 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	// Compare the SMBIOS to the one stored in the state.
+	var smbios map[string]interface{}
+
+	//nolint:nestif
+	if vmConfig.SMBIOS != nil {
+		smbios = map[string]interface{}{}
+
+		if vmConfig.SMBIOS.Family != nil {
+			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Family)
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSFamily] = string(b)
+		} else {
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSFamily] = dvResourceVirtualEnvironmentVMSMBIOSFamily
+		}
+
+		if vmConfig.SMBIOS.Manufacturer != nil {
+			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Manufacturer)
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSManufacturer] = string(b)
+		} else {
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSManufacturer] = dvResourceVirtualEnvironmentVMSMBIOSManufacturer
+		}
+
+		if vmConfig.SMBIOS.Product != nil {
+			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Product)
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSProduct] = string(b)
+		} else {
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSProduct] = dvResourceVirtualEnvironmentVMSMBIOSProduct
+		}
+
+		if vmConfig.SMBIOS.Serial != nil {
+			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Serial)
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSSerial] = string(b)
+		} else {
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSSerial] = dvResourceVirtualEnvironmentVMSMBIOSSerial
+		}
+
+		if vmConfig.SMBIOS.SKU != nil {
+			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.SKU)
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSSKU] = string(b)
+		} else {
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSSKU] = dvResourceVirtualEnvironmentVMSMBIOSSKU
+		}
+
+		if vmConfig.SMBIOS.Version != nil {
+			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Version)
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSVersion] = string(b)
+		} else {
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSVersion] = dvResourceVirtualEnvironmentVMSMBIOSVersion
+		}
+
+		if vmConfig.SMBIOS.UUID != nil {
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSUUID] = *vmConfig.SMBIOS.UUID
+		} else {
+			smbios[mkResourceVirtualEnvironmentVMSMBIOSUUID] = nil
+		}
+	}
+
+	currentSMBIOS := d.Get(mkResourceVirtualEnvironmentVMSMBIOS).([]interface{})
+
+	//nolint:gocritic
+	if len(clone) > 0 {
+		if len(currentSMBIOS) > 0 {
+			err := d.Set(mkResourceVirtualEnvironmentVMSMBIOS, []interface{}{currentSMBIOS})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else if len(smbios) == 0 {
+		err := d.Set(mkResourceVirtualEnvironmentVMSMBIOS, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
+	} else if len(currentSMBIOS) > 0 ||
+		smbios[mkResourceVirtualEnvironmentVMSMBIOSFamily] != dvResourceVirtualEnvironmentVMSMBIOSFamily ||
+		smbios[mkResourceVirtualEnvironmentVMSMBIOSManufacturer] != dvResourceVirtualEnvironmentVMSMBIOSManufacturer ||
+		smbios[mkResourceVirtualEnvironmentVMSMBIOSProduct] != dvResourceVirtualEnvironmentVMSMBIOSProduct ||
+		smbios[mkResourceVirtualEnvironmentVMSMBIOSSerial] != dvResourceVirtualEnvironmentVMSMBIOSSerial ||
+		smbios[mkResourceVirtualEnvironmentVMSMBIOSSKU] != dvResourceVirtualEnvironmentVMSMBIOSSKU ||
+		smbios[mkResourceVirtualEnvironmentVMSMBIOSVersion] != dvResourceVirtualEnvironmentVMSMBIOSVersion {
+		err := d.Set(mkResourceVirtualEnvironmentVMSMBIOS, []interface{}{smbios})
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	// Compare the startup order to the one stored in the state.
 	var startup map[string]interface{}
 
@@ -4171,14 +4380,14 @@ func vmReadCustom(
 			err := d.Set(mkResourceVirtualEnvironmentVMStartup, []interface{}{startup})
 			diags = append(diags, diag.FromErr(err)...)
 		}
+	} else if len(startup) == 0 {
+		err := d.Set(mkResourceVirtualEnvironmentVMStartup, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
 	} else if len(currentStartup) > 0 ||
 		startup[mkResourceVirtualEnvironmentVMStartupOrder] != mkResourceVirtualEnvironmentVMStartupOrder ||
 		startup[mkResourceVirtualEnvironmentVMStartupUpDelay] != dvResourceVirtualEnvironmentVMStartupUpDelay ||
 		startup[mkResourceVirtualEnvironmentVMStartupDownDelay] != dvResourceVirtualEnvironmentVMStartupDownDelay {
 		err := d.Set(mkResourceVirtualEnvironmentVMStartup, []interface{}{startup})
-		diags = append(diags, diag.FromErr(err)...)
-	} else {
-		err := d.Set(mkResourceVirtualEnvironmentVMStartup, []interface{}{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4953,6 +5162,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 
 		rebootRequired = true
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentVMSMBIOS) {
+		updateBody.SMBIOS = vmGetSMBIOS(d)
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMStartup) {
