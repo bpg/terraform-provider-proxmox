@@ -1,11 +1,12 @@
 # Terraform Provider for Proxmox
-
 [![Go Report Card](https://goreportcard.com/badge/github.com/bpg/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/bpg/terraform-provider-proxmox)
 [![GoDoc](https://godoc.org/github.com/bpg/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/bpg/terraform-provider-proxmox)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
-[![All Contributors](https://img.shields.io/github/all-contributors/bpg/terraform-provider-proxmox)](#contributors)
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors%2D35%2Dorange.svg)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Conventional Commits](https://img.shields.io/badge/conventional%20commits-v1.0.0-ff69b4)](https://www.conventionalcommits.org/en/v1.0.0/)
 [![Buy Me A Coffee](https://img.shields.io/badge/-buy%20me%20a%20coffee-5F7FFF?logo=buymeacoffee&labelColor=gray&logoColor=FFDD00)](https://www.buymeacoffee.com/bpgca)
 
@@ -138,6 +139,71 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://danitso.com/"><img src="https://avatars.githubusercontent.com/u/7096448?v=4?s=100" width="100px;" alt="Dan R. Petersen"/><br /><sub><b>Dan R. Petersen</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=danitso-dp" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/bpg"><img src="https://avatars.githubusercontent.com/u/627562?v=4?s=100" width="100px;" alt="Pavel Boldyrev"/><br /><sub><b>Pavel Boldyrev</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=bpg" title="Code">💻</a> <a href="#maintenance-bpg" title="Maintenance">🚧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/luhahn"><img src="https://avatars.githubusercontent.com/u/61747797?v=4?s=100" width="100px;" alt="Lucas Hahn"/><br /><sub><b>Lucas Hahn</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=luhahn" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/blz-ea"><img src="https://avatars.githubusercontent.com/u/19339605?v=4?s=100" width="100px;" alt="Alex Kulikovskikh"/><br /><sub><b>Alex Kulikovskikh</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=blz-ea" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/otopetrik"><img src="https://avatars.githubusercontent.com/u/972298?v=4?s=100" width="100px;" alt="Oto Petřík"/><br /><sub><b>Oto Petřík</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=otopetrik" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.patreon.com/boik"><img src="https://avatars.githubusercontent.com/u/6451933?v=4?s=100" width="100px;" alt="Boik"/><br /><sub><b>Boik</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=qazbnm456" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/abdo-farag"><img src="https://avatars.githubusercontent.com/u/10170837?v=4?s=100" width="100px;" alt="Abdelfadeel Farag"/><br /><sub><b>Abdelfadeel Farag</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=abdo-farag" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/kugo12"><img src="https://avatars.githubusercontent.com/u/15050771?v=4?s=100" width="100px;" alt="Szczepan Wiśniowski"/><br /><sub><b>Szczepan Wiśniowski</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=kugo12" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/xonvanetta"><img src="https://avatars.githubusercontent.com/u/11271952?v=4?s=100" width="100px;" alt="Fabian Heib"/><br /><sub><b>Fabian Heib</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=xonvanetta" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/kaje783"><img src="https://avatars.githubusercontent.com/u/120482249?v=4?s=100" width="100px;" alt="kaje783"/><br /><sub><b>kaje783</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=kaje783" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/michalg91"><img src="https://avatars.githubusercontent.com/u/63045346?v=4?s=100" width="100px;" alt="michalg91"/><br /><sub><b>michalg91</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=michalg91" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/1-cameron"><img src="https://avatars.githubusercontent.com/u/68611194?v=4?s=100" width="100px;" alt="Cameron"/><br /><sub><b>Cameron</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=1-cameron" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://christopherjones.us/"><img src="https://avatars.githubusercontent.com/u/115515?v=4?s=100" width="100px;" alt="Chris Jones"/><br /><sub><b>Chris Jones</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=magikid" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://dominik.wombacher.cc/"><img src="https://avatars.githubusercontent.com/u/16312366?v=4?s=100" width="100px;" alt="Dominik Wombacher"/><br /><sub><b>Dominik Wombacher</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=wombelix" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="http://frank.villaro-dixon.eu/"><img src="https://avatars.githubusercontent.com/u/17879459?v=4?s=100" width="100px;" alt="Frank Villaro-Dixon"/><br /><sub><b>Frank Villaro-Dixon</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Frankkkkk" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/groggemans"><img src="https://avatars.githubusercontent.com/u/11381284?v=4?s=100" width="100px;" alt="Gertjan Roggemans"/><br /><sub><b>Gertjan Roggemans</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=groggemans" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/HenriAW"><img src="https://avatars.githubusercontent.com/u/24527359?v=4?s=100" width="100px;" alt="Henri Williams"/><br /><sub><b>Henri Williams</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=HenriAW" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/zeddD1abl0"><img src="https://avatars.githubusercontent.com/u/8335605?v=4?s=100" width="100px;" alt="Jordan Keith"/><br /><sub><b>Jordan Keith</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=zeddD1abl0" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/shortmann"><img src="https://avatars.githubusercontent.com/u/20142334?v=4?s=100" width="100px;" alt="Kai Kahllund"/><br /><sub><b>Kai Kahllund</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=shortmann" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/kevinglasson"><img src="https://avatars.githubusercontent.com/u/22187575?v=4?s=100" width="100px;" alt="Kevin"/><br /><sub><b>Kevin</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=kevinglasson" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/krzysztof-magosa"><img src="https://avatars.githubusercontent.com/u/6112411?v=4?s=100" width="100px;" alt="Krzysztof Magosa"/><br /><sub><b>Krzysztof Magosa</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=krzysztof-magosa" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://burchett.dev/"><img src="https://avatars.githubusercontent.com/u/783042?v=4?s=100" width="100px;" alt="Matt Burchett"/><br /><sub><b>Matt Burchett</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=mattburchett" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/moyiz"><img src="https://avatars.githubusercontent.com/u/8603313?v=4?s=100" width="100px;" alt="Moyiz"/><br /><sub><b>Moyiz</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=moyiz" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/pescobar"><img src="https://avatars.githubusercontent.com/u/103797?v=4?s=100" width="100px;" alt="Pablo Escobar Lopez"/><br /><sub><b>Pablo Escobar Lopez</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=pescobar" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://hrmny.sh/"><img src="https://avatars.githubusercontent.com/u/8845940?v=4?s=100" width="100px;" alt="Leah"/><br /><sub><b>Leah</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ForsakenHarmony" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/wbpascal"><img src="https://avatars.githubusercontent.com/u/9532590?v=4?s=100" width="100px;" alt="Pascal Wiedenbeck"/><br /><sub><b>Pascal Wiedenbeck</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=wbpascal" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Patricol"><img src="https://avatars.githubusercontent.com/u/13428020?v=4?s=100" width="100px;" alt="Patrick Collins"/><br /><sub><b>Patrick Collins</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Patricol" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://prajwal-portfolio.netlify.app/"><img src="https://avatars.githubusercontent.com/u/48290911?v=4?s=100" width="100px;" alt="Prajwal"/><br /><sub><b>Prajwal</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=PrajwalBorkar" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/rafsaf"><img src="https://avatars.githubusercontent.com/u/51059348?v=4?s=100" width="100px;" alt="Rafał Safin"/><br /><sub><b>Rafał Safin</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=rafsaf" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/RemkoMolier"><img src="https://avatars.githubusercontent.com/u/16520301?v=4?s=100" width="100px;" alt="Remko Molier"/><br /><sub><b>Remko Molier</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=RemkoMolier" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.tuomassalmi.com/"><img src="https://avatars.githubusercontent.com/u/3398165?v=4?s=100" width="100px;" alt="Tuomas Salmi"/><br /><sub><b>Tuomas Salmi</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Tumetsu" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ikiris"><img src="https://avatars.githubusercontent.com/u/4852950?v=4?s=100" width="100px;" alt="ikiris"/><br /><sub><b>ikiris</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ikiris" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/mleone87"><img src="https://avatars.githubusercontent.com/u/807457?v=4?s=100" width="100px;" alt="mleone87"/><br /><sub><b>mleone87</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=mleone87" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://thiscute.world/en/"><img src="https://avatars.githubusercontent.com/u/22363274?v=4?s=100" width="100px;" alt="Ryan Yin"/><br /><sub><b>Ryan Yin</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ryan4yin" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/zoop-btc"><img src="https://avatars.githubusercontent.com/u/101409458?v=4?s=100" width="100px;" alt="zoop"/><br /><sub><b>zoop</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=zoop-btc" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td align="center" size="13px" colspan="7">
+        <img src="https://raw.githubusercontent.com/all-contributors/all-contributors-cli/1b8533af435da9854653492b1327a23a4dbd0a10/assets/logo-small.svg">
+          <a href="https://all-contributors.js.org/docs/en/bot/usage">Add your contributions</a>
+        </img>
+      </td>
+    </tr>
+  </tfoot>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 
