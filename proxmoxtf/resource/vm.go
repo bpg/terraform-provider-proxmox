@@ -3129,6 +3129,7 @@ func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
 
 func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 	smbiosSections := d.Get(mkResourceVirtualEnvironmentVMSMBIOS).([]interface{})
+	//nolint:nestif
 	if len(smbiosSections) > 0 {
 		smbiosBlock := smbiosSections[0].(map[string]interface{})
 		b64 := types.CustomBool(true)
@@ -4276,42 +4277,48 @@ func vmReadCustom(
 		smbios = map[string]interface{}{}
 
 		if vmConfig.SMBIOS.Family != nil {
-			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Family)
+			b, err := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Family)
+			diags = append(diags, diag.FromErr(err)...)
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSFamily] = string(b)
 		} else {
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSFamily] = dvResourceVirtualEnvironmentVMSMBIOSFamily
 		}
 
 		if vmConfig.SMBIOS.Manufacturer != nil {
-			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Manufacturer)
+			b, err := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Manufacturer)
+			diags = append(diags, diag.FromErr(err)...)
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSManufacturer] = string(b)
 		} else {
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSManufacturer] = dvResourceVirtualEnvironmentVMSMBIOSManufacturer
 		}
 
 		if vmConfig.SMBIOS.Product != nil {
-			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Product)
+			b, err := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Product)
+			diags = append(diags, diag.FromErr(err)...)
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSProduct] = string(b)
 		} else {
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSProduct] = dvResourceVirtualEnvironmentVMSMBIOSProduct
 		}
 
 		if vmConfig.SMBIOS.Serial != nil {
-			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Serial)
+			b, err := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Serial)
+			diags = append(diags, diag.FromErr(err)...)
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSSerial] = string(b)
 		} else {
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSSerial] = dvResourceVirtualEnvironmentVMSMBIOSSerial
 		}
 
 		if vmConfig.SMBIOS.SKU != nil {
-			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.SKU)
+			b, err := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.SKU)
+			diags = append(diags, diag.FromErr(err)...)
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSSKU] = string(b)
 		} else {
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSSKU] = dvResourceVirtualEnvironmentVMSMBIOSSKU
 		}
 
 		if vmConfig.SMBIOS.Version != nil {
-			b, _ := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Version)
+			b, err := base64.StdEncoding.DecodeString(*vmConfig.SMBIOS.Version)
+			diags = append(diags, diag.FromErr(err)...)
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSVersion] = string(b)
 		} else {
 			smbios[mkResourceVirtualEnvironmentVMSMBIOSVersion] = dvResourceVirtualEnvironmentVMSMBIOSVersion
