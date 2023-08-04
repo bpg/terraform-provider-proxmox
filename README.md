@@ -4,9 +4,7 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors%2D36%2Dorange.svg)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
+[![All Contributors](https://img.shields.io/github/all-contributors/bpg/terraform-provider-proxmox)](#contributors)
 [![Conventional Commits](https://img.shields.io/badge/conventional%20commits-v1.0.0-ff69b4)](https://www.conventionalcommits.org/en/v1.0.0/)
 [![Buy Me A Coffee](https://img.shields.io/badge/-buy%20me%20a%20coffee-5F7FFF?logo=buymeacoffee&labelColor=gray&logoColor=FFDD00)](https://www.buymeacoffee.com/bpgca)
 
@@ -148,7 +146,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/bpg"><img src="https://avatars.githubusercontent.com/u/627562?v=4?s=100" width="100px;" alt="Pavel Boldyrev"/><br /><sub><b>Pavel Boldyrev</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=bpg" title="Code">💻</a> <a href="#maintenance-bpg" title="Maintenance">🚧</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/luhahn"><img src="https://avatars.githubusercontent.com/u/61747797?v=4?s=100" width="100px;" alt="Lucas Hahn"/><br /><sub><b>Lucas Hahn</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=luhahn" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/blz-ea"><img src="https://avatars.githubusercontent.com/u/19339605?v=4?s=100" width="100px;" alt="Alex Kulikovskikh"/><br /><sub><b>Alex Kulikovskikh</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=blz-ea" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/otopetrik"><img src="https://avatars.githubusercontent.com/u/972298?v=4?s=100" width="100px;" alt="Oto Petřík"/><br /><sub><b>Oto Petřík</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=otopetrik" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/otopetrik"><img src="https://avatars.githubusercontent.com/u/972298?v=4?s=100" width="100px;" alt="Oto Petřík"/><br /><sub><b>Oto Petřík</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=otopetrik" title="Code">💻</a> <a href="#question-otopetrik" title="Answering Questions">💬</a> <a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aotopetrik" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.patreon.com/boik"><img src="https://avatars.githubusercontent.com/u/6451933?v=4?s=100" width="100px;" alt="Boik"/><br /><sub><b>Boik</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=qazbnm456" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/abdo-farag"><img src="https://avatars.githubusercontent.com/u/10170837?v=4?s=100" width="100px;" alt="Abdelfadeel Farag"/><br /><sub><b>Abdelfadeel Farag</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=abdo-farag" title="Code">💻</a></td>
     </tr>
@@ -202,13 +200,6 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
     </tr>
   </tfoot>
 </table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
