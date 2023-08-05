@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -30,9 +29,7 @@ import (
 var ErrNoDataObjectInResponse = errors.New("the server did not include a data object in the response")
 
 const (
-	// the large timeout is to allow for large file uploads.
-	httpClientTimeout = 5 * time.Minute
-	basePathJSONAPI   = "api2/json"
+	basePathJSONAPI = "api2/json"
 )
 
 // Client is an interface for performing requests against the Proxmox API.
@@ -93,7 +90,6 @@ func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 		endpoint: strings.TrimRight(u.String(), "/"),
 		httpClient: &http.Client{
 			Transport: transport,
-			Timeout:   httpClientTimeout,
 		},
 	}, nil
 }
