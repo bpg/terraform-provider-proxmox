@@ -2258,9 +2258,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	serialDevices := vmGetSerialDeviceList(d)
 
 	smbios := vmGetSMBIOS(d)
-	if smbios != nil && (smbios.UUID == nil || *smbios.UUID == "") {
-		smbios.UUID = types.StrPtr(uuid.New().String())
-	}
 
 	startupOrder := vmGetStartupOrder(d)
 
@@ -3139,7 +3136,7 @@ func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 		serial, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSSerial].(string)
 		sku, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSSKU].(string)
 		version, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSVersion].(string)
-		uuid, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSUUID].(string)
+		uid, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSUUID].(string)
 
 		smbios := vms.CustomSMBIOS{
 			Base64: &b64,
@@ -3175,8 +3172,12 @@ func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 			smbios.Version = &v
 		}
 
-		if uuid != "" {
-			smbios.UUID = &uuid
+		if uid != "" {
+			smbios.UUID = &uid
+		}
+
+		if smbios.UUID == nil || *smbios.UUID == "" {
+			smbios.UUID = types.StrPtr(uuid.New().String())
 		}
 
 		return &smbios
@@ -4336,7 +4337,7 @@ func vmReadCustom(
 	//nolint:gocritic
 	if len(clone) > 0 {
 		if len(currentSMBIOS) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentVMSMBIOS, []interface{}{currentSMBIOS})
+			err := d.Set(mkResourceVirtualEnvironmentVMSMBIOS, currentSMBIOS)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(smbios) == 0 {
@@ -5173,10 +5174,16 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMSMBIOS) {
 		updateBody.SMBIOS = vmGetSMBIOS(d)
+		if updateBody.SMBIOS == nil {
+			del = append(del, "smbios1")
+		}
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentVMStartup) {
 		updateBody.StartupOrder = vmGetStartupOrder(d)
+		if updateBody.StartupOrder == nil {
+			del = append(del, "startup")
+		}
 	}
 
 	// Prepare the new VGA configuration.
