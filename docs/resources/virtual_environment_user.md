@@ -49,7 +49,7 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
 - `groups` - (Optional) The user's groups.
 - `keys` - (Optional) The user's keys.
 - `last_name` - (Optional) The user's last name.
-- `password` - (Required) The user's password.
+- `password` - (Optional) The user's password. Required for PVE or PAM realms.
 - `user_id` - (Required) The user identifier.
 
 ## Attribute Reference
