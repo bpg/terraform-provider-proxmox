@@ -31,7 +31,6 @@ func TestUserSchema(t *testing.T) {
 	s := User()
 
 	test.AssertRequiredArguments(t, s, []string{
-		mkResourceVirtualEnvironmentUserPassword,
 		mkResourceVirtualEnvironmentUserUserID,
 	})
 
@@ -45,6 +44,7 @@ func TestUserSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentUserGroups,
 		mkResourceVirtualEnvironmentUserKeys,
 		mkResourceVirtualEnvironmentUserLastName,
+		mkResourceVirtualEnvironmentUserPassword,
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
