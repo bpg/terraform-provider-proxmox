@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.28.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.27.0...v0.28.0) (2023-08-06)
+
+
+### Features
+
+* **vm:** add support for SMBIOS settings ([#454](https://github.com/bpg/terraform-provider-proxmox/issues/454)) ([85ff60d](https://github.com/bpg/terraform-provider-proxmox/commit/85ff60d4bd928880eebeb6bbd9440a65a3e2cc9d))
+
+
+### Bug Fixes
+
+* **api:** remove HTTP client timeout ([#464](https://github.com/bpg/terraform-provider-proxmox/issues/464)) ([824e51c](https://github.com/bpg/terraform-provider-proxmox/commit/824e51c6508fe0e5905b143ef6d8dd161b1acbfe))
+* **user:** make `password` attribute optional ([#463](https://github.com/bpg/terraform-provider-proxmox/issues/463)) ([5a3b1cc](https://github.com/bpg/terraform-provider-proxmox/commit/5a3b1ccaf703db260ba25e564c04506ea0de6247))
+* **vm:** give `cache` the correct default value ([#450](https://github.com/bpg/terraform-provider-proxmox/issues/450)) ([0d3227a](https://github.com/bpg/terraform-provider-proxmox/commit/0d3227a890b4df12ecb71fbd3215e5f1d4babff8))
+
+
+### Miscellaneous
+
+* **doc:** add all-contributors to README.md ([#455](https://github.com/bpg/terraform-provider-proxmox/issues/455)) ([d885e64](https://github.com/bpg/terraform-provider-proxmox/commit/d885e643728c1da30deca3f26150a57ba75593db))
+* **doc:** add existing contributors ([#459](https://github.com/bpg/terraform-provider-proxmox/issues/459)) ([cb71d73](https://github.com/bpg/terraform-provider-proxmox/commit/cb71d731f1903ec9fbfa2eb5d4b78c53c961f86f))
+* **doc:** cleanup readme ([#461](https://github.com/bpg/terraform-provider-proxmox/issues/461)) ([368b133](https://github.com/bpg/terraform-provider-proxmox/commit/368b133427e14753b287469b814591141126913d))
+
 ## [0.27.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.26.0...v0.27.0) (2023-07-30)
 
 
