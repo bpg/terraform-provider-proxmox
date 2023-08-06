@@ -414,6 +414,14 @@ output "ubuntu_vm_public_key" {
     - `virtio-scsi-single` - VirtIO SCSI (single queue).
     - `megasas` - LSI Logic MegaRAID SAS.
     - `pvscsi` - VMware Paravirtual SCSI.
+- `smbios` - (Optional) The SMBIOS (type1) settings for the VM.
+    - `family`- (Optional) The family string.
+    - `manufacturer` - (Optional) The manufacturer.
+    - `product` - (Optional) The product ID.
+    - `serial` - (Optional) The serial number.
+    - `sku` - (Optional) The SKU number.
+    - `uuid` - (Optional) The UUID (defaults to randomly generated UUID).
+    - `version` - (Optional) The version.
 - `started` - (Optional) Whether to start the virtual machine (defaults
   to `true`).
 - `startup` - (Optional) Defines startup and shutdown behavior of the VM.

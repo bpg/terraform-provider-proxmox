@@ -13,6 +13,12 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     numa = true
   }
 
+  smbios {
+    manufacturer = "Terraform"
+    product      = "Terraform Provider Proxmox"
+    version      = "0.0.1"
+  }
+
   startup {
     order      = "3"
     up_delay   = "60"
