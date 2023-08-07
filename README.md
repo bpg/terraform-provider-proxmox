@@ -188,6 +188,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://www.si458.co.uk"><img src="https://avatars.githubusercontent.com/u/765314?v=4?s=100" width="100px;" alt="Simon Smith"/><br /><sub><b>Simon Smith</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Asi458" title="Bug reports">🐛</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=si458" title="Tests">⚠️</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/grzeg1"><img src="https://avatars.githubusercontent.com/u/8179857?v=4?s=100" width="100px;" alt="grzeg1"/><br /><sub><b>grzeg1</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Agrzeg1" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>
