@@ -76,6 +76,7 @@ EOF
     - `data` - (Required) The raw data.
     - `file_name` - (Required) The file name.
     - `resize` - (Optional) The number of bytes to resize the file to.
+- `timeout_upload` - (Optional) Timeout for uploading ISO/VSTMPL files. Default 1800s.
 
 ## Attribute Reference
 
