@@ -194,7 +194,7 @@ func File() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentFileTimeoutUpload: {
 				Type:        schema.TypeInt,
-				Description: "Timeout to upload ISO/VZTMPL",
+				Description: "Timeout for uploading ISO/VSTMPL files in seconds",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentFileTimeoutUpload,
 			},
