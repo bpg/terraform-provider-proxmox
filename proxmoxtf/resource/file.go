@@ -197,7 +197,6 @@ func File() *schema.Resource {
 				Description: "Timeout to upload ISO/VZTMPL",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentFileTimeoutUpload,
-				ForceNew:    true,
 			},
 		},
 		CreateContext: fileCreate,
