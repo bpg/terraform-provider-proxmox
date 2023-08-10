@@ -144,6 +144,7 @@ func (c *Client) APIUpload(
 	ctx context.Context,
 	datastoreID string,
 	d *api.FileUploadRequest,
+	uploadTimeout int,
 ) (*DatastoreUploadResponseBody, error) {
 	tflog.Debug(ctx, "uploading file to datastore using PVE API", map[string]interface{}{
 		"file_name":    d.FileName,
@@ -274,6 +275,16 @@ func (c *Client) APIUpload(
 
 	if err != nil {
 		return nil, fmt.Errorf("error uploading file to datastore %s: %w", datastoreID, err)
+	}
+
+	if resBody.UploadID == nil {
+		return nil, fmt.Errorf("error uploading file to datastore %s: no uploadID", datastoreID)
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *resBody.UploadID, uploadTimeout, 5)
+
+	if err != nil {
+		return nil, fmt.Errorf("error uploading file to datastore %s: failed waiting for upload - %w", datastoreID, err)
 	}
 
 	return resBody, nil

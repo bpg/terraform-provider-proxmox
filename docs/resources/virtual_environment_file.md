@@ -76,6 +76,8 @@ EOF
     - `data` - (Required) The raw data.
     - `file_name` - (Required) The file name.
     - `resize` - (Optional) The number of bytes to resize the file to.
+- `timeout_upload` - (Optional) Timeout for uploading ISO/VSTMPL files in
+  seconds (defaults to 1800).
 
 ## Attribute Reference
 
@@ -96,7 +98,8 @@ created as another temporary file).
 
 ## Import
 
-Instances can be imported using the `node_name`, `datastore_id`, `content_type` and the `file_name`, e.g.,
+Instances can be imported using the `node_name`, `datastore_id`, `content_type`
+and the `file_name`, e.g.,
 
 ```bash
 $ terraform import proxmox_virtual_environment_file.cloud_config pve/local/snippets/example.cloud-config.yaml
