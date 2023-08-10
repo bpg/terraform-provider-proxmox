@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.29.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.28.0...v0.29.0) (2023-08-10)
+
+
+### Features
+
+* **file:** ensure upload of ISO/VSTMPL is completed upon resource creation ([#471](https://github.com/bpg/terraform-provider-proxmox/issues/471)) ([f901e71](https://github.com/bpg/terraform-provider-proxmox/commit/f901e711dd4e8cd59b3a1e34c58a1a03564bd13a))
+
+
+### Bug Fixes
+
+* **user:** make `password` attribute optional ([#474](https://github.com/bpg/terraform-provider-proxmox/issues/474)) ([244e061](https://github.com/bpg/terraform-provider-proxmox/commit/244e061779f05752bd0760ea6b5a15c869e26505))
+* **vm:** default disk cache is not set to `none` if not specified for an existing disk ([#478](https://github.com/bpg/terraform-provider-proxmox/issues/478)) ([8d0b3ed](https://github.com/bpg/terraform-provider-proxmox/commit/8d0b3ed25fa1c2dcc0d319d725aea34f3e18aef8))
+* **vm:** ensure startup / shutdown delay is applied when order is not configured ([#479](https://github.com/bpg/terraform-provider-proxmox/issues/479)) ([2cf64b8](https://github.com/bpg/terraform-provider-proxmox/commit/2cf64b88c35991db19f83a1fa69ed41cbceebd32))
+
+
+### Miscellaneous
+
+* **deps-dev:** bump commonmarker from 0.23.9 to 0.23.10 in /docs ([#472](https://github.com/bpg/terraform-provider-proxmox/issues/472)) ([2e16fbb](https://github.com/bpg/terraform-provider-proxmox/commit/2e16fbb44bf45e58c9296d1e1e28d3fbea9d732c))
+* **deps:** bump github.com/golangci/golangci-lint from 1.53.3 to 1.54.0 in /tools ([#482](https://github.com/bpg/terraform-provider-proxmox/issues/482)) ([390f03c](https://github.com/bpg/terraform-provider-proxmox/commit/390f03c1590725d7f89a1f38c3848269bbe4c402))
+* **deps:** bump github.com/goreleaser/goreleaser from 1.19.2 to 1.20.0 in /tools ([#481](https://github.com/bpg/terraform-provider-proxmox/issues/481)) ([eb3d847](https://github.com/bpg/terraform-provider-proxmox/commit/eb3d8473acd593ef0e876b711c3ffc3441fc4b54))
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework from 1.3.3 to 1.3.4 ([#466](https://github.com/bpg/terraform-provider-proxmox/issues/466)) ([8a5a533](https://github.com/bpg/terraform-provider-proxmox/commit/8a5a53301b3e2e7ecad9322c80f2700726ea0504))
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework-validators from 0.10.0 to 0.11.0 ([#467](https://github.com/bpg/terraform-provider-proxmox/issues/467)) ([7c9e3ed](https://github.com/bpg/terraform-provider-proxmox/commit/7c9e3ed1afaa3bf50b78be1aefd77cc76fc3d06d))
+* **deps:** bump golang.org/x/crypto from 0.11.0 to 0.12.0 ([#465](https://github.com/bpg/terraform-provider-proxmox/issues/465)) ([185e98f](https://github.com/bpg/terraform-provider-proxmox/commit/185e98fe802119ab0de53bb2eeb34d7510517475))
+* **deps:** bump goreleaser/goreleaser-action from 4.3.0 to 4.4.0 ([#480](https://github.com/bpg/terraform-provider-proxmox/issues/480)) ([a7047da](https://github.com/bpg/terraform-provider-proxmox/commit/a7047dac7269143ce833da1310ca6f03646ccbf1))
+
 ## [0.28.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.27.0...v0.28.0) (2023-08-06)
 
 
