@@ -1303,18 +1303,16 @@ func VM() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentVMStartupOrder,
 						},
 						mkResourceVirtualEnvironmentVMStartupUpDelay: {
-							Type:             schema.TypeInt,
-							Description:      "A non-negative number defining the delay in seconds before the next VM is started",
-							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMStartupUpDelay,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+							Type:        schema.TypeInt,
+							Description: "A non-negative number defining the delay in seconds before the next VM is started",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMStartupUpDelay,
 						},
 						mkResourceVirtualEnvironmentVMStartupDownDelay: {
-							Type:             schema.TypeInt,
-							Description:      "A non-negative number defining the delay in seconds before the next VM is shut down",
-							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMStartupDownDelay,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+							Type:        schema.TypeInt,
+							Description: "A non-negative number defining the delay in seconds before the next VM is shut down",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMStartupDownDelay,
 						},
 					},
 				},
@@ -3206,8 +3204,9 @@ func vmGetStartupOrder(d *schema.ResourceData) *vms.CustomStartupOrder {
 
 		if startupOrder >= 0 {
 			order.Order = &startupOrder
-			return &order
 		}
+
+		return &order
 	}
 
 	return nil
