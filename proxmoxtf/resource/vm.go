@@ -3706,13 +3706,13 @@ func vmReadCustom(
 		if dd.Discard != nil {
 			disk[mkResourceVirtualEnvironmentVMDiskDiscard] = *dd.Discard
 		} else {
-			disk[mkResourceVirtualEnvironmentVMDiskDiscard] = ""
+			disk[mkResourceVirtualEnvironmentVMDiskDiscard] = dvResourceVirtualEnvironmentVMDiskDiscard
 		}
 
 		if dd.Cache != nil {
 			disk[mkResourceVirtualEnvironmentVMDiskCache] = *dd.Cache
 		} else {
-			disk[mkResourceVirtualEnvironmentVMDiskCache] = ""
+			disk[mkResourceVirtualEnvironmentVMDiskCache] = dvResourceVirtualEnvironmentVMDiskCache
 		}
 
 		diskMap[di] = disk
@@ -5007,6 +5007,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				tmp.BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
 				tmp.MaxReadSpeedMbps = value.MaxReadSpeedMbps
 				tmp.MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
+				tmp.Cache = value.Cache
 
 				switch prefix {
 				case "virtio":
