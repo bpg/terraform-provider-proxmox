@@ -40,6 +40,7 @@ func TestFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileContentType,
 		mkResourceVirtualEnvironmentFileSourceFile,
 		mkResourceVirtualEnvironmentFileSourceRaw,
+		mkResourceVirtualEnvironmentFileTimeoutUpload,
 	})
 
 	test.AssertComputedAttributes(t, s, []string{
@@ -59,6 +60,7 @@ func TestFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileNodeName:             schema.TypeString,
 		mkResourceVirtualEnvironmentFileSourceFile:           schema.TypeList,
 		mkResourceVirtualEnvironmentFileSourceRaw:            schema.TypeList,
+		mkResourceVirtualEnvironmentFileTimeoutUpload:        schema.TypeInt,
 	})
 
 	sourceFileSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentFileSourceFile)
