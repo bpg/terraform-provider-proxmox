@@ -40,6 +40,7 @@ const (
 	dvResourceVirtualEnvironmentFileSourceFileFileName = ""
 	dvResourceVirtualEnvironmentFileSourceFileInsecure = false
 	dvResourceVirtualEnvironmentFileSourceRawResize    = 0
+	dvResourceVirtualEnvironmentFileTimeoutUpload      = 1800
 
 	mkResourceVirtualEnvironmentFileContentType          = "content_type"
 	mkResourceVirtualEnvironmentFileDatastoreID          = "datastore_id"
@@ -58,6 +59,7 @@ const (
 	mkResourceVirtualEnvironmentFileSourceRawData        = "data"
 	mkResourceVirtualEnvironmentFileSourceRawFileName    = "file_name"
 	mkResourceVirtualEnvironmentFileSourceRawResize      = "resize"
+	mkResourceVirtualEnvironmentFileTimeoutUpload        = "timeout_upload"
 )
 
 // File returns a resource that manages files on a node.
@@ -189,6 +191,12 @@ func File() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentFileTimeoutUpload: {
+				Type:        schema.TypeInt,
+				Description: "Timeout for uploading ISO/VSTMPL files in seconds",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentFileTimeoutUpload,
 			},
 		},
 		CreateContext: fileCreate,
@@ -425,7 +433,8 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	switch *contentType {
 	case "iso", "vztmpl":
-		_, err = capi.Node(nodeName).APIUpload(ctx, datastoreID, request)
+		uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
+		_, err = capi.Node(nodeName).APIUpload(ctx, datastoreID, request, uploadTimeout)
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
