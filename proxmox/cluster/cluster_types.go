@@ -27,7 +27,7 @@ type ResourcesListBody struct {
 
 // ResourcesListRequestBody contains the body params to cluster resource list request.
 type ResourcesListRequestBody struct {
-	Type string `json:"type"  url:"type"`
+	Type string `json:"type" url:"type"`
 }
 
 // ResourcesListResponseData contains the data from a cluster resource list body response.

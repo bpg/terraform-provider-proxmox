@@ -49,5 +49,5 @@ type RuleUpdateRequestBody struct {
 	Action *string `json:"action,omitempty" url:"action,omitempty"`
 	Type   *string `json:"type,omitempty"   url:"type,omitempty"`
 
-	Group *string `json:"group,omitempty"   url:"group,omitempty"`
+	Group *string `json:"group,omitempty" url:"group,omitempty"`
 }
