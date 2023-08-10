@@ -10,6 +10,11 @@ resource "proxmox_virtual_environment_user" "example" {
   user_id  = "terraform-provider-proxmox-example@pve"
 }
 
+resource "proxmox_virtual_environment_user" "example2" {
+  comment  = "Managed by Terraform"
+  user_id  = "terraform-provider-proxmox-example2@pve"
+}
+
 output "resource_proxmox_virtual_environment_user_example_acl" {
   value = proxmox_virtual_environment_user.example.acl
 }
