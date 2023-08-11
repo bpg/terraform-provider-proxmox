@@ -3473,7 +3473,6 @@ func vmReadCustom(
 
 	// Compare the IDE devices to the CDROM configurations stored in the state.
 	currentInterface := dvResourceVirtualEnvironmentVMCDROMInterface
-	cdromIDEDevice := vmConfig.IDEDevice3
 
 	currentCDROM := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
 	if len(currentCDROM) > 0 {
@@ -3481,6 +3480,7 @@ func vmReadCustom(
 		currentInterface = currentBlock[mkResourceVirtualEnvironmentVMCDROMInterface].(string)
 	}
 
+	cdromIDEDevice := vmConfig.IDEDevice3
 	switch currentInterface {
 	case "ide0":
 		cdromIDEDevice = vmConfig.IDEDevice0
