@@ -5147,10 +5147,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		updateBody.CloudInitConfig = initializationConfig
 
 		if updateBody.CloudInitConfig != nil {
+			var fileVolume string
 			initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 			initializationBlock := initialization[0].(map[string]interface{})
 			initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
 			initializationInterface := initializationBlock[mkResourceVirtualEnvironmentVMInitializationInterface].(string)
+			cdromMedia := "cdrom"
 
 			existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "")
 			if initializationInterface == "" && existingInterface == "" {
@@ -5164,7 +5166,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				tflog.Debug(ctx, fmt.Sprintf("CloudInit must be moved from %s to %s", existingInterface, initializationInterface))
 			}
 
-			if mustMove || d.HasChange(mkResourceVirtualEnvironmentVMInitializationDatastoreID) {
+			if mustMove || d.HasChange(mkResourceVirtualEnvironmentVMInitializationDatastoreID) || existingInterface == "" {
 				// CloudInit must be moved, either from a device to another or from a datastore
 				// to another (or both). This requires the VM to be stopped.
 				if err := vmShutdown(ctx, vmAPI, d); err != nil {
@@ -5176,13 +5178,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				}
 
 				stoppedBeforeUpdate = true
+				fileVolume = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+			} else {
+				ideDevice := getIdeDevice(vmConfig, existingInterface)
+				fileVolume = ideDevice.FileVolume
 			}
-
-			cdromMedia := "cdrom"
 
 			updateBody.IDEDevices[initializationInterface] = vms.CustomStorageDevice{
 				Enabled:    true,
-				FileVolume: fmt.Sprintf("%s:cloudinit", initializationDatastoreID),
+				FileVolume: fileVolume,
 				Media:      &cdromMedia,
 			}
 		}
