@@ -383,6 +383,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "tseeker",
+      "name": "Emmanuel Benoît",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1409844?v=4",
+      "profile": "http://www.ebenoit.info",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
