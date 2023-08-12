@@ -129,8 +129,6 @@ resource "proxmox_virtual_environment_vm" "example" {
     ]
   }
 
-  # While overwriting the initialization block when cloning a template is possible, it is not recommended.
-  # This will cause the coned VM to be reinitialized each time on re-apply.
   #  initialization {
   #    dns {
   #      server = "8.8.8.8"
