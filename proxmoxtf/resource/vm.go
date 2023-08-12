@@ -1516,7 +1516,9 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 // Check for an existing CloudInit IDE drive. If no such drive is found, return -1.
 func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, defaultValue string) string {
-	devices := []*vms.CustomStorageDevice{vmConfig.IDEDevice0, vmConfig.IDEDevice1, vmConfig.IDEDevice2, vmConfig.IDEDevice3}
+	devices := []*vms.CustomStorageDevice{
+		vmConfig.IDEDevice0, vmConfig.IDEDevice1, vmConfig.IDEDevice2, vmConfig.IDEDevice3,
+	}
 	for i, device := range devices {
 		if device != nil && device.Enabled && device.Media != nil && *device.Media == "cdrom" && strings.Contains(
 			device.FileVolume,
@@ -1525,12 +1527,14 @@ func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, default
 			return fmt.Sprintf("ide%d", i)
 		}
 	}
+
 	return defaultValue
 }
 
 // Return a pointer to the IDE device configuration based on its name.
 func getIdeDevice(vmConfig *vms.GetResponseData, deviceName string) *vms.CustomStorageDevice {
 	ideDevice := vmConfig.IDEDevice3
+
 	switch deviceName {
 	case "ide0":
 		ideDevice = vmConfig.IDEDevice0
@@ -1539,6 +1543,7 @@ func getIdeDevice(vmConfig *vms.GetResponseData, deviceName string) *vms.CustomS
 	case "ide2":
 		ideDevice = vmConfig.IDEDevice2
 	}
+
 	return ideDevice
 }
 
@@ -1549,14 +1554,17 @@ func deleteIdeDrives(ctx context.Context, vmAPI *vms.Client, itf1 string, itf2 s
 	ddUpdateBody := &vms.UpdateRequestBody{}
 	ddUpdateBody.Delete = append(ddUpdateBody.Delete, itf1)
 	tflog.Debug(ctx, fmt.Sprintf("Deleting IDE interface '%s'", itf1))
+
 	if itf2 != "" && itf2 != itf1 {
 		ddUpdateBody.Delete = append(ddUpdateBody.Delete, itf2)
 		tflog.Debug(ctx, fmt.Sprintf("Deleting IDE interface '%s'", itf2))
 	}
+
 	e := vmAPI.UpdateVM(ctx, ddUpdateBody)
 	if e != nil {
 		return diag.FromErr(e)
 	}
+
 	return nil
 }
 
@@ -1571,10 +1579,10 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 		ForceStop: &forceStop,
 		Timeout:   &shutdownTimeout,
 	}, shutdownTimeout+30)
-
 	if e != nil {
 		return diag.FromErr(e)
 	}
+
 	return nil
 }
 
@@ -1875,15 +1883,16 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
 		initializationInterface := initializationBlock[mkResourceVirtualEnvironmentVMInitializationInterface].(string)
 
-		existingInterface := ""
-		if vmConfig, err := vmAPI.GetVM(ctx); err != nil {
+		vmConfig, err := vmAPI.GetVM(ctx)
+		if err != nil {
 			return diag.FromErr(err)
-		} else {
-			existingInterface = findExistingCloudInitDrive(vmConfig, vmID, "ide2")
 		}
+
+		existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "ide2")
 		if initializationInterface == "" {
 			initializationInterface = existingInterface
 		}
+
 		tflog.Trace(ctx, fmt.Sprintf("CloudInit IDE interface is '%s'", initializationInterface))
 
 		const cdromCloudInitEnabled = true
@@ -2290,10 +2299,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
-		cdromCloudInitInterface = initializationBlock[mkResourceVirtualEnvironmentVMInitializationInterface].(string)
 
 		cdromCloudInitEnabled = true
 		cdromCloudInitFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+
+		cdromCloudInitInterface = initializationBlock[mkResourceVirtualEnvironmentVMInitializationInterface].(string)
 		if cdromCloudInitInterface == "" {
 			cdromCloudInitInterface = "ide2"
 		}
@@ -5155,14 +5165,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 
 			if mustMove || d.HasChange(mkResourceVirtualEnvironmentVMInitializationDatastoreID) {
-				// CloudInit must be moved, either from a device to another or from a datastore to another (or both). This requires the VM to be stopped.
-				stoppedBeforeUpdate = true
+				// CloudInit must be moved, either from a device to another or from a datastore
+				// to another (or both). This requires the VM to be stopped.
 				if err := vmShutdown(ctx, vmAPI, d); err != nil {
 					return err
 				}
+
 				if err := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); err != nil {
 					return err
 				}
+
+				stoppedBeforeUpdate = true
 			}
 
 			cdromMedia := "cdrom"
@@ -5304,9 +5317,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Determine if the state of the virtual machine state needs to be changed.
-	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
-
+	//nolint: nestif
 	if (d.HasChange(mkResourceVirtualEnvironmentVMStarted) || stoppedBeforeUpdate) && !bool(template) {
+		started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 		if started {
 			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
 
