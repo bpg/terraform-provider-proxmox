@@ -37,10 +37,10 @@ type Client interface {
 	// Version returns a client for getting the version of the Proxmox Virtual Environment API.
 	Version() *version.Client
 
-	// API returns a lower-lever REST API client.
+	// API returns a lower-level REST API client.
 	API() api.Client
 
-	// SSH returns a lower-lever SSH client.
+	// SSH returns a lower-level SSH client.
 	SSH() ssh.Client
 }
 
