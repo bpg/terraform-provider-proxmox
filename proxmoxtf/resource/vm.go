@@ -1502,6 +1502,22 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return vmCreateCustom(ctx, d, m)
 }
 
+// Shutdown the VM.
+func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
+	forceStop := types.CustomBool(true)
+	shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
+
+	e := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
+		ForceStop: &forceStop,
+		Timeout:   &shutdownTimeout,
+	}, shutdownTimeout+30)
+
+	if e != nil {
+		return diag.FromErr(e)
+	}
+	return nil
+}
+
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
@@ -5224,17 +5240,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				return diag.FromErr(e)
 			}
 		} else {
-			forceStop := types.CustomBool(true)
-			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
-
-			e = vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
-				ForceStop: &forceStop,
-				Timeout:   &shutdownTimeout,
-			}, shutdownTimeout+30)
-			if e != nil {
-				return diag.FromErr(e)
+			if e := vmShutdown(ctx, vmAPI, d); e != nil {
+				return e
 			}
-
 			rebootRequired = false
 		}
 	}
@@ -5365,19 +5373,8 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		if shutdownForDisksRequired && !template {
-			forceStop := types.CustomBool(true)
-			shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
-
-			err = vmAPI.ShutdownVM(
-				ctx,
-				&vms.ShutdownRequestBody{
-					ForceStop: &forceStop,
-					Timeout:   &shutdownTimeout,
-				},
-				shutdownTimeout+30,
-			)
-			if err != nil {
-				return diag.FromErr(err)
+			if e := vmShutdown(ctx, vmAPI, d); e != nil {
+				return e
 			}
 		}
 
@@ -5456,19 +5453,8 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	if status.Status != "stopped" {
-		forceStop := types.CustomBool(true)
-		shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
-
-		err = vmAPI.ShutdownVM(
-			ctx,
-			&vms.ShutdownRequestBody{
-				ForceStop: &forceStop,
-				Timeout:   &shutdownTimeout,
-			},
-			shutdownTimeout+30,
-		)
-		if err != nil {
-			return diag.FromErr(err)
+		if e := vmShutdown(ctx, vmAPI, d); e != nil {
+			return e
 		}
 	}
 
