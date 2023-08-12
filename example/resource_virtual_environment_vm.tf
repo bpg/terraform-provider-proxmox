@@ -56,6 +56,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   initialization {
     datastore_id = local.datastore_id
+    # interface = "ide2"
 
     dns {
       server = "1.1.1.1"
@@ -129,11 +130,21 @@ resource "proxmox_virtual_environment_vm" "example" {
     ]
   }
 
-  #  initialization {
-  #    dns {
-  #      server = "8.8.8.8"
-  #    }
-  #  }
+  initialization {
+    // if unspecified:
+    //   - autodetected if there is a cloud-init device on the template
+    //   - otherwise defaults to ide2
+    interface = "ide0"
+
+    dns {
+      server = "8.8.8.8"
+    }
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+  }
 
 }
 
