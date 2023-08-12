@@ -18,6 +18,7 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -76,6 +77,7 @@ const (
 	dvResourceVirtualEnvironmentVMEFIDiskType                       = "2m"
 	dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys            = false
 	dvResourceVirtualEnvironmentVMInitializationDatastoreID         = "local-lvm"
+	dvResourceVirtualEnvironmentVMInitializationInterface           = ""
 	dvResourceVirtualEnvironmentVMInitializationDNSDomain           = ""
 	dvResourceVirtualEnvironmentVMInitializationDNSServer           = ""
 	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address = ""
@@ -196,6 +198,7 @@ const (
 	mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA                 = "xvga"
 	mkResourceVirtualEnvironmentVMInitialization                    = "initialization"
 	mkResourceVirtualEnvironmentVMInitializationDatastoreID         = "datastore_id"
+	mkResourceVirtualEnvironmentVMInitializationInterface           = "interface"
 	mkResourceVirtualEnvironmentVMInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentVMInitializationDNSDomain           = "domain"
 	mkResourceVirtualEnvironmentVMInitializationDNSServer           = "server"
@@ -779,6 +782,16 @@ func VM() *schema.Resource {
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentVMInitializationDatastoreID,
+						},
+						mkResourceVirtualEnvironmentVMInitializationInterface: {
+							Type:             schema.TypeString,
+							Description:      "The IDE interface on which the CloudInit drive will be added",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMInitializationInterface,
+							ValidateDiagFunc: validator.IDEInterface(),
+							DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+								return newValue == ""
+							},
 						},
 						mkResourceVirtualEnvironmentVMInitializationDNS: {
 							Type:        schema.TypeList,
@@ -1502,8 +1515,56 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return vmCreateCustom(ctx, d, m)
 }
 
+// Check for an existing CloudInit IDE drive. If no such drive is found, return -1.
+func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, defaultValue string) string {
+	devices := []*vms.CustomStorageDevice{vmConfig.IDEDevice0, vmConfig.IDEDevice1, vmConfig.IDEDevice2, vmConfig.IDEDevice3}
+	for i, device := range devices {
+		if device != nil && device.Enabled && device.Media != nil && *device.Media == "cdrom" && strings.Contains(
+			device.FileVolume,
+			fmt.Sprintf("vm-%d-cloudinit", vmID),
+		) {
+			return fmt.Sprintf("ide%d", i)
+		}
+	}
+	return defaultValue
+}
+
+// Return a pointer to the IDE device configuration based on its name.
+func getIdeDevice(vmConfig *vms.GetResponseData, deviceName string) *vms.CustomStorageDevice {
+	ideDevice := vmConfig.IDEDevice3
+	switch deviceName {
+	case "ide0":
+		ideDevice = vmConfig.IDEDevice0
+	case "ide1":
+		ideDevice = vmConfig.IDEDevice1
+	case "ide2":
+		ideDevice = vmConfig.IDEDevice2
+	}
+	return ideDevice
+}
+
+// Delete IDE interfaces that can then be used for CloudInit. The first interface will always
+// be deleted. The second will be deleted only if it isn't empty and isn't the same as the
+// first.
+func deleteIdeDrives(ctx context.Context, vmAPI *vms.Client, itf1 string, itf2 string) diag.Diagnostics {
+	ddUpdateBody := &vms.UpdateRequestBody{}
+	ddUpdateBody.Delete = append(ddUpdateBody.Delete, itf1)
+	tflog.Debug(ctx, fmt.Sprintf("Deleting IDE interface '%s'", itf1))
+	if itf2 != "" && itf2 != itf1 {
+		ddUpdateBody.Delete = append(ddUpdateBody.Delete, itf2)
+		tflog.Debug(ctx, fmt.Sprintf("Deleting IDE interface '%s'", itf2))
+	}
+	e := vmAPI.UpdateVM(ctx, ddUpdateBody)
+	if e != nil {
+		return diag.FromErr(e)
+	}
+	return nil
+}
+
 // Shutdown the VM.
 func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
+	tflog.Debug(ctx, "Shutting down VM")
+
 	forceStop := types.CustomBool(true)
 	shutdownTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutShutdownVM).(int)
 
@@ -1763,12 +1824,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		cdromMedia := "cdrom"
 
-		ideDevices = vms.CustomStorageDevices{
-			cdromInterface: vms.CustomStorageDevice{
-				Enabled:    cdromEnabled,
-				FileVolume: cdromFileID,
-				Media:      &cdromMedia,
-			},
+		ideDevices[cdromInterface] = vms.CustomStorageDevice{
+			Enabled:    cdromEnabled,
+			FileVolume: cdromFileID,
+			Media:      &cdromMedia,
 		}
 	}
 
@@ -1811,26 +1870,34 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(initialization) > 0 {
+		tflog.Trace(ctx, "Preparing the CloudInit configuration")
+
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
+		initializationInterface := initializationBlock[mkResourceVirtualEnvironmentVMInitializationInterface].(string)
+
+		existingInterface := ""
+		if vmConfig, err := vmAPI.GetVM(ctx); err != nil {
+			return diag.FromErr(err)
+		} else {
+			existingInterface = findExistingCloudInitDrive(vmConfig, vmID, "ide2")
+		}
+		if initializationInterface == "" {
+			initializationInterface = existingInterface
+		}
+		tflog.Trace(ctx, fmt.Sprintf("CloudInit IDE interface is '%s'", initializationInterface))
 
 		const cdromCloudInitEnabled = true
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
-
-		ideDevices = vms.CustomStorageDevices{
-			"ide2": vms.CustomStorageDevice{
-				Enabled:    cdromCloudInitEnabled,
-				FileVolume: cdromCloudInitFileID,
-				Media:      &cdromCloudInitMedia,
-			},
+		ideDevices[initializationInterface] = vms.CustomStorageDevice{
+			Enabled:    cdromCloudInitEnabled,
+			FileVolume: cdromCloudInitFileID,
+			Media:      &cdromCloudInitMedia,
 		}
-		ciUpdateBody := &vms.UpdateRequestBody{}
-		ciUpdateBody.Delete = append(ciUpdateBody.Delete, "ide2")
 
-		e = vmAPI.UpdateVM(ctx, ciUpdateBody)
-		if e != nil {
-			return diag.FromErr(e)
+		if err := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); err != nil {
+			return err
 		}
 
 		updateBody.CloudInitConfig = vmGetCloudInitConfig(d)
@@ -2158,6 +2225,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	cdromCloudInitEnabled := false
 	cdromCloudInitFileID := ""
+	cdromCloudInitInterface := ""
 
 	if cdromFileID == "" {
 		cdromFileID = "cdrom"
@@ -2223,9 +2291,13 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
+		cdromCloudInitInterface = initializationBlock[mkResourceVirtualEnvironmentVMInitializationInterface].(string)
 
 		cdromCloudInitEnabled = true
 		cdromCloudInitFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+		if cdromCloudInitInterface == "" {
+			cdromCloudInitInterface = "ide2"
+		}
 	}
 
 	pciDeviceObjects := vmGetHostPCIDeviceObjects(d)
@@ -2340,7 +2412,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	ideDevice2Media := "cdrom"
 	ideDevices := vms.CustomStorageDevices{
-		"ide2": vms.CustomStorageDevice{
+		cdromCloudInitInterface: vms.CustomStorageDevice{
 			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
@@ -3496,15 +3568,7 @@ func vmReadCustom(
 		currentInterface = currentBlock[mkResourceVirtualEnvironmentVMCDROMInterface].(string)
 	}
 
-	cdromIDEDevice := vmConfig.IDEDevice3
-	switch currentInterface {
-	case "ide0":
-		cdromIDEDevice = vmConfig.IDEDevice0
-	case "ide1":
-		cdromIDEDevice = vmConfig.IDEDevice1
-	case "ide2":
-		cdromIDEDevice = vmConfig.IDEDevice2
-	}
+	cdromIDEDevice := getIdeDevice(vmConfig, currentInterface)
 
 	//nolint:nestif
 	if cdromIDEDevice != nil {
@@ -3883,16 +3947,13 @@ func vmReadCustom(
 	// Compare the initialization configuration to the one stored in the state.
 	initialization := map[string]interface{}{}
 
-	if vmConfig.IDEDevice2 != nil {
-		if *vmConfig.IDEDevice2.Media == "cdrom" {
-			if strings.Contains(
-				vmConfig.IDEDevice2.FileVolume,
-				fmt.Sprintf("vm-%d-cloudinit", vmID),
-			) {
-				fileVolumeParts := strings.Split(vmConfig.IDEDevice2.FileVolume, ":")
-				initialization[mkResourceVirtualEnvironmentVMInitializationDatastoreID] = fileVolumeParts[0]
-			}
-		}
+	initializationInterface := findExistingCloudInitDrive(vmConfig, vmID, "")
+	if initializationInterface != "" {
+		initializationDevice := getIdeDevice(vmConfig, initializationInterface)
+		fileVolumeParts := strings.Split(initializationDevice.FileVolume, ":")
+
+		initialization[mkResourceVirtualEnvironmentVMInitializationInterface] = initializationInterface
+		initialization[mkResourceVirtualEnvironmentVMInitializationDatastoreID] = fileVolumeParts[0]
 	}
 
 	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
@@ -5070,6 +5131,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Prepare the new cloud-init configuration.
+	stoppedBeforeUpdate := false
 	if d.HasChange(mkResourceVirtualEnvironmentVMInitialization) {
 		initializationConfig := vmGetCloudInitConfig(d)
 
@@ -5079,23 +5141,31 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 			initializationBlock := initialization[0].(map[string]interface{})
 			initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
+			initializationInterface := initializationBlock[mkResourceVirtualEnvironmentVMInitializationInterface].(string)
+
+			existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "")
+			if initializationInterface == "" && existingInterface == "" {
+				initializationInterface = "ide2"
+			} else if initializationInterface == "" {
+				initializationInterface = existingInterface
+			} else if existingInterface != "" && initializationInterface != existingInterface {
+				// CloudInit must be moved. This requires the VM to be stopped.
+				tflog.Debug(ctx, fmt.Sprintf("CloudInit must be moved from %s to %s", existingInterface, initializationInterface))
+				stoppedBeforeUpdate = true
+				if err := vmShutdown(ctx, vmAPI, d); err != nil {
+					return err
+				}
+				if err := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); err != nil {
+					return err
+				}
+			}
 
 			cdromMedia := "cdrom"
 
-			updateBody.IDEDevices["ide2"] = vms.CustomStorageDevice{
+			updateBody.IDEDevices[initializationInterface] = vms.CustomStorageDevice{
 				Enabled:    true,
 				FileVolume: fmt.Sprintf("%s:cloudinit", initializationDatastoreID),
 				Media:      &cdromMedia,
-			}
-
-			if vmConfig.IDEDevice2 != nil &&
-				strings.Contains(
-					vmConfig.IDEDevice2.FileVolume,
-					fmt.Sprintf("vm-%d-cloudinit", vmID),
-				) {
-				tmp := updateBody.IDEDevices["ide2"]
-				tmp.Enabled = true
-				updateBody.IDEDevices["ide2"] = tmp
 			}
 		}
 
@@ -5231,7 +5301,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Determine if the state of the virtual machine state needs to be changed.
 	started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 
-	if d.HasChange(mkResourceVirtualEnvironmentVMStarted) && !bool(template) {
+	if (d.HasChange(mkResourceVirtualEnvironmentVMStarted) || stoppedBeforeUpdate) && !bool(template) {
 		if started {
 			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
 
