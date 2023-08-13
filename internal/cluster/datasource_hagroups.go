@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
@@ -55,10 +56,7 @@ func (d *hagroupsDatasource) Schema(_ context.Context, _ datasource.SchemaReques
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability groups.",
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "Placeholder identifier attribute.",
-				Computed:    true,
-			},
+			"id": tffwk.IDAttribute(),
 			"group_ids": schema.ListAttribute{
 				Description: "The identifiers of the High Availability groups.",
 				ElementType: types.StringType,
