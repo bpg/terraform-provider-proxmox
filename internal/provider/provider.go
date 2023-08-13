@@ -358,6 +358,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
 		cluster.NewHAGroupsDataSource,
+		cluster.NewHAGroupDataSource,
 	}
 }
 
