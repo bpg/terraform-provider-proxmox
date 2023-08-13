@@ -56,5 +56,6 @@ func haGroupsRead(ctx context.Context, d *schema.ResourceData, m interface{}) di
 	d.SetId("hagroups")
 
 	err = d.Set(mkDataSourceVirtualEnvironmentHAGroupsGroupIDs, groupIDs)
+
 	return diag.FromErr(err)
 }
