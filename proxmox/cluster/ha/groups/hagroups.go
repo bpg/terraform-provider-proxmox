@@ -21,7 +21,7 @@ func (c *Client) List(ctx context.Context) ([]*HAGroupListResponseData, error) {
 
 	err := c.DoRequest(ctx, http.MethodGet, "cluster/ha/groups", nil, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error listing pools: %w", err)
+		return nil, fmt.Errorf("error listing HA groups: %w", err)
 	}
 
 	if resBody.Data == nil {
