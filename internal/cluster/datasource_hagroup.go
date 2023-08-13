@@ -126,8 +126,8 @@ func (d *hagroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	groupID := state.Group.ValueString()
-	group, err := d.client.Get(ctx, groupID)
 
+	group, err := d.client.Get(ctx, groupID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Unable to read High Availability group '%s'", groupID),
