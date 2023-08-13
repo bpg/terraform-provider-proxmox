@@ -65,7 +65,7 @@ func HAGroup() *schema.Resource {
 						},
 						mkDataSourceVirtualEnvironmentHAGroupMemberPriority: {
 							Type:        schema.TypeInt,
-							Description: "The priority assigned to this member node",
+							Description: "The priority assigned to this member node, or -1 if no priority is specified",
 							Computed:    true,
 						},
 					},
@@ -152,6 +152,8 @@ func parseHAGroupMembers(diags diag.Diagnostics, groupID string, nodes string) (
 			} else {
 				diags = append(diags, diag.FromErr(err)...)
 			}
+		} else {
+			memberOut[mkDataSourceVirtualEnvironmentHAGroupMemberPriority] = -1
 		}
 
 		membersOut[i] = memberOut
