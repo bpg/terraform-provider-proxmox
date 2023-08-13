@@ -1514,7 +1514,7 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return vmCreateCustom(ctx, d, m)
 }
 
-// Check for an existing CloudInit IDE drive. If no such drive is found, return -1.
+// Check for an existing CloudInit IDE drive. If no such drive is found, return the specified `defaultValue`.
 func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, defaultValue string) string {
 	devices := []*vms.CustomStorageDevice{
 		vmConfig.IDEDevice0, vmConfig.IDEDevice1, vmConfig.IDEDevice2, vmConfig.IDEDevice3,
@@ -1531,7 +1531,8 @@ func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, default
 	return defaultValue
 }
 
-// Return a pointer to the IDE device configuration based on its name.
+// Return a pointer to the IDE device configuration based on its name. The device name is assumed to be a
+// valid IDE interface name.
 func getIdeDevice(vmConfig *vms.GetResponseData, deviceName string) *vms.CustomStorageDevice {
 	ideDevice := vmConfig.IDEDevice3
 
