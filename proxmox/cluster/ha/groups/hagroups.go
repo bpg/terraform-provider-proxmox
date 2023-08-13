@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -31,6 +32,25 @@ func (c *Client) List(ctx context.Context) ([]*HAGroupListResponseData, error) {
 	sort.Slice(resBody.Data, func(i, j int) bool {
 		return resBody.Data[i].ID < resBody.Data[j].ID
 	})
+
+	return resBody.Data, nil
+}
+
+// Get retrieves a single HA group based on its identifier.
+func (c *Client) Get(ctx context.Context, groupID string) (*HAGroupGetResponseData, error) {
+	resBody := &HAGroupGetResponseBody{}
+
+	err := c.DoRequest(
+		ctx, http.MethodGet,
+		fmt.Sprintf("cluster/ha/groups/%s", url.PathEscape(groupID)), nil, resBody,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error listing pools: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
 
 	return resBody.Data, nil
 }
