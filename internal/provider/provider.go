@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/internal/cluster"
 	"github.com/bpg/terraform-provider-proxmox/internal/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -356,6 +357,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
+		cluster.NewHAGroupsDataSource,
 	}
 }
 
