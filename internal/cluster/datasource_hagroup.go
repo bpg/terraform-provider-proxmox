@@ -120,6 +120,7 @@ func (d *hagroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 	var state hagroupModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -145,8 +146,10 @@ func (d *hagroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 	state.ID = types.StringValue(groupID)
 	state.NoFailback = types.BoolValue(group.NoFailback != 0)
 	state.Restricted = types.BoolValue(group.NoFailback != 0)
+
 	members, diags := parseHAGroupMembers(groupID, group.Nodes)
 	resp.Diagnostics.Append(diags...)
+
 	state.Members = members
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -156,6 +159,7 @@ func (d *hagroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 // be converted into a map value. Errors will be returned as Terraform diagnostics.
 func parseHAGroupMembers(groupID string, nodes string) (basetypes.MapValue, diag.Diagnostics) {
 	var diags diag.Diagnostics
+
 	membersIn := strings.Split(nodes, ",")
 	membersOut := make(map[string]attr.Value)
 
@@ -172,6 +176,7 @@ func parseHAGroupMembers(groupID string, nodes string) (basetypes.MapValue, diag
 		}
 
 		priority := types.Int64Null()
+
 		if len(nodeDesc) == 2 {
 			prio, err := strconv.Atoi(nodeDesc[1])
 			if err == nil {
