@@ -38,7 +38,7 @@ type hagroupsDatasource struct {
 
 // hagroupsModel maps the schema data for the High Availability groups data source.
 type hagroupsModel struct {
-	Groups types.List   `tfsdk:"group_ids"`
+	Groups types.Set    `tfsdk:"group_ids"`
 	ID     types.String `tfsdk:"id"`
 }
 
@@ -57,7 +57,7 @@ func (d *hagroupsDatasource) Schema(_ context.Context, _ datasource.SchemaReques
 		Description: "Retrieves the list of High Availability groups.",
 		Attributes: map[string]schema.Attribute{
 			"id": tffwk.IDAttribute(),
-			"group_ids": schema.ListAttribute{
+			"group_ids": schema.SetAttribute{
 				Description: "The identifiers of the High Availability groups.",
 				ElementType: types.StringType,
 				Computed:    true,
@@ -109,7 +109,7 @@ func (d *hagroupsDatasource) Read(ctx context.Context, _ datasource.ReadRequest,
 		groups[i] = types.StringValue(v.ID)
 	}
 
-	groupsValue, diags := types.ListValue(types.StringType, groups)
+	groupsValue, diags := types.SetValue(types.StringType, groups)
 	resp.Diagnostics.Append(diags...)
 
 	state.ID = types.StringValue("hagroups")
