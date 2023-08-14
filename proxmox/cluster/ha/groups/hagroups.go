@@ -66,7 +66,7 @@ func (c *Client) Create(ctx context.Context, data *HAGroupCreateRequestBody) err
 }
 
 // Update updates a HA group's configuration.
-func (c *Client) CreateOrUpdate(ctx context.Context, groupID string, data *HAGroupUpdateRequestBody) error {
+func (c *Client) Update(ctx context.Context, groupID string, data *HAGroupUpdateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("cluster/ha/groups/%s", url.PathEscape(groupID)), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating HA group: %w", err)
