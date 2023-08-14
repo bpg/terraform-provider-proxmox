@@ -26,7 +26,7 @@ type HAGroupGetResponseBody struct {
 // HAGroupDataBase contains fields which are both received from and send to the HA group API.
 type HAGroupDataBase struct {
 	// A SHA1 digest of the group's configuration.
-	Digest string `json:"digest"`
+	Digest *string `json:"digest,omitempty"`
 	// The group's comment, if defined
 	Comment *string `json:"comment,omitempty"`
 	// A comma-separated list of node fields. Each node field contains a node name, and may
