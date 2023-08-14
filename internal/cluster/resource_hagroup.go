@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -169,24 +170,8 @@ func (r *hagroupResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	data.ID = types.StringValue(groupID)
-	found, diags := r.read(ctx, &data)
 
-	resp.Diagnostics.Append(diags...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !found {
-		resp.Diagnostics.AddError(
-			"HA group not found after creation",
-			"Failed to find the group when trying to read back the new HA group's data.",
-		)
-
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
+	r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
 }
 
 // Read reads a HA group definition from the Proxmox cluster.
@@ -213,6 +198,37 @@ func (r *hagroupResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 // Update updates a HA group definition on the Proxmox cluster.
 func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data, state hagroupModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateRequest := &hagroups.HAGroupUpdateRequestBody{}
+	updateRequest.Comment = tffwk.OptStringFromModel(data.Comment)
+	updateRequest.Digest = tffwk.OptStringFromModel(state.Digest)
+	updateRequest.Nodes = r.groupMembersToString(data.Members)
+	updateRequest.NoFailback = tffwk.BoolintFromModel(data.NoFailback)
+	updateRequest.Restricted = tffwk.BoolintFromModel(data.Restricted)
+
+	if updateRequest.Comment == nil && !state.Comment.IsNull() {
+		updateRequest.Delete = "comment"
+	}
+
+	err := r.client.Update(ctx, state.Group.ValueString(), updateRequest)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating HA group",
+			fmt.Sprintf("Could not update HA group '%s', unexpected error: %s",
+				state.Group.ValueString(), err.Error()),
+		)
+		return
+	}
+
+	r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
 }
 
 // Delete deletes a HA group definition.
@@ -253,6 +269,25 @@ func (r *hagroupResource) ImportState(
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
+}
+
+// readBack reads information about a created or modified HA group from the cluster then updates the response
+// state accordingly. It is assumed that the `state`'s identifier is set.
+func (r *hagroupResource) readBack(ctx context.Context, data *hagroupModel, respDiags *diag.Diagnostics, respState *tfsdk.State) {
+	found, diags := r.read(ctx, data)
+
+	respDiags.Append(diags...)
+
+	if !found {
+		respDiags.AddError(
+			"HA group not found after update",
+			"Failed to find the group when trying to read back the updated HA group's data.",
+		)
+	}
+
+	if !respDiags.HasError() {
+		respDiags.Append(respState.Set(ctx, *data)...)
+	}
 }
 
 // read reads information about a HA group from the cluster. The group identifier must have been set in the
