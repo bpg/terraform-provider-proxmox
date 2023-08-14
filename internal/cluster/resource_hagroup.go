@@ -131,18 +131,15 @@ func (r *hagroupResource) Configure(
 	}
 
 	client, ok := req.ProviderData.(proxmox.Client)
-
-	if !ok {
+	if ok {
+		r.client = *client.Cluster().HA().Groups()
+	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
 			fmt.Sprintf("Expected *proxmox.Client, got: %T. Please report this issue to the provider developers.",
 				req.ProviderData),
 		)
-
-		return
 	}
-
-	r.client = *client.Cluster().HA().Groups()
 }
 
 // Create creates a new HA group on the Proxmox cluster.
@@ -224,16 +221,15 @@ func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	err := r.client.Update(ctx, state.Group.ValueString(), updateRequest)
-	if err != nil {
+	if err == nil {
+		r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
+	} else {
 		resp.Diagnostics.AddError(
 			"Error updating HA group",
 			fmt.Sprintf("Could not update HA group '%s', unexpected error: %s",
 				state.Group.ValueString(), err.Error()),
 		)
-		return
 	}
-
-	r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
 }
 
 // Delete deletes a HA group definition.
@@ -274,17 +270,22 @@ func (r *hagroupResource) ImportState(
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	reqId := req.ID
+	reqID := req.ID
 	data := hagroupModel{
-		ID:    types.StringValue(reqId),
-		Group: types.StringValue(reqId),
+		ID:    types.StringValue(reqID),
+		Group: types.StringValue(reqID),
 	}
 	r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
 }
 
 // readBack reads information about a created or modified HA group from the cluster then updates the response
 // state accordingly. It is assumed that the `state`'s identifier is set.
-func (r *hagroupResource) readBack(ctx context.Context, data *hagroupModel, respDiags *diag.Diagnostics, respState *tfsdk.State) {
+func (r *hagroupResource) readBack(
+	ctx context.Context,
+	data *hagroupModel,
+	respDiags *diag.Diagnostics,
+	respState *tfsdk.State,
+) {
 	found, diags := r.read(ctx, data)
 
 	respDiags.Append(diags...)
