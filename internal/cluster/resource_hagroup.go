@@ -70,7 +70,7 @@ func (r *hagroupResource) Schema(
 					stringvalidator.RegexMatches(
 						regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_\.]*[a-zA-Z0-9]$`),
 						"must start with a letter, end with a letter or number, be composed of "+
-							"letters, numbers, '-', '_' and '.', and must be at least 2 characters long.",
+							"letters, numbers, '-', '_' and '.', and must be at least 2 characters long",
 					),
 				},
 			},
@@ -81,6 +81,11 @@ func (r *hagroupResource) Schema(
 			"comment": schema.StringAttribute{
 				Description: "The comment associated with this group",
 				Optional:    true,
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[^\s]|^$`), "must not start with whitespace"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`[^\s]$|^$`), "must not end with whitespace"),
+				},
 			},
 			"members": schema.MapAttribute{
 				Description: "The member nodes for this group, associated with their priority or to null if no priority is set.",
