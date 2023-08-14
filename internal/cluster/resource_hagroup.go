@@ -29,7 +29,7 @@ type hagroupResourceModel struct {
 	ID types.String `tfsdk:"id"`
 }
 
-// NewLinuxBridgeResource creates a new resource for managing Linux Bridge network interfaces.
+// NewHAGroupResource creates a new resource for managing Linux Bridge network interfaces.
 func NewHAGroupResource() resource.Resource {
 	return &hagroupResource{}
 }
