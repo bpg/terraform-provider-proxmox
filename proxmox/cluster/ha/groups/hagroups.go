@@ -54,3 +54,13 @@ func (c *Client) Get(ctx context.Context, groupID string) (*HAGroupGetResponseDa
 
 	return resBody.Data, nil
 }
+
+// CreateOrUpdate updates a HA group's configuration. If no such group exists, it will be created.
+func (c *Client) CreateOrUpdate(ctx context.Context, groupID string, data HAGroupUpdateRequestBody) error {
+	err := c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("cluster/ha/groups/%s", url.PathEscape(groupID)), data, nil)
+	if err != nil {
+		return fmt.Errorf("error creating or updating HA group: %w", err)
+	}
+
+	return nil
+}
