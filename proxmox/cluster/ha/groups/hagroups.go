@@ -45,7 +45,7 @@ func (c *Client) Get(ctx context.Context, groupID string) (*HAGroupGetResponseDa
 		c.ExpandPath(url.PathEscape(groupID)), nil, resBody,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error listing HA group: %w", err)
+		return nil, fmt.Errorf("error reading HA group: %w", err)
 	}
 
 	if resBody.Data == nil {
