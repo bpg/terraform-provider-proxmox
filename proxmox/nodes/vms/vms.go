@@ -445,7 +445,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 
 						if nic.IPAddresses == nil ||
 							(nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
-							break
+							continue
 						}
 
 						for _, addr := range *nic.IPAddresses {
