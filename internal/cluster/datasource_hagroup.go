@@ -9,15 +9,10 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
 	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -41,16 +36,6 @@ type hagroupDatasource struct {
 	client *hagroups.Client
 }
 
-// hagroupModel maps the schema data for the High Availability group data source.
-type hagroupModel struct {
-	ID         types.String `tfsdk:"id"`
-	Group      types.String `tfsdk:"group"`
-	Comment    types.String `tfsdk:"comment"`
-	Nodes      types.Map    `tfsdk:"nodes"`
-	NoFailback types.Bool   `tfsdk:"no_failback"`
-	Restricted types.Bool   `tfsdk:"restricted"`
-}
-
 // Metadata returns the data source type name.
 func (d *hagroupDatasource) Metadata(
 	_ context.Context,
@@ -69,6 +54,10 @@ func (d *hagroupDatasource) Schema(_ context.Context, _ datasource.SchemaRequest
 			"group": schema.StringAttribute{
 				Description: "The identifier of the High Availability group to read.",
 				Required:    true,
+			},
+			"digest": schema.StringAttribute{
+				Description: "The SHA-1 digest of the group's configuration",
+				Computed:    true,
 			},
 			"comment": schema.StringAttribute{
 				Description: "The comment associated with this group",
@@ -139,64 +128,8 @@ func (d *hagroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	if group.Comment != nil {
-		state.Comment = types.StringValue(*group.Comment)
-	} else {
-		state.Comment = types.StringNull()
-	}
-
 	state.ID = types.StringValue(groupID)
-	state.NoFailback = group.NoFailback.ToValue()
-	state.Restricted = group.Restricted.ToValue()
 
-	nodes, diags := parseHAGroupNodes(groupID, group.Nodes)
-	resp.Diagnostics.Append(diags...)
-
-	state.Nodes = nodes
-
+	resp.Diagnostics.Append(state.importFromAPI(*group)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-// Parse the list of member nodes. The list is received from the Proxmox API as a string. It must
-// be converted into a map value. Errors will be returned as Terraform diagnostics.
-func parseHAGroupNodes(groupID string, nodes string) (basetypes.MapValue, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	nodesIn := strings.Split(nodes, ",")
-	nodesOut := make(map[string]attr.Value)
-
-	for _, nodeDescStr := range nodesIn {
-		nodeDesc := strings.Split(nodeDescStr, ":")
-		if len(nodeDesc) > 2 {
-			diags.AddWarning(
-				"Could not parse HA group node",
-				fmt.Sprintf("Received group node '%s' for HA group '%s'",
-					nodeDescStr, groupID),
-			)
-
-			continue
-		}
-
-		priority := types.Int64Null()
-
-		if len(nodeDesc) == 2 {
-			prio, err := strconv.Atoi(nodeDesc[1])
-			if err == nil {
-				priority = types.Int64Value(int64(prio))
-			} else {
-				diags.AddWarning(
-					"Could not parse HA group node priority",
-					fmt.Sprintf("Node priority string '%s' for node %s of HA group '%s'",
-						nodeDesc[1], nodeDesc[0], groupID),
-				)
-			}
-		}
-
-		nodesOut[nodeDesc[0]] = priority
-	}
-
-	value, mbDiags := types.MapValue(types.Int64Type, nodesOut)
-	diags.Append(mbDiags...)
-
-	return value, diags
 }
