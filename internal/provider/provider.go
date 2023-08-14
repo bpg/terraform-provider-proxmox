@@ -349,6 +349,7 @@ func (p *proxmoxProvider) Configure(
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		cluster.NewHAGroupResource,
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
 	}
