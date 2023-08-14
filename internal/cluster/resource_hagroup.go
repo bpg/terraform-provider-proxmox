@@ -201,11 +201,15 @@ func (r *hagroupResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	_, diags := r.read(ctx, &data)
+	found, diags := r.read(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 
 	if !resp.Diagnostics.HasError() {
-		resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
+		if found {
+			resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
+		} else {
+			resp.State.RemoveResource(ctx)
+		}
 	}
 }
 
@@ -231,14 +235,14 @@ func (r *hagroupResource) read(ctx context.Context, data *hagroupModel) (bool, d
 	name := data.Group.ValueString()
 
 	group, err := r.client.Get(ctx, name)
-	if errors.Is(err, api.ErrNoDataObjectInResponse) {
-		return false, diag.Diagnostics{}
-	}
-
 	if err != nil {
-		return false, diag.Diagnostics{
-			diag.NewErrorDiagnostic("Could not read HA group", err.Error()),
+		var diags diag.Diagnostics
+
+		if !strings.Contains(err.Error(), "no such ha group") {
+			diags.AddError("Could not read HA group", err.Error())
 		}
+
+		return false, diags
 	}
 
 	return true, data.importFromAPI(*group)
