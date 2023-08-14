@@ -64,3 +64,13 @@ func (c *Client) CreateOrUpdate(ctx context.Context, groupID string, data HAGrou
 
 	return nil
 }
+
+// Delete deletes a HA group.
+func (c *Client) Delete(ctx context.Context, groupID string) error {
+	err := c.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("cluster/ha/groups/%s", url.PathEscape(groupID)), nil, nil)
+	if err != nil {
+		return fmt.Errorf("error deleting HA group: %w", err)
+	}
+
+	return nil
+}
