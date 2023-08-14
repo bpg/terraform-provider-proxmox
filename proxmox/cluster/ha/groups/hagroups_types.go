@@ -26,16 +26,16 @@ type HAGroupGetResponseBody struct {
 // HAGroupDataBase contains fields which are both received from and send to the HA group API.
 type HAGroupDataBase struct {
 	// A SHA1 digest of the group's configuration.
-	Digest *string `json:"digest,omitempty"`
+	Digest *string `json:"digest,omitempty" url:"digest,omitempty"`
 	// The group's comment, if defined
-	Comment *string `json:"comment,omitempty"`
+	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	// A comma-separated list of node fields. Each node field contains a node name, and may
 	// include a priority, with a semicolon acting as a separator.
-	Nodes string `json:"nodes"`
+	Nodes string `json:"nodes" url:"nodes"`
 	// A boolean (0/1) indicating that failing back to the highest priority node is disabled.
-	NoFailback types.CustomBool `json:"nofailback"`
+	NoFailback types.CustomBool `json:"nofailback" url:"nofailback"`
 	// A boolean (0/1) indicating that associated resources cannot run on other nodes.
-	Restricted types.CustomBool `json:"restricted"`
+	Restricted types.CustomBool `json:"restricted" url:"restricted"`
 }
 
 // HAGroupGetResponseData contains the data from a HA group get response.
@@ -48,10 +48,20 @@ type HAGroupGetResponseData struct {
 	Type string `json:"type"`
 }
 
+// HAGroupCreateRequestBody contains the data which must be sent when creating a HA group.
+type HAGroupCreateRequestBody struct {
+	// The group's data
+	HAGroupDataBase
+	// The group's identifier
+	ID string `url:"group"`
+	// The type. Always set to `group`.
+	Type string `url:"type"`
+}
+
 // HAGroupUpdateRequestBody contains the data which must be sent when updating a HA group.
 type HAGroupUpdateRequestBody struct {
 	// The group's data
 	HAGroupDataBase
 	// A list of settings to delete
-	Delete string `json:"delete"`
+	Delete string `url:"delete"`
 }
