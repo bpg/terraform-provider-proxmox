@@ -76,6 +76,10 @@ func (r *hagroupResource) Schema(
 					),
 				},
 			},
+			"digest": schema.StringAttribute{
+				Description: "The SHA-1 digest of the group's configuration",
+				Computed:    true,
+			},
 			"comment": schema.StringAttribute{
 				Description: "The comment associated with this group",
 				Optional:    true,
