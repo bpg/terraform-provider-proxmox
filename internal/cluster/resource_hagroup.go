@@ -274,6 +274,12 @@ func (r *hagroupResource) ImportState(
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
+	reqId := req.ID
+	data := hagroupModel{
+		ID:    types.StringValue(reqId),
+		Group: types.StringValue(reqId),
+	}
+	r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
 }
 
 // readBack reads information about a created or modified HA group from the cluster then updates the response
