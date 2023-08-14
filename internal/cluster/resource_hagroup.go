@@ -31,8 +31,13 @@ var (
 
 // hagroupResourceModel is the model used to represent a High Availability group.
 type hagroupResourceModel struct {
-	// Identifier used by Terrraform
-	ID types.String `tfsdk:"id"`
+	ID         types.String `tfsdk:"id"`          // Identifier used by Terrraform
+	Group      types.String `tfsdk:"group"`       // HA group name
+	Digest     types.String `tfsdk:"digest"`      // Group configuration checksum
+	Comment    types.String `tfsdk:"comment"`     // Comment, if present
+	Members    types.Map    `tfsdk:"members"`     // Map of member nodes associated with their priorities
+	NoFailback types.Bool   `tfsdk:"no_failback"` // Flag that disables failback
+	Restricted types.Bool   `tfsdk:"restricted"`  // Flag that prevents execution on other member nodes
 }
 
 // NewHAGroupResource creates a new resource for managing Linux Bridge network interfaces.
