@@ -8,14 +8,12 @@ package cluster
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -219,6 +217,34 @@ func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest
 
 // Delete deletes a HA group definition.
 func (r *hagroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data hagroupModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	groupID := data.Group.ValueString()
+
+	err := r.client.Delete(ctx, groupID)
+	if err != nil {
+		if strings.Contains(err.Error(), "no such ha group") {
+			resp.Diagnostics.AddWarning(
+				"HA group does not exist",
+				fmt.Sprintf(
+					"Could not delete HA group '%s', it does not exist or has been deleted outside of Terraform.",
+					groupID,
+				),
+			)
+		} else {
+			resp.Diagnostics.AddError(
+				"Error deleting HA group",
+				fmt.Sprintf("Could not delete HA group '%s', unexpected error: %s",
+					groupID, err.Error()),
+			)
+		}
+	}
 }
 
 // ImportState imports a HA group from the Proxmox cluster.
