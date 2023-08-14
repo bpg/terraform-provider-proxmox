@@ -193,19 +193,19 @@ func (r *hagroupResource) Create(ctx context.Context, req resource.CreateRequest
 
 // Read reads a HA group definition from the Proxmox cluster.
 func (r *hagroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state hagroupModel
+	var data hagroupModel
 
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, diags := r.read(ctx, &state)
+	_, diags := r.read(ctx, &data)
 	resp.Diagnostics.Append(diags...)
 
 	if !resp.Diagnostics.HasError() {
-		resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+		resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
 	}
 }
 
