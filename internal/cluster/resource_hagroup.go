@@ -92,7 +92,7 @@ func (r *hagroupResource) Schema(
 							"must be a valid Proxmox node name",
 						),
 					),
-					mapvalidator.ValueInt64sAre(int64validator.AtLeast(0)),
+					mapvalidator.ValueInt64sAre(int64validator.Between(0, 1000)),
 				},
 			},
 			"no_failback": schema.BoolAttribute{
