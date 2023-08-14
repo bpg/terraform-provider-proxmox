@@ -23,11 +23,9 @@ type HAGroupGetResponseBody struct {
 	Data *HAGroupGetResponseData `json:"data,omitempty"`
 }
 
-// HAGroupGetResponseData contains the data from a HA group get response.
-type HAGroupGetResponseData struct {
-	// The group's identifier
-	ID string `json:"group"`
-	// A digest of the group's configuration
+// HAGroupDataBase contains fields which are both received from and send to the HA group API.
+type HAGroupDataBase struct {
+	// A SHA1 digest of the group's configuration.
 	Digest string `json:"digest"`
 	// The group's comment, if defined
 	Comment *string `json:"comment,omitempty"`
@@ -38,6 +36,22 @@ type HAGroupGetResponseData struct {
 	NoFailback types.CustomBool `json:"nofailback"`
 	// A boolean (0/1) indicating that associated resources cannot run on other nodes.
 	Restricted types.CustomBool `json:"restricted"`
+}
+
+// HAGroupGetResponseData contains the data from a HA group get response.
+type HAGroupGetResponseData struct {
+	// The group's data
+	HAGroupDataBase
+	// The group's identifier
+	ID string `json:"group"`
 	// The type. Always set to `group`.
 	Type string `json:"type"`
+}
+
+// HAGroupUpdateRequestBody contains the data which must be sent when updating a HA group.
+type HAGroupUpdateRequestBody struct {
+	// The group's data
+	HAGroupDataBase
+	// A list of settings to delete
+	Delete string `json:"delete"`
 }
