@@ -91,7 +91,14 @@ func (s HAResourceState) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals a Proxmox HA resource state.
 func (s *HAResourceState) UnmarshalJSON(b []byte) error {
-	state, err := ParseHAResourceState(string(b))
+	var stateString string
+
+	err := json.Unmarshal(b, &stateString)
+	if err != nil {
+		return fmt.Errorf("cannot unmarshal HA resource state: %w", err)
+	}
+
+	state, err := ParseHAResourceState(stateString)
 	if err == nil {
 		*s = state
 	}

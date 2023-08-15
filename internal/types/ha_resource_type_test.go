@@ -7,6 +7,8 @@
 package types
 
 import (
+	"bytes"
+	"encoding/json"
 	"testing"
 )
 
@@ -56,6 +58,64 @@ func TestHAResourceTypeToString(t *testing.T) {
 			t.Parallel()
 			if got := tt.resType.String(); got != tt.want {
 				t.Errorf("HAResourceType.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHAResourceTypeToJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		state HAResourceType
+		want  string
+	}{
+		{"jsonify vm", HAResourceTypeVM, `"vm"`},
+		{"jsonify container", HAResourceTypeContainer, `"ct"`},
+	}
+	for _, test := range tests {
+		tt := test
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := json.Marshal(tt.state)
+			if err != nil {
+				t.Errorf("json.Marshal(HAResourceType): err = %v", err)
+			} else if !bytes.Equal(got, []byte(tt.want)) {
+				t.Errorf("json.Marshal(HAResourceType) = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHAResourceTypeFromJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		json    string
+		want    HAResourceType
+		wantErr bool
+	}{
+		{"started", `"vm"`, HAResourceTypeVM, false},
+		{"container", `"ct"`, HAResourceTypeContainer, false},
+		{"invalid JSON", `\\/yo`, HAResourceTypeVM, true},
+		{"incompatible type", `["yo"]`, HAResourceTypeVM, true},
+		{"invalid content", `"nope"`, HAResourceTypeVM, true},
+	}
+	for _, test := range tests {
+		tt := test
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var got HAResourceType
+
+			err := json.Unmarshal([]byte(tt.json), &got)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("json.Unmarshal(HAResourceType) error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err == nil && got != tt.want {
+				t.Errorf("json.Unmarshal(HAResourceType) got = %v, want %v", got, tt.want)
 			}
 		})
 	}

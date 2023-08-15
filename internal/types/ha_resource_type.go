@@ -72,7 +72,14 @@ func (t HAResourceType) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON unmarshals a Proxmox HA resource type.
 func (t *HAResourceType) UnmarshalJSON(b []byte) error {
-	resType, err := ParseHAResourceType(string(b))
+	var rtString string
+
+	err := json.Unmarshal(b, &rtString)
+	if err != nil {
+		return fmt.Errorf("cannot unmarshal HA resource type: %w", err)
+	}
+
+	resType, err := ParseHAResourceType(rtString)
 	if err == nil {
 		*t = resType
 	}
