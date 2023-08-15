@@ -65,7 +65,7 @@ func (r *CustomBool) PointerBool() *bool {
 	return (*bool)(r)
 }
 
-// ToValue returns a Terraform attribue value.
+// ToValue returns a Terraform attribute value.
 func (r CustomBool) ToValue() types.Bool {
 	return types.BoolValue(bool(r))
 }
