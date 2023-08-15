@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
@@ -23,7 +22,6 @@ import (
 type hagroupModel struct {
 	ID         types.String `tfsdk:"id"`          // Identifier used by Terrraform
 	Group      types.String `tfsdk:"group"`       // HA group name
-	Digest     types.String `tfsdk:"digest"`      // Group configuration checksum
 	Comment    types.String `tfsdk:"comment"`     // Comment, if present
 	Nodes      types.Map    `tfsdk:"nodes"`       // Map of member nodes associated with their priorities
 	NoFailback types.Bool   `tfsdk:"no_failback"` // Flag that disables failback
@@ -32,8 +30,7 @@ type hagroupModel struct {
 
 // Import the contents of a HA group model from the API's response data.
 func (m *hagroupModel) importFromAPI(group hagroups.HAGroupGetResponseData) diag.Diagnostics {
-	m.Comment = tffwk.OptStringToModel(group.Comment)
-	m.Digest = tffwk.OptStringToModel(group.Digest)
+	m.Comment = types.StringPointerValue(group.Comment)
 	m.NoFailback = group.NoFailback.ToValue()
 	m.Restricted = group.Restricted.ToValue()
 

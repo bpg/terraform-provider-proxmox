@@ -74,10 +74,6 @@ func (r *hagroupResource) Schema(
 					),
 				},
 			},
-			"digest": schema.StringAttribute{
-				Description: "The SHA-1 digest of the group's configuration",
-				Computed:    true,
-			},
 			"comment": schema.StringAttribute{
 				Description: "The comment associated with this group",
 				Optional:    true,
@@ -87,8 +83,10 @@ func (r *hagroupResource) Schema(
 					stringvalidator.RegexMatches(regexp.MustCompile(`[^\s]$|^$`), "must not end with whitespace"),
 				},
 			},
-			"members": schema.MapAttribute{
-				Description: "The member nodes for this group, associated with their priority or to null if no priority is set.",
+			"nodes": schema.MapAttribute{
+				Description: "The member nodes for this group. They are provided as a map, where the keys are the node " +
+					"names and the values represent their priority: integers for known prorities or `null` for unset " +
+					"priorities.",
 				Required:    true,
 				ElementType: types.Int64Type,
 				Validators: []validator.Map{
@@ -155,7 +153,7 @@ func (r *hagroupResource) Create(ctx context.Context, req resource.CreateRequest
 	groupID := data.Group.ValueString()
 	createRequest := &hagroups.HAGroupCreateRequestBody{}
 	createRequest.ID = groupID
-	createRequest.Comment = tffwk.OptStringFromModel(data.Comment)
+	createRequest.Comment = data.Comment.ValueStringPointer()
 	createRequest.Nodes = r.groupNodesToString(data.Nodes)
 	createRequest.NoFailback.FromValue(data.NoFailback)
 	createRequest.Restricted.FromValue(data.Restricted)
@@ -210,8 +208,7 @@ func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	updateRequest := &hagroups.HAGroupUpdateRequestBody{}
-	updateRequest.Comment = tffwk.OptStringFromModel(data.Comment)
-	updateRequest.Digest = tffwk.OptStringFromModel(state.Digest)
+	updateRequest.Comment = data.Comment.ValueStringPointer()
 	updateRequest.Nodes = r.groupNodesToString(data.Nodes)
 	updateRequest.NoFailback.FromValue(data.NoFailback)
 	updateRequest.Restricted.FromValue(data.Restricted)

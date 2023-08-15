@@ -55,10 +55,6 @@ func (d *hagroupDatasource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "The identifier of the High Availability group to read.",
 				Required:    true,
 			},
-			"digest": schema.StringAttribute{
-				Description: "The SHA-1 digest of the group's configuration",
-				Computed:    true,
-			},
 			"comment": schema.StringAttribute{
 				Description: "The comment associated with this group",
 				Computed:    true,
