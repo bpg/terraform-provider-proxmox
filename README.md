@@ -195,6 +195,9 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="14.28%"><a href="https://michael.franzl.name"><img src="https://avatars.githubusercontent.com/u/72123?v=4?s=100" width="100px;" alt="Michael Franzl"/><br /><sub><b>Michael Franzl</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Amichaelfranzl" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://www.ebenoit.info"><img src="https://avatars.githubusercontent.com/u/1409844?v=4?s=100" width="100px;" alt="Emmanuel Benoît"/><br /><sub><b>Emmanuel Benoît</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=tseeker" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/mandrav"><img src="https://avatars.githubusercontent.com/u/1273530?v=4?s=100" width="100px;" alt="mandrav"/><br /><sub><b>mandrav</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=mandrav" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Amandrav" title="Bug reports">🐛</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
