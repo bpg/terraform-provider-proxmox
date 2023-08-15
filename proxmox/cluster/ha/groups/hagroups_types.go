@@ -33,9 +33,9 @@ type HAGroupDataBase struct {
 	// include a priority, with a semicolon acting as a separator.
 	Nodes string `json:"nodes" url:"nodes"`
 	// A boolean (0/1) indicating that failing back to the highest priority node is disabled.
-	NoFailback types.CustomBool `json:"nofailback" url:"nofailback"`
+	NoFailback types.CustomBool `json:"nofailback" url:"nofailback,int"`
 	// A boolean (0/1) indicating that associated resources cannot run on other nodes.
-	Restricted types.CustomBool `json:"restricted" url:"restricted"`
+	Restricted types.CustomBool `json:"restricted" url:"restricted,int"`
 }
 
 // HAGroupGetResponseData contains the data from a HA group get response.
