@@ -20,7 +20,7 @@ import (
 func (c *Client) List(ctx context.Context) ([]*HAGroupListResponseData, error) {
 	resBody := &HAGroupListResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodGet, "cluster/ha/groups", nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error listing HA groups: %w", err)
 	}
@@ -42,7 +42,7 @@ func (c *Client) Get(ctx context.Context, groupID string) (*HAGroupGetResponseDa
 
 	err := c.DoRequest(
 		ctx, http.MethodGet,
-		fmt.Sprintf("cluster/ha/groups/%s", url.PathEscape(groupID)), nil, resBody,
+		c.ExpandPath(url.PathEscape(groupID)), nil, resBody,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error listing pools: %w", err)
