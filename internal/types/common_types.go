@@ -70,6 +70,11 @@ func (r CustomBool) ToValue() types.Bool {
 	return types.BoolValue(bool(r))
 }
 
+// FromValue sets the numeric boolean based on the value of a Terraform attribute.
+func (r *CustomBool) FromValue(tfValue types.Bool) {
+	*r = CustomBool(tfValue.ValueBool())
+}
+
 // MarshalJSON converts a boolean to a JSON value.
 func (r *CustomCommaSeparatedList) MarshalJSON() ([]byte, error) {
 	s := strings.Join(*r, ",")

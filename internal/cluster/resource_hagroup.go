@@ -156,9 +156,9 @@ func (r *hagroupResource) Create(ctx context.Context, req resource.CreateRequest
 	createRequest := &hagroups.HAGroupCreateRequestBody{}
 	createRequest.ID = groupID
 	createRequest.Comment = tffwk.OptStringFromModel(data.Comment)
-	createRequest.Nodes = r.groupMembersToString(data.Members)
-	createRequest.NoFailback = tffwk.BoolintFromModel(data.NoFailback)
-	createRequest.Restricted = tffwk.BoolintFromModel(data.Restricted)
+	createRequest.Nodes = r.groupNodesToString(data.Nodes)
+	createRequest.NoFailback.FromValue(data.NoFailback)
+	createRequest.Restricted.FromValue(data.Restricted)
 	createRequest.Type = "group"
 
 	err := r.client.Create(ctx, createRequest)
@@ -212,9 +212,9 @@ func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest
 	updateRequest := &hagroups.HAGroupUpdateRequestBody{}
 	updateRequest.Comment = tffwk.OptStringFromModel(data.Comment)
 	updateRequest.Digest = tffwk.OptStringFromModel(state.Digest)
-	updateRequest.Nodes = r.groupMembersToString(data.Members)
-	updateRequest.NoFailback = tffwk.BoolintFromModel(data.NoFailback)
-	updateRequest.Restricted = tffwk.BoolintFromModel(data.Restricted)
+	updateRequest.Nodes = r.groupNodesToString(data.Nodes)
+	updateRequest.NoFailback.FromValue(data.NoFailback)
+	updateRequest.Restricted.FromValue(data.Restricted)
 
 	if updateRequest.Comment == nil && !state.Comment.IsNull() {
 		updateRequest.Delete = "comment"
@@ -321,9 +321,9 @@ func (r *hagroupResource) read(ctx context.Context, data *hagroupModel) (bool, d
 	return true, data.importFromAPI(*group)
 }
 
-// groupMembersToString converts the map of group member nodes into a string.
-func (r *hagroupResource) groupMembersToString(members types.Map) string {
-	mbElements := members.Elements()
+// groupNodesToString converts the map of group member nodes into a string.
+func (r *hagroupResource) groupNodesToString(nodes types.Map) string {
+	mbElements := nodes.Elements()
 	mbNodes := make([]string, len(mbElements))
 	i := 0
 
