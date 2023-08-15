@@ -1606,7 +1606,7 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 	for _, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 		if len(v) == 1 {
-			r.DeviceIDs = strings.Split(v[1], ";")
+			r.DeviceIDs = strings.Split(v[0], ";")
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "host":
