@@ -46,7 +46,7 @@ type hagroupModel struct {
 	ID         types.String `tfsdk:"id"`
 	Group      types.String `tfsdk:"group"`
 	Comment    types.String `tfsdk:"comment"`
-	Members    types.Map    `tfsdk:"members"`
+	Nodes      types.Map    `tfsdk:"nodes"`
 	NoFailback types.Bool   `tfsdk:"no_failback"`
 	Restricted types.Bool   `tfsdk:"restricted"`
 }
@@ -74,8 +74,10 @@ func (d *hagroupDatasource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "The comment associated with this group",
 				Computed:    true,
 			},
-			"members": schema.MapAttribute{
-				Description: "The member nodes for this group, associated with their priority or to null if no priority is set.",
+			"nodes": schema.MapAttribute{
+				Description: "The member nodes for this group. They are provided as a map, where the keys are the node " +
+					"names and the values represent their priority: integers for known prorities or `null` for unset " +
+					"priorities.",
 				Computed:    true,
 				ElementType: types.Int64Type,
 			},
@@ -147,28 +149,28 @@ func (d *hagroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 	state.NoFailback = group.NoFailback.ToValue()
 	state.Restricted = group.Restricted.ToValue()
 
-	members, diags := parseHAGroupMembers(groupID, group.Nodes)
+	nodes, diags := parseHAGroupNodes(groupID, group.Nodes)
 	resp.Diagnostics.Append(diags...)
 
-	state.Members = members
+	state.Nodes = nodes
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Parse the list of member nodes. The list is received from the Proxmox API as a string. It must
 // be converted into a map value. Errors will be returned as Terraform diagnostics.
-func parseHAGroupMembers(groupID string, nodes string) (basetypes.MapValue, diag.Diagnostics) {
+func parseHAGroupNodes(groupID string, nodes string) (basetypes.MapValue, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	membersIn := strings.Split(nodes, ",")
-	membersOut := make(map[string]attr.Value)
+	nodesIn := strings.Split(nodes, ",")
+	nodesOut := make(map[string]attr.Value)
 
-	for _, nodeDescStr := range membersIn {
+	for _, nodeDescStr := range nodesIn {
 		nodeDesc := strings.Split(nodeDescStr, ":")
 		if len(nodeDesc) > 2 {
 			diags.AddWarning(
-				"Could not parse HA group member",
-				fmt.Sprintf("Received group member '%s' for HA group '%s'",
+				"Could not parse HA group node",
+				fmt.Sprintf("Received group node '%s' for HA group '%s'",
 					nodeDescStr, groupID),
 			)
 
@@ -183,17 +185,17 @@ func parseHAGroupMembers(groupID string, nodes string) (basetypes.MapValue, diag
 				priority = types.Int64Value(int64(prio))
 			} else {
 				diags.AddWarning(
-					"Could not parse HA group member priority",
+					"Could not parse HA group node priority",
 					fmt.Sprintf("Node priority string '%s' for node %s of HA group '%s'",
 						nodeDesc[1], nodeDesc[0], groupID),
 				)
 			}
 		}
 
-		membersOut[nodeDesc[0]] = priority
+		nodesOut[nodeDesc[0]] = priority
 	}
 
-	value, mbDiags := types.MapValue(types.Int64Type, membersOut)
+	value, mbDiags := types.MapValue(types.Int64Type, nodesOut)
 	diags.Append(mbDiags...)
 
 	return value, diags
