@@ -15,6 +15,8 @@ import (
 )
 
 func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
 	ds8gig := types.DiskSizeFromGigabytes(8)
 	tests := []struct {
 		name    string
@@ -49,8 +51,11 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := &CustomStorageDevice{}
 			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
@@ -61,6 +66,8 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 }
 
 func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		line    string
@@ -94,7 +101,9 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := &CustomPCIDevice{}
 			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
