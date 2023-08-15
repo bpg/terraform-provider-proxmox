@@ -59,3 +59,46 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		line    string
+		want    *CustomPCIDevice
+		wantErr bool
+	}{
+		{
+			name: "id only pci device",
+			line: `"0000:81:00.2"`,
+			want: &CustomPCIDevice{
+				DeviceIDs:  []string{"0000:81:00.2"},
+				MDev:       nil,
+				PCIExpress: types.BoolPtr(false),
+				ROMBAR:     types.BoolPtr(true),
+				ROMFile:    nil,
+				XVGA:       types.BoolPtr(false),
+			},
+		},
+		{
+			name: "pci device with more details",
+			line: `"host=81:00.4,pcie=0,rombar=1,x-vga=0"`,
+			want: &CustomPCIDevice{
+				DeviceIDs:  []string{"81:00.4"},
+				MDev:       nil,
+				PCIExpress: types.BoolPtr(false),
+				ROMBAR:     types.BoolPtr(true),
+				ROMFile:    nil,
+				XVGA:       types.BoolPtr(false),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &CustomPCIDevice{}
+			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
