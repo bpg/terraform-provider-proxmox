@@ -57,7 +57,7 @@ func (c *Client) Get(ctx context.Context, groupID string) (*HAGroupGetResponseDa
 
 // Create creates a new HA group.
 func (c *Client) Create(ctx context.Context, data *HAGroupCreateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, "cluster/ha/groups", data, nil)
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(""), data, nil)
 	if err != nil {
 		return fmt.Errorf("error creating HA group: %w", err)
 	}
@@ -67,7 +67,7 @@ func (c *Client) Create(ctx context.Context, data *HAGroupCreateRequestBody) err
 
 // Update updates a HA group's configuration.
 func (c *Client) Update(ctx context.Context, groupID string, data *HAGroupUpdateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPut, fmt.Sprintf("cluster/ha/groups/%s", url.PathEscape(groupID)), data, nil)
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(url.PathEscape(groupID)), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating HA group: %w", err)
 	}
@@ -77,7 +77,7 @@ func (c *Client) Update(ctx context.Context, groupID string, data *HAGroupUpdate
 
 // Delete deletes a HA group.
 func (c *Client) Delete(ctx context.Context, groupID string) error {
-	err := c.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("cluster/ha/groups/%s", url.PathEscape(groupID)), nil, nil)
+	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(url.PathEscape(groupID)), nil, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting HA group: %w", err)
 	}
