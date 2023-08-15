@@ -6,6 +6,8 @@
 
 package groups
 
+import "github.com/bpg/terraform-provider-proxmox/internal/types"
+
 // HAGroupListResponseBody contains the body from a HA group list response.
 type HAGroupListResponseBody struct {
 	Data []*HAGroupListResponseData `json:"data,omitempty"`
@@ -33,9 +35,9 @@ type HAGroupGetResponseData struct {
 	// include a priority, with a semicolon acting as a separator.
 	Nodes string `json:"nodes"`
 	// A boolean (0/1) indicating that failing back to the highest priority node is disabled.
-	NoFailback int `json:"nofailback"`
+	NoFailback types.CustomBool `json:"nofailback"`
 	// A boolean (0/1) indicating that associated resources cannot run on other nodes.
-	Restricted int `json:"restricted"`
+	Restricted types.CustomBool `json:"restricted"`
 	// The type. Always set to `group`.
 	Type string `json:"type"`
 }

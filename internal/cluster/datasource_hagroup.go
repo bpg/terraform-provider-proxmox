@@ -144,8 +144,8 @@ func (d *hagroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	state.ID = types.StringValue(groupID)
-	state.NoFailback = types.BoolValue(group.NoFailback != 0)
-	state.Restricted = types.BoolValue(group.Restricted != 0)
+	state.NoFailback = group.NoFailback.ToValue()
+	state.Restricted = group.Restricted.ToValue()
 
 	members, diags := parseHAGroupMembers(groupID, group.Nodes)
 	resp.Diagnostics.Append(diags...)
