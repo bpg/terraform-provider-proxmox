@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // CustomBool allows a JSON boolean value to also be an integer.
@@ -61,6 +63,11 @@ func (r CustomBool) Pointer() *CustomBool {
 // PointerBool returns a pointer to a boolean.
 func (r *CustomBool) PointerBool() *bool {
 	return (*bool)(r)
+}
+
+// ToValue returns a Terraform attribue value.
+func (r CustomBool) ToValue() types.Bool {
+	return types.BoolValue(bool(r))
 }
 
 // MarshalJSON converts a boolean to a JSON value.
