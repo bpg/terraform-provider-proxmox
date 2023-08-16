@@ -31,7 +31,7 @@ type HAResourceGetResponseData struct {
 	Comment     *string               `json:"comment,omitempty"` // Resource comment, if defined
 	Digest      *string               `json:"digest,omitempty"`  // SHA-1 digest of the resources' configuration.
 	Group       *string               `json:"group,omitempty"`   // HA group identifier, if the resource is part of one.
-	MaxRelocate int                   `json:"max_relocate"`      // Maximal number of service relocation attempts.
-	MaxRestart  int                   `json:"max_restart"`       // Maximal number of service restart attempts.
+	MaxRelocate *int64                `json:"max_relocate"`      // Maximal number of service relocation attempts.
+	MaxRestart  *int64                `json:"max_restart"`       // Maximal number of service restart attempts.
 	State       types.HAResourceState `json:"state"`             // Requested resource state.
 }
