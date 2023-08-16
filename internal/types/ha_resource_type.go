@@ -11,7 +11,9 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	"github.com/google/go-querystring/query"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -47,6 +49,11 @@ func ParseHAResourceType(input string) (HAResourceType, error) {
 	default:
 		return _haResourceTypeValue, fmt.Errorf("illegal HA resource type '%s'", input)
 	}
+}
+
+// HAResourceTypeValidator returns a new HA resource type validator.
+func HAResourceTypeValidator() validator.String {
+	return tffwk.NewParseValidator(ParseHAResourceType, "value must be a valid HA resource type")
 }
 
 // String converts a HAResourceType value into a string.

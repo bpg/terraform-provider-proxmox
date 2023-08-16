@@ -13,7 +13,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	"github.com/google/go-querystring/query"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -71,6 +73,11 @@ func ParseHAResourceID(input string) (HAResourceID, error) {
 	resID.Name = inParts[1]
 
 	return resID, nil
+}
+
+// HAResourceIDValidator returns a new HA resource identifier validator.
+func HAResourceIDValidator() validator.String {
+	return tffwk.NewParseValidator(ParseHAResourceID, "value must be a valid HA resource identifier")
 }
 
 // String converts a HAResourceID value into a string.
