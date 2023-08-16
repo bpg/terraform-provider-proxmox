@@ -28,7 +28,7 @@ type HAResourceDataBase struct {
 	// Resource comment, if defined
 	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
 	// HA group identifier, if the resource is part of one.
-	Group *string `json:"group,omitempty" url:"comment,omitempty"`
+	Group *string `json:"group,omitempty" url:"group,omitempty"`
 	// Maximal number of service relocation attempts.
 	MaxRelocate *int64 `json:"max_relocate,omitempty" url:"max_relocate,omitempty"`
 	// Maximal number of service restart attempts.
