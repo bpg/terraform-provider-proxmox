@@ -23,15 +23,46 @@ type HAResourceGetResponseBody struct {
 	Data *HAResourceGetResponseData `json:"data,omitempty"`
 }
 
+// HAResourceDataBase contains data common to all HA resource API calls.
+type HAResourceDataBase struct {
+	// Resource comment, if defined
+	Comment *string `json:"comment,omitempty" url:"comment,omitempty"`
+	// HA group identifier, if the resource is part of one.
+	Group *string `json:"group,omitempty" url:"comment,omitempty"`
+	// Maximal number of service relocation attempts.
+	MaxRelocate *int64 `json:"max_relocate,omitempty" url:"max_relocate,omitempty"`
+	// Maximal number of service restart attempts.
+	MaxRestart *int64 `json:"max_restart" url:"max_restart,omitempty"`
+	// Requested resource state.
+	State types.HAResourceState `json:"state" url:"state"`
+}
+
 // HAResourceGetResponseData contains data received from the HA resource API when requesting information about a single
 // HA resource.
 type HAResourceGetResponseData struct {
-	ID          types.HAResourceID    `json:"sid"`               // Identifier of this resource
-	Type        types.HAResourceType  `json:"type"`              // Type of this resource
-	Comment     *string               `json:"comment,omitempty"` // Resource comment, if defined
-	Digest      *string               `json:"digest,omitempty"`  // SHA-1 digest of the resources' configuration.
-	Group       *string               `json:"group,omitempty"`   // HA group identifier, if the resource is part of one.
-	MaxRelocate *int64                `json:"max_relocate"`      // Maximal number of service relocation attempts.
-	MaxRestart  *int64                `json:"max_restart"`       // Maximal number of service restart attempts.
-	State       types.HAResourceState `json:"state"`             // Requested resource state.
+	HAResourceDataBase
+	// Identifier of this resource
+	ID types.HAResourceID `json:"sid"`
+	// Type of this resource
+	Type types.HAResourceType `json:"type"`
+	// SHA-1 digest of the resources' configuration.
+	Digest *string `json:"digest,omitempty"`
+}
+
+// HAResourceCreateRequestBody contains data received from the HA resource API when creating a new HA resource.
+type HAResourceCreateRequestBody struct {
+	HAResourceDataBase
+	// Identifier of this resource
+	ID types.HAResourceID `url:"sid"`
+	// Type of this resource
+	Type *types.HAResourceType `url:"type,omitempty"`
+	// SHA-1 digest of the resources' configuration.
+	Digest *string `url:"comment,omitempty"`
+}
+
+// HAResourceUpdateRequestData contains data received from the HA resource API when creating a new HA resource.
+type HAResourceUpdateRequestBody struct {
+	HAResourceDataBase
+	// Settings that must be deleted from the resource's configuration
+	Delete []string `url:"delete,omitempty,comma"`
 }
