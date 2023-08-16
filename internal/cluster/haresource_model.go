@@ -7,6 +7,9 @@
 package cluster
 
 import (
+	"fmt"
+
+	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -42,4 +45,70 @@ func (d *haresourceModel) importFromAPI(data *haresources.HAResourceGetResponseD
 	d.Group = types.StringPointerValue(data.Group)
 	d.MaxRelocate = types.Int64PointerValue(data.MaxRelocate)
 	d.MaxRestart = types.Int64PointerValue(data.MaxRestart)
+}
+
+// toRequestBase builds the common request data structure for HA resource creation or update API calls.
+func (d haresourceModel) toRequestBase() haresources.HAResourceDataBase {
+	var state customtypes.HAResourceState
+
+	if d.State.IsNull() {
+		state = customtypes.HAResourceStateStarted
+	} else {
+		var err error
+
+		state, err = customtypes.ParseHAResourceState(d.State.ValueString())
+		if err != nil {
+			panic(fmt.Errorf(
+				"state string '%s' wrongly assumed to be valid; error: %w",
+				d.State.ValueString(), err,
+			))
+		}
+	}
+
+	return haresources.HAResourceDataBase{
+		State:       state,
+		Comment:     d.Comment.ValueStringPointer(),
+		Group:       d.Group.ValueStringPointer(),
+		MaxRelocate: d.MaxRelocate.ValueInt64Pointer(),
+		MaxRestart:  d.MaxRestart.ValueInt64Pointer(),
+	}
+}
+
+// toCreateRequest builds the request data structure for creating a new HA resource.
+func (d haresourceModel) toCreateRequest(resID customtypes.HAResourceID) *haresources.HAResourceCreateRequestBody {
+	return &haresources.HAResourceCreateRequestBody{
+		ID:                 resID,
+		Type:               &resID.Type,
+		HAResourceDataBase: d.toRequestBase(),
+	}
+}
+
+// toUpdateRequest builds the request data structure for updating an existing HA resource.
+func (d haresourceModel) toUpdateRequest(state *haresourceModel) *haresources.HAResourceUpdateRequestBody {
+	del := []string{}
+
+	if d.Comment.IsNull() && !state.Comment.IsNull() {
+		del = append(del, "comment")
+	}
+
+	if d.Group.IsNull() && !state.Group.IsNull() {
+		del = append(del, "group")
+	}
+
+	if d.MaxRelocate.IsNull() && !state.MaxRelocate.IsNull() {
+		del = append(del, "max_relocate")
+	}
+
+	if d.MaxRestart.IsNull() && !state.MaxRestart.IsNull() {
+		del = append(del, "max_restart")
+	}
+
+	if len(del) == 0 {
+		del = nil
+	}
+
+	return &haresources.HAResourceUpdateRequestBody{
+		HAResourceDataBase: d.toRequestBase(),
+		Delete:             del,
+	}
 }
