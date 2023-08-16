@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/google/go-querystring/query"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // NOTE: the linter believes the `HAResourceID` structure below should be tagged with `json:` due to some values of it
@@ -108,4 +109,9 @@ func (rid *HAResourceID) UnmarshalJSON(b []byte) error {
 func (rid HAResourceID) EncodeValues(key string, v *url.Values) error {
 	v.Add(key, rid.String())
 	return nil
+}
+
+// ToValue converts a HA resource ID into a Terraform value.
+func (rid HAResourceID) ToValue() types.String {
+	return types.StringValue(rid.String())
 }

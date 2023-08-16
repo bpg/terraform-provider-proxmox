@@ -12,6 +12,7 @@ import (
 	"net/url"
 
 	"github.com/google/go-querystring/query"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // HAResourceType represents the type of a HA resource.
@@ -91,4 +92,9 @@ func (t *HAResourceType) UnmarshalJSON(b []byte) error {
 func (t HAResourceType) EncodeValues(key string, v *url.Values) error {
 	v.Add(key, t.String())
 	return nil
+}
+
+// ToValue converts a HA resource type into a Terraform value.
+func (t HAResourceType) ToValue() types.String {
+	return types.StringValue(t.String())
 }

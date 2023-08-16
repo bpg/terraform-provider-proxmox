@@ -12,6 +12,7 @@ import (
 	"net/url"
 
 	"github.com/google/go-querystring/query"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // HAResourceState represents the requested state of a HA resource.
@@ -110,4 +111,9 @@ func (s *HAResourceState) UnmarshalJSON(b []byte) error {
 func (s HAResourceState) EncodeValues(key string, v *url.Values) error {
 	v.Add(key, s.String())
 	return nil
+}
+
+// ToValue converts a HA resource state into a Terraform value.
+func (s HAResourceState) ToValue() types.String {
+	return types.StringValue(s.String())
 }
