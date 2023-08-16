@@ -60,7 +60,7 @@ type HAResourceCreateRequestBody struct {
 	Digest *string `url:"comment,omitempty"`
 }
 
-// HAResourceUpdateRequestData contains data received from the HA resource API when creating a new HA resource.
+// HAResourceUpdateRequestBody contains data received from the HA resource API when updating an existing HA resource.
 type HAResourceUpdateRequestBody struct {
 	HAResourceDataBase
 	// Settings that must be deleted from the resource's configuration
