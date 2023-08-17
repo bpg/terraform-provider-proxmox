@@ -991,7 +991,7 @@ func VM() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The Host PCI devices mapped to the VM",
 				Optional:    true,
-				ForceNew:    true,
+				ForceNew:    false,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{}, nil
 				},
