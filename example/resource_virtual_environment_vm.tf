@@ -146,6 +146,17 @@ resource "proxmox_virtual_environment_vm" "example" {
     }
   }
 
+  #hostpci {
+  #  device = "hostpci0"
+  #  id = "0000:00:1f.0"
+  #  pcie = true
+  #}
+
+  #hostpci {
+  #  device = "hostpci1"
+  #  mapping = "gpu"
+  #  pcie = true
+  #}
 }
 
 output "resource_proxmox_virtual_environment_vm_example_id" {

@@ -283,7 +283,8 @@ output "ubuntu_vm_public_key" {
 - `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
     - `device` - (Required) The PCI device name for Proxmox, in form
       of `hostpciX` where `X` is a sequential number from 0 to 3.
-    - `id` - (Required) The PCI device ID.
+    - `id` - (Optional) The PCI device ID. Use either this or `mapping`.
+    - `mapping` - (Optional) The resource mapping name of the device, for example gpu. Use either this or `id`.
     - `mdev` - (Optional) The mediated device ID to use.
     - `pcie` - (Optional) Tells Proxmox to use a PCIe or PCI port. Some
       guests/device combination require PCIe rather than PCI. PCIe is only
