@@ -1379,7 +1379,7 @@ func VM() *schema.Resource {
 			},
 			mkResourceVirtualEnvironmentVMTimeoutMigrate: {
 				Type:        schema.TypeInt,
-				Description: "MoveDisk timeout",
+				Description: "Migrate VM timeout",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMTimeoutMigrate,
 			},
