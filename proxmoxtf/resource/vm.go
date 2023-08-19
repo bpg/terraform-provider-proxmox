@@ -98,6 +98,7 @@ const (
 	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentVMMemoryFloating                    = 0
 	dvResourceVirtualEnvironmentVMMemoryShared                      = 0
+	dvResourceVirtualEnvironmentVMMigrate                           = false
 	dvResourceVirtualEnvironmentVMName                              = ""
 	dvResourceVirtualEnvironmentVMNetworkDeviceBridge               = "vmbr0"
 	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled              = true
@@ -123,6 +124,7 @@ const (
 	dvResourceVirtualEnvironmentVMTemplate                          = false
 	dvResourceVirtualEnvironmentVMTimeoutClone                      = 1800
 	dvResourceVirtualEnvironmentVMTimeoutMoveDisk                   = 1800
+	dvResourceVirtualEnvironmentVMTimeoutMigrate                    = 1800
 	dvResourceVirtualEnvironmentVMTimeoutReboot                     = 1800
 	dvResourceVirtualEnvironmentVMTimeoutShutdownVM                 = 1800
 	dvResourceVirtualEnvironmentVMTimeoutStartVM                    = 1800
@@ -230,6 +232,7 @@ const (
 	mkResourceVirtualEnvironmentVMMemoryDedicated                   = "dedicated"
 	mkResourceVirtualEnvironmentVMMemoryFloating                    = "floating"
 	mkResourceVirtualEnvironmentVMMemoryShared                      = "shared"
+	mkResourceVirtualEnvironmentVMMigrate                           = "migrate"
 	mkResourceVirtualEnvironmentVMName                              = "name"
 	mkResourceVirtualEnvironmentVMNetworkDevice                     = "network_device"
 	mkResourceVirtualEnvironmentVMNetworkDeviceBridge               = "bridge"
@@ -265,6 +268,7 @@ const (
 	mkResourceVirtualEnvironmentVMTemplate                          = "template"
 	mkResourceVirtualEnvironmentVMTimeoutClone                      = "timeout_clone"
 	mkResourceVirtualEnvironmentVMTimeoutMoveDisk                   = "timeout_move_disk"
+	mkResourceVirtualEnvironmentVMTimeoutMigrate                    = "timeout_migrate"
 	mkResourceVirtualEnvironmentVMTimeoutReboot                     = "timeout_reboot"
 	mkResourceVirtualEnvironmentVMTimeoutShutdownVM                 = "timeout_shutdown_vm"
 	mkResourceVirtualEnvironmentVMTimeoutStartVM                    = "timeout_start_vm"
@@ -1183,7 +1187,12 @@ func VM() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
-				ForceNew:    true,
+			},
+			mkResourceVirtualEnvironmentVMMigrate: {
+				Type:        schema.TypeBool,
+				Description: "Whether to migrate the VM on node change instead of re-creating it",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMMigrate,
 			},
 			mkResourceVirtualEnvironmentVMOperatingSystem: {
 				Type:        schema.TypeList,
@@ -1368,6 +1377,12 @@ func VM() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMTimeoutMoveDisk,
 			},
+			mkResourceVirtualEnvironmentVMTimeoutMigrate: {
+				Type:        schema.TypeInt,
+				Description: "Migrate VM timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutMigrate,
+			},
 			mkResourceVirtualEnvironmentVMTimeoutReboot: {
 				Type:        schema.TypeInt,
 				Description: "Reboot timeout",
@@ -1483,6 +1498,12 @@ func VM() *schema.Resource {
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
 					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+			customdiff.ForceNewIf(
+				mkResourceVirtualEnvironmentVMNodeName,
+				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+					return !d.Get(mkResourceVirtualEnvironmentVMMigrate).(bool)
 				},
 			),
 		),
@@ -4845,6 +4866,26 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	e = vmUpdatePool(ctx, d, api.Pool(), vmID)
 	if e != nil {
 		return diag.FromErr(e)
+	}
+
+	// If the node name has changed we need to migrate the VM to the new node before we do anything else.
+	if d.HasChange(mkResourceVirtualEnvironmentVMNodeName) {
+		oldNodeNameValue, _ := d.GetChange(mkResourceVirtualEnvironmentVMNodeName)
+		oldNodeName := oldNodeNameValue.(string)
+		vmAPI := api.Node(oldNodeName).VM(vmID)
+
+		migrateTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMigrate).(int)
+		trueValue := types.CustomBool(true)
+		migrateBody := &vms.MigrateRequestBody{
+			TargetNode:      nodeName,
+			WithLocalDisks:  &trueValue,
+			OnlineMigration: &trueValue,
+		}
+
+		err := vmAPI.MigrateVM(ctx, migrateBody, migrateTimeout)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	vmAPI := api.Node(nodeName).VM(vmID)

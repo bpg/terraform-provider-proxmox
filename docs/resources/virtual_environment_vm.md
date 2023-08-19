@@ -365,6 +365,8 @@ output "ubuntu_vm_public_key" {
     - `floating` - (Optional) The floating memory in megabytes (defaults
       to `0`).
     - `shared` - (Optional) The shared memory in megabytes (defaults to `0`).
+- `migrate` - (Optional) Migrate the VM on node change instead of re-creating
+  it (defaults to `false`).
 - `name` - (Optional) The virtual machine name.
 - `network_device` - (Optional) A network device (multiple blocks supported).
     - `bridge` - (Optional) The name of the network bridge (defaults
@@ -446,6 +448,8 @@ output "ubuntu_vm_public_key" {
   1800).
 - `timeout_move_disk` - (Optional) Timeout for moving the disk of a VM in
   seconds (defaults to 1800).
+- `timeout_migrate` - (Optional) Timeout for migrating the VM (defaults to
+  1800).
 - `timeout_reboot` - (Optional) Timeout for rebooting a VM in seconds (defaults
   to 1800).
 - `timeout_shutdown_vm` - (Optional) Timeout for shutting down a VM in seconds (
