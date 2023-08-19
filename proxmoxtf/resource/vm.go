@@ -4797,7 +4797,7 @@ func vmUpdatePool(
 
 	oldPool := oldPoolValue.(string)
 	newPool := newPoolValue.(string)
-	vmList := []string{strconv.Itoa(vmID)}
+	vmList := (types.CustomCommaSeparatedList)([]string{strconv.Itoa(vmID)})
 
 	tflog.Debug(ctx, fmt.Sprintf("Moving VM %d from pool '%s' to pool '%s'", vmID, oldPool, newPool))
 
@@ -4842,7 +4842,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(e)
 	}
 
-	if vmUpdatePool(ctx, d, api.Pool(), vmID) != nil {
+	e = vmUpdatePool(ctx, d, api.Pool(), vmID)
+	if e != nil {
 		return diag.FromErr(e)
 	}
 

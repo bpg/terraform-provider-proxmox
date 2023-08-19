@@ -52,7 +52,7 @@ type PoolUpdateRequestBody struct {
 	// If this is set to 1, VMs and datastores will be removed from the pool instead of added.
 	Delete *types.CustomBool `json:"delete,omitempty" url:"delete,omitempty,int"`
 	// The list of virtual machines to add or delete.
-	VMs *[]string `json:"vms,omitempty" url:"vms,omitempty,comma"`
+	VMs *types.CustomCommaSeparatedList `json:"vms,omitempty" url:"vms,omitempty,comma"`
 	// The list of datastores to add or delete.
-	Storage *[]string `json:"storage,omitempty" url:"storage,omitempty,comma"`
+	Storage *types.CustomCommaSeparatedList `json:"storage,omitempty" url:"storage,omitempty,comma"`
 }
