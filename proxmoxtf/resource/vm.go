@@ -17,6 +17,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,6 +28,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
@@ -1221,7 +1223,6 @@ func VM() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The ID of the pool to assign the virtual machine to",
 				Optional:    true,
-				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentVMPoolID,
 			},
 			mkResourceVirtualEnvironmentVMSerialDevice: {
@@ -3454,6 +3455,27 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	return vmReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
 }
 
+// orderedListFromMap generates a list from a map's values. The values are sorted based on the map's keys.
+func orderedListFromMap(inputMap map[string]interface{}) []interface{} {
+	itemCount := len(inputMap)
+	keyList := make([]string, itemCount)
+	i := 0
+
+	for key := range inputMap {
+		keyList[i] = key
+		i++
+	}
+
+	sort.Strings(keyList)
+
+	orderedList := make([]interface{}, itemCount)
+	for i, k := range keyList {
+		orderedList[i] = inputMap[k]
+	}
+
+	return orderedList
+}
+
 func vmReadCustom(
 	ctx context.Context,
 	d *schema.ResourceData,
@@ -3726,7 +3748,6 @@ func vmReadCustom(
 	currentDiskList := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	diskMap := map[string]interface{}{}
 	diskObjects := getDiskInfo(vmConfig, d)
-	var orderedDiskList []interface{}
 
 	for di, dd := range diskObjects {
 		disk := map[string]interface{}{}
@@ -3828,24 +3849,8 @@ func vmReadCustom(
 		diskMap[di] = disk
 	}
 
-	var keyList []string
-
-	for key := range diskMap {
-		keyList = append(keyList, key)
-	}
-
-	sort.Strings(keyList)
-
-	for _, k := range keyList {
-		orderedDiskList = append(orderedDiskList, diskMap[k])
-	}
-
-	if len(clone) > 0 {
-		if len(currentDiskList) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else if len(currentDiskList) > 0 {
+	if len(currentDiskList) > 0 {
+		orderedDiskList := orderedListFromMap(diskMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -3908,7 +3913,6 @@ func vmReadCustom(
 
 	currentPCIList := d.Get(mkResourceVirtualEnvironmentVMHostPCI).([]interface{})
 	pciMap := map[string]interface{}{}
-	var orderedPCIList []interface{}
 
 	pciDevices := getPCIInfo(vmConfig, d)
 	for pi, pp := range pciDevices {
@@ -3954,23 +3958,9 @@ func vmReadCustom(
 		pciMap[pi] = pci
 	}
 
-	keyList = []string{}
-	for key := range pciMap {
-		keyList = append(keyList, key)
-	}
-	sort.Strings(keyList)
-
-	for _, k := range keyList {
-		orderedPCIList = append(orderedPCIList, pciMap[k])
-	}
-
-	if len(clone) > 0 {
-		if len(currentPCIList) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else if len(currentPCIList) > 0 {
+	if len(currentPCIList) > 0 {
 		// todo: reordering of devices by PVE may cause an issue here
+		orderedPCIList := orderedListFromMap(pciMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -4814,6 +4804,49 @@ func vmReadPrimitiveValues(
 	return diags
 }
 
+// vmUpdatePool moves the VM to the pool it is supposed to be in if the pool ID changed.
+func vmUpdatePool(
+	ctx context.Context,
+	d *schema.ResourceData,
+	api *pools.Client,
+	vmID int,
+) error {
+	oldPoolValue, newPoolValue := d.GetChange(mkResourceVirtualEnvironmentVMPoolID)
+	if cmp.Equal(newPoolValue, oldPoolValue) {
+		return nil
+	}
+
+	oldPool := oldPoolValue.(string)
+	newPool := newPoolValue.(string)
+	vmList := (types.CustomCommaSeparatedList)([]string{strconv.Itoa(vmID)})
+
+	tflog.Debug(ctx, fmt.Sprintf("Moving VM %d from pool '%s' to pool '%s'", vmID, oldPool, newPool))
+
+	if oldPool != "" {
+		trueValue := types.CustomBool(true)
+		poolUpdate := &pools.PoolUpdateRequestBody{
+			VMs:    &vmList,
+			Delete: &trueValue,
+		}
+
+		err := api.UpdatePool(ctx, oldPool, poolUpdate)
+		if err != nil {
+			return fmt.Errorf("while removing VM %d from pool %s: %w", vmID, oldPool, err)
+		}
+	}
+
+	if newPool != "" {
+		poolUpdate := &pools.PoolUpdateRequestBody{VMs: &vmList}
+
+		err := api.UpdatePool(ctx, newPool, poolUpdate)
+		if err != nil {
+			return fmt.Errorf("while adding VM %d to pool %s: %w", vmID, newPool, err)
+		}
+	}
+
+	return nil
+}
+
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
@@ -4826,6 +4859,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	rebootRequired := false
 
 	vmID, e := strconv.Atoi(d.Id())
+	if e != nil {
+		return diag.FromErr(e)
+	}
+
+	e = vmUpdatePool(ctx, d, api.Pool(), vmID)
 	if e != nil {
 		return diag.FromErr(e)
 	}
