@@ -1622,7 +1622,7 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "host":
-				dIds := strings.Split(v[0], ";")
+				dIds := strings.Split(v[1], ";")
 				r.DeviceIDs = &dIds
 			case "mapping":
 				r.Mapping = &v[1]
