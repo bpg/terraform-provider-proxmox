@@ -137,6 +137,7 @@ const (
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
 	maxResourceVirtualEnvironmentVMNetworkDevices = 8
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
+	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
 
 	mkResourceVirtualEnvironmentVMRebootAfterCreation               = "reboot"
 	mkResourceVirtualEnvironmentVMOnBoot                            = "on_boot"
@@ -5300,6 +5301,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Prepare the new hostpci devices configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMHostPCI) {
 		updateBody.PCIDevices = vmGetHostPCIDeviceObjects(d)
+
+		for i := len(updateBody.PCIDevices); i < maxResourceVirtualEnvironmentVMHostPCIDevices; i++ {
+			del = append(del, fmt.Sprintf("hostpci%d", i))
+		}
+
 		rebootRequired = true
 	}
 
