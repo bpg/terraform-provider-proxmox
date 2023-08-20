@@ -17,6 +17,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -27,6 +28,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
@@ -96,6 +98,7 @@ const (
 	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentVMMemoryFloating                    = 0
 	dvResourceVirtualEnvironmentVMMemoryShared                      = 0
+	dvResourceVirtualEnvironmentVMMigrate                           = false
 	dvResourceVirtualEnvironmentVMName                              = ""
 	dvResourceVirtualEnvironmentVMNetworkDeviceBridge               = "vmbr0"
 	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled              = true
@@ -121,6 +124,7 @@ const (
 	dvResourceVirtualEnvironmentVMTemplate                          = false
 	dvResourceVirtualEnvironmentVMTimeoutClone                      = 1800
 	dvResourceVirtualEnvironmentVMTimeoutMoveDisk                   = 1800
+	dvResourceVirtualEnvironmentVMTimeoutMigrate                    = 1800
 	dvResourceVirtualEnvironmentVMTimeoutReboot                     = 1800
 	dvResourceVirtualEnvironmentVMTimeoutShutdownVM                 = 1800
 	dvResourceVirtualEnvironmentVMTimeoutStartVM                    = 1800
@@ -229,6 +233,7 @@ const (
 	mkResourceVirtualEnvironmentVMMemoryDedicated                   = "dedicated"
 	mkResourceVirtualEnvironmentVMMemoryFloating                    = "floating"
 	mkResourceVirtualEnvironmentVMMemoryShared                      = "shared"
+	mkResourceVirtualEnvironmentVMMigrate                           = "migrate"
 	mkResourceVirtualEnvironmentVMName                              = "name"
 	mkResourceVirtualEnvironmentVMNetworkDevice                     = "network_device"
 	mkResourceVirtualEnvironmentVMNetworkDeviceBridge               = "bridge"
@@ -264,6 +269,7 @@ const (
 	mkResourceVirtualEnvironmentVMTemplate                          = "template"
 	mkResourceVirtualEnvironmentVMTimeoutClone                      = "timeout_clone"
 	mkResourceVirtualEnvironmentVMTimeoutMoveDisk                   = "timeout_move_disk"
+	mkResourceVirtualEnvironmentVMTimeoutMigrate                    = "timeout_migrate"
 	mkResourceVirtualEnvironmentVMTimeoutReboot                     = "timeout_reboot"
 	mkResourceVirtualEnvironmentVMTimeoutShutdownVM                 = "timeout_shutdown_vm"
 	mkResourceVirtualEnvironmentVMTimeoutStartVM                    = "timeout_start_vm"
@@ -1187,7 +1193,12 @@ func VM() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
-				ForceNew:    true,
+			},
+			mkResourceVirtualEnvironmentVMMigrate: {
+				Type:        schema.TypeBool,
+				Description: "Whether to migrate the VM on node change instead of re-creating it",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMMigrate,
 			},
 			mkResourceVirtualEnvironmentVMOperatingSystem: {
 				Type:        schema.TypeList,
@@ -1218,7 +1229,6 @@ func VM() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The ID of the pool to assign the virtual machine to",
 				Optional:    true,
-				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentVMPoolID,
 			},
 			mkResourceVirtualEnvironmentVMSerialDevice: {
@@ -1373,6 +1383,12 @@ func VM() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMTimeoutMoveDisk,
 			},
+			mkResourceVirtualEnvironmentVMTimeoutMigrate: {
+				Type:        schema.TypeInt,
+				Description: "Migrate VM timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutMigrate,
+			},
 			mkResourceVirtualEnvironmentVMTimeoutReboot: {
 				Type:        schema.TypeInt,
 				Description: "Reboot timeout",
@@ -1488,6 +1504,12 @@ func VM() *schema.Resource {
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
 					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+			customdiff.ForceNewIf(
+				mkResourceVirtualEnvironmentVMNodeName,
+				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+					return !d.Get(mkResourceVirtualEnvironmentVMMigrate).(bool)
 				},
 			),
 		),
@@ -3445,6 +3467,27 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	return vmReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
 }
 
+// orderedListFromMap generates a list from a map's values. The values are sorted based on the map's keys.
+func orderedListFromMap(inputMap map[string]interface{}) []interface{} {
+	itemCount := len(inputMap)
+	keyList := make([]string, itemCount)
+	i := 0
+
+	for key := range inputMap {
+		keyList[i] = key
+		i++
+	}
+
+	sort.Strings(keyList)
+
+	orderedList := make([]interface{}, itemCount)
+	for i, k := range keyList {
+		orderedList[i] = inputMap[k]
+	}
+
+	return orderedList
+}
+
 func vmReadCustom(
 	ctx context.Context,
 	d *schema.ResourceData,
@@ -3717,7 +3760,6 @@ func vmReadCustom(
 	currentDiskList := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	diskMap := map[string]interface{}{}
 	diskObjects := getDiskInfo(vmConfig, d)
-	var orderedDiskList []interface{}
 
 	for di, dd := range diskObjects {
 		disk := map[string]interface{}{}
@@ -3819,24 +3861,8 @@ func vmReadCustom(
 		diskMap[di] = disk
 	}
 
-	var keyList []string
-
-	for key := range diskMap {
-		keyList = append(keyList, key)
-	}
-
-	sort.Strings(keyList)
-
-	for _, k := range keyList {
-		orderedDiskList = append(orderedDiskList, diskMap[k])
-	}
-
-	if len(clone) > 0 {
-		if len(currentDiskList) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else if len(currentDiskList) > 0 {
+	if len(currentDiskList) > 0 {
+		orderedDiskList := orderedListFromMap(diskMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -3899,7 +3925,6 @@ func vmReadCustom(
 
 	currentPCIList := d.Get(mkResourceVirtualEnvironmentVMHostPCI).([]interface{})
 	pciMap := map[string]interface{}{}
-	var orderedPCIList []interface{}
 
 	pciDevices := getPCIInfo(vmConfig, d)
 	for pi, pp := range pciDevices {
@@ -3955,23 +3980,9 @@ func vmReadCustom(
 		pciMap[pi] = pci
 	}
 
-	keyList = []string{}
-	for key := range pciMap {
-		keyList = append(keyList, key)
-	}
-	sort.Strings(keyList)
-
-	for _, k := range keyList {
-		orderedPCIList = append(orderedPCIList, pciMap[k])
-	}
-
-	if len(clone) > 0 {
-		if len(currentPCIList) > 0 {
-			err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else if len(currentPCIList) > 0 {
+	if len(currentPCIList) > 0 {
 		// todo: reordering of devices by PVE may cause an issue here
+		orderedPCIList := orderedListFromMap(pciMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -4815,6 +4826,49 @@ func vmReadPrimitiveValues(
 	return diags
 }
 
+// vmUpdatePool moves the VM to the pool it is supposed to be in if the pool ID changed.
+func vmUpdatePool(
+	ctx context.Context,
+	d *schema.ResourceData,
+	api *pools.Client,
+	vmID int,
+) error {
+	oldPoolValue, newPoolValue := d.GetChange(mkResourceVirtualEnvironmentVMPoolID)
+	if cmp.Equal(newPoolValue, oldPoolValue) {
+		return nil
+	}
+
+	oldPool := oldPoolValue.(string)
+	newPool := newPoolValue.(string)
+	vmList := (types.CustomCommaSeparatedList)([]string{strconv.Itoa(vmID)})
+
+	tflog.Debug(ctx, fmt.Sprintf("Moving VM %d from pool '%s' to pool '%s'", vmID, oldPool, newPool))
+
+	if oldPool != "" {
+		trueValue := types.CustomBool(true)
+		poolUpdate := &pools.PoolUpdateRequestBody{
+			VMs:    &vmList,
+			Delete: &trueValue,
+		}
+
+		err := api.UpdatePool(ctx, oldPool, poolUpdate)
+		if err != nil {
+			return fmt.Errorf("while removing VM %d from pool %s: %w", vmID, oldPool, err)
+		}
+	}
+
+	if newPool != "" {
+		poolUpdate := &pools.PoolUpdateRequestBody{VMs: &vmList}
+
+		err := api.UpdatePool(ctx, newPool, poolUpdate)
+		if err != nil {
+			return fmt.Errorf("while adding VM %d to pool %s: %w", vmID, newPool, err)
+		}
+	}
+
+	return nil
+}
+
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
@@ -4829,6 +4883,31 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	vmID, e := strconv.Atoi(d.Id())
 	if e != nil {
 		return diag.FromErr(e)
+	}
+
+	e = vmUpdatePool(ctx, d, api.Pool(), vmID)
+	if e != nil {
+		return diag.FromErr(e)
+	}
+
+	// If the node name has changed we need to migrate the VM to the new node before we do anything else.
+	if d.HasChange(mkResourceVirtualEnvironmentVMNodeName) {
+		oldNodeNameValue, _ := d.GetChange(mkResourceVirtualEnvironmentVMNodeName)
+		oldNodeName := oldNodeNameValue.(string)
+		vmAPI := api.Node(oldNodeName).VM(vmID)
+
+		migrateTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMigrate).(int)
+		trueValue := types.CustomBool(true)
+		migrateBody := &vms.MigrateRequestBody{
+			TargetNode:      nodeName,
+			WithLocalDisks:  &trueValue,
+			OnlineMigration: &trueValue,
+		}
+
+		err := vmAPI.MigrateVM(ctx, migrateBody, migrateTimeout)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	vmAPI := api.Node(nodeName).VM(vmID)
