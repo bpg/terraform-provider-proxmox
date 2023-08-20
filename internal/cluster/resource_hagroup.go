@@ -12,9 +12,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -25,6 +22,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
 var (
@@ -85,7 +86,7 @@ func (r *hagroupResource) Schema(
 			},
 			"nodes": schema.MapAttribute{
 				Description: "The member nodes for this group. They are provided as a map, where the keys are the node " +
-					"names and the values represent their priority: integers for known prorities or `null` for unset " +
+					"names and the values represent their priority: integers for known priorities or `null` for unset " +
 					"priorities.",
 				Required:    true,
 				ElementType: types.Int64Type,

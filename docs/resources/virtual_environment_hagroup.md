@@ -36,7 +36,7 @@ resource "proxmox_virtual_environment_hagroup" "example" {
 ### Required
 
 - `group` (String) The identifier of the High Availability group to manage.
-- `members` (Map of Number) The member nodes for this group, associated with their priority or to null if no priority is set.
+- `nodes` (Map of Number) The member nodes for this group. They are provided as a map, where the keys are the node names and the values represent their priority: integers for known priorities or `null` for unset priorities.
 
 ### Optional
 
@@ -46,7 +46,6 @@ resource "proxmox_virtual_environment_hagroup" "example" {
 
 ### Read-Only
 
-- `digest` (String) The SHA-1 digest of the group's configuration
 - `id` (String) The ID of this resource.
 
 ## Import

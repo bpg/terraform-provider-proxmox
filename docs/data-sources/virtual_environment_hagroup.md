@@ -39,6 +39,6 @@ output "proxmox_virtual_environment_hagroups_full" {
 
 - `comment` (String) The comment associated with this group
 - `id` (String) The ID of this resource.
-- `members` (Map of Number) The member nodes for this group, associated with their priority or to null if no priority is set.
 - `no_failback` (Boolean) A flag that indicates that failing back to a higher priority node is disabled for this HA group.
+- `nodes` (Map of Number) The member nodes for this group. They are provided as a map, where the keys are the node names and the values represent their priority: integers for known priorities or `null` for unset priorities.
 - `restricted` (Boolean) A flag that indicates that other nodes may not be used to run resources associated to this HA group.

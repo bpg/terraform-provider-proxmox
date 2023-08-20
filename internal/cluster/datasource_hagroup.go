@@ -61,7 +61,7 @@ func (d *hagroupDatasource) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"nodes": schema.MapAttribute{
 				Description: "The member nodes for this group. They are provided as a map, where the keys are the node " +
-					"names and the values represent their priority: integers for known prorities or `null` for unset " +
+					"names and the values represent their priority: integers for known priorities or `null` for unset " +
 					"priorities.",
 				Computed:    true,
 				ElementType: types.Int64Type,
