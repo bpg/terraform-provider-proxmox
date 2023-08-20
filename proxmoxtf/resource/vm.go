@@ -5246,7 +5246,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				tflog.Debug(ctx, fmt.Sprintf("CloudInit must be moved from %s to %s", existingInterface, initializationInterface))
 			}
 
-			if mustMove || d.HasChange(mkResourceVirtualEnvironmentVMInitializationDatastoreID) || existingInterface == "" {
+			oldInit, _ := d.GetChange(mkResourceVirtualEnvironmentVMInitialization)
+			oldInitBlock := oldInit.([]interface{})[0].(map[string]interface{})
+			prevDatastoreID := oldInitBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
+
+			mustChangeDatastore := prevDatastoreID != initializationDatastoreID
+			if mustChangeDatastore {
+				tflog.Debug(ctx, fmt.Sprintf("CloudInit must be moved from datastore %s to datastore %s",
+					prevDatastoreID, initializationDatastoreID))
+			}
+
+			if mustMove || mustChangeDatastore || existingInterface == "" {
 				// CloudInit must be moved, either from a device to another or from a datastore
 				// to another (or both). This requires the VM to be stopped.
 				if err := vmShutdown(ctx, vmAPI, d); err != nil {
