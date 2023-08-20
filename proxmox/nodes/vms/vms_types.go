@@ -118,7 +118,8 @@ type CustomNUMADevices []CustomNUMADevice
 
 // CustomPCIDevice handles QEMU host PCI device mapping parameters.
 type CustomPCIDevice struct {
-	DeviceIDs  []string          `json:"host"              url:"host,semicolon"`
+	DeviceIDs  *[]string         `json:"host,omitempty"    url:"host,omitempty,semicolon"`
+	Mapping    *string           `json:"mapping,omitempty" url:"mapping,omitempty"`
 	MDev       *string           `json:"mdev,omitempty"    url:"mdev,omitempty"`
 	PCIExpress *types.CustomBool `json:"pcie,omitempty"    url:"pcie,omitempty,int"`
 	ROMBAR     *types.CustomBool `json:"rombar,omitempty"  url:"rombar,omitempty,int"`
@@ -526,7 +527,7 @@ type ListResponseData struct {
 
 // MigrateRequestBody contains the body for a VM migration request.
 type MigrateRequestBody struct {
-	OnlineMigration *types.CustomBool `json:"online,omitempty"           url:"online,omitempty"`
+	OnlineMigration *types.CustomBool `json:"online,omitempty"           url:"online,omitempty,int"`
 	TargetNode      string            `json:"target"                     url:"target"`
 	TargetStorage   *string           `json:"targetstorage,omitempty"    url:"targetstorage,omitempty"`
 	WithLocalDisks  *types.CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty,int"`
@@ -912,8 +913,18 @@ func (r CustomNUMADevices) EncodeValues(key string, v *url.Values) error {
 
 // EncodeValues converts a CustomPCIDevice struct to a URL vlaue.
 func (r CustomPCIDevice) EncodeValues(key string, v *url.Values) error {
-	values := []string{
-		fmt.Sprintf("host=%s", strings.Join(r.DeviceIDs, ";")),
+	values := []string{}
+
+	if r.DeviceIDs == nil && r.Mapping == nil {
+		return fmt.Errorf("either device ID or resource mapping must be set")
+	}
+
+	if r.DeviceIDs != nil {
+		values = append(values, fmt.Sprintf("host=%s", strings.Join(*r.DeviceIDs, ";")))
+	}
+
+	if r.Mapping != nil {
+		values = append(values, fmt.Sprintf("mapping=%s", *r.Mapping))
 	}
 
 	if r.MDev != nil {
@@ -1606,11 +1617,15 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 	for _, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 		if len(v) == 1 {
-			r.DeviceIDs = strings.Split(v[0], ";")
+			dIds := strings.Split(v[0], ";")
+			r.DeviceIDs = &dIds
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "host":
-				r.DeviceIDs = strings.Split(v[1], ";")
+				dIds := strings.Split(v[0], ";")
+				r.DeviceIDs = &dIds
+			case "mapping":
+				r.Mapping = &v[1]
 			case "mdev":
 				r.MDev = &v[1]
 			case "pcie":

@@ -31,7 +31,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     up_delay   = "60"
     down_delay = "60"
   }
-  
+
   disk {
     datastore_id = "local-lvm"
     file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
@@ -283,7 +283,9 @@ output "ubuntu_vm_public_key" {
 - `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
     - `device` - (Required) The PCI device name for Proxmox, in form
       of `hostpciX` where `X` is a sequential number from 0 to 3.
-    - `id` - (Required) The PCI device ID.
+    - `id` - (Optional) The PCI device ID. Use either this or `mapping`.
+    - `mapping` - (Optional) The resource mapping name of the device, for
+      example gpu. Use either this or `id`.
     - `mdev` - (Optional) The mediated device ID to use.
     - `pcie` - (Optional) Tells Proxmox to use a PCIe or PCI port. Some
       guests/device combination require PCIe rather than PCI. PCIe is only
@@ -365,6 +367,8 @@ output "ubuntu_vm_public_key" {
     - `floating` - (Optional) The floating memory in megabytes (defaults
       to `0`).
     - `shared` - (Optional) The shared memory in megabytes (defaults to `0`).
+- `migrate` - (Optional) Migrate the VM on node change instead of re-creating
+  it (defaults to `false`).
 - `name` - (Optional) The virtual machine name.
 - `network_device` - (Optional) A network device (multiple blocks supported).
     - `bridge` - (Optional) The name of the network bridge (defaults
@@ -446,6 +450,8 @@ output "ubuntu_vm_public_key" {
   1800).
 - `timeout_move_disk` - (Optional) Timeout for moving the disk of a VM in
   seconds (defaults to 1800).
+- `timeout_migrate` - (Optional) Timeout for migrating the VM (defaults to
+  1800).
 - `timeout_reboot` - (Optional) Timeout for rebooting a VM in seconds (defaults
   to 1800).
 - `timeout_shutdown_vm` - (Optional) Timeout for shutting down a VM in seconds (
