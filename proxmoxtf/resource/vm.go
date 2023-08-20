@@ -1591,7 +1591,9 @@ func deleteIdeDrives(ctx context.Context, vmAPI *vms.Client, itf1 string, itf2 s
 	return nil
 }
 
-// Shutdown the VM.
+// Shutdown the VM. When the API calls returns without error, we check the VM's actual state: if it is still running,
+// the VM is most likely used as a High Availability resource, and we have to wait for the HA manager to actually
+// shut it down.
 func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
 	tflog.Debug(ctx, "Shutting down VM")
 
@@ -1606,7 +1608,24 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 		return diag.FromErr(e)
 	}
 
-	return nil
+	// Wait for VM to stop
+	for {
+		vmStatus, err := vmAPI.GetVMStatus(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		if vmStatus.Status == "stopped" {
+			return nil
+		}
+
+		if shutdownTimeout > 0 {
+			time.Sleep(time.Second)
+			shutdownTimeout--
+		} else {
+			return diag.Errorf("timed out waiting for VM to stop")
+		}
+	}
 }
 
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
