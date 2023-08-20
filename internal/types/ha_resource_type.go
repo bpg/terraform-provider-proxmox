@@ -11,10 +11,11 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/internal/validators"
 )
 
 // HAResourceType represents the type of a HA resource.
@@ -33,9 +34,9 @@ var (
 
 const (
 	// HAResourceTypeVM indicates that a HA resource refers to a virtual machine.
-	HAResourceTypeVM HAResourceType = iota
+	HAResourceTypeVM HAResourceType = 0
 	// HAResourceTypeContainer indicates that a HA resource refers to a container.
-	HAResourceTypeContainer
+	HAResourceTypeContainer HAResourceType = 1
 )
 
 // ParseHAResourceType converts the string representation of a HA resource type into the corresponding
@@ -53,7 +54,7 @@ func ParseHAResourceType(input string) (HAResourceType, error) {
 
 // HAResourceTypeValidator returns a new HA resource type validator.
 func HAResourceTypeValidator() validator.String {
-	return tffwk.NewParseValidator(ParseHAResourceType, "value must be a valid HA resource type")
+	return validators.NewParseValidator(ParseHAResourceType, "value must be a valid HA resource type")
 }
 
 // String converts a HAResourceType value into a string.

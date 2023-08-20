@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
+	"github.com/bpg/terraform-provider-proxmox/internal/structure"
 	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
@@ -66,7 +66,7 @@ func (r *haresourceResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages Proxmox HA resources.",
 		Attributes: map[string]schema.Attribute{
-			"id": tffwk.IDAttribute(),
+			"id": structure.IDAttribute(),
 			"resource_id": schema.StringAttribute{
 				Description: "The Proxmox HA resource identifier",
 				Required:    true,

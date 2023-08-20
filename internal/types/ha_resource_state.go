@@ -11,10 +11,11 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/internal/validators"
 )
 
 // HAResourceState represents the requested state of a HA resource.
@@ -35,15 +36,15 @@ var (
 
 const (
 	// HAResourceStateStarted indicates that a HA resource should be started.
-	HAResourceStateStarted HAResourceState = iota
+	HAResourceStateStarted HAResourceState = 0
 	// HAResourceStateStopped indicates that a HA resource should be stopped, but that it should still be relocated
 	// on node failure.
-	HAResourceStateStopped
+	HAResourceStateStopped HAResourceState = 1
 	// HAResourceStateDisabled indicates that a HA resource should be stopped. No relocation should occur on node failure.
-	HAResourceStateDisabled
+	HAResourceStateDisabled HAResourceState = 2
 	// HAResourceStateIgnored indicates that a HA resource is not managed by the cluster resource manager. No relocation
 	// or status change will occur.
-	HAResourceStateIgnored
+	HAResourceStateIgnored HAResourceState = 3
 )
 
 // ParseHAResourceState converts the string representation of a HA resource state into the corresponding
@@ -68,7 +69,7 @@ func ParseHAResourceState(input string) (HAResourceState, error) {
 
 // HAResourceStateValidator returns a new HA resource state validator.
 func HAResourceStateValidator() validator.String {
-	return tffwk.NewParseValidator(ParseHAResourceState, "value must be a valid HA resource state")
+	return validators.NewParseValidator(ParseHAResourceState, "value must be a valid HA resource state")
 }
 
 // String converts a HAResourceState value into a string.

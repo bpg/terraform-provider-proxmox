@@ -13,10 +13,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/internal/validators"
 )
 
 // NOTE: the linter believes the `HAResourceID` structure below should be tagged with `json:` due to some values of it
@@ -77,7 +78,7 @@ func ParseHAResourceID(input string) (HAResourceID, error) {
 
 // HAResourceIDValidator returns a new HA resource identifier validator.
 func HAResourceIDValidator() validator.String {
-	return tffwk.NewParseValidator(ParseHAResourceID, "value must be a valid HA resource identifier")
+	return validators.NewParseValidator(ParseHAResourceID, "value must be a valid HA resource identifier")
 }
 
 // String converts a HAResourceID value into a string.

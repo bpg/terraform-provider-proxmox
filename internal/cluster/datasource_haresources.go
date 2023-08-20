@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/tffwk"
+	"github.com/bpg/terraform-provider-proxmox/internal/structure"
 	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
@@ -63,7 +63,7 @@ func (d *haresourcesDatasource) Schema(_ context.Context, _ datasource.SchemaReq
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability resources.",
 		Attributes: map[string]schema.Attribute{
-			"id": tffwk.IDAttribute(),
+			"id": structure.IDAttribute(),
 			"type": schema.StringAttribute{
 				Description: "The type of High Availability resources to fetch (`vm` or `ct`). All resources " +
 					"will be fetched if this option is unset.",

@@ -4,27 +4,14 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tffwk
+package validators
 
 import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
-
-// IDAttribute generates an attribute definition suitable for the always-present `id` attribute.
-func IDAttribute() schema.StringAttribute {
-	return schema.StringAttribute{
-		Computed: true,
-		PlanModifiers: []planmodifier.String{
-			stringplanmodifier.UseStateForUnknown(),
-		},
-	}
-}
 
 // NewParseValidator creates a validator which uses a parsing function to validate a string. The function is expected
 // to return a value of type `T` and an error. If the error is non-nil, the validator will fail. The `description`
