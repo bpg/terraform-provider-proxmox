@@ -1010,9 +1010,10 @@ func VM() *schema.Resource {
 							Required:    true,
 						},
 						mkResourceVirtualEnvironmentVMHostPCIDeviceID: {
-							Type:        schema.TypeString,
-							Description: "The PCI ID of the device, for example 0000:00:1f.0 (or 0000:00:1f.0;0000:00:1f.1 for multiple device functions, or 0000:00:1f for all functions). Use either this or mapping.",
-							Optional:    true,
+							Type: schema.TypeString,
+							Description: "The PCI ID of the device, for example 0000:00:1f.0 (or 0000:00:1f.0;0000:00:1f.1 for multiple " +
+								"device functions, or 0000:00:1f for all functions). Use either this or mapping.",
+							Optional: true,
 						},
 						mkResourceVirtualEnvironmentVMHostPCIDeviceMapping: {
 							Type:        schema.TypeString,
@@ -1025,9 +1026,10 @@ func VM() *schema.Resource {
 							Optional:    true,
 						},
 						mkResourceVirtualEnvironmentVMHostPCIDevicePCIE: {
-							Type:        schema.TypeBool,
-							Description: "Tells Proxmox VE to use a PCIe or PCI port. Some guests/device combination require PCIe rather than PCI. PCIe is only available for q35 machine types.",
-							Optional:    true,
+							Type: schema.TypeBool,
+							Description: "Tells Proxmox VE to use a PCIe or PCI port. Some guests/device combination require PCIe rather " +
+								"than PCI. PCIe is only available for q35 machine types.",
+							Optional: true,
 						},
 						mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR: {
 							Type:        schema.TypeBool,
