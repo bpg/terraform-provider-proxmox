@@ -1613,9 +1613,22 @@ func vmWaitState(ctx context.Context, vmAPI *vms.Client, state string, timeout i
 	}
 }
 
-// Shutdown the VM. When the API calls returns without error, we check the VM's actual state: if it is still running,
-// the VM is most likely used as a High Availability resource, and we have to wait for the HA manager to actually
-// shut it down.
+// Start the VM, then wait for it to actually start; it may not be started immediately if running in HA mode.
+func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
+	tflog.Debug(ctx, "Starting VM")
+
+	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
+
+	e := vmAPI.StartVM(ctx, startVMTimeout)
+	if e != nil {
+		return diag.FromErr(e)
+	}
+
+	return vmWaitState(ctx, vmAPI, "running", startVMTimeout)
+}
+
+// Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if
+// running in HA mode).
 func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
 	tflog.Debug(ctx, "Shutting down VM")
 
@@ -2765,10 +2778,8 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	vmAPI := api.Node(nodeName).VM(vmID)
 
 	// Start the virtual machine and wait for it to reach a running state before continuing.
-	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-	err = vmAPI.StartVM(ctx, startVMTimeout)
-	if err != nil {
-		return diag.FromErr(err)
+	if diags := vmStart(ctx, vmAPI, d); diags != nil {
+		return diags
 	}
 
 	if reboot {
@@ -5429,11 +5440,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if (d.HasChange(mkResourceVirtualEnvironmentVMStarted) || stoppedBeforeUpdate) && !bool(template) {
 		started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 		if started {
-			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-
-			e = vmAPI.StartVM(ctx, startVMTimeout)
-			if e != nil {
-				return diag.FromErr(e)
+			if diags := vmStart(ctx, vmAPI, d); diags != nil {
+				return diags
 			}
 		} else {
 			if e := vmShutdown(ctx, vmAPI, d); e != nil {
@@ -5590,10 +5598,8 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		if shutdownForDisksRequired && started && !template {
-			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-			err = vmAPI.StartVM(ctx, startVMTimeout)
-			if err != nil {
-				return diag.FromErr(err)
+			if diags := vmStart(ctx, vmAPI, d); diags != nil {
+				return diags
 			}
 
 			// This concludes an equivalent of a reboot, avoid doing another.
