@@ -195,6 +195,7 @@ const (
 	mkResourceVirtualEnvironmentVMHostPCI                           = "hostpci"
 	mkResourceVirtualEnvironmentVMHostPCIDevice                     = "device"
 	mkResourceVirtualEnvironmentVMHostPCIDeviceID                   = "id"
+	mkResourceVirtualEnvironmentVMHostPCIDeviceMapping              = "mapping"
 	mkResourceVirtualEnvironmentVMHostPCIDeviceMDev                 = "mdev"
 	mkResourceVirtualEnvironmentVMHostPCIDevicePCIE                 = "pcie"
 	mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR               = "rombar"
@@ -1009,9 +1010,15 @@ func VM() *schema.Resource {
 							Required:    true,
 						},
 						mkResourceVirtualEnvironmentVMHostPCIDeviceID: {
+							Type: schema.TypeString,
+							Description: "The PCI ID of the device, for example 0000:00:1f.0 (or 0000:00:1f.0;0000:00:1f.1 for multiple " +
+								"device functions, or 0000:00:1f for all functions). Use either this or mapping.",
+							Optional: true,
+						},
+						mkResourceVirtualEnvironmentVMHostPCIDeviceMapping: {
 							Type:        schema.TypeString,
-							Description: "The PCI ID of the device, for example 0000:00:1f.0 (or 0000:00:1f.0;0000:00:1f.1 for multiple device functions, or 0000:00:1f for all functions)",
-							Required:    true,
+							Description: "The resource mapping name of the device, for example gpu. Use either this or id.",
+							Optional:    true,
 						},
 						mkResourceVirtualEnvironmentVMHostPCIDeviceMDev: {
 							Type:        schema.TypeString,
@@ -1019,9 +1026,10 @@ func VM() *schema.Resource {
 							Optional:    true,
 						},
 						mkResourceVirtualEnvironmentVMHostPCIDevicePCIE: {
-							Type:        schema.TypeBool,
-							Description: "Tells Proxmox VE to use a PCIe or PCI port. Some guests/device combination require PCIe rather than PCI. PCIe is only available for q35 machine types.",
-							Optional:    true,
+							Type: schema.TypeBool,
+							Description: "Tells Proxmox VE to use a PCIe or PCI port. Some guests/device combination require PCIe rather " +
+								"than PCI. PCIe is only available for q35 machine types.",
+							Optional: true,
 						},
 						mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR: {
 							Type:        schema.TypeBool,
@@ -3137,15 +3145,16 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 		)
 		romfile, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile].(string)
 		xvga := types.CustomBool(block[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA].(bool))
+		mapping, _ := block[mkResourceVirtualEnvironmentVMHostPCIDeviceMapping].(string)
 
 		device := vms.CustomPCIDevice{
-			DeviceIDs:  strings.Split(ids, ";"),
 			PCIExpress: &pcie,
 			ROMBAR:     &rombar,
 			XVGA:       &xvga,
 		}
 		if ids != "" {
-			device.DeviceIDs = strings.Split(ids, ";")
+			dIds := strings.Split(ids, ";")
+			device.DeviceIDs = &dIds
 		}
 
 		if mdev != "" {
@@ -3154,6 +3163,10 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 
 		if romfile != "" {
 			device.ROMFile = &romfile
+		}
+
+		if mapping != "" {
+			device.Mapping = &mapping
 		}
 
 		pciDeviceObjects[i] = device
@@ -3923,7 +3936,11 @@ func vmReadCustom(
 		pci := map[string]interface{}{}
 
 		pci[mkResourceVirtualEnvironmentVMHostPCIDevice] = pi
-		pci[mkResourceVirtualEnvironmentVMHostPCIDeviceID] = strings.Join(pp.DeviceIDs, ";")
+		if pp.DeviceIDs != nil {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceID] = strings.Join(*pp.DeviceIDs, ";")
+		} else {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceID] = ""
+		}
 
 		if pp.MDev != nil {
 			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceMDev] = *pp.MDev
@@ -3953,6 +3970,12 @@ func vmReadCustom(
 			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA] = *pp.XVGA
 		} else {
 			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA] = false
+		}
+
+		if pp.Mapping != nil {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceMapping] = *pp.Mapping
+		} else {
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceMapping] = ""
 		}
 
 		pciMap[pi] = pci
