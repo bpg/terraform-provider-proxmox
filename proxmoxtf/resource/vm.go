@@ -1965,6 +1965,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		tflog.Trace(ctx, fmt.Sprintf("CloudInit IDE interface is '%s'", initializationInterface))
 
 		const cdromCloudInitEnabled = true
+
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
 		ideDevices[initializationInterface] = vms.CustomStorageDevice{
@@ -3534,6 +3535,7 @@ func vmReadCustom(
 	vmStatus *vms.GetStatusResponseData,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
