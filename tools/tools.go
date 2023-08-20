@@ -1,11 +1,11 @@
-//go:build tools
-// +build tools
-
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+
+//go:build tools
+// +build tools
 
 package tools
 
@@ -29,5 +29,11 @@ import (
 // Temporary: while migrating to the TF framework, we need to copy the generated docs to the right place
 // for the resources / data sources that have been migrated.
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_version.md ../docs/data-sources/
+//go:generate cp ../build/docs-gen/data-sources/virtual_environment_hagroup.md ../docs/data-sources/
+//go:generate cp ../build/docs-gen/data-sources/virtual_environment_hagroups.md ../docs/data-sources/
+//go:generate cp ../build/docs-gen/data-sources/virtual_environment_haresource.md ../docs/data-sources/
+//go:generate cp ../build/docs-gen/data-sources/virtual_environment_haresources.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_network_linux_bridge.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_network_linux_vlan.md ../docs/resources/
+//go:generate cp ../build/docs-gen/resources/virtual_environment_hagroup.md ../docs/resources/
+//go:generate cp ../build/docs-gen/resources/virtual_environment_haresource.md ../docs/resources/
