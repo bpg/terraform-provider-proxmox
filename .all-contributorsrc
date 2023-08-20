@@ -390,7 +390,9 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/1409844?v=4",
       "profile": "http://www.ebenoit.info",
       "contributions": [
-        "code"
+        "code",
+        "bug",
+        "test"
       ]
     },
     {
@@ -408,6 +410,16 @@
       "name": "Michael Iseli",
       "avatar_url": "https://avatars.githubusercontent.com/u/673902?v=4",
       "profile": "https://github.com/michaelze",
+      "contributions": [
+        "code",
+        "bug"
+      ]
+    },
+    {
+      "login": "zharalim",
+      "name": "Risto Oikarinen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1004061?v=4",
+      "profile": "https://github.com/zharalim",
       "contributions": [
         "code"
       ]
