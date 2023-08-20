@@ -104,6 +104,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 resource "proxmox_virtual_environment_vm" "example" {
   name      = "terraform-provider-proxmox-example"
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
+  migrate   = true // migrate the VM on node change
   pool_id   = proxmox_virtual_environment_pool.example.id
   vm_id     = 2041
   tags      = ["terraform", "ubuntu"]

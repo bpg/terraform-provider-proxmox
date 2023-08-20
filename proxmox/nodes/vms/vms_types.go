@@ -526,7 +526,7 @@ type ListResponseData struct {
 
 // MigrateRequestBody contains the body for a VM migration request.
 type MigrateRequestBody struct {
-	OnlineMigration *types.CustomBool `json:"online,omitempty"           url:"online,omitempty"`
+	OnlineMigration *types.CustomBool `json:"online,omitempty"           url:"online,omitempty,int"`
 	TargetNode      string            `json:"target"                     url:"target"`
 	TargetStorage   *string           `json:"targetstorage,omitempty"    url:"targetstorage,omitempty"`
 	WithLocalDisks  *types.CustomBool `json:"with-local-disks,omitempty" url:"with-local-disks,omitempty,int"`
