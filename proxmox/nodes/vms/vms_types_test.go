@@ -102,6 +102,7 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			name: "pci device with mapping",
 			line: `"mapping=mappeddevice,pcie=0,rombar=1,x-vga=0"`,
 			want: &CustomPCIDevice{
+				DeviceIDs:  nil,
 				Mapping:    types.StrPtr("mappeddevice"),
 				MDev:       nil,
 				PCIExpress: types.BoolPtr(false),

@@ -3151,7 +3151,6 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 			PCIExpress: &pcie,
 			ROMBAR:     &rombar,
 			XVGA:       &xvga,
-			Mapping:    &mapping,
 		}
 		if ids != "" {
 			dIds := strings.Split(ids, ";")
