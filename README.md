@@ -197,7 +197,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mandrav"><img src="https://avatars.githubusercontent.com/u/1273530?v=4?s=100" width="100px;" alt="mandrav"/><br /><sub><b>mandrav</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=mandrav" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Amandrav" title="Bug reports">🐛</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/michaelze"><img src="https://avatars.githubusercontent.com/u/673902?v=4?s=100" width="100px;" alt="Michael Iseli"/><br /><sub><b>Michael Iseli</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=michaelze" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/michaelze"><img src="https://avatars.githubusercontent.com/u/673902?v=4?s=100" width="100px;" alt="Michael Iseli"/><br /><sub><b>Michael Iseli</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=michaelze" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Amichaelze" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>
