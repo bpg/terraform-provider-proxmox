@@ -390,7 +390,9 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/1409844?v=4",
       "profile": "http://www.ebenoit.info",
       "contributions": [
-        "code"
+        "code",
+        "bug",
+        "test"
       ]
     },
     {
