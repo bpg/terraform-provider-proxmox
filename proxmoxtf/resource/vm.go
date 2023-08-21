@@ -1600,28 +1600,6 @@ func deleteIdeDrives(ctx context.Context, vmAPI *vms.Client, itf1 string, itf2 s
 	return nil
 }
 
-// Wait until a VM reaches the desired state. An error is returned if the VM doesn't reach the
-// desired state within the given timeout.
-func vmWaitState(ctx context.Context, vmAPI *vms.Client, state string, timeout int) diag.Diagnostics {
-	for {
-		vmStatus, err := vmAPI.GetVMStatus(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		if vmStatus.Status == state {
-			return nil
-		}
-
-		if timeout > 0 {
-			time.Sleep(time.Second)
-			timeout--
-		} else {
-			return diag.Errorf("timed out waiting for VM to stop")
-		}
-	}
-}
-
 // Start the VM, then wait for it to actually start; it may not be started immediately if running in HA mode.
 func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
 	tflog.Debug(ctx, "Starting VM")
@@ -1633,7 +1611,7 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 		return diag.FromErr(e)
 	}
 
-	return vmWaitState(ctx, vmAPI, "running", startVMTimeout)
+	return diag.FromErr(vmAPI.WaitForVMState(ctx, "running", startVMTimeout, 1))
 }
 
 // Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if
@@ -1652,7 +1630,7 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 		return diag.FromErr(e)
 	}
 
-	return vmWaitState(ctx, vmAPI, "stopped", shutdownTimeout)
+	return diag.FromErr(vmAPI.WaitForVMState(ctx, "stopped", shutdownTimeout, 1))
 }
 
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
