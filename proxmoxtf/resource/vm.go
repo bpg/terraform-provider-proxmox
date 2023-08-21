@@ -1600,7 +1600,22 @@ func deleteIdeDrives(ctx context.Context, vmAPI *vms.Client, itf1 string, itf2 s
 	return nil
 }
 
-// Shutdown the VM.
+// Start the VM, then wait for it to actually start; it may not be started immediately if running in HA mode.
+func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
+	tflog.Debug(ctx, "Starting VM")
+
+	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
+
+	e := vmAPI.StartVM(ctx, startVMTimeout)
+	if e != nil {
+		return diag.FromErr(e)
+	}
+
+	return diag.FromErr(vmAPI.WaitForVMState(ctx, "running", startVMTimeout, 1))
+}
+
+// Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if
+// running in HA mode).
 func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
 	tflog.Debug(ctx, "Shutting down VM")
 
@@ -1615,7 +1630,7 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 		return diag.FromErr(e)
 	}
 
-	return nil
+	return diag.FromErr(vmAPI.WaitForVMState(ctx, "stopped", shutdownTimeout, 1))
 }
 
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -1928,6 +1943,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		tflog.Trace(ctx, fmt.Sprintf("CloudInit IDE interface is '%s'", initializationInterface))
 
 		const cdromCloudInitEnabled = true
+
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
 		ideDevices[initializationInterface] = vms.CustomStorageDevice{
@@ -2750,10 +2766,8 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	vmAPI := api.Node(nodeName).VM(vmID)
 
 	// Start the virtual machine and wait for it to reach a running state before continuing.
-	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-	err = vmAPI.StartVM(ctx, startVMTimeout)
-	if err != nil {
-		return diag.FromErr(err)
+	if diags := vmStart(ctx, vmAPI, d); diags != nil {
+		return diags
 	}
 
 	if reboot {
@@ -3499,6 +3513,7 @@ func vmReadCustom(
 	vmStatus *vms.GetStatusResponseData,
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -5444,11 +5459,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if (d.HasChange(mkResourceVirtualEnvironmentVMStarted) || stoppedBeforeUpdate) && !bool(template) {
 		started := d.Get(mkResourceVirtualEnvironmentVMStarted).(bool)
 		if started {
-			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-
-			e = vmAPI.StartVM(ctx, startVMTimeout)
-			if e != nil {
-				return diag.FromErr(e)
+			if diags := vmStart(ctx, vmAPI, d); diags != nil {
+				return diags
 			}
 		} else {
 			if e := vmShutdown(ctx, vmAPI, d); e != nil {
@@ -5605,10 +5617,8 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		if shutdownForDisksRequired && started && !template {
-			startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
-			err = vmAPI.StartVM(ctx, startVMTimeout)
-			if err != nil {
-				return diag.FromErr(err)
+			if diags := vmStart(ctx, vmAPI, d); diags != nil {
+				return diags
 			}
 
 			// This concludes an equivalent of a reboot, avoid doing another.
