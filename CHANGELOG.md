@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.30.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.29.0...v0.30.0) (2023-08-21)
+
+
+### Features
+
+* **ha:** add support for Proxmox High Availability objects ([#498](https://github.com/bpg/terraform-provider-proxmox/issues/498)) ([03c9b36](https://github.com/bpg/terraform-provider-proxmox/commit/03c9b36b86914583c1709e99db305682b7b7dc99))
+* **vm:** add support for migration when the node name is modified ([#501](https://github.com/bpg/terraform-provider-proxmox/issues/501)) ([a285360](https://github.com/bpg/terraform-provider-proxmox/commit/a2853606ad294476e9b5f17a994cb230643e9277))
+* **vm:** add support for non-default CloudInit interface and CloudInit storage change ([#486](https://github.com/bpg/terraform-provider-proxmox/issues/486)) ([5475936](https://github.com/bpg/terraform-provider-proxmox/commit/547593661f5bcab1141edc9a7203dca65c6b539d))
+* **vm:** add support for pool update ([#505](https://github.com/bpg/terraform-provider-proxmox/issues/505)) ([e6c15ec](https://github.com/bpg/terraform-provider-proxmox/commit/e6c15eccc6fd2076afb2f521e28f27976abba892))
+* **vm:** fix adding/removing hostpci devices forcing vm recreation ([#504](https://github.com/bpg/terraform-provider-proxmox/issues/504)) ([a038fd3](https://github.com/bpg/terraform-provider-proxmox/commit/a038fd31420fe23963c7d68198ed5f40b6583058))
+* **vm:** support PCI device resource mapping ([#500](https://github.com/bpg/terraform-provider-proxmox/issues/500)) ([2697054](https://github.com/bpg/terraform-provider-proxmox/commit/26970541c48495b7b9fd220960c83f54956e8132))
+
+
+### Bug Fixes
+
+* **vm:** fix CloudInit datastore change support ([#509](https://github.com/bpg/terraform-provider-proxmox/issues/509)) ([73c1294](https://github.com/bpg/terraform-provider-proxmox/commit/73c1294979b956939b755ac05796fb1a68f92f75))
+* **vm:** fix index out of range when unmarshalling custompcidevice ([#496](https://github.com/bpg/terraform-provider-proxmox/issues/496)) ([78d6683](https://github.com/bpg/terraform-provider-proxmox/commit/78d668377f383badd8a53a18dbd4cb65e67176c2))
+* **vm:** fixed startup / shutdown behaviour on HA clusters ([#508](https://github.com/bpg/terraform-provider-proxmox/issues/508)) ([148a9e0](https://github.com/bpg/terraform-provider-proxmox/commit/148a9e0c9c3f8d78645846b39646ad7d8c78c4a5))
+* **vm:** no IP address detection when VM contains bridges ([#493](https://github.com/bpg/terraform-provider-proxmox/issues/493)) ([9fd9d21](https://github.com/bpg/terraform-provider-proxmox/commit/9fd9d211d75e760ef1c7e44d13de9ce8d38bf834))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/golangci/golangci-lint from 1.54.0 to 1.54.1 in /tools ([#489](https://github.com/bpg/terraform-provider-proxmox/issues/489)) ([e4f9888](https://github.com/bpg/terraform-provider-proxmox/commit/e4f9888f6f6db835d425e52878631517ef4d5e14))
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework from 1.3.4 to 1.3.5 ([#512](https://github.com/bpg/terraform-provider-proxmox/issues/512)) ([98ae6a8](https://github.com/bpg/terraform-provider-proxmox/commit/98ae6a8d8f489b98c05d88598594d43c004b6316))
+* **deps:** bump github.com/pkg/sftp from 1.13.5 to 1.13.6 ([#488](https://github.com/bpg/terraform-provider-proxmox/issues/488)) ([9045183](https://github.com/bpg/terraform-provider-proxmox/commit/9045183c1dd18ba2ebd3c1afcd7c16e73213bf27))
+* **vm:** fix linter errors ([#506](https://github.com/bpg/terraform-provider-proxmox/issues/506)) ([1896ea0](https://github.com/bpg/terraform-provider-proxmox/commit/1896ea08f09ec4e684a886d11a5915c6e573eac1))
+
 ## [0.29.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.28.0...v0.29.0) (2023-08-10)
 
 
