@@ -76,7 +76,7 @@ type NetworkInterfaceCreateUpdateRequestBody struct {
 	OVSPorts           *string           `json:"ovs_ports,omitempty"             url:"ovs_ports,omitempty"`
 	OVSTag             *string           `json:"ovs_tag,omitempty"               url:"ovs_tag,omitempty"`
 	Slaves             *string           `json:"slaves,omitempty"                url:"slaves,omitempty"`
-	VLANID             *int64            `json:"vlan_id,omitempty"               url:"vlan_id,omitempty"`
+	VLANID             *int64            `json:"vlan-id,omitempty"               url:"vlan-id,omitempty"`
 	VLANRawDevice      *string           `json:"vlan-raw-device,omitempty"       url:"vlan-raw-device,omitempty"`
 }
 

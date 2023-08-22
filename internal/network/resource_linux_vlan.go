@@ -202,13 +202,13 @@ func (r *linuxVLANResource) Schema(
 			},
 			// Linux VLAN attributes
 			"interface": schema.StringAttribute{
-				// read-only
 				Description: "The VLAN raw device.",
+				Optional:    true,
 				Computed:    true,
 			},
 			"vlan": schema.Int64Attribute{
-				// read-only
 				Description: "The VLAN tag",
+				Optional:    true,
 				Computed:    true,
 			},
 		},
