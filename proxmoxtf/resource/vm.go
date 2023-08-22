@@ -3945,7 +3945,7 @@ func vmReadCustom(
 
 	pciDevices := getPCIInfo(vmConfig, d)
 	for pi, pp := range pciDevices {
-		if (pp == nil) || (pp.DeviceIDs == nil) {
+		if (pp == nil) || (pp.DeviceIDs == nil && pp.Mapping == nil) {
 			continue
 		}
 
