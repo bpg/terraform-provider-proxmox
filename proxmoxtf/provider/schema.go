@@ -31,6 +31,7 @@ const (
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"
 	mkProviderSSHNodeAddress = "address"
+	mkProviderSSHNodePort    = "port"
 )
 
 func createSchema() map[string]*schema.Schema {
@@ -154,6 +155,13 @@ func createSchema() map[string]*schema.Schema {
 									Required:     true,
 									Description:  "The address of the Proxmox VE node.",
 									ValidateFunc: validation.IsIPAddress,
+								},
+								mkProviderSSHNodePort: {
+									Type:         schema.TypeInt,
+									Optional:     true,
+									Description:  "The port of the Proxmox VE node.",
+									Default:      22,
+									ValidateFunc: validation.IsPortNumber,
 								},
 							},
 						},

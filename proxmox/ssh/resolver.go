@@ -10,7 +10,13 @@ import (
 	"context"
 )
 
+// ProxmoxNode represents node address and port for SSH connection.
+type ProxmoxNode struct {
+	Address string
+	Port    int32
+}
+
 // NodeResolver is an interface for resolving node names to IP addresses to use for SSH connection.
 type NodeResolver interface {
-	Resolve(ctx context.Context, nodeName string) (string, error)
+	Resolve(ctx context.Context, nodeName string) (ProxmoxNode, error)
 }
