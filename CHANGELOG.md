@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.30.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.30.0...v0.30.1) (2023-08-22)
+
+
+### Bug Fixes
+
+* **vm:** fix PCI device resource mapping changed ([#517](https://github.com/bpg/terraform-provider-proxmox/issues/517)) ([b1ac87d](https://github.com/bpg/terraform-provider-proxmox/commit/b1ac87df1df96a9172fee7cb4aa5934c6afb4ef1))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/golangci/golangci-lint from 1.54.1 to 1.54.2 in /tools ([#514](https://github.com/bpg/terraform-provider-proxmox/issues/514)) ([731dad8](https://github.com/bpg/terraform-provider-proxmox/commit/731dad87945335ebd3f897ff747edfc3e30607c4))
+* **deps:** bump github.com/google/uuid from 1.3.0 to 1.3.1 ([#515](https://github.com/bpg/terraform-provider-proxmox/issues/515)) ([79c7f10](https://github.com/bpg/terraform-provider-proxmox/commit/79c7f100f6cfd2ea52d50aa69b92f5c99a0deded))
+
 ## [0.30.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.29.0...v0.30.0) (2023-08-21)
 
 
