@@ -148,16 +148,18 @@ func (r *linuxVLANResource) Schema(
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
-				Description: "A unique identifier with format '<node name>:<iface>'",
+				Description: "A unique identifier with format '<node name>:<iface>'.",
 			},
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node.",
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
-				Description:         "The interface name.",
-				MarkdownDescription: "The interface name. Add the VLAN tag number to an existing interface name, e.g. `ens18.21`",
-				Required:            true,
+				Description: "The interface name.",
+				MarkdownDescription: "The interface name. Either add the VLAN tag number to an existing interface name, " +
+					"e.g. `ens18.21` (and do not set `interface` and `vlan`), or use custom name, e.g. `vlan_lab` " +
+					"(`interface` and `vlan` are then required).",
+				Required: true,
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(3),
 				},
@@ -202,13 +204,13 @@ func (r *linuxVLANResource) Schema(
 			},
 			// Linux VLAN attributes
 			"interface": schema.StringAttribute{
-				// read-only
-				Description: "The VLAN raw device.",
+				Description: "The VLAN raw device. See also `name`.",
+				Optional:    true,
 				Computed:    true,
 			},
 			"vlan": schema.Int64Attribute{
-				// read-only
-				Description: "The VLAN tag",
+				Description: "The VLAN tag. See also `name`.",
+				Optional:    true,
 				Computed:    true,
 			},
 		},
