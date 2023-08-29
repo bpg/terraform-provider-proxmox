@@ -25,9 +25,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-// ErrNoDataObjectInResponse is returned when the server does not include a data object in the response.
-var ErrNoDataObjectInResponse = errors.New("the server did not include a data object in the response")
-
 const (
 	basePathJSONAPI = "api2/json"
 )
@@ -292,7 +289,7 @@ func (c *client) IsRootTicket() bool {
 // validateResponseCode ensures that a response is valid.
 func validateResponseCode(res *http.Response) error {
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		status := strings.TrimPrefix(res.Status, fmt.Sprintf("%d ", res.StatusCode))
+		msg := strings.TrimPrefix(res.Status, fmt.Sprintf("%d ", res.StatusCode))
 
 		errRes := &ErrorResponseBody{}
 		err := json.NewDecoder(res.Body).Decode(errRes)
@@ -304,10 +301,13 @@ func validateResponseCode(res *http.Response) error {
 				errList = append(errList, fmt.Sprintf("%s: %s", k, strings.TrimRight(v, "\n\r")))
 			}
 
-			status = fmt.Sprintf("%s (%s)", status, strings.Join(errList, " - "))
+			msg = fmt.Sprintf("%s (%s)", msg, strings.Join(errList, " - "))
 		}
 
-		return fmt.Errorf("received an HTTP %d response - Reason: %s", res.StatusCode, status)
+		return &HTTPError{
+			Code:    res.StatusCode,
+			Message: msg,
+		}
 	}
 
 	return nil
