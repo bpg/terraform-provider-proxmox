@@ -423,6 +423,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "dawidole",
+      "name": "dawidole",
+      "avatar_url": "https://avatars.githubusercontent.com/u/37155335?v=4",
+      "profile": "https://github.com/dawidole",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
