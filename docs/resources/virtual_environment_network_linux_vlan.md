@@ -14,11 +14,22 @@ Manages a Linux VLAN network interface in a Proxmox VE node.
 ## Example Usage
 
 ```terraform
+# using VLAN tag
 resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
   node_name = "pve"
   name      = "eno0.99"
 
   comment = "VLAN 99"
+}
+
+# using custom network interface name
+resource "proxmox_virtual_environment_network_linux_vlan" "vlan98" {
+  node_name = "pve"
+  name      = "vlan_lab"
+
+  interface = "eno0"
+  vlan      = 98
+  comment   = "VLAN 98"
 }
 ```
 
@@ -27,7 +38,7 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
 
 ### Required
 
-- `name` (String) The interface name. Add the VLAN tag number to an existing interface name, e.g. `ens18.21`
+- `name` (String) The interface name. Either add the VLAN tag number to an existing interface name, e.g. `ens18.21` (and do not set `interface` and `vlan`), or use custom name, e.g. `vlan_lab` (`interface` and `vlan` are then required).
 - `node_name` (String) The name of the node.
 
 ### Optional
@@ -38,13 +49,13 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
 - `comment` (String) Comment for the interface.
 - `gateway` (String) Default gateway address.
 - `gateway6` (String) Default IPv6 gateway address.
+- `interface` (String) The VLAN raw device. See also `name`.
 - `mtu` (Number) The interface MTU.
+- `vlan` (Number) The VLAN tag. See also `name`.
 
 ### Read-Only
 
-- `id` (String) A unique identifier with format '<node name>:<iface>'
-- `interface` (String) The VLAN raw device.
-- `vlan` (Number) The VLAN tag
+- `id` (String) A unique identifier with format '<node name>:<iface>'.
 
 ## Import
 
