@@ -196,13 +196,13 @@ func File() *schema.Resource {
 				Type:        schema.TypeInt,
 				Description: "Timeout for uploading ISO/VSTMPL files in seconds",
 				Optional:    true,
-				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentFileTimeoutUpload,
 			},
 		},
 		CreateContext: fileCreate,
 		ReadContext:   fileRead,
 		DeleteContext: fileDelete,
+		UpdateContext: fileUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
 				node, datastore, volumeID, err := fileParseImportID(d.Id())
@@ -801,5 +801,11 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	d.SetId("")
 
+	return nil
+}
+
+func fileUpdate(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
+	// a pass-through update function -- no actual resource update is needed / allowed
+	// only the TF state is updated, for example, a timeout_upload attribute value
 	return nil
 }
