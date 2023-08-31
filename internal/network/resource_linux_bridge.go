@@ -86,7 +86,9 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 		body.BridgePorts = &bridgePorts
 	}
 
-	body.BridgeVLANAware = pvetypes.CustomBool(m.VLANAware.ValueBool()).Pointer()
+	if m.VLANAware.ValueBool() {
+		body.BridgeVLANAware = pvetypes.CustomBool(true).Pointer()
+	}
 
 	return body
 }
@@ -99,7 +101,11 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 	m.Gateway = pvetypes.NewIPAddrPointerValue(iface.Gateway)
 	m.Address6 = pvetypes.NewIPCIDRPointerValue(iface.CIDR6)
 	m.Gateway6 = pvetypes.NewIPAddrPointerValue(iface.Gateway6)
+
 	m.Autostart = types.BoolPointerValue(iface.Autostart.PointerBool())
+	if m.Autostart.IsNull() {
+		m.Autostart = types.BoolValue(false)
+	}
 
 	if iface.MTU != nil {
 		if v, err := strconv.Atoi(*iface.MTU); err == nil {
