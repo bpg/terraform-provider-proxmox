@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.30.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.30.1...v0.30.2) (2023-08-31)
+
+
+### Bug Fixes
+
+* **core:** improve error handling while waiting for PVE tasks to complete ([#526](https://github.com/bpg/terraform-provider-proxmox/issues/526)) ([6f02df4](https://github.com/bpg/terraform-provider-proxmox/commit/6f02df4440566ed1d97e0c6d016311b91bd53125))
+* **file:** forced replacement of file resources that missing `timeout_upload` attribute ([#528](https://github.com/bpg/terraform-provider-proxmox/issues/528)) ([11d8261](https://github.com/bpg/terraform-provider-proxmox/commit/11d82614e628d24d9ee8db5cccc33427bf5a811c))
+* **node:** creating linux_bridge with 'vlan_aware=false' or 'autostart=false' ([#529](https://github.com/bpg/terraform-provider-proxmox/issues/529)) ([f00e48a](https://github.com/bpg/terraform-provider-proxmox/commit/f00e48a51e1618bccf1d1800590b81696db15071))
+* **provider:** User-settable VLAN ID and name ([#518](https://github.com/bpg/terraform-provider-proxmox/issues/518)) ([5599c7a](https://github.com/bpg/terraform-provider-proxmox/commit/5599c7afe45dbea217457b1452186c02b07db90f))
+
+
+### Miscellaneous
+
+* **deps:** bump activesupport from 7.0.6 to 7.0.7.1 in /docs ([#522](https://github.com/bpg/terraform-provider-proxmox/issues/522)) ([cd7927b](https://github.com/bpg/terraform-provider-proxmox/commit/cd7927bec347f22ecce500147866fbe01e742b51))
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework-validators from 0.11.0 to 0.12.0 ([#530](https://github.com/bpg/terraform-provider-proxmox/issues/530)) ([e35443a](https://github.com/bpg/terraform-provider-proxmox/commit/e35443a23b9528290952c24db573971d115e9877))
+* **deps:** bump github.com/hashicorp/terraform-plugin-sdk/v2 from 2.27.0 to 2.28.0 ([#524](https://github.com/bpg/terraform-provider-proxmox/issues/524)) ([5556b17](https://github.com/bpg/terraform-provider-proxmox/commit/5556b17a1ed1e4e92343d17d534461348d3da30c))
+
 ## [0.30.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.30.0...v0.30.1) (2023-08-22)
 
 
