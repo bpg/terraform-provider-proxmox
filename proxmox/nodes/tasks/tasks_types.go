@@ -78,7 +78,7 @@ func ParseTaskID(taskID string) (TaskID, error) {
 		NodeName:  parts[1],
 		PID:       int(pid),
 		PStart:    int(pstart),
-		StartTime: time.Unix(stime, 0),
+		StartTime: time.Unix(stime, 0).UTC(),
 		Type:      parts[5],
 		ID:        parts[6],
 		User:      parts[7],
