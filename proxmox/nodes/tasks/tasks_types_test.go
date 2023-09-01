@@ -19,6 +19,7 @@ func TestParseTaskID(t *testing.T) {
 
 	stime, err := time.Parse(time.RFC3339, "2023-08-30T21:28:16-04:00")
 	require.NoError(t, err)
+
 	stime = stime.UTC()
 
 	tests := []struct {
