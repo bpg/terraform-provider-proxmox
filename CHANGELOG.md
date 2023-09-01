@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.30.2...v0.30.3) (2023-09-01)
+
+
+### Bug Fixes
+
+* **file:** file upload in multi-node PVE cluster ([#533](https://github.com/bpg/terraform-provider-proxmox/issues/533)) ([ef2f2c1](https://github.com/bpg/terraform-provider-proxmox/commit/ef2f2c115976dfd97de2ce557be899927672f4b8))
+
 ## [0.30.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.30.1...v0.30.2) (2023-08-31)
 
 
