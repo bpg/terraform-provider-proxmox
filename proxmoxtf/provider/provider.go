@@ -129,12 +129,15 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		sshConf[mkProviderSSHAgentSocket] = sshAgentSocket
 	}
 
-	nodeOverrides := map[string]string{}
+	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
 	if ns, ok := sshConf[mkProviderSSHNode]; ok {
 		for _, n := range ns.([]interface{}) {
 			node := n.(map[string]interface{})
-			nodeOverrides[node[mkProviderSSHNodeName].(string)] = node[mkProviderSSHNodeAddress].(string)
+			nodeOverrides[node[mkProviderSSHNodeName].(string)] = ssh.ProxmoxNode{
+				Address: node[mkProviderSSHNodeAddress].(string),
+				Port:    node[mkProviderSSHNodePort].(int32),
+			}
 		}
 	}
 
@@ -161,12 +164,12 @@ type apiResolver struct {
 	c api.Client
 }
 
-func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, error) {
+func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
 	nc := &nodes.Client{Client: r.c, NodeName: nodeName}
 
 	networkDevices, err := nc.ListNetworkInterfaces(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to list network devices of node \"%s\": %w", nc.NodeName, err)
+		return ssh.ProxmoxNode{}, fmt.Errorf("failed to list network devices of node \"%s\": %w", nc.NodeName, err)
 	}
 
 	nodeAddress := ""
@@ -179,22 +182,23 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, err
 	}
 
 	if nodeAddress == "" {
-		return "", fmt.Errorf("failed to determine the IP address of node \"%s\"", nc.NodeName)
+		return ssh.ProxmoxNode{}, fmt.Errorf("failed to determine the IP address of node \"%s\"", nc.NodeName)
 	}
 
 	nodeAddressParts := strings.Split(nodeAddress, "/")
+	node := ssh.ProxmoxNode{Address: nodeAddressParts[0], Port: 22}
 
-	return nodeAddressParts[0], nil
+	return node, nil
 }
 
 type apiResolverWithOverrides struct {
 	ar        apiResolver
-	overrides map[string]string
+	overrides map[string]ssh.ProxmoxNode
 }
 
-func (r *apiResolverWithOverrides) Resolve(ctx context.Context, nodeName string) (string, error) {
-	if ip, ok := r.overrides[nodeName]; ok {
-		return ip, nil
+func (r *apiResolverWithOverrides) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
+	if node, ok := r.overrides[nodeName]; ok {
+		return node, nil
 	}
 
 	return r.ar.Resolve(ctx, nodeName)

@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -68,6 +69,7 @@ type proxmoxProviderModel struct {
 		Nodes []struct {
 			Name    types.String `tfsdk:"name"`
 			Address types.String `tfsdk:"address"`
+			Port    types.Int64  `tfsdk:"port"`
 		} `tfsdk:"node"`
 	} `tfsdk:"ssh"`
 }
@@ -166,6 +168,11 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 									"address": schema.StringAttribute{
 										Description: "The address of the Proxmox VE node.",
 										Required:    true,
+									},
+									"port": schema.Int64Attribute{
+										Description: "The port of the Proxmox VE node.",
+										Optional:    true,
+										Validators:  []validator.Int64{int64validator.Between(1, 65535)},
 									},
 								},
 							},
@@ -291,8 +298,9 @@ func (p *proxmoxProvider) Configure(
 	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
 	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
-	nodeOverrides := map[string]string{}
+	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
+	//nolint: nestif
 	if len(config.SSH) > 0 {
 		if !config.SSH[0].Username.IsNull() {
 			sshUsername = config.SSH[0].Username.ValueString()
@@ -311,7 +319,15 @@ func (p *proxmoxProvider) Configure(
 		}
 
 		for _, n := range config.SSH[0].Nodes {
-			nodeOverrides[n.Name.ValueString()] = n.Address.ValueString()
+			nodePort := int32(n.Port.ValueInt64())
+			if nodePort == 0 {
+				nodePort = 22
+			}
+
+			nodeOverrides[n.Name.ValueString()] = ssh.ProxmoxNode{
+				Address: n.Address.ValueString(),
+				Port:    nodePort,
+			}
 		}
 	}
 
@@ -370,12 +386,12 @@ type apiResolver struct {
 	c api.Client
 }
 
-func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, error) {
+func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
 	nc := &nodes.Client{Client: r.c, NodeName: nodeName}
 
 	networkDevices, err := nc.ListNetworkInterfaces(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to list network devices of node \"%s\": %w", nc.NodeName, err)
+		return ssh.ProxmoxNode{}, fmt.Errorf("failed to list network devices of node \"%s\": %w", nc.NodeName, err)
 	}
 
 	nodeAddress := ""
@@ -388,22 +404,23 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (string, err
 	}
 
 	if nodeAddress == "" {
-		return "", fmt.Errorf("failed to determine the IP address of node \"%s\"", nc.NodeName)
+		return ssh.ProxmoxNode{}, fmt.Errorf("failed to determine the IP address of node \"%s\"", nc.NodeName)
 	}
 
 	nodeAddressParts := strings.Split(nodeAddress, "/")
+	node := ssh.ProxmoxNode{Address: nodeAddressParts[0], Port: 22}
 
-	return nodeAddressParts[0], nil
+	return node, nil
 }
 
 type apiResolverWithOverrides struct {
 	ar        apiResolver
-	overrides map[string]string
+	overrides map[string]ssh.ProxmoxNode
 }
 
-func (r *apiResolverWithOverrides) Resolve(ctx context.Context, nodeName string) (string, error) {
-	if ip, ok := r.overrides[nodeName]; ok {
-		return ip, nil
+func (r *apiResolverWithOverrides) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
+	if node, ok := r.overrides[nodeName]; ok {
+		return node, nil
 	}
 
 	return r.ar.Resolve(ctx, nodeName)

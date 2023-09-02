@@ -74,19 +74,20 @@ func NewClient(
 
 // ExecuteNodeCommands executes commands on a given node.
 func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error {
-	ip, err := c.nodeLookup.Resolve(ctx, nodeName)
+	node, err := c.nodeLookup.Resolve(ctx, nodeName)
 	if err != nil {
 		return fmt.Errorf("failed to find node endpoint: %w", err)
 	}
 
 	tflog.Debug(ctx, "executing commands on the node using SSH", map[string]interface{}{
-		"node_address": ip,
+		"node_address": node.Address,
+		"node_port":    node.Port,
 		"commands":     commands,
 	})
 
 	closeOrLogError := utils.CloseOrLogError(ctx)
 
-	sshClient, err := c.openNodeShell(ctx, ip)
+	sshClient, err := c.openNodeShell(ctx, node)
 	if err != nil {
 		return err
 	}
@@ -212,13 +213,13 @@ func (c *client) NodeUpload(
 }
 
 // openNodeShell establishes a new SSH connection to a node.
-func (c *client) openNodeShell(ctx context.Context, nodeAddress string) (*ssh.Client, error) {
+func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Client, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
 	}
 
-	sshHost := fmt.Sprintf("%s:22", nodeAddress)
+	sshHost := fmt.Sprintf("%s:%d", node.Address, node.Port)
 
 	sshPath := path.Join(homeDir, ".ssh")
 	if _, err = os.Stat(sshPath); os.IsNotExist(err) {
