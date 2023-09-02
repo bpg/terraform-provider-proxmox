@@ -134,12 +134,10 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	if ns, ok := sshConf[mkProviderSSHNode]; ok {
 		for _, n := range ns.([]interface{}) {
 			node := n.(map[string]interface{})
-			ProxmoxNode := ssh.ProxmoxNode{
+			nodeOverrides[node[mkProviderSSHNodeName].(string)] = ssh.ProxmoxNode{
 				Address: node[mkProviderSSHNodeAddress].(string),
-				Port:    int32(node[mkProviderSSHNodePort].(int)),
+				Port:    node[mkProviderSSHNodePort].(int32),
 			}
-
-			nodeOverrides[node[mkProviderSSHNodeName].(string)] = ProxmoxNode
 		}
 	}
 
