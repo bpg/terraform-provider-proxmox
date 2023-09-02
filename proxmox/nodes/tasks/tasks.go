@@ -8,9 +8,9 @@ package tasks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -20,15 +20,20 @@ import (
 func (c *Client) GetTaskStatus(ctx context.Context, upid string) (*GetTaskStatusResponseData, error) {
 	resBody := &GetTaskStatusResponseBody{}
 
-	err := c.DoRequest(
+	path, err := c.BuildPath(upid, "status")
+	if err != nil {
+		return nil, fmt.Errorf("error building path for task status: %w", err)
+	}
+
+	err = c.DoRequest(
 		ctx,
 		http.MethodGet,
-		c.ExpandPath(fmt.Sprintf("%s/status", url.PathEscape(upid))),
+		path,
 		nil,
 		resBody,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error retrievinf task status: %w", err)
+		return nil, fmt.Errorf("error retrieving task status: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -45,10 +50,24 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, timeoutSec, delay
 	timeStart := time.Now()
 	timeElapsed := timeStart.Sub(timeStart)
 
+	isCriticalError := func(err error) bool {
+		var target *api.HTTPError
+		if errors.As(err, &target) {
+			if target.Code != http.StatusBadRequest {
+				// this is a special case to account for eventual consistency
+				// when creating a task -- the task may not be available via status API
+				// immediately after creation
+				return true
+			}
+		}
+
+		return err != nil
+	}
+
 	for timeElapsed.Seconds() < timeMax {
 		if int64(timeElapsed.Seconds())%timeDelay == 0 {
 			status, err := c.GetTaskStatus(ctx, upid)
-			if err != nil {
+			if isCriticalError(err) {
 				return err
 			}
 

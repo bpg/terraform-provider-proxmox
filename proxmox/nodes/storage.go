@@ -282,7 +282,6 @@ func (c *Client) APIUpload(
 	}
 
 	err = c.Tasks().WaitForTask(ctx, *resBody.UploadID, uploadTimeout, 5)
-
 	if err != nil {
 		return nil, fmt.Errorf("error uploading file to datastore %s: failed waiting for upload - %w", datastoreID, err)
 	}

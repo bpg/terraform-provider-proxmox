@@ -423,6 +423,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "dawidole",
+      "name": "dawidole",
+      "avatar_url": "https://avatars.githubusercontent.com/u/37155335?v=4",
+      "profile": "https://github.com/dawidole",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "GJKrupa",
+      "name": "Gerard Krupa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5756726?v=4",
+      "profile": "http://www.krupa.me.uk/",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
