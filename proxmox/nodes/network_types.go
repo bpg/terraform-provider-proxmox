@@ -7,7 +7,7 @@
 package nodes
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // NetworkInterfaceListResponseBody contains the body from a node network interface list response.

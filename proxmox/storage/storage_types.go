@@ -7,7 +7,7 @@
 package storage
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // DatastoreGetResponseBody contains the body from a datastore get response.

@@ -9,8 +9,8 @@ package cluster
 import (
 	"fmt"
 
-	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -49,14 +49,14 @@ func (d *haresourceModel) importFromAPI(data *haresources.HAResourceGetResponseD
 
 // toRequestBase builds the common request data structure for HA resource creation or update API calls.
 func (d haresourceModel) toRequestBase() haresources.HAResourceDataBase {
-	var state customtypes.HAResourceState
+	var state proxmoxtypes.HAResourceState
 
 	if d.State.IsNull() {
-		state = customtypes.HAResourceStateStarted
+		state = proxmoxtypes.HAResourceStateStarted
 	} else {
 		var err error
 
-		state, err = customtypes.ParseHAResourceState(d.State.ValueString())
+		state, err = proxmoxtypes.ParseHAResourceState(d.State.ValueString())
 		if err != nil {
 			panic(fmt.Errorf(
 				"state string '%s' wrongly assumed to be valid; error: %w",
@@ -75,7 +75,7 @@ func (d haresourceModel) toRequestBase() haresources.HAResourceDataBase {
 }
 
 // toCreateRequest builds the request data structure for creating a new HA resource.
-func (d haresourceModel) toCreateRequest(resID customtypes.HAResourceID) *haresources.HAResourceCreateRequestBody {
+func (d haresourceModel) toCreateRequest(resID proxmoxtypes.HAResourceID) *haresources.HAResourceCreateRequestBody {
 	return &haresources.HAResourceCreateRequestBody{
 		ID:                 resID,
 		Type:               &resID.Type,

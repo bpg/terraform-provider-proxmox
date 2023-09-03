@@ -14,8 +14,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func (c *Client) usersPath() string {

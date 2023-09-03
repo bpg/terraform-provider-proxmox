@@ -13,11 +13,18 @@ import (
 )
 
 // IDAttribute generates an attribute definition suitable for the always-present `id` attribute.
-func IDAttribute() schema.StringAttribute {
-	return schema.StringAttribute{
+func IDAttribute(desc ...string) schema.StringAttribute {
+	attr := schema.StringAttribute{
 		Computed: true,
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),
 		},
+		Description: "The unique identifier for the resource.",
 	}
+
+	if len(desc) > 0 {
+		attr.Description = desc[0]
+	}
+
+	return attr
 }

@@ -12,13 +12,10 @@ import (
 	"net/url"
 
 	"github.com/google/go-querystring/query"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/bpg/terraform-provider-proxmox/internal/validators"
 )
 
-// HAResourceType represents the type of a HA resource.
+// HAResourceType represents the type of HA resource.
 type HAResourceType int
 
 // Ensure various interfaces are supported by the HA resource type type.
@@ -50,11 +47,6 @@ func ParseHAResourceType(input string) (HAResourceType, error) {
 	default:
 		return _haResourceTypeValue, fmt.Errorf("illegal HA resource type '%s'", input)
 	}
-}
-
-// HAResourceTypeValidator returns a new HA resource type validator.
-func HAResourceTypeValidator() validator.String {
-	return validators.NewParseValidator(ParseHAResourceType, "value must be a valid HA resource type")
 }
 
 // String converts a HAResourceType value into a string.

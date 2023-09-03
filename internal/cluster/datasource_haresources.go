@@ -18,9 +18,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/internal/structure"
-	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -107,7 +107,7 @@ func (d *haresourcesDatasource) Configure(
 func (d *haresourcesDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var (
 		data      haresourcesModel
-		fetchType *customtypes.HAResourceType
+		fetchType *proxmoxtypes.HAResourceType
 	)
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -119,7 +119,7 @@ func (d *haresourcesDatasource) Read(ctx context.Context, req datasource.ReadReq
 	if data.Type.IsNull() {
 		data.ID = types.StringValue("haresources")
 	} else {
-		confType, err := customtypes.ParseHAResourceType(data.Type.ValueString())
+		confType, err := proxmoxtypes.ParseHAResourceType(data.Type.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Unexpected HA resource type",

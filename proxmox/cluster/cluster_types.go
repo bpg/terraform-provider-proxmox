@@ -7,7 +7,7 @@
 package cluster
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // NextIDRequestBody contains the data for a cluster next id request.

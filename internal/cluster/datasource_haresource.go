@@ -15,9 +15,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/internal/structure"
-	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/internal/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -55,7 +56,7 @@ func (d *haresourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequ
 				Description: "The identifier of the Proxmox HA resource to read.",
 				Required:    true,
 				Validators: []validator.String{
-					customtypes.HAResourceIDValidator(),
+					validators.HAResourceIDValidator(),
 				},
 			},
 			"type": schema.StringAttribute{
@@ -118,7 +119,7 @@ func (d *haresourceDatasource) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	resID, err := customtypes.ParseHAResourceID(data.ResourceID.ValueString())
+	resID, err := proxmoxtypes.ParseHAResourceID(data.ResourceID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",

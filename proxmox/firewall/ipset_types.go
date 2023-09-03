@@ -7,7 +7,7 @@
 package firewall
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // IPSetListResponseBody contains the data from an IPSet get response.

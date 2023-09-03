@@ -6,7 +6,9 @@
 
 package groups
 
-import "github.com/bpg/terraform-provider-proxmox/internal/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+)
 
 // HAGroupListResponseBody contains the body from a HA group list response.
 type HAGroupListResponseBody struct {

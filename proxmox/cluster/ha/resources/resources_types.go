@@ -6,7 +6,9 @@
 
 package resources
 
-import "github.com/bpg/terraform-provider-proxmox/internal/types"
+import (
+	types2 "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+)
 
 // HAResourceListResponseBody contains the body from a HA resource list response.
 type HAResourceListResponseBody struct {
@@ -15,7 +17,7 @@ type HAResourceListResponseBody struct {
 
 // HAResourceListResponseData contains the data from a HA resource list response.
 type HAResourceListResponseData struct {
-	ID types.HAResourceID `json:"sid"`
+	ID types2.HAResourceID `json:"sid"`
 }
 
 // HAResourceGetResponseBody contains the body from a HA resource get response.
@@ -34,7 +36,7 @@ type HAResourceDataBase struct {
 	// Maximal number of service restart attempts.
 	MaxRestart *int64 `json:"max_restart" url:"max_restart,omitempty"`
 	// Requested resource state.
-	State types.HAResourceState `json:"state" url:"state"`
+	State types2.HAResourceState `json:"state" url:"state"`
 }
 
 // HAResourceGetResponseData contains data received from the HA resource API when requesting information about a single
@@ -42,9 +44,9 @@ type HAResourceDataBase struct {
 type HAResourceGetResponseData struct {
 	HAResourceDataBase
 	// Identifier of this resource
-	ID types.HAResourceID `json:"sid"`
+	ID types2.HAResourceID `json:"sid"`
 	// Type of this resource
-	Type types.HAResourceType `json:"type"`
+	Type types2.HAResourceType `json:"type"`
 	// SHA-1 digest of the resources' configuration.
 	Digest *string `json:"digest,omitempty"`
 }
@@ -53,9 +55,9 @@ type HAResourceGetResponseData struct {
 type HAResourceCreateRequestBody struct {
 	HAResourceDataBase
 	// Identifier of this resource
-	ID types.HAResourceID `url:"sid"`
+	ID types2.HAResourceID `url:"sid"`
 	// Type of this resource
-	Type *types.HAResourceType `url:"type,omitempty"`
+	Type *types2.HAResourceType `url:"type,omitempty"`
 	// SHA-1 digest of the resources' configuration.
 	Digest *string `url:"comment,omitempty"`
 }
