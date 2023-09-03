@@ -113,10 +113,14 @@ func TestContainerSchema(t *testing.T) {
 
 	test.AssertOptionalArguments(t, featuresSchema, []string{
 		mkResourceVirtualEnvironmentContainerFeaturesNesting,
+		mkResourceVirtualEnvironmentContainerFeaturesKeyControl,
+		mkResourceVirtualEnvironmentContainerFeaturesFUSE,
 	})
 
 	test.AssertValueTypes(t, featuresSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentContainerFeaturesNesting: schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerFeaturesNesting:    schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerFeaturesKeyControl: schema.TypeBool,
+		mkResourceVirtualEnvironmentContainerFeaturesFUSE:       schema.TypeBool,
 	})
 
 	initializationSchema := test.AssertNestedSchemaExistence(
