@@ -12,10 +12,7 @@ import (
 	"net/url"
 
 	"github.com/google/go-querystring/query"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/bpg/terraform-provider-proxmox/internal/validators"
 )
 
 // HAResourceState represents the requested state of a HA resource.
@@ -65,11 +62,6 @@ func ParseHAResourceState(input string) (HAResourceState, error) {
 	default:
 		return HAResourceStateIgnored, fmt.Errorf("illegal HA resource state '%s'", input)
 	}
-}
-
-// HAResourceStateValidator returns a new HA resource state validator.
-func HAResourceStateValidator() validator.String {
-	return validators.NewParseValidator(ParseHAResourceState, "value must be a valid HA resource state")
 }
 
 // String converts a HAResourceState value into a string.

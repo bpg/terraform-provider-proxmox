@@ -13,17 +13,17 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	types2 "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type haResourceTypeListQuery struct {
-	ResType *types.HAResourceType `url:"type"`
+	ResType *types2.HAResourceType `url:"type"`
 }
 
 // List retrieves the list of HA resources. If the `resType` argument is `nil`, all resources will be returned;
 // otherwise resources will be filtered by the specified type (either `ct` or `vm`).
-func (c *Client) List(ctx context.Context, resType *types.HAResourceType) ([]*HAResourceListResponseData, error) {
+func (c *Client) List(ctx context.Context, resType *types2.HAResourceType) ([]*HAResourceListResponseData, error) {
 	options := &haResourceTypeListQuery{resType}
 	resBody := &HAResourceListResponseBody{}
 
@@ -46,7 +46,7 @@ func (c *Client) List(ctx context.Context, resType *types.HAResourceType) ([]*HA
 }
 
 // Get retrieves the configuration of a single HA resource.
-func (c *Client) Get(ctx context.Context, id types.HAResourceID) (*HAResourceGetResponseData, error) {
+func (c *Client) Get(ctx context.Context, id types2.HAResourceID) (*HAResourceGetResponseData, error) {
 	resBody := &HAResourceGetResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(url.PathEscape(id.String())), nil, resBody)
@@ -72,7 +72,7 @@ func (c *Client) Create(ctx context.Context, data *HAResourceCreateRequestBody) 
 }
 
 // Update updates an existing HA resource.
-func (c *Client) Update(ctx context.Context, id types.HAResourceID, data *HAResourceUpdateRequestBody) error {
+func (c *Client) Update(ctx context.Context, id types2.HAResourceID, data *HAResourceUpdateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(url.PathEscape(id.String())), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating HA resource %v: %w", id, err)
@@ -82,7 +82,7 @@ func (c *Client) Update(ctx context.Context, id types.HAResourceID, data *HAReso
 }
 
 // Delete deletes a HA resource.
-func (c *Client) Delete(ctx context.Context, id types.HAResourceID) error {
+func (c *Client) Delete(ctx context.Context, id types2.HAResourceID) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(url.PathEscape(id.String())), nil, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting HA resource %v: %w", id, err)

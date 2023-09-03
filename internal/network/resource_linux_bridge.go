@@ -24,9 +24,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	pvetypes "github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/internal/structure"
+	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
@@ -37,16 +39,16 @@ var (
 
 type linuxBridgeResourceModel struct {
 	// Base attributes
-	ID        types.String         `tfsdk:"id"`
-	NodeName  types.String         `tfsdk:"node_name"`
-	Name      types.String         `tfsdk:"name"`
-	Address   pvetypes.IPCIDRValue `tfsdk:"address"`
-	Gateway   pvetypes.IPAddrValue `tfsdk:"gateway"`
-	Address6  pvetypes.IPCIDRValue `tfsdk:"address6"`
-	Gateway6  pvetypes.IPAddrValue `tfsdk:"gateway6"`
-	Autostart types.Bool           `tfsdk:"autostart"`
-	MTU       types.Int64          `tfsdk:"mtu"`
-	Comment   types.String         `tfsdk:"comment"`
+	ID        types.String            `tfsdk:"id"`
+	NodeName  types.String            `tfsdk:"node_name"`
+	Name      types.String            `tfsdk:"name"`
+	Address   customtypes.IPCIDRValue `tfsdk:"address"`
+	Gateway   customtypes.IPAddrValue `tfsdk:"gateway"`
+	Address6  customtypes.IPCIDRValue `tfsdk:"address6"`
+	Gateway6  customtypes.IPAddrValue `tfsdk:"gateway6"`
+	Autostart types.Bool              `tfsdk:"autostart"`
+	MTU       types.Int64             `tfsdk:"mtu"`
+	Comment   types.String            `tfsdk:"comment"`
 	// Linux bridge attributes
 	Ports     []types.String `tfsdk:"ports"`
 	VLANAware types.Bool     `tfsdk:"vlan_aware"`
@@ -57,7 +59,7 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 	body := &nodes.NetworkInterfaceCreateUpdateRequestBody{
 		Iface:     m.Name.ValueString(),
 		Type:      "bridge",
-		Autostart: pvetypes.CustomBool(m.Autostart.ValueBool()).Pointer(),
+		Autostart: proxmoxtypes.CustomBool(m.Autostart.ValueBool()).Pointer(),
 	}
 
 	body.CIDR = m.Address.ValueStringPointer()
@@ -87,7 +89,7 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 	}
 
 	if m.VLANAware.ValueBool() {
-		body.BridgeVLANAware = pvetypes.CustomBool(true).Pointer()
+		body.BridgeVLANAware = proxmoxtypes.CustomBool(true).Pointer()
 	}
 
 	return body
@@ -97,10 +99,10 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 	ctx context.Context,
 	iface *nodes.NetworkInterfaceListResponseData,
 ) error {
-	m.Address = pvetypes.NewIPCIDRPointerValue(iface.CIDR)
-	m.Gateway = pvetypes.NewIPAddrPointerValue(iface.Gateway)
-	m.Address6 = pvetypes.NewIPCIDRPointerValue(iface.CIDR6)
-	m.Gateway6 = pvetypes.NewIPAddrPointerValue(iface.Gateway6)
+	m.Address = customtypes.NewIPCIDRPointerValue(iface.CIDR)
+	m.Gateway = customtypes.NewIPAddrPointerValue(iface.Gateway)
+	m.Address6 = customtypes.NewIPCIDRPointerValue(iface.CIDR6)
+	m.Gateway6 = customtypes.NewIPAddrPointerValue(iface.Gateway6)
 
 	m.Autostart = types.BoolPointerValue(iface.Autostart.PointerBool())
 	if m.Autostart.IsNull() {
@@ -169,13 +171,7 @@ func (r *linuxBridgeResource) Schema(
 		Description: "Manages a Linux Bridge network interface in a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			// Base attributes
-			"id": schema.StringAttribute{
-				Computed: true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-				Description: "A unique identifier with format '<node name>:<iface>'",
-			},
+			"id": structure.IDAttribute("A unique identifier with format '<node name>:<iface>'"),
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node.",
 				Required:    true,
@@ -196,22 +192,22 @@ func (r *linuxBridgeResource) Schema(
 			},
 			"address": schema.StringAttribute{
 				Description: "The interface IPv4/CIDR address.",
-				CustomType:  pvetypes.IPCIDRType{},
+				CustomType:  customtypes.IPCIDRType{},
 				Optional:    true,
 			},
 			"gateway": schema.StringAttribute{
 				Description: "Default gateway address.",
-				CustomType:  pvetypes.IPAddrType{},
+				CustomType:  customtypes.IPAddrType{},
 				Optional:    true,
 			},
 			"address6": schema.StringAttribute{
 				Description: "The interface IPv6/CIDR address.",
-				CustomType:  pvetypes.IPCIDRType{},
+				CustomType:  customtypes.IPCIDRType{},
 				Optional:    true,
 			},
 			"gateway6": schema.StringAttribute{
 				Description: "Default IPv6 gateway address.",
-				CustomType:  pvetypes.IPAddrType{},
+				CustomType:  customtypes.IPAddrType{},
 				Optional:    true,
 			},
 			"autostart": schema.BoolAttribute{

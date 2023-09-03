@@ -7,7 +7,7 @@
 package nodes
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 // CertificateDeleteRequestBody contains the data for a custom certificate delete request.

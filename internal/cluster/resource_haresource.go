@@ -13,9 +13,10 @@ import (
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/internal/structure"
-	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/internal/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -71,7 +72,7 @@ func (r *haresourceResource) Schema(
 				Description: "The Proxmox HA resource identifier",
 				Required:    true,
 				Validators: []validator.String{
-					customtypes.HAResourceIDValidator(),
+					validators.HAResourceIDValidator(),
 				},
 			},
 			"state": schema.StringAttribute{
@@ -80,7 +81,7 @@ func (r *haresourceResource) Schema(
 				Computed:    true,
 				Default:     stringdefault.StaticString("started"),
 				Validators: []validator.String{
-					customtypes.HAResourceStateValidator(),
+					validators.HAResourceStateValidator(),
 				},
 			},
 			"type": schema.StringAttribute{
@@ -88,7 +89,7 @@ func (r *haresourceResource) Schema(
 				Computed:            true,
 				Optional:            true,
 				Validators: []validator.String{
-					customtypes.HAResourceTypeValidator(),
+					validators.HAResourceTypeValidator(),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -164,7 +165,7 @@ func (r *haresourceResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	resID, err := customtypes.ParseHAResourceID(data.ResourceID.ValueString())
+	resID, err := proxmoxtypes.ParseHAResourceID(data.ResourceID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
@@ -207,7 +208,7 @@ func (r *haresourceResource) Update(
 		return
 	}
 
-	resID, err := customtypes.ParseHAResourceID(state.ID.ValueString())
+	resID, err := proxmoxtypes.ParseHAResourceID(state.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
@@ -246,7 +247,7 @@ func (r *haresourceResource) Delete(
 		return
 	}
 
-	resID, err := customtypes.ParseHAResourceID(data.ID.ValueString())
+	resID, err := proxmoxtypes.ParseHAResourceID(data.ID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
@@ -322,7 +323,7 @@ func (r *haresourceResource) ImportState(
 func (r *haresourceResource) read(ctx context.Context, data *haresourceModel) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	resID, err := customtypes.ParseHAResourceID(data.ID.ValueString())
+	resID, err := proxmoxtypes.ParseHAResourceID(data.ID.ValueString())
 	if err != nil {
 		diags.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",

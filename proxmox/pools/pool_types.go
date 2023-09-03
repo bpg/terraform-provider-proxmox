@@ -6,7 +6,9 @@
 
 package pools
 
-import "github.com/bpg/terraform-provider-proxmox/internal/types"
+import (
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+)
 
 // PoolCreateRequestBody contains the data for a pool create request.
 type PoolCreateRequestBody struct {
