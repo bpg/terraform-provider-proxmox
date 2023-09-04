@@ -79,7 +79,7 @@ const (
 	dvResourceVirtualEnvironmentVMEFIDiskType                       = "2m"
 	dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys            = false
 	dvResourceVirtualEnvironmentVMInitializationDatastoreID         = "local-lvm"
-	dvResourceVirtualEnvironmentVMInitializationInterface           = ""
+	dvResourceVirtualEnvironmentVMInitializationInterface           = "ide2"
 	dvResourceVirtualEnvironmentVMInitializationDNSDomain           = ""
 	dvResourceVirtualEnvironmentVMInitializationDNSServer           = ""
 	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address = ""
