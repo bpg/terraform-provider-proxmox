@@ -795,7 +795,7 @@ func VM() *schema.Resource {
 							Description:      "The IDE interface on which the CloudInit drive will be added",
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMInitializationInterface,
-							ValidateDiagFunc: validator.IDEInterface(),
+							ValidateDiagFunc: validator.CloudInitInterface(),
 							DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
 								return newValue == ""
 							},
