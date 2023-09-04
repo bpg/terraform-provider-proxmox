@@ -136,7 +136,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 			node := n.(map[string]interface{})
 			nodeOverrides[node[mkProviderSSHNodeName].(string)] = ssh.ProxmoxNode{
 				Address: node[mkProviderSSHNodeAddress].(string),
-				Port:    node[mkProviderSSHNodePort].(int32),
+				Port:    int32(node[mkProviderSSHNodePort].(int)),
 			}
 		}
 	}
