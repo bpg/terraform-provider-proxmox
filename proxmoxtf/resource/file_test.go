@@ -7,10 +7,10 @@
 package resource
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
@@ -102,40 +102,83 @@ func TestFileSchema(t *testing.T) {
 	})
 }
 
-func Test_fileParseImportID(t *testing.T) {
+func Test_fileParseVolumeID(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name                string
-		value               string
-		valid               bool
-		expectedNodeName    string
-		expectedDatastoreID string
-		expectedVolumeID    string
+		name    string
+		id      string
+		want    fileVolumeID
+		wantErr bool
 	}{
-		{"empty", "", false, "", "", ""},
-		{"missing slash", "invalid", false, "", "", ""},
-		{"missing parts", "invalid/invalid/invalid", false, "", "", ""},
-		{"valid", "node/datastore_id/content_type/file_name", true, "node", "datastore_id", "content_type/file_name"},
+		{"empty", "", fileVolumeID{}, true},
+		{"missing datastore", "iso/file.ido", fileVolumeID{}, true},
+		{"missing type", "local:/file.ido", fileVolumeID{}, true},
+		{"missing file", "local:iso", fileVolumeID{}, true},
+		{"missing file", "local:iso/", fileVolumeID{}, true},
+		{"valid", "local:iso/file.iso", fileVolumeID{
+			datastoreID: "local",
+			contentType: "iso",
+			fileName:    "file.iso",
+		}, false},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			require := require.New(t)
-
-			nodeName, datastoreID, volumeID, err := fileParseImportID(tt.value)
-
-			if !tt.valid {
-				require.Error(err)
+			got, err := fileParseVolumeID(tt.id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("fileParseVolumeID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("fileParseVolumeID() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
-			require.Nil(err)
-			require.Equal(tt.expectedNodeName, nodeName)
-			require.Equal(tt.expectedDatastoreID, datastoreID)
-			require.Equal(tt.expectedVolumeID, volumeID)
+func Test_fileParseImportID(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		id      string
+		node    string
+		volID   fileVolumeID
+		wantErr bool
+	}{
+		{"empty", "", "", fileVolumeID{}, true},
+		{"missing node", "local:iso/file.iso", "", fileVolumeID{}, true},
+		{"missing node 2", "/local:iso/file.iso", "", fileVolumeID{}, true},
+		{
+			"valid", "pve/local:iso/file.iso",
+			"pve",
+			fileVolumeID{
+				datastoreID: "local",
+				contentType: "iso",
+				fileName:    "file.iso",
+			},
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			node, volID, err := fileParseImportID(tt.id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("fileParseImportID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if node != tt.node {
+				t.Errorf("fileParseImportID() got node = %v, want %v", node, tt.node)
+			}
+			if !reflect.DeepEqual(volID, tt.volID) {
+				t.Errorf("fileParseImportID() got volID = %v, want %v", volID, tt.volID)
+			}
 		})
 	}
 }
