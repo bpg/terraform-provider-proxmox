@@ -98,9 +98,10 @@ created as another temporary file).
 
 ## Import
 
-Instances can be imported using the `node_name`, `datastore_id`, `content_type`
-and the `file_name`, e.g.,
+Instances can be imported using the `node_name`, `volume_id`, where `volume_id`
+consists of the `datastore_id`, `content_type`, and `file_name`, separated as following: `<datastore_id>:<content_type>/<file_name>`, 
+for example: `local:snippets/example.cloud-config.yaml`
 
 ```bash
-$ terraform import proxmox_virtual_environment_file.cloud_config pve/local/snippets/example.cloud-config.yaml
+$ terraform import proxmox_virtual_environment_file.cloud_config pve/local:snippets/example.cloud-config.yaml
 ```

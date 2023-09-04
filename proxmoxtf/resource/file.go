@@ -205,21 +205,26 @@ func File() *schema.Resource {
 		UpdateContext: fileUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
-				node, datastore, volumeID, err := fileParseImportID(d.Id())
+				node, volID, err := fileParseImportID(d.Id())
 				if err != nil {
 					return nil, err
 				}
 
-				d.SetId(volumeID)
+				d.SetId(volID.String())
 
 				err = d.Set(mkResourceVirtualEnvironmentFileNodeName, node)
 				if err != nil {
-					return nil, fmt.Errorf("failed setting state during import: %w", err)
+					return nil, fmt.Errorf("failed setting 'node_name' in state during import: %w", err)
 				}
 
-				err = d.Set(mkResourceVirtualEnvironmentFileDatastoreID, datastore)
+				err = d.Set(mkResourceVirtualEnvironmentFileDatastoreID, volID.datastoreID)
 				if err != nil {
-					return nil, fmt.Errorf("failed setting state during import: %w", err)
+					return nil, fmt.Errorf("failed setting 'datastore_id' in state during import: %w", err)
+				}
+
+				err = d.Set(mkResourceVirtualEnvironmentFileContentType, volID.contentType)
+				if err != nil {
+					return nil, fmt.Errorf("failed setting 'content_type' in state during import: %w", err)
 				}
 
 				return []*schema.ResourceData{d}, nil
@@ -228,14 +233,59 @@ func File() *schema.Resource {
 	}
 }
 
-func fileParseImportID(id string) (string, string, string, error) {
-	parts := strings.SplitN(id, "/", 4)
+type fileVolumeID struct {
+	datastoreID string
+	contentType string
+	fileName    string
+}
 
-	if len(parts) != 4 || parts[0] == "" || parts[1] == "" || parts[2] == "" || parts[3] == "" {
-		return "", "", "", fmt.Errorf("unexpected format of ID (%s), expected node/datastore_id/content_type/file_name", id)
+func (v fileVolumeID) String() string {
+	return fmt.Sprintf("%s:%s/%s", v.datastoreID, v.contentType, v.fileName)
+}
+
+// fileParseVolumeID parses a volume ID in the format datastore_id:content_type/file_name.
+func fileParseVolumeID(id string) (fileVolumeID, error) {
+	parts := strings.SplitN(id, ":", 2)
+
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return fileVolumeID{}, fmt.Errorf("unexpected format of ID (%s), expected datastore_id:content_type/file_name", id)
 	}
 
-	return parts[0], parts[1], strings.Join(parts[2:], "/"), nil
+	datastoreID := parts[0]
+
+	parts = strings.SplitN(parts[1], "/", 2)
+
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return fileVolumeID{}, fmt.Errorf("unexpected format of ID (%s), expected datastore_id:content_type/file_name", id)
+	}
+
+	contentType := parts[0]
+	fileName := parts[1]
+
+	return fileVolumeID{
+		datastoreID: datastoreID,
+		contentType: contentType,
+		fileName:    fileName,
+	}, nil
+}
+
+// fileParseImportID parses an import ID in the format node/datastore_id:content_type/file_name.
+func fileParseImportID(id string) (string, fileVolumeID, error) {
+	parts := strings.SplitN(id, "/", 2)
+
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", fileVolumeID{},
+			fmt.Errorf("unexpected format of ID (%s), expected node/datastore_id:content_type/file_name", id)
+	}
+
+	node := parts[0]
+
+	volID, err := fileParseVolumeID(parts[1])
+	if err != nil {
+		return "", fileVolumeID{}, err
+	}
+
+	return node, volID, nil
 }
 
 func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -471,18 +521,18 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	volumeID, di := fileGetVolumeID(d)
+	volID, di := fileGetVolumeID(d)
 	diags = append(diags, di...)
 	if diags.HasError() {
 		return diags
 	}
 
-	d.SetId(*volumeID)
+	d.SetId(volID.String())
 
 	diags = append(diags, fileRead(ctx, d, m)...)
 
 	if d.Id() == "" {
-		diags = append(diags, diag.Errorf("failed to read file from %q", *volumeID)...)
+		diags = append(diags, diag.Errorf("failed to read file from %q", volID.String())...)
 	}
 
 	return diags
@@ -586,18 +636,20 @@ func fileGetFileName(d *schema.ResourceData) (*string, error) {
 	return &sourceFileFileName, nil
 }
 
-func fileGetVolumeID(d *schema.ResourceData) (*string, diag.Diagnostics) {
+func fileGetVolumeID(d *schema.ResourceData) (fileVolumeID, diag.Diagnostics) {
 	fileName, err := fileGetFileName(d)
 	if err != nil {
-		return nil, diag.FromErr(err)
+		return fileVolumeID{}, diag.FromErr(err)
 	}
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	contentType, diags := fileGetContentType(d)
 
-	volumeID := fmt.Sprintf("%s:%s/%s", datastoreID, *contentType, *fileName)
-
-	return &volumeID, diags
+	return fileVolumeID{
+		datastoreID: datastoreID,
+		contentType: *contentType,
+		fileName:    *fileName,
+	}, diags
 }
 
 func fileIsURL(d *schema.ResourceData) bool {
