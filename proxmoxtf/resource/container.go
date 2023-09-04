@@ -45,6 +45,8 @@ const (
 	dvResourceVirtualEnvironmentContainerDiskDatastoreID                   = "local"
 	dvResourceVirtualEnvironmentContainerDiskSize                          = 4
 	dvResourceVirtualEnvironmentContainerFeaturesNesting                   = false
+	dvResourceVirtualEnvironmentContainerFeaturesKeyControl                = false
+	dvResourceVirtualEnvironmentContainerFeaturesFUSE                      = false
 	dvResourceVirtualEnvironmentContainerMemoryDedicated                   = 512
 	dvResourceVirtualEnvironmentContainerMemorySwap                        = 0
 	dvResourceVirtualEnvironmentContainerMountPointACL                     = false
@@ -87,6 +89,8 @@ const (
 	mkResourceVirtualEnvironmentContainerDiskSize                          = "size"
 	mkResourceVirtualEnvironmentContainerFeatures                          = "features"
 	mkResourceVirtualEnvironmentContainerFeaturesNesting                   = "nesting"
+	mkResourceVirtualEnvironmentContainerFeaturesKeyControl                = "keyctl"
+	mkResourceVirtualEnvironmentContainerFeaturesFUSE                      = "fuse"
 	mkResourceVirtualEnvironmentContainerInitialization                    = "initialization"
 	mkResourceVirtualEnvironmentContainerInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentContainerInitializationDNSDomain           = "domain"
@@ -308,7 +312,9 @@ func Container() *schema.Resource {
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentContainerFeaturesNesting: dvResourceVirtualEnvironmentContainerFeaturesNesting,
+							mkResourceVirtualEnvironmentContainerFeaturesNesting:    dvResourceVirtualEnvironmentContainerFeaturesNesting,
+							mkResourceVirtualEnvironmentContainerFeaturesKeyControl: dvResourceVirtualEnvironmentContainerFeaturesKeyControl,
+							mkResourceVirtualEnvironmentContainerFeaturesFUSE:       dvResourceVirtualEnvironmentContainerFeaturesFUSE,
 						},
 					}, nil
 				},
@@ -320,6 +326,20 @@ func Container() *schema.Resource {
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentContainerFeaturesNesting,
+						},
+						mkResourceVirtualEnvironmentContainerFeaturesKeyControl: {
+							Type:        schema.TypeBool,
+							Description: "Whether the container supports `keyctl()` system call",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentContainerFeaturesKeyControl,
+						},
+						mkResourceVirtualEnvironmentContainerFeaturesFUSE: {
+							Type:        schema.TypeBool,
+							Description: "Whether the container supports FUSE mounts",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentContainerFeaturesFUSE,
 						},
 					},
 				},
@@ -1194,8 +1214,13 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	nesting := types2.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
+	keyctl := types2.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesKeyControl].(bool))
+	fuse := types2.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesFUSE].(bool))
+
 	features := containers.CustomFeatures{
-		Nesting: &nesting,
+		Nesting:    &nesting,
+		KeyControl: &keyctl,
+		FUSE:       &fuse,
 	}
 
 	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})

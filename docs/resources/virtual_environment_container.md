@@ -200,6 +200,10 @@ output "ubuntu_container_public_key" {
 - `features` - (Optional) The container features
     - `nesting` - (Optional) Whether the container is nested (defaults
       to `false`)
+    - `fuse` - (Optional) Whether the container supports FUSE mounts (defaults
+      to `false`)
+    - `keyctl` - (Optional) Whether the container supports `keyctl()` system call (defaults
+      to `false`)
 
 ## Attribute Reference
 
