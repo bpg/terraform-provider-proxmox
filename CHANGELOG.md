@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.31.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.30.3...v0.31.0) (2023-09-04)
+
+
+### Features
+
+* **file:** FORMAT CHANGE: update import id, so it matches the resource's format: `&lt;node_name&gt;/<datastore_id>:<content_type>/<file>` ([#543](https://github.com/bpg/terraform-provider-proxmox/issues/543)) ([7ace07d](https://github.com/bpg/terraform-provider-proxmox/commit/7ace07dfa47c4a6750973d04cb8d853fc9640047))
+* **lxc:** add support for `keyctl` and `fuse` features ([#537](https://github.com/bpg/terraform-provider-proxmox/issues/537)) ([8ce9006](https://github.com/bpg/terraform-provider-proxmox/commit/8ce9006eed15dadc6f051464b8b98e3a1abd7d6d))
+* **provider:** add optional SSH port param to node in provider ssh block ([#520](https://github.com/bpg/terraform-provider-proxmox/issues/520)) ([124cac2](https://github.com/bpg/terraform-provider-proxmox/commit/124cac247ce34e2603b0d1c1c94106d958185708))
+
+
+### Bug Fixes
+
+* **provider:** panic crash in provider, interface conversion error ([#545](https://github.com/bpg/terraform-provider-proxmox/issues/545)) ([13326bb](https://github.com/bpg/terraform-provider-proxmox/commit/13326bbd33648391f0f87d339db272145e3066ac))
+* **vm:** explicitly allow `""` as a value for CloudInit interfaces ([#546](https://github.com/bpg/terraform-provider-proxmox/issues/546)) ([0233053](https://github.com/bpg/terraform-provider-proxmox/commit/0233053dd8f8aa0fbfae8f7c11bb8ce359576bce))
+
+
+### Miscellaneous
+
+* **code:** fix `proxmox` package dependencies ([#536](https://github.com/bpg/terraform-provider-proxmox/issues/536)) ([5ecf135](https://github.com/bpg/terraform-provider-proxmox/commit/5ecf13539862bb9602696a7575568f228fc85e29))
+* **deps:** bump actions/checkout from 3 to 4 ([#541](https://github.com/bpg/terraform-provider-proxmox/issues/541)) ([44d6d6b](https://github.com/bpg/terraform-provider-proxmox/commit/44d6d6b080c534ad16b3d9911ae445d4e16acfa3))
+
 ## [0.30.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.30.2...v0.30.3) (2023-09-01)
 
 
