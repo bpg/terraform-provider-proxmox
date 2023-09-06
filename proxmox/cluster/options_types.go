@@ -15,14 +15,14 @@ type userTagAccess struct {
 	UserAllow     *string   `json:"user-allow,omitempty"`
 }
 type tagStyle struct {
-	Shape         *string `json:"shape,omitempty"`
-	CaseSensitive *string `json:"case-sensitive,omitempty"`
-	Ordering      *string `json:"ordering,omitempty"`
-	ColorMap      *string `json:"color-map,omitempty"`
+	Shape         *string           `json:"shape,omitempty"`
+	CaseSensitive *types.CustomBool `json:"case-sensitive,omitempty"`
+	Ordering      *string           `json:"ordering,omitempty"`
+	ColorMap      *string           `json:"color-map,omitempty"`
 }
 type crs struct {
-	HaRebalanceOnStart *types.CustomInt `json:"ha-rebalance-on-start,omitempty"`
-	HA                 *string          `json:"ha,omitempty"`
+	HaRebalanceOnStart *types.CustomBool `json:"ha-rebalance-on-start,omitempty"`
+	HA                 *string           `json:"ha,omitempty"`
 }
 type notify struct {
 	PackageUpdates *string `json:"package-updates,omitempty"`
@@ -64,15 +64,15 @@ type OptionsResponseBody struct {
 type OptionsResponseData struct {
 	optionsBaseData
 	MaxWorkers                *types.CustomInt `json:"max_workers,omitempty"`
-	ClusterResourceScheduling *crs             `json:"crs,omitempty"             url:"crs,omitempty"`
-	HASettings                *haSettings      `json:"ha,omitempty"              url:"ha,omitempty"`
-	TagStyle                  *tagStyle        `json:"tag-style,omitempty"       url:"tag-style,omitempty"`
-	Migration                 *migration       `json:"migration,omitempty"       url:"migration,omitempty"`
-	Webauthn                  *webauthn        `json:"webauthn,omitempty"        url:"webauthn,omitempty"`
-	NextID                    *nextID          `json:"next-id,omitempty"         url:"next-id,omitempty"`
-	Notify                    *notify          `json:"notify,omitempty"          url:"notify,omitempty"`
-	UserTagAccess             *userTagAccess   `json:"user-tag-access,omitempty" url:"user-tag-access,omitempty"`
-	RegisteredTags            *[]string        `json:"registered-tags,omitempty" url:"registered-tags,omitempty"`
+	ClusterResourceScheduling *crs             `json:"crs,omitempty"`
+	HASettings                *haSettings      `json:"ha,omitempty"`
+	TagStyle                  *tagStyle        `json:"tag-style,omitempty"`
+	Migration                 *migration       `json:"migration,omitempty"`
+	Webauthn                  *webauthn        `json:"webauthn,omitempty"`
+	NextID                    *nextID          `json:"next-id,omitempty"`
+	Notify                    *notify          `json:"notify,omitempty"`
+	UserTagAccess             *userTagAccess   `json:"user-tag-access,omitempty"`
+	RegisteredTags            *[]string        `json:"registered-tags,omitempty"`
 }
 
 // OptionsRequestData contains the body for cluster options request.

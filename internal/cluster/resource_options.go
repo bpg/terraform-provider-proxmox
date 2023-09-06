@@ -34,13 +34,85 @@ type clusterOptionsModel struct {
 	BandwidthLimitMigration types.Int64  `tfsdk:"bandwidth_limit_migration"`
 	BandwidthLimitMove      types.Int64  `tfsdk:"bandwidth_limit_move"`
 	BandwidthLimitRestore   types.Int64  `tfsdk:"bandwidth_limit_restore"`
+	Console                 types.String `tfsdk:"console"`
+	HTTPProxy               types.String `tfsdk:"http_proxy"`
+	MacPrefix               types.String `tfsdk:"mac_prefix"`
+	Description             types.String `tfsdk:"description"`
+	HAShutdownPolicy        types.String `tfsdk:"ha_shutdown_policy"`
+	MigrationType           types.String `tfsdk:"migration_type"`
+	MigrationNetwork        types.String `tfsdk:"migration_cidr"`
+	CrsHA                   types.String `tfsdk:"crs_ha"`
+	CrsHARebalanceOnStart   types.Bool   `tfsdk:"crs_ha_rebalance_on_start"`
 	EmailFrom               types.String `tfsdk:"email_from"`
 	Keyboard                types.String `tfsdk:"keyboard"`
 	Language                types.String `tfsdk:"language"`
 	MaxWorkers              types.Int64  `tfsdk:"max_workers"`
 }
 
-func (m *clusterOptionsModel) bandwithData() string {
+func (m *clusterOptionsModel) haData() *string {
+	var haDataParams []string
+
+	if !m.HAShutdownPolicy.IsNull() && m.HAShutdownPolicy.ValueString() != "" {
+		haDataParams = append(haDataParams, fmt.Sprintf("shutdown_policy=%s", m.HAShutdownPolicy.ValueString()))
+	}
+
+	if len(haDataParams) > 0 {
+		haDataValue := strings.Join(haDataParams, ",")
+
+		return &haDataValue
+	}
+
+	return nil
+}
+
+func (m *clusterOptionsModel) migrationData() *string {
+	var migrationDataParams []string
+
+	if !m.MigrationType.IsNull() && m.MigrationType.ValueString() != "" {
+		migrationDataParams = append(migrationDataParams, fmt.Sprintf("type=%s", m.MigrationType.ValueString()))
+	}
+
+	if !m.MigrationNetwork.IsNull() && m.MigrationNetwork.ValueString() != "" {
+		migrationDataParams = append(migrationDataParams, fmt.Sprintf("network=%s", m.MigrationNetwork.ValueString()))
+	}
+
+	if len(migrationDataParams) > 0 {
+		migrationDataValue := strings.Join(migrationDataParams, ",")
+
+		return &migrationDataValue
+	}
+
+	return nil
+}
+
+func (m *clusterOptionsModel) crsData() *string {
+	var crsDataParams []string
+
+	if !m.CrsHA.IsNull() && m.CrsHA.ValueString() != "" {
+		crsDataParams = append(crsDataParams, fmt.Sprintf("ha=%s", m.CrsHA.ValueString()))
+	}
+
+	if !m.CrsHARebalanceOnStart.IsNull() {
+		var haRebalanceOnStart string
+		if m.CrsHARebalanceOnStart.ValueBool() {
+			haRebalanceOnStart = "1"
+		} else {
+			haRebalanceOnStart = "0"
+		}
+
+		crsDataParams = append(crsDataParams, fmt.Sprintf("ha-rebalance-on-start=%s", haRebalanceOnStart))
+	}
+
+	if len(crsDataParams) > 0 {
+		crsDataValue := strings.Join(crsDataParams, ",")
+
+		return &crsDataValue
+	}
+
+	return nil
+}
+
+func (m *clusterOptionsModel) bandwithData() *string {
 	var bandwidthParams []string
 
 	if !m.BandwidthLimitClone.IsNull() && m.BandwidthLimitClone.ValueInt64() != 0 {
@@ -63,19 +135,54 @@ func (m *clusterOptionsModel) bandwithData() string {
 		bandwidthParams = append(bandwidthParams, fmt.Sprintf("restore=%d", m.BandwidthLimitRestore.ValueInt64()))
 	}
 
-	return strings.Join(bandwidthParams, ",")
+	if len(bandwidthParams) > 0 {
+		bandwithDataValue := strings.Join(bandwidthParams, ",")
+
+		return &bandwithDataValue
+	}
+
+	return nil
 }
 
 func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData {
 	body := &cluster.OptionsRequestData{}
 
-	body.EmailFrom = m.EmailFrom.ValueStringPointer()
-	body.Keyboard = m.Keyboard.ValueStringPointer()
-	body.Language = m.Language.ValueStringPointer()
-	body.MaxWorkers = m.MaxWorkers.ValueInt64Pointer()
+	if !m.EmailFrom.IsUnknown() {
+		body.EmailFrom = m.EmailFrom.ValueStringPointer()
+	}
 
-	bandwidth := m.bandwithData()
-	body.BandwidthLimit = &bandwidth
+	if !m.Keyboard.IsUnknown() {
+		body.Keyboard = m.Keyboard.ValueStringPointer()
+	}
+
+	if !m.Language.IsUnknown() {
+		body.Language = m.Language.ValueStringPointer()
+	}
+
+	if !m.MaxWorkers.IsUnknown() {
+		body.MaxWorkers = m.MaxWorkers.ValueInt64Pointer()
+	}
+
+	if !m.Console.IsUnknown() {
+		body.Console = m.Console.ValueStringPointer()
+	}
+
+	if !m.HTTPProxy.IsUnknown() {
+		body.HTTPProxy = m.HTTPProxy.ValueStringPointer()
+	}
+
+	if !m.MacPrefix.IsUnknown() {
+		body.MacPrefix = m.MacPrefix.ValueStringPointer()
+	}
+
+	if !m.MacPrefix.IsUnknown() {
+		body.Description = m.Description.ValueStringPointer()
+	}
+
+	body.HASettings = m.haData()
+	body.BandwidthLimit = m.bandwithData()
+	body.ClusterResourceScheduling = m.crsData()
+	body.Migration = m.migrationData()
 
 	return body
 }
@@ -91,7 +198,7 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 	m.BandwidthLimitRestore = types.Int64Null()
 
 	//nolint:nestif
-	if *iface.BandwidthLimit != "" {
+	if iface.BandwidthLimit != nil {
 		for _, bandwidth := range strings.Split(*iface.BandwidthLimit, ",") {
 			bandwidthData := strings.SplitN(bandwidth, "=", 2)
 			bandwidthName := bandwidthData[0]
@@ -131,6 +238,19 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 		m.MaxWorkers = types.Int64Value(int64(*iface.MaxWorkers))
 	}
 
+	m.Console = types.StringPointerValue(iface.Console)
+	m.HTTPProxy = types.StringPointerValue(iface.HTTPProxy)
+	m.MacPrefix = types.StringPointerValue(iface.MacPrefix)
+	m.Description = types.StringPointerValue(iface.Description)
+	m.HAShutdownPolicy = types.StringPointerValue(iface.HASettings.ShutdownPolicy)
+	m.MigrationType = types.StringPointerValue(iface.Migration.Type)
+	m.MigrationNetwork = types.StringPointerValue(iface.Migration.Network)
+	m.CrsHA = types.StringPointerValue(iface.ClusterResourceScheduling.HA)
+
+	if iface.ClusterResourceScheduling.HaRebalanceOnStart != nil {
+		m.CrsHARebalanceOnStart = types.BoolValue(bool(*iface.ClusterResourceScheduling.HaRebalanceOnStart))
+	}
+
 	return nil
 }
 
@@ -151,7 +271,7 @@ func (r *clusterOptionsResource) Metadata(
 	resp.TypeName = req.ProviderTypeName + "_cluster_options"
 }
 
-// // Schema defines the schema for the resource.
+// Schema defines the schema for the resource.
 func (r *clusterOptionsResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
@@ -165,39 +285,95 @@ func (r *clusterOptionsResource) Schema(
 			"email_from": schema.StringAttribute{
 				Description: "email address to send notification from (default is root@$hostname).",
 				Optional:    true,
+				Computed:    true,
 			},
 			"keyboard": schema.StringAttribute{
 				Description: "Default keybord layout for vnc server.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"max_workers": schema.Int64Attribute{
 				Description: "Defines how many workers (per node) are maximal started on" +
 					" actions like 'stopall VMs' or task from the ha-manager.",
 				Optional: true,
+				Computed: true,
 			},
 			"language": schema.StringAttribute{
 				Description: "Default GUI language.",
 				Optional:    true,
+				Computed:    true,
+			},
+			"console": schema.StringAttribute{
+				Description: "Select the default Console viewer. applet | vv | html5 | xtermjs",
+				Optional:    true,
+				Computed:    true,
+			},
+			"http_proxy": schema.StringAttribute{
+				Description: "Specify external http proxy which is used for downloads " +
+					"(example: 'http://username:password@host:port/')",
+				Optional: true,
+				Computed: true,
+			},
+			"mac_prefix": schema.StringAttribute{
+				Description: "Prefix for autogenerated MAC addresses.",
+				Optional:    true,
+				Computed:    true,
+			},
+			"description": schema.StringAttribute{
+				Description: "Datacenter description. Shown in the web-interface datacenter notes panel. " +
+					"This is saved as comment inside the configuration file.",
+				Optional: true,
+				Computed: true,
+			},
+			"ha_shutdown_policy": schema.StringAttribute{
+				Description: "Cluster wide HA shutdown policy.",
+				Optional:    true,
+				Computed:    true,
+			},
+			"migration_type": schema.StringAttribute{
+				Description: "Cluster wide migration type.",
+				Optional:    true,
+				Computed:    true,
+			},
+			"migration_cidr": schema.StringAttribute{
+				Description: "Cluster wide migration network CIDR.",
+				Optional:    true,
+				Computed:    true,
+			},
+			"crs_ha": schema.StringAttribute{
+				Description: "Cluster resource scheduling setting for HA.",
+				Optional:    true,
+				Computed:    true,
+			},
+			"crs_ha_rebalance_on_start": schema.BoolAttribute{
+				Description: "Cluster resource scheduling setting for HA rebalance on start.",
+				Optional:    true,
+				Computed:    true,
 			},
 			"bandwidth_limit_clone": schema.Int64Attribute{
 				Description: "Clone I/O bandwidth limit in KiB/s.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"bandwidth_limit_default": schema.Int64Attribute{
 				Description: "Default I/O bandwidth limit in KiB/s.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"bandwidth_limit_migration": schema.Int64Attribute{
 				Description: "Migration I/O bandwidth limit in KiB/s.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"bandwidth_limit_move": schema.Int64Attribute{
 				Description: "Move I/O bandwidth limit in KiB/s.",
 				Optional:    true,
+				Computed:    true,
 			},
 			"bandwidth_limit_restore": schema.Int64Attribute{
 				Description: "Restore I/O bandwidth limit in KiB/s.",
 				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
@@ -328,8 +504,20 @@ func (r *clusterOptionsResource) Update(ctx context.Context, req resource.Update
 		toDelete = append(toDelete, "keyboard")
 	}
 
-	if plan.bandwithData() != state.bandwithData() && plan.bandwithData() == "" {
+	if *plan.bandwithData() != *state.bandwithData() && *plan.bandwithData() == "" {
 		toDelete = append(toDelete, "bwlimit")
+	}
+
+	if *plan.crsData() != *state.crsData() && *plan.crsData() == "" {
+		toDelete = append(toDelete, "crs")
+	}
+
+	if *plan.haData() != *state.haData() && *plan.haData() == "" {
+		toDelete = append(toDelete, "ha")
+	}
+
+	if *plan.migrationData() != *state.migrationData() && *plan.migrationData() == "" {
+		toDelete = append(toDelete, "migration")
 	}
 
 	if !plan.EmailFrom.Equal(state.EmailFrom) && plan.EmailFrom.ValueString() == "" {
@@ -338,6 +526,22 @@ func (r *clusterOptionsResource) Update(ctx context.Context, req resource.Update
 
 	if !plan.Language.Equal(state.Language) && plan.Language.ValueString() == "" {
 		toDelete = append(toDelete, "language")
+	}
+
+	if !plan.Console.Equal(state.Console) && plan.Console.ValueString() == "" {
+		toDelete = append(toDelete, "console")
+	}
+
+	if !plan.HTTPProxy.Equal(state.HTTPProxy) && plan.HTTPProxy.ValueString() == "" {
+		toDelete = append(toDelete, "http_proxy")
+	}
+
+	if !plan.MacPrefix.Equal(state.MacPrefix) && plan.MacPrefix.ValueString() == "" {
+		toDelete = append(toDelete, "mac_prefix")
+	}
+
+	if !plan.Description.Equal(state.Description) && plan.Description.ValueString() == "" {
+		toDelete = append(toDelete, "description")
 	}
 
 	if !plan.MaxWorkers.Equal(state.MaxWorkers) && plan.MaxWorkers.ValueInt64() == 0 {
