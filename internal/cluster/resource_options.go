@@ -73,7 +73,9 @@ func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData
 	body.Keyboard = m.Keyboard.ValueStringPointer()
 	body.Language = m.Language.ValueStringPointer()
 	body.MaxWorkers = m.MaxWorkers.ValueInt64Pointer()
-	body.BandwidthLimit = m.bandwithData()
+
+	bandwidth := m.bandwithData()
+	body.BandwidthLimit = &bandwidth
 
 	return body
 }
@@ -89,14 +91,14 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 	m.BandwidthLimitRestore = types.Int64Null()
 
 	//nolint:nestif
-	if iface.BandwidthLimit != "" {
-		for _, bandwidth := range strings.Split(iface.BandwidthLimit, ",") {
+	if *iface.BandwidthLimit != "" {
+		for _, bandwidth := range strings.Split(*iface.BandwidthLimit, ",") {
 			bandwidthData := strings.SplitN(bandwidth, "=", 2)
 			bandwidthName := bandwidthData[0]
 
 			bandwidthLimit, err := strconv.ParseInt(bandwidthData[1], 10, 64)
 			if err != nil {
-				return fmt.Errorf("failed to parse bandwidth limit: %s", iface.BandwidthLimit)
+				return fmt.Errorf("failed to parse bandwidth limit: %s", *iface.BandwidthLimit)
 			}
 
 			if bandwidthName == "clone" {
@@ -343,7 +345,8 @@ func (r *clusterOptionsResource) Update(ctx context.Context, req resource.Update
 	}
 
 	if len(toDelete) > 0 {
-		body.Delete = strings.Join(toDelete, ",")
+		d := strings.Join(toDelete, ",")
+		body.Delete = &d
 	}
 
 	err := r.client.Cluster().CreateUpdateOptions(ctx, body)
