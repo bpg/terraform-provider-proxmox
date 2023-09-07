@@ -278,9 +278,8 @@ func (r *clusterOptionsResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages Proxmox VE cluster options.",
+		Description: "Manages Proxmox VE Cluster Datacenter options.",
 		Attributes: map[string]schema.Attribute{
-			// Base attributes
 			"id": structure.IDAttribute("A unique identifier"),
 			"email_from": schema.StringAttribute{
 				Description: "email address to send notification from (default is root@$hostname).",
@@ -289,8 +288,12 @@ func (r *clusterOptionsResource) Schema(
 			},
 			"keyboard": schema.StringAttribute{
 				Description: "Default keybord layout for vnc server.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Default keybord layout for vnc server. Must be `de` | " +
+					"`de-ch` | `da` | `en-gb` | `en-us` | `es` | `fi` | `fr` | `fr-be` | `fr-ca` " +
+					"| `fr-ch` | `hu` | `is` | `it` | `ja` | `lt` | `mk` | `nl` | `no` | `pl` | " +
+					"`pt` | `pt-br` | `sv` | `sl` | `tr`.",
+				Optional: true,
+				Computed: true,
 			},
 			"max_workers": schema.Int64Attribute{
 				Description: "Defines how many workers (per node) are maximal started on" +
@@ -300,17 +303,30 @@ func (r *clusterOptionsResource) Schema(
 			},
 			"language": schema.StringAttribute{
 				Description: "Default GUI language.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Default GUI language. Must be `ca` | `da` | `de` " +
+					"| `en` | `es` | `eu` | `fa` | `fr` | `he` | `it` | `ja` | `nb` | " +
+					"`nn` | `pl` | `pt_BR` | `ru` | `sl` | `sv` | `tr` | `zh_CN` | `zh_TW`.",
+				Optional: true,
+				Computed: true,
 			},
 			"console": schema.StringAttribute{
-				Description: "Select the default Console viewer. applet | vv | html5 | xtermjs",
-				Optional:    true,
-				Computed:    true,
+				Description: "Select the default Console viewer.",
+				MarkdownDescription: "Select the default Console viewer. " +
+					"Must be `applet` | `vv`| `html5` | `xtermjs`. " +
+					"You can either use the builtin java applet (VNC; deprecated and maps to html5), " +
+					"an external virt-viewer comtatible application (SPICE), " +
+					"an HTML5 based vnc viewer (noVNC), " +
+					"or an HTML5 based console client (xtermjs). " +
+					"If the selected viewer is not available " +
+					"(e.g. SPICE not activated for the VM), " +
+					"the fallback is noVNC.",
+				Optional: true,
+				Computed: true,
 			},
 			"http_proxy": schema.StringAttribute{
-				Description: "Specify external http proxy which is used for downloads " +
-					"(example: 'http://username:password@host:port/')",
+				Description: "Specify external http proxy which is used for downloads.",
+				MarkdownDescription: "Specify external http proxy which is used for downloads " +
+					"(example: `http://username:password@host:port/`).",
 				Optional: true,
 				Computed: true,
 			},
@@ -327,13 +343,16 @@ func (r *clusterOptionsResource) Schema(
 			},
 			"ha_shutdown_policy": schema.StringAttribute{
 				Description: "Cluster wide HA shutdown policy.",
-				Optional:    true,
-				Computed:    true,
+				MarkdownDescription: "Cluster wide HA shutdown policy. " +
+					"Must be `freeze` | `failover` | `migrate` | `conditional`.",
+				Optional: true,
+				Computed: true,
 			},
 			"migration_type": schema.StringAttribute{
-				Description: "Cluster wide migration type.",
-				Optional:    true,
-				Computed:    true,
+				Description:         "Cluster wide migration type.",
+				MarkdownDescription: "Cluster wide migration type. Must be `secure` | `unsecure`.",
+				Optional:            true,
+				Computed:            true,
 			},
 			"migration_cidr": schema.StringAttribute{
 				Description: "Cluster wide migration network CIDR.",
@@ -341,9 +360,10 @@ func (r *clusterOptionsResource) Schema(
 				Computed:    true,
 			},
 			"crs_ha": schema.StringAttribute{
-				Description: "Cluster resource scheduling setting for HA.",
-				Optional:    true,
-				Computed:    true,
+				Description:         "Cluster resource scheduling setting for HA.",
+				MarkdownDescription: "Cluster resource scheduling setting for HA. Must be `static` | `basic`.",
+				Optional:            true,
+				Computed:            true,
 			},
 			"crs_ha_rebalance_on_start": schema.BoolAttribute{
 				Description: "Cluster resource scheduling setting for HA rebalance on start.",

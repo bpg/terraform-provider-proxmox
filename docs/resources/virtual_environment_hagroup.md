@@ -46,7 +46,7 @@ resource "proxmox_virtual_environment_hagroup" "example" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) The unique identifier for the resource.
 
 ## Import
 
