@@ -28,6 +28,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Additional context**
 Add any other context about the problem here.
+- Single or clustered Proxmox:
 - Provider version (ideally it should be the latest version):
 - Terraform version:
 - OS (where you run Terraform from):

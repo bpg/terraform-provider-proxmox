@@ -31,27 +31,10 @@ jobs:
       - name: Build
         run: go vet . && go build -v .
 
-# Very noisy, temporarily disabled
-#      - name: Run coverage
-#        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
-#
-#      - name: Upload coverage to Codecov
-#        uses: codecov/codecov-action@v3
-
-  # run acceptance tests in a matrix with Terraform core versions
   test:
-    name: Matrix Test
+    name: Unit Tests
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        # list whatever Terraform versions here you would like to support
-        terraform:
-          - '1.2.9'
-          - '1.3.8'
-          - '1.4.2'
     steps:
 
       - name: Check out code into the Go module directory
@@ -64,13 +47,6 @@ jobs:
 
       - name: Get dependencies
         run: go mod download
-
-#      - name: TF acceptance tests
-#        timeout-minutes: 10
-#        env:
-#          TF_ACC: "1"
-#          TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
-#        run: go test -v -cover ./...
 
       - name: Unit tests
         timeout-minutes: 10
