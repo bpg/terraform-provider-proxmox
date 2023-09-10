@@ -608,10 +608,10 @@ func (r *clusterOptionsResource) Delete(ctx context.Context, req resource.Delete
 // Imports a cluster options interface.
 func (r *clusterOptionsResource) ImportState(
 	ctx context.Context,
-	_ resource.ImportStateRequest,
+	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	state := clusterOptionsModel{}
+	state := clusterOptionsModel{ID: types.StringValue(req.ID)}
 	r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
