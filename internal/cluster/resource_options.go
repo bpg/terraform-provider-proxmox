@@ -242,13 +242,27 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 	m.HTTPProxy = types.StringPointerValue(iface.HTTPProxy)
 	m.MacPrefix = types.StringPointerValue(iface.MacPrefix)
 	m.Description = types.StringPointerValue(iface.Description)
-	m.HAShutdownPolicy = types.StringPointerValue(iface.HASettings.ShutdownPolicy)
-	m.MigrationType = types.StringPointerValue(iface.Migration.Type)
-	m.MigrationNetwork = types.StringPointerValue(iface.Migration.Network)
-	m.CrsHA = types.StringPointerValue(iface.ClusterResourceScheduling.HA)
 
-	if iface.ClusterResourceScheduling.HaRebalanceOnStart != nil {
+	if iface.HASettings != nil {
+		m.HAShutdownPolicy = types.StringPointerValue(iface.HASettings.ShutdownPolicy)
+	} else {
+		m.HAShutdownPolicy = types.StringPointerValue(nil)
+	}
+
+	if iface.Migration != nil {
+		m.MigrationType = types.StringPointerValue(iface.Migration.Type)
+		m.MigrationNetwork = types.StringPointerValue(iface.Migration.Network)
+	} else {
+		m.MigrationType = types.StringPointerValue(nil)
+		m.MigrationNetwork = types.StringPointerValue(nil)
+	}
+
+	if iface.ClusterResourceScheduling != nil {
 		m.CrsHARebalanceOnStart = types.BoolValue(bool(*iface.ClusterResourceScheduling.HaRebalanceOnStart))
+		m.CrsHA = types.StringPointerValue(iface.ClusterResourceScheduling.HA)
+	} else {
+		m.CrsHARebalanceOnStart = types.BoolPointerValue(nil)
+		m.CrsHA = types.StringPointerValue(nil)
 	}
 
 	return nil
@@ -524,19 +538,19 @@ func (r *clusterOptionsResource) Update(ctx context.Context, req resource.Update
 		toDelete = append(toDelete, "keyboard")
 	}
 
-	if *plan.bandwithData() != *state.bandwithData() && *plan.bandwithData() == "" {
+	if (plan.bandwithData() == nil && state.bandwithData() != nil) || (*plan.bandwithData() != *state.bandwithData() && *plan.bandwithData() == "") {
 		toDelete = append(toDelete, "bwlimit")
 	}
 
-	if *plan.crsData() != *state.crsData() && *plan.crsData() == "" {
+	if (plan.crsData() == nil && state.crsData() != nil) || (*plan.crsData() != *state.crsData() && *plan.crsData() == "") {
 		toDelete = append(toDelete, "crs")
 	}
 
-	if *plan.haData() != *state.haData() && *plan.haData() == "" {
+	if (plan.haData() == nil && state.haData() != nil) || (*plan.haData() != *state.haData() && *plan.haData() == "") {
 		toDelete = append(toDelete, "ha")
 	}
 
-	if *plan.migrationData() != *state.migrationData() && *plan.migrationData() == "" {
+	if (plan.migrationData() == nil && state.migrationData() != nil) || (*plan.migrationData() != *state.migrationData() && *plan.migrationData() == "") {
 		toDelete = append(toDelete, "migration")
 	}
 
