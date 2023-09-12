@@ -16,7 +16,7 @@ require (
 	github.com/pkg/sftp v1.13.6
 	github.com/skeema/knownhosts v1.2.0
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/crypto v0.12.0
+	golang.org/x/crypto v0.13.0
 	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
 )
 
@@ -61,8 +61,8 @@ require (
 	github.com/zclconf/go-cty v1.13.2 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230726155614-23370e0ffb3e // indirect
 	google.golang.org/grpc v1.57.0 // indirect
