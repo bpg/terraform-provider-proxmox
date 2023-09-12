@@ -43,7 +43,7 @@ resource "proxmox_virtual_environment_haresource" "example" {
 
 ### Read-Only
 
-- `id` (String) The unique identifier for the resource.
+- `id` (String) The unique identifier of this resource.
 
 ## Import
 

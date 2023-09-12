@@ -39,5 +39,5 @@ output "data_proxmox_virtual_environment_haresources" {
 
 ### Read-Only
 
-- `id` (String) The unique identifier for the resource.
+- `id` (String) The unique identifier of this resource.
 - `resource_ids` (Set of String) The identifiers of the High Availability resources.

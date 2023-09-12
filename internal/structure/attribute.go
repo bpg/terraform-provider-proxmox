@@ -19,7 +19,7 @@ func IDAttribute(desc ...string) schema.StringAttribute {
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),
 		},
-		Description: "The unique identifier for the resource.",
+		Description: "The unique identifier of this resource.",
 	}
 
 	if len(desc) > 0 {

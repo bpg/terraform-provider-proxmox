@@ -12,13 +12,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/structure"
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	cluster "github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/internal/structure"
+	"github.com/bpg/terraform-provider-proxmox/internal/validators"
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 )
 
 var (
@@ -112,7 +116,7 @@ func (m *clusterOptionsModel) crsData() *string {
 	return nil
 }
 
-func (m *clusterOptionsModel) bandwithData() *string {
+func (m *clusterOptionsModel) bandwidthData() *string {
 	var bandwidthParams []string
 
 	if !m.BandwidthLimitClone.IsNull() && m.BandwidthLimitClone.ValueInt64() != 0 {
@@ -180,7 +184,7 @@ func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData
 	}
 
 	body.HASettings = m.haData()
-	body.BandwidthLimit = m.bandwithData()
+	body.BandwidthLimit = m.bandwidthData()
 	body.ClusterResourceScheduling = m.crsData()
 	body.Migration = m.migrationData()
 
@@ -294,20 +298,21 @@ func (r *clusterOptionsResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages Proxmox VE Cluster Datacenter options.",
 		Attributes: map[string]schema.Attribute{
-			"id": structure.IDAttribute("A unique identifier"),
+			"id": structure.IDAttribute(),
 			"email_from": schema.StringAttribute{
 				Description: "email address to send notification from (default is root@$hostname).",
 				Optional:    true,
 				Computed:    true,
 			},
 			"keyboard": schema.StringAttribute{
-				Description: "Default keybord layout for vnc server.",
-				MarkdownDescription: "Default keybord layout for vnc server. Must be `de` | " +
+				Description: "Default keyboard layout for vnc server.",
+				MarkdownDescription: "Default keyboard layout for vnc server. Must be `de` | " +
 					"`de-ch` | `da` | `en-gb` | `en-us` | `es` | `fi` | `fr` | `fr-be` | `fr-ca` " +
 					"| `fr-ch` | `hu` | `is` | `it` | `ja` | `lt` | `mk` | `nl` | `no` | `pl` | " +
 					"`pt` | `pt-br` | `sv` | `sl` | `tr`.",
-				Optional: true,
-				Computed: true,
+				Optional:   true,
+				Computed:   true,
+				Validators: []validator.String{validators.KeyboardLayoutValidator()},
 			},
 			"max_workers": schema.Int64Attribute{
 				Description: "Defines how many workers (per node) are maximal started on" +
@@ -320,15 +325,16 @@ func (r *clusterOptionsResource) Schema(
 				MarkdownDescription: "Default GUI language. Must be `ca` | `da` | `de` " +
 					"| `en` | `es` | `eu` | `fa` | `fr` | `he` | `it` | `ja` | `nb` | " +
 					"`nn` | `pl` | `pt_BR` | `ru` | `sl` | `sv` | `tr` | `zh_CN` | `zh_TW`.",
-				Optional: true,
-				Computed: true,
+				Optional:   true,
+				Computed:   true,
+				Validators: []validator.String{validators.LanguageValidator()},
 			},
 			"console": schema.StringAttribute{
 				Description: "Select the default Console viewer.",
 				MarkdownDescription: "Select the default Console viewer. " +
 					"Must be `applet` | `vv`| `html5` | `xtermjs`. " +
 					"You can either use the builtin java applet (VNC; deprecated and maps to html5), " +
-					"an external virt-viewer comtatible application (SPICE), " +
+					"an external virt-viewer compatible application (SPICE), " +
 					"an HTML5 based vnc viewer (noVNC), " +
 					"or an HTML5 based console client (xtermjs). " +
 					"If the selected viewer is not available " +
@@ -336,6 +342,12 @@ func (r *clusterOptionsResource) Schema(
 					"the fallback is noVNC.",
 				Optional: true,
 				Computed: true,
+				Validators: []validator.String{stringvalidator.OneOf([]string{
+					"applet",
+					"vv",
+					"html5",
+					"xtermjs",
+				}...)},
 			},
 			"http_proxy": schema.StringAttribute{
 				Description: "Specify external http proxy which is used for downloads.",
@@ -361,12 +373,22 @@ func (r *clusterOptionsResource) Schema(
 					"Must be `freeze` | `failover` | `migrate` | `conditional`.",
 				Optional: true,
 				Computed: true,
+				Validators: []validator.String{stringvalidator.OneOf([]string{
+					"freeze",
+					"failover",
+					"migrate",
+					"conditional",
+				}...)},
 			},
 			"migration_type": schema.StringAttribute{
 				Description:         "Cluster wide migration type.",
 				MarkdownDescription: "Cluster wide migration type. Must be `secure` | `unsecure`.",
 				Optional:            true,
 				Computed:            true,
+				Validators: []validator.String{stringvalidator.OneOf([]string{
+					"secure",
+					"unsecure",
+				}...)},
 			},
 			"migration_cidr": schema.StringAttribute{
 				Description: "Cluster wide migration network CIDR.",
@@ -378,6 +400,10 @@ func (r *clusterOptionsResource) Schema(
 				MarkdownDescription: "Cluster resource scheduling setting for HA. Must be `static` | `basic`.",
 				Optional:            true,
 				Computed:            true,
+				Validators: []validator.String{stringvalidator.OneOf([]string{
+					"static",
+					"basic",
+				}...)},
 			},
 			"crs_ha_rebalance_on_start": schema.BoolAttribute{
 				Description: "Cluster resource scheduling setting for HA rebalance on start.",
@@ -538,7 +564,7 @@ func (r *clusterOptionsResource) Update(ctx context.Context, req resource.Update
 		toDelete = append(toDelete, "keyboard")
 	}
 
-	if (plan.bandwithData() == nil && state.bandwithData() != nil) || (*plan.bandwithData() != *state.bandwithData() && *plan.bandwithData() == "") {
+	if (plan.bandwidthData() == nil && state.bandwidthData() != nil) || (*plan.bandwidthData() != *state.bandwidthData() && *plan.bandwidthData() == "") {
 		toDelete = append(toDelete, "bwlimit")
 	}
 
