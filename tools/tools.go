@@ -1,11 +1,11 @@
+//go:build tools
+// +build tools
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
-
-//go:build tools
-// +build tools
 
 package tools
 
@@ -37,3 +37,4 @@ import (
 //go:generate cp ../build/docs-gen/resources/virtual_environment_network_linux_vlan.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_hagroup.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_haresource.md ../docs/resources/
+//go:generate cp ../build/docs-gen/resources/virtual_environment_cluster_options.md ../docs/resources/

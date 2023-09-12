@@ -39,7 +39,7 @@ output "proxmox_virtual_environment_haresources_full" {
 
 - `comment` (String) The comment associated with this resource.
 - `group` (String) The identifier of the High Availability group this resource is a member of.
-- `id` (String) The ID of this resource.
+- `id` (String) The unique identifier of this resource.
 - `max_relocate` (Number) The maximal number of relocation attempts.
 - `max_restart` (Number) The maximal number of restart attempts.
 - `state` (String) The desired state of the resource.

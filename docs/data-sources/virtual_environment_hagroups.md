@@ -27,4 +27,4 @@ output "data_proxmox_virtual_environment_hagroups" {
 ### Read-Only
 
 - `group_ids` (Set of String) The identifiers of the High Availability groups.
-- `id` (String) The ID of this resource.
+- `id` (String) The unique identifier of this resource.
