@@ -450,6 +450,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ishioni",
+      "name": "Piotr Maksymiuk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50323052?v=4",
+      "profile": "https://github.com/ishioni",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
