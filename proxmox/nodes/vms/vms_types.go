@@ -379,7 +379,7 @@ type GetResponseData struct {
 	CPUArchitecture      *string                          `json:"arch,omitempty"`
 	CPUCores             *int                             `json:"cores,omitempty"`
 	CPUEmulation         *CustomCPUEmulation              `json:"cpu,omitempty"`
-	CPULimit             *int                             `json:"cpulimit,omitempty"`
+	CPULimit             *types2.CustomInt                `json:"cpulimit,omitempty"`
 	CPUSockets           *int                             `json:"sockets,omitempty"`
 	CPUUnits             *int                             `json:"cpuunits,omitempty"`
 	DedicatedMemory      *int                             `json:"memory,omitempty"`
