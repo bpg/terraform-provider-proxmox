@@ -157,7 +157,7 @@ type GetResponseData struct {
 	ConsoleMode       *string                 `json:"cmode,omitempty"`
 	CPUArchitecture   *string                 `json:"arch,omitempty"`
 	CPUCores          *int                    `json:"cores,omitempty"`
-	CPULimit          *int                    `json:"cpulimit,omitempty"`
+	CPULimit          *types2.CustomInt       `json:"cpulimit,omitempty"`
 	CPUUnits          *int                    `json:"cpuunits,omitempty"`
 	DedicatedMemory   *int                    `json:"memory,omitempty"`
 	Description       *string                 `json:"description,omitempty"`
