@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
-	types2 "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
@@ -821,7 +821,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		vmID = *vmIDNew
 	}
 
-	fullCopy := types2.CustomBool(true)
+	fullCopy := types.CustomBool(true)
 
 	cloneBody := &containers.CloneRequestBody{
 		FullCopy: &fullCopy,
@@ -874,7 +874,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	if len(console) > 0 {
 		consoleBlock := console[0].(map[string]interface{})
 
-		consoleEnabled := types2.CustomBool(
+		consoleEnabled := types.CustomBool(
 			consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
 		)
 		consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
@@ -1029,7 +1029,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 		bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 		enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
-		firewall := types2.CustomBool(
+		firewall := types.CustomBool(
 			networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall].(bool),
 		)
 		macAddress := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress].(string)
@@ -1113,7 +1113,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.Tags = &tagString
 	}
 
-	template := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 
 	//nolint:gosimple
 	if template != dvResourceVirtualEnvironmentContainerTemplate {
@@ -1155,7 +1155,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	consoleEnabled := types2.CustomBool(
+	consoleEnabled := types.CustomBool(
 		consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
 	)
 	consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
@@ -1213,9 +1213,9 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	nesting := types2.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
-	keyctl := types2.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesKeyControl].(bool))
-	fuse := types2.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesFUSE].(bool))
+	nesting := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
+	keyctl := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesKeyControl].(bool))
+	fuse := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesFUSE].(bool))
 
 	features := containers.CustomFeatures{
 		Nesting:    &nesting,
@@ -1329,14 +1329,14 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		mountPointMap := mp.(map[string]interface{})
 		mountPointObject := containers.CustomMountPoint{}
 
-		acl := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointACL].(bool))
-		backup := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointBackup].(bool))
+		acl := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointACL].(bool))
+		backup := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointBackup].(bool))
 		mountOptions := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointMountOptions].([]interface{})
 		path := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointPath].(string)
-		quota := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointQuota].(bool))
-		readOnly := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReadOnly].(bool))
-		replicate := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReplicate].(bool))
-		shared := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointShared].(bool))
+		quota := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointQuota].(bool))
+		readOnly := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReadOnly].(bool))
+		replicate := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReplicate].(bool))
+		shared := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointShared].(bool))
 		size := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointSize].(string)
 		volume := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointVolume].(string)
 
@@ -1349,9 +1349,9 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		mountPointObject.Shared = &shared
 
 		if len(size) > 0 {
-			var ds types2.DiskSize
+			var ds types.DiskSize
 
-			ds, err = types2.ParseDiskSize(size)
+			ds, err = types.ParseDiskSize(size)
 			if err != nil {
 				return diag.Errorf("invalid disk size: %s", err.Error())
 			}
@@ -1447,10 +1447,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	operatingSystemType := operatingSystemBlock[mkResourceVirtualEnvironmentContainerOperatingSystemType].(string)
 
 	poolID := d.Get(mkResourceVirtualEnvironmentContainerPoolID).(string)
-	started := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
+	started := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
 	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
-	template := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
-	unprivileged := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
+	unprivileged := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
@@ -1775,7 +1775,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	} else if len(currentConsole) > 0 ||
 		//nolint:lll
-		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] != types2.CustomBool(dvResourceVirtualEnvironmentContainerConsoleEnabled) ||
+		console[mkResourceVirtualEnvironmentContainerConsoleEnabled] != types.CustomBool(dvResourceVirtualEnvironmentContainerConsoleEnabled) ||
 		console[mkResourceVirtualEnvironmentContainerConsoleMode] != dvResourceVirtualEnvironmentContainerConsoleMode ||
 		console[mkResourceVirtualEnvironmentContainerConsoleTTYCount] != dvResourceVirtualEnvironmentContainerConsoleTTYCount {
 		err := d.Set(mkResourceVirtualEnvironmentContainerConsole, []interface{}{console})
@@ -2291,7 +2291,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
 	updateBody.Description = &description
 
-	template := types2.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
+	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 
 	if d.HasChange(mkResourceVirtualEnvironmentContainerTemplate) {
 		updateBody.Template = &template
@@ -2310,7 +2310,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.FromErr(err)
 		}
 
-		consoleEnabled := types2.CustomBool(
+		consoleEnabled := types.CustomBool(
 			consoleBlock[mkResourceVirtualEnvironmentContainerConsoleEnabled].(bool),
 		)
 		consoleMode := consoleBlock[mkResourceVirtualEnvironmentContainerConsoleMode].(string)
@@ -2454,14 +2454,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			mountPointMap := mp.(map[string]interface{})
 			mountPointObject := containers.CustomMountPoint{}
 
-			acl := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointACL].(bool))
-			backup := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointBackup].(bool))
+			acl := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointACL].(bool))
+			backup := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointBackup].(bool))
 			mountOptions := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointMountOptions].([]interface{})
 			path := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointPath].(string)
-			quota := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointQuota].(bool))
-			readOnly := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReadOnly].(bool))
-			replicate := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReplicate].(bool))
-			shared := types2.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointShared].(bool))
+			quota := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointQuota].(bool))
+			readOnly := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReadOnly].(bool))
+			replicate := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointReplicate].(bool))
+			shared := types.CustomBool(mountPointMap[mkResourceVirtualEnvironmentContainerMountPointShared].(bool))
 			volume := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointVolume].(string)
 
 			mountPointObject.ACL = &acl
@@ -2515,7 +2515,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 			bridge := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge].(string)
 			enabled := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled].(bool)
-			firewall := types2.CustomBool(
+			firewall := types.CustomBool(
 				networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall].(bool),
 			)
 			macAddress := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress].(string)
@@ -2631,7 +2631,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 				return diag.FromErr(e)
 			}
 		} else {
-			forceStop := types2.CustomBool(true)
+			forceStop := types.CustomBool(true)
 			shutdownTimeout := 300
 
 			e = containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
@@ -2691,7 +2691,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	if status.Status != "stopped" {
-		forceStop := types2.CustomBool(true)
+		forceStop := types.CustomBool(true)
 		shutdownTimeout := 300
 
 		err = containerAPI.ShutdownContainer(
