@@ -202,6 +202,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/dawidole"><img src="https://avatars.githubusercontent.com/u/37155335?v=4?s=100" width="100px;" alt="dawidole"/><br /><sub><b>dawidole</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Adawidole" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://www.krupa.me.uk/"><img src="https://avatars.githubusercontent.com/u/5756726?v=4?s=100" width="100px;" alt="Gerard Krupa"/><br /><sub><b>Gerard Krupa</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=GJKrupa" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://simoncaron.com"><img src="https://avatars.githubusercontent.com/u/8635747?v=4?s=100" width="100px;" alt="Simon Caron"/><br /><sub><b>Simon Caron</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=simoncaron" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ishioni"><img src="https://avatars.githubusercontent.com/u/50323052?v=4?s=100" width="100px;" alt="Piotr Maksymiuk"/><br /><sub><b>Piotr Maksymiuk</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aishioni" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>
