@@ -11,13 +11,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	types2 "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 
-	ds8gig := types2.DiskSizeFromGigabytes(8)
+	ds8gig := types.DiskSizeFromGigabytes(8)
 	tests := []struct {
 		name    string
 		line    string
@@ -28,26 +28,26 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			name: "simple volume",
 			line: `"local-lvm:vm-2041-disk-0,discard=on,ssd=1,iothread=1,size=8G,cache=writeback"`,
 			want: &CustomStorageDevice{
-				Cache:      types2.StrPtr("writeback"),
-				Discard:    types2.StrPtr("on"),
+				Cache:      types.StrPtr("writeback"),
+				Discard:    types.StrPtr("on"),
 				Enabled:    true,
 				FileVolume: "local-lvm:vm-2041-disk-0",
-				IOThread:   types2.BoolPtr(true),
+				IOThread:   types.BoolPtr(true),
 				Size:       &ds8gig,
-				SSD:        types2.BoolPtr(true),
+				SSD:        types.BoolPtr(true),
 			},
 		},
 		{
 			name: "raw volume type",
 			line: `"nfs:2041/vm-2041-disk-0.raw,discard=ignore,ssd=1,iothread=1,size=8G"`,
 			want: &CustomStorageDevice{
-				Discard:    types2.StrPtr("ignore"),
+				Discard:    types.StrPtr("ignore"),
 				Enabled:    true,
 				FileVolume: "nfs:2041/vm-2041-disk-0.raw",
-				Format:     types2.StrPtr("raw"),
-				IOThread:   types2.BoolPtr(true),
+				Format:     types.StrPtr("raw"),
+				IOThread:   types.BoolPtr(true),
 				Size:       &ds8gig,
-				SSD:        types2.BoolPtr(true),
+				SSD:        types.BoolPtr(true),
 			},
 		},
 	}
@@ -80,10 +80,10 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			want: &CustomPCIDevice{
 				DeviceIDs:  &[]string{"0000:81:00.2"},
 				MDev:       nil,
-				PCIExpress: types2.BoolPtr(false),
-				ROMBAR:     types2.BoolPtr(true),
+				PCIExpress: types.BoolPtr(false),
+				ROMBAR:     types.BoolPtr(true),
 				ROMFile:    nil,
-				XVGA:       types2.BoolPtr(false),
+				XVGA:       types.BoolPtr(false),
 			},
 		},
 		{
@@ -92,10 +92,10 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			want: &CustomPCIDevice{
 				DeviceIDs:  &[]string{"81:00.4"},
 				MDev:       nil,
-				PCIExpress: types2.BoolPtr(false),
-				ROMBAR:     types2.BoolPtr(true),
+				PCIExpress: types.BoolPtr(false),
+				ROMBAR:     types.BoolPtr(true),
 				ROMFile:    nil,
-				XVGA:       types2.BoolPtr(false),
+				XVGA:       types.BoolPtr(false),
 			},
 		},
 		{
@@ -103,12 +103,12 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			line: `"mapping=mappeddevice,pcie=0,rombar=1,x-vga=0"`,
 			want: &CustomPCIDevice{
 				DeviceIDs:  nil,
-				Mapping:    types2.StrPtr("mappeddevice"),
+				Mapping:    types.StrPtr("mappeddevice"),
 				MDev:       nil,
-				PCIExpress: types2.BoolPtr(false),
-				ROMBAR:     types2.BoolPtr(true),
+				PCIExpress: types.BoolPtr(false),
+				ROMBAR:     types.BoolPtr(true),
 				ROMFile:    nil,
-				XVGA:       types2.BoolPtr(false),
+				XVGA:       types.BoolPtr(false),
 			},
 		},
 	}
