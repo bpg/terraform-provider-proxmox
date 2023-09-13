@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.32.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.31.0...v0.32.0) (2023-09-13)
+
+
+### Features
+
+* **cluster:** add cluster options resource ([#548](https://github.com/bpg/terraform-provider-proxmox/issues/548)) ([de8b4ec](https://github.com/bpg/terraform-provider-proxmox/commit/de8b4ec41ada527b5a14883b5dcacdab2684fc37))
+
+
+### Bug Fixes
+
+* **lxc,vm:** error unmarshalling string `cpulimit` ([#563](https://github.com/bpg/terraform-provider-proxmox/issues/563)) ([11a8ec0](https://github.com/bpg/terraform-provider-proxmox/commit/11a8ec0c9594c1b9ff305edcd47f090309bc1466))
+
+
+### Miscellaneous
+
+* **ci:** cleanup and update project configs ([#549](https://github.com/bpg/terraform-provider-proxmox/issues/549)) ([edec5bf](https://github.com/bpg/terraform-provider-proxmox/commit/edec5bfd1cc25886fa36e1344a6de4a6d2427786))
+* **code:** remove redundant `types2` import aliases ([#564](https://github.com/bpg/terraform-provider-proxmox/issues/564)) ([2dee65b](https://github.com/bpg/terraform-provider-proxmox/commit/2dee65bd0b872b795f559530cbd5b12c856e5771))
+* **deps:** bump crazy-max/ghaction-import-gpg from 5 to 6 ([#558](https://github.com/bpg/terraform-provider-proxmox/issues/558)) ([1f8330a](https://github.com/bpg/terraform-provider-proxmox/commit/1f8330afc7f189964ab09fa652b39e2123e6187e))
+* **deps:** bump github.com/hashicorp/terraform-plugin-* dependencies ([#561](https://github.com/bpg/terraform-provider-proxmox/issues/561)) ([3d7fbaa](https://github.com/bpg/terraform-provider-proxmox/commit/3d7fbaa7c7f8ce7a1cedf1dae3d31fceecad5ea1))
+* **deps:** bump golang.org/x/crypto from 0.12.0 to 0.13.0 ([#554](https://github.com/bpg/terraform-provider-proxmox/issues/554)) ([1040aab](https://github.com/bpg/terraform-provider-proxmox/commit/1040aabb23d6eb7ff3841315aa5f608b24437e26))
+* **deps:** bump goreleaser/goreleaser-action from 4.4.0 to 5.0.0 ([#560](https://github.com/bpg/terraform-provider-proxmox/issues/560)) ([ac556b5](https://github.com/bpg/terraform-provider-proxmox/commit/ac556b55150d271c098916b2134d3991f765891a))
+
 ## [0.31.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.30.3...v0.31.0) (2023-09-04)
 
 
