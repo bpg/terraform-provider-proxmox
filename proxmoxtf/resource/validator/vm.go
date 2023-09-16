@@ -18,8 +18,8 @@ import (
 // VMID returns a schema validation function for a VM ID.
 func VMID() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
-		min := 100
-		max := 2147483647
+		minID := 100
+		maxID := 2147483647
 
 		var ws []string
 		var es []error
@@ -32,8 +32,8 @@ func VMID() schema.SchemaValidateDiagFunc {
 		}
 
 		if v != -1 {
-			if v < min || v > max {
-				es = append(es, fmt.Errorf("expected %s to be in the range (%d - %d), got %d", k, min, max, v))
+			if v < minID || v > maxID {
+				es = append(es, fmt.Errorf("expected %s to be in the range (%d - %d), got %d", k, minID, maxID, v))
 				return ws, es
 			}
 		}

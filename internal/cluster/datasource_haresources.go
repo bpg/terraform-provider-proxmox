@@ -25,22 +25,22 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &haresourcesDatasource{}
-	_ datasource.DataSourceWithConfigure = &haresourcesDatasource{}
+	_ datasource.DataSource              = &haResourcesDatasource{}
+	_ datasource.DataSourceWithConfigure = &haResourcesDatasource{}
 )
 
 // NewHAResourcesDataSource is a helper function to simplify the provider implementation.
 func NewHAResourcesDataSource() datasource.DataSource {
-	return &haresourcesDatasource{}
+	return &haResourcesDatasource{}
 }
 
-// haresourcesDatasource is the data source implementation for High Availability resources.
-type haresourcesDatasource struct {
+// haResourcesDatasource is the data source implementation for High Availability resources.
+type haResourcesDatasource struct {
 	client *haresources.Client
 }
 
-// haresourcesModel maps the schema data for the High Availability resources data source.
-type haresourcesModel struct {
+// haResourcesModel maps the schema data for the High Availability resources data source.
+type haResourcesModel struct {
 	// The Terraform resource identifier
 	ID types.String `tfsdk:"id"`
 	// The type of HA resources to fetch. If unset, all resources will be fetched.
@@ -50,7 +50,7 @@ type haresourcesModel struct {
 }
 
 // Metadata returns the data source type name.
-func (d *haresourcesDatasource) Metadata(
+func (d *haResourcesDatasource) Metadata(
 	_ context.Context,
 	req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
@@ -59,7 +59,7 @@ func (d *haresourcesDatasource) Metadata(
 }
 
 // Schema returns the schema for the data source.
-func (d *haresourcesDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *haResourcesDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability resources.",
 		Attributes: map[string]schema.Attribute{
@@ -82,7 +82,7 @@ func (d *haresourcesDatasource) Schema(_ context.Context, _ datasource.SchemaReq
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *haresourcesDatasource) Configure(
+func (d *haResourcesDatasource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -104,9 +104,9 @@ func (d *haresourcesDatasource) Configure(
 }
 
 // Read fetches the list of HA resources from the Proxmox cluster then converts it to a list of strings.
-func (d *haresourcesDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *haResourcesDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var (
-		data      haresourcesModel
+		data      haResourcesModel
 		fetchType *proxmoxtypes.HAResourceType
 	)
 

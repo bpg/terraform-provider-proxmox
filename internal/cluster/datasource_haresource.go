@@ -23,22 +23,22 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &haresourceDatasource{}
-	_ datasource.DataSourceWithConfigure = &haresourceDatasource{}
+	_ datasource.DataSource              = &haResourceDatasource{}
+	_ datasource.DataSourceWithConfigure = &haResourceDatasource{}
 )
 
 // NewHAResourceDataSource is a helper function to simplify the provider implementation.
 func NewHAResourceDataSource() datasource.DataSource {
-	return &haresourceDatasource{}
+	return &haResourceDatasource{}
 }
 
-// haresourceDatasource is the data source implementation for High Availability resources.
-type haresourceDatasource struct {
+// haResourceDatasource is the data source implementation for High Availability resources.
+type haResourceDatasource struct {
 	client *haresources.Client
 }
 
 // Metadata returns the data source type name.
-func (d *haresourceDatasource) Metadata(
+func (d *haResourceDatasource) Metadata(
 	_ context.Context,
 	req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
@@ -47,7 +47,7 @@ func (d *haresourceDatasource) Metadata(
 }
 
 // Schema returns the schema for the data source.
-func (d *haresourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability resources.",
 		Attributes: map[string]schema.Attribute{
@@ -88,7 +88,7 @@ func (d *haresourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequ
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *haresourceDatasource) Configure(
+func (d *haResourceDatasource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -110,8 +110,8 @@ func (d *haresourceDatasource) Configure(
 }
 
 // Read fetches the specified HA resource.
-func (d *haresourceDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data haresourceModel
+func (d *haResourceDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data haResourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 

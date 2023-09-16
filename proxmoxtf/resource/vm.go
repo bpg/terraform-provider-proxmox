@@ -3641,7 +3641,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	// Compare the IDE devices to the CDROM configurations stored in the state.
+	// Compare the IDE devices to the CD-ROM configurations stored in the state.
 	currentInterface := dvResourceVirtualEnvironmentVMCDROMInterface
 
 	currentCDROM := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})

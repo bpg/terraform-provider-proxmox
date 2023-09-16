@@ -25,7 +25,7 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, 
 
 	resBody := &MoveDiskResponseBody{}
 
-	// just a guard in case someone sets retries to 0 unknowingly
+	// just a guard in case someone sets retries to zero unknowingly
 	if retries <= 0 {
 		retries = 1
 	}

@@ -157,7 +157,7 @@ func (r *haresourceResource) Configure(
 
 // Create creates a new HA resource.
 func (r *haresourceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data haresourceModel
+	var data haResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
@@ -199,7 +199,7 @@ func (r *haresourceResource) Update(
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
 ) {
-	var data, state haresourceModel
+	var data, state haResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -239,7 +239,7 @@ func (r *haresourceResource) Delete(
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
-	var data haresourceModel
+	var data haResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -284,7 +284,7 @@ func (r *haresourceResource) Read(
 	req resource.ReadRequest,
 	resp *resource.ReadResponse,
 ) {
-	var data haresourceModel
+	var data haResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -311,7 +311,7 @@ func (r *haresourceResource) ImportState(
 	resp *resource.ImportStateResponse,
 ) {
 	reqID := req.ID
-	data := haresourceModel{
+	data := haResourceModel{
 		ID:         types.StringValue(reqID),
 		ResourceID: types.StringValue(reqID),
 	}
@@ -320,7 +320,7 @@ func (r *haresourceResource) ImportState(
 
 // read reads information about a HA resource from the cluster. The Terraform resource identifier must have been set
 // in the model before this function is called.
-func (r *haresourceResource) read(ctx context.Context, data *haresourceModel) (bool, diag.Diagnostics) {
+func (r *haresourceResource) read(ctx context.Context, data *haResourceModel) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	resID, err := proxmoxtypes.ParseHAResourceID(data.ID.ValueString())
@@ -334,7 +334,7 @@ func (r *haresourceResource) read(ctx context.Context, data *haresourceModel) (b
 		return false, diags
 	}
 
-	resource, err := r.client.Get(ctx, resID)
+	res, err := r.client.Get(ctx, resID)
 	if err != nil {
 		if !strings.Contains(err.Error(), "no such resource") {
 			diags.AddError("Could not read HA resource", err.Error())
@@ -343,7 +343,7 @@ func (r *haresourceResource) read(ctx context.Context, data *haresourceModel) (b
 		return false, diags
 	}
 
-	data.importFromAPI(resource)
+	data.importFromAPI(res)
 
 	return true, nil
 }
@@ -352,7 +352,7 @@ func (r *haresourceResource) read(ctx context.Context, data *haresourceModel) (b
 // state accordingly. It is assumed that the `state`'s identifier is set.
 func (r *haresourceResource) readBack(
 	ctx context.Context,
-	data *haresourceModel,
+	data *haResourceModel,
 	respDiags *diag.Diagnostics,
 	respState *tfsdk.State,
 ) {

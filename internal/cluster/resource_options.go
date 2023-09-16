@@ -645,7 +645,7 @@ func (r *clusterOptionsResource) Delete(ctx context.Context, req resource.Delete
 	}
 }
 
-// Imports a cluster options interface.
+// ImportState a cluster options interface.
 func (r *clusterOptionsResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,

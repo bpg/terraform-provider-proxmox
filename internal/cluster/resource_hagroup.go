@@ -143,7 +143,7 @@ func (r *hagroupResource) Configure(
 
 // Create creates a new HA group on the Proxmox cluster.
 func (r *hagroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data hagroupModel
+	var data haGroupModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
@@ -177,7 +177,7 @@ func (r *hagroupResource) Create(ctx context.Context, req resource.CreateRequest
 
 // Read reads a HA group definition from the Proxmox cluster.
 func (r *hagroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data hagroupModel
+	var data haGroupModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -199,7 +199,7 @@ func (r *hagroupResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 // Update updates a HA group definition on the Proxmox cluster.
 func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data, state hagroupModel
+	var data, state haGroupModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -232,7 +232,7 @@ func (r *hagroupResource) Update(ctx context.Context, req resource.UpdateRequest
 
 // Delete deletes a HA group definition.
 func (r *hagroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data hagroupModel
+	var data haGroupModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -269,7 +269,7 @@ func (r *hagroupResource) ImportState(
 	resp *resource.ImportStateResponse,
 ) {
 	reqID := req.ID
-	data := hagroupModel{
+	data := haGroupModel{
 		ID:    types.StringValue(reqID),
 		Group: types.StringValue(reqID),
 	}
@@ -280,7 +280,7 @@ func (r *hagroupResource) ImportState(
 // state accordingly. It is assumed that the `state`'s identifier is set.
 func (r *hagroupResource) readBack(
 	ctx context.Context,
-	data *hagroupModel,
+	data *haGroupModel,
 	respDiags *diag.Diagnostics,
 	respState *tfsdk.State,
 ) {
@@ -302,7 +302,7 @@ func (r *hagroupResource) readBack(
 
 // read reads information about a HA group from the cluster. The group identifier must have been set in the
 // `data`.
-func (r *hagroupResource) read(ctx context.Context, data *hagroupModel) (bool, diag.Diagnostics) {
+func (r *hagroupResource) read(ctx context.Context, data *haGroupModel) (bool, diag.Diagnostics) {
 	name := data.Group.ValueString()
 
 	group, err := r.client.Get(ctx, name)

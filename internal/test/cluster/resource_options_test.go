@@ -10,8 +10,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/test"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+
+	"github.com/bpg/terraform-provider-proxmox/internal/test"
 )
 
 func TestClusterOptionsResource(t *testing.T) {

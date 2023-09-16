@@ -21,23 +21,23 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &hagroupDatasource{}
-	_ datasource.DataSourceWithConfigure = &hagroupDatasource{}
+	_ datasource.DataSource              = &haGroupDatasource{}
+	_ datasource.DataSourceWithConfigure = &haGroupDatasource{}
 )
 
 // NewHAGroupDataSource is a helper function to simplify the provider implementation.
 func NewHAGroupDataSource() datasource.DataSource {
-	return &hagroupDatasource{}
+	return &haGroupDatasource{}
 }
 
-// hagroupDatasource is the data source implementation for full information about
+// haGroupDatasource is the data source implementation for full information about
 // specific High Availability groups.
-type hagroupDatasource struct {
+type haGroupDatasource struct {
 	client *hagroups.Client
 }
 
 // Metadata returns the data source type name.
-func (d *hagroupDatasource) Metadata(
+func (d *haGroupDatasource) Metadata(
 	_ context.Context,
 	req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
@@ -46,7 +46,7 @@ func (d *hagroupDatasource) Metadata(
 }
 
 // Schema returns the schema for the data source.
-func (d *hagroupDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *haGroupDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves information about a specific High Availability group.",
 		Attributes: map[string]schema.Attribute{
@@ -79,7 +79,7 @@ func (d *hagroupDatasource) Schema(_ context.Context, _ datasource.SchemaRequest
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *hagroupDatasource) Configure(
+func (d *haGroupDatasource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -103,8 +103,8 @@ func (d *hagroupDatasource) Configure(
 }
 
 // Read fetches the list of HA groups from the Proxmox cluster then converts it to a list of strings.
-func (d *hagroupDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state hagroupModel
+func (d *haGroupDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var state haGroupModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 

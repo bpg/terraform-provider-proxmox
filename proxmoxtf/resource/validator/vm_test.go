@@ -31,15 +31,14 @@ func Test_getCPUTypeValidator(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			require := require.New(t)
 
 			f := CPUType()
 			res := f(tt.value, nil)
 
 			if tt.valid {
-				require.Empty(res, "validate: '%s'", tt.value)
+				require.Empty(t, res, "validate: '%s'", tt.value)
 			} else {
-				require.NotEmpty(res, "validate: '%s'", tt.value)
+				require.NotEmpty(t, res, "validate: '%s'", tt.value)
 			}
 		})
 	}

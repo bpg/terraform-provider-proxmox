@@ -460,18 +460,16 @@ func Test_parseImportIDWIthNodeName(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			require := require.New(t)
-
 			nodeName, id, err := parseImportIDWithNodeName(tt.value)
 
 			if !tt.valid {
-				require.Error(err)
+				require.Error(t, err)
 				return
 			}
 
-			require.Nil(err)
-			require.Equal(tt.expectedNodeName, nodeName)
-			require.Equal(tt.expectedID, id)
+			require.NoError(t, err)
+			require.Equal(t, tt.expectedNodeName, nodeName)
+			require.Equal(t, tt.expectedID, id)
 		})
 	}
 }
