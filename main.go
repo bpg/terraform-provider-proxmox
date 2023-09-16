@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	newProvider "github.com/bpg/terraform-provider-proxmox/internal/provider"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 )
 
@@ -48,7 +48,7 @@ func main() {
 	}
 
 	providers := []func() tfprotov6.ProviderServer{
-		providerserver.NewProtocol6(newProvider.New(version)()),
+		providerserver.NewProtocol6(fwprovider.New(version)()),
 		func() tfprotov6.ProviderServer {
 			return upgradedSdkServer
 		},

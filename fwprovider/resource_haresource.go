@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package cluster
+package fwprovider
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/structure"
-	"github.com/bpg/terraform-provider-proxmox/internal/validators"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -31,26 +31,28 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// haresourceResource contains the resource's internal data.
-type haresourceResource struct {
+// haResourceResource contains the resource's internal data.
+// NOTE: the naming is horrible, but this is the convention used by the framework.
+// and the entity name in the API is "ha resource", so...
+type haResourceResource struct {
 	// The HA resources API client
 	client haresources.Client
 }
 
 // Ensure the resource implements the expected interfaces.
 var (
-	_ resource.Resource                = &haresourceResource{}
-	_ resource.ResourceWithConfigure   = &haresourceResource{}
-	_ resource.ResourceWithImportState = &haresourceResource{}
+	_ resource.Resource                = &haResourceResource{}
+	_ resource.ResourceWithConfigure   = &haResourceResource{}
+	_ resource.ResourceWithImportState = &haResourceResource{}
 )
 
 // NewHAResourceResource returns a new resource for managing High Availability resources.
 func NewHAResourceResource() resource.Resource {
-	return &haresourceResource{}
+	return &haResourceResource{}
 }
 
 // Metadata defines the name of the resource.
-func (r *haresourceResource) Metadata(
+func (r *haResourceResource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
@@ -59,7 +61,7 @@ func (r *haresourceResource) Metadata(
 }
 
 // Schema defines the schema for the resource.
-func (r *haresourceResource) Schema(
+func (r *haResourceResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
@@ -134,7 +136,7 @@ func (r *haresourceResource) Schema(
 }
 
 // Configure adds the provider-configured client to the resource.
-func (r *haresourceResource) Configure(
+func (r *haResourceResource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -156,7 +158,7 @@ func (r *haresourceResource) Configure(
 }
 
 // Create creates a new HA resource.
-func (r *haresourceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *haResourceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data haResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -194,7 +196,7 @@ func (r *haresourceResource) Create(ctx context.Context, req resource.CreateRequ
 }
 
 // Update updates an existing HA resource.
-func (r *haresourceResource) Update(
+func (r *haResourceResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
@@ -234,7 +236,7 @@ func (r *haresourceResource) Update(
 }
 
 // Delete deletes an existing HA resource.
-func (r *haresourceResource) Delete(
+func (r *haResourceResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
@@ -279,7 +281,7 @@ func (r *haresourceResource) Delete(
 }
 
 // Read reads the HA resource.
-func (r *haresourceResource) Read(
+func (r *haResourceResource) Read(
 	ctx context.Context,
 	req resource.ReadRequest,
 	resp *resource.ReadResponse,
@@ -305,7 +307,7 @@ func (r *haresourceResource) Read(
 }
 
 // ImportState imports a HA resource from the Proxmox cluster.
-func (r *haresourceResource) ImportState(
+func (r *haResourceResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -320,7 +322,7 @@ func (r *haresourceResource) ImportState(
 
 // read reads information about a HA resource from the cluster. The Terraform resource identifier must have been set
 // in the model before this function is called.
-func (r *haresourceResource) read(ctx context.Context, data *haResourceModel) (bool, diag.Diagnostics) {
+func (r *haResourceResource) read(ctx context.Context, data *haResourceModel) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	resID, err := proxmoxtypes.ParseHAResourceID(data.ID.ValueString())
@@ -350,7 +352,7 @@ func (r *haresourceResource) read(ctx context.Context, data *haResourceModel) (b
 
 // readBack reads information about a created or modified HA resource from the cluster then updates the response
 // state accordingly. It is assumed that the `state`'s identifier is set.
-func (r *haresourceResource) readBack(
+func (r *haResourceResource) readBack(
 	ctx context.Context,
 	data *haResourceModel,
 	respDiags *diag.Diagnostics,

@@ -4,11 +4,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package network
+package fwprovider
 
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -22,20 +24,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/structure"
-	customtypes "github.com/bpg/terraform-provider-proxmox/internal/types"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
-	_ resource.Resource                = &linuxVLANResource{}
-	_ resource.ResourceWithConfigure   = &linuxVLANResource{}
-	_ resource.ResourceWithImportState = &linuxVLANResource{}
+	_ resource.Resource                = &linuxBridgeResource{}
+	_ resource.ResourceWithConfigure   = &linuxBridgeResource{}
+	_ resource.ResourceWithImportState = &linuxBridgeResource{}
 )
 
-type linuxVLANResourceModel struct {
+type linuxBridgeResourceModel struct {
 	// Base attributes
 	ID        types.String            `tfsdk:"id"`
 	NodeName  types.String            `tfsdk:"node_name"`
@@ -47,16 +50,16 @@ type linuxVLANResourceModel struct {
 	Autostart types.Bool              `tfsdk:"autostart"`
 	MTU       types.Int64             `tfsdk:"mtu"`
 	Comment   types.String            `tfsdk:"comment"`
-	// Linux VLAN attributes
-	Interface types.String `tfsdk:"interface"`
-	VLAN      types.Int64  `tfsdk:"vlan"`
+	// Linux bridge attributes
+	Ports     []types.String `tfsdk:"ports"`
+	VLANAware types.Bool     `tfsdk:"vlan_aware"`
 }
 
 //nolint:lll
-func (m *linuxVLANResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
+func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
 	body := &nodes.NetworkInterfaceCreateUpdateRequestBody{
 		Iface:     m.Name.ValueString(),
-		Type:      "vlan",
+		Type:      "bridge",
 		Autostart: proxmoxtypes.CustomBool(m.Autostart.ValueBool()).Pointer(),
 	}
 
@@ -64,29 +67,48 @@ func (m *linuxVLANResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nod
 	body.Gateway = m.Gateway.ValueStringPointer()
 	body.CIDR6 = m.Address6.ValueStringPointer()
 	body.Gateway6 = m.Gateway6.ValueStringPointer()
-	body.Comments = m.Comment.ValueStringPointer()
 
 	if !m.MTU.IsUnknown() {
 		body.MTU = m.MTU.ValueInt64Pointer()
 	}
 
-	if !m.Interface.IsUnknown() {
-		body.VLANRawDevice = m.Interface.ValueStringPointer()
+	body.Comments = m.Comment.ValueStringPointer()
+
+	var sanitizedPorts []string
+
+	for i := 0; i < len(m.Ports); i++ {
+		port := strings.TrimSpace(m.Ports[i].ValueString())
+		if len(port) > 0 {
+			sanitizedPorts = append(sanitizedPorts, port)
+		}
+	}
+	sort.Strings(sanitizedPorts)
+	bridgePorts := strings.Join(sanitizedPorts, " ")
+
+	if len(bridgePorts) > 0 {
+		body.BridgePorts = &bridgePorts
 	}
 
-	if !m.VLAN.IsUnknown() {
-		body.VLANID = m.VLAN.ValueInt64Pointer()
+	if m.VLANAware.ValueBool() {
+		body.BridgeVLANAware = proxmoxtypes.CustomBool(true).Pointer()
 	}
 
 	return body
 }
 
-func (m *linuxVLANResourceModel) importFromNetworkInterfaceList(iface *nodes.NetworkInterfaceListResponseData) {
+func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
+	ctx context.Context,
+	iface *nodes.NetworkInterfaceListResponseData,
+) error {
 	m.Address = customtypes.NewIPCIDRPointerValue(iface.CIDR)
 	m.Gateway = customtypes.NewIPAddrPointerValue(iface.Gateway)
 	m.Address6 = customtypes.NewIPCIDRPointerValue(iface.CIDR6)
 	m.Gateway6 = customtypes.NewIPAddrPointerValue(iface.Gateway6)
+
 	m.Autostart = types.BoolPointerValue(iface.Autostart.PointerBool())
+	if m.Autostart.IsNull() {
+		m.Autostart = types.BoolValue(false)
+	}
 
 	if iface.MTU != nil {
 		if v, err := strconv.Atoi(*iface.MTU); err == nil {
@@ -102,62 +124,68 @@ func (m *linuxVLANResourceModel) importFromNetworkInterfaceList(iface *nodes.Net
 		m.Comment = types.StringNull()
 	}
 
-	if iface.VLANID != nil {
-		if v, err := strconv.Atoi(*iface.VLANID); err == nil {
-			m.VLAN = types.Int64Value(int64(v))
+	if iface.BridgeVLANAware != nil {
+		m.VLANAware = types.BoolPointerValue(iface.BridgeVLANAware.PointerBool())
+	} else {
+		m.VLANAware = types.BoolValue(false)
+	}
+
+	if iface.BridgePorts != nil && len(*iface.BridgePorts) > 0 {
+		ports, diags := types.ListValueFrom(ctx, types.StringType, strings.Split(*iface.BridgePorts, " "))
+		if diags.HasError() {
+			return fmt.Errorf("failed to parse bridge ports: %s", *iface.BridgePorts)
 		}
-	} else {
-		// in reality, this should never happen
-		m.VLAN = types.Int64Unknown()
+
+		diags = ports.ElementsAs(ctx, &m.Ports, false)
+		if diags.HasError() {
+			return fmt.Errorf("failed to build bridge ports list: %s", *iface.BridgePorts)
+		}
 	}
 
-	if iface.VLANRawDevice != nil {
-		m.Interface = types.StringValue(strings.TrimSpace(*iface.VLANRawDevice))
-	} else {
-		m.Interface = types.StringNull()
-	}
+	return nil
 }
 
-// NewLinuxVLANResource creates a new resource for managing Linux VLAN network interfaces.
-func NewLinuxVLANResource() resource.Resource {
-	return &linuxVLANResource{}
+// NewLinuxBridgeResource creates a new resource for managing Linux Bridge network interfaces.
+func NewLinuxBridgeResource() resource.Resource {
+	return &linuxBridgeResource{}
 }
 
-type linuxVLANResource struct {
+type linuxBridgeResource struct {
 	client proxmox.Client
 }
 
-func (r *linuxVLANResource) Metadata(
+func (r *linuxBridgeResource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_network_linux_vlan"
+	resp.TypeName = req.ProviderTypeName + "_network_linux_bridge"
 }
 
 // Schema defines the schema for the resource.
-func (r *linuxVLANResource) Schema(
+func (r *linuxBridgeResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a Linux VLAN network interface in a Proxmox VE node.",
+		Description: "Manages a Linux Bridge network interface in a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			// Base attributes
-			"id": structure.IDAttribute("A unique identifier with format '<node name>:<iface>'."),
+			"id": structure.IDAttribute("A unique identifier with format '<node name>:<iface>'"),
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node.",
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
-				Description: "The interface name.",
-				MarkdownDescription: "The interface name. Either add the VLAN tag number to an existing interface name, " +
-					"e.g. `ens18.21` (and do not set `interface` and `vlan`), or use custom name, e.g. `vlan_lab` " +
-					"(`interface` and `vlan` are then required).",
-				Required: true,
+				Description:         "The interface name.",
+				MarkdownDescription: "The interface name. Must be `vmbrN`, where N is a number between 0 and 9999.",
+				Required:            true,
 				Validators: []validator.String{
-					stringvalidator.LengthAtLeast(3),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^vmbr(\d{1,4})$`),
+						`must be "vmbrN", where N is a number between 0 and 9999`,
+					),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -198,14 +226,14 @@ func (r *linuxVLANResource) Schema(
 				Description: "Comment for the interface.",
 				Optional:    true,
 			},
-			// Linux VLAN attributes
-			"interface": schema.StringAttribute{
-				Description: "The VLAN raw device. See also `name`.",
+			// Linux Bridge attributes
+			"ports": schema.ListAttribute{
+				Description: "The interface bridge ports.",
 				Optional:    true,
-				Computed:    true,
+				ElementType: types.StringType,
 			},
-			"vlan": schema.Int64Attribute{
-				Description: "The VLAN tag. See also `name`.",
+			"vlan_aware": schema.BoolAttribute{
+				Description: "Whether the interface bridge is VLAN aware (defaults to `true`).",
 				Optional:    true,
 				Computed:    true,
 			},
@@ -213,7 +241,7 @@ func (r *linuxVLANResource) Schema(
 	}
 }
 
-func (r *linuxVLANResource) Configure(
+func (r *linuxBridgeResource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -238,8 +266,8 @@ func (r *linuxVLANResource) Configure(
 }
 
 //nolint:dupl
-func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan linuxVLANResourceModel
+func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan linuxBridgeResourceModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 
@@ -252,8 +280,8 @@ func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateReque
 	err := r.client.Node(plan.NodeName.ValueString()).CreateNetworkInterface(ctx, body)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating Linux VLAN interface",
-			"Could not create Linux VLAN, unexpected error: "+err.Error(),
+			"Error creating Linux Bridge interface",
+			"Could not create Linux Bridge, unexpected error: "+err.Error(),
 		)
 
 		return
@@ -280,7 +308,7 @@ func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateReque
 	}
 }
 
-func (r *linuxVLANResource) read(ctx context.Context, model *linuxVLANResourceModel, diags *diag.Diagnostics) {
+func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResourceModel, diags *diag.Diagnostics) {
 	ifaces, err := r.client.Node(model.NodeName.ValueString()).ListNetworkInterfaces(ctx)
 	if err != nil {
 		diags.AddError(
@@ -296,16 +324,24 @@ func (r *linuxVLANResource) read(ctx context.Context, model *linuxVLANResourceMo
 			continue
 		}
 
-		model.importFromNetworkInterfaceList(iface)
+		err = model.importFromNetworkInterfaceList(ctx, iface)
+		if err != nil {
+			diags.AddError(
+				"Error converting network interface to a model",
+				"Could not import network interface from API response, unexpected error: "+err.Error(),
+			)
+
+			return
+		}
 
 		break
 	}
 }
 
-// Read reads a Linux VLAN interface.
-func (r *linuxVLANResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+// Read reads a Linux Bridge interface.
+func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
-	var state linuxVLANResourceModel
+	var state linuxBridgeResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
@@ -323,9 +359,9 @@ func (r *linuxVLANResource) Read(ctx context.Context, req resource.ReadRequest, 
 	resp.Diagnostics.Append(diags...)
 }
 
-// Update updates a Linux VLAN interface.
-func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state linuxVLANResourceModel
+// Update updates a Linux Bridge interface.
+func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state linuxBridgeResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -343,6 +379,12 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 		body.MTU = nil
 	}
 
+	// VLANAware is computed, will never be null
+	if !plan.VLANAware.Equal(state.VLANAware) && !plan.VLANAware.ValueBool() {
+		toDelete = append(toDelete, "bridge_vlan_aware")
+		body.BridgeVLANAware = nil
+	}
+
 	if len(toDelete) > 0 {
 		body.Delete = &toDelete
 	}
@@ -350,8 +392,8 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 	err := r.client.Node(plan.NodeName.ValueString()).UpdateNetworkInterface(ctx, plan.Name.ValueString(), body)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error updating Linux VLAN interface",
-			"Could not update Linux VLAN, unexpected error: "+err.Error(),
+			"Error updating Linux Bridge interface",
+			"Could not update Linux Bridge, unexpected error: "+err.Error(),
 		)
 
 		return
@@ -375,11 +417,11 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 	}
 }
 
-// Delete deletes a Linux VLAN interface.
+// Delete deletes a Linux Bridge interface.
 //
 //nolint:dupl
-func (r *linuxVLANResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state linuxVLANResourceModel
+func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state linuxBridgeResourceModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
@@ -391,14 +433,14 @@ func (r *linuxVLANResource) Delete(ctx context.Context, req resource.DeleteReque
 	if err != nil {
 		if strings.Contains(err.Error(), "interface does not exist") {
 			resp.Diagnostics.AddWarning(
-				"Linux VLAN interface does not exist",
-				fmt.Sprintf("Could not delete Linux VLAN '%s', interface does not exist, "+
+				"Linux Bridge interface does not exist",
+				fmt.Sprintf("Could not delete Linux Bridge '%s', interface does not exist, "+
 					"or has already been deleted outside of Terraform.", state.Name.ValueString()),
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error deleting Linux VLAN interface",
-				fmt.Sprintf("Could not delete Linux VLAN '%s', unexpected error: %s",
+				"Error deleting Linux Bridge interface",
+				fmt.Sprintf("Could not delete Linux Bridge '%s', unexpected error: %s",
 					state.Name.ValueString(), err.Error()),
 			)
 		}
@@ -416,7 +458,7 @@ func (r *linuxVLANResource) Delete(ctx context.Context, req resource.DeleteReque
 	}
 }
 
-func (r *linuxVLANResource) ImportState(
+func (r *linuxBridgeResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -425,7 +467,7 @@ func (r *linuxVLANResource) ImportState(
 	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: node_name:iface. Got: %q", req.ID),
+			fmt.Sprintf("Expected import identifier with format: `node_name:iface`. Got: %q", req.ID),
 		)
 
 		return
@@ -434,7 +476,7 @@ func (r *linuxVLANResource) ImportState(
 	nodeName := idParts[0]
 	iface := idParts[1]
 
-	state := linuxVLANResourceModel{
+	state := linuxBridgeResourceModel{
 		ID:       types.StringValue(req.ID),
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),

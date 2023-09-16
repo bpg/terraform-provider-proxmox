@@ -4,21 +4,19 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package cluster
+package tests
 
 import (
 	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-
-	"github.com/bpg/terraform-provider-proxmox/internal/test"
 )
 
 func TestClusterOptionsResource(t *testing.T) {
 	t.Parallel()
 
-	accProviders := test.AccMuxProviders(context.Background(), t)
+	accProviders := AccMuxProviders(context.Background(), t)
 
 	resourceName := "proxmox_virtual_environment_cluster_options.test_options"
 
@@ -27,7 +25,7 @@ func TestClusterOptionsResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: test.ProviderConfig + `
+				Config: ProviderConfig + `
 resource "proxmox_virtual_environment_cluster_options" "test_options" {
 	language                  = "en"
 	keyboard                  = "pl"
@@ -65,7 +63,7 @@ resource "proxmox_virtual_environment_cluster_options" "test_options" {
 			},
 			// Update testing
 			{
-				Config: test.ProviderConfig + `
+				Config: ProviderConfig + `
 resource "proxmox_virtual_environment_cluster_options" "test_options" {
 	language                  = "en"
 	keyboard                  = "pl"

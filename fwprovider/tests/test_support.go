@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package test
+package tests
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	fwprovider "github.com/bpg/terraform-provider-proxmox/internal/provider"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 )
 

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package cluster
+package fwprovider
 
 import (
 	"context"
@@ -15,7 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
