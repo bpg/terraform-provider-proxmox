@@ -209,6 +209,7 @@ func (r *linuxVLANResource) Schema(
 				Description: "The VLAN tag. See also `name`.",
 				Optional:    true,
 				Computed:    true,
+				// 4,094
 			},
 		},
 	}

@@ -12,6 +12,11 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/avast/retry-go/v4"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -19,6 +24,12 @@ import (
 const (
 	networkReloadTimeoutSec = 5
 )
+
+// reloadLock is used to prevent concurrent network reloads.
+// global variable by design.
+//
+//nolint:gochecknoglobals
+var reloadLock sync.Mutex
 
 // ListNetworkInterfaces retrieves a list of network interfaces for a specific nodes.
 func (c *Client) ListNetworkInterfaces(ctx context.Context) ([]*NetworkInterfaceListResponseData, error) {
@@ -55,20 +66,32 @@ func (c *Client) CreateNetworkInterface(ctx context.Context, d *NetworkInterface
 
 // ReloadNetworkConfiguration reloads the network configuration for a specific node.
 func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
+	reloadLock.Lock()
+	defer reloadLock.Unlock()
+
 	resBody := &ReloadNetworkResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("network"), nil, resBody)
+	err := retry.Do(
+		func() error {
+			err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("network"), nil, resBody)
+			if err != nil {
+				return err //nolint:wrapcheck
+			}
+
+			if resBody.Data == nil {
+				return api.ErrNoDataObjectInResponse
+			}
+
+			return c.Tasks().WaitForTask(ctx, *resBody.Data, networkReloadTimeoutSec, 1) //nolint:wrapcheck
+		},
+		retry.Delay(1*time.Second),
+		retry.Attempts(3),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "exit code 89")
+		}),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to reload network configuration for node \"%s\": %w", c.NodeName, err)
-	}
-
-	if resBody.Data == nil {
-		return api.ErrNoDataObjectInResponse
-	}
-
-	err = c.Tasks().WaitForTask(ctx, *resBody.Data, networkReloadTimeoutSec, 1)
-	if err == nil {
-		return nil
 	}
 
 	return nil

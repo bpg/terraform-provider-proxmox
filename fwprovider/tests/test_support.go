@@ -24,23 +24,11 @@ import (
 )
 
 const (
-	// ProviderConfig is a shared configuration to combine with the actual
-	// test configuration so the Proxmox VE client is properly configured.
-	// It is also possible to use the PROXMOX_VE_ environment variables instead.
-	ProviderConfig = `
-provider "proxmox" {
-  username = "root@pam"
-  password = "password"
-  insecure = true
-  ssh {
-    agent = true
-  }
-}
-`
+	accTestNodeName = "pve"
 )
 
-// AccMuxProviders returns a map of mux servers for the acceptance tests.
-func AccMuxProviders(ctx context.Context, t *testing.T) map[string]func() (tfprotov6.ProviderServer, error) {
+// testAccMuxProviders returns a map of mux servers for the acceptance tests.
+func testAccMuxProviders(ctx context.Context, t *testing.T) map[string]func() (tfprotov6.ProviderServer, error) {
 	t.Helper()
 
 	// Init sdkV2 provider

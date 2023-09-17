@@ -16,7 +16,7 @@ import (
 func TestClusterOptionsResource(t *testing.T) {
 	t.Parallel()
 
-	accProviders := AccMuxProviders(context.Background(), t)
+	accProviders := testAccMuxProviders(context.Background(), t)
 
 	resourceName := "proxmox_virtual_environment_cluster_options.test_options"
 
@@ -25,7 +25,7 @@ func TestClusterOptionsResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: ProviderConfig + `
+				Config: `
 resource "proxmox_virtual_environment_cluster_options" "test_options" {
 	language                  = "en"
 	keyboard                  = "pl"
@@ -63,7 +63,7 @@ resource "proxmox_virtual_environment_cluster_options" "test_options" {
 			},
 			// Update testing
 			{
-				Config: ProviderConfig + `
+				Config: `
 resource "proxmox_virtual_environment_cluster_options" "test_options" {
 	language                  = "en"
 	keyboard                  = "pl"
