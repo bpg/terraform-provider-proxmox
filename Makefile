@@ -87,7 +87,11 @@ test:
 
 .PHONY: testacc
 testacc:
-	 TF_ACC=1 go test ./...
+    # env vars required for acceptance tests
+    #   - PROXMOX_VE_ENDPOINT
+    #   - PROXMOX_VE_USERNAME
+    #   - PROXMOX_VE_PASSWORD
+	TF_ACC=1 go test ./...
 
 .PHONY: lint
 lint:

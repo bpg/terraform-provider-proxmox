@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package cluster
+package fwprovider
 
 import (
 	"context"
@@ -15,35 +15,36 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &hagroupsDatasource{}
-	_ datasource.DataSourceWithConfigure = &hagroupsDatasource{}
+	_ datasource.DataSource              = &haGroupsDatasource{}
+	_ datasource.DataSourceWithConfigure = &haGroupsDatasource{}
 )
 
 // NewHAGroupsDataSource is a helper function to simplify the provider implementation.
 func NewHAGroupsDataSource() datasource.DataSource {
-	return &hagroupsDatasource{}
+	return &haGroupsDatasource{}
 }
 
-// hagroupsDatasource is the data source implementation for High Availability groups.
-type hagroupsDatasource struct {
+// haGroupsDatasource is the data source implementation for High Availability groups.
+type haGroupsDatasource struct {
 	client *hagroups.Client
 }
 
-// hagroupsModel maps the schema data for the High Availability groups data source.
-type hagroupsModel struct {
+// haGroupsModel maps the schema data for the High Availability groups data source.
+type haGroupsModel struct {
 	Groups types.Set    `tfsdk:"group_ids"`
 	ID     types.String `tfsdk:"id"`
 }
 
 // Metadata returns the data source type name.
-func (d *hagroupsDatasource) Metadata(
+func (d *haGroupsDatasource) Metadata(
 	_ context.Context,
 	req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
@@ -52,7 +53,7 @@ func (d *hagroupsDatasource) Metadata(
 }
 
 // Schema returns the schema for the data source.
-func (d *hagroupsDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *haGroupsDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability groups.",
 		Attributes: map[string]schema.Attribute{
@@ -67,7 +68,7 @@ func (d *hagroupsDatasource) Schema(_ context.Context, _ datasource.SchemaReques
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *hagroupsDatasource) Configure(
+func (d *haGroupsDatasource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -91,8 +92,8 @@ func (d *hagroupsDatasource) Configure(
 }
 
 // Read fetches the list of HA groups from the Proxmox cluster then converts it to a list of strings.
-func (d *hagroupsDatasource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state hagroupsModel
+func (d *haGroupsDatasource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var state haGroupsModel
 
 	list, err := d.client.List(ctx)
 	if err != nil {

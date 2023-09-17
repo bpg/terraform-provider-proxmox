@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package test
+package tests
 
 import (
 	"context"
@@ -15,10 +15,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func Test_VersionDatasource(t *testing.T) {
+func TestAccDatasourceVersion(t *testing.T) {
 	t.Parallel()
 
-	accProviders := AccMuxProviders(context.Background(), t)
+	accProviders := testAccMuxProviders(context.Background(), t)
 
 	datasourceName := "data.proxmox_virtual_environment_version.test"
 
@@ -27,7 +27,7 @@ func Test_VersionDatasource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: ProviderConfig + `data "proxmox_virtual_environment_version" "test" {}`,
+				Config: `data "proxmox_virtual_environment_version" "test" {}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "release", "8.0"),
 					resource.TestCheckResourceAttrSet(datasourceName, "repository_id"),

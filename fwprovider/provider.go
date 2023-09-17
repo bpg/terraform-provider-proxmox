@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package provider
+package fwprovider
 
 import (
 	"context"
@@ -24,8 +24,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"github.com/bpg/terraform-provider-proxmox/internal/cluster"
-	"github.com/bpg/terraform-provider-proxmox/internal/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
@@ -365,21 +363,21 @@ func (p *proxmoxProvider) Configure(
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		cluster.NewHAGroupResource,
-		cluster.NewHAResourceResource,
-		cluster.NewClusterOptionsResource,
-		network.NewLinuxBridgeResource,
-		network.NewLinuxVLANResource,
+		NewHAGroupResource,
+		NewHAResourceResource,
+		NewClusterOptionsResource,
+		NewLinuxBridgeResource,
+		NewLinuxVLANResource,
 	}
 }
 
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
-		cluster.NewHAGroupsDataSource,
-		cluster.NewHAGroupDataSource,
-		cluster.NewHAResourcesDataSource,
-		cluster.NewHAResourceDataSource,
+		NewHAGroupsDataSource,
+		NewHAGroupDataSource,
+		NewHAResourcesDataSource,
+		NewHAResourceDataSource,
 	}
 }
 

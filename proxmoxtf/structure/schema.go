@@ -15,8 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// MergeSchema merges the map[string]*schema.Schema from src into dst. Safety
-// against conflicts is enforced by panicking.
+// MergeSchema merges the map[string]*schema.Schema from src into dst.
+// Panicking enforces safety against conflicts.
 func MergeSchema(dst, src map[string]*schema.Schema) {
 	for k, v := range src {
 		if _, ok := dst[k]; ok {

@@ -188,7 +188,7 @@ output "ubuntu_container_public_key" {
         - `unmanaged` - Unmanaged.
 - `pool_id` - (Optional) The identifier for a pool to assign the container to.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
-- `tags` - (Optional) A list of tags of the container. This is only meta
+- `tags` - (Optional) A list of tags the container tags. This is only meta
   information (defaults to `[]`). Note: Proxmox always sorts the container tags.
   If the list in template is not sorted, then Proxmox will always report a
   difference on the resource. You may use the `ignore_changes` lifecycle
@@ -202,8 +202,8 @@ output "ubuntu_container_public_key" {
       to `false`)
     - `fuse` - (Optional) Whether the container supports FUSE mounts (defaults
       to `false`)
-    - `keyctl` - (Optional) Whether the container supports `keyctl()` system call (defaults
-      to `false`)
+    - `keyctl` - (Optional) Whether the container supports `keyctl()` system
+      call (defaults to `false`)
 
 ## Attribute Reference
 

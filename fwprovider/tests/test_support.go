@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package test
+package tests
 
 import (
 	"context"
@@ -19,28 +19,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
-	fwprovider "github.com/bpg/terraform-provider-proxmox/internal/provider"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 )
 
 const (
-	// ProviderConfig is a shared configuration to combine with the actual
-	// test configuration so the Proxmox VE client is properly configured.
-	// It is also possible to use the PROXMOX_VE_ environment variables instead.
-	ProviderConfig = `
-provider "proxmox" {
-  username = "root@pam"
-  password = "password"
-  insecure = true
-  ssh {
-    agent = true
-  }
-}
-`
+	accTestNodeName = "pve"
 )
 
-// AccMuxProviders returns a map of mux servers for the acceptance tests.
-func AccMuxProviders(ctx context.Context, t *testing.T) map[string]func() (tfprotov6.ProviderServer, error) {
+// testAccMuxProviders returns a map of mux servers for the acceptance tests.
+func testAccMuxProviders(ctx context.Context, t *testing.T) map[string]func() (tfprotov6.ProviderServer, error) {
 	t.Helper()
 
 	// Init sdkV2 provider
