@@ -193,7 +193,6 @@ func (r *linuxVLANResource) Schema(
 			"mtu": schema.Int64Attribute{
 				Description: "The interface MTU.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"comment": schema.StringAttribute{
 				Description: "Comment for the interface.",

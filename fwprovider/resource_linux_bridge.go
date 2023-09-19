@@ -220,7 +220,6 @@ func (r *linuxBridgeResource) Schema(
 			"mtu": schema.Int64Attribute{
 				Description: "The interface MTU.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"comment": schema.StringAttribute{
 				Description: "Comment for the interface.",
@@ -233,7 +232,7 @@ func (r *linuxBridgeResource) Schema(
 				ElementType: types.StringType,
 			},
 			"vlan_aware": schema.BoolAttribute{
-				Description: "Whether the interface bridge is VLAN aware (defaults to `true`).",
+				Description: "Whether the interface bridge is VLAN aware (defaults to `false`).",
 				Optional:    true,
 				Computed:    true,
 			},
