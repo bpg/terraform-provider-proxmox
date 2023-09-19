@@ -40,21 +40,23 @@ type clusterOptionsModel struct {
 	BandwidthLimitMove      types.Int64  `tfsdk:"bandwidth_limit_move"`
 	BandwidthLimitRestore   types.Int64  `tfsdk:"bandwidth_limit_restore"`
 	Console                 types.String `tfsdk:"console"`
-	HTTPProxy               types.String `tfsdk:"http_proxy"`
-	MacPrefix               types.String `tfsdk:"mac_prefix"`
-	Description             types.String `tfsdk:"description"`
-	HAShutdownPolicy        types.String `tfsdk:"ha_shutdown_policy"`
-	MigrationType           types.String `tfsdk:"migration_type"`
-	MigrationNetwork        types.String `tfsdk:"migration_cidr"`
 	CrsHA                   types.String `tfsdk:"crs_ha"`
 	CrsHARebalanceOnStart   types.Bool   `tfsdk:"crs_ha_rebalance_on_start"`
+	Description             types.String `tfsdk:"description"`
 	EmailFrom               types.String `tfsdk:"email_from"`
+	HAShutdownPolicy        types.String `tfsdk:"ha_shutdown_policy"`
+	HTTPProxy               types.String `tfsdk:"http_proxy"`
 	Keyboard                types.String `tfsdk:"keyboard"`
 	Language                types.String `tfsdk:"language"`
+	MacPrefix               types.String `tfsdk:"mac_prefix"`
 	MaxWorkers              types.Int64  `tfsdk:"max_workers"`
+	MigrationNetwork        types.String `tfsdk:"migration_cidr"`
+	MigrationType           types.String `tfsdk:"migration_type"`
 }
 
-func (m *clusterOptionsModel) haData() *string {
+// haData returns HA settings parameter string for API, HA settings are
+// defined, otherwise empty string is returned.
+func (m *clusterOptionsModel) haData() string {
 	var haDataParams []string
 
 	if !m.HAShutdownPolicy.IsNull() && m.HAShutdownPolicy.ValueString() != "" {
@@ -62,15 +64,15 @@ func (m *clusterOptionsModel) haData() *string {
 	}
 
 	if len(haDataParams) > 0 {
-		haDataValue := strings.Join(haDataParams, ",")
-
-		return &haDataValue
+		return strings.Join(haDataParams, ",")
 	}
 
-	return nil
+	return ""
 }
 
-func (m *clusterOptionsModel) migrationData() *string {
+// migrationData returns migration settings parameter string for API, if any of migration
+// settings are defined, otherwise empty string is returned.
+func (m *clusterOptionsModel) migrationData() string {
 	var migrationDataParams []string
 
 	if !m.MigrationType.IsNull() && m.MigrationType.ValueString() != "" {
@@ -82,15 +84,15 @@ func (m *clusterOptionsModel) migrationData() *string {
 	}
 
 	if len(migrationDataParams) > 0 {
-		migrationDataValue := strings.Join(migrationDataParams, ",")
-
-		return &migrationDataValue
+		return strings.Join(migrationDataParams, ",")
 	}
 
-	return nil
+	return ""
 }
 
-func (m *clusterOptionsModel) crsData() *string {
+// crsData returns cluster resource scheduling settings parameter string for API, if any of cluster resource scheduling
+// settings are defined, otherwise empty string is returned.
+func (m *clusterOptionsModel) crsData() string {
 	var crsDataParams []string
 
 	if !m.CrsHA.IsNull() && m.CrsHA.ValueString() != "" {
@@ -109,15 +111,15 @@ func (m *clusterOptionsModel) crsData() *string {
 	}
 
 	if len(crsDataParams) > 0 {
-		crsDataValue := strings.Join(crsDataParams, ",")
-
-		return &crsDataValue
+		return strings.Join(crsDataParams, ",")
 	}
 
-	return nil
+	return ""
 }
 
-func (m *clusterOptionsModel) bandwidthData() *string {
+// bandwidthData returns bandwidth limit settings parameter string for API, if any of bandwidth
+// limit settings are defined, otherwise empty string is returned.
+func (m *clusterOptionsModel) bandwidthData() string {
 	var bandwidthParams []string
 
 	if !m.BandwidthLimitClone.IsNull() && m.BandwidthLimitClone.ValueInt64() != 0 {
@@ -141,12 +143,10 @@ func (m *clusterOptionsModel) bandwidthData() *string {
 	}
 
 	if len(bandwidthParams) > 0 {
-		bandwithDataValue := strings.Join(bandwidthParams, ",")
-
-		return &bandwithDataValue
+		return strings.Join(bandwidthParams, ",")
 	}
 
-	return nil
+	return ""
 }
 
 func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData {
@@ -184,17 +184,32 @@ func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData
 		body.Description = m.Description.ValueStringPointer()
 	}
 
-	body.HASettings = m.haData()
-	body.BandwidthLimit = m.bandwidthData()
-	body.ClusterResourceScheduling = m.crsData()
-	body.Migration = m.migrationData()
+	haData := m.haData()
+	if haData != "" {
+		body.HASettings = &haData
+	}
+
+	bandwidthData := m.bandwidthData()
+	if bandwidthData != "" {
+		body.BandwidthLimit = &bandwidthData
+	}
+
+	crsData := m.crsData()
+	if crsData != "" {
+		body.ClusterResourceScheduling = &crsData
+	}
+
+	migrationData := m.migrationData()
+	if migrationData != "" {
+		body.Migration = &migrationData
+	}
 
 	return body
 }
 
 func (m *clusterOptionsModel) importFromOptionsAPI(
 	_ context.Context,
-	iface *cluster.OptionsResponseData,
+	opts *cluster.OptionsResponseData,
 ) error {
 	m.BandwidthLimitClone = types.Int64Null()
 	m.BandwidthLimitDefault = types.Int64Null()
@@ -203,14 +218,14 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 	m.BandwidthLimitRestore = types.Int64Null()
 
 	//nolint:nestif
-	if iface.BandwidthLimit != nil {
-		for _, bandwidth := range strings.Split(*iface.BandwidthLimit, ",") {
+	if opts.BandwidthLimit != nil {
+		for _, bandwidth := range strings.Split(*opts.BandwidthLimit, ",") {
 			bandwidthData := strings.SplitN(bandwidth, "=", 2)
 			bandwidthName := bandwidthData[0]
 
 			bandwidthLimit, err := strconv.ParseInt(bandwidthData[1], 10, 64)
 			if err != nil {
-				return fmt.Errorf("failed to parse bandwidth limit: %s", *iface.BandwidthLimit)
+				return fmt.Errorf("failed to parse bandwidth limit: %s", *opts.BandwidthLimit)
 			}
 
 			if bandwidthName == "clone" {
@@ -235,39 +250,46 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 		}
 	}
 
-	m.EmailFrom = types.StringPointerValue(iface.EmailFrom)
-	m.Keyboard = types.StringPointerValue(iface.Keyboard)
-	m.Language = types.StringPointerValue(iface.Language)
+	m.EmailFrom = types.StringPointerValue(opts.EmailFrom)
+	m.Keyboard = types.StringPointerValue(opts.Keyboard)
+	m.Language = types.StringPointerValue(opts.Language)
 
-	if iface.MaxWorkers != nil {
-		m.MaxWorkers = types.Int64Value(int64(*iface.MaxWorkers))
+	if opts.MaxWorkers != nil {
+		m.MaxWorkers = types.Int64PointerValue(opts.MaxWorkers.PointerInt64())
+	} else {
+		m.MaxWorkers = types.Int64Null()
 	}
 
-	m.Console = types.StringPointerValue(iface.Console)
-	m.HTTPProxy = types.StringPointerValue(iface.HTTPProxy)
-	m.MacPrefix = types.StringPointerValue(iface.MacPrefix)
-	m.Description = types.StringPointerValue(iface.Description)
+	m.Console = types.StringPointerValue(opts.Console)
+	m.HTTPProxy = types.StringPointerValue(opts.HTTPProxy)
+	m.MacPrefix = types.StringPointerValue(opts.MacPrefix)
 
-	if iface.HASettings != nil {
-		m.HAShutdownPolicy = types.StringPointerValue(iface.HASettings.ShutdownPolicy)
+	if opts.Description != nil && *opts.Description != "" {
+		m.Description = types.StringPointerValue(opts.Description)
 	} else {
-		m.HAShutdownPolicy = types.StringPointerValue(nil)
+		m.Description = types.StringNull()
 	}
 
-	if iface.Migration != nil {
-		m.MigrationType = types.StringPointerValue(iface.Migration.Type)
-		m.MigrationNetwork = types.StringPointerValue(iface.Migration.Network)
+	if opts.HASettings != nil {
+		m.HAShutdownPolicy = types.StringPointerValue(opts.HASettings.ShutdownPolicy)
 	} else {
-		m.MigrationType = types.StringPointerValue(nil)
-		m.MigrationNetwork = types.StringPointerValue(nil)
+		m.HAShutdownPolicy = types.StringNull()
 	}
 
-	if iface.ClusterResourceScheduling != nil {
-		m.CrsHARebalanceOnStart = types.BoolValue(bool(*iface.ClusterResourceScheduling.HaRebalanceOnStart))
-		m.CrsHA = types.StringPointerValue(iface.ClusterResourceScheduling.HA)
+	if opts.Migration != nil {
+		m.MigrationType = types.StringPointerValue(opts.Migration.Type)
+		m.MigrationNetwork = types.StringPointerValue(opts.Migration.Network)
 	} else {
-		m.CrsHARebalanceOnStart = types.BoolPointerValue(nil)
-		m.CrsHA = types.StringPointerValue(nil)
+		m.MigrationType = types.StringNull()
+		m.MigrationNetwork = types.StringNull()
+	}
+
+	if opts.ClusterResourceScheduling != nil {
+		m.CrsHARebalanceOnStart = types.BoolPointerValue(opts.ClusterResourceScheduling.HaRebalanceOnStart.PointerBool())
+		m.CrsHA = types.StringPointerValue(opts.ClusterResourceScheduling.HA)
+	} else {
+		m.CrsHARebalanceOnStart = types.BoolNull()
+		m.CrsHA = types.StringNull()
 	}
 
 	return nil
@@ -303,7 +325,6 @@ func (r *clusterOptionsResource) Schema(
 			"email_from": schema.StringAttribute{
 				Description: "email address to send notification from (default is root@$hostname).",
 				Optional:    true,
-				Computed:    true,
 			},
 			"keyboard": schema.StringAttribute{
 				Description: "Default keyboard layout for vnc server.",
@@ -311,24 +332,25 @@ func (r *clusterOptionsResource) Schema(
 					"`de-ch` | `da` | `en-gb` | `en-us` | `es` | `fi` | `fr` | `fr-be` | `fr-ca` " +
 					"| `fr-ch` | `hu` | `is` | `it` | `ja` | `lt` | `mk` | `nl` | `no` | `pl` | " +
 					"`pt` | `pt-br` | `sv` | `sl` | `tr`.",
-				Optional:   true,
-				Computed:   true,
-				Validators: []validator.String{validators.KeyboardLayoutValidator()},
+				Optional: true,
+				Validators: []validator.String{
+					validators.KeyboardLayoutValidator(),
+				},
 			},
 			"max_workers": schema.Int64Attribute{
 				Description: "Defines how many workers (per node) are maximal started on" +
 					" actions like 'stopall VMs' or task from the ha-manager.",
 				Optional: true,
-				Computed: true,
 			},
 			"language": schema.StringAttribute{
 				Description: "Default GUI language.",
 				MarkdownDescription: "Default GUI language. Must be `ca` | `da` | `de` " +
 					"| `en` | `es` | `eu` | `fa` | `fr` | `he` | `it` | `ja` | `nb` | " +
 					"`nn` | `pl` | `pt_BR` | `ru` | `sl` | `sv` | `tr` | `zh_CN` | `zh_TW`.",
-				Optional:   true,
-				Computed:   true,
-				Validators: []validator.String{validators.LanguageValidator()},
+				Optional: true,
+				Validators: []validator.String{
+					validators.LanguageValidator(),
+				},
 			},
 			"console": schema.StringAttribute{
 				Description: "Select the default Console viewer.",
@@ -342,7 +364,6 @@ func (r *clusterOptionsResource) Schema(
 					"(e.g. SPICE not activated for the VM), " +
 					"the fallback is noVNC.",
 				Optional: true,
-				Computed: true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
 					"applet",
 					"vv",
@@ -355,25 +376,21 @@ func (r *clusterOptionsResource) Schema(
 				MarkdownDescription: "Specify external http proxy which is used for downloads " +
 					"(example: `http://username:password@host:port/`).",
 				Optional: true,
-				Computed: true,
 			},
 			"mac_prefix": schema.StringAttribute{
 				Description: "Prefix for autogenerated MAC addresses.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"description": schema.StringAttribute{
 				Description: "Datacenter description. Shown in the web-interface datacenter notes panel. " +
 					"This is saved as comment inside the configuration file.",
 				Optional: true,
-				Computed: true,
 			},
 			"ha_shutdown_policy": schema.StringAttribute{
 				Description: "Cluster wide HA shutdown policy.",
-				MarkdownDescription: "Cluster wide HA shutdown policy. " +
-					"Must be `freeze` | `failover` | `migrate` | `conditional`.",
+				MarkdownDescription: "Cluster wide HA shutdown policy (). " +
+					"Must be `freeze` | `failover` | `migrate` | `conditional` (default is `conditional`).",
 				Optional: true,
-				Computed: true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
 					"freeze",
 					"failover",
@@ -382,10 +399,10 @@ func (r *clusterOptionsResource) Schema(
 				}...)},
 			},
 			"migration_type": schema.StringAttribute{
-				Description:         "Cluster wide migration type.",
-				MarkdownDescription: "Cluster wide migration type. Must be `secure` | `unsecure`.",
-				Optional:            true,
-				Computed:            true,
+				Description: "Cluster wide migration type.",
+				MarkdownDescription: "Cluster wide migration type. Must be `secure` | `unsecure` " +
+					"(default is `secure`).",
+				Optional: true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
 					"secure",
 					"unsecure",
@@ -394,11 +411,10 @@ func (r *clusterOptionsResource) Schema(
 			"migration_cidr": schema.StringAttribute{
 				Description: "Cluster wide migration network CIDR.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"crs_ha": schema.StringAttribute{
 				Description:         "Cluster resource scheduling setting for HA.",
-				MarkdownDescription: "Cluster resource scheduling setting for HA. Must be `static` | `basic`.",
+				MarkdownDescription: "Cluster resource scheduling setting for HA. Must be `static` | `basic` (default is `basic`).",
 				Optional:            true,
 				Computed:            true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
@@ -409,32 +425,26 @@ func (r *clusterOptionsResource) Schema(
 			"crs_ha_rebalance_on_start": schema.BoolAttribute{
 				Description: "Cluster resource scheduling setting for HA rebalance on start.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"bandwidth_limit_clone": schema.Int64Attribute{
 				Description: "Clone I/O bandwidth limit in KiB/s.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"bandwidth_limit_default": schema.Int64Attribute{
 				Description: "Default I/O bandwidth limit in KiB/s.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"bandwidth_limit_migration": schema.Int64Attribute{
 				Description: "Migration I/O bandwidth limit in KiB/s.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"bandwidth_limit_move": schema.Int64Attribute{
 				Description: "Move I/O bandwidth limit in KiB/s.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"bandwidth_limit_restore": schema.Int64Attribute{
 				Description: "Restore I/O bandwidth limit in KiB/s.",
 				Optional:    true,
-				Computed:    true,
 			},
 		},
 	}
@@ -464,10 +474,12 @@ func (r *clusterOptionsResource) Configure(
 	r.client = client
 }
 
-// Create update must-existing cluster options interface.
-//
-//nolint:lll
-func (r *clusterOptionsResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+// Create update must-existing cluster options.
+func (r *clusterOptionsResource) Create(
+	ctx context.Context,
+	req resource.CreateRequest,
+	resp *resource.CreateResponse,
+) {
 	var plan clusterOptionsModel
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -481,7 +493,7 @@ func (r *clusterOptionsResource) Create(ctx context.Context, req resource.Create
 	err := r.client.Cluster().CreateUpdateOptions(ctx, body)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating cluster options interface",
+			"Error creating cluster options",
 			"Could not create cluster options, unexpected error: "+err.Error(),
 		)
 
@@ -515,7 +527,7 @@ func (r *clusterOptionsResource) read(ctx context.Context, model *clusterOptions
 
 	if err != nil {
 		diags.AddError(
-			"Error converting cluster options interface to a model",
+			"Error converting cluster options to a model",
 			"Could not import cluster options from API response, unexpected error: "+err.Error(),
 		)
 
@@ -523,7 +535,7 @@ func (r *clusterOptionsResource) read(ctx context.Context, model *clusterOptions
 	}
 }
 
-// Read reads a cluster options interface.
+// Read reads cluster options.
 func (r *clusterOptionsResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	var state clusterOptionsModel
@@ -544,10 +556,12 @@ func (r *clusterOptionsResource) Read(ctx context.Context, req resource.ReadRequ
 	resp.Diagnostics.Append(diags...)
 }
 
-// Update updates a cluster options interface.
-//
-//nolint:lll
-func (r *clusterOptionsResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+// Update updates cluster options.
+func (r *clusterOptionsResource) Update(
+	ctx context.Context,
+	req resource.UpdateRequest,
+	resp *resource.UpdateResponse,
+) {
 	var plan, state clusterOptionsModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -565,19 +579,19 @@ func (r *clusterOptionsResource) Update(ctx context.Context, req resource.Update
 		toDelete = append(toDelete, "keyboard")
 	}
 
-	if (plan.bandwidthData() == nil && state.bandwidthData() != nil) || (*plan.bandwidthData() != *state.bandwidthData() && *plan.bandwidthData() == "") {
+	if plan.bandwidthData() != state.bandwidthData() && plan.bandwidthData() == "" {
 		toDelete = append(toDelete, "bwlimit")
 	}
 
-	if (plan.crsData() == nil && state.crsData() != nil) || (*plan.crsData() != *state.crsData() && *plan.crsData() == "") {
+	if plan.crsData() != state.crsData() && plan.crsData() == "" {
 		toDelete = append(toDelete, "crs")
 	}
 
-	if (plan.haData() == nil && state.haData() != nil) || (*plan.haData() != *state.haData() && *plan.haData() == "") {
+	if plan.haData() != state.haData() && plan.haData() == "" {
 		toDelete = append(toDelete, "ha")
 	}
 
-	if (plan.migrationData() == nil && state.migrationData() != nil) || (*plan.migrationData() != *state.migrationData() && *plan.migrationData() == "") {
+	if plan.migrationData() != state.migrationData() && plan.migrationData() == "" {
 		toDelete = append(toDelete, "migration")
 	}
 
@@ -617,7 +631,7 @@ func (r *clusterOptionsResource) Update(ctx context.Context, req resource.Update
 	err := r.client.Cluster().CreateUpdateOptions(ctx, body)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error updating cluster options interface",
+			"Error updating cluster options",
 			"Could not update cluster options, unexpected error: "+err.Error(),
 		)
 
@@ -633,20 +647,83 @@ func (r *clusterOptionsResource) Update(ctx context.Context, req resource.Update
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-// Delete deletes a cluster options interface.
-//
-//nolint:lll
-func (r *clusterOptionsResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+// Delete deletes cluster options.
+func (r *clusterOptionsResource) Delete(
+	ctx context.Context,
+	req resource.DeleteRequest,
+	resp *resource.DeleteResponse,
+) {
 	var state clusterOptionsModel
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
-	if resp.Diagnostics.HasError() {
-		return
+	var toDelete []string
+
+	if !state.Keyboard.IsUnknown() && state.Keyboard.ValueString() != "" {
+		toDelete = append(toDelete, "keyboard")
+	}
+
+	if state.bandwidthData() != "" {
+		toDelete = append(toDelete, "bwlimit")
+	}
+
+	if state.crsData() != "" {
+		toDelete = append(toDelete, "crs")
+	}
+
+	if state.haData() != "" {
+		toDelete = append(toDelete, "ha")
+	}
+
+	if state.migrationData() != "" {
+		toDelete = append(toDelete, "migration")
+	}
+
+	if state.EmailFrom.ValueString() != "" {
+		toDelete = append(toDelete, "email_from")
+	}
+
+	if state.Language.ValueString() != "" {
+		toDelete = append(toDelete, "language")
+	}
+
+	if state.Console.ValueString() != "" {
+		toDelete = append(toDelete, "console")
+	}
+
+	if !state.HTTPProxy.IsUnknown() && state.HTTPProxy.ValueString() != "" {
+		toDelete = append(toDelete, "http_proxy")
+	}
+
+	if !state.MacPrefix.IsUnknown() && state.MacPrefix.ValueString() != "" {
+		toDelete = append(toDelete, "mac_prefix")
+	}
+
+	if !state.Description.IsUnknown() && state.Description.ValueString() != "" {
+		toDelete = append(toDelete, "description")
+	}
+
+	if !state.MaxWorkers.IsUnknown() && state.MaxWorkers.ValueInt64() != 0 {
+		toDelete = append(toDelete, "max_workers")
+	}
+
+	if len(toDelete) > 0 {
+		d := strings.Join(toDelete, ",")
+		body := &cluster.OptionsRequestData{
+			Delete: &d,
+		}
+
+		err := r.client.Cluster().CreateUpdateOptions(ctx, body)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error updating cluster options",
+				"Could not update cluster options, unexpected error: "+err.Error(),
+			)
+		}
 	}
 }
 
-// ImportState a cluster options interface.
+// ImportState imports cluster options.
 func (r *clusterOptionsResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
