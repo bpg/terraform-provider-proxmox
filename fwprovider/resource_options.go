@@ -141,9 +141,9 @@ func (m *clusterOptionsModel) bandwidthData() *string {
 	}
 
 	if len(bandwidthParams) > 0 {
-		bandwithDataValue := strings.Join(bandwidthParams, ",")
+		bandwidthDataValue := strings.Join(bandwidthParams, ",")
 
-		return &bandwithDataValue
+		return &bandwidthDataValue
 	}
 
 	return nil
@@ -194,7 +194,7 @@ func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData
 
 func (m *clusterOptionsModel) importFromOptionsAPI(
 	_ context.Context,
-	iface *cluster.OptionsResponseData,
+	opts *cluster.OptionsResponseData,
 ) error {
 	m.BandwidthLimitClone = types.Int64Null()
 	m.BandwidthLimitDefault = types.Int64Null()
@@ -203,14 +203,14 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 	m.BandwidthLimitRestore = types.Int64Null()
 
 	//nolint:nestif
-	if iface.BandwidthLimit != nil {
-		for _, bandwidth := range strings.Split(*iface.BandwidthLimit, ",") {
+	if opts.BandwidthLimit != nil {
+		for _, bandwidth := range strings.Split(*opts.BandwidthLimit, ",") {
 			bandwidthData := strings.SplitN(bandwidth, "=", 2)
 			bandwidthName := bandwidthData[0]
 
 			bandwidthLimit, err := strconv.ParseInt(bandwidthData[1], 10, 64)
 			if err != nil {
-				return fmt.Errorf("failed to parse bandwidth limit: %s", *iface.BandwidthLimit)
+				return fmt.Errorf("failed to parse bandwidth limit: %s", *opts.BandwidthLimit)
 			}
 
 			if bandwidthName == "clone" {
@@ -235,39 +235,39 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 		}
 	}
 
-	m.EmailFrom = types.StringPointerValue(iface.EmailFrom)
-	m.Keyboard = types.StringPointerValue(iface.Keyboard)
-	m.Language = types.StringPointerValue(iface.Language)
+	m.EmailFrom = types.StringPointerValue(opts.EmailFrom)
+	m.Keyboard = types.StringPointerValue(opts.Keyboard)
+	m.Language = types.StringPointerValue(opts.Language)
 
-	if iface.MaxWorkers != nil {
-		m.MaxWorkers = types.Int64Value(int64(*iface.MaxWorkers))
+	if opts.MaxWorkers != nil {
+		m.MaxWorkers = types.Int64Value(int64(*opts.MaxWorkers))
 	}
 
-	m.Console = types.StringPointerValue(iface.Console)
-	m.HTTPProxy = types.StringPointerValue(iface.HTTPProxy)
-	m.MacPrefix = types.StringPointerValue(iface.MacPrefix)
-	m.Description = types.StringPointerValue(iface.Description)
+	m.Console = types.StringPointerValue(opts.Console)
+	m.HTTPProxy = types.StringPointerValue(opts.HTTPProxy)
+	m.MacPrefix = types.StringPointerValue(opts.MacPrefix)
+	m.Description = types.StringPointerValue(opts.Description)
 
-	if iface.HASettings != nil {
-		m.HAShutdownPolicy = types.StringPointerValue(iface.HASettings.ShutdownPolicy)
+	if opts.HASettings != nil {
+		m.HAShutdownPolicy = types.StringPointerValue(opts.HASettings.ShutdownPolicy)
 	} else {
-		m.HAShutdownPolicy = types.StringPointerValue(nil)
+		m.HAShutdownPolicy = types.StringNull()
 	}
 
-	if iface.Migration != nil {
-		m.MigrationType = types.StringPointerValue(iface.Migration.Type)
-		m.MigrationNetwork = types.StringPointerValue(iface.Migration.Network)
+	if opts.Migration != nil {
+		m.MigrationType = types.StringPointerValue(opts.Migration.Type)
+		m.MigrationNetwork = types.StringPointerValue(opts.Migration.Network)
 	} else {
-		m.MigrationType = types.StringPointerValue(nil)
-		m.MigrationNetwork = types.StringPointerValue(nil)
+		m.MigrationType = types.StringNull()
+		m.MigrationNetwork = types.StringNull()
 	}
 
-	if iface.ClusterResourceScheduling != nil {
-		m.CrsHARebalanceOnStart = types.BoolValue(bool(*iface.ClusterResourceScheduling.HaRebalanceOnStart))
-		m.CrsHA = types.StringPointerValue(iface.ClusterResourceScheduling.HA)
+	if opts.ClusterResourceScheduling != nil {
+		m.CrsHARebalanceOnStart = types.BoolValue(bool(*opts.ClusterResourceScheduling.HaRebalanceOnStart))
+		m.CrsHA = types.StringPointerValue(opts.ClusterResourceScheduling.HA)
 	} else {
-		m.CrsHARebalanceOnStart = types.BoolPointerValue(nil)
-		m.CrsHA = types.StringPointerValue(nil)
+		m.CrsHARebalanceOnStart = types.BoolNull()
+		m.CrsHA = types.StringNull()
 	}
 
 	return nil
@@ -311,9 +311,11 @@ func (r *clusterOptionsResource) Schema(
 					"`de-ch` | `da` | `en-gb` | `en-us` | `es` | `fi` | `fr` | `fr-be` | `fr-ca` " +
 					"| `fr-ch` | `hu` | `is` | `it` | `ja` | `lt` | `mk` | `nl` | `no` | `pl` | " +
 					"`pt` | `pt-br` | `sv` | `sl` | `tr`.",
-				Optional:   true,
-				Computed:   true,
-				Validators: []validator.String{validators.KeyboardLayoutValidator()},
+				Optional: true,
+				Computed: true,
+				Validators: []validator.String{
+					validators.KeyboardLayoutValidator(),
+				},
 			},
 			"max_workers": schema.Int64Attribute{
 				Description: "Defines how many workers (per node) are maximal started on" +
@@ -326,9 +328,11 @@ func (r *clusterOptionsResource) Schema(
 				MarkdownDescription: "Default GUI language. Must be `ca` | `da` | `de` " +
 					"| `en` | `es` | `eu` | `fa` | `fr` | `he` | `it` | `ja` | `nb` | " +
 					"`nn` | `pl` | `pt_BR` | `ru` | `sl` | `sv` | `tr` | `zh_CN` | `zh_TW`.",
-				Optional:   true,
-				Computed:   true,
-				Validators: []validator.String{validators.LanguageValidator()},
+				Optional: true,
+				Computed: true,
+				Validators: []validator.String{
+					validators.LanguageValidator(),
+				},
 			},
 			"console": schema.StringAttribute{
 				Description: "Select the default Console viewer.",
@@ -370,8 +374,8 @@ func (r *clusterOptionsResource) Schema(
 			},
 			"ha_shutdown_policy": schema.StringAttribute{
 				Description: "Cluster wide HA shutdown policy.",
-				MarkdownDescription: "Cluster wide HA shutdown policy. " +
-					"Must be `freeze` | `failover` | `migrate` | `conditional`.",
+				MarkdownDescription: "Cluster wide HA shutdown policy (). " +
+					"Must be `freeze` | `failover` | `migrate` | `conditional` (default is `conditional`).",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
@@ -382,10 +386,11 @@ func (r *clusterOptionsResource) Schema(
 				}...)},
 			},
 			"migration_type": schema.StringAttribute{
-				Description:         "Cluster wide migration type.",
-				MarkdownDescription: "Cluster wide migration type. Must be `secure` | `unsecure`.",
-				Optional:            true,
-				Computed:            true,
+				Description: "Cluster wide migration type.",
+				MarkdownDescription: "Cluster wide migration type. Must be `secure` | `unsecure` " +
+					"(default is `secure`).",
+				Optional: true,
+				Computed: true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
 					"secure",
 					"unsecure",
@@ -398,7 +403,7 @@ func (r *clusterOptionsResource) Schema(
 			},
 			"crs_ha": schema.StringAttribute{
 				Description:         "Cluster resource scheduling setting for HA.",
-				MarkdownDescription: "Cluster resource scheduling setting for HA. Must be `static` | `basic`.",
+				MarkdownDescription: "Cluster resource scheduling setting for HA. Must be `static` | `basic` (default is `basic`).",
 				Optional:            true,
 				Computed:            true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{

@@ -66,20 +66,20 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 func testAccResourceLinuxVLANCreatedConfig(iface string, vlan int) string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_network_linux_vlan" "test" {
-		node_name = "%s"
-		name = "%s.%d"
 		comment = "created by terraform"
 		mtu = 1499
+		name = "%s.%d"
+		node_name = "%s"
 	}
-	`, accTestNodeName, iface, vlan)
+	`, iface, vlan, accTestNodeName)
 }
 
 func testAccResourceLinuxVLANCreatedCheck(iface string, vlan int) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestLinuxVLANName, "name", fmt.Sprintf("%s.%d", iface, vlan)),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "comment", "created by terraform"),
-		resource.TestCheckResourceAttr(accTestLinuxVLANName, "vlan", strconv.Itoa(vlan)),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "interface", iface),
+		resource.TestCheckResourceAttr(accTestLinuxVLANName, "name", fmt.Sprintf("%s.%d", iface, vlan)),
+		resource.TestCheckResourceAttr(accTestLinuxVLANName, "vlan", strconv.Itoa(vlan)),
 		resource.TestCheckResourceAttrSet(accTestLinuxVLANName, "id"),
 	)
 }
@@ -87,24 +87,24 @@ func testAccResourceLinuxVLANCreatedCheck(iface string, vlan int) resource.TestC
 func testAccResourceLinuxVLANCustomNameCreatedConfig(name string, iface string, vlan int) string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_network_linux_vlan" "%s" {
-		node_name = "%s"
-		name = "%s"
-		interface = "%s"
-		vlan = %d
 		comment = "created by terraform"
+		interface = "%s"
 		mtu = 1499
+		name = "%s"
+		node_name = "%s"
+		vlan = %d
 	}
-	`, name, accTestNodeName, name, iface, vlan)
+	`, name, iface, name, accTestNodeName, vlan)
 }
 
 func testAccResourceLinuxVLANCustomNameCreatedCheck(name string, iface string, vlan int) resource.TestCheckFunc {
 	resourceName := fmt.Sprintf("proxmox_virtual_environment_network_linux_vlan.%s", name)
 
 	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(resourceName, "name", name),
 		resource.TestCheckResourceAttr(resourceName, "comment", "created by terraform"),
-		resource.TestCheckResourceAttr(resourceName, "vlan", strconv.Itoa(vlan)),
 		resource.TestCheckResourceAttr(resourceName, "interface", iface),
+		resource.TestCheckResourceAttr(resourceName, "name", name),
+		resource.TestCheckResourceAttr(resourceName, "vlan", strconv.Itoa(vlan)),
 		resource.TestCheckResourceAttrSet(resourceName, "id"),
 	)
 }
@@ -112,24 +112,23 @@ func testAccResourceLinuxVLANCustomNameCreatedCheck(name string, iface string, v
 func testAccResourceLinuxVLANUpdatedConfig(iface string, vlan int, ipV4cidr string) string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_network_linux_vlan" "test" {
-		node_name = "%s"
-		name = "%s.%d"
 		address = "%s"
 		address6 = "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"
 		comment = "updated by terraform"
-		mtu = null
+		name = "%s.%d"
+		node_name = "%s"
 	}
-	`, accTestNodeName, iface, vlan, ipV4cidr)
+	`, ipV4cidr, iface, vlan, accTestNodeName)
 }
 
 func testAccResourceLinuxVLANUpdatedCheck(iface string, vlan int, ipV4cidr string) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestLinuxVLANName, "name", fmt.Sprintf("%s.%d", iface, vlan)),
-		resource.TestCheckResourceAttr(accTestLinuxVLANName, "vlan", strconv.Itoa(vlan)),
-		resource.TestCheckResourceAttr(accTestLinuxVLANName, "interface", iface),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "address", ipV4cidr),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "address6", "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"),
 		resource.TestCheckResourceAttr(accTestLinuxVLANName, "comment", "updated by terraform"),
+		resource.TestCheckResourceAttr(accTestLinuxVLANName, "interface", iface),
+		resource.TestCheckResourceAttr(accTestLinuxVLANName, "name", fmt.Sprintf("%s.%d", iface, vlan)),
+		resource.TestCheckResourceAttr(accTestLinuxVLANName, "vlan", strconv.Itoa(vlan)),
 		resource.TestCheckNoResourceAttr(accTestLinuxVLANName, "mtu"),
 		resource.TestCheckResourceAttrSet(accTestLinuxVLANName, "id"),
 	)

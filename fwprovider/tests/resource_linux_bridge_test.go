@@ -56,25 +56,25 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 func testAccResourceLinuxBridgeCreatedConfig(name string, ipV4cidr string) string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_network_linux_bridge" "test" {
-		node_name = "%s"
-		name = "%s"
 		address = "%s"
-		comment = "created by terraform"
-		vlan_aware = true
 		autostart = true
+		comment = "created by terraform"
 		mtu = 1499
+		name = "%s"
+		node_name = "%s"
+		vlan_aware = true
 	}
-	`, accTestNodeName, name, ipV4cidr)
+	`, ipV4cidr, name, accTestNodeName)
 }
 
 func testAccResourceLinuxBridgeCreatedCheck(name string, ipV4cidr string) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "name", name),
 		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "address", ipV4cidr),
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "comment", "created by terraform"),
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "vlan_aware", "true"),
 		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "autostart", "true"),
+		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "comment", "created by terraform"),
 		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "mtu", "1499"),
+		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "name", name),
+		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "vlan_aware", "true"),
 		resource.TestCheckResourceAttrSet(accTestLinuxBridgeName, "id"),
 	)
 }
@@ -82,27 +82,27 @@ func testAccResourceLinuxBridgeCreatedCheck(name string, ipV4cidr string) resour
 func testAccResourceLinuxBridgeUpdatedConfig(name string, ipV4cidr string, ipV6cidr string) string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_network_linux_bridge" "test" {
-		node_name = "%s"
-		name = "%s"
 		address = "%s"
 		address6 = "%s"
-		comment = "updated by terraform"
-		vlan_aware = false
 		autostart = false
+		comment = "updated by terraform"
 		mtu = null
+		name = "%s"
+		node_name = "%s"
+		vlan_aware = false
 	}
-	`, accTestNodeName, name, ipV4cidr, ipV6cidr)
+	`, ipV4cidr, ipV6cidr, name, accTestNodeName)
 }
 
 func testAccResourceLinuxBridgeUpdatedCheck(name string, ipV4cidr string, ipV6cidr string) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.ComposeAggregateTestCheckFunc(
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "name", name),
 			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "address", ipV4cidr),
 			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "address6", ipV6cidr),
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "comment", "updated by terraform"),
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "vlan_aware", "false"),
 			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "autostart", "false"),
+			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "comment", "updated by terraform"),
+			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "name", name),
+			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "vlan_aware", "false"),
 			resource.TestCheckNoResourceAttr(accTestLinuxBridgeName, "mtu"),
 			resource.TestCheckResourceAttrSet(accTestLinuxBridgeName, "id"),
 		),
