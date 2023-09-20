@@ -54,6 +54,28 @@ For example:
 feat(vm): add support for the `clone` operation
 ```
 
+In order for a code change to be accepted, you'll also have to accept the
+Developer Certificate of Origin (DCO).
+It's very lightweight, and you can find
+it [here](https://developercertificate.org).
+Accepting is accomplished by signing off on your commits, you can do this by
+adding a `Signed-off-by` line to your commit message, like here:
+
+```
+feat(vm): add support for the `clone` operation
+
+Signed-off-by: Random Developer <random@developer.example.org>
+```
+
+Git has a built-in flag to append this line automatically:
+
+```
+> git commit -s -m 'feat(vm): add a cool new feature'
+```
+
+You can find more details about the DCO checker in
+the [DCO app repo](https://github.com/dcoapp/app).
+
 ## Submitting changes
 
 Please create a new PR against the `main` branch which must be based on the
