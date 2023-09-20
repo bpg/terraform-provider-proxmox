@@ -16,3 +16,4 @@ jobs:
           skip-github-release: false
           include-v-in-tag: true
           changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
+          signoff: 'Pavel Boldyrev <627562+bpg@users.noreply.github.com>'
