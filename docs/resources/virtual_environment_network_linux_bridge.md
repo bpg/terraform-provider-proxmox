@@ -50,7 +50,7 @@ resource "proxmox_virtual_environment_network_linux_bridge" "vmbr99" {
 - `gateway6` (String) Default IPv6 gateway address.
 - `mtu` (Number) The interface MTU.
 - `ports` (List of String) The interface bridge ports.
-- `vlan_aware` (Boolean) Whether the interface bridge is VLAN aware (defaults to `true`).
+- `vlan_aware` (Boolean) Whether the interface bridge is VLAN aware (defaults to `false`).
 
 ### Read-Only
 
