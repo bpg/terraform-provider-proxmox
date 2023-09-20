@@ -4337,7 +4337,7 @@ func vmReadCustom(
 		if pp.ROMBAR != nil {
 			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR] = *pp.ROMBAR
 		} else {
-			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR] = false
+			pci[mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR] = true
 		}
 
 		if pp.ROMFile != nil {
@@ -4361,7 +4361,7 @@ func vmReadCustom(
 		pciMap[pi] = pci
 	}
 
-	if len(currentPCIList) > 0 {
+	if len(pciMap) > 0 {
 		orderedPCIList := orderedListFromMap(pciMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)

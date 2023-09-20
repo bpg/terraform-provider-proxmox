@@ -121,6 +121,7 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			require.Equal(t, tt.want, r)
 		})
 	}
 }
