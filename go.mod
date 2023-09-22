@@ -1,6 +1,6 @@
 module github.com/bpg/terraform-provider-proxmox
 
-go 1.20
+go 1.21
 
 require (
 	github.com/avast/retry-go/v4 v4.5.0
@@ -19,7 +19,7 @@ require (
 	github.com/skeema/knownhosts v1.2.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.13.0
-	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
 
 require (
