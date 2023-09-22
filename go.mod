@@ -16,7 +16,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.12.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.29.0
 	github.com/pkg/sftp v1.13.6
-	github.com/skeema/knownhosts v1.2.0
+	github.com/skeema/knownhosts v1.2.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.13.0
 	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
