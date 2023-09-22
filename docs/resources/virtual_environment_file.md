@@ -96,6 +96,10 @@ You must ensure that you have at least `Size-in-MB * 2 + 1` MB of storage space
 available (twice the size plus overhead because a multipart payload needs to be
 created as another temporary file).
 
+If the specified file already exists, the resource will unconditionally replace
+it and take ownership of the resource. On destruction, the file will be deleted
+as if it did not exist before.
+
 ## Import
 
 Instances can be imported using the `node_name`, `datastore_id`, `content_type`
