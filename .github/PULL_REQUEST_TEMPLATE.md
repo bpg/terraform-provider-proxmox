@@ -1,9 +1,16 @@
 ### Contributor's Note
+<!--- 
 Please mark the following items with an [x] if they apply to your PR.
 Leave the [ ] if they are not applicable, or if you have not completed the item.
+--->
 - [ ] I have added / updated documentation in `/docs` for any user-facing features or additions.
 - [ ] I have added / updated templates in `/example` for any new or updated resources / data sources.
 - [ ] I have ran `make example` to verify that the change works as expected. 
+
+### Proof of Work
+<!--- 
+Please add screenshots, logs, or other relevant information that demonstrates the change works as expected.
+--->
 
 <!--- Please keep this note for the community --->
 ### Community Note
