@@ -206,6 +206,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/0xinterface"><img src="https://avatars.githubusercontent.com/u/890207?v=4?s=100" width="100px;" alt="Kristopher"/><br /><sub><b>Kristopher</b></sub></a><br /><a href="#ideas-0xinterface" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/mritalian"><img src="https://avatars.githubusercontent.com/u/15789014?v=4?s=100" width="100px;" alt="Eric B"/><br /><sub><b>Eric B</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=mritalian" title="Tests">⚠️</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=mritalian" title="Documentation">📖</a></td>
     </tr>
   </tbody>
   <tfoot>
