@@ -468,6 +468,16 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "mritalian",
+      "name": "Eric B",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15789014?v=4",
+      "profile": "https://github.com/mritalian",
+      "contributions": [
+        "test",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
