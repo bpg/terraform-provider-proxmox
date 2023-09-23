@@ -659,7 +659,7 @@ func (r *clusterOptionsResource) Delete(
 
 	var toDelete []string
 
-	if !state.Keyboard.IsUnknown() && state.Keyboard.ValueString() != "" {
+	if !state.Keyboard.IsNull() && state.Keyboard.ValueString() != "" {
 		toDelete = append(toDelete, "keyboard")
 	}
 
@@ -679,31 +679,31 @@ func (r *clusterOptionsResource) Delete(
 		toDelete = append(toDelete, "migration")
 	}
 
-	if state.EmailFrom.ValueString() != "" {
+	if !state.EmailFrom.IsNull() && state.EmailFrom.ValueString() != "" {
 		toDelete = append(toDelete, "email_from")
 	}
 
-	if state.Language.ValueString() != "" {
+	if !state.Language.IsNull() && state.Language.ValueString() != "" {
 		toDelete = append(toDelete, "language")
 	}
 
-	if state.Console.ValueString() != "" {
+	if !state.Console.IsNull() && state.Console.ValueString() != "" {
 		toDelete = append(toDelete, "console")
 	}
 
-	if !state.HTTPProxy.IsUnknown() && state.HTTPProxy.ValueString() != "" {
+	if !state.HTTPProxy.IsNull() && state.HTTPProxy.ValueString() != "" {
 		toDelete = append(toDelete, "http_proxy")
 	}
 
-	if !state.MacPrefix.IsUnknown() && state.MacPrefix.ValueString() != "" {
+	if !state.MacPrefix.IsNull() && state.MacPrefix.ValueString() != "" {
 		toDelete = append(toDelete, "mac_prefix")
 	}
 
-	if !state.Description.IsUnknown() && state.Description.ValueString() != "" {
+	if !state.Description.IsNull() && state.Description.ValueString() != "" {
 		toDelete = append(toDelete, "description")
 	}
 
-	if !state.MaxWorkers.IsUnknown() && state.MaxWorkers.ValueInt64() != 0 {
+	if !state.MaxWorkers.IsNull() && state.MaxWorkers.ValueInt64() != 0 {
 		toDelete = append(toDelete, "max_workers")
 	}
 
