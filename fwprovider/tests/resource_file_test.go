@@ -42,11 +42,11 @@ func TestAccResourceFile(t *testing.T) {
 			// 	ImportStateIdPrefix: "local:snippets/",
 			// 	ImportStateId:       fmt.Sprintf("local:snippets/%s", snippet),
 			// },
-			// // Update testing
-			// {
-			// 	Config: testAccResourceLinuxVLANUpdatedConfig(iface, vlan1, ipV4cidr),
-			// 	Check:  testAccResourceLinuxVLANUpdatedCheck(iface, vlan1, ipV4cidr),
-			// },
+			// Update testing
+			{
+				Config: testAccResourceFileUpdatedConfig(snippet),
+				Check:  testAccResourceFileUpdatedCheck(snippet),
+			},
 		},
 	})
 }
@@ -74,6 +74,35 @@ func testAccResourceFileCreatedCheck(fname string) resource.TestCheckFunc {
 		resource.TestCheckResourceAttr(accTestFileName, "content_type", "snippets"),
 		// resource.TestCheckResourceAttr(accTestFileName, "file_name", fname),
 		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.file_name", fname),
+		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.data", "test snippet\n"),
 		resource.TestCheckResourceAttr(accTestFileName, "id", fmt.Sprintf("local:snippets/%s", fname)),
+	)
+}
+
+func testAccResourceFileUpdatedConfig(fname string) string {
+	return fmt.Sprintf(`
+resource "proxmox_virtual_environment_file" "test" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = "%s"
+
+  source_raw {
+    data = <<EOF
+test snippet - updated
+    EOF
+
+    file_name = "%s-upd"
+  }
+}
+	`, accTestNodeName, fname)
+}
+
+func testAccResourceFileUpdatedCheck(fname string) resource.TestCheckFunc {
+	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(accTestFileName, "content_type", "snippets"),
+		// resource.TestCheckResourceAttr(accTestFileName, "file_name", fname),
+		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.file_name", fname+"-upd"),
+		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.data", "test snippet - updated\n"),
+		resource.TestCheckResourceAttr(accTestFileName, "id", fmt.Sprintf("local:snippets/%s-upd", fname)),
 	)
 }
