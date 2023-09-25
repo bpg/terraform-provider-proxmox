@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.32.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.32.0...v0.32.1) (2023-09-23)
+
+
+### Bug Fixes
+
+* **cluster:** inconsistencies in applying cluster options ([#573](https://github.com/bpg/terraform-provider-proxmox/issues/573)) ([03f3ed7](https://github.com/bpg/terraform-provider-proxmox/commit/03f3ed7871e2a2fe653d6cfe9dcb28196738e1e2))
+* **network:** remove computed flag from mtu attribute ([#572](https://github.com/bpg/terraform-provider-proxmox/issues/572)) ([5720fe4](https://github.com/bpg/terraform-provider-proxmox/commit/5720fe4673873166e7dbf7bc687b57837b99b117))
+
+
+### Miscellaneous
+
+* **code:** bump go to v1.21 ([#585](https://github.com/bpg/terraform-provider-proxmox/issues/585)) ([11c0940](https://github.com/bpg/terraform-provider-proxmox/commit/11c09405ea2f6d9dfc28191ce50739f811b5f0c4))
+* **code:** re-organize and cleanup "fwk provider"'s code ([#568](https://github.com/bpg/terraform-provider-proxmox/issues/568)) ([7d064a8](https://github.com/bpg/terraform-provider-proxmox/commit/7d064a8b27d78a1564c9da914f17340966d955d1))
+* **deps:** bump github.com/skeema/knownhosts from 1.2.0 to 1.2.1 ([#584](https://github.com/bpg/terraform-provider-proxmox/issues/584)) ([7890212](https://github.com/bpg/terraform-provider-proxmox/commit/7890212a566036bf448f4db149a7f8816de187ab))
+* **docs:** add "Proof of Work" section to the PR template ([#583](https://github.com/bpg/terraform-provider-proxmox/issues/583)) ([de1eb2b](https://github.com/bpg/terraform-provider-proxmox/commit/de1eb2b950ae6a001ad07a93f27a90858500749b))
+* **docs:** add a note about DCO to CONTRIBUTING.md ([#574](https://github.com/bpg/terraform-provider-proxmox/issues/574)) ([d0c9b45](https://github.com/bpg/terraform-provider-proxmox/commit/d0c9b4594d46c327b5a0f09288ac5b88a48af61e))
+* **docs:** update `proxmox_virtual_environment_file` documentation ([#580](https://github.com/bpg/terraform-provider-proxmox/issues/580)) ([7dde53c](https://github.com/bpg/terraform-provider-proxmox/commit/7dde53cf1cee1127cecb86cab3b6e75331410c56))
+
 ## [0.32.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.31.0...v0.32.0) (2023-09-13)
 
 
