@@ -743,7 +743,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	if !found {
-		diags = append(diags, diag.Errorf("cannot read file %q after upload", d.Id())...)
+		diags = append(diags, diag.Errorf("no such file: %q", d.Id())...)
 		return diags
 	}
 

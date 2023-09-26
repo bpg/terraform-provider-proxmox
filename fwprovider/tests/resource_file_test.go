@@ -62,9 +62,10 @@ func TestAccResourceFile(t *testing.T) {
 				// RefreshState: true,
 			},
 			{
-				Config:  testAccResourceFileCreatedConfig(snippetFile.Name()),
-				Check:   testAccResourceFileCreatedCheck("snippets", snippetFile.Name()),
-				Destroy: false,
+				Config:                    testAccResourceFileCreatedConfig(snippetFile.Name()),
+				Check:                     testAccResourceFileCreatedCheck("snippets", snippetFile.Name()),
+				Destroy:                   false,
+				PreventPostDestroyRefresh: true,
 			},
 			{
 				Config: testAccResourceFileCreatedConfig(snippetURL),
@@ -79,12 +80,17 @@ func TestAccResourceFile(t *testing.T) {
 				ExpectError: regexp.MustCompile("please specify .* - not both"),
 			},
 			// // ImportState testing
-			// {
-			// 	ResourceName:      accTestFileName,
-			// 	ImportState:       true,
-			// 	ImportStateVerify: true,
-			// 	ImportStateId:     fmt.Sprintf("pve/local:snippets/%s", filepath.Base(snippetFile.Name())),
-			// },
+			{
+				ResourceName:      accTestFileName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("pve/local:snippets/%s", filepath.Base(snippetFile.Name())),
+				SkipFunc: func() (bool, error) {
+					// TODO: add a file to the snippets directory outside of terraform
+					// and then import it here
+					return true, nil
+				},
+			},
 			// Update testing
 			{
 				Config: testAccResourceFileSnippetRawUpdatedConfig(snippetRaw),
