@@ -71,7 +71,7 @@ func File() *schema.Resource {
 				Description:      "The content type",
 				Optional:         true,
 				ForceNew:         true,
-				Default:          dvResourceVirtualEnvironmentFileContentType,
+				Computed:         true,
 				ValidateDiagFunc: validator.ContentType(),
 			},
 			mkResourceVirtualEnvironmentFileDatastoreID: {
@@ -677,53 +677,53 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
-	sourceFilePath := ""
-
-	if len(sourceFile) == 0 {
-		return nil
-	}
-
-	sourceFileBlock := sourceFile[0].(map[string]interface{})
-	sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 
 	list, err := capi.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	fileIsURL := fileIsURL(d)
-	fileName, err := fileGetFileName(d)
-	if err != nil {
-		return diag.FromErr(err)
+	readFileAttrs := readFile
+	if fileIsURL(d) {
+		readFileAttrs = readURL
 	}
 
 	var diags diag.Diagnostics
 
+	found := false
 	for _, v := range list {
 		if v.VolumeID == d.Id() {
-			var fileModificationDate string
-			var fileSize int64
-			var fileTag string
+			found = true
 
-			if fileIsURL {
-				fileSize, fileModificationDate, fileTag, err = readURL(ctx, d, sourceFilePath)
-			} else {
-				fileModificationDate, fileSize, fileTag, err = readFile(ctx, sourceFilePath)
-			}
+			volID, err := fileParseVolumeID(v.VolumeID)
 			diags = append(diags, diag.FromErr(err)...)
 
-			lastFileMD := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
-			lastFileSize := int64(d.Get(mkResourceVirtualEnvironmentFileFileSize).(int))
-			lastFileTag := d.Get(mkResourceVirtualEnvironmentFileFileTag).(string)
+			err = d.Set(mkResourceVirtualEnvironmentFileFileName, volID.fileName)
+			diags = append(diags, diag.FromErr(err)...)
+
+			err = d.Set(mkResourceVirtualEnvironmentFileContentType, v.ContentType)
+			diags = append(diags, diag.FromErr(err)...)
+
+			if len(sourceFile) == 0 {
+				continue
+			}
+
+			sourceFileBlock := sourceFile[0].(map[string]interface{})
+			sourceFilePath := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
+
+			fileModificationDate, fileSize, fileTag, err := readFileAttrs(ctx, sourceFilePath)
+			diags = append(diags, diag.FromErr(err)...)
 
 			err = d.Set(mkResourceVirtualEnvironmentFileFileModificationDate, fileModificationDate)
-			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkResourceVirtualEnvironmentFileFileName, *fileName)
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkResourceVirtualEnvironmentFileFileSize, fileSize)
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
 			diags = append(diags, diag.FromErr(err)...)
+
+			lastFileMD := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
+			lastFileSize := int64(d.Get(mkResourceVirtualEnvironmentFileFileSize).(int))
+			lastFileTag := d.Get(mkResourceVirtualEnvironmentFileFileTag).(string)
 
 			// just to make the logic easier to read
 			changed := false
@@ -742,7 +742,10 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 	}
 
-	d.SetId("")
+	if !found {
+		diags = append(diags, diag.Errorf("cannot read file %q after upload", d.Id())...)
+		return diags
+	}
 
 	return nil
 }
@@ -781,9 +784,8 @@ func readFile(
 //nolint:nonamedreturns
 func readURL(
 	ctx context.Context,
-	d *schema.ResourceData,
 	sourceFilePath string,
-) (fileSize int64, fileModificationDate string, fileTag string, err error) {
+) (fileModificationDate string, fileSize int64, fileTag string, err error) {
 	res, err := http.Head(sourceFilePath)
 	if err != nil {
 		return
@@ -806,11 +808,6 @@ func readURL(
 		}
 
 		fileModificationDate = timeParsed.UTC().Format(time.RFC3339)
-	} else {
-		err = d.Set(mkResourceVirtualEnvironmentFileFileModificationDate, "")
-		if err != nil {
-			return
-		}
 	}
 
 	httpTag := res.Header.Get("ETag")
