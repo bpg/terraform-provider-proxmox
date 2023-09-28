@@ -9,19 +9,33 @@ package tests
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
 	accTestFileName = "proxmox_virtual_environment_file.test"
 )
+
+type nodeResolver struct {
+	node ssh.ProxmoxNode
+}
+
+func (c *nodeResolver) Resolve(_ context.Context, _ string) (ssh.ProxmoxNode, error) {
+	return c.node, nil
+}
 
 func TestAccResourceFile(t *testing.T) {
 	t.Parallel()
@@ -30,74 +44,116 @@ func TestAccResourceFile(t *testing.T) {
 
 	snippetRaw := fmt.Sprintf("snippet-raw-%s.txt", gofakeit.Word())
 	snippetURL := "https://raw.githubusercontent.com/yaml/yaml-test-suite/main/src/229Q.yaml"
+	snippetFile1 := createFile(t, "snippet-file-1-*.yaml", "test snippet 1 - file")
+	snippetFile2 := createFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file")
+	fileISO := createFile(t, "file-*.iso", "pretend it is an ISO")
 
-	snippetFile, err := os.CreateTemp("", "snippet-file-*.yaml")
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
 	require.NoError(t, err)
 
-	defer snippetFile.Close()
+	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
 
-	_, err = snippetFile.WriteString("test snippet - file\n")
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
 	require.NoError(t, err)
 
-	snippetFileISO, err := os.CreateTemp("", "snippet-file-*.iso")
+	f, err := os.Open(snippetFile2.Name())
+	defer f.Close()
+	err = sshClient.NodeUpload(context.Background(), "pve", "/var/lib/vz",
+		&api.FileUploadRequest{
+			ContentType: "snippets",
+			FileName:    filepath.Base(snippetFile2.Name()),
+			File:        f,
+		})
 	require.NoError(t, err)
-
-	defer snippetFile.Close()
-
-	_, err = snippetFile.WriteString("pretend it is an ISO")
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		_ = os.Remove(snippetFile.Name())
-		_ = os.Remove(snippetFileISO.Name())
-	})
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: accProviders,
 		Steps: []resource.TestStep{
-			// Upload a snippet file from a raw source
 			{
 				Config: testAccResourceFileSnippetRawCreatedConfig(snippetRaw),
 				Check:  testAccResourceFileSnippetRawCreatedCheck(snippetRaw),
-				// RefreshState: true,
 			},
 			{
-				Config:                    testAccResourceFileCreatedConfig(snippetFile.Name()),
-				Check:                     testAccResourceFileCreatedCheck("snippets", snippetFile.Name()),
-				Destroy:                   false,
-				PreventPostDestroyRefresh: true,
+				Config: testAccResourceFileCreatedConfig(snippetFile1.Name()),
+				Check:  testAccResourceFileCreatedCheck("snippets", snippetFile1.Name()),
+			},
+			// allow to overwrite the a file by default
+			{
+				Config: testAccResourceFileCreatedConfig(snippetFile2.Name()),
+				Check:  testAccResourceFileCreatedCheck("snippets", snippetFile2.Name()),
 			},
 			{
 				Config: testAccResourceFileCreatedConfig(snippetURL),
 				Check:  testAccResourceFileCreatedCheck("snippets", snippetURL),
 			},
 			{
-				Config: testAccResourceFileCreatedConfig(snippetFileISO.Name()),
-				Check:  testAccResourceFileCreatedCheck("iso", snippetFileISO.Name()),
+				Config: testAccResourceFileCreatedConfig(fileISO.Name()),
+				Check:  testAccResourceFileCreatedCheck("iso", fileISO.Name()),
 			},
 			{
-				Config:      testAccResourceFileWrongSourceCreatedConfig(),
+				Config:      testAccResourceFileTwoSourcesCreatedConfig(),
 				ExpectError: regexp.MustCompile("please specify .* - not both"),
 			},
-			// // ImportState testing
 			{
-				ResourceName:      accTestFileName,
-				ImportState:       true,
-				ImportStateVerify: true,
-				ImportStateId:     fmt.Sprintf("pve/local:snippets/%s", filepath.Base(snippetFile.Name())),
-				SkipFunc: func() (bool, error) {
-					// TODO: add a file to the snippets directory outside of terraform
-					// and then import it here
-					return true, nil
-				},
+				Config:      testAccResourceFileCreatedConfig("https://github.com", "content_type = \"iso\""),
+				ExpectError: regexp.MustCompile("failed to determine file name from the URL"),
+			},
+			{
+				Config:      testAccResourceFileMissingSourceConfig(),
+				ExpectError: regexp.MustCompile("missing argument"),
+			},
+			// do not allow to overwrite the a file
+			{
+				Config:      testAccResourceFileCreatedConfig(snippetFile2.Name(), "overwrite = false"),
+				ExpectError: regexp.MustCompile("already exists"),
 			},
 			// Update testing
 			{
 				Config: testAccResourceFileSnippetRawUpdatedConfig(snippetRaw),
 				Check:  testAccResourceFileSnippetUpdatedCheck(snippetRaw),
 			},
+			// ImportState testing
+			{
+				ResourceName:      accTestFileName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("pve/local:snippets/%s", filepath.Base(snippetFile2.Name())),
+				SkipFunc: func() (bool, error) {
+					// TODO: add a file to the snippets directory outside of terraform
+					// and then import it here
+					return true, nil
+				},
+			},
 		},
 	})
+}
+
+func createFile(t *testing.T, namePattern string, content string) *os.File {
+	t.Helper()
+
+	f, err := os.CreateTemp("", namePattern)
+	require.NoError(t, err)
+
+	_, err = f.WriteString(content)
+	require.NoError(t, err)
+
+	defer f.Close()
+
+	t.Cleanup(func() {
+		_ = os.Remove(f.Name())
+	})
+
+	return f
 }
 
 func testAccResourceFileSnippetRawCreatedConfig(fname string) string {
@@ -106,37 +162,34 @@ resource "proxmox_virtual_environment_file" "test" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = "%s"
-
   source_raw {
     data = <<EOF
 test snippet
     EOF
-
     file_name = "%s"
   }
 }
 	`, accTestNodeName, fname)
 }
 
-func testAccResourceFileCreatedConfig(fname string) string {
+func testAccResourceFileCreatedConfig(fname string, extra ...string) string {
 	return fmt.Sprintf(`
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
-
   source_file {
     path = "%s"
   }
+  %s
 }
-	`, accTestNodeName, fname)
+	`, accTestNodeName, fname, strings.Join(extra, "\n"))
 }
 
-func testAccResourceFileWrongSourceCreatedConfig() string {
+func testAccResourceFileTwoSourcesCreatedConfig() string {
 	return fmt.Sprintf(`
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
-
   source_raw {
     data = <<EOF
 test snippet
@@ -146,6 +199,15 @@ test snippet
   source_file {
     path = "bar.txt"
   }
+}
+	`, accTestNodeName)
+}
+
+func testAccResourceFileMissingSourceConfig() string {
+	return fmt.Sprintf(`
+resource "proxmox_virtual_environment_file" "test" {
+  datastore_id = "local"
+  node_name    = "%s"
 }
 	`, accTestNodeName)
 }

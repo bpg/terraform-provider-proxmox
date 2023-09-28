@@ -39,6 +39,7 @@ const (
 	dvResourceVirtualEnvironmentFileSourceFileChecksum = ""
 	dvResourceVirtualEnvironmentFileSourceFileFileName = ""
 	dvResourceVirtualEnvironmentFileSourceFileInsecure = false
+	dvResourceVirtualEnvironmentFileOverwrite          = true
 	dvResourceVirtualEnvironmentFileSourceRawResize    = 0
 	dvResourceVirtualEnvironmentFileTimeoutUpload      = 1800
 
@@ -49,6 +50,7 @@ const (
 	mkResourceVirtualEnvironmentFileFileSize             = "file_size"
 	mkResourceVirtualEnvironmentFileFileTag              = "file_tag"
 	mkResourceVirtualEnvironmentFileNodeName             = "node_name"
+	mkResourceVirtualEnvironmentFileOverwrite            = "overwrite"
 	mkResourceVirtualEnvironmentFileSourceFile           = "source_file"
 	mkResourceVirtualEnvironmentFileSourceFilePath       = "path"
 	mkResourceVirtualEnvironmentFileSourceFileChanged    = "changed"
@@ -198,6 +200,12 @@ func File() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentFileTimeoutUpload,
 			},
+			mkResourceVirtualEnvironmentFileOverwrite: {
+				Type:        schema.TypeBool,
+				Description: "Whether to overwrite the file if it already exists",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentFileOverwrite,
+			},
 		},
 		CreateContext: fileCreate,
 		ReadContext:   fileRead,
@@ -295,7 +303,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	diags = append(diags, dg...)
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
-	fileName, err := fileGetFileName(d)
+	fileName, err := fileGetSourceFileName(d)
 	diags = append(diags, diag.FromErr(err)...)
 
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
@@ -407,7 +415,9 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 				)
 			}
 		}
-	} else if len(sourceRaw) > 0 {
+	}
+
+	if len(sourceRaw) > 0 {
 		sourceRawBlock := sourceRaw[0].(map[string]interface{})
 		sourceRawData := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawData].(string)
 		sourceRawResize := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawResize].(int)
@@ -445,13 +455,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		}(tempRawFileName)
 
 		sourceFilePathLocal = tempRawFileName
-	} else {
-		return diag.Errorf(
-			"please specify either \"%s.%s\" or \"%s\"",
-			mkResourceVirtualEnvironmentFileSourceFile,
-			mkResourceVirtualEnvironmentFileSourceFilePath,
-			mkResourceVirtualEnvironmentFileSourceRaw,
-		)
 	}
 
 	// Open the source file for reading in order to upload it.
@@ -590,7 +593,7 @@ func fileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
 	return &contentType, diags
 }
 
-func fileGetFileName(d *schema.ResourceData) (*string, error) {
+func fileGetSourceFileName(d *schema.ResourceData) (*string, error) {
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
 
@@ -637,7 +640,7 @@ func fileGetFileName(d *schema.ResourceData) (*string, error) {
 }
 
 func fileGetVolumeID(d *schema.ResourceData) (fileVolumeID, diag.Diagnostics) {
-	fileName, err := fileGetFileName(d)
+	fileName, err := fileGetSourceFileName(d)
 	if err != nil {
 		return fileVolumeID{}, diag.FromErr(err)
 	}
