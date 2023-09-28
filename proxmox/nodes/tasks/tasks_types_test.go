@@ -17,10 +17,12 @@ import (
 func TestParseTaskID(t *testing.T) {
 	t.Parallel()
 
-	stime, err := time.Parse(time.RFC3339, "2023-08-30T21:28:16-04:00")
-	require.NoError(t, err)
+	parseTime := func(s string) time.Time {
+		stime, err := time.Parse(time.RFC3339, s)
+		require.NoError(t, err)
 
-	stime = stime.UTC()
+		return stime.UTC()
+	}
 
 	tests := []struct {
 		name    string
@@ -35,7 +37,7 @@ func TestParseTaskID(t *testing.T) {
 				NodeName:  "pve",
 				PID:       400563,
 				PStart:    17540764,
-				StartTime: stime,
+				StartTime: parseTime("2023-08-30T21:28:16-04:00"),
 				Type:      "imgcopy",
 				ID:        "",
 				User:      "root@pam",
@@ -48,9 +50,22 @@ func TestParseTaskID(t *testing.T) {
 				NodeName:  "pve",
 				PID:       400563,
 				PStart:    17540764,
-				StartTime: stime,
+				StartTime: parseTime("2023-08-30T21:28:16-04:00"),
 				Type:      "qmcreate",
 				ID:        "101",
+				User:      "root@pam",
+			},
+		},
+		{
+			name:   "large pid",
+			taskID: "UPID:pve-srv:0012D68C:8206F38C:65144CB7:qmcreate:501:root@pam:",
+			want: TaskID{
+				NodeName:  "pve-srv",
+				PID:       1234572,
+				PStart:    2181493644,
+				StartTime: parseTime("2023-09-27T15:39:35Z"),
+				Type:      "qmcreate",
+				ID:        "501",
 				User:      "root@pam",
 			},
 		},
