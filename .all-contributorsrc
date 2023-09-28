@@ -478,6 +478,15 @@
         "test",
         "doc"
       ]
+    },
+    {
+      "login": "2b",
+      "name": "2b",
+      "avatar_url": "https://avatars.githubusercontent.com/u/829041?v=4",
+      "profile": "https://github.com/2b",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
