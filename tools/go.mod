@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/golangci/golangci-lint v1.54.2
-	github.com/goreleaser/goreleaser v1.21.0
+	github.com/goreleaser/goreleaser v1.21.2
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
 )
 
