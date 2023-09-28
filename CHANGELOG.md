@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.32.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.32.1...v0.32.2) (2023-09-28)
+
+
+### Bug Fixes
+
+* **tasks:** fix UPID (task id) parsing error ([#591](https://github.com/bpg/terraform-provider-proxmox/issues/591)) ([294a9da](https://github.com/bpg/terraform-provider-proxmox/commit/294a9daa8711f7a2dbb054f1de750bf9f1bb4f3a))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/goreleaser/goreleaser from 1.20.0 to 1.21.0 in /tools ([#587](https://github.com/bpg/terraform-provider-proxmox/issues/587)) ([2573323](https://github.com/bpg/terraform-provider-proxmox/commit/257332393f48dc2c5367c8934923bea28964ffdc))
+* **deps:** bump github.com/goreleaser/goreleaser from 1.21.0 to 1.21.2 in /tools ([#592](https://github.com/bpg/terraform-provider-proxmox/issues/592)) ([2621aad](https://github.com/bpg/terraform-provider-proxmox/commit/2621aadb5f089a88b6ddf027ce906c20031ee2a0))
+
 ## [0.32.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.32.0...v0.32.1) (2023-09-23)
 
 
