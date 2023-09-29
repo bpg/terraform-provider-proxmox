@@ -48,10 +48,11 @@ func TestAccResourceFile(t *testing.T) {
 	snippetFile2 := createFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file")
 	fileISO := createFile(t, "file-*.iso", "pretend it is an ISO")
 
-	uploadSnippetFile(t, snippetFile2)
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: accProviders,
+		PreCheck: func() {
+			uploadSnippetFile(t, snippetFile2)
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceFileSnippetRawCreatedConfig(snippetRaw),
@@ -259,7 +260,7 @@ test snippet - updated
 func testAccResourceFileSnippetUpdatedCheck(fname string) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(accTestFileName, "content_type", "snippets"),
-		// resource.TestCheckResourceAttr(accTestFileName, "file_name", fname),
+		resource.TestCheckResourceAttr(accTestFileName, "file_name", fname),
 		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.file_name", fname),
 		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.data", "test snippet - updated\n"),
 		resource.TestCheckResourceAttr(accTestFileName, "id", fmt.Sprintf("local:snippets/%s", fname)),
