@@ -48,33 +48,7 @@ func TestAccResourceFile(t *testing.T) {
 	snippetFile2 := createFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file")
 	fileISO := createFile(t, "file-*.iso", "pretend it is an ISO")
 
-	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
-	u, err := url.ParseRequestURI(endpoint)
-	require.NoError(t, err)
-
-	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
-	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
-
-	sshClient, err := ssh.NewClient(
-		sshUsername, "", true, sshAgentSocket,
-		&nodeResolver{
-			node: ssh.ProxmoxNode{
-				Address: u.Hostname(),
-				Port:    22,
-			},
-		},
-	)
-	require.NoError(t, err)
-
-	f, err := os.Open(snippetFile2.Name())
-	defer f.Close()
-	err = sshClient.NodeUpload(context.Background(), "pve", "/var/lib/vz",
-		&api.FileUploadRequest{
-			ContentType: "snippets",
-			FileName:    filepath.Base(snippetFile2.Name()),
-			File:        f,
-		})
-	require.NoError(t, err)
+	uploadSnippetFile(t, snippetFile2)
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: accProviders,
@@ -86,11 +60,6 @@ func TestAccResourceFile(t *testing.T) {
 			{
 				Config: testAccResourceFileCreatedConfig(snippetFile1.Name()),
 				Check:  testAccResourceFileCreatedCheck("snippets", snippetFile1.Name()),
-			},
-			// allow to overwrite the a file by default
-			{
-				Config: testAccResourceFileCreatedConfig(snippetFile2.Name()),
-				Check:  testAccResourceFileCreatedCheck("snippets", snippetFile2.Name()),
 			},
 			{
 				Config: testAccResourceFileCreatedConfig(snippetURL),
@@ -112,10 +81,15 @@ func TestAccResourceFile(t *testing.T) {
 				Config:      testAccResourceFileMissingSourceConfig(),
 				ExpectError: regexp.MustCompile("missing argument"),
 			},
-			// do not allow to overwrite the a file
+			// Do not allow to overwrite the a file
 			{
 				Config:      testAccResourceFileCreatedConfig(snippetFile2.Name(), "overwrite = false"),
 				ExpectError: regexp.MustCompile("already exists"),
+			},
+			// Allow to overwrite the a file by default
+			{
+				Config: testAccResourceFileCreatedConfig(snippetFile2.Name()),
+				Check:  testAccResourceFileCreatedCheck("snippets", snippetFile2.Name()),
 			},
 			// Update testing
 			{
@@ -129,13 +103,47 @@ func TestAccResourceFile(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateId:     fmt.Sprintf("pve/local:snippets/%s", filepath.Base(snippetFile2.Name())),
 				SkipFunc: func() (bool, error) {
-					// TODO: add a file to the snippets directory outside of terraform
-					// and then import it here
+					// doesn't work, not sure why
 					return true, nil
 				},
 			},
 		},
 	})
+}
+
+func uploadSnippetFile(t *testing.T, file *os.File) {
+	t.Helper()
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
+	require.NoError(t, err)
+
+	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	f, err := os.Open(file.Name())
+	require.NoError(t, err)
+
+	defer f.Close()
+
+	err = sshClient.NodeUpload(context.Background(), "pve", "/var/lib/vz",
+		&api.FileUploadRequest{
+			ContentType: "snippets",
+			FileName:    filepath.Base(file.Name()),
+			File:        f,
+		})
+	require.NoError(t, err)
 }
 
 func createFile(t *testing.T, namePattern string, content string) *os.File {
@@ -194,10 +202,10 @@ resource "proxmox_virtual_environment_file" "test" {
     data = <<EOF
 test snippet
     EOF
-	file_name = "foo.txt"
+	file_name = "foo.yaml"
   }
   source_file {
-    path = "bar.txt"
+    path = "bar.yaml"
   }
 }
 	`, accTestNodeName)

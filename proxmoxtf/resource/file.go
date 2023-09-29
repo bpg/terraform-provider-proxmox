@@ -302,11 +302,50 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	contentType, dg := fileGetContentType(d)
 	diags = append(diags, dg...)
 
-	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	fileName, err := fileGetSourceFileName(d)
 	diags = append(diags, diag.FromErr(err)...)
 
+	if diags.HasError() {
+		return diags
+	}
+
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
+	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+
+	config := m.(proxmoxtf.ProviderConfiguration)
+
+	capi, err := config.GetClient()
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	list, err := capi.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	for _, file := range list {
+		volumeID, e := fileParseVolumeID(file.VolumeID)
+		if e != nil {
+			tflog.Warn(ctx, "failed to parse volume ID", map[string]interface{}{
+				"error": err,
+			})
+
+			continue
+		}
+
+		if volumeID.fileName == *fileName {
+			if d.Get(mkResourceVirtualEnvironmentFileOverwrite).(bool) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("the existing file %q has been overwritten by the resource", volumeID),
+				})
+			} else {
+				return diag.Errorf("file %q already exists", volumeID)
+			}
+		}
+	}
+
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
 
@@ -417,6 +456,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		}
 	}
 
+	//nolint:nestif
 	if len(sourceRaw) > 0 {
 		sourceRawBlock := sourceRaw[0].(map[string]interface{})
 		sourceRawData := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawData].(string)
@@ -471,13 +511,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			})
 		}
 	}(file)
-
-	config := m.(proxmoxtf.ProviderConfiguration)
-
-	capi, err := config.GetClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	request := &api.FileUploadRequest{
 		ContentType: *contentType,
