@@ -65,6 +65,8 @@ EOF
     - `vztmpl`
 - `datastore_id` - (Required) The datastore id.
 - `node_name` - (Required) The node name.
+- `overwrite` - (Optional) Whether to overwrite an existing file (defaults to
+  `true`).
 - `source_file` - (Optional) The source file (conflicts with `source_raw`).
     - `checksum` - (Optional) The SHA256 checksum of the source file.
     - `file_name` - (Optional) The file name to use instead of the source file
@@ -96,19 +98,22 @@ You must ensure that you have at least `Size-in-MB * 2 + 1` MB of storage space
 available (twice the size plus overhead because a multipart payload needs to be
 created as another temporary file).
 
-If the specified file already exists, the resource will unconditionally replace
-it and take ownership of the resource. On destruction, the file will be deleted
-as if it did not exist before.
+By default, if the specified file already exists, the resource will
+unconditionally replace it and take ownership of the resource. On destruction,
+the file will be deleted as if it did not exist before. If you want to prevent
+the resource from replacing the file, set `overwrite` to `false`.
 
 ## Import
 
 Instances can be imported using the `node_name`, `datastore_id`, `content_type`
 and the `file_name` in the following format:
+
 ```
 <node_name>:<datastore_id>/<content_type>/<file_name>
 ```
 
 Example:
+
 ```bash
 $ terraform import proxmox_virtual_environment_file.cloud_config pve/local:snippets/example.cloud-config.yaml
 ```

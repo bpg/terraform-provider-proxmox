@@ -39,6 +39,7 @@ const (
 	dvResourceVirtualEnvironmentFileSourceFileChecksum = ""
 	dvResourceVirtualEnvironmentFileSourceFileFileName = ""
 	dvResourceVirtualEnvironmentFileSourceFileInsecure = false
+	dvResourceVirtualEnvironmentFileOverwrite          = true
 	dvResourceVirtualEnvironmentFileSourceRawResize    = 0
 	dvResourceVirtualEnvironmentFileTimeoutUpload      = 1800
 
@@ -49,6 +50,7 @@ const (
 	mkResourceVirtualEnvironmentFileFileSize             = "file_size"
 	mkResourceVirtualEnvironmentFileFileTag              = "file_tag"
 	mkResourceVirtualEnvironmentFileNodeName             = "node_name"
+	mkResourceVirtualEnvironmentFileOverwrite            = "overwrite"
 	mkResourceVirtualEnvironmentFileSourceFile           = "source_file"
 	mkResourceVirtualEnvironmentFileSourceFilePath       = "path"
 	mkResourceVirtualEnvironmentFileSourceFileChanged    = "changed"
@@ -71,7 +73,7 @@ func File() *schema.Resource {
 				Description:      "The content type",
 				Optional:         true,
 				ForceNew:         true,
-				Default:          dvResourceVirtualEnvironmentFileContentType,
+				Computed:         true,
 				ValidateDiagFunc: validator.ContentType(),
 			},
 			mkResourceVirtualEnvironmentFileDatastoreID: {
@@ -198,6 +200,12 @@ func File() *schema.Resource {
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentFileTimeoutUpload,
 			},
+			mkResourceVirtualEnvironmentFileOverwrite: {
+				Type:        schema.TypeBool,
+				Description: "Whether to overwrite the file if it already exists",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentFileOverwrite,
+			},
 		},
 		CreateContext: fileCreate,
 		ReadContext:   fileRead,
@@ -294,11 +302,50 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	contentType, dg := fileGetContentType(d)
 	diags = append(diags, dg...)
 
-	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
-	fileName, err := fileGetFileName(d)
+	fileName, err := fileGetSourceFileName(d)
 	diags = append(diags, diag.FromErr(err)...)
 
+	if diags.HasError() {
+		return diags
+	}
+
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
+	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
+
+	config := m.(proxmoxtf.ProviderConfiguration)
+
+	capi, err := config.GetClient()
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	list, err := capi.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	for _, file := range list {
+		volumeID, e := fileParseVolumeID(file.VolumeID)
+		if e != nil {
+			tflog.Warn(ctx, "failed to parse volume ID", map[string]interface{}{
+				"error": err,
+			})
+
+			continue
+		}
+
+		if volumeID.fileName == *fileName {
+			if d.Get(mkResourceVirtualEnvironmentFileOverwrite).(bool) {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("the existing file %q has been overwritten by the resource", volumeID),
+				})
+			} else {
+				return diag.Errorf("file %q already exists", volumeID)
+			}
+		}
+	}
+
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
 
@@ -407,7 +454,10 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 				)
 			}
 		}
-	} else if len(sourceRaw) > 0 {
+	}
+
+	//nolint:nestif
+	if len(sourceRaw) > 0 {
 		sourceRawBlock := sourceRaw[0].(map[string]interface{})
 		sourceRawData := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawData].(string)
 		sourceRawResize := sourceRawBlock[mkResourceVirtualEnvironmentFileSourceRawResize].(int)
@@ -445,13 +495,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		}(tempRawFileName)
 
 		sourceFilePathLocal = tempRawFileName
-	} else {
-		return diag.Errorf(
-			"please specify either \"%s.%s\" or \"%s\"",
-			mkResourceVirtualEnvironmentFileSourceFile,
-			mkResourceVirtualEnvironmentFileSourceFilePath,
-			mkResourceVirtualEnvironmentFileSourceRaw,
-		)
 	}
 
 	// Open the source file for reading in order to upload it.
@@ -468,13 +511,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			})
 		}
 	}(file)
-
-	config := m.(proxmoxtf.ProviderConfiguration)
-
-	capi, err := config.GetClient()
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	request := &api.FileUploadRequest{
 		ContentType: *contentType,
@@ -590,7 +626,7 @@ func fileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
 	return &contentType, diags
 }
 
-func fileGetFileName(d *schema.ResourceData) (*string, error) {
+func fileGetSourceFileName(d *schema.ResourceData) (*string, error) {
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
 
@@ -637,7 +673,7 @@ func fileGetFileName(d *schema.ResourceData) (*string, error) {
 }
 
 func fileGetVolumeID(d *schema.ResourceData) (fileVolumeID, diag.Diagnostics) {
-	fileName, err := fileGetFileName(d)
+	fileName, err := fileGetSourceFileName(d)
 	if err != nil {
 		return fileVolumeID{}, diag.FromErr(err)
 	}
@@ -677,53 +713,53 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
-	sourceFilePath := ""
-
-	if len(sourceFile) == 0 {
-		return nil
-	}
-
-	sourceFileBlock := sourceFile[0].(map[string]interface{})
-	sourceFilePath = sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 
 	list, err := capi.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	fileIsURL := fileIsURL(d)
-	fileName, err := fileGetFileName(d)
-	if err != nil {
-		return diag.FromErr(err)
+	readFileAttrs := readFile
+	if fileIsURL(d) {
+		readFileAttrs = readURL
 	}
 
 	var diags diag.Diagnostics
 
+	found := false
 	for _, v := range list {
 		if v.VolumeID == d.Id() {
-			var fileModificationDate string
-			var fileSize int64
-			var fileTag string
+			found = true
 
-			if fileIsURL {
-				fileSize, fileModificationDate, fileTag, err = readURL(ctx, d, sourceFilePath)
-			} else {
-				fileModificationDate, fileSize, fileTag, err = readFile(ctx, sourceFilePath)
-			}
+			volID, err := fileParseVolumeID(v.VolumeID)
 			diags = append(diags, diag.FromErr(err)...)
 
-			lastFileMD := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
-			lastFileSize := int64(d.Get(mkResourceVirtualEnvironmentFileFileSize).(int))
-			lastFileTag := d.Get(mkResourceVirtualEnvironmentFileFileTag).(string)
+			err = d.Set(mkResourceVirtualEnvironmentFileFileName, volID.fileName)
+			diags = append(diags, diag.FromErr(err)...)
+
+			err = d.Set(mkResourceVirtualEnvironmentFileContentType, v.ContentType)
+			diags = append(diags, diag.FromErr(err)...)
+
+			if len(sourceFile) == 0 {
+				continue
+			}
+
+			sourceFileBlock := sourceFile[0].(map[string]interface{})
+			sourceFilePath := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
+
+			fileModificationDate, fileSize, fileTag, err := readFileAttrs(ctx, sourceFilePath)
+			diags = append(diags, diag.FromErr(err)...)
 
 			err = d.Set(mkResourceVirtualEnvironmentFileFileModificationDate, fileModificationDate)
-			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkResourceVirtualEnvironmentFileFileName, *fileName)
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkResourceVirtualEnvironmentFileFileSize, fileSize)
 			diags = append(diags, diag.FromErr(err)...)
 			err = d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
 			diags = append(diags, diag.FromErr(err)...)
+
+			lastFileMD := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
+			lastFileSize := int64(d.Get(mkResourceVirtualEnvironmentFileFileSize).(int))
+			lastFileTag := d.Get(mkResourceVirtualEnvironmentFileFileTag).(string)
 
 			// just to make the logic easier to read
 			changed := false
@@ -742,7 +778,10 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 	}
 
-	d.SetId("")
+	if !found {
+		diags = append(diags, diag.Errorf("no such file: %q", d.Id())...)
+		return diags
+	}
 
 	return nil
 }
@@ -781,9 +820,8 @@ func readFile(
 //nolint:nonamedreturns
 func readURL(
 	ctx context.Context,
-	d *schema.ResourceData,
 	sourceFilePath string,
-) (fileSize int64, fileModificationDate string, fileTag string, err error) {
+) (fileModificationDate string, fileSize int64, fileTag string, err error) {
 	res, err := http.Head(sourceFilePath)
 	if err != nil {
 		return
@@ -806,11 +844,6 @@ func readURL(
 		}
 
 		fileModificationDate = timeParsed.UTC().Format(time.RFC3339)
-	} else {
-		err = d.Set(mkResourceVirtualEnvironmentFileFileModificationDate, "")
-		if err != nil {
-			return
-		}
 	}
 
 	httpTag := res.Header.Get("ETag")
