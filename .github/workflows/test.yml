@@ -70,10 +70,3 @@ jobs:
         if: steps.filter.outputs.go == 'true'
         timeout-minutes: 10
         run: go test -v -cover ./...
-
-  all-tests-passed:
-    name: All Tests Passed
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "PASS"
