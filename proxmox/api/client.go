@@ -75,6 +75,7 @@ func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 
 	var transport http.RoundTripper = &http.Transport{
 		TLSClientConfig: &tls.Config{
+			MinVersion:         tls.VersionTLS13,
 			InsecureSkipVerify: insecure, //nolint:gosec
 		},
 	}
