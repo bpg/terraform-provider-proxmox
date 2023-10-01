@@ -382,7 +382,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			httpClient := http.Client{
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
-						MaxVersion:         tls.VersionTLS13,
+						MinVersion:         tls.VersionTLS13,
 						InsecureSkipVerify: sourceFileInsecure,
 					},
 				},
