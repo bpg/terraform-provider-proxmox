@@ -125,8 +125,10 @@ func (t *ticketAuthenticator) AuthenticateRequest(ctx context.Context, req *http
 	}
 
 	req.AddCookie(&http.Cookie{
-		Name:  "PVEAuthCookie",
-		Value: *a.Ticket,
+		HttpOnly: true,
+		Name:     "PVEAuthCookie",
+		Secure:   true,
+		Value:    *a.Ticket,
 	})
 
 	if req.Method != http.MethodGet {
