@@ -43,6 +43,40 @@ func (c *Client) GetTaskStatus(ctx context.Context, upid string) (*GetTaskStatus
 	return resBody.Data, nil
 }
 
+// GetTaskLog retrieves the log of a task. The log is returned as an array of
+// lines. Each line is an object with a line number and the text of the line.
+// Reads first 50 lines by default.
+func (c *Client) GetTaskLog(ctx context.Context, upid string) ([]string, error) {
+	resBody := &GetTaskLogResponseBody{}
+	lines := []string{}
+
+	path, err := c.BuildPath(upid, "log")
+	if err != nil {
+		return lines, fmt.Errorf("error building path for task status: %w", err)
+	}
+
+	err = c.DoRequest(
+		ctx,
+		http.MethodGet,
+		path,
+		nil,
+		resBody,
+	)
+	if err != nil {
+		return lines, fmt.Errorf("error retrieving task status: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return lines, api.ErrNoDataObjectInResponse
+	}
+
+	for _, line := range resBody.Data {
+		lines = append(lines, line.LineText)
+	}
+
+	return lines, nil
+}
+
 // WaitForTask waits for a specific task to complete.
 func (c *Client) WaitForTask(ctx context.Context, upid string, timeoutSec, delaySec int) error {
 	timeDelay := int64(delaySec)

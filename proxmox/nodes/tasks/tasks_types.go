@@ -25,6 +25,17 @@ type GetTaskStatusResponseData struct {
 	ExitCode string `json:"exitstatus,omitempty"`
 }
 
+// GetTaskLogResponseBody contains the body from a node get task log response.
+type GetTaskLogResponseBody struct {
+	Data []*GetTaskLogResponseData `json:"data,omitempty"`
+}
+
+// GetTaskLogResponseData contains the data from a node get task log response.
+type GetTaskLogResponseData struct {
+	LineNumber int    `json:"n,omitempty"`
+	LineText   string `json:"t,omitempty"`
+}
+
 // TaskID contains the components of a PVE task ID.
 type TaskID struct {
 	NodeName  string
