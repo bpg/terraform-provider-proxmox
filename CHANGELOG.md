@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.33.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.32.2...v0.33.0) (2023-10-02)
+
+
+### Features
+
+* **file:** add optional `overwrite` flag to the file resource ([#593](https://github.com/bpg/terraform-provider-proxmox/issues/593)) ([5e24a75](https://github.com/bpg/terraform-provider-proxmox/commit/5e24a75d09b930aef07a067b37be0507c1948de1))
+* **vm:** allow `scsi` and `sata` interfaces for CloudInit Drive ([#598](https://github.com/bpg/terraform-provider-proxmox/issues/598)) ([0b8f2e2](https://github.com/bpg/terraform-provider-proxmox/commit/0b8f2e2c6f80b0370290e6b32ba1e7add977018c))
+
+
+### Bug Fixes
+
+* **api:** set min TLS version 1.3, secure HTTP-only cookie ([#596](https://github.com/bpg/terraform-provider-proxmox/issues/596)) ([16ebf30](https://github.com/bpg/terraform-provider-proxmox/commit/16ebf30a79e8e3cc2df48787b210fd78950f8260))
+
+
+### Miscellaneous
+
+* **ci:** cleanup CI flows ([#595](https://github.com/bpg/terraform-provider-proxmox/issues/595)) ([bd09fd3](https://github.com/bpg/terraform-provider-proxmox/commit/bd09fd3d6ec954e6d2c8d01e51050faf5677d422))
+
 ## [0.32.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.32.1...v0.32.2) (2023-09-28)
 
 
