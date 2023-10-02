@@ -1602,16 +1602,26 @@ func deleteIdeDrives(ctx context.Context, vmAPI *vms.Client, itf1 string, itf2 s
 
 // Start the VM, then wait for it to actually start; it may not be started immediately if running in HA mode.
 func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	tflog.Debug(ctx, "Starting VM")
 
 	startVMTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStartVM).(int)
 
-	e := vmAPI.StartVM(ctx, startVMTimeout)
+	log, e := vmAPI.StartVM(ctx, startVMTimeout)
 	if e != nil {
-		return diag.FromErr(e)
+		return append(diags, diag.FromErr(e)...)
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMState(ctx, "running", startVMTimeout, 1))
+	if len(log) > 0 {
+		lines := "\n\t| " + strings.Join(log, "\n\t| ")
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  fmt.Sprintf("the VM startup task finished with a warning, task log:\n%s", lines),
+		})
+	}
+
+	return append(diags, diag.FromErr(vmAPI.WaitForVMState(ctx, "running", startVMTimeout, 1))...)
 }
 
 // Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if
@@ -3779,11 +3789,15 @@ func vmReadCustom(
 	diskObjects := getDiskInfo(vmConfig, d)
 
 	for di, dd := range diskObjects {
-		disk := map[string]interface{}{}
-
 		if dd == nil || dd.FileVolume == "none" || strings.HasPrefix(di, "ide") {
 			continue
 		}
+
+		if strings.HasSuffix(dd.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
+			continue
+		}
+
+		disk := map[string]interface{}{}
 
 		fileIDParts := strings.Split(dd.FileVolume, ":")
 

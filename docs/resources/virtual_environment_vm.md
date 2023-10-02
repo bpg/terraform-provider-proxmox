@@ -300,8 +300,9 @@ output "ubuntu_vm_public_key" {
     - `datastore_id` - (Optional) The identifier for the datastore to create the
       cloud-init disk in (defaults to `local-lvm`).
     - `interface` - (Optional) The hardware interface to connect the cloud-init
-      image to. Must be `ideN`. Will be detected if the setting is missing but a
-      cloud-init image is present, otherwise defaults to `ide2`.
+      image to. Must be one of `ide0..3`, `sata0..5`, `scsi0..30`. Will be
+      detected if the setting is missing but a cloud-init image is present,
+      otherwise defaults to `ide2`.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
         - `server` - (Optional) The DNS server.

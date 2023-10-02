@@ -7,6 +7,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     enabled = true
   }
 
+  bios        = "ovmf"
   description = "Managed by Terraform"
 
   cpu {
@@ -56,7 +57,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   initialization {
     datastore_id = local.datastore_id
-    # interface = "ide2"
+    interface    = "scsi4"
 
     dns {
       server = "1.1.1.1"
@@ -76,7 +77,8 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     meta_data_file_id   = proxmox_virtual_environment_file.meta_config.id
   }
 
-  name = "terraform-provider-proxmox-example-template"
+  machine = "q35"
+  name    = "terraform-provider-proxmox-example-template"
 
   network_device {
     mtu = 1450
@@ -113,6 +115,8 @@ resource "proxmox_virtual_environment_vm" "example" {
     vm_id = proxmox_virtual_environment_vm.example_template.id
   }
 
+  machine = "q35"
+
   memory {
     dedicated = 768
   }
@@ -135,7 +139,7 @@ resource "proxmox_virtual_environment_vm" "example" {
     // if unspecified:
     //   - autodetected if there is a cloud-init device on the template
     //   - otherwise defaults to ide2
-    interface = "ide0"
+    interface = "scsi4"
 
     dns {
       server = "8.8.8.8"

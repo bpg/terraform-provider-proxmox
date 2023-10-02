@@ -256,13 +256,12 @@ func IDEInterface() schema.SchemaValidateDiagFunc {
 // CloudInitInterface is a schema validation function that accepts either an IDE interface identifier or an
 // empty string, which is used as the default and means "detect which interface should be used automatically".
 func CloudInitInterface() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringInSlice([]string{
-		"",
-		"ide0",
-		"ide1",
-		"ide2",
-		"ide3",
-	}, false))
+	r := regexp.MustCompile(`^ide[0-3]|sata[0-5]|scsi(?:30|[12][0-9]|[0-9])$`)
+
+	return validation.ToDiagFunc(validation.Any(
+		validation.StringIsEmpty,
+		validation.StringMatch(r, "one of ide0..3|sata0..5|scsi0..30"),
+	))
 }
 
 // CloudInitType is a schema validation function for cloud-init types.
