@@ -229,3 +229,10 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
 ## Stargazers
 
 [![Star History Chart](https://api.star-history.com/svg?repos=bpg/terraform-provider-proxmox&type=Date)](https://star-history.com/#bpg/terraform-provider-proxmox&Date)
+
+## Sponsorship
+
+❤️ This project is sponsored by:
+- [TJ Zimmerman](https://github.com/zimmertr)
+
+Thanks again for your support, it is much appreciated! 🙏
