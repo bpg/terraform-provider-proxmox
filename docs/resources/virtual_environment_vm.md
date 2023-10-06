@@ -240,6 +240,10 @@ output "ubuntu_vm_public_key" {
         - `unsafe` - Write directly to the disk bypassing the host cache.
     - `datastore_id` - (Optional) The identifier for the datastore to create
       the disk in (defaults to `local-lvm`).
+    - `path_in_datastore` - (Optional) The in-datastore path to the disk image.
+      ***Experimental.***Use to attach another VM's disks,
+      or (as root only) host's filesystem paths (`datastore_id` empty string).
+      See "*Example: Attached disks*". 
     - `discard` - (Optional) Whether to pass discard/trim requests to the
       underlying storage. Supported values are `on`/`ignore` (defaults
       to `ignore`).
@@ -512,6 +516,73 @@ to force the migration step to migrate all disks to a specific datastore on the
 target node. If you need certain disks to be on specific datastores, set
 the `datastore_id` argument of the disks in the `disks` block to move the disks
 to the correct datastore after the cloning and migrating succeeded.
+
+## Example: Attached disks
+
+In this example VM `data_vm` holds two data disks, and is not used as an actual VM,
+but only as a container for the disks.
+It does not have any OS installation, it is never started.
+
+VM `data_user_vm` attaches those disks as `scsi1` and `scsi2`.
+**VM `data_user_vm` can be *re-created/replaced* without losing data stored on disks
+owned by `data_vm`.**
+
+This functionality is **experimental**.
+
+Do *not* simultaneously run more than one VM using same disk. For most filesystems,
+attaching one disk to multiple VM will cause errors or even data corruption.
+
+Do *not* move or resize `data_vm` disks.
+(Resource `data_user_vm` should reject attempts to move or resize non-owned disks.)
+
+
+```terraform
+resource "proxmox_virtual_environment_vm" "data_vm" {
+  started = false
+  on_boot = false
+
+  disk {
+    datastore_id = "local-zfs"
+    file_format  = "raw"
+    interface    = "scsi0"
+    size         = 1 
+  }
+
+  disk {
+    datastore_id = "local-zfs"
+    file_format  = "raw"
+    interface    = "scsi1"
+    size         = 4 
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "data_user_vm" {
+  # boot disk
+  disk {
+    datastore_id = "local-zfs"
+    file_format  = "raw"
+    interface    = "scsi0"
+    size         = 8 
+  }
+
+  # attached disks from data_vm
+  dynamic "disk" {
+    for_each = { for idx, val in proxmox_virtual_environment_vm.data_vm.disk : idx => val }
+    iterator = data_disk
+    content {
+      datastore_id      = data_disk.value["datastore_id"]
+      path_in_datastore = data_disk.value["path_in_datastore"]
+      file_format       = data_disk.value["file_format"]
+      size              = data_disk.value["size"]
+      # assign from scsi1 and up
+      interface         = "scsi${data_disk.key + 1}" 
+    }
+  }
+
+  # remainder of VM configuration
+  ...
+}
+````
 
 ## Import
 
