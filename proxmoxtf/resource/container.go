@@ -67,6 +67,7 @@ const (
 	dvResourceVirtualEnvironmentContainerStarted                           = true
 	dvResourceVirtualEnvironmentContainerTemplate                          = false
 	dvResourceVirtualEnvironmentContainerUnprivileged                      = false
+	dvResourceVirtualEnvironmentContainerStartOnBoot                       = false
 	dvResourceVirtualEnvironmentContainerVMID                              = -1
 
 	maxResourceVirtualEnvironmentContainerNetworkInterfaces = 8
@@ -138,6 +139,7 @@ const (
 	mkResourceVirtualEnvironmentContainerTags                              = "tags"
 	mkResourceVirtualEnvironmentContainerTemplate                          = "template"
 	mkResourceVirtualEnvironmentContainerUnprivileged                      = "unprivileged"
+	mkResourceVirtualEnvironmentContainerStartOnBoot                       = "start_on_boot"
 	mkResourceVirtualEnvironmentContainerVMID                              = "vm_id"
 )
 
@@ -741,6 +743,13 @@ func Container() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Default:     dvResourceVirtualEnvironmentContainerUnprivileged,
+			},
+			mkResourceVirtualEnvironmentContainerStartOnBoot: {
+				Type:        schema.TypeBool,
+				Description: "Automatically start container when the host system boots.",
+				Optional:    true,
+				ForceNew:    false,
+				Default:     dvResourceVirtualEnvironmentContainerStartOnBoot,
 			},
 			mkResourceVirtualEnvironmentContainerVMID: {
 				Type:             schema.TypeInt,
@@ -1451,6 +1460,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
+	startOnBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStartOnBoot).(bool))
 	vmID := d.Get(mkResourceVirtualEnvironmentContainerVMID).(int)
 
 	if vmID == -1 {
@@ -1477,7 +1487,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
 		OSType:               &operatingSystemType,
 		RootFS:               rootFS,
-		StartOnBoot:          &started,
+		StartOnBoot:          &startOnBoot,
+		Start:                &started,
 		Swap:                 &memorySwap,
 		Template:             &template,
 		TTY:                  &consoleTTYCount,
