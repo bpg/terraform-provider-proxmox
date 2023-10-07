@@ -7,6 +7,8 @@
 package proxmox
 
 import (
+	"os"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
@@ -42,16 +44,20 @@ type Client interface {
 
 	// SSH returns a lower-level SSH client.
 	SSH() ssh.Client
+
+	// TempDir returns (possibly overridden) os.TempDir().
+	TempDir() string
 }
 
 type client struct {
-	a api.Client
-	s ssh.Client
+	a              api.Client
+	s              ssh.Client
+	tmpDirOverride string
 }
 
 // NewClient creates a new API client.
-func NewClient(a api.Client, s ssh.Client) Client {
-	return &client{a: a, s: s}
+func NewClient(a api.Client, s ssh.Client, tmpDirOverride string) Client {
+	return &client{a: a, s: s, tmpDirOverride: tmpDirOverride}
 }
 
 // Access returns a client for managing access control.
@@ -92,4 +98,13 @@ func (c *client) API() api.Client {
 // SSH returns a lower-lever SSH client.s.
 func (c *client) SSH() ssh.Client {
 	return c.s
+}
+
+// TempDir returns (possibly overridden) os.TempDir().
+func (c *client) TempDir() string {
+	if c.tmpDirOverride != "" {
+		return c.tmpDirOverride
+	}
+
+	return os.TempDir()
 }
