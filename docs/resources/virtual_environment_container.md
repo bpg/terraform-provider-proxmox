@@ -188,7 +188,7 @@ output "ubuntu_container_public_key" {
         - `unmanaged` - Unmanaged.
 - `pool_id` - (Optional) The identifier for a pool to assign the container to.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
-- `start_on_boot` - (Optional) Automatically start container when the host system boots (defaults to `false`).
+- `start_on_boot` - (Optional) Automatically start container when the host system boots (defaults to `true`).
 - `tags` - (Optional) A list of tags the container tags. This is only meta
   information (defaults to `[]`). Note: Proxmox always sorts the container tags.
   If the list in template is not sorted, then Proxmox will always report a
