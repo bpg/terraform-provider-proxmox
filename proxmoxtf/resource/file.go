@@ -471,8 +471,8 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			}
 		}
 
-		tempRawFile, err := os.CreateTemp(config.TempDir(), "raw")
-		if err != nil {
+		tempRawFile, e := os.CreateTemp(config.TempDir(), "raw")
+		if e != nil {
 			return diag.FromErr(err)
 		}
 

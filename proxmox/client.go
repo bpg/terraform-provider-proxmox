@@ -50,54 +50,54 @@ type Client interface {
 }
 
 type client struct {
-	a              api.Client
-	s              ssh.Client
+	apiClient      api.Client
+	sshClient      ssh.Client
 	tmpDirOverride string
 }
 
 // NewClient creates a new API client.
-func NewClient(a api.Client, s ssh.Client, tmpDirOverride string) Client {
-	return &client{a: a, s: s, tmpDirOverride: tmpDirOverride}
+func NewClient(apiClient api.Client, sshClient ssh.Client, tmpDirOverride string) Client {
+	return &client{apiClient: apiClient, sshClient: sshClient, tmpDirOverride: tmpDirOverride}
 }
 
 // Access returns a client for managing access control.
 func (c *client) Access() *access.Client {
-	return &access.Client{Client: c.a}
+	return &access.Client{Client: c.apiClient}
 }
 
 // Cluster returns a client for managing the cluster.
 func (c *client) Cluster() *cluster.Client {
-	return &cluster.Client{Client: c.a}
+	return &cluster.Client{Client: c.apiClient}
 }
 
 // Node returns a client for managing resources on a specific node.
 func (c *client) Node(nodeName string) *nodes.Client {
-	return &nodes.Client{Client: c.a, NodeName: nodeName}
+	return &nodes.Client{Client: c.apiClient, NodeName: nodeName}
 }
 
 // Pool returns a client for managing resource pools.
 func (c *client) Pool() *pools.Client {
-	return &pools.Client{Client: c.a}
+	return &pools.Client{Client: c.apiClient}
 }
 
 // Storage returns a client for managing storage.
 func (c *client) Storage() *storage.Client {
-	return &storage.Client{Client: c.a}
+	return &storage.Client{Client: c.apiClient}
 }
 
 // Version returns a client for getting the version of the Proxmox Virtual Environment API.
 func (c *client) Version() *version.Client {
-	return &version.Client{Client: c.a}
+	return &version.Client{Client: c.apiClient}
 }
 
 // API returns a lower-lever REST API client.
 func (c *client) API() api.Client {
-	return c.a
+	return c.apiClient
 }
 
-// SSH returns a lower-lever SSH client.s.
+// SSH returns a lower-lever SSH client.
 func (c *client) SSH() ssh.Client {
-	return c.s
+	return c.sshClient
 }
 
 // TempDir returns (possibly overridden) os.TempDir().
