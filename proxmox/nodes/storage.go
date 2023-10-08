@@ -145,6 +145,7 @@ func (c *Client) APIUpload(
 	datastoreID string,
 	d *api.FileUploadRequest,
 	uploadTimeout int,
+	tempDir string,
 ) (*DatastoreUploadResponseBody, error) {
 	tflog.Debug(ctx, "uploading file to datastore using PVE API", map[string]interface{}{
 		"file_name":    d.FileName,
@@ -205,7 +206,7 @@ func (c *Client) APIUpload(
 
 	// We need to store the multipart content in a temporary file to avoid using high amounts of memory.
 	// This is necessary due to Proxmox VE not supporting chunked transfers in v6.1 and earlier versions.
-	tempMultipartFile, err := os.CreateTemp("", "multipart")
+	tempMultipartFile, err := os.CreateTemp(tempDir, "multipart")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temporary file: %w", err)
 	}

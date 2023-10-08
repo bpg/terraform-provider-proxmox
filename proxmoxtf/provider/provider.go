@@ -155,7 +155,14 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		return nil, diag.Errorf("error creating SSH client: %s", err)
 	}
 
-	config := proxmoxtf.NewProviderConfiguration(apiClient, sshClient)
+	// Intentionally use 'PROXMOX_VE_TMPDIR' with 'TMP' instead of 'TEMP', to match os.TempDir's use of $TMPDIR
+	tmpDirOverride := utils.GetAnyStringEnv("PROXMOX_VE_TMPDIR", "PM_VE_TMPDIR")
+
+	if v, ok := d.GetOk(mkProviderTmpDir); ok {
+		tmpDirOverride = v.(string)
+	}
+
+	config := proxmoxtf.NewProviderConfiguration(apiClient, sshClient, tmpDirOverride)
 
 	return config, nil
 }

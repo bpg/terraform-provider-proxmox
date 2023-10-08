@@ -70,6 +70,7 @@ type proxmoxProviderModel struct {
 			Port    types.Int64  `tfsdk:"port"`
 		} `tfsdk:"node"`
 	} `tfsdk:"ssh"`
+	TmpDir types.String `tfsdk:"tmp_dir"`
 }
 
 func (p *proxmoxProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -117,6 +118,10 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 			},
 			"username": schema.StringAttribute{
 				Description: "The username for the Proxmox VE API.",
+				Optional:    true,
+			},
+			"tmp_dir": schema.StringAttribute{
+				Description: "The alternative temporary directory.",
 				Optional:    true,
 			},
 		},
@@ -355,7 +360,14 @@ func (p *proxmoxProvider) Configure(
 		return
 	}
 
-	client := proxmox.NewClient(apiClient, sshClient)
+	// Intentionally use 'PROXMOX_VE_TMPDIR' with 'TMP' instead of 'TEMP', to match os.TempDir's use of $TMPDIR
+	tmpDirOverride := utils.GetAnyStringEnv("PROXMOX_VE_TMPDIR", "PM_VE_TMPDIR")
+
+	if !config.TmpDir.IsNull() {
+		tmpDirOverride = config.TmpDir.ValueString()
+	}
+
+	client := proxmox.NewClient(apiClient, sshClient, tmpDirOverride)
 
 	resp.ResourceData = client
 	resp.DataSourceData = client

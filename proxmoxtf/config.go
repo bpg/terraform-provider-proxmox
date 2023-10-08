@@ -8,6 +8,7 @@ package proxmoxtf
 
 import (
 	"errors"
+	"os"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -16,18 +17,21 @@ import (
 
 // ProviderConfiguration is the configuration for the provider.
 type ProviderConfiguration struct {
-	apiClient api.Client
-	sshClient ssh.Client
+	apiClient      api.Client
+	sshClient      ssh.Client
+	tmpDirOverride string
 }
 
 // NewProviderConfiguration creates a new provider configuration.
 func NewProviderConfiguration(
 	apiClient api.Client,
 	sshClient ssh.Client,
+	tmpDirOverride string,
 ) ProviderConfiguration {
 	return ProviderConfiguration{
-		apiClient: apiClient,
-		sshClient: sshClient,
+		apiClient:      apiClient,
+		sshClient:      sshClient,
+		tmpDirOverride: tmpDirOverride,
 	}
 }
 
@@ -45,5 +49,14 @@ func (c *ProviderConfiguration) GetClient() (proxmox.Client, error) {
 		)
 	}
 
-	return proxmox.NewClient(c.apiClient, c.sshClient), nil
+	return proxmox.NewClient(c.apiClient, c.sshClient, c.tmpDirOverride), nil
+}
+
+// TempDir returns (possibly overridden) os.TempDir().
+func (c *ProviderConfiguration) TempDir() string {
+	if c.tmpDirOverride != "" {
+		return c.tmpDirOverride
+	}
+
+	return os.TempDir()
 }
