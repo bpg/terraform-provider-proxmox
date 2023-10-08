@@ -65,6 +65,7 @@ const (
 	dvResourceVirtualEnvironmentContainerOperatingSystemType               = "unmanaged"
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
+	dvResourceVirtualEnvironmentContainerStartOnBoot                       = true
 	dvResourceVirtualEnvironmentContainerTemplate                          = false
 	dvResourceVirtualEnvironmentContainerUnprivileged                      = false
 	dvResourceVirtualEnvironmentContainerVMID                              = -1
@@ -135,6 +136,7 @@ const (
 	mkResourceVirtualEnvironmentContainerOperatingSystemType               = "type"
 	mkResourceVirtualEnvironmentContainerPoolID                            = "pool_id"
 	mkResourceVirtualEnvironmentContainerStarted                           = "started"
+	mkResourceVirtualEnvironmentContainerStartOnBoot                       = "start_on_boot"
 	mkResourceVirtualEnvironmentContainerTags                              = "tags"
 	mkResourceVirtualEnvironmentContainerTemplate                          = "template"
 	mkResourceVirtualEnvironmentContainerUnprivileged                      = "unprivileged"
@@ -716,6 +718,13 @@ func Container() *schema.Resource {
 				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
 					return d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 				},
+			},
+			mkResourceVirtualEnvironmentContainerStartOnBoot: {
+				Type:        schema.TypeBool,
+				Description: "Automatically start container when the host system boots.",
+				Optional:    true,
+				ForceNew:    false,
+				Default:     dvResourceVirtualEnvironmentContainerStartOnBoot,
 			},
 			mkResourceVirtualEnvironmentContainerTags: {
 				Type:        schema.TypeList,
@@ -1448,6 +1457,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	poolID := d.Get(mkResourceVirtualEnvironmentContainerPoolID).(string)
 	started := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
+	startOnBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStartOnBoot).(bool))
 	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
@@ -1477,7 +1487,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
 		OSType:               &operatingSystemType,
 		RootFS:               rootFS,
-		StartOnBoot:          &started,
+		Start:                &started,
+		StartOnBoot:          &startOnBoot,
 		Swap:                 &memorySwap,
 		Template:             &template,
 		TTY:                  &consoleTTYCount,
