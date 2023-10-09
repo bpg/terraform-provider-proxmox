@@ -1745,10 +1745,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(clone) == 0 || currentDescription != dvResourceVirtualEnvironmentContainerDescription {
 		if containerConfig.Description != nil {
-			e = d.Set(
-				mkResourceVirtualEnvironmentContainerDescription,
-				strings.TrimSpace(*containerConfig.Description),
-			)
+			e = d.Set(mkResourceVirtualEnvironmentContainerDescription, *containerConfig.Description)
 		} else {
 			e = d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
 		}
