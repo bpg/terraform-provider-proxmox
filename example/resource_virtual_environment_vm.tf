@@ -11,7 +11,8 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   description = "Managed by Terraform"
 
   cpu {
-    numa = true
+    cores = 2
+    numa  = true
   }
 
   smbios {
@@ -81,7 +82,8 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   name    = "terraform-provider-proxmox-example-template"
 
   network_device {
-    mtu = 1450
+    mtu    = 1450
+    queues = 2
   }
 
   network_device {
