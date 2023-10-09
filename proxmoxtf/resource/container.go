@@ -1226,10 +1226,18 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	keyctl := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesKeyControl].(bool))
 	fuse := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesFUSE].(bool))
 
-	features := containers.CustomFeatures{
-		Nesting:    &nesting,
-		KeyControl: &keyctl,
-		FUSE:       &fuse,
+	features := containers.CustomFeatures{}
+
+	if nesting {
+		features.Nesting = &nesting
+	}
+
+	if keyctl {
+		features.KeyControl = &keyctl
+	}
+
+	if fuse {
+		features.FUSE = &fuse
 	}
 
 	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
@@ -1567,12 +1575,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := api.Node(nodeName).Container(vmID)
 
-	// Start the container and wait for it to reach a running state before continuing.
-	err = containerAPI.StartContainer(ctx, 60)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
+	// A container was started by the create operation, so wait for it to be running.
 	err = containerAPI.WaitForContainerState(ctx, "running", 120, 5)
 	if err != nil {
 		return diag.FromErr(err)
