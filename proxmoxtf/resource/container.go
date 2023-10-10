@@ -1575,8 +1575,8 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := api.Node(nodeName).Container(vmID)
 
-	// A container was started by the create operation, so wait for it to be running.
-	err = containerAPI.WaitForContainerState(ctx, "running", 120, 5)
+	// Start the container and wait for it to reach a running state before continuing.
+	err = containerAPI.StartContainer(ctx, 60)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2636,11 +2636,6 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			if e != nil {
 				return diag.FromErr(e)
 			}
-
-			e = containerAPI.WaitForContainerState(ctx, "running", 300, 5)
-			if e != nil {
-				return diag.FromErr(e)
-			}
 		} else {
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := 300
@@ -2653,7 +2648,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 				return diag.FromErr(e)
 			}
 
-			e = containerAPI.WaitForContainerState(ctx, "stopped", 300, 5)
+			e = containerAPI.WaitForContainerStatus(ctx, "stopped", 300, 5)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -2716,7 +2711,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.FromErr(err)
 		}
 
-		err = containerAPI.WaitForContainerState(ctx, "stopped", 30, 5)
+		err = containerAPI.WaitForContainerStatus(ctx, "stopped", 30, 5)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2734,7 +2729,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
-	err = containerAPI.WaitForContainerState(ctx, "", 60, 2)
+	err = containerAPI.WaitForContainerStatus(ctx, "", 60, 2)
 	if err == nil {
 		return diag.Errorf("failed to delete container \"%d\"", vmID)
 	}

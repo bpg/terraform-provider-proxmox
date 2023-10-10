@@ -25,7 +25,7 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 
 	accProviders := testAccMuxProviders(context.Background(), t)
 
-	iface := "eno0"
+	iface := "enp6s18"
 	vlan1 := gofakeit.Number(10, 4094)
 	customName := fmt.Sprintf("iface_%s", gofakeit.Word())
 	vlan2 := gofakeit.Number(10, 4094)

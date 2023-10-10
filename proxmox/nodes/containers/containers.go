@@ -119,14 +119,29 @@ func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) 
 	return nil
 }
 
-// StartContainer starts a container.
+// StartContainer starts a container if is not already running.
 func (c *Client) StartContainer(ctx context.Context, timeout int) error {
+	status, err := c.GetContainerStatus(ctx)
+	if err != nil {
+		return fmt.Errorf("error retrieving container status: %w", err)
+	}
+
+	if status.Status == "running" {
+		return nil
+	}
+
 	taskID, err := c.StartContainerAsync(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("error starting container: %w", err)
 	}
 
 	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	if err != nil {
+		return fmt.Errorf("error waiting for container start: %w", err)
+	}
+
+	// the timeout here should probably be configurable
+	err = c.WaitForContainerStatus(ctx, "running", timeout*2, 5)
 	if err != nil {
 		return fmt.Errorf("error waiting for container start: %w", err)
 	}
@@ -170,9 +185,9 @@ func (c *Client) UpdateContainer(ctx context.Context, d *UpdateRequestBody) erro
 	return nil
 }
 
-// WaitForContainerState waits for a container to reach a specific state.
-func (c *Client) WaitForContainerState(ctx context.Context, state string, timeout int, delay int) error {
-	state = strings.ToLower(state)
+// WaitForContainerStatus waits for a container to reach a specific state.
+func (c *Client) WaitForContainerStatus(ctx context.Context, status string, timeout int, delay int) error {
+	status = strings.ToLower(status)
 
 	timeDelay := int64(delay)
 	timeMax := float64(timeout)
@@ -186,7 +201,7 @@ func (c *Client) WaitForContainerState(ctx context.Context, state string, timeou
 				return fmt.Errorf("error retrieving container status: %w", err)
 			}
 
-			if data.Status == state {
+			if data.Status == status {
 				return nil
 			}
 
@@ -203,9 +218,9 @@ func (c *Client) WaitForContainerState(ctx context.Context, state string, timeou
 	}
 
 	return fmt.Errorf(
-		"timeout while waiting for container \"%d\" to enter the state \"%s\"",
+		"timeout while waiting for container \"%d\" to enter the status \"%s\"",
 		c.VMID,
-		state,
+		status,
 	)
 }
 
