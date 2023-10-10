@@ -9,6 +9,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -20,7 +21,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
@@ -64,4 +68,41 @@ func testAccMuxProviders(ctx context.Context, t *testing.T) map[string]func() (t
 	}
 
 	return muxServers
+}
+
+//nolint:gochecknoglobals
+var (
+	once        sync.Once
+	nodesClient *nodes.Client
+)
+
+func getNodesClient() *nodes.Client {
+	if nodesClient == nil {
+		once.Do(
+			func() {
+				username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
+				password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
+				endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+				apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
+
+				creds, err := api.NewCredentials(username, password, "", apiToken)
+				if err != nil {
+					panic(err)
+				}
+
+				conn, err := api.NewConnection(endpoint, true)
+				if err != nil {
+					panic(err)
+				}
+
+				client, err := api.NewClient(creds, conn)
+				if err != nil {
+					panic(err)
+				}
+
+				nodesClient = &nodes.Client{Client: client, NodeName: accTestNodeName}
+			})
+	}
+
+	return nodesClient
 }

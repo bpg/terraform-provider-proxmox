@@ -14,10 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/require"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
-	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
@@ -29,18 +25,17 @@ func TestAccResourceContainer(t *testing.T) {
 	t.Parallel()
 
 	accProviders := testAccMuxProviders(context.Background(), t)
-	client := newClient(t)
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: accProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceContainerCreateConfig(false),
-				Check:  testAccResourceContainerCreateCheck(t, client),
+				Check:  testAccResourceContainerCreateCheck(t),
 			},
 			{
 				Config: testAccResourceContainerCreateConfig(true) + testAccResourceContainerCreateCloneConfig(),
-				Check:  testAccResourceContainerCreateCloneCheck(t, client),
+				Check:  testAccResourceContainerCreateCloneCheck(t),
 			},
 		},
 	})
@@ -86,13 +81,13 @@ resource "proxmox_virtual_environment_container" "test_container" {
 `, accTestNodeName, isTemplate)
 }
 
-func testAccResourceContainerCreateCheck(t *testing.T, client *nodes.Client) resource.TestCheckFunc {
+func testAccResourceContainerCreateCheck(t *testing.T) resource.TestCheckFunc {
 	t.Helper()
 
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
 		func(*terraform.State) error {
-			err := client.Container(1100).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			err := getNodesClient().Container(1100).WaitForContainerStatus(context.Background(), "running", 10, 1)
 			require.NoError(t, err, "container did not start")
 			return nil
 		},
@@ -118,34 +113,14 @@ resource "proxmox_virtual_environment_container" "test_container_clone" {
 `, accTestNodeName)
 }
 
-func testAccResourceContainerCreateCloneCheck(t *testing.T, client *nodes.Client) resource.TestCheckFunc {
+func testAccResourceContainerCreateCloneCheck(t *testing.T) resource.TestCheckFunc {
 	t.Helper()
 
 	return resource.ComposeTestCheckFunc(
 		func(*terraform.State) error {
-			err := client.Container(1101).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			err := getNodesClient().Container(1101).WaitForContainerStatus(context.Background(), "running", 10, 1)
 			require.NoError(t, err, "container did not start")
 			return nil
 		},
 	)
-}
-
-func newClient(t *testing.T) *nodes.Client {
-	t.Helper()
-
-	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
-	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
-	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
-	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
-
-	creds, err := api.NewCredentials(username, password, "", apiToken)
-	require.NoError(t, err)
-
-	conn, err := api.NewConnection(endpoint, true)
-	require.NoError(t, err)
-
-	client, err := api.NewClient(creds, conn)
-	require.NoError(t, err)
-
-	return &nodes.Client{Client: client, NodeName: accTestNodeName}
 }
