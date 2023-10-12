@@ -22,6 +22,7 @@ const (
 	mkProviderPassword       = "password"
 	mkProviderUsername       = "username"
 	mkProviderAPIToken       = "api_token"
+	mkProviderTmpDir         = "tmp_dir"
 	mkProviderSSH            = "ssh"
 	mkProviderSSHUsername    = "username"
 	mkProviderSSHPassword    = "password"
@@ -168,6 +169,12 @@ func createSchema() map[string]*schema.Schema {
 					},
 				},
 			},
+		},
+		mkProviderTmpDir: {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Description:  "The alternative temporary directory.",
+			ValidateFunc: validation.StringIsNotEmpty,
 		},
 	}
 }

@@ -104,6 +104,7 @@ const (
 	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled              = true
 	dvResourceVirtualEnvironmentVMNetworkDeviceFirewall             = false
 	dvResourceVirtualEnvironmentVMNetworkDeviceModel                = "virtio"
+	dvResourceVirtualEnvironmentVMNetworkDeviceQueues               = 0
 	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = 0
 	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID               = 0
 	dvResourceVirtualEnvironmentVMNetworkDeviceMTU                  = 0
@@ -243,6 +244,7 @@ const (
 	mkResourceVirtualEnvironmentVMNetworkDeviceFirewall             = "firewall"
 	mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress           = "mac_address"
 	mkResourceVirtualEnvironmentVMNetworkDeviceModel                = "model"
+	mkResourceVirtualEnvironmentVMNetworkDeviceQueues               = "queues"
 	mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = "rate_limit"
 	mkResourceVirtualEnvironmentVMNetworkDeviceVLANID               = "vlan_id"
 	mkResourceVirtualEnvironmentVMNetworkDeviceMTU                  = "mtu"
@@ -1171,6 +1173,13 @@ func VM() *schema.Resource {
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMNetworkDeviceModel,
 							ValidateDiagFunc: validator.NetworkDeviceModel(),
+						},
+						mkResourceVirtualEnvironmentVMNetworkDeviceQueues: {
+							Type:             schema.TypeInt,
+							Description:      "Number of packet queues to be used on the device",
+							Optional:         true,
+							Default:          dvResourceVirtualEnvironmentVMNetworkDeviceQueues,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 64)),
 						},
 						mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit: {
 							Type:        schema.TypeFloat,
@@ -3236,6 +3245,7 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices 
 		firewall := types.CustomBool(block[mkResourceVirtualEnvironmentVMNetworkDeviceFirewall].(bool))
 		macAddress := block[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress].(string)
 		model := block[mkResourceVirtualEnvironmentVMNetworkDeviceModel].(string)
+		queues := block[mkResourceVirtualEnvironmentVMNetworkDeviceQueues].(int)
 		rateLimit := block[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit].(float64)
 		vlanID := block[mkResourceVirtualEnvironmentVMNetworkDeviceVLANID].(int)
 		mtu := block[mkResourceVirtualEnvironmentVMNetworkDeviceMTU].(int)
@@ -3252,6 +3262,10 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices 
 
 		if macAddress != "" {
 			device.MACAddress = &macAddress
+		}
+
+		if queues != 0 {
+			device.Queues = &queues
 		}
 
 		if rateLimit != 0 {
@@ -4338,6 +4352,12 @@ func vmReadCustom(
 
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress] = macAddresses[ni]
 			networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceModel] = nd.Model
+
+			if nd.Queues != nil {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceQueues] = *nd.Queues
+			} else {
+				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceQueues] = 0
+			}
 
 			if nd.RateLimit != nil {
 				networkDevice[mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit] = *nd.RateLimit

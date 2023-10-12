@@ -21,6 +21,7 @@ provider "proxmox" {
   username = "root@pam"
   password = "the-password-set-during-installation-of-proxmox-ve"
   insecure = true
+  tmp_dir  = "/var/tmp"
 }
 ```
 
@@ -167,6 +168,15 @@ failed (changing feature flags for privileged container is only allowed for root
 > when using API Token authentication, even when `Administrator` role or
 > the `root@pam` user is used with the token.
 
+### Temporary directory
+
+Using `proxmox_virtual_environment_file` with `.iso` files or disk images can require
+large amount of space in the temporary directory of the computer running terraform.
+
+Consider pointing `tmp_dir` to a directory with enough space, especially if the default
+temporary directory is limited by the system memory (e.g. `tmpfs` mounted
+on `/tmp`).
+
 ## Argument Reference
 
 In addition
@@ -209,3 +219,4 @@ Proxmox `provider` block:
         - `name` - (Required) The name of the node.
         - `address` - (Required) The IP address of the node.
         - `port` - (Optional) SSH port of the node. Defaults to 22.
+- `tmp_dir` - (Optional) Use custom temporary directory. (can also be sourced from `PROXMOX_VE_TMPDIR`)

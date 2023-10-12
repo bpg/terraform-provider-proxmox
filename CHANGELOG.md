@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.34.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.33.0...v0.34.0) (2023-10-10)
+
+
+### Features
+
+* **lxc:** add support for the `start_on_boot` option ([#605](https://github.com/bpg/terraform-provider-proxmox/issues/605)) ([d36cf4e](https://github.com/bpg/terraform-provider-proxmox/commit/d36cf4eab81955184c926c86ce692bcf6c01b840))
+* **provider:** configure temp directory ([#607](https://github.com/bpg/terraform-provider-proxmox/issues/607)) ([06ad004](https://github.com/bpg/terraform-provider-proxmox/commit/06ad00463c8ec0426f72a559924e6a0adfe4e2a8))
+* **vm:** add option to enable multiqueue in network devices ([#614](https://github.com/bpg/terraform-provider-proxmox/issues/614)) ([be5251d](https://github.com/bpg/terraform-provider-proxmox/commit/be5251dd5ad535be6bdf8f9ef73c43f54a9dc2c7))
+
+
+### Bug Fixes
+
+* **lxc:** cloned container does not start by default ([#615](https://github.com/bpg/terraform-provider-proxmox/issues/615)) ([d5994a2](https://github.com/bpg/terraform-provider-proxmox/commit/d5994a2bd5323cef34b71f3fea895539a0cfccd8))
+* **lxc:** create container when authenticated with API token ([#610](https://github.com/bpg/terraform-provider-proxmox/issues/610)) ([32bdc94](https://github.com/bpg/terraform-provider-proxmox/commit/32bdc94167253b7b3ec6eaecbccc2d2cc0104b61))
+* **lxc:** multi-line description always shows as changed ([#611](https://github.com/bpg/terraform-provider-proxmox/issues/611)) ([088ad09](https://github.com/bpg/terraform-provider-proxmox/commit/088ad09e356e1baf17b7cb84656155d192d2909d))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework from 1.4.0 to 1.4.1 ([#612](https://github.com/bpg/terraform-provider-proxmox/issues/612)) ([a266496](https://github.com/bpg/terraform-provider-proxmox/commit/a266496fcbf9c044712896ea1af5827f47869be1))
+* **deps:** bump golang.org/x/crypto from 0.13.0 to 0.14.0 ([#613](https://github.com/bpg/terraform-provider-proxmox/issues/613)) ([0150a97](https://github.com/bpg/terraform-provider-proxmox/commit/0150a97cd4a2489311db943459f7d41b8ef8e61e))
+
 ## [0.33.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.32.2...v0.33.0) (2023-10-02)
 
 

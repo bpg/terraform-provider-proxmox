@@ -395,7 +395,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 			defer utils.CloseOrLogError(ctx)(res.Body)
 
-			tempDownloadedFile, err := os.CreateTemp("", "download")
+			tempDownloadedFile, err := os.CreateTemp(config.TempDir(), "download")
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -471,8 +471,8 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			}
 		}
 
-		tempRawFile, err := os.CreateTemp("", "raw")
-		if err != nil {
+		tempRawFile, e := os.CreateTemp(config.TempDir(), "raw")
+		if e != nil {
 			return diag.FromErr(err)
 		}
 
@@ -522,7 +522,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	switch *contentType {
 	case "iso", "vztmpl":
 		uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
-		_, err = capi.Node(nodeName).APIUpload(ctx, datastoreID, request, uploadTimeout)
+		_, err = capi.Node(nodeName).APIUpload(ctx, datastoreID, request, uploadTimeout, config.TempDir())
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.

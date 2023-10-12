@@ -65,6 +65,7 @@ const (
 	dvResourceVirtualEnvironmentContainerOperatingSystemType               = "unmanaged"
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
+	dvResourceVirtualEnvironmentContainerStartOnBoot                       = true
 	dvResourceVirtualEnvironmentContainerTemplate                          = false
 	dvResourceVirtualEnvironmentContainerUnprivileged                      = false
 	dvResourceVirtualEnvironmentContainerVMID                              = -1
@@ -135,6 +136,7 @@ const (
 	mkResourceVirtualEnvironmentContainerOperatingSystemType               = "type"
 	mkResourceVirtualEnvironmentContainerPoolID                            = "pool_id"
 	mkResourceVirtualEnvironmentContainerStarted                           = "started"
+	mkResourceVirtualEnvironmentContainerStartOnBoot                       = "start_on_boot"
 	mkResourceVirtualEnvironmentContainerTags                              = "tags"
 	mkResourceVirtualEnvironmentContainerTemplate                          = "template"
 	mkResourceVirtualEnvironmentContainerUnprivileged                      = "unprivileged"
@@ -717,6 +719,13 @@ func Container() *schema.Resource {
 					return d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 				},
 			},
+			mkResourceVirtualEnvironmentContainerStartOnBoot: {
+				Type:        schema.TypeBool,
+				Description: "Automatically start container when the host system boots.",
+				Optional:    true,
+				ForceNew:    false,
+				Default:     dvResourceVirtualEnvironmentContainerStartOnBoot,
+			},
 			mkResourceVirtualEnvironmentContainerTags: {
 				Type:        schema.TypeList,
 				Description: "Tags of the container. This is only meta information.",
@@ -1217,10 +1226,18 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	keyctl := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesKeyControl].(bool))
 	fuse := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesFUSE].(bool))
 
-	features := containers.CustomFeatures{
-		Nesting:    &nesting,
-		KeyControl: &keyctl,
-		FUSE:       &fuse,
+	features := containers.CustomFeatures{}
+
+	if nesting {
+		features.Nesting = &nesting
+	}
+
+	if keyctl {
+		features.KeyControl = &keyctl
+	}
+
+	if fuse {
+		features.FUSE = &fuse
 	}
 
 	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
@@ -1448,6 +1465,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	poolID := d.Get(mkResourceVirtualEnvironmentContainerPoolID).(string)
 	started := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
+	startOnBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStartOnBoot).(bool))
 	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
@@ -1477,7 +1495,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
 		OSType:               &operatingSystemType,
 		RootFS:               rootFS,
-		StartOnBoot:          &started,
+		Start:                &started,
+		StartOnBoot:          &startOnBoot,
 		Swap:                 &memorySwap,
 		Template:             &template,
 		TTY:                  &consoleTTYCount,
@@ -1558,11 +1577,6 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	// Start the container and wait for it to reach a running state before continuing.
 	err = containerAPI.StartContainer(ctx, 60)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	err = containerAPI.WaitForContainerState(ctx, "running", 120, 5)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1731,10 +1745,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(clone) == 0 || currentDescription != dvResourceVirtualEnvironmentContainerDescription {
 		if containerConfig.Description != nil {
-			e = d.Set(
-				mkResourceVirtualEnvironmentContainerDescription,
-				strings.TrimSpace(*containerConfig.Description),
-			)
+			e = d.Set(mkResourceVirtualEnvironmentContainerDescription, *containerConfig.Description)
 		} else {
 			e = d.Set(mkResourceVirtualEnvironmentContainerDescription, "")
 		}
@@ -2625,11 +2636,6 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			if e != nil {
 				return diag.FromErr(e)
 			}
-
-			e = containerAPI.WaitForContainerState(ctx, "running", 300, 5)
-			if e != nil {
-				return diag.FromErr(e)
-			}
 		} else {
 			forceStop := types.CustomBool(true)
 			shutdownTimeout := 300
@@ -2642,7 +2648,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 				return diag.FromErr(e)
 			}
 
-			e = containerAPI.WaitForContainerState(ctx, "stopped", 300, 5)
+			e = containerAPI.WaitForContainerStatus(ctx, "stopped", 300, 5)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -2705,7 +2711,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.FromErr(err)
 		}
 
-		err = containerAPI.WaitForContainerState(ctx, "stopped", 30, 5)
+		err = containerAPI.WaitForContainerStatus(ctx, "stopped", 30, 5)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2723,7 +2729,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
-	err = containerAPI.WaitForContainerState(ctx, "", 60, 2)
+	err = containerAPI.WaitForContainerStatus(ctx, "", 60, 2)
 	if err == nil {
 		return diag.Errorf("failed to delete container \"%d\"", vmID)
 	}
