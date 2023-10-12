@@ -539,6 +539,7 @@ Do *not* move or resize `data_vm` disks.
 
 ```terraform
 resource "proxmox_virtual_environment_vm" "data_vm" {
+  node_name = "first-node"
   started = false
   on_boot = false
 

@@ -164,6 +164,40 @@ resource "proxmox_virtual_environment_vm" "example" {
   #  mapping = "gpu"
   #  pcie = true
   #}
+
+  # attached disks from data_vm
+  dynamic "disk" {
+    for_each = {for idx, val in proxmox_virtual_environment_vm.data_vm.disk : idx => val}
+    iterator = data_disk
+    content {
+      datastore_id      = data_disk.value["datastore_id"]
+      path_in_datastore = data_disk.value["path_in_datastore"]
+      file_format       = data_disk.value["file_format"]
+      size              = data_disk.value["size"]
+      # assign from scsi1 and up
+      interface         = "scsi${data_disk.key + 1}"
+    }
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "data_vm" {
+  name      = "terraform-provider-proxmox-data-vm"
+  node_name = data.proxmox_virtual_environment_nodes.example.names[0]
+  started   = false
+  on_boot   = false
+
+  disk {
+    datastore_id = local.datastore_id
+    file_format  = "raw"
+    interface    = "scsi0"
+    size         = 1
+  }
+  disk {
+    datastore_id = local.datastore_id
+    file_format  = "raw"
+    interface    = "scsi1"
+    size         = 4
+  }
 }
 
 output "resource_proxmox_virtual_environment_vm_example_id" {
