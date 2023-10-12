@@ -187,6 +187,46 @@ type CustomStorageDevice struct {
 	SizeInt                 *int
 }
 
+// PathInDatastore returns path part of FileVolume or nil if it is not yet allocated.
+func (r CustomStorageDevice) PathInDatastore() *string {
+	probablyDatastoreID, pathInDatastore, hasDatastoreID := strings.Cut(r.FileVolume, ":")
+	if !hasDatastoreID {
+		// when no ':' separator is found, 'Cut' places the whole string to 'probablyDatastoreID',
+		// we want it in 'pathInDatastore' (as it is absolute filesystem path)
+		pathInDatastore = probablyDatastoreID
+
+		return &pathInDatastore
+	}
+
+	pathInDatastoreWithoutDigits := strings.Map(
+		func(c rune) rune {
+			if c < '0' || c > '9' {
+				return -1
+			}
+			return c
+		},
+		pathInDatastore)
+
+	if pathInDatastoreWithoutDigits == "" {
+		// FileVolume is not yet allocated, it is in the "STORAGE_ID:SIZE_IN_GiB" format
+		return nil
+	}
+
+	return &pathInDatastore
+}
+
+// IsOwnedBy returns true, if CustomStorageDevice is owned by given VM. Not yet allocated volumes are not owned by any VM.
+func (r CustomStorageDevice) IsOwnedBy(vmID int) bool {
+	pathInDatastore := r.PathInDatastore()
+	if pathInDatastore == nil {
+		// not yet allocated volume, consider disk not owned by any VM
+		// NOTE: if needed, create IsOwnedByOtherThan(vmId) instead of changing this return value.
+		return false
+	}
+
+	return strings.HasPrefix(*pathInDatastore, fmt.Sprintf("vm-%d-", vmID))
+}
+
 // CustomStorageDevices handles QEMU SATA device parameters.
 type CustomStorageDevices map[string]CustomStorageDevice
 

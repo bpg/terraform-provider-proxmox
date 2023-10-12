@@ -189,16 +189,18 @@ func TestVMSchema(t *testing.T) {
 
 	test.AssertOptionalArguments(t, diskSchema, []string{
 		mkResourceVirtualEnvironmentVMDiskDatastoreID,
+		mkResourceVirtualEnvironmentVMDiskPathInDatastore,
 		mkResourceVirtualEnvironmentVMDiskFileFormat,
 		mkResourceVirtualEnvironmentVMDiskFileID,
 		mkResourceVirtualEnvironmentVMDiskSize,
 	})
 
 	test.AssertValueTypes(t, diskSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentVMDiskDatastoreID: schema.TypeString,
-		mkResourceVirtualEnvironmentVMDiskFileFormat:  schema.TypeString,
-		mkResourceVirtualEnvironmentVMDiskFileID:      schema.TypeString,
-		mkResourceVirtualEnvironmentVMDiskSize:        schema.TypeInt,
+		mkResourceVirtualEnvironmentVMDiskDatastoreID:     schema.TypeString,
+		mkResourceVirtualEnvironmentVMDiskPathInDatastore: schema.TypeString,
+		mkResourceVirtualEnvironmentVMDiskFileFormat:      schema.TypeString,
+		mkResourceVirtualEnvironmentVMDiskFileID:          schema.TypeString,
+		mkResourceVirtualEnvironmentVMDiskSize:            schema.TypeInt,
 	})
 
 	diskSpeedSchema := test.AssertNestedSchemaExistence(

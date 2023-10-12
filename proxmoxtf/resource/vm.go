@@ -177,6 +177,7 @@ const (
 	mkResourceVirtualEnvironmentVMDisk                              = "disk"
 	mkResourceVirtualEnvironmentVMDiskInterface                     = "interface"
 	mkResourceVirtualEnvironmentVMDiskDatastoreID                   = "datastore_id"
+	mkResourceVirtualEnvironmentVMDiskPathInDatastore               = "path_in_datastore"
 	mkResourceVirtualEnvironmentVMDiskFileFormat                    = "file_format"
 	mkResourceVirtualEnvironmentVMDiskFileID                        = "file_id"
 	mkResourceVirtualEnvironmentVMDiskSize                          = "size"
@@ -599,14 +600,15 @@ func VM() *schema.Resource {
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMDiskDatastoreID: dvResourceVirtualEnvironmentVMDiskDatastoreID,
-							mkResourceVirtualEnvironmentVMDiskFileID:      dvResourceVirtualEnvironmentVMDiskFileID,
-							mkResourceVirtualEnvironmentVMDiskInterface:   dvResourceVirtualEnvironmentVMDiskInterface,
-							mkResourceVirtualEnvironmentVMDiskSize:        dvResourceVirtualEnvironmentVMDiskSize,
-							mkResourceVirtualEnvironmentVMDiskIOThread:    dvResourceVirtualEnvironmentVMDiskIOThread,
-							mkResourceVirtualEnvironmentVMDiskSSD:         dvResourceVirtualEnvironmentVMDiskSSD,
-							mkResourceVirtualEnvironmentVMDiskDiscard:     dvResourceVirtualEnvironmentVMDiskDiscard,
-							mkResourceVirtualEnvironmentVMDiskCache:       dvResourceVirtualEnvironmentVMDiskCache,
+							mkResourceVirtualEnvironmentVMDiskDatastoreID:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
+							mkResourceVirtualEnvironmentVMDiskPathInDatastore: nil,
+							mkResourceVirtualEnvironmentVMDiskFileID:          dvResourceVirtualEnvironmentVMDiskFileID,
+							mkResourceVirtualEnvironmentVMDiskInterface:       dvResourceVirtualEnvironmentVMDiskInterface,
+							mkResourceVirtualEnvironmentVMDiskSize:            dvResourceVirtualEnvironmentVMDiskSize,
+							mkResourceVirtualEnvironmentVMDiskIOThread:        dvResourceVirtualEnvironmentVMDiskIOThread,
+							mkResourceVirtualEnvironmentVMDiskSSD:             dvResourceVirtualEnvironmentVMDiskSSD,
+							mkResourceVirtualEnvironmentVMDiskDiscard:         dvResourceVirtualEnvironmentVMDiskDiscard,
+							mkResourceVirtualEnvironmentVMDiskCache:           dvResourceVirtualEnvironmentVMDiskCache,
 						},
 					}, nil
 				},
@@ -622,6 +624,13 @@ func VM() *schema.Resource {
 							Description: "The datastore id",
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
+						},
+						mkResourceVirtualEnvironmentVMDiskPathInDatastore: {
+							Type:        schema.TypeString,
+							Description: "The in-datastore path to disk image",
+							Computed:    true,
+							Optional:    true,
+							Default:     nil,
 						},
 						mkResourceVirtualEnvironmentVMDiskFileFormat: {
 							Type:             schema.TypeString,
@@ -3013,6 +3022,12 @@ func vmGetDiskDeviceObjects(
 
 		block := diskEntry.(map[string]interface{})
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
+		pathInDatastore := ""
+
+		if untyped, hasPathInDatastore := block[mkResourceVirtualEnvironmentVMDiskPathInDatastore]; hasPathInDatastore {
+			pathInDatastore = untyped.(string)
+		}
+
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
 		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
@@ -3039,7 +3054,16 @@ func vmGetDiskDeviceObjects(
 		if fileID != "" {
 			diskDevice.Enabled = false
 		} else {
-			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+			if pathInDatastore != "" {
+				if datastoreID != "" {
+					diskDevice.FileVolume = fmt.Sprintf("%s:%s", datastoreID, pathInDatastore)
+				} else {
+					// FileVolume is absolute path in the host filesystem
+					diskDevice.FileVolume = pathInDatastore
+				}
+			} else {
+				diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+			}
 		}
 
 		diskDevice.ID = &datastoreID
@@ -3813,24 +3837,34 @@ func vmReadCustom(
 
 		disk := map[string]interface{}{}
 
-		fileIDParts := strings.Split(dd.FileVolume, ":")
+		datastoreID, pathInDatastore, hasDatastoreID := strings.Cut(dd.FileVolume, ":")
+		if !hasDatastoreID {
+			// when no ':' separator is found, 'Cut' places the whole string to 'datastoreID',
+			// we want it in 'pathInDatastore' (it is absolute filesystem path)
+			pathInDatastore = datastoreID
+			datastoreID = ""
+		}
 
-		disk[mkResourceVirtualEnvironmentVMDiskDatastoreID] = fileIDParts[0]
+		disk[mkResourceVirtualEnvironmentVMDiskDatastoreID] = datastoreID
+		disk[mkResourceVirtualEnvironmentVMDiskPathInDatastore] = pathInDatastore
 
 		if dd.Format == nil {
 			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = dvResourceVirtualEnvironmentVMDiskFileFormat
-			// disk format may not be returned by config API if it is default for the storage, and that may be different
-			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			files, err := api.Node(nodeName).ListDatastoreFiles(ctx, fileIDParts[0])
-			if err != nil {
-				diags = append(diags, diag.FromErr(err)...)
-				continue
-			}
 
-			for _, v := range files {
-				if v.VolumeID == dd.FileVolume {
-					disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = v.FileFormat
-					break
+			if datastoreID != "" {
+				// disk format may not be returned by config API if it is default for the storage, and that may be different
+				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
+				files, err := api.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
+				if err != nil {
+					diags = append(diags, diag.FromErr(err)...)
+					continue
+				}
+
+				for _, v := range files {
+					if v.VolumeID == dd.FileVolume {
+						disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = v.FileFormat
+						break
+					}
 				}
 			}
 		} else {
@@ -5602,29 +5636,48 @@ func vmUpdateDiskLocationAndSize(
 				}
 
 				if *oldDisk.ID != *diskNewEntries[prefix][oldKey].ID {
-					deleteOriginalDisk := types.CustomBool(true)
+					if oldDisk.IsOwnedBy(vmID) {
+						deleteOriginalDisk := types.CustomBool(true)
 
-					diskMoveBodies = append(
-						diskMoveBodies,
-						&vms.MoveDiskRequestBody{
-							DeleteOriginalDisk: &deleteOriginalDisk,
-							Disk:               *oldDisk.Interface,
-							TargetStorage:      *diskNewEntries[prefix][oldKey].ID,
-						},
-					)
+						diskMoveBodies = append(
+							diskMoveBodies,
+							&vms.MoveDiskRequestBody{
+								DeleteOriginalDisk: &deleteOriginalDisk,
+								Disk:               *oldDisk.Interface,
+								TargetStorage:      *diskNewEntries[prefix][oldKey].ID,
+							},
+						)
 
-					// Cannot be done while VM is running.
-					shutdownForDisksRequired = true
+						// Cannot be done while VM is running.
+						shutdownForDisksRequired = true
+					} else {
+						return diag.Errorf(
+							"Cannot move %s:%s to datastore %s in VM %d configuration, it is not owned by this VM!",
+							*oldDisk.ID,
+							*oldDisk.PathInDatastore(),
+							*diskNewEntries[prefix][oldKey].ID,
+							vmID,
+						)
+					}
 				}
 
 				if *oldDisk.SizeInt < *diskNewEntries[prefix][oldKey].SizeInt {
-					diskResizeBodies = append(
-						diskResizeBodies,
-						&vms.ResizeDiskRequestBody{
-							Disk: *oldDisk.Interface,
-							Size: *diskNewEntries[prefix][oldKey].Size,
-						},
-					)
+					if oldDisk.IsOwnedBy(vmID) {
+						diskResizeBodies = append(
+							diskResizeBodies,
+							&vms.ResizeDiskRequestBody{
+								Disk: *oldDisk.Interface,
+								Size: *diskNewEntries[prefix][oldKey].Size,
+							},
+						)
+					} else {
+						return diag.Errorf(
+							"Cannot resize %s:%s in VM %d configuration, it is not owned by this VM!",
+							*oldDisk.ID,
+							*oldDisk.PathInDatastore(),
+							vmID,
+						)
+					}
 				}
 			}
 		}
