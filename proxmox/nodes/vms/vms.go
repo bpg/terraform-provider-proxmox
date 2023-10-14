@@ -435,57 +435,72 @@ func (c *Client) UpdateVMAsync(ctx context.Context, d *UpdateRequestBody) (*stri
 // WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
 func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	ctx context.Context,
-	timeout int,
-	delay int,
-	waitForIP bool,
+	timeout int, // time in seconds to wait until giving up
+	delay int, // the delay in seconds between requests to the agent
+	waitForIP bool, // whether or not to block until an IP is found, or just block until the interfaces are published
 ) (*GetQEMUNetworkInterfacesResponseData, error) {
-	timeDelay := int64(delay)
-	timeMax := float64(timeout)
+	delaySeconds := int64(delay)
+	timeMaxSeconds := float64(timeout)
 	timeStart := time.Now()
 	timeElapsed := timeStart.Sub(timeStart)
 
-	for timeElapsed.Seconds() < timeMax {
-		//nolint:nestif
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
-			data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
-
-			if err == nil && data != nil && data.Result != nil {
-				hasAnyGlobalUnicast := false
-
-				if waitForIP {
-					for _, nic := range *data.Result {
-						if nic.Name == "lo" {
-							continue
-						}
-
-						if nic.IPAddresses == nil ||
-							(nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
-							continue
-						}
-
-						for _, addr := range *nic.IPAddresses {
-							if ip := net.ParseIP(addr.Address); ip != nil && ip.IsGlobalUnicast() {
-								hasAnyGlobalUnicast = true
-							}
-						}
-					}
-				}
-
-				if hasAnyGlobalUnicast {
-					return data, err
-				}
-			}
-
-			time.Sleep(1 * time.Second)
-		}
-
-		time.Sleep(200 * time.Millisecond)
-
+	for timeElapsed.Seconds() < timeMaxSeconds {
 		timeElapsed = time.Since(timeStart)
 
+		// check if terraform wants to shut us down (we try to poll the ctx every 200ms)
 		if ctx.Err() != nil {
 			return nil, fmt.Errorf("error waiting for VM network interfaces: %w", ctx.Err())
 		}
+
+		// sleep another 200 milliseconds if we haven't delayed enough since our last call
+		if int64(timeElapsed.Seconds())%delaySeconds != 0 {
+			time.Sleep(200 * time.Millisecond)
+			continue
+		}
+
+		// request the network interfaces from the agent
+		data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
+
+		// tick ahead and continue if we got an error from the api
+		if err != nil || data == nil || data.Result == nil {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		// If we're waiting for an IP, check if we have one yet; if not then keep looping
+		if waitForIP {
+			for _, nic := range *data.Result {
+				// skip the loopback interface
+				if nic.Name == "lo" {
+					continue
+				}
+
+				// skip the interface if it has no IP addresses
+				if nic.IPAddresses == nil ||
+					(nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
+					continue
+				}
+
+				// return if the interface has any global unicast addresses
+				for _, addr := range *nic.IPAddresses {
+					if ip := net.ParseIP(addr.Address); ip != nil && ip.IsGlobalUnicast() {
+						return data, err
+					}
+				}
+			}
+
+			// no IP address has come through the agent yet
+			time.Sleep(1 * time.Second)
+			continue //nolint
+		}
+
+		// if not waiting for an IP, and the agent sent us an interface, return
+		if data.Result != nil && len(*data.Result) > 0 {
+			return data, err
+		}
+
+		// we didn't get any interfaces so tick ahead to keep looping
+		time.Sleep(1 * time.Second)
 	}
 
 	return nil, fmt.Errorf(
