@@ -204,16 +204,16 @@ type GetStatusResponseBody struct {
 
 // GetStatusResponseData contains the data from a container get status response.
 type GetStatusResponseData struct {
-	CPUCount         *float64     `json:"cpus,omitempty"`
-	Lock             *string      `json:"lock,omitempty"`
-	MemoryAllocation *int         `json:"maxmem,omitempty"`
-	Name             *string      `json:"name,omitempty"`
-	RootDiskSize     *interface{} `json:"maxdisk,omitempty"`
-	Status           string       `json:"status,omitempty"`
-	SwapAllocation   *int         `json:"maxswap,omitempty"`
-	Tags             *string      `json:"tags,omitempty"`
-	Uptime           *int         `json:"uptime,omitempty"`
-	VMID             *int         `json:"vmid,omitempty"`
+	CPUCount         *float64         `json:"cpus,omitempty"`
+	Lock             *string          `json:"lock,omitempty"`
+	MemoryAllocation *int             `json:"maxmem,omitempty"`
+	Name             *string          `json:"name,omitempty"`
+	RootDiskSize     *interface{}     `json:"maxdisk,omitempty"`
+	Status           string           `json:"status,omitempty"`
+	SwapAllocation   *int             `json:"maxswap,omitempty"`
+	Tags             *string          `json:"tags,omitempty"`
+	Uptime           *int             `json:"uptime,omitempty"`
+	VMID             *types.CustomInt `json:"vmid,omitempty"`
 }
 
 // StartResponseBody contains the body from a container start response.
