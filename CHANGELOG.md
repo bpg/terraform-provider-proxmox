@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.35.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.34.0...v0.35.0) (2023-10-17)
+
+
+### Features
+
+* **vm:** add 'path_in_datastore' disk argument ([#606](https://github.com/bpg/terraform-provider-proxmox/issues/606)) ([aeb5e88](https://github.com/bpg/terraform-provider-proxmox/commit/aeb5e88bc9112686675c7058501fa9378b69af93))
+
+
+### Bug Fixes
+
+* **lxc:** unmarshal string/int vmid as int when read container status ([#622](https://github.com/bpg/terraform-provider-proxmox/issues/622)) ([b90445a](https://github.com/bpg/terraform-provider-proxmox/commit/b90445a12c31c970c1cd1d2f37508ffcee586bf8))
+* **provider:** add informative error around ssh-agent  ([#620](https://github.com/bpg/terraform-provider-proxmox/issues/620)) ([388ce7c](https://github.com/bpg/terraform-provider-proxmox/commit/388ce7ce8d37964da427d2430c9e03b14f790856))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/google/go-cmp from 0.5.9 to 0.6.0 ([#624](https://github.com/bpg/terraform-provider-proxmox/issues/624)) ([21e48c7](https://github.com/bpg/terraform-provider-proxmox/commit/21e48c7fb8aef8b5f5a48fea76ca9a030ccd59cc))
+* **deps:** bump golang.org/x/net from 0.13.0 to 0.17.0 ([#616](https://github.com/bpg/terraform-provider-proxmox/issues/616)) ([29894bd](https://github.com/bpg/terraform-provider-proxmox/commit/29894bda234baca2645fc5e0d5d6f05101406b18))
+* **deps:** bump golang.org/x/net from 0.15.0 to 0.17.0 in /tools ([#617](https://github.com/bpg/terraform-provider-proxmox/issues/617)) ([7287f5d](https://github.com/bpg/terraform-provider-proxmox/commit/7287f5de4801d0f56faa8e3b99c80d41ac2f1f01))
+
 ## [0.34.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.33.0...v0.34.0) (2023-10-10)
 
 
