@@ -487,6 +487,16 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "TheNotary",
+      "name": "TheNotary",
+      "avatar_url": "https://avatars.githubusercontent.com/u/799247?v=4",
+      "profile": "https://github.com/TheNotary",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
