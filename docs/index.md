@@ -88,26 +88,25 @@ To set this up, SSH into the Proxmox cluster or host in order to accomplish the 
 Create a user:
 
 ```sh
-pveum user add terraform-prov@pve
+sudo pveum user add terraform-prov@pve
 ```
 
 Create a role for the user:
 
 ```sh
-pveum role add TerraformProv -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt"
-
+sudo pveum role add TerraformProv -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt"
 ```
 
 Assign the role to the previously created user:
 
 ```sh
-pveum aclmod / -user terraform-prov@pve -role TerraformProv
+sudo pveum aclmod / -user terraform-prov@pve -role TerraformProv
 ```
 
 Create an API token for the user:
 
 ```
-pveum user token add terraform-prov@pve terraform --privsep=0
+sudo pveum user token add terraform-prov@pve terraform --privsep=0
 ```
 
 Generating the token will output a table containing the token's ID and secret which are meant to be concatenated into a single string for use with either the `api_token` field of the `provider` block or sourced from the `PROXMOX_VE_API_TOKEN` environment variable.
