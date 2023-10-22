@@ -224,7 +224,17 @@ func (r CustomStorageDevice) IsOwnedBy(vmID int) bool {
 		return false
 	}
 
-	return strings.HasPrefix(*pathInDatastore, fmt.Sprintf("vm-%d-", vmID))
+	// ZFS uses "local-zfs:vm-123-disk-0"
+	if strings.HasPrefix(*pathInDatastore, fmt.Sprintf("vm-%d-", vmID)) {
+		return true
+	}
+
+	// directory uses "local:123/vm-123-disk-0"
+	if strings.HasPrefix(*pathInDatastore, fmt.Sprintf("%d/vm-%d-", vmID, vmID)) {
+		return true
+	}
+
+	return false
 }
 
 // CustomStorageDevices handles QEMU SATA device parameters.
