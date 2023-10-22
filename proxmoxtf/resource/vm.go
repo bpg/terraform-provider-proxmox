@@ -3053,17 +3053,17 @@ func vmGetDiskDeviceObjects(
 		}
 		if fileID != "" {
 			diskDevice.Enabled = false
-		} else {
-			if pathInDatastore != "" {
-				if datastoreID != "" {
-					diskDevice.FileVolume = fmt.Sprintf("%s:%s", datastoreID, pathInDatastore)
-				} else {
-					// FileVolume is absolute path in the host filesystem
-					diskDevice.FileVolume = pathInDatastore
-				}
+		}
+
+		if pathInDatastore != "" {
+			if datastoreID != "" {
+				diskDevice.FileVolume = fmt.Sprintf("%s:%s", datastoreID, pathInDatastore)
 			} else {
-				diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+				// FileVolume is absolute path in the host filesystem
+				diskDevice.FileVolume = pathInDatastore
 			}
+		} else {
+			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
 		}
 
 		diskDevice.ID = &datastoreID
