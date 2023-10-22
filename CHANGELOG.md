@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.35.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.35.0...v0.35.1) (2023-10-22)
+
+
+### Bug Fixes
+
+* **vm:** better check for disk ownership ([#633](https://github.com/bpg/terraform-provider-proxmox/issues/633)) ([6753582](https://github.com/bpg/terraform-provider-proxmox/commit/6753582e4b1999fdf2fd9ea0f499c0cd0f7cd64c))
+* **vm:** set FileVolume for disks with file_id ([#635](https://github.com/bpg/terraform-provider-proxmox/issues/635)) ([d1d7bd3](https://github.com/bpg/terraform-provider-proxmox/commit/d1d7bd39c741d99b2395ef858bf739cb067f0542))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/golangci/golangci-lint from 1.54.2 to 1.55.0 in /tools ([#636](https://github.com/bpg/terraform-provider-proxmox/issues/636)) ([bcd33bb](https://github.com/bpg/terraform-provider-proxmox/commit/bcd33bb139d20ea4986d7dadf145e6ebbe497e79))
+
 ## [0.35.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.34.0...v0.35.0) (2023-10-17)
 
 
