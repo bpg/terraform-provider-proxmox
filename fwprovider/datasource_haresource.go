@@ -104,7 +104,7 @@ func (d *haResourceDatasource) Configure(
 	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T. Please report this issue to the provider developers.",
+			fmt.Sprintf("Expected *proxmox.Client, got: %T",
 				req.ProviderData),
 		)
 	}
@@ -124,8 +124,7 @@ func (d *haResourceDatasource) Read(ctx context.Context, req datasource.ReadRequ
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
-			fmt.Sprintf("Couldn't parse configuration into a valid HA resource identifier: %s. "+
-				"Please report this issue to the provider developers.", err.Error()),
+			fmt.Sprintf("Couldn't parse configuration into a valid HA resource identifier: %ss", err.Error()),
 		)
 
 		return

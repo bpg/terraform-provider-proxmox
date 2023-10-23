@@ -151,8 +151,7 @@ func (r *haResourceResource) Configure(
 	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T. Please report this issue to the provider developers.",
-				req.ProviderData),
+			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
 		)
 	}
 }
@@ -171,8 +170,7 @@ func (r *haResourceResource) Create(ctx context.Context, req resource.CreateRequ
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
-			fmt.Sprintf("Couldn't parse the Terraform resource ID into a valid HA resource identifier: %s. "+
-				"Please report this issue to the provider developers.", err),
+			fmt.Sprintf("Couldn't parse the Terraform resource ID into a valid HA resource identifier: %s", err),
 		)
 
 		return
@@ -214,8 +212,7 @@ func (r *haResourceResource) Update(
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
-			fmt.Sprintf("Couldn't parse the Terraform resource ID into a valid HA resource identifier: %s. "+
-				"Please report this issue to the provider developers.", err),
+			fmt.Sprintf("Couldn't parse the Terraform resource ID into a valid HA resource identifier: %s", err),
 		)
 
 		return
@@ -253,8 +250,7 @@ func (r *haResourceResource) Delete(
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
-			fmt.Sprintf("Couldn't parse the Terraform resource ID into a valid HA resource identifier: %s. "+
-				"Please report this issue to the provider developers.", err),
+			fmt.Sprintf("Couldn't parse the Terraform resource ID into a valid HA resource identifier: %s", err),
 		)
 
 		return
@@ -329,8 +325,7 @@ func (r *haResourceResource) read(ctx context.Context, data *haResourceModel) (b
 	if err != nil {
 		diags.AddError(
 			"Unexpected error parsing Proxmox HA resource identifier",
-			fmt.Sprintf("Couldn't parse the Terraform resource ID into a valid HA resource identifier: %s. "+
-				"Please report this issue to the provider developers.", err),
+			fmt.Sprintf("Couldn't parse the Terraform resource ID into a valid HA resource identifier: %s", err),
 		)
 
 		return false, diags
