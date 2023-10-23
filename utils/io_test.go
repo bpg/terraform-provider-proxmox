@@ -25,10 +25,10 @@ func TestCloseOrLogError(t *testing.T) {
 	func() {
 		defer f(c)
 		defer f(b)
-		assert.Equal(t, false, c.isClosed)
+		assert.False(t, c.isClosed)
 	}()
 
-	assert.Equal(t, true, c.isClosed)
+	assert.True(t, c.isClosed)
 }
 
 type testCloser struct {
