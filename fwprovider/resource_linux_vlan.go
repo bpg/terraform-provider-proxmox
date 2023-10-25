@@ -228,8 +228,7 @@ func (r *linuxVLANResource) Configure(
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T. Please report this issue to the provider developers.",
-				req.ProviderData),
+			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
 		)
 
 		return

@@ -44,7 +44,7 @@ func AssertListMaxItems(t *testing.T, s *schema.Resource, key string, expectedMa
 	t.Helper()
 
 	require.NotNil(t, s.Schema[key], "Error in Schema: Missing definition for \"%s\"", key)
-	assert.Equal(t, s.Schema[key].MaxItems, expectedMaxItems,
+	assert.Equal(t, expectedMaxItems, s.Schema[key].MaxItems,
 		"Error in Schema: Argument \"%s\" has \"MaxItems: %#v\", but value %#v is expected!",
 		key, s.Schema[key].MaxItems, expectedMaxItems)
 }

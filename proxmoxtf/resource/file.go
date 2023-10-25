@@ -780,8 +780,9 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	if !found {
-		diags = append(diags, diag.Errorf("no such file: %q", d.Id())...)
-		return diags
+		// an empty ID is used to signal that the resource does not exist when provider reads the state
+		// back after creation, or on the state refresh.
+		d.SetId("")
 	}
 
 	return nil

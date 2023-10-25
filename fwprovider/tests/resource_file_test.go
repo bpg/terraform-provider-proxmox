@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/stretchr/testify/require"
 
@@ -26,7 +27,8 @@ import (
 )
 
 const (
-	accTestFileName = "proxmox_virtual_environment_file.test"
+	accTestFileRawName = "proxmox_virtual_environment_file.test_raw"
+	accTestFileName    = "proxmox_virtual_environment_file.test"
 )
 
 type nodeResolver struct {
@@ -94,8 +96,11 @@ func TestAccResourceFile(t *testing.T) {
 			},
 			// Update testing
 			{
-				Config: testAccResourceFileSnippetRawUpdatedConfig(snippetRaw),
-				Check:  testAccResourceFileSnippetUpdatedCheck(snippetRaw),
+				PreConfig: func() {
+					deleteSnippet(t, filepath.Base(snippetFile1.Name()))
+				},
+				Config: testAccResourceFileSnippetUpdateConfig(snippetFile1.Name()),
+				Check:  testAccResourceFileSnippetUpdatedCheck(snippetFile1.Name()),
 			},
 			// ImportState testing
 			{
@@ -165,9 +170,16 @@ func createFile(t *testing.T, namePattern string, content string) *os.File {
 	return f
 }
 
+func deleteSnippet(t *testing.T, fname string) {
+	t.Helper()
+
+	err := getNodesClient().DeleteDatastoreFile(context.Background(), "local", fmt.Sprintf("snippets/%s", fname))
+	require.NoError(t, err)
+}
+
 func testAccResourceFileSnippetRawCreatedConfig(fname string) string {
 	return fmt.Sprintf(`
-resource "proxmox_virtual_environment_file" "test" {
+resource "proxmox_virtual_environment_file" "test_raw" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = "%s"
@@ -223,11 +235,11 @@ resource "proxmox_virtual_environment_file" "test" {
 
 func testAccResourceFileSnippetRawCreatedCheck(fname string) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestFileName, "content_type", "snippets"),
-		resource.TestCheckResourceAttr(accTestFileName, "file_name", fname),
-		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.file_name", fname),
-		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.data", "test snippet\n"),
-		resource.TestCheckResourceAttr(accTestFileName, "id", fmt.Sprintf("local:snippets/%s", fname)),
+		resource.TestCheckResourceAttr(accTestFileRawName, "content_type", "snippets"),
+		resource.TestCheckResourceAttr(accTestFileRawName, "file_name", fname),
+		resource.TestCheckResourceAttr(accTestFileRawName, "source_raw.0.file_name", fname),
+		resource.TestCheckResourceAttr(accTestFileRawName, "source_raw.0.data", "test snippet\n"),
+		resource.TestCheckResourceAttr(accTestFileRawName, "id", fmt.Sprintf("local:snippets/%s", fname)),
 	)
 }
 
@@ -239,19 +251,13 @@ func testAccResourceFileCreatedCheck(ctype string, fname string) resource.TestCh
 	)
 }
 
-func testAccResourceFileSnippetRawUpdatedConfig(fname string) string {
+func testAccResourceFileSnippetUpdateConfig(fname string) string {
 	return fmt.Sprintf(`
 resource "proxmox_virtual_environment_file" "test" {
-  content_type = "snippets"
   datastore_id = "local"
   node_name    = "%s"
-
-  source_raw {
-    data = <<EOF
-test snippet - updated
-    EOF
-
-    file_name = "%s"
+  source_file {
+    path = "%s"
   }
 }
 	`, accTestNodeName, fname)
@@ -260,9 +266,7 @@ test snippet - updated
 func testAccResourceFileSnippetUpdatedCheck(fname string) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(accTestFileName, "content_type", "snippets"),
-		resource.TestCheckResourceAttr(accTestFileName, "file_name", fname),
-		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.file_name", fname),
-		resource.TestCheckResourceAttr(accTestFileName, "source_raw.0.data", "test snippet - updated\n"),
-		resource.TestCheckResourceAttr(accTestFileName, "id", fmt.Sprintf("local:snippets/%s", fname)),
+		resource.TestCheckResourceAttr(accTestFileName, "file_name", filepath.Base(fname)),
+		resource.TestCheckResourceAttr(accTestFileName, "id", fmt.Sprintf("local:%s/%s", "snippets", filepath.Base(fname))),
 	)
 }

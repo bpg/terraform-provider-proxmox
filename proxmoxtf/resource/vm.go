@@ -124,6 +124,7 @@ const (
 	dvResourceVirtualEnvironmentVMTabletDevice                      = true
 	dvResourceVirtualEnvironmentVMTemplate                          = false
 	dvResourceVirtualEnvironmentVMTimeoutClone                      = 1800
+	dvResourceVirtualEnvironmentVMTimeoutCreate                     = 1800
 	dvResourceVirtualEnvironmentVMTimeoutMoveDisk                   = 1800
 	dvResourceVirtualEnvironmentVMTimeoutMigrate                    = 1800
 	dvResourceVirtualEnvironmentVMTimeoutReboot                     = 1800
@@ -272,6 +273,7 @@ const (
 	mkResourceVirtualEnvironmentVMTags                              = "tags"
 	mkResourceVirtualEnvironmentVMTemplate                          = "template"
 	mkResourceVirtualEnvironmentVMTimeoutClone                      = "timeout_clone"
+	mkResourceVirtualEnvironmentVMTimeoutCreate                     = "timeout_create"
 	mkResourceVirtualEnvironmentVMTimeoutMoveDisk                   = "timeout_move_disk"
 	mkResourceVirtualEnvironmentVMTimeoutMigrate                    = "timeout_migrate"
 	mkResourceVirtualEnvironmentVMTimeoutReboot                     = "timeout_reboot"
@@ -284,8 +286,6 @@ const (
 	mkResourceVirtualEnvironmentVMVGAType                           = "type"
 	mkResourceVirtualEnvironmentVMVMID                              = "vm_id"
 	mkResourceVirtualEnvironmentVMSCSIHardware                      = "scsi_hardware"
-
-	vmCreateTimeoutSeconds = 10
 )
 
 // VM returns a resource that manages VMs.
@@ -1397,6 +1397,12 @@ func VM() *schema.Resource {
 				Description: "Clone VM timeout",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMTimeoutClone,
+			},
+			mkResourceVirtualEnvironmentVMTimeoutCreate: {
+				Type:        schema.TypeInt,
+				Description: "Create VM timeout",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMTimeoutCreate,
 			},
 			mkResourceVirtualEnvironmentVMTimeoutMoveDisk: {
 				Type:        schema.TypeInt,
@@ -2607,7 +2613,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		createBody.PoolID = &poolID
 	}
 
-	err = api.Node(nodeName).VM(0).CreateVM(ctx, createBody, vmCreateTimeoutSeconds)
+	createTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutClone).(int)
+
+	err = api.Node(nodeName).VM(0).CreateVM(ctx, createBody, createTimeout)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3053,17 +3061,17 @@ func vmGetDiskDeviceObjects(
 		}
 		if fileID != "" {
 			diskDevice.Enabled = false
-		} else {
-			if pathInDatastore != "" {
-				if datastoreID != "" {
-					diskDevice.FileVolume = fmt.Sprintf("%s:%s", datastoreID, pathInDatastore)
-				} else {
-					// FileVolume is absolute path in the host filesystem
-					diskDevice.FileVolume = pathInDatastore
-				}
+		}
+
+		if pathInDatastore != "" {
+			if datastoreID != "" {
+				diskDevice.FileVolume = fmt.Sprintf("%s:%s", datastoreID, pathInDatastore)
 			} else {
-				diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
+				// FileVolume is absolute path in the host filesystem
+				diskDevice.FileVolume = pathInDatastore
 			}
+		} else {
+			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
 		}
 
 		diskDevice.ID = &datastoreID
