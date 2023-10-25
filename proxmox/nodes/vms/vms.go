@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
 	"time"
 
@@ -444,12 +446,26 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	timeStart := time.Now()
 	timeElapsed := timeStart.Sub(timeStart)
 
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt)
+
 	for timeElapsed.Seconds() < timeMaxSeconds {
 		timeElapsed = time.Since(timeStart)
 
 		// check if terraform wants to shut us down (we try to poll the ctx every 200ms)
 		if ctx.Err() != nil {
 			return nil, fmt.Errorf("error waiting for VM network interfaces: %w", ctx.Err())
+		}
+
+		select {
+		case <-ch:
+			{
+				// the returned error will be eaten by the terraform runtime, so we log it here as well
+				const msg = "interrupted by signal"
+				tflog.Warn(ctx, msg)
+				return nil, fmt.Errorf(msg)
+			}
+		default:
 		}
 
 		// sleep another 200 milliseconds if we haven't delayed enough since our last call
