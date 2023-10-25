@@ -243,7 +243,7 @@ output "ubuntu_vm_public_key" {
     - `path_in_datastore` - (Optional) The in-datastore path to the disk image.
       ***Experimental.***Use to attach another VM's disks,
       or (as root only) host's filesystem paths (`datastore_id` empty string).
-      See "*Example: Attached disks*". 
+      See "*Example: Attached disks*".
     - `discard` - (Optional) Whether to pass discard/trim requests to the
       underlying storage. Supported values are `on`/`ignore` (defaults
       to `ignore`).
@@ -454,6 +454,8 @@ output "ubuntu_vm_public_key" {
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `timeout_clone` - (Optional) Timeout for cloning a VM in seconds (defaults to
   1800).
+- `timeout_create` - (Optional) Timeout for creating a VM in seconds (defaults to
+  1800).
 - `timeout_move_disk` - (Optional) Timeout for moving the disk of a VM in
   seconds (defaults to 1800).
 - `timeout_migrate` - (Optional) Timeout for migrating the VM (defaults to
@@ -535,7 +537,6 @@ attaching one disk to multiple VM will cause errors or even data corruption.
 
 Do *not* move or resize `data_vm` disks.
 (Resource `data_user_vm` should reject attempts to move or resize non-owned disks.)
-
 
 ```terraform
 resource "proxmox_virtual_environment_vm" "data_vm" {
