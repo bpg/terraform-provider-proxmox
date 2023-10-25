@@ -9,13 +9,14 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/brianvoe/gofakeit/v6"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/brianvoe/gofakeit/v6"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -170,6 +171,8 @@ func createFile(t *testing.T, namePattern string, content string) *os.File {
 }
 
 func deleteSnippet(t *testing.T, fname string) {
+	t.Helper()
+
 	err := getNodesClient().DeleteDatastoreFile(context.Background(), "local", fmt.Sprintf("snippets/%s", fname))
 	require.NoError(t, err)
 }
