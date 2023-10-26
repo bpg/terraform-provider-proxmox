@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.36.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.35.1...v0.36.0) (2023-10-26)
+
+
+### Features
+
+* **vm:** add configurable timeout for VM create operation ([#648](https://github.com/bpg/terraform-provider-proxmox/issues/648)) ([a30f96c](https://github.com/bpg/terraform-provider-proxmox/commit/a30f96c348888522ca9278d8fef4bd9b12b1b634))
+
+
+### Bug Fixes
+
+* **file:** handle missing file on state refresh ([#649](https://github.com/bpg/terraform-provider-proxmox/issues/649)) ([2a56c23](https://github.com/bpg/terraform-provider-proxmox/commit/2a56c23f52abda293f328196a0d80b9becd749a7))
+* **vm:** better handle of ctrl+c when qemu is not responding  ([#627](https://github.com/bpg/terraform-provider-proxmox/issues/627)) ([aec09e4](https://github.com/bpg/terraform-provider-proxmox/commit/aec09e4ecd8f9df937a04845162a679098f0c480))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/brianvoe/gofakeit/v6 from 6.23.2 to 6.24.0 ([#642](https://github.com/bpg/terraform-provider-proxmox/issues/642)) ([72951dc](https://github.com/bpg/terraform-provider-proxmox/commit/72951dc65691bdb44bae5f31b218a31811ffdfb7))
+* **deps:** bump google.golang.org/grpc from 1.57.0 to 1.57.1 ([#652](https://github.com/bpg/terraform-provider-proxmox/issues/652)) ([4740da0](https://github.com/bpg/terraform-provider-proxmox/commit/4740da0d1f413743c252be963f7b6252ed3f0d96))
+* **deps:** bump google.golang.org/grpc from 1.57.0 to 1.57.1 in /tools ([#653](https://github.com/bpg/terraform-provider-proxmox/issues/653)) ([db9140d](https://github.com/bpg/terraform-provider-proxmox/commit/db9140d05ef71753c8a8e1310c259717fef6e417))
+* fix linter error ([#645](https://github.com/bpg/terraform-provider-proxmox/issues/645)) ([1056180](https://github.com/bpg/terraform-provider-proxmox/commit/1056180ca571ef171870be5e864461fb49732bdf))
+
 ## [0.35.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.35.0...v0.35.1) (2023-10-22)
 
 
