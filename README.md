@@ -1,4 +1,5 @@
 # Terraform Provider for Proxmox
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/bpg/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/bpg/terraform-provider-proxmox)
 [![GoDoc](https://godoc.org/github.com/bpg/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/bpg/terraform-provider-proxmox)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
@@ -25,7 +26,9 @@ backwards compatibility between provider versions as much as possible.
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) 1.2+
+- [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x
+- TLS 1.3 for the Proxmox API endpoint
+- [Terraform](https://www.terraform.io/downloads.html) 1.4+
 - [Go](https://golang.org/doc/install) 1.21 (to build the provider plugin)
 
 ## Building the provider
@@ -61,11 +64,17 @@ make test
 
 Tests are limited to regression tests, ensuring backwards compatibility.
 
+A limited number of acceptance tests are available in the `proxmoxtf/test` directory, mostly
+for "new" functionality implemented using the Terraform Provider Framework. These tests
+are not run by default, as they require a Proxmox VE environment to be available.
+They can be run using `make testacc`, the Proxmox connection can be configured using
+environment variables, see provider documentation for details.
+
 ## Deploying the example resources
 
-There are number of TF examples in the `examples` directory, which can be used
+There are number of TF examples in the `example` directory, which can be used
 to deploy a Container, VM, or other Proxmox resources on your test Proxmox
-cluster. The following assumptions are made about the test Proxmox cluster:
+environment. The following assumptions are made about the test environment:
 
 - It has one node named `pve`
 - The node has local storages named `local` and `local-lvm`
@@ -237,6 +246,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
 ## Sponsorship
 
 ❤️ This project is sponsored by:
+
 - [TJ Zimmerman](https://github.com/zimmertr)
 
 Thanks again for your support, it is much appreciated! 🙏

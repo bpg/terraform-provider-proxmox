@@ -20,6 +20,6 @@ Please add screenshots, logs, or other relevant information that demonstrates th
 <!--- Thank you for keeping this note for the community --->
 
 <!--- If your PR fully resolves and should automatically close the linked issue, use Closes. Otherwise, use Relates --->
-Relates OR Closes #0000
+Closes #0000 | Relates #0000
 
 <!--- Release note for [CHANGELOG](https://github.com/bpg/terraform-provider-proxmox/blob/main/CHANGELOG.md) will be created automatically using the PR's title, update it accordingly. --->
