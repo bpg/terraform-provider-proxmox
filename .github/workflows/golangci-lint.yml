@@ -26,6 +26,7 @@ jobs:
           filters: |
             go:
               - '**/*.go'
+              - 'tools/go.mod'
 
       - uses: actions/setup-go@v4
         if: steps.filter.outputs.go == 'true'
