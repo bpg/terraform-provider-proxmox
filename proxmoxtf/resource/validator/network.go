@@ -16,23 +16,23 @@ import (
 
 // MACAddress is a schema validation function for MAC address.
 func MACAddress() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
+	return validation.ToDiagFunc(func(i interface{}, path string) ([]string, []error) {
 		v, ok := i.(string)
 
 		var ws []string
 		var es []error
 
 		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			es = append(es, fmt.Errorf("expected type of %q to be string", path))
 			return ws, es
 		}
 
 		if v != "" {
-			r := regexp.MustCompile(`^[A-Z\d]{2}(:[A-Z\d]{2}){5}$`)
+			r := regexp.MustCompile(`^[A-Fa-f0-9]{2}(:[A-Fa-f0-9]{2}){5}$`)
 			ok := r.MatchString(v)
 
 			if !ok {
-				es = append(es, fmt.Errorf("expected %s to be a valid MAC address (A0:B1:C2:D3:E4:F5), got %s", k, v))
+				es = append(es, fmt.Errorf("expected %q to be a valid MAC address (A0:B1:C2:D3:E4:F5), got %q", path, v))
 				return ws, es
 			}
 		}
