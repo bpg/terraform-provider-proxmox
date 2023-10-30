@@ -140,6 +140,7 @@ const (
 	maxResourceVirtualEnvironmentVMNetworkDevices = 8
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
+	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
 
 	mkResourceVirtualEnvironmentVMRebootAfterCreation               = "reboot"
 	mkResourceVirtualEnvironmentVMOnBoot                            = "on_boot"
@@ -280,6 +281,10 @@ const (
 	mkResourceVirtualEnvironmentVMTimeoutShutdownVM                 = "timeout_shutdown_vm"
 	mkResourceVirtualEnvironmentVMTimeoutStartVM                    = "timeout_start_vm"
 	mkResourceVirtualEnvironmentVMTimeoutStopVM                     = "timeout_stop_vm"
+	mkResourceVirtualEnvironmentVMHostUSB                           = "usb"
+	mkResourceVirtualEnvironmentVMHostUSBDevice                     = "host"
+	mkResourceVirtualEnvironmentVMHostUSBDeviceMapping              = "mapping"
+	mkResourceVirtualEnvironmentVMHostUSBDeviceUSB3                 = "usb3"
 	mkResourceVirtualEnvironmentVMVGA                               = "vga"
 	mkResourceVirtualEnvironmentVMVGAEnabled                        = "enabled"
 	mkResourceVirtualEnvironmentVMVGAMemory                         = "memory"
@@ -1061,6 +1066,34 @@ func VM() *schema.Resource {
 					},
 				},
 			},
+			mkResourceVirtualEnvironmentVMHostUSB: {
+				Type:        schema.TypeList,
+				Description: "The Host USB devices mapped to the VM",
+				Optional:    true,
+				ForceNew:    false,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMHostUSBDevice: {
+							Type:        schema.TypeString,
+							Description: "The USB device ID for Proxmox, in form of '<MANUFACTURER>:<ID>'",
+							Required:    true,
+						},
+						mkResourceVirtualEnvironmentVMHostUSBDeviceMapping: {
+							Type:        schema.TypeString,
+							Description: "The resource mapping name of the device, for example usbdisk. Use either this or id.",
+							Optional:    true,
+						},
+						mkResourceVirtualEnvironmentVMHostUSBDeviceUSB3: {
+							Type:        schema.TypeBool,
+							Description: "Makes the USB device a USB3 device for the machine. Default is false",
+							Optional:    true,
+						},
+					},
+				},
+			},
 			mkResourceVirtualEnvironmentVMKeyboardLayout: {
 				Type:             schema.TypeString,
 				Description:      "The keyboard layout",
@@ -1831,6 +1864,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	cpu := d.Get(mkResourceVirtualEnvironmentVMCPU).([]interface{})
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 	hostPCI := d.Get(mkResourceVirtualEnvironmentVMHostPCI).([]interface{})
+	hostUSB := d.Get(mkResourceVirtualEnvironmentVMHostUSB).([]interface{})
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	memory := d.Get(mkResourceVirtualEnvironmentVMMemory).([]interface{})
 	networkDevice := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
@@ -1995,6 +2029,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(hostPCI) > 0 {
 		updateBody.PCIDevices = vmGetHostPCIDeviceObjects(d)
+	}
+
+	if len(hostUSB) > 0 {
+		updateBody.USBDevices = vmGetHostUSBDeviceObjects(d)
 	}
 
 	if len(cdrom) > 0 || len(initialization) > 0 {
@@ -2393,6 +2431,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	pciDeviceObjects := vmGetHostPCIDeviceObjects(d)
 
+	usbDeviceObjects := vmGetHostUSBDeviceObjects(d)
+
 	keyboardLayout := d.Get(mkResourceVirtualEnvironmentVMKeyboardLayout).(string)
 	memoryBlock, err := structure.GetSchemaBlock(
 		resource,
@@ -2562,6 +2602,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		StartupOrder:        startupOrder,
 		TabletDeviceEnabled: &tabletDevice,
 		Template:            &template,
+		USBDevices:          usbDeviceObjects,
 		VGADevice:           vgaDevice,
 		VMID:                &vmID,
 	}
@@ -3239,6 +3280,31 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 	}
 
 	return pciDeviceObjects
+}
+
+func vmGetHostUSBDeviceObjects(d *schema.ResourceData) vms.CustomUSBDevices {
+	usbDevice := d.Get(mkResourceVirtualEnvironmentVMHostUSB).([]interface{})
+	usbDeviceObjects := make(vms.CustomUSBDevices, len(usbDevice))
+
+	for i, usbDeviceEntry := range usbDevice {
+		block := usbDeviceEntry.(map[string]interface{})
+
+		host, _ := block[mkResourceVirtualEnvironmentVMHostUSBDevice].(string)
+		usb3 := types.CustomBool(block[mkResourceVirtualEnvironmentVMHostUSBDeviceUSB3].(bool))
+		mapping, _ := block[mkResourceVirtualEnvironmentVMHostUSBDeviceMapping].(string)
+
+		device := vms.CustomUSBDevice{
+			HostDevice: &host,
+			USB3:       &usb3,
+		}
+		if mapping != "" {
+			device.Mapping = &mapping
+		}
+
+		usbDeviceObjects[i] = device
+	}
+
+	return usbDeviceObjects
 }
 
 func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices {
@@ -4071,6 +4137,45 @@ func vmReadCustom(
 		// todo: reordering of devices by PVE may cause an issue here
 		orderedPCIList := orderedListFromMap(pciMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	currentUSBList := d.Get(mkResourceVirtualEnvironmentVMHostUSB).([]interface{})
+	usbMap := map[string]interface{}{}
+
+	usbDevices := getUSBInfo(vmConfig, d)
+	for pi, pp := range usbDevices {
+		if (pp == nil) || (pp.HostDevice == nil && pp.Mapping == nil) {
+			continue
+		}
+
+		usb := map[string]interface{}{}
+
+		if pp.HostDevice != nil {
+			usb[mkResourceVirtualEnvironmentVMHostUSBDevice] = *pp.HostDevice
+		} else {
+			usb[mkResourceVirtualEnvironmentVMHostUSBDevice] = ""
+		}
+
+		if pp.USB3 != nil {
+			usb[mkResourceVirtualEnvironmentVMHostUSBDeviceUSB3] = *pp.USB3
+		} else {
+			usb[mkResourceVirtualEnvironmentVMHostUSBDeviceUSB3] = false
+		}
+
+		if pp.Mapping != nil {
+			usb[mkResourceVirtualEnvironmentVMHostUSBDeviceMapping] = *pp.Mapping
+		} else {
+			usb[mkResourceVirtualEnvironmentVMHostUSBDeviceMapping] = ""
+		}
+
+		usbMap[pi] = usb
+	}
+
+	if len(currentUSBList) > 0 {
+		// todo: reordering of devices by PVE may cause an issue here
+		orderedUSBList := orderedListFromMap(usbMap)
+		err := d.Set(mkResourceVirtualEnvironmentVMHostUSB, orderedUSBList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -5410,6 +5515,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		rebootRequired = true
 	}
 
+	// Prepare the new usb devices configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMHostUSB) {
+		updateBody.USBDevices = vmGetHostUSBDeviceObjects(d)
+
+		for i := len(updateBody.USBDevices); i < maxResourceVirtualEnvironmentVMHostUSBDevices; i++ {
+			del = append(del, fmt.Sprintf("usb%d", i))
+		}
+
+		rebootRequired = true
+	}
+
 	// Prepare the new memory configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMMemory) {
 		memoryBlock, err := structure.GetSchemaBlock(
@@ -5920,6 +6036,17 @@ func getPCIInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*v
 	pciDevices["hostpci3"] = resp.PCIDevice3
 
 	return pciDevices
+}
+
+func getUSBInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomUSBDevice {
+	usbDevices := map[string]*vms.CustomUSBDevice{}
+
+	usbDevices["usb0"] = resp.USBDevice0
+	usbDevices["usb1"] = resp.USBDevice1
+	usbDevices["usb2"] = resp.USBDevice2
+	usbDevices["usb3"] = resp.USBDevice3
+
+	return usbDevices
 }
 
 func parseImportIDWithNodeName(id string) (string, string, error) {
