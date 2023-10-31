@@ -242,9 +242,9 @@ type CustomStorageDevices map[string]CustomStorageDevice
 
 // CustomUSBDevice handles QEMU USB device parameters.
 type CustomUSBDevice struct {
-	HostDevice *string           `json:"host" url:"host"`
+	HostDevice *string           `json:"host"              url:"host"`
 	Mapping    *string           `json:"mapping,omitempty" url:"mapping,omitempty"`
-	USB3       *types.CustomBool `json:"usb3,omitempty" url:"usb3,omitempty,int"`
+	USB3       *types.CustomBool `json:"usb3,omitempty"    url:"usb3,omitempty,int"`
 }
 
 // CustomUSBDevices handles QEMU USB device parameters.

@@ -3483,33 +3483,38 @@ func vmGetStartupOrder(d *schema.ResourceData) *vms.CustomStartupOrder {
 }
 
 func vmGetTagsString(d *schema.ResourceData) string {
-	tags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
 	var sanitizedTags []string
+
+	tags := d.Get(mkResourceVirtualEnvironmentVMTags).([]interface{})
 	for i := 0; i < len(tags); i++ {
 		tag := strings.TrimSpace(tags[i].(string))
 		if len(tag) > 0 {
 			sanitizedTags = append(sanitizedTags, tag)
 		}
 	}
+
 	sort.Strings(sanitizedTags)
+
 	return strings.Join(sanitizedTags, ";")
 }
 
 func vmGetSerialDeviceValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) (s []string, es []error) {
+	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)
+
+		var es []error
 
 		if !ok {
 			es = append(es, fmt.Errorf("expected type of %s to be string", k))
-			return
+			return nil, es
 		}
 
 		if !strings.HasPrefix(v, "/dev/") && v != "socket" {
 			es = append(es, fmt.Errorf("expected %s to be '/dev/*' or 'socket'", k))
-			return
+			return nil, es
 		}
 
-		return
+		return nil, es
 	})
 }
 
@@ -4134,7 +4139,6 @@ func vmReadCustom(
 	}
 
 	if len(currentPCIList) > 0 {
-		// todo: reordering of devices by PVE may cause an issue here
 		orderedPCIList := orderedListFromMap(pciMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)
