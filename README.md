@@ -222,6 +222,9 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ratiborusx"><img src="https://avatars.githubusercontent.com/u/123507924?v=4?s=100" width="100px;" alt="Ratiborus"/><br /><sub><b>Ratiborus</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aratiborusx" title="Bug reports">🐛</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ratiborusx" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/skleinjung"><img src="https://avatars.githubusercontent.com/u/17599474?v=4?s=100" width="100px;" alt="Sean Kleinjung"/><br /><sub><b>Sean Kleinjung</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Askleinjung" title="Bug reports">🐛</a> <a href="#financial-skleinjung" title="Financial">💵</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/muhlba91"><img src="https://avatars.githubusercontent.com/u/653739?v=4?s=100" width="100px;" alt="Daniel Mühlbachler-Pietrzykowski"/><br /><sub><b>Daniel Mühlbachler-Pietrzykowski</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=muhlba91" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>

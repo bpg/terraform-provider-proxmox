@@ -528,6 +528,15 @@
         "bug",
         "financial"
       ]
+    },
+    {
+      "login": "muhlba91",
+      "name": "Daniel Mühlbachler-Pietrzykowski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/653739?v=4",
+      "profile": "https://github.com/muhlba91",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
