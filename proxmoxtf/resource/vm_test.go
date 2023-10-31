@@ -49,6 +49,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMEFIDisk,
 		mkResourceVirtualEnvironmentVMInitialization,
 		mkResourceVirtualEnvironmentVMHostPCI,
+		mkResourceVirtualEnvironmentVMHostUSB,
 		mkResourceVirtualEnvironmentVMKeyboardLayout,
 		mkResourceVirtualEnvironmentVMKVMArguments,
 		mkResourceVirtualEnvironmentVMMachine,
@@ -84,6 +85,7 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMDisk:                  schema.TypeList,
 		mkResourceVirtualEnvironmentVMEFIDisk:               schema.TypeList,
 		mkResourceVirtualEnvironmentVMHostPCI:               schema.TypeList,
+		mkResourceVirtualEnvironmentVMHostUSB:               schema.TypeList,
 		mkResourceVirtualEnvironmentVMInitialization:        schema.TypeList,
 		mkResourceVirtualEnvironmentVMIPv4Addresses:         schema.TypeList,
 		mkResourceVirtualEnvironmentVMIPv6Addresses:         schema.TypeList,
@@ -276,6 +278,17 @@ func TestVMSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR:  schema.TypeBool,
 		mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile: schema.TypeString,
 		mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA:    schema.TypeBool,
+	})
+
+	hostUSBSchema := test.AssertNestedSchemaExistence(t, s, mkResourceVirtualEnvironmentVMHostUSB)
+
+	test.AssertOptionalArguments(t, hostUSBSchema, []string{
+		mkResourceVirtualEnvironmentVMHostUSBDeviceMapping,
+	})
+
+	test.AssertValueTypes(t, hostUSBSchema, map[string]schema.ValueType{
+		mkResourceVirtualEnvironmentVMHostUSBDevice:     schema.TypeString,
+		mkResourceVirtualEnvironmentVMHostUSBDeviceUSB3: schema.TypeBool,
 	})
 
 	initializationDNSSchema := test.AssertNestedSchemaExistence(

@@ -301,6 +301,12 @@ output "ubuntu_vm_public_key" {
       is a relative path under `/usr/share/kvm/`.
     - `xvga` - (Optional) Marks the PCI(e) device as the primary GPU of the VM.
       With this enabled the `vga` configuration argument will be ignored.
+- `usb` - (Optional) A host USB device mapping (multiple blocks supported).
+    - `host` - (Optional) The USB device ID. Use either this or `mapping`.
+    - `mapping` - (Optional) The resource mapping name of the device, for
+      example usbdevice. Use either this or `id`.
+    - `usb3` - (Optional) Makes the USB device a USB3 device for the VM (defaults
+      to `false`).
 - `initialization` - (Optional) The cloud-init configuration.
     - `datastore_id` - (Optional) The identifier for the datastore to create the
       cloud-init disk in (defaults to `local-lvm`).

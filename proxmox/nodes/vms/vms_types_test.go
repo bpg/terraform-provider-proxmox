@@ -124,3 +124,50 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		line    string
+		want    *CustomUSBDevice
+		wantErr bool
+	}{
+		{
+			name: "id only usb device",
+			line: `"host=0000:81"`,
+			want: &CustomUSBDevice{
+				HostDevice: types.StrPtr("0000:81"),
+			},
+		},
+		{
+			name: "usb device with more details",
+			line: `"host=81:00,usb3=0"`,
+			want: &CustomUSBDevice{
+				HostDevice: types.StrPtr("81:00"),
+				USB3:       types.BoolPtr(false),
+			},
+		},
+		{
+			name: "usb device with mapping",
+			line: `"mapping=mappeddevice,usb=0"`,
+			want: &CustomUSBDevice{
+				HostDevice: nil,
+				Mapping:    types.StrPtr("mappeddevice"),
+				USB3:       types.BoolPtr(false),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			r := &CustomUSBDevice{}
+			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
