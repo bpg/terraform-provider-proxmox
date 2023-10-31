@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.37.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.36.0...v0.37.0) (2023-10-31)
+
+
+### Features
+
+* **vm:** add support for USB devices passthrough ([#666](https://github.com/bpg/terraform-provider-proxmox/issues/666)) ([cec4e65](https://github.com/bpg/terraform-provider-proxmox/commit/cec4e6586834feb876321520b93caf7ce4cb68d7))
+
+
+### Bug Fixes
+
+* **docs:** document qemu-guest-agent behavior ([#670](https://github.com/bpg/terraform-provider-proxmox/issues/670)) ([e2e5b4e](https://github.com/bpg/terraform-provider-proxmox/commit/e2e5b4e3441f46fbaef36751c6e5a6d1bc5ad671))
+* **docs:** update `README.md` and file resource documentation ([#659](https://github.com/bpg/terraform-provider-proxmox/issues/659)) ([f6f05a5](https://github.com/bpg/terraform-provider-proxmox/commit/f6f05a56e4c9296491044ec8d5d0215a44da6f56))
+* **vm:** MAC address validator should allow lowercase hex ([#660](https://github.com/bpg/terraform-provider-proxmox/issues/660)) ([7867e66](https://github.com/bpg/terraform-provider-proxmox/commit/7867e66d531484815b529fcdf0b8607fa837dc89))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/docker/docker from 24.0.2+incompatible to 24.0.7+incompatible in /tools ([#667](https://github.com/bpg/terraform-provider-proxmox/issues/667)) ([aea4a6f](https://github.com/bpg/terraform-provider-proxmox/commit/aea4a6f1cb0848a3274799dc605446c96dc192df))
+* **deps:** bump github.com/golangci/golangci-lint from 1.55.0 to 1.55.1 in /tools ([#664](https://github.com/bpg/terraform-provider-proxmox/issues/664)) ([6ab1d5f](https://github.com/bpg/terraform-provider-proxmox/commit/6ab1d5fffbe265291e2991db162fb68fd1b50b02))
+* **deps:** bump github.com/google/uuid from 1.3.1 to 1.4.0 ([#662](https://github.com/bpg/terraform-provider-proxmox/issues/662)) ([0ec8c24](https://github.com/bpg/terraform-provider-proxmox/commit/0ec8c2498b56a7f3d206409590f943e6764f8586))
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework from 1.4.1 to 1.4.2 ([#663](https://github.com/bpg/terraform-provider-proxmox/issues/663)) ([b389080](https://github.com/bpg/terraform-provider-proxmox/commit/b38908063f523fc5738a9e1c987b848b80ecb5d3))
+
 ## [0.36.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.35.1...v0.36.0) (2023-10-26)
 
 
