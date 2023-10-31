@@ -165,9 +165,21 @@ resource "proxmox_virtual_environment_vm" "example" {
   #  pcie = true
   #}
 
+  #usb {
+  #  host = "0000:1234"
+  #  mapping = "usbdevice1"
+  #  usb3 = false
+  #}
+
+  #usb {
+  #  host = "0000:5678"
+  #  mapping = "usbdevice2"
+  #  usb3 = false
+  #}
+
   # attached disks from data_vm
   dynamic "disk" {
-    for_each = {for idx, val in proxmox_virtual_environment_vm.data_vm.disk : idx => val}
+    for_each = { for idx, val in proxmox_virtual_environment_vm.data_vm.disk : idx => val }
     iterator = data_disk
     content {
       datastore_id      = data_disk.value["datastore_id"]
@@ -175,7 +187,7 @@ resource "proxmox_virtual_environment_vm" "example" {
       file_format       = data_disk.value["file_format"]
       size              = data_disk.value["size"]
       # assign from scsi1 and up
-      interface         = "scsi${data_disk.key + 1}"
+      interface = "scsi${data_disk.key + 1}"
     }
   }
 }
