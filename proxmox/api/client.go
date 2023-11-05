@@ -84,6 +84,9 @@ func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 		transport = logging.NewLoggingHTTPTransport(transport)
 	}
 
+	// make sure the path does not contain "/api2/json"
+	u.Path = ""
+
 	return &Connection{
 		endpoint: strings.TrimRight(u.String(), "/"),
 		httpClient: &http.Client{
