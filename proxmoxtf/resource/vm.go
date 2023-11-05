@@ -1102,10 +1102,11 @@ func VM() *schema.Resource {
 				ValidateDiagFunc: validator.KeyboardLayout(),
 			},
 			mkResourceVirtualEnvironmentVMMachine: {
-				Type:        schema.TypeString,
-				Description: "The VM machine type, either default i440fx or q35",
-				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMMachineType,
+				Type:             schema.TypeString,
+				Description:      "The VM machine type, either default `pc` or `q35`",
+				Optional:         true,
+				Default:          dvResourceVirtualEnvironmentVMMachineType,
+				ValidateDiagFunc: validator.MachineType(),
 			},
 			mkResourceVirtualEnvironmentVMMACAddresses: {
 				Type:        schema.TypeList,

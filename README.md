@@ -78,6 +78,7 @@ environment. The following assumptions are made about the test environment:
 
 - It has one node named `pve`
 - The node has local storages named `local` and `local-lvm`
+- The "Snippets" content type is enabled in `local` storage
 
 Create `examples/terraform.tfvars` with the following variables:
 
