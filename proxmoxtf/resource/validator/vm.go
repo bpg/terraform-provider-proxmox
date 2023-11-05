@@ -185,6 +185,14 @@ func KeyboardLayout() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// MachineType is a schema validation function for machine types.
+func MachineType() schema.SchemaValidateDiagFunc {
+	//nolint:lll
+	r := regexp.MustCompile(`^$|^(pc|pc(-i440fx)?-\d+(\.\d+)+(\+pve\d+)?(\.pxe)?|q35|pc-q35-\d+(\.\d+)+(\+pve\d+)?(\.pxe)?|virt(?:-\d+(\.\d+)+)?(\+pve\d+)?)$`)
+
+	return validation.ToDiagFunc(validation.StringMatch(r, "must be a valid machine type"))
+}
+
 // Timeout is a schema validation function for timeouts.
 func Timeout() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {

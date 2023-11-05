@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_getCPUTypeValidator(t *testing.T) {
+func TestCPUType(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -33,6 +33,40 @@ func Test_getCPUTypeValidator(t *testing.T) {
 			t.Parallel()
 
 			f := CPUType()
+			res := f(tt.value, nil)
+
+			if tt.valid {
+				require.Empty(t, res, "validate: '%s'", tt.value)
+			} else {
+				require.NotEmpty(t, res, "validate: '%s'", tt.value)
+			}
+		})
+	}
+}
+
+func TestMachineType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value string
+		valid bool
+	}{
+		{"empty is valid", "", true},
+		{"invalid", "invalid", false},
+		{"valid q35", "q35", true},
+		{"valid pc-q35", "pc-q35-2.3", true},
+		{"valid i440fx", "pc-i440fx-3.1+pve0", true},
+		{"valid virt", "virt", true},
+		{"invalid i440fx", "i440fx", false},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := MachineType()
 			res := f(tt.value, nil)
 
 			if tt.valid {

@@ -370,8 +370,8 @@ output "ubuntu_vm_public_key" {
     - `sv` - Swedish.
     - `tr` - Turkish.
 - `kvm_arguments` - (Optional) Arbitrary arguments passed to kvm.
-- `machine` - (Optional) The VM machine type (defaults to `i440fx`).
-    - `i440fx` - Standard PC (i440FX + PIIX, 1996).
+- `machine` - (Optional) The VM machine type (defaults to `pc`).
+    - `pc` - Standard PC (i440FX + PIIX, 1996).
     - `q35` - Standard PC (Q35 + ICH9, 2009).
 - `memory` - (Optional) The memory configuration.
     - `dedicated` - (Optional) The dedicated memory in megabytes (defaults
