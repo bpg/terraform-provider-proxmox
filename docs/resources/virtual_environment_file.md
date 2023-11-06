@@ -11,6 +11,10 @@ subcategory: Virtual Environment
 
 Manages a file.
 
+> This resource uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
+
+> `content_type=snippets` requires configuration in the 'datacenter>storage' section of proxmox before first use. The content type needs to be selected. 
+
 ## Example Usage
 
 ```terraform
