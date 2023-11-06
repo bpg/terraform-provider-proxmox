@@ -19,7 +19,7 @@ type DatastoreFileListResponseBody struct {
 type DatastoreFileListResponseData struct {
 	ContentType    string  `json:"content"`
 	FileFormat     string  `json:"format"`
-	FileSize       int     `json:"size"`
+	FileSize       int64   `json:"size"`
 	ParentVolumeID *string `json:"parent,omitempty"`
 	SpaceUsed      *int    `json:"used,omitempty"`
 	VMID           *int    `json:"vmid,omitempty"`
