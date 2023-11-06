@@ -11,6 +11,8 @@ subcategory: Virtual Environment
 
 Manages a virtual machine.
 
+> This resource uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
+
 ## Example Usage
 
 ```terraform
