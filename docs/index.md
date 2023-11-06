@@ -186,7 +186,8 @@ Proxmox `provider` block:
 
 - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment
   API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is
-  `https://<your-cluster-endpoint>:8006/`.
+  `https://<your-cluster-endpoint>:8006/`. **Do not** include `/api2/json` at
+  the end.
 - `insecure` - (Optional) Whether to skip the TLS verification step (can
   also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults
   to `false`.
