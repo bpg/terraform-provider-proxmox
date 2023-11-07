@@ -136,7 +136,7 @@ type CustomSerialDevices []string
 // CustomSharedMemory handles QEMU Inter-VM shared memory parameters.
 type CustomSharedMemory struct {
 	Name *string `json:"name,omitempty" url:"name,omitempty"`
-	Size int     `json:"size"           url:"size"`
+	Size int64   `json:"size"           url:"size"`
 }
 
 // CustomSMBIOS handles QEMU SMBIOS parameters.
@@ -184,7 +184,7 @@ type CustomStorageDevice struct {
 	Interface               *string
 	ID                      *string
 	FileID                  *string
-	SizeInt                 *int
+	SizeInt                 *int64
 }
 
 // PathInDatastore returns path part of FileVolume or nil if it is not yet allocated.
@@ -306,12 +306,12 @@ type CreateRequestBody struct {
 	CPULimit             *int                           `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
 	CPUSockets           *int                           `json:"sockets,omitempty"            url:"sockets,omitempty"`
 	CPUUnits             *int                           `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
-	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
+	DedicatedMemory      *int64                         `json:"memory,omitempty"             url:"memory,omitempty"`
 	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
 	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"force,omitempty,int"`
 	Description          *string                        `json:"description,omitempty"        url:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                 `json:"efidisk0,omitempty"           url:"efidisk0,omitempty"`
-	FloatingMemory       *int                           `json:"balloon,omitempty"            url:"balloon,omitempty"`
+	FloatingMemory       *int64                         `json:"balloon,omitempty"            url:"balloon,omitempty"`
 	FloatingMemoryShares *int                           `json:"shares,omitempty"             url:"shares,omitempty"`
 	Freeze               *types.CustomBool              `json:"freeze,omitempty"             url:"freeze,omitempty,int"`
 	HookScript           *string                        `json:"hookscript,omitempty"         url:"hookscript,omitempty"`
@@ -433,11 +433,11 @@ type GetResponseData struct {
 	CPULimit             *types.CustomInt                `json:"cpulimit,omitempty"`
 	CPUSockets           *int                            `json:"sockets,omitempty"`
 	CPUUnits             *int                            `json:"cpuunits,omitempty"`
-	DedicatedMemory      *int                            `json:"memory,omitempty"`
+	DedicatedMemory      *int64                          `json:"memory,omitempty"`
 	DeletionProtection   *types.CustomBool               `json:"protection,omitempty"`
 	Description          *string                         `json:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                  `json:"efidisk0,omitempty"`
-	FloatingMemory       *int                            `json:"balloon,omitempty"`
+	FloatingMemory       *int64                          `json:"balloon,omitempty"`
 	FloatingMemoryShares *int                            `json:"shares,omitempty"`
 	Freeze               *types.CustomBool               `json:"freeze,omitempty"`
 	HookScript           *string                         `json:"hookscript,omitempty"`
@@ -555,11 +555,11 @@ type GetStatusResponseData struct {
 	AgentEnabled     *types.CustomBool `json:"agent,omitempty"`
 	CPUCount         *float64          `json:"cpus,omitempty"`
 	Lock             *string           `json:"lock,omitempty"`
-	MemoryAllocation *int              `json:"maxmem,omitempty"`
+	MemoryAllocation *int64            `json:"maxmem,omitempty"`
 	Name             *string           `json:"name,omitempty"`
 	PID              *int              `json:"pid,omitempty"`
 	QMPStatus        *string           `json:"qmpstatus,omitempty"`
-	RootDiskSize     *int              `json:"maxdisk,omitempty"`
+	RootDiskSize     *int64            `json:"maxdisk,omitempty"`
 	SpiceSupport     *types.CustomBool `json:"spice,omitempty"`
 	Status           string            `json:"status,omitempty"`
 	Tags             *string           `json:"tags,omitempty"`
@@ -1758,7 +1758,7 @@ func (r *CustomSharedMemory) UnmarshalJSON(b []byte) error {
 			case "size":
 				var err error
 
-				r.Size, err = strconv.Atoi(v[1])
+				r.Size, err = strconv.ParseInt(v[1], 10, 64)
 				if err != nil {
 					return fmt.Errorf("failed to parse shared memory size: %w", err)
 				}

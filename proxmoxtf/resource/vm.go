@@ -2047,9 +2047,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if len(memory) > 0 {
 		memoryBlock := memory[0].(map[string]interface{})
 
-		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
-		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
-		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int64)
+		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int64)
+		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int64)
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.FloatingMemory = &memoryFloating
@@ -2154,7 +2154,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diskBlock := disk[i].(map[string]interface{})
 		diskInterface := diskBlock[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int64)
 		prefix := diskDigitPrefix(diskInterface)
 
 		currentDiskInfo := allDiskInfo[diskInterface]
@@ -2446,9 +2446,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		return diag.FromErr(err)
 	}
 
-	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
-	memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
-	memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
+	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int64)
+	memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int64)
+	memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int64)
 
 	machine := d.Get(mkResourceVirtualEnvironmentVMMachine).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
@@ -3080,7 +3080,7 @@ func vmGetDiskDeviceObjects(
 
 		fileFormat, _ := block[mkResourceVirtualEnvironmentVMDiskFileFormat].(string)
 		fileID, _ := block[mkResourceVirtualEnvironmentVMDiskFileID].(string)
-		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		size, _ := block[mkResourceVirtualEnvironmentVMDiskSize].(int64)
 		diskInterface, _ := block[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		ioThread := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskIOThread].(bool))
 		ssd := types.CustomBool(block[mkResourceVirtualEnvironmentVMDiskSSD].(bool))
@@ -5544,9 +5544,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			return diag.FromErr(err)
 		}
 
-		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
-		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
-		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int64)
+		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int64)
+		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int64)
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.FloatingMemory = &memoryFloating

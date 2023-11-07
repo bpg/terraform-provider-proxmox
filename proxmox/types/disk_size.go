@@ -28,17 +28,17 @@ func (r DiskSize) String() string {
 }
 
 // InMegabytes returns the disk size in megabytes.
-func (r DiskSize) InMegabytes() int {
-	return int(int64(r) / 1024 / 1024)
+func (r DiskSize) InMegabytes() int64 {
+	return int64(r) / 1024 / 1024
 }
 
 // InGigabytes returns the disk size in gigabytes.
-func (r DiskSize) InGigabytes() int {
-	return int(int64(r) / 1024 / 1024 / 1024)
+func (r DiskSize) InGigabytes() int64 {
+	return int64(r) / 1024 / 1024 / 1024
 }
 
 // DiskSizeFromGigabytes creates a DiskSize from gigabytes.
-func DiskSizeFromGigabytes(size int) DiskSize {
+func DiskSizeFromGigabytes(size int64) DiskSize {
 	return DiskSize(size * 1024 * 1024 * 1024)
 }
 
