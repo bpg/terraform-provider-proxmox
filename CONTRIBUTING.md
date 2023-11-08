@@ -39,18 +39,18 @@ You can run all the test cases by invoking `make test`.
 
 ## Manual Testing
 
-```
+```bash
 ## Linux
-# Build Provider
+# Build Provider for your machine
 GOOS=linux GOARCH='amd64' go build -o "./build/terraform-provider-proxmox_v0.38.0"
 # Copy for local use
 cp ./build/terraform-provider-proxmox_v0.38.0 $HOME/.terraform.d/plugins/terraform.example.com/bpg/proxmox/0.38.0/linux_amd64/terraform-provider-proxmox_v0.38.0
 
 ### Windows
-# Build Provider
+# Build Provider for your machine
 GOOS=windows GOARCH='386' go build -o "./build/terraform-provider-proxmox_v0.38.0.exe"
 # Copy for local use 
-# cp ./build/terraform-provider-proxmox_v0.38.0.exe %APPDATA%\terraform.d\plugins\terraform.example.com\bpg\proxmox\0.38.0\windows_386\terraform-provider-proxmox_v0.38.0.exe
+cp ./build/terraform-provider-proxmox_v0.38.0.exe %APPDATA%\terraform.d\plugins\terraform.example.com\bpg\proxmox\0.38.0\windows_386\terraform-provider-proxmox_v0.38.0.exe
 ```
 
 ```terraform
