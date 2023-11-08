@@ -1011,8 +1011,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	if len(memory) > 0 {
 		memoryBlock := memory[0].(map[string]interface{})
 
-		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int64)
-		memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int64)
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int)
+		memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int)
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.Swap = &memorySwap
@@ -1336,8 +1336,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
-	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int64)
-	memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int64)
+	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int)
+	memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int)
 
 	mountPoint := d.Get(mkResourceVirtualEnvironmentContainerMountPoint).([]interface{})
 	mountPointArray := make(containers.CustomMountPointArray, 0, len(mountPoint))
@@ -2444,8 +2444,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.FromErr(err)
 		}
 
-		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int64)
-		memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int64)
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentContainerMemoryDedicated].(int)
+		memorySwap := memoryBlock[mkResourceVirtualEnvironmentContainerMemorySwap].(int)
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.Swap = &memorySwap

@@ -39,7 +39,7 @@ type CreateRequestBody struct {
 	CPULimit             *int                        `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
 	CPUUnits             *int                        `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
 	DatastoreID          *string                     `json:"storage,omitempty"              url:"storage,omitempty"`
-	DedicatedMemory      *int64                      `json:"memory,omitempty"               url:"memory,omitempty"`
+	DedicatedMemory      *int                        `json:"memory,omitempty"               url:"memory,omitempty"`
 	Delete               []string                    `json:"delete,omitempty"               url:"delete,omitempty"`
 	Description          *string                     `json:"description,omitempty"          url:"description,omitempty"`
 	DNSDomain            *string                     `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
@@ -63,7 +63,7 @@ type CreateRequestBody struct {
 	Start                *types.CustomBool           `json:"start,omitempty"                url:"start,omitempty,int"`
 	StartOnBoot          *types.CustomBool           `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
 	StartupBehavior      *CustomStartupBehavior      `json:"startup,omitempty"              url:"startup,omitempty"`
-	Swap                 *int64                      `json:"swap,omitempty"                 url:"swap,omitempty"`
+	Swap                 *int                        `json:"swap,omitempty"                 url:"swap,omitempty"`
 	Tags                 *string                     `json:"tags,omitempty"                 url:"tags,omitempty"`
 	Template             *types.CustomBool           `json:"template,omitempty"             url:"template,omitempty,int"`
 	TTY                  *int                        `json:"tty,omitempty"                  url:"tty,omitempty"`
