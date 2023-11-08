@@ -11,6 +11,24 @@ the best opportunity to work with you, by making sure we have the things we need
 in order to make it happen. Doing your best to follow it will speed up our
 ability to merge PRs and respond to issues.
 
+## Build the provider
+
+- Clone the repository
+  to `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
+
+  ```sh
+  mkdir -p "${GOPATH}/src/github.com/bpg"
+  cd "${GOPATH}/src/github.com/bpg"
+  git clone git@github.com:bpg/terraform-provider-proxmox
+  ```
+
+- Enter the provider directory and build it:
+
+  ```sh
+  cd "${GOPATH}/src/github.com/bpg/terraform-provider-proxmox"
+  make build
+  ```
+
 ## Testing
 
 The project has a handful of test cases which must pass for a contribution to be
@@ -18,6 +36,36 @@ accepted. We also expect that you either create new test cases or modify
 existing ones in order to target your changes.
 
 You can run all the test cases by invoking `make test`.
+
+## Manual Testing
+
+```
+## Linux
+# Build Provider
+GOOS=linux GOARCH='amd64' go build -o "./build/terraform-provider-proxmox_v0.38.0"
+# Copy for local use
+cp ./build/terraform-provider-proxmox_v0.38.0 $HOME/.terraform.d/plugins/terraform.example.com/bpg/proxmox/0.38.0/linux_amd64/terraform-provider-proxmox_v0.38.0
+
+### Windows
+# Build Provider
+GOOS=windows GOARCH='386' go build -o "./build/terraform-provider-proxmox_v0.38.0.exe"
+# Copy for local use 
+# cp ./build/terraform-provider-proxmox_v0.38.0.exe %APPDATA%\terraform.d\plugins\terraform.example.com\bpg\proxmox\0.38.0\windows_386\terraform-provider-proxmox_v0.38.0.exe
+```
+
+```terraform
+# Use in Terraform
+terraform {
+  required_providers {
+    proxmox = {
+      source = "terraform.example.com/bpg/proxmox"
+      version = "0.38.0"
+    }
+  }
+}
+# terraform init -upgrade
+# terraform <command>
+```
 
 ## Coding conventions
 

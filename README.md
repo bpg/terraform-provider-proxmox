@@ -31,24 +31,6 @@ backwards compatibility between provider versions as much as possible.
 - [Terraform](https://www.terraform.io/downloads.html) 1.4+
 - [Go](https://golang.org/doc/install) 1.21 (to build the provider plugin)
 
-## Building the provider
-
-- Clone the repository
-  to `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
-
-  ```sh
-  mkdir -p "${GOPATH}/src/github.com/bpg"
-  cd "${GOPATH}/src/github.com/bpg"
-  git clone git@github.com:bpg/terraform-provider-proxmox
-  ```
-
-- Enter the provider directory and build it:
-
-  ```sh
-  cd "${GOPATH}/src/github.com/bpg/terraform-provider-proxmox"
-  make build
-  ```
-
 ## Using the provider
 
 You can find the latest release and its documentation in
