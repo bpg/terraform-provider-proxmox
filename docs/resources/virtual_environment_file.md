@@ -11,23 +11,43 @@ subcategory: Virtual Environment
 
 Manages a file.
 
-> This resource uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
-
-> `content_type=snippets` requires configuration in the 'datacenter>storage' section of proxmox before first use. The content type needs to be selected. 
-
 ## Example Usage
 
+### Backups
+
+-> **Note:** The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
+
 ```terraform
-resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
-  content_type = "vztmpl"
+resource "proxmox_virtual_environment_file" "backup" {
+  content_type = "backup"
   datastore_id = "local"
-  node_name    = "first-node"
+  node_name    = "pve"
 
   source_file {
-    path = "https://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+    path = "vzdump-lxc-100-2023_11_08-23_10_05.tar"
   }
 }
 ```
+
+### Images
+
+```terraform
+resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
+  content_type = "iso"
+  datastore_id = "local"
+  node_name    = "pve"
+
+  source_file {
+    path = "https://cloud-images.ubuntu.com/jammy/20230929/jammy-server-cloudimg-amd64-disk-kvm.img"
+  }
+}
+```
+
+### Snippets
+
+-> **Note:**  Snippets are not enabled by default in new Proxmox installations. You need to enable them in the 'Datacenter>Storage' section of the proxmox interface before first using this resource.
+
+-> **Note:** The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
 
 ```terraform
 resource "proxmox_virtual_environment_file" "cloud_config" {
@@ -59,6 +79,21 @@ EOF
   }
 }
 ```
+
+### Container Template (`vztmpl`)
+
+```terraform
+resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
+  content_type = "vztmpl"
+  datastore_id = "local"
+  node_name    = "first-node"
+
+  source_file {
+    path = "https://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+  }
+}
+```
+
 
 ## Argument Reference
 
@@ -110,10 +145,6 @@ By default, if the specified file already exists, the resource will
 unconditionally replace it and take ownership of the resource. On destruction,
 the file will be deleted as if it did not exist before. If you want to prevent
 the resource from replacing the file, set `overwrite` to `false`.
-
-Make sure the target datastore supports the content type you are uploading. For
-example, the `snippets` content type can be disabled by default on the `local`
-datastore.
 
 ## Import
 
