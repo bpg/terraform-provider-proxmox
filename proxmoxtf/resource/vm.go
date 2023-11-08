@@ -2047,9 +2047,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if len(memory) > 0 {
 		memoryBlock := memory[0].(map[string]interface{})
 
-		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int64)
-		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int64)
-		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int64)
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
+		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
+		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.FloatingMemory = &memoryFloating
@@ -2446,9 +2446,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		return diag.FromErr(err)
 	}
 
-	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int64)
-	memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int64)
-	memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int64)
+	memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
+	memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
+	memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
 
 	machine := d.Get(mkResourceVirtualEnvironmentVMMachine).(string)
 	name := d.Get(mkResourceVirtualEnvironmentVMName).(string)
@@ -5544,9 +5544,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			return diag.FromErr(err)
 		}
 
-		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int64)
-		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int64)
-		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int64)
+		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
+		memoryFloating := memoryBlock[mkResourceVirtualEnvironmentVMMemoryFloating].(int)
+		memoryShared := memoryBlock[mkResourceVirtualEnvironmentVMMemoryShared].(int)
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.FloatingMemory = &memoryFloating

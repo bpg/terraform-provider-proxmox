@@ -136,7 +136,7 @@ type CustomSerialDevices []string
 // CustomSharedMemory handles QEMU Inter-VM shared memory parameters.
 type CustomSharedMemory struct {
 	Name *string `json:"name,omitempty" url:"name,omitempty"`
-	Size int64   `json:"size"           url:"size"`
+	Size int     `json:"size"           url:"size"`
 }
 
 // CustomSMBIOS handles QEMU SMBIOS parameters.
@@ -306,12 +306,12 @@ type CreateRequestBody struct {
 	CPULimit             *int                           `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
 	CPUSockets           *int                           `json:"sockets,omitempty"            url:"sockets,omitempty"`
 	CPUUnits             *int                           `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
-	DedicatedMemory      *int64                         `json:"memory,omitempty"             url:"memory,omitempty"`
+	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
 	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
 	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"force,omitempty,int"`
 	Description          *string                        `json:"description,omitempty"        url:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                 `json:"efidisk0,omitempty"           url:"efidisk0,omitempty"`
-	FloatingMemory       *int64                         `json:"balloon,omitempty"            url:"balloon,omitempty"`
+	FloatingMemory       *int                           `json:"balloon,omitempty"            url:"balloon,omitempty"`
 	FloatingMemoryShares *int                           `json:"shares,omitempty"             url:"shares,omitempty"`
 	Freeze               *types.CustomBool              `json:"freeze,omitempty"             url:"freeze,omitempty,int"`
 	HookScript           *string                        `json:"hookscript,omitempty"         url:"hookscript,omitempty"`
@@ -1758,7 +1758,7 @@ func (r *CustomSharedMemory) UnmarshalJSON(b []byte) error {
 			case "size":
 				var err error
 
-				r.Size, err = strconv.ParseInt(v[1], 10, 64)
+				r.Size, err = strconv.Atoi(v[1])
 				if err != nil {
 					return fmt.Errorf("failed to parse shared memory size: %w", err)
 				}
