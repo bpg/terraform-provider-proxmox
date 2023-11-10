@@ -2,6 +2,8 @@ module github.com/bpg/terraform-provider-proxmox/tools
 
 go 1.21
 
+replace github.com/nats-io/nkeys => github.com/nats-io/nkeys v0.4.6
+
 require (
 	github.com/golangci/golangci-lint v1.55.2
 	github.com/goreleaser/goreleaser v1.22.1
