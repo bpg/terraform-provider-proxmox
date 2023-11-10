@@ -11,7 +11,7 @@
 	},
 	
 	// Workaround for https://github.com/orgs/community/discussions/75161
-	"updateContentCommand": "unset GIT_COMMITTER_NAME; unset GIT_COMMITTER_EMAIL;"
+	"updateContentCommand": "unset GIT_COMMITTER_NAME; unset GIT_COMMITTER_EMAIL;",
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
