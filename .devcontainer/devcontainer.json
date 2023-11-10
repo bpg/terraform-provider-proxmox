@@ -9,18 +9,19 @@
 	"features": {
 		"ghcr.io/devcontainers/features/terraform:1": {}
 	},
+	
+	// Workaround for https://github.com/orgs/community/discussions/75161
+	"updateContentCommand": "unset GIT_COMMITTER_NAME; unset GIT_COMMITTER_EMAIL;"
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "uname -a",
-
 	// Configure tool-specific properties.
 	// "customizations": {},
-
+	
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
-
+	
+	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "make build"
 }
