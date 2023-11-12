@@ -184,7 +184,6 @@ type CustomStorageDevice struct {
 	Interface               *string
 	ID                      *string
 	FileID                  *string
-	SizeInt                 *int64
 }
 
 // PathInDatastore returns path part of FileVolume or nil if it is not yet allocated.
