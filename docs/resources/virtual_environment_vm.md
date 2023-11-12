@@ -11,6 +11,8 @@ subcategory: Virtual Environment
 
 Manages a virtual machine.
 
+> This resource uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
+
 ## Example Usage
 
 ```terraform
@@ -158,7 +160,7 @@ output "ubuntu_vm_public_key" {
           AMD CPUs, best used with "virt-ssbd".
         - `+hv-evmcs`/`-hv-evmcs` - Improve performance for nested
           virtualization (only supported on Intel CPUs).
-        - `+hv-tlbflush`/`-hv-tlbflush` - Improve performance in overcommitted  
+        - `+hv-tlbflush`/`-hv-tlbflush` - Improve performance in overcommitted
           Windows guests (may lead to guest BSOD on old CPUs).
         - `+ibpb`/`-ibpb` - Allows improved Spectre mitigation on AMD CPUs.
         - `+md-clear`/`-md-clear` - Required to let the guest OS know if MDS is
@@ -320,13 +322,15 @@ output "ubuntu_vm_public_key" {
     - `ip_config` - (Optional) The IP configuration (one block per network
       device).
         - `ipv4` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv4 address (use `dhcp` for
-              autodiscovery).
+            - `address` - (Optional) The IPv4 address in CIDR notation
+              (e.g. 192.168.2.2/24).  Alternatively, set this to `dhcp` for
+              autodiscovery.
             - `gateway` - (Optional) The IPv4 gateway (must be omitted
               when `dhcp` is used as the address).
         - `ipv6` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv6 address (use `dhcp` for
-              autodiscovery).
+            - `address` - (Optional) The IPv6 address in CIDR notation
+              (e.g. fd1c:000:0000::0000:000:7334/64).  Alternatively, set this
+              to `dhcp` for autodiscovery.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
               when `dhcp` is used as the address).
     - `user_account` - (Optional) The user account configuration (conflicts
@@ -593,14 +597,14 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
     datastore_id = "local-zfs"
     file_format  = "raw"
     interface    = "scsi0"
-    size         = 1 
+    size         = 1
   }
 
   disk {
     datastore_id = "local-zfs"
     file_format  = "raw"
     interface    = "scsi1"
-    size         = 4 
+    size         = 4
   }
 }
 
@@ -610,7 +614,7 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
     datastore_id = "local-zfs"
     file_format  = "raw"
     interface    = "scsi0"
-    size         = 8 
+    size         = 8
   }
 
   # attached disks from data_vm
@@ -623,7 +627,7 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
       file_format       = data_disk.value["file_format"]
       size              = data_disk.value["size"]
       # assign from scsi1 and up
-      interface         = "scsi${data_disk.key + 1}" 
+      interface         = "scsi${data_disk.key + 1}"
     }
   }
 
