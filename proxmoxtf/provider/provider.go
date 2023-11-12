@@ -181,10 +181,31 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.Proxmox
 
 	nodeAddress := ""
 
+	// try IPv4 address on the interface with IPv4 gateway
 	for _, d := range networkDevices {
-		if d.Address != nil {
+		if d.Gateway != nil && d.Address != nil {
 			nodeAddress = *d.Address
 			break
+		}
+	}
+
+	if nodeAddress == "" {
+		// fallback 1: try IPv6 address on the interface with IPv6 gateway
+		for _, d := range networkDevices {
+			if d.Gateway6 != nil && d.Address6 != nil {
+				nodeAddress = *d.Address6
+				break
+			}
+		}
+	}
+
+	if nodeAddress == "" {
+		// fallback 2: use first interface with any IPv4 address
+		for _, d := range networkDevices {
+			if d.Address != nil {
+				nodeAddress = *d.Address
+				break
+			}
 		}
 	}
 
