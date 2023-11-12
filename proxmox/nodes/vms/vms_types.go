@@ -184,7 +184,6 @@ type CustomStorageDevice struct {
 	Interface               *string
 	ID                      *string
 	FileID                  *string
-	SizeInt                 *int
 }
 
 // PathInDatastore returns path part of FileVolume or nil if it is not yet allocated.
@@ -433,11 +432,11 @@ type GetResponseData struct {
 	CPULimit             *types.CustomInt                `json:"cpulimit,omitempty"`
 	CPUSockets           *int                            `json:"sockets,omitempty"`
 	CPUUnits             *int                            `json:"cpuunits,omitempty"`
-	DedicatedMemory      *int                            `json:"memory,omitempty"`
+	DedicatedMemory      *int64                          `json:"memory,omitempty"`
 	DeletionProtection   *types.CustomBool               `json:"protection,omitempty"`
 	Description          *string                         `json:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                  `json:"efidisk0,omitempty"`
-	FloatingMemory       *int                            `json:"balloon,omitempty"`
+	FloatingMemory       *int64                          `json:"balloon,omitempty"`
 	FloatingMemoryShares *int                            `json:"shares,omitempty"`
 	Freeze               *types.CustomBool               `json:"freeze,omitempty"`
 	HookScript           *string                         `json:"hookscript,omitempty"`
@@ -555,11 +554,11 @@ type GetStatusResponseData struct {
 	AgentEnabled     *types.CustomBool `json:"agent,omitempty"`
 	CPUCount         *float64          `json:"cpus,omitempty"`
 	Lock             *string           `json:"lock,omitempty"`
-	MemoryAllocation *int              `json:"maxmem,omitempty"`
+	MemoryAllocation *int64            `json:"maxmem,omitempty"`
 	Name             *string           `json:"name,omitempty"`
 	PID              *int              `json:"pid,omitempty"`
 	QMPStatus        *string           `json:"qmpstatus,omitempty"`
-	RootDiskSize     *int              `json:"maxdisk,omitempty"`
+	RootDiskSize     *int64            `json:"maxdisk,omitempty"`
 	SpiceSupport     *types.CustomBool `json:"spice,omitempty"`
 	Status           string            `json:"status,omitempty"`
 	Tags             *string           `json:"tags,omitempty"`

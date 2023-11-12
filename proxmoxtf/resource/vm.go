@@ -2154,7 +2154,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diskBlock := disk[i].(map[string]interface{})
 		diskInterface := diskBlock[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		diskSize := int64(diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int))
 		prefix := diskDigitPrefix(diskInterface)
 
 		currentDiskInfo := allDiskInfo[diskInterface]
@@ -3120,9 +3120,8 @@ func vmGetDiskDeviceObjects(
 		diskDevice.Interface = &diskInterface
 		diskDevice.Format = &fileFormat
 		diskDevice.FileID = &fileID
-		diskSize := types.DiskSizeFromGigabytes(size)
+		diskSize := types.DiskSizeFromGigabytes(int64(size))
 		diskDevice.Size = &diskSize
-		diskDevice.SizeInt = &size
 		diskDevice.IOThread = &ioThread
 		diskDevice.Discard = &discard
 		diskDevice.Cache = &cache
@@ -3229,9 +3228,7 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*v
 				return nil, fmt.Errorf("invalid efi disk type: %s", err.Error())
 			}
 
-			sizeInt := ds.InMegabytes()
 			storageDevice.Size = &ds
-			storageDevice.SizeInt = &sizeInt
 		}
 	}
 
@@ -5790,7 +5787,7 @@ func vmUpdateDiskLocationAndSize(
 					}
 				}
 
-				if *oldDisk.SizeInt < *diskNewEntries[prefix][oldKey].SizeInt {
+				if *oldDisk.Size < *diskNewEntries[prefix][oldKey].Size {
 					if oldDisk.IsOwnedBy(vmID) {
 						diskResizeBodies = append(
 							diskResizeBodies,

@@ -84,7 +84,7 @@ func TestToFromGigabytes(t *testing.T) {
 
 	tests := []struct {
 		name string
-		size int
+		size int64
 		want string
 	}{
 		{"handle 0 size", 0, "0"},
