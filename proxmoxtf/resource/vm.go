@@ -4390,13 +4390,13 @@ func vmReadCustom(
 	memory := map[string]interface{}{}
 
 	if vmConfig.DedicatedMemory != nil {
-		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = *vmConfig.DedicatedMemory
+		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = int(*vmConfig.DedicatedMemory)
 	} else {
 		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = 0
 	}
 
 	if vmConfig.FloatingMemory != nil {
-		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = *vmConfig.FloatingMemory
+		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = int(*vmConfig.FloatingMemory)
 	} else {
 		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = 0
 	}
