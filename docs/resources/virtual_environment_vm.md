@@ -422,6 +422,7 @@ output "ubuntu_vm_public_key" {
         - `win7` - Windows 7.
         - `win8` - Windows 8, 2012 or 2012 R2.
         - `win10` - Windows 10 or 2016.
+        - `win11` - Windows 11
         - `wvista` - Windows Vista.
         - `wxp` - Windows XP.
 - `pool_id` - (Optional) The identifier for a pool to assign the virtual machine
