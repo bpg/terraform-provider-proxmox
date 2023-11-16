@@ -3370,7 +3370,7 @@ func vmGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 		"win7",
 		"win8",
 		"win10",
-                "win11",
+		"win11",
 		"wvista",
 		"wxp",
 	}, false))
