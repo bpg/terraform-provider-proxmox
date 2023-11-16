@@ -3,7 +3,7 @@ module github.com/bpg/terraform-provider-proxmox
 go 1.21
 
 require (
-	github.com/avast/retry-go/v4 v4.5.0
+	github.com/avast/retry-go/v4 v4.5.1
 	github.com/brianvoe/gofakeit/v6 v6.24.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-querystring v1.1.0
