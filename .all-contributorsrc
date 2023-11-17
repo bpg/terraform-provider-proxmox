@@ -567,6 +567,15 @@
         "doc",
         "code"
       ]
+    },
+    {
+      "login": "dark-vex",
+      "name": "Daniele De Lorenzi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2905124?v=4",
+      "profile": "https://github.com/dark-vex",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
