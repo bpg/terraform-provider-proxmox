@@ -60,6 +60,7 @@ type Connection struct {
 
 // NewConnection creates and initializes a Connection instance.
 func NewConnection(endpoint string, insecure bool) (*Connection, error) {
+	tflog.Trace(context.Background(), "Starting a connection")
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
@@ -103,6 +104,7 @@ type client struct {
 
 // NewClient creates and initializes a VirtualEnvironmentClient instance.
 func NewClient(creds *Credentials, conn *Connection) (Client, error) {
+	tflog.Trace(context.Background(), "Creating a new client")
 	if creds == nil {
 		return nil, errors.New("credentials must not be nil")
 	}
@@ -137,8 +139,14 @@ func (c *client) DoRequest(
 	method, path string,
 	requestBody, responseBody interface{},
 ) error {
-	var reqBodyReader io.Reader
+	// Setup Logging
+	logSubsystem := "tf-provider-proxmox_client-dorequest"
 
+	// Read the level from ENV variable "TF_LOG_PROVIDER_PROXMOX_HTTP_DOREQ_LOGLEVEL"
+	httpReqContext := tflog.NewSubsystem(ctx, logSubsystem,
+		tflog.WithLevelFromEnv("TF_LOG_PROVIDER_PROXMOX_HTTP_DOREQ_LOGLEVEL"))
+
+	var reqBodyReader io.Reader
 	var reqContentLength *int64
 
 	modifiedPath := path
@@ -184,10 +192,20 @@ func (c *client) DoRequest(
 		reqBodyReader = new(bytes.Buffer)
 	}
 
+	assembledUrl := fmt.Sprintf("%s/%s/%s", c.conn.endpoint, basePathJSONAPI, modifiedPath)
+
+	httpReqContext = tflog.SubsystemSetField(httpReqContext, logSubsystem, "http_endpoint", c.conn.endpoint)
+	httpReqContext = tflog.SubsystemSetField(httpReqContext, logSubsystem, "modified_path", modifiedPath)
+	httpReqContext = tflog.SubsystemSetField(httpReqContext, logSubsystem, "assembled_url", assembledUrl)
+	httpReqContext = tflog.SubsystemSetField(httpReqContext, logSubsystem, "http_method", method)
+
+	tflog.SubsystemTrace(httpReqContext, logSubsystem,
+		"Creating new HTTP Request")
+
 	req, err := http.NewRequestWithContext(
-		ctx,
+		httpReqContext,
 		method,
-		fmt.Sprintf("%s/%s/%s", c.conn.endpoint, basePathJSONAPI, modifiedPath),
+		assembledUrl,
 		reqBodyReader,
 	)
 	if err != nil {
@@ -199,6 +217,9 @@ func (c *client) DoRequest(
 		)
 	}
 
+	tflog.SubsystemTrace(httpReqContext, logSubsystem,
+		"Adding headers to HTTP Request")
+
 	req.Header.Add("Accept", "application/json")
 
 	if reqContentLength != nil {
@@ -209,6 +230,9 @@ func (c *client) DoRequest(
 		req.Header.Add("Content-Type", reqBodyType)
 	}
 
+	tflog.SubsystemTrace(httpReqContext, logSubsystem,
+		"Attempting HTTP authentication request")
+
 	err = c.auth.AuthenticateRequest(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to authenticate HTTP %s request (path: %s) - Reason: %w",
@@ -217,6 +241,9 @@ func (c *client) DoRequest(
 			err,
 		)
 	}
+
+	tflog.SubsystemTrace(httpReqContext, logSubsystem,
+		"Attempting HTTP main request")
 
 	//nolint:bodyclose
 	res, err := c.conn.httpClient.Do(req)
@@ -230,13 +257,28 @@ func (c *client) DoRequest(
 
 	defer utils.CloseOrLogError(ctx)(res.Body)
 
+	tflog.SubsystemTrace(httpReqContext, logSubsystem,
+		"Validating HTTP response code")
+
 	err = validateResponseCode(res)
 	if err != nil {
 		return err
 	}
 
+	tflog.SubsystemDebug(httpReqContext, logSubsystem,
+		fmt.Sprintf("HTTP response code: %s", res.Status))
+
+	tflog.SubsystemTrace(httpReqContext, logSubsystem,
+		"Decoding JSON from HTTP response body")
+
 	//nolint:nestif
 	if responseBody != nil {
+		tflog.SubsystemDebug(httpReqContext, logSubsystem,
+			"HTTP response body is not nil",
+			map[string]interface{}{
+				"http_res_body": responseBody,
+			})
+
 		err = json.NewDecoder(res.Body).Decode(responseBody)
 		if err != nil {
 			return fmt.Errorf(
@@ -247,6 +289,12 @@ func (c *client) DoRequest(
 			)
 		}
 	} else {
+		tflog.SubsystemDebug(httpReqContext, logSubsystem,
+			"HTTP response body IS nil",
+			map[string]interface{}{
+				"http_res_body": responseBody,
+			})
+
 		data, err := io.ReadAll(res.Body)
 		if err != nil {
 			return fmt.Errorf(
