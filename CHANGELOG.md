@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.38.0...v0.38.1) (2023-11-17)
+
+
+### Bug Fixes
+
+* **vm:** type error when unmarshalling `GetResponseData.data.memory` ([#728](https://github.com/bpg/terraform-provider-proxmox/issues/728)) ([b429f95](https://github.com/bpg/terraform-provider-proxmox/commit/b429f95ca578c530d08caae95228f20e57de0c03))
+
 ## [0.38.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.37.1...v0.38.0) (2023-11-17)
 
 
