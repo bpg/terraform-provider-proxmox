@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.38.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.37.1...v0.38.0) (2023-11-17)
+
+
+### Features
+
+* **file:** rename content type `backup` -&gt; `dump` for backups ([#724](https://github.com/bpg/terraform-provider-proxmox/issues/724)) ([3280370](https://github.com/bpg/terraform-provider-proxmox/commit/3280370155ef339e5cf05ac4c94eb0e412d81d5c))
+* **vm:** Add Win 11 as os type ([#720](https://github.com/bpg/terraform-provider-proxmox/issues/720)) ([0eeb7a7](https://github.com/bpg/terraform-provider-proxmox/commit/0eeb7a7fd924f4cd09e424219c532e55cc3ea721))
+
+
+### Bug Fixes
+
+* **vm:** memory size datatype conversion causing `null` on read ([#715](https://github.com/bpg/terraform-provider-proxmox/issues/715)) ([2bbf228](https://github.com/bpg/terraform-provider-proxmox/commit/2bbf228eecd4f34120f38b32102688d4b78eb220))
+* **vm:** use int64 for resource memory and disk size ([#694](https://github.com/bpg/terraform-provider-proxmox/issues/694)) ([5fe6892](https://github.com/bpg/terraform-provider-proxmox/commit/5fe6892724a74906400d30a67c3047e1a0e86781))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/avast/retry-go/v4 from 4.5.0 to 4.5.1 ([#722](https://github.com/bpg/terraform-provider-proxmox/issues/722)) ([b0fea6d](https://github.com/bpg/terraform-provider-proxmox/commit/b0fea6d681301501826b95ae60e3f701e7bf79c2))
+* **deps:** bump github.com/hashicorp/terraform-plugin-go from 0.19.0 to 0.19.1 ([#723](https://github.com/bpg/terraform-provider-proxmox/issues/723)) ([6c83e07](https://github.com/bpg/terraform-provider-proxmox/commit/6c83e07bdf65367f23326f8bd9f6f35cf254509f))
+* **deps:** bump google-github-actions/release-please-action from 3.7.12 to 3.7.13 ([#716](https://github.com/bpg/terraform-provider-proxmox/issues/716)) ([4898d4d](https://github.com/bpg/terraform-provider-proxmox/commit/4898d4d80c352b47455431f1408366e4504ac524))
+
 ## [0.37.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.37.0...v0.37.1) (2023-11-12)
 
 
