@@ -13,13 +13,13 @@ Manages a file.
 
 ## Example Usage
 
-### Backups
+### Backups (`dump`)
 
 -> **Note:** The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
 
 ```terraform
 resource "proxmox_virtual_environment_file" "backup" {
-  content_type = "backup"
+  content_type = "dump"
   datastore_id = "local"
   node_name    = "pve"
 
@@ -99,7 +99,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 
 - `content_type` - (Optional) The content type. If not specified, the content type will be inferred from the file
   extension. Valid values are:
-    - `backup` (allowed extensions: `.vzdump`)
+    - `dump` (allowed extensions: `.vzdump`)
     - `iso` (allowed extensions: `.iso`, `.img`)
     - `snippets` (allowed extensions: any)
     - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)
