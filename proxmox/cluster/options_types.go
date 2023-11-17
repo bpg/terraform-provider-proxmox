@@ -63,16 +63,16 @@ type OptionsResponseBody struct {
 // OptionsResponseData contains the data from a cluster options response.
 type OptionsResponseData struct {
 	optionsBaseData
-	MaxWorkers                *types.CustomInt `json:"max_workers,omitempty"`
-	ClusterResourceScheduling *crs             `json:"crs,omitempty"`
-	HASettings                *haSettings      `json:"ha,omitempty"`
-	TagStyle                  *tagStyle        `json:"tag-style,omitempty"`
-	Migration                 *migration       `json:"migration,omitempty"`
-	Webauthn                  *webauthn        `json:"webauthn,omitempty"`
-	NextID                    *nextID          `json:"next-id,omitempty"`
-	Notify                    *notify          `json:"notify,omitempty"`
-	UserTagAccess             *userTagAccess   `json:"user-tag-access,omitempty"`
-	RegisteredTags            *[]string        `json:"registered-tags,omitempty"`
+	MaxWorkers                *types.CustomInt64 `json:"max_workers,omitempty"`
+	ClusterResourceScheduling *crs               `json:"crs,omitempty"`
+	HASettings                *haSettings        `json:"ha,omitempty"`
+	TagStyle                  *tagStyle          `json:"tag-style,omitempty"`
+	Migration                 *migration         `json:"migration,omitempty"`
+	Webauthn                  *webauthn          `json:"webauthn,omitempty"`
+	NextID                    *nextID            `json:"next-id,omitempty"`
+	Notify                    *notify            `json:"notify,omitempty"`
+	UserTagAccess             *userTagAccess     `json:"user-tag-access,omitempty"`
+	RegisteredTags            *[]string          `json:"registered-tags,omitempty"`
 }
 
 // OptionsRequestData contains the body for cluster options request.

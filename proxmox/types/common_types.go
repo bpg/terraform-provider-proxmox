@@ -9,6 +9,7 @@ package types
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -24,6 +25,9 @@ type CustomCommaSeparatedList []string
 
 // CustomInt allows a JSON integer value to also be a string.
 type CustomInt int
+
+// CustomInt64 allows a JSON int64 value to also be a string.
+type CustomInt64 int64
 
 // CustomLineBreakSeparatedList allows a multiline JSON string to also be a string array.
 type CustomLineBreakSeparatedList []string
@@ -106,7 +110,7 @@ func (r *CustomInt) UnmarshalJSON(b []byte) error {
 
 	i, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot parse int %q: %w", s, err)
 	}
 
 	*r = CustomInt(i)
@@ -114,15 +118,22 @@ func (r *CustomInt) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// PointerInt64 returns a pointer to an int64.
-func (r *CustomInt) PointerInt64() *int64 {
-	if r == nil {
-		return nil
+// UnmarshalJSON converts a JSON value to an integer.
+func (r *CustomInt64) UnmarshalJSON(b []byte) error {
+	s := string(b)
+
+	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
+		s = s[1 : len(s)-1]
 	}
 
-	i := int64(*r)
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return fmt.Errorf("cannot parse int64 %q: %w", s, err)
+	}
 
-	return &i
+	*r = CustomInt64(i)
+
+	return nil
 }
 
 // MarshalJSON converts a boolean to a JSON value.

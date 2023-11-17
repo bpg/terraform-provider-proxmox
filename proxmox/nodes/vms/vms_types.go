@@ -432,11 +432,11 @@ type GetResponseData struct {
 	CPULimit             *types.CustomInt                `json:"cpulimit,omitempty"`
 	CPUSockets           *int                            `json:"sockets,omitempty"`
 	CPUUnits             *int                            `json:"cpuunits,omitempty"`
-	DedicatedMemory      *int64                          `json:"memory,omitempty"`
+	DedicatedMemory      *types.CustomInt64              `json:"memory,omitempty"`
 	DeletionProtection   *types.CustomBool               `json:"protection,omitempty"`
 	Description          *string                         `json:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                  `json:"efidisk0,omitempty"`
-	FloatingMemory       *int64                          `json:"balloon,omitempty"`
+	FloatingMemory       *types.CustomInt64              `json:"balloon,omitempty"`
 	FloatingMemoryShares *int                            `json:"shares,omitempty"`
 	Freeze               *types.CustomBool               `json:"freeze,omitempty"`
 	HookScript           *string                         `json:"hookscript,omitempty"`
