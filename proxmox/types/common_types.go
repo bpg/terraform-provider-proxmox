@@ -9,6 +9,7 @@ package types
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +26,7 @@ type CustomCommaSeparatedList []string
 // CustomInt allows a JSON integer value to also be a string.
 type CustomInt int
 
+// CustomInt64 allows a JSON int64 value to also be a string.
 type CustomInt64 int64
 
 // CustomLineBreakSeparatedList allows a multiline JSON string to also be a string array.
@@ -108,7 +110,7 @@ func (r *CustomInt) UnmarshalJSON(b []byte) error {
 
 	i, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot parse int %q: %w", s, err)
 	}
 
 	*r = CustomInt(i)
@@ -124,9 +126,9 @@ func (r *CustomInt64) UnmarshalJSON(b []byte) error {
 		s = s[1 : len(s)-1]
 	}
 
-	i, err := strconv.ParseInt(s, 10, 32)
+	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot parse int64 %q: %w", s, err)
 	}
 
 	*r = CustomInt64(i)
