@@ -432,7 +432,7 @@ type GetResponseData struct {
 	CPULimit             *types.CustomInt                `json:"cpulimit,omitempty"`
 	CPUSockets           *int                            `json:"sockets,omitempty"`
 	CPUUnits             *int                            `json:"cpuunits,omitempty"`
-	DedicatedMemory      *int64                          `json:"memory,omitempty"`
+	DedicatedMemory      *int64                          `json:"memory,omitempty,string"`
 	DeletionProtection   *types.CustomBool               `json:"protection,omitempty"`
 	Description          *string                         `json:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                  `json:"efidisk0,omitempty"`
