@@ -35,5 +35,5 @@ resource "proxmox_virtual_environment_time" "first_node_time" {
 Instances can be imported using the `node_name`, e.g.,
 
 ```bash
-$ terraform import proxmox_virtual_environment_dns.first_node first-node
+terraform import proxmox_virtual_environment_dns.first_node first-node
 ```

@@ -41,7 +41,7 @@ resource "proxmox_virtual_environment_firewall_options" "example" {
 - `dhcp` - (Optional)Enable DHCP.
 - `enabled` - (Optional) Enable or disable the firewall.
 - `ipfilter` - (Optional) Enable default IP filters. This is equivalent to
-  adding an empty ipfilter-net<id> ipset for every interface. Such ipsets
+  adding an empty `ipfilter-net<id>` ipset for every interface. Such ipsets
   implicitly contain sane default restrictions such as restricting IPv6 link
   local addresses to the one derived from the interface's MAC address. For
   containers the configured IP addresses will be implicitly added.
