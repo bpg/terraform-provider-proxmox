@@ -500,6 +500,7 @@ output "ubuntu_vm_public_key" {
         - `virtio` - VirtIO-GPU.
         - `vmware` - VMware Compatible.
 - `vm_id` - (Optional) The VM identifier.
+- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable).
 
 ## Attribute Reference
 
