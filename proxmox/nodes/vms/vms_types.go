@@ -239,6 +239,13 @@ func (r CustomStorageDevice) IsOwnedBy(vmID int) bool {
 // CustomStorageDevices handles QEMU SATA device parameters.
 type CustomStorageDevices map[string]CustomStorageDevice
 
+// CustomTPMState handles QEMU TPM state parameters.
+type CustomTPMState struct {
+	FileVolume string          `json:"file"              url:"file"`
+	Size       *types.DiskSize `json:"size,omitempty"    url:"size,omitempty"`
+	Version    *string         `json:"version,omitempty" url:"version,omitempty"`
+}
+
 // CustomUSBDevice handles QEMU USB device parameters.
 type CustomUSBDevice struct {
 	HostDevice *string           `json:"host"              url:"host"`
@@ -349,6 +356,7 @@ type CreateRequestBody struct {
 	Tags                 *string                        `json:"tags,omitempty"               url:"tags,omitempty"`
 	Template             *types.CustomBool              `json:"template,omitempty"           url:"template,omitempty,int"`
 	TimeDriftFixEnabled  *types.CustomBool              `json:"tdf,omitempty"                url:"tdf,omitempty,int"`
+	TPMState             *CustomTPMState                `json:"tpmstate0,omitempty"          url:"tpmstate0,omitempty"`
 	USBDevices           CustomUSBDevices               `json:"usb,omitempty"                url:"usb,omitempty"`
 	VGADevice            *CustomVGADevice               `json:"vga,omitempty"                url:"vga,omitempty"`
 	VirtualCPUCount      *int                           `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
@@ -517,6 +525,7 @@ type GetResponseData struct {
 	Tags                 *string                         `json:"tags,omitempty"`
 	Template             *types.CustomBool               `json:"template,omitempty"`
 	TimeDriftFixEnabled  *types.CustomBool               `json:"tdf,omitempty"`
+	TPMState             *CustomTPMState                 `json:"tpmstate0,omitempty"`
 	USBDevice0           *CustomUSBDevice                `json:"usb0,omitempty"`
 	USBDevice1           *CustomUSBDevice                `json:"usb1,omitempty"`
 	USBDevice2           *CustomUSBDevice                `json:"usb2,omitempty"`

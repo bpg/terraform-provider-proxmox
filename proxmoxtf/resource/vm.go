@@ -78,6 +78,8 @@ const (
 	dvResourceVirtualEnvironmentVMEFIDiskFileFormat                 = "qcow2"
 	dvResourceVirtualEnvironmentVMEFIDiskType                       = "2m"
 	dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys            = false
+	dvResourceVirtualEnvironmentVMTPMStateDatastoreID               = "local-lvm"
+	dvResourceVirtualEnvironmentVMTPMStateVersion                   = "v2.0"
 	dvResourceVirtualEnvironmentVMInitializationDatastoreID         = "local-lvm"
 	dvResourceVirtualEnvironmentVMInitializationInterface           = ""
 	dvResourceVirtualEnvironmentVMInitializationDNSDomain           = ""
@@ -199,6 +201,9 @@ const (
 	mkResourceVirtualEnvironmentVMEFIDiskFileFormat                 = "file_format"
 	mkResourceVirtualEnvironmentVMEFIDiskType                       = "type"
 	mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys            = "pre_enrolled_keys"
+	mkResourceVirtualEnvironmentVMTPMState                          = "tpm_state"
+	mkResourceVirtualEnvironmentVMTPMStateDatastoreID               = "datastore_id"
+	mkResourceVirtualEnvironmentVMTPMStateVersion                   = "version"
 	mkResourceVirtualEnvironmentVMHostPCI                           = "hostpci"
 	mkResourceVirtualEnvironmentVMHostPCIDevice                     = "device"
 	mkResourceVirtualEnvironmentVMHostPCIDeviceID                   = "id"
@@ -788,6 +793,38 @@ func VM() *schema.Resource {
 							Optional: true,
 							ForceNew: true,
 							Default:  dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys,
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
+			mkResourceVirtualEnvironmentVMTPMState: {
+				Type:        schema.TypeList,
+				Description: "The tpmstate device",
+				Optional:    true,
+				ForceNew:    true,
+				DefaultFunc: func() (interface{}, error) {
+					return []interface{}{}, nil
+				},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentVMTPMStateDatastoreID: {
+							Type:        schema.TypeString,
+							Description: "Datastore ID",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMTPMStateDatastoreID,
+						},
+						mkResourceVirtualEnvironmentVMTPMStateVersion: {
+							Type:        schema.TypeString,
+							Description: "TPM version",
+							Optional:    true,
+							ForceNew:    true,
+							Default:     dvResourceVirtualEnvironmentVMTPMStateVersion,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+								"v1.2",
+								"v2.0",
+							}, true)),
 						},
 					},
 				},
@@ -2318,6 +2355,59 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
+	tpmState := d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
+	tpmStateInfo := vmGetTPMState(d, nil) // from the resource config
+
+	for i := range tpmState {
+		diskBlock := tpmState[i].(map[string]interface{})
+		diskInterface := "tpmstate0"
+		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMTPMStateDatastoreID].(string)
+
+		currentTPMState := vmConfig.TPMState
+		configuredTPMStateInfo := tpmStateInfo
+
+		if currentTPMState == nil {
+			diskUpdateBody := &vms.UpdateRequestBody{}
+
+			diskUpdateBody.TPMState = configuredTPMStateInfo
+
+			e = vmAPI.UpdateVM(ctx, diskUpdateBody)
+			if e != nil {
+				return diag.FromErr(e)
+			}
+
+			continue
+		}
+
+		deleteOriginalDisk := types.CustomBool(true)
+
+		diskMoveBody := &vms.MoveDiskRequestBody{
+			DeleteOriginalDisk: &deleteOriginalDisk,
+			Disk:               diskInterface,
+			TargetStorage:      dataStoreID,
+		}
+
+		moveDisk := false
+
+		if dataStoreID != "" {
+			moveDisk = true
+
+			if allDiskInfo[diskInterface] != nil {
+				fileIDParts := strings.Split(allDiskInfo[diskInterface].FileVolume, ":")
+				moveDisk = dataStoreID != fileIDParts[0]
+			}
+		}
+
+		if moveDisk {
+			moveDiskTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutMoveDisk).(int)
+
+			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
+			if e != nil {
+				return diag.FromErr(e)
+			}
+		}
+	}
+
 	return vmCreateStart(ctx, d, m)
 }
 
@@ -2424,6 +2514,25 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			FileVolume:      fmt.Sprintf("%s:1", datastoreID),
 			Format:          &fileFormat,
 			PreEnrolledKeys: &preEnrolledKeys,
+		}
+	}
+
+	var tpmState *vms.CustomTPMState
+
+	tpmStateBlock := d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
+	if len(tpmStateBlock) > 0 {
+		block := tpmStateBlock[0].(map[string]interface{})
+
+		datastoreID, _ := block[mkResourceVirtualEnvironmentVMTPMStateDatastoreID].(string)
+		version, _ := block[mkResourceVirtualEnvironmentVMTPMStateVersion].(string)
+
+		if version == "" {
+			version = dvResourceVirtualEnvironmentVMTPMStateVersion
+		}
+
+		tpmState = &vms.CustomTPMState{
+			FileVolume: fmt.Sprintf("%s:1", datastoreID),
+			Version:    &version,
 		}
 	}
 
@@ -2606,6 +2715,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		CPUUnits:            &cpuUnits,
 		DedicatedMemory:     &memoryDedicated,
 		EFIDisk:             efiDisk,
+		TPMState:            tpmState,
 		FloatingMemory:      &memoryFloating,
 		IDEDevices:          ideDevices,
 		KeyboardLayout:      &keyboardLayout,
@@ -3215,7 +3325,8 @@ func vmGetEfiDisk(d *schema.ResourceData, disk []interface{}) *vms.CustomEFIDisk
 		efiType, _ := block[mkResourceVirtualEnvironmentVMEFIDiskType].(string)
 		preEnrolledKeys := types.CustomBool(block[mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys].(bool))
 
-		// special case for efi disk, the size is ignored, see docs for more info
+		// use the special syntax STORAGE_ID:SIZE_IN_GiB to allocate a new volume.
+		// NB SIZE_IN_GiB is ignored, see docs for more info.
 		efiDiskConfig.FileVolume = fmt.Sprintf("%s:1", datastoreID)
 		efiDiskConfig.Format = &fileFormat
 		efiDiskConfig.Type = &efiType
@@ -3250,6 +3361,55 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*v
 			}
 
 			storageDevice.Size = &ds
+		}
+	}
+
+	return storageDevice, nil
+}
+
+func vmGetTPMState(d *schema.ResourceData, disk []interface{}) *vms.CustomTPMState {
+	var tmpState []interface{}
+
+	if disk != nil {
+		tmpState = disk
+	} else {
+		tmpState = d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
+	}
+
+	var tmpStateConfig *vms.CustomTPMState
+
+	if len(tmpState) > 0 {
+		tmpStateConfig = &vms.CustomTPMState{}
+
+		block := tmpState[0].(map[string]interface{})
+		datastoreID, _ := block[mkResourceVirtualEnvironmentVMTPMStateDatastoreID].(string)
+		version, _ := block[mkResourceVirtualEnvironmentVMTPMState].(*string)
+
+		// use the special syntax STORAGE_ID:SIZE_IN_GiB to allocate a new volume.
+		// NB SIZE_IN_GiB is ignored, see docs for more info.
+		tmpStateConfig.FileVolume = fmt.Sprintf("%s:1", datastoreID)
+		tmpStateConfig.Version = version
+	}
+
+	return tmpStateConfig
+}
+
+func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*vms.CustomStorageDevice, error) {
+	tmpState := vmGetTPMState(d, disk)
+
+	var storageDevice *vms.CustomStorageDevice
+
+	if tmpState != nil {
+		id := "0"
+		baseDiskInterface := "tmpstate"
+		diskInterface := fmt.Sprint(baseDiskInterface, id)
+
+		storageDevice = &vms.CustomStorageDevice{
+			Enabled:    true,
+			FileVolume: tmpState.FileVolume,
+			Size:       tmpState.Size,
+			Interface:  &diskInterface,
+			ID:         &id,
 		}
 	}
 
@@ -4097,6 +4257,30 @@ func vmReadCustom(
 			efiDisk[mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys] != dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys || //nolint:lll
 			efiDisk[mkResourceVirtualEnvironmentVMEFIDiskFileFormat] != dvResourceVirtualEnvironmentVMEFIDiskFileFormat {
 			err := d.Set(mkResourceVirtualEnvironmentVMEFIDisk, []interface{}{efiDisk})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	//nolint:nestif
+	if vmConfig.TPMState != nil {
+		tpmState := map[string]interface{}{}
+
+		fileIDParts := strings.Split(vmConfig.TPMState.FileVolume, ":")
+
+		tpmState[mkResourceVirtualEnvironmentVMTPMStateDatastoreID] = fileIDParts[0]
+		tpmState[mkResourceVirtualEnvironmentVMTPMStateVersion] = dvResourceVirtualEnvironmentVMTPMStateVersion
+
+		currentTMPState := d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
+
+		if len(clone) > 0 {
+			if len(currentTMPState) > 0 {
+				err := d.Set(mkResourceVirtualEnvironmentVMTPMState, []interface{}{tpmState})
+				diags = append(diags, diag.FromErr(err)...)
+			}
+		} else if len(currentTMPState) > 0 ||
+			tpmState[mkResourceVirtualEnvironmentVMTPMStateDatastoreID] != dvResourceVirtualEnvironmentVMTPMStateDatastoreID ||
+			tpmState[mkResourceVirtualEnvironmentVMTPMStateVersion] != dvResourceVirtualEnvironmentVMTPMStateVersion {
+			err := d.Set(mkResourceVirtualEnvironmentVMTPMState, []interface{}{tpmState})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -5463,6 +5647,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		rebootRequired = true
 	}
 
+	// Prepare the new tpm state configuration.
+	if d.HasChange(mkResourceVirtualEnvironmentVMTPMState) {
+		tmpState := vmGetTPMState(d, nil)
+
+		updateBody.TPMState = tmpState
+
+		rebootRequired = true
+	}
+
 	// Prepare the new cloud-init configuration.
 	stoppedBeforeUpdate := false
 	if d.HasChange(mkResourceVirtualEnvironmentVMInitialization) {
@@ -5777,6 +5970,37 @@ func vmUpdateDiskLocationAndSize(
 			}
 		}
 
+		// Add tpm state if it has changes
+		if d.HasChange(mkResourceVirtualEnvironmentVMTPMState) {
+			diskOld, diskNew := d.GetChange(mkResourceVirtualEnvironmentVMTPMState)
+
+			oldTMPState, e := vmGetTPMStateAsStorageDevice(d, diskOld.([]interface{}))
+			if e != nil {
+				return diag.FromErr(e)
+			}
+
+			newTPMState, e := vmGetTPMStateAsStorageDevice(d, diskNew.([]interface{}))
+			if e != nil {
+				return diag.FromErr(e)
+			}
+
+			if oldTMPState != nil {
+				baseDiskInterface := diskDigitPrefix(*oldTMPState.Interface)
+				diskOldEntries[baseDiskInterface][*oldTMPState.Interface] = *oldTMPState
+			}
+
+			if newTPMState != nil {
+				baseDiskInterface := diskDigitPrefix(*newTPMState.Interface)
+				diskNewEntries[baseDiskInterface][*newTPMState.Interface] = *newTPMState
+			}
+
+			if oldTMPState != nil && newTPMState != nil && oldTMPState.Size != newTPMState.Size {
+				return diag.Errorf(
+					"resizing of tpm state is not supported.",
+				)
+			}
+		}
+
 		var diskMoveBodies []*vms.MoveDiskRequestBody
 
 		var diskResizeBodies []*vms.ResizeDiskRequestBody
@@ -6049,6 +6273,11 @@ func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string
 
 	if vm.EFIDisk != nil {
 		fileIDParts := strings.Split(vm.EFIDisk.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
+	if vm.TPMState != nil {
+		fileIDParts := strings.Split(vm.TPMState.FileVolume, ":")
 		datastoresSet[fileIDParts[0]] = 1
 	}
 
