@@ -232,6 +232,9 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="14.28%"><a href="http://www.simplysoft.ch"><img src="https://avatars.githubusercontent.com/u/1588210?v=4?s=100" width="100px;" alt="simplysoft"/><br /><sub><b>simplysoft</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=simplysoft" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://ruilopes.com"><img src="https://avatars.githubusercontent.com/u/43356?v=4?s=100" width="100px;" alt="Rui Lopes"/><br /><sub><b>Rui Lopes</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=rgl" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://soundcloud.com/midoriiro"><img src="https://avatars.githubusercontent.com/u/2159328?v=4?s=100" width="100px;" alt="Alexis Bekhdadi"/><br /><sub><b>Alexis Bekhdadi</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Amidoriiro" title="Bug reports">🐛</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
