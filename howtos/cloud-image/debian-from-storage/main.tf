@@ -4,7 +4,7 @@ resource "proxmox_virtual_environment_vm" "debian_vm" {
 
   initialization {
     user_account {
-      # do not use this in production, cofigure your own ssh key instead!
+      # do not use this in production, configure your own ssh key instead!
       username = "user"
       password = "password"
     }

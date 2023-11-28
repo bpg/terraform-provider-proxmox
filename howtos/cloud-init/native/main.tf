@@ -1,12 +1,13 @@
-resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
+resource "proxmox_virtual_environment_vm" "centos_vm" {
   name      = "test-ubuntu"
   node_name = "pve"
 
   initialization {
     user_account {
-      # do not use this in production, configure your own ssh key instead!
-      username = "user"
-      password = "password"
+      keys     = [trimspace(tls_private_key.ubuntu_vm_key.public_key_openssh)]
+
+      # do not use this in production, cofigure your own ssh key instead!
+      username = "ubuntu"
     }
   }
 
@@ -26,7 +27,6 @@ resource "proxmox_virtual_environment_file" "ubuntu_cloud_image" {
   node_name    = "pve"
 
   source_file {
-    # you may download this image locally on your workstation and then use the local path instead of the remote URL
     path      = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
   }
 }
