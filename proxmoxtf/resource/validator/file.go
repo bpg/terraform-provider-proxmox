@@ -39,7 +39,7 @@ func FileID() schema.SchemaValidateDiagFunc {
 		}
 
 		if v != "" {
-			r := regexp.MustCompile(`^(?i)[a-z\d\-_]+:([a-z\d\-_]+/)?.+$`)
+			r := regexp.MustCompile(`^(?i)[a-z\d\-_\.]+:([a-z\d\-_]+/)?.+$`)
 			ok := r.MatchString(v)
 
 			if !ok {
