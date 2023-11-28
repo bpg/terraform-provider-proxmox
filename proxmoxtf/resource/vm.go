@@ -3394,26 +3394,25 @@ func vmGetTPMState(d *schema.ResourceData, disk []interface{}) *vms.CustomTPMSta
 	return tmpStateConfig
 }
 
-func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*vms.CustomStorageDevice, error) {
+func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) *vms.CustomStorageDevice {
 	tmpState := vmGetTPMState(d, disk)
 
 	var storageDevice *vms.CustomStorageDevice
 
 	if tmpState != nil {
 		id := "0"
-		baseDiskInterface := "tmpstate"
+		baseDiskInterface := "tpmstate"
 		diskInterface := fmt.Sprint(baseDiskInterface, id)
 
 		storageDevice = &vms.CustomStorageDevice{
 			Enabled:    true,
 			FileVolume: tmpState.FileVolume,
-			Size:       tmpState.Size,
 			Interface:  &diskInterface,
 			ID:         &id,
 		}
 	}
 
-	return storageDevice, nil
+	return storageDevice
 }
 
 func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
@@ -4261,7 +4260,6 @@ func vmReadCustom(
 		}
 	}
 
-	//nolint:nestif
 	if vmConfig.TPMState != nil {
 		tpmState := map[string]interface{}{}
 
@@ -5974,15 +5972,8 @@ func vmUpdateDiskLocationAndSize(
 		if d.HasChange(mkResourceVirtualEnvironmentVMTPMState) {
 			diskOld, diskNew := d.GetChange(mkResourceVirtualEnvironmentVMTPMState)
 
-			oldTMPState, e := vmGetTPMStateAsStorageDevice(d, diskOld.([]interface{}))
-			if e != nil {
-				return diag.FromErr(e)
-			}
-
-			newTPMState, e := vmGetTPMStateAsStorageDevice(d, diskNew.([]interface{}))
-			if e != nil {
-				return diag.FromErr(e)
-			}
+			oldTMPState := vmGetTPMStateAsStorageDevice(d, diskOld.([]interface{}))
+			newTPMState := vmGetTPMStateAsStorageDevice(d, diskNew.([]interface{}))
 
 			if oldTMPState != nil {
 				baseDiskInterface := diskDigitPrefix(*oldTMPState.Interface)
