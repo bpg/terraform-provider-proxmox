@@ -13,8 +13,10 @@ ability to merge PRs and respond to issues.
 
 ## Build the provider
 
-- Clone the repository
-  to `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
+> [!TIP]
+> `$GOPATH` is the path to your Go workspace. If undefined, it defaults to `$HOME/go` on Linux and macOS, and `%USERPROFILE%\go` on Windows.
+
+- Clone the repository to `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
 
   ```sh
   mkdir -p "${GOPATH}/src/github.com/bpg"
@@ -29,6 +31,14 @@ ability to merge PRs and respond to issues.
   make build
   ```
 
+- You also can cross-compile the provider for all supported platforms:
+
+  ```sh
+  make build-all
+  ```
+
+  The binaries will be placed in the `dist` directory.
+
 ## Testing
 
 The project has a handful of test cases which must pass for a contribution to be
@@ -39,33 +49,60 @@ You can run all the test cases by invoking `make test`.
 
 ## Manual Testing
 
-```bash
-## Linux
-# Build Provider for your machine
-GOOS=linux GOARCH='amd64' go build -o "./build/terraform-provider-proxmox_v0.38.0"
-# Copy for local use
-cp ./build/terraform-provider-proxmox_v0.38.0 $HOME/.terraform.d/plugins/terraform.example.com/bpg/proxmox/0.38.0/linux_amd64/terraform-provider-proxmox_v0.38.0
+You can manually test the provider by running it locally. This is useful for
+testing changes to the provider before submitting a PR.
 
-### Windows
-# Build Provider for your machine
-GOOS=windows GOARCH='386' go build -o "./build/terraform-provider-proxmox_v0.38.0.exe"
-# Copy for local use 
-cp ./build/terraform-provider-proxmox_v0.38.0.exe %APPDATA%\terraform.d\plugins\terraform.example.com\bpg\proxmox\0.38.0\windows_386\terraform-provider-proxmox_v0.38.0.exe
-```
+- Create a $HOME/.terraformrc (POSIX) or %USERPROFILE%/terraform.rc (Windows) file with the following contents:
 
-```terraform
-# Use in Terraform
-terraform {
-  required_providers {
-    proxmox = {
-      source = "terraform.example.com/bpg/proxmox"
-      version = "0.38.0"
+  ```terraform
+  provider_installation {
+
+    dev_overrides {
+        "bpg/proxmox" = "/home/user/go/bin/" # <- put an absolute path where $GOPATH/bin is pointing to in your system.
     }
+
+    # For all other providers, install them directly from their origin provider
+    # registries as normal. If you omit this, Terraform will _only_ use
+    # the dev_overrides block, and so no other providers will be available.
+    direct {}
   }
-}
-# terraform init -upgrade
-# terraform <command>
-```
+  ```
+
+- Build & install the provider by running the following command in the provider directory:
+
+  ```bash
+  go install .
+
+  ```
+
+- Run `terraform init` in a directory containing a Terraform configuration
+  using the provider. You should see output similar to the following:
+
+  ```bash
+  ❯ terraform init -upgrade
+
+  Initializing the backend...
+
+  Initializing provider plugins...
+
+  ...
+
+  ╷
+  │ Warning: Provider development overrides are in effect
+  │
+  │ The following provider development overrides are set in the CLI configuration:
+  │  - bpg/proxmox in /home/user/go/bin
+  │
+  │ Skip terraform init when using provider development overrides. It is not necessary and may error unexpectedly.
+  ╵
+
+  Terraform has been successfully initialized!
+  ```
+
+- Run `terraform plan` or `terraform apply` to test your changes.
+
+> [!TIP]
+> You don't need to run `terraform init` again after making changes to the provider, as long as you have the `dev_overrides` block in your `terraform.rc` file, and the provider is installed in the path specified in the `dev_overrides` block by running `go install .` in the provider directory.
 
 ## Coding conventions
 
