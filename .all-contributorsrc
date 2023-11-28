@@ -594,6 +594,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "midoriiro",
+      "name": "Alexis Bekhdadi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2159328?v=4",
+      "profile": "https://soundcloud.com/midoriiro",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
