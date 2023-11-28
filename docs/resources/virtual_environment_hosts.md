@@ -32,8 +32,8 @@ resource "proxmox_virtual_environment_hosts" "first_node_host_entries" {
 
 - `node_name` - (Required) A node name.
 - `entry` - (Required) A host entry (multiple blocks supported).
-    - `address` - (Required) The IP address.
-    - `hostnames` - (Required) The hostnames.
+  - `address` - (Required) The IP address.
+  - `hostnames` - (Required) The hostnames.
 
 ## Attribute Reference
 
@@ -52,5 +52,5 @@ Be careful not to use this resource multiple times for the same node.
 Instances can be imported using the `node_name`, e.g.,
 
 ```bash
-$ terraform import proxmox_virtual_environment_hosts.first_node_host_entries first-node
+terraform import proxmox_virtual_environment_hosts.first_node_host_entries first-node
 ```

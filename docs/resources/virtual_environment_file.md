@@ -94,15 +94,14 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 }
 ```
 
-
 ## Argument Reference
 
 - `content_type` - (Optional) The content type. If not specified, the content type will be inferred from the file
   extension. Valid values are:
-    - `dump` (allowed extensions: `.vzdump`)
-    - `iso` (allowed extensions: `.iso`, `.img`)
-    - `snippets` (allowed extensions: any)
-    - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)
+  - `dump` (allowed extensions: `.vzdump`)
+  - `iso` (allowed extensions: `.iso`, `.img`)
+  - `snippets` (allowed extensions: any)
+  - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)
 - `datastore_id` - (Required) The datastore id.
 - `node_name` - (Required) The node name.
 - `overwrite` - (Optional) Whether to overwrite an existing file (defaults to
@@ -110,17 +109,17 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 - `source_file` - (Optional) The source file (conflicts with `source_raw`), could be a
   local file or a URL. If the source file is a URL, the file will be downloaded
   and stored locally before uploading it to Proxmox VE.
-    - `checksum` - (Optional) The SHA256 checksum of the source file.
-    - `file_name` - (Optional) The file name to use instead of the source file
-      name. Useful when the source file does not have a valid file extension, for example 
+  - `checksum` - (Optional) The SHA256 checksum of the source file.
+  - `file_name` - (Optional) The file name to use instead of the source file
+      name. Useful when the source file does not have a valid file extension, for example
       when the source file is a URL referencing a `.qcow2` image.
-    - `insecure` - (Optional) Whether to skip the TLS verification step for
+  - `insecure` - (Optional) Whether to skip the TLS verification step for
       HTTPS sources (defaults to `false`).
-    - `path` - (Required) A path to a local file or a URL.
+  - `path` - (Required) A path to a local file or a URL.
 - `source_raw` - (Optional) The raw source (conflicts with `source_file`).
-    - `data` - (Required) The raw data.
-    - `file_name` - (Required) The file name.
-    - `resize` - (Optional) The number of bytes to resize the file to.
+  - `data` - (Required) The raw data.
+  - `file_name` - (Required) The file name.
+  - `resize` - (Optional) The number of bytes to resize the file to.
 - `timeout_upload` - (Optional) Timeout for uploading ISO/VSTMPL files in
   seconds (defaults to 1800).
 
@@ -158,5 +157,5 @@ node_name:datastore_id/content_type/file_name
 Example:
 
 ```bash
-$ terraform import proxmox_virtual_environment_file.cloud_config pve/local:snippets/example.cloud-config.yaml
+terraform import proxmox_virtual_environment_file.cloud_config pve/local:snippets/example.cloud-config.yaml
 ```

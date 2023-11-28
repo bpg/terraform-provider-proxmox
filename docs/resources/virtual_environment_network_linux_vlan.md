@@ -55,7 +55,7 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan98" {
 
 ### Read-Only
 
-- `id` (String) A unique identifier with format '<node name>:<iface>'.
+- `id` (String) A unique identifier with format `<node name>:<iface>`.
 
 ## Import
 
