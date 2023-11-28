@@ -255,7 +255,8 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 	m.Language = types.StringPointerValue(opts.Language)
 
 	if opts.MaxWorkers != nil {
-		m.MaxWorkers = types.Int64PointerValue(opts.MaxWorkers.PointerInt64())
+		value := int64(*opts.MaxWorkers)
+		m.MaxWorkers = types.Int64PointerValue(&value)
 	} else {
 		m.MaxWorkers = types.Int64Null()
 	}

@@ -136,6 +136,8 @@ const (
 	dvResourceVirtualEnvironmentVMVGAType                           = "std"
 	dvResourceVirtualEnvironmentVMSCSIHardware                      = "virtio-scsi-pci"
 
+	dvResourceVirtualEnvironmentVMHookScript = ""
+
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
 	maxResourceVirtualEnvironmentVMNetworkDevices = 8
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
@@ -291,6 +293,7 @@ const (
 	mkResourceVirtualEnvironmentVMVGAType                           = "type"
 	mkResourceVirtualEnvironmentVMVMID                              = "vm_id"
 	mkResourceVirtualEnvironmentVMSCSIHardware                      = "scsi_hardware"
+	mkResourceVirtualEnvironmentVMHookScriptFileID                  = "hook_script_file_id"
 )
 
 // VM returns a resource that manages VMs.
@@ -1530,6 +1533,12 @@ func VM() *schema.Resource {
 				Default:          dvResourceVirtualEnvironmentVMSCSIHardware,
 				ValidateDiagFunc: validator.SCSIHardware(),
 			},
+			mkResourceVirtualEnvironmentVMHookScriptFileID: {
+				Type:        schema.TypeString,
+				Description: "A hook script",
+				Optional:    true,
+				Default:     dvResourceVirtualEnvironmentVMHookScript,
+			},
 		},
 		CreateContext: vmCreate,
 		ReadContext:   vmRead,
@@ -2121,6 +2130,13 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.VGADevice = vgaDevice
 	}
 
+	hookScript := d.Get(mkResourceVirtualEnvironmentVMHookScriptFileID).(string)
+	if len(hookScript) > 0 {
+		updateBody.HookScript = &hookScript
+	} else {
+		del = append(del, "hookscript")
+	}
+
 	updateBody.Delete = del
 
 	e = vmAPI.UpdateVM(ctx, updateBody)
@@ -2154,7 +2170,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diskBlock := disk[i].(map[string]interface{})
 		diskInterface := diskBlock[mkResourceVirtualEnvironmentVMDiskInterface].(string)
 		dataStoreID := diskBlock[mkResourceVirtualEnvironmentVMDiskDatastoreID].(string)
-		diskSize := diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int)
+		diskSize := int64(diskBlock[mkResourceVirtualEnvironmentVMDiskSize].(int))
 		prefix := diskDigitPrefix(diskInterface)
 
 		currentDiskInfo := allDiskInfo[diskInterface]
@@ -2655,6 +2671,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		createBody.PoolID = &poolID
 	}
 
+	hookScript := d.Get(mkResourceVirtualEnvironmentVMHookScriptFileID).(string)
+	if len(hookScript) > 0 {
+		createBody.HookScript = &hookScript
+	}
+
 	createTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutClone).(int)
 
 	err = api.Node(nodeName).VM(0).CreateVM(ctx, createBody, createTimeout)
@@ -3120,9 +3141,8 @@ func vmGetDiskDeviceObjects(
 		diskDevice.Interface = &diskInterface
 		diskDevice.Format = &fileFormat
 		diskDevice.FileID = &fileID
-		diskSize := types.DiskSizeFromGigabytes(size)
+		diskSize := types.DiskSizeFromGigabytes(int64(size))
 		diskDevice.Size = &diskSize
-		diskDevice.SizeInt = &size
 		diskDevice.IOThread = &ioThread
 		diskDevice.Discard = &discard
 		diskDevice.Cache = &cache
@@ -3229,9 +3249,7 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*v
 				return nil, fmt.Errorf("invalid efi disk type: %s", err.Error())
 			}
 
-			sizeInt := ds.InMegabytes()
 			storageDevice.Size = &ds
-			storageDevice.SizeInt = &sizeInt
 		}
 	}
 
@@ -3373,6 +3391,7 @@ func vmGetOperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 		"win7",
 		"win8",
 		"win10",
+		"win11",
 		"wvista",
 		"wxp",
 	}, false))
@@ -4393,13 +4412,13 @@ func vmReadCustom(
 	memory := map[string]interface{}{}
 
 	if vmConfig.DedicatedMemory != nil {
-		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = *vmConfig.DedicatedMemory
+		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = int(*vmConfig.DedicatedMemory)
 	} else {
 		memory[mkResourceVirtualEnvironmentVMMemoryDedicated] = 0
 	}
 
 	if vmConfig.FloatingMemory != nil {
-		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = *vmConfig.FloatingMemory
+		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = int(*vmConfig.FloatingMemory)
 	} else {
 		memory[mkResourceVirtualEnvironmentVMMemoryFloating] = 0
 	}
@@ -5643,6 +5662,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		rebootRequired = true
 	}
 
+	if d.HasChanges(mkResourceVirtualEnvironmentVMHookScriptFileID) {
+		hookScript := d.Get(mkResourceVirtualEnvironmentVMHookScriptFileID).(string)
+		if len(hookScript) > 0 {
+			updateBody.HookScript = &hookScript
+		} else {
+			del = append(del, "hookscript")
+		}
+	}
+
 	// Update the configuration now that everything has been prepared.
 	updateBody.Delete = del
 
@@ -5790,7 +5818,7 @@ func vmUpdateDiskLocationAndSize(
 					}
 				}
 
-				if *oldDisk.SizeInt < *diskNewEntries[prefix][oldKey].SizeInt {
+				if *oldDisk.Size < *diskNewEntries[prefix][oldKey].Size {
 					if oldDisk.IsOwnedBy(vmID) {
 						diskResizeBodies = append(
 							diskResizeBodies,

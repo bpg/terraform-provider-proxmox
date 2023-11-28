@@ -1,0 +1,8 @@
+{
+    "git.alwaysSignOff": true,
+    "cSpell.words": [
+        "iothread",
+        "qcow",
+        "virtio"
+    ]
+}

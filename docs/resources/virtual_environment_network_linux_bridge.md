@@ -54,7 +54,7 @@ resource "proxmox_virtual_environment_network_linux_bridge" "vmbr99" {
 
 ### Read-Only
 
-- `id` (String) A unique identifier with format '<node name>:<iface>'
+- `id` (String) A unique identifier with format `<node name>:<iface>`
 
 ## Import
 

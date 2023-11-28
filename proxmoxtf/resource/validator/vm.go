@@ -53,7 +53,7 @@ func BIOS() schema.SchemaValidateDiagFunc {
 // ContentType returns a schema validation function for a content type on a storage device.
 func ContentType() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
-		"backup",
+		"dump",
 		"iso",
 		"snippets",
 		"vztmpl",

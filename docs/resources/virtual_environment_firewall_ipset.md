@@ -50,9 +50,9 @@ resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
 - `name` - (Required) IPSet name.
 - `comment` - (Optional) IPSet comment.
 - `cidr` - (Optional) IP/CIDR block (multiple blocks supported).
-    - `name` - Network/IP specification in CIDR format.
-    - `comment` - (Optional) Arbitrary string annotation.
-    - `nomatch` - (Optional) Entries marked as `nomatch` are skipped as if those
+  - `name` - Network/IP specification in CIDR format.
+  - `comment` - (Optional) Arbitrary string annotation.
+  - `nomatch` - (Optional) Entries marked as `nomatch` are skipped as if those
       were not added to the set.
 
 ## Attribute Reference

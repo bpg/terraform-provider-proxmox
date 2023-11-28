@@ -555,7 +555,8 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	}
 
 	if err != nil {
-		return diag.FromErr(err)
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
 	}
 
 	volID, di := fileGetVolumeID(d)

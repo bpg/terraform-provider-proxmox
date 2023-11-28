@@ -98,7 +98,7 @@ Please use lowercase for the description and do not end it with a period.
 
 For example:
 
-```
+```commit
 feat(vm): add support for the `clone` operation
 ```
 
@@ -109,7 +109,7 @@ it [here](https://developercertificate.org).
 Accepting is accomplished by signing off on your commits, you can do this by
 adding a `Signed-off-by` line to your commit message, like here:
 
-```
+```commit
 feat(vm): add support for the `clone` operation
 
 Signed-off-by: Random Developer <random@developer.example.org>
@@ -117,7 +117,7 @@ Signed-off-by: Random Developer <random@developer.example.org>
 
 Git has a built-in flag to append this line automatically:
 
-```
+```shell
 > git commit -s -m 'feat(vm): add a cool new feature'
 ```
 
@@ -137,7 +137,7 @@ well.
 ## Releasing
 
 We use automated release management orchestrated
-by https://github.com/googleapis/release-please GitHub Action. The action
+by [release-please](https://github.com/googleapis/release-please) GitHub Action. The action
 creates a new release PR with the changelog and bumps the version based on the
 commit messages. The release PR is merged by the maintainers.
 

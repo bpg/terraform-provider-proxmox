@@ -155,18 +155,9 @@ provider "proxmox" {
 }
 ```
 
-> Note1: The `username` field in the `ssh` block is required when using API
-> Token authentication. This is because the provider needs to know which user to
-> use for the SSH connection.
+-> **Note:** Note1: The `username` field in the `ssh` block (or alternatively a username in `PROXMOX_VE_USERNAME` or `PROXMOX_VE_SSH_USERNAME` environment variable) is required when using API Token authentication. This is because the provider needs to know which user to use for the SSH connection.
 
-> Note2: Not all Proxmox API operations are supported via API Token. You may see
-> errors like
-`error creating container: received an HTTP 403 response - Reason: Permission check
-failed (changing feature flags for privileged container is only allowed for root@pam)`
-> or
-`error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config`
-> when using API Token authentication, even when `Administrator` role or
-> the `root@pam` user is used with the token.
+-> **Note:** Note2: Not all Proxmox API operations are supported via API Token. You may see errors like `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token. The workaround is to use password authentication for those operations.
 
 ### Temporary directory
 
@@ -203,21 +194,21 @@ Proxmox `provider` block:
   example, `root@pam!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 - `ssh` - (Optional) The SSH connection configuration to a Proxmox node. This is
   a block, whose fields are documented below.
-    - `username` - (Optional) The username to use for the SSH connection.
+  - `username` - (Optional) The username to use for the SSH connection.
       Defaults to the username used for the Proxmox API connection. Can also be
       sourced from `PROXMOX_VE_SSH_USERNAME`. Required when using API Token.
-    - `password` - (Optional) The password to use for the SSH connection.
+  - `password` - (Optional) The password to use for the SSH connection.
       Defaults to the password used for the Proxmox API connection. Can also be
       sourced from `PROXMOX_VE_SSH_PASSWORD`.
-    - `agent` - (Optional) Whether to use the SSH agent for the SSH
+  - `agent` - (Optional) Whether to use the SSH agent for the SSH
       authentication. Defaults to `false`. Can also be sourced
       from `PROXMOX_VE_SSH_AGENT`.
-    - `agent_socket` - (Optional) The path to the SSH agent socket.
+  - `agent_socket` - (Optional) The path to the SSH agent socket.
       Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can
       also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
-    - `node` - (Optional) The node configuration for the SSH connection. Can be
+  - `node` - (Optional) The node configuration for the SSH connection. Can be
       specified multiple times to provide configuration fo multiple nodes.
-        - `name` - (Required) The name of the node.
-        - `address` - (Required) The IP address of the node.
-        - `port` - (Optional) SSH port of the node. Defaults to 22.
+    - `name` - (Required) The name of the node.
+    - `address` - (Required) The IP address of the node.
+    - `port` - (Optional) SSH port of the node. Defaults to 22.
 - `tmp_dir` - (Optional) Use custom temporary directory. (can also be sourced from `PROXMOX_VE_TMPDIR`)
