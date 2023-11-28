@@ -3368,45 +3368,45 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*v
 }
 
 func vmGetTPMState(d *schema.ResourceData, disk []interface{}) *vms.CustomTPMState {
-	var tmpState []interface{}
+	var tpmState []interface{}
 
 	if disk != nil {
-		tmpState = disk
+		tpmState = disk
 	} else {
-		tmpState = d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
+		tpmState = d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
 	}
 
-	var tmpStateConfig *vms.CustomTPMState
+	var tpmStateConfig *vms.CustomTPMState
 
-	if len(tmpState) > 0 {
-		tmpStateConfig = &vms.CustomTPMState{}
+	if len(tpmState) > 0 {
+		tpmStateConfig = &vms.CustomTPMState{}
 
-		block := tmpState[0].(map[string]interface{})
+		block := tpmState[0].(map[string]interface{})
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMTPMStateDatastoreID].(string)
 		version, _ := block[mkResourceVirtualEnvironmentVMTPMState].(*string)
 
 		// use the special syntax STORAGE_ID:SIZE_IN_GiB to allocate a new volume.
 		// NB SIZE_IN_GiB is ignored, see docs for more info.
-		tmpStateConfig.FileVolume = fmt.Sprintf("%s:1", datastoreID)
-		tmpStateConfig.Version = version
+		tpmStateConfig.FileVolume = fmt.Sprintf("%s:1", datastoreID)
+		tpmStateConfig.Version = version
 	}
 
-	return tmpStateConfig
+	return tpmStateConfig
 }
 
 func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) *vms.CustomStorageDevice {
-	tmpState := vmGetTPMState(d, disk)
+	tpmState := vmGetTPMState(d, disk)
 
 	var storageDevice *vms.CustomStorageDevice
 
-	if tmpState != nil {
+	if tpmState != nil {
 		id := "0"
 		baseDiskInterface := "tpmstate"
 		diskInterface := fmt.Sprint(baseDiskInterface, id)
 
 		storageDevice = &vms.CustomStorageDevice{
 			Enabled:    true,
-			FileVolume: tmpState.FileVolume,
+			FileVolume: tpmState.FileVolume,
 			Interface:  &diskInterface,
 			ID:         &id,
 		}
@@ -4268,14 +4268,14 @@ func vmReadCustom(
 		tpmState[mkResourceVirtualEnvironmentVMTPMStateDatastoreID] = fileIDParts[0]
 		tpmState[mkResourceVirtualEnvironmentVMTPMStateVersion] = dvResourceVirtualEnvironmentVMTPMStateVersion
 
-		currentTMPState := d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
+		currentTPMState := d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
 
 		if len(clone) > 0 {
-			if len(currentTMPState) > 0 {
+			if len(currentTPMState) > 0 {
 				err := d.Set(mkResourceVirtualEnvironmentVMTPMState, []interface{}{tpmState})
 				diags = append(diags, diag.FromErr(err)...)
 			}
-		} else if len(currentTMPState) > 0 ||
+		} else if len(currentTPMState) > 0 ||
 			tpmState[mkResourceVirtualEnvironmentVMTPMStateDatastoreID] != dvResourceVirtualEnvironmentVMTPMStateDatastoreID ||
 			tpmState[mkResourceVirtualEnvironmentVMTPMStateVersion] != dvResourceVirtualEnvironmentVMTPMStateVersion {
 			err := d.Set(mkResourceVirtualEnvironmentVMTPMState, []interface{}{tpmState})
@@ -5647,9 +5647,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new tpm state configuration.
 	if d.HasChange(mkResourceVirtualEnvironmentVMTPMState) {
-		tmpState := vmGetTPMState(d, nil)
+		tpmState := vmGetTPMState(d, nil)
 
-		updateBody.TPMState = tmpState
+		updateBody.TPMState = tpmState
 
 		rebootRequired = true
 	}
@@ -5972,12 +5972,12 @@ func vmUpdateDiskLocationAndSize(
 		if d.HasChange(mkResourceVirtualEnvironmentVMTPMState) {
 			diskOld, diskNew := d.GetChange(mkResourceVirtualEnvironmentVMTPMState)
 
-			oldTMPState := vmGetTPMStateAsStorageDevice(d, diskOld.([]interface{}))
+			oldTPMState := vmGetTPMStateAsStorageDevice(d, diskOld.([]interface{}))
 			newTPMState := vmGetTPMStateAsStorageDevice(d, diskNew.([]interface{}))
 
-			if oldTMPState != nil {
-				baseDiskInterface := diskDigitPrefix(*oldTMPState.Interface)
-				diskOldEntries[baseDiskInterface][*oldTMPState.Interface] = *oldTMPState
+			if oldTPMState != nil {
+				baseDiskInterface := diskDigitPrefix(*oldTPMState.Interface)
+				diskOldEntries[baseDiskInterface][*oldTPMState.Interface] = *oldTPMState
 			}
 
 			if newTPMState != nil {
@@ -5985,7 +5985,7 @@ func vmUpdateDiskLocationAndSize(
 				diskNewEntries[baseDiskInterface][*newTPMState.Interface] = *newTPMState
 			}
 
-			if oldTMPState != nil && newTPMState != nil && oldTMPState.Size != newTPMState.Size {
+			if oldTPMState != nil && newTPMState != nil && oldTPMState.Size != newTPMState.Size {
 				return diag.Errorf(
 					"resizing of tpm state is not supported.",
 				)
