@@ -198,7 +198,7 @@ output "ubuntu_container_public_key" {
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on
   the host (defaults to `false`).
 - `vm_id` - (Optional) The container identifier
-- `features` - (Optional) The container features
+- `features` - (Optional) The container feature flags. Changing flags (except nesting) is only allowed for `root@pam` authenticated user.
   - `nesting` - (Optional) Whether the container is nested (defaults
       to `false`)
   - `fuse` - (Optional) Whether the container supports FUSE mounts (defaults

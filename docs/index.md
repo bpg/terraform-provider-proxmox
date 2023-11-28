@@ -155,9 +155,9 @@ provider "proxmox" {
 }
 ```
 
--> **Note:** The `username` field in the `ssh` block is required when using API Token authentication. This is because the provider needs to know which user to use for the SSH connection.
+-> **Note:** Note1: The `username` field in the `ssh` block (or alternatively a username in `PROXMOX_VE_USERNAME` or `PROXMOX_VE_SSH_USERNAME` environment variable) is required when using API Token authentication. This is because the provider needs to know which user to use for the SSH connection.
 
--> **Note:** Not all Proxmox API operations are supported via API Token. You may see errors like `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
+-> **Note:** Note2: Not all Proxmox API operations are supported via API Token. You may see errors like `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token. The workaround is to use password authentication for those operations.
 
 ### Temporary directory
 
