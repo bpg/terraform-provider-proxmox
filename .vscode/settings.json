@@ -4,5 +4,6 @@
         "iothread",
         "qcow",
         "virtio"
-    ]
+    ],
+    "go.testEnvFile": "${workspaceFolder}/test.env",
 }
