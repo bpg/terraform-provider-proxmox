@@ -2809,12 +2809,10 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
 			fmt.Sprintf(`vm_id="%d"`, vmID),
 			`source_image=$(pvesm path "$file_id")`,
-			`cp "$source_image" "$file_path_tmp"`,
-			`qemu-img resize -f "$file_format" "$file_path_tmp" "${disk_size}G"`,
-			`imported_disk="$(qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format $file_format | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
+			`imported_disk="$(qm importdisk "$vm_id" "$source_image" "$datastore_id_target" -format $file_format | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
 			`disk_id="${datastore_id_target}:$imported_disk${disk_options}"`,
 			`qm set "$vm_id" "-${disk_interface}" "$disk_id"`,
-			`rm -f "$file_path_tmp"`,
+			`qm resize "$vm_id" "${disk_interface}" "${disk_size}G"`,
 		)
 
 		importedDiskCount++
