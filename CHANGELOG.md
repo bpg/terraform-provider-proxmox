@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.39.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.38.1...v0.39.0) (2023-11-30)
+
+
+### Features
+
+* **docs:** add initial mini-howtos for VM ([#730](https://github.com/bpg/terraform-provider-proxmox/issues/730)) ([e2717a9](https://github.com/bpg/terraform-provider-proxmox/commit/e2717a9a9ee542e7e17c0b518ccd1da78d5abdea))
+* **provider:** modify the proxmox api client to support connecting through an https proxy ([#748](https://github.com/bpg/terraform-provider-proxmox/issues/748)) ([13e911c](https://github.com/bpg/terraform-provider-proxmox/commit/13e911cf592770740d88880e9e12d16f5d9bb8b6))
+* **vm:** Support hook script ([#733](https://github.com/bpg/terraform-provider-proxmox/issues/733)) ([0eb04b2](https://github.com/bpg/terraform-provider-proxmox/commit/0eb04b2a250999893996ce62ea1b9109081494a7))
+
+
+### Bug Fixes
+
+* **cluster:** can't read back cluster options on PVE 8.1 ([#755](https://github.com/bpg/terraform-provider-proxmox/issues/755)) ([cd24cf2](https://github.com/bpg/terraform-provider-proxmox/commit/cd24cf238cb11c3ffb4b9e5378c52b04c6961068))
+* **docs:** improve documentation for container feature flags ([#747](https://github.com/bpg/terraform-provider-proxmox/issues/747)) ([d5193b3](https://github.com/bpg/terraform-provider-proxmox/commit/d5193b3e9b0ddbaf0fde45381b2bc9d9e28bca18))
+* **vm,lxc:** file ID validator to allow . in a storage name ([#750](https://github.com/bpg/terraform-provider-proxmox/issues/750)) ([a6fa40e](https://github.com/bpg/terraform-provider-proxmox/commit/a6fa40e1772dd29d919dc62be071a95b871facbd))
+* **vm:** resize image once imported ([#753](https://github.com/bpg/terraform-provider-proxmox/issues/753)) ([d16b8e1](https://github.com/bpg/terraform-provider-proxmox/commit/d16b8e1696a50d5aca6bcce02a220069bfed0e87))
+* **vm:** unable to clone as non-root due to `hook_script` ([#756](https://github.com/bpg/terraform-provider-proxmox/issues/756)) ([728eceb](https://github.com/bpg/terraform-provider-proxmox/commit/728eceb5e9fc342984218a0baf0155afae53fd71))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/brianvoe/gofakeit/v6 from 6.24.0 to 6.25.0 ([#741](https://github.com/bpg/terraform-provider-proxmox/issues/741)) ([9016641](https://github.com/bpg/terraform-provider-proxmox/commit/9016641c34d839ee1b5eb34892171897fac75880))
+* **deps:** bump golang.org/x/crypto from 0.15.0 to 0.16.0 ([#752](https://github.com/bpg/terraform-provider-proxmox/issues/752)) ([a4ac84a](https://github.com/bpg/terraform-provider-proxmox/commit/a4ac84a78cca4b3f972d38e856adb294bb60fb2b))
+
 ## [0.38.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.38.0...v0.38.1) (2023-11-17)
 
 
