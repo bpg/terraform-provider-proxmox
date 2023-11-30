@@ -3383,12 +3383,12 @@ func vmGetTPMState(d *schema.ResourceData, disk []interface{}) *vms.CustomTPMSta
 
 		block := tpmState[0].(map[string]interface{})
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMTPMStateDatastoreID].(string)
-		version, _ := block[mkResourceVirtualEnvironmentVMTPMState].(*string)
+		version, _ := block[mkResourceVirtualEnvironmentVMTPMStateVersion].(string)
 
 		// use the special syntax STORAGE_ID:SIZE_IN_GiB to allocate a new volume.
 		// NB SIZE_IN_GiB is ignored, see docs for more info.
 		tpmStateConfig.FileVolume = fmt.Sprintf("%s:1", datastoreID)
-		tpmStateConfig.Version = version
+		tpmStateConfig.Version = &version
 	}
 
 	return tpmStateConfig
