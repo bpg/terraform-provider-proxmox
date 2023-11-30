@@ -2001,17 +2001,17 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
+	vmConfig, err := vmAPI.GetVM(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if len(initialization) > 0 {
 		tflog.Trace(ctx, "Preparing the CloudInit configuration")
 
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDatastoreID].(string)
 		initializationInterface := initializationBlock[mkResourceVirtualEnvironmentVMInitializationInterface].(string)
-
-		vmConfig, err := vmAPI.GetVM(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
 
 		existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "ide2")
 		if initializationInterface == "" {
@@ -2131,10 +2131,13 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	hookScript := d.Get(mkResourceVirtualEnvironmentVMHookScriptFileID).(string)
+	currentHookScript := vmConfig.HookScript
 	if len(hookScript) > 0 {
 		updateBody.HookScript = &hookScript
 	} else {
-		del = append(del, "hookscript")
+		if currentHookScript != nil {
+			del = append(del, "hookscript")
+		}
 	}
 
 	updateBody.Delete = del
@@ -2147,7 +2150,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	efiDisk := d.Get(mkResourceVirtualEnvironmentVMEFIDisk).([]interface{})
 
-	vmConfig, e := vmAPI.GetVM(ctx)
+	vmConfig, e = vmAPI.GetVM(ctx)
 	if e != nil {
 		if strings.Contains(e.Error(), "HTTP 404") ||
 			(strings.Contains(e.Error(), "HTTP 500") && strings.Contains(e.Error(), "does not exist")) {
