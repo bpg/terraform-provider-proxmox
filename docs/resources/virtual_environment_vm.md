@@ -65,6 +65,10 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     type = "l26"
   }
 
+  tpm_state {
+    version = "v2.0"
+  }
+
   serial_device {}
 }
 
@@ -287,6 +291,11 @@ output "ubuntu_vm_public_key" {
       distribution-specific and Microsoft Standard keys enrolled, if used with
       EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
       to `false`).
+- `tpm_state` - (Optional) The TPM state device.
+  - `datastore_id` (Optional) The identifier for the datastore to create
+      the disk in (defaults to `local-lvm`).
+  - `version` (Optional) TPM state device version. Can be `v1.2` or `v2.0`.
+      (defaults to `v2.0`).
 - `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
   - `device` - (Required) The PCI device name for Proxmox, in form
       of `hostpciX` where `X` is a sequential number from 0 to 3.
