@@ -261,5 +261,6 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
 ❤️ This project is sponsored by:
 
 - [TJ Zimmerman](https://github.com/zimmertr)
+- [Elias Alvord](https://github.com/elias314)
 
 Thanks again for your support, it is much appreciated! 🙏
