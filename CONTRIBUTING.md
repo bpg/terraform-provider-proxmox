@@ -52,7 +52,7 @@ You can run all the test cases by invoking `make test`.
 You can manually test the provider by running it locally. This is useful for
 testing changes to the provider before submitting a PR.
 
-- Create a $HOME/.terraformrc (POSIX) or %USERPROFILE%/terraform.rc (Windows) file with the following contents:
+- Create a $HOME/.terraformrc (POSIX) or %APPDATA%/terraform.rc (Windows) file with the following contents:
 
   ```terraform
   provider_installation {
