@@ -33,6 +33,11 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     type         = "4m"
   }
 
+  tpm_state {
+    datastore_id = local.datastore_id
+    version      = "v2.0"
+  }
+
   #  disk {
   #    datastore_id = local.datastore_id
   #    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
