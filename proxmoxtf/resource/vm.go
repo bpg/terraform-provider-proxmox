@@ -2132,12 +2132,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	hookScript := d.Get(mkResourceVirtualEnvironmentVMHookScriptFileID).(string)
 	currentHookScript := vmConfig.HookScript
+
 	if len(hookScript) > 0 {
 		updateBody.HookScript = &hookScript
-	} else {
-		if currentHookScript != nil {
-			del = append(del, "hookscript")
-		}
+	} else if currentHookScript != nil {
+		del = append(del, "hookscript")
 	}
 
 	updateBody.Delete = del
