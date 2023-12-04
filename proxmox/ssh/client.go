@@ -7,9 +7,11 @@
 package ssh
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path"
@@ -29,8 +31,8 @@ import (
 
 // Client is an interface for performing SSH requests against the Proxmox Nodes.
 type Client interface {
-	// ExecuteNodeCommands executes a command on a node.
-	ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error
+	// ExecuteNodeCommand executes a command on a node.
+	ExecuteNodeCommand(ctx context.Context, nodeName string, command string, envVars []string) (error, string, string)
 
 	// NodeUpload uploads a file to a node.
 	NodeUpload(ctx context.Context, nodeName string,
@@ -72,48 +74,80 @@ func NewClient(
 	}, nil
 }
 
-// ExecuteNodeCommands executes commands on a given node.
-func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error {
+// ExecuteNodeCommand executes a command on a given node.
+func (c *client) ExecuteNodeCommand(ctx context.Context, nodeName string, command string, envVars []string) (error, string, string) {
 	node, err := c.nodeLookup.Resolve(ctx, nodeName)
 	if err != nil {
-		return fmt.Errorf("failed to find node endpoint: %w", err)
+		return fmt.Errorf("failed to find node endpoint: %w", err), "", ""
 	}
 
 	tflog.Debug(ctx, "executing commands on the node using SSH", map[string]interface{}{
 		"node_address": node.Address,
 		"node_port":    node.Port,
-		"commands":     commands,
+		"commands":     command,
 	})
 
 	closeOrLogError := utils.CloseOrLogError(ctx)
 
 	sshClient, err := c.openNodeShell(ctx, node)
 	if err != nil {
-		return err
+		return err, "", ""
 	}
 
 	defer closeOrLogError(sshClient)
 
+	tflog.Info(ctx, "Creating new SSH session")
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed to create SSH session: %w", err)
+		return fmt.Errorf("failed to create SSH session: %w", err), "", ""
 	}
-
 	defer closeOrLogError(sshSession)
 
-	script := strings.Join(commands, " && \\\n")
-
-	output, err := sshSession.CombinedOutput(
-		fmt.Sprintf(
-			"/bin/bash -c '%s'",
-			strings.ReplaceAll(script, "'", "'\"'\"'"),
-		),
-	)
-	if err != nil {
-		return errors.New(string(output))
+	for _, s := range envVars {
+		key := strings.Split(s, "=")[0]
+		val := strings.Split(s, "=")[1]
+		sshSession.Setenv(key, val)
 	}
 
-	return nil
+	stdout, err := sshSession.StdoutPipe()
+	if err != nil {
+		tflog.Error(ctx, fmt.Sprintf("Error Executing command over ssh: %v\nError: %v", command, err))
+		return err, "", ""
+	}
+
+	stderr, errerr := sshSession.StderrPipe()
+	if errerr != nil {
+		tflog.Error(ctx, fmt.Sprintf("Error Executing command over ssh: %v\nError: %v", command, err))
+		return errerr, "", ""
+	}
+
+	var buf bytes.Buffer
+	var errbuf bytes.Buffer
+
+	done := make(chan bool, 1)
+	doneErr := make(chan bool, 1)
+	go func() {
+		if _, err := io.Copy(&buf, stdout); err != nil {
+			tflog.Error(ctx, fmt.Sprintf("Copy of stdout failed: %v", err))
+		}
+		done <- true
+	}()
+	go func() {
+		if _, err := io.Copy(&errbuf, stderr); err != nil {
+			tflog.Error(ctx, fmt.Sprintf("Copy of stderr failed: %v", err))
+		}
+		doneErr <- true
+	}()
+
+	if err := sshSession.Run(fmt.Sprintf("/bin/bash -c '%v' \n", command)); err != nil {
+		tflog.Error(ctx, fmt.Sprintf("Error Executing command over ssh: %v\nError: %v", command, err))
+		//return err, "", ""
+	}
+
+	<-done
+	<-doneErr
+
+	return nil, buf.String(), errbuf.String()
 }
 
 func (c *client) NodeUpload(

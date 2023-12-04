@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,6 +29,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
@@ -2667,16 +2669,157 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	return vmCreateCustomDisks(ctx, d, m)
 }
 
-func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	vmID, err := strconv.Atoi(d.Id())
+// Get the filesystem path of a disk image on disk by pve disk id
+func vmGetDiskImagePath(ctx context.Context, sshClient ssh.Client, nodeName string, fileId string) (error, string) {
+	envVars := []string{}
+	command := fmt.Sprintf(`sudo -s /sbin/pvesm path "%v"`, fileId)
+
+	err, sout, serr := sshClient.ExecuteNodeCommand(ctx, nodeName, command, envVars)
+	if err != nil {
+		return err, fmt.Sprintf("stdout: %v - stderr: %v", sout, serr)
+	}
+	if serr != "" {
+		err := errors.New(fmt.Sprintf("vmGetDiskImagePath(): stderr conatins text: %v", serr))
+		return err, sout
+	}
+	output := strings.TrimSuffix(sout, "\n")
+	return nil, output
+}
+
+// Copy a disk image to tmp for manipulation
+func vmCopyDiskImageTmp(ctx context.Context, sshClient ssh.Client, nodeName string, diskImagePath string, tmpFile string) (error, string) {
+	envVars := []string{}
+	command := fmt.Sprintf(`sudo -s cp -f "%v" "%v"`, diskImagePath, tmpFile)
+
+	err, sout, serr := sshClient.ExecuteNodeCommand(ctx, nodeName, command, envVars)
+	if err != nil {
+		return err, fmt.Sprintf("stdout: %v - stderr: %v", sout, serr)
+	}
+	if serr != "" {
+		err := errors.New(fmt.Sprintf("vmCopyDiskImageTmp(): stderr conatins text: %v", serr))
+		return err, sout
+	}
+	output := strings.TrimSuffix(sout, "\n")
+	return nil, output
+}
+
+func vmQemuResizeDiskImage(ctx context.Context, sshClient ssh.Client, nodeName string, fileFormat string, diskImagePath string, diskImageNewSize string) (error, string) {
+	envVars := []string{}
+	command := fmt.Sprintf(`sudo -s qemu-img resize -f "%v" "%v" "%vG"`, fileFormat, diskImagePath, diskImageNewSize)
+
+	err, sout, serr := sshClient.ExecuteNodeCommand(ctx, nodeName, command, envVars)
+	if err != nil {
+		return err, fmt.Sprintf("stdout: %v - stderr: %v", sout, serr)
+	}
+	if serr != "" {
+		err := errors.New(fmt.Sprintf("vmQemuResizeDiskImage(): stderr conatins text: %v", serr))
+		return err, sout
+	}
+	output := strings.TrimSuffix(sout, "\n")
+	return nil, output
+}
+
+func vmQemuImportDiskImage(ctx context.Context, sshClient ssh.Client, nodeName string, vmId string, diskImagePath string, datastoreId string, fileFormat string) (error, string) {
+	envVars := []string{}
+	command := fmt.Sprintf(`sudo -s qm importdisk "%v" "%v" "%v" -format "%v"`, vmId, diskImagePath, datastoreId, fileFormat)
+
+	err, sout, serr := sshClient.ExecuteNodeCommand(ctx, nodeName, command, envVars)
+	if err != nil {
+		return err, fmt.Sprintf("stdout: %v - stderr: %v", sout, serr)
+	}
+	if serr != "" {
+		if strings.Contains(serr, `can't lock file`) {
+			err := errors.New(fmt.Sprintf("vmQemuImportDiskImage(): stderr reports can't lock file: %v", serr))
+			return err, sout
+		}
+		if strings.Contains(serr, `got timeout`) {
+			err := errors.New(fmt.Sprintf("vmQemuImportDiskImage(): stderr reports timeout: %v", serr))
+			return err, sout
+		}
+		tflog.Info(ctx, fmt.Sprintf("vmQemuImportDiskImage(): stderr contains text: %v", serr))
+	}
+
+	successLine := ""
+	outLines := strings.Split(sout, "\n")
+	for _, line := range outLines {
+		if strings.Contains(line, "Successfully imported disk as") {
+			successLine = line
+		}
+	}
+
+	if successLine == "" {
+		return errors.New("vmQemuImportDiskImage: Import result line not found"), sout
+	}
+
+	regexPattern := `^.*:.*:(.*)\'$`
+	re := regexp.MustCompile(regexPattern)
+	matches := re.FindStringSubmatch(successLine)
+
+	if len(matches) != 2 {
+		return errors.New(fmt.Sprintf("vmQemuImportDiskImage: Regexp of disk id failed, incorrect number matches - %v - %v", matches, len(matches))), sout
+	}
+
+	output := strings.TrimSuffix(matches[1], "\n")
+	return nil, output
+}
+
+func vmQemuVmSetDiskImageInterface(ctx context.Context, sshClient ssh.Client, nodeName string, vmId string, datastoreId string, diskImageId string, vmDiskInterface string, vmDiskOptions []string) (error, string) {
+	envVars := []string{}
+	diskOptionsString := ""
+	if len(vmDiskOptions) > 0 {
+		diskOptionsString = fmt.Sprintf(",%v", strings.Join(vmDiskOptions, ","))
+	}
+	command := fmt.Sprintf(`sudo -s qm set "%v" -%v "%v:%v%v"`, vmId, vmDiskInterface, datastoreId, diskImageId, diskOptionsString)
+
+	err, sout, serr := sshClient.ExecuteNodeCommand(ctx, nodeName, command, envVars)
+	if err != nil {
+		return err, fmt.Sprintf("stdout: %v - stderr: %v", sout, serr)
+	}
+	if serr != "" {
+		err := errors.New(fmt.Sprintf("vmQemuVmSetDiskImageInterface(): stderr conatins text: %v", serr))
+		return err, sout
+	}
+
+	expectedSuccessLine := fmt.Sprintf("update VM %v: -%v %v:%v%v", vmId, vmDiskInterface, datastoreId, diskImageId, diskOptionsString)
+	successLine := ""
+	outLines := strings.Split(sout, "\n")
+	for _, line := range outLines {
+		if strings.Contains(line, expectedSuccessLine) {
+			successLine = line
+		}
+	}
+
+	if successLine == "" {
+		return errors.New(fmt.Sprintf("vmQemuVmSetDiskImageInterface: Update result line not found - stdout: %v", sout)), sout
+	}
+
+	return nil, sout
+}
+
+func vmQemuVmRemoveTmpDiskImageFile(ctx context.Context, sshClient ssh.Client, nodeName string, diskImagePath string) (error, string) {
+	envVars := []string{}
+	command := fmt.Sprintf(`sudo -s rm -f "%v"`, diskImagePath)
+
+	err, sout, serr := sshClient.ExecuteNodeCommand(ctx, nodeName, command, envVars)
+	if err != nil {
+		return err, fmt.Sprintf("stdout: %v - stderr: %v", sout, serr)
+	}
+	if serr != "" {
+		err := errors.New(fmt.Sprintf("vmQemuVmRemoveTmpDiskImageFile(): stderr conatins text: %v", serr))
+		return err, sout
+	}
+
+	return nil, sout
+}
+
+func vmCreateCustomDisks(ctx context.Context, data *schema.ResourceData, m interface{}) diag.Diagnostics {
+	vmID, err := strconv.Atoi(data.Id())
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
-	var commands []string
-
 	// Determine the ID of the next disk.
-	disk := d.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
+	disk := data.Get(mkResourceVirtualEnvironmentVMDisk).([]interface{})
 	diskCount := 0
 
 	for _, d := range disk {
@@ -2735,6 +2878,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 		speedLimitWriteBurstable := speedBlock[mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable].(int)
 
 		diskOptions := ""
+		diskOptionsSlice := []string{}
 
 		if ioThread {
 			diskOptions += ",iothread=1"
@@ -2775,49 +2919,52 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 			fileFormat,
 		)
 
-		//nolint:lll
-		commands = append(
-			commands,
-			`set -e`,
-			fmt.Sprintf(`file_id="%s"`, fileID),
-			fmt.Sprintf(`file_format="%s"`, fileFormat),
-			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
-			fmt.Sprintf(`disk_options="%s"`, diskOptions),
-			fmt.Sprintf(`disk_size="%d"`, size),
-			fmt.Sprintf(`disk_interface="%s"`, diskInterface),
-			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
-			fmt.Sprintf(`vm_id="%d"`, vmID),
-			`source_image=$(/sbin/pvesm path "$file_id")`,
-			`cp "$source_image" "$file_path_tmp"`,
-			`qemu-img resize -f "$file_format" "$file_path_tmp" "${disk_size}G"`,
-			`imported_disk="$(qm importdisk "$vm_id" "$file_path_tmp" "$datastore_id_target" -format $file_format | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
-			`disk_id="${datastore_id_target}:$imported_disk${disk_options}"`,
-			`qm set "$vm_id" "-${disk_interface}" "$disk_id"`,
-			`rm -f "$file_path_tmp"`,
-		)
-
-		importedDiskCount++
-	}
-
-	// Execute the commands on the node and wait for the result.
-	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
-	if len(commands) > 0 {
 		config := m.(proxmoxtf.ProviderConfiguration)
-
 		api, err := config.GetClient()
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		nodeName := d.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+		nodeName := data.Get(mkResourceVirtualEnvironmentVMNodeName).(string)
+		vmIdString := data.Id()
 
-		err = api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
+		// Get filesystem path of disk image in store
+		err, diskImageStorePath := vmGetDiskImagePath(ctx, api.SSH(), nodeName, fileID)
 		if err != nil {
 			return diag.FromErr(err)
 		}
+		if diskImageStorePath == "" {
+			return diag.Errorf("Disk image id returned is blank: %v", diskImageStorePath)
+		}
+
+		// Copy the image file to tmp file for manipulation
+		err, _ = vmCopyDiskImageTmp(ctx, api.SSH(), nodeName, diskImageStorePath, filePathTmp)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Resize the tmp disk image for importing
+		err, _ = vmQemuResizeDiskImage(ctx, api.SSH(), nodeName, fileFormat, filePathTmp, strconv.Itoa(size))
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Import the resized disk into datastore
+		err, diskImageId := vmQemuImportDiskImage(ctx, api.SSH(), nodeName, vmIdString, filePathTmp, datastoreID, fileFormat)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		// Set imported disk to VM interface
+		err, _ = vmQemuVmSetDiskImageInterface(ctx, api.SSH(), nodeName, vmIdString, datastoreID, diskImageId, diskInterface, diskOptionsSlice)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		importedDiskCount++
 	}
 
-	return vmCreateStart(ctx, d, m)
+	return vmCreateStart(ctx, data, m)
 }
 
 func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

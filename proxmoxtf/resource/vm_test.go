@@ -7,12 +7,19 @@
 package resource
 
 import (
+	"context"
+	"fmt"
+	"net/url"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 // TestVMInstantiation tests whether the VM instance can be instantiated.
@@ -487,4 +494,306 @@ func Test_parseImportIDWIthNodeName(t *testing.T) {
 			require.Equal(t, tt.expectedID, id)
 		})
 	}
+}
+
+type nodeResolver struct {
+	node ssh.ProxmoxNode
+}
+
+func (c *nodeResolver) Resolve(_ context.Context, _ string) (ssh.ProxmoxNode, error) {
+	return c.node, nil
+}
+
+func TestVmGetDiskImagePath(t *testing.T) {
+	ctx := context.TODO()
+	testDiskImageId := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_ID")
+	testDiskImagePath := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH")
+
+	if testDiskImageId == "" {
+		t.Skip("SKIPPING TestVmGetDiskImagePath: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_ID'")
+	}
+	if testDiskImagePath == "" {
+		t.Skip("SKIPPING TestVmGetDiskImagePath: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH'")
+	}
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
+	require.NoError(t, err)
+
+	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	err, output := vmGetDiskImagePath(ctx, sshClient, u.Hostname(), testDiskImageId)
+	t.Logf("TestVmGetDiskImagePath: stdout: %v", output)
+	t.Logf("TestVmGetDiskImagePath: stderr: %v", err)
+
+	require.Equal(t, testDiskImagePath, output)
+}
+
+func TestVmCopyDiskImageTmp(t *testing.T) {
+	ctx := context.TODO()
+	testDiskImageTmpPath := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH_TMP")
+	testDiskImagePath := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH")
+
+	if testDiskImageTmpPath == "" {
+		t.Skip("SKIPPING TestVmCopyDiskImageTmp: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH_TMP'")
+	}
+	if testDiskImagePath == "" {
+		t.Skip("SKIPPING TestVmCopyDiskImageTmp: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH'")
+	}
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
+	require.NoError(t, err)
+
+	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	err, output := vmCopyDiskImageTmp(ctx, sshClient, u.Hostname(), testDiskImagePath, testDiskImageTmpPath)
+	t.Logf("TestVmCopyDiskImageTmp: stdout: %v", output)
+	t.Logf("TestVmCopyDiskImageTmp: err: %v", err)
+
+	require.Nil(t, err)
+	require.Equal(t, "", output)
+
+	// Proactively go and check the file exists after cp
+	sshClient, err = ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	comErr, stdOut, stdErr := sshClient.ExecuteNodeCommand(
+		ctx,
+		u.Host,
+		fmt.Sprintf(`ls "%v"`, testDiskImageTmpPath),
+		[]string{},
+	)
+	require.NoError(t, comErr)
+	require.Equal(t, fmt.Sprintf("%v\n", testDiskImageTmpPath), stdOut)
+	require.Empty(t, stdErr)
+}
+
+func TestVmQemuResizeDiskImage(t *testing.T) {
+	ctx := context.TODO()
+	testDiskImageTmpPath := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH_TMP")
+	testDiskImageTmpNewSize := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_TMP_NEWSIZE")
+	testDiskImageTmpFormat := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_TMP_FORMAT")
+
+	if testDiskImageTmpPath == "" {
+		t.Skip("SKIPPING TestVmQemuResizeDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH_TMP'")
+	}
+	if testDiskImageTmpNewSize == "" {
+		t.Skip("SKIPPING TestVmQemuResizeDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_TMP_NEWSIZE'")
+	}
+	if testDiskImageTmpFormat == "" {
+		t.Skip("SKIPPING TestVmQemuResizeDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_TMP_FORMAT'")
+	}
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
+	require.NoError(t, err)
+
+	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	err, output := vmQemuResizeDiskImage(ctx, sshClient, u.Hostname(), testDiskImageTmpFormat, testDiskImageTmpPath, testDiskImageTmpNewSize)
+	t.Logf("TestVmQemuResizeDiskImage: stdout: %v", output)
+	t.Logf("TestVmQemuResizeDiskImage: err: %v", err)
+
+	require.Nil(t, err)
+	require.Equal(t, "Image resized.", output)
+}
+
+func TestVmQemuImportDiskImage(t *testing.T) {
+	ctx := context.TODO()
+	testDiskImageTmpPath := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH_TMP")
+	testVmId := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_VM_ID")
+	testVmDatastoreId := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_VM_DATASTORE_ID")
+	testDiskImageTmpFormat := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_DISKIMAGE_TMP_FORMAT")
+
+	if testDiskImageTmpPath == "" {
+		t.Skip("SKIPPING TestVmQemuImportDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_PATH_TMP'")
+	}
+	if testVmId == "" {
+		t.Skip("SKIPPING TestVmQemuImportDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_VM_ID'")
+	}
+	if testVmDatastoreId == "" {
+		t.Skip("SKIPPING TestVmQemuResizeDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_VM_DATASTORE_ID'")
+	}
+	if testDiskImageTmpFormat == "" {
+		t.Skip("SKIPPING TestVmQemuResizeDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_DISKIMAGE_TMP_FORMAT'")
+	}
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
+	require.NoError(t, err)
+
+	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	err, output := vmQemuImportDiskImage(ctx, sshClient, u.Hostname(), testVmId, testDiskImageTmpPath, testVmDatastoreId, testDiskImageTmpFormat)
+	t.Logf("TestVmQemuImportDiskImage: stdout: %v", output)
+	t.Logf("TestVmQemuImportDiskImage: err: %v", err)
+
+	regexPattern := fmt.Sprintf(`^vm-%v-disk-\d*$`, testVmId)
+	re := regexp.MustCompile(regexPattern)
+	matches := re.FindStringSubmatch(output)
+
+	require.Nil(t, err)
+	require.Equal(t, matches[0], output)
+}
+
+func TestVmQemuVmSetDiskImageInterface(t *testing.T) {
+	ctx := context.TODO()
+	testVmDiskInterface := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_VM_DISK_INTERFACE_0")
+	testVmId := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_VM_ID")
+	testVmDatastoreId := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_VMLVM_DATASTORE_ID")
+	testDiskImageId := utils.GetAnyStringEnv("PROXMOXTF_EXISTENT_TEST_VM_IMPORTED_DISKIMAGE_ID")
+
+	if testVmDiskInterface == "" {
+		t.Skip("SKIPPING TestVmQemuImportDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_VM_DISK_INTERFACE_0'")
+	}
+	if testVmId == "" {
+		t.Skip("SKIPPING TestVmQemuImportDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_VM_ID'")
+	}
+	if testVmDatastoreId == "" {
+		t.Skip("SKIPPING TestVmQemuResizeDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_VMLVM_DATASTORE_ID'")
+	}
+	if testDiskImageId == "" {
+		t.Skip("SKIPPING TestVmQemuResizeDiskImage: Environment variable not set: 'PROXMOXTF_EXISTENT_TEST_VM_IMPORTED_DISKIMAGE_ID'")
+	}
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
+	require.NoError(t, err)
+
+	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	err, output := vmQemuVmSetDiskImageInterface(ctx, sshClient, u.Hostname(), testVmId, testVmDatastoreId, testDiskImageId, testVmDiskInterface, []string{})
+	t.Logf("TestVmQemuVmSetDiskImageInterface: stdout: %v", output)
+	t.Logf("TestVmQemuVmSetDiskImageInterface: err: %v", err)
+
+	regexPattern := fmt.Sprintf("update VM %v: -%v %v:%v%v\n", testVmId, testVmDiskInterface, testVmDatastoreId, testDiskImageId, "")
+	re := regexp.MustCompile(regexPattern)
+	matches := re.FindStringSubmatch(output)
+
+	require.Nil(t, err)
+	require.Equal(t, matches[0], output)
+}
+
+func TestVmQemuVmRemoveTmpDiskImageFile(t *testing.T) {
+	ctx := context.TODO()
+	remoteTmpDir := utils.GetAnyStringEnv("PROXMOXTF_TEST_REMOTE_TMP_DIR")
+
+	if remoteTmpDir == "" {
+		remoteTmpDir = "/tmp"
+	}
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
+	require.NoError(t, err)
+
+	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	// Create the tmp file to delete
+	createdTmpFile := fmt.Sprintf(`%v/%v`, remoteTmpDir, "random-file.tmp")
+	createTmpFileCommand := fmt.Sprintf(`echo 'Test' > %v`, createdTmpFile)
+	tmpFileErr, tmpFilesout, tmpFilesErr := sshClient.ExecuteNodeCommand(ctx, u.Hostname(), createTmpFileCommand, []string{})
+
+	if tmpFileErr != nil {
+		t.Errorf("TestVmQemuVmRemoveTmpDiskImageFile: Error creating tmp file on server for test: file: %v - stdout: %v - stderr: %v", tmpFileErr, tmpFilesout, tmpFilesErr)
+	}
+
+	// Run the test
+	sshClient, err = ssh.NewClient(
+		sshUsername, "", true, sshAgentSocket,
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    22,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	err, output := vmQemuVmRemoveTmpDiskImageFile(ctx, sshClient, u.Hostname(), createdTmpFile)
+	t.Logf("TestVmQemuVmRemoveTmpDiskImageFile: stdout: %v", output)
+	t.Logf("TestVmQemuVmRemoveTmpDiskImageFile: err: %v", err)
+
+	require.Nil(t, err)
+	require.Equal(t, "", output)
 }

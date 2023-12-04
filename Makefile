@@ -99,7 +99,7 @@ lint:
 
 .PHONY: release-build
 release-build:
-	go run -modfile=tools/go.mod github.com/goreleaser/goreleaser build --clean --skip-validate
+	go run -modfile=tools/go.mod github.com/goreleaser/goreleaser build --clean --skip-validate --snapshot
 
 .PHONY: docs
 docs:
