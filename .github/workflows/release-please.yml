@@ -1,19 +1,18 @@
+name: release-please
+
 on:
   push:
     branches:
       - main
-name: release-please
+
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 #v3.7.13
+      - uses: google-github-actions/release-please-action@a6d1fd9854c8c40688a72f7e4b072a1e965860a0 #v4.0.0
         with:
           token: ${{ secrets.BOT_TOKEN }}
-          release-type: go
-          extra-files: |
-            Makefile
-          skip-github-release: false
-          include-v-in-tag: true
-          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
-          signoff: 'GitHub Bot <48106979+bpg-bot@users.noreply.github.com>'
