@@ -5,10 +5,5 @@
     ],
     "include-v-in-tag": true,
     "signoff": "GitHub Bot <48106979+bpg-bot@users.noreply.github.com>",
-    "skip-github-releases": false,
-    "packages": {
-        ".": {
-            "release-type": "go"
-        }
-    }
+    "skip-github-releases": false
 }
