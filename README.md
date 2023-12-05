@@ -31,24 +31,6 @@ backwards compatibility between provider versions as much as possible.
 - [Terraform](https://www.terraform.io/downloads.html) 1.4+
 - [Go](https://golang.org/doc/install) 1.21 (to build the provider plugin)
 
-## Building the provider
-
-- Clone the repository
-  to `$GOPATH/src/github.com/bpg/terraform-provider-proxmox`:
-
-  ```sh
-  mkdir -p "${GOPATH}/src/github.com/bpg"
-  cd "${GOPATH}/src/github.com/bpg"
-  git clone git@github.com:bpg/terraform-provider-proxmox
-  ```
-
-- Enter the provider directory and build it:
-
-  ```sh
-  cd "${GOPATH}/src/github.com/bpg/terraform-provider-proxmox"
-  make build
-  ```
-
 ## Using the provider
 
 You can find the latest release and its documentation in
@@ -234,6 +216,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://soundcloud.com/midoriiro"><img src="https://avatars.githubusercontent.com/u/2159328?v=4?s=100" width="100px;" alt="Alexis Bekhdadi"/><br /><sub><b>Alexis Bekhdadi</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Amidoriiro" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/geoshapka"><img src="https://avatars.githubusercontent.com/u/32462387?v=4?s=100" width="100px;" alt="geoshapka"/><br /><sub><b>geoshapka</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Ageoshapka" title="Bug reports">🐛</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=geoshapka" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
   <tfoot>
