@@ -1,9 +1,0 @@
-{
-    "bump-minor-pre-major": true,
-    "extra-files": [
-        "Makefile"
-    ],
-    "include-v-in-tag": true,
-    "signoff": "GitHub Bot <48106979+bpg-bot@users.noreply.github.com>",
-    "skip-github-releases": false
-}
