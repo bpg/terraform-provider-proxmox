@@ -205,6 +205,7 @@ output "ubuntu_container_public_key" {
       to `false`)
   - `keyctl` - (Optional) Whether the container supports `keyctl()` system
       call (defaults to `false`)
+  - `mount` - (Optional) List of allowed mount types (`cifs` or `nfs`)
 
 ## Attribute Reference
 
