@@ -239,6 +239,12 @@ func (r CustomStorageDevice) IsOwnedBy(vmID int) bool {
 // CustomStorageDevices handles QEMU SATA device parameters.
 type CustomStorageDevices map[string]CustomStorageDevice
 
+// CustomTPMState handles QEMU TPM state parameters.
+type CustomTPMState struct {
+	FileVolume string  `json:"file"              url:"file"`
+	Version    *string `json:"version,omitempty" url:"version,omitempty"`
+}
+
 // CustomUSBDevice handles QEMU USB device parameters.
 type CustomUSBDevice struct {
 	HostDevice *string           `json:"host"              url:"host"`
@@ -349,6 +355,7 @@ type CreateRequestBody struct {
 	Tags                 *string                        `json:"tags,omitempty"               url:"tags,omitempty"`
 	Template             *types.CustomBool              `json:"template,omitempty"           url:"template,omitempty,int"`
 	TimeDriftFixEnabled  *types.CustomBool              `json:"tdf,omitempty"                url:"tdf,omitempty,int"`
+	TPMState             *CustomTPMState                `json:"tpmstate0,omitempty"          url:"tpmstate0,omitempty"`
 	USBDevices           CustomUSBDevices               `json:"usb,omitempty"                url:"usb,omitempty"`
 	VGADevice            *CustomVGADevice               `json:"vga,omitempty"                url:"vga,omitempty"`
 	VirtualCPUCount      *int                           `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
@@ -517,6 +524,7 @@ type GetResponseData struct {
 	Tags                 *string                         `json:"tags,omitempty"`
 	Template             *types.CustomBool               `json:"template,omitempty"`
 	TimeDriftFixEnabled  *types.CustomBool               `json:"tdf,omitempty"`
+	TPMState             *CustomTPMState                 `json:"tpmstate0,omitempty"`
 	USBDevice0           *CustomUSBDevice                `json:"usb0,omitempty"`
 	USBDevice1           *CustomUSBDevice                `json:"usb1,omitempty"`
 	USBDevice2           *CustomUSBDevice                `json:"usb2,omitempty"`
@@ -1233,6 +1241,21 @@ func (r CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 	return nil
 }
 
+// EncodeValues converts a CustomTPMState struct to a URL vlaue.
+func (r CustomTPMState) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("file=%s", r.FileVolume),
+	}
+
+	if r.Version != nil {
+		values = append(values, fmt.Sprintf("version=%s", *r.Version))
+	}
+
+	v.Add(key, strings.Join(values, ","))
+
+	return nil
+}
+
 // EncodeValues converts a CustomUSBDevice struct to a URL vlaue.
 func (r CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 	if r.HostDevice == nil && r.Mapping == nil {
@@ -1700,6 +1723,33 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 			case "x-vga":
 				bv := types.CustomBool(v[1] == "1")
 				r.XVGA = &bv
+			}
+		}
+	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomTPMState string to an object.
+func (r *CustomTPMState) UnmarshalJSON(b []byte) error {
+	var s string
+
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomTPMState: %w", err)
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+		if len(v) == 1 {
+			r.FileVolume = v[0]
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "file":
+				r.FileVolume = v[1]
+			case "version":
+				r.Version = &v[1]
 			}
 		}
 	}
