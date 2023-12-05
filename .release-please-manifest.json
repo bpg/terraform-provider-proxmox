@@ -1,7 +1,0 @@
-{
-    "packages": {
-        ".": {
-            "release-type": "go"
-        }
-    }
-}
