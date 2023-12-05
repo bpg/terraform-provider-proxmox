@@ -364,7 +364,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/86479955?v=4",
       "profile": "https://github.com/dandaolrian",
       "contributions": [
-        "code"
+        "code",
+        "test"
       ]
     },
     {
@@ -584,6 +585,34 @@
       "profile": "http://www.simplysoft.ch",
       "contributions": [
         "code"
+      ]
+    },
+    {
+      "login": "rgl",
+      "name": "Rui Lopes",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43356?v=4",
+      "profile": "http://ruilopes.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "midoriiro",
+      "name": "Alexis Bekhdadi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2159328?v=4",
+      "profile": "https://soundcloud.com/midoriiro",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "geoshapka",
+      "name": "geoshapka",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32462387?v=4",
+      "profile": "https://github.com/geoshapka",
+      "contributions": [
+        "bug",
+        "test"
       ]
     }
   ],

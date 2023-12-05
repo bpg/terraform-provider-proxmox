@@ -4,5 +4,10 @@
         "iothread",
         "qcow",
         "virtio"
-    ]
+    ],
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--fast",
+    ],
+    "go.testEnvFile": "${workspaceFolder}/test.env",
 }
