@@ -26,10 +26,6 @@ issues:
       linters:
         - lll
 linters-settings:
-  nolintlint:
-    # Disable to ensure that nolint directives don't have a leading space.
-    # Default is true.
-    allow-leading-space: false
   exhaustive:
     default-signifies-exhaustive: true
   govet:
@@ -48,9 +44,6 @@ linters-settings:
     statements: 60
   errcheck:
     check-blank: true
-    ignoretests: true
-  revive:
-    exported: ["checkPrivateReceivers"]
 linters:
   enable-all: true
   disable:
