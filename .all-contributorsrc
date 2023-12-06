@@ -632,6 +632,16 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "dylanbegin",
+      "name": "Dylan Begin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/64234261?v=4",
+      "profile": "https://github.com/dylanbegin",
+      "contributions": [
+        "bug",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 8,
