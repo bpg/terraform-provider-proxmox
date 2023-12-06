@@ -93,6 +93,7 @@ const (
 	mkResourceVirtualEnvironmentContainerFeaturesNesting                   = "nesting"
 	mkResourceVirtualEnvironmentContainerFeaturesKeyControl                = "keyctl"
 	mkResourceVirtualEnvironmentContainerFeaturesFUSE                      = "fuse"
+	mkResourceVirtualEnvironmentContainerFeaturesMountTypes                = "mount"
 	mkResourceVirtualEnvironmentContainerInitialization                    = "initialization"
 	mkResourceVirtualEnvironmentContainerInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentContainerInitializationDNSDomain           = "domain"
@@ -316,13 +317,13 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "Features",
 				Optional:    true,
-				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
 							mkResourceVirtualEnvironmentContainerFeaturesNesting:    dvResourceVirtualEnvironmentContainerFeaturesNesting,
 							mkResourceVirtualEnvironmentContainerFeaturesKeyControl: dvResourceVirtualEnvironmentContainerFeaturesKeyControl,
 							mkResourceVirtualEnvironmentContainerFeaturesFUSE:       dvResourceVirtualEnvironmentContainerFeaturesFUSE,
+							mkResourceVirtualEnvironmentContainerFeaturesMountTypes: []interface{}{},
 						},
 					}, nil
 				},
@@ -332,22 +333,28 @@ func Container() *schema.Resource {
 							Type:        schema.TypeBool,
 							Description: "Whether the container runs as nested",
 							Optional:    true,
-							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentContainerFeaturesNesting,
 						},
 						mkResourceVirtualEnvironmentContainerFeaturesKeyControl: {
 							Type:        schema.TypeBool,
 							Description: "Whether the container supports `keyctl()` system call",
 							Optional:    true,
-							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentContainerFeaturesKeyControl,
 						},
 						mkResourceVirtualEnvironmentContainerFeaturesFUSE: {
 							Type:        schema.TypeBool,
 							Description: "Whether the container supports FUSE mounts",
 							Optional:    true,
-							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentContainerFeaturesFUSE,
+						},
+						mkResourceVirtualEnvironmentContainerFeaturesMountTypes: {
+							Type:        schema.TypeList,
+							Description: "List of allowed mount types",
+							Optional:    true,
+							Elem: &schema.Schema{
+								Type:             schema.TypeString,
+								ValidateDiagFunc: validator.MountType(),
+							},
 						},
 					},
 				},
@@ -1234,33 +1241,9 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	featuresBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkResourceVirtualEnvironmentContainerFeatures},
-		0,
-		true,
-	)
+	features, err := containerGetFeatures(resource, d)
 	if err != nil {
 		return diag.FromErr(err)
-	}
-
-	nesting := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
-	keyctl := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesKeyControl].(bool))
-	fuse := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesFUSE].(bool))
-
-	features := containers.CustomFeatures{}
-
-	if nesting {
-		features.Nesting = &nesting
-	}
-
-	if keyctl {
-		features.KeyControl = &keyctl
-	}
-
-	if fuse {
-		features.FUSE = &fuse
 	}
 
 	initialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
@@ -1535,7 +1518,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		CPUUnits:             &cpuUnits,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
-		Features:             &features,
+		Features:             features,
 		MountPoints:          mountPointArray,
 		NetworkInterfaces:    networkInterfaceArray,
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
@@ -1750,6 +1733,52 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	sort.Strings(sanitizedTags)
 
 	return strings.Join(sanitizedTags, ";")
+}
+
+func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*containers.CustomFeatures, error) {
+	featuresBlock, err := structure.GetSchemaBlock(
+		resource,
+		d,
+		[]string{mkResourceVirtualEnvironmentContainerFeatures},
+		0,
+		true,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error getting container features from schema: %w", err)
+	}
+
+	nesting := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
+	keyctl := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesKeyControl].(bool))
+	fuse := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesFUSE].(bool))
+	mountTypes := featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesMountTypes].([]interface{})
+
+	var mountTypesConverted []string
+	if mountTypes != nil {
+		mountTypesConverted = make([]string, len(mountTypes))
+		for i, mountType := range mountTypes {
+			mountTypesConverted[i] = mountType.(string)
+		}
+	} else {
+		mountTypesConverted = []string{}
+	}
+
+	features := containers.CustomFeatures{
+		MountTypes: &mountTypesConverted,
+	}
+
+	if nesting {
+		features.Nesting = &nesting
+	}
+
+	if keyctl {
+		features.KeyControl = &keyctl
+	}
+
+	if fuse {
+		features.FUSE = &fuse
+	}
+
+	return &features, nil
 }
 
 func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -2402,6 +2431,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		updateBody.CPUUnits = &cpuUnits
 
 		rebootRequired = true
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentContainerFeatures) {
+		features, err := containerGetFeatures(resource, d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		updateBody.Features = features
 	}
 
 	// Prepare the new initialization configuration.

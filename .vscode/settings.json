@@ -1,13 +1,23 @@
 {
     "git.alwaysSignOff": true,
     "cSpell.words": [
+        "CLRF",
         "iothread",
+        "keyctl",
+        "proxmoxtf",
         "qcow",
-        "virtio"
+        "rootfs",
+        "unmanaged",
+        "virtio",
+        "VLANID",
+        "vmbr",
+        "VMID"
     ],
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [
-        "--fast",
+        "--config=${workspaceFolder}/.golangci.yml",
+        "--fast"
     ],
+    "go.lintOnSave": "workspace",
     "go.testEnvFile": "${workspaceFolder}/test.env",
 }
