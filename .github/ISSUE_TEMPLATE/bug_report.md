@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ""
-labels: 'bug'
+labels: '🐛 bug'
 assignees: ''
 ---
 
@@ -11,6 +11,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
+
 1. Create a resource '....'
 2. Run '....'
 3. See error
@@ -28,6 +29,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Additional context**
 Add any other context about the problem here.
+
 - Single or clustered Proxmox:
 - Provider version (ideally it should be the latest version):
 - Terraform version:
