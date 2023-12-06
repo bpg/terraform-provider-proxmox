@@ -354,8 +354,6 @@ func Container() *schema.Resource {
 								Type:             schema.TypeString,
 								ValidateDiagFunc: validator.MountType(),
 							},
-							DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
-							DiffSuppressOnRefresh: true,
 						},
 					},
 				},
@@ -1724,10 +1722,19 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 	}
 
 	features := containers.CustomFeatures{
-		Nesting:    &nesting,
-		KeyControl: &keyctl,
-		FUSE:       &fuse,
 		MountTypes: &mountTypesConverted,
+	}
+
+	if nesting {
+		features.Nesting = &nesting
+	}
+
+	if keyctl {
+		features.KeyControl = &keyctl
+	}
+
+	if fuse {
+		features.FUSE = &fuse
 	}
 
 	return &features, nil
