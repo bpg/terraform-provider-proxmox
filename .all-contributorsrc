@@ -6,7 +6,7 @@
   "files": [
     "README.md"
   ],
-  "imageSize": 100,
+  "imageSize": 50,
   "commit": false,
   "commitConvention": "angular",
   "contributors": [
@@ -625,7 +625,7 @@
       ]
     }
   ],
-  "contributorsPerLine": 7,
+  "contributorsPerLine": 14,
   "skipCi": false,
   "linkToUsage": true,
   "commitType": "docs"
