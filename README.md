@@ -236,9 +236,9 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-## Stargazers
+## Repository Metrics
 
-[![Star History Chart](https://api.star-history.com/svg?repos=bpg/terraform-provider-proxmox&type=Date)](https://star-history.com/#bpg/terraform-provider-proxmox&Date)
+<p align="center"><img src="/metrics.svg" alt="Metrics" width="400"></p>
 
 ## Sponsorship
 

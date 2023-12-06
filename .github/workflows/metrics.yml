@@ -3,8 +3,7 @@ name: metrics
 on:
   schedule: [{cron: "0 0 * * *"}]
   workflow_dispatch:
-#   push: {branches: ["main"]}
-  push: {}
+  push: {branches: ["main"]}
 
 jobs:
   github-metrics:
@@ -15,7 +14,7 @@ jobs:
       - uses: lowlighter/metrics@latest
         with:
             template: repository
-            filename: metrics.repository.svg
+            filename: metrics.svg
             user: bpg
             repo: terraform-provider-proxmox
             token: ${{ secrets.METRICS_TOKEN }}
