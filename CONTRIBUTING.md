@@ -117,6 +117,9 @@ You can run `make lint` to lint your code.
 
 We expect that all commit messages follow the
 [Conventional Commits](https://www.conventionalcommits.org/) specification.
+Please use the `feat`, `fix` or `chore` types for your commits, as they will
+be used to automatically generate the changelog. Other types will be ignored
+in the changelog.
 
 Please use the `scope` field to indicate the area of the codebase that is being
 changed. For example, `vm` for changes in the Virtual Machine resource, or
@@ -139,10 +142,11 @@ For example:
 feat(vm): add support for the `clone` operation
 ```
 
+### Developer Certificate of Origin
+
 In order for a code change to be accepted, you'll also have to accept the
 Developer Certificate of Origin (DCO).
-It's very lightweight, and you can find
-it [here](https://developercertificate.org).
+It's very lightweight, and you can find it [here](https://developercertificate.org).
 Accepting is accomplished by signing off on your commits, you can do this by
 adding a `Signed-off-by` line to your commit message, like here:
 
@@ -152,14 +156,18 @@ feat(vm): add support for the `clone` operation
 Signed-off-by: Random Developer <random@developer.example.org>
 ```
 
-Git has a built-in flag to append this line automatically:
+Please use your real name and a valid email address. If you'd like to keep your
+email address private, you can use a GitHub-provided `noreply`` email address.
+For more information, see "[Setting your commit email address.](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address#setting-your-commit-email-address-on-github)"
+
+If you set your `user.name` and `user.email` in Git, you can sign your commit
+automatically with the `-s` flag:
 
 ```shell
 > git commit -s -m 'feat(vm): add a cool new feature'
 ```
 
-You can find more details about the DCO checker in
-the [DCO app repo](https://github.com/dcoapp/app).
+You can find more details about the DCO checker in the [DCO app repo](https://github.com/dcoapp/app).
 
 ## Submitting changes
 
@@ -168,8 +176,7 @@ project's [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
 
 We usually squash all PRs commits on merge, and use the PR title as the commit
 message. Therefore, the PR title should follow the
-[Conventional Commits](https://www.conventionalcommits.org/) specification as
-well.
+[Conventional Commits](https://www.conventionalcommits.org/) specification as well.
 
 ## Releasing
 
@@ -178,7 +185,6 @@ by [release-please](https://github.com/googleapis/release-please) GitHub Action.
 creates a new release PR with the changelog and bumps the version based on the
 commit messages. The release PR is merged by the maintainers.
 
-The release will be published to the GitHub Releases page and the Terraform
-Registry.
+The release will be published to the GitHub Releases page and the Terraform Registry.
 
 We aim to release a new version every 1-2 weeks.
