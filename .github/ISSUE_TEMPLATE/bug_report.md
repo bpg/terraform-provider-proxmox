@@ -21,6 +21,12 @@ Steps to reproduce the behavior:
 
 Please also provide a minimal Terraform configuration that reproduces the issue.
 
+```hcl
+
+# >>> put your example here <<< #
+
+```
+
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 

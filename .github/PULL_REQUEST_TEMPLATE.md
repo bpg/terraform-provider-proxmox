@@ -11,6 +11,20 @@ Leave the [ ] if they are not applicable, or if you have not completed the item.
 You can find more information about coding conventions and local testing in the [CONTRIBUTING.md](https://github.com/bpg/terraform-provider-proxmox/blob/main/CONTRIBUTING.md) file.
 --->
 
+<!--
+*IF* your code contains breaking changes make sure to add `!` to the end of commit type, e.g.:
+```
+    feat(vm)!: add support for new feature 
+```
+Also, uncomment the section just below, and add a description of the breaking change. 
+--->
+
+<!---
+#### ⚠ BREAKING CHANGES
+
+>>> Put your description here <<<
+--->
+
 ### Proof of Work
 <!--- 
 Please add screenshots, logs, or other relevant information that demonstrates the change works as expected.

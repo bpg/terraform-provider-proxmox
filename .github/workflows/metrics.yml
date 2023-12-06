@@ -1,0 +1,26 @@
+name: metrics
+
+on:
+  schedule: [{cron: "0 0 * * *"}]
+  workflow_dispatch:
+  push: {branches: ["main"]}
+
+jobs:
+  github-metrics:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: lowlighter/metrics@latest
+        with:
+            template: repository
+            filename: metrics.svg
+            user: bpg
+            repo: terraform-provider-proxmox
+            token: ${{ secrets.METRICS_TOKEN }}
+            plugin_lines: yes
+            plugin_followup: yes
+            plugin_stargazers: yes
+            plugin_stargazers_days: 0
+            plugin_stargazers_charts_type: graph
+
