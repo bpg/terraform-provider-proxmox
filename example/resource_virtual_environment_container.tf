@@ -6,6 +6,13 @@ resource "proxmox_virtual_environment_container" "example_template" {
     size         = 10
   }
 
+  mount_point {
+    // volume mount
+    volume = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+    size   = "4G"
+    path   = "mnt/local"
+  }
+
   initialization {
     dns {
       server = "1.1.1.1"
@@ -63,6 +70,7 @@ resource "proxmox_virtual_environment_container" "example" {
   }
 
   mount_point {
+    // bind mount, requires root@pam
     volume = "/mnt/bindmounts/shared"
     path    = "/shared"
   }
