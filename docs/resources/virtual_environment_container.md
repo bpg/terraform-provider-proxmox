@@ -47,8 +47,16 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   }
 
   mount_point {
+    # bind mount, *requires* root@pam authentication
     volume = "/mnt/bindmounts/shared"
-    path   = "/shared"
+    path   = "/mnt/shared"
+  }
+
+  mount_point {
+    # volume mount, a new volume will be created by PVE
+    volume = "local-lvm"
+    size   = "10G"
+    path   = "/mnt/volume"
   }
 
 }
@@ -155,7 +163,7 @@ output "ubuntu_container_public_key" {
   - `replicate` (Optional) Will include this volume to a storage replica job.
   - `shared` (Optional) Mark this non-volume mount point as available on all
       nodes.
-  - `size` (Optional) Volume size (only for ZFS storage backed mount points).
+  - `size` (Optional) Volume size (only for volume mount points).
       Can be specified with a unit suffix (e.g. `10G`).
   - `volume` (Required) Volume, device or directory to mount into the
       container.

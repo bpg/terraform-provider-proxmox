@@ -51,6 +51,7 @@ const (
 	dvResourceVirtualEnvironmentContainerMemorySwap                        = 0
 	dvResourceVirtualEnvironmentContainerMountPointACL                     = false
 	dvResourceVirtualEnvironmentContainerMountPointBackup                  = true
+	dvResourceVirtualEnvironmentContainerMountPointPath                    = ""
 	dvResourceVirtualEnvironmentContainerMountPointQuota                   = false
 	dvResourceVirtualEnvironmentContainerMountPointReadOnly                = false
 	dvResourceVirtualEnvironmentContainerMountPointReplicate               = true
@@ -576,10 +577,17 @@ func Container() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "Path to the mount point as seen from inside the container",
 							Required:    true,
+							// StateFunc: func(i interface{}) string {
+							// 	// PVE strips leading slashes from the path, so we have to do the same
+							// 	return strings.TrimPrefix(i.(string), "/")
+							// },
+							DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+								return "/"+oldVal == newVal
+							},
 						},
 						mkResourceVirtualEnvironmentContainerMountPointQuota: {
 							Type:        schema.TypeBool,
-							Description: "Enable user quotas inside the container (not supported with zfs subvolumes)",
+							Description: "Enable user quotas inside the container (not supported with volume mounts)",
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentContainerMountPointQuota,
 						},
@@ -612,6 +620,16 @@ func Container() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "Volume, device or directory to mount into the container",
 							Required:    true,
+							DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+								// For *new* volume mounts PVE returns an actual volume ID which is saved in the stare,
+								// so on reapply the provider will try override it:"
+								//   "local-lvm" -> "local-lvm:vm-101-disk-1"
+								//   "local-lvm:8" -> "local-lvm:vm-101-disk-1"
+								// There is also an option to mount an existing volume, so
+								//   "local-lvm:vm-101-disk-1" -> "local-lvm:vm-101-disk-1"
+								// which is a valid case.
+								return oldVal == newVal || strings.HasPrefix(oldVal, strings.Split(newVal, ":")[0]+":")
+							},
 						},
 					},
 				},
@@ -1330,6 +1348,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	mountPoint := d.Get(mkResourceVirtualEnvironmentContainerMountPoint).([]interface{})
 	mountPointArray := make(containers.CustomMountPointArray, 0, len(mountPoint))
 
+	// because of default bool values:
+	//nolint:gosimple
 	for _, mp := range mountPoint {
 		mountPointMap := mp.(map[string]interface{})
 		mountPointObject := containers.CustomMountPoint{}
@@ -1345,13 +1365,34 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		size := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointSize].(string)
 		volume := mountPointMap[mkResourceVirtualEnvironmentContainerMountPointVolume].(string)
 
-		mountPointObject.ACL = &acl
-		mountPointObject.Backup = &backup
-		mountPointObject.MountPoint = path
-		mountPointObject.Quota = &quota
-		mountPointObject.ReadOnly = &readOnly
-		mountPointObject.Replicate = &replicate
-		mountPointObject.Shared = &shared
+		// we have to set only the values that are different from the provider's defaults,
+		if acl != dvResourceVirtualEnvironmentContainerMountPointACL {
+			mountPointObject.ACL = &acl
+		}
+
+		if backup != dvResourceVirtualEnvironmentContainerMountPointBackup {
+			mountPointObject.Backup = &backup
+		}
+
+		if path != dvResourceVirtualEnvironmentContainerMountPointPath {
+			mountPointObject.MountPoint = path
+		}
+
+		if quota != dvResourceVirtualEnvironmentContainerMountPointQuota {
+			mountPointObject.Quota = &quota
+		}
+
+		if readOnly != dvResourceVirtualEnvironmentContainerMountPointReadOnly {
+			mountPointObject.ReadOnly = &readOnly
+		}
+
+		if replicate != dvResourceVirtualEnvironmentContainerMountPointReplicate {
+			mountPointObject.Replicate = &replicate
+		}
+
+		if shared != dvResourceVirtualEnvironmentContainerMountPointShared {
+			mountPointObject.Shared = &shared
+		}
 
 		if len(size) > 0 {
 			var ds types.DiskSize
