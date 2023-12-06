@@ -1,8 +1,11 @@
+name: release-please
+
 on:
   push:
     branches:
       - main
-name: release-please
+  workflow_dispatch: {}
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -11,6 +14,7 @@ jobs:
         with:
           token: ${{ secrets.BOT_TOKEN }}
           release-type: go
+          bump-minor-pre-major: true
           extra-files: |
             Makefile
           skip-github-release: false
