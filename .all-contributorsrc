@@ -623,6 +623,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "redpimpernel",
+      "name": "redpimpernel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50511476?v=4",
+      "profile": "https://github.com/redpimpernel",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 14,
