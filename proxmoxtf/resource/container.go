@@ -351,7 +351,7 @@ func Container() *schema.Resource {
 							Description: "List of allowed mount types",
 							Optional:    true,
 							Elem: &schema.Schema{
-								Type:         schema.TypeString,
+								Type:             schema.TypeString,
 								ValidateDiagFunc: validator.MountType(),
 							},
 							DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
@@ -1705,7 +1705,7 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 		true,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting container features from schema: %w", err)
 	}
 
 	nesting := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesNesting].(bool))
@@ -1713,26 +1713,21 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 	fuse := types.CustomBool(featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesFUSE].(bool))
 	mountTypes := featuresBlock[mkResourceVirtualEnvironmentContainerFeaturesMountTypes].([]interface{})
 
-	features := containers.CustomFeatures{}
-
-	if nesting {
-		features.Nesting = &nesting
-	}
-
-	if keyctl {
-		features.KeyControl = &keyctl
-	}
-
-	if fuse {
-		features.FUSE = &fuse
-	}
-
+	var mountTypesConverted []string
 	if mountTypes != nil {
-		mountTypesConverted := make([]string, len(mountTypes))
+		mountTypesConverted = make([]string, len(mountTypes))
 		for i, mountType := range mountTypes {
 			mountTypesConverted[i] = mountType.(string)
 		}
-		features.MountTypes = &mountTypesConverted
+	} else {
+		mountTypesConverted = []string{}
+	}
+
+	features := containers.CustomFeatures{
+		Nesting:    &nesting,
+		KeyControl: &keyctl,
+		FUSE:       &fuse,
+		MountTypes: &mountTypesConverted,
 	}
 
 	return &features, nil
