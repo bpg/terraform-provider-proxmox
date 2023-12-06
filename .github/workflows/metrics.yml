@@ -14,8 +14,14 @@ jobs:
     steps:
       - uses: lowlighter/metrics@latest
         with:
+            template: repository
+            filename: metrics.repository.svg
+            user: bpg
+            repo: terraform-provider-proxmox
             token: ${{ secrets.METRICS_TOKEN }}
-            base: ""
+            plugin_lines: yes
+            plugin_followup: yes
             plugin_stargazers: yes
+            plugin_stargazers_days: 0
             plugin_stargazers_charts_type: graph
 
