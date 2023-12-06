@@ -623,9 +623,28 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "redpimpernel",
+      "name": "redpimpernel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50511476?v=4",
+      "profile": "https://github.com/redpimpernel",
+      "contributions": [
+        "test"
+      ]
+    },
+    {
+      "login": "dylanbegin",
+      "name": "Dylan Begin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/64234261?v=4",
+      "profile": "https://github.com/dylanbegin",
+      "contributions": [
+        "bug",
+        "test"
+      ]
     }
   ],
-  "contributorsPerLine": 14,
+  "contributorsPerLine": 8,
   "skipCi": false,
   "linkToUsage": true,
   "commitType": "docs"
