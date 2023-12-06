@@ -1,0 +1,21 @@
+name: metrics
+
+on:
+  schedule: [{cron: "0 0 * * *"}]
+  workflow_dispatch:
+#   push: {branches: ["main"]}
+  push: {}
+
+jobs:
+  github-metrics:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: lowlighter/metrics@latest
+        with:
+            token: ${{ secrets.METRICS_TOKEN }}
+            base: ""
+            plugin_stargazers: yes
+            plugin_stargazers_charts_type: graph
+
