@@ -238,7 +238,9 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
 
 ## Repository Metrics
 
-<p align="center"><img src="/metrics.svg" alt="Metrics" width="400"></p>
+<picture>
+  <img src="https://gist.githubusercontent.com/bpg/2cc44ead81225542ed1ef0303d8f9eb9/raw/metrics.svg?p" alt="Metrics">
+</picture>
 
 ## Sponsorship
 
