@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.40.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.39.0...v0.40.0) (2023-12-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lxc:** allow to update `features`, add mount type support ([#765](https://github.com/bpg/terraform-provider-proxmox/issues/765))
+
+### Features
+
+* **lxc:** allow to update `features`, add mount type support ([#765](https://github.com/bpg/terraform-provider-proxmox/issues/765)) ([8bf2609](https://github.com/bpg/terraform-provider-proxmox/commit/8bf26099e0da5db85f1997789cb867aa11db9906))
+* **vm:** Add support for setting the VM TPM State device ([#743](https://github.com/bpg/terraform-provider-proxmox/issues/743)) ([66bba2a](https://github.com/bpg/terraform-provider-proxmox/commit/66bba2a0275e2e9e3a2c5c2de7414d89be89a53c))
+
+
+### Bug Fixes
+
+* **docs:** add more details about local testing of the provider ([#698](https://github.com/bpg/terraform-provider-proxmox/issues/698)) ([f1450cb](https://github.com/bpg/terraform-provider-proxmox/commit/f1450cb6dd13e291ce885130f0550cd26e97e99f))
+* **lxc:** description is always showed as changed ([#762](https://github.com/bpg/terraform-provider-proxmox/issues/762)) ([d1f2093](https://github.com/bpg/terraform-provider-proxmox/commit/d1f2093d3977ff9d30b1af95f97e1fe601d22991))
+* **lxc:** fixes for datastore-backed volume mounts ([#772](https://github.com/bpg/terraform-provider-proxmox/issues/772)) ([25deebb](https://github.com/bpg/terraform-provider-proxmox/commit/25deebba265ccea0031ea2261ee2e03f1c09f5d7))
+
+
+### Miscellaneous
+
+* configure vscode's linter to use proper .golangci.yml file ([#774](https://github.com/bpg/terraform-provider-proxmox/issues/774)) ([d0f43e1](https://github.com/bpg/terraform-provider-proxmox/commit/d0f43e1497325a5aafd915771c5da5d99f2c7ead))
+* **deps:** bump github.com/brianvoe/gofakeit/v6 from 6.25.0 to 6.26.0 ([#775](https://github.com/bpg/terraform-provider-proxmox/issues/775)) ([006b5e9](https://github.com/bpg/terraform-provider-proxmox/commit/006b5e9caa51a24ae3a573abdb3bd7e21506e974))
+* **docs:** update CONTRIBUTING.md and other project docs ([#771](https://github.com/bpg/terraform-provider-proxmox/issues/771)) ([7505b37](https://github.com/bpg/terraform-provider-proxmox/commit/7505b377087f08773c88819d287364c0f5be8d20))
+* **docs:** update PR and issue templates ([#777](https://github.com/bpg/terraform-provider-proxmox/issues/777)) ([54288dd](https://github.com/bpg/terraform-provider-proxmox/commit/54288ddd76c4e96542921123c2f081aff51075be))
+
 ## [0.39.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.38.1...v0.39.0) (2023-11-30)
 
 
