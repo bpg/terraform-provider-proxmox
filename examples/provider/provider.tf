@@ -1,6 +1,6 @@
 terraform {
   required_providers {
-    datadog = {
+    proxmox = {
       source = "bpg/proxmox"
     }
   }
