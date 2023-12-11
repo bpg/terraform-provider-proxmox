@@ -28,7 +28,7 @@ jobs:
               - '**/*.go'
               - 'tools/go.mod'
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         if: steps.filter.outputs.go == 'true'
         with:
           go-version-file: 'go.mod'

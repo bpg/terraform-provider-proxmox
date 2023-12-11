@@ -27,7 +27,7 @@ jobs:
 
       - name: Set up Go
         if: steps.filter.outputs.go == 'true'
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
 
@@ -58,7 +58,7 @@ jobs:
 
       - name: Set up Go
         if: steps.filter.outputs.go == 'true'
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
 
