@@ -642,6 +642,15 @@
         "bug",
         "test"
       ]
+    },
+    {
+      "login": "ActualTrash",
+      "name": "Chase H",
+      "avatar_url": "https://avatars.githubusercontent.com/u/31072505?v=4",
+      "profile": "https://github.com/ActualTrash",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 8,
