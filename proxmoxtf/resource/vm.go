@@ -138,7 +138,7 @@ const (
 	dvResourceVirtualEnvironmentVMVGAType                           = "std"
 	dvResourceVirtualEnvironmentVMSCSIHardware                      = "virtio-scsi-pci"
 	dvResourceVirtualEnvironmentVMStopOnDestroy                     = false
-	dvResourceVirtualEnvironmentVMHookScript = ""
+	dvResourceVirtualEnvironmentVMHookScript                        = ""
 
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
 	maxResourceVirtualEnvironmentVMNetworkDevices = 8
@@ -1759,6 +1759,7 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 	tflog.Debug(ctx, "Stopping VM")
 
 	stopTimeout := d.Get(mkResourceVirtualEnvironmentVMTimeoutStopVM).(int)
+
 	e := vmAPI.StopVM(ctx, stopTimeout+30)
 	if e != nil {
 		return diag.FromErr(e)
