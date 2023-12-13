@@ -151,6 +151,7 @@ output "ubuntu_vm_public_key" {
       Sometimes Proxmox errors with timeout when creating multiple clones at
       once.
   - `vm_id` - (Required) The identifier for the source VM.
+  - `full` - (Optional) Full or linked clone (defaults to `true`).
 - `cpu` - (Optional) The CPU configuration.
   - `architecture` - (Optional) The CPU architecture (defaults to `x86_64`).
     - `aarch64` - ARM (64 bit).
