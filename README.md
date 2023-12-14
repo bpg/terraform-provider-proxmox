@@ -221,6 +221,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/ActualTrash"><img src="https://avatars.githubusercontent.com/u/31072505?v=4?s=50" width="50px;" alt="Chase H"/><br /><sub><b>Chase H</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ActualTrash" title="Code">💻</a></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/zmingxie"><img src="https://avatars.githubusercontent.com/u/1136583?v=4?s=50" width="50px;" alt="Ming Xie"/><br /><sub><b>Ming Xie</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=zmingxie" title="Code">💻</a></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/frostyfab"><img src="https://avatars.githubusercontent.com/u/140175283?v=4?s=50" width="50px;" alt="frostyfab"/><br /><sub><b>frostyfab</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=frostyfab" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/joek-office"><img src="https://avatars.githubusercontent.com/u/124031385?v=4?s=50" width="50px;" alt="joek-office"/><br /><sub><b>joek-office</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Ajoek-office" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>
