@@ -660,6 +660,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "frostyfab",
+      "name": "frostyfab",
+      "avatar_url": "https://avatars.githubusercontent.com/u/140175283?v=4",
+      "profile": "https://github.com/frostyfab",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 8,
