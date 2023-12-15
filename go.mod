@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/brianvoe/gofakeit/v6 v6.26.0
+	github.com/brianvoe/gofakeit/v6 v6.26.3
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.4.0
