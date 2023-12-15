@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/brianvoe/gofakeit/v6 v6.26.0
+	github.com/brianvoe/gofakeit/v6 v6.26.3
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.4.0
@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0
 	github.com/hashicorp/terraform-plugin-go v0.20.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
-	github.com/hashicorp/terraform-plugin-mux v0.12.0
+	github.com/hashicorp/terraform-plugin-mux v0.13.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.30.0
 	github.com/pkg/sftp v1.13.6
 	github.com/skeema/knownhosts v1.2.1
