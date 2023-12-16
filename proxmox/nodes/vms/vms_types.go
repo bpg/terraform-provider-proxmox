@@ -187,8 +187,8 @@ type CustomStorageDevice struct {
 }
 
 // PathInDatastore returns path part of FileVolume or nil if it is not yet allocated.
-func (r CustomStorageDevice) PathInDatastore() *string {
-	probablyDatastoreID, pathInDatastore, hasDatastoreID := strings.Cut(r.FileVolume, ":")
+func (d CustomStorageDevice) PathInDatastore() *string {
+	probablyDatastoreID, pathInDatastore, hasDatastoreID := strings.Cut(d.FileVolume, ":")
 	if !hasDatastoreID {
 		// when no ':' separator is found, 'Cut' places the whole string to 'probablyDatastoreID',
 		// we want it in 'pathInDatastore' (as it is absolute filesystem path)
@@ -215,8 +215,8 @@ func (r CustomStorageDevice) PathInDatastore() *string {
 }
 
 // IsOwnedBy returns true, if CustomStorageDevice is owned by given VM. Not yet allocated volumes are not owned by any VM.
-func (r CustomStorageDevice) IsOwnedBy(vmID int) bool {
-	pathInDatastore := r.PathInDatastore()
+func (d CustomStorageDevice) IsOwnedBy(vmID int) bool {
+	pathInDatastore := d.PathInDatastore()
 	if pathInDatastore == nil {
 		// not yet allocated volume, consider disk not owned by any VM
 		// NOTE: if needed, create IsOwnedByOtherThan(vmId) instead of changing this return value.
@@ -234,6 +234,12 @@ func (r CustomStorageDevice) IsOwnedBy(vmID int) bool {
 	}
 
 	return false
+}
+
+// IsCloudInitDrive returns true, if CustomStorageDevice is a cloud-init drive.
+func (d CustomStorageDevice) IsCloudInitDrive(vmID int) bool {
+	return d.Media != nil && *d.Media == "cdrom" &&
+		strings.Contains(d.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID))
 }
 
 // CustomStorageDevices handles QEMU SATA device parameters.

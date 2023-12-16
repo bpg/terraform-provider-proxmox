@@ -1662,10 +1662,7 @@ func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, default
 		vmConfig.IDEDevice0, vmConfig.IDEDevice1, vmConfig.IDEDevice2, vmConfig.IDEDevice3,
 	}
 	for i, device := range devices {
-		if device != nil && device.Enabled && device.Media != nil && *device.Media == "cdrom" && strings.Contains(
-			device.FileVolume,
-			fmt.Sprintf("vm-%d-cloudinit", vmID),
-		) {
+		if device != nil && device.Enabled && device.IsCloudInitDrive(vmID) {
 			return fmt.Sprintf("ide%d", i)
 		}
 	}
@@ -4110,7 +4107,7 @@ func vmReadCustom(
 			continue
 		}
 
-		if strings.HasSuffix(dd.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID)) {
+		if dd.IsCloudInitDrive(vmID) {
 			continue
 		}
 
