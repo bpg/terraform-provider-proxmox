@@ -9,6 +9,7 @@ package vms
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -61,6 +62,60 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			require.Equal(t, tt.want, r)
+		})
+	}
+}
+
+func TestCustomStorageDevice_IsCloudInitDrive(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		device CustomStorageDevice
+		want   bool
+	}{
+		{
+			name: "simple volume",
+			device: CustomStorageDevice{
+				FileVolume: "local-lvm:vm-131-disk-0",
+			},
+			want: false,
+		}, {
+			name: "on directory storage",
+			device: CustomStorageDevice{
+				Media:      types.StrPtr("cdrom"),
+				FileVolume: "local:131/vm-131-cloudinit.qcow2",
+			},
+			want: true,
+		}, {
+			name: "on block storage",
+			device: CustomStorageDevice{
+				Media:      types.StrPtr("cdrom"),
+				FileVolume: "local-lvm:vm-131-cloudinit",
+			},
+			want: true,
+		}, {
+			name: "wrong VM ID",
+			device: CustomStorageDevice{
+				Media:      types.StrPtr("cdrom"),
+				FileVolume: "local-lvm:vm-123-cloudinit",
+			},
+			want: false,
+		}, {
+			name: "not a cdrom",
+			device: CustomStorageDevice{
+				FileVolume: "local-lvm:vm-123-cloudinit",
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := tt.device.IsCloudInitDrive(131)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

@@ -1160,73 +1160,73 @@ func (r CustomStartupOrder) EncodeValues(key string, v *url.Values) error {
 }
 
 // EncodeValues converts a CustomStorageDevice struct to a URL vlaue.
-func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
+func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
-		fmt.Sprintf("file=%s", r.FileVolume),
+		fmt.Sprintf("file=%s", d.FileVolume),
 	}
 
-	if r.AIO != nil {
-		values = append(values, fmt.Sprintf("aio=%s", *r.AIO))
+	if d.AIO != nil {
+		values = append(values, fmt.Sprintf("aio=%s", *d.AIO))
 	}
 
-	if r.BackupEnabled != nil {
-		if *r.BackupEnabled {
+	if d.BackupEnabled != nil {
+		if *d.BackupEnabled {
 			values = append(values, "backup=1")
 		} else {
 			values = append(values, "backup=0")
 		}
 	}
 
-	if r.BurstableReadSpeedMbps != nil {
-		values = append(values, fmt.Sprintf("mbps_rd_max=%d", *r.BurstableReadSpeedMbps))
+	if d.BurstableReadSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_rd_max=%d", *d.BurstableReadSpeedMbps))
 	}
 
-	if r.BurstableWriteSpeedMbps != nil {
-		values = append(values, fmt.Sprintf("mbps_wr_max=%d", *r.BurstableWriteSpeedMbps))
+	if d.BurstableWriteSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_wr_max=%d", *d.BurstableWriteSpeedMbps))
 	}
 
-	if r.Format != nil {
-		values = append(values, fmt.Sprintf("format=%s", *r.Format))
+	if d.Format != nil {
+		values = append(values, fmt.Sprintf("format=%s", *d.Format))
 	}
 
-	if r.MaxReadSpeedMbps != nil {
-		values = append(values, fmt.Sprintf("mbps_rd=%d", *r.MaxReadSpeedMbps))
+	if d.MaxReadSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_rd=%d", *d.MaxReadSpeedMbps))
 	}
 
-	if r.MaxWriteSpeedMbps != nil {
-		values = append(values, fmt.Sprintf("mbps_wr=%d", *r.MaxWriteSpeedMbps))
+	if d.MaxWriteSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_wr=%d", *d.MaxWriteSpeedMbps))
 	}
 
-	if r.Media != nil {
-		values = append(values, fmt.Sprintf("media=%s", *r.Media))
+	if d.Media != nil {
+		values = append(values, fmt.Sprintf("media=%s", *d.Media))
 	}
 
-	if r.Size != nil {
-		values = append(values, fmt.Sprintf("size=%s", *r.Size))
+	if d.Size != nil {
+		values = append(values, fmt.Sprintf("size=%s", *d.Size))
 	}
 
-	if r.IOThread != nil {
-		if *r.IOThread {
+	if d.IOThread != nil {
+		if *d.IOThread {
 			values = append(values, "iothread=1")
 		} else {
 			values = append(values, "iothread=0")
 		}
 	}
 
-	if r.SSD != nil {
-		if *r.SSD {
+	if d.SSD != nil {
+		if *d.SSD {
 			values = append(values, "ssd=1")
 		} else {
 			values = append(values, "ssd=0")
 		}
 	}
 
-	if r.Discard != nil && *r.Discard != "" {
-		values = append(values, fmt.Sprintf("discard=%s", *r.Discard))
+	if d.Discard != nil && *d.Discard != "" {
+		values = append(values, fmt.Sprintf("discard=%s", *d.Discard))
 	}
 
-	if r.Cache != nil && *r.Cache != "" {
-		values = append(values, fmt.Sprintf("cache=%s", *r.Cache))
+	if d.Cache != nil && *d.Cache != "" {
+		values = append(values, fmt.Sprintf("cache=%s", *d.Cache))
 	}
 
 	v.Add(key, strings.Join(values, ","))
@@ -1235,8 +1235,8 @@ func (r CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 }
 
 // EncodeValues converts a CustomStorageDevices array to multiple URL values.
-func (r CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
-	for s, d := range r {
+func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
+	for s, d := range d {
 		if d.Enabled {
 			if err := d.EncodeValues(s, v); err != nil {
 				return fmt.Errorf("error encoding storage device %s: %w", s, err)
@@ -1907,7 +1907,7 @@ func (r *CustomStartupOrder) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalJSON converts a CustomStorageDevice string to an object.
-func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
+func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	var s string
 
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -1921,24 +1921,24 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 
 		//nolint:nestif
 		if len(v) == 1 {
-			r.FileVolume = v[0]
+			d.FileVolume = v[0]
 
 			ext := filepath.Ext(v[0])
 			if ext != "" {
 				format := string([]byte(ext)[1:])
-				r.Format = &format
+				d.Format = &format
 			}
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "aio":
-				r.AIO = &v[1]
+				d.AIO = &v[1]
 
 			case "backup":
 				bv := types.CustomBool(v[1] == "1")
-				r.BackupEnabled = &bv
+				d.BackupEnabled = &bv
 
 			case "file":
-				r.FileVolume = v[1]
+				d.FileVolume = v[1]
 
 			case "mbps_rd":
 				iv, err := strconv.Atoi(v[1])
@@ -1946,59 +1946,59 @@ func (r *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 					return fmt.Errorf("failed to convert mbps_rd to int: %w", err)
 				}
 
-				r.MaxReadSpeedMbps = &iv
+				d.MaxReadSpeedMbps = &iv
 			case "mbps_rd_max":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
 					return fmt.Errorf("failed to convert mbps_rd_max to int: %w", err)
 				}
 
-				r.BurstableReadSpeedMbps = &iv
+				d.BurstableReadSpeedMbps = &iv
 			case "mbps_wr":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
 					return fmt.Errorf("failed to convert mbps_wr to int: %w", err)
 				}
 
-				r.MaxWriteSpeedMbps = &iv
+				d.MaxWriteSpeedMbps = &iv
 			case "mbps_wr_max":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
 					return fmt.Errorf("failed to convert mbps_wr_max to int: %w", err)
 				}
 
-				r.BurstableWriteSpeedMbps = &iv
+				d.BurstableWriteSpeedMbps = &iv
 			case "media":
-				r.Media = &v[1]
+				d.Media = &v[1]
 
 			case "size":
-				r.Size = new(types.DiskSize)
-				err := r.Size.UnmarshalJSON([]byte(v[1]))
+				d.Size = new(types.DiskSize)
+				err := d.Size.UnmarshalJSON([]byte(v[1]))
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)
 				}
 
 			case "format":
-				r.Format = &v[1]
+				d.Format = &v[1]
 
 			case "iothread":
 				bv := types.CustomBool(v[1] == "1")
-				r.IOThread = &bv
+				d.IOThread = &bv
 
 			case "ssd":
 				bv := types.CustomBool(v[1] == "1")
-				r.SSD = &bv
+				d.SSD = &bv
 
 			case "discard":
-				r.Discard = &v[1]
+				d.Discard = &v[1]
 
 			case "cache":
-				r.Cache = &v[1]
+				d.Cache = &v[1]
 			}
 		}
 	}
 
-	r.Enabled = true
+	d.Enabled = true
 
 	return nil
 }
