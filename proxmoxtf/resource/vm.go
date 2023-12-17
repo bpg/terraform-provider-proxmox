@@ -56,6 +56,7 @@ const (
 	dvResourceVirtualEnvironmentVMCPUArchitecture                   = "x86_64"
 	dvResourceVirtualEnvironmentVMCPUCores                          = 1
 	dvResourceVirtualEnvironmentVMCPUHotplugged                     = 0
+	dvResourceVirtualEnvironmentVMCPULimit                          = 0
 	dvResourceVirtualEnvironmentVMCPUNUMA                           = false
 	dvResourceVirtualEnvironmentVMCPUSockets                        = 1
 	dvResourceVirtualEnvironmentVMCPUType                           = "qemu64"
@@ -175,6 +176,7 @@ const (
 	mkResourceVirtualEnvironmentVMCPUCores                          = "cores"
 	mkResourceVirtualEnvironmentVMCPUFlags                          = "flags"
 	mkResourceVirtualEnvironmentVMCPUHotplugged                     = "hotplugged"
+	mkResourceVirtualEnvironmentVMCPULimit                          = "limit"
 	mkResourceVirtualEnvironmentVMCPUNUMA                           = "numa"
 	mkResourceVirtualEnvironmentVMCPUSockets                        = "sockets"
 	mkResourceVirtualEnvironmentVMCPUType                           = "type"
@@ -526,8 +528,9 @@ func VM() *schema.Resource {
 							mkResourceVirtualEnvironmentVMCPUArchitecture: dvResourceVirtualEnvironmentVMCPUArchitecture,
 							mkResourceVirtualEnvironmentVMCPUCores:        dvResourceVirtualEnvironmentVMCPUCores,
 							mkResourceVirtualEnvironmentVMCPUFlags:        []interface{}{},
-							mkResourceVirtualEnvironmentVMCPUNUMA:         dvResourceVirtualEnvironmentVMCPUNUMA,
 							mkResourceVirtualEnvironmentVMCPUHotplugged:   dvResourceVirtualEnvironmentVMCPUHotplugged,
+							mkResourceVirtualEnvironmentVMCPULimit:        dvResourceVirtualEnvironmentVMCPULimit,
+							mkResourceVirtualEnvironmentVMCPUNUMA:         dvResourceVirtualEnvironmentVMCPUNUMA,
 							mkResourceVirtualEnvironmentVMCPUSockets:      dvResourceVirtualEnvironmentVMCPUSockets,
 							mkResourceVirtualEnvironmentVMCPUType:         dvResourceVirtualEnvironmentVMCPUType,
 							mkResourceVirtualEnvironmentVMCPUUnits:        dvResourceVirtualEnvironmentVMCPUUnits,
@@ -565,6 +568,15 @@ func VM() *schema.Resource {
 							Optional:         true,
 							Default:          dvResourceVirtualEnvironmentVMCPUHotplugged,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
+						},
+						mkResourceVirtualEnvironmentVMCPULimit: {
+							Type:        schema.TypeInt,
+							Description: "Limit of CPU usage",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentVMCPULimit,
+							ValidateDiagFunc: validation.ToDiagFunc(
+								validation.IntBetween(0, 128),
+							),
 						},
 						mkResourceVirtualEnvironmentVMCPUNUMA: {
 							Type:        schema.TypeBool,
@@ -2028,6 +2040,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
+		cpuLimit := cpuBlock[mkResourceVirtualEnvironmentVMCPULimit].(int)
 		cpuNUMA := types.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
@@ -2056,6 +2069,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
+		}
+
+		if cpuLimit > 0 {
+			updateBody.CPULimit = &cpuLimit
 		}
 	}
 
@@ -2504,6 +2521,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 	cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 	cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
+	cpuLimit := cpuBlock[mkResourceVirtualEnvironmentVMCPULimit].(int)
 	cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 	cpuNUMA := types.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 	cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
@@ -2777,6 +2795,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if cpuHotplugged > 0 {
 		createBody.VirtualCPUCount = &cpuHotplugged
+	}
+
+	if cpuLimit > 0 {
+		createBody.CPULimit = &cpuLimit
 	}
 
 	if description != "" {
@@ -4041,6 +4063,13 @@ func vmReadCustom(
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] = 0
 	}
 
+	if vmConfig.CPULimit != nil {
+		cpu[mkResourceVirtualEnvironmentVMCPULimit] = *vmConfig.CPULimit
+	} else {
+		// Default value of "cpulimit" is "0" according to the API documentation.
+		cpu[mkResourceVirtualEnvironmentVMCPULimit] = 0
+	}
+
 	if vmConfig.NUMAEnabled != nil {
 		cpu[mkResourceVirtualEnvironmentVMCPUNUMA] = *vmConfig.NUMAEnabled
 	} else {
@@ -4094,6 +4123,7 @@ func vmReadCustom(
 		cpu[mkResourceVirtualEnvironmentVMCPUCores] != dvResourceVirtualEnvironmentVMCPUCores ||
 		len(cpu[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})) > 0 ||
 		cpu[mkResourceVirtualEnvironmentVMCPUHotplugged] != dvResourceVirtualEnvironmentVMCPUHotplugged ||
+		cpu[mkResourceVirtualEnvironmentVMCPULimit] != dvResourceVirtualEnvironmentVMCPULimit ||
 		cpu[mkResourceVirtualEnvironmentVMCPUSockets] != dvResourceVirtualEnvironmentVMCPUSockets ||
 		cpu[mkResourceVirtualEnvironmentVMCPUType] != dvResourceVirtualEnvironmentVMCPUType ||
 		cpu[mkResourceVirtualEnvironmentVMCPUUnits] != dvResourceVirtualEnvironmentVMCPUUnits {
@@ -5559,6 +5589,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuCores := cpuBlock[mkResourceVirtualEnvironmentVMCPUCores].(int)
 		cpuFlags := cpuBlock[mkResourceVirtualEnvironmentVMCPUFlags].([]interface{})
 		cpuHotplugged := cpuBlock[mkResourceVirtualEnvironmentVMCPUHotplugged].(int)
+		cpuLimit := cpuBlock[mkResourceVirtualEnvironmentVMCPULimit].(int)
 		cpuNUMA := types.CustomBool(cpuBlock[mkResourceVirtualEnvironmentVMCPUNUMA].(bool))
 		cpuSockets := cpuBlock[mkResourceVirtualEnvironmentVMCPUSockets].(int)
 		cpuType := cpuBlock[mkResourceVirtualEnvironmentVMCPUType].(string)
@@ -5579,6 +5610,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			updateBody.VirtualCPUCount = &cpuHotplugged
 		} else {
 			del = append(del, "vcpus")
+		}
+
+		if cpuLimit > 0 {
+			updateBody.CPULimit = &cpuLimit
+		} else {
+			del = append(del, "cpulimit")
 		}
 
 		cpuFlagsConverted := make([]string, len(cpuFlags))
