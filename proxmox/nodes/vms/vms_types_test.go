@@ -133,12 +133,7 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			name: "id only pci device",
 			line: `"0000:81:00.2"`,
 			want: &CustomPCIDevice{
-				DeviceIDs:  &[]string{"0000:81:00.2"},
-				MDev:       nil,
-				PCIExpress: types.BoolPtr(false),
-				ROMBAR:     types.BoolPtr(true),
-				ROMFile:    nil,
-				XVGA:       types.BoolPtr(false),
+				DeviceIDs: &[]string{"0000:81:00.2"},
 			},
 		},
 		{
@@ -176,6 +171,7 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			require.Equal(t, tt.want, r)
 		})
 	}
 }
