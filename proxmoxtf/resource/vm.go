@@ -4388,7 +4388,7 @@ func vmReadCustom(
 		pciMap[pi] = pci
 	}
 
-	if len(pciMap) > 0 {
+	if len(clone) == 0 || len(currentPCIList) > 0 {
 		orderedPCIList := orderedListFromMap(pciMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)
@@ -4426,7 +4426,7 @@ func vmReadCustom(
 		usbMap[pi] = usb
 	}
 
-	if len(currentUSBList) > 0 {
+	if len(clone) == 0 || len(currentUSBList) > 0 {
 		// todo: reordering of devices by PVE may cause an issue here
 		orderedUSBList := orderedListFromMap(usbMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMHostUSB, orderedUSBList)

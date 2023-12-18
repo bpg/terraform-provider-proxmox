@@ -1709,12 +1709,6 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 		if len(v) == 1 {
 			dIds := strings.Split(v[0], ";")
 			r.DeviceIDs = &dIds
-			rombarValue := types.CustomBool(true)
-			r.ROMBAR = &rombarValue
-			pciExpressValue := types.CustomBool(false)
-			r.PCIExpress = &pciExpressValue
-			xvgaValue := types.CustomBool(false)
-			r.XVGA = &xvgaValue
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "host":
