@@ -678,6 +678,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "mkopnsrc",
+      "name": "Mahesh K.",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2036998?v=4",
+      "profile": "http://opnsrc.dev",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 8,
