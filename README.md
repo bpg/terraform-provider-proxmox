@@ -223,6 +223,9 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/frostyfab"><img src="https://avatars.githubusercontent.com/u/140175283?v=4?s=50" width="50px;" alt="frostyfab"/><br /><sub><b>frostyfab</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=frostyfab" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/joek-office"><img src="https://avatars.githubusercontent.com/u/124031385?v=4?s=50" width="50px;" alt="joek-office"/><br /><sub><b>joek-office</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Ajoek-office" title="Bug reports">🐛</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="12.5%"><a href="http://opnsrc.dev"><img src="https://avatars.githubusercontent.com/u/2036998?v=4?s=50" width="50px;" alt="Mahesh K."/><br /><sub><b>Mahesh K.</b></sub></a><br /><a href="#financial-mkopnsrc" title="Financial">💵</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
