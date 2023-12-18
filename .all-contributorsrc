@@ -660,6 +660,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "frostyfab",
+      "name": "frostyfab",
+      "avatar_url": "https://avatars.githubusercontent.com/u/140175283?v=4",
+      "profile": "https://github.com/frostyfab",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "joek-office",
+      "name": "joek-office",
+      "avatar_url": "https://avatars.githubusercontent.com/u/124031385?v=4",
+      "profile": "https://github.com/joek-office",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 8,

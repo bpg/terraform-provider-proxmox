@@ -13,6 +13,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   cpu {
     cores = 2
     numa  = true
+    limit = 64
   }
 
   smbios {
