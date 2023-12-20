@@ -209,6 +209,6 @@ Proxmox `provider` block:
   - `node` - (Optional) The node configuration for the SSH connection. Can be
       specified multiple times to provide configuration fo multiple nodes.
     - `name` - (Required) The name of the node.
-    - `address` - (Required) The IP address of the node.
+    - `address` - (Required) The FQDN/IP address of the node.
     - `port` - (Optional) SSH port of the node. Defaults to 22.
 - `tmp_dir` - (Optional) Use custom temporary directory. (can also be sourced from `PROXMOX_VE_TMPDIR`)
