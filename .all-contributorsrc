@@ -687,6 +687,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "bitchecker",
+      "name": "bitchecker",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11056930?v=4",
+      "profile": "https://github.com/bitchecker",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 8,
