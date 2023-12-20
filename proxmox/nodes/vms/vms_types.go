@@ -467,6 +467,30 @@ type GetResponseData struct {
 	IPConfig5            *CustomCloudInitIPConfig        `json:"ipconfig5,omitempty"`
 	IPConfig6            *CustomCloudInitIPConfig        `json:"ipconfig6,omitempty"`
 	IPConfig7            *CustomCloudInitIPConfig        `json:"ipconfig7,omitempty"`
+	IPConfig8            *CustomCloudInitIPConfig        `json:"ipconfig8,omitempty"`
+	IPConfig9            *CustomCloudInitIPConfig        `json:"ipconfig9,omitempty"`
+	IPConfig10           *CustomCloudInitIPConfig        `json:"ipconfig10,omitempty"`
+	IPConfig11           *CustomCloudInitIPConfig        `json:"ipconfig11,omitempty"`
+	IPConfig12           *CustomCloudInitIPConfig        `json:"ipconfig12,omitempty"`
+	IPConfig13           *CustomCloudInitIPConfig        `json:"ipconfig13,omitempty"`
+	IPConfig14           *CustomCloudInitIPConfig        `json:"ipconfig14,omitempty"`
+	IPConfig15           *CustomCloudInitIPConfig        `json:"ipconfig15,omitempty"`
+	IPConfig16           *CustomCloudInitIPConfig        `json:"ipconfig16,omitempty"`
+	IPConfig17           *CustomCloudInitIPConfig        `json:"ipconfig17,omitempty"`
+	IPConfig18           *CustomCloudInitIPConfig        `json:"ipconfig18,omitempty"`
+	IPConfig19           *CustomCloudInitIPConfig        `json:"ipconfig19,omitempty"`
+	IPConfig20           *CustomCloudInitIPConfig        `json:"ipconfig20,omitempty"`
+	IPConfig21           *CustomCloudInitIPConfig        `json:"ipconfig21,omitempty"`
+	IPConfig22           *CustomCloudInitIPConfig        `json:"ipconfig22,omitempty"`
+	IPConfig23           *CustomCloudInitIPConfig        `json:"ipconfig23,omitempty"`
+	IPConfig24           *CustomCloudInitIPConfig        `json:"ipconfig24,omitempty"`
+	IPConfig25           *CustomCloudInitIPConfig        `json:"ipconfig25,omitempty"`
+	IPConfig26           *CustomCloudInitIPConfig        `json:"ipconfig26,omitempty"`
+	IPConfig27           *CustomCloudInitIPConfig        `json:"ipconfig27,omitempty"`
+	IPConfig28           *CustomCloudInitIPConfig        `json:"ipconfig28,omitempty"`
+	IPConfig29           *CustomCloudInitIPConfig        `json:"ipconfig29,omitempty"`
+	IPConfig30           *CustomCloudInitIPConfig        `json:"ipconfig30,omitempty"`
+	IPConfig31           *CustomCloudInitIPConfig        `json:"ipconfig31,omitempty"`
 	KeyboardLayout       *string                         `json:"keyboard,omitempty"`
 	KVMArguments         *string                         `json:"args,omitempty"`
 	KVMEnabled           *types.CustomBool               `json:"kvm,omitempty"`
@@ -484,6 +508,30 @@ type GetResponseData struct {
 	NetworkDevice5       *CustomNetworkDevice            `json:"net5,omitempty"`
 	NetworkDevice6       *CustomNetworkDevice            `json:"net6,omitempty"`
 	NetworkDevice7       *CustomNetworkDevice            `json:"net7,omitempty"`
+	NetworkDevice8       *CustomNetworkDevice            `json:"net8,omitempty"`
+	NetworkDevice9       *CustomNetworkDevice            `json:"net9,omitempty"`
+	NetworkDevice10      *CustomNetworkDevice            `json:"net10,omitempty"`
+	NetworkDevice11      *CustomNetworkDevice            `json:"net11,omitempty"`
+	NetworkDevice12      *CustomNetworkDevice            `json:"net12,omitempty"`
+	NetworkDevice13      *CustomNetworkDevice            `json:"net13,omitempty"`
+	NetworkDevice14      *CustomNetworkDevice            `json:"net14,omitempty"`
+	NetworkDevice15      *CustomNetworkDevice            `json:"net15,omitempty"`
+	NetworkDevice16      *CustomNetworkDevice            `json:"net16,omitempty"`
+	NetworkDevice17      *CustomNetworkDevice            `json:"net17,omitempty"`
+	NetworkDevice18      *CustomNetworkDevice            `json:"net18,omitempty"`
+	NetworkDevice19      *CustomNetworkDevice            `json:"net19,omitempty"`
+	NetworkDevice20      *CustomNetworkDevice            `json:"net20,omitempty"`
+	NetworkDevice21      *CustomNetworkDevice            `json:"net21,omitempty"`
+	NetworkDevice22      *CustomNetworkDevice            `json:"net22,omitempty"`
+	NetworkDevice23      *CustomNetworkDevice            `json:"net23,omitempty"`
+	NetworkDevice24      *CustomNetworkDevice            `json:"net24,omitempty"`
+	NetworkDevice25      *CustomNetworkDevice            `json:"net25,omitempty"`
+	NetworkDevice26      *CustomNetworkDevice            `json:"net26,omitempty"`
+	NetworkDevice27      *CustomNetworkDevice            `json:"net27,omitempty"`
+	NetworkDevice28      *CustomNetworkDevice            `json:"net28,omitempty"`
+	NetworkDevice29      *CustomNetworkDevice            `json:"net29,omitempty"`
+	NetworkDevice30      *CustomNetworkDevice            `json:"net30,omitempty"`
+	NetworkDevice31      *CustomNetworkDevice            `json:"net31,omitempty"`
 	NUMADevices          *CustomNUMADevices              `json:"numa_devices,omitempty"`
 	NUMAEnabled          *types.CustomBool               `json:"numa,omitempty"`
 	OSType               *string                         `json:"ostype,omitempty"`

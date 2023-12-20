@@ -142,7 +142,7 @@ const (
 	dvResourceVirtualEnvironmentVMHookScript                        = ""
 
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
-	maxResourceVirtualEnvironmentVMNetworkDevices = 8
+	maxResourceVirtualEnvironmentVMNetworkDevices = 32
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
@@ -4475,6 +4475,31 @@ func vmReadCustom(
 		vmConfig.IPConfig5,
 		vmConfig.IPConfig6,
 		vmConfig.IPConfig7,
+		vmConfig.IPConfig7,
+		vmConfig.IPConfig8,
+		vmConfig.IPConfig9,
+		vmConfig.IPConfig10,
+		vmConfig.IPConfig11,
+		vmConfig.IPConfig12,
+		vmConfig.IPConfig13,
+		vmConfig.IPConfig14,
+		vmConfig.IPConfig15,
+		vmConfig.IPConfig16,
+		vmConfig.IPConfig17,
+		vmConfig.IPConfig18,
+		vmConfig.IPConfig19,
+		vmConfig.IPConfig20,
+		vmConfig.IPConfig21,
+		vmConfig.IPConfig22,
+		vmConfig.IPConfig23,
+		vmConfig.IPConfig24,
+		vmConfig.IPConfig25,
+		vmConfig.IPConfig26,
+		vmConfig.IPConfig27,
+		vmConfig.IPConfig28,
+		vmConfig.IPConfig29,
+		vmConfig.IPConfig30,
+		vmConfig.IPConfig31,
 	}
 	ipConfigList := make([]interface{}, len(ipConfigObjects))
 
@@ -4677,9 +4702,9 @@ func vmReadCustom(
 	// Compare the network devices to those stored in the state.
 	currentNetworkDeviceList := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 
-	macAddresses := make([]interface{}, 8)
+	macAddresses := make([]interface{}, maxResourceVirtualEnvironmentVMNetworkDevices)
 	networkDeviceLast := -1
-	networkDeviceList := make([]interface{}, 8)
+	networkDeviceList := make([]interface{}, maxResourceVirtualEnvironmentVMNetworkDevices)
 	networkDeviceObjects := []*vms.CustomNetworkDevice{
 		vmConfig.NetworkDevice0,
 		vmConfig.NetworkDevice1,
@@ -4689,6 +4714,30 @@ func vmReadCustom(
 		vmConfig.NetworkDevice5,
 		vmConfig.NetworkDevice6,
 		vmConfig.NetworkDevice7,
+		vmConfig.NetworkDevice8,
+		vmConfig.NetworkDevice9,
+		vmConfig.NetworkDevice10,
+		vmConfig.NetworkDevice11,
+		vmConfig.NetworkDevice12,
+		vmConfig.NetworkDevice13,
+		vmConfig.NetworkDevice14,
+		vmConfig.NetworkDevice15,
+		vmConfig.NetworkDevice16,
+		vmConfig.NetworkDevice17,
+		vmConfig.NetworkDevice18,
+		vmConfig.NetworkDevice19,
+		vmConfig.NetworkDevice20,
+		vmConfig.NetworkDevice21,
+		vmConfig.NetworkDevice22,
+		vmConfig.NetworkDevice23,
+		vmConfig.NetworkDevice24,
+		vmConfig.NetworkDevice25,
+		vmConfig.NetworkDevice26,
+		vmConfig.NetworkDevice27,
+		vmConfig.NetworkDevice28,
+		vmConfig.NetworkDevice29,
+		vmConfig.NetworkDevice30,
+		vmConfig.NetworkDevice31,
 	}
 
 	for ni, nd := range networkDeviceObjects {
