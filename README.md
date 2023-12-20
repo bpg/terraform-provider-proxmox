@@ -225,6 +225,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
     </tr>
     <tr>
       <td align="center" valign="top" width="12.5%"><a href="http://opnsrc.dev"><img src="https://avatars.githubusercontent.com/u/2036998?v=4?s=50" width="50px;" alt="Mahesh K."/><br /><sub><b>Mahesh K.</b></sub></a><br /><a href="#financial-mkopnsrc" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/bitchecker"><img src="https://avatars.githubusercontent.com/u/11056930?v=4?s=50" width="50px;" alt="bitchecker"/><br /><sub><b>bitchecker</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=bitchecker" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
