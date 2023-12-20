@@ -472,7 +472,7 @@ type GetResponseData struct {
 	IPConfig10           *CustomCloudInitIPConfig        `json:"ipconfig10,omitempty"`
 	IPConfig11           *CustomCloudInitIPConfig        `json:"ipconfig11,omitempty"`
 	IPConfig12           *CustomCloudInitIPConfig        `json:"ipconfig12,omitempty"`
-	IPConfig13           *CustomCloudInitIPConfig        `json:"ipconfig13,oitempty"`
+	IPConfig13           *CustomCloudInitIPConfig        `json:"ipconfig13,omitempty"`
 	IPConfig14           *CustomCloudInitIPConfig        `json:"ipconfig14,omitempty"`
 	IPConfig15           *CustomCloudInitIPConfig        `json:"ipconfig15,omitempty"`
 	IPConfig16           *CustomCloudInitIPConfig        `json:"ipconfig16,omitempty"`
@@ -482,7 +482,7 @@ type GetResponseData struct {
 	IPConfig20           *CustomCloudInitIPConfig        `json:"ipconfig20,omitempty"`
 	IPConfig21           *CustomCloudInitIPConfig        `json:"ipconfig21,omitempty"`
 	IPConfig22           *CustomCloudInitIPConfig        `json:"ipconfig22,omitempty"`
-	IPConfig23           *CustomCloudInitIPConfig        `json:"ipconfig23,oitempty"`
+	IPConfig23           *CustomCloudInitIPConfig        `json:"ipconfig23,omitempty"`
 	IPConfig24           *CustomCloudInitIPConfig        `json:"ipconfig24,omitempty"`
 	IPConfig25           *CustomCloudInitIPConfig        `json:"ipconfig25,omitempty"`
 	IPConfig26           *CustomCloudInitIPConfig        `json:"ipconfig26,omitempty"`
@@ -513,7 +513,7 @@ type GetResponseData struct {
 	NetworkDevice10      *CustomNetworkDevice            `json:"net10,omitempty"`
 	NetworkDevice11      *CustomNetworkDevice            `json:"net11,omitempty"`
 	NetworkDevice12      *CustomNetworkDevice            `json:"net12,omitempty"`
-	NetworkDevice13      *CustomNetworkDevice            `json:"net13,oitempty"`
+	NetworkDevice13      *CustomNetworkDevice            `json:"net13,omitempty"`
 	NetworkDevice14      *CustomNetworkDevice            `json:"net14,omitempty"`
 	NetworkDevice15      *CustomNetworkDevice            `json:"net15,omitempty"`
 	NetworkDevice16      *CustomNetworkDevice            `json:"net16,omitempty"`
@@ -523,7 +523,7 @@ type GetResponseData struct {
 	NetworkDevice20      *CustomNetworkDevice            `json:"net20,omitempty"`
 	NetworkDevice21      *CustomNetworkDevice            `json:"net21,omitempty"`
 	NetworkDevice22      *CustomNetworkDevice            `json:"net22,omitempty"`
-	NetworkDevice23      *CustomNetworkDevice            `json:"net23,oitempty"`
+	NetworkDevice23      *CustomNetworkDevice            `json:"net23,omitempty"`
 	NetworkDevice24      *CustomNetworkDevice            `json:"net24,omitempty"`
 	NetworkDevice25      *CustomNetworkDevice            `json:"net25,omitempty"`
 	NetworkDevice26      *CustomNetworkDevice            `json:"net26,omitempty"`

@@ -142,7 +142,7 @@ const (
 	dvResourceVirtualEnvironmentVMHookScript                        = ""
 
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
-	maxResourceVirtualEnvironmentVMNetworkDevices = 8
+	maxResourceVirtualEnvironmentVMNetworkDevices = 32
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
@@ -4702,9 +4702,9 @@ func vmReadCustom(
 	// Compare the network devices to those stored in the state.
 	currentNetworkDeviceList := d.Get(mkResourceVirtualEnvironmentVMNetworkDevice).([]interface{})
 
-	macAddresses := make([]interface{}, 8)
+	macAddresses := make([]interface{}, maxResourceVirtualEnvironmentVMNetworkDevices)
 	networkDeviceLast := -1
-	networkDeviceList := make([]interface{}, 8)
+	networkDeviceList := make([]interface{}, maxResourceVirtualEnvironmentVMNetworkDevices)
 	networkDeviceObjects := []*vms.CustomNetworkDevice{
 		vmConfig.NetworkDevice0,
 		vmConfig.NetworkDevice1,
