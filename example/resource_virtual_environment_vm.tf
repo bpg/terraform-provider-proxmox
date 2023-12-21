@@ -143,6 +143,10 @@ resource "proxmox_virtual_environment_vm" "example" {
     ]
   }
 
+  smbios {
+    serial = "my-custom-serial"
+  }
+
   initialization {
     // if unspecified:
     //   - autodetected if there is a cloud-init device on the template
