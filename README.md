@@ -228,6 +228,8 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
     <tr>
       <td align="center" valign="top" width="12.5%"><a href="http://opnsrc.dev"><img src="https://avatars.githubusercontent.com/u/2036998?v=4?s=50" width="50px;" alt="Mahesh K."/><br /><sub><b>Mahesh K.</b></sub></a><br /><a href="#financial-mkopnsrc" title="Financial">💵</a></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/bitchecker"><img src="https://avatars.githubusercontent.com/u/11056930?v=4?s=50" width="50px;" alt="bitchecker"/><br /><sub><b>bitchecker</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=bitchecker" title="Code">💻</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/olemathias"><img src="https://avatars.githubusercontent.com/u/891048?v=4?s=50" width="50px;" alt="Ole Mathias Aa. Heggem"/><br /><sub><b>Ole Mathias Aa. Heggem</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aolemathias" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/scibi"><img src="https://avatars.githubusercontent.com/u/703860?v=4?s=50" width="50px;" alt="scibi"/><br /><sub><b>scibi</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Ascibi" title="Bug reports">🐛</a> <a href="#ideas-scibi" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
   <tfoot>

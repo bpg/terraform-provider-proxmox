@@ -2176,6 +2176,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	updateBody.StartOnBoot = &onBoot
 
+	updateBody.SMBIOS = vmGetSMBIOS(d)
+
 	updateBody.StartupOrder = vmGetStartupOrder(d)
 
 	//nolint:gosimple

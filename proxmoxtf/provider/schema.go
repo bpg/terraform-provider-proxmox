@@ -155,7 +155,7 @@ func createSchema() map[string]*schema.Schema {
 									Type:         schema.TypeString,
 									Required:     true,
 									Description:  "The address of the Proxmox VE node.",
-									ValidateFunc: validation.IsIPAddress,
+									ValidateFunc: validation.StringIsNotEmpty,
 								},
 								mkProviderSSHNodePort: {
 									Type:         schema.TypeInt,
