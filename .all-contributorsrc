@@ -705,6 +705,16 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "scibi",
+      "name": "scibi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/703860?v=4",
+      "profile": "https://github.com/scibi",
+      "contributions": [
+        "bug",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 8,
