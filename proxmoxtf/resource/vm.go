@@ -221,6 +221,7 @@ const (
 	mkResourceVirtualEnvironmentVMInitializationDNS                 = "dns"
 	mkResourceVirtualEnvironmentVMInitializationDNSDomain           = "domain"
 	mkResourceVirtualEnvironmentVMInitializationDNSServer           = "server"
+	mkResourceVirtualEnvironmentVMInitializationDNSServers          = "servers"
 	mkResourceVirtualEnvironmentVMInitializationIPConfig            = "ip_config"
 	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4        = "ipv4"
 	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address = "address"
@@ -887,8 +888,17 @@ func VM() *schema.Resource {
 									mkResourceVirtualEnvironmentVMInitializationDNSServer: {
 										Type:        schema.TypeString,
 										Description: "The DNS server",
+										Deprecated: "The `server` attribute is deprecated and will be removed in a future release. " +
+											"Please use the `servers` attribute instead.",
+										Optional: true,
+										Default:  dvResourceVirtualEnvironmentVMInitializationDNSServer,
+									},
+									mkResourceVirtualEnvironmentVMInitializationDNSServers: {
+										Type:        schema.TypeList,
+										Description: "The list of DNS servers",
 										Optional:    true,
-										Default:     dvResourceVirtualEnvironmentVMInitializationDNSServer,
+										Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPv4Address},
+										MinItems:    0,
 									},
 								},
 							},
@@ -1656,6 +1666,16 @@ func VM() *schema.Resource {
 			},
 		},
 	}
+}
+
+// ConvertToStringSlice helps convert interface slice to string slice.
+func ConvertToStringSlice(interfaceSlice []interface{}) []string {
+	resultSlice := []string{}
+	for _, val := range interfaceSlice {
+		resultSlice = append(resultSlice, val.(string))
+	}
+
+	return resultSlice
 }
 
 func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -3090,10 +3110,15 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 				initializationConfig.SearchDomain = &domain
 			}
 
-			server := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServer].(string)
+			servers := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServers].([]interface{})
+			deprecatedServer := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServer].(string)
 
-			if server != "" {
-				initializationConfig.Nameserver = &server
+			if len(servers) > 0 {
+				nameserver := strings.Join(ConvertToStringSlice(servers), " ")
+
+				initializationConfig.Nameserver = &nameserver
+			} else if deprecatedServer != "" {
+				initializationConfig.Nameserver = &deprecatedServer
 			}
 		}
 
@@ -4458,8 +4483,12 @@ func vmReadCustom(
 
 		if vmConfig.CloudInitDNSServer != nil {
 			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServer] = *vmConfig.CloudInitDNSServer
+
+			dnsServer := strings.Split(*vmConfig.CloudInitDNSServer, " ")
+			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServers] = dnsServer
 		} else {
 			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServer] = ""
+			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServers] = []string{}
 		}
 
 		initialization[mkResourceVirtualEnvironmentVMInitializationDNS] = []interface{}{

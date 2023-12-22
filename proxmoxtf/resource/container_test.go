@@ -154,11 +154,13 @@ func TestContainerSchema(t *testing.T) {
 	test.AssertOptionalArguments(t, initializationDNSSchema, []string{
 		mkResourceVirtualEnvironmentContainerInitializationDNSDomain,
 		mkResourceVirtualEnvironmentContainerInitializationDNSServer,
+		mkResourceVirtualEnvironmentContainerInitializationDNSServers,
 	})
 
 	test.AssertValueTypes(t, initializationDNSSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentContainerInitializationDNSDomain: schema.TypeString,
-		mkResourceVirtualEnvironmentContainerInitializationDNSServer: schema.TypeString,
+		mkResourceVirtualEnvironmentContainerInitializationDNSDomain:  schema.TypeString,
+		mkResourceVirtualEnvironmentContainerInitializationDNSServer:  schema.TypeString,
+		mkResourceVirtualEnvironmentContainerInitializationDNSServers: schema.TypeList,
 	})
 
 	initializationIPConfigSchema := test.AssertNestedSchemaExistence(

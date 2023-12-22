@@ -300,11 +300,13 @@ func TestVMSchema(t *testing.T) {
 	test.AssertOptionalArguments(t, initializationDNSSchema, []string{
 		mkResourceVirtualEnvironmentVMInitializationDNSDomain,
 		mkResourceVirtualEnvironmentVMInitializationDNSServer,
+		mkResourceVirtualEnvironmentVMInitializationDNSServers,
 	})
 
 	test.AssertValueTypes(t, initializationDNSSchema, map[string]schema.ValueType{
-		mkResourceVirtualEnvironmentVMInitializationDNSDomain: schema.TypeString,
-		mkResourceVirtualEnvironmentVMInitializationDNSServer: schema.TypeString,
+		mkResourceVirtualEnvironmentVMInitializationDNSDomain:  schema.TypeString,
+		mkResourceVirtualEnvironmentVMInitializationDNSServer:  schema.TypeString,
+		mkResourceVirtualEnvironmentVMInitializationDNSServers: schema.TypeList,
 	})
 
 	initializationIPConfigSchema := test.AssertNestedSchemaExistence(
