@@ -62,7 +62,7 @@ environment. The following assumptions are made about the test environment:
 - The node has local storages named `local` and `local-lvm`
 - The "Snippets" content type is enabled in `local` storage
 
-Create `examples/terraform.tfvars` with the following variables:
+Create `example/terraform.tfvars` with the following variables:
 
 ```sh
 virtual_environment_username = "root@pam"
@@ -71,6 +71,8 @@ virtual_environment_endpoint = "https://<your-cluster-endpoint>:8006/"
 ```
 
 Then run `make example` to deploy the example resources.
+
+If you don't have free proxmox cluster to play with, there is dedicated [how-to tutorial](howtos/setup-proxmox-for-make-example/README.md) how to setup Proxmox inside VM and run `make example` on it.
 
 ## Future work
 

@@ -9,6 +9,8 @@ Leave the [ ] if they are not applicable, or if you have not completed the item.
 
 <!---
 You can find more information about coding conventions and local testing in the [CONTRIBUTING.md](https://github.com/bpg/terraform-provider-proxmox/blob/main/CONTRIBUTING.md) file.
+
+If you are unsure how to run `make example`, see [Deploying the example resources](https://github.com/bpg/terraform-provider-proxmox?tab=readme-ov-file#deploying-the-example-resources) section in README.
 --->
 
 <!--
