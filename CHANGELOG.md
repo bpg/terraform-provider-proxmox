@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.42.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.41.0...v0.42.0) (2023-12-23)
+
+
+### Features
+
+* **vm, lxc:** add new `initialization.dns.servers` param to vm and container ([#832](https://github.com/bpg/terraform-provider-proxmox/issues/832)) ([16e571d](https://github.com/bpg/terraform-provider-proxmox/commit/16e571dc199c8977b3954e3c56c9b96cc351503e))
+* **vm:** add new dns servers param to vm and container, deprecated server param ([16e571d](https://github.com/bpg/terraform-provider-proxmox/commit/16e571dc199c8977b3954e3c56c9b96cc351503e))
+* **vm:** add support for up to 32 network interfaces ([#822](https://github.com/bpg/terraform-provider-proxmox/issues/822)) ([4113bec](https://github.com/bpg/terraform-provider-proxmox/commit/4113bec1b5184cd30c0435ae50470a8f7ab3ba39))
+
+
+### Bug Fixes
+
+* **provider:** allow FQDN for `ssh.node.address` in provider's config ([#824](https://github.com/bpg/terraform-provider-proxmox/issues/824)) ([34df977](https://github.com/bpg/terraform-provider-proxmox/commit/34df9773c34b43ba39b5d8505b5916b52f87ff3e))
+* **vm:** update `smbios` during clone ([#827](https://github.com/bpg/terraform-provider-proxmox/issues/827)) ([0ffe75a](https://github.com/bpg/terraform-provider-proxmox/commit/0ffe75afa44995d4b648687281974e990029977e))
+
+
+### Miscellaneous
+
+* **deps:** bump golang.org/x/crypto from 0.14.0 to 0.17.0 in /tools ([#819](https://github.com/bpg/terraform-provider-proxmox/issues/819)) ([21a4b01](https://github.com/bpg/terraform-provider-proxmox/commit/21a4b01cd16fec6d3f04ae0e2c7eab9a021ee1e6))
+* **deps:** bump golang.org/x/crypto from 0.16.0 to 0.17.0 ([#820](https://github.com/bpg/terraform-provider-proxmox/issues/820)) ([ec31d75](https://github.com/bpg/terraform-provider-proxmox/commit/ec31d75fe1a93e110f4e21108c4f69d12c9a38d7))
+* **docs:** improve make example docs and add proxmox setup how-to ([#829](https://github.com/bpg/terraform-provider-proxmox/issues/829)) ([4f54f89](https://github.com/bpg/terraform-provider-proxmox/commit/4f54f89b5db4cf37321b9c021a411b747093325f))
+
 ## [0.41.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.40.0...v0.41.0) (2023-12-18)
 
 
