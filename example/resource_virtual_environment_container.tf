@@ -15,7 +15,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
 
   initialization {
     dns {
-      server = "1.1.1.1"
+      servers = ["1.1.1.1", "8.8.8.8"]
     }
 
     hostname = "terraform-provider-proxmox-example-lxc-template"
@@ -72,7 +72,7 @@ resource "proxmox_virtual_environment_container" "example" {
   mount_point {
     // bind mount, requires root@pam
     volume = "/mnt/bindmounts/shared"
-    path    = "/shared"
+    path   = "/shared"
   }
 
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]

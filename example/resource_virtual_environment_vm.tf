@@ -67,7 +67,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     interface    = "scsi4"
 
     dns {
-      server = "1.1.1.1"
+      servers = ["1.1.1.1", "8.8.8.8"]
     }
 
     ip_config {
@@ -154,7 +154,7 @@ resource "proxmox_virtual_environment_vm" "example" {
     interface = "scsi4"
 
     dns {
-      server = "8.8.8.8"
+      servers = ["1.1.1.1"]
     }
     ip_config {
       ipv4 {

@@ -331,7 +331,8 @@ output "ubuntu_vm_public_key" {
       otherwise defaults to `ide2`.
   - `dns` - (Optional) The DNS configuration.
     - `domain` - (Optional) The DNS search domain.
-    - `server` - (Optional) The DNS server.
+    - `server` - (Optional) The DNS server. The `server` attribute is deprecated and will be removed in a future release. Please use the `servers` attribute instead.
+    - `servers` - (Optional) The list of DNS servers.
   - `ip_config` - (Optional) The IP configuration (one block per network
       device).
     - `ipv4` - (Optional) The IPv4 configuration.
