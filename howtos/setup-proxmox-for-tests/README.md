@@ -1,4 +1,4 @@
-# Setup VM with proxmox to run make example
+# Setup VM with proxmox to run examples and acceptance tests
 
 ## Who
 
@@ -16,11 +16,11 @@ Be sure to install `go` and `terraform` on your system first.
 
 ## Linux (Debian/Ubuntu) with virt-manager
 
-Goal is to have a proxmox node in VM using https://virt-manager.org/ for a job. This text assumes some linux knowledge. Tested on Debian 12 bookworm and proxmox VE 8.1. For other distros, with any luck steps should be similar.
+Goal is to have a proxmox node in VM using <https://virt-manager.org/> for a job. This text assumes some linux knowledge. Tested on Debian 12 bookworm and proxmox VE 8.1. For other distros, with any luck steps should be similar.
 
 1. `sudo apt-get install virt-manager`.
 
-2. Download some proxmox image from http://download.proxmox.com/iso/, currently latest is `proxmox-ve_8.1-1.iso`.
+2. Download some proxmox image from <http://download.proxmox.com/iso/>, currently latest is `proxmox-ve_8.1-1.iso`.
 
 3. Run `virt-manager` and "create a new virtual machine", use a file you just downloaded, choose debian as a operating system, leave default network settings.
 
@@ -32,7 +32,7 @@ Goal is to have a proxmox node in VM using https://virt-manager.org/ for a job. 
 
    It may look like this:
 
-   ```
+   ```txt
    root@proxmox:~# ip a
    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -52,7 +52,7 @@ Goal is to have a proxmox node in VM using https://virt-manager.org/ for a job. 
 
 7. (Optional) On **your** computer, there should be new interface created mapped to that one you see on proxmox. Again `ip a`:
 
-   ```
+   ```txt
    ...
 
    8: virbr0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
@@ -70,11 +70,11 @@ Goal is to have a proxmox node in VM using https://virt-manager.org/ for a job. 
    ssh root@192.168.122.43
    ```
 
-   You can also use browser and visit console at https://192.168.122.43:8006.
+   You can also use browser and visit console at <https://192.168.122.43:8006>.
 
 9. Create `terraform.tfvars` file (it will be git ignored file) in `example` folder with credentials for you new proxmox node.
 
-   ```
+   ```txt
    # example/terraform.tfvars
    virtual_environment_username = "root@pam"
    virtual_environment_endpoint = "https://192.168.122.43:8006/"
@@ -84,4 +84,4 @@ Goal is to have a proxmox node in VM using https://virt-manager.org/ for a job. 
 
 10. Now you can run `make example`.
 
-11. If you see error with proxmox_virtual_environment_file: the datastore "local" does not support content type "snippets"; supported content types are: [backup iso vztmpl], you need to enable them, see https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file#snippets.
+11. If you see error with proxmox_virtual_environment_file: the datastore "local" does not support content type "snippets"; supported content types are: [backup iso vztmpl], you need to enable them, see <https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file#snippets>.

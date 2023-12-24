@@ -47,6 +47,27 @@ existing ones in order to target your changes.
 
 You can run all the test cases by invoking `make test`.
 
+### Acceptance tests
+
+The project has a limited set of acceptance tests which are run against a real Proxmox
+instance. These tests are developed alongside the framework-based resource and datasource implementations, and are located in the `fwprovider/tests` directory.
+
+To run the acceptance tests, you need to have a Proxmox instance available. See more details in the [Setup Proxmox for Tests](./howtos/setup-proxmox-for-tests/README.md) section.
+Create a `testacc.env` file in the project's root directory with the following contents:
+
+```env
+TF_ACC=1
+PROXMOX_VE_API_TOKEN="root@pam!<token name>=<token value>"
+PROXMOX_VE_ENDPOINT="https://<pve instance>:8006/"
+PROXMOX_VE_SSH_AGENT="true"
+PROXMOX_VE_SSH_USERNAME="root"
+```
+
+Then use `make testacc` to run the acceptance tests.
+
+> [!NOTE]
+> The acceptance tests support is still in development. Only handful of resources and data sources are covered by the tests. Some tests may require extra configuration on the Proxmox instance, and fail if the configuration is not present.
+
 ## Manual Testing
 
 You can manually test the provider by running it locally. This is useful for
@@ -72,7 +93,6 @@ testing changes to the provider before submitting a PR.
 
   ```bash
   go install .
-
   ```
 
 - Run `terraform init` in a directory containing a Terraform configuration
@@ -106,11 +126,12 @@ testing changes to the provider before submitting a PR.
 
 ## Coding conventions
 
-We expect that all code contributions have been formatted using `gofmt`. You can
-run `make fmt` to format your code.
+We expect that all code contributions have been formatted using `gofmt`.
 
-We also expect that all code contributions have been linted
-using `golangci-lint`.
+You can run `make fmt` to format your code.
+
+We also expect that all code contributions have been linted using `golangci-lint`.
+
 You can run `make lint` to lint your code.
 
 ## Commit message conventions

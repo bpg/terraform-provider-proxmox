@@ -124,7 +124,7 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 	u, err := url.ParseRequestURI(endpoint)
 	require.NoError(t, err)
 
-	sshUsername := strings.Split(utils.GetAnyStringEnv("PROXMOX_VE_USERNAME"), "@")[0]
+	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
 
 	sshClient, err := ssh.NewClient(
