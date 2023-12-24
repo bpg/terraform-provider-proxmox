@@ -294,9 +294,9 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 	sshClient, err = ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
 		if c.password == "" {
-			return nil, fmt.Errorf("unable to authenticate over SSH to %s. Please verify that ssh-agent is "+
+			return nil, fmt.Errorf("unable to authenticate user %q over SSH to %q. Please verify that ssh-agent is "+
 				"correctly loaded with an authorized key via 'ssh-add -L' (NOTE: configurations in ~/.ssh/config are "+
-				"not considered by golang's ssh implementation). The exact error from ssh.Dial: %w", sshHost, err)
+				"not considered by golang's ssh implementation). The exact error from ssh.Dial: %w", c.username, sshHost, err)
 		}
 
 		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)

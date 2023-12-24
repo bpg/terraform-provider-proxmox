@@ -74,6 +74,7 @@ resource "proxmox_virtual_environment_container" "test_container" {
   }
 
   operating_system {
+	# TODO: this file needs to be upload to PVE first
     template_file_id = "local:vztmpl/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
     type             = "ubuntu"
   }

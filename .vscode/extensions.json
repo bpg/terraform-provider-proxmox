@@ -1,7 +1,8 @@
 {
     "recommendations": [
         "davidanson.vscode-markdownlint",
-        "joshbolduc.commitlint",
+        "golang.go",
         "hashicorp.terraform",
+        "joshbolduc.commitlint",
     ]
 }
