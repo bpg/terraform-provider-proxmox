@@ -264,7 +264,11 @@ func (r *downloadFileResource) Create(
 	}
 
 	plan.FileName = types.StringValue(filename)
-	plan.Size = types.Int64Value(*fileMetadata.Size)
+	if fileMetadata.Size != nil {
+		plan.Size = types.Int64Value(*fileMetadata.Size)
+	} else {
+		plan.Size = types.Int64Value(0)
+	}
 
 	downloadFileReq := nodestorage.DownloadURLPostRequestBody{
 		Node:              plan.Node.ValueStringPointer(),
