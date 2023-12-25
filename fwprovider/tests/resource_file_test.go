@@ -173,7 +173,7 @@ func createFile(t *testing.T, namePattern string, content string) *os.File {
 func deleteSnippet(t *testing.T, fname string) {
 	t.Helper()
 
-	err := getNodesClient().DeleteDatastoreFile(context.Background(), "local", fmt.Sprintf("snippets/%s", fname))
+	err := getNodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
 	require.NoError(t, err)
 }
 

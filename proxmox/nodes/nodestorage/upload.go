@@ -1,10 +1,4 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-package nodes
+package nodestorage
 
 import (
 	"context"
@@ -12,137 +6,16 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
-	"sort"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
-// DeleteDatastoreFile deletes a file in a datastore.
-func (c *Client) DeleteDatastoreFile(
-	ctx context.Context,
-	datastoreID, volumeID string,
-) error {
-	err := c.DoRequest(
-		ctx,
-		http.MethodDelete,
-		c.ExpandPath(
-			fmt.Sprintf(
-				"storage/%s/content/%s",
-				url.PathEscape(datastoreID),
-				url.PathEscape(volumeID),
-			),
-		),
-		nil,
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf("error deleting file %s from datastore %s: %w", volumeID, datastoreID, err)
-	}
-
-	return nil
-}
-
-// GetDatastoreStatus gets status information for a given datastore.
-func (c *Client) GetDatastoreStatus(
-	ctx context.Context,
-	datastoreID string,
-) (*DatastoreGetStatusResponseData, error) {
-	resBody := &DatastoreGetStatusResponseBody{}
-
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		c.ExpandPath(
-			fmt.Sprintf(
-				"storage/%s/status",
-				url.PathEscape(datastoreID),
-			),
-		),
-		nil,
-		resBody,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving status for datastore %s: %w", datastoreID, err)
-	}
-
-	if resBody.Data == nil {
-		return nil, api.ErrNoDataObjectInResponse
-	}
-
-	return resBody.Data, nil
-}
-
-// ListDatastoreFiles retrieves a list of the files in a datastore.
-func (c *Client) ListDatastoreFiles(
-	ctx context.Context,
-	datastoreID string,
-) ([]*DatastoreFileListResponseData, error) {
-	resBody := &DatastoreFileListResponseBody{}
-
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		c.ExpandPath(
-			fmt.Sprintf(
-				"storage/%s/content",
-				url.PathEscape(datastoreID),
-			),
-		),
-		nil,
-		resBody,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving files from datastore %s: %w", datastoreID, err)
-	}
-
-	if resBody.Data == nil {
-		return nil, api.ErrNoDataObjectInResponse
-	}
-
-	sort.Slice(resBody.Data, func(i, j int) bool {
-		return resBody.Data[i].VolumeID < resBody.Data[j].VolumeID
-	})
-
-	return resBody.Data, nil
-}
-
-// ListDatastores retrieves a list of nodes.
-func (c *Client) ListDatastores(
-	ctx context.Context,
-	d *DatastoreListRequestBody,
-) ([]*DatastoreListResponseData, error) {
-	resBody := &DatastoreListResponseBody{}
-
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		c.ExpandPath("storage"),
-		d,
-		resBody,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving datastores: %w", err)
-	}
-
-	if resBody.Data == nil {
-		return nil, api.ErrNoDataObjectInResponse
-	}
-
-	sort.Slice(resBody.Data, func(i, j int) bool {
-		return resBody.Data[i].ID < resBody.Data[j].ID
-	})
-
-	return resBody.Data, nil
-}
-
 // APIUpload uploads a file to a datastore using the Proxmox API.
 func (c *Client) APIUpload(
 	ctx context.Context,
-	datastoreID string,
 	d *api.FileUploadRequest,
 	uploadTimeout int,
 	tempDir string,
@@ -264,27 +137,22 @@ func (c *Client) APIUpload(
 	err = c.DoRequest(
 		ctx,
 		http.MethodPost,
-		c.ExpandPath(
-			fmt.Sprintf(
-				"storage/%s/upload",
-				url.PathEscape(datastoreID),
-			),
-		),
+		c.ExpandPath("upload"),
 		reqBody,
 		resBody,
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("error uploading file to datastore %s: %w", datastoreID, err)
+		return nil, fmt.Errorf("error uploading file to datastore %s: %w", c.StorageName, err)
 	}
 
 	if resBody.UploadID == nil {
-		return nil, fmt.Errorf("error uploading file to datastore %s: no uploadID", datastoreID)
+		return nil, fmt.Errorf("error uploading file to datastore %s: no uploadID", c.StorageName)
 	}
 
 	err = c.Tasks().WaitForTask(ctx, *resBody.UploadID, uploadTimeout, 5)
 	if err != nil {
-		return nil, fmt.Errorf("error uploading file to datastore %s: failed waiting for upload - %w", datastoreID, err)
+		return nil, fmt.Errorf("error uploading file to datastore %s: failed waiting for upload - %w", c.StorageName, err)
 	}
 
 	return resBody, nil

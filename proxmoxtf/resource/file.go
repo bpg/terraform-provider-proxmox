@@ -319,7 +319,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		return diag.FromErr(err)
 	}
 
-	list, err := capi.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
+	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -522,7 +522,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	switch *contentType {
 	case "iso", "vztmpl":
 		uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
-		_, err = capi.Node(nodeName).APIUpload(ctx, datastoreID, request, uploadTimeout, config.TempDir())
+		_, err = capi.Node(nodeName).Storage(datastoreID).APIUpload(ctx, request, uploadTimeout, config.TempDir())
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
@@ -716,7 +716,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 
-	list, err := capi.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
+	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -876,7 +876,7 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 
-	err = capi.Node(nodeName).DeleteDatastoreFile(ctx, datastoreID, d.Id())
+	err = capi.Node(nodeName).Storage(datastoreID).DeleteDatastoreFile(ctx, d.Id())
 
 	if err != nil {
 		if strings.Contains(err.Error(), "HTTP 404") {

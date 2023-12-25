@@ -6,20 +6,20 @@
 
 package nodes
 
-// QueryUrlMetadataGetResponseBody contains the body from a QueryUrlMetadata get response.
-type QueryUrlMetadataGetResponseBody struct {
-	Data *QueryUrlMetadataGetResponseData `json:"data,omitempty"`
+// QueryURLMetadataGetResponseBody contains the body from a QueryUrlMetadata get response.
+type QueryURLMetadataGetResponseBody struct {
+	Data *QueryURLMetadataGetResponseData `json:"data,omitempty"`
 }
 
-// QueryUrlMetadataGetResponseData contains the data from a QueryUrlMetadata get response.
-type QueryUrlMetadataGetResponseData struct {
-	Filename *string `json:"filename,omitempty"   url:"filename,omitempty"`
-	Mimetype *string `json:"mimetype,omitempty"   url:"mimetype,omitempty"`
-	Size     *int64  `json:"size,omitempty"   url:"size,omitempty"`
+// QueryURLMetadataGetResponseData contains the data from a QueryUrlMetadata get response.
+type QueryURLMetadataGetResponseData struct {
+	Filename *string `json:"filename,omitempty" url:"filename,omitempty"`
+	Mimetype *string `json:"mimetype,omitempty" url:"mimetype,omitempty"`
+	Size     *int64  `json:"size,omitempty"     url:"size,omitempty"`
 }
 
-// QueryUrlMetadataGetRequestBody contains the body for a QueryUrlMetadata get request.
-type QueryUrlMetadataGetRequestBody struct {
-	Verify *bool   `json:"verify-certificates,omitempty"   url:"verify-certificates,omitempty"`
-	URL    *string `json:"url,omitempty"   url:"url,omitempty"`
+// QueryURLMetadataGetRequestBody contains the body for a QueryUrlMetadata get request.
+type QueryURLMetadataGetRequestBody struct {
+	Verify *bool   `json:"verify-certificates,omitempty" url:"verify-certificates,omitempty"`
+	URL    *string `json:"url,omitempty"                 url:"url,omitempty"`
 }

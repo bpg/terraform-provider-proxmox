@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package nodes
+package nodestorage
 
 import (
 	"context"
@@ -14,16 +14,21 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
-// GetQueryURLMetadata retrieves the URL filename details for a node.
-func (c *Client) GetQueryURLMetadata(
+// GetDatastoreStatus gets status information for a given datastore.
+func (c *Client) GetDatastoreStatus(
 	ctx context.Context,
-	d *QueryURLMetadataGetRequestBody,
-) (*QueryURLMetadataGetResponseData, error) {
-	resBody := &QueryURLMetadataGetResponseBody{}
+) (*DatastoreGetStatusResponseData, error) {
+	resBody := &DatastoreGetStatusResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("query-url-metadata"), d, resBody)
+	err := c.DoRequest(
+		ctx,
+		http.MethodGet,
+		c.ExpandPath("status"),
+		nil,
+		resBody,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving Query URL metadata configuration: %w", err)
+		return nil, fmt.Errorf("error retrieving status for datastore %s: %w", c.StorageName, err)
 	}
 
 	if resBody.Data == nil {
