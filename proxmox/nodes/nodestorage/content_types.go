@@ -24,19 +24,19 @@ type DatastoreFileListResponseData struct {
 
 // DatastoreFileGetRequestData contains the body from a datastore content get request.
 type DatastoreFileGetRequestData struct {
-	Node     string `json:"node"`
-	VolumeID string `json:"volume"`
+	Node     string `json:"node,omitempty"   url:"node,omitempty"`
+	VolumeID string `json:"volume,omitempty" url:"volume,omitempty"`
 }
 
 // DatastoreFileGetResponseBody contains the body from a datastore content get response.
 type DatastoreFileGetResponseBody struct {
-	Data *DatastoreFileGetResponseData `json:"data,omitempty"`
+	Data *DatastoreFileGetResponseData `json:"data,omitempty" url:"data,omitempty"`
 }
 
 // DatastoreFileGetResponseData contains the data from a datastore content get response.
 type DatastoreFileGetResponseData struct {
-	Path       *string `json:"path"`
-	FileFormat *string `json:"format"`
-	FileSize   *int64  `json:"size"`
-	SpaceUsed  *int64  `json:"used,omitempty"`
+	Path       *string `json:"path"           url:"path,omitempty"`
+	FileFormat *string `json:"format"         url:"format,omitempty"`
+	FileSize   *int64  `json:"size"           url:"size,omitempty"`
+	SpaceUsed  *int64  `json:"used,omitempty" url:"used,omitempty"`
 }

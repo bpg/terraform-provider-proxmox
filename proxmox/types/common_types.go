@@ -51,6 +51,15 @@ func (r CustomBool) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+// ToInt converts CustomBool bool to int.
+func (r CustomBool) ToInt() int {
+	if r {
+		return 1
+	}
+
+	return 0
+}
+
 // UnmarshalJSON converts a JSON value to a boolean.
 func (r *CustomBool) UnmarshalJSON(b []byte) error {
 	s := string(b)

@@ -380,6 +380,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		NewClusterOptionsResource,
 		NewLinuxBridgeResource,
 		NewLinuxVLANResource,
+		NewDownloadFileResource,
 	}
 }
 

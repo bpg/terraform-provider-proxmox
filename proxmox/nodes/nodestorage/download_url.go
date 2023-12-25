@@ -22,7 +22,7 @@ func (c *Client) DownloadFileByURL(
 ) error {
 	resBody := &DownloadURLResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("download-url"), d, resBody)
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("download-url"), d, resBody)
 	if err != nil {
 		return fmt.Errorf("error download file by URL: %w", err)
 	}

@@ -6,8 +6,6 @@
 
 package nodestorage
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
-
 // DownloadURLResponseBody contains the body from a DownloadURL get response.
 type DownloadURLResponseBody struct {
 	TaskID *string `json:"data,omitempty"`
@@ -15,13 +13,13 @@ type DownloadURLResponseBody struct {
 
 // DownloadURLPostRequestBody contains the body for a DownloadURL get request.
 type DownloadURLPostRequestBody struct {
-	Content           *string           `json:"content,omitempty"             url:"content,omitempty"`
-	FileName          *string           `json:"filename,omitempty"            url:"filename,omitempty"`
-	Node              *string           `json:"node,omitempty"                url:"node,omitempty"`
-	Storage           *string           `json:"storage,omitempty"             url:"storage,omitempty"`
-	URL               *string           `json:"url,omitempty"                 url:"url,omitempty"`
-	Checksum          *string           `json:"checksum,omitempty"            url:"checksum,omitempty"`
-	ChecksumAlgorithm *string           `json:"checksum-algorithm,omitempty"  url:"checksum-algorithm,omitempty"`
-	Compression       *string           `json:"compression,omitempty"         url:"compression,omitempty"`
-	Verify            *types.CustomBool `json:"verify-certificates,omitempty" url:"verify-certificates,omitempty"`
+	Content           *string `json:"content,omitempty"             url:"content,omitempty"`
+	FileName          *string `json:"filename,omitempty"            url:"filename,omitempty"`
+	Node              *string `json:"node,omitempty"                url:"node,omitempty"`
+	Storage           *string `json:"storage,omitempty"             url:"storage,omitempty"`
+	URL               *string `json:"url,omitempty"                 url:"url,omitempty"`
+	Checksum          *string `json:"checksum,omitempty"            url:"checksum,omitempty"`
+	ChecksumAlgorithm *string `json:"checksum-algorithm,omitempty"  url:"checksum-algorithm,omitempty"`
+	Compression       *string `json:"compression,omitempty"         url:"compression,omitempty"`
+	Verify            *int    `json:"verify-certificates,omitempty" url:"verify-certificates,omitempty"`
 }

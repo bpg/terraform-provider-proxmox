@@ -96,5 +96,9 @@ func (c *Client) GetDatastoreFile(
 		return nil, fmt.Errorf("error get file %s from datastore %s: %w", volumeID, c.StorageName, err)
 	}
 
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
 	return resBody.Data, nil
 }

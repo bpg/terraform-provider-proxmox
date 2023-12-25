@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -37,18 +38,20 @@ var (
 )
 
 type downloadFileModel struct {
-	ID                types.String `tfsdk:"id"`
-	Content           types.String `tfsdk:"content"`
-	FileName          types.String `tfsdk:"filename"`
-	Storage           types.String `tfsdk:"datastore_id"`
-	Node              types.String `tfsdk:"node_name"`
-	Size              types.Int64  `tfsdk:"size"`
-	URL               types.String `tfsdk:"download_url"`
-	Checksum          types.String `tfsdk:"checksum"`
-	Compression       types.String `tfsdk:"compression"`
-	UploadTimeout     types.Int64  `tfsdk:"upload_timeout"`
-	ChecksumAlgorithm types.String `tfsdk:"checksum_algorithm"`
-	Verify            types.Bool   `tfsdk:"verify"`
+	ID                    types.String `tfsdk:"id"`
+	Content               types.String `tfsdk:"content_type"`
+	FileName              types.String `tfsdk:"filename"`
+	Storage               types.String `tfsdk:"datastore_id"`
+	Node                  types.String `tfsdk:"node_name"`
+	Size                  types.Int64  `tfsdk:"size"`
+	URL                   types.String `tfsdk:"download_url"`
+	Checksum              types.String `tfsdk:"checksum"`
+	Compression           types.String `tfsdk:"compression"`
+	UploadTimeout         types.Int64  `tfsdk:"upload_timeout"`
+	ChecksumAlgorithm     types.String `tfsdk:"checksum_algorithm"`
+	Path                  types.String `tfsdk:"path"`
+	Verify                types.Bool   `tfsdk:"verify"`
+	AllowUnsupportedTypes types.Bool   `tfsdk:"allow_unsupported_types"`
 }
 
 // NewDownloadFileResource manages files downloaded using proxmomx API.
@@ -76,10 +79,12 @@ func (r *downloadFileResource) Schema(
 ) {
 	resp.Schema = schema.Schema{
 		Description: "Manages files downloaded directly using proxmomx API. " +
-			"Supports only `iso` and `vztmpl` content types.",
+			"Supports officially only `iso` and `vztmpl` content types, " +
+			"but other like `qcow2` can be used when `allow_unsupported_types` " +
+			"is set to true, proxmox does seem to handle it properly.",
 		Attributes: map[string]schema.Attribute{
 			"id": structure.IDAttribute(),
-			"content": schema.StringAttribute{
+			"content_type": schema.StringAttribute{
 				MarkdownDescription: "The file content type. Must be `iso` | `vztmpl`.",
 				Required:            true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
@@ -96,6 +101,12 @@ func (r *downloadFileResource) Schema(
 				Required:            false,
 				Optional:            false,
 			},
+			"path": schema.StringAttribute{
+				MarkdownDescription: "The file path on host.",
+				Computed:            true,
+				Required:            false,
+				Optional:            false,
+			},
 			"datastore_id": schema.StringAttribute{
 				MarkdownDescription: "The identifier for the target datastore.",
 				Required:            true,
@@ -103,7 +114,6 @@ func (r *downloadFileResource) Schema(
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-
 			"node_name": schema.StringAttribute{
 				MarkdownDescription: "The node name.",
 				Required:            true,
@@ -136,7 +146,6 @@ func (r *downloadFileResource) Schema(
 			"checksum": schema.StringAttribute{
 				MarkdownDescription: "The expected checksum of the file.",
 				Optional:            true,
-				Computed:            true,
 				Default:             nil,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -146,7 +155,6 @@ func (r *downloadFileResource) Schema(
 				MarkdownDescription: "Decompress the downloaded file using the " +
 					"specified compression algorithm.",
 				Optional: true,
-				Computed: true,
 				Default:  nil,
 			},
 			"checksum_algorithm": schema.StringAttribute{
@@ -161,8 +169,7 @@ func (r *downloadFileResource) Schema(
 					"sha384",
 					"sha512",
 				}...)},
-				Computed: true,
-				Default:  nil,
+				Default: nil,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -172,6 +179,14 @@ func (r *downloadFileResource) Schema(
 				Optional:            true,
 				Computed:            true,
 				Default:             booldefault.StaticBool(true),
+			},
+			"allow_unsupported_types": schema.BoolAttribute{
+				MarkdownDescription: "By default `false`. If `true`, " +
+					"content formats `qcow2` and `raw` can be downloaded, " +
+					"though it is not supported by proxmox.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
 			},
 		},
 	}
@@ -214,7 +229,7 @@ func (r *downloadFileResource) Create(
 	}
 
 	nodesClient := r.client.Node(plan.Node.ValueString())
-	verify := proxmoxtypes.CustomBool(*plan.Verify.ValueBoolPointer())
+	verify := proxmoxtypes.CustomBool(plan.Verify.ValueBool()).ToInt()
 
 	queryURLMetadataReq := nodes.QueryURLMetadataGetRequestBody{
 		URL:    plan.URL.ValueStringPointer(),
@@ -234,7 +249,19 @@ func (r *downloadFileResource) Create(
 		return
 	}
 
-	plan.FileName = types.StringValue(*fileMetadata.Filename)
+	filename := *fileMetadata.Filename
+
+	if plan.AllowUnsupportedTypes.ValueBool() {
+		unsupportedAllowedTypes := []string{"qcow2", "raw"}
+		for _, contentType := range unsupportedAllowedTypes {
+			if strings.HasSuffix(filename, contentType) {
+				filename += ".iso"
+				break
+			}
+		}
+	}
+
+	plan.FileName = types.StringValue(filename)
 	plan.Size = types.Int64Value(*fileMetadata.Size)
 
 	downloadFileReq := nodestorage.DownloadURLPostRequestBody{
@@ -259,7 +286,9 @@ func (r *downloadFileResource) Create(
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Download File interface",
-			"Could not  GetQueryURLMetadata, unexpected error: "+err.Error(),
+			fmt.Sprintf(
+				"Could not DownloadFileByURL: `%s`, "+
+					"unexpected error: %s", filename, err.Error()),
 		)
 
 		return
@@ -267,6 +296,41 @@ func (r *downloadFileResource) Create(
 
 	plan.ID = types.StringValue(plan.Storage.ValueString() + ":" +
 		plan.Content.ValueString() + "/" + plan.FileName.ValueString())
+
+	r.read(ctx, &plan, &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		resp.State.RemoveResource(ctx)
+	}
+
+	resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+}
+
+func (r *downloadFileResource) read(
+	ctx context.Context,
+	model *downloadFileModel,
+	diags *diag.Diagnostics,
+) {
+	nodesClient := r.client.Node(model.Node.ValueString())
+	storageClient := nodesClient.Storage(model.Storage.ValueString())
+
+	fileData, err := storageClient.GetDatastoreFile(
+		ctx,
+		model.ID.ValueString(),
+		model.Node.ValueString(),
+	)
+	if err != nil {
+		diags.AddWarning("Could not get file from datastore", err.Error())
+		return
+	}
+
+	pathSplit := strings.Split(*fileData.Path, "/")
+	filename := pathSplit[len(pathSplit)-1]
+
+	model.FileName = types.StringValue(filename)
+	model.Size = types.Int64Value(*fileData.FileSize)
+	model.Path = types.StringValue(*fileData.Path)
 }
 
 // Read reads file from datastore.
@@ -283,41 +347,31 @@ func (r *downloadFileResource) Read(
 		return
 	}
 
-	nodesClient := r.client.Node(state.Node.ValueString())
-	storageClient := nodesClient.Storage(state.Storage.ValueString())
-
-	fileData, err := storageClient.GetDatastoreFile(
-		ctx,
-		state.ID.ValueString(),
-		state.Node.ValueString(),
-	)
-	if err != nil {
-		diags.AddError("Could not get file from datastore", err.Error())
-	}
+	r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		resp.State.RemoveResource(ctx)
 	}
-
-	state.Content = types.StringValue(*fileData.FileFormat)
-	state.Size = types.Int64Value(*fileData.FileSize)
-	state.ID = types.StringValue(*fileData.Path)
 }
 
-// Update force-reacreate resource.
+// Update file resource.
 func (r *downloadFileResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
 ) {
-	var data, state downloadFileModel
+	var plan, state downloadFileModel
 
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
+	r.read(ctx, &plan, &resp.Diagnostics)
+
 	if resp.Diagnostics.HasError() {
-		resp.State.RemoveResource(ctx)
+		return
 	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
 // Delete removes file resource.
@@ -326,35 +380,35 @@ func (r *downloadFileResource) Delete(
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
-	var data downloadFileModel
+	var state downloadFileModel
 
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	nodesClient := r.client.Node(data.Node.ValueString())
-	storageClient := nodesClient.Storage(data.Storage.ValueString())
+	nodesClient := r.client.Node(state.Node.ValueString())
+	storageClient := nodesClient.Storage(state.Storage.ValueString())
 
 	err := storageClient.DeleteDatastoreFile(
 		ctx,
-		data.ID.ValueString(),
+		state.ID.ValueString(),
 	)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such") {
+		if strings.Contains(err.Error(), "unable to parse") {
 			resp.Diagnostics.AddWarning(
 				"Datastore file does not exists",
 				fmt.Sprintf(
 					"Could not delete Datastore file '%s', it does not exist or has been deleted outside of Terraform.",
-					data.ID.ValueString(),
+					state.ID.ValueString(),
 				),
 			)
 		} else {
 			resp.Diagnostics.AddError(
 				"Error deleting Datastore file",
 				fmt.Sprintf("Could not delete Datastore file '%s', unexpected error: %s",
-					data.ID.ValueString(), err.Error()),
+					state.ID.ValueString(), err.Error()),
 			)
 		}
 	}
