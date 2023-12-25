@@ -78,10 +78,12 @@ func (r *downloadFileResource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages files downloaded directly using proxmomx API. " +
+		Description: "Manages files upload using directly proxmox download-url API. " +
+			"It can be a full replacement for ISO files created using " +
+			"`proxmox_virtual_environment_file` and it does not use SSH.\n\n" +
 			"Supports officially only `iso` and `vztmpl` content types, " +
-			"but other like `qcow2` can be used when `allow_unsupported_types` " +
-			"is set to true, proxmox does seem to handle it properly.",
+			"though other like `qcow2` can be used when `allow_unsupported_types` " +
+			"is set to `true`, proxmox does seem to handle it properly.",
 		Attributes: map[string]schema.Attribute{
 			"id": structure.IDAttribute(),
 			"content_type": schema.StringAttribute{

@@ -72,14 +72,13 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   serial_device {}
 }
 
-resource "proxmox_virtual_environment_file" "ubuntu_cloud_image" {
-  content_type = "iso"
-  datastore_id = "local"
-  node_name    = "first-node"
-
-  source_file {
-    path = "http://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img"
-  }
+resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+  content_type       = "iso"
+  datastore_id       = "local"
+  node_name          = "first-node"
+  download_url       = "https://cloud-images.ubuntu.com/noble/20231218/noble-server-cloudimg-amd64.img"
+  checksum           = "ee57ee52e80d1cdd4121043dd5109c7869433e5e2a78bfa6058881fc1d535e03"
+  checksum_algorithm = "sha256"
 }
 
 resource "random_password" "ubuntu_vm_password" {

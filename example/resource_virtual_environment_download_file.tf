@@ -9,6 +9,13 @@ resource "proxmox_virtual_environment_download_file" "debian12_image" {
   upload_timeout          = 4444
 }
 
+resource "proxmox_virtual_environment_download_file" "ubuntu_20_lxc_image" {
+  content_type = "vztmpl"
+  datastore_id = "local"
+  node_name    = "pve"
+  download_url = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+}
+
 resource "proxmox_virtual_environment_download_file" "ubuntu_noble_image" {
   content_type       = "iso"
   datastore_id       = "local"

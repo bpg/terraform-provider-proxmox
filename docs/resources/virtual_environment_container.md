@@ -61,14 +61,11 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
 
 }
 
-resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
+resource "proxmox_virtual_environment_download_file" "ubuntu_container_template" {
   content_type = "vztmpl"
   datastore_id = "local"
   node_name    = "first-node"
-
-  source_file {
-    path = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
-  }
+  download_url = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
 }
 
 resource "random_password" "ubuntu_container_password" {
