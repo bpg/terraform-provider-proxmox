@@ -14,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const accTestDownloadIsoFileName = "proxmox_virtual_environment_download_file.iso_image"
-const accTestDownloadQcow2FileName = "proxmox_virtual_environment_download_file.qcow2_image"
+const (
+	accTestDownloadIsoFileName   = "proxmox_virtual_environment_download_file.iso_image"
+	accTestDownloadQcow2FileName = "proxmox_virtual_environment_download_file.qcow2_image"
+)
 
 func TestAccResourceDownloadFile(t *testing.T) {
 	t.Parallel()
