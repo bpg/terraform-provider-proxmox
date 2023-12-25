@@ -67,3 +67,34 @@ func (c *Client) ListDatastoreFiles(
 
 	return resBody.Data, nil
 }
+
+// GetDatastoreFile get a file details in a datastore.
+func (c *Client) GetDatastoreFile(
+	ctx context.Context,
+	volumeID string,
+	nodeName string,
+) (*DatastoreFileGetResponseData, error) {
+	reqBody := &DatastoreFileGetRequestData{
+		Node:     nodeName,
+		VolumeID: volumeID,
+	}
+	resBody := &DatastoreFileGetResponseBody{}
+
+	err := c.DoRequest(
+		ctx,
+		http.MethodGet,
+		c.ExpandPath(
+			fmt.Sprintf(
+				"content/%s",
+				url.PathEscape(volumeID),
+			),
+		),
+		reqBody,
+		resBody,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error get file %s from datastore %s: %w", volumeID, c.StorageName, err)
+	}
+
+	return resBody.Data, nil
+}

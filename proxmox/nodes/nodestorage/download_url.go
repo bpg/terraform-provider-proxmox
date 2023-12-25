@@ -18,27 +18,27 @@ import (
 func (c *Client) DownloadFileByURL(
 	ctx context.Context,
 	d *DownloadURLPostRequestBody,
-	uploadTimeout int,
-) (*DownloadURLResponseBody, error) {
+	uploadTimeout int64,
+) error {
 	resBody := &DownloadURLResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("download-url"), d, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error download file by URL: %w", err)
+		return fmt.Errorf("error download file by URL: %w", err)
 	}
 
 	if resBody.TaskID == nil {
-		return nil, api.ErrNoDataObjectInResponse
+		return api.ErrNoDataObjectInResponse
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *resBody.TaskID, uploadTimeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *resBody.TaskID, int(uploadTimeout), 5)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return fmt.Errorf(
 			"error download file to datastore %s: failed waiting for url download - %w",
 			c.StorageName,
 			err,
 		)
 	}
 
-	return resBody, nil
+	return nil
 }
