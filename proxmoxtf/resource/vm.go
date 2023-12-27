@@ -69,7 +69,7 @@ const (
 	dvResourceVirtualEnvironmentVMDiskSize                          = 8
 	dvResourceVirtualEnvironmentVMDiskIOThread                      = false
 	dvResourceVirtualEnvironmentVMDiskSSD                           = false
-	dvResourceVirtualEnvironmentVMDiskDiscard                       = ""
+	dvResourceVirtualEnvironmentVMDiskDiscard                       = "ignore"
 	dvResourceVirtualEnvironmentVMDiskCache                         = "none"
 	dvResourceVirtualEnvironmentVMDiskSpeedRead                     = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
