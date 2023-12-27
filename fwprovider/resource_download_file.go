@@ -290,14 +290,23 @@ func (r *downloadFileResource) Create(
 	)
 
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error creating Download File interface",
-			fmt.Sprintf(
-				"Could not DownloadFileByURL: `%s`, "+
-					"unexpected error: %s", filename, err.Error()),
-		)
+		if strings.Contains(err.Error(), "refusing to override existing file") {
+			resp.Diagnostics.AddWarning(
+				"File already exists",
+				fmt.Sprintf(
+					"Could not DownloadFileByURL: `%s`, "+
+						"unexpected error: %s", filename, err.Error()),
+			)
+		} else {
+			resp.Diagnostics.AddError(
+				"Error creating Download File interface",
+				fmt.Sprintf(
+					"Could not DownloadFileByURL: `%s`, "+
+						"unexpected error: %s", filename, err.Error()),
+			)
 
-		return
+			return
+		}
 	}
 
 	plan.ID = types.StringValue(plan.Storage.ValueString() + ":" +
