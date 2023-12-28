@@ -6,6 +6,8 @@
 
 package nodes
 
+import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+
 // QueryURLMetadataGetResponseBody contains the body from a QueryURLMetadata get response.
 type QueryURLMetadataGetResponseBody struct {
 	Data *QueryURLMetadataGetResponseData `json:"data,omitempty"`
@@ -20,6 +22,6 @@ type QueryURLMetadataGetResponseData struct {
 
 // QueryURLMetadataGetRequestBody contains the body for a QueryURLMetadata get request.
 type QueryURLMetadataGetRequestBody struct {
-	Verify *int    `json:"verify-certificates,omitempty" url:"verify-certificates,omitempty"`
-	URL    *string `json:"url,omitempty"                 url:"url,omitempty"`
+	Verify *types.CustomBool `json:"verify-certificates,omitempty" url:"verify-certificates,omitempty,int"`
+	URL    *string           `json:"url,omitempty"                 url:"url,omitempty"`
 }

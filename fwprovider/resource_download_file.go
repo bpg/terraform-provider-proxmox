@@ -247,7 +247,7 @@ func (r *downloadFileResource) Create(
 	}
 
 	nodesClient := r.client.Node(plan.Node.ValueString())
-	verify := proxmoxtypes.CustomBool(plan.Verify.ValueBool()).ToInt()
+	verify := proxmoxtypes.CustomBool(plan.Verify.ValueBool())
 
 	queryURLMetadataReq := nodes.QueryURLMetadataGetRequestBody{
 		URL:    plan.URL.ValueStringPointer(),
