@@ -77,6 +77,27 @@ func (c *Client) GetTaskLog(ctx context.Context, upid string) ([]string, error) 
 	return lines, nil
 }
 
+// DeleteTask deletes specific task.
+func (c *Client) DeleteTask(ctx context.Context, upid string) error {
+	path, err := c.BaseTaskPath(upid)
+	if err != nil {
+		return fmt.Errorf("error creating task path: %w", err)
+	}
+
+	err = c.DoRequest(
+		ctx,
+		http.MethodDelete,
+		path,
+		nil,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error deleting task: %w", err)
+	}
+
+	return nil
+}
+
 // WaitForTask waits for a specific task to complete.
 func (c *Client) WaitForTask(ctx context.Context, upid string, timeoutSec, delaySec int) error {
 	timeDelay := int64(delaySec)

@@ -31,13 +31,20 @@ func (c *Client) DownloadFileByURL(
 		return api.ErrNoDataObjectInResponse
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *resBody.TaskID, int(uploadTimeout), 5)
-	if err != nil {
-		return fmt.Errorf(
+	taskErr := c.Tasks().WaitForTask(ctx, *resBody.TaskID, int(uploadTimeout), 5)
+	if taskErr != nil {
+		err = fmt.Errorf(
 			"error download file to datastore %s: failed waiting for url download - %w",
 			c.StorageName,
-			err,
+			taskErr,
 		)
+
+		deleteErr := c.Tasks().DeleteTask(context.WithoutCancel(ctx), *resBody.TaskID)
+		if deleteErr != nil {
+			return fmt.Errorf("%w \n %w", err, deleteErr)
+		}
+
+		return err
 	}
 
 	return nil

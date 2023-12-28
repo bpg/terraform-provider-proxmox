@@ -13,11 +13,12 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -102,12 +103,18 @@ func (r *downloadFileResource) Schema(
 				Computed:            true,
 				Required:            false,
 				Optional:            false,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"path": schema.StringAttribute{
 				MarkdownDescription: "The file path on host.",
 				Computed:            true,
 				Required:            false,
 				Optional:            false,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"datastore_id": schema.StringAttribute{
 				MarkdownDescription: "The identifier for the target datastore.",
@@ -128,6 +135,9 @@ func (r *downloadFileResource) Schema(
 				Optional:            false,
 				Required:            false,
 				Computed:            true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"upload_timeout": schema.Int64Attribute{
 				MarkdownDescription: "The file download timeout seconds. Default is 600 (10min).",
@@ -152,6 +162,9 @@ func (r *downloadFileResource) Schema(
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.AlsoRequires(path.MatchRoot("checksum_algorithm")),
+				},
 			},
 			"compression": schema.StringAttribute{
 				MarkdownDescription: "Decompress the downloaded file using the " +
@@ -163,14 +176,17 @@ func (r *downloadFileResource) Schema(
 				MarkdownDescription: "The algorithm to calculate the checksum of the file. " +
 					"Must be `md5` | `sha1` | `sha224` | `sha256` | `sha384` | `sha512`.",
 				Optional: true,
-				Validators: []validator.String{stringvalidator.OneOf([]string{
-					"md5",
-					"sha1",
-					"sha224",
-					"sha256",
-					"sha384",
-					"sha512",
-				}...)},
+				Validators: []validator.String{
+					stringvalidator.OneOf([]string{
+						"md5",
+						"sha1",
+						"sha224",
+						"sha256",
+						"sha384",
+						"sha512",
+					}...),
+					stringvalidator.AlsoRequires(path.MatchRoot("checksum")),
+				},
 				Default: nil,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -264,11 +280,6 @@ func (r *downloadFileResource) Create(
 	}
 
 	plan.FileName = types.StringValue(filename)
-	if fileMetadata.Size != nil {
-		plan.Size = types.Int64Value(*fileMetadata.Size)
-	} else {
-		plan.Size = types.Int64Value(0)
-	}
 
 	downloadFileReq := nodestorage.DownloadURLPostRequestBody{
 		Node:              plan.Node.ValueStringPointer(),
@@ -291,11 +302,11 @@ func (r *downloadFileResource) Create(
 
 	if err != nil {
 		if strings.Contains(err.Error(), "refusing to override existing file") {
-			resp.Diagnostics.AddWarning(
-				"File already exists",
+			resp.Diagnostics.AddError(
+				"File already exists in a datastore, delete it first.",
 				fmt.Sprintf(
-					"Could not DownloadFileByURL: `%s`, "+
-						"unexpected error: %s", filename, err.Error()),
+					"File already exists in a datastore: `%s`, "+
+						"error: %s", filename, err.Error()),
 			)
 		} else {
 			resp.Diagnostics.AddError(
@@ -304,18 +315,20 @@ func (r *downloadFileResource) Create(
 					"Could not DownloadFileByURL: `%s`, "+
 						"unexpected error: %s", filename, err.Error()),
 			)
-
-			return
 		}
+
+		return
 	}
 
 	plan.ID = types.StringValue(plan.Storage.ValueString() + ":" +
 		plan.Content.ValueString() + "/" + plan.FileName.ValueString())
 
-	r.read(ctx, &plan, &resp.Diagnostics)
+	err = r.read(ctx, &plan)
 
-	if resp.Diagnostics.HasError() {
-		resp.State.RemoveResource(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error when reading file from datastore", err.Error(),
+		)
 	}
 
 	resp.State.Set(ctx, plan)
@@ -325,8 +338,7 @@ func (r *downloadFileResource) Create(
 func (r *downloadFileResource) read(
 	ctx context.Context,
 	model *downloadFileModel,
-	diags *diag.Diagnostics,
-) {
+) error {
 	nodesClient := r.client.Node(model.Node.ValueString())
 	storageClient := nodesClient.Storage(model.Storage.ValueString())
 
@@ -336,8 +348,7 @@ func (r *downloadFileResource) read(
 		model.Node.ValueString(),
 	)
 	if err != nil {
-		diags.AddWarning("Could not get file from datastore", err.Error())
-		return
+		return fmt.Errorf("file does not exists in datastore: %w", err)
 	}
 
 	pathSplit := strings.Split(*fileData.Path, "/")
@@ -346,6 +357,8 @@ func (r *downloadFileResource) read(
 	model.FileName = types.StringValue(filename)
 	model.Size = types.Int64Value(*fileData.FileSize)
 	model.Path = types.StringValue(*fileData.Path)
+
+	return nil
 }
 
 // Read reads file from datastore.
@@ -362,9 +375,8 @@ func (r *downloadFileResource) Read(
 		return
 	}
 
-	r.read(ctx, &state, &resp.Diagnostics)
-
-	if resp.Diagnostics.HasError() {
+	err := r.read(ctx, &state)
+	if err != nil {
 		resp.State.RemoveResource(ctx)
 	}
 }
@@ -380,9 +392,12 @@ func (r *downloadFileResource) Update(
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	r.read(ctx, &plan, &resp.Diagnostics)
+	err := r.read(ctx, &plan)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error when reading file from datastore", err.Error(),
+		)
 
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -415,14 +430,14 @@ func (r *downloadFileResource) Delete(
 			resp.Diagnostics.AddWarning(
 				"Datastore file does not exists",
 				fmt.Sprintf(
-					"Could not delete Datastore file '%s', it does not exist or has been deleted outside of Terraform.",
+					"Could not delete datastore file '%s', it does not exist or has been deleted outside of Terraform.",
 					state.ID.ValueString(),
 				),
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error deleting Datastore file",
-				fmt.Sprintf("Could not delete Datastore file '%s', unexpected error: %s",
+				"Error deleting datastore file",
+				fmt.Sprintf("Could not delete datastore file '%s', unexpected error: %s",
 					state.ID.ValueString(), err.Error()),
 			)
 		}
