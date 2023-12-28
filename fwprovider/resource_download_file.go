@@ -303,7 +303,8 @@ func (r *downloadFileResource) Create(
 	if err != nil {
 		if strings.Contains(err.Error(), "refusing to override existing file") {
 			resp.Diagnostics.AddError(
-				"File already exists in a datastore, delete it first.",
+				"File already exists in a datastore, it was createad outside of Terraform "+
+					"or is managed by another terraform resource.",
 				fmt.Sprintf(
 					"File already exists in a datastore: `%s`, "+
 						"error: %s", filename, err.Error()),
