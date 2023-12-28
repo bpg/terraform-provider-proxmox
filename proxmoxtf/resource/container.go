@@ -398,7 +398,7 @@ func Container() *schema.Resource {
 										Type:        schema.TypeList,
 										Description: "The list of DNS servers",
 										Optional:    true,
-										Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPv4Address},
+										Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPAddress},
 										MinItems:    0,
 									},
 								},
