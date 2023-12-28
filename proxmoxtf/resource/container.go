@@ -918,6 +918,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
 	updateBody := &containers.UpdateRequestBody{}
 
+	startOnBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStartOnBoot).(bool))
+	updateBody.StartOnBoot = &startOnBoot
+
 	console := d.Get(mkResourceVirtualEnvironmentContainerConsole).([]interface{})
 
 	if len(console) > 0 {
