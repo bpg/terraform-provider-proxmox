@@ -717,6 +717,15 @@
         "bug",
         "ideas"
       ]
+    },
+    {
+      "login": "LEI",
+      "name": "Guillaume",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4112243?v=4",
+      "profile": "https://github.com/LEI",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 8,
