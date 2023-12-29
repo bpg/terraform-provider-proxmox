@@ -9,8 +9,10 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -176,12 +178,14 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.Proxmox
 
 	networkDevices, err := nc.ListNetworkInterfaces(ctx)
 	if err != nil {
-		return ssh.ProxmoxNode{}, fmt.Errorf("failed to list network devices of node \"%s\": %w", nc.NodeName, err)
+		return ssh.ProxmoxNode{}, fmt.Errorf("failed to list network devices of node %q: %w", nc.NodeName, err)
 	}
 
 	nodeAddress := ""
 
 	// try IPv4 address on the interface with IPv4 gateway
+	tflog.Debug(ctx, "Attempting to find interfaces with both a static IPV4 address and gateway.")
+
 	for _, d := range networkDevices {
 		if d.Gateway != nil && d.Address != nil {
 			nodeAddress = *d.Address
@@ -191,6 +195,8 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.Proxmox
 
 	if nodeAddress == "" {
 		// fallback 1: try IPv6 address on the interface with IPv6 gateway
+		tflog.Debug(ctx, "Attempting to find interfaces with both a static IPV6 address and gateway.")
+
 		for _, d := range networkDevices {
 			if d.Gateway6 != nil && d.Address6 != nil {
 				nodeAddress = *d.Address6
@@ -201,11 +207,30 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.Proxmox
 
 	if nodeAddress == "" {
 		// fallback 2: use first interface with any IPv4 address
+		tflog.Debug(ctx, "Attempting to find interfaces with at least a static IPV4 address.")
+
 		for _, d := range networkDevices {
 			if d.Address != nil {
 				nodeAddress = *d.Address
 				break
 			}
+		}
+	}
+
+	if nodeAddress == "" {
+		// fallback 3: do a good old DNS lookup
+		tflog.Debug(ctx, fmt.Sprintf("Attempting a DNS lookup of node %q.", nc.NodeName))
+
+		ips, err := net.LookupIP(nodeName)
+		if err != nil {
+			for _, ip := range ips {
+				if ipv4 := ip.To4(); ipv4 != nil {
+					nodeAddress = ipv4.String()
+					break
+				}
+			}
+		} else {
+			tflog.Debug(ctx, fmt.Sprintf("Failed to do a DNS lookup of the node: %s", err.Error()))
 		}
 	}
 
