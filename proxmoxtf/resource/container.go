@@ -2011,11 +2011,28 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSDomain] = ""
 		}
 
-		if containerConfig.DNSServer != nil {
-			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServer] = *containerConfig.DNSServer
+		// check what we have in the plan
+		currentInitializationDNSBlock := map[string]interface{}{}
+		currentInitialization := d.Get(mkResourceVirtualEnvironmentContainerInitialization).([]interface{})
 
-			dnsServer := strings.Split(*containerConfig.DNSServer, " ")
-			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServers] = dnsServer
+		if len(currentInitialization) > 0 {
+			currentInitializationBlock := currentInitialization[0].(map[string]interface{})
+			//nolint:lll
+			currentInitializationDNS := currentInitializationBlock[mkResourceVirtualEnvironmentContainerInitializationDNS].([]interface{})
+			if len(currentInitializationDNS) > 0 {
+				currentInitializationDNSBlock = currentInitializationDNS[0].(map[string]interface{})
+			}
+		}
+
+		//nolint:lll
+		currentInitializationDNSServer, ok := currentInitializationDNSBlock[mkResourceVirtualEnvironmentContainerInitializationDNSServer]
+		if containerConfig.DNSServer != nil {
+			if ok && currentInitializationDNSServer != "" {
+				initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServer] = *containerConfig.DNSServer
+			} else {
+				dnsServer := strings.Split(*containerConfig.DNSServer, " ")
+				initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServers] = dnsServer
+			}
 		} else {
 			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServer] = ""
 			initializationDNS[mkResourceVirtualEnvironmentContainerInitializationDNSServers] = []string{}
