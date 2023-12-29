@@ -726,6 +726,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "loganmancuso",
+      "name": "Logan Mancuso",
+      "avatar_url": "https://avatars.githubusercontent.com/u/18329590?v=4",
+      "profile": "https://loganmancuso.github.io/",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 8,
