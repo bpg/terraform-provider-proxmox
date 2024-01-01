@@ -51,7 +51,6 @@ func testAccResourceDownloadIsoFileCreatedConfig() string {
 		content_type = "iso"
 		node_name    = "%s"
 		datastore_id = "%s"
-		file_name    = "fake_iso_file.img"
 		url = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
 	  }
 	 `, accTestNodeName, accTestStorageName)
@@ -60,46 +59,47 @@ func testAccResourceDownloadIsoFileCreatedConfig() string {
 func testAccResourceDownloadQcow2FileCreatedConfig() string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_download_file" "qcow2_image" {
-		content_type = "iso"
-		node_name    = "%s"
-		datastore_id = "%s"
-		file_name    = "fake_qcow2_file.img"
-		url = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
+		content_type       = "iso"
+		node_name          = "%s"
+		datastore_id       = "%s"
+		file_name          = "fake_qcow2_file.img"
+		url                = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
+		checksum           = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
+		checksum_algorithm = "sha256"
 	  }
 	 `, accTestNodeName, accTestStorageName)
 }
 
 func testAccResourceDownloadIsoFileCreatedCheck() resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "content_type", "iso"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "id", "local:iso/fake_file.iso"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "node_name", accTestNodeName),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "datastore_id", accTestStorageName),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "download_url", "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "filename", "fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "allow_unsupported_types", "false"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "url", "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "file_name", "fake_file.iso"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "upload_timeout", "600"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "size", "512"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "size", "3"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "verify", "true"),
 		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "checksum"),
 		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "checksum_algorithm"),
-		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "compression"),
+		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "decompression_algorithm"),
 	)
 }
 
 func testAccResourceDownloadQcow2FileCreatedCheck() resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "id", "local:iso/fake_qcow2_file.img"),
 		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "content_type", "iso"),
 		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "node_name", accTestNodeName),
 		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "datastore_id", accTestStorageName),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "download_url", "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "filename", "fake_file.qcow2.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "allow_unsupported_types", "true"),
+		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "url", "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"),
+		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "file_name", "fake_qcow2_file.img"),
 		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "upload_timeout", "600"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "size", "512"),
+		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "size", "3"),
 		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "verify", "true"),
-		resource.TestCheckNoResourceAttr(accTestDownloadQcow2FileName, "checksum"),
-		resource.TestCheckNoResourceAttr(accTestDownloadQcow2FileName, "checksum_algorithm"),
-		resource.TestCheckNoResourceAttr(accTestDownloadQcow2FileName, "compression"),
+		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "checksum", "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"),
+		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "checksum_algorithm", "sha256"),
+		resource.TestCheckNoResourceAttr(accTestDownloadQcow2FileName, "decompression_algorithm"),
 	)
 }
 
@@ -118,17 +118,17 @@ func testAccResourceDownloadIsoFileUpdatedConfig() string {
 
 func testAccResourceDownloadIsoFileUpdatedCheck() resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "id", "local:iso/fake_file.iso"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "content_type", "iso"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "node_name", accTestNodeName),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "datastore_id", accTestStorageName),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "download_url", "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "filename", "fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "allow_unsupported_types", "false"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "url", "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "file_name", "fake_file.iso"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "upload_timeout", "10000"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "size", "512"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "size", "3"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "verify", "true"),
 		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "checksum"),
 		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "checksum_algorithm"),
-		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "compression"),
+		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "decompression_algorithm"),
 	)
 }
