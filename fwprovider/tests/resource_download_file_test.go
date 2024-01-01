@@ -51,7 +51,8 @@ func testAccResourceDownloadIsoFileCreatedConfig() string {
 		content_type = "iso"
 		node_name    = "%s"
 		datastore_id = "%s"
-		download_url = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
+		file_name    = "fake_iso_file.img"
+		url = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
 	  }
 	 `, accTestNodeName, accTestStorageName)
 }
@@ -62,8 +63,8 @@ func testAccResourceDownloadQcow2FileCreatedConfig() string {
 		content_type = "iso"
 		node_name    = "%s"
 		datastore_id = "%s"
-		download_url = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
-		allow_unsupported_types = true
+		file_name    = "fake_qcow2_file.img"
+		url = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
 	  }
 	 `, accTestNodeName, accTestStorageName)
 }
@@ -108,7 +109,8 @@ func testAccResourceDownloadIsoFileUpdatedConfig() string {
 		content_type = "iso"
 		node_name    = "%s"
 		datastore_id = "%s"
-		download_url = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
+		file_name    = "fake_iso_file.img"
+		url = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
 		upload_timeout = 10000
 	  }
 	 `, accTestNodeName, accTestStorageName)
