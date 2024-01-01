@@ -4,42 +4,64 @@ title: proxmox_virtual_environment_download_file
 parent: Resources
 subcategory: Virtual Environment
 description: |-
-  Manages files upload using directly proxmox download-url API. It can be a full replacement for ISO files created using proxmox_virtual_environment_file and it does not use SSH.
-  Supports officially only iso and vztmpl content types, though other like qcow2 can be used when allow_unsupported_types is set to true, proxmox does seem to handle it properly.
+  Manages files upload using PVE download-url API. It can be fully compatibile and faster replacement for image files created using proxmox_virtual_environment_file. Supports images for VMs (ISO images) and LXC (CT Templates).
 ---
 
 # Resource: proxmox_virtual_environment_download_file
 
-Manages files upload using directly proxmox download-url API. It can be a full replacement for ISO files created using `proxmox_virtual_environment_file` and it does not use SSH.
-
-Supports officially only `iso` and `vztmpl` content types, though other like `qcow2` can be used when `allow_unsupported_types` is set to `true`, proxmox does seem to handle it properly.
+Manages files upload using PVE download-url API. It can be fully compatibile and faster replacement for image files created using `proxmox_virtual_environment_file`. Supports images for VMs (ISO images) and LXC (CT Templates).
 
 ## Example Usage
 
 ```terraform
-resource "proxmox_virtual_environment_download_file" "ubuntu_24_noble_image" {
+resource "proxmox_virtual_environment_download_file" "release_20231228_debian_12_bookworm_qcow2_img" {
   content_type       = "iso"
   datastore_id       = "local"
+  file_name          = "debian-12-generic-amd64-20231228-1609.img"
   node_name          = "pve"
-  download_url       = "https://cloud-images.ubuntu.com/noble/20231218/noble-server-cloudimg-amd64.img"
-  checksum           = "ee57ee52e80d1cdd4121043dd5109c7869433e5e2a78bfa6058881fc1d535e03"
-  checksum_algorithm = "sha256"
+  url                = "https://cloud.debian.org/images/cloud/bookworm/20231228-1609/debian-12-generic-amd64-20231228-1609.qcow2"
+  checksum           = "d2fbcf11fb28795842e91364d8c7b69f1870db09ff299eb94e4fbbfa510eb78d141e74c1f4bf6dfa0b7e33d0c3b66e6751886feadb4e9916f778bab1776bdf1b"
+  checksum_algorithm = "sha512"
 }
 
-resource "proxmox_virtual_environment_download_file" "ubuntu_20_lxc_image" {
+resource "proxmox_virtual_environment_download_file" "latest_debian_12_bookworm_qcow2_img" {
+  content_type = "iso"
+  datastore_id = "local"
+  file_name    = "debian-12-generic-amd64.qcow2.img"
+  node_name    = "pve"
+  url          = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+}
+
+resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_qcow2_img" {
+  content_type = "iso"
+  datastore_id = "local"
+  node_name    = "pve"
+  url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+}
+
+resource "proxmox_virtual_environment_download_file" "latest_static_ubuntu_24_noble_qcow2_img" {
+  content_type = "iso"
+  datastore_id = "local"
+  node_name    = "pve"
+  url          = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  overwrite    = false
+}
+
+resource "proxmox_virtual_environment_download_file" "release_20231211_ubuntu_22_jammy_lxc_img" {
+  content_type       = "vztmpl"
+  datastore_id       = "local"
+  node_name          = "pve"
+  url                = "https://cloud-images.ubuntu.com/releases/22.04/release-20231211/ubuntu-22.04-server-cloudimg-amd64.tar.gz"
+  checksum           = "0775e90e34a2136784374a7dfe4fadd0b58b812ba52d40b7514b40c77824c804"
+  checksum_algorithm = "sha256"
+  upload_timeout     = 4444
+}
+
+resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc_img" {
   content_type = "vztmpl"
   datastore_id = "local"
   node_name    = "pve"
-  download_url = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
-}
-
-resource "proxmox_virtual_environment_download_file" "debian12_image_qcow2" {
-  content_type            = "iso"
-  datastore_id            = "local"
-  node_name               = "pve"
-  download_url            = "https://cloud.debian.org/images/cloud/bookworm/20230802-1460/debian-12-generic-amd64-20230802-1460.qcow2"
-  allow_unsupported_types = true
-  upload_timeout          = 4444
+  url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.tar.gz"
 }
 ```
 
@@ -48,23 +70,22 @@ resource "proxmox_virtual_environment_download_file" "debian12_image_qcow2" {
 
 ### Required
 
-- `content_type` (String) The file content type. Must be `iso` | `vztmpl`.
+- `content_type` (String) The file content type. Must be `iso` for VM images or `vztmpl` for LXC images.
 - `datastore_id` (String) The identifier for the target datastore.
-- `download_url` (String) The URL to download the file from. Format `https?://.*`.
 - `node_name` (String) The node name.
+- `url` (String) The URL to download the file from. Format `https?://.*`.
 
 ### Optional
 
-- `allow_unsupported_types` (Boolean) By default `false`. If `true`, content formats `qcow2` and `raw` can be downloaded, though it is not supported by proxmox.
 - `checksum` (String) The expected checksum of the file.
 - `checksum_algorithm` (String) The algorithm to calculate the checksum of the file. Must be `md5` | `sha1` | `sha224` | `sha256` | `sha384` | `sha512`.
-- `compression` (String) Decompress the downloaded file using the specified compression algorithm.
+- `decompression_algorithm` (String) Decompress the downloaded file using the specified compression algorithm. Must be one of `gz` | `lzo` | `zst`.
+- `file_name` (String) The file name. If not provided, it is calculatedusing `url`. PVE will raise 'wrong file extenstion' error for some popular extensions file `.raw` or `.qcow2`. Workaround is to use eg. `.img` instead.
+- `overwrite` (Boolean) If `true` and size of uploaded file is different, than size from `url` Content-Length header, file will be downloaded again. If `false`, there will be no checks.
 - `upload_timeout` (Number) The file download timeout seconds. Default is 600 (10min).
 - `verify` (Boolean) By default `true`. If `false`, no SSL/TLS certificates will be verified.
 
 ### Read-Only
 
-- `filename` (String) The file name.
 - `id` (String) The unique identifier of this resource.
-- `path` (String) The file path on host.
 - `size` (Number) The file size.

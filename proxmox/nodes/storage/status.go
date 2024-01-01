@@ -4,42 +4,36 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package nodestorage
+package storage
 
 import (
 	"context"
 	"fmt"
 	"net/http"
-	"sort"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
-// ListDatastores retrieves a list of nodes.
-func (c *Client) ListDatastores(
+// GetDatastoreStatus gets status information for a given datastore.
+func (c *Client) GetDatastoreStatus(
 	ctx context.Context,
-	d *DatastoreListRequestBody,
-) ([]*DatastoreListResponseData, error) {
-	resBody := &DatastoreListResponseBody{}
+) (*DatastoreGetStatusResponseData, error) {
+	resBody := &DatastoreGetStatusResponseBody{}
 
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
-		c.basePath(),
-		d,
+		c.ExpandPath("status"),
+		nil,
 		resBody,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving datastores: %w", err)
+		return nil, fmt.Errorf("error retrieving status for datastore %s: %w", c.StorageName, err)
 	}
 
 	if resBody.Data == nil {
 		return nil, api.ErrNoDataObjectInResponse
 	}
-
-	sort.Slice(resBody.Data, func(i, j int) bool {
-		return resBody.Data[i].ID < resBody.Data[j].ID
-	})
 
 	return resBody.Data, nil
 }

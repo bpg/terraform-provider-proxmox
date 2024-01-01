@@ -23,7 +23,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/nodestorage"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -109,7 +109,7 @@ func getNodesClient() *nodes.Client {
 	return nodesClient
 }
 
-func getNodeStorageClient() *nodestorage.Client {
+func getNodeStorageClient() *storage.Client {
 	nodesClient := getNodesClient()
-	return &nodestorage.Client{Client: nodesClient, StorageName: accTestStorageName}
+	return &storage.Client{Client: nodesClient, StorageName: accTestStorageName}
 }

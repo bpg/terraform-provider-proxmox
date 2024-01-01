@@ -12,7 +12,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/nodestorage"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 )
@@ -45,8 +45,8 @@ func (c *Client) VM(vmID int) *vms.Client {
 }
 
 // Storage returns a client for managing a specific storage.
-func (c *Client) Storage(storageName string) *nodestorage.Client {
-	return &nodestorage.Client{
+func (c *Client) Storage(storageName string) *storage.Client {
+	return &storage.Client{
 		Client:      c,
 		StorageName: storageName,
 	}

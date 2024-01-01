@@ -1,4 +1,4 @@
-package nodestorage
+package storage
 
 import (
 	"context"

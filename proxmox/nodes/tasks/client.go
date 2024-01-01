@@ -23,8 +23,7 @@ func (c *Client) ExpandPath(_ string) string {
 	panic("ExpandPath of tasks.Client must not be used. Use BuildPath instead.")
 }
 
-// BaseTaskPath builds base task path using Task ID.
-func (c *Client) BaseTaskPath(taskID string) (string, error) {
+func (c *Client) baseTaskPath(taskID string) (string, error) {
 	tid, err := ParseTaskID(taskID)
 	if err != nil {
 		return "", err
@@ -38,7 +37,7 @@ func (c *Client) BaseTaskPath(taskID string) (string, error) {
 
 // BuildPath builds a path using information from Task ID.
 func (c *Client) BuildPath(taskID string, path string) (string, error) {
-	basePath, err := c.BaseTaskPath(taskID)
+	basePath, err := c.baseTaskPath(taskID)
 	if err != nil {
 		return "", err
 	}

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package nodestorage
+package storage
 
 // DatastoreFileListResponseBody contains the body from a datastore content list response.
 type DatastoreFileListResponseBody struct {
