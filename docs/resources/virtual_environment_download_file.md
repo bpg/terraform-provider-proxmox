@@ -4,15 +4,12 @@ title: proxmox_virtual_environment_download_file
 parent: Resources
 subcategory: Virtual Environment
 description: |-
-  Manages files upload using directly proxmox download-url API. It can be a full replacement for ISO files created using proxmox_virtual_environment_file and it does not use SSH.
-  Supports officially only iso and vztmpl content types, though other like qcow2 can be used when allow_unsupported_types is set to true, proxmox does seem to handle it properly.
+  Manages files upload using PVE download-url API. It can be a full and faster replacement for image files created using proxmox_virtual_environment_file. Supports iso and vztmpl content types.
 ---
 
 # Resource: proxmox_virtual_environment_download_file
 
-Manages files upload using directly proxmox download-url API. It can be a full replacement for ISO files created using `proxmox_virtual_environment_file` and it does not use SSH.
-
-Supports officially only `iso` and `vztmpl` content types, though other like `qcow2` can be used when `allow_unsupported_types` is set to `true`, proxmox does seem to handle it properly.
+Manages files upload using PVE download-url API. It can be a full and faster replacement for image files created using `proxmox_virtual_environment_file`. Supports `iso` and `vztmpl` content types.
 
 ## Example Usage
 
@@ -50,21 +47,21 @@ resource "proxmox_virtual_environment_download_file" "debian12_image_qcow2" {
 
 - `content_type` (String) The file content type. Must be `iso` | `vztmpl`.
 - `datastore_id` (String) The identifier for the target datastore.
-- `download_url` (String) The URL to download the file from. Format `https?://.*`.
 - `node_name` (String) The node name.
+- `url` (String) The URL to download the file from. Format `https?://.*`.
 
 ### Optional
 
-- `allow_unsupported_types` (Boolean) By default `false`. If `true`, content formats `qcow2` and `raw` can be downloaded, though it is not supported by proxmox.
 - `checksum` (String) The expected checksum of the file.
 - `checksum_algorithm` (String) The algorithm to calculate the checksum of the file. Must be `md5` | `sha1` | `sha224` | `sha256` | `sha384` | `sha512`.
-- `compression` (String) Decompress the downloaded file using the specified compression algorithm.
+- `compression` (String) Decompress the downloaded file using the specified compression algorithm. Must be one of `gz` | `lzo` | `zst`.
+- `file_name` (String) The file name. If not provided, it is calculatedusing `url`.
+- `overwrite` (Boolean) If `true` and size of uploaded file is different, than size from `url` Content-Length header, file will be downloaded again. If `false`, there will be no checks.
 - `upload_timeout` (Number) The file download timeout seconds. Default is 600 (10min).
 - `verify` (Boolean) By default `true`. If `false`, no SSL/TLS certificates will be verified.
 
 ### Read-Only
 
-- `filename` (String) The file name.
 - `id` (String) The unique identifier of this resource.
 - `path` (String) The file path on host.
 - `size` (Number) The file size.

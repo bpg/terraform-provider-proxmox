@@ -79,7 +79,7 @@ func (c *Client) GetTaskLog(ctx context.Context, upid string) ([]string, error) 
 
 // DeleteTask deletes specific task.
 func (c *Client) DeleteTask(ctx context.Context, upid string) error {
-	path, err := c.BaseTaskPath(upid)
+	path, err := c.baseTaskPath(upid)
 	if err != nil {
 		return fmt.Errorf("error creating task path: %w", err)
 	}

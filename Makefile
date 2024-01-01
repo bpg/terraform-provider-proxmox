@@ -40,7 +40,7 @@ example-apply:
 		&& export TF_DISABLE_CHECKPOINT="true" \
 		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
 		&& cd ./example \
-		&& terraform apply -auto-approve
+		&& terraform apply -auto-approve -target="proxmox_virtual_environment_download_file.latest_debian_12_bookworm_qcow2_img"
 
 .PHONY: example-build
 example-build:
@@ -71,7 +71,7 @@ example-plan:
 		&& export TF_DISABLE_CHECKPOINT="true" \
 		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
 		&& cd ./example \
-		&& terraform plan
+		&& terraform plan -target="proxmox_virtual_environment_download_file.latest_debian_12_bookworm_qcow2_img"
 
 .PHONY: fmt
 fmt:
