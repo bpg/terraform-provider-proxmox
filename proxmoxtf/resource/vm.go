@@ -69,7 +69,7 @@ const (
 	dvResourceVirtualEnvironmentVMDiskSize                          = 8
 	dvResourceVirtualEnvironmentVMDiskIOThread                      = false
 	dvResourceVirtualEnvironmentVMDiskSSD                           = false
-	dvResourceVirtualEnvironmentVMDiskDiscard                       = ""
+	dvResourceVirtualEnvironmentVMDiskDiscard                       = "ignore"
 	dvResourceVirtualEnvironmentVMDiskCache                         = "none"
 	dvResourceVirtualEnvironmentVMDiskSpeedRead                     = 0
 	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
@@ -897,7 +897,7 @@ func VM() *schema.Resource {
 										Type:        schema.TypeList,
 										Description: "The list of DNS servers",
 										Optional:    true,
-										Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPv4Address},
+										Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPAddress},
 										MinItems:    0,
 									},
 								},
@@ -4481,11 +4481,29 @@ func vmReadCustom(
 			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSDomain] = ""
 		}
 
-		if vmConfig.CloudInitDNSServer != nil {
-			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServer] = *vmConfig.CloudInitDNSServer
+		// check what we have in the plan
+		currentInitializationDNSBlock := map[string]interface{}{}
+		currentInitialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 
-			dnsServer := strings.Split(*vmConfig.CloudInitDNSServer, " ")
-			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServers] = dnsServer
+		if len(currentInitialization) > 0 {
+			currentInitializationBlock := currentInitialization[0].(map[string]interface{})
+			//nolint:lll
+			currentInitializationDNS := currentInitializationBlock[mkResourceVirtualEnvironmentVMInitializationDNS].([]interface{})
+			if len(currentInitializationDNS) > 0 {
+				currentInitializationDNSBlock = currentInitializationDNS[0].(map[string]interface{})
+			}
+		}
+
+		//nolint:lll
+		currentInitializationDNSServer, ok := currentInitializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServer]
+		if vmConfig.CloudInitDNSServer != nil {
+			if ok && currentInitializationDNSServer != "" {
+				// the template is using deprecated attribute mkResourceVirtualEnvironmentVMInitializationDNSServer
+				initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServer] = *vmConfig.CloudInitDNSServer
+			} else {
+				dnsServer := strings.Split(*vmConfig.CloudInitDNSServer, " ")
+				initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServers] = dnsServer
+			}
 		} else {
 			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServer] = ""
 			initializationDNS[mkResourceVirtualEnvironmentVMInitializationDNSServers] = []string{}

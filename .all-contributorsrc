@@ -717,6 +717,24 @@
         "bug",
         "ideas"
       ]
+    },
+    {
+      "login": "LEI",
+      "name": "Guillaume",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4112243?v=4",
+      "profile": "https://github.com/LEI",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "loganmancuso",
+      "name": "Logan Mancuso",
+      "avatar_url": "https://avatars.githubusercontent.com/u/18329590?v=4",
+      "profile": "https://loganmancuso.github.io/",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 8,

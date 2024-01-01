@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.42.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.42.0...v0.42.1) (2023-12-29)
+
+
+### Bug Fixes
+
+* accept ipv6 in dns servers initialization ([bf5cbd9](https://github.com/bpg/terraform-provider-proxmox/commit/bf5cbd9dad116a4515bd2eb193c296097b1e4b84))
+* **lxc:** add missing `onboot` param on container clone create ([#838](https://github.com/bpg/terraform-provider-proxmox/issues/838)) ([40102a6](https://github.com/bpg/terraform-provider-proxmox/commit/40102a6a501a5ead3219492f34255a25c4f21371))
+* **vm,lxc:** accept IPv6 in `initialization.dns.servers` attribute ([#842](https://github.com/bpg/terraform-provider-proxmox/issues/842)) ([bf5cbd9](https://github.com/bpg/terraform-provider-proxmox/commit/bf5cbd9dad116a4515bd2eb193c296097b1e4b84))
+* **vm,lxc:** unexpected state drift when using `initialization.dns.servers` ([#844](https://github.com/bpg/terraform-provider-proxmox/issues/844)) ([ac923cd](https://github.com/bpg/terraform-provider-proxmox/commit/ac923cd1b42c0c64d9829beb1ab552680b21d98b))
+* **vm:** Fixed missing default for disk discard ([#840](https://github.com/bpg/terraform-provider-proxmox/issues/840)) ([5281ac2](https://github.com/bpg/terraform-provider-proxmox/commit/5281ac24921795ed933047e5d9ca953add15bdd0))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/go-git/go-git/v5 from 5.7.0 to 5.11.0 in /tools ([#839](https://github.com/bpg/terraform-provider-proxmox/issues/839)) ([f860c4b](https://github.com/bpg/terraform-provider-proxmox/commit/f860c4bab54344beb4fd54366adcf940ea1463fe))
+* **tests:** Update acceptance tests to PVE 8.1, add docs ([#834](https://github.com/bpg/terraform-provider-proxmox/issues/834)) ([d8f82d4](https://github.com/bpg/terraform-provider-proxmox/commit/d8f82d47b3a74e4b64a26757522c067a635e4fa3))
+
 ## [0.42.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.41.0...v0.42.0) (2023-12-23)
 
 
