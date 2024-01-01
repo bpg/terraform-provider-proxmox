@@ -118,12 +118,12 @@ func testAccResourceDownloadIsoFileUpdatedConfig() string {
 
 func testAccResourceDownloadIsoFileUpdatedCheck() resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "id", "local:iso/fake_file.iso"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "id", "local:iso/fake_iso_file.img"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "content_type", "iso"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "node_name", accTestNodeName),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "datastore_id", accTestStorageName),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "url", "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "file_name", "fake_file.iso"),
+		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "file_name", "fake_iso_file.img"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "upload_timeout", "10000"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "size", "3"),
 		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "verify", "true"),
