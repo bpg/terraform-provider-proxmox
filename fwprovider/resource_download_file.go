@@ -71,7 +71,7 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 	if originalStateSizeBytes != nil {
 		originalStateSize, err := strconv.ParseInt(string(originalStateSizeBytes), 10, 64)
 		if err != nil {
-			resp.Diagnostics.AddWarning(
+			resp.Diagnostics.AddError(
 				"Unexpected error when reading originalStateSize from Private",
 				fmt.Sprintf(
 					"Unexpected error in ParseInt: %s",
@@ -106,7 +106,7 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 	if (urlSizeBytes != nil) && (plan.URL.ValueString() == state.URL.ValueString()) {
 		urlSize, err := strconv.ParseInt(string(urlSizeBytes), 10, 64)
 		if err != nil {
-			resp.Diagnostics.AddWarning(
+			resp.Diagnostics.AddError(
 				"Unexpected error when reading urlSize from Private",
 				fmt.Sprintf(
 					"Unexpected error in ParseInt: %s",
