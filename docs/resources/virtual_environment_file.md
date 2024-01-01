@@ -47,7 +47,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 
 ### Snippets
 
--> **Note:** Snippets are not enabled by default in new Proxmox installations. You need to enable them in the 'Datacenter>Storage' section of the proxmox interface before first using this resource.
+-> **Note:**  Snippets are not enabled by default in new Proxmox installations. You need to enable them in the 'Datacenter>Storage' section of the proxmox interface before first using this resource.
 
 -> **Note:** The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
 
@@ -115,10 +115,10 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
   and stored locally before uploading it to Proxmox VE.
   - `checksum` - (Optional) The SHA256 checksum of the source file.
   - `file_name` - (Optional) The file name to use instead of the source file
-    name. Useful when the source file does not have a valid file extension, for example
-    when the source file is a URL referencing a `.qcow2` image.
+      name. Useful when the source file does not have a valid file extension, for example
+      when the source file is a URL referencing a `.qcow2` image.
   - `insecure` - (Optional) Whether to skip the TLS verification step for
-    HTTPS sources (defaults to `false`).
+      HTTPS sources (defaults to `false`).
   - `path` - (Required) A path to a local file or a URL.
 - `source_raw` - (Optional) The raw source (conflicts with `source_file`).
   - `data` - (Required) The raw data.
