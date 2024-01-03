@@ -23,12 +23,14 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
-	accTestNodeName = "pve"
+	accTestNodeName    = "pve"
+	accTestStorageName = "local"
 )
 
 // testAccMuxProviders returns a map of mux servers for the acceptance tests.
@@ -105,4 +107,9 @@ func getNodesClient() *nodes.Client {
 	}
 
 	return nodesClient
+}
+
+func getNodeStorageClient() *storage.Client {
+	nodesClient := getNodesClient()
+	return &storage.Client{Client: nodesClient, StorageName: accTestStorageName}
 }

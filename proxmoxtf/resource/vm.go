@@ -1871,7 +1871,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		onlySharedDatastores := true
 		for _, datastore := range datastores {
-			datastoreStatus, err2 := api.Node(cloneNodeName).GetDatastoreStatus(ctx, datastore)
+			datastoreStatus, err2 := api.Node(cloneNodeName).Storage(datastore).GetDatastoreStatus(ctx)
 			if err2 != nil {
 				return diag.FromErr(err2)
 			}
@@ -4187,7 +4187,7 @@ func vmReadCustom(
 			if datastoreID != "" {
 				// disk format may not be returned by config API if it is default for the storage, and that may be different
 				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-				files, err := api.Node(nodeName).ListDatastoreFiles(ctx, datastoreID)
+				files, err := api.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
 				if err != nil {
 					diags = append(diags, diag.FromErr(err)...)
 					continue
@@ -4292,7 +4292,7 @@ func vmReadCustom(
 		} else {
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			files, err := api.Node(nodeName).ListDatastoreFiles(ctx, fileIDParts[0])
+			files, err := api.Node(nodeName).Storage(fileIDParts[0]).ListDatastoreFiles(ctx)
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
 			} else {

@@ -48,7 +48,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   disk {
     datastore_id = local.datastore_id
-    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
+    file_id      = proxmox_virtual_environment_download_file.latest_debian_12_bookworm_qcow2_img.id
     interface    = "scsi0"
     discard      = "on"
     cache        = "writeback"
