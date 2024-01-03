@@ -35,8 +35,8 @@ resource "proxmox_virtual_environment_download_file" "release_20231211_ubuntu_22
   content_type       = "vztmpl"
   datastore_id       = "local"
   node_name          = "pve"
-  url                = "https://cloud-images.ubuntu.com/releases/22.04/release-20231211/ubuntu-22.04-server-cloudimg-amd64.tar.gz"
-  checksum           = "0775e90e34a2136784374a7dfe4fadd0b58b812ba52d40b7514b40c77824c804"
+  url                = "https://cloud-images.ubuntu.com/releases/22.04/release-20231211/ubuntu-22.04-server-cloudimg-amd64-root.tar.xz"
+  checksum           = "c9997dcfea5d826fd04871f960c513665f2e87dd7450bba99f68a97e60e4586e"
   checksum_algorithm = "sha256"
   upload_timeout     = 4444
 }

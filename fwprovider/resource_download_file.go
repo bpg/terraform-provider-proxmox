@@ -201,9 +201,9 @@ func (r *downloadFileResource) Schema(
 				},
 			},
 			"file_name": schema.StringAttribute{
-				Description: "The file name. If not provided, it is calculated" +
-					"using `url`. PVE will raise 'wrong file extenstion' error for some popular " +
-					"extensions file `.raw` or `.qcow2`. Workaround is to use eg. `.img` instead.",
+				Description: "The file name. If not provided, it is calculated " +
+					"using `url`. PVE will raise 'wrong file extension' error for some popular " +
+					"extensions file `.raw` or `.qcow2`. Workaround is to use e.g. `.img` instead.",
 				Computed: true,
 				Required: false,
 				Optional: true,

@@ -4,12 +4,12 @@ title: proxmox_virtual_environment_download_file
 parent: Resources
 subcategory: Virtual Environment
 description: |-
-  Manages files upload using PVE download-url API. It can be fully compatibile and faster replacement for image files created using proxmox_virtual_environment_file. Supports images for VMs (ISO images) and LXC (CT Templates).
+  Manages files upload using PVE download-url API. It can be fully compatible and faster replacement for image files created using proxmox_virtual_environment_file. Supports images for VMs (ISO images) and LXC (CT Templates).
 ---
 
 # Resource: proxmox_virtual_environment_download_file
 
-Manages files upload using PVE download-url API. It can be fully compatibile and faster replacement for image files created using `proxmox_virtual_environment_file`. Supports images for VMs (ISO images) and LXC (CT Templates).
+Manages files upload using PVE download-url API. It can be fully compatible and faster replacement for image files created using `proxmox_virtual_environment_file`. Supports images for VMs (ISO images) and LXC (CT Templates).
 
 ## Example Usage
 
@@ -51,8 +51,8 @@ resource "proxmox_virtual_environment_download_file" "release_20231211_ubuntu_22
   content_type       = "vztmpl"
   datastore_id       = "local"
   node_name          = "pve"
-  url                = "https://cloud-images.ubuntu.com/releases/22.04/release-20231211/ubuntu-22.04-server-cloudimg-amd64.tar.gz"
-  checksum           = "0775e90e34a2136784374a7dfe4fadd0b58b812ba52d40b7514b40c77824c804"
+  url                = "https://cloud-images.ubuntu.com/releases/22.04/release-20231211/ubuntu-22.04-server-cloudimg-amd64-root.tar.xz"
+  checksum           = "c9997dcfea5d826fd04871f960c513665f2e87dd7450bba99f68a97e60e4586e"
   checksum_algorithm = "sha256"
   upload_timeout     = 4444
 }
@@ -80,7 +80,7 @@ resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc
 - `checksum` (String) The expected checksum of the file.
 - `checksum_algorithm` (String) The algorithm to calculate the checksum of the file. Must be `md5` | `sha1` | `sha224` | `sha256` | `sha384` | `sha512`.
 - `decompression_algorithm` (String) Decompress the downloaded file using the specified compression algorithm. Must be one of `gz` | `lzo` | `zst`.
-- `file_name` (String) The file name. If not provided, it is calculatedusing `url`. PVE will raise 'wrong file extenstion' error for some popular extensions file `.raw` or `.qcow2`. Workaround is to use eg. `.img` instead.
+- `file_name` (String) The file name. If not provided, it is calculated using `url`. PVE will raise 'wrong file extension' error for some popular extensions file `.raw` or `.qcow2`. Workaround is to use e.g. `.img` instead.
 - `overwrite` (Boolean) If `true` and size of uploaded file is different, than size from `url` Content-Length header, file will be downloaded again. If `false`, there will be no checks.
 - `upload_timeout` (Number) The file download timeout seconds. Default is 600 (10min).
 - `verify` (Boolean) By default `true`. If `false`, no SSL/TLS certificates will be verified.
