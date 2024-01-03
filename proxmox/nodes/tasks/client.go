@@ -23,13 +23,26 @@ func (c *Client) ExpandPath(_ string) string {
 	panic("ExpandPath of tasks.Client must not be used. Use BuildPath instead.")
 }
 
-// BuildPath builds a path using information from Task ID.
-func (c *Client) BuildPath(taskID string, path string) (string, error) {
+func (c *Client) baseTaskPath(taskID string) (string, error) {
 	tid, err := ParseTaskID(taskID)
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("nodes/%s/tasks/%s/%s",
-		url.PathEscape(tid.NodeName), url.PathEscape(taskID), url.PathEscape(path)), nil
+	return fmt.Sprintf("nodes/%s/tasks/%s",
+		url.PathEscape(tid.NodeName),
+		url.PathEscape(taskID),
+	), nil
+}
+
+// BuildPath builds a path using information from Task ID.
+func (c *Client) BuildPath(taskID string, path string) (string, error) {
+	basePath, err := c.baseTaskPath(taskID)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/%s",
+		basePath, url.PathEscape(path),
+	), nil
 }
