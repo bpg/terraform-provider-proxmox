@@ -6,7 +6,8 @@ nav_order: 1
 
 # Proxmox Provider
 
-This provider for [Terraform](https://www.terraform.io/) is used for interacting with resources supported by [Proxmox](https://www.proxmox.com/en/). The provider needs to be configured with the proper endpoints and credentials before it can be used.
+This provider for [Terraform](https://www.terraform.io/) is used for interacting with resources supported by [Proxmox](https://www.proxmox.com/en/).
+The provider needs to be configured with the proper endpoints and credentials before it can be used.
 
 Use the navigation to the left to read about the available resources.
 
@@ -34,7 +35,8 @@ provider "proxmox" {
 
 ## Authentication
 
-The Proxmox provider offers a flexible means of providing credentials for authentication. Static credentials can be provided to the `proxmox` block through either a `api_token` or a combination of `username` and `password` arguments.
+The Proxmox provider offers a flexible means of providing credentials for authentication.
+Static credentials can be provided to the `proxmox` block through either a `api_token` or a combination of `username` and `password` arguments.
 
 !> Hard-coding credentials into any Terraform configuration is not recommended, and risks secret leakage should this file ever be committed to a public version control system.
 
@@ -58,11 +60,13 @@ provider "proxmox" {
 }
 ```
 
-The variable values can be provided via a separate `.tfvars` file that should be gitignored. See the [Terraform documentation](https://www.terraform.io/docs/configuration/variables.html) for more information.
+The variable values can be provided via a separate `.tfvars` file that should be gitignored.
+See the [Terraform documentation](https://www.terraform.io/docs/configuration/variables.html) for more information.
 
 ### Environment variables
 
-Instead of using static arguments, credentials can be handled through the use of environment variables. For example:
+Instead of using static arguments, credentials can be handled through the use of environment variables.
+For example:
 
 ```terraform
 provider "proxmox" {
@@ -78,11 +82,13 @@ terraform plan
 
 See the [Argument Reference](#argument-reference) section for the supported variable names and use cases.
 
-### SSH connection
+## SSH Connection
 
 ~> Please read if you are using VMs with custom disk images, or uploading snippets.
 
-The Proxmox provider can connect to a Proxmox node via SSH. This is used in the `proxmox_virtual_environment_vm` or `proxmox_virtual_environment_file` resource to execute commands on the node to perform actions that are not supported by Proxmox API. For example, to import VM disks, or to uploading certain type of resources, such as snippets.
+The Proxmox provider can connect to a Proxmox node via SSH.
+This is used in the `proxmox_virtual_environment_vm` or `proxmox_virtual_environment_file` resource to execute commands on the node to perform actions that are not supported by Proxmox API.
+For example, to import VM disks, or to uploading certain type of resources, such as snippets.
 
 The SSH connection configuration is provided via the optional `ssh` block in the `provider` block:
 
@@ -99,18 +105,32 @@ provider "proxmox" {
 }
 ```
 
-If no `ssh` block is provided, the provider will attempt to connect to the target node using the credentials provided in the `username` and `password` arguments (or `PROXMOX_VE_USERNAME` and `PROXMOX_VE_PASSWORD` environment variables). Note that the target node is identified by the `node` argument in the resource, and may be different from the Proxmox API endpoint.
+If no `ssh` block is provided, the provider will attempt to connect to the target node using the credentials provided in the `username` and `password` arguments (or `PROXMOX_VE_USERNAME` and `PROXMOX_VE_PASSWORD` environment variables).
+Note that the target node is identified by the `node` argument in the resource, and may be different from the Proxmox API endpoint.
 Please refer to the [Argument Reference](#argument-reference) section to view the available arguments of the `ssh` block.
 
-#### SSH Agent
+### SSH Agent
 
-The provider does not use OS-specific SSH configuration files, such as `~/.ssh/config`. Instead, it uses the SSH protocol directly, and supports the `SSH_AUTH_SOCK` environment variable (or `agent_socket` argument) to connect to the `ssh-agent`. This allows the provider to use the SSH agent configured by the user, and to support multiple SSH agents running on the same machine. You can find more details on the [SSH Agent](https://www.ssh.com/academy/ssh/agent) page.
+The provider does not use OS-specific SSH configuration files, such as `~/.ssh/config`.
+Instead, it uses the SSH protocol directly, and supports the `SSH_AUTH_SOCK` environment variable (or `agent_socket` argument) to connect to the `ssh-agent`.
+This allows the provider to use the SSH agent configured by the user, and to support multiple SSH agents running on the same machine.
+You can find more details on the SSH Agent [here](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#adding-your-ssh-keys-to-an-ssh-agent-to-avoid-typing-the-passphrase).
 
-#### Node IP address used for SSH connection
+### Node IP address used for SSH connection
 
-In order to make the SSH connection, the provider needs to be able to resolve the target node to an IP. When the target node is represented as a name, the provider will enumerate the node's interfaces via the Proxmox API, using the first one that is not a loopback device. In some cases this may not be the desired behavior, for example, when the node has multiple network interfaces, and the one that should be used for SSH is not the first one.
+In order to make the SSH connection, the provider needs to be able to resolve the target node name to an IP.
+The following methods are used to resolve the node name, in the specified order:
 
-To override the node IP address used for SSH connection, you can use the optional `node` blocks in the `ssh` block. For example:
+1. Enumerate the node's network interfaces via the Proxmox API, and identify the first interface that:
+    1. Has an IPv4 address with IPv4 gateway configured, or
+    2. Has an IPv6 address with IPv6 gateway configured, or
+    3. Has an IPv4 address
+2. Resolve the Proxmox node name (usually a shortname) via DNS using the system DNS resolver of the machine running Terraform.
+
+In some cases this may not be the desired behavior, for example, when the node has multiple network interfaces, and the one that should be used for SSH is not the first one.
+
+To override the node IP address used for SSH connection, you can use the optional `node` blocks in the `ssh` block, and specify the desired IP address (or FQDN) for each node.
+For example:
 
 ```terraform
 provider "proxmox" {
@@ -130,9 +150,10 @@ provider "proxmox" {
 
 ```
 
-### API Token authentication
+## API Token Authentication
 
-API Token authentication can be used to authenticate with the Proxmox API without the need to provide a password. In combination with the `ssh` block and `ssh-agent` support, this allows for a fully password-less authentication.
+API Token authentication can be used to authenticate with the Proxmox API without the need to provide a password.
+In combination with the `ssh` block and `ssh-agent` support, this allows for a fully password-less authentication.
 
 You can create an API Token for a user via the Proxmox UI, or via the command line on the Proxmox host or cluster:
 
@@ -148,7 +169,8 @@ You can create an API Token for a user via the Proxmox UI, or via the command li
   sudo pveum role add Terraform -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt User.Modify"
   ```
 
-  ~> The list of privileges above is only an example, please review it and adjust to your needs. Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
+  ~> The list of privileges above is only an example, please review it and adjust to your needs.
+  Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
 
 - Assign the role to the previously created user:
 
@@ -180,11 +202,16 @@ provider "proxmox" {
 
 -> The token authentication is taking precedence over the password authentication.
 
--> The `username` field in the `ssh` block (or alternatively a username in `PROXMOX_VE_USERNAME` or `PROXMOX_VE_SSH_USERNAME` environment variable) is **required** when using API Token authentication. This is because the provider needs to know which user to use for the SSH connection.
+-> The `username` field in the `ssh` block (or alternatively a username in `PROXMOX_VE_USERNAME` or `PROXMOX_VE_SSH_USERNAME` environment variable) is **required** when using API Token authentication.
+This is because the provider needs to know which user to use for the SSH connection.
 
--> Not all Proxmox API operations are supported via API Token. You may see errors like `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token. The workaround is to use password authentication for those operations.
+-> Not all Proxmox API operations are supported via API Token.
+You may see errors like `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
+The workaround is to use password authentication for those operations.
 
-### Temporary directory
+-> You can also configure additional users and roles using [`virtual_environment_user`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_user) and [`virtual_environment_role`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_role) resources of the provider.
+
+## Temporary Directory
 
 Using `proxmox_virtual_environment_file` with `.iso` files or disk images can require large amount of space in the temporary directory of the computer running terraform.
 
