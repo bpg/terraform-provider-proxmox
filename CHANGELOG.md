@@ -5,7 +5,6 @@
 
 ### Bug Fixes
 
-* accept ipv6 in dns servers initialization ([bf5cbd9](https://github.com/bpg/terraform-provider-proxmox/commit/bf5cbd9dad116a4515bd2eb193c296097b1e4b84))
 * **lxc:** add missing `onboot` param on container clone create ([#838](https://github.com/bpg/terraform-provider-proxmox/issues/838)) ([40102a6](https://github.com/bpg/terraform-provider-proxmox/commit/40102a6a501a5ead3219492f34255a25c4f21371))
 * **vm,lxc:** accept IPv6 in `initialization.dns.servers` attribute ([#842](https://github.com/bpg/terraform-provider-proxmox/issues/842)) ([bf5cbd9](https://github.com/bpg/terraform-provider-proxmox/commit/bf5cbd9dad116a4515bd2eb193c296097b1e4b84))
 * **vm,lxc:** unexpected state drift when using `initialization.dns.servers` ([#844](https://github.com/bpg/terraform-provider-proxmox/issues/844)) ([ac923cd](https://github.com/bpg/terraform-provider-proxmox/commit/ac923cd1b42c0c64d9829beb1ab552680b21d98b))
