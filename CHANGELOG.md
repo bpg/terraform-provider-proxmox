@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.43.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.42.1...v0.43.0) (2024-01-04)
+
+
+### Features
+
+* **provider:** add DNS lookup fallback for node IP resolution ([#848](https://github.com/bpg/terraform-provider-proxmox/issues/848)) ([d398c9c](https://github.com/bpg/terraform-provider-proxmox/commit/d398c9c102fc2f6741b3e6d574fcfb8a4f7f49aa))
+* **storage:** add new resource `proxmox_virtual_environment_download_file`  ([#837](https://github.com/bpg/terraform-provider-proxmox/issues/837)) ([58347c0](https://github.com/bpg/terraform-provider-proxmox/commit/58347c09fe012e35025613923d95c5aa8340318a))
+
+
+### Miscellaneous
+
+* **deps:** bump crazy-max/ghaction-import-gpg from 6.0.0 to 6.1.0 ([#855](https://github.com/bpg/terraform-provider-proxmox/issues/855)) ([620bb84](https://github.com/bpg/terraform-provider-proxmox/commit/620bb84635d38181e841a8d41cd8a01dd4afd83b))
+* **deps:** bump github.com/goreleaser/goreleaser from 1.22.1 to 1.23.0 in /tools ([#854](https://github.com/bpg/terraform-provider-proxmox/issues/854)) ([3914bc2](https://github.com/bpg/terraform-provider-proxmox/commit/3914bc28b64decbcc853c0e6aa3188b3343ebf81))
+* **docs:** update provider documentation with more details about token use ([#846](https://github.com/bpg/terraform-provider-proxmox/issues/846)) ([2677445](https://github.com/bpg/terraform-provider-proxmox/commit/2677445802bf792fbd2b92ec8120f1ddacdb299a))
+
 ## [0.42.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.42.0...v0.42.1) (2023-12-29)
 
 
