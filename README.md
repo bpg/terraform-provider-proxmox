@@ -233,6 +233,7 @@ using SFTP. This requires the use of a PAM account (standard Linux account).
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/LEI"><img src="https://avatars.githubusercontent.com/u/4112243?v=4?s=50" width="50px;" alt="Guillaume"/><br /><sub><b>Guillaume</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=LEI" title="Code">💻</a></td>
       <td align="center" valign="top" width="12.5%"><a href="https://loganmancuso.github.io/"><img src="https://avatars.githubusercontent.com/u/18329590?v=4?s=50" width="50px;" alt="Logan Mancuso"/><br /><sub><b>Logan Mancuso</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aloganmancuso" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/benbouillet"><img src="https://avatars.githubusercontent.com/u/15980664?v=4?s=50" width="50px;" alt="Ben Bouillet"/><br /><sub><b>Ben Bouillet</b></sub></a><br /><a href="#financial-benbouillet" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/CppBunny"><img src="https://avatars.githubusercontent.com/u/7388307?v=4?s=50" width="50px;" alt="CppBunny"/><br /><sub><b>CppBunny</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=CppBunny" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
