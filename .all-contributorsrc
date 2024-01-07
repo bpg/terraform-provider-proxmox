@@ -744,6 +744,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "CppBunny",
+      "name": "CppBunny",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7388307?v=4",
+      "profile": "https://github.com/CppBunny",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 8,
