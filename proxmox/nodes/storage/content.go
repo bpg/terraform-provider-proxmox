@@ -72,12 +72,7 @@ func (c *Client) ListDatastoreFiles(
 func (c *Client) GetDatastoreFile(
 	ctx context.Context,
 	volumeID string,
-	nodeName string,
 ) (*DatastoreFileGetResponseData, error) {
-	reqBody := &DatastoreFileGetRequestData{
-		Node:     nodeName,
-		VolumeID: volumeID,
-	}
 	resBody := &DatastoreFileGetResponseBody{}
 
 	err := c.DoRequest(
@@ -89,7 +84,7 @@ func (c *Client) GetDatastoreFile(
 				url.PathEscape(volumeID),
 			),
 		),
-		reqBody,
+		nil,
 		resBody,
 	)
 	if err != nil {
