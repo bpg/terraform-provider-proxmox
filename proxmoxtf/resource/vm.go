@@ -4187,18 +4187,13 @@ func vmReadCustom(
 			if datastoreID != "" {
 				// disk format may not be returned by config API if it is default for the storage, and that may be different
 				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-				files, err := api.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
+				volume, err := api.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
 				if err != nil {
 					diags = append(diags, diag.FromErr(err)...)
 					continue
 				}
 
-				for _, v := range files {
-					if v.VolumeID == dd.FileVolume {
-						disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = v.FileFormat
-						break
-					}
-				}
+				disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = volume.FileFormat
 			}
 		} else {
 			disk[mkResourceVirtualEnvironmentVMDiskFileFormat] = dd.Format
@@ -4292,17 +4287,11 @@ func vmReadCustom(
 		} else {
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			files, err := api.Node(nodeName).Storage(fileIDParts[0]).ListDatastoreFiles(ctx)
+			volume, err := api.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
 			} else {
-				efiDisk[mkResourceVirtualEnvironmentVMEFIDiskFileFormat] = ""
-				for _, v := range files {
-					if v.VolumeID == vmConfig.EFIDisk.FileVolume {
-						efiDisk[mkResourceVirtualEnvironmentVMEFIDiskFileFormat] = v.FileFormat
-						break
-					}
-				}
+				efiDisk[mkResourceVirtualEnvironmentVMEFIDiskFileFormat] = volume.FileFormat
 			}
 		}
 
