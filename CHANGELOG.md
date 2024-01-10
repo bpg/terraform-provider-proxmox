@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.43.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.0...v0.43.1) (2024-01-10)
+
+
+### Bug Fixes
+
+* **docs:** typos in `proxmox_virtual_environment_file` resource ([#872](https://github.com/bpg/terraform-provider-proxmox/issues/872)) ([74e0ef3](https://github.com/bpg/terraform-provider-proxmox/commit/74e0ef3b1e37c02b8671fb650b4593c378bf96d1))
+* **vm:** optimize retrieval of VM volume attributes from a datastore ([#862](https://github.com/bpg/terraform-provider-proxmox/issues/862)) ([613be84](https://github.com/bpg/terraform-provider-proxmox/commit/613be842bee37eec4d0f74ddfa91a3a0bf8db43a))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/cloudflare/circl from 1.3.3 to 1.3.7 ([#869](https://github.com/bpg/terraform-provider-proxmox/issues/869)) ([ea653e1](https://github.com/bpg/terraform-provider-proxmox/commit/ea653e1f253655c0a97677376cbab8544b2a9c3c))
+* **deps:** bump github.com/cloudflare/circl from 1.3.5 to 1.3.7 in /tools ([#870](https://github.com/bpg/terraform-provider-proxmox/issues/870)) ([ffafa06](https://github.com/bpg/terraform-provider-proxmox/commit/ffafa063af28e4c7b7d5180c82a937b9abd17ccb))
+
 ## [0.43.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.42.1...v0.43.0) (2024-01-04)
 
 
