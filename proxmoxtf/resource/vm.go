@@ -4268,7 +4268,7 @@ func vmReadCustom(
 		diskMap[di] = disk
 	}
 
-	if len(currentDiskList) > 0 {
+	if len(clone) == 0 || len(currentDiskList) > 0 {
 		orderedDiskList := orderedListFromMap(diskMap)
 		err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
 		diags = append(diags, diag.FromErr(err)...)
@@ -5119,6 +5119,10 @@ func vmReadCustom(
 	diags = append(
 		diags,
 		vmReadNetworkValues(ctx, d, m, vmID, vmConfig)...)
+
+	d.SetId(strconv.Itoa(vmID))
+	d.Set(mkResourceVirtualEnvironmentVMVMID, vmID)
+	d.Set(mkResourceVirtualEnvironmentVMNodeName, nodeName)
 
 	return diags
 }
