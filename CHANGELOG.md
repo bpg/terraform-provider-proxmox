@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.43.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.1...v0.43.2) (2024-01-11)
+
+
+### Bug Fixes
+
+* **provider:** node DNS lookup fallback does not produce an IP ([#874](https://github.com/bpg/terraform-provider-proxmox/issues/874)) ([e436427](https://github.com/bpg/terraform-provider-proxmox/commit/e436427e00bd39ffe0df4ae7d6c3f445f0a0cb31))
+* **vm:** missing disks when importing VM to a TF state ([#877](https://github.com/bpg/terraform-provider-proxmox/issues/877)) ([a8bf497](https://github.com/bpg/terraform-provider-proxmox/commit/a8bf497c7f3331e0c92501d479ccf04a8481e926))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/brianvoe/gofakeit/v6 from 6.26.3 to 6.26.4 ([#879](https://github.com/bpg/terraform-provider-proxmox/issues/879)) ([6aa56b3](https://github.com/bpg/terraform-provider-proxmox/commit/6aa56b3f6e7639ddd1190d84e4d53bd6c516a977))
+* **deps:** bump golang.org/x/crypto from 0.17.0 to 0.18.0 ([#878](https://github.com/bpg/terraform-provider-proxmox/issues/878)) ([0f198eb](https://github.com/bpg/terraform-provider-proxmox/commit/0f198eb66b44d6aea23f6489587c404ef3d7ffdf))
+
 ## [0.43.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.0...v0.43.1) (2024-01-10)
 
 
