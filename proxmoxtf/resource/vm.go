@@ -5120,9 +5120,12 @@ func vmReadCustom(
 		diags,
 		vmReadNetworkValues(ctx, d, m, vmID, vmConfig)...)
 
+	// during import these core attributes might not be set, so set them explicitly here
 	d.SetId(strconv.Itoa(vmID))
-	d.Set(mkResourceVirtualEnvironmentVMVMID, vmID)
-	d.Set(mkResourceVirtualEnvironmentVMNodeName, nodeName)
+	e := d.Set(mkResourceVirtualEnvironmentVMVMID, vmID)
+	diags = append(diags, diag.FromErr(e)...)
+	e = d.Set(mkResourceVirtualEnvironmentVMNodeName, nodeName)
+	diags = append(diags, diag.FromErr(e)...)
 
 	return diags
 }
