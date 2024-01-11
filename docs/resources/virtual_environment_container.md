@@ -121,8 +121,8 @@ output "ubuntu_container_public_key" {
 - `disk` - (Optional) The disk configuration.
   - `datastore_id` - (Optional) The identifier for the datastore to create the
       disk in (defaults to `local`).
-      -`size` - (Optional) The size of the root filesystem in gigabytes (
-      defaults to `4`). Requires `datastore_id` to be set.
+  - `size` - (Optional) The size of the root filesystem in gigabytes (defaults
+      to `4`). Requires `datastore_id` to be set.
 - `initialization` - (Optional) The initialization configuration.
   - `dns` - (Optional) The DNS configuration.
     - `domain` - (Optional) The DNS search domain.
