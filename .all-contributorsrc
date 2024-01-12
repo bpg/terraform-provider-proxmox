@@ -762,6 +762,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "tomstokes",
+      "name": "Tom Stokes",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1216926?v=4",
+      "profile": "http://tomstok.es",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 8,
