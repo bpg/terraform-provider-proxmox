@@ -4,15 +4,16 @@ on:
   push:
     branches:
       - main
-      - switch-to-gh-app
   workflow_dispatch: {}
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
 
-      - name: "Generate Short Lived OAuth App Token (ghs_*)"
+      - name: Generate Short Lived OAuth App Token
         uses: actions/create-github-app-token@f04aa94d10cf56334d1c580e077ce2e3569e805d #v1.6.3
         id: app-token
         with:
@@ -21,10 +22,10 @@ jobs:
           owner: "${{ github.repository_owner }}"
           repositories: "${{ github.event.repository.name }}"
 
-      - name: "Create / Update Release PR"
+      - name: Create / Update Release PR
         uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 #v3.7.13
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: "${{ steps.app-token.outputs.token }}"
           release-type: go
           bump-minor-pre-major: true
           extra-files: |

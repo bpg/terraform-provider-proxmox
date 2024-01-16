@@ -7,7 +7,6 @@ on:
   push: 
     branches: 
       - "main"
-      - "switch-to-gh-app"
 
 jobs:
   github-metrics:
@@ -15,21 +14,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: "Generate Short Lived OAuth App Token (ghs_*)"
-        uses: actions/create-github-app-token@f04aa94d10cf56334d1c580e077ce2e3569e805d #v1.6.3
-        id: app-token
-        with:
-          app-id: "${{ secrets.BOT_APP_ID }}"
-          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
-          owner: "${{ github.repository_owner }}"
-          repositories: "${{ github.event.repository.name }}"
-      - uses: lowlighter/metrics@latest
+
+      - name: Generate Metrics
+        uses: lowlighter/metrics@latest
         with:
             template: repository
             filename: metrics.svg
             user: bpg
             repo: terraform-provider-proxmox
-            token: ${{ steps.app-token.outputs.token }}
+            token: "${{ secrets.METRICS_TOKEN }}"
             output_action: gist
             committer_gist: 2cc44ead81225542ed1ef0303d8f9eb9
             plugin_lines: yes
