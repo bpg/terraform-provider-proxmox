@@ -10,7 +10,7 @@ source "https://rubygems.org"
 # Happy Jekylling!
 
 gem "activesupport", ">= 4.1.11"
-gem "jekyll", "~> 3.9"
+gem "jekyll", "~> 4.0"
 gem "just-the-docs", "~> 0.3"
 gem "webrick", "~> 1.7"
 gem "kramdown", "~> 2.3.1"
