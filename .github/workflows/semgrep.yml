@@ -1,4 +1,6 @@
-on:
+name: Semgrep
+
+on: 
   pull_request: {}
   push:
     branches:
@@ -8,15 +10,18 @@ on:
   schedule:
   # random HH:MM to avoid a load spike on GitHub Actions at 00:00
   - cron: 29 16 * * *
-name: Semgrep
+
 jobs:
   semgrep:
-    name: Scan
     runs-on: ubuntu-latest
     env:
-      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+      SEMGREP_APP_TOKEN: "${{ secrets.SEMGREP_APP_TOKEN }}"
     container:
       image: returntocorp/semgrep
     steps:
-    - uses: actions/checkout@v4
-    - run: semgrep ci
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Semgrep
+      run: semgrep ci

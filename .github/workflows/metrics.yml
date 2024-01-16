@@ -1,9 +1,12 @@
-name: metrics
+name: Publish Metrics
 
 on:
-  schedule: [{cron: "0 0 * * *"}]
+  schedule:
+    - cron: "0 0 * * *" # every day at 00:00 UTC (8pm EST)
   workflow_dispatch:
-  push: {branches: ["main"]}
+  push: 
+    branches: 
+      - "main"
 
 jobs:
   github-metrics:
@@ -11,13 +14,15 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: lowlighter/metrics@latest
+
+      - name: Generate Metrics
+        uses: lowlighter/metrics@latest
         with:
             template: repository
             filename: metrics.svg
             user: bpg
             repo: terraform-provider-proxmox
-            token: ${{ secrets.METRICS_TOKEN }}
+            token: "${{ secrets.METRICS_TOKEN }}"
             output_action: gist
             committer_gist: 2cc44ead81225542ed1ef0303d8f9eb9
             plugin_lines: yes
