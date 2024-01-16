@@ -4,5 +4,31 @@
     "github>bpg/renovate-config",
     "github>bpg/renovate-config:automerge-github-actions",
   ],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths",
+  ],
   "rebaseWhen": "behind-base-branch",
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch",
+      ],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps",
+      "commitMessageExtra": "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      "matchUpdateTypes": ["digest"],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps",
+      "commitMessageExtra": "({{currentDigestShort}} → {{newDigestShort}})",
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "semanticCommitScope": "ci",
+    },
+  ]
 }
