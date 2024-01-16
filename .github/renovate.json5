@@ -34,13 +34,7 @@
       ],
       "semanticCommitType": "chore",
       "semanticCommitScope": "docs",
-      "commitMessageExtra": "({{currentVersion}} → {{newVersion}}) in docs",
-    },
-    {
-      "matchUpdateTypes": ["digest"],
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "deps",
-      "commitMessageExtra": "({{currentDigestShort}} → {{newDigestShort}})",
+      "commitMessageExtra": "({{currentVersion}} → {{newVersion}})",
     },
     {
       "matchManagers": ["github-actions"],
