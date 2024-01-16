@@ -11,14 +11,29 @@
   "rebaseWhen": "behind-base-branch",
   "packageRules": [
     {
-      "matchUpdateTypes": [
-        "major",
-        "minor",
-        "patch",
+      "matchPackagePatterns": [
+        "*",
       ],
       "semanticCommitType": "chore",
       "semanticCommitScope": "deps",
       "commitMessageExtra": "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      "matchFileNames": [
+        "tools/go.mod",
+        "tools/go.sum",
+      ],
+      "commitMessageExtra": "({{currentVersion}} → {{newVersion}}) in /tools",
+    },
+    {
+      "matchFileNames": [
+        "examples/**",
+        "example/**",
+        "howtos/**",
+      ],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "docs",
+      "commitMessageExtra": "({{currentVersion}} → {{newVersion}}) in docs",
     },
     {
       "matchUpdateTypes": ["digest"],
