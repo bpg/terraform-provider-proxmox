@@ -35,6 +35,9 @@
       "semanticCommitType": "chore",
       "semanticCommitScope": "docs",
       "commitMessageExtra": "({{currentVersion}} → {{newVersion}})",
+      "automerge": true,
+      "automergeType": "branch",
+      "matchUpdateTypes": ["minor", "patch"],
     },
     {
       "matchManagers": ["github-actions"],
