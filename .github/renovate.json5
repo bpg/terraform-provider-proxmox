@@ -30,6 +30,7 @@
         "examples/**",
         "example/**",
         "howtos/**",
+        "docs/**",
       ],
       "semanticCommitType": "chore",
       "semanticCommitScope": "docs",
