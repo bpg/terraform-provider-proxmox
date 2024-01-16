@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Filter paths
-        uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 #v2.2.1
+        uses: dorny/paths-filter@3b817c99747a70f3b42db7c51bcc44407b73481e # v2.2.1
         id: filter
         with:
           filters: |
