@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - switch-to-gh-app
   workflow_dispatch: {}
 
 jobs:
