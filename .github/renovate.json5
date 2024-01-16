@@ -4,4 +4,5 @@
     "github>bpg/renovate-config",
     "github>bpg/renovate-config:automerge-github-actions",
   ],
+  "rebaseWhen": "behind-base-branch",
 }
