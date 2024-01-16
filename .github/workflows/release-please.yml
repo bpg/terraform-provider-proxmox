@@ -1,4 +1,4 @@
-name: release-please
+name: Release Please
 
 on:
   push:
@@ -10,9 +10,20 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 #v3.7.13
+
+      - name: "Generate Short Lived OAuth App Token (ghs_*)"
+        uses: actions/create-github-app-token@f04aa94d10cf56334d1c580e077ce2e3569e805d #v1.6.3
+        id: app-token
         with:
-          token: ${{ secrets.BOT_TOKEN }}
+          app-id: "${{ secrets.BOT_APP_ID }}"
+          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
+          owner: "${{ github.repository_owner }}"
+          repositories: "${{ github.event.repository.name }}"
+
+      - name: "Create / Update Release PR"
+        uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 #v3.7.13
+        with:
+          token: ${{ steps.app-token.outputs.token }}
           release-type: go
           bump-minor-pre-major: true
           extra-files: |
