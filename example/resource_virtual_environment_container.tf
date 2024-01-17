@@ -56,6 +56,12 @@ resource "proxmox_virtual_environment_container" "example_template" {
     "example",
     "terraform",
   ]
+
+  startup {
+    order      = "3"
+    up_delay   = "60"
+    down_delay = "60"
+  }
 }
 
 resource "proxmox_virtual_environment_container" "example" {

@@ -66,6 +66,9 @@ const (
 	dvResourceVirtualEnvironmentContainerOperatingSystemType               = "unmanaged"
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
+	dvResourceVirtualEnvironmentContainerStartupOrder                      = -1
+	dvResourceVirtualEnvironmentContainerStartupUpDelay                    = -1
+	dvResourceVirtualEnvironmentContainerStartupDownDelay                  = -1
 	dvResourceVirtualEnvironmentContainerStartOnBoot                       = true
 	dvResourceVirtualEnvironmentContainerTemplate                          = false
 	dvResourceVirtualEnvironmentContainerUnprivileged                      = false
@@ -139,6 +142,10 @@ const (
 	mkResourceVirtualEnvironmentContainerOperatingSystemType               = "type"
 	mkResourceVirtualEnvironmentContainerPoolID                            = "pool_id"
 	mkResourceVirtualEnvironmentContainerStarted                           = "started"
+	mkResourceVirtualEnvironmentContainerStartup                           = "startup"
+	mkResourceVirtualEnvironmentContainerStartupOrder                      = "order"
+	mkResourceVirtualEnvironmentContainerStartupUpDelay                    = "up_delay"
+	mkResourceVirtualEnvironmentContainerStartupDownDelay                  = "down_delay"
 	mkResourceVirtualEnvironmentContainerStartOnBoot                       = "start_on_boot"
 	mkResourceVirtualEnvironmentContainerTags                              = "tags"
 	mkResourceVirtualEnvironmentContainerTemplate                          = "template"
@@ -759,6 +766,35 @@ func Container() *schema.Resource {
 					return d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool)
 				},
 			},
+			mkResourceVirtualEnvironmentContainerStartup: {
+				Type:        schema.TypeList,
+				Description: "Defines startup and shutdown behavior of the container",
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkResourceVirtualEnvironmentContainerStartupOrder: {
+							Type:        schema.TypeInt,
+							Description: "A non-negative number defining the general startup order",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerStartupOrder,
+						},
+						mkResourceVirtualEnvironmentContainerStartupUpDelay: {
+							Type:        schema.TypeInt,
+							Description: "A non-negative number defining the delay in seconds before the next container is started",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerStartupUpDelay,
+						},
+						mkResourceVirtualEnvironmentContainerStartupDownDelay: {
+							Type:        schema.TypeInt,
+							Description: "A non-negative number defining the delay in seconds before the next container is shut down",
+							Optional:    true,
+							Default:     dvResourceVirtualEnvironmentContainerStartupDownDelay,
+						},
+					},
+				},
+				MaxItems: 1,
+				MinItems: 0,
+			},
 			mkResourceVirtualEnvironmentContainerStartOnBoot: {
 				Type:        schema.TypeBool,
 				Description: "Automatically start container when the host system boots.",
@@ -920,6 +956,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	startOnBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStartOnBoot).(bool))
 	updateBody.StartOnBoot = &startOnBoot
+
+	updateBody.StartupBehavior = containerGetStartupBehavior(d)
 
 	console := d.Get(mkResourceVirtualEnvironmentContainerConsole).([]interface{})
 
@@ -1526,6 +1564,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	poolID := d.Get(mkResourceVirtualEnvironmentContainerPoolID).(string)
 	started := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStarted).(bool))
 	startOnBoot := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerStartOnBoot).(bool))
+	startupBehavior := containerGetStartupBehavior(d)
 	tags := d.Get(mkResourceVirtualEnvironmentContainerTags).([]interface{})
 	template := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkResourceVirtualEnvironmentContainerUnprivileged).(bool))
@@ -1557,6 +1596,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		RootFS:               rootFS,
 		Start:                &started,
 		StartOnBoot:          &startOnBoot,
+		StartupBehavior:      startupBehavior,
 		Swap:                 &memorySwap,
 		Template:             &template,
 		TTY:                  &consoleTTYCount,
@@ -1764,6 +1804,34 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	sort.Strings(sanitizedTags)
 
 	return strings.Join(sanitizedTags, ";")
+}
+
+func containerGetStartupBehavior(d *schema.ResourceData) *containers.CustomStartupBehavior {
+	startup := d.Get(mkResourceVirtualEnvironmentContainerStartup).([]interface{})
+	if len(startup) > 0 {
+		startupBlock := startup[0].(map[string]interface{})
+		startupOrder := startupBlock[mkResourceVirtualEnvironmentContainerStartupOrder].(int)
+		startupUpDelay := startupBlock[mkResourceVirtualEnvironmentContainerStartupUpDelay].(int)
+		startupDownDelay := startupBlock[mkResourceVirtualEnvironmentContainerStartupDownDelay].(int)
+
+		order := containers.CustomStartupBehavior{}
+
+		if startupUpDelay >= 0 {
+			order.Up = &startupUpDelay
+		}
+
+		if startupDownDelay >= 0 {
+			order.Down = &startupDownDelay
+		}
+
+		if startupOrder >= 0 {
+			order.Order = &startupOrder
+		}
+
+		return &order
+	}
+
+	return nil
 }
 
 func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*containers.CustomFeatures, error) {
@@ -2317,6 +2385,53 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	// Compare the startup behavior to the one stored in the state.
+	var startup map[string]interface{}
+
+	//nolint:nestif
+	if containerConfig.StartupBehavior != nil {
+		startup = map[string]interface{}{}
+
+		if containerConfig.StartupBehavior.Order != nil {
+			startup[mkResourceVirtualEnvironmentContainerStartupOrder] = *containerConfig.StartupBehavior.Order
+		} else {
+			startup[mkResourceVirtualEnvironmentContainerStartupOrder] = dvResourceVirtualEnvironmentContainerStartupOrder
+		}
+
+		if containerConfig.StartupBehavior.Up != nil {
+			startup[mkResourceVirtualEnvironmentContainerStartupUpDelay] = *containerConfig.StartupBehavior.Up
+		} else {
+			startup[mkResourceVirtualEnvironmentContainerStartupUpDelay] = dvResourceVirtualEnvironmentContainerStartupUpDelay
+		}
+
+		if containerConfig.StartupBehavior.Down != nil {
+			startup[mkResourceVirtualEnvironmentContainerStartupDownDelay] = *containerConfig.StartupBehavior.Down
+		} else {
+			//nolint:lll
+			startup[mkResourceVirtualEnvironmentContainerStartupDownDelay] = dvResourceVirtualEnvironmentContainerStartupDownDelay
+		}
+	}
+
+	currentStartup := d.Get(mkResourceVirtualEnvironmentContainerStartup).([]interface{})
+
+	//nolint:gocritic
+	if len(clone) > 0 {
+		if len(currentStartup) > 0 {
+			err := d.Set(mkResourceVirtualEnvironmentContainerStartup, []interface{}{startup})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else if len(startup) == 0 {
+		err := d.Set(mkResourceVirtualEnvironmentContainerStartup, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
+	} else if len(currentStartup) > 0 ||
+		startup[mkResourceVirtualEnvironmentContainerStartupOrder] != mkResourceVirtualEnvironmentContainerStartupOrder ||
+		startup[mkResourceVirtualEnvironmentContainerStartupUpDelay] != dvResourceVirtualEnvironmentContainerStartupUpDelay ||
+		//nolint:lll
+		startup[mkResourceVirtualEnvironmentContainerStartupDownDelay] != dvResourceVirtualEnvironmentContainerStartupDownDelay {
+		err := d.Set(mkResourceVirtualEnvironmentContainerStartup, []interface{}{startup})
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	// Compare the operating system configuration to the one stored in the state.
 	operatingSystem := map[string]interface{}{}
 
@@ -2738,6 +2853,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		rebootRequired = true
+	}
+
+	if d.HasChange(mkResourceVirtualEnvironmentContainerStartup) {
+		updateBody.StartupBehavior = containerGetStartupBehavior(d)
+		if updateBody.StartupBehavior == nil {
+			updateBody.Delete = append(updateBody.Delete, "startup")
+		}
 	}
 
 	// Prepare the new operating system configuration.
