@@ -16,11 +16,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
+	"golang.org/x/exp/maps"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -73,7 +75,7 @@ func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, 
 		)
 	}
 
-	v, err := getMinTLSVersion(minTLS)
+	version, err := GetMinTLSVersion(minTLS)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +83,7 @@ func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, 
 	var transport http.RoundTripper = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{
-			MinVersion:         v,
+			MinVersion:         version,
 			InsecureSkipVerify: insecure, //nolint:gosec
 		},
 	}
@@ -323,17 +325,21 @@ func validateResponseCode(res *http.Response) error {
 	return nil
 }
 
-func getMinTLSVersion(v string) (uint16, error) {
-	switch v {
-	case "1.0":
-		return tls.VersionTLS10, nil
-	case "1.1":
-		return tls.VersionTLS11, nil
-	case "1.2":
-		return tls.VersionTLS12, nil
-	case "1.3", "":
-		return tls.VersionTLS13, nil
-	default:
-		return 0, fmt.Errorf("unknown minimum TLS version: %v", v)
+func GetMinTLSVersion(version string) (uint16, error) {
+	validVersions := map[string]uint16{
+		"":    tls.VersionTLS13,
+		"1.3": tls.VersionTLS13,
+		"1.2": tls.VersionTLS12,
+		"1.1": tls.VersionTLS11,
+		"1.0": tls.VersionTLS10,
 	}
+
+	if val, ok := validVersions[strings.TrimSpace(version)]; ok {
+		return val, nil
+	}
+
+	valid := maps.Keys(validVersions)
+	sort.Strings(valid)
+
+	return 0, fmt.Errorf("unsupported minimal TLS version %s, must be one of: %s", version, strings.Join(valid, ", "))
 }

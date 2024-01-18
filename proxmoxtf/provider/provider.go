@@ -67,6 +67,10 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		insecure = v.(bool)
 	}
 
+	if v, ok := d.GetOk(mkProviderMinTLS); ok {
+		minTLS = v.(string)
+	}
+
 	if v, ok := d.GetOk(mkProviderUsername); ok {
 		username = v.(string)
 	}

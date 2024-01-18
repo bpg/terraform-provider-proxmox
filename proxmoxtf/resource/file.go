@@ -39,6 +39,7 @@ const (
 	dvResourceVirtualEnvironmentFileSourceFileChecksum = ""
 	dvResourceVirtualEnvironmentFileSourceFileFileName = ""
 	dvResourceVirtualEnvironmentFileSourceFileInsecure = false
+	dvResourceVirtualEnvironmentFileSourceFileMinTLS   = ""
 	dvResourceVirtualEnvironmentFileOverwrite          = true
 	dvResourceVirtualEnvironmentFileSourceRawResize    = 0
 	dvResourceVirtualEnvironmentFileTimeoutUpload      = 1800
@@ -57,6 +58,7 @@ const (
 	mkResourceVirtualEnvironmentFileSourceFileChecksum   = "checksum"
 	mkResourceVirtualEnvironmentFileSourceFileFileName   = "file_name"
 	mkResourceVirtualEnvironmentFileSourceFileInsecure   = "insecure"
+	mkResourceVirtualEnvironmentFileSourceFileMinTLS     = "min_tls"
 	mkResourceVirtualEnvironmentFileSourceRaw            = "source_raw"
 	mkResourceVirtualEnvironmentFileSourceRawData        = "data"
 	mkResourceVirtualEnvironmentFileSourceRawFileName    = "file_name"
@@ -154,6 +156,14 @@ func File() *schema.Resource {
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvResourceVirtualEnvironmentFileSourceFileInsecure,
+						},
+						mkResourceVirtualEnvironmentFileSourceFileMinTLS: {
+							Type: schema.TypeBool,
+							Description: "The minimum required TLS version for API calls." +
+								"Supported values: `1.0|1.1|1.2|1.3`. Defaults to `1.3`.",
+							Optional: true,
+							ForceNew: true,
+							Default:  dvResourceVirtualEnvironmentFileSourceFileMinTLS,
 						},
 					},
 				},
@@ -372,6 +382,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		sourceFileBlock := sourceFile[0].(map[string]interface{})
 		sourceFilePath := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 		sourceFileChecksum := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileChecksum].(string)
+		sourceFileMinTLS := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileMinTLS].(string)
 		sourceFileInsecure := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFileInsecure].(bool)
 
 		if fileIsURL(d) {
@@ -379,10 +390,15 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 				"url": sourceFilePath,
 			})
 
+			version, err := api.GetMinTLSVersion(sourceFileMinTLS)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
 			httpClient := http.Client{
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
-						MinVersion:         tls.VersionTLS13,
+						MinVersion:         version,
 						InsecureSkipVerify: sourceFileInsecure,
 					},
 				},
