@@ -18,6 +18,7 @@ const (
 	dvProviderOTP            = ""
 	mkProviderEndpoint       = "endpoint"
 	mkProviderInsecure       = "insecure"
+	mkProviderMinTLS         = "min_tls"
 	mkProviderOTP            = "otp"
 	mkProviderPassword       = "password"
 	mkProviderUsername       = "username"
@@ -47,6 +48,12 @@ func createSchema() map[string]*schema.Schema {
 			Type:        schema.TypeBool,
 			Optional:    true,
 			Description: "Whether to skip the TLS verification step.",
+		},
+		mkProviderMinTLS: {
+			Type:     schema.TypeString,
+			Optional: true,
+			Description: "The minimum required TLS version for API calls." +
+				"Supported values: `1.0|1.1|1.2|1.3`. Defaults to `1.3`.",
 		},
 		mkProviderOTP: {
 			Type:        schema.TypeString,

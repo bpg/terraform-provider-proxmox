@@ -50,6 +50,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN")
 	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT")
 	insecure := utils.GetAnyBoolEnv("PROXMOX_VE_INSECURE", "PM_VE_INSECURE")
+	minTLS := utils.GetAnyStringEnv("PROXMOX_VE_MIN_TLS", "PM_VE_MIN_TLS")
 	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME", "PM_VE_USERNAME")
 	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD", "PM_VE_PASSWORD")
 	otp := utils.GetAnyStringEnv("PROXMOX_VE_OTP", "PM_VE_OTP")
@@ -81,7 +82,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	creds, err = api.NewCredentials(username, password, otp, apiToken)
 	diags = append(diags, diag.FromErr(err)...)
 
-	conn, err = api.NewConnection(endpoint, insecure)
+	conn, err = api.NewConnection(endpoint, insecure, minTLS)
 	diags = append(diags, diag.FromErr(err)...)
 
 	if diags.HasError() {

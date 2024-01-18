@@ -59,7 +59,7 @@ type Connection struct {
 }
 
 // NewConnection creates and initializes a Connection instance.
-func NewConnection(endpoint string, insecure bool) (*Connection, error) {
+func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, error) {
 	u, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, errors.New(
@@ -73,10 +73,15 @@ func NewConnection(endpoint string, insecure bool) (*Connection, error) {
 		)
 	}
 
+	v, err := getMinTLSVersion(minTLS)
+	if err != nil {
+		return nil, err
+	}
+
 	var transport http.RoundTripper = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{
-			MinVersion:         tls.VersionTLS13,
+			MinVersion:         v,
 			InsecureSkipVerify: insecure, //nolint:gosec
 		},
 	}
@@ -316,4 +321,19 @@ func validateResponseCode(res *http.Response) error {
 	}
 
 	return nil
+}
+
+func getMinTLSVersion(v string) (uint16, error) {
+	switch v {
+	case "1.0":
+		return tls.VersionTLS10, nil
+	case "1.1":
+		return tls.VersionTLS11, nil
+	case "1.2":
+		return tls.VersionTLS12, nil
+	case "1.3", "":
+		return tls.VersionTLS13, nil
+	default:
+		return 0, fmt.Errorf("unknown minimum TLS version: %v", v)
+	}
 }
