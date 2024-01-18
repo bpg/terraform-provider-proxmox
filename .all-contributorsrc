@@ -780,6 +780,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "lfelicetti-softatnet",
+      "name": "lfelicetti-softatnet",
+      "avatar_url": "https://avatars.githubusercontent.com/u/138860955?v=4",
+      "profile": "https://github.com/lfelicetti-softatnet",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 8,
