@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_firewall_rules
-permalink: /resources/virtual_environment_firewall_rules
-nav_order: 10
 parent: Resources
 subcategory: Virtual Environment
 ---

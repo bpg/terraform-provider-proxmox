@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_users
-permalink: /data-sources/virtual_environment_users
-nav_order: 19
 parent: Data Sources
 subcategory: Virtual Environment
 ---

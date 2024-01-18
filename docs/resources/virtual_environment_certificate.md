@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_certificate
-permalink: /resources/virtual_environment_certificate
-nav_order: 1
 parent: Resources
 subcategory: Virtual Environment
 ---

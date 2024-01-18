@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_roles
-permalink: /data-sources/virtual_environment_roles
-nav_order: 16
 parent: Data Sources
 subcategory: Virtual Environment
 ---

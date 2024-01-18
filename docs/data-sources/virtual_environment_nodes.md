@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_nodes
-permalink: /data-sources/virtual_environment_nodes
-nav_order: 12
 parent: Data Sources
 subcategory: Virtual Environment
 ---

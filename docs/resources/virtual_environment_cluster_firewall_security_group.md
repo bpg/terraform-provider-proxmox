@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_cluster_firewall_security_group
-permalink: /resources/virtual_environment_cluster_firewall_security_group
-nav_order: 3
 parent: Resources
 subcategory: Virtual Environment
 ---

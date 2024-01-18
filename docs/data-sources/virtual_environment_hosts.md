@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_hosts
-permalink: /data-sources/virtual_environment_hosts
-nav_order: 11
 parent: Data Sources
 subcategory: Virtual Environment
 ---
