@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_firewall_options
-permalink: /resources/virtual_environment_firewall_options
-nav_order: 9
 parent: Resources
 subcategory: Virtual Environment
 ---

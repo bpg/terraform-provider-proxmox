@@ -1,7 +1,6 @@
 ---
 layout: home
-title: Introduction
-nav_order: 1
+title: "Provider: Proxmox Virtual Environment"
 ---
 
 # Proxmox Provider

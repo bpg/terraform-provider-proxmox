@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_groups
-permalink: /data-sources/virtual_environment_groups
-nav_order: 10
 parent: Data Sources
 subcategory: Virtual Environment
 ---

@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_vms
-permalink: /data-sources/virtual_environment_vms
-nav_order: 22
 parent: Data Sources
 subcategory: Virtual Environment
 ---
