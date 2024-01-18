@@ -771,6 +771,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "jkossis",
+      "name": "Jason Kossis",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1247832?v=4",
+      "profile": "https://github.com/jkossis",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 8,
