@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_firewall_ipset
-permalink: /resources/virtual_environment_firewall_ipset
-nav_order: 8
 parent: Resources
 subcategory: Virtual Environment
 ---

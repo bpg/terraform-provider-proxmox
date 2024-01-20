@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_container
-permalink: /resources/virtual_environment_container
-nav_order: 4
 parent: Resources
 subcategory: Virtual Environment
 ---
@@ -59,6 +57,11 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     path   = "/mnt/volume"
   }
 
+  startup {
+    order      = "3"
+    up_delay   = "60"
+    down_delay = "60"
+  }
 }
 
 resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc_img" {
@@ -194,6 +197,13 @@ output "ubuntu_container_public_key" {
     - `unmanaged` - Unmanaged.
 - `pool_id` - (Optional) The identifier for a pool to assign the container to.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
+- `startup` - (Optional) Defines startup and shutdown behavior of the container.
+  - `order` - (Required) A non-negative number defining the general startup
+      order.
+  - `up` - (Optional) A non-negative number defining the delay in seconds
+      before the next container is started.
+  - `down` - (Optional) A non-negative number defining the delay in seconds
+      before the next container is shut down.
 - `start_on_boot` - (Optional) Automatically start container when the host system boots (defaults to `true`).
 - `tags` - (Optional) A list of tags the container tags. This is only meta
   information (defaults to `[]`). Note: Proxmox always sorts the container tags.

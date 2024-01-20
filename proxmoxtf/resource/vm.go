@@ -3092,150 +3092,153 @@ func vmGetAudioDriverValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+//nolint:lll
 func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
-	var initializationConfig *vms.CustomCloudInitConfig
-
 	initialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 
-	if len(initialization) > 0 {
-		initializationBlock := initialization[0].(map[string]interface{})
-		initializationConfig = &vms.CustomCloudInitConfig{}
-		initializationDNS := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDNS].([]interface{})
+	if len(initialization) == 0 || initialization[0] == nil {
+		return nil
+	}
 
-		if len(initializationDNS) > 0 {
-			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
-			domain := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSDomain].(string)
+	var initializationConfig *vms.CustomCloudInitConfig
 
-			if domain != "" {
-				initializationConfig.SearchDomain = &domain
+	initializationBlock := initialization[0].(map[string]interface{})
+	initializationConfig = &vms.CustomCloudInitConfig{}
+	initializationDNS := initializationBlock[mkResourceVirtualEnvironmentVMInitializationDNS].([]interface{})
+
+	if len(initializationDNS) > 0 && initializationDNS[0] != nil {
+		initializationDNSBlock := initializationDNS[0].(map[string]interface{})
+		domain := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSDomain].(string)
+
+		if domain != "" {
+			initializationConfig.SearchDomain = &domain
+		}
+
+		servers := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServers].([]interface{})
+		deprecatedServer := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServer].(string)
+
+		if len(servers) > 0 {
+			nameserver := strings.Join(ConvertToStringSlice(servers), " ")
+
+			initializationConfig.Nameserver = &nameserver
+		} else if deprecatedServer != "" {
+			initializationConfig.Nameserver = &deprecatedServer
+		}
+	}
+
+	initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentVMInitializationIPConfig].([]interface{})
+	initializationConfig.IPConfig = make(
+		[]vms.CustomCloudInitIPConfig,
+		len(initializationIPConfig),
+	)
+
+	for i, c := range initializationIPConfig {
+		configBlock := c.(map[string]interface{})
+		ipv4 := configBlock[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4].([]interface{})
+
+		if len(ipv4) > 0 {
+			ipv4Block := ipv4[0].(map[string]interface{})
+			ipv4Address := ipv4Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address].(string)
+
+			if ipv4Address != "" {
+				initializationConfig.IPConfig[i].IPv4 = &ipv4Address
 			}
 
-			servers := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServers].([]interface{})
-			deprecatedServer := initializationDNSBlock[mkResourceVirtualEnvironmentVMInitializationDNSServer].(string)
+			ipv4Gateway := ipv4Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway].(string)
 
-			if len(servers) > 0 {
-				nameserver := strings.Join(ConvertToStringSlice(servers), " ")
-
-				initializationConfig.Nameserver = &nameserver
-			} else if deprecatedServer != "" {
-				initializationConfig.Nameserver = &deprecatedServer
+			if ipv4Gateway != "" {
+				initializationConfig.IPConfig[i].GatewayIPv4 = &ipv4Gateway
 			}
 		}
 
-		initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentVMInitializationIPConfig].([]interface{})
-		initializationConfig.IPConfig = make(
-			[]vms.CustomCloudInitIPConfig,
-			len(initializationIPConfig),
-		)
+		ipv6 := configBlock[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6].([]interface{})
 
-		for i, c := range initializationIPConfig {
-			configBlock := c.(map[string]interface{})
-			ipv4 := configBlock[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4].([]interface{})
+		if len(ipv6) > 0 {
+			ipv6Block := ipv6[0].(map[string]interface{})
+			ipv6Address := ipv6Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address].(string)
 
-			if len(ipv4) > 0 {
-				ipv4Block := ipv4[0].(map[string]interface{})
-				ipv4Address := ipv4Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address].(string)
-
-				if ipv4Address != "" {
-					initializationConfig.IPConfig[i].IPv4 = &ipv4Address
-				}
-
-				ipv4Gateway := ipv4Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway].(string)
-
-				if ipv4Gateway != "" {
-					initializationConfig.IPConfig[i].GatewayIPv4 = &ipv4Gateway
-				}
+			if ipv6Address != "" {
+				initializationConfig.IPConfig[i].IPv6 = &ipv6Address
 			}
 
-			ipv6 := configBlock[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6].([]interface{})
+			ipv6Gateway := ipv6Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway].(string)
 
-			if len(ipv6) > 0 {
-				ipv6Block := ipv6[0].(map[string]interface{})
-				ipv6Address := ipv6Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address].(string)
-
-				if ipv6Address != "" {
-					initializationConfig.IPConfig[i].IPv6 = &ipv6Address
-				}
-
-				ipv6Gateway := ipv6Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway].(string)
-
-				if ipv6Gateway != "" {
-					initializationConfig.IPConfig[i].GatewayIPv6 = &ipv6Gateway
-				}
+			if ipv6Gateway != "" {
+				initializationConfig.IPConfig[i].GatewayIPv6 = &ipv6Gateway
 			}
 		}
+	}
 
-		initializationUserAccount := initializationBlock[mkResourceVirtualEnvironmentVMInitializationUserAccount].([]interface{})
+	initializationUserAccount := initializationBlock[mkResourceVirtualEnvironmentVMInitializationUserAccount].([]interface{})
 
-		if len(initializationUserAccount) > 0 {
-			initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
-			keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountKeys].([]interface{})
+	if len(initializationUserAccount) > 0 {
+		initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
+		keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountKeys].([]interface{})
 
-			if len(keys) > 0 {
-				sshKeys := make(vms.CustomCloudInitSSHKeys, len(keys))
+		if len(keys) > 0 {
+			sshKeys := make(vms.CustomCloudInitSSHKeys, len(keys))
 
-				for i, k := range keys {
-					sshKeys[i] = k.(string)
-				}
-
-				initializationConfig.SSHKeys = &sshKeys
+			for i, k := range keys {
+				sshKeys[i] = k.(string)
 			}
 
-			password := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountPassword].(string)
-
-			if password != "" {
-				initializationConfig.Password = &password
-			}
-
-			username := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountUsername].(string)
-
-			initializationConfig.Username = &username
+			initializationConfig.SSHKeys = &sshKeys
 		}
 
-		initializationUserDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationUserDataFileID].(string)
+		password := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountPassword].(string)
 
-		if initializationUserDataFileID != "" {
-			initializationConfig.Files = &vms.CustomCloudInitFiles{
-				UserVolume: &initializationUserDataFileID,
-			}
+		if password != "" {
+			initializationConfig.Password = &password
 		}
 
-		initializationVendorDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID].(string)
+		username := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountUsername].(string)
 
-		if initializationVendorDataFileID != "" {
-			if initializationConfig.Files == nil {
-				initializationConfig.Files = &vms.CustomCloudInitFiles{}
-			}
+		initializationConfig.Username = &username
+	}
 
-			initializationConfig.Files.VendorVolume = &initializationVendorDataFileID
+	initializationUserDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationUserDataFileID].(string)
+
+	if initializationUserDataFileID != "" {
+		initializationConfig.Files = &vms.CustomCloudInitFiles{
+			UserVolume: &initializationUserDataFileID,
+		}
+	}
+
+	initializationVendorDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationVendorDataFileID].(string)
+
+	if initializationVendorDataFileID != "" {
+		if initializationConfig.Files == nil {
+			initializationConfig.Files = &vms.CustomCloudInitFiles{}
 		}
 
-		initializationNetworkDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID].(string)
+		initializationConfig.Files.VendorVolume = &initializationVendorDataFileID
+	}
 
-		if initializationNetworkDataFileID != "" {
-			if initializationConfig.Files == nil {
-				initializationConfig.Files = &vms.CustomCloudInitFiles{}
-			}
+	initializationNetworkDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID].(string)
 
-			initializationConfig.Files.NetworkVolume = &initializationNetworkDataFileID
+	if initializationNetworkDataFileID != "" {
+		if initializationConfig.Files == nil {
+			initializationConfig.Files = &vms.CustomCloudInitFiles{}
 		}
 
-		//nolint:lll
-		initializationMetaDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationMetaDataFileID].(string)
+		initializationConfig.Files.NetworkVolume = &initializationNetworkDataFileID
+	}
 
-		if initializationMetaDataFileID != "" {
-			if initializationConfig.Files == nil {
-				initializationConfig.Files = &vms.CustomCloudInitFiles{}
-			}
+	//nolint:lll
+	initializationMetaDataFileID := initializationBlock[mkResourceVirtualEnvironmentVMInitializationMetaDataFileID].(string)
 
-			initializationConfig.Files.MetaVolume = &initializationMetaDataFileID
+	if initializationMetaDataFileID != "" {
+		if initializationConfig.Files == nil {
+			initializationConfig.Files = &vms.CustomCloudInitFiles{}
 		}
 
-		initializationType := initializationBlock[mkResourceVirtualEnvironmentVMInitializationType].(string)
+		initializationConfig.Files.MetaVolume = &initializationMetaDataFileID
+	}
 
-		if initializationType != "" {
-			initializationConfig.Type = &initializationType
-		}
+	initializationType := initializationBlock[mkResourceVirtualEnvironmentVMInitializationType].(string)
+
+	if initializationType != "" {
+		initializationConfig.Type = &initializationType
 	}
 
 	return initializationConfig

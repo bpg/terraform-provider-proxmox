@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_pool
-permalink: /data-sources/virtual_environment_pool
-nav_order: 13
 parent: Data Sources
 subcategory: Virtual Environment
 ---

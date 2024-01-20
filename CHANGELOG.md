@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.44.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.3...v0.44.0) (2024-01-20)
+
+
+### Features
+
+* **lxc:** add container startup options ([#923](https://github.com/bpg/terraform-provider-proxmox/issues/923)) ([c9c3067](https://github.com/bpg/terraform-provider-proxmox/commit/c9c3067b61bf6fe7930c6d8281040aa382eac09d))
+* **provider:** add min_tls option to provider config ([#931](https://github.com/bpg/terraform-provider-proxmox/issues/931)) ([01ff2cb](https://github.com/bpg/terraform-provider-proxmox/commit/01ff2cb7dba6e74e5aae51114dd13883740d028f))
+
+
+### Bug Fixes
+
+* **vm:** panic on empty `initialization.dns` block ([#928](https://github.com/bpg/terraform-provider-proxmox/issues/928)) ([e5bccbc](https://github.com/bpg/terraform-provider-proxmox/commit/e5bccbc53de66f73b95e92f00a80ba98af6becf1))
+
+
+### Miscellaneous
+
+* **deps:** update golang.org/x/exp digest (v0.0.0-20240112132812-db7319d0e0e3 → ) ([#934](https://github.com/bpg/terraform-provider-proxmox/issues/934)) ([3ffd230](https://github.com/bpg/terraform-provider-proxmox/commit/3ffd2306828af30ffd25aaa753ed086700bd71a2))
+* **deps:** update module github.com/brianvoe/gofakeit/v6 (v6.27.0 → v6.28.0) ([#937](https://github.com/bpg/terraform-provider-proxmox/issues/937)) ([c1e9c08](https://github.com/bpg/terraform-provider-proxmox/commit/c1e9c089ba921bc522a363531cb8835dd14fc30a))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.16.0 → v0.17.0) in /tools ([#922](https://github.com/bpg/terraform-provider-proxmox/issues/922)) ([c8e298c](https://github.com/bpg/terraform-provider-proxmox/commit/c8e298cc4c6071f47fdaf90328548b5e690b674b))
+* **deps:** update module go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp (v0.46.1 → v0.47.0) in /tools ([#933](https://github.com/bpg/terraform-provider-proxmox/issues/933)) ([9326131](https://github.com/bpg/terraform-provider-proxmox/commit/932613110dc0ee0f4a6c438a910d14b64761f8a2))
+* **docs:** remove static website generator with ruby dependencies ([#929](https://github.com/bpg/terraform-provider-proxmox/issues/929)) ([7d94bf7](https://github.com/bpg/terraform-provider-proxmox/commit/7d94bf73ec37bed1802cc2a37399832498ee35e7))
+* **docs:** update activesupport (7.1.2 → 7.1.3) ([#925](https://github.com/bpg/terraform-provider-proxmox/issues/925)) ([85109cb](https://github.com/bpg/terraform-provider-proxmox/commit/85109cbe3d3c2cfa8068e56978eae7a1472f9cc5))
+* **docs:** update jekyll (3.9.3 → 3.9.4) ([#921](https://github.com/bpg/terraform-provider-proxmox/issues/921)) ([93283ef](https://github.com/bpg/terraform-provider-proxmox/commit/93283ef3ab684d6155202d1fd62190a73fee1792))
+* **docs:** update terraform proxmox (0.43.2 → 0.43.3) ([#919](https://github.com/bpg/terraform-provider-proxmox/issues/919)) ([5cffafc](https://github.com/bpg/terraform-provider-proxmox/commit/5cffafc26e3d9e7b668cd53232c78006f757faea))
+
+## [0.43.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.2...v0.43.3) (2024-01-16)
+
+
+### Bug Fixes
+
+* **docs:** fix indentation in `virtual_environment_container.md` ([#882](https://github.com/bpg/terraform-provider-proxmox/issues/882)) ([10dbfdd](https://github.com/bpg/terraform-provider-proxmox/commit/10dbfddc57c5dc3245b9a1827ec3f5d43f783e21))
+
+
+### Miscellaneous
+
+* **ci:** switch to renovate ([#891](https://github.com/bpg/terraform-provider-proxmox/issues/891)) ([01e6698](https://github.com/bpg/terraform-provider-proxmox/commit/01e669854bb4044afcf22144a1b6e3c4cbfe92b5))
+* **ci:** update ([#890](https://github.com/bpg/terraform-provider-proxmox/issues/890)) ([c635044](https://github.com/bpg/terraform-provider-proxmox/commit/c635044db341422b458202a62538cffdaadb5fcc))
+* **ci:** update dorny/paths-filter action ( v2.2.1 → v2.11.1 ) ([#911](https://github.com/bpg/terraform-provider-proxmox/issues/911)) ([daa94d4](https://github.com/bpg/terraform-provider-proxmox/commit/daa94d4f8791d68747cf9be0dc7451fb466833bb))
+* **ci:** update dorny/paths-filter digest ( 4512585 → 3b817c9 ) ([#910](https://github.com/bpg/terraform-provider-proxmox/issues/910)) ([5574e60](https://github.com/bpg/terraform-provider-proxmox/commit/5574e60542861e5b3010f427aa295f780ce90437))
+* **ci:** update renovate config ([8226c42](https://github.com/bpg/terraform-provider-proxmox/commit/8226c421f5e99fc4e8ca6254a9b0738d6395df1b))
+* **deps:** bump github.com/hashicorp/terraform-plugin-framework from 1.4.2 to 1.5.0 ([#889](https://github.com/bpg/terraform-provider-proxmox/issues/889)) ([c7bbb47](https://github.com/bpg/terraform-provider-proxmox/commit/c7bbb47223bce86a653f236841fa1285f2a5dfe5))
+* **deps:** update activesupport (7.0.7.1 → 7.1.2) ([#897](https://github.com/bpg/terraform-provider-proxmox/issues/897)) ([9a0b897](https://github.com/bpg/terraform-provider-proxmox/commit/9a0b8979befe5875b67315f231fbebc4ed7f0d63))
+* **deps:** update github.com/hashicorp/go-cty digest ( d3edf31 → 8598007 ) ([#892](https://github.com/bpg/terraform-provider-proxmox/issues/892)) ([34cb5a7](https://github.com/bpg/terraform-provider-proxmox/commit/34cb5a7c4eae16695b0e2ae84d078c783d6bf78f))
+* **deps:** update golang.org/x/exp digest ( 9212866 → db7319d ) ([#893](https://github.com/bpg/terraform-provider-proxmox/issues/893)) ([21264c0](https://github.com/bpg/terraform-provider-proxmox/commit/21264c039af6ee714006e3f6f84798ade22cf46a))
+* **deps:** update jekyll (3.9.3 → 3.9.4) ([#894](https://github.com/bpg/terraform-provider-proxmox/issues/894)) ([65f429e](https://github.com/bpg/terraform-provider-proxmox/commit/65f429e81cae3f83cf989eac4bf5d0a846459d90))
+* **deps:** update just-the-docs (0.5.4 → 0.7.0) ([#898](https://github.com/bpg/terraform-provider-proxmox/issues/898)) ([2f074d6](https://github.com/bpg/terraform-provider-proxmox/commit/2f074d6b2d5bc046036b8eaac66396ef924dc0a7))
+* **deps:** update module github.com/brianvoe/gofakeit/v6 (v6.26.4 → v6.27.0) ([#900](https://github.com/bpg/terraform-provider-proxmox/issues/900)) ([c500cc5](https://github.com/bpg/terraform-provider-proxmox/commit/c500cc5b9b54257cb8fd551034efa5a206ce84bb))
+* **deps:** update module github.com/nats-io/nkeys (v0.4.6 → v0.4.7) ([#895](https://github.com/bpg/terraform-provider-proxmox/issues/895)) ([268722c](https://github.com/bpg/terraform-provider-proxmox/commit/268722c1214627298aa1e34da5cd8d7ba73b20a2))
+* **deps:** update module go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp (v0.44.0 → v0.46.1) ([#901](https://github.com/bpg/terraform-provider-proxmox/issues/901)) ([8d5ef9a](https://github.com/bpg/terraform-provider-proxmox/commit/8d5ef9a73fbf99b112729ea34235d8c0ee259bf9))
+* **deps:** update terraform local (2.2.2 → 2.4.1) ([#902](https://github.com/bpg/terraform-provider-proxmox/issues/902)) ([c116db5](https://github.com/bpg/terraform-provider-proxmox/commit/c116db592b7b0d7dc345f84589075e1c9e679811))
+* **deps:** update tzinfo-data (1.2023.3 → 1.2023.4) ([#896](https://github.com/bpg/terraform-provider-proxmox/issues/896)) ([2edf2cb](https://github.com/bpg/terraform-provider-proxmox/commit/2edf2cbb1d5d4996c4f33f8a5be18983ffe3e9d9))
+* **docs:** update terraform proxmox (0.38.1 → 0.43.2) in docs ([#903](https://github.com/bpg/terraform-provider-proxmox/issues/903)) ([5d9f41c](https://github.com/bpg/terraform-provider-proxmox/commit/5d9f41c877e82a500da212c03cb611d5530f290a))
+* **docs:** update terraform tls (3.1.0 → 3.4.0) in docs ([#904](https://github.com/bpg/terraform-provider-proxmox/issues/904)) ([699f19d](https://github.com/bpg/terraform-provider-proxmox/commit/699f19d135529eb9772bd0dcacd8169e01abd1d7))
+* **docs:** Update Terraform tls (3.4.0 → 4.0.5) in docs ([#908](https://github.com/bpg/terraform-provider-proxmox/issues/908)) ([9e7d7d1](https://github.com/bpg/terraform-provider-proxmox/commit/9e7d7d17cb62bffcacacbfab64e2473f33d2f086))
+
 ## [0.43.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.1...v0.43.2) (2024-01-11)
 
 

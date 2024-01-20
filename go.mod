@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/brianvoe/gofakeit/v6 v6.27.0
+	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.5.0
@@ -19,7 +19,7 @@ require (
 	github.com/skeema/knownhosts v1.2.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.18.0
-	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3
+	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a
 )
 
 require (

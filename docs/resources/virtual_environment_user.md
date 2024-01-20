@@ -1,8 +1,6 @@
 ---
 layout: page
 title: proxmox_virtual_environment_user
-permalink: /resources/virtual_environment_user
-nav_order: 16
 parent: Resources
 subcategory: Virtual Environment
 ---
