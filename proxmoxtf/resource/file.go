@@ -158,7 +158,7 @@ func File() *schema.Resource {
 							Default:     dvResourceVirtualEnvironmentFileSourceFileInsecure,
 						},
 						mkResourceVirtualEnvironmentFileSourceFileMinTLS: {
-							Type: schema.TypeBool,
+							Type: schema.TypeString,
 							Description: "The minimum required TLS version for API calls." +
 								"Supported values: `1.0|1.1|1.2|1.3`. Defaults to `1.3`.",
 							Optional: true,
@@ -390,9 +390,9 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 				"url": sourceFilePath,
 			})
 
-			version, err := api.GetMinTLSVersion(sourceFileMinTLS)
-			if err != nil {
-				return diag.FromErr(err)
+			version, e := api.GetMinTLSVersion(sourceFileMinTLS)
+			if e != nil {
+				return diag.FromErr(e)
 			}
 
 			httpClient := http.Client{

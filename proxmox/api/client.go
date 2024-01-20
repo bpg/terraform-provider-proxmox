@@ -325,6 +325,8 @@ func validateResponseCode(res *http.Response) error {
 	return nil
 }
 
+// GetMinTLSVersion returns the minimum TLS version constant for the given string. If the string is empty,
+// the default TLS version is returned. For unsupported TLS versions, an error is returned.
 func GetMinTLSVersion(version string) (uint16, error) {
 	validVersions := map[string]uint16{
 		"":    tls.VersionTLS13,
