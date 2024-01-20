@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.44.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.3...v0.44.0) (2024-01-20)
+
+
+### Features
+
+* **lxc:** add container startup options ([#923](https://github.com/bpg/terraform-provider-proxmox/issues/923)) ([c9c3067](https://github.com/bpg/terraform-provider-proxmox/commit/c9c3067b61bf6fe7930c6d8281040aa382eac09d))
+* **provider:** add min_tls option to provider config ([#931](https://github.com/bpg/terraform-provider-proxmox/issues/931)) ([01ff2cb](https://github.com/bpg/terraform-provider-proxmox/commit/01ff2cb7dba6e74e5aae51114dd13883740d028f))
+
+
+### Bug Fixes
+
+* **vm:** panic on empty `initialization.dns` block ([#928](https://github.com/bpg/terraform-provider-proxmox/issues/928)) ([e5bccbc](https://github.com/bpg/terraform-provider-proxmox/commit/e5bccbc53de66f73b95e92f00a80ba98af6becf1))
+
+
+### Miscellaneous
+
+* **deps:** update golang.org/x/exp digest (v0.0.0-20240112132812-db7319d0e0e3 → ) ([#934](https://github.com/bpg/terraform-provider-proxmox/issues/934)) ([3ffd230](https://github.com/bpg/terraform-provider-proxmox/commit/3ffd2306828af30ffd25aaa753ed086700bd71a2))
+* **deps:** update module github.com/brianvoe/gofakeit/v6 (v6.27.0 → v6.28.0) ([#937](https://github.com/bpg/terraform-provider-proxmox/issues/937)) ([c1e9c08](https://github.com/bpg/terraform-provider-proxmox/commit/c1e9c089ba921bc522a363531cb8835dd14fc30a))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.16.0 → v0.17.0) in /tools ([#922](https://github.com/bpg/terraform-provider-proxmox/issues/922)) ([c8e298c](https://github.com/bpg/terraform-provider-proxmox/commit/c8e298cc4c6071f47fdaf90328548b5e690b674b))
+* **deps:** update module go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp (v0.46.1 → v0.47.0) in /tools ([#933](https://github.com/bpg/terraform-provider-proxmox/issues/933)) ([9326131](https://github.com/bpg/terraform-provider-proxmox/commit/932613110dc0ee0f4a6c438a910d14b64761f8a2))
+* **docs:** remove static website generator with ruby dependencies ([#929](https://github.com/bpg/terraform-provider-proxmox/issues/929)) ([7d94bf7](https://github.com/bpg/terraform-provider-proxmox/commit/7d94bf73ec37bed1802cc2a37399832498ee35e7))
+* **docs:** update activesupport (7.1.2 → 7.1.3) ([#925](https://github.com/bpg/terraform-provider-proxmox/issues/925)) ([85109cb](https://github.com/bpg/terraform-provider-proxmox/commit/85109cbe3d3c2cfa8068e56978eae7a1472f9cc5))
+* **docs:** update jekyll (3.9.3 → 3.9.4) ([#921](https://github.com/bpg/terraform-provider-proxmox/issues/921)) ([93283ef](https://github.com/bpg/terraform-provider-proxmox/commit/93283ef3ab684d6155202d1fd62190a73fee1792))
+* **docs:** update terraform proxmox (0.43.2 → 0.43.3) ([#919](https://github.com/bpg/terraform-provider-proxmox/issues/919)) ([5cffafc](https://github.com/bpg/terraform-provider-proxmox/commit/5cffafc26e3d9e7b668cd53232c78006f757faea))
+
 ## [0.43.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.2...v0.43.3) (2024-01-16)
 
 
