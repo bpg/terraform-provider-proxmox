@@ -21,10 +21,10 @@ provider "proxmox" {
   password = "the-password-set-during-installation-of-proxmox-ve"
   # because self-signed TLS certificate is in use
   insecure = true
-  # uncoment (unless on Windows...)
+  # uncomment (unless on Windows...)
   # tmp_dir  = "/var/tmp"
 
-  ssh {    
+  ssh {
     agent = true
     # TODO: uncomment and configure if using api_token instead of password
     # username = "root"
@@ -121,9 +121,9 @@ In order to make the SSH connection, the provider needs to be able to resolve th
 The following methods are used to resolve the node name, in the specified order:
 
 1. Enumerate the node's network interfaces via the Proxmox API, and identify the first interface that:
-    1. Has an IPv4 address with IPv4 gateway configured, or
-    2. Has an IPv6 address with IPv6 gateway configured, or
-    3. Has an IPv4 address
+   1. Has an IPv4 address with IPv4 gateway configured, or
+   2. Has an IPv6 address with IPv6 gateway configured, or
+   3. Has an IPv4 address
 2. Resolve the Proxmox node name (usually a shortname) via DNS using the system DNS resolver of the machine running Terraform.
 
 In some cases this may not be the desired behavior, for example, when the node has multiple network interfaces, and the one that should be used for SSH is not the first one.
@@ -222,6 +222,7 @@ In addition to [generic provider arguments](https://www.terraform.io/docs/config
 
 - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is `https://<your-cluster-endpoint>:8006/`. **Do not** include `/api2/json` at the end.
 - `insecure` - (Optional) Whether to skip the TLS verification step (can also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults to `false`.
+- `min_tls` - (Optional) The minimum required TLS version for API calls (can also be sourced from `PROXMOX_VE_MIN_TLS`). Supported values: `1.0|1.1|1.2|1.3`. If omitted, defaults to `1.3`.
 - `otp` - (Optional, Deprecated) The one-time password for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_OTP`).
 - `password` - (Required) The password for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_PASSWORD`).
 - `username` - (Required) The username and realm for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_USERNAME`). For example, `root@pam`.

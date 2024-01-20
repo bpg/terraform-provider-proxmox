@@ -92,7 +92,7 @@ func getNodesClient() *nodes.Client {
 					panic(err)
 				}
 
-				conn, err := api.NewConnection(endpoint, true)
+				conn, err := api.NewConnection(endpoint, true, "")
 				if err != nil {
 					panic(err)
 				}

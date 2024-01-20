@@ -117,6 +117,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
       when the source file is a URL referencing a `.qcow2` image.
   - `insecure` - (Optional) Whether to skip the TLS verification step for
       HTTPS sources (defaults to `false`).
+  - `min_tls` - (Optional) The minimum required TLS version for HTTPS sources. "Supported values: `1.0|1.1|1.2|1.3` (defaults to `1.3`).
   - `path` - (Required) A path to a local file or a URL.
 - `source_raw` - (Optional) The raw source (conflicts with `source_file`).
   - `data` - (Required) The raw data.

@@ -37,6 +37,7 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderPassword,
 		mkProviderEndpoint,
 		mkProviderInsecure,
+		mkProviderMinTLS,
 		mkProviderOTP,
 	})
 
@@ -45,6 +46,7 @@ func TestProviderSchema(t *testing.T) {
 		mkProviderPassword: schema.TypeString,
 		mkProviderEndpoint: schema.TypeString,
 		mkProviderInsecure: schema.TypeBool,
+		mkProviderMinTLS:   schema.TypeString,
 		mkProviderOTP:      schema.TypeString,
 	})
 

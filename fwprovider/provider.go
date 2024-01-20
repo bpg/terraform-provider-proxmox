@@ -56,6 +56,7 @@ type proxmoxProviderModel struct {
 	APIToken types.String `tfsdk:"api_token"`
 	Endpoint types.String `tfsdk:"endpoint"`
 	Insecure types.Bool   `tfsdk:"insecure"`
+	MinTLS   types.String `tfsdk:"min_tls"`
 	OTP      types.String `tfsdk:"otp"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
@@ -105,6 +106,11 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 			"insecure": schema.BoolAttribute{
 				Description: "Whether to skip the TLS verification step.",
 				Optional:    true,
+			},
+			"min_tls": schema.StringAttribute{
+				Description: "The minimum required TLS version for API calls." +
+					"Supported values: `1.0|1.1|1.2|1.3`. Defaults to `1.3`.",
+				Optional: true,
 			},
 			"otp": schema.StringAttribute{
 				Description: "The one-time password for the Proxmox VE API.",
@@ -228,6 +234,7 @@ func (p *proxmoxProvider) Configure(
 	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
 	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
 	insecure := utils.GetAnyBoolEnv("PROXMOX_VE_INSECURE")
+	minTLS := utils.GetAnyStringEnv("PROXMOX_VE_MIN_TLS")
 	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
 	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
 
@@ -241,6 +248,10 @@ func (p *proxmoxProvider) Configure(
 
 	if !config.Insecure.IsNull() {
 		insecure = config.Insecure.ValueBool()
+	}
+
+	if !config.MinTLS.IsNull() {
+		minTLS = config.MinTLS.ValueString()
 	}
 
 	if !config.Username.IsNull() {
@@ -278,6 +289,7 @@ func (p *proxmoxProvider) Configure(
 	conn, err := api.NewConnection(
 		endpoint,
 		insecure,
+		minTLS,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
