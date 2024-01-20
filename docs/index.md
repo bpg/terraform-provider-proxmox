@@ -21,7 +21,7 @@ provider "proxmox" {
   password = "the-password-set-during-installation-of-proxmox-ve"
   # because self-signed TLS certificate is in use
   insecure = true
-  # uncoment (unless on Windows...)
+  # uncomment (unless on Windows...)
   # tmp_dir  = "/var/tmp"
 
   ssh {

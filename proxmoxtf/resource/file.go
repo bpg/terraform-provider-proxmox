@@ -159,7 +159,7 @@ func File() *schema.Resource {
 						},
 						mkResourceVirtualEnvironmentFileSourceFileMinTLS: {
 							Type: schema.TypeString,
-							Description: "The minimum required TLS version for API calls." +
+							Description: "The minimum required TLS version for HTTPS sources." +
 								"Supported values: `1.0|1.1|1.2|1.3`. Defaults to `1.3`.",
 							Optional: true,
 							ForceNew: true,
