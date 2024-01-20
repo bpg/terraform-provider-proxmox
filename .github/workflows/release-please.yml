@@ -26,11 +26,3 @@ jobs:
         uses: google-github-actions/release-please-action@cc61a07e2da466bebbc19b3a7dd01d6aecb20d1e # v4.0.2
         with:
           token: "${{ steps.app-token.outputs.token }}"
-          release-type: go
-          bump-minor-pre-major: true
-          extra-files: |
-            Makefile
-          skip-github-release: false
-          include-v-in-tag: true
-          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
-          signoff: 'GitHub Bot <48106979+bpg-bot@users.noreply.github.com>'
