@@ -789,6 +789,16 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "xoxys",
+      "name": "Robert Kaussow",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3391958?v=4",
+      "profile": "https://thegeeklab.de",
+      "contributions": [
+        "code",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 8,
