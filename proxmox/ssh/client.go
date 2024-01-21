@@ -51,7 +51,6 @@ func NewClient(
 	agent bool, agentSocket string,
 	nodeLookup NodeResolver,
 ) (Client, error) {
-	//goland:noinspection GoBoolExpressions
 	if agent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
 		return nil, errors.New(
 			"the ssh agent flag is only supported on POSIX systems, please set it to 'false'" +
@@ -101,14 +100,9 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 
 	defer closeOrLogError(sshSession)
 
-	script := strings.Join(commands, " && \\\n")
+	cmd := c.buildCommandLine(commands)
 
-	output, err := sshSession.CombinedOutput(
-		fmt.Sprintf(
-			"/bin/bash -c '%s'",
-			strings.ReplaceAll(script, "'", "'\"'\"'"),
-		),
-	)
+	output, err := sshSession.CombinedOutput(cmd)
 	if err != nil {
 		return errors.New(string(output))
 	}
@@ -347,4 +341,20 @@ func (c *client) createSSHClientAgent(
 	})
 
 	return sshClient, nil
+}
+
+// buildCommandLine builds a bash command line from a list of commands, which is
+// then executed on the node over SSH.
+func (*client) buildCommandLine(commands []string) string {
+	if len(commands) == 0 {
+		return ""
+	}
+
+	fun := fmt.Sprintf("fun(){ %s }", strings.Join(commands, " && "))
+	cmd := fmt.Sprintf(
+		`%s; if [ $(sudo -n echo tfpve 2>&1 | grep "tfpve" | wc -l) -gt 0 ]; then sudo fun; else fun; fi`,
+		fun,
+	)
+
+	return cmd
 }
