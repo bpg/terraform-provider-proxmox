@@ -1,15 +1,15 @@
 name: Semgrep
 
-on: 
+on:
   pull_request: {}
   push:
     branches:
-    - main
+      - main
     paths:
-    - .github/workflows/semgrep.yml
+      - .github/workflows/semgrep.yml
   schedule:
-  # random HH:MM to avoid a load spike on GitHub Actions at 00:00
-  - cron: 29 16 * * *
+    # random HH:MM to avoid a load spike on GitHub Actions at 00:00
+    - cron: 29 16 * * *
 
 jobs:
   semgrep:
@@ -19,9 +19,8 @@ jobs:
     container:
       image: returntocorp/semgrep
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Semgrep
-      run: semgrep ci
+      - name: Semgrep
+        run: semgrep ci
