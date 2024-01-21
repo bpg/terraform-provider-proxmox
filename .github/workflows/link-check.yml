@@ -1,0 +1,37 @@
+name: "Link Check"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@c3089c702fbb949e3f7a8122be0c33c017904f9b # v1.9.1
+        id: lychee
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Find Link Checker Issue
+        id: link-checker-issue
+        uses: micalevisk/last-issue-action@0d40124cc99ac8601c2516007f0c98ef3d27537b # v2.3.0
+        with:
+          state: open
+          labels: |
+            broken-links
+
+      - name: Update Issue
+        uses: peter-evans/create-issue-from-file@433e51abf769039ee20ba1293a088ca19d573b7f # renovate: tag=v4.0.1
+        with:
+          title: Broken links detected 🔗
+          issue-number: "${{ steps.link-checker-issue.outputs.issue-number }}"
+          content-filepath: ./lychee/out.md
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          labels: |
+            broken-links

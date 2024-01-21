@@ -15,7 +15,6 @@ jobs:
   golangci-lint:
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -34,7 +33,7 @@ jobs:
         uses: actions/setup-go@v5
         if: steps.filter.outputs.go == 'true'
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Lint code
         if: steps.filter.outputs.go == 'true'

@@ -11,13 +11,12 @@ name: Publish Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-
       - name: Generate Short Lived OAuth App Token
         uses: actions/create-github-app-token@c4fa18d55c5d49e6a2793e351ea4938322c61072 # v1.6.4
         id: app-token
@@ -32,11 +31,11 @@ jobs:
 
       - name: Unshallow
         run: git fetch --prune --unshallow
-       
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Import GPG key
         id: import_gpg
