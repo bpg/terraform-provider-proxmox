@@ -1,15 +1,22 @@
-GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 NAME=terraform-provider-proxmox
 TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
 VERSION=0.44.0# x-release-please-version
+
+# check if opentofu is installed and use it if it is,
+# otherwise use terraform
+ifeq ($(shell tofu -version 2>/dev/null),)
+	TERRAFORM_EXECUTABLE=terraform
+else
+	TERRAFORM_EXECUTABLE=tofu
+endif
 
 ifeq ($(OS),Windows_NT)
 	TERRAFORM_PLATFORM=windows_amd64
 	TERRAFORM_PLUGIN_CACHE_DIRECTORY=$$(cygpath -u "$(shell pwd -P)")/cache/plugins
 	TERRAFORM_PLUGIN_EXTENSION=.exe
 else
-	TERRAFORM_PLATFORM=$$(terraform -version | awk 'FNR == 2 {print $$2}')
+	TERRAFORM_PLATFORM=$$($(TERRAFORM_EXECUTABLE) -version | awk 'FNR == 2 {print $$2}')
 	TERRAFORM_PLUGIN_CACHE_DIRECTORY=$(shell pwd -P)/cache/plugins
 endif
 
@@ -40,7 +47,7 @@ example-apply:
 		&& export TF_DISABLE_CHECKPOINT="true" \
 		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
 		&& cd ./example \
-		&& terraform apply -auto-approve
+		&& $(TERRAFORM_EXECUTABLE) apply -auto-approve
 
 .PHONY: example-build
 example-build:
@@ -54,7 +61,7 @@ example-destroy:
 		&& export TF_DISABLE_CHECKPOINT="true" \
 		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
 		&& cd ./example \
-		&& terraform destroy -auto-approve
+		&& $(TERRAFORM_EXECUTABLE) destroy -auto-approve
 
 .PHONY: example-init
 example-init:
@@ -63,7 +70,7 @@ example-init:
 		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
 		&& cd ./example \
 		&& rm -f .terraform.lock.hcl \
-		&& terraform init
+		&& $(TERRAFORM_EXECUTABLE) init
 
 .PHONY: example-plan
 example-plan:
@@ -71,11 +78,11 @@ example-plan:
 		&& export TF_DISABLE_CHECKPOINT="true" \
 		&& export TF_PLUGIN_CACHE_DIR="$(TERRAFORM_PLUGIN_CACHE_DIRECTORY)" \
 		&& cd ./example \
-		&& terraform plan
+		&& $(TERRAFORM_EXECUTABLE) plan
 
 .PHONY: fmt
 fmt:
-	gofmt -s -w $(GOFMT_FILES)
+	gofmt -s -w $$(find . -name '*.go')
 
 .PHONY: init
 init:
