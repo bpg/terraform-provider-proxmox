@@ -30,7 +30,7 @@ import (
 // Client is an interface for performing SSH requests against the Proxmox Nodes.
 type Client interface {
 	// ExecuteNodeCommands executes a command on a node.
-	ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error
+	ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) ([]byte, error)
 
 	// NodeUpload uploads a file to a node.
 	NodeUpload(ctx context.Context, nodeName string,
@@ -38,18 +38,18 @@ type Client interface {
 }
 
 type client struct {
-	username    string
-	password    string
-	agent       bool
-	agentSocket string
-	nodeLookup  NodeResolver
+	username     string
+	password     string
+	agent        bool
+	agentSocket  string
+	nodeResolver NodeResolver
 }
 
 // NewClient creates a new SSH client.
 func NewClient(
 	username string, password string,
 	agent bool, agentSocket string,
-	nodeLookup NodeResolver,
+	nodeResolver NodeResolver,
 ) (Client, error) {
 	if agent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
 		return nil, errors.New(
@@ -58,24 +58,24 @@ func NewClient(
 		)
 	}
 
-	if nodeLookup == nil {
-		return nil, errors.New("node lookup is required")
+	if nodeResolver == nil {
+		return nil, errors.New("node resolver is required")
 	}
 
 	return &client{
-		username:    username,
-		password:    password,
-		agent:       agent,
-		agentSocket: agentSocket,
-		nodeLookup:  nodeLookup,
+		username:     username,
+		password:     password,
+		agent:        agent,
+		agentSocket:  agentSocket,
+		nodeResolver: nodeResolver,
 	}, nil
 }
 
 // ExecuteNodeCommands executes commands on a given node.
-func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) error {
-	node, err := c.nodeLookup.Resolve(ctx, nodeName)
+func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) ([]byte, error) {
+	node, err := c.nodeResolver.Resolve(ctx, nodeName)
 	if err != nil {
-		return fmt.Errorf("failed to find node endpoint: %w", err)
+		return nil, fmt.Errorf("failed to find node endpoint: %w", err)
 	}
 
 	tflog.Debug(ctx, "executing commands on the node using SSH", map[string]interface{}{
@@ -88,26 +88,24 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 
 	sshClient, err := c.openNodeShell(ctx, node)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer closeOrLogError(sshClient)
 
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed to create SSH session: %w", err)
+		return nil, fmt.Errorf("failed to create SSH session: %w", err)
 	}
 
 	defer closeOrLogError(sshSession)
 
-	cmd := c.buildCommandLine(commands)
-
-	output, err := sshSession.CombinedOutput(cmd)
+	output, err := sshSession.CombinedOutput(strings.Join(commands, "; "))
 	if err != nil {
-		return errors.New(string(output))
+		return nil, errors.New(string(output))
 	}
 
-	return nil
+	return output, nil
 }
 
 func (c *client) NodeUpload(
@@ -116,7 +114,7 @@ func (c *client) NodeUpload(
 	remoteFileDir string,
 	d *api.FileUploadRequest,
 ) error {
-	ip, err := c.nodeLookup.Resolve(ctx, nodeName)
+	ip, err := c.nodeResolver.Resolve(ctx, nodeName)
 	if err != nil {
 		return fmt.Errorf("failed to find node endpoint: %w", err)
 	}
@@ -341,20 +339,4 @@ func (c *client) createSSHClientAgent(
 	})
 
 	return sshClient, nil
-}
-
-// buildCommandLine builds a bash command line from a list of commands, which is
-// then executed on the node over SSH.
-func (*client) buildCommandLine(commands []string) string {
-	if len(commands) == 0 {
-		return ""
-	}
-
-	fun := fmt.Sprintf("fun(){ %s }", strings.Join(commands, " && "))
-	cmd := fmt.Sprintf(
-		`%s; if [ $(sudo -n echo tfpve 2>&1 | grep "tfpve" | wc -l) -gt 0 ]; then sudo fun; else fun; fi`,
-		fun,
-	)
-
-	return cmd
 }
