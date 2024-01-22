@@ -118,7 +118,7 @@ You can find more details on the SSH Agent [here](https://www.digitalocean.com/c
 ### SSH User
 
 By default, the provider will use the same username for the SSH connection as the one used for the Proxmox API connection (when using PAM authentication).
-This can be overridden by specifying the `username` argument in the `ssh` block (or alternatively a username in `PROXMOX_VE_SSH_USERNAME` environment variable):
+This can be overridden by specifying the `username` argument in the `ssh` block (or alternatively a username in the `PROXMOX_VE_SSH_USERNAME` environment variable):
 
 ```terraform
 provider "proxmox" {
@@ -134,41 +134,41 @@ provider "proxmox" {
 -> When using API Token or non-PAM authentication for Proxmox API, the `username` field in the `ssh` block (or alternatively a username in `PROXMOX_VE_USERNAME` or `PROXMOX_VE_SSH_USERNAME` environment variable) is **required**.
 This is because the provider needs to know which PAM user to use for the SSH connection.
 
-When using a non-root user for the SSH connection, the user needs to have the `sudo` privilege on the target node without password.
+When using a non-root user for the SSH connection, the user **must** have the `sudo` privilege on the target node without requiring a password.
 
-You can configure the `sudo` privilege for the use via the command line on the Proxmox host or cluster. In the example blow we create a user `terraform` and assign the `sudo` privilege to it:
+You can configure the `sudo` privilege for the user via the command line on the Proxmox host. In the example below, we create a user `terraform` and assign the `sudo` privilege to it:
 
 - Create a new system user:
 
-  ```sh
-  sudo useradd -m terraform
-  ```
+    ```sh
+    sudo useradd -m terraform
+    ```
 
 - Add the user to the `sudo` group:
 
-  ```sh
-  sudo usermod -aG sudo terraform
-  ```
+    ```sh
+    sudo usermod -aG sudo terraform
+    ```
 
 - Configure the `sudo` privilege for the user:
 
-  ```sh
-  sudo visudo
-  ```
+    ```sh
+    sudo visudo
+    ```
 
   Add the following line to the end of the file:
 
-  ```sh
-  terraform ALL=(ALL) NOPASSWD:ALL
-  ```
+    ```sh
+    terraform ALL=(ALL) NOPASSWD:ALL
+    ```
 
   Save the file and exit.
 
 - Copy your SSH public key to the new user on the target node:
 
-  ```sh
-  ssh-copy-id terraform@<target-node>
-  ```
+    ```sh
+    ssh-copy-id terraform@<target-node>
+    ```
 
 - Test the SSH connection and password-less `sudo`:
   
@@ -221,30 +221,30 @@ You can create an API Token for a user via the Proxmox UI, or via the command li
 
 - Create a user:
 
-  ```sh
-  sudo pveum user add terraform@pve
-  ```
+    ```sh
+    sudo pveum user add terraform@pve
+    ```
 
 - Create a role for the user (you can skip this step if you want to use the any of the existing roles):
 
-  ```sh
-  sudo pveum role add Terraform -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt User.Modify"
-  ```
+    ```sh
+    sudo pveum role add Terraform -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt User.Modify"
+    ```
 
   ~> The list of privileges above is only an example, please review it and adjust to your needs.
   Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
 
 - Assign the role to the previously created user:
 
-  ```sh
-  sudo pveum aclmod / -user terraform@pve -role Terraform
-  ```
+    ```sh
+    sudo pveum aclmod / -user terraform@pve -role Terraform
+    ```
 
 - Create an API token for the user:
 
-  ```sh
-  sudo pveum user token add terraform@pve provider --privsep=0
-  ```
+    ```sh
+    sudo pveum user token add terraform@pve provider --privsep=0
+    ```
 
 Refer to the upstream docs as needed for additional details concerning [PVE User Management](https://pve.proxmox.com/wiki/User_Management).
 
@@ -288,12 +288,12 @@ In addition to [generic provider arguments](https://www.terraform.io/docs/config
 - `username` - (Required) The username and realm for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_USERNAME`). For example, `root@pam`.
 - `api_token` - (Optional) The API Token for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_API_TOKEN`). For example, `root@pam!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
 - `ssh` - (Optional) The SSH connection configuration to a Proxmox node. This is a block, whose fields are documented below.
-  - `username` - (Optional) The username to use for the SSH connection. Defaults to the username used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_USERNAME`. Required when using API Token.
-  - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
-  - `agent` - (Optional) Whether to use the SSH agent for the SSH authentication. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_AGENT`.
-  - `agent_socket` - (Optional) The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
-  - `node` - (Optional) The node configuration for the SSH connection. Can be specified multiple times to provide configuration fo multiple nodes.
-    - `name` - (Required) The name of the node.
-    - `address` - (Required) The FQDN/IP address of the node.
-    - `port` - (Optional) SSH port of the node. Defaults to 22.
+    - `username` - (Optional) The username to use for the SSH connection. Defaults to the username used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_USERNAME`. Required when using API Token.
+    - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
+    - `agent` - (Optional) Whether to use the SSH agent for the SSH authentication. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_AGENT`.
+    - `agent_socket` - (Optional) The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
+    - `node` - (Optional) The node configuration for the SSH connection. Can be specified multiple times to provide configuration fo multiple nodes.
+        - `name` - (Required) The name of the node.
+        - `address` - (Required) The FQDN/IP address of the node.
+        - `port` - (Optional) SSH port of the node. Defaults to 22.
 - `tmp_dir` - (Optional) Use custom temporary directory. (can also be sourced from `PROXMOX_VE_TMPDIR`)
