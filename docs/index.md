@@ -115,6 +115,69 @@ Instead, it uses the SSH protocol directly, and supports the `SSH_AUTH_SOCK` env
 This allows the provider to use the SSH agent configured by the user, and to support multiple SSH agents running on the same machine.
 You can find more details on the SSH Agent [here](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#adding-your-ssh-keys-to-an-ssh-agent-to-avoid-typing-the-passphrase).
 
+### SSH User
+
+By default, the provider will use the same username for the SSH connection as the one used for the Proxmox API connection (when using PAM authentication).
+This can be overridden by specifying the `username` argument in the `ssh` block (or alternatively a username in `PROXMOX_VE_SSH_USERNAME` environment variable):
+
+```terraform
+provider "proxmox" {
+  ...
+
+  ssh {
+    agent = true
+    username = "terraform"
+  }
+}
+```
+
+-> When using API Token or non-PAM authentication for Proxmox API, the `username` field in the `ssh` block (or alternatively a username in `PROXMOX_VE_USERNAME` or `PROXMOX_VE_SSH_USERNAME` environment variable) is **required**.
+This is because the provider needs to know which PAM user to use for the SSH connection.
+
+When using a non-root user for the SSH connection, the user needs to have the `sudo` privilege on the target node without password.
+
+You can configure the `sudo` privilege for the use via the command line on the Proxmox host or cluster. In the example blow we create a user `terraform` and assign the `sudo` privilege to it:
+
+- Create a new system user:
+
+  ```sh
+  sudo useradd -m terraform
+  ```
+
+- Add the user to the `sudo` group:
+
+  ```sh
+  sudo usermod -aG sudo terraform
+  ```
+
+- Configure the `sudo` privilege for the user:
+
+  ```sh
+  sudo visudo
+  ```
+
+  Add the following line to the end of the file:
+
+  ```sh
+  terraform ALL=(ALL) NOPASSWD:ALL
+  ```
+
+  Save the file and exit.
+
+- Copy your SSH public key to the new user on the target node:
+
+  ```sh
+  ssh-copy-id terraform@<target-node>
+  ```
+
+- Test the SSH connection and password-less `sudo`:
+  
+    ```sh
+    ssh terraform@<target-node> sudo ls -la /root
+    ```
+
+  You should be able to connect to the target node and see content of the `/root` folder without password.
+
 ### Node IP address used for SSH connection
 
 In order to make the SSH connection, the provider needs to be able to resolve the target node name to an IP.
@@ -194,21 +257,18 @@ provider "proxmox" {
   insecure  = true
   ssh {
     agent    = true
-    username = "root"
+    username = "terraform"
   }
 }
 ```
 
 -> The token authentication is taking precedence over the password authentication.
 
--> The `username` field in the `ssh` block (or alternatively a username in `PROXMOX_VE_USERNAME` or `PROXMOX_VE_SSH_USERNAME` environment variable) is **required** when using API Token authentication.
-This is because the provider needs to know which user to use for the SSH connection.
-
 -> Not all Proxmox API operations are supported via API Token.
 You may see errors like `error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
 The workaround is to use password authentication for those operations.
 
--> You can also configure additional users and roles using [`virtual_environment_user`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_user) and [`virtual_environment_role`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_role) resources of the provider.
+-> You can also configure additional PVE users and roles using [`virtual_environment_user`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_user) and [`virtual_environment_role`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_role) resources of the provider.
 
 ## Temporary Directory
 
