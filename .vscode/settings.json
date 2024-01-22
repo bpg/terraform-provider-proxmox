@@ -9,7 +9,6 @@
         "rootfs",
         "signoff",
         "tflog",
-        "tfpve",
         "unmanaged",
         "virtio",
         "VLANID",
