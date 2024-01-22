@@ -8,6 +8,7 @@
     "gomodTidy",
     "gomodUpdateImportPaths",
   ],
+  "ignorePaths": ["howtos/**"],
   "rebaseWhen": "behind-base-branch",
   "packageRules": [
     {
@@ -29,7 +30,6 @@
       "matchFileNames": [
         "examples/**",
         "example/**",
-        "howtos/**",
         "docs/**",
       ],
       "semanticCommitType": "chore",
