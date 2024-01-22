@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.45.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.44.0...v0.45.0) (2024-01-22)
+
+
+### Features
+
+* **provider:** use `sudo` when running commands over SSH ([#950](https://github.com/bpg/terraform-provider-proxmox/issues/950)) ([9d764e5](https://github.com/bpg/terraform-provider-proxmox/commit/9d764e588976a5b1d35662501de2a6bc804fb693))
+
+
+### Miscellaneous
+
+* **ci:** add link checker, reformat actions code ([#944](https://github.com/bpg/terraform-provider-proxmox/issues/944)) ([a030542](https://github.com/bpg/terraform-provider-proxmox/commit/a030542da0524caa7f7bdb996892b18c78d45804))
+* **ci:** update actions/create-github-app-token action (v1.6.3 → v1.6.4) ([#939](https://github.com/bpg/terraform-provider-proxmox/issues/939)) ([25db34b](https://github.com/bpg/terraform-provider-proxmox/commit/25db34b149f29b25935ae14245fc97837bffc0d6))
+* **ci:** Update google-github-actions/release-please-action action (v3.7.13 → v4.0.2) ([#905](https://github.com/bpg/terraform-provider-proxmox/issues/905)) ([d4832b3](https://github.com/bpg/terraform-provider-proxmox/commit/d4832b3d5991c6b4610dacae7c43a31dea3f94ee))
+* **ci:** update issue templates, renovate config ([#951](https://github.com/bpg/terraform-provider-proxmox/issues/951)) ([9644590](https://github.com/bpg/terraform-provider-proxmox/commit/96445909989fbb65a8a28aad4f98ce072db93e79))
+* **docs:** move list of contributors to CONTRIBUTORS.md ([#945](https://github.com/bpg/terraform-provider-proxmox/issues/945)) ([aabfeb8](https://github.com/bpg/terraform-provider-proxmox/commit/aabfeb86a204bdd109b885e7e1cda84eff42d8a5))
+* **docs:** update README.md, add note about OpenTofu support ([#943](https://github.com/bpg/terraform-provider-proxmox/issues/943)) ([b926c57](https://github.com/bpg/terraform-provider-proxmox/commit/b926c57a53002f955651dde8e95ac3734d453e8f))
+
 ## [0.44.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.43.3...v0.44.0) (2024-01-20)
 
 
