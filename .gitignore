@@ -32,6 +32,7 @@ modules-dev/
 *.tfstate.lock.info
 *.tfvars
 *.env
+id_rsa.pub
 
 .*.swp
 .DS_Store
