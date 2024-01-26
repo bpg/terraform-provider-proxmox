@@ -24,8 +24,8 @@ data "proxmox_virtual_environment_group" "operations_team" {
 ## Attribute Reference
 
 - `acl` - The access control list.
-  - `path` - The path.
-  - `propagate` - Whether to propagate to child paths.
-  - `role_id` - The role identifier.
+    - `path` - The path.
+    - `propagate` - Whether to propagate to child paths.
+    - `role_id` - The role identifier.
 - `comment` - The group comment.
 - `members` - The group members as a list with `username@realm` entries.

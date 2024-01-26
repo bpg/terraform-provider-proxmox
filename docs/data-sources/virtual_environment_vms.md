@@ -26,7 +26,7 @@ data "proxmox_virtual_environment_vms" "ubuntu_vms" {
 ## Attribute Reference
 
 - `vms` - The VMs list.
-  - `name` - The virtual machine name.
-  - `node_name` - The node name.
-  - `tags` - A list of tags of the VM.
-  - `vm_id` - The VM identifier.
+    - `name` - The virtual machine name.
+    - `node_name` - The node name.
+    - `tags` - A list of tags of the VM.
+    - `vm_id` - The VM identifier.

@@ -36,9 +36,9 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
 ## Argument Reference
 
 - `acl` - (Optional) The access control list (multiple blocks supported).
-  - `path` - The path.
-  - `propagate` - Whether to propagate to child paths.
-  - `role_id` - The role identifier.
+    - `path` - The path.
+    - `propagate` - Whether to propagate to child paths.
+    - `role_id` - The role identifier.
 - `comment` - (Optional) The user comment.
 - `email` - (Optional) The user's email address.
 - `enabled` - (Optional) Whether the user account is enabled.

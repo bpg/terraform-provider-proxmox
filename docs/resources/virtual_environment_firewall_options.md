@@ -39,20 +39,22 @@ resource "proxmox_virtual_environment_firewall_options" "example" {
 - `dhcp` - (Optional)Enable DHCP.
 - `enabled` - (Optional) Enable or disable the firewall.
 - `ipfilter` - (Optional) Enable default IP filters. This is equivalent to
-  adding an empty `ipfilter-net<id>` ipset for every interface. Such ipsets
-  implicitly contain sane default restrictions such as restricting IPv6 link
-  local addresses to the one derived from the interface's MAC address. For
-  containers the configured IP addresses will be implicitly added.
+    adding an empty `ipfilter-net<id>` ipset for every interface. Such ipsets
+    implicitly contain sane default restrictions such as restricting IPv6 link
+    local addresses to the one derived from the interface's MAC address. For
+    containers the configured IP addresses will be implicitly added.
 - `log_level_in` - (Optional) Log level for incoming
-  packets (`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`).
+    packets (`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`,
+    `debug`, `nolog`).
 - `log_level_out` - (Optional) Log level for outgoing
-  packets (`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, `debug`, `nolog`).
+    packets (`emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`,
+    `debug`, `nolog`).
 - `macfilter` - (Optional) Enable/disable MAC address filter.
 - `ndp` - (Optional) Enable NDP (Neighbor Discovery Protocol).
 - `input_policy` - (Optional) The default input
-  policy (`ACCEPT`, `DROP`, `REJECT`).
+    policy (`ACCEPT`, `DROP`, `REJECT`).
 - `output_policy` - (Optional) The default output
-  policy (`ACCEPT`, `DROP`, `REJECT`).
+    policy (`ACCEPT`, `DROP`, `REJECT`).
 - `radv` - (Optional) Enable Router Advertisement.
 
 ## Attribute Reference

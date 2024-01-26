@@ -24,9 +24,9 @@ data "proxmox_virtual_environment_user" "operations_user" {
 ## Attribute Reference
 
 - `acl` - The access control list.
-  - `path` - The path.
-  - `propagate` - Whether to propagate to child paths.
-  - `role_id` - The role identifier.
+    - `path` - The path.
+    - `propagate` - Whether to propagate to child paths.
+    - `role_id` - The role identifier.
 - `comment` - The user comment.
 - `email` - The user's email address.
 - `enabled` - Whether the user account is enabled.

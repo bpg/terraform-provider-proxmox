@@ -33,10 +33,11 @@ resource "proxmox_virtual_environment_cluster_firewall" "example" {
 - `input_policy` - (Optional) The default input policy (`ACCEPT`, `DROP`, `REJECT`).
 - `output_policy` - (Optional) The default output policy (`ACCEPT`, `DROP`, `REJECT`).
 - `log_ratelimit` - (Optional) The log rate limit.
-  - `enabled` - (Optional) Enable or disable the log rate limit.
-  - `burst` - (Optional) Initial burst of packages which will always get
-      logged before the rate is applied (defaults to `5`).
-  - `rate` - (Optional) Frequency with which the burst bucket gets refilled (defaults to `1/second`).
+    - `enabled` - (Optional) Enable or disable the log rate limit.
+    - `burst` - (Optional) Initial burst of packages which will always get
+        logged before the rate is applied (defaults to `5`).
+    - `rate` - (Optional) Frequency with which the burst bucket gets refilled
+        (defaults to `1/second`).
 
 ## Attribute Reference
 
