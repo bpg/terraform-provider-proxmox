@@ -15,20 +15,23 @@ import (
 )
 
 const (
-	dvProviderOTP            = ""
-	mkProviderEndpoint       = "endpoint"
-	mkProviderInsecure       = "insecure"
-	mkProviderMinTLS         = "min_tls"
-	mkProviderOTP            = "otp"
-	mkProviderPassword       = "password"
-	mkProviderUsername       = "username"
-	mkProviderAPIToken       = "api_token"
-	mkProviderTmpDir         = "tmp_dir"
-	mkProviderSSH            = "ssh"
-	mkProviderSSHUsername    = "username"
-	mkProviderSSHPassword    = "password"
-	mkProviderSSHAgent       = "agent"
-	mkProviderSSHAgentSocket = "agent_socket"
+	dvProviderOTP               = ""
+	mkProviderEndpoint          = "endpoint"
+	mkProviderInsecure          = "insecure"
+	mkProviderMinTLS            = "min_tls"
+	mkProviderOTP               = "otp"
+	mkProviderPassword          = "password"
+	mkProviderUsername          = "username"
+	mkProviderAPIToken          = "api_token"
+	mkProviderTmpDir            = "tmp_dir"
+	mkProviderSSH               = "ssh"
+	mkProviderSSHUsername       = "username"
+	mkProviderSSHPassword       = "password"
+	mkProviderSSHAgent          = "agent"
+	mkProviderSSHAgentSocket    = "agent_socket"
+	mkProviderSSHSocks5Server   = "socks5_server"
+	mkProviderSSHSocks5Username = "socks5_username"
+	mkProviderSSHSocks5Password = "socks5_password"
 
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"
@@ -141,6 +144,40 @@ func createSchema() map[string]*schema.Schema {
 							"environment variable.",
 						DefaultFunc: schema.MultiEnvDefaultFunc(
 							[]string{"SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK"},
+							nil,
+						),
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHSocks5Server: {
+						Type:     schema.TypeString,
+						Optional: true,
+						Description: "The address:port of the SOCKS5 proxy server. " +
+							"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_SERVER` environment variable.",
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"PROXMOX_VE_SSH_SOCKS5_SERVER"},
+							nil,
+						),
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHSocks5Username: {
+						Type:     schema.TypeString,
+						Optional: true,
+						Description: "The username for the SOCKS5 proxy server. " +
+							"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_USERNAME` environment variable.",
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"PROXMOX_VE_SSH_SOCKS5_USERNAME"},
+							nil,
+						),
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHSocks5Password: {
+						Type:      schema.TypeString,
+						Optional:  true,
+						Sensitive: true,
+						Description: "The password for the SOCKS5 proxy server. " +
+							"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_PASSWORD` environment variable.",
+						DefaultFunc: schema.MultiEnvDefaultFunc(
+							[]string{"PROXMOX_VE_SSH_SOCKS5_PASSWORD"},
 							nil,
 						),
 						ValidateFunc: validation.StringIsNotEmpty,

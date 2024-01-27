@@ -129,6 +129,7 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 
 	sshClient, err := ssh.NewClient(
 		sshUsername, "", true, sshAgentSocket,
+		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
 				Address: u.Hostname(),

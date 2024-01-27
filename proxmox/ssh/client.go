@@ -22,6 +22,7 @@ import (
 	"github.com/skeema/knownhosts"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/net/proxy"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -41,17 +42,21 @@ type Client interface {
 }
 
 type client struct {
-	username     string
-	password     string
-	agent        bool
-	agentSocket  string
-	nodeResolver NodeResolver
+	username       string
+	password       string
+	agent          bool
+	agentSocket    string
+	socks5Server   string
+	socks5Username string
+	socks5Password string
+	nodeResolver   NodeResolver
 }
 
 // NewClient creates a new SSH client.
 func NewClient(
 	username string, password string,
 	agent bool, agentSocket string,
+	socks5Server string, socks5Username string, socks5Password string,
 	nodeResolver NodeResolver,
 ) (Client, error) {
 	if agent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
@@ -61,16 +66,23 @@ func NewClient(
 		)
 	}
 
+	if (socks5Username != "" || socks5Password != "") && socks5Server == "" {
+		return nil, errors.New("socks5 server is required when socks5 username or password is set")
+	}
+
 	if nodeResolver == nil {
 		return nil, errors.New("node resolver is required")
 	}
 
 	return &client{
-		username:     username,
-		password:     password,
-		agent:        agent,
-		agentSocket:  agentSocket,
-		nodeResolver: nodeResolver,
+		username:       username,
+		password:       password,
+		agent:          agent,
+		agentSocket:    agentSocket,
+		socks5Server:   socks5Server,
+		socks5Username: socks5Username,
+		socks5Password: socks5Password,
+		nodeResolver:   nodeResolver,
 	}, nil
 }
 
@@ -267,6 +279,41 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 		return kherr
 	})
 
+	tflog.Info(ctx, fmt.Sprintf("agent is set to %t", c.agent))
+
+	var sshClient *ssh.Client
+	if c.agent {
+		sshClient, err = c.createSSHClientAgent(ctx, cb, kh, sshHost)
+		if err == nil {
+			return sshClient, nil
+		}
+
+		tflog.Error(ctx, "Failed ssh connection through agent, falling back to password authentication",
+			map[string]interface{}{
+				"error": err,
+			})
+	}
+
+	sshClient, err = c.createSSHClient(ctx, cb, kh, sshHost)
+	if err != nil {
+		return nil, fmt.Errorf("unable to authenticate user %q over SSH to %q. Please verify that ssh-agent is "+
+			"correctly loaded with an authorized key via 'ssh-add -L' (NOTE: configurations in ~/.ssh/config are "+
+			"not considered by the provider): %w", c.username, sshHost, err)
+	}
+
+	return sshClient, nil
+}
+
+func (c *client) createSSHClient(
+	ctx context.Context,
+	cb ssh.HostKeyCallback,
+	kh knownhosts.HostKeyCallback,
+	sshHost string,
+) (*ssh.Client, error) {
+	if c.password == "" {
+		tflog.Error(ctx, "Using password authentication fallback for SSH connection, but the SSH password is empty")
+	}
+
 	sshConfig := &ssh.ClientConfig{
 		User:              c.username,
 		Auth:              []ssh.AuthMethod{ssh.Password(c.password)},
@@ -274,39 +321,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
 	}
 
-	tflog.Info(ctx, fmt.Sprintf("agent is set to %t", c.agent))
-
-	var sshClient *ssh.Client
-	if c.agent {
-		sshClient, err = c.createSSHClientAgent(ctx, cb, kh, sshHost)
-		if err != nil {
-			tflog.Error(ctx, "Failed ssh connection through agent, "+
-				"falling back to password authentication",
-				map[string]interface{}{
-					"error": err,
-				})
-		} else {
-			return sshClient, nil
-		}
-	}
-
-	sshClient, err = ssh.Dial("tcp", sshHost, sshConfig)
-	if err != nil {
-		if c.password == "" {
-			return nil, fmt.Errorf("unable to authenticate user %q over SSH to %q. Please verify that ssh-agent is "+
-				"correctly loaded with an authorized key via 'ssh-add -L' (NOTE: configurations in ~/.ssh/config are "+
-				"not considered by golang's ssh implementation). The exact error from ssh.Dial: %w", c.username, sshHost, err)
-		}
-
-		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
-	}
-
-	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
-		"host": sshHost,
-		"user": c.username,
-	})
-
-	return sshClient, nil
+	return c.connect(ctx, sshHost, sshConfig)
 }
 
 // createSSHClientAgent establishes an ssh connection through the agent authentication mechanism.
@@ -335,6 +350,25 @@ func (c *client) createSSHClientAgent(
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
 	}
 
+	return c.connect(ctx, sshHost, sshConfig)
+}
+
+func (c *client) connect(ctx context.Context, sshHost string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
+	if c.socks5Server != "" {
+		sshClient, err := c.socks5SSHClient(sshHost, sshConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial %s via SOCKS5 proxy %s: %w", sshHost, c.socks5Server, err)
+		}
+
+		tflog.Debug(ctx, "SSH connection via SOCKS5 established", map[string]interface{}{
+			"host":          sshHost,
+			"socks5_server": c.socks5Server,
+			"user":          c.username,
+		})
+
+		return sshClient, nil
+	}
+
 	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
@@ -346,4 +380,26 @@ func (c *client) createSSHClientAgent(
 	})
 
 	return sshClient, nil
+}
+
+func (c *client) socks5SSHClient(sshServerAddress string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
+	dialer, err := proxy.SOCKS5("tcp", c.socks5Server, &proxy.Auth{
+		User:     c.socks5Username,
+		Password: c.socks5Password,
+	}, proxy.Direct)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := dialer.Dial("tcp", sshServerAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	sshConn, chans, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return ssh.NewClient(sshConn, chans, reqs), nil
 }
