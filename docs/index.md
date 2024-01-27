@@ -213,8 +213,26 @@ provider "proxmox" {
     }
   }
 }
-
 ```
+
+### SSH Connection via SOCKS5 Proxy
+
+The provider supports SSH connection to the target node via a SOCKS5 proxy.
+
+To enable the SOCKS5 proxy, you need to configure the `ssh` block in the `provider` block, and specify the `socks5_server` argument:
+
+```terraform
+provider "proxmox" {
+  // ...
+  ssh {
+    // ...
+    socks5_server     = "ip-or-fqdn-of-socks5-server:port"
+    socks5_username   = "username"  # optional  
+    socks5_password   = "password"  # optional
+  }
+}
+
+If enabled, this method will be used for all SSH connections to the target nodes in the cluster. 
 
 ## API Token Authentication
 
@@ -296,6 +314,9 @@ In addition to [generic provider arguments](https://www.terraform.io/docs/config
     - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
     - `agent` - (Optional) Whether to use the SSH agent for the SSH authentication. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_AGENT`.
     - `agent_socket` - (Optional) The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
+    - `socks5_server` - (Optional) The address of the SOCKS5 proxy server to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_SERVER`.
+    - `socks5_username` - (Optional) The username to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_USERNAME`.
+    - `socks5_password` - (Optional) The password to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_PASSWORD`.
     - `node` - (Optional) The node configuration for the SSH connection. Can be specified multiple times to provide configuration fo multiple nodes.
         - `name` - (Required) The name of the node.
         - `address` - (Required) The FQDN/IP address of the node.

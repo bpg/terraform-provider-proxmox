@@ -61,10 +61,13 @@ type proxmoxProviderModel struct {
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 	SSH      []struct {
-		Agent       types.Bool   `tfsdk:"agent"`
-		AgentSocket types.String `tfsdk:"agent_socket"`
-		Password    types.String `tfsdk:"password"`
-		Username    types.String `tfsdk:"username"`
+		Agent          types.Bool   `tfsdk:"agent"`
+		AgentSocket    types.String `tfsdk:"agent_socket"`
+		Password       types.String `tfsdk:"password"`
+		Username       types.String `tfsdk:"username"`
+		Socks5Server   types.String `tfsdk:"socks5_server"`
+		Socks5Username types.String `tfsdk:"socks5_username"`
+		Socks5Password types.String `tfsdk:"socks5_password"`
 
 		Nodes []struct {
 			Name    types.String `tfsdk:"name"`
@@ -164,6 +167,22 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 								"Defaults to the value of the `username` field of the " +
 								"`provider` block.",
 							Optional: true,
+						},
+						"socks5_server": schema.StringAttribute{
+							Description: "The address:port of the SOCKS5 proxy server. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_SERVER` environment variable.",
+							Optional: true,
+						},
+						"socks5_username": schema.StringAttribute{
+							Description: "The username for the SOCKS5 proxy server. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_USERNAME` environment variable.",
+							Optional: true,
+						},
+						"socks5_password": schema.StringAttribute{
+							Description: "The password for the SOCKS5 proxy server. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_PASSWORD` environment variable.",
+							Optional:  true,
+							Sensitive: true,
 						},
 					},
 					Blocks: map[string]schema.Block{
@@ -314,6 +333,9 @@ func (p *proxmoxProvider) Configure(
 	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
 	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
+	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
+	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
+	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
 	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
 	//nolint: nestif
@@ -332,6 +354,18 @@ func (p *proxmoxProvider) Configure(
 
 		if !config.SSH[0].AgentSocket.IsNull() {
 			sshAgentSocket = config.SSH[0].AgentSocket.ValueString()
+		}
+
+		if !config.SSH[0].Socks5Server.IsNull() {
+			sshSocks5Server = config.SSH[0].Socks5Server.ValueString()
+		}
+
+		if !config.SSH[0].Socks5Username.IsNull() {
+			sshSocks5Username = config.SSH[0].Socks5Username.ValueString()
+		}
+
+		if !config.SSH[0].Socks5Password.IsNull() {
+			sshSocks5Password = config.SSH[0].Socks5Password.ValueString()
 		}
 
 		for _, n := range config.SSH[0].Nodes {
@@ -357,6 +391,7 @@ func (p *proxmoxProvider) Configure(
 
 	sshClient, err := ssh.NewClient(
 		sshUsername, sshPassword, sshAgent, sshAgentSocket,
+		sshSocks5Server, sshSocks5Username, sshSocks5Password,
 		&apiResolverWithOverrides{
 			ar:        apiResolver{c: apiClient},
 			overrides: nodeOverrides,
