@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.45.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.45.0...v0.45.1) (2024-01-27)
+
+
+### Bug Fixes
+
+* **docs:** inconsistent indentations in docs ([#961](https://github.com/bpg/terraform-provider-proxmox/issues/961)) ([0d548a7](https://github.com/bpg/terraform-provider-proxmox/commit/0d548a78078ee9ae3e0653ea8f5e75b228dc17ac))
+* **docs:** update HOW-TOs for cloud-init ([#955](https://github.com/bpg/terraform-provider-proxmox/issues/955)) ([d91ec25](https://github.com/bpg/terraform-provider-proxmox/commit/d91ec25bfae08e6f24bb9923c0ba962792e765db))
+* **vm:** regression: `sudo: command not found` when creating a VM ([#966](https://github.com/bpg/terraform-provider-proxmox/issues/966)) ([01a8f97](https://github.com/bpg/terraform-provider-proxmox/commit/01a8f9779c87a844f7d74ccaa8f9a3d4bc28bb55))
+
+
+### Miscellaneous
+
+* **ci:** update dorny/paths-filter action (v2.11.1 → v2.12.0) ([#958](https://github.com/bpg/terraform-provider-proxmox/issues/958)) ([3a5e69d](https://github.com/bpg/terraform-provider-proxmox/commit/3a5e69d9c8e647a72b9e6141fe3e2d0f2363c991))
+* **deps:** update module github.com/google/uuid (v1.5.0 → v1.6.0) ([#954](https://github.com/bpg/terraform-provider-proxmox/issues/954)) ([b6474f8](https://github.com/bpg/terraform-provider-proxmox/commit/b6474f8ddbd8c1d3564c7d2f2bbe5a996862d443))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.17.0 → v0.18.0) in /tools ([#957](https://github.com/bpg/terraform-provider-proxmox/issues/957)) ([4a03a78](https://github.com/bpg/terraform-provider-proxmox/commit/4a03a78dcd6d350b3a17fccabffb85b23c7f9fc3))
+* **deps:** update module github.com/hashicorp/terraform-plugin-go (v0.20.0 → v0.21.0) ([#964](https://github.com/bpg/terraform-provider-proxmox/issues/964)) ([63e7bfc](https://github.com/bpg/terraform-provider-proxmox/commit/63e7bfc042bd5f4b60f6fbf70c7fdfd344b91b05))
+
 ## [0.45.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.44.0...v0.45.0) (2024-01-22)
 
 
