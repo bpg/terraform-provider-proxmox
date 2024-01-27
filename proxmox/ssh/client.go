@@ -388,17 +388,17 @@ func (c *client) socks5SSHClient(sshServerAddress string, sshConfig *ssh.ClientC
 		Password: c.socks5Password,
 	}, proxy.Direct)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create SOCKS5 proxy dialer: %w", err)
 	}
 
 	conn, err := dialer.Dial("tcp", sshServerAddress)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to dial %s via SOCKS5 proxy %s: %w", sshServerAddress, c.socks5Server, err)
 	}
 
 	sshConn, chans, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create SSH client connection: %w", err)
 	}
 
 	return ssh.NewClient(sshConn, chans, reqs), nil
