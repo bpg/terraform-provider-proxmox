@@ -29,6 +29,9 @@ import (
 
 // Client is an interface for performing SSH requests against the Proxmox Nodes.
 type Client interface {
+	// Username returns the SSH username.
+	Username() string
+
 	// ExecuteNodeCommands executes a command on a node.
 	ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) ([]byte, error)
 
@@ -69,6 +72,10 @@ func NewClient(
 		agentSocket:  agentSocket,
 		nodeResolver: nodeResolver,
 	}, nil
+}
+
+func (c *client) Username() string {
+	return c.username
 }
 
 // ExecuteNodeCommands executes commands on a given node.
