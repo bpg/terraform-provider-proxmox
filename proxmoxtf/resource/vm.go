@@ -2974,6 +2974,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 		commands = append(
 			commands,
 			`set -e`,
+			`try_sudo(){ if [ $(sudo -n echo tfpve 2>&1 | grep "tfpve" | wc -l) -gt 0 ]; then sudo $1; else $1; fi }`,
 			fmt.Sprintf(`file_id="%s"`, fileID),
 			fmt.Sprintf(`file_format="%s"`, fileFormat),
 			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
@@ -2982,11 +2983,11 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 			fmt.Sprintf(`disk_interface="%s"`, diskInterface),
 			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
 			fmt.Sprintf(`vm_id="%d"`, vmID),
-			`source_image=$(sudo pvesm path "$file_id")`,
-			`imported_disk="$(sudo qm importdisk "$vm_id" "$source_image" "$datastore_id_target" -format $file_format | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
+			`source_image=$(try_sudo "pvesm path $file_id")`,
+			`imported_disk="$(try_sudo "qm importdisk $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
 			`disk_id="${datastore_id_target}:$imported_disk${disk_options}"`,
-			`sudo qm set "$vm_id" "-${disk_interface}" "$disk_id"`,
-			`sudo qm resize "$vm_id" "${disk_interface}" "${disk_size}G"`,
+			`try_sudo "qm set $vm_id -${disk_interface} $disk_id"`,
+			`try_sudo "qm resize $vm_id ${disk_interface} ${disk_size}G"`,
 		)
 
 		importedDiskCount++
@@ -3006,6 +3007,11 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 
 		out, err := api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
+			if strings.Contains(err.Error(), "pvesm: not found") {
+				return diag.Errorf("The configured SSH user '%s' does not have the required permissions to import disks. "+
+					"Make sure `sudo` is installated and the user is a member of sudoers.", api.SSH().Username())
+			}
+
 			return diag.FromErr(err)
 		}
 

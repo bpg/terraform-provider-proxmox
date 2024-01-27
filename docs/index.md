@@ -136,6 +136,10 @@ This is because the provider needs to know which PAM user to use for the SSH con
 
 When using a non-root user for the SSH connection, the user **must** have the `sudo` privilege on the target node without requiring a password.
 
+-> If you run clustered Proxmox VE, you will need to configure the `sudo` privilege for the user on all nodes in the cluster.
+
+-> `sudo` is not installed by default on Proxmox VE nodes. You can install it via the command line on the Proxmox host: `apt install sudo`
+
 You can configure the `sudo` privilege for the user via the command line on the Proxmox host. In the example below, we create a user `terraform` and assign the `sudo` privilege to it:
 
 - Create a new system user:
