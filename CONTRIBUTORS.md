@@ -115,6 +115,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://thegeeklab.de"><img src="https://avatars.githubusercontent.com/u/3391958?v=4?s=100" width="100px;" alt="Robert Kaussow"/><br /><sub><b>Robert Kaussow</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=xoxys" title="Code">💻</a> <a href="#ideas-xoxys" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/laktosterror"><img src="https://avatars.githubusercontent.com/u/55037659?v=4?s=100" width="100px;" alt="laktosterror"/><br /><sub><b>laktosterror</b></sub></a><br /><a href="#ideas-laktosterror" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
   <tfoot>
