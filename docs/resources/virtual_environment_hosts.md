@@ -30,15 +30,15 @@ resource "proxmox_virtual_environment_hosts" "first_node_host_entries" {
 
 - `node_name` - (Required) A node name.
 - `entry` - (Required) A host entry (multiple blocks supported).
-  - `address` - (Required) The IP address.
-  - `hostnames` - (Required) The hostnames.
+    - `address` - (Required) The IP address.
+    - `hostnames` - (Required) The hostnames.
 
 ## Attribute Reference
 
 - `addresses` - The IP addresses.
 - `digest` - The SHA1 digest.
 - `entries` - The host entries (conversion of `addresses` and `hostnames` into
-  objects).
+    objects).
 - `hostnames` - The hostnames associated with each of the IP addresses.
 
 ## Important Notes

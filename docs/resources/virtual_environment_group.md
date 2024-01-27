@@ -21,9 +21,9 @@ resource "proxmox_virtual_environment_group" "operations_team" {
 ## Argument Reference
 
 - `acl` - (Optional) The access control list (multiple blocks supported).
-  - `path` - The path.
-  - `propagate` - Whether to propagate to child paths.
-  - `role_id` - The role identifier.
+    - `path` - The path.
+    - `propagate` - Whether to propagate to child paths.
+    - `role_id` - The role identifier.
 - `comment` - (Optional) The group comment.
 - `group_id` - (Required) The group identifier.
 
