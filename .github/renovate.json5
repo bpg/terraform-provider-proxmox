@@ -3,6 +3,7 @@
   extends: [
     "github>bpg/renovate-config",
     "github>bpg/renovate-config:automerge-github-actions",
+    ":semanticCommitTypeAll(chore)",
   ],
   "postUpdateOptions": [
     "gomodTidy",
@@ -15,7 +16,6 @@
       "matchPackagePatterns": [
         "*",
       ],
-      "semanticCommitType": "chore",
       "semanticCommitScope": "deps",
       "commitMessageExtra": "({{currentVersion}} → {{newVersion}})",
     },
@@ -33,7 +33,6 @@
         "example/**",
         "docs/**",
       ],
-      "semanticCommitType": "chore",
       "semanticCommitScope": "docs",
       "automerge": true,
       "automergeType": "branch",
