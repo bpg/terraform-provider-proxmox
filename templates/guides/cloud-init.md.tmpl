@@ -1,0 +1,28 @@
+---
+layout: page
+title: Configure a VM with Cloud-Init
+parent: Guides
+subcategory: Virtual Environment
+description: |-
+    This guide explains how to use the Proxmox provider to create and manage virtual machines using cloud-init.
+---
+
+# Configure a VM with Cloud-Init
+
+## Native Proxmox Cloud-Init support
+
+Proxmox supports Cloud-Init natively, so you can use the `initialization` block to configure your VM:
+
+{{ codefile "terraform" "examples/guides/cloud-init/native/main.tf" }}
+
+Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
+
+## Custom Cloud-Init configuration
+
+Because of several limitations of the native Proxmox cloud-init support, you may want to use a custom Cloud-Init configuration instead. This would allow you to adjust the VM configuration to your needs, and also install the `qemu-guest-agent` and additional packages.
+
+In order to use a custom cloud-init configuration, you need to create a `cloud-config` snippet file and pass it to the VM as a `user_data_file_id` parameter. You can use the `proxmox_virtual_environment_file` resource to create the file. Make sure the "Snippets" content type is enabled on the target datastore in Proxmox before applying the configuration below.
+
+{{ codefile "terraform" "examples/guides/cloud-init/custom/cloud-config.tf" }}
+
+{{ codefile "terraform" "examples/guides/cloud-init/custom/main.tf" }}

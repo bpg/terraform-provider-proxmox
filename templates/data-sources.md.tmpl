@@ -14,7 +14,7 @@ description: |-
 {{ if .HasExample -}}
 ## Example Usage
 
-{{ printf "{{tffile %q}}" .ExampleFile }}
+{{ codefile "terraform" .ExampleFile }}
 {{- end }}
 
 {{ .SchemaMarkdown | trimspace }}
