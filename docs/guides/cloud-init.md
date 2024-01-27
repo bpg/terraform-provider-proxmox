@@ -1,16 +1,23 @@
-# HOW-TO Configure a VM with Cloud-Init
+---
+layout: page
+title: Configure a VM with Cloud-Init
+parent: Guides
+subcategory: Virtual Environment
+description: |-
+    This guide explains how to use the Proxmox provider to create and manage virtual machines using cloud-init.
+---
 
-> [!NOTE]
-> Examples below use the following defaults:
->
-> - a single Proxmox node named `pve`
-> - local storages named `local` and `local-lvm`
+# Configure a VM with Cloud-Init
 
 ## Native Proxmox Cloud-Init support
 
 Proxmox supports Cloud-Init natively, so you can use the `initialization` block to configure your VM:
 
 ```terraform
+data "local_file" "ssh_public_key" {
+  filename = "./id_rsa.pub"
+}
+
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   name      = "test-ubuntu"
   node_name = "pve"
@@ -43,6 +50,14 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     bridge = "vmbr0"
   }
 }
+
+resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+  content_type = "iso"
+  datastore_id = "local"
+  node_name    = "pve"
+
+  url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+}
 ```
 
 Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
@@ -54,6 +69,10 @@ Because of several limitations of the native Proxmox cloud-init support, you may
 In order to use a custom cloud-init configuration, you need to create a `cloud-config` snippet file and pass it to the VM as a `user_data_file_id` parameter. You can use the `proxmox_virtual_environment_file` resource to create the file. Make sure the "Snippets" content type is enabled on the target datastore in Proxmox before applying the configuration below.
 
 ```terraform
+data "local_file" "ssh_public_key" {
+  filename = "./id_rsa.pub"
+}
+
 resource "proxmox_virtual_environment_file" "cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
@@ -125,5 +144,17 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     bridge = "vmbr0"
   }
 
+}
+
+resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+  content_type = "iso"
+  datastore_id = "local"
+  node_name    = "pve"
+
+  url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+}
+
+output "vm_ipv4_address" {
+  value = proxmox_virtual_environment_vm.ubuntu_vm.ipv4_addresses[1][0]
 }
 ```

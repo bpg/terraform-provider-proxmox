@@ -1,4 +1,13 @@
-# Setup VM with proxmox to run examples and acceptance tests
+---
+layout: page
+title: Setup a VM with Proxmox
+parent: Guides
+subcategory: Virtual Environment
+description: |-
+  This guide will help you setup a proxmox node in VM using virt-manager for a job.
+---
+
+# Setup VM with Proxmox to run examples and acceptance tests
 
 ## Who
 
@@ -8,7 +17,7 @@ Contributors
 
 To test changes, it's best to try it on real proxmox cluster. There is dedicated `make example` command that will try to apply changes defined in `example` directory. Most resources have its examples declarations there. For example, if you add new resource, you could add new file with example resource there (ideally after adding tests). If nothing breaks, apply works fine, new resource is created and all other resources are fine, then likely change is safe.
 
-But – proxmox node setup can be tricky task for some contributors.
+But, proxmox node setup can be tricky task for some contributors.
 
 ## Preconditions
 

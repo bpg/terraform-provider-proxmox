@@ -12,7 +12,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = proxmox_virtual_environment_file.ubuntu_cloud_image.id
+    file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
@@ -20,13 +20,10 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   }
 }
 
-resource "proxmox_virtual_environment_file" "ubuntu_cloud_image" {
+resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
   content_type = "iso"
   datastore_id = "local"
   node_name    = "pve"
+  url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
 
-  source_file {
-    # you may download this image locally on your workstation and then use the local path instead of the remote URL
-    path      = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
-  }
 }
