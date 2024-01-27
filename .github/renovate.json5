@@ -25,6 +25,7 @@
         "tools/go.sum",
       ],
       "commitMessageExtra": "({{currentVersion}} → {{newVersion}}) in /tools",
+      "groupName": ["tools"],
     },
     {
       "matchFileNames": [
@@ -34,7 +35,6 @@
       ],
       "semanticCommitType": "chore",
       "semanticCommitScope": "docs",
-      "commitMessageExtra": "({{currentVersion}} → {{newVersion}})",
       "automerge": true,
       "automergeType": "branch",
       "matchUpdateTypes": ["minor", "patch"],
@@ -42,6 +42,10 @@
     {
       "matchManagers": ["github-actions"],
       "semanticCommitScope": "ci",
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "commitMessagePrefix": "{{semanticCommitType}}({{semanticCommitScope}}):",
     },
   ]
 }
