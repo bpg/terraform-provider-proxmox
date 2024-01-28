@@ -819,6 +819,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "romner-set",
+      "name": "romner",
+      "avatar_url": "https://avatars.githubusercontent.com/u/41077433?v=4",
+      "profile": "https://starless.one",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
