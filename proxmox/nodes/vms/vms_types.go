@@ -699,6 +699,19 @@ type ShutdownResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
+// StartRequestBody contains the body for a VM start request.
+type StartRequestBody struct {
+	ForceCPU         *string           `json:"force-cpu,omitempty"         url:"force-cpu,omitempty"`
+	Machine          *string           `json:"machine,omitempty"           url:"machine,omitempty"`
+	MigrateFrom      *string           `json:"migratefrom,omitempty"       url:"migratefrom,omitempty"`
+	MigrationNetwork *string           `json:"migration_network,omitempty" url:"migration_network,omitempty"`
+	MigrationType    *string           `json:"migration_type,omitempty"    url:"migration_type,omitempty"`
+	SkipLock         *types.CustomBool `json:"skipLock,omitempty"          url:"skipLock,omitempty,int"`
+	StateURI         *string           `json:"stateuri,omitempty"          url:"stateuri,omitempty"`
+	TargetStorage    *string           `json:"targetstorage,omitempty"     url:"targetstorage,omitempty"`
+	TimeoutSeconds   *int              `json:"timeout,omitempty"           url:"timeout,omitempty"`
+}
+
 // StartResponseBody contains the body from a VM start response.
 type StartResponseBody struct {
 	Data *string `json:"data,omitempty"`

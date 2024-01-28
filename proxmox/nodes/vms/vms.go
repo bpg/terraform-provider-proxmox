@@ -334,7 +334,7 @@ func (c *Client) ShutdownVMAsync(ctx context.Context, d *ShutdownRequestBody) (*
 // StartVM starts a virtual machine.
 // Returns the task log if the VM had warnings at startup, or fails to start.
 func (c *Client) StartVM(ctx context.Context, timeout int) ([]string, error) {
-	taskID, err := c.StartVMAsync(ctx)
+	taskID, err := c.StartVMAsync(ctx, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -362,10 +362,13 @@ func (c *Client) StartVM(ctx context.Context, timeout int) ([]string, error) {
 }
 
 // StartVMAsync starts a virtual machine asynchronously.
-func (c *Client) StartVMAsync(ctx context.Context) (*string, error) {
+func (c *Client) StartVMAsync(ctx context.Context, timeout int) (*string, error) {
+	reqBody := &StartRequestBody{
+		TimeoutSeconds: &timeout,
+	}
 	resBody := &StartResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), reqBody, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error starting VM: %w", err)
 	}
