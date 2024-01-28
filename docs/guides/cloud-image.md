@@ -1,8 +1,7 @@
 ---
 layout: page
-title: Create a VM from a Cloud Image
-parent: Guides
-subcategory: Virtual Environment
+page_title: "Create a VM from a Cloud Image"
+subcategory: Guides
 description: |-
     This guide explains how to create a VM from a cloud image.
 ---
