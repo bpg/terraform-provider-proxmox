@@ -465,10 +465,10 @@ output "ubuntu_vm_public_key" {
 - `startup` - (Optional) Defines startup and shutdown behavior of the VM.
     - `order` - (Required) A non-negative number defining the general startup
         order.
-    - `up` - (Optional) A non-negative number defining the delay in seconds
-        before the next VM is started.
-    - `down` - (Optional) A non-negative number defining the delay in seconds
-        before the next VM is shut down.
+    - `up_delay` - (Optional) A non-negative number defining the delay in
+        seconds before the next VM is started.
+    - `down_delay` - (Optional) A non-negative number defining the delay in
+        seconds before the next VM is shut down.
 - `tablet_device` - (Optional) Whether to enable the USB tablet device (defaults
     to `true`).
 - `tags` - (Optional) A list of tags of the VM. This is only meta information (

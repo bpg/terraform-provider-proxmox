@@ -202,10 +202,10 @@ output "ubuntu_container_public_key" {
 - `startup` - (Optional) Defines startup and shutdown behavior of the container.
     - `order` - (Required) A non-negative number defining the general startup
         order.
-        - `up` - (Optional) A non-negative number defining the delay in seconds
-            before the next container is started.
-        - `down` - (Optional) A non-negative number defining the delay in
-            seconds before the next container is shut down.
+    - `up_delay` - (Optional) A non-negative number defining the delay in
+        seconds before the next container is started.
+    - `down_delay` - (Optional) A non-negative number defining the delay in
+        seconds before the next container is shut down.
 - `start_on_boot` - (Optional) Automatically start container when the host
   system boots (defaults to `true`).
 - `tags` - (Optional) A list of tags the container tags. This is only meta
