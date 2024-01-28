@@ -117,6 +117,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://thegeeklab.de"><img src="https://avatars.githubusercontent.com/u/3391958?v=4?s=100" width="100px;" alt="Robert Kaussow"/><br /><sub><b>Robert Kaussow</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=xoxys" title="Code">💻</a> <a href="#ideas-xoxys" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/laktosterror"><img src="https://avatars.githubusercontent.com/u/55037659?v=4?s=100" width="100px;" alt="laktosterror"/><br /><sub><b>laktosterror</b></sub></a><br /><a href="#ideas-laktosterror" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jtamas96"><img src="https://avatars.githubusercontent.com/u/25171705?v=4?s=100" width="100px;" alt="Jánosi Tamás"/><br /><sub><b>Jánosi Tamás</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Ajtamas96" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://starless.one"><img src="https://avatars.githubusercontent.com/u/41077433?v=4?s=100" width="100px;" alt="romner"/><br /><sub><b>romner</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aromner-set" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>
