@@ -231,6 +231,7 @@ provider "proxmox" {
     socks5_password   = "password"  # optional
   }
 }
+```
 
 If enabled, this method will be used for all SSH connections to the target nodes in the cluster. 
 

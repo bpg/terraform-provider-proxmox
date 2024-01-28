@@ -1,8 +1,7 @@
 ---
 layout: page
-title: Configure a VM with Cloud-Init
-parent: Guides
-subcategory: Virtual Environment
+page_title: "Configure a VM with Cloud-Init"
+subcategory: Guides
 description: |-
     This guide explains how to use the Proxmox provider to create and manage virtual machines using cloud-init.
 ---

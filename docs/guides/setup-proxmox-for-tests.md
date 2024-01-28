@@ -1,8 +1,7 @@
 ---
 layout: page
-title: Setup a VM with Proxmox
-parent: Guides
-subcategory: Virtual Environment
+page_title: "Setup a VM with Proxmox"
+subcategory: Guides
 description: |-
   This guide will help you setup a proxmox node in VM using virt-manager for a job.
 ---
@@ -93,4 +92,4 @@ Goal is to have a proxmox node in VM using <https://virt-manager.org/> for a job
 
 10. Now you can run `make example`.
 
-11. If you see error with proxmox_virtual_environment_file: the datastore "local" does not support content type "snippets"; supported content types are: [backup iso vztmpl], you need to enable them, see <https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file#snippets>.
+11. If you see error with proxmox_virtual_environment_file: the datastore "local" does not support content type "snippets"; supported content types are: `[backup, iso, vztmpl]`, you need to enable them, see <https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file#snippets>.
