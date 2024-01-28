@@ -809,6 +809,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "jtamas96",
+      "name": "Jánosi Tamás",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25171705?v=4",
+      "profile": "https://github.com/jtamas96",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
