@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.46.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.0...v0.46.1) (2024-01-28)
+
+
+### Bug Fixes
+
+* **docs:** fix documentation tree structure in the TF registry ([#980](https://github.com/bpg/terraform-provider-proxmox/issues/980)) ([49a76bb](https://github.com/bpg/terraform-provider-proxmox/commit/49a76bb1a10c56ab2537e83b4b9fb20d2c7c9b9e))
+
 ## [0.46.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.45.1...v0.46.0) (2024-01-28)
 
 
