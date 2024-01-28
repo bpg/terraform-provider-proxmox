@@ -8,6 +8,7 @@ package resource
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -86,7 +87,15 @@ func Pool() *schema.Resource {
 		UpdateContext: poolUpdate,
 		DeleteContext: poolDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+				d.SetId(d.Id())
+				err := d.Set(mkResourceVirtualEnvironmentPoolPoolID, d.Id())
+				if err != nil {
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
+				}
+
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 	}
 }
