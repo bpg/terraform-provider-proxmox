@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.46.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.45.1...v0.46.0) (2024-01-28)
+
+
+### Features
+
+* **docs:** rename howtos -&gt; guides and publish to the Terraform Registry ([#971](https://github.com/bpg/terraform-provider-proxmox/issues/971)) ([c39494b](https://github.com/bpg/terraform-provider-proxmox/commit/c39494b939afb0e1316776eea8730f2545135b4b))
+* **provider:** add SOCKS5 proxy support for SSH connections ([#970](https://github.com/bpg/terraform-provider-proxmox/issues/970)) ([da1d780](https://github.com/bpg/terraform-provider-proxmox/commit/da1d7804af6b2ad6d6a1d698e52d19de3c1d5cb6))
+
+
+### Bug Fixes
+
+* **docs:** fix broken links ([#976](https://github.com/bpg/terraform-provider-proxmox/issues/976)) ([0e2eb80](https://github.com/bpg/terraform-provider-proxmox/commit/0e2eb80e9f4f2e13678ad9ca6afb3cf5de4d5f19))
+* **lxc:** panic on empty `initialization.ip_config` block ([#977](https://github.com/bpg/terraform-provider-proxmox/issues/977)) ([0253eb9](https://github.com/bpg/terraform-provider-proxmox/commit/0253eb97576c6f6b06e4cf652b5c1e74ad20639d))
+* **pool:** missing `pool_id` after import ([#974](https://github.com/bpg/terraform-provider-proxmox/issues/974)) ([ed33a18](https://github.com/bpg/terraform-provider-proxmox/commit/ed33a18c9b6499ff33bacb79cebfd510b24a29c8))
+* **vm:** `timeout_start_vm` is ignored ([#978](https://github.com/bpg/terraform-provider-proxmox/issues/978)) ([625bdb6](https://github.com/bpg/terraform-provider-proxmox/commit/625bdb696f5c41f76c12f5572c89bb4594f81853))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.6.4 → v1.7.0) ([2fad644](https://github.com/bpg/terraform-provider-proxmox/commit/2fad644ffd732283875ab38f70c852bf9723c409))
+* **ci:** Update dorny/paths-filter action (v2.12.0 → v3.0.0) ([#959](https://github.com/bpg/terraform-provider-proxmox/issues/959)) ([3790b52](https://github.com/bpg/terraform-provider-proxmox/commit/3790b522e71ccbab69ea0549b0a12b390bfb8848))
+* **ci:** update lycheeverse/lychee-action action (v1.9.1 → v1.9.2) ([105a694](https://github.com/bpg/terraform-provider-proxmox/commit/105a694ddf8ff3c8e60440d995ffa2f42cc70788))
+* **ci:** Update peter-evans/create-issue-from-file action (v4.0.1 → v5.0.0) ([#960](https://github.com/bpg/terraform-provider-proxmox/issues/960)) ([2ec8c1d](https://github.com/bpg/terraform-provider-proxmox/commit/2ec8c1d2cdd518d34245ce120937e852a6eedea0))
+
 ## [0.45.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.45.0...v0.45.1) (2024-01-27)
 
 
