@@ -65,7 +65,7 @@ virtual_environment_endpoint = "https://<your-cluster-endpoint>:8006/"
 
 Then run `make example` to deploy the example resources.
 
-If you don't have free proxmox cluster to play with, there is dedicated [how-to tutorial](howtos/setup-proxmox-for-tests/README.md) how to setup Proxmox inside VM and run `make example` on it.
+If you don't have free proxmox cluster to play with, there is dedicated [how-to tutorial](docs/guides/setup-proxmox-for-tests.md) how to setup Proxmox inside VM and run `make example` on it.
 
 ## Future work
 

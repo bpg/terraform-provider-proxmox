@@ -52,7 +52,7 @@ You can run all the test cases by invoking `make test`.
 The project has a limited set of acceptance tests which are run against a real Proxmox
 instance. These tests are developed alongside the framework-based resource and datasource implementations, and are located in the `fwprovider/tests` directory.
 
-To run the acceptance tests, you need to have a Proxmox instance available. See more details in the [Setup Proxmox for Tests](./howtos/setup-proxmox-for-tests/README.md) section.
+To run the acceptance tests, you need to have a Proxmox instance available. See more details in the [Setup Proxmox for Tests](docs/guides/setup-proxmox-for-tests.md) section.
 Create a `testacc.env` file in the project's root directory with the following contents:
 
 ```env
