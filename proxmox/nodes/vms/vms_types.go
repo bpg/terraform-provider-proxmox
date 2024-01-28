@@ -699,6 +699,7 @@ type ShutdownResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
+// StartRequestBody contains the body for a VM start request.
 type StartRequestBody struct {
 	ForceCPU         *string           `json:"force-cpu,omitempty"         url:"force-cpu,omitempty"`
 	Machine          *string           `json:"machine,omitempty"           url:"machine,omitempty"`
