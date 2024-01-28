@@ -119,7 +119,16 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 
 	defer closeOrLogError(sshSession)
 
-	output, err := sshSession.CombinedOutput(strings.Join(commands, "; "))
+	script := strings.Join(commands, "; ")
+
+	output, err := sshSession.CombinedOutput(
+		fmt.Sprintf(
+			// explicitly use bash to support shell features like pipes and var assignment
+			"/bin/bash -c '%s'",
+			// shell script escaping for single quotes
+			strings.ReplaceAll(script, `'`, `'"'"'`),
+		),
+	)
 	if err != nil {
 		return nil, errors.New(string(output))
 	}
