@@ -1341,6 +1341,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfig].([]interface{})
 
 		for _, c := range initializationIPConfig {
+			if c == nil {
+				continue
+			}
+
 			configBlock := c.(map[string]interface{})
 			ipv4 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4].([]interface{})
 
@@ -2641,6 +2645,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfig].([]interface{})
 
 		for _, c := range initializationIPConfig {
+			if c == nil {
+				continue
+			}
+
 			configBlock := c.(map[string]interface{})
 			ipv4 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4].([]interface{})
 
