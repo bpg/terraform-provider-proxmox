@@ -6407,6 +6407,9 @@ func getDiskInfo(resp *vms.GetResponseData, d *schema.ResourceData) map[string]*
 					v.FileID = &fileID
 				}
 			}
+			if v.Size == nil {
+				v.Size = new(types.DiskSize)
+			}
 			// defensive copy of the loop variable
 			iface := k
 			v.Interface = &iface
