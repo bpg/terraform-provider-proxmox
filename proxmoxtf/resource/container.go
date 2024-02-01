@@ -22,6 +22,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
@@ -63,6 +64,7 @@ const (
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress        = ""
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit         = 0
 	dvResourceVirtualEnvironmentContainerNetworkInterfaceVLANID            = 0
+	dvResourceVirtualEnvironmentContainerNetworkInterfaceMTU               = 0
 	dvResourceVirtualEnvironmentContainerOperatingSystemType               = "unmanaged"
 	dvResourceVirtualEnvironmentContainerPoolID                            = ""
 	dvResourceVirtualEnvironmentContainerStarted                           = true
@@ -707,11 +709,11 @@ func Container() *schema.Resource {
 							Optional:    true,
 							Default:     dvResourceVirtualEnvironmentContainerNetworkInterfaceVLANID,
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceMTU: {
+						mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU: {
 							Type:        schema.TypeInt,
 							Description: "Maximum transmission unit (MTU)",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceMTU,
+							Default:     dvResourceVirtualEnvironmentContainerNetworkInterfaceMTU,
 						},
 					},
 				},
@@ -1007,7 +1009,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 			deprecatedServer := initializationDNSBlock[mkResourceVirtualEnvironmentContainerInitializationDNSServer].(string)
 
 			if len(servers) > 0 {
-				nameserver := strings.Join(ConvertToStringSlice(servers), " ")
+				nameserver := strings.Join(utils.ConvertToStringSlice(servers), " ")
 
 				updateBody.DNSServer = &nameserver
 			} else {
@@ -1134,7 +1136,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		name := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceName].(string)
 		rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
 		vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
-		mtu, _ := networkInterfaceMap[mkResourceVirtualEnvironmentVMNetworkDeviceMTU].(int)
+		mtu, _ := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU].(int)
 
 		if bridge != "" {
 			networkInterfaceObject.Bridge = &bridge
@@ -1329,7 +1331,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 			deprecatedServer := initializationDNSBlock[mkResourceVirtualEnvironmentContainerInitializationDNSServer].(string)
 
 			if len(servers) > 0 {
-				nameserver := strings.Join(ConvertToStringSlice(servers), " ")
+				nameserver := strings.Join(utils.ConvertToStringSlice(servers), " ")
 
 				initializationDNSServer = nameserver
 			} else {
@@ -2542,7 +2544,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	resource := Container()
 
 	// Retrieve the clone argument as the update logic varies for clones.
-	clone := d.Get(mkResourceVirtualEnvironmentVMClone).([]interface{})
+	clone := d.Get(mkResourceVirtualEnvironmentContainerClone).([]interface{})
 
 	// Prepare the new primitive values.
 	description := d.Get(mkResourceVirtualEnvironmentContainerDescription).(string)
@@ -2635,7 +2637,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			deprecatedServer := initializationDNSBlock[mkResourceVirtualEnvironmentContainerInitializationDNSServer].(string)
 
 			if len(servers) > 0 {
-				initializationDNSServer = strings.Join(ConvertToStringSlice(servers), " ")
+				initializationDNSServer = strings.Join(utils.ConvertToStringSlice(servers), " ")
 			} else {
 				initializationDNSServer = deprecatedServer
 			}
@@ -3011,4 +3013,14 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 	d.SetId("")
 
 	return nil
+}
+
+func parseImportIDWithNodeName(id string) (string, string, error) {
+	nodeName, id, found := strings.Cut(id, "/")
+
+	if !found {
+		return "", "", fmt.Errorf("unexpected format of ID (%s), expected node/id", id)
+	}
+
+	return nodeName, id, nil
 }

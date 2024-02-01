@@ -12,6 +12,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm"
 )
 
 func createResourceMap() map[string]*schema.Resource {
@@ -33,6 +34,6 @@ func createResourceMap() map[string]*schema.Resource {
 		"proxmox_virtual_environment_role": resource.Role(),
 		"proxmox_virtual_environment_time": resource.Time(),
 		"proxmox_virtual_environment_user": resource.User(),
-		"proxmox_virtual_environment_vm":   resource.VM(),
+		"proxmox_virtual_environment_vm":   vm.VM(),
 	}
 }
