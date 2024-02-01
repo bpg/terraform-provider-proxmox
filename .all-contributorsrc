@@ -828,6 +828,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "Jayden-Lind",
+      "name": "Jayden Lind",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70465314?v=4",
+      "profile": "https://jayden-lind.github.io",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
