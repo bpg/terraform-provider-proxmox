@@ -14,111 +14,111 @@ import (
 )
 
 const (
-	dvResourceVirtualEnvironmentVMRebootAfterCreation               = false
-	dvResourceVirtualEnvironmentVMOnBoot                            = true
-	dvResourceVirtualEnvironmentVMACPI                              = true
-	dvResourceVirtualEnvironmentVMAgentEnabled                      = false
-	dvResourceVirtualEnvironmentVMAgentTimeout                      = "15m"
-	dvResourceVirtualEnvironmentVMAgentTrim                         = false
-	dvResourceVirtualEnvironmentVMAgentType                         = "virtio"
-	dvResourceVirtualEnvironmentVMAudioDeviceDevice                 = "intel-hda"
-	dvResourceVirtualEnvironmentVMAudioDeviceDriver                 = "spice"
-	dvResourceVirtualEnvironmentVMAudioDeviceEnabled                = true
-	dvResourceVirtualEnvironmentVMBIOS                              = "seabios"
-	dvResourceVirtualEnvironmentVMCDROMEnabled                      = false
-	dvResourceVirtualEnvironmentVMCDROMFileID                       = ""
-	dvResourceVirtualEnvironmentVMCDROMInterface                    = "ide3"
-	dvResourceVirtualEnvironmentVMCloneDatastoreID                  = ""
-	dvResourceVirtualEnvironmentVMCloneNodeName                     = ""
-	dvResourceVirtualEnvironmentVMCloneFull                         = true
-	dvResourceVirtualEnvironmentVMCloneRetries                      = 1
-	dvResourceVirtualEnvironmentVMCPUArchitecture                   = "x86_64"
-	dvResourceVirtualEnvironmentVMCPUCores                          = 1
-	dvResourceVirtualEnvironmentVMCPUHotplugged                     = 0
-	dvResourceVirtualEnvironmentVMCPULimit                          = 0
-	dvResourceVirtualEnvironmentVMCPUNUMA                           = false
-	dvResourceVirtualEnvironmentVMCPUSockets                        = 1
-	dvResourceVirtualEnvironmentVMCPUType                           = "qemu64"
-	dvResourceVirtualEnvironmentVMCPUUnits                          = 1024
-	dvResourceVirtualEnvironmentVMDescription                       = ""
-	dvResourceVirtualEnvironmentVMDiskInterface                     = "scsi0"
-	dvResourceVirtualEnvironmentVMDiskDatastoreID                   = "local-lvm"
-	dvResourceVirtualEnvironmentVMDiskFileFormat                    = "qcow2"
-	dvResourceVirtualEnvironmentVMDiskFileID                        = ""
-	dvResourceVirtualEnvironmentVMDiskSize                          = 8
-	dvResourceVirtualEnvironmentVMDiskIOThread                      = false
-	dvResourceVirtualEnvironmentVMDiskSSD                           = false
-	dvResourceVirtualEnvironmentVMDiskDiscard                       = "ignore"
-	dvResourceVirtualEnvironmentVMDiskCache                         = "none"
-	dvResourceVirtualEnvironmentVMDiskSpeedRead                     = 0
-	dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = 0
-	dvResourceVirtualEnvironmentVMDiskSpeedWrite                    = 0
-	dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable           = 0
-	dvResourceVirtualEnvironmentVMEFIDiskDatastoreID                = "local-lvm"
-	dvResourceVirtualEnvironmentVMEFIDiskFileFormat                 = "qcow2"
-	dvResourceVirtualEnvironmentVMEFIDiskType                       = "2m"
-	dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys            = false
-	dvResourceVirtualEnvironmentVMTPMStateDatastoreID               = "local-lvm"
-	dvResourceVirtualEnvironmentVMTPMStateVersion                   = "v2.0"
-	dvResourceVirtualEnvironmentVMInitializationDatastoreID         = "local-lvm"
-	dvResourceVirtualEnvironmentVMInitializationInterface           = ""
-	dvResourceVirtualEnvironmentVMInitializationDNSDomain           = ""
-	dvResourceVirtualEnvironmentVMInitializationDNSServer           = ""
-	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address = ""
-	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway = ""
-	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address = ""
-	dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway = ""
-	dvResourceVirtualEnvironmentVMInitializationUserAccountPassword = ""
-	dvResourceVirtualEnvironmentVMInitializationUserDataFileID      = ""
-	dvResourceVirtualEnvironmentVMInitializationVendorDataFileID    = ""
-	dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID   = ""
-	dvResourceVirtualEnvironmentVMInitializationMetaDataFileID      = ""
-	dvResourceVirtualEnvironmentVMInitializationType                = ""
-	dvResourceVirtualEnvironmentVMKeyboardLayout                    = "en-us"
-	dvResourceVirtualEnvironmentVMKVMArguments                      = ""
-	dvResourceVirtualEnvironmentVMMachineType                       = ""
-	dvResourceVirtualEnvironmentVMMemoryDedicated                   = 512
-	dvResourceVirtualEnvironmentVMMemoryFloating                    = 0
-	dvResourceVirtualEnvironmentVMMemoryShared                      = 0
-	dvResourceVirtualEnvironmentVMMigrate                           = false
-	dvResourceVirtualEnvironmentVMName                              = ""
-	dvResourceVirtualEnvironmentVMNetworkDeviceBridge               = "vmbr0"
-	dvResourceVirtualEnvironmentVMNetworkDeviceEnabled              = true
-	dvResourceVirtualEnvironmentVMNetworkDeviceFirewall             = false
-	dvResourceVirtualEnvironmentVMNetworkDeviceModel                = "virtio"
-	dvResourceVirtualEnvironmentVMNetworkDeviceQueues               = 0
-	dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = 0
-	dvResourceVirtualEnvironmentVMNetworkDeviceVLANID               = 0
-	dvResourceVirtualEnvironmentVMNetworkDeviceMTU                  = 0
-	dvResourceVirtualEnvironmentVMOperatingSystemType               = "other"
-	dvResourceVirtualEnvironmentVMPoolID                            = ""
-	dvResourceVirtualEnvironmentVMSerialDeviceDevice                = "socket"
-	dvResourceVirtualEnvironmentVMSMBIOSFamily                      = ""
-	dvResourceVirtualEnvironmentVMSMBIOSManufacturer                = ""
-	dvResourceVirtualEnvironmentVMSMBIOSProduct                     = ""
-	dvResourceVirtualEnvironmentVMSMBIOSSKU                         = ""
-	dvResourceVirtualEnvironmentVMSMBIOSSerial                      = ""
-	dvResourceVirtualEnvironmentVMSMBIOSVersion                     = ""
-	dvResourceVirtualEnvironmentVMStarted                           = true
-	dvResourceVirtualEnvironmentVMStartupOrder                      = -1
-	dvResourceVirtualEnvironmentVMStartupUpDelay                    = -1
-	dvResourceVirtualEnvironmentVMStartupDownDelay                  = -1
-	dvResourceVirtualEnvironmentVMTabletDevice                      = true
-	dvResourceVirtualEnvironmentVMTemplate                          = false
-	dvResourceVirtualEnvironmentVMTimeoutClone                      = 1800
-	dvResourceVirtualEnvironmentVMTimeoutCreate                     = 1800
-	dvResourceVirtualEnvironmentVMTimeoutMoveDisk                   = 1800
-	dvResourceVirtualEnvironmentVMTimeoutMigrate                    = 1800
-	dvResourceVirtualEnvironmentVMTimeoutReboot                     = 1800
-	dvResourceVirtualEnvironmentVMTimeoutShutdownVM                 = 1800
-	dvResourceVirtualEnvironmentVMTimeoutStartVM                    = 1800
-	dvResourceVirtualEnvironmentVMTimeoutStopVM                     = 300
-	dvResourceVirtualEnvironmentVMVGAEnabled                        = true
-	dvResourceVirtualEnvironmentVMVGAMemory                         = 16
-	dvResourceVirtualEnvironmentVMVGAType                           = "std"
-	dvResourceVirtualEnvironmentVMSCSIHardware                      = "virtio-scsi-pci"
-	dvResourceVirtualEnvironmentVMStopOnDestroy                     = false
-	dvResourceVirtualEnvironmentVMHookScript                        = ""
+	dvRebootAfterCreation               = false
+	dvOnBoot                            = true
+	dvACPI                              = true
+	dvAgentEnabled                      = false
+	dvAgentTimeout                      = "15m"
+	dvAgentTrim                         = false
+	dvAgentType                         = "virtio"
+	dvAudioDeviceDevice                 = "intel-hda"
+	dvAudioDeviceDriver                 = "spice"
+	dvAudioDeviceEnabled                = true
+	dvBIOS                              = "seabios"
+	dvCDROMEnabled                      = false
+	dvCDROMFileID                       = ""
+	dvCDROMInterface                    = "ide3"
+	dvCloneDatastoreID                  = ""
+	dvCloneNodeName                     = ""
+	dvCloneFull                         = true
+	dvCloneRetries                      = 1
+	dvCPUArchitecture                   = "x86_64"
+	dvCPUCores                          = 1
+	dvCPUHotplugged                     = 0
+	dvCPULimit                          = 0
+	dvCPUNUMA                           = false
+	dvCPUSockets                        = 1
+	dvCPUType                           = "qemu64"
+	dvCPUUnits                          = 1024
+	dvDescription                       = ""
+	dvDiskInterface                     = "scsi0"
+	dvDiskDatastoreID                   = "local-lvm"
+	dvDiskFileFormat                    = "qcow2"
+	dvDiskFileID                        = ""
+	dvDiskSize                          = 8
+	dvDiskIOThread                      = false
+	dvDiskSSD                           = false
+	dvDiskDiscard                       = "ignore"
+	dvDiskCache                         = "none"
+	dvDiskSpeedRead                     = 0
+	dvDiskSpeedReadBurstable            = 0
+	dvDiskSpeedWrite                    = 0
+	dvDiskSpeedWriteBurstable           = 0
+	dvEFIDiskDatastoreID                = "local-lvm"
+	dvEFIDiskFileFormat                 = "qcow2"
+	dvEFIDiskType                       = "2m"
+	dvEFIDiskPreEnrolledKeys            = false
+	dvTPMStateDatastoreID               = "local-lvm"
+	dvTPMStateVersion                   = "v2.0"
+	dvInitializationDatastoreID         = "local-lvm"
+	dvInitializationInterface           = ""
+	dvInitializationDNSDomain           = ""
+	dvInitializationDNSServer           = ""
+	dvInitializationIPConfigIPv4Address = ""
+	dvInitializationIPConfigIPv4Gateway = ""
+	dvInitializationIPConfigIPv6Address = ""
+	dvInitializationIPConfigIPv6Gateway = ""
+	dvInitializationUserAccountPassword = ""
+	dvInitializationUserDataFileID      = ""
+	dvInitializationVendorDataFileID    = ""
+	dvInitializationNetworkDataFileID   = ""
+	dvInitializationMetaDataFileID      = ""
+	dvInitializationType                = ""
+	dvKeyboardLayout                    = "en-us"
+	dvKVMArguments                      = ""
+	dvMachineType                       = ""
+	dvMemoryDedicated                   = 512
+	dvMemoryFloating                    = 0
+	dvMemoryShared                      = 0
+	dvMigrate                           = false
+	dvName                              = ""
+	dvNetworkDeviceBridge               = "vmbr0"
+	dvNetworkDeviceEnabled              = true
+	dvNetworkDeviceFirewall             = false
+	dvNetworkDeviceModel                = "virtio"
+	dvNetworkDeviceQueues               = 0
+	dvNetworkDeviceRateLimit            = 0
+	dvNetworkDeviceVLANID               = 0
+	dvNetworkDeviceMTU                  = 0
+	dvOperatingSystemType               = "other"
+	dvPoolID                            = ""
+	dvSerialDeviceDevice                = "socket"
+	dvSMBIOSFamily                      = ""
+	dvSMBIOSManufacturer                = ""
+	dvSMBIOSProduct                     = ""
+	dvSMBIOSSKU                         = ""
+	dvSMBIOSSerial                      = ""
+	dvSMBIOSVersion                     = ""
+	dvStarted                           = true
+	dvStartupOrder                      = -1
+	dvStartupUpDelay                    = -1
+	dvStartupDownDelay                  = -1
+	dvTabletDevice                      = true
+	dvTemplate                          = false
+	dvTimeoutClone                      = 1800
+	dvTimeoutCreate                     = 1800
+	dvTimeoutMoveDisk                   = 1800
+	dvTimeoutMigrate                    = 1800
+	dvTimeoutReboot                     = 1800
+	dvTimeoutShutdownVM                 = 1800
+	dvTimeoutStartVM                    = 1800
+	dvTimeoutStopVM                     = 300
+	dvVGAEnabled                        = true
+	dvVGAMemory                         = 16
+	dvVGAType                           = "std"
+	dvSCSIHardware                      = "virtio-scsi-pci"
+	dvStopOnDestroy                     = false
+	dvHookScript                        = ""
 
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
 	maxResourceVirtualEnvironmentVMNetworkDevices = 32
@@ -126,181 +126,181 @@ const (
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
 
-	mkResourceVirtualEnvironmentVMRebootAfterCreation               = "reboot"
-	mkResourceVirtualEnvironmentVMOnBoot                            = "on_boot"
-	mkResourceVirtualEnvironmentVMBootOrder                         = "boot_order"
-	mkResourceVirtualEnvironmentVMACPI                              = "acpi"
-	mkResourceVirtualEnvironmentVMAgent                             = "agent"
-	mkResourceVirtualEnvironmentVMAgentEnabled                      = "enabled"
-	mkResourceVirtualEnvironmentVMAgentTimeout                      = "timeout"
-	mkResourceVirtualEnvironmentVMAgentTrim                         = "trim"
-	mkResourceVirtualEnvironmentVMAgentType                         = "type"
-	mkResourceVirtualEnvironmentVMAudioDevice                       = "audio_device"
-	mkResourceVirtualEnvironmentVMAudioDeviceDevice                 = "device"
-	mkResourceVirtualEnvironmentVMAudioDeviceDriver                 = "driver"
-	mkResourceVirtualEnvironmentVMAudioDeviceEnabled                = "enabled"
-	mkResourceVirtualEnvironmentVMBIOS                              = "bios"
-	mkResourceVirtualEnvironmentVMCDROM                             = "cdrom"
-	mkResourceVirtualEnvironmentVMCDROMEnabled                      = "enabled"
-	mkResourceVirtualEnvironmentVMCDROMFileID                       = "file_id"
-	mkResourceVirtualEnvironmentVMCDROMInterface                    = "interface"
-	mkResourceVirtualEnvironmentVMClone                             = "clone"
-	mkResourceVirtualEnvironmentVMCloneRetries                      = "retries"
-	mkResourceVirtualEnvironmentVMCloneDatastoreID                  = "datastore_id"
-	mkResourceVirtualEnvironmentVMCloneNodeName                     = "node_name"
-	mkResourceVirtualEnvironmentVMCloneVMID                         = "vm_id"
-	mkResourceVirtualEnvironmentVMCloneFull                         = "full"
-	mkResourceVirtualEnvironmentVMCPU                               = "cpu"
-	mkResourceVirtualEnvironmentVMCPUArchitecture                   = "architecture"
-	mkResourceVirtualEnvironmentVMCPUCores                          = "cores"
-	mkResourceVirtualEnvironmentVMCPUFlags                          = "flags"
-	mkResourceVirtualEnvironmentVMCPUHotplugged                     = "hotplugged"
-	mkResourceVirtualEnvironmentVMCPULimit                          = "limit"
-	mkResourceVirtualEnvironmentVMCPUNUMA                           = "numa"
-	mkResourceVirtualEnvironmentVMCPUSockets                        = "sockets"
-	mkResourceVirtualEnvironmentVMCPUType                           = "type"
-	mkResourceVirtualEnvironmentVMCPUUnits                          = "units"
-	mkResourceVirtualEnvironmentVMDescription                       = "description"
-	mkResourceVirtualEnvironmentVMDisk                              = "disk"
-	mkResourceVirtualEnvironmentVMDiskInterface                     = "interface"
-	mkResourceVirtualEnvironmentVMDiskDatastoreID                   = "datastore_id"
-	mkResourceVirtualEnvironmentVMDiskPathInDatastore               = "path_in_datastore"
-	mkResourceVirtualEnvironmentVMDiskFileFormat                    = "file_format"
-	mkResourceVirtualEnvironmentVMDiskFileID                        = "file_id"
-	mkResourceVirtualEnvironmentVMDiskSize                          = "size"
-	mkResourceVirtualEnvironmentVMDiskIOThread                      = "iothread"
-	mkResourceVirtualEnvironmentVMDiskSSD                           = "ssd"
-	mkResourceVirtualEnvironmentVMDiskDiscard                       = "discard"
-	mkResourceVirtualEnvironmentVMDiskCache                         = "cache"
-	mkResourceVirtualEnvironmentVMDiskSpeed                         = "speed"
-	mkResourceVirtualEnvironmentVMDiskSpeedRead                     = "read"
-	mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable            = "read_burstable"
-	mkResourceVirtualEnvironmentVMDiskSpeedWrite                    = "write"
-	mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable           = "write_burstable"
-	mkResourceVirtualEnvironmentVMEFIDisk                           = "efi_disk"
-	mkResourceVirtualEnvironmentVMEFIDiskDatastoreID                = "datastore_id"
-	mkResourceVirtualEnvironmentVMEFIDiskFileFormat                 = "file_format"
-	mkResourceVirtualEnvironmentVMEFIDiskType                       = "type"
-	mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys            = "pre_enrolled_keys"
-	mkResourceVirtualEnvironmentVMTPMState                          = "tpm_state"
-	mkResourceVirtualEnvironmentVMTPMStateDatastoreID               = "datastore_id"
-	mkResourceVirtualEnvironmentVMTPMStateVersion                   = "version"
-	mkResourceVirtualEnvironmentVMHostPCI                           = "hostpci"
-	mkResourceVirtualEnvironmentVMHostPCIDevice                     = "device"
-	mkResourceVirtualEnvironmentVMHostPCIDeviceID                   = "id"
-	mkResourceVirtualEnvironmentVMHostPCIDeviceMapping              = "mapping"
-	mkResourceVirtualEnvironmentVMHostPCIDeviceMDev                 = "mdev"
-	mkResourceVirtualEnvironmentVMHostPCIDevicePCIE                 = "pcie"
-	mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR               = "rombar"
-	mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile              = "rom_file"
-	mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA                 = "xvga"
-	mkResourceVirtualEnvironmentVMInitialization                    = "initialization"
-	mkResourceVirtualEnvironmentVMInitializationDatastoreID         = "datastore_id"
-	mkResourceVirtualEnvironmentVMInitializationInterface           = "interface"
-	mkResourceVirtualEnvironmentVMInitializationDNS                 = "dns"
-	mkResourceVirtualEnvironmentVMInitializationDNSDomain           = "domain"
-	mkResourceVirtualEnvironmentVMInitializationDNSServer           = "server"
-	mkResourceVirtualEnvironmentVMInitializationDNSServers          = "servers"
-	mkResourceVirtualEnvironmentVMInitializationIPConfig            = "ip_config"
-	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4        = "ipv4"
-	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address = "address"
-	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway = "gateway"
-	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6        = "ipv6"
-	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address = "address"
-	mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway = "gateway"
-	mkResourceVirtualEnvironmentVMInitializationType                = "type"
-	mkResourceVirtualEnvironmentVMInitializationUserAccount         = "user_account"
-	mkResourceVirtualEnvironmentVMInitializationUserAccountKeys     = "keys"
-	mkResourceVirtualEnvironmentVMInitializationUserAccountPassword = "password"
-	mkResourceVirtualEnvironmentVMInitializationUserAccountUsername = "username"
-	mkResourceVirtualEnvironmentVMInitializationUserDataFileID      = "user_data_file_id"
-	mkResourceVirtualEnvironmentVMInitializationVendorDataFileID    = "vendor_data_file_id"
-	mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID   = "network_data_file_id"
-	mkResourceVirtualEnvironmentVMInitializationMetaDataFileID      = "meta_data_file_id"
-	mkResourceVirtualEnvironmentVMIPv4Addresses                     = "ipv4_addresses"
-	mkResourceVirtualEnvironmentVMIPv6Addresses                     = "ipv6_addresses"
-	mkResourceVirtualEnvironmentVMKeyboardLayout                    = "keyboard_layout"
-	mkResourceVirtualEnvironmentVMKVMArguments                      = "kvm_arguments"
-	mkResourceVirtualEnvironmentVMMachine                           = "machine"
-	mkResourceVirtualEnvironmentVMMACAddresses                      = "mac_addresses"
-	mkResourceVirtualEnvironmentVMMemory                            = "memory"
-	mkResourceVirtualEnvironmentVMMemoryDedicated                   = "dedicated"
-	mkResourceVirtualEnvironmentVMMemoryFloating                    = "floating"
-	mkResourceVirtualEnvironmentVMMemoryShared                      = "shared"
-	mkResourceVirtualEnvironmentVMMigrate                           = "migrate"
-	mkResourceVirtualEnvironmentVMName                              = "name"
-	mkResourceVirtualEnvironmentVMNetworkDevice                     = "network_device"
-	mkResourceVirtualEnvironmentVMNetworkDeviceBridge               = "bridge"
-	mkResourceVirtualEnvironmentVMNetworkDeviceEnabled              = "enabled"
-	mkResourceVirtualEnvironmentVMNetworkDeviceFirewall             = "firewall"
-	mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress           = "mac_address"
-	mkResourceVirtualEnvironmentVMNetworkDeviceModel                = "model"
-	mkResourceVirtualEnvironmentVMNetworkDeviceQueues               = "queues"
-	mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit            = "rate_limit"
-	mkResourceVirtualEnvironmentVMNetworkDeviceVLANID               = "vlan_id"
-	mkResourceVirtualEnvironmentVMNetworkDeviceMTU                  = "mtu"
-	mkResourceVirtualEnvironmentVMNetworkInterfaceNames             = "network_interface_names"
-	mkResourceVirtualEnvironmentVMNodeName                          = "node_name"
-	mkResourceVirtualEnvironmentVMOperatingSystem                   = "operating_system"
-	mkResourceVirtualEnvironmentVMOperatingSystemType               = "type"
-	mkResourceVirtualEnvironmentVMPoolID                            = "pool_id"
-	mkResourceVirtualEnvironmentVMSerialDevice                      = "serial_device"
-	mkResourceVirtualEnvironmentVMSerialDeviceDevice                = "device"
-	mkResourceVirtualEnvironmentVMSMBIOS                            = "smbios"
-	mkResourceVirtualEnvironmentVMSMBIOSFamily                      = "family"
-	mkResourceVirtualEnvironmentVMSMBIOSManufacturer                = "manufacturer"
-	mkResourceVirtualEnvironmentVMSMBIOSProduct                     = "product"
-	mkResourceVirtualEnvironmentVMSMBIOSSKU                         = "sku"
-	mkResourceVirtualEnvironmentVMSMBIOSSerial                      = "serial"
-	mkResourceVirtualEnvironmentVMSMBIOSUUID                        = "uuid"
-	mkResourceVirtualEnvironmentVMSMBIOSVersion                     = "version"
-	mkResourceVirtualEnvironmentVMStarted                           = "started"
-	mkResourceVirtualEnvironmentVMStartup                           = "startup"
-	mkResourceVirtualEnvironmentVMStartupOrder                      = "order"
-	mkResourceVirtualEnvironmentVMStartupUpDelay                    = "up_delay"
-	mkResourceVirtualEnvironmentVMStartupDownDelay                  = "down_delay"
-	mkResourceVirtualEnvironmentVMTabletDevice                      = "tablet_device"
-	mkResourceVirtualEnvironmentVMTags                              = "tags"
-	mkResourceVirtualEnvironmentVMTemplate                          = "template"
-	mkResourceVirtualEnvironmentVMTimeoutClone                      = "timeout_clone"
-	mkResourceVirtualEnvironmentVMTimeoutCreate                     = "timeout_create"
-	mkResourceVirtualEnvironmentVMTimeoutMoveDisk                   = "timeout_move_disk"
-	mkResourceVirtualEnvironmentVMTimeoutMigrate                    = "timeout_migrate"
-	mkResourceVirtualEnvironmentVMTimeoutReboot                     = "timeout_reboot"
-	mkResourceVirtualEnvironmentVMTimeoutShutdownVM                 = "timeout_shutdown_vm"
-	mkResourceVirtualEnvironmentVMTimeoutStartVM                    = "timeout_start_vm"
-	mkResourceVirtualEnvironmentVMTimeoutStopVM                     = "timeout_stop_vm"
-	mkResourceVirtualEnvironmentVMHostUSB                           = "usb"
-	mkResourceVirtualEnvironmentVMHostUSBDevice                     = "host"
-	mkResourceVirtualEnvironmentVMHostUSBDeviceMapping              = "mapping"
-	mkResourceVirtualEnvironmentVMHostUSBDeviceUSB3                 = "usb3"
-	mkResourceVirtualEnvironmentVMVGA                               = "vga"
-	mkResourceVirtualEnvironmentVMVGAEnabled                        = "enabled"
-	mkResourceVirtualEnvironmentVMVGAMemory                         = "memory"
-	mkResourceVirtualEnvironmentVMVGAType                           = "type"
-	mkResourceVirtualEnvironmentVMVMID                              = "vm_id"
-	mkResourceVirtualEnvironmentVMSCSIHardware                      = "scsi_hardware"
-	mkResourceVirtualEnvironmentVMHookScriptFileID                  = "hook_script_file_id"
-	mkResourceVirtualEnvironmentVMStopOnDestroy                     = "stop_on_destroy"
+	mkRebootAfterCreation               = "reboot"
+	mkOnBoot                            = "on_boot"
+	mkBootOrder                         = "boot_order"
+	mkACPI                              = "acpi"
+	mkAgent                             = "agent"
+	mkAgentEnabled                      = "enabled"
+	mkAgentTimeout                      = "timeout"
+	mkAgentTrim                         = "trim"
+	mkAgentType                         = "type"
+	mkAudioDevice                       = "audio_device"
+	mkAudioDeviceDevice                 = "device"
+	mkAudioDeviceDriver                 = "driver"
+	mkAudioDeviceEnabled                = "enabled"
+	mkBIOS                              = "bios"
+	mkCDROM                             = "cdrom"
+	mkCDROMEnabled                      = "enabled"
+	mkCDROMFileID                       = "file_id"
+	mkCDROMInterface                    = "interface"
+	mkClone                             = "clone"
+	mkCloneRetries                      = "retries"
+	mkCloneDatastoreID                  = "datastore_id"
+	mkCloneNodeName                     = "node_name"
+	mkCloneVMID                         = "vm_id"
+	mkCloneFull                         = "full"
+	mkCPU                               = "cpu"
+	mkCPUArchitecture                   = "architecture"
+	mkCPUCores                          = "cores"
+	mkCPUFlags                          = "flags"
+	mkCPUHotplugged                     = "hotplugged"
+	mkCPULimit                          = "limit"
+	mkCPUNUMA                           = "numa"
+	mkCPUSockets                        = "sockets"
+	mkCPUType                           = "type"
+	mkCPUUnits                          = "units"
+	mkDescription                       = "description"
+	mkDisk                              = "disk"
+	mkDiskInterface                     = "interface"
+	mkDiskDatastoreID                   = "datastore_id"
+	mkDiskPathInDatastore               = "path_in_datastore"
+	mkDiskFileFormat                    = "file_format"
+	mkDiskFileID                        = "file_id"
+	mkDiskSize                          = "size"
+	mkDiskIOThread                      = "iothread"
+	mkDiskSSD                           = "ssd"
+	mkDiskDiscard                       = "discard"
+	mkDiskCache                         = "cache"
+	mkDiskSpeed                         = "speed"
+	mkDiskSpeedRead                     = "read"
+	mkDiskSpeedReadBurstable            = "read_burstable"
+	mkDiskSpeedWrite                    = "write"
+	mkDiskSpeedWriteBurstable           = "write_burstable"
+	mkEFIDisk                           = "efi_disk"
+	mkEFIDiskDatastoreID                = "datastore_id"
+	mkEFIDiskFileFormat                 = "file_format"
+	mkEFIDiskType                       = "type"
+	mkEFIDiskPreEnrolledKeys            = "pre_enrolled_keys"
+	mkTPMState                          = "tpm_state"
+	mkTPMStateDatastoreID               = "datastore_id"
+	mkTPMStateVersion                   = "version"
+	mkHostPCI                           = "hostpci"
+	mkHostPCIDevice                     = "device"
+	mkHostPCIDeviceID                   = "id"
+	mkHostPCIDeviceMapping              = "mapping"
+	mkHostPCIDeviceMDev                 = "mdev"
+	mkHostPCIDevicePCIE                 = "pcie"
+	mkHostPCIDeviceROMBAR               = "rombar"
+	mkHostPCIDeviceROMFile              = "rom_file"
+	mkHostPCIDeviceXVGA                 = "xvga"
+	mkInitialization                    = "initialization"
+	mkInitializationDatastoreID         = "datastore_id"
+	mkInitializationInterface           = "interface"
+	mkInitializationDNS                 = "dns"
+	mkInitializationDNSDomain           = "domain"
+	mkInitializationDNSServer           = "server"
+	mkInitializationDNSServers          = "servers"
+	mkInitializationIPConfig            = "ip_config"
+	mkInitializationIPConfigIPv4        = "ipv4"
+	mkInitializationIPConfigIPv4Address = "address"
+	mkInitializationIPConfigIPv4Gateway = "gateway"
+	mkInitializationIPConfigIPv6        = "ipv6"
+	mkInitializationIPConfigIPv6Address = "address"
+	mkInitializationIPConfigIPv6Gateway = "gateway"
+	mkInitializationType                = "type"
+	mkInitializationUserAccount         = "user_account"
+	mkInitializationUserAccountKeys     = "keys"
+	mkInitializationUserAccountPassword = "password"
+	mkInitializationUserAccountUsername = "username"
+	mkInitializationUserDataFileID      = "user_data_file_id"
+	mkInitializationVendorDataFileID    = "vendor_data_file_id"
+	mkInitializationNetworkDataFileID   = "network_data_file_id"
+	mkInitializationMetaDataFileID      = "meta_data_file_id"
+	mkIPv4Addresses                     = "ipv4_addresses"
+	mkIPv6Addresses                     = "ipv6_addresses"
+	mkKeyboardLayout                    = "keyboard_layout"
+	mkKVMArguments                      = "kvm_arguments"
+	mkMachine                           = "machine"
+	mkMACAddresses                      = "mac_addresses"
+	mkMemory                            = "memory"
+	mkMemoryDedicated                   = "dedicated"
+	mkMemoryFloating                    = "floating"
+	mkMemoryShared                      = "shared"
+	mkMigrate                           = "migrate"
+	mkName                              = "name"
+	mkNetworkDevice                     = "network_device"
+	mkNetworkDeviceBridge               = "bridge"
+	mkNetworkDeviceEnabled              = "enabled"
+	mkNetworkDeviceFirewall             = "firewall"
+	mkNetworkDeviceMACAddress           = "mac_address"
+	mkNetworkDeviceModel                = "model"
+	mkNetworkDeviceQueues               = "queues"
+	mkNetworkDeviceRateLimit            = "rate_limit"
+	mkNetworkDeviceVLANID               = "vlan_id"
+	mkNetworkDeviceMTU                  = "mtu"
+	mkNetworkInterfaceNames             = "network_interface_names"
+	mkNodeName                          = "node_name"
+	mkOperatingSystem                   = "operating_system"
+	mkOperatingSystemType               = "type"
+	mkPoolID                            = "pool_id"
+	mkSerialDevice                      = "serial_device"
+	mkSerialDeviceDevice                = "device"
+	mkSMBIOS                            = "smbios"
+	mkSMBIOSFamily                      = "family"
+	mkSMBIOSManufacturer                = "manufacturer"
+	mkSMBIOSProduct                     = "product"
+	mkSMBIOSSKU                         = "sku"
+	mkSMBIOSSerial                      = "serial"
+	mkSMBIOSUUID                        = "uuid"
+	mkSMBIOSVersion                     = "version"
+	mkStarted                           = "started"
+	mkStartup                           = "startup"
+	mkStartupOrder                      = "order"
+	mkStartupUpDelay                    = "up_delay"
+	mkStartupDownDelay                  = "down_delay"
+	mkTabletDevice                      = "tablet_device"
+	mkTags                              = "tags"
+	mkTemplate                          = "template"
+	mkTimeoutClone                      = "timeout_clone"
+	mkTimeoutCreate                     = "timeout_create"
+	mkTimeoutMoveDisk                   = "timeout_move_disk"
+	mkTimeoutMigrate                    = "timeout_migrate"
+	mkTimeoutReboot                     = "timeout_reboot"
+	mkTimeoutShutdownVM                 = "timeout_shutdown_vm"
+	mkTimeoutStartVM                    = "timeout_start_vm"
+	mkTimeoutStopVM                     = "timeout_stop_vm"
+	mkHostUSB                           = "usb"
+	mkHostUSBDevice                     = "host"
+	mkHostUSBDeviceMapping              = "mapping"
+	mkHostUSBDeviceUSB3                 = "usb3"
+	mkVGA                               = "vga"
+	mkVGAEnabled                        = "enabled"
+	mkVGAMemory                         = "memory"
+	mkVGAType                           = "type"
+	mkVMID                              = "vm_id"
+	mkSCSIHardware                      = "scsi_hardware"
+	mkHookScriptFileID                  = "hook_script_file_id"
+	mkStopOnDestroy                     = "stop_on_destroy"
 )
 
 // VM returns a resource that manages VMs.
 func VM() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkResourceVirtualEnvironmentVMRebootAfterCreation: {
+			mkRebootAfterCreation: {
 				Type:        schema.TypeBool,
 				Description: "Whether to reboot vm after creation",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMRebootAfterCreation,
+				Default:     dvRebootAfterCreation,
 			},
-			mkResourceVirtualEnvironmentVMOnBoot: {
+			mkOnBoot: {
 				Type:        schema.TypeBool,
 				Description: "Start VM on Node boot",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMOnBoot,
+				Default:     dvOnBoot,
 			},
-			mkResourceVirtualEnvironmentVMBootOrder: {
+			mkBootOrder: {
 				Type:        schema.TypeList,
 				Description: "The guest will attempt to boot from devices in the order they appear here",
 				Optional:    true,
@@ -309,52 +309,52 @@ func VM() *schema.Resource {
 					return []interface{}{}, nil
 				},
 			},
-			mkResourceVirtualEnvironmentVMACPI: {
+			mkACPI: {
 				Type:        schema.TypeBool,
 				Description: "Whether to enable ACPI",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMACPI,
+				Default:     dvACPI,
 			},
-			mkResourceVirtualEnvironmentVMAgent: {
+			mkAgent: {
 				Type:        schema.TypeList,
 				Description: "The QEMU agent configuration",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMAgentEnabled: dvResourceVirtualEnvironmentVMAgentEnabled,
-							mkResourceVirtualEnvironmentVMAgentTimeout: dvResourceVirtualEnvironmentVMAgentTimeout,
-							mkResourceVirtualEnvironmentVMAgentTrim:    dvResourceVirtualEnvironmentVMAgentTrim,
-							mkResourceVirtualEnvironmentVMAgentType:    dvResourceVirtualEnvironmentVMAgentType,
+							mkAgentEnabled: dvAgentEnabled,
+							mkAgentTimeout: dvAgentTimeout,
+							mkAgentTrim:    dvAgentTrim,
+							mkAgentType:    dvAgentType,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMAgentEnabled: {
+						mkAgentEnabled: {
 							Type:        schema.TypeBool,
 							Description: "Whether to enable the QEMU agent",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMAgentEnabled,
+							Default:     dvAgentEnabled,
 						},
-						mkResourceVirtualEnvironmentVMAgentTimeout: {
+						mkAgentTimeout: {
 							Type:             schema.TypeString,
 							Description:      "The maximum amount of time to wait for data from the QEMU agent to become available",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMAgentTimeout,
+							Default:          dvAgentTimeout,
 							ValidateDiagFunc: validator.Timeout(),
 						},
-						mkResourceVirtualEnvironmentVMAgentTrim: {
+						mkAgentTrim: {
 							Type:        schema.TypeBool,
 							Description: "Whether to enable the FSTRIM feature in the QEMU agent",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMAgentTrim,
+							Default:     dvAgentTrim,
 						},
-						mkResourceVirtualEnvironmentVMAgentType: {
+						mkAgentType: {
 							Type:             schema.TypeString,
 							Description:      "The QEMU agent interface type",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMAgentType,
+							Default:          dvAgentType,
 							ValidateDiagFunc: validator.QEMUAgentType(),
 						},
 					},
@@ -362,13 +362,13 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMKVMArguments: {
+			mkKVMArguments: {
 				Type:        schema.TypeString,
 				Description: "The args implementation",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMKVMArguments,
+				Default:     dvKVMArguments,
 			},
-			mkResourceVirtualEnvironmentVMAudioDevice: {
+			mkAudioDevice: {
 				Type:        schema.TypeList,
 				Description: "The audio devices",
 				Optional:    true,
@@ -377,71 +377,71 @@ func VM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMAudioDeviceDevice: {
+						mkAudioDeviceDevice: {
 							Type:             schema.TypeString,
 							Description:      "The device",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMAudioDeviceDevice,
+							Default:          dvAudioDeviceDevice,
 							ValidateDiagFunc: vmGetAudioDeviceValidator(),
 						},
-						mkResourceVirtualEnvironmentVMAudioDeviceDriver: {
+						mkAudioDeviceDriver: {
 							Type:             schema.TypeString,
 							Description:      "The driver",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMAudioDeviceDriver,
+							Default:          dvAudioDeviceDriver,
 							ValidateDiagFunc: vmGetAudioDriverValidator(),
 						},
-						mkResourceVirtualEnvironmentVMAudioDeviceEnabled: {
+						mkAudioDeviceEnabled: {
 							Type:        schema.TypeBool,
 							Description: "Whether to enable the audio device",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMAudioDeviceEnabled,
+							Default:     dvAudioDeviceEnabled,
 						},
 					},
 				},
 				MaxItems: maxResourceVirtualEnvironmentVMAudioDevices,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMBIOS: {
+			mkBIOS: {
 				Type:             schema.TypeString,
 				Description:      "The BIOS implementation",
 				Optional:         true,
-				Default:          dvResourceVirtualEnvironmentVMBIOS,
+				Default:          dvBIOS,
 				ValidateDiagFunc: validator.BIOS(),
 			},
-			mkResourceVirtualEnvironmentVMCDROM: {
+			mkCDROM: {
 				Type:        schema.TypeList,
 				Description: "The CDROM drive",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMCDROMEnabled:   dvResourceVirtualEnvironmentVMCDROMEnabled,
-							mkResourceVirtualEnvironmentVMCDROMFileID:    dvResourceVirtualEnvironmentVMCDROMFileID,
-							mkResourceVirtualEnvironmentVMCDROMInterface: dvResourceVirtualEnvironmentVMCDROMInterface,
+							mkCDROMEnabled:   dvCDROMEnabled,
+							mkCDROMFileID:    dvCDROMFileID,
+							mkCDROMInterface: dvCDROMInterface,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMCDROMEnabled: {
+						mkCDROMEnabled: {
 							Type:        schema.TypeBool,
 							Description: "Whether to enable the CDROM drive",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMCDROMEnabled,
+							Default:     dvCDROMEnabled,
 						},
-						mkResourceVirtualEnvironmentVMCDROMFileID: {
+						mkCDROMFileID: {
 							Type:             schema.TypeString,
 							Description:      "The file id",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMCDROMFileID,
+							Default:          dvCDROMFileID,
 							ValidateDiagFunc: validator.FileID(),
 						},
-						mkResourceVirtualEnvironmentVMCDROMInterface: {
+						mkCDROMInterface: {
 							Type:             schema.TypeString,
 							Description:      "The CDROM interface",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMCDROMInterface,
+							Default:          dvCDROMInterface,
 							ValidateDiagFunc: validator.IDEInterface(),
 						},
 					},
@@ -449,7 +449,7 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMClone: {
+			mkClone: {
 				Type:        schema.TypeList,
 				Description: "The cloning configuration",
 				Optional:    true,
@@ -458,82 +458,82 @@ func VM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMCloneRetries: {
+						mkCloneRetries: {
 							Type:        schema.TypeInt,
 							Description: "The number of Retries to create a clone",
 							Optional:    true,
 							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentVMCloneRetries,
+							Default:     dvCloneRetries,
 						},
-						mkResourceVirtualEnvironmentVMCloneDatastoreID: {
+						mkCloneDatastoreID: {
 							Type:        schema.TypeString,
 							Description: "The ID of the target datastore",
 							Optional:    true,
 							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentVMCloneDatastoreID,
+							Default:     dvCloneDatastoreID,
 						},
-						mkResourceVirtualEnvironmentVMCloneNodeName: {
+						mkCloneNodeName: {
 							Type:        schema.TypeString,
 							Description: "The name of the source node",
 							Optional:    true,
 							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentVMCloneNodeName,
+							Default:     dvCloneNodeName,
 						},
-						mkResourceVirtualEnvironmentVMCloneVMID: {
+						mkCloneVMID: {
 							Type:             schema.TypeInt,
 							Description:      "The ID of the source VM",
 							Required:         true,
 							ForceNew:         true,
 							ValidateDiagFunc: validator.VMID(),
 						},
-						mkResourceVirtualEnvironmentVMCloneFull: {
+						mkCloneFull: {
 							Type:        schema.TypeBool,
 							Description: "The Clone Type, create a Full Clone (true) or a linked Clone (false)",
 							Optional:    true,
 							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentVMCloneFull,
+							Default:     dvCloneFull,
 						},
 					},
 				},
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMCPU: {
+			mkCPU: {
 				Type:        schema.TypeList,
 				Description: "The CPU allocation",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMCPUArchitecture: dvResourceVirtualEnvironmentVMCPUArchitecture,
-							mkResourceVirtualEnvironmentVMCPUCores:        dvResourceVirtualEnvironmentVMCPUCores,
-							mkResourceVirtualEnvironmentVMCPUFlags:        []interface{}{},
-							mkResourceVirtualEnvironmentVMCPUHotplugged:   dvResourceVirtualEnvironmentVMCPUHotplugged,
-							mkResourceVirtualEnvironmentVMCPULimit:        dvResourceVirtualEnvironmentVMCPULimit,
-							mkResourceVirtualEnvironmentVMCPUNUMA:         dvResourceVirtualEnvironmentVMCPUNUMA,
-							mkResourceVirtualEnvironmentVMCPUSockets:      dvResourceVirtualEnvironmentVMCPUSockets,
-							mkResourceVirtualEnvironmentVMCPUType:         dvResourceVirtualEnvironmentVMCPUType,
-							mkResourceVirtualEnvironmentVMCPUUnits:        dvResourceVirtualEnvironmentVMCPUUnits,
+							mkCPUArchitecture: dvCPUArchitecture,
+							mkCPUCores:        dvCPUCores,
+							mkCPUFlags:        []interface{}{},
+							mkCPUHotplugged:   dvCPUHotplugged,
+							mkCPULimit:        dvCPULimit,
+							mkCPUNUMA:         dvCPUNUMA,
+							mkCPUSockets:      dvCPUSockets,
+							mkCPUType:         dvCPUType,
+							mkCPUUnits:        dvCPUUnits,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMCPUArchitecture: {
+						mkCPUArchitecture: {
 							Type:             schema.TypeString,
 							Description:      "The CPU architecture",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMCPUArchitecture,
+							Default:          dvCPUArchitecture,
 							ValidateDiagFunc: vmGetCPUArchitectureValidator(),
 						},
-						mkResourceVirtualEnvironmentVMCPUCores: {
+						mkCPUCores: {
 							Type:             schema.TypeInt,
 							Description:      "The number of CPU cores",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMCPUCores,
+							Default:          dvCPUCores,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 2304)),
 						},
-						mkResourceVirtualEnvironmentVMCPUFlags: {
+						mkCPUFlags: {
 							Type:        schema.TypeList,
 							Description: "The CPU flags",
 							Optional:    true,
@@ -542,47 +542,47 @@ func VM() *schema.Resource {
 							},
 							Elem: &schema.Schema{Type: schema.TypeString},
 						},
-						mkResourceVirtualEnvironmentVMCPUHotplugged: {
+						mkCPUHotplugged: {
 							Type:             schema.TypeInt,
 							Description:      "The number of hotplugged vCPUs",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMCPUHotplugged,
+							Default:          dvCPUHotplugged,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
 						},
-						mkResourceVirtualEnvironmentVMCPULimit: {
+						mkCPULimit: {
 							Type:        schema.TypeInt,
 							Description: "Limit of CPU usage",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMCPULimit,
+							Default:     dvCPULimit,
 							ValidateDiagFunc: validation.ToDiagFunc(
 								validation.IntBetween(0, 128),
 							),
 						},
-						mkResourceVirtualEnvironmentVMCPUNUMA: {
+						mkCPUNUMA: {
 							Type:        schema.TypeBool,
 							Description: "Enable/disable NUMA.",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMCPUNUMA,
+							Default:     dvCPUNUMA,
 						},
-						mkResourceVirtualEnvironmentVMCPUSockets: {
+						mkCPUSockets: {
 							Type:             schema.TypeInt,
 							Description:      "The number of CPU sockets",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMCPUSockets,
+							Default:          dvCPUSockets,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 16)),
 						},
-						mkResourceVirtualEnvironmentVMCPUType: {
+						mkCPUType: {
 							Type:             schema.TypeString,
 							Description:      "The emulated CPU type",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMCPUType,
+							Default:          dvCPUType,
 							ValidateDiagFunc: validator.CPUType(),
 						},
-						mkResourceVirtualEnvironmentVMCPUUnits: {
+						mkCPUUnits: {
 							Type:        schema.TypeInt,
 							Description: "The CPU units",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMCPUUnits,
+							Default:     dvCPUUnits,
 							ValidateDiagFunc: validation.ToDiagFunc(
 								validation.IntBetween(2, 262144),
 							),
@@ -592,159 +592,14 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMDescription: {
+			mkDescription: {
 				Type:        schema.TypeString,
 				Description: "The description",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMDescription,
+				Default:     dvDescription,
 			},
-			mkResourceVirtualEnvironmentVMDisk: {
-				Type:        schema.TypeList,
-				Description: "The disk devices",
-				Optional:    true,
-				ForceNew:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMDiskDatastoreID:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
-							mkResourceVirtualEnvironmentVMDiskPathInDatastore: nil,
-							mkResourceVirtualEnvironmentVMDiskFileID:          dvResourceVirtualEnvironmentVMDiskFileID,
-							mkResourceVirtualEnvironmentVMDiskInterface:       dvResourceVirtualEnvironmentVMDiskInterface,
-							mkResourceVirtualEnvironmentVMDiskSize:            dvResourceVirtualEnvironmentVMDiskSize,
-							mkResourceVirtualEnvironmentVMDiskIOThread:        dvResourceVirtualEnvironmentVMDiskIOThread,
-							mkResourceVirtualEnvironmentVMDiskSSD:             dvResourceVirtualEnvironmentVMDiskSSD,
-							mkResourceVirtualEnvironmentVMDiskDiscard:         dvResourceVirtualEnvironmentVMDiskDiscard,
-							mkResourceVirtualEnvironmentVMDiskCache:           dvResourceVirtualEnvironmentVMDiskCache,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMDiskInterface: {
-							Type:        schema.TypeString,
-							Description: "The datastore name",
-							Required:    true,
-						},
-						mkResourceVirtualEnvironmentVMDiskDatastoreID: {
-							Type:        schema.TypeString,
-							Description: "The datastore id",
-							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMDiskDatastoreID,
-						},
-						mkResourceVirtualEnvironmentVMDiskPathInDatastore: {
-							Type:        schema.TypeString,
-							Description: "The in-datastore path to disk image",
-							Computed:    true,
-							Optional:    true,
-							Default:     nil,
-						},
-						mkResourceVirtualEnvironmentVMDiskFileFormat: {
-							Type:             schema.TypeString,
-							Description:      "The file format",
-							Optional:         true,
-							ForceNew:         true,
-							Computed:         true,
-							ValidateDiagFunc: validator.FileFormat(),
-						},
-						mkResourceVirtualEnvironmentVMDiskFileID: {
-							Type:             schema.TypeString,
-							Description:      "The file id for a disk image",
-							Optional:         true,
-							ForceNew:         true,
-							Default:          dvResourceVirtualEnvironmentVMDiskFileID,
-							ValidateDiagFunc: validator.FileID(),
-						},
-						mkResourceVirtualEnvironmentVMDiskSize: {
-							Type:             schema.TypeInt,
-							Description:      "The disk size in gigabytes",
-							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMDiskSize,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
-						},
-						mkResourceVirtualEnvironmentVMDiskIOThread: {
-							Type:        schema.TypeBool,
-							Description: "Whether to use iothreads for this disk drive",
-							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMDiskIOThread,
-						},
-						mkResourceVirtualEnvironmentVMDiskSSD: {
-							Type:        schema.TypeBool,
-							Description: "Whether to use ssd for this disk drive",
-							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMDiskSSD,
-						},
-						mkResourceVirtualEnvironmentVMDiskDiscard: {
-							Type:        schema.TypeString,
-							Description: "Whether to pass discard/trim requests to the underlying storage.",
-							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMDiskDiscard,
-						},
-						mkResourceVirtualEnvironmentVMDiskCache: {
-							Type:        schema.TypeString,
-							Description: "The drive’s cache mode",
-							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMDiskCache,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.StringInSlice([]string{
-									"none",
-									"writethrough",
-									"writeback",
-									"unsafe",
-									"directsync",
-								}, false),
-							),
-						},
-						mkResourceVirtualEnvironmentVMDiskSpeed: {
-							Type:        schema.TypeList,
-							Description: "The speed limits",
-							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{
-									map[string]interface{}{
-										mkResourceVirtualEnvironmentVMDiskSpeedRead:           dvResourceVirtualEnvironmentVMDiskSpeedRead,
-										mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable:  dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable,
-										mkResourceVirtualEnvironmentVMDiskSpeedWrite:          dvResourceVirtualEnvironmentVMDiskSpeedWrite,
-										mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable: dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable,
-									},
-								}, nil
-							},
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									mkResourceVirtualEnvironmentVMDiskSpeedRead: {
-										Type:        schema.TypeInt,
-										Description: "The maximum read speed in megabytes per second",
-										Optional:    true,
-										Default:     dvResourceVirtualEnvironmentVMDiskSpeedRead,
-									},
-									mkResourceVirtualEnvironmentVMDiskSpeedReadBurstable: {
-										Type:        schema.TypeInt,
-										Description: "The maximum burstable read speed in megabytes per second",
-										Optional:    true,
-										Default:     dvResourceVirtualEnvironmentVMDiskSpeedReadBurstable,
-									},
-									mkResourceVirtualEnvironmentVMDiskSpeedWrite: {
-										Type:        schema.TypeInt,
-										Description: "The maximum write speed in megabytes per second",
-										Optional:    true,
-										Default:     dvResourceVirtualEnvironmentVMDiskSpeedWrite,
-									},
-									mkResourceVirtualEnvironmentVMDiskSpeedWriteBurstable: {
-										Type:        schema.TypeInt,
-										Description: "The maximum burstable write speed in megabytes per second",
-										Optional:    true,
-										Default:     dvResourceVirtualEnvironmentVMDiskSpeedWriteBurstable,
-									},
-								},
-							},
-							MaxItems: 1,
-							MinItems: 0,
-						},
-					},
-				},
-				MaxItems: 14,
-				MinItems: 0,
-			},
-			mkResourceVirtualEnvironmentVMEFIDisk: {
+			mkDisk: diskSchema(),
+			mkEFIDisk: {
 				Type:        schema.TypeList,
 				Description: "The efidisk device",
 				Optional:    true,
@@ -754,13 +609,13 @@ func VM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMEFIDiskDatastoreID: {
+						mkEFIDiskDatastoreID: {
 							Type:        schema.TypeString,
 							Description: "The datastore id",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMEFIDiskDatastoreID,
+							Default:     dvEFIDiskDatastoreID,
 						},
-						mkResourceVirtualEnvironmentVMEFIDiskFileFormat: {
+						mkEFIDiskFileFormat: {
 							Type:             schema.TypeString,
 							Description:      "The file format",
 							Optional:         true,
@@ -768,31 +623,31 @@ func VM() *schema.Resource {
 							Computed:         true,
 							ValidateDiagFunc: validator.FileFormat(),
 						},
-						mkResourceVirtualEnvironmentVMEFIDiskType: {
+						mkEFIDiskType: {
 							Type:        schema.TypeString,
 							Description: "Size and type of the OVMF EFI disk",
 							Optional:    true,
 							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentVMEFIDiskType,
+							Default:     dvEFIDiskType,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 								"2m",
 								"4m",
 							}, true)),
 						},
-						mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys: {
+						mkEFIDiskPreEnrolledKeys: {
 							Type: schema.TypeBool,
 							Description: "Use an EFI vars template with distribution-specific and Microsoft Standard " +
 								"keys enrolled, if used with efi type=`4m`.",
 							Optional: true,
 							ForceNew: true,
-							Default:  dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys,
+							Default:  dvEFIDiskPreEnrolledKeys,
 						},
 					},
 				},
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMTPMState: {
+			mkTPMState: {
 				Type:        schema.TypeList,
 				Description: "The tpmstate device",
 				Optional:    true,
@@ -802,18 +657,18 @@ func VM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMTPMStateDatastoreID: {
+						mkTPMStateDatastoreID: {
 							Type:        schema.TypeString,
 							Description: "Datastore ID",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMTPMStateDatastoreID,
+							Default:     dvTPMStateDatastoreID,
 						},
-						mkResourceVirtualEnvironmentVMTPMStateVersion: {
+						mkTPMStateVersion: {
 							Type:        schema.TypeString,
 							Description: "TPM version",
 							Optional:    true,
 							ForceNew:    true,
-							Default:     dvResourceVirtualEnvironmentVMTPMStateVersion,
+							Default:     dvTPMStateVersion,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 								"v1.2",
 								"v2.0",
@@ -824,7 +679,7 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMInitialization: {
+			mkInitialization: {
 				Type:        schema.TypeList,
 				Description: "The cloud-init configuration",
 				Optional:    true,
@@ -833,23 +688,23 @@ func VM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMInitializationDatastoreID: {
+						mkInitializationDatastoreID: {
 							Type:        schema.TypeString,
 							Description: "The datastore id",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMInitializationDatastoreID,
+							Default:     dvInitializationDatastoreID,
 						},
-						mkResourceVirtualEnvironmentVMInitializationInterface: {
+						mkInitializationInterface: {
 							Type:             schema.TypeString,
 							Description:      "The IDE interface on which the CloudInit drive will be added",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMInitializationInterface,
+							Default:          dvInitializationInterface,
 							ValidateDiagFunc: validator.CloudInitInterface(),
 							DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
 								return newValue == ""
 							},
 						},
-						mkResourceVirtualEnvironmentVMInitializationDNS: {
+						mkInitializationDNS: {
 							Type:        schema.TypeList,
 							Description: "The DNS configuration",
 							Optional:    true,
@@ -858,21 +713,21 @@ func VM() *schema.Resource {
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									mkResourceVirtualEnvironmentVMInitializationDNSDomain: {
+									mkInitializationDNSDomain: {
 										Type:        schema.TypeString,
 										Description: "The DNS search domain",
 										Optional:    true,
-										Default:     dvResourceVirtualEnvironmentVMInitializationDNSDomain,
+										Default:     dvInitializationDNSDomain,
 									},
-									mkResourceVirtualEnvironmentVMInitializationDNSServer: {
+									mkInitializationDNSServer: {
 										Type:        schema.TypeString,
 										Description: "The DNS server",
 										Deprecated: "The `server` attribute is deprecated and will be removed in a future release. " +
 											"Please use the `servers` attribute instead.",
 										Optional: true,
-										Default:  dvResourceVirtualEnvironmentVMInitializationDNSServer,
+										Default:  dvInitializationDNSServer,
 									},
-									mkResourceVirtualEnvironmentVMInitializationDNSServers: {
+									mkInitializationDNSServers: {
 										Type:        schema.TypeList,
 										Description: "The list of DNS servers",
 										Optional:    true,
@@ -884,7 +739,7 @@ func VM() *schema.Resource {
 							MaxItems: 1,
 							MinItems: 0,
 						},
-						mkResourceVirtualEnvironmentVMInitializationIPConfig: {
+						mkInitializationIPConfig: {
 							Type:        schema.TypeList,
 							Description: "The IP configuration",
 							Optional:    true,
@@ -893,7 +748,7 @@ func VM() *schema.Resource {
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4: {
+									mkInitializationIPConfigIPv4: {
 										Type:        schema.TypeList,
 										Description: "The IPv4 configuration",
 										Optional:    true,
@@ -902,24 +757,24 @@ func VM() *schema.Resource {
 										},
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
-												mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address: {
+												mkInitializationIPConfigIPv4Address: {
 													Type:        schema.TypeString,
 													Description: "The IPv4 address",
 													Optional:    true,
-													Default:     dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address,
+													Default:     dvInitializationIPConfigIPv4Address,
 												},
-												mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway: {
+												mkInitializationIPConfigIPv4Gateway: {
 													Type:        schema.TypeString,
 													Description: "The IPv4 gateway",
 													Optional:    true,
-													Default:     dvResourceVirtualEnvironmentVMInitializationIPConfigIPv4Gateway,
+													Default:     dvInitializationIPConfigIPv4Gateway,
 												},
 											},
 										},
 										MaxItems: 1,
 										MinItems: 0,
 									},
-									mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6: {
+									mkInitializationIPConfigIPv6: {
 										Type:        schema.TypeList,
 										Description: "The IPv6 configuration",
 										Optional:    true,
@@ -928,17 +783,17 @@ func VM() *schema.Resource {
 										},
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
-												mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address: {
+												mkInitializationIPConfigIPv6Address: {
 													Type:        schema.TypeString,
 													Description: "The IPv6 address",
 													Optional:    true,
-													Default:     dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address,
+													Default:     dvInitializationIPConfigIPv6Address,
 												},
-												mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway: {
+												mkInitializationIPConfigIPv6Gateway: {
 													Type:        schema.TypeString,
 													Description: "The IPv6 gateway",
 													Optional:    true,
-													Default:     dvResourceVirtualEnvironmentVMInitializationIPConfigIPv6Gateway,
+													Default:     dvInitializationIPConfigIPv6Gateway,
 												},
 											},
 										},
@@ -950,7 +805,7 @@ func VM() *schema.Resource {
 							MaxItems: 8,
 							MinItems: 0,
 						},
-						mkResourceVirtualEnvironmentVMInitializationUserAccount: {
+						mkInitializationUserAccount: {
 							Type:        schema.TypeList,
 							Description: "The user account configuration",
 							Optional:    true,
@@ -960,26 +815,26 @@ func VM() *schema.Resource {
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									mkResourceVirtualEnvironmentVMInitializationUserAccountKeys: {
+									mkInitializationUserAccountKeys: {
 										Type:        schema.TypeList,
 										Description: "The SSH keys",
 										Optional:    true,
 										ForceNew:    true,
 										Elem:        &schema.Schema{Type: schema.TypeString},
 									},
-									mkResourceVirtualEnvironmentVMInitializationUserAccountPassword: {
+									mkInitializationUserAccountPassword: {
 										Type:        schema.TypeString,
 										Description: "The SSH password",
 										Optional:    true,
 										ForceNew:    true,
 										Sensitive:   true,
-										Default:     dvResourceVirtualEnvironmentVMInitializationUserAccountPassword,
-										DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-											return len(old) > 0 &&
-												strings.ReplaceAll(old, "*", "") == ""
+										Default:     dvInitializationUserAccountPassword,
+										DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+											return len(oldValue) > 0 &&
+												strings.ReplaceAll(oldValue, "*", "") == ""
 										},
 									},
-									mkResourceVirtualEnvironmentVMInitializationUserAccountUsername: {
+									mkInitializationUserAccountUsername: {
 										Type:        schema.TypeString,
 										Description: "The SSH username",
 										Optional:    true,
@@ -990,44 +845,44 @@ func VM() *schema.Resource {
 							MaxItems: 1,
 							MinItems: 0,
 						},
-						mkResourceVirtualEnvironmentVMInitializationUserDataFileID: {
+						mkInitializationUserDataFileID: {
 							Type:             schema.TypeString,
 							Description:      "The ID of a file containing custom user data",
 							Optional:         true,
 							ForceNew:         true,
-							Default:          dvResourceVirtualEnvironmentVMInitializationUserDataFileID,
+							Default:          dvInitializationUserDataFileID,
 							ValidateDiagFunc: validator.FileID(),
 						},
-						mkResourceVirtualEnvironmentVMInitializationVendorDataFileID: {
+						mkInitializationVendorDataFileID: {
 							Type:             schema.TypeString,
 							Description:      "The ID of a file containing vendor data",
 							Optional:         true,
 							ForceNew:         true,
-							Default:          dvResourceVirtualEnvironmentVMInitializationVendorDataFileID,
+							Default:          dvInitializationVendorDataFileID,
 							ValidateDiagFunc: validator.FileID(),
 						},
-						mkResourceVirtualEnvironmentVMInitializationNetworkDataFileID: {
+						mkInitializationNetworkDataFileID: {
 							Type:             schema.TypeString,
 							Description:      "The ID of a file containing network config",
 							Optional:         true,
 							ForceNew:         true,
-							Default:          dvResourceVirtualEnvironmentVMInitializationNetworkDataFileID,
+							Default:          dvInitializationNetworkDataFileID,
 							ValidateDiagFunc: validator.FileID(),
 						},
-						mkResourceVirtualEnvironmentVMInitializationMetaDataFileID: {
+						mkInitializationMetaDataFileID: {
 							Type:             schema.TypeString,
 							Description:      "The ID of a file containing meta data config",
 							Optional:         true,
 							ForceNew:         true,
-							Default:          dvResourceVirtualEnvironmentVMInitializationMetaDataFileID,
+							Default:          dvInitializationMetaDataFileID,
 							ValidateDiagFunc: validator.FileID(),
 						},
-						mkResourceVirtualEnvironmentVMInitializationType: {
+						mkInitializationType: {
 							Type:             schema.TypeString,
 							Description:      "The cloud-init configuration format",
 							Optional:         true,
 							ForceNew:         true,
-							Default:          dvResourceVirtualEnvironmentVMInitializationType,
+							Default:          dvInitializationType,
 							ValidateDiagFunc: validator.CloudInitType(),
 						},
 					},
@@ -1035,7 +890,7 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMIPv4Addresses: {
+			mkIPv4Addresses: {
 				Type:        schema.TypeList,
 				Description: "The IPv4 addresses published by the QEMU agent",
 				Computed:    true,
@@ -1044,7 +899,7 @@ func VM() *schema.Resource {
 					Elem: &schema.Schema{Type: schema.TypeString},
 				},
 			},
-			mkResourceVirtualEnvironmentVMIPv6Addresses: {
+			mkIPv6Addresses: {
 				Type:        schema.TypeList,
 				Description: "The IPv6 addresses published by the QEMU agent",
 				Computed:    true,
@@ -1053,7 +908,7 @@ func VM() *schema.Resource {
 					Elem: &schema.Schema{Type: schema.TypeString},
 				},
 			},
-			mkResourceVirtualEnvironmentVMHostPCI: {
+			mkHostPCI: {
 				Type:        schema.TypeList,
 				Description: "The Host PCI devices mapped to the VM",
 				Optional:    true,
@@ -1063,52 +918,53 @@ func VM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMHostPCIDevice: {
+						mkHostPCIDevice: {
 							Type:        schema.TypeString,
 							Description: "The PCI device name for Proxmox, in form of 'hostpciX' where X is a sequential number from 0 to 3",
 							Required:    true,
 						},
-						mkResourceVirtualEnvironmentVMHostPCIDeviceID: {
+						mkHostPCIDeviceID: {
 							Type: schema.TypeString,
 							Description: "The PCI ID of the device, for example 0000:00:1f.0 (or 0000:00:1f.0;0000:00:1f.1 for multiple " +
 								"device functions, or 0000:00:1f for all functions). Use either this or mapping.",
 							Optional: true,
 						},
-						mkResourceVirtualEnvironmentVMHostPCIDeviceMapping: {
+						mkHostPCIDeviceMapping: {
 							Type:        schema.TypeString,
 							Description: "The resource mapping name of the device, for example gpu. Use either this or id.",
 							Optional:    true,
 						},
-						mkResourceVirtualEnvironmentVMHostPCIDeviceMDev: {
+						mkHostPCIDeviceMDev: {
 							Type:        schema.TypeString,
 							Description: "The the mediated device to use",
 							Optional:    true,
 						},
-						mkResourceVirtualEnvironmentVMHostPCIDevicePCIE: {
+						mkHostPCIDevicePCIE: {
 							Type: schema.TypeBool,
 							Description: "Tells Proxmox VE to use a PCIe or PCI port. Some guests/device combination require PCIe rather " +
 								"than PCI. PCIe is only available for q35 machine types.",
 							Optional: true,
 						},
-						mkResourceVirtualEnvironmentVMHostPCIDeviceROMBAR: {
+						mkHostPCIDeviceROMBAR: {
 							Type:        schema.TypeBool,
 							Description: "Makes the firmware ROM visible for the guest. Default is true",
 							Optional:    true,
 						},
-						mkResourceVirtualEnvironmentVMHostPCIDeviceROMFile: {
+						mkHostPCIDeviceROMFile: {
 							Type:        schema.TypeString,
 							Description: "A path to a ROM file for the device to use. This is a relative path under /usr/share/kvm/",
 							Optional:    true,
 						},
-						mkResourceVirtualEnvironmentVMHostPCIDeviceXVGA: {
-							Type:        schema.TypeBool,
-							Description: "Marks the PCI(e) device as the primary GPU of the VM. With this enabled the vga configuration argument will be ignored.",
-							Optional:    true,
+						mkHostPCIDeviceXVGA: {
+							Type: schema.TypeBool,
+							Description: "Marks the PCI(e) device as the primary GPU of the VM. " +
+								"With this enabled the vga configuration argument will be ignored.",
+							Optional: true,
 						},
 					},
 				},
 			},
-			mkResourceVirtualEnvironmentVMHostUSB: {
+			mkHostUSB: {
 				Type:        schema.TypeList,
 				Description: "The Host USB devices mapped to the VM",
 				Optional:    true,
@@ -1118,17 +974,17 @@ func VM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMHostUSBDevice: {
+						mkHostUSBDevice: {
 							Type:        schema.TypeString,
 							Description: "The USB device ID for Proxmox, in form of '<MANUFACTURER>:<ID>'",
 							Required:    true,
 						},
-						mkResourceVirtualEnvironmentVMHostUSBDeviceMapping: {
+						mkHostUSBDeviceMapping: {
 							Type:        schema.TypeString,
 							Description: "The resource mapping name of the device, for example usbdisk. Use either this or id.",
 							Optional:    true,
 						},
-						mkResourceVirtualEnvironmentVMHostUSBDeviceUSB3: {
+						mkHostUSBDeviceUSB3: {
 							Type:        schema.TypeBool,
 							Description: "Makes the USB device a USB3 device for the machine. Default is false",
 							Optional:    true,
@@ -1136,64 +992,64 @@ func VM() *schema.Resource {
 					},
 				},
 			},
-			mkResourceVirtualEnvironmentVMKeyboardLayout: {
+			mkKeyboardLayout: {
 				Type:             schema.TypeString,
 				Description:      "The keyboard layout",
 				Optional:         true,
-				Default:          dvResourceVirtualEnvironmentVMKeyboardLayout,
+				Default:          dvKeyboardLayout,
 				ValidateDiagFunc: validator.KeyboardLayout(),
 			},
-			mkResourceVirtualEnvironmentVMMachine: {
+			mkMachine: {
 				Type:             schema.TypeString,
 				Description:      "The VM machine type, either default `pc` or `q35`",
 				Optional:         true,
-				Default:          dvResourceVirtualEnvironmentVMMachineType,
+				Default:          dvMachineType,
 				ValidateDiagFunc: validator.MachineType(),
 			},
-			mkResourceVirtualEnvironmentVMMACAddresses: {
+			mkMACAddresses: {
 				Type:        schema.TypeList,
 				Description: "The MAC addresses for the network interfaces",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkResourceVirtualEnvironmentVMMemory: {
+			mkMemory: {
 				Type:        schema.TypeList,
 				Description: "The memory allocation",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMMemoryDedicated: dvResourceVirtualEnvironmentVMMemoryDedicated,
-							mkResourceVirtualEnvironmentVMMemoryFloating:  dvResourceVirtualEnvironmentVMMemoryFloating,
-							mkResourceVirtualEnvironmentVMMemoryShared:    dvResourceVirtualEnvironmentVMMemoryShared,
+							mkMemoryDedicated: dvMemoryDedicated,
+							mkMemoryFloating:  dvMemoryFloating,
+							mkMemoryShared:    dvMemoryShared,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMMemoryDedicated: {
+						mkMemoryDedicated: {
 							Type:        schema.TypeInt,
 							Description: "The dedicated memory in megabytes",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMMemoryDedicated,
+							Default:     dvMemoryDedicated,
 							ValidateDiagFunc: validation.ToDiagFunc(
 								validation.IntBetween(64, 268435456),
 							),
 						},
-						mkResourceVirtualEnvironmentVMMemoryFloating: {
+						mkMemoryFloating: {
 							Type:        schema.TypeInt,
 							Description: "The floating memory in megabytes (balloon)",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMMemoryFloating,
+							Default:     dvMemoryFloating,
 							ValidateDiagFunc: validation.ToDiagFunc(
 								validation.IntBetween(0, 268435456),
 							),
 						},
-						mkResourceVirtualEnvironmentVMMemoryShared: {
+						mkMemoryShared: {
 							Type:        schema.TypeInt,
 							Description: "The shared memory in megabytes",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMMemoryShared,
+							Default:     dvMemoryShared,
 							ValidateDiagFunc: validation.ToDiagFunc(
 								validation.IntBetween(0, 268435456),
 							),
@@ -1203,13 +1059,13 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMName: {
+			mkName: {
 				Type:        schema.TypeString,
 				Description: "The name",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMName,
+				Default:     dvName,
 			},
-			mkResourceVirtualEnvironmentVMNetworkDevice: {
+			mkNetworkDevice: {
 				Type:        schema.TypeList,
 				Description: "The network devices",
 				Optional:    true,
@@ -1218,103 +1074,103 @@ func VM() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMNetworkDeviceBridge: {
+						mkNetworkDeviceBridge: {
 							Type:        schema.TypeString,
 							Description: "The bridge",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceBridge,
+							Default:     dvNetworkDeviceBridge,
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceEnabled: {
+						mkNetworkDeviceEnabled: {
 							Type:        schema.TypeBool,
 							Description: "Whether to enable the network device",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceEnabled,
+							Default:     dvNetworkDeviceEnabled,
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceFirewall: {
+						mkNetworkDeviceFirewall: {
 							Type:        schema.TypeBool,
 							Description: "Whether this interface's firewall rules should be used",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceFirewall,
+							Default:     dvNetworkDeviceFirewall,
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceMACAddress: {
+						mkNetworkDeviceMACAddress: {
 							Type:             schema.TypeString,
 							Description:      "The MAC address",
 							Optional:         true,
 							Computed:         true,
 							ValidateDiagFunc: validator.MACAddress(),
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceModel: {
+						mkNetworkDeviceModel: {
 							Type:             schema.TypeString,
 							Description:      "The model",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMNetworkDeviceModel,
+							Default:          dvNetworkDeviceModel,
 							ValidateDiagFunc: validator.NetworkDeviceModel(),
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceQueues: {
+						mkNetworkDeviceQueues: {
 							Type:             schema.TypeInt,
 							Description:      "Number of packet queues to be used on the device",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMNetworkDeviceQueues,
+							Default:          dvNetworkDeviceQueues,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 64)),
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceRateLimit: {
+						mkNetworkDeviceRateLimit: {
 							Type:        schema.TypeFloat,
 							Description: "The rate limit in megabytes per second",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceRateLimit,
+							Default:     dvNetworkDeviceRateLimit,
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceVLANID: {
+						mkNetworkDeviceVLANID: {
 							Type:        schema.TypeInt,
 							Description: "The VLAN identifier",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceVLANID,
+							Default:     dvNetworkDeviceVLANID,
 						},
-						mkResourceVirtualEnvironmentVMNetworkDeviceMTU: {
+						mkNetworkDeviceMTU: {
 							Type:        schema.TypeInt,
 							Description: "Maximum transmission unit (MTU)",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMNetworkDeviceMTU,
+							Default:     dvNetworkDeviceMTU,
 						},
 					},
 				},
 				MaxItems: maxResourceVirtualEnvironmentVMNetworkDevices,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMNetworkInterfaceNames: {
+			mkNetworkInterfaceNames: {
 				Type:        schema.TypeList,
 				Description: "The network interface names published by the QEMU agent",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			mkResourceVirtualEnvironmentVMNodeName: {
+			mkNodeName: {
 				Type:        schema.TypeString,
 				Description: "The node name",
 				Required:    true,
 			},
-			mkResourceVirtualEnvironmentVMMigrate: {
+			mkMigrate: {
 				Type:        schema.TypeBool,
 				Description: "Whether to migrate the VM on node change instead of re-creating it",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMMigrate,
+				Default:     dvMigrate,
 			},
-			mkResourceVirtualEnvironmentVMOperatingSystem: {
+			mkOperatingSystem: {
 				Type:        schema.TypeList,
 				Description: "The operating system configuration",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMOperatingSystemType: dvResourceVirtualEnvironmentVMOperatingSystemType,
+							mkOperatingSystemType: dvOperatingSystemType,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMOperatingSystemType: {
+						mkOperatingSystemType: {
 							Type:             schema.TypeString,
 							Description:      "The type",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMOperatingSystemType,
+							Default:          dvOperatingSystemType,
 							ValidateDiagFunc: vmGetOperatingSystemTypeValidator(),
 						},
 					},
@@ -1322,30 +1178,30 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMPoolID: {
+			mkPoolID: {
 				Type:        schema.TypeString,
 				Description: "The ID of the pool to assign the virtual machine to",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMPoolID,
+				Default:     dvPoolID,
 			},
-			mkResourceVirtualEnvironmentVMSerialDevice: {
+			mkSerialDevice: {
 				Type:        schema.TypeList,
 				Description: "The serial devices",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMSerialDeviceDevice: dvResourceVirtualEnvironmentVMSerialDeviceDevice,
+							mkSerialDeviceDevice: dvSerialDeviceDevice,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMSerialDeviceDevice: {
+						mkSerialDeviceDevice: {
 							Type:             schema.TypeString,
 							Description:      "The device",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMSerialDeviceDevice,
+							Default:          dvSerialDeviceDevice,
 							ValidateDiagFunc: vmGetSerialDeviceValidator(),
 						},
 					},
@@ -1353,104 +1209,104 @@ func VM() *schema.Resource {
 				MaxItems: maxResourceVirtualEnvironmentVMSerialDevices,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMSMBIOS: {
+			mkSMBIOS: {
 				Type:        schema.TypeList,
 				Description: "Specifies SMBIOS (type1) settings for the VM",
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMSMBIOSFamily: {
+						mkSMBIOSFamily: {
 							Type:        schema.TypeString,
 							Description: "Sets SMBIOS family string",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMSMBIOSFamily,
+							Default:     dvSMBIOSFamily,
 						},
-						mkResourceVirtualEnvironmentVMSMBIOSManufacturer: {
+						mkSMBIOSManufacturer: {
 							Type:        schema.TypeString,
 							Description: "Sets SMBIOS manufacturer",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMSMBIOSManufacturer,
+							Default:     dvSMBIOSManufacturer,
 						},
-						mkResourceVirtualEnvironmentVMSMBIOSProduct: {
+						mkSMBIOSProduct: {
 							Type:        schema.TypeString,
 							Description: "Sets SMBIOS product ID",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMSMBIOSProduct,
+							Default:     dvSMBIOSProduct,
 						},
-						mkResourceVirtualEnvironmentVMSMBIOSSerial: {
+						mkSMBIOSSerial: {
 							Type:        schema.TypeString,
 							Description: "Sets SMBIOS serial number",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMSMBIOSSerial,
+							Default:     dvSMBIOSSerial,
 						},
-						mkResourceVirtualEnvironmentVMSMBIOSSKU: {
+						mkSMBIOSSKU: {
 							Type:        schema.TypeString,
 							Description: "Sets SMBIOS SKU",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMSMBIOSSKU,
+							Default:     dvSMBIOSSKU,
 						},
-						mkResourceVirtualEnvironmentVMSMBIOSUUID: {
+						mkSMBIOSUUID: {
 							Type:        schema.TypeString,
 							Description: "Sets SMBIOS UUID",
 							Optional:    true,
 							Computed:    true,
 						},
-						mkResourceVirtualEnvironmentVMSMBIOSVersion: {
+						mkSMBIOSVersion: {
 							Type:        schema.TypeString,
 							Description: "Sets SMBIOS version",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMSMBIOSVersion,
+							Default:     dvSMBIOSVersion,
 						},
 					},
 				},
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMStarted: {
+			mkStarted: {
 				Type:        schema.TypeBool,
 				Description: "Whether to start the virtual machine",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMStarted,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return d.Get(mkResourceVirtualEnvironmentVMTemplate).(bool)
+				Default:     dvStarted,
+				DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+					return d.Get(mkTemplate).(bool)
 				},
 			},
-			mkResourceVirtualEnvironmentVMStartup: {
+			mkStartup: {
 				Type:        schema.TypeList,
 				Description: "Defines startup and shutdown behavior of the VM",
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMStartupOrder: {
+						mkStartupOrder: {
 							Type:        schema.TypeInt,
 							Description: "A non-negative number defining the general startup order",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMStartupOrder,
+							Default:     dvStartupOrder,
 						},
-						mkResourceVirtualEnvironmentVMStartupUpDelay: {
+						mkStartupUpDelay: {
 							Type:        schema.TypeInt,
 							Description: "A non-negative number defining the delay in seconds before the next VM is started",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMStartupUpDelay,
+							Default:     dvStartupUpDelay,
 						},
-						mkResourceVirtualEnvironmentVMStartupDownDelay: {
+						mkStartupDownDelay: {
 							Type:        schema.TypeInt,
 							Description: "A non-negative number defining the delay in seconds before the next VM is shut down",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMStartupDownDelay,
+							Default:     dvStartupDownDelay,
 						},
 					},
 				},
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMTabletDevice: {
+			mkTabletDevice: {
 				Type:        schema.TypeBool,
 				Description: "Whether to enable the USB tablet device",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTabletDevice,
+				Default:     dvTabletDevice,
 			},
-			mkResourceVirtualEnvironmentVMTags: {
+			mkTags: {
 				Type:        schema.TypeList,
 				Description: "Tags of the virtual machine. This is only meta information.",
 				Optional:    true,
@@ -1461,94 +1317,94 @@ func VM() *schema.Resource {
 				DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
 				DiffSuppressOnRefresh: true,
 			},
-			mkResourceVirtualEnvironmentVMTemplate: {
+			mkTemplate: {
 				Type:        schema.TypeBool,
 				Description: "Whether to create a template",
 				Optional:    true,
 				ForceNew:    true,
-				Default:     dvResourceVirtualEnvironmentVMTemplate,
+				Default:     dvTemplate,
 			},
-			mkResourceVirtualEnvironmentVMTimeoutClone: {
+			mkTimeoutClone: {
 				Type:        schema.TypeInt,
 				Description: "Clone VM timeout",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTimeoutClone,
+				Default:     dvTimeoutClone,
 			},
-			mkResourceVirtualEnvironmentVMTimeoutCreate: {
+			mkTimeoutCreate: {
 				Type:        schema.TypeInt,
 				Description: "Create VM timeout",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTimeoutCreate,
+				Default:     dvTimeoutCreate,
 			},
-			mkResourceVirtualEnvironmentVMTimeoutMoveDisk: {
+			mkTimeoutMoveDisk: {
 				Type:        schema.TypeInt,
 				Description: "MoveDisk timeout",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTimeoutMoveDisk,
+				Default:     dvTimeoutMoveDisk,
 			},
-			mkResourceVirtualEnvironmentVMTimeoutMigrate: {
+			mkTimeoutMigrate: {
 				Type:        schema.TypeInt,
 				Description: "Migrate VM timeout",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTimeoutMigrate,
+				Default:     dvTimeoutMigrate,
 			},
-			mkResourceVirtualEnvironmentVMTimeoutReboot: {
+			mkTimeoutReboot: {
 				Type:        schema.TypeInt,
 				Description: "Reboot timeout",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTimeoutReboot,
+				Default:     dvTimeoutReboot,
 			},
-			mkResourceVirtualEnvironmentVMTimeoutShutdownVM: {
+			mkTimeoutShutdownVM: {
 				Type:        schema.TypeInt,
 				Description: "Shutdown timeout",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTimeoutShutdownVM,
+				Default:     dvTimeoutShutdownVM,
 			},
-			mkResourceVirtualEnvironmentVMTimeoutStartVM: {
+			mkTimeoutStartVM: {
 				Type:        schema.TypeInt,
 				Description: "Start VM timeout",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTimeoutStartVM,
+				Default:     dvTimeoutStartVM,
 			},
-			mkResourceVirtualEnvironmentVMTimeoutStopVM: {
+			mkTimeoutStopVM: {
 				Type:        schema.TypeInt,
 				Description: "Stop VM timeout",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMTimeoutStopVM,
+				Default:     dvTimeoutStopVM,
 			},
-			mkResourceVirtualEnvironmentVMVGA: {
+			mkVGA: {
 				Type:        schema.TypeList,
 				Description: "The VGA configuration",
 				Optional:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkResourceVirtualEnvironmentVMVGAEnabled: dvResourceVirtualEnvironmentVMVGAEnabled,
-							mkResourceVirtualEnvironmentVMVGAMemory:  dvResourceVirtualEnvironmentVMVGAMemory,
-							mkResourceVirtualEnvironmentVMVGAType:    dvResourceVirtualEnvironmentVMVGAType,
+							mkVGAEnabled: dvVGAEnabled,
+							mkVGAMemory:  dvVGAMemory,
+							mkVGAType:    dvVGAType,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						mkResourceVirtualEnvironmentVMVGAEnabled: {
+						mkVGAEnabled: {
 							Type:        schema.TypeBool,
 							Description: "Whether to enable the VGA device",
 							Optional:    true,
-							Default:     dvResourceVirtualEnvironmentVMVGAEnabled,
+							Default:     dvVGAEnabled,
 						},
-						mkResourceVirtualEnvironmentVMVGAMemory: {
+						mkVGAMemory: {
 							Type:             schema.TypeInt,
 							Description:      "The VGA memory in megabytes (4-512 MB)",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMVGAMemory,
+							Default:          dvVGAMemory,
 							ValidateDiagFunc: validator.VGAMemory(),
 						},
-						mkResourceVirtualEnvironmentVMVGAType: {
+						mkVGAType: {
 							Type:             schema.TypeString,
 							Description:      "The VGA type",
 							Optional:         true,
-							Default:          dvResourceVirtualEnvironmentVMVGAType,
+							Default:          dvVGAType,
 							ValidateDiagFunc: validator.VGAType(),
 						},
 					},
@@ -1556,7 +1412,7 @@ func VM() *schema.Resource {
 				MaxItems: 1,
 				MinItems: 0,
 			},
-			mkResourceVirtualEnvironmentVMVMID: {
+			mkVMID: {
 				Type:        schema.TypeInt,
 				Description: "The VM identifier",
 				Optional:    true,
@@ -1565,24 +1421,24 @@ func VM() *schema.Resource {
 				// do not require re-creation.
 				ValidateDiagFunc: validator.VMID(),
 			},
-			mkResourceVirtualEnvironmentVMSCSIHardware: {
+			mkSCSIHardware: {
 				Type:             schema.TypeString,
 				Description:      "The SCSI hardware type",
 				Optional:         true,
-				Default:          dvResourceVirtualEnvironmentVMSCSIHardware,
+				Default:          dvSCSIHardware,
 				ValidateDiagFunc: validator.SCSIHardware(),
 			},
-			mkResourceVirtualEnvironmentVMHookScriptFileID: {
+			mkHookScriptFileID: {
 				Type:        schema.TypeString,
 				Description: "A hook script",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMHookScript,
+				Default:     dvHookScript,
 			},
-			mkResourceVirtualEnvironmentVMStopOnDestroy: {
+			mkStopOnDestroy: {
 				Type:        schema.TypeBool,
 				Description: "Whether to stop rather than shutdown on VM destroy",
 				Optional:    true,
-				Default:     dvResourceVirtualEnvironmentVMStopOnDestroy,
+				Default:     dvStopOnDestroy,
 			},
 		},
 		CreateContext: vmCreate,
@@ -1591,30 +1447,30 @@ func VM() *schema.Resource {
 		DeleteContext: vmDelete,
 		CustomizeDiff: customdiff.All(
 			customdiff.ComputedIf(
-				mkResourceVirtualEnvironmentVMIPv4Addresses,
+				mkIPv4Addresses,
 				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-					return d.HasChange(mkResourceVirtualEnvironmentVMStarted) ||
-						d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice)
+					return d.HasChange(mkStarted) ||
+						d.HasChange(mkNetworkDevice)
 				},
 			),
 			customdiff.ComputedIf(
-				mkResourceVirtualEnvironmentVMIPv6Addresses,
+				mkIPv6Addresses,
 				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-					return d.HasChange(mkResourceVirtualEnvironmentVMStarted) ||
-						d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice)
+					return d.HasChange(mkStarted) ||
+						d.HasChange(mkNetworkDevice)
 				},
 			),
 			customdiff.ComputedIf(
-				mkResourceVirtualEnvironmentVMNetworkInterfaceNames,
+				mkNetworkInterfaceNames,
 				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-					return d.HasChange(mkResourceVirtualEnvironmentVMStarted) ||
-						d.HasChange(mkResourceVirtualEnvironmentVMNetworkDevice)
+					return d.HasChange(mkStarted) ||
+						d.HasChange(mkNetworkDevice)
 				},
 			),
 			customdiff.ForceNewIf(
-				mkResourceVirtualEnvironmentVMVMID,
+				mkVMID,
 				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-					newValue := d.Get(mkResourceVirtualEnvironmentVMVMID)
+					newValue := d.Get(mkVMID)
 
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
@@ -1622,9 +1478,9 @@ func VM() *schema.Resource {
 				},
 			),
 			customdiff.ForceNewIf(
-				mkResourceVirtualEnvironmentVMNodeName,
+				mkNodeName,
 				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
-					return !d.Get(mkResourceVirtualEnvironmentVMMigrate).(bool)
+					return !d.Get(mkMigrate).(bool)
 				},
 			),
 		),
@@ -1636,7 +1492,7 @@ func VM() *schema.Resource {
 				}
 
 				d.SetId(id)
-				err = d.Set(mkResourceVirtualEnvironmentVMNodeName, node)
+				err = d.Set(mkNodeName, node)
 				if err != nil {
 					return nil, fmt.Errorf("failed setting state during import: %w", err)
 				}

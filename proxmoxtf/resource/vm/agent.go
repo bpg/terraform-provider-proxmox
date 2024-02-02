@@ -8,15 +8,15 @@ import (
 )
 
 func createAgent(d *schema.ResourceData, updateBody *vms.UpdateRequestBody) {
-	agent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+	agent := d.Get(mkAgent).([]interface{})
 	if len(agent) > 0 {
 		agentBlock := agent[0].(map[string]interface{})
 
 		agentEnabled := types.CustomBool(
-			agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool),
+			agentBlock[mkAgentEnabled].(bool),
 		)
-		agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
-		agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
+		agentTrim := types.CustomBool(agentBlock[mkAgentTrim].(bool))
+		agentType := agentBlock[mkAgentType].(string)
 
 		updateBody.Agent = &vms.CustomAgent{
 			Enabled:         &agentEnabled,
@@ -30,7 +30,7 @@ func customAgent(d *schema.ResourceData, resource *schema.Resource) (*vms.Custom
 	agentBlock, err := structure.GetSchemaBlock(
 		resource,
 		d,
-		[]string{mkResourceVirtualEnvironmentVMAgent},
+		[]string{mkAgent},
 		0,
 		true,
 	)
@@ -39,10 +39,10 @@ func customAgent(d *schema.ResourceData, resource *schema.Resource) (*vms.Custom
 	}
 
 	agentEnabled := types.CustomBool(
-		agentBlock[mkResourceVirtualEnvironmentVMAgentEnabled].(bool),
+		agentBlock[mkAgentEnabled].(bool),
 	)
-	agentTrim := types.CustomBool(agentBlock[mkResourceVirtualEnvironmentVMAgentTrim].(bool))
-	agentType := agentBlock[mkResourceVirtualEnvironmentVMAgentType].(string)
+	agentTrim := types.CustomBool(agentBlock[mkAgentTrim].(bool))
+	agentType := agentBlock[mkAgentType].(string)
 
 	return &vms.CustomAgent{
 		Enabled:         &agentEnabled,
@@ -53,64 +53,64 @@ func customAgent(d *schema.ResourceData, resource *schema.Resource) (*vms.Custom
 
 func setAgent(d *schema.ResourceData, clone bool, vmConfig *vms.GetResponseData) error {
 	// Compare the agent configuration to the one stored in the state.
-	currentAgent := d.Get(mkResourceVirtualEnvironmentVMAgent).([]interface{})
+	currentAgent := d.Get(mkAgent).([]interface{})
 
 	if !clone || len(currentAgent) > 0 {
 		if vmConfig.Agent != nil {
 			agent := map[string]interface{}{}
 
 			if vmConfig.Agent.Enabled != nil {
-				agent[mkResourceVirtualEnvironmentVMAgentEnabled] = bool(*vmConfig.Agent.Enabled)
+				agent[mkAgentEnabled] = bool(*vmConfig.Agent.Enabled)
 			} else {
-				agent[mkResourceVirtualEnvironmentVMAgentEnabled] = false
+				agent[mkAgentEnabled] = false
 			}
 
 			if vmConfig.Agent.TrimClonedDisks != nil {
-				agent[mkResourceVirtualEnvironmentVMAgentTrim] = bool(
+				agent[mkAgentTrim] = bool(
 					*vmConfig.Agent.TrimClonedDisks,
 				)
 			} else {
-				agent[mkResourceVirtualEnvironmentVMAgentTrim] = false
+				agent[mkAgentTrim] = false
 			}
 
 			if len(currentAgent) > 0 {
 				currentAgentBlock := currentAgent[0].(map[string]interface{})
-				currentAgentTimeout := currentAgentBlock[mkResourceVirtualEnvironmentVMAgentTimeout].(string)
+				currentAgentTimeout := currentAgentBlock[mkAgentTimeout].(string)
 
 				if currentAgentTimeout != "" {
-					agent[mkResourceVirtualEnvironmentVMAgentTimeout] = currentAgentTimeout
+					agent[mkAgentTimeout] = currentAgentTimeout
 				} else {
-					agent[mkResourceVirtualEnvironmentVMAgentTimeout] = dvResourceVirtualEnvironmentVMAgentTimeout
+					agent[mkAgentTimeout] = dvAgentTimeout
 				}
 			} else {
-				agent[mkResourceVirtualEnvironmentVMAgentTimeout] = dvResourceVirtualEnvironmentVMAgentTimeout
+				agent[mkAgentTimeout] = dvAgentTimeout
 			}
 
 			if vmConfig.Agent.Type != nil {
-				agent[mkResourceVirtualEnvironmentVMAgentType] = *vmConfig.Agent.Type
+				agent[mkAgentType] = *vmConfig.Agent.Type
 			} else {
-				agent[mkResourceVirtualEnvironmentVMAgentType] = ""
+				agent[mkAgentType] = ""
 			}
 
 			if clone {
 				if len(currentAgent) > 0 {
-					return d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
+					return d.Set(mkAgent, []interface{}{agent})
 				}
 			} else if len(currentAgent) > 0 ||
-				agent[mkResourceVirtualEnvironmentVMAgentEnabled] != dvResourceVirtualEnvironmentVMAgentEnabled ||
-				agent[mkResourceVirtualEnvironmentVMAgentTimeout] != dvResourceVirtualEnvironmentVMAgentTimeout ||
-				agent[mkResourceVirtualEnvironmentVMAgentTrim] != dvResourceVirtualEnvironmentVMAgentTrim ||
-				agent[mkResourceVirtualEnvironmentVMAgentType] != dvResourceVirtualEnvironmentVMAgentType {
-				return d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{agent})
-
+				agent[mkAgentEnabled] != dvAgentEnabled ||
+				agent[mkAgentTimeout] != dvAgentTimeout ||
+				agent[mkAgentTrim] != dvAgentTrim ||
+				agent[mkAgentType] != dvAgentType {
+				return d.Set(mkAgent, []interface{}{agent})
 			}
 		} else if clone {
 			if len(currentAgent) > 0 {
-				return d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
+				return d.Set(mkAgent, []interface{}{})
 			}
 		} else {
-			return d.Set(mkResourceVirtualEnvironmentVMAgent, []interface{}{})
+			return d.Set(mkAgent, []interface{}{})
 		}
 	}
+
 	return nil
 }

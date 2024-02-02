@@ -1,9 +1,13 @@
 {
     "git.alwaysSignOff": true,
     "cSpell.words": [
+        "Burstable",
+        "cdrom",
         "CLRF",
         "iothread",
         "keyctl",
+        "mbps",
+        "NUMA",
         "proxmoxtf",
         "qcow",
         "rootfs",
