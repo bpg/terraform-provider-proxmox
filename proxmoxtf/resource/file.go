@@ -739,7 +739,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	readFileAttrs := readFile
 	if fileIsURL(d) {
-		readFileAttrs = readURL
+		readFileAttrs = readURL(capi.API().HTTP())
 	}
 
 	var diags diag.Diagnostics
@@ -838,48 +838,55 @@ func readFile(
 
 //nolint:nonamedreturns
 func readURL(
+	httClient *http.Client,
+) func(
 	ctx context.Context,
 	sourceFilePath string,
 ) (fileModificationDate string, fileSize int64, fileTag string, err error) {
-	res, err := http.Head(sourceFilePath)
-	if err != nil {
-		return
-	}
-
-	defer utils.CloseOrLogError(ctx)(res.Body)
-
-	fileSize = res.ContentLength
-	httpLastModified := res.Header.Get("Last-Modified")
-
-	if httpLastModified != "" {
-		var timeParsed time.Time
-		timeParsed, err = time.Parse(time.RFC1123, httpLastModified)
-
+	return func(
+		ctx context.Context,
+		sourceFilePath string,
+	) (fileModificationDate string, fileSize int64, fileTag string, err error) {
+		res, err := httClient.Head(sourceFilePath)
 		if err != nil {
-			timeParsed, err = time.Parse(time.RFC1123Z, httpLastModified)
-			if err != nil {
-				return
-			}
+			return
 		}
 
-		fileModificationDate = timeParsed.UTC().Format(time.RFC3339)
-	}
+		defer utils.CloseOrLogError(ctx)(res.Body)
 
-	httpTag := res.Header.Get("ETag")
+		fileSize = res.ContentLength
+		httpLastModified := res.Header.Get("Last-Modified")
 
-	if httpTag != "" {
-		httpTagParts := strings.Split(httpTag, "\"")
+		if httpLastModified != "" {
+			var timeParsed time.Time
+			timeParsed, err = time.Parse(time.RFC1123, httpLastModified)
 
-		if len(httpTagParts) > 1 {
-			fileTag = httpTagParts[1]
+			if err != nil {
+				timeParsed, err = time.Parse(time.RFC1123Z, httpLastModified)
+				if err != nil {
+					return
+				}
+			}
+
+			fileModificationDate = timeParsed.UTC().Format(time.RFC3339)
+		}
+
+		httpTag := res.Header.Get("ETag")
+
+		if httpTag != "" {
+			httpTagParts := strings.Split(httpTag, "\"")
+
+			if len(httpTagParts) > 1 {
+				fileTag = httpTagParts[1]
+			} else {
+				fileTag = ""
+			}
 		} else {
 			fileTag = ""
 		}
-	} else {
-		fileTag = ""
-	}
 
-	return
+		return
+	}
 }
 
 func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
