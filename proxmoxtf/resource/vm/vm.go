@@ -594,9 +594,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	// from the cloned VM
-	// from the resource config
-	allDiskInfo, err := updateDisk1(ctx, vmConfig, d, vmAPI)
+	allDiskInfo, err := createDisks(ctx, vmConfig, d, vmAPI)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -786,7 +784,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	description := d.Get(mkDescription).(string)
 
-	diskDeviceObjects, err := vmGetDiskDeviceObjects(d, nil)
+	diskDeviceObjects, err := getStorageDevicesFromResource(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3825,7 +3823,7 @@ func vmUpdateDiskLocationAndSize(
 	if d.HasChange(mkDisk) {
 		diskOld, diskNew := d.GetChange(mkDisk)
 
-		diskOldEntries, err := vmGetDiskDeviceObjects(
+		diskOldEntries, err := getDiskDeviceObjects1(
 			d,
 			diskOld.([]interface{}),
 		)
@@ -3833,7 +3831,7 @@ func vmUpdateDiskLocationAndSize(
 			return diag.FromErr(err)
 		}
 
-		diskNewEntries, err := vmGetDiskDeviceObjects(
+		diskNewEntries, err := getDiskDeviceObjects1(
 			d,
 			diskNew.([]interface{}),
 		)
@@ -4085,120 +4083,6 @@ func diskDigitPrefix(s string) string {
 	}
 
 	return s
-}
-
-func getDiskInfo(resp *vms.GetResponseData, d *schema.ResourceData) map[string]*vms.CustomStorageDevice {
-	currentDisk := d.Get(mkDisk)
-
-	currentDiskList := currentDisk.([]interface{})
-	currentDiskMap := map[string]map[string]interface{}{}
-
-	for _, v := range currentDiskList {
-		diskMap := v.(map[string]interface{})
-		diskInterface := diskMap[mkDiskInterface].(string)
-
-		currentDiskMap[diskInterface] = diskMap
-	}
-
-	storageDevices := map[string]*vms.CustomStorageDevice{}
-
-	storageDevices["ide0"] = resp.IDEDevice0
-	storageDevices["ide1"] = resp.IDEDevice1
-	storageDevices["ide2"] = resp.IDEDevice2
-	storageDevices["ide3"] = resp.IDEDevice3
-
-	storageDevices["sata0"] = resp.SATADevice0
-	storageDevices["sata1"] = resp.SATADevice1
-	storageDevices["sata2"] = resp.SATADevice2
-	storageDevices["sata3"] = resp.SATADevice3
-	storageDevices["sata4"] = resp.SATADevice4
-	storageDevices["sata5"] = resp.SATADevice5
-
-	storageDevices["scsi0"] = resp.SCSIDevice0
-	storageDevices["scsi1"] = resp.SCSIDevice1
-	storageDevices["scsi2"] = resp.SCSIDevice2
-	storageDevices["scsi3"] = resp.SCSIDevice3
-	storageDevices["scsi4"] = resp.SCSIDevice4
-	storageDevices["scsi5"] = resp.SCSIDevice5
-	storageDevices["scsi6"] = resp.SCSIDevice6
-	storageDevices["scsi7"] = resp.SCSIDevice7
-	storageDevices["scsi8"] = resp.SCSIDevice8
-	storageDevices["scsi9"] = resp.SCSIDevice9
-	storageDevices["scsi10"] = resp.SCSIDevice10
-	storageDevices["scsi11"] = resp.SCSIDevice11
-	storageDevices["scsi12"] = resp.SCSIDevice12
-	storageDevices["scsi13"] = resp.SCSIDevice13
-
-	storageDevices["virtio0"] = resp.VirtualIODevice0
-	storageDevices["virtio1"] = resp.VirtualIODevice1
-	storageDevices["virtio2"] = resp.VirtualIODevice2
-	storageDevices["virtio3"] = resp.VirtualIODevice3
-	storageDevices["virtio4"] = resp.VirtualIODevice4
-	storageDevices["virtio5"] = resp.VirtualIODevice5
-	storageDevices["virtio6"] = resp.VirtualIODevice6
-	storageDevices["virtio7"] = resp.VirtualIODevice7
-	storageDevices["virtio8"] = resp.VirtualIODevice8
-	storageDevices["virtio9"] = resp.VirtualIODevice9
-	storageDevices["virtio10"] = resp.VirtualIODevice10
-	storageDevices["virtio11"] = resp.VirtualIODevice11
-	storageDevices["virtio12"] = resp.VirtualIODevice12
-	storageDevices["virtio13"] = resp.VirtualIODevice13
-	storageDevices["virtio14"] = resp.VirtualIODevice14
-	storageDevices["virtio15"] = resp.VirtualIODevice15
-
-	for k, v := range storageDevices {
-		if v != nil {
-			if currentDiskMap[k] != nil {
-				if currentDiskMap[k][mkDiskFileID] != nil {
-					fileID := currentDiskMap[k][mkDiskFileID].(string)
-					v.FileID = &fileID
-				}
-			}
-
-			if v.Size == nil {
-				v.Size = new(types.DiskSize)
-			}
-
-			// defensive copy of the loop variable
-			iface := k
-			v.Interface = &iface
-		}
-	}
-
-	return storageDevices
-}
-
-// getDiskDatastores returns a list of the used datastores in a VM.
-func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string {
-	storageDevices := getDiskInfo(vm, d)
-	datastoresSet := map[string]int{}
-
-	for _, diskInfo := range storageDevices {
-		// Ignore empty storage devices and storage devices (like ide) which may not have any media mounted
-		if diskInfo == nil || diskInfo.FileVolume == "none" {
-			continue
-		}
-
-		fileIDParts := strings.Split(diskInfo.FileVolume, ":")
-		datastoresSet[fileIDParts[0]] = 1
-	}
-
-	if vm.EFIDisk != nil {
-		fileIDParts := strings.Split(vm.EFIDisk.FileVolume, ":")
-		datastoresSet[fileIDParts[0]] = 1
-	}
-
-	if vm.TPMState != nil {
-		fileIDParts := strings.Split(vm.TPMState.FileVolume, ":")
-		datastoresSet[fileIDParts[0]] = 1
-	}
-
-	datastores := []string{}
-	for datastore := range datastoresSet {
-		datastores = append(datastores, datastore)
-	}
-
-	return datastores
 }
 
 func getPCIInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomPCIDevice {

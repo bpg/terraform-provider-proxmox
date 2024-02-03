@@ -17,6 +17,40 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"golang.org/x/exp/maps"
+)
+
+const (
+	mkDisk                    = "disk"
+	mkDiskInterface           = "interface"
+	mkDiskDatastoreID         = "datastore_id"
+	mkDiskPathInDatastore     = "path_in_datastore"
+	mkDiskFileFormat          = "file_format"
+	mkDiskFileID              = "file_id"
+	mkDiskSize                = "size"
+	mkDiskIOThread            = "iothread"
+	mkDiskSSD                 = "ssd"
+	mkDiskDiscard             = "discard"
+	mkDiskCache               = "cache"
+	mkDiskSpeed               = "speed"
+	mkDiskSpeedRead           = "read"
+	mkDiskSpeedReadBurstable  = "read_burstable"
+	mkDiskSpeedWrite          = "write"
+	mkDiskSpeedWriteBurstable = "write_burstable"
+
+	dvDiskInterface           = "scsi0"
+	dvDiskDatastoreID         = "local-lvm"
+	dvDiskFileFormat          = "qcow2"
+	dvDiskFileID              = ""
+	dvDiskSize                = 8
+	dvDiskIOThread            = false
+	dvDiskSSD                 = false
+	dvDiskDiscard             = "ignore"
+	dvDiskCache               = "none"
+	dvDiskSpeedRead           = 0
+	dvDiskSpeedReadBurstable  = 0
+	dvDiskSpeedWrite          = 0
+	dvDiskSpeedWriteBurstable = 0
 )
 
 func diskSchema() *schema.Schema {
@@ -165,26 +199,65 @@ func diskSchema() *schema.Schema {
 	}
 }
 
-func updateDisk1(
+func createDisks(
 	ctx context.Context, vmConfig *vms.GetResponseData, d *schema.ResourceData, vmAPI *vms.Client,
 ) (map[string]*vms.CustomStorageDevice, error) {
-	allDiskInfo := getDiskInfo(vmConfig, d)
+	// this is what VM has at the moment: map of interface name (virtio1) -> disk object
+	currentStorageDevices := populateFileIDs(mapStorageDevices(vmConfig), d)
 
-	diskDeviceObjects, e := vmGetDiskDeviceObjects(d, nil)
+	// map of interface type (virtio|sata|scsi|...)  -> map of interface name (virtio1) -> disk object
+	planStorageDevices, e := getStorageDevicesFromResource(d)
 	if e != nil {
 		return nil, e
 	}
 
+	// create disks that are not present in the current configuration
+	for prefix, disks := range planStorageDevices {
+		for diskInterface, disk := range disks {
+			if currentStorageDevices[diskInterface] == nil {
+				diskUpdateBody := &vms.UpdateRequestBody{}
+
+				switch prefix {
+				case "virtio":
+					if diskUpdateBody.VirtualIODevices == nil {
+						diskUpdateBody.VirtualIODevices = vms.CustomStorageDevices{}
+					}
+					diskUpdateBody.VirtualIODevices[diskInterface] = disk
+				case "sata":
+					if diskUpdateBody.SATADevices == nil {
+						diskUpdateBody.SATADevices = vms.CustomStorageDevices{}
+					}
+					diskUpdateBody.SATADevices[diskInterface] = disk
+				case "scsi":
+					if diskUpdateBody.SCSIDevices == nil {
+						diskUpdateBody.SCSIDevices = vms.CustomStorageDevices{}
+					}
+					diskUpdateBody.SCSIDevices[diskInterface] = disk
+				}
+
+				e = vmAPI.UpdateVM(ctx, diskUpdateBody)
+				if e != nil {
+					return nil, e
+				}
+			}
+		}
+	}
+
+
+
+
 	disk := d.Get(mkDisk).([]interface{})
 	for i := range disk {
 		diskBlock := disk[i].(map[string]interface{})
+
 		diskInterface := diskBlock[mkDiskInterface].(string)
 		dataStoreID := diskBlock[mkDiskDatastoreID].(string)
 		diskSize := int64(diskBlock[mkDiskSize].(int))
+
 		prefix := diskDigitPrefix(diskInterface)
 
-		currentDiskInfo := allDiskInfo[diskInterface]
-		configuredDiskInfo := diskDeviceObjects[prefix][diskInterface]
+		currentDiskInfo := currentStorageDevices[diskInterface]
+		configuredDiskInfo := planStorageDevices[prefix][diskInterface]
 
 		if currentDiskInfo == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
@@ -235,7 +308,7 @@ func updateDisk1(
 
 		diskResizeBody := &vms.ResizeDiskRequestBody{
 			Disk: diskInterface,
-			Size: types.DiskSizeFromGigabytes(diskSize),
+			Size: *types.DiskSizeFromGigabytes(diskSize),
 		}
 
 		moveDisk := false
@@ -243,8 +316,8 @@ func updateDisk1(
 		if dataStoreID != "" {
 			moveDisk = true
 
-			if allDiskInfo[diskInterface] != nil {
-				fileIDParts := strings.Split(allDiskInfo[diskInterface].FileVolume, ":")
+			if currentStorageDevices[diskInterface] != nil {
+				fileIDParts := strings.Split(currentStorageDevices[diskInterface].FileVolume, ":")
 				moveDisk = dataStoreID != fileIDParts[0]
 			}
 		}
@@ -266,7 +339,7 @@ func updateDisk1(
 		}
 	}
 
-	return allDiskInfo, nil
+	return currentStorageDevices, nil
 }
 
 func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) error {
@@ -430,42 +503,37 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 	return nil
 }
 
-func vmGetDiskDeviceObjects(
+func getStorageDevicesFromResource(d *schema.ResourceData) (map[string]map[string]vms.CustomStorageDevice, error) {
+	return getDiskDeviceObjects1(d, d.Get(mkDisk).([]interface{}))
+}
+
+func getDiskDeviceObjects1(
 	d *schema.ResourceData,
 	disks []interface{},
 ) (map[string]map[string]vms.CustomStorageDevice, error) {
-	var diskDevice []interface{}
-
-	if disks != nil {
-		diskDevice = disks
-	} else {
-		diskDevice = d.Get(mkDisk).([]interface{})
-	}
-
 	diskDeviceObjects := map[string]map[string]vms.CustomStorageDevice{}
 	resource := VM()
 
-	for _, diskEntry := range diskDevice {
+	for _, diskEntry := range disks {
 		diskDevice := vms.CustomStorageDevice{
 			Enabled: true,
 		}
 
 		block := diskEntry.(map[string]interface{})
+		diskInterface, _ := block[mkDiskInterface].(string)
 		datastoreID, _ := block[mkDiskDatastoreID].(string)
-		pathInDatastore := ""
-
-		if untyped, hasPathInDatastore := block[mkDiskPathInDatastore]; hasPathInDatastore {
-			pathInDatastore = untyped.(string)
-		}
-
+		size, _ := block[mkDiskSize].(int)
 		fileFormat, _ := block[mkDiskFileFormat].(string)
 		fileID, _ := block[mkDiskFileID].(string)
-		size, _ := block[mkDiskSize].(int)
-		diskInterface, _ := block[mkDiskInterface].(string)
 		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
 		discard := block[mkDiskDiscard].(string)
 		cache := block[mkDiskCache].(string)
+
+		pathInDatastore := ""
+		if untyped, hasPathInDatastore := block[mkDiskPathInDatastore]; hasPathInDatastore {
+			pathInDatastore = untyped.(string)
+		}
 
 		speedBlock, err := structure.GetSchemaBlock(
 			resource,
@@ -501,8 +569,7 @@ func vmGetDiskDeviceObjects(
 		diskDevice.Interface = &diskInterface
 		diskDevice.Format = &fileFormat
 		diskDevice.FileID = &fileID
-		diskSize := types.DiskSizeFromGigabytes(int64(size))
-		diskDevice.Size = &diskSize
+		diskDevice.Size = types.DiskSizeFromGigabytes(int64(size))
 		diskDevice.IOThread = &ioThread
 		diskDevice.Discard = &discard
 		diskDevice.Cache = &cache
@@ -561,7 +628,7 @@ func readDisk1(ctx context.Context, d *schema.ResourceData,
 ) diag.Diagnostics {
 	currentDiskList := d.Get(mkDisk).([]interface{})
 	diskMap := map[string]interface{}{}
-	diskObjects := getDiskInfo(vmConfig, d)
+	diskObjects := populateFileIDs(mapStorageDevices(vmConfig), d)
 
 	var diags diag.Diagnostics
 
@@ -689,12 +756,12 @@ func updateDisk(d *schema.ResourceData, vmConfig *vms.GetResponseData, updateBod
 		return nil
 	}
 
-	diskDeviceObjects, err := vmGetDiskDeviceObjects(d, nil)
+	diskDeviceObjects, err := getStorageDevicesFromResource(d)
 	if err != nil {
 		return err
 	}
 
-	diskDeviceInfo := getDiskInfo(vmConfig, d)
+	diskDeviceInfo := populateFileIDs(mapStorageDevices(vmConfig), d)
 
 	for prefix, diskMap := range diskDeviceObjects {
 		if diskMap == nil {
@@ -750,4 +817,147 @@ func updateDisk(d *schema.ResourceData, vmConfig *vms.GetResponseData, updateBod
 	}
 
 	return nil
+}
+
+// mapStorageDevices maps the current VM storage devices by their interface names.
+func mapStorageDevices(resp *vms.GetResponseData) map[string]*vms.CustomStorageDevice {
+	storageDevices := map[string]*vms.CustomStorageDevice{}
+
+	fillMap := func(iface string, dev *vms.CustomStorageDevice) {
+		if dev != nil {
+			d := *dev
+
+			if d.Size == nil {
+				d.Size = new(types.DiskSize)
+			}
+
+			d.Interface = &iface
+
+			storageDevices[iface] = &d
+		}
+	}
+
+	fillMap("ide0", resp.IDEDevice0)
+	fillMap("ide1", resp.IDEDevice1)
+	fillMap("ide2", resp.IDEDevice2)
+	fillMap("ide3", resp.IDEDevice3)
+
+	fillMap("sata0", resp.SATADevice0)
+	fillMap("sata1", resp.SATADevice1)
+	fillMap("sata2", resp.SATADevice2)
+	fillMap("sata3", resp.SATADevice3)
+	fillMap("sata4", resp.SATADevice4)
+	fillMap("sata5", resp.SATADevice5)
+
+	fillMap("scsi0", resp.SCSIDevice0)
+	fillMap("scsi1", resp.SCSIDevice1)
+	fillMap("scsi2", resp.SCSIDevice2)
+	fillMap("scsi3", resp.SCSIDevice3)
+	fillMap("scsi4", resp.SCSIDevice4)
+	fillMap("scsi5", resp.SCSIDevice5)
+	fillMap("scsi6", resp.SCSIDevice6)
+	fillMap("scsi7", resp.SCSIDevice7)
+	fillMap("scsi8", resp.SCSIDevice8)
+	fillMap("scsi9", resp.SCSIDevice9)
+	fillMap("scsi10", resp.SCSIDevice10)
+	fillMap("scsi11", resp.SCSIDevice11)
+	fillMap("scsi12", resp.SCSIDevice12)
+	fillMap("scsi13", resp.SCSIDevice13)
+
+	fillMap("virtio0", resp.VirtualIODevice0)
+	fillMap("virtio1", resp.VirtualIODevice1)
+	fillMap("virtio2", resp.VirtualIODevice2)
+	fillMap("virtio3", resp.VirtualIODevice3)
+	fillMap("virtio4", resp.VirtualIODevice4)
+	fillMap("virtio5", resp.VirtualIODevice5)
+	fillMap("virtio6", resp.VirtualIODevice6)
+	fillMap("virtio7", resp.VirtualIODevice7)
+	fillMap("virtio8", resp.VirtualIODevice8)
+	fillMap("virtio9", resp.VirtualIODevice9)
+	fillMap("virtio10", resp.VirtualIODevice10)
+	fillMap("virtio11", resp.VirtualIODevice11)
+	fillMap("virtio12", resp.VirtualIODevice12)
+	fillMap("virtio13", resp.VirtualIODevice13)
+	fillMap("virtio14", resp.VirtualIODevice14)
+	fillMap("virtio15", resp.VirtualIODevice15)
+
+	return storageDevices
+}
+
+// mapStorageDevices maps the current VM storage devices by their interface names.
+func populateFileIDs(devices map[string]*vms.CustomStorageDevice, d *schema.ResourceData) map[string]*vms.CustomStorageDevice {
+	planDisk := d.Get(mkDisk)
+
+	planDiskList := planDisk.([]interface{})
+	planDiskMap := map[string]map[string]interface{}{}
+
+	for _, v := range planDiskList {
+		dm := v.(map[string]interface{})
+		iface := dm[mkDiskInterface].(string)
+
+		planDiskMap[iface] = dm
+	}
+
+	for k, v := range devices {
+		if v != nil && planDiskMap[k] != nil {
+			if planDiskMap[k][mkDiskFileID] != nil {
+				fileID := planDiskMap[k][mkDiskFileID].(string)
+				v.FileID = &fileID
+			}
+		}
+	}
+
+	return devices
+}
+
+// getDiskDatastores returns a list of the used datastores in a VM.
+func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string {
+	storageDevices := populateFileIDs(mapStorageDevices(vm), d)
+	datastoresSet := map[string]int{}
+
+	for _, diskInfo := range storageDevices {
+		// Ignore empty storage devices and storage devices (like ide) which may not have any media mounted
+		if diskInfo == nil || diskInfo.FileVolume == "none" {
+			continue
+		}
+
+		fileIDParts := strings.Split(diskInfo.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
+	if vm.EFIDisk != nil {
+		fileIDParts := strings.Split(vm.EFIDisk.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
+	if vm.TPMState != nil {
+		fileIDParts := strings.Split(vm.TPMState.FileVolume, ":")
+		datastoresSet[fileIDParts[0]] = 1
+	}
+
+	datastores := []string{}
+	for datastore := range datastoresSet {
+		datastores = append(datastores, datastore)
+	}
+
+	return datastores
+}
+
+type customStorageDeviceMap struct {
+	// map of interface type (virtio|sata|scsi|...)  -> map of interface name (virtio1) -> disk object
+	devices map[string]map[string]vms.CustomStorageDevice
+}
+
+func (c *customStorageDeviceMap) byInterfaceType(interfaceType string) []vms.CustomStorageDevice {
+	return maps.Values[map[string]vms.CustomStorageDevice](c.devices[interfaceType])
+}
+
+func (c *customStorageDeviceMap) byInterfaceName(interfaceName string) (*vms.CustomStorageDevice, bool) {
+	for _, devices := range c.devices {
+		if device, ok := devices[interfaceName]; ok {
+			return &device, true
+		}
+	}
+
+	return nil, false
 }
