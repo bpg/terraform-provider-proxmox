@@ -2,7 +2,6 @@ package vm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -17,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"golang.org/x/exp/maps"
 )
 
 const (
@@ -203,143 +201,100 @@ func createDisks(
 	ctx context.Context, vmConfig *vms.GetResponseData, d *schema.ResourceData, vmAPI *vms.Client,
 ) (map[string]*vms.CustomStorageDevice, error) {
 	// this is what VM has at the moment: map of interface name (virtio1) -> disk object
-	currentStorageDevices := populateFileIDs(mapStorageDevices(vmConfig), d)
+	currentDisks := populateFileIDs(mapStorageDevices(vmConfig), d)
 
-	// map of interface type (virtio|sata|scsi|...)  -> map of interface name (virtio1) -> disk object
-	planStorageDevices, e := getStorageDevicesFromResource(d)
+	// map of interface name (virtio1) -> disk object
+	planDisks, e := getStorageDevicesFromResource(d)
 	if e != nil {
 		return nil, e
 	}
 
-	// create disks that are not present in the current configuration
-	for prefix, disks := range planStorageDevices {
-		for diskInterface, disk := range disks {
-			if currentStorageDevices[diskInterface] == nil {
-				diskUpdateBody := &vms.UpdateRequestBody{}
+	for diskInterface, planDisk := range planDisks {
+		currentDisk := currentDisks[diskInterface]
+		if currentDisk == nil {
+			// create disks that are not present in the current configuration
+			err := createDisk(ctx, planDisk, vmAPI)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			// disk is present, i.e. when cloned a template, but we need to check if it needs to be resized
+			if planDisk.Size.InGigabytes() < currentDisk.Size.InGigabytes() {
+				return nil, fmt.Errorf("disk resize fails requests size (%dG) is lower than current size (%s)",
+					planDisk.Size.InGigabytes(),
+					*currentDisk.Size,
+				)
+			}
 
-				switch prefix {
-				case "virtio":
-					if diskUpdateBody.VirtualIODevices == nil {
-						diskUpdateBody.VirtualIODevices = vms.CustomStorageDevices{}
-					}
-					diskUpdateBody.VirtualIODevices[diskInterface] = disk
-				case "sata":
-					if diskUpdateBody.SATADevices == nil {
-						diskUpdateBody.SATADevices = vms.CustomStorageDevices{}
-					}
-					diskUpdateBody.SATADevices[diskInterface] = disk
-				case "scsi":
-					if diskUpdateBody.SCSIDevices == nil {
-						diskUpdateBody.SCSIDevices = vms.CustomStorageDevices{}
-					}
-					diskUpdateBody.SCSIDevices[diskInterface] = disk
+			moveDisk := false
+			if *planDisk.ID != "" {
+				fileIDParts := strings.Split(currentDisk.FileVolume, ":")
+				moveDisk = *planDisk.ID != fileIDParts[0]
+			}
+
+			if moveDisk {
+				moveDiskTimeout := d.Get(mkTimeoutMoveDisk).(int)
+				deleteOriginalDisk := types.CustomBool(true)
+
+				diskMoveBody := &vms.MoveDiskRequestBody{
+					DeleteOriginalDisk: &deleteOriginalDisk,
+					Disk:               diskInterface,
+					TargetStorage:      *planDisk.ID,
 				}
 
-				e = vmAPI.UpdateVM(ctx, diskUpdateBody)
-				if e != nil {
-					return nil, e
+				err := vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			if planDisk.Size.InGigabytes() > currentDisk.Size.InGigabytes() {
+				moveDiskTimeout := d.Get(mkTimeoutMoveDisk).(int)
+
+				diskResizeBody := &vms.ResizeDiskRequestBody{
+					Disk: diskInterface,
+					Size: *types.DiskSizeFromGigabytes(planDisk.Size.InGigabytes()),
+				}
+
+				err := vmAPI.ResizeVMDisk(ctx, diskResizeBody, moveDiskTimeout)
+				if err != nil {
+					return nil, err
 				}
 			}
 		}
 	}
 
+	return currentDisks, nil
+}
 
-
-
-	disk := d.Get(mkDisk).([]interface{})
-	for i := range disk {
-		diskBlock := disk[i].(map[string]interface{})
-
-		diskInterface := diskBlock[mkDiskInterface].(string)
-		dataStoreID := diskBlock[mkDiskDatastoreID].(string)
-		diskSize := int64(diskBlock[mkDiskSize].(int))
-
-		prefix := diskDigitPrefix(diskInterface)
-
-		currentDiskInfo := currentStorageDevices[diskInterface]
-		configuredDiskInfo := planStorageDevices[prefix][diskInterface]
-
-		if currentDiskInfo == nil {
-			diskUpdateBody := &vms.UpdateRequestBody{}
-
-			switch prefix {
-			case "virtio":
-				if diskUpdateBody.VirtualIODevices == nil {
-					diskUpdateBody.VirtualIODevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.VirtualIODevices[diskInterface] = configuredDiskInfo
-			case "sata":
-				if diskUpdateBody.SATADevices == nil {
-					diskUpdateBody.SATADevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.SATADevices[diskInterface] = configuredDiskInfo
-			case "scsi":
-				if diskUpdateBody.SCSIDevices == nil {
-					diskUpdateBody.SCSIDevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.SCSIDevices[diskInterface] = configuredDiskInfo
-			}
-
-			e = vmAPI.UpdateVM(ctx, diskUpdateBody)
-			if e != nil {
-				return nil, e
-			}
-
-			continue
+func createDisk(ctx context.Context, disk *vms.CustomStorageDevice, vmAPI *vms.Client) error {
+	addToDevices := func(ds vms.CustomStorageDevices, disk *vms.CustomStorageDevice) vms.CustomStorageDevices {
+		if ds == nil {
+			ds = vms.CustomStorageDevices{}
 		}
 
-		if diskSize < currentDiskInfo.Size.InGigabytes() {
-			return nil, fmt.Errorf("disk resize fails requests size (%dG) is lower than current size (%s)",
-				diskSize,
-				*currentDiskInfo.Size,
-			)
-		}
+		ds[*disk.Interface] = disk
 
-		deleteOriginalDisk := types.CustomBool(true)
-
-		diskMoveBody := &vms.MoveDiskRequestBody{
-			DeleteOriginalDisk: &deleteOriginalDisk,
-			Disk:               diskInterface,
-			TargetStorage:      dataStoreID,
-		}
-
-		diskResizeBody := &vms.ResizeDiskRequestBody{
-			Disk: diskInterface,
-			Size: *types.DiskSizeFromGigabytes(diskSize),
-		}
-
-		moveDisk := false
-
-		if dataStoreID != "" {
-			moveDisk = true
-
-			if currentStorageDevices[diskInterface] != nil {
-				fileIDParts := strings.Split(currentStorageDevices[diskInterface].FileVolume, ":")
-				moveDisk = dataStoreID != fileIDParts[0]
-			}
-		}
-
-		if moveDisk {
-			moveDiskTimeout := d.Get(mkTimeoutMoveDisk).(int)
-
-			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
-			if e != nil {
-				return nil, e
-			}
-		}
-
-		if diskSize > currentDiskInfo.Size.InGigabytes() {
-			e = vmAPI.ResizeVMDisk(ctx, diskResizeBody)
-			if e != nil {
-				return nil, e
-			}
-		}
+		return ds
 	}
 
-	return currentStorageDevices, nil
+	diskUpdateBody := &vms.UpdateRequestBody{}
+
+	switch disk.StorageInterface() {
+	case "virtio":
+		diskUpdateBody.VirtualIODevices = addToDevices(diskUpdateBody.VirtualIODevices, disk)
+	case "sata":
+		diskUpdateBody.SATADevices = addToDevices(diskUpdateBody.SATADevices, disk)
+	case "scsi":
+		diskUpdateBody.SCSIDevices = addToDevices(diskUpdateBody.SCSIDevices, disk)
+	}
+
+	err := vmAPI.UpdateVM(ctx, diskUpdateBody)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) error {
@@ -503,15 +458,12 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 	return nil
 }
 
-func getStorageDevicesFromResource(d *schema.ResourceData) (map[string]map[string]vms.CustomStorageDevice, error) {
+func getStorageDevicesFromResource(d *schema.ResourceData) (vms.CustomStorageDevices, error) {
 	return getDiskDeviceObjects1(d, d.Get(mkDisk).([]interface{}))
 }
 
-func getDiskDeviceObjects1(
-	d *schema.ResourceData,
-	disks []interface{},
-) (map[string]map[string]vms.CustomStorageDevice, error) {
-	diskDeviceObjects := map[string]map[string]vms.CustomStorageDevice{}
+func getDiskDeviceObjects1(d *schema.ResourceData, disks []interface{}) (vms.CustomStorageDevices, error) {
+	diskDeviceObjects := vms.CustomStorageDevices{}
 	resource := VM()
 
 	for _, diskEntry := range disks {
@@ -601,23 +553,16 @@ func getDiskDeviceObjects1(
 			}
 		}
 
-		baseDiskInterface := diskDigitPrefix(diskInterface)
+		storageInterface := diskDevice.StorageInterface()
 
-		if baseDiskInterface != "virtio" && baseDiskInterface != "scsi" &&
-			baseDiskInterface != "sata" {
-			errorMsg := fmt.Sprintf(
-				"Defined disk interface not supported. Interface was %s, but only virtio, sata and scsi are supported",
+		if storageInterface != "virtio" && storageInterface != "scsi" && storageInterface != "sata" {
+			return diskDeviceObjects, fmt.Errorf(
+				"Defined disk interface not supported. Interface was '%s', but only 'virtio', 'sata' and 'scsi' are supported",
 				diskInterface,
 			)
-
-			return diskDeviceObjects, errors.New(errorMsg)
 		}
 
-		if _, present := diskDeviceObjects[baseDiskInterface]; !present {
-			diskDeviceObjects[baseDiskInterface] = map[string]vms.CustomStorageDevice{}
-		}
-
-		diskDeviceObjects[baseDiskInterface][diskInterface] = diskDevice
+		diskDeviceObjects[diskInterface] = &diskDevice
 	}
 
 	return diskDeviceObjects, nil
@@ -756,63 +701,53 @@ func updateDisk(d *schema.ResourceData, vmConfig *vms.GetResponseData, updateBod
 		return nil
 	}
 
-	diskDeviceObjects, err := getStorageDevicesFromResource(d)
+	currentDisks := populateFileIDs(mapStorageDevices(vmConfig), d)
+
+	planDisks, err := getStorageDevicesFromResource(d)
 	if err != nil {
 		return err
 	}
 
-	diskDeviceInfo := populateFileIDs(mapStorageDevices(vmConfig), d)
-
-	for prefix, diskMap := range diskDeviceObjects {
-		if diskMap == nil {
-			continue
+	addToDevices := func(ds vms.CustomStorageDevices, disk *vms.CustomStorageDevice) vms.CustomStorageDevices {
+		if ds == nil {
+			ds = vms.CustomStorageDevices{}
 		}
 
-		for key, value := range diskMap {
-			if diskDeviceInfo[key] == nil {
-				// TODO: create a new disk here
-				return fmt.Errorf("missing %s device %s", prefix, key)
+		ds[*disk.Interface] = disk
+
+		return ds
+	}
+
+	for diskInterface, disk := range planDisks {
+		if currentDisks[diskInterface] == nil {
+			// TODO: create a new disk here
+			return fmt.Errorf("missing device %s", diskInterface)
+		}
+
+		// copy the current disk and update the fields
+		tmp := *currentDisks[diskInterface]
+		tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
+		tmp.BurstableWriteSpeedMbps = disk.BurstableWriteSpeedMbps
+		tmp.MaxReadSpeedMbps = disk.MaxReadSpeedMbps
+		tmp.MaxWriteSpeedMbps = disk.MaxWriteSpeedMbps
+		tmp.Cache = disk.Cache
+		tmp.Discard = disk.Discard
+		tmp.IOThread = disk.IOThread
+		tmp.SSD = disk.SSD
+
+		switch disk.StorageInterface() {
+		case "virtio":
+			updateBody.VirtualIODevices = addToDevices(updateBody.VirtualIODevices, &tmp)
+		case "sata":
+			updateBody.SATADevices = addToDevices(updateBody.SATADevices, &tmp)
+		case "scsi":
+			updateBody.SCSIDevices = addToDevices(updateBody.SCSIDevices, &tmp)
+		case "ide":
+			{
+				// Investigate whether to support IDE mapping.
 			}
-
-			tmp := *diskDeviceInfo[key]
-			tmp.BurstableReadSpeedMbps = value.BurstableReadSpeedMbps
-			tmp.BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
-			tmp.MaxReadSpeedMbps = value.MaxReadSpeedMbps
-			tmp.MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
-			tmp.Cache = value.Cache
-
-			switch prefix {
-			case "virtio":
-				{
-					if updateBody.VirtualIODevices == nil {
-						updateBody.VirtualIODevices = vms.CustomStorageDevices{}
-					}
-
-					updateBody.VirtualIODevices[key] = tmp
-				}
-			case "sata":
-				{
-					if updateBody.SATADevices == nil {
-						updateBody.SATADevices = vms.CustomStorageDevices{}
-					}
-
-					updateBody.SATADevices[key] = tmp
-				}
-			case "scsi":
-				{
-					if updateBody.SCSIDevices == nil {
-						updateBody.SCSIDevices = vms.CustomStorageDevices{}
-					}
-
-					updateBody.SCSIDevices[key] = tmp
-				}
-			case "ide":
-				{
-					// Investigate whether to support IDE mapping.
-				}
-			default:
-				return fmt.Errorf("device prefix %s not supported", prefix)
-			}
+		default:
+			return fmt.Errorf("device storage interface %s not supported", disk.StorageInterface())
 		}
 	}
 
@@ -941,23 +876,4 @@ func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string
 	}
 
 	return datastores
-}
-
-type customStorageDeviceMap struct {
-	// map of interface type (virtio|sata|scsi|...)  -> map of interface name (virtio1) -> disk object
-	devices map[string]map[string]vms.CustomStorageDevice
-}
-
-func (c *customStorageDeviceMap) byInterfaceType(interfaceType string) []vms.CustomStorageDevice {
-	return maps.Values[map[string]vms.CustomStorageDevice](c.devices[interfaceType])
-}
-
-func (c *customStorageDeviceMap) byInterfaceName(interfaceName string) (*vms.CustomStorageDevice, bool) {
-	for _, devices := range c.devices {
-		if device, ok := devices[interfaceName]; ok {
-			return &device, true
-		}
-	}
-
-	return nil, false
 }

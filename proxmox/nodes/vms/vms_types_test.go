@@ -120,6 +120,102 @@ func TestCustomStorageDevice_IsCloudInitDrive(t *testing.T) {
 	}
 }
 
+func TestCustomStorageDevice_StorageInterface(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		device CustomStorageDevice
+		want   string
+	}{
+		{
+			name: "virtio0",
+			device: CustomStorageDevice{
+				Interface: types.StrPtr("virtio0"),
+			},
+			want: "virtio",
+		}, {
+			name: "scsi13",
+			device: CustomStorageDevice{
+				Interface: types.StrPtr("scsi13"),
+			},
+			want: "scsi",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := tt.device.StorageInterface()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		iface   string
+		devices CustomStorageDevices
+		want    CustomStorageDevices
+	}{
+		{
+			name:    "empty",
+			iface:   "virtio",
+			devices: CustomStorageDevices{},
+			want:    CustomStorageDevices{},
+		},
+		{
+			name:  "not in the list",
+			iface: "sata",
+			devices: CustomStorageDevices{
+				"virtio0": CustomStorageDevice{
+					Interface: types.StrPtr("virtio0"),
+				},
+				"scsi13": CustomStorageDevice{
+					Interface: types.StrPtr("scsi13"),
+				},
+			},
+			want: CustomStorageDevices{},
+		},
+		{
+			name:  "not in the list",
+			iface: "virtio",
+			devices: CustomStorageDevices{
+				"virtio0": CustomStorageDevice{
+					Interface: types.StrPtr("virtio0"),
+				},
+				"scsi13": CustomStorageDevice{
+					Interface: types.StrPtr("scsi13"),
+				},
+				"virtio1": CustomStorageDevice{
+					Interface: types.StrPtr("virtio1"),
+				},
+			},
+			want: CustomStorageDevices{
+				"virtio0": CustomStorageDevice{
+					Interface: types.StrPtr("virtio0"),
+				},
+				"virtio1": CustomStorageDevice{
+					Interface: types.StrPtr("virtio1"),
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := tt.devices.ByStorageInterface(tt.iface)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 

@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -357,16 +356,16 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(cdrom) > 0 || len(initialization) > 0 {
 		ideDevices = vms.CustomStorageDevices{
-			"ide0": vms.CustomStorageDevice{
+			"ide0": &vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide1": vms.CustomStorageDevice{
+			"ide1": &vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide2": vms.CustomStorageDevice{
+			"ide2": &vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide3": vms.CustomStorageDevice{
+			"ide3": &vms.CustomStorageDevice{
 				Enabled: false,
 			},
 		}
@@ -385,7 +384,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		cdromMedia := "cdrom"
 
-		ideDevices[cdromInterface] = vms.CustomStorageDevice{
+		ideDevices[cdromInterface] = &vms.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
@@ -458,7 +457,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
-		ideDevices[initializationInterface] = vms.CustomStorageDevice{
+		ideDevices[initializationInterface] = &vms.CustomStorageDevice{
 			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &cdromCloudInitMedia,
@@ -784,11 +783,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	description := d.Get(mkDescription).(string)
 
-	diskDeviceObjects, err := getStorageDevicesFromResource(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	var efiDisk *vms.CustomEFIDisk
 
 	efiDiskBlock := d.Get(mkEFIDisk).([]interface{})
@@ -830,11 +824,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			Version:    &version,
 		}
 	}
-
-	virtioDeviceObjects := diskDeviceObjects["virtio"]
-	scsiDeviceObjects := diskDeviceObjects["scsi"]
-	// ideDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "ide")
-	sataDeviceObjects := diskDeviceObjects["sata"]
 
 	initializationConfig := vmGetCloudInitConfig(d)
 
@@ -935,19 +924,25 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		bootOrderConverted = []string{cdromInterface}
 	}
 
+	planDisks, err := getStorageDevicesFromResource(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	bootOrder := d.Get(mkBootOrder).([]interface{})
-	//nolint:nestif
 	if len(bootOrder) == 0 {
-		if sataDeviceObjects != nil {
-			bootOrderConverted = append(bootOrderConverted, "sata0")
-		}
+		for _, disk := range planDisks {
+			if *disk.Interface == "sata0" {
+				bootOrderConverted = append(bootOrderConverted, "sata0")
+			}
 
-		if scsiDeviceObjects != nil {
-			bootOrderConverted = append(bootOrderConverted, "scsi0")
-		}
+			if *disk.Interface == "scsi0" {
+				bootOrderConverted = append(bootOrderConverted, "scsi0")
+			}
 
-		if virtioDeviceObjects != nil {
-			bootOrderConverted = append(bootOrderConverted, "virtio0")
+			if *disk.Interface == "virtio0" {
+				bootOrderConverted = append(bootOrderConverted, "virtio0")
+			}
 		}
 
 		if networkDeviceObjects != nil {
@@ -967,12 +962,12 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	ideDevice2Media := "cdrom"
 	ideDevices := vms.CustomStorageDevices{
-		cdromCloudInitInterface: vms.CustomStorageDevice{
+		cdromCloudInitInterface: &vms.CustomStorageDevice{
 			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
 		},
-		cdromInterface: vms.CustomStorageDevice{
+		cdromInterface: &vms.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &ideDevice2Media,
@@ -1028,15 +1023,18 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		VMID:                &vmID,
 	}
 
-	if sataDeviceObjects != nil {
+	sataDeviceObjects := planDisks.ByStorageInterface("sata")
+	if len(sataDeviceObjects) > 0 {
 		createBody.SATADevices = sataDeviceObjects
 	}
 
-	if scsiDeviceObjects != nil {
+	scsiDeviceObjects := planDisks.ByStorageInterface("scsi")
+	if len(scsiDeviceObjects) > 0 {
 		createBody.SCSIDevices = scsiDeviceObjects
 	}
 
-	if virtioDeviceObjects != nil {
+	virtioDeviceObjects := planDisks.ByStorageInterface("virtio")
+	if len(virtioDeviceObjects) > 0 {
 		createBody.VirtualIODevices = virtioDeviceObjects
 	}
 
@@ -3266,16 +3264,16 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	updateBody := &vms.UpdateRequestBody{
 		IDEDevices: vms.CustomStorageDevices{
-			"ide0": vms.CustomStorageDevice{
+			"ide0": &vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide1": vms.CustomStorageDevice{
+			"ide1": &vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide2": vms.CustomStorageDevice{
+			"ide2": &vms.CustomStorageDevice{
 				Enabled: false,
 			},
-			"ide3": vms.CustomStorageDevice{
+			"ide3": &vms.CustomStorageDevice{
 				Enabled: false,
 			},
 		},
@@ -3462,7 +3460,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		cdromMedia := "cdrom"
 
-		updateBody.IDEDevices[cdromInterface] = vms.CustomStorageDevice{
+		updateBody.IDEDevices[cdromInterface] = &vms.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
@@ -3609,7 +3607,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				fileVolume = ideDevice.FileVolume
 			}
 
-			updateBody.IDEDevices[initializationInterface] = vms.CustomStorageDevice{
+			updateBody.IDEDevices[initializationInterface] = &vms.CustomStorageDevice{
 				Enabled:    true,
 				FileVolume: fileVolume,
 				Media:      &cdromMedia,
@@ -3854,13 +3852,11 @@ func vmUpdateDiskLocationAndSize(
 			}
 
 			if oldEfiDisk != nil {
-				baseDiskInterface := diskDigitPrefix(*oldEfiDisk.Interface)
-				diskOldEntries[baseDiskInterface][*oldEfiDisk.Interface] = *oldEfiDisk
+				diskOldEntries[*oldEfiDisk.Interface] = oldEfiDisk
 			}
 
 			if newEfiDisk != nil {
-				baseDiskInterface := diskDigitPrefix(*newEfiDisk.Interface)
-				diskNewEntries[baseDiskInterface][*newEfiDisk.Interface] = *newEfiDisk
+				diskNewEntries[*newEfiDisk.Interface] = newEfiDisk
 			}
 
 			if oldEfiDisk != nil && newEfiDisk != nil && oldEfiDisk.Size != newEfiDisk.Size {
@@ -3878,13 +3874,11 @@ func vmUpdateDiskLocationAndSize(
 			newTPMState := vmGetTPMStateAsStorageDevice(d, diskNew.([]interface{}))
 
 			if oldTPMState != nil {
-				baseDiskInterface := diskDigitPrefix(*oldTPMState.Interface)
-				diskOldEntries[baseDiskInterface][*oldTPMState.Interface] = *oldTPMState
+				diskOldEntries[*oldTPMState.Interface] = oldTPMState
 			}
 
 			if newTPMState != nil {
-				baseDiskInterface := diskDigitPrefix(*newTPMState.Interface)
-				diskNewEntries[baseDiskInterface][*newTPMState.Interface] = *newTPMState
+				diskNewEntries[*newTPMState.Interface] = newTPMState
 			}
 
 			if oldTPMState != nil && newTPMState != nil && oldTPMState.Size != newTPMState.Size {
@@ -3894,64 +3888,64 @@ func vmUpdateDiskLocationAndSize(
 			}
 		}
 
+		// TODO: move to disks.go
+
 		var diskMoveBodies []*vms.MoveDiskRequestBody
 
 		var diskResizeBodies []*vms.ResizeDiskRequestBody
 
 		shutdownForDisksRequired := false
 
-		for prefix, diskMap := range diskOldEntries {
-			for oldKey, oldDisk := range diskMap {
-				if _, present := diskNewEntries[prefix][oldKey]; !present {
+		for oldKey, oldDisk := range diskOldEntries {
+			if _, present := diskNewEntries[oldKey]; !present {
+				return diag.Errorf(
+					"deletion of disks not supported. Please delete disk by hand. Old Interface was %s",
+					*oldDisk.Interface,
+				)
+			}
+
+			if *oldDisk.ID != *diskNewEntries[oldKey].ID {
+				if oldDisk.IsOwnedBy(vmID) {
+					deleteOriginalDisk := types.CustomBool(true)
+
+					diskMoveBodies = append(
+						diskMoveBodies,
+						&vms.MoveDiskRequestBody{
+							DeleteOriginalDisk: &deleteOriginalDisk,
+							Disk:               *oldDisk.Interface,
+							TargetStorage:      *diskNewEntries[oldKey].ID,
+						},
+					)
+
+					// Cannot be done while VM is running.
+					shutdownForDisksRequired = true
+				} else {
 					return diag.Errorf(
-						"deletion of disks not supported. Please delete disk by hand. Old Interface was %s",
-						*oldDisk.Interface,
+						"Cannot move %s:%s to datastore %s in VM %d configuration, it is not owned by this VM!",
+						*oldDisk.ID,
+						*oldDisk.PathInDatastore(),
+						*diskNewEntries[oldKey].ID,
+						vmID,
 					)
 				}
+			}
 
-				if *oldDisk.ID != *diskNewEntries[prefix][oldKey].ID {
-					if oldDisk.IsOwnedBy(vmID) {
-						deleteOriginalDisk := types.CustomBool(true)
-
-						diskMoveBodies = append(
-							diskMoveBodies,
-							&vms.MoveDiskRequestBody{
-								DeleteOriginalDisk: &deleteOriginalDisk,
-								Disk:               *oldDisk.Interface,
-								TargetStorage:      *diskNewEntries[prefix][oldKey].ID,
-							},
-						)
-
-						// Cannot be done while VM is running.
-						shutdownForDisksRequired = true
-					} else {
-						return diag.Errorf(
-							"Cannot move %s:%s to datastore %s in VM %d configuration, it is not owned by this VM!",
-							*oldDisk.ID,
-							*oldDisk.PathInDatastore(),
-							*diskNewEntries[prefix][oldKey].ID,
-							vmID,
-						)
-					}
-				}
-
-				if *oldDisk.Size < *diskNewEntries[prefix][oldKey].Size {
-					if oldDisk.IsOwnedBy(vmID) {
-						diskResizeBodies = append(
-							diskResizeBodies,
-							&vms.ResizeDiskRequestBody{
-								Disk: *oldDisk.Interface,
-								Size: *diskNewEntries[prefix][oldKey].Size,
-							},
-						)
-					} else {
-						return diag.Errorf(
-							"Cannot resize %s:%s in VM %d configuration, it is not owned by this VM!",
-							*oldDisk.ID,
-							*oldDisk.PathInDatastore(),
-							vmID,
-						)
-					}
+			if *oldDisk.Size < *diskNewEntries[oldKey].Size {
+				if oldDisk.IsOwnedBy(vmID) {
+					diskResizeBodies = append(
+						diskResizeBodies,
+						&vms.ResizeDiskRequestBody{
+							Disk: *oldDisk.Interface,
+							Size: *diskNewEntries[oldKey].Size,
+						},
+					)
+				} else {
+					return diag.Errorf(
+						"Cannot resize %s:%s in VM %d configuration, it is not owned by this VM!",
+						*oldDisk.ID,
+						*oldDisk.PathInDatastore(),
+						vmID,
+					)
 				}
 			}
 		}
@@ -3972,7 +3966,9 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		for _, reqBody := range diskResizeBodies {
-			err = vmAPI.ResizeVMDisk(ctx, reqBody)
+			moveDiskTimeout := d.Get(mkTimeoutMoveDisk).(int)
+
+			err = vmAPI.ResizeVMDisk(ctx, reqBody, moveDiskTimeout)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -4073,16 +4069,6 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	d.SetId("")
 
 	return nil
-}
-
-func diskDigitPrefix(s string) string {
-	for i, r := range s {
-		if unicode.IsDigit(r) {
-			return s[:i]
-		}
-	}
-
-	return s
 }
 
 func getPCIInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomPCIDevice {

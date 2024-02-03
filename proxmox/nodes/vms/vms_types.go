@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -242,8 +243,32 @@ func (d CustomStorageDevice) IsCloudInitDrive(vmID int) bool {
 		strings.Contains(d.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID))
 }
 
-// CustomStorageDevices handles QEMU SATA device parameters.
-type CustomStorageDevices map[string]CustomStorageDevice
+// StorageInterface returns the storage interface of the CustomStorageDevice, e.g. "virtio" or "scsi" for "virtio0" or "scsi2".
+func (d CustomStorageDevice) StorageInterface() string {
+	for i, r := range *d.Interface {
+		if unicode.IsDigit(r) {
+			return (*d.Interface)[:i]
+		}
+	}
+
+	panic(fmt.Sprintf("cannot determine storage interface for disk interface '%s'", *d.Interface))
+}
+
+// CustomStorageDevices handles map of QEMU storage device per disk interface.
+type CustomStorageDevices map[string]*CustomStorageDevice
+
+// ByStorageInterface returns a map of CustomStorageDevices filtered by the given storage interface.
+func (d CustomStorageDevices) ByStorageInterface(storageInterface string) CustomStorageDevices {
+	result := make(CustomStorageDevices)
+
+	for k, v := range d {
+		if v.StorageInterface() == storageInterface {
+			result[k] = v
+		}
+	}
+
+	return result
+}
 
 // CustomTPMState handles QEMU TPM state parameters.
 type CustomTPMState struct {
