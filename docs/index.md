@@ -163,7 +163,9 @@ You can configure the `sudo` privilege for the user via the command line on the 
   Add the following line to the end of the file:
 
     ```sh
-    terraform ALL=(ALL) NOPASSWD:ALL
+    terraform ALL=(root) NOPASSWD: /sbin/pvesm
+    terraform ALL=(root) NOPASSWD: /sbin/qm
+    terraform ALL=(root) NOPASSWD: /usr/bin/echo tfpve
     ```
 
   Save the file and exit.
@@ -177,10 +179,10 @@ You can configure the `sudo` privilege for the user via the command line on the 
 - Test the SSH connection and password-less `sudo`:
   
     ```sh
-    ssh terraform@<target-node> sudo ls -la /root
+    ssh terraform@<target-node> sudo echo tfpve
     ```
 
-  You should be able to connect to the target node and see content of the `/root` folder without password.
+  You should be able to connect to the target node and see the output `tfpve` on the screen without being prompted for your password.
 
 ### Node IP address used for SSH connection
 
