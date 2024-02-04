@@ -172,10 +172,10 @@ func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
 			name:  "not in the list",
 			iface: "sata",
 			devices: CustomStorageDevices{
-				"virtio0": CustomStorageDevice{
+				"virtio0": &CustomStorageDevice{
 					Interface: types.StrPtr("virtio0"),
 				},
-				"scsi13": CustomStorageDevice{
+				"scsi13": &CustomStorageDevice{
 					Interface: types.StrPtr("scsi13"),
 				},
 			},
@@ -185,21 +185,21 @@ func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
 			name:  "not in the list",
 			iface: "virtio",
 			devices: CustomStorageDevices{
-				"virtio0": CustomStorageDevice{
+				"virtio0": &CustomStorageDevice{
 					Interface: types.StrPtr("virtio0"),
 				},
-				"scsi13": CustomStorageDevice{
+				"scsi13": &CustomStorageDevice{
 					Interface: types.StrPtr("scsi13"),
 				},
-				"virtio1": CustomStorageDevice{
+				"virtio1": &CustomStorageDevice{
 					Interface: types.StrPtr("virtio1"),
 				},
 			},
 			want: CustomStorageDevices{
-				"virtio0": CustomStorageDevice{
+				"virtio0": &CustomStorageDevice{
 					Interface: types.StrPtr("virtio0"),
 				},
-				"virtio1": CustomStorageDevice{
+				"virtio1": &CustomStorageDevice{
 					Interface: types.StrPtr("virtio1"),
 				},
 			},

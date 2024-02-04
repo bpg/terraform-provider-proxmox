@@ -251,7 +251,8 @@ func (d CustomStorageDevice) StorageInterface() string {
 		}
 	}
 
-	panic(fmt.Sprintf("cannot determine storage interface for disk interface '%s'", *d.Interface))
+	// panic(fmt.Sprintf("cannot determine storage interface for disk interface '%s'", *d.Interface))
+	return ""
 }
 
 // CustomStorageDevices handles map of QEMU storage device per disk interface.
@@ -1245,11 +1246,9 @@ func (r CustomStartupOrder) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomStorageDevice struct to a URL vlaue.
-func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
-	values := []string{
-		fmt.Sprintf("file=%s", d.FileVolume),
-	}
+// EncodeOptions converts a CustomStorageDevice's common options a URL vlaue.
+func (d CustomStorageDevice) EncodeOptions() string {
+	values := []string{}
 
 	if d.AIO != nil {
 		values = append(values, fmt.Sprintf("aio=%s", *d.AIO))
@@ -1261,34 +1260,6 @@ func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 		} else {
 			values = append(values, "backup=0")
 		}
-	}
-
-	if d.BurstableReadSpeedMbps != nil {
-		values = append(values, fmt.Sprintf("mbps_rd_max=%d", *d.BurstableReadSpeedMbps))
-	}
-
-	if d.BurstableWriteSpeedMbps != nil {
-		values = append(values, fmt.Sprintf("mbps_wr_max=%d", *d.BurstableWriteSpeedMbps))
-	}
-
-	if d.Format != nil {
-		values = append(values, fmt.Sprintf("format=%s", *d.Format))
-	}
-
-	if d.MaxReadSpeedMbps != nil {
-		values = append(values, fmt.Sprintf("mbps_rd=%d", *d.MaxReadSpeedMbps))
-	}
-
-	if d.MaxWriteSpeedMbps != nil {
-		values = append(values, fmt.Sprintf("mbps_wr=%d", *d.MaxWriteSpeedMbps))
-	}
-
-	if d.Media != nil {
-		values = append(values, fmt.Sprintf("media=%s", *d.Media))
-	}
-
-	if d.Size != nil {
-		values = append(values, fmt.Sprintf("size=%s", *d.Size))
 	}
 
 	if d.IOThread != nil {
@@ -1314,6 +1285,45 @@ func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 	if d.Cache != nil && *d.Cache != "" {
 		values = append(values, fmt.Sprintf("cache=%s", *d.Cache))
 	}
+
+	if d.BurstableReadSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_rd_max=%d", *d.BurstableReadSpeedMbps))
+	}
+
+	if d.BurstableWriteSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_wr_max=%d", *d.BurstableWriteSpeedMbps))
+	}
+
+	if d.MaxReadSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_rd=%d", *d.MaxReadSpeedMbps))
+	}
+
+	if d.MaxWriteSpeedMbps != nil {
+		values = append(values, fmt.Sprintf("mbps_wr=%d", *d.MaxWriteSpeedMbps))
+	}
+
+	return strings.Join(values, ",")
+}
+
+// EncodeValues converts a CustomStorageDevice struct to a URL vlaue.
+func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
+	values := []string{
+		fmt.Sprintf("file=%s", d.FileVolume),
+	}
+
+	if d.Format != nil {
+		values = append(values, fmt.Sprintf("format=%s", *d.Format))
+	}
+
+	if d.Media != nil {
+		values = append(values, fmt.Sprintf("media=%s", *d.Media))
+	}
+
+	if d.Size != nil {
+		values = append(values, fmt.Sprintf("size=%s", *d.Size))
+	}
+
+	values = append(values, d.EncodeOptions())
 
 	v.Add(key, strings.Join(values, ","))
 

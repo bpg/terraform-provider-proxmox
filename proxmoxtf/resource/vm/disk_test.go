@@ -57,7 +57,7 @@ func TestPopulateFileID(t *testing.T) {
 	err := d.Set("disk", disk)
 	require.NoError(t, err)
 
-	expected := map[string]*vms.CustomStorageDevice{
+	expected := vms.CustomStorageDevices{
 		"virtio0": {
 			FileID: types.StrPtr("local:100/vm-100-disk-1.qcow2"),
 		},

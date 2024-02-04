@@ -981,6 +981,7 @@ func VM() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The MAC addresses for the network interfaces",
 				Computed:    true,
+				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			mkMemory: {

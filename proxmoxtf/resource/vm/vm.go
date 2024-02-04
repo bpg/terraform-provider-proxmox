@@ -115,7 +115,7 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 		})
 	}
 
-	return append(diags, diag.FromErr(vmAPI.WaitForVMState(ctx, "running", startVMTimeout, 1))...)
+	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "running", startVMTimeout, 1))...)
 }
 
 // Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if
@@ -134,7 +134,7 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 		return diag.FromErr(e)
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMState(ctx, "stopped", shutdownTimeout, 1))
+	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped", shutdownTimeout, 1))
 }
 
 // Forcefully stop the VM, then wait for it to actually stop.
@@ -148,7 +148,7 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 		return diag.FromErr(e)
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMState(ctx, "stopped", stopTimeout, 1))
+	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped", stopTimeout, 1))
 }
 
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -1091,7 +1091,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	d.SetId(strconv.Itoa(vmID))
 
-	err = vmCreateCustomDisks(ctx, d, m)
+	err = vmImportCustomDisks(ctx, d, m)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2625,26 +2625,23 @@ func vmReadCustom(
 		networkDeviceList[ni] = networkDevice
 	}
 
-	if len(clone) > 0 {
-		if len(currentNetworkDeviceList) > 0 {
-			err := d.Set(
-				mkMACAddresses,
-				macAddresses[0:len(currentNetworkDeviceList)],
-			)
-			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(
-				mkNetworkDevice,
-				networkDeviceList[:networkDeviceLast+1],
-			)
-			diags = append(diags, diag.FromErr(err)...)
-		}
+	if len(currentNetworkDeviceList) == 0 {
+		err := d.Set(mkMACAddresses, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
+		err = d.Set(mkNetworkDevice, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
 	} else {
 		err := d.Set(mkMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
 		diags = append(diags, diag.FromErr(err)...)
 
-		if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-			err := d.Set(mkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+		if len(clone) > 0 {
+			err = d.Set(mkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
 			diags = append(diags, diag.FromErr(err)...)
+		} else {
+			if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
+				err := d.Set(mkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+				diags = append(diags, diag.FromErr(err)...)
+			}
 		}
 	}
 
@@ -4061,7 +4058,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
-	err = vmAPI.WaitForVMState(ctx, "", 60, 2)
+	err = vmAPI.WaitForVMStatus(ctx, "", 60, 2)
 	if err == nil {
 		return diag.Errorf("failed to delete VM \"%d\"", vmID)
 	}

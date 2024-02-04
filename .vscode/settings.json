@@ -27,5 +27,5 @@
         "--fast"
     ],
     "go.lintOnSave": "workspace",
-    "go.testEnvFile": "${workspaceFolder}/test.env",
+    "go.testEnvFile": "${workspaceFolder}/testacc.env",
 }

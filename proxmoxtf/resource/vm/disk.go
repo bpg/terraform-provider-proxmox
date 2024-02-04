@@ -197,9 +197,10 @@ func diskSchema() *schema.Schema {
 	}
 }
 
+// called from vmCreateClone
 func createDisks(
 	ctx context.Context, vmConfig *vms.GetResponseData, d *schema.ResourceData, vmAPI *vms.Client,
-) (map[string]*vms.CustomStorageDevice, error) {
+) (vms.CustomStorageDevices, error) {
 	// this is what VM has at the moment: map of interface name (virtio1) -> disk object
 	currentDisks := populateFileIDs(mapStorageDevices(vmConfig), d)
 
@@ -209,62 +210,90 @@ func createDisks(
 		return nil, e
 	}
 
-	for diskInterface, planDisk := range planDisks {
-		currentDisk := currentDisks[diskInterface]
+	for iface, planDisk := range planDisks {
+		currentDisk := currentDisks[iface]
+
+		// create disks that are not present in the current configuration
 		if currentDisk == nil {
-			// create disks that are not present in the current configuration
 			err := createDisk(ctx, planDisk, vmAPI)
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			// disk is present, i.e. when cloned a template, but we need to check if it needs to be resized
-			if planDisk.Size.InGigabytes() < currentDisk.Size.InGigabytes() {
-				return nil, fmt.Errorf("disk resize fails requests size (%dG) is lower than current size (%s)",
-					planDisk.Size.InGigabytes(),
-					*currentDisk.Size,
-				)
-			}
 
-			moveDisk := false
-			if *planDisk.ID != "" {
-				fileIDParts := strings.Split(currentDisk.FileVolume, ":")
-				moveDisk = *planDisk.ID != fileIDParts[0]
-			}
+			continue
+		}
 
-			if moveDisk {
-				moveDiskTimeout := d.Get(mkTimeoutMoveDisk).(int)
-				deleteOriginalDisk := types.CustomBool(true)
+		// disk is present, i.e. when cloning a template, but we need to check if it needs to be moved or resized
 
-				diskMoveBody := &vms.MoveDiskRequestBody{
-					DeleteOriginalDisk: &deleteOriginalDisk,
-					Disk:               diskInterface,
-					TargetStorage:      *planDisk.ID,
-				}
+		timeoutSec := d.Get(mkTimeoutMoveDisk).(int)
 
-				err := vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
-				if err != nil {
-					return nil, err
-				}
-			}
+		err := resizeDiskIfRequired(ctx, currentDisk, planDisk, vmAPI, timeoutSec)
+		if err != nil {
+			return nil, err
+		}
 
-			if planDisk.Size.InGigabytes() > currentDisk.Size.InGigabytes() {
-				moveDiskTimeout := d.Get(mkTimeoutMoveDisk).(int)
-
-				diskResizeBody := &vms.ResizeDiskRequestBody{
-					Disk: diskInterface,
-					Size: *types.DiskSizeFromGigabytes(planDisk.Size.InGigabytes()),
-				}
-
-				err := vmAPI.ResizeVMDisk(ctx, diskResizeBody, moveDiskTimeout)
-				if err != nil {
-					return nil, err
-				}
-			}
+		err = moveDiskIfRequired(ctx, currentDisk, planDisk, vmAPI, timeoutSec)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	return currentDisks, nil
+}
+
+func resizeDiskIfRequired(
+	ctx context.Context,
+	currentDisk *vms.CustomStorageDevice, planDisk *vms.CustomStorageDevice,
+	vmAPI *vms.Client, timeoutSec int,
+) error {
+	if planDisk.Size.InGigabytes() < currentDisk.Size.InGigabytes() {
+		return fmt.Errorf("the planned disk size (%dG) is lower than the current size (%s)",
+			planDisk.Size.InGigabytes(),
+			*currentDisk.Size,
+		)
+	}
+
+	if planDisk.Size.InGigabytes() > currentDisk.Size.InGigabytes() {
+		diskResizeBody := &vms.ResizeDiskRequestBody{
+			Disk: *planDisk.Interface,
+			Size: *planDisk.Size,
+		}
+
+		err := vmAPI.ResizeVMDisk(ctx, diskResizeBody, timeoutSec)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func moveDiskIfRequired(
+	ctx context.Context,
+	currentDisk *vms.CustomStorageDevice, planDisk *vms.CustomStorageDevice,
+	vmAPI *vms.Client, timeoutSec int,
+) error {
+	needToMove := false
+
+	if *planDisk.ID != "" {
+		fileIDParts := strings.Split(currentDisk.FileVolume, ":")
+		needToMove = *planDisk.ID != fileIDParts[0]
+	}
+
+	if needToMove {
+		diskMoveBody := &vms.MoveDiskRequestBody{
+			DeleteOriginalDisk: types.CustomBool(true).Pointer(),
+			Disk:               *planDisk.Interface,
+			TargetStorage:      *planDisk.ID,
+		}
+
+		err := vmAPI.MoveVMDisk(ctx, diskMoveBody, timeoutSec)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func createDisk(ctx context.Context, disk *vms.CustomStorageDevice, vmAPI *vms.Client) error {
@@ -297,112 +326,44 @@ func createDisk(ctx context.Context, disk *vms.CustomStorageDevice, vmAPI *vms.C
 	return nil
 }
 
-func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) error {
+func vmImportCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) error {
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return err
 	}
 
-	// Determine the ID of the next disk.
-	disk := d.Get(mkDisk).([]interface{})
+	planDisks, err := getStorageDevicesFromResource(d)
+	if err != nil {
+		return err
+	}
+
 	diskCount := 0
 
-	for _, d := range disk {
-		block := d.(map[string]interface{})
-		fileID, _ := block[mkDiskFileID].(string)
-
-		if fileID == "" {
+	for _, d := range planDisks {
+		if *d.FileID == "" {
 			diskCount++
 		}
 	}
-
-	// Retrieve some information about the disk schema.
-	resourceSchema := VM().Schema
-	diskSchemaElem := resourceSchema[mkDisk].Elem
-	diskSchemaResource := diskSchemaElem.(*schema.Resource)
-	diskSpeedResource := diskSchemaResource.Schema[mkDiskSpeed]
 
 	// Generate the commands required to import the specified disks.
 	commands := []string{}
 	importedDiskCount := 0
 
-	for _, d := range disk {
-		block := d.(map[string]interface{})
-
-		fileID, _ := block[mkDiskFileID].(string)
-
-		if fileID == "" {
+	for _, d := range planDisks {
+		if *d.FileID == "" {
 			continue
 		}
 
-		datastoreID, _ := block[mkDiskDatastoreID].(string)
-		fileFormat, _ := block[mkDiskFileFormat].(string)
-		size, _ := block[mkDiskSize].(int)
-		speed := block[mkDiskSpeed].([]interface{})
-		diskInterface, _ := block[mkDiskInterface].(string)
-		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
-		ssd := types.CustomBool(block[mkDiskSSD].(bool))
-		discard, _ := block[mkDiskDiscard].(string)
-		cache, _ := block[mkDiskCache].(string)
-
-		if fileFormat == "" {
-			fileFormat = dvDiskFileFormat
-		}
-
-		if len(speed) == 0 {
-			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
-			if err != nil {
-				return err
-			}
-
-			speed = diskSpeedDefault.([]interface{})
-		}
-
-		speedBlock := speed[0].(map[string]interface{})
-		speedLimitRead := speedBlock[mkDiskSpeedRead].(int)
-		speedLimitReadBurstable := speedBlock[mkDiskSpeedReadBurstable].(int)
-		speedLimitWrite := speedBlock[mkDiskSpeedWrite].(int)
-		speedLimitWriteBurstable := speedBlock[mkDiskSpeedWriteBurstable].(int)
-
-		diskOptions := ""
-
-		if ioThread {
-			diskOptions += ",iothread=1"
-		}
-
-		if ssd {
-			diskOptions += ",ssd=1"
-		}
-
-		if discard != "" {
-			diskOptions += fmt.Sprintf(",discard=%s", discard)
-		}
-
-		if cache != "" {
-			diskOptions += fmt.Sprintf(",cache=%s", cache)
-		}
-
-		if speedLimitRead > 0 {
-			diskOptions += fmt.Sprintf(",mbps_rd=%d", speedLimitRead)
-		}
-
-		if speedLimitReadBurstable > 0 {
-			diskOptions += fmt.Sprintf(",mbps_rd_max=%d", speedLimitReadBurstable)
-		}
-
-		if speedLimitWrite > 0 {
-			diskOptions += fmt.Sprintf(",mbps_wr=%d", speedLimitWrite)
-		}
-
-		if speedLimitWriteBurstable > 0 {
-			diskOptions += fmt.Sprintf(",mbps_wr_max=%d", speedLimitWriteBurstable)
+		diskOptions := d.EncodeOptions()
+		if diskOptions != "" {
+			diskOptions = "," + diskOptions
 		}
 
 		filePathTmp := fmt.Sprintf(
 			"/tmp/vm-%d-disk-%d.%s",
 			vmID,
 			diskCount+importedDiskCount,
-			fileFormat,
+			*d.Format,
 		)
 
 		//nolint:lll
@@ -410,12 +371,12 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 			commands,
 			`set -e`,
 			`try_sudo(){ if [ $(sudo -n echo tfpve 2>&1 | grep "tfpve" | wc -l) -gt 0 ]; then sudo $1; else $1; fi }`,
-			fmt.Sprintf(`file_id="%s"`, fileID),
-			fmt.Sprintf(`file_format="%s"`, fileFormat),
-			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
+			fmt.Sprintf(`file_id="%s"`, *d.FileID),
+			fmt.Sprintf(`file_format="%s"`, *d.Format),
+			fmt.Sprintf(`datastore_id_target="%s"`, *d.ID),
 			fmt.Sprintf(`disk_options="%s"`, diskOptions),
-			fmt.Sprintf(`disk_size="%d"`, size),
-			fmt.Sprintf(`disk_interface="%s"`, diskInterface),
+			fmt.Sprintf(`disk_size="%d"`, d.Size.InGigabytes()),
+			fmt.Sprintf(`disk_interface="%s"`, *d.Interface),
 			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
 			fmt.Sprintf(`vm_id="%d"`, vmID),
 			`source_image=$(try_sudo "pvesm path $file_id")`,
@@ -557,7 +518,7 @@ func getDiskDeviceObjects1(d *schema.ResourceData, disks []interface{}) (vms.Cus
 
 		if storageInterface != "virtio" && storageInterface != "scsi" && storageInterface != "sata" {
 			return diskDeviceObjects, fmt.Errorf(
-				"Defined disk interface not supported. Interface was '%s', but only 'virtio', 'sata' and 'scsi' are supported",
+				"The disk interface '%s' is not supported, should be one of 'virtioN', 'sataN', or 'scsiN'",
 				diskInterface,
 			)
 		}
@@ -701,7 +662,7 @@ func updateDisk(d *schema.ResourceData, vmConfig *vms.GetResponseData, updateBod
 		return nil
 	}
 
-	currentDisks := populateFileIDs(mapStorageDevices(vmConfig), d)
+	// currentDisks := populateFileIDs(mapStorageDevices(vmConfig), d)
 
 	planDisks, err := getStorageDevicesFromResource(d)
 	if err != nil {
@@ -718,22 +679,25 @@ func updateDisk(d *schema.ResourceData, vmConfig *vms.GetResponseData, updateBod
 		return ds
 	}
 
-	for diskInterface, disk := range planDisks {
-		if currentDisks[diskInterface] == nil {
-			// TODO: create a new disk here
-			return fmt.Errorf("missing device %s", diskInterface)
-		}
+	for _, disk := range planDisks {
+		// for diskInterface, disk := range planDisks {
+		// if currentDisks[diskInterface] == nil {
+		// 	// TODO: create a new disk here
+		// 	return fmt.Errorf("missing device %s", diskInterface)
+		// }
+
+		tmp := *disk
 
 		// copy the current disk and update the fields
-		tmp := *currentDisks[diskInterface]
-		tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
-		tmp.BurstableWriteSpeedMbps = disk.BurstableWriteSpeedMbps
-		tmp.MaxReadSpeedMbps = disk.MaxReadSpeedMbps
-		tmp.MaxWriteSpeedMbps = disk.MaxWriteSpeedMbps
-		tmp.Cache = disk.Cache
-		tmp.Discard = disk.Discard
-		tmp.IOThread = disk.IOThread
-		tmp.SSD = disk.SSD
+		// tmp := *currentDisks[diskInterface]
+		// tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
+		// tmp.BurstableWriteSpeedMbps = disk.BurstableWriteSpeedMbps
+		// tmp.MaxReadSpeedMbps = disk.MaxReadSpeedMbps
+		// tmp.MaxWriteSpeedMbps = disk.MaxWriteSpeedMbps
+		// tmp.Cache = disk.Cache
+		// tmp.Discard = disk.Discard
+		// tmp.IOThread = disk.IOThread
+		// tmp.SSD = disk.SSD
 
 		switch disk.StorageInterface() {
 		case "virtio":
@@ -820,7 +784,7 @@ func mapStorageDevices(resp *vms.GetResponseData) map[string]*vms.CustomStorageD
 }
 
 // mapStorageDevices maps the current VM storage devices by their interface names.
-func populateFileIDs(devices map[string]*vms.CustomStorageDevice, d *schema.ResourceData) map[string]*vms.CustomStorageDevice {
+func populateFileIDs(devices vms.CustomStorageDevices, d *schema.ResourceData) vms.CustomStorageDevices {
 	planDisk := d.Get(mkDisk)
 
 	planDiskList := planDisk.([]interface{})

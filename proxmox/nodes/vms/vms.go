@@ -625,8 +625,8 @@ func (c *Client) WaitForVMConfigUnlock(ctx context.Context, timeout int, delay i
 	return fmt.Errorf("timeout while waiting for VM \"%d\" configuration to become unlocked", c.VMID)
 }
 
-// WaitForVMState waits for a virtual machine to reach a specific state.
-func (c *Client) WaitForVMState(ctx context.Context, state string, timeout int, delay int) error {
+// WaitForVMStatus waits for a virtual machine to reach a specific status.
+func (c *Client) WaitForVMStatus(ctx context.Context, state string, timeout int, delay int) error {
 	state = strings.ToLower(state)
 
 	timeDelay := int64(delay)
