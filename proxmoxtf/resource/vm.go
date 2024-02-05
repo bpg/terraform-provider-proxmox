@@ -3008,7 +3008,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 
 		out, err := api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
-			if matches, _ := regexp.Match(`pvesm: .* not found`, out); matches {
+			if matches, e := regexp.Match(`pvesm: .* not found`, out); e == nil && matches {
 				return diag.FromErr(newErrSSHUserNoPermission(api.SSH().Username()))
 			}
 

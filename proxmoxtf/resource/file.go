@@ -601,7 +601,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			),
 		})
 		if err != nil {
-			if matches, _ := regexp.Match(`cannot move .* Permission denied`, []byte(err.Error())); matches {
+			if matches, e := regexp.MatchString(`cannot move .* Permission denied`, err.Error()); e == nil && matches {
 				return diag.FromErr(newErrSSHUserNoPermission(capi.SSH().Username()))
 			}
 

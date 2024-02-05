@@ -11,5 +11,5 @@ const (
 func newErrSSHUserNoPermission(username string) error {
 	return fmt.Errorf("the SSH user '%s' does not have required permissions. "+
 		"Make sure 'sudo' is installed and the user is configured in sudoers file. "+
-		"Refer to the documentation for more details.", username)
+		"Refer to the documentation for more details", username)
 }
