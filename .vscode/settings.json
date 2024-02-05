@@ -1,9 +1,11 @@
 {
     "git.alwaysSignOff": true,
     "cSpell.words": [
+        "capi",
         "CLRF",
         "iothread",
         "keyctl",
+        "nolint",
         "proxmoxtf",
         "qcow",
         "rootfs",
@@ -13,7 +15,8 @@
         "virtio",
         "VLANID",
         "vmbr",
-        "VMID"
+        "VMID",
+        "vztmpl"
     ],
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [
