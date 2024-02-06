@@ -593,10 +593,11 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 		_, err := capi.SSH().ExecuteNodeCommands(ctx, nodeName, []string{
 			// the `mv` command should be scoped to the specific directories in sudoers!
-			fmt.Sprintf(`%s; try_sudo "mv %s/%s %s/%s" && rm -rf %s`,
+			fmt.Sprintf(`%s; try_sudo "mv %s/%s %s/%s" && rmdir %s && rmdir %s`,
 				trySudo,
 				srcDir, *fileName,
 				dstDir, *fileName,
+				srcDir,
 				tempFileDir,
 			),
 		})
