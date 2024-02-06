@@ -847,6 +847,16 @@
         "bug",
         "doc"
       ]
+    },
+    {
+      "login": "kvangent",
+      "name": "kvangent",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10712294?v=4",
+      "profile": "https://github.com/kvangent",
+      "contributions": [
+        "bug",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
