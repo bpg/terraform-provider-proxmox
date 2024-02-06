@@ -1,14 +1,14 @@
 {
     "git.alwaysSignOff": true,
     "cSpell.words": [
-        "Burstable",
-        "cdrom",
+        "capi",
         "CLRF",
         "iface",
         "iothread",
         "keyctl",
         "mbps",
         "NUMA",
+        "nolint",
         "proxmoxtf",
         "qcow",
         "rootfs",
@@ -19,7 +19,8 @@
         "virtio",
         "VLANID",
         "vmbr",
-        "VMID"
+        "VMID",
+        "vztmpl"
     ],
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [

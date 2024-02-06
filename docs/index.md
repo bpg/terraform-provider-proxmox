@@ -160,10 +160,12 @@ You can configure the `sudo` privilege for the user via the command line on the 
     sudo visudo
     ```
 
-  Add the following line to the end of the file:
+  Add the following lines to the end of the file:
 
     ```sh
-    terraform ALL=(ALL) NOPASSWD:ALL
+    terraform ALL=(root) NOPASSWD: /sbin/pvesm
+    terraform ALL=(root) NOPASSWD: /sbin/qm
+    terraform ALL=(root) NOPASSWD: /usr/bin/mv /tmp/tfpve/* /var/lib/vz/*
     ```
 
   Save the file and exit.
@@ -177,10 +179,10 @@ You can configure the `sudo` privilege for the user via the command line on the 
 - Test the SSH connection and password-less `sudo`:
   
     ```sh
-    ssh terraform@<target-node> sudo ls -la /root
+    ssh terraform@<target-node> sudo pvesm apiinfo 
     ```
 
-  You should be able to connect to the target node and see content of the `/root` folder without password.
+  You should be able to connect to the target node and see the output containing `APIVER <number>` on the screen without being prompted for your password.
 
 ### Node IP address used for SSH connection
 

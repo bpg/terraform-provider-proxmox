@@ -837,6 +837,26 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Eusebius1920",
+      "name": "Eusebius1920",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8429638?v=4",
+      "profile": "https://github.com/Eusebius1920",
+      "contributions": [
+        "bug",
+        "doc"
+      ]
+    },
+    {
+      "login": "kvangent",
+      "name": "kvangent",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10712294?v=4",
+      "profile": "https://github.com/kvangent",
+      "contributions": [
+        "bug",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
