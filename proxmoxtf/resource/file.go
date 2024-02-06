@@ -12,6 +12,7 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"fmt"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/ssh"
 	"io"
 	"net/http"
 	"net/url"
@@ -594,7 +595,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		_, err := capi.SSH().ExecuteNodeCommands(ctx, nodeName, []string{
 			// the `mv` command should be scoped to the specific directories in sudoers!
 			fmt.Sprintf(`%s; try_sudo "mv %s/%s %s/%s" && rm %s/%s && rmdir -p %s`,
-				trySudo,
+				ssh.TrySudo,
 				srcDir, *fileName,
 				dstDir, *fileName,
 				srcDir, *fileName,
@@ -603,7 +604,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		})
 		if err != nil {
 			if matches, e := regexp.MatchString(`cannot move .* Permission denied`, err.Error()); e == nil && matches {
-				return diag.FromErr(newErrSSHUserNoPermission(capi.SSH().Username()))
+				return diag.FromErr(ssh.NewErrSSHUserNoPermission(capi.SSH().Username()))
 			}
 
 			diags = append(diags, diag.Errorf("error moving file: %s", err.Error())...)
