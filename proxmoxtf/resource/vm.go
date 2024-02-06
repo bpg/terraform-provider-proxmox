@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -2974,7 +2975,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 		commands = append(
 			commands,
 			`set -e`,
-			`try_sudo(){ if [ $(sudo -n echo tfpve 2>&1 | grep "tfpve" | wc -l) -gt 0 ]; then sudo $1; else $1; fi }`,
+			trySudo,
 			fmt.Sprintf(`file_id="%s"`, fileID),
 			fmt.Sprintf(`file_format="%s"`, fileFormat),
 			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
@@ -3007,9 +3008,8 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 
 		out, err := api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
-			if strings.Contains(err.Error(), "pvesm: not found") {
-				return diag.Errorf("The configured SSH user '%s' does not have the required permissions to import disks. "+
-					"Make sure `sudo` is installated and the user is a member of sudoers.", api.SSH().Username())
+			if matches, e := regexp.Match(`pvesm: .* not found`, out); e == nil && matches {
+				return diag.FromErr(newErrSSHUserNoPermission(api.SSH().Username()))
 			}
 
 			return diag.FromErr(err)
