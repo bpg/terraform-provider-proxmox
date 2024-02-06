@@ -17,10 +17,12 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -538,7 +540,12 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	switch *contentType {
 	case "iso", "vztmpl":
 		uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
+
 		_, err = capi.Node(nodeName).Storage(datastoreID).APIUpload(ctx, request, uploadTimeout, config.TempDir())
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+			return diags
+		}
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
@@ -565,14 +572,44 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			}...)
 		}
 
-		remoteFileDir := *datastore.Path
+		// the temp directory is used to store the file on the node before moving it to the datastore
+		// will be created if it does not exist
+		tempFileDir := fmt.Sprintf("/tmp/tfpve/%s", uuid.NewString())
 
-		err = capi.SSH().NodeUpload(ctx, nodeName, remoteFileDir, request)
-	}
+		err = capi.SSH().NodeUpload(ctx, nodeName, tempFileDir, request)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+			return diags
+		}
 
-	if err != nil {
-		diags = append(diags, diag.FromErr(err)...)
-		return diags
+		// handle the case where the file is uploaded to a subdirectory of the datastore
+		srcDir := tempFileDir
+		dstDir := *datastore.Path
+
+		if request.ContentType != "" {
+			srcDir = tempFileDir + "/" + request.ContentType
+			dstDir = *datastore.Path + "/" + request.ContentType
+		}
+
+		_, err := capi.SSH().ExecuteNodeCommands(ctx, nodeName, []string{
+			// the `mv` command should be scoped to the specific directories in sudoers!
+			fmt.Sprintf(`%s; try_sudo "mv %s/%s %s/%s" && rm %s/%s && rmdir -p %s`,
+				trySudo,
+				srcDir, *fileName,
+				dstDir, *fileName,
+				srcDir, *fileName,
+				srcDir,
+			),
+		})
+		if err != nil {
+			if matches, e := regexp.MatchString(`cannot move .* Permission denied`, err.Error()); e == nil && matches {
+				return diag.FromErr(newErrSSHUserNoPermission(capi.SSH().Username()))
+			}
+
+			diags = append(diags, diag.Errorf("error moving file: %s", err.Error())...)
+
+			return diags
+		}
 	}
 
 	volID, di := fileGetVolumeID(d)
