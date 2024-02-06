@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.46.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.1...v0.46.2) (2024-02-06)
+
+
+### Bug Fixes
+
+* **docs:** update sudo configuration to a more restrictive variant ([#1001](https://github.com/bpg/terraform-provider-proxmox/issues/1001)) ([6bd8ba5](https://github.com/bpg/terraform-provider-proxmox/commit/6bd8ba566a60c18121d9a66f1cdd056878fe6114))
+* **file:** use `sudo` for snippets upload ([#1004](https://github.com/bpg/terraform-provider-proxmox/issues/1004)) ([60fb679](https://github.com/bpg/terraform-provider-proxmox/commit/60fb679e9f31b3be3e05bb9b25a0deb0ab37c48c))
+* **vm:** error when creating custom disks on PVE with non-default shell ([#983](https://github.com/bpg/terraform-provider-proxmox/issues/983)) ([1f333ea](https://github.com/bpg/terraform-provider-proxmox/commit/1f333ea097f43097e3847d08153145ac2a44faad))
+* **vm:** panic at import / state refresh if disk size is not set ([#994](https://github.com/bpg/terraform-provider-proxmox/issues/994)) ([363e502](https://github.com/bpg/terraform-provider-proxmox/commit/363e502a567f8c75c45b682795ce5974e993d082))
+
+
+### Miscellaneous
+
+* **ci:** update lycheeverse/lychee-action action (v1.9.2 → v1.9.3) ([#999](https://github.com/bpg/terraform-provider-proxmox/issues/999)) ([f8004b0](https://github.com/bpg/terraform-provider-proxmox/commit/f8004b0e2a35616b94804fdb272df598cd2b88a2))
+* **deps:** update golang.org/x/exp digest (v0.0.0-20240119083558-1b970713d09a → ) ([9cfd383](https://github.com/bpg/terraform-provider-proxmox/commit/9cfd3833da3a8c38ef5800fae1e65f3cd6d3b696))
+* **deps:** update golang.org/x/exp digest (v0.0.0-20240119083558-1b970713d09a 1b97071 → 2c58cdc) ([#1007](https://github.com/bpg/terraform-provider-proxmox/issues/1007)) ([9cfd383](https://github.com/bpg/terraform-provider-proxmox/commit/9cfd3833da3a8c38ef5800fae1e65f3cd6d3b696))
+* **deps:** update module github.com/goreleaser/goreleaser (v1.23.0 → v1.24.0) in /tools [security] ([#1006](https://github.com/bpg/terraform-provider-proxmox/issues/1006)) ([e132f5a](https://github.com/bpg/terraform-provider-proxmox/commit/e132f5af4bbb892efd130777f7046269ddb0cfa6))
+* **deps:** update module github.com/hashicorp/terraform-plugin-mux (v0.13.0 → v0.14.0) ([#989](https://github.com/bpg/terraform-provider-proxmox/issues/989)) ([eb6377e](https://github.com/bpg/terraform-provider-proxmox/commit/eb6377e6fdbd84d3cbd59b254106f94325dbc479))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.31.0 → v2.32.0) ([#990](https://github.com/bpg/terraform-provider-proxmox/issues/990)) ([c1eeefb](https://github.com/bpg/terraform-provider-proxmox/commit/c1eeefbb1214ef9c14341eac94b9469e7161e96f))
+* **deps:** update module golang.org/x/net (v0.18.0 → v0.20.0) ([#994](https://github.com/bpg/terraform-provider-proxmox/issues/994)) ([b196cdb](https://github.com/bpg/terraform-provider-proxmox/commit/b196cdb65bed27c34a755c3bab1654f71ef4a5e6))
+
 ## [0.46.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.0...v0.46.1) (2024-01-28)
 
 
