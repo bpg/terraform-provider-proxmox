@@ -857,6 +857,15 @@
         "bug",
         "test"
       ]
+    },
+    {
+      "login": "ecanuto",
+      "name": "Everaldo Canuto",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55260?v=4",
+      "profile": "https://github.com/ecanuto",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
