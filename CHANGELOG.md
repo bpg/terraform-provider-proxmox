@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.46.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.2...v0.46.3) (2024-02-07)
+
+
+### Bug Fixes
+
+* **file:** `error moving file` when uploading snippets ([#1013](https://github.com/bpg/terraform-provider-proxmox/issues/1013)) ([b6fbdcf](https://github.com/bpg/terraform-provider-proxmox/commit/b6fbdcf5ab3c191136c60814404153785aec806b))
+
+
+### Miscellaneous
+
+* **deps:** update module go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp (v0.47.0 → v0.48.0) in /tools ([#1014](https://github.com/bpg/terraform-provider-proxmox/issues/1014)) ([303b7da](https://github.com/bpg/terraform-provider-proxmox/commit/303b7da684dcf2f986fd6a70a74e40b75d71911a))
+
 ## [0.46.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.1...v0.46.2) (2024-02-06)
 
 
