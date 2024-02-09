@@ -12,7 +12,6 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"fmt"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/ssh"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,6 +21,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/ssh"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
@@ -594,12 +595,12 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 		_, err := capi.SSH().ExecuteNodeCommands(ctx, nodeName, []string{
 			// the `mv` command should be scoped to the specific directories in sudoers!
-			fmt.Sprintf(`%s; try_sudo "mv %s/%s %s/%s" && rm %s/%s && rmdir -p %s`,
+			fmt.Sprintf(`%s; try_sudo "mv %s/%s %s/%s" && rmdir %s && rmdir %s || echo`,
 				ssh.TrySudo,
 				srcDir, *fileName,
 				dstDir, *fileName,
-				srcDir, *fileName,
 				srcDir,
+				tempFileDir,
 			),
 		})
 		if err != nil {

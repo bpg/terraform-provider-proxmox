@@ -122,6 +122,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Eusebius1920"><img src="https://avatars.githubusercontent.com/u/8429638?v=4?s=100" width="100px;" alt="Eusebius1920"/><br /><sub><b>Eusebius1920</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3AEusebius1920" title="Bug reports">🐛</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Eusebius1920" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/kvangent"><img src="https://avatars.githubusercontent.com/u/10712294?v=4?s=100" width="100px;" alt="kvangent"/><br /><sub><b>kvangent</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Akvangent" title="Bug reports">🐛</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=kvangent" title="Tests">⚠️</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ecanuto"><img src="https://avatars.githubusercontent.com/u/55260?v=4?s=100" width="100px;" alt="Everaldo Canuto"/><br /><sub><b>Everaldo Canuto</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ecanuto" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
