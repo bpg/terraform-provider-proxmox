@@ -16,4 +16,12 @@ pull_request_rules:
     actions:
       review:
         type: APPROVE
-        message: ":robot: LGTM! *beep* *boop*"
+  - name: Automatic approval of all-contributors's pull requests
+    conditions:
+      - author=allcontributors[bot]
+      - "#approved-reviews-by=0"
+    actions:
+      review:
+        type: APPROVE
+      merge:
+        method: squash
