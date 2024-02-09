@@ -1,6 +1,4 @@
-# v1.51.2
-run:
-  deadline: 5m
+# v1.55.2
 issues:
   new-from-rev: 9101977dc81f64db077b9a1eda2fe401359854c9
   # Maximum issues count per one linter. Set to 0 to disable.
