@@ -23,6 +23,8 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	resourceSsh "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/ssh"
+
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -144,12 +146,21 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 
 	defer f.Close()
 
-	err = sshClient.NodeUpload(context.Background(), "pve", "/var/lib/vz",
+	fname := filepath.Base(file.Name())
+	err = sshClient.NodeUpload(context.Background(), "pve", "/tmp/tfpve/testacc",
 		&api.FileUploadRequest{
 			ContentType: "snippets",
-			FileName:    filepath.Base(file.Name()),
+			FileName:    fname,
 			File:        f,
 		})
+	require.NoError(t, err)
+
+	_, err = sshClient.ExecuteNodeCommands(context.Background(), "pve", []string{
+		fmt.Sprintf(`%s; try_sudo "mv /tmp/tfpve/testacc/snippets/%s /var/lib/vz/snippets/%s" && rm -rf /tmp/tfpve/testacc/`,
+			resourceSsh.TrySudo,
+			fname, fname,
+		),
+	})
 	require.NoError(t, err)
 }
 
