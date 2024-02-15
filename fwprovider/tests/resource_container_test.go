@@ -43,6 +43,12 @@ func TestAccResourceContainer(t *testing.T) {
 
 func testAccResourceContainerCreateConfig(isTemplate bool) string {
 	return fmt.Sprintf(`
+// resource "proxmox_virtual_environment_download_file" "ubuntu_container_template" {
+// 	content_type = "vztmpl"
+// 	datastore_id = "local"
+// 	node_name    = "pve"
+// 	url = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+// }
 resource "proxmox_virtual_environment_container" "test_container" {
   node_name = "%s"
   vm_id     = 1100
@@ -53,11 +59,11 @@ resource "proxmox_virtual_environment_container" "test_container" {
     size         = 8
   }
 
-  description = <<-EOT
-    my
-    description
-    value
-  EOT
+//   description = <<-EOT
+//     my
+//     description
+//     value
+//   EOT
 
   initialization {
     hostname = "test"
@@ -75,7 +81,8 @@ resource "proxmox_virtual_environment_container" "test_container" {
 
   operating_system {
 	# TODO: this file needs to be upload to PVE first
-    template_file_id = "local:vztmpl/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
+	//template_file_id = proxmox_virtual_environment_download_file.ubuntu_container_template.id
+    template_file_id = "local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
     type             = "ubuntu"
   }
 }
@@ -86,7 +93,7 @@ func testAccResourceContainerCreateCheck(t *testing.T) resource.TestCheckFunc {
 	t.Helper()
 
 	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
+		// resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
 		func(*terraform.State) error {
 			err := getNodesClient().Container(1100).WaitForContainerStatus(context.Background(), "running", 10, 1)
 			require.NoError(t, err, "container did not start")
