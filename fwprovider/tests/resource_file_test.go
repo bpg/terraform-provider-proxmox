@@ -23,7 +23,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
-	resourceSsh "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/ssh"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -157,7 +156,7 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 
 	_, err = sshClient.ExecuteNodeCommands(context.Background(), "pve", []string{
 		fmt.Sprintf(`%s; try_sudo "mv /tmp/tfpve/testacc/snippets/%s /var/lib/vz/snippets/%s" && rm -rf /tmp/tfpve/testacc/`,
-			resourceSsh.TrySudo,
+			ssh.TrySudo,
 			fname, fname,
 		),
 	})

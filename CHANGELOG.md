@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.46.4](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.3...v0.46.4) (2024-02-16)
+
+
+### Bug Fixes
+
+* **vm:** fix panic when a config block is empty ([#1033](https://github.com/bpg/terraform-provider-proxmox/issues/1033)) ([027cf1e](https://github.com/bpg/terraform-provider-proxmox/commit/027cf1e81a2ab25f9d934921c6510d091870e3ee))
+* **vm:** multi-line description field is always marked as changed ([#1030](https://github.com/bpg/terraform-provider-proxmox/issues/1030)) ([797873b](https://github.com/bpg/terraform-provider-proxmox/commit/797873b257614246fbadf167e7649cc5ed8e17e8))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.7.0 → v1.8.0) ([#1022](https://github.com/bpg/terraform-provider-proxmox/issues/1022)) ([0469192](https://github.com/bpg/terraform-provider-proxmox/commit/046919275607986c4ff380a846171f0c56e5e5f2))
+* **ci:** update dorny/paths-filter action (v3.0.0 → v3.0.1) ([#1032](https://github.com/bpg/terraform-provider-proxmox/issues/1032)) ([d444202](https://github.com/bpg/terraform-provider-proxmox/commit/d444202ab8b2f80f6d144d46ea2af55f25aa8af7))
+* **ci:** update mergify config to auto-approve renovate PRs ([#1023](https://github.com/bpg/terraform-provider-proxmox/issues/1023)) ([dfb95a8](https://github.com/bpg/terraform-provider-proxmox/commit/dfb95a85f437c3e414f2e8c7020d0077ebe01bc7))
+* **deps:** update golang.org/x/exp digest (v0.0.0-20240205201215-2c58cdc269a3 → ) ([#1031](https://github.com/bpg/terraform-provider-proxmox/issues/1031)) ([4fab30e](https://github.com/bpg/terraform-provider-proxmox/commit/4fab30e5dfd62d63e29986b86dca57943f13d8af))
+* **deps:** update module golang.org/x/crypto (v0.18.0 → v0.19.0) ([#1018](https://github.com/bpg/terraform-provider-proxmox/issues/1018)) ([34d31e2](https://github.com/bpg/terraform-provider-proxmox/commit/34d31e2ed080dc944900f5219338dbe9846a3aad))
+* **deps:** update module golang.org/x/net (v0.20.0 → v0.21.0) ([#1020](https://github.com/bpg/terraform-provider-proxmox/issues/1020)) ([ed3bdb5](https://github.com/bpg/terraform-provider-proxmox/commit/ed3bdb5187dbf5588eedfc8d9ed193ab108edd64))
+* **docs:** update links disk image link in examples ([#1028](https://github.com/bpg/terraform-provider-proxmox/issues/1028)) ([62a2130](https://github.com/bpg/terraform-provider-proxmox/commit/62a2130554c9ad09a7406d40e19678c4471f9364))
+
 ## [0.46.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.2...v0.46.3) (2024-02-07)
 
 

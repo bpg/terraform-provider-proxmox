@@ -285,7 +285,10 @@ func Container() *schema.Resource {
 				StateFunc: func(i interface{}) string {
 					// PVE always adds a newline to the description, so we have to do the same,
 					// also taking in account the CLRF case (Windows)
-					return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n") + "\n"
+					if i.(string) != "" {
+						return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n") + "\n"
+					}
+					return ""
 				},
 			},
 			mkResourceVirtualEnvironmentContainerDisk: {

@@ -28,6 +28,18 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
+const (
+	// TrySudo is a shell function that tries to execute a command with sudo if the user has sudo permissions.
+	TrySudo = `try_sudo(){ if [ $(sudo -n pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ]; then sudo $1; else $1; fi }`
+)
+
+// NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
+func NewErrUserHasNoPermission(username string) error {
+	return fmt.Errorf("the SSH user '%s' does not have required permissions. "+
+		"Make sure 'sudo' is installed and the user is configured in sudoers file. "+
+		"Refer to the documentation for more details", username)
+}
+
 // Client is an interface for performing SSH requests against the Proxmox Nodes.
 type Client interface {
 	// Username returns the SSH username.
