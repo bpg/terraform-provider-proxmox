@@ -43,6 +43,12 @@ func TestAccResourceContainer(t *testing.T) {
 
 func testAccResourceContainerCreateConfig(isTemplate bool) string {
 	return fmt.Sprintf(`
+resource "proxmox_virtual_environment_download_file" "ubuntu_container_template" {
+	content_type = "vztmpl"
+	datastore_id = "local"
+	node_name    = "pve"
+	url = "http://download.proxmox.com/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
+}
 resource "proxmox_virtual_environment_container" "test_container" {
   node_name = "%s"
   vm_id     = 1100
@@ -74,8 +80,7 @@ resource "proxmox_virtual_environment_container" "test_container" {
   }
 
   operating_system {
-	# TODO: this file needs to be upload to PVE first
-    template_file_id = "local:vztmpl/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
+	template_file_id = proxmox_virtual_environment_download_file.ubuntu_container_template.id
     type             = "ubuntu"
   }
 }

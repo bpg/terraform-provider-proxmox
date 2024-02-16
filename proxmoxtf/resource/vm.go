@@ -18,6 +18,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -619,6 +621,15 @@ func VM() *schema.Resource {
 				Description: "The description",
 				Optional:    true,
 				Default:     dvResourceVirtualEnvironmentVMDescription,
+				StateFunc: func(i interface{}) string {
+					// PVE always adds a newline to the description, so we have to do the same,
+					// also taking in account the CLRF case (Windows)
+					if i.(string) != "" {
+						return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n") + "\n"
+					}
+
+					return ""
+				},
 			},
 			mkResourceVirtualEnvironmentVMDisk: {
 				Type:        schema.TypeList,
@@ -2975,7 +2986,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 		commands = append(
 			commands,
 			`set -e`,
-			trySudo,
+			ssh.TrySudo,
 			fmt.Sprintf(`file_id="%s"`, fileID),
 			fmt.Sprintf(`file_format="%s"`, fileFormat),
 			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
@@ -3009,7 +3020,7 @@ func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 		out, err := api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
 			if matches, e := regexp.Match(`pvesm: .* not found`, out); e == nil && matches {
-				return diag.FromErr(newErrSSHUserNoPermission(api.SSH().Username()))
+				return diag.FromErr(ssh.NewErrUserHasNoPermission(api.SSH().Username()))
 			}
 
 			return diag.FromErr(err)

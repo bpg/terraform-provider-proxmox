@@ -30,6 +30,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -594,7 +595,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		_, err := capi.SSH().ExecuteNodeCommands(ctx, nodeName, []string{
 			// the `mv` command should be scoped to the specific directories in sudoers!
 			fmt.Sprintf(`%s; try_sudo "mv %s/%s %s/%s" && rmdir %s && rmdir %s || echo`,
-				trySudo,
+				ssh.TrySudo,
 				srcDir, *fileName,
 				dstDir, *fileName,
 				srcDir,
@@ -603,7 +604,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		})
 		if err != nil {
 			if matches, e := regexp.MatchString(`cannot move .* Permission denied`, err.Error()); e == nil && matches {
-				return diag.FromErr(newErrSSHUserNoPermission(capi.SSH().Username()))
+				return diag.FromErr(ssh.NewErrUserHasNoPermission(capi.SSH().Username()))
 			}
 
 			diags = append(diags, diag.Errorf("error moving file: %s", err.Error())...)
@@ -776,7 +777,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	readFileAttrs := readFile
 	if fileIsURL(d) {
-		readFileAttrs = readURL
+		readFileAttrs = readURL(capi.API().HTTP())
 	}
 
 	var diags diag.Diagnostics
@@ -873,50 +874,57 @@ func readFile(
 	return fileModificationDate, fileSize, fileTag, nil
 }
 
-//nolint:nonamedreturns
 func readURL(
+	httClient *http.Client,
+) func(
 	ctx context.Context,
 	sourceFilePath string,
 ) (fileModificationDate string, fileSize int64, fileTag string, err error) {
-	res, err := http.Head(sourceFilePath)
-	if err != nil {
-		return
-	}
-
-	defer utils.CloseOrLogError(ctx)(res.Body)
-
-	fileSize = res.ContentLength
-	httpLastModified := res.Header.Get("Last-Modified")
-
-	if httpLastModified != "" {
-		var timeParsed time.Time
-		timeParsed, err = time.Parse(time.RFC1123, httpLastModified)
-
+	return func(
+		ctx context.Context,
+		sourceFilePath string,
+	) (string, int64, string, error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodHead, sourceFilePath, nil)
 		if err != nil {
-			timeParsed, err = time.Parse(time.RFC1123Z, httpLastModified)
+			return "", 0, "", fmt.Errorf("failed to create a new request: %w", err)
+		}
+
+		res, err := httClient.Do(req) //nolint:bodyclose
+		if err != nil {
+			return "", 0, "", fmt.Errorf("failed to HEAD the URL: %w", err)
+		}
+
+		defer utils.CloseOrLogError(ctx)(res.Body)
+
+		fileModificationDate := ""
+		fileSize := res.ContentLength
+		fileTag := ""
+
+		httpLastModified := res.Header.Get("Last-Modified")
+		if httpLastModified != "" {
+			var timeParsed time.Time
+			timeParsed, err = time.Parse(time.RFC1123, httpLastModified)
+
 			if err != nil {
-				return
+				timeParsed, err = time.Parse(time.RFC1123Z, httpLastModified)
+				if err != nil {
+					return fileModificationDate, fileSize, fileTag, fmt.Errorf("failed to parse Last-Modified header: %w", err)
+				}
+			}
+
+			fileModificationDate = timeParsed.UTC().Format(time.RFC3339)
+		}
+
+		httpTag := res.Header.Get("ETag")
+		if httpTag != "" {
+			httpTagParts := strings.Split(httpTag, "\"")
+			if len(httpTagParts) > 1 {
+				fileTag = httpTagParts[1]
 			}
 		}
 
-		fileModificationDate = timeParsed.UTC().Format(time.RFC3339)
+		return fileModificationDate, fileSize, fileTag, nil
 	}
-
-	httpTag := res.Header.Get("ETag")
-
-	if httpTag != "" {
-		httpTagParts := strings.Split(httpTag, "\"")
-
-		if len(httpTagParts) > 1 {
-			fileTag = httpTagParts[1]
-		} else {
-			fileTag = ""
-		}
-	} else {
-		fileTag = ""
-	}
-
-	return
 }
 
 func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

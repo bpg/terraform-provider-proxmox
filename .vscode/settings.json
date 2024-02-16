@@ -10,6 +10,7 @@
         "qcow",
         "rootfs",
         "signoff",
+        "stretchr",
         "tflog",
         "unmanaged",
         "virtio",
