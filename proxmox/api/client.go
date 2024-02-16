@@ -52,6 +52,9 @@ type Client interface {
 	// IsRootTicket returns true if the authenticator is configured to use the root directly using a login ticket.
 	// (root using token is weaker, cannot change VM arch)
 	IsRootTicket() bool
+
+	// HTTP returns a lower-level HTTP client.
+	HTTP() *http.Client
 }
 
 // Connection represents a connection to the Proxmox Virtual Environment API.
@@ -296,6 +299,10 @@ func (c *client) IsRoot() bool {
 
 func (c *client) IsRootTicket() bool {
 	return c.auth.IsRootTicket()
+}
+
+func (c *client) HTTP() *http.Client {
+	return c.conn.httpClient
 }
 
 // validateResponseCode ensures that a response is valid.
