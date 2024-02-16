@@ -1997,7 +1997,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.ACPI = &acpi
 	}
 
-	if len(agent) > 0 {
+	if len(agent) > 0 && agent[0] != nil {
 		agentBlock := agent[0].(map[string]interface{})
 
 		agentEnabled := types.CustomBool(
@@ -2042,7 +2042,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
-	if len(cdrom) > 0 {
+	if len(cdrom) > 0 && cdrom[0] != nil {
 		cdromBlock := cdrom[0].(map[string]interface{})
 
 		cdromEnabled := cdromBlock[mkResourceVirtualEnvironmentVMCDROMEnabled].(bool)
@@ -2062,7 +2062,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
-	if len(cpu) > 0 {
+	if len(cpu) > 0 && cpu[0] != nil {
 		cpuBlock := cpu[0].(map[string]interface{})
 
 		cpuArchitecture := cpuBlock[mkResourceVirtualEnvironmentVMCPUArchitecture].(string)
@@ -2110,7 +2110,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(err)
 	}
 
-	if len(initialization) > 0 {
+	if len(initialization) > 0 && initialization[0] != nil {
 		tflog.Trace(ctx, "Preparing the CloudInit configuration")
 
 		initializationBlock := initialization[0].(map[string]interface{})
@@ -2157,7 +2157,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.KeyboardLayout = &keyboardLayout
 	}
 
-	if len(memory) > 0 {
+	if len(memory) > 0 && memory[0] != nil {
 		memoryBlock := memory[0].(map[string]interface{})
 
 		memoryDedicated := memoryBlock[mkResourceVirtualEnvironmentVMMemoryDedicated].(int)
@@ -2191,7 +2191,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
-	if len(operatingSystem) > 0 {
+	if len(operatingSystem) > 0 && operatingSystem[0] != nil {
 		operatingSystemBlock := operatingSystem[0].(map[string]interface{})
 		operatingSystemType := operatingSystemBlock[mkResourceVirtualEnvironmentVMOperatingSystemType].(string)
 
@@ -2567,7 +2567,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	var efiDisk *vms.CustomEFIDisk
 
 	efiDiskBlock := d.Get(mkResourceVirtualEnvironmentVMEFIDisk).([]interface{})
-	if len(efiDiskBlock) > 0 {
+	if len(efiDiskBlock) > 0 && efiDiskBlock[0] != nil {
 		block := efiDiskBlock[0].(map[string]interface{})
 
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMEFIDiskDatastoreID].(string)
@@ -2590,7 +2590,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	var tpmState *vms.CustomTPMState
 
 	tpmStateBlock := d.Get(mkResourceVirtualEnvironmentVMTPMState).([]interface{})
-	if len(tpmStateBlock) > 0 {
+	if len(tpmStateBlock) > 0 && tpmStateBlock[0] != nil {
 		block := tpmStateBlock[0].(map[string]interface{})
 
 		datastoreID, _ := block[mkResourceVirtualEnvironmentVMTPMStateDatastoreID].(string)
@@ -3148,16 +3148,13 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 	}
 
 	initializationIPConfig := initializationBlock[mkResourceVirtualEnvironmentVMInitializationIPConfig].([]interface{})
-	initializationConfig.IPConfig = make(
-		[]vms.CustomCloudInitIPConfig,
-		len(initializationIPConfig),
-	)
+	initializationConfig.IPConfig = make([]vms.CustomCloudInitIPConfig, len(initializationIPConfig))
 
 	for i, c := range initializationIPConfig {
 		configBlock := c.(map[string]interface{})
 		ipv4 := configBlock[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4].([]interface{})
 
-		if len(ipv4) > 0 {
+		if len(ipv4) > 0 && ipv4[0] != nil {
 			ipv4Block := ipv4[0].(map[string]interface{})
 			ipv4Address := ipv4Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv4Address].(string)
 
@@ -3174,7 +3171,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 
 		ipv6 := configBlock[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6].([]interface{})
 
-		if len(ipv6) > 0 {
+		if len(ipv6) > 0 && ipv6[0] != nil {
 			ipv6Block := ipv6[0].(map[string]interface{})
 			ipv6Address := ipv6Block[mkResourceVirtualEnvironmentVMInitializationIPConfigIPv6Address].(string)
 
@@ -3192,7 +3189,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 
 	initializationUserAccount := initializationBlock[mkResourceVirtualEnvironmentVMInitializationUserAccount].([]interface{})
 
-	if len(initializationUserAccount) > 0 {
+	if len(initializationUserAccount) > 0 && initializationUserAccount[0] != nil {
 		initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
 		keys := initializationUserAccountBlock[mkResourceVirtualEnvironmentVMInitializationUserAccountKeys].([]interface{})
 
@@ -3407,7 +3404,7 @@ func vmGetEfiDisk(d *schema.ResourceData, disk []interface{}) *vms.CustomEFIDisk
 
 	var efiDiskConfig *vms.CustomEFIDisk
 
-	if len(efiDisk) > 0 {
+	if len(efiDisk) > 0 && efiDisk[0] != nil {
 		efiDiskConfig = &vms.CustomEFIDisk{}
 
 		block := efiDisk[0].(map[string]interface{})
@@ -3469,7 +3466,7 @@ func vmGetTPMState(d *schema.ResourceData, disk []interface{}) *vms.CustomTPMSta
 
 	var tpmStateConfig *vms.CustomTPMState
 
-	if len(tpmState) > 0 {
+	if len(tpmState) > 0 && tpmState[0] != nil {
 		tpmStateConfig = &vms.CustomTPMState{}
 
 		block := tpmState[0].(map[string]interface{})
@@ -3665,7 +3662,7 @@ func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
 func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 	smbiosSections := d.Get(mkResourceVirtualEnvironmentVMSMBIOS).([]interface{})
 	//nolint:nestif
-	if len(smbiosSections) > 0 {
+	if len(smbiosSections) > 0 && smbiosSections[0] != nil {
 		smbiosBlock := smbiosSections[0].(map[string]interface{})
 		b64 := types.CustomBool(true)
 		family, _ := smbiosBlock[mkResourceVirtualEnvironmentVMSMBIOSFamily].(string)
@@ -3726,7 +3723,8 @@ func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 
 func vmGetStartupOrder(d *schema.ResourceData) *vms.CustomStartupOrder {
 	startup := d.Get(mkResourceVirtualEnvironmentVMStartup).([]interface{})
-	if len(startup) > 0 {
+
+	if len(startup) > 0 && startup[0] != nil {
 		startupBlock := startup[0].(map[string]interface{})
 		startupOrder := startupBlock[mkResourceVirtualEnvironmentVMStartupOrder].(int)
 		startupUpDelay := startupBlock[mkResourceVirtualEnvironmentVMStartupUpDelay].(int)
@@ -3957,7 +3955,7 @@ func vmReadCustom(
 				agent[mkResourceVirtualEnvironmentVMAgentTrim] = false
 			}
 
-			if len(currentAgent) > 0 {
+			if len(currentAgent) > 0 && currentAgent[0] != nil {
 				currentAgentBlock := currentAgent[0].(map[string]interface{})
 				currentAgentTimeout := currentAgentBlock[mkResourceVirtualEnvironmentVMAgentTimeout].(string)
 
@@ -4042,7 +4040,7 @@ func vmReadCustom(
 	currentInterface := dvResourceVirtualEnvironmentVMCDROMInterface
 
 	currentCDROM := d.Get(mkResourceVirtualEnvironmentVMCDROM).([]interface{})
-	if len(currentCDROM) > 0 {
+	if len(currentCDROM) > 0 && currentCDROM[0] != nil {
 		currentBlock := currentCDROM[0].(map[string]interface{})
 		currentInterface = currentBlock[mkResourceVirtualEnvironmentVMCDROMInterface].(string)
 	}
@@ -4059,7 +4057,7 @@ func vmReadCustom(
 			cdromBlock[mkResourceVirtualEnvironmentVMCDROMFileID] = cdromIDEDevice.FileVolume
 			cdromBlock[mkResourceVirtualEnvironmentVMCDROMInterface] = currentInterface
 
-			if len(currentCDROM) > 0 {
+			if len(currentCDROM) > 0 && currentCDROM[0] != nil {
 				currentBlock := currentCDROM[0].(map[string]interface{})
 
 				if currentBlock[mkResourceVirtualEnvironmentVMCDROMFileID] == "" {
@@ -4498,11 +4496,11 @@ func vmReadCustom(
 		currentInitializationDNSBlock := map[string]interface{}{}
 		currentInitialization := d.Get(mkResourceVirtualEnvironmentVMInitialization).([]interface{})
 
-		if len(currentInitialization) > 0 {
+		if len(currentInitialization) > 0 && currentInitialization[0] != nil {
 			currentInitializationBlock := currentInitialization[0].(map[string]interface{})
 			//nolint:lll
 			currentInitializationDNS := currentInitializationBlock[mkResourceVirtualEnvironmentVMInitializationDNS].([]interface{})
-			if len(currentInitializationDNS) > 0 {
+			if len(currentInitializationDNS) > 0 && currentInitializationDNS[0] != nil {
 				currentInitializationDNSBlock = currentInitializationDNS[0].(map[string]interface{})
 			}
 		}
