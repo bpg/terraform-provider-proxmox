@@ -183,7 +183,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		vmID = *vmIDNew
 		err = d.Set(mkVMID, vmID)
-
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -1471,8 +1470,8 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 		}
 
 		if ids != "" {
-			dIds := strings.Split(ids, ";")
-			device.DeviceIDs = &dIds
+			dIDs := strings.Split(ids, ";")
+			device.DeviceIDs = &dIDs
 		}
 
 		if mdev != "" {
@@ -1741,7 +1740,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) 
 		true,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading VGA block: %w", err)
 	}
 
 	vgaEnabled := types.CustomBool(vgaBlock[mkVGAEnabled].(bool))
@@ -2458,7 +2457,8 @@ func vmReadCustom(
 
 	currentInitialization := d.Get(mkInitialization).([]interface{})
 
-	if len(clone) > 0 {
+	switch {
+	case len(clone) > 0:
 		if len(currentInitialization) > 0 {
 			if len(initialization) > 0 {
 				err := d.Set(
@@ -2471,10 +2471,10 @@ func vmReadCustom(
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		}
-	} else if len(initialization) > 0 {
+	case len(initialization) > 0:
 		err := d.Set(mkInitialization, []interface{}{initialization})
 		diags = append(diags, diag.FromErr(err)...)
-	} else {
+	default:
 		err := d.Set(mkInitialization, []interface{}{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -2637,11 +2637,9 @@ func vmReadCustom(
 		if len(clone) > 0 {
 			err = d.Set(mkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
 			diags = append(diags, diag.FromErr(err)...)
-		} else {
-			if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-				err := d.Set(mkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
-				diags = append(diags, diag.FromErr(err)...)
-			}
+		} else if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
+			err := d.Set(mkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
@@ -2656,7 +2654,8 @@ func vmReadCustom(
 
 	currentOperatingSystem := d.Get(mkOperatingSystem).([]interface{})
 
-	if len(clone) > 0 {
+	switch {
+	case len(clone) > 0:
 		if len(currentOperatingSystem) > 0 {
 			err := d.Set(
 				mkOperatingSystem,
@@ -2664,11 +2663,11 @@ func vmReadCustom(
 			)
 			diags = append(diags, diag.FromErr(err)...)
 		}
-	} else if len(currentOperatingSystem) > 0 ||
-		operatingSystem[mkOperatingSystemType] != dvOperatingSystemType {
+	case len(currentOperatingSystem) > 0 ||
+		operatingSystem[mkOperatingSystemType] != dvOperatingSystemType:
 		err := d.Set(mkOperatingSystem, []interface{}{operatingSystem})
 		diags = append(diags, diag.FromErr(err)...)
-	} else {
+	default:
 		err := d.Set(mkOperatingSystem, []interface{}{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -2875,18 +2874,19 @@ func vmReadCustom(
 
 	currentVGA := d.Get(mkVGA).([]interface{})
 
-	if len(clone) > 0 {
+	switch {
+	case len(clone) > 0:
 		if len(currentVGA) > 0 {
 			err := d.Set(mkVGA, []interface{}{vga})
 			diags = append(diags, diag.FromErr(err)...)
 		}
-	} else if len(currentVGA) > 0 ||
+	case len(currentVGA) > 0 ||
 		vga[mkVGAEnabled] != dvVGAEnabled ||
 		vga[mkVGAMemory] != dvVGAMemory ||
-		vga[mkVGAType] != dvVGAType {
+		vga[mkVGAType] != dvVGAType:
 		err := d.Set(mkVGA, []interface{}{vga})
 		diags = append(diags, diag.FromErr(err)...)
-	} else {
+	default:
 		err := d.Set(mkVGA, []interface{}{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -3524,7 +3524,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		rebootRequired = true
 	}
 
-	err := updateDisk(d, vmConfig, updateBody)
+	err := updateDisk(d, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3777,6 +3777,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			if e := vmShutdown(ctx, vmAPI, d); e != nil {
 				return e
 			}
+
 			rebootRequired = false
 		}
 	}

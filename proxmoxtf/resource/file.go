@@ -22,8 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/ssh"
-
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -227,7 +225,7 @@ func File() *schema.Resource {
 		DeleteContext: fileDelete,
 		UpdateContext: fileUpdate,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				node, volID, err := fileParseImportID(d.Id())
 				if err != nil {
 					return nil, err

@@ -6,11 +6,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
@@ -568,6 +569,15 @@ func VM() *schema.Resource {
 				Description: "The description",
 				Optional:    true,
 				Default:     dvDescription,
+				StateFunc: func(i interface{}) string {
+					// PVE always adds a newline to the description, so we have to do the same,
+					// also taking in account the CLRF case (Windows)
+					if i.(string) != "" {
+						return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n")
+					}
+
+					return ""
+				},
 			},
 			mkDisk: diskSchema(),
 			mkEFIDisk: {

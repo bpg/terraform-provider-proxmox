@@ -3,21 +3,22 @@ package vm
 import (
 	"context"
 	"fmt"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/ssh"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
@@ -199,7 +200,7 @@ func diskSchema() *schema.Schema {
 	}
 }
 
-// called from vmCreateClone
+// called from vmCreateClone.
 func createDisks(
 	ctx context.Context, vmConfig *vms.GetResponseData, d *schema.ResourceData, vmAPI *vms.Client,
 ) (vms.CustomStorageDevices, error) {
@@ -226,7 +227,6 @@ func createDisks(
 		}
 
 		// disk is present, i.e. when cloning a template, but we need to check if it needs to be moved or resized
-
 		timeoutSec := d.Get(mkTimeoutMoveDisk).(int)
 
 		err := resizeDiskIfRequired(ctx, currentDisk, planDisk, vmAPI, timeoutSec)
@@ -263,7 +263,7 @@ func resizeDiskIfRequired(
 
 		err := vmAPI.ResizeVMDisk(ctx, diskResizeBody, timeoutSec)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to resize disk: %w", err)
 		}
 	}
 
@@ -291,7 +291,7 @@ func moveDiskIfRequired(
 
 		err := vmAPI.MoveVMDisk(ctx, diskMoveBody, timeoutSec)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to move disk: %w", err)
 		}
 	}
 
@@ -322,7 +322,7 @@ func createDisk(ctx context.Context, disk *vms.CustomStorageDevice, vmAPI *vms.C
 
 	err := vmAPI.UpdateVM(ctx, diskUpdateBody)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create disk: %w", err)
 	}
 
 	return nil
@@ -331,7 +331,7 @@ func createDisk(ctx context.Context, disk *vms.CustomStorageDevice, vmAPI *vms.C
 func vmImportCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) error {
 	vmID, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to convert vm id to int: %w", err)
 	}
 
 	planDisks, err := getStorageDevicesFromResource(d)
@@ -398,7 +398,7 @@ func vmImportCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 
 		api, err := config.GetClient()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get client: %w", err)
 		}
 
 		nodeName := d.Get(mkNodeName).(string)
@@ -406,10 +406,10 @@ func vmImportCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 		out, err := api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
 			if matches, e := regexp.Match(`pvesm: .* not found`, out); e == nil && matches {
-				return ssh.NewErrSSHUserNoPermission(api.SSH().Username())
+				return ssh.NewErrUserHasNoPermission(api.SSH().Username()) //nolint:wrapcheck
 			}
 
-			return err
+			return fmt.Errorf("failed to import disks: %w", err)
 		}
 
 		tflog.Debug(ctx, "vmCreateCustomDisks", map[string]interface{}{
@@ -457,7 +457,7 @@ func getDiskDeviceObjects1(d *schema.ResourceData, disks []interface{}) (vms.Cus
 			false,
 		)
 		if err != nil {
-			return diskDeviceObjects, err
+			return diskDeviceObjects, fmt.Errorf("failed to read disk speed: %w", err)
 		}
 
 		if fileFormat == "" {
@@ -519,7 +519,7 @@ func getDiskDeviceObjects1(d *schema.ResourceData, disks []interface{}) (vms.Cus
 
 		if storageInterface != "virtio" && storageInterface != "scsi" && storageInterface != "sata" {
 			return diskDeviceObjects, fmt.Errorf(
-				"The disk interface '%s' is not supported, should be one of 'virtioN', 'sataN', or 'scsiN'",
+				"the disk interface '%s' is not supported, should be one of 'virtioN', 'sataN', or 'scsiN'",
 				diskInterface,
 			)
 		}
@@ -657,7 +657,7 @@ func readDisk1(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-func updateDisk(d *schema.ResourceData, vmConfig *vms.GetResponseData, updateBody *vms.UpdateRequestBody) error {
+func updateDisk(d *schema.ResourceData, updateBody *vms.UpdateRequestBody) error {
 	// Prepare the new disk device configuration.
 	if !d.HasChange(mkDisk) {
 		return nil

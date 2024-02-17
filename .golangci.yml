@@ -73,6 +73,7 @@ linters:
     - ireturn
     - maintidx
     - nlreturn
+    - perfsprint
     - tagliatelle
     - testpackage
     - varnamelen
