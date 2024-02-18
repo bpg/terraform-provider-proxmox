@@ -4,6 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+// file deepcode ignore NoHardcodedCredentials/test: test file
+
 package tasks
 
 import (

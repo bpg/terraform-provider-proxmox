@@ -86,6 +86,7 @@ func NewConnection(endpoint string, insecure bool, minTLS string) (*Connection, 
 	var transport http.RoundTripper = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		TLSClientConfig: &tls.Config{
+			// deepcode ignore InsecureTLSConfig: the min TLS version is configurable
 			MinVersion:         version,
 			InsecureSkipVerify: insecure, //nolint:gosec
 		},

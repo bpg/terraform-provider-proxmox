@@ -38,8 +38,9 @@ func (r DiskSize) InGigabytes() int64 {
 }
 
 // DiskSizeFromGigabytes creates a DiskSize from gigabytes.
-func DiskSizeFromGigabytes(size int64) DiskSize {
-	return DiskSize(size * 1024 * 1024 * 1024)
+func DiskSizeFromGigabytes(size int64) *DiskSize {
+	ds := DiskSize(size * 1024 * 1024 * 1024)
+	return &ds
 }
 
 // MarshalJSON marshals a disk size into a Proxmox API `<DiskSize>` string.
@@ -64,6 +65,14 @@ func (r *DiskSize) UnmarshalJSON(b []byte) error {
 	*r = size
 
 	return nil
+}
+
+func (r *DiskSize) Copy() *DiskSize {
+	if r == nil {
+		return nil
+	}
+
+	return &(*r)
 }
 
 // ParseDiskSize parses a disk size string into a number of bytes.

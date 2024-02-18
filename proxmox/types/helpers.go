@@ -11,8 +11,30 @@ func StrPtr(s string) *string {
 	return &s
 }
 
+// IntPtr returns a pointer to an int.
+func IntPtr(i int) *int {
+	return &i
+}
+
 // BoolPtr returns a pointer to a bool.
 func BoolPtr(s bool) *CustomBool {
 	customBool := CustomBool(s)
 	return &customBool
+}
+
+// CopyString copies content of a string pointer.
+func CopyString(s *string) *string {
+	if s == nil {
+		return nil
+	}
+
+	return StrPtr(*s)
+}
+
+func CopyInt(i *int) *int {
+	if i == nil {
+		return nil
+	}
+
+	return IntPtr(*i)
 }
