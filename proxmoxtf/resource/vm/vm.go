@@ -182,6 +182,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		vmID = *vmIDNew
+
 		err = d.Set(mkVMID, vmID)
 		if err != nil {
 			return diag.FromErr(err)
@@ -303,6 +304,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if e != nil {
 		return diag.FromErr(e)
 	}
+
+	//// UPDATE AFTER CLONE, can we just call update?
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
 	acpi := types.CustomBool(d.Get(mkACPI).(bool))
@@ -1378,11 +1381,11 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*v
 		diskInterface := fmt.Sprint(baseDiskInterface, id)
 
 		storageDevice = &vms.CustomStorageDevice{
-			Enabled:    true,
-			FileVolume: efiDisk.FileVolume,
-			Format:     efiDisk.Format,
-			Interface:  &diskInterface,
-			ID:         &id,
+			Enabled:     true,
+			FileVolume:  efiDisk.FileVolume,
+			Format:      efiDisk.Format,
+			Interface:   &diskInterface,
+			DatastoreID: &id,
 		}
 
 		if efiDisk.Type != nil {
@@ -1436,10 +1439,10 @@ func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) *v
 		diskInterface := fmt.Sprint(baseDiskInterface, id)
 
 		storageDevice = &vms.CustomStorageDevice{
-			Enabled:    true,
-			FileVolume: tpmState.FileVolume,
-			Interface:  &diskInterface,
-			ID:         &id,
+			Enabled:     true,
+			FileVolume:  tpmState.FileVolume,
+			Interface:   &diskInterface,
+			DatastoreID: &id,
 		}
 	}
 
@@ -3819,18 +3822,12 @@ func vmUpdateDiskLocationAndSize(
 	if d.HasChange(mkDisk) {
 		diskOld, diskNew := d.GetChange(mkDisk)
 
-		diskOldEntries, err := getDiskDeviceObjects1(
-			d,
-			diskOld.([]interface{}),
-		)
+		diskOldEntries, err := getDiskDeviceObjects1(d, diskOld.([]interface{}))
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		diskNewEntries, err := getDiskDeviceObjects1(
-			d,
-			diskNew.([]interface{}),
-		)
+		diskNewEntries, err := getDiskDeviceObjects1(d, diskNew.([]interface{}))
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3902,7 +3899,7 @@ func vmUpdateDiskLocationAndSize(
 				)
 			}
 
-			if *oldDisk.ID != *diskNewEntries[oldKey].ID {
+			if *oldDisk.DatastoreID != *diskNewEntries[oldKey].DatastoreID {
 				if oldDisk.IsOwnedBy(vmID) {
 					deleteOriginalDisk := types.CustomBool(true)
 
@@ -3911,7 +3908,7 @@ func vmUpdateDiskLocationAndSize(
 						&vms.MoveDiskRequestBody{
 							DeleteOriginalDisk: &deleteOriginalDisk,
 							Disk:               *oldDisk.Interface,
-							TargetStorage:      *diskNewEntries[oldKey].ID,
+							TargetStorage:      *diskNewEntries[oldKey].DatastoreID,
 						},
 					)
 
@@ -3920,9 +3917,9 @@ func vmUpdateDiskLocationAndSize(
 				} else {
 					return diag.Errorf(
 						"Cannot move %s:%s to datastore %s in VM %d configuration, it is not owned by this VM!",
-						*oldDisk.ID,
+						*oldDisk.DatastoreID,
 						*oldDisk.PathInDatastore(),
-						*diskNewEntries[oldKey].ID,
+						*diskNewEntries[oldKey].DatastoreID,
 						vmID,
 					)
 				}
@@ -3940,7 +3937,7 @@ func vmUpdateDiskLocationAndSize(
 				} else {
 					return diag.Errorf(
 						"Cannot resize %s:%s in VM %d configuration, it is not owned by this VM!",
-						*oldDisk.ID,
+						*oldDisk.DatastoreID,
 						*oldDisk.PathInDatastore(),
 						vmID,
 					)

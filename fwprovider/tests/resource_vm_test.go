@@ -104,13 +104,14 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}`,
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_disk1", map[string]string{
-					"disk.0.cache":        "none",
-					"disk.0.datastore_id": "local-lvm",
-					"disk.0.discard":      "ignore",
-					"disk.0.file_format":  "raw",
-					// "disk.0.file_id":           "",  // is empty by default, but we can't check for that
+					// those are empty by default, but we can't check for that
+					// "disk.0.cache":          "",
+					// "disk.0.discard":      	"",
+					// "disk.0.file_id":        "",
+					"disk.0.datastore_id":      "local-lvm",
+					"disk.0.file_format":       "raw",
 					"disk.0.interface":         "virtio0",
-					"disk.0.iothread":          "false",
+					"disk.0.iothread":          "true",
 					"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
 					"disk.0.size":              "8",
 					"disk.0.ssd":               "false",
@@ -140,11 +141,10 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}`,
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_disk2", map[string]string{
-					"disk.0.cache":        "none",
-					"disk.0.datastore_id": "local-lvm",
-					"disk.0.discard":      "on",
-					"disk.0.file_format":  "raw",
-					// "disk.0.file_id":           "",  // is empty by default, but we can't check for that
+					"disk.0.cache":             "none",
+					"disk.0.datastore_id":      "local-lvm",
+					"disk.0.discard":           "on",
+					"disk.0.file_format":       "raw",
 					"disk.0.interface":         "virtio0",
 					"disk.0.iothread":          "true",
 					"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
@@ -153,7 +153,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}),
 			),
 		}}},
-		{"clone default disk", []resource.TestStep{
+		{"clone default disk without overrides", []resource.TestStep{
 			{
 				Config: `
 				resource "proxmox_virtual_environment_vm" "test_disk3_template" {
@@ -188,6 +188,58 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"clone disk with new size", []resource.TestStep{
+			{
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_disk3_template" {
+					node_name = "pve"
+					started   = false
+					name 	  = "test-disk3-template"
+					template  = "true"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						discard      = "on"
+						iothread     = true
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "test_disk3" {
+					node_name = "pve"
+					started   = false
+					name 	  = "test-disk3"
+
+					clone {
+						vm_id = proxmox_virtual_environment_vm.test_disk3_template.id
+					}
+
+					disk {
+						interface    = "scsi0"
+						size = 10
+                        ssd = true
+					}
+				}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{
+						"disk.0.datastore_id":      "local-lvm",
+						"disk.0.discard":           "on",
+						"disk.0.file_format":       "raw",
+						"disk.0.interface":         "virtio0",
+						"disk.0.iothread":          "true",
+						"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
+						"disk.0.size":              "10",
+						"disk.0.ssd":               "true",
+					}),
+				),
+			},
+			//{
+			//	RefreshState: true,
+			//	Destroy:      false,
+			//},
+		}},
 		//{"default disk parameters", resource.TestStep{}},
 		//{"default disk parameters", resource.TestStep{}},
 	}
@@ -213,10 +265,10 @@ func testResourceAttributes(res string, attrs map[string]string) resource.TestCh
 			if err := resource.TestCheckResourceAttrWith(res, k, func(got string) error {
 				match, err := regexp.Match(v, []byte(got)) //nolint:mirror
 				if err != nil {
-					return fmt.Errorf("error matching %s: %w", v, err)
+					return fmt.Errorf("error matching '%s': %w", v, err)
 				}
 				if !match {
-					return fmt.Errorf("expected %s to match %s", got, v)
+					return fmt.Errorf("expected '%s' to match '%s'", got, v)
 				}
 				return nil
 			})(s); err != nil {

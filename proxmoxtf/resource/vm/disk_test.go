@@ -3,13 +3,16 @@ package vm
 import (
 	"testing"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func TestMapStorageDevices(t *testing.T) {
+	t.Parallel()
+
 	devices := &vms.GetResponseData{
 		VirtualIODevice0: &vms.CustomStorageDevice{
 			Interface: types.StrPtr("virtio0"),
@@ -37,6 +40,8 @@ func TestMapStorageDevices(t *testing.T) {
 }
 
 func TestPopulateFileID(t *testing.T) {
+	t.Parallel()
+
 	devicesMap := map[string]*vms.CustomStorageDevice{
 		"virtio0": {},
 		"virtio1": {},

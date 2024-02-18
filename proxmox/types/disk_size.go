@@ -67,6 +67,14 @@ func (r *DiskSize) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (r *DiskSize) Copy() *DiskSize {
+	if r == nil {
+		return nil
+	}
+
+	return &(*r)
+}
+
 // ParseDiskSize parses a disk size string into a number of bytes.
 func ParseDiskSize(size string) (DiskSize, error) {
 	matches := sizeRegex.FindStringSubmatch(size)

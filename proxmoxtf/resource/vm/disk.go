@@ -205,6 +205,7 @@ func createDisks(
 	ctx context.Context, vmConfig *vms.GetResponseData, d *schema.ResourceData, vmAPI *vms.Client,
 ) (vms.CustomStorageDevices, error) {
 	// this is what VM has at the moment: map of interface name (virtio1) -> disk object
+	// the disks have already been cloned, they have all original properties from the template
 	currentDisks := populateFileIDs(mapStorageDevices(vmConfig), d)
 
 	// map of interface name (virtio1) -> disk object
@@ -277,16 +278,16 @@ func moveDiskIfRequired(
 ) error {
 	needToMove := false
 
-	if *planDisk.ID != "" {
+	if *planDisk.DatastoreID != "" {
 		fileIDParts := strings.Split(currentDisk.FileVolume, ":")
-		needToMove = *planDisk.ID != fileIDParts[0]
+		needToMove = *planDisk.DatastoreID != fileIDParts[0]
 	}
 
 	if needToMove {
 		diskMoveBody := &vms.MoveDiskRequestBody{
 			DeleteOriginalDisk: types.CustomBool(true).Pointer(),
 			Disk:               *planDisk.Interface,
-			TargetStorage:      *planDisk.ID,
+			TargetStorage:      *planDisk.DatastoreID,
 		}
 
 		err := vmAPI.MoveVMDisk(ctx, diskMoveBody, timeoutSec)
@@ -375,7 +376,7 @@ func vmImportCustomDisks(ctx context.Context, d *schema.ResourceData, m interfac
 			ssh.TrySudo,
 			fmt.Sprintf(`file_id="%s"`, *d.FileID),
 			fmt.Sprintf(`file_format="%s"`, *d.Format),
-			fmt.Sprintf(`datastore_id_target="%s"`, *d.ID),
+			fmt.Sprintf(`datastore_id_target="%s"`, *d.DatastoreID),
 			fmt.Sprintf(`disk_options="%s"`, diskOptions),
 			fmt.Sprintf(`disk_size="%d"`, d.Size.InGigabytes()),
 			fmt.Sprintf(`disk_interface="%s"`, *d.Interface),
@@ -476,10 +477,11 @@ func getDiskDeviceObjects1(d *schema.ResourceData, disks []interface{}) (vms.Cus
 				diskDevice.FileVolume = pathInDatastore
 			}
 		} else {
+			// a new disk, not yet allocated
 			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
 		}
 
-		diskDevice.ID = &datastoreID
+		diskDevice.DatastoreID = &datastoreID
 		diskDevice.Interface = &diskInterface
 		diskDevice.Format = &fileFormat
 		diskDevice.FileID = &fileID
