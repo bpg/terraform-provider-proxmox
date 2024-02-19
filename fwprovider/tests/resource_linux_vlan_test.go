@@ -20,9 +20,8 @@ const (
 	accTestLinuxVLANName = "proxmox_virtual_environment_network_linux_vlan.test"
 )
 
+//nolint:paralleltest
 func TestAccResourceLinuxVLAN(t *testing.T) {
-	t.Parallel()
-
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	iface := "ens18"

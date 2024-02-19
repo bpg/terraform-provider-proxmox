@@ -20,9 +20,8 @@ const (
 	accTestLinuxBridgeName = "proxmox_virtual_environment_network_linux_bridge.test"
 )
 
+//nolint:paralleltest
 func TestAccResourceLinuxBridge(t *testing.T) {
-	t.Parallel()
-
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))

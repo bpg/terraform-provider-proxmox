@@ -19,9 +19,8 @@ const (
 	accTestDownloadQcow2FileName = "proxmox_virtual_environment_download_file.qcow2_image"
 )
 
+//nolint:paralleltest
 func TestAccResourceDownloadFile(t *testing.T) {
-	t.Parallel()
-
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	resource.Test(t, resource.TestCase{

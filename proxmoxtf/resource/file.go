@@ -225,7 +225,7 @@ func File() *schema.Resource {
 		DeleteContext: fileDelete,
 		UpdateContext: fileUpdate,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				node, volID, err := fileParseImportID(d.Id())
 				if err != nil {
 					return nil, err
@@ -899,8 +899,8 @@ func readURL(
 		fileModificationDate := ""
 		fileSize := res.ContentLength
 		fileTag := ""
-
 		httpLastModified := res.Header.Get("Last-Modified")
+
 		if httpLastModified != "" {
 			var timeParsed time.Time
 			timeParsed, err = time.Parse(time.RFC1123, httpLastModified)
@@ -916,8 +916,10 @@ func readURL(
 		}
 
 		httpTag := res.Header.Get("ETag")
+
 		if httpTag != "" {
 			httpTagParts := strings.Split(httpTag, "\"")
+
 			if len(httpTagParts) > 1 {
 				fileTag = httpTagParts[1]
 			}
