@@ -1,10 +1,12 @@
 module github.com/bpg/terraform-provider-proxmox
 
-go 1.21
+go 1.22
+
+toolchain go1.22.0
 
 require (
 	github.com/avast/retry-go/v4 v4.5.1
-	github.com/brianvoe/gofakeit/v6 v6.28.0
+	github.com/brianvoe/gofakeit/v7 v7.0.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
