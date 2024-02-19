@@ -3017,13 +3017,3 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	return nil
 }
-
-func parseImportIDWithNodeName(id string) (string, string, error) {
-	nodeName, id, found := strings.Cut(id, "/")
-
-	if !found {
-		return "", "", fmt.Errorf("unexpected format of ID (%s), expected node/id", id)
-	}
-
-	return nodeName, id, nil
-}

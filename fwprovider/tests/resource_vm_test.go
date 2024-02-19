@@ -238,10 +238,10 @@ func TestAccResourceVMDisks(t *testing.T) {
 			//{
 			//	RefreshState: true,
 			//	Destroy:      false,
-			//},
+			// },
 		}},
-		//{"default disk parameters", resource.TestStep{}},
-		//{"default disk parameters", resource.TestStep{}},
+		// {"default disk parameters", resource.TestStep{}},
+		// {"default disk parameters", resource.TestStep{}},
 	}
 
 	accProviders := testAccMuxProviders(context.Background(), t)

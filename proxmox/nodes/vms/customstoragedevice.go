@@ -175,7 +175,7 @@ func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 	}
 
 	if d.Size != nil {
-		values = append(values, fmt.Sprintf("size=%s", *d.Size))
+		values = append(values, fmt.Sprintf("size=%d", *d.Size))
 	}
 
 	values = append(values, d.EncodeOptions())

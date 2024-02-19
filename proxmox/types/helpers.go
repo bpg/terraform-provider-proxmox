@@ -31,6 +31,7 @@ func CopyString(s *string) *string {
 	return StrPtr(*s)
 }
 
+// CopyInt copies content of an int pointer.
 func CopyInt(i *int) *int {
 	if i == nil {
 		return nil

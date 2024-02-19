@@ -41,11 +41,14 @@ func TestParseDiskSize(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := ParseDiskSize(tt.size)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseDiskSize() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if int64(got) != tt.want {
 				t.Errorf("parseDiskSize() got = %v, want %v", got, tt.want)
 			}
@@ -72,7 +75,10 @@ func TestFormatDiskSize(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if got := FormatDiskSize(DiskSize(tt.size)); got != tt.want {
+
+			size := DiskSize(tt.size)
+
+			if got := FormatDiskSize(&size); got != tt.want {
 				t.Errorf("formatDiskSize() = %v, want %v", got, tt.want)
 			}
 		})
@@ -99,9 +105,12 @@ func TestToFromGigabytes(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			ds := DiskSizeFromGigabytes(tt.size)
+
 			gb := ds.InGigabytes()
 			assert.Equal(t, tt.size, gb)
+
 			if got := ds.String(); got != tt.want {
 				t.Errorf("DiskSize.String() = %v, want %v", got, tt.want)
 			}

@@ -464,7 +464,7 @@ func (r *CustomRootFS) EncodeValues(key string, v *url.Values) error {
 	}
 
 	if r.Size != nil {
-		values = append(values, fmt.Sprintf("size=%s", *r.Size))
+		values = append(values, fmt.Sprintf("size=%d", *r.Size))
 	}
 
 	if r.MountOptions != nil {

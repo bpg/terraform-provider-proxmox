@@ -23,28 +23,37 @@ var sizeRegex = regexp.MustCompile(`(?i)^(\d+(\.\d+)?)(k|kb|kib|m|mb|mib|g|gb|gi
 type DiskSize int64
 
 // String returns the string representation of the disk size.
-func (r DiskSize) String() string {
+func (r *DiskSize) String() string {
 	return FormatDiskSize(r)
 }
 
 // InMegabytes returns the disk size in megabytes.
-func (r DiskSize) InMegabytes() int64 {
-	return int64(r) / 1024 / 1024
+func (r *DiskSize) InMegabytes() int64 {
+	if r == nil {
+		return 0
+	}
+
+	return int64(*r) / 1024 / 1024
 }
 
 // InGigabytes returns the disk size in gigabytes.
-func (r DiskSize) InGigabytes() int64 {
-	return int64(r) / 1024 / 1024 / 1024
+func (r *DiskSize) InGigabytes() int64 {
+	if r == nil {
+		return 0
+	}
+
+	return int64(*r) / 1024 / 1024 / 1024
 }
 
 // DiskSizeFromGigabytes creates a DiskSize from gigabytes.
 func DiskSizeFromGigabytes(size int64) *DiskSize {
 	ds := DiskSize(size * 1024 * 1024 * 1024)
+
 	return &ds
 }
 
 // MarshalJSON marshals a disk size into a Proxmox API `<DiskSize>` string.
-func (r DiskSize) MarshalJSON() ([]byte, error) {
+func (r *DiskSize) MarshalJSON() ([]byte, error) {
 	bytes, err := json.Marshal(FormatDiskSize(r))
 	if err != nil {
 		return nil, fmt.Errorf("cannot marshal disk size: %w", err)
@@ -67,65 +76,68 @@ func (r *DiskSize) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Copy returns a deep copy of the disk size.
 func (r *DiskSize) Copy() *DiskSize {
 	if r == nil {
 		return nil
 	}
 
-	return &(*r)
+	c := *r
+
+	return &c
 }
 
 // ParseDiskSize parses a disk size string into a number of bytes.
 func ParseDiskSize(size string) (DiskSize, error) {
 	matches := sizeRegex.FindStringSubmatch(size)
 	if len(matches) > 0 {
-		fsize, err := strconv.ParseFloat(matches[1], 64)
+		fSize, err := strconv.ParseFloat(matches[1], 64)
 		if err != nil {
 			return -1, fmt.Errorf("cannot parse disk size \"%s\": %w", size, err)
 		}
 
 		switch strings.ToLower(matches[3]) {
 		case "k", "kb", "kib":
-			fsize *= 1024
+			fSize *= 1024
 		case "m", "mb", "mib":
-			fsize = fsize * 1024 * 1024
+			fSize = fSize * 1024 * 1024
 		case "g", "gb", "gib":
-			fsize = fsize * 1024 * 1024 * 1024
+			fSize = fSize * 1024 * 1024 * 1024
 		case "t", "tb", "tib":
-			fsize = fsize * 1024 * 1024 * 1024 * 1024
+			fSize = fSize * 1024 * 1024 * 1024 * 1024
 		}
 
-		return DiskSize(math.Ceil(fsize)), nil
+		return DiskSize(math.Ceil(fSize)), nil
 	}
 
 	return -1, fmt.Errorf("cannot parse disk size \"%s\"", size)
 }
 
 // FormatDiskSize turns a number of bytes into a disk size string.
-func FormatDiskSize(size DiskSize) string {
-	if size < 0 {
+func FormatDiskSize(size *DiskSize) string {
+	if size == nil || *size < 0 {
 		return ""
 	}
 
-	if size < 1024 {
-		return fmt.Sprintf("%d", size)
+	if *size < 1024 {
+		return fmt.Sprintf("%d", *size)
 	}
 
 	round := func(f float64) string {
 		return strconv.FormatFloat(math.Ceil(f*100)/100, 'f', -1, 64)
 	}
 
-	if size < 1024*1024 {
-		return round(float64(size)/1024) + "K"
+	if *size < 1024*1024 {
+		return round(float64(*size)/1024) + "K"
 	}
 
-	if size < 1024*1024*1024 {
-		return round(float64(size)/1024/1024) + "M"
+	if *size < 1024*1024*1024 {
+		return round(float64(*size)/1024/1024) + "M"
 	}
 
-	if size < 1024*1024*1024*1024 {
-		return round(float64(size)/1024/1024/1024) + "G"
+	if *size < 1024*1024*1024*1024 {
+		return round(float64(*size)/1024/1024/1024) + "G"
 	}
 
-	return round(float64(size)/1024/1024/1024/1024) + "T"
+	return round(float64(*size)/1024/1024/1024/1024) + "T"
 }
