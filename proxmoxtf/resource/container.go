@@ -1353,7 +1353,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 			configBlock := c.(map[string]interface{})
 			ipv4 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4].([]interface{})
 
-			if len(ipv4) > 0 {
+			if len(ipv4) > 0 && ipv4[0] != nil {
 				ipv4Block := ipv4[0].(map[string]interface{})
 
 				initializationIPConfigIPv4Address = append(
@@ -1372,7 +1372,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 			ipv6 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6].([]interface{})
 
-			if len(ipv6) > 0 {
+			if len(ipv6) > 0 && ipv6[0] != nil {
 				ipv6Block := ipv6[0].(map[string]interface{})
 
 				initializationIPConfigIPv6Address = append(
@@ -2660,7 +2660,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			configBlock := c.(map[string]interface{})
 			ipv4 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv4].([]interface{})
 
-			if len(ipv4) > 0 {
+			if len(ipv4) > 0 && ipv4[0] != nil {
 				ipv4Block := ipv4[0].(map[string]interface{})
 
 				initializationIPConfigIPv4Address = append(
@@ -2679,7 +2679,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 			ipv6 := configBlock[mkResourceVirtualEnvironmentContainerInitializationIPConfigIPv6].([]interface{})
 
-			if len(ipv6) > 0 {
+			if len(ipv6) > 0 && ipv6[0] != nil {
 				ipv6Block := ipv6[0].(map[string]interface{})
 
 				initializationIPConfigIPv6Address = append(
