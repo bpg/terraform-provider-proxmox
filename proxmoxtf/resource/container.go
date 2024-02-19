@@ -1512,12 +1512,14 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		rateLimit := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit].(float64)
 		vlanID := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceVLANID].(int)
 		mtu := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceMTU].(int)
+		firewall := networkInterfaceMap[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall].(bool)
 
 		if bridge != "" {
 			networkInterfaceObject.Bridge = &bridge
 		}
 
 		networkInterfaceObject.Enabled = enabled
+		networkInterfaceObject.Name = name
 
 		if len(initializationIPConfigIPv4Address) > ni {
 			if initializationIPConfigIPv4Address[ni] != "" {
@@ -1537,11 +1539,13 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 			}
 		}
 
+		if firewall {
+			networkInterfaceObject.Firewall = types.CustomBool(firewall).Pointer()
+		}
+
 		if macAddress != "" {
 			networkInterfaceObject.MACAddress = &macAddress
 		}
-
-		networkInterfaceObject.Name = name
 
 		if rateLimit != 0 {
 			networkInterfaceObject.RateLimit = &rateLimit
@@ -1739,15 +1743,17 @@ func containerGetExistingNetworkInterface(
 
 		networkInterface := map[string]interface{}{}
 
+		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled] = true
+		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceName] = nv.Name
+
 		if nv.Bridge != nil {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge] = *nv.Bridge
 		} else {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge] = ""
 		}
 
-		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled] = true
-		if nv.Firewall != nil {
-			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall] = *nv.Firewall
+		if nv.Firewall != nil && *nv.Firewall {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall] = true
 		} else {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall] = false
 		}
@@ -1757,8 +1763,6 @@ func containerGetExistingNetworkInterface(
 		} else {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress] = ""
 		}
-
-		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceName] = nv.Name
 
 		if nv.RateLimit != nil {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit] = *nv.RateLimit
@@ -2287,16 +2291,17 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		networkInterface := map[string]interface{}{}
 
+		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled] = true
+		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceName] = nv.Name
+
 		if nv.Bridge != nil {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge] = *nv.Bridge
 		} else {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceBridge] = ""
 		}
 
-		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceEnabled] = true
-
-		if nv.Firewall != nil {
-			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall] = *nv.Firewall
+		if nv.Firewall != nil && *nv.Firewall {
+			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall] = true
 		} else {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceFirewall] = false
 		}
@@ -2306,8 +2311,6 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		} else {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceMACAddress] = ""
 		}
-
-		networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceName] = nv.Name
 
 		if nv.RateLimit != nil {
 			networkInterface[mkResourceVirtualEnvironmentContainerNetworkInterfaceRateLimit] = *nv.RateLimit
