@@ -262,44 +262,6 @@ func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*stri
 	return resBody.Data, nil
 }
 
-// // ResizeVMDisk resizes a virtual machine disk.
-// func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) error {
-// 	var err error
-
-// 	tflog.Debug(ctx, "resize disk", map[string]interface{}{
-// 		"disk": d.Disk,
-// 		"size": d.Size,
-// 	})
-
-// 	for i := 0; i < 5; i++ {
-// 		err = c.DoRequest(
-// 			ctx,
-// 			http.MethodPut,
-// 			c.ExpandPath("resize"),
-// 			d,
-// 			nil,
-// 		)
-// 		if err == nil {
-// 			return nil
-// 		}
-
-// 		tflog.Debug(ctx, "resize disk failed", map[string]interface{}{
-// 			"retry": i,
-// 		})
-// 		time.Sleep(5 * time.Second)
-
-// 		if ctx.Err() != nil {
-// 			return fmt.Errorf("error resizing VM disk: %w", ctx.Err())
-// 		}
-// 	}
-
-// 	if err != nil {
-// 		return fmt.Errorf("error resizing VM disk: %w", err)
-// 	}
-
-// 	return nil
-// }
-
 // ResizeVMDisk resizes a virtual machine disk.
 func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody, timeout int) error {
 	taskID, err := c.ResizeVMDiskAsync(ctx, d)

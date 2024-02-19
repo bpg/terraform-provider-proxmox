@@ -624,8 +624,9 @@ func VM() *schema.Resource {
 				StateFunc: func(i interface{}) string {
 					// PVE always adds a newline to the description, so we have to do the same,
 					// also taking in account the CLRF case (Windows)
+					// Unlike container, VM description does not have trailing "\n"
 					if i.(string) != "" {
-						return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n") + "\n"
+						return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n")
 					}
 
 					return ""
@@ -1187,6 +1188,7 @@ func VM() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The MAC addresses for the network interfaces",
 				Computed:    true,
+				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			mkResourceVirtualEnvironmentVMMemory: {
@@ -4209,9 +4211,9 @@ func vmReadCustom(
 			if datastoreID != "" {
 				// disk format may not be returned by config API if it is default for the storage, and that may be different
 				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-				volume, err := api.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
-				if err != nil {
-					diags = append(diags, diag.FromErr(err)...)
+				volume, e := api.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
+				if e != nil {
+					diags = append(diags, diag.FromErr(e)...)
 					continue
 				}
 
@@ -4292,7 +4294,7 @@ func vmReadCustom(
 
 	if len(clone) == 0 || len(currentDiskList) > 0 {
 		orderedDiskList := orderedListFromMap(diskMap)
-		err := d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
+		err = d.Set(mkResourceVirtualEnvironmentVMDisk, orderedDiskList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4309,9 +4311,9 @@ func vmReadCustom(
 		} else {
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			volume, err := api.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
-			if err != nil {
-				diags = append(diags, diag.FromErr(err)...)
+			volume, e := api.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
+			if e != nil {
+				diags = append(diags, diag.FromErr(e)...)
 			} else {
 				efiDisk[mkResourceVirtualEnvironmentVMEFIDiskFileFormat] = volume.FileFormat
 			}
@@ -4333,7 +4335,7 @@ func vmReadCustom(
 
 		if len(clone) > 0 {
 			if len(currentEfiDisk) > 0 {
-				err := d.Set(mkResourceVirtualEnvironmentVMEFIDisk, []interface{}{efiDisk})
+				err = d.Set(mkResourceVirtualEnvironmentVMEFIDisk, []interface{}{efiDisk})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(currentEfiDisk) > 0 ||
@@ -4341,7 +4343,7 @@ func vmReadCustom(
 			efiDisk[mkResourceVirtualEnvironmentVMEFIDiskType] != dvResourceVirtualEnvironmentVMEFIDiskType ||
 			efiDisk[mkResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys] != dvResourceVirtualEnvironmentVMEFIDiskPreEnrolledKeys || //nolint:lll
 			efiDisk[mkResourceVirtualEnvironmentVMEFIDiskFileFormat] != dvResourceVirtualEnvironmentVMEFIDiskFileFormat {
-			err := d.Set(mkResourceVirtualEnvironmentVMEFIDisk, []interface{}{efiDisk})
+			err = d.Set(mkResourceVirtualEnvironmentVMEFIDisk, []interface{}{efiDisk})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -4358,13 +4360,13 @@ func vmReadCustom(
 
 		if len(clone) > 0 {
 			if len(currentTPMState) > 0 {
-				err := d.Set(mkResourceVirtualEnvironmentVMTPMState, []interface{}{tpmState})
+				err = d.Set(mkResourceVirtualEnvironmentVMTPMState, []interface{}{tpmState})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(currentTPMState) > 0 ||
 			tpmState[mkResourceVirtualEnvironmentVMTPMStateDatastoreID] != dvResourceVirtualEnvironmentVMTPMStateDatastoreID ||
 			tpmState[mkResourceVirtualEnvironmentVMTPMStateVersion] != dvResourceVirtualEnvironmentVMTPMStateVersion {
-			err := d.Set(mkResourceVirtualEnvironmentVMTPMState, []interface{}{tpmState})
+			err = d.Set(mkResourceVirtualEnvironmentVMTPMState, []interface{}{tpmState})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -4428,7 +4430,7 @@ func vmReadCustom(
 
 	if len(clone) == 0 || len(currentPCIList) > 0 {
 		orderedPCIList := orderedListFromMap(pciMap)
-		err := d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
+		err = d.Set(mkResourceVirtualEnvironmentVMHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4467,7 +4469,7 @@ func vmReadCustom(
 	if len(clone) == 0 || len(currentUSBList) > 0 {
 		// todo: reordering of devices by PVE may cause an issue here
 		orderedUSBList := orderedListFromMap(usbMap)
-		err := d.Set(mkResourceVirtualEnvironmentVMHostUSB, orderedUSBList)
+		err = d.Set(mkResourceVirtualEnvironmentVMHostUSB, orderedUSBList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4696,21 +4698,18 @@ func vmReadCustom(
 	if len(clone) > 0 {
 		if len(currentInitialization) > 0 {
 			if len(initialization) > 0 {
-				err := d.Set(
-					mkResourceVirtualEnvironmentVMInitialization,
-					[]interface{}{initialization},
-				)
+				err = d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
 				diags = append(diags, diag.FromErr(err)...)
 			} else {
-				err := d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+				err = d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		}
 	} else if len(initialization) > 0 {
-		err := d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
+		err = d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{initialization})
 		diags = append(diags, diag.FromErr(err)...)
 	} else {
-		err := d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
+		err = d.Set(mkResourceVirtualEnvironmentVMInitialization, []interface{}{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4859,27 +4858,12 @@ func vmReadCustom(
 		networkDeviceList[ni] = networkDevice
 	}
 
-	if len(clone) > 0 {
-		if len(currentNetworkDeviceList) > 0 {
-			err := d.Set(
-				mkResourceVirtualEnvironmentVMMACAddresses,
-				macAddresses[0:len(currentNetworkDeviceList)],
-			)
-			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(
-				mkResourceVirtualEnvironmentVMNetworkDevice,
-				networkDeviceList[:networkDeviceLast+1],
-			)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else {
-		err := d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
-		diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
+	diags = append(diags, diag.FromErr(err)...)
 
-		if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-			err := d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
-			diags = append(diags, diag.FromErr(err)...)
-		}
+	if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
+		err := d.Set(mkResourceVirtualEnvironmentVMNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the operating system configuration to the one stored in the state.
@@ -5230,8 +5214,6 @@ func vmReadNetworkValues(
 				}
 			}
 
-			err = d.Set(mkResourceVirtualEnvironmentVMMACAddresses, macAddresses)
-			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
