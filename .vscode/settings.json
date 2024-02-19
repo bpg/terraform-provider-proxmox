@@ -8,6 +8,8 @@
         "iothread",
         "keyctl",
         "mbps",
+        "nameserver",
+        "nestif",
         "nolint",
         "NUMA",
         "proxmoxtf",
