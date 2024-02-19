@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v6"
+	"github.com/brianvoe/gofakeit/v7"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
