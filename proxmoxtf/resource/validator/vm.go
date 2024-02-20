@@ -9,6 +9,7 @@ package validator
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -22,6 +23,7 @@ func VMID() schema.SchemaValidateDiagFunc {
 		maxID := 2147483647
 
 		var ws []string
+
 		var es []error
 
 		v, ok := i.(int)
@@ -57,6 +59,14 @@ func ContentType() schema.SchemaValidateDiagFunc {
 		"iso",
 		"snippets",
 		"vztmpl",
+	}, false))
+}
+
+// CPUArchitecture returns a schema validation function for a CPU architecture.
+func CPUArchitecture() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"aarch64",
+		"x86_64",
 	}, false))
 }
 
@@ -199,6 +209,7 @@ func Timeout() schema.SchemaValidateDiagFunc {
 		v, ok := i.(string)
 
 		var ws []string
+
 		var es []error
 
 		if !ok {
@@ -278,4 +289,59 @@ func CloudInitType() schema.SchemaValidateDiagFunc {
 		"configdrive2",
 		"nocloud",
 	}, false))
+}
+
+// AudioDevice is a schema validation function for audio devices.
+func AudioDevice() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"AC97",
+		"ich9-intel-hda",
+		"intel-hda",
+	}, false))
+}
+
+// AudioDriver is a schema validation function for audio drivers.
+func AudioDriver() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"spice",
+	}, false))
+}
+
+// OperatingSystemType is a schema validation function for operating system types.
+func OperatingSystemType() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"l24",
+		"l26",
+		"other",
+		"solaris",
+		"w2k",
+		"w2k3",
+		"w2k8",
+		"win7",
+		"win8",
+		"win10",
+		"win11",
+		"wvista",
+		"wxp",
+	}, false))
+}
+
+func SerialDevice() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
+		v, ok := i.(string)
+
+		var es []error
+
+		if !ok {
+			es = append(es, fmt.Errorf("expected type of %s to be string", k))
+			return nil, es
+		}
+
+		if !strings.HasPrefix(v, "/dev/") && v != "socket" {
+			es = append(es, fmt.Errorf("expected %s to be '/dev/*' or 'socket'", k))
+			return nil, es
+		}
+
+		return nil, es
+	})
 }

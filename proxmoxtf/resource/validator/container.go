@@ -18,3 +18,38 @@ func MountType() schema.SchemaValidateDiagFunc {
 		"nfs",
 	}, false))
 }
+
+// ConsoleMode returns a schema validation function for a console mode on a lxc container.
+func ConsoleMode() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"console",
+		"shell",
+		"tty",
+	}, false))
+}
+
+// CPUArchitecture returns a schema validation function for a CPU architecture on a lxc container.
+func ContainerCPUArchitecture() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"amd64",
+		"arm64",
+		"armhf",
+		"i386",
+	}, false))
+}
+
+// ContainerOperatingSystemType returns a schema validation function for an operating system type on a lxc container.
+func ContainerOperatingSystemType() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"alpine",
+		"archlinux",
+		"centos",
+		"debian",
+		"fedora",
+		"gentoo",
+		"nixos",
+		"opensuse",
+		"ubuntu",
+		"unmanaged",
+	}, false))
+}
