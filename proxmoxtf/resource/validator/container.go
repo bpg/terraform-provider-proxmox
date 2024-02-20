@@ -28,7 +28,7 @@ func ConsoleMode() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// CPUArchitecture returns a schema validation function for a CPU architecture on a lxc container.
+// ContainerCPUArchitecture returns a schema validation function for a CPU architecture on a lxc container.
 func ContainerCPUArchitecture() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"amd64",

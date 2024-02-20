@@ -326,6 +326,7 @@ func OperatingSystemType() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// SerialDevice is a schema validation function for serial devices.
 func SerialDevice() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)

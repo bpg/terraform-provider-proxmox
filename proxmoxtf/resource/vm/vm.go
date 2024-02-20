@@ -1898,7 +1898,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			}
 		}
 
-		//nolint:wsl
 		if onlySharedDatastores {
 			// If the source and the target node are not the same, only clone directly to the target node if
 			//  all used datastores in the source VM are shared. Directly cloning to non-shared storage
