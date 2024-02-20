@@ -15,7 +15,7 @@ This repository is a fork of <https://github.com/danitso/terraform-provider-prox
 
 ## Compatibility promise
 
-This provider is compatible with the latest version of Proxmox VE (currently 8.0).
+This provider is compatible with the latest version of Proxmox VE (currently 8.1).
 While it may work with older 7.x versions, it is not guaranteed to do so.
 
 While provider is on version 0.x, it is not guaranteed to be backwards compatible with all previous minor versions.
@@ -26,7 +26,7 @@ However, we will try to keep the backwards compatibility between provider versio
 - [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
 - [Terraform](https://www.terraform.io/downloads.html) 1.5.x+ or [OpenTofu](https://opentofu.org) 1.6.x
-- [Go](https://golang.org/doc/install) 1.21 (to build the provider plugin)
+- [Go](https://golang.org/doc/install) 1.22 (to build the provider plugin)
 
 ## Using the provider
 
@@ -133,5 +133,6 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [TJ Zimmerman](https://github.com/zimmertr)
 - [Elias Alvord](https://github.com/elias314)
 - [laktosterror](https://github.com/laktosterror)
+- [Radosław Szamszur](https://github.com/rszamszur)
 
 Thanks again for your support, it is much appreciated! 🙏
