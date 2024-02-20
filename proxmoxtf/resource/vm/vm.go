@@ -366,7 +366,7 @@ func VM() *schema.Resource {
 							Description:      "The maximum amount of time to wait for data from the QEMU agent to become available",
 							Optional:         true,
 							Default:          dvAgentTimeout,
-							ValidateDiagFunc: validator.Timeout(),
+							ValidateDiagFunc: TimeoutValidator(),
 						},
 						mkAgentTrim: {
 							Type:        schema.TypeBool,
@@ -379,7 +379,7 @@ func VM() *schema.Resource {
 							Description:      "The QEMU agent interface type",
 							Optional:         true,
 							Default:          dvAgentType,
-							ValidateDiagFunc: validator.QEMUAgentType(),
+							ValidateDiagFunc: QEMUAgentTypeValidator(),
 						},
 					},
 				},
@@ -406,14 +406,14 @@ func VM() *schema.Resource {
 							Description:      "The device",
 							Optional:         true,
 							Default:          dvAudioDeviceDevice,
-							ValidateDiagFunc: validator.AudioDevice(),
+							ValidateDiagFunc: AudioDeviceValidator(),
 						},
 						mkAudioDeviceDriver: {
 							Type:             schema.TypeString,
 							Description:      "The driver",
 							Optional:         true,
 							Default:          dvAudioDeviceDriver,
-							ValidateDiagFunc: validator.AudioDriver(),
+							ValidateDiagFunc: AudioDriverValidator(),
 						},
 						mkAudioDeviceEnabled: {
 							Type:        schema.TypeBool,
@@ -431,7 +431,7 @@ func VM() *schema.Resource {
 				Description:      "The BIOS implementation",
 				Optional:         true,
 				Default:          dvBIOS,
-				ValidateDiagFunc: validator.BIOS(),
+				ValidateDiagFunc: BIOSValidator(),
 			},
 			mkCDROM: {
 				Type:        schema.TypeList,
@@ -466,7 +466,7 @@ func VM() *schema.Resource {
 							Description:      "The CDROM interface",
 							Optional:         true,
 							Default:          dvCDROMInterface,
-							ValidateDiagFunc: validator.IDEInterface(),
+							ValidateDiagFunc: IDEInterfaceValidator(),
 						},
 					},
 				},
@@ -508,7 +508,7 @@ func VM() *schema.Resource {
 							Description:      "The ID of the source VM",
 							Required:         true,
 							ForceNew:         true,
-							ValidateDiagFunc: validator.VMID(),
+							ValidateDiagFunc: VMIDValidator(),
 						},
 						mkCloneFull: {
 							Type:        schema.TypeBool,
@@ -548,7 +548,7 @@ func VM() *schema.Resource {
 							Description:      "The CPU architecture",
 							Optional:         true,
 							Default:          dvCPUArchitecture,
-							ValidateDiagFunc: validator.CPUArchitecture(),
+							ValidateDiagFunc: CPUArchitectureValidator(),
 						},
 						mkCPUCores: {
 							Type:             schema.TypeInt,
@@ -600,7 +600,7 @@ func VM() *schema.Resource {
 							Description:      "The emulated CPU type",
 							Optional:         true,
 							Default:          dvCPUType,
-							ValidateDiagFunc: validator.CPUType(),
+							ValidateDiagFunc: CPUTypeValidator(),
 						},
 						mkCPUUnits: {
 							Type:        schema.TypeInt,
@@ -878,8 +878,8 @@ func VM() *schema.Resource {
 							Description:      "The IDE interface on which the CloudInit drive will be added",
 							Optional:         true,
 							Default:          dvInitializationInterface,
-							ValidateDiagFunc: validator.CloudInitInterface(),
-							DiffSuppressFunc: func(k, oldValue, newValue string, d *schema.ResourceData) bool {
+							ValidateDiagFunc: CloudInitInterfaceValidator(),
+							DiffSuppressFunc: func(_, _, newValue string, _ *schema.ResourceData) bool {
 								return newValue == ""
 							},
 						},
@@ -1008,7 +1008,7 @@ func VM() *schema.Resource {
 										ForceNew:    true,
 										Sensitive:   true,
 										Default:     dvInitializationUserAccountPassword,
-										DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+										DiffSuppressFunc: func(_, oldVal, _ string, _ *schema.ResourceData) bool {
 											return len(oldVal) > 0 &&
 												strings.ReplaceAll(oldVal, "*", "") == ""
 										},
@@ -1062,7 +1062,7 @@ func VM() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvInitializationType,
-							ValidateDiagFunc: validator.CloudInitType(),
+							ValidateDiagFunc: CloudInitTypeValidator(),
 						},
 					},
 				},
@@ -1176,14 +1176,14 @@ func VM() *schema.Resource {
 				Description:      "The keyboard layout",
 				Optional:         true,
 				Default:          dvKeyboardLayout,
-				ValidateDiagFunc: validator.KeyboardLayout(),
+				ValidateDiagFunc: KeyboardLayoutValidator(),
 			},
 			mkMachine: {
 				Type:             schema.TypeString,
 				Description:      "The VM machine type, either default `pc` or `q35`",
 				Optional:         true,
 				Default:          dvMachineType,
-				ValidateDiagFunc: validator.MachineType(),
+				ValidateDiagFunc: MachineTypeValidator(),
 			},
 			mkMACAddresses: {
 				Type:        schema.TypeList,
@@ -1284,7 +1284,7 @@ func VM() *schema.Resource {
 							Description:      "The model",
 							Optional:         true,
 							Default:          dvNetworkDeviceModel,
-							ValidateDiagFunc: validator.NetworkDeviceModel(),
+							ValidateDiagFunc: NetworkDeviceModelValidator(),
 						},
 						mkNetworkDeviceQueues: {
 							Type:             schema.TypeInt,
@@ -1351,7 +1351,7 @@ func VM() *schema.Resource {
 							Description:      "The type",
 							Optional:         true,
 							Default:          dvOperatingSystemType,
-							ValidateDiagFunc: validator.OperatingSystemType(),
+							ValidateDiagFunc: OperatingSystemTypeValidator(),
 						},
 					},
 				},
@@ -1382,7 +1382,7 @@ func VM() *schema.Resource {
 							Description:      "The device",
 							Optional:         true,
 							Default:          dvSerialDeviceDevice,
-							ValidateDiagFunc: validator.SerialDevice(),
+							ValidateDiagFunc: SerialDeviceValidator(),
 						},
 					},
 				},
@@ -1447,7 +1447,7 @@ func VM() *schema.Resource {
 				Description: "Whether to start the virtual machine",
 				Optional:    true,
 				Default:     dvStarted,
-				DiffSuppressFunc: func(k, _, _ string, d *schema.ResourceData) bool {
+				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
 					return d.Get(mkTemplate).(bool)
 				},
 			},
@@ -1578,14 +1578,14 @@ func VM() *schema.Resource {
 							Description:      "The VGA memory in megabytes (4-512 MB)",
 							Optional:         true,
 							Default:          dvVGAMemory,
-							ValidateDiagFunc: validator.VGAMemory(),
+							ValidateDiagFunc: VGAMemoryValidator(),
 						},
 						mkVGAType: {
 							Type:             schema.TypeString,
 							Description:      "The VGA type",
 							Optional:         true,
 							Default:          dvVGAType,
-							ValidateDiagFunc: validator.VGAType(),
+							ValidateDiagFunc: VGATypeValidator(),
 						},
 					},
 				},
@@ -1599,14 +1599,14 @@ func VM() *schema.Resource {
 				Computed:    true,
 				// "ForceNew: true" handled in CustomizeDiff, making sure VMs with legacy configs with vm_id = -1
 				// do not require re-creation.
-				ValidateDiagFunc: validator.VMID(),
+				ValidateDiagFunc: VMIDValidator(),
 			},
 			mkSCSIHardware: {
 				Type:             schema.TypeString,
 				Description:      "The SCSI hardware type",
 				Optional:         true,
 				Default:          dvSCSIHardware,
-				ValidateDiagFunc: validator.SCSIHardware(),
+				ValidateDiagFunc: SCSIHardwareValidator(),
 			},
 			mkHookScriptFileID: {
 				Type:        schema.TypeString,
@@ -1628,28 +1628,28 @@ func VM() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			customdiff.ComputedIf(
 				mkIPv4Addresses,
-				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
 					return d.HasChange(mkStarted) ||
 						d.HasChange(mkNetworkDevice)
 				},
 			),
 			customdiff.ComputedIf(
 				mkIPv6Addresses,
-				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
 					return d.HasChange(mkStarted) ||
 						d.HasChange(mkNetworkDevice)
 				},
 			),
 			customdiff.ComputedIf(
 				mkNetworkInterfaceNames,
-				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
 					return d.HasChange(mkStarted) ||
 						d.HasChange(mkNetworkDevice)
 				},
 			),
 			customdiff.ForceNewIf(
 				mkVMID,
-				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
 					newValue := d.Get(mkVMID)
 
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
@@ -1659,13 +1659,13 @@ func VM() *schema.Resource {
 			),
 			customdiff.ForceNewIf(
 				mkNodeName,
-				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
 					return !d.Get(mkMigrate).(bool)
 				},
 			),
 		),
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				node, id, err := parseImportIDWithNodeName(d.Id())
 				if err != nil {
 					return nil, err
@@ -3518,8 +3518,8 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 		}
 
 		if ids != "" {
-			dIds := strings.Split(ids, ";")
-			device.DeviceIDs = &dIds
+			dIDs := strings.Split(ids, ";")
+			device.DeviceIDs = &dIDs
 		}
 
 		if mdev != "" {

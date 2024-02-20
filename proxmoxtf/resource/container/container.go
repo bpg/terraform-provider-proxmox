@@ -21,6 +21,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	resource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -187,7 +188,7 @@ func Container() *schema.Resource {
 							Description:      "The ID of the source container",
 							Required:         true,
 							ForceNew:         true,
-							ValidateDiagFunc: validator.VMID(),
+							ValidateDiagFunc: resource.VMIDValidator(),
 						},
 					},
 				},
@@ -220,7 +221,7 @@ func Container() *schema.Resource {
 							Description:      "The console mode",
 							Optional:         true,
 							Default:          dvConsoleMode,
-							ValidateDiagFunc: validator.ConsoleMode(),
+							ValidateDiagFunc: ConsoleModeValidator(),
 						},
 						mkConsoleTTYCount: {
 							Type:             schema.TypeInt,
@@ -254,7 +255,7 @@ func Container() *schema.Resource {
 							Description:      "The CPU architecture",
 							Optional:         true,
 							Default:          dvCPUArchitecture,
-							ValidateDiagFunc: validator.ContainerCPUArchitecture(),
+							ValidateDiagFunc: CPUArchitectureValidator(),
 						},
 						mkCPUCores: {
 							Type:             schema.TypeInt,
@@ -366,7 +367,7 @@ func Container() *schema.Resource {
 							Optional:    true,
 							Elem: &schema.Schema{
 								Type:             schema.TypeString,
-								ValidateDiagFunc: validator.MountType(),
+								ValidateDiagFunc: MountTypeValidator(),
 							},
 						},
 					},
@@ -748,7 +749,7 @@ func Container() *schema.Resource {
 							Description:      "The type",
 							Optional:         true,
 							Default:          dvOperatingSystemType,
-							ValidateDiagFunc: validator.ContainerOperatingSystemType(),
+							ValidateDiagFunc: OperatingSystemTypeValidator(),
 						},
 					},
 				},
@@ -838,7 +839,7 @@ func Container() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				Default:          dvVMID,
-				ValidateDiagFunc: validator.VMID(),
+				ValidateDiagFunc: resource.VMIDValidator(),
 			},
 		},
 		CreateContext: containerCreate,

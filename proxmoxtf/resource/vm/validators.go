@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package validator
+package resource
 
 import (
 	"fmt"
@@ -16,8 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-// VMID returns a schema validation function for a VM ID.
-func VMID() schema.SchemaValidateDiagFunc {
+// VMIDValidator returns a schema validation function for a VM ID.
+func VMIDValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		minID := 100
 		maxID := 2147483647
@@ -44,34 +44,24 @@ func VMID() schema.SchemaValidateDiagFunc {
 	})
 }
 
-// BIOS returns a schema validation function for a BIOS type.
-func BIOS() schema.SchemaValidateDiagFunc {
+// BIOSValidator returns a schema validation function for a BIOSValidator type.
+func BIOSValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"ovmf",
 		"seabios",
 	}, false))
 }
 
-// ContentType returns a schema validation function for a content type on a storage device.
-func ContentType() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringInSlice([]string{
-		"dump",
-		"iso",
-		"snippets",
-		"vztmpl",
-	}, false))
-}
-
-// CPUArchitecture returns a schema validation function for a CPU architecture.
-func CPUArchitecture() schema.SchemaValidateDiagFunc {
+// CPUArchitectureValidator returns a schema validation function for a CPU architecture.
+func CPUArchitectureValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"aarch64",
 		"x86_64",
 	}, false))
 }
 
-// CPUType returns a schema validation function for a CPU type.
-func CPUType() schema.SchemaValidateDiagFunc {
+// CPUTypeValidator returns a schema validation function for a CPU type.
+func CPUTypeValidator() schema.SchemaValidateDiagFunc {
 	standardTypes := []string{
 		"486",
 		"Broadwell",
@@ -154,18 +144,18 @@ func CPUType() schema.SchemaValidateDiagFunc {
 	))
 }
 
-// NetworkDeviceModel is a schema validation function for network device models.
-func NetworkDeviceModel() schema.SchemaValidateDiagFunc {
+// NetworkDeviceModelValidator is a schema validation function for network device models.
+func NetworkDeviceModelValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"e1000", "rtl8139", "virtio", "vmxnet3"}, false))
 }
 
-// QEMUAgentType is a schema validation function for QEMU agent types.
-func QEMUAgentType() schema.SchemaValidateDiagFunc {
+// QEMUAgentTypeValidator is a schema validation function for QEMU agent types.
+func QEMUAgentTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"isa", "virtio"}, false))
 }
 
-// KeyboardLayout is a schema validation function for keyboard layouts.
-func KeyboardLayout() schema.SchemaValidateDiagFunc {
+// KeyboardLayoutValidator is a schema validation function for keyboard layouts.
+func KeyboardLayoutValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"da",
 		"de",
@@ -195,16 +185,16 @@ func KeyboardLayout() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// MachineType is a schema validation function for machine types.
-func MachineType() schema.SchemaValidateDiagFunc {
+// MachineTypeValidator is a schema validation function for machine types.
+func MachineTypeValidator() schema.SchemaValidateDiagFunc {
 	//nolint:lll
 	r := regexp.MustCompile(`^$|^(pc|pc(-i440fx)?-\d+(\.\d+)+(\+pve\d+)?(\.pxe)?|q35|pc-q35-\d+(\.\d+)+(\+pve\d+)?(\.pxe)?|virt(?:-\d+(\.\d+)+)?(\+pve\d+)?)$`)
 
 	return validation.ToDiagFunc(validation.StringMatch(r, "must be a valid machine type"))
 }
 
-// Timeout is a schema validation function for timeouts.
-func Timeout() schema.SchemaValidateDiagFunc {
+// TimeoutValidator is a schema validation function for timeouts.
+func TimeoutValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)
 
@@ -227,13 +217,13 @@ func Timeout() schema.SchemaValidateDiagFunc {
 	})
 }
 
-// VGAMemory is a schema validation function for VGA memory sizes.
-func VGAMemory() schema.SchemaValidateDiagFunc {
+// VGAMemoryValidator is a schema validation function for VGA memory sizes.
+func VGAMemoryValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.IntBetween(4, 512))
 }
 
-// VGAType is a schema validation function for VGA device types.
-func VGAType() schema.SchemaValidateDiagFunc {
+// VGATypeValidator is a schema validation function for VGA device types.
+func VGATypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"cirrus",
 		"qxl",
@@ -250,8 +240,8 @@ func VGAType() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// SCSIHardware is a schema validation function for SCSI hardware.
-func SCSIHardware() schema.SchemaValidateDiagFunc {
+// SCSIHardwareValidator is a schema validation function for SCSI hardware.
+func SCSIHardwareValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"lsi",
 		"lsi53c810",
@@ -262,8 +252,8 @@ func SCSIHardware() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// IDEInterface is a schema validation function for IDE interfaces.
-func IDEInterface() schema.SchemaValidateDiagFunc {
+// IDEInterfaceValidator is a schema validation function for IDE interfaces.
+func IDEInterfaceValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"ide0",
 		"ide1",
@@ -272,9 +262,9 @@ func IDEInterface() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// CloudInitInterface is a schema validation function that accepts either an IDE interface identifier or an
+// CloudInitInterfaceValidator is a schema validation function that accepts either an IDE interface identifier or an
 // empty string, which is used as the default and means "detect which interface should be used automatically".
-func CloudInitInterface() schema.SchemaValidateDiagFunc {
+func CloudInitInterfaceValidator() schema.SchemaValidateDiagFunc {
 	r := regexp.MustCompile(`^ide[0-3]|sata[0-5]|scsi(?:30|[12][0-9]|[0-9])$`)
 
 	return validation.ToDiagFunc(validation.Any(
@@ -283,16 +273,16 @@ func CloudInitInterface() schema.SchemaValidateDiagFunc {
 	))
 }
 
-// CloudInitType is a schema validation function for cloud-init types.
-func CloudInitType() schema.SchemaValidateDiagFunc {
+// CloudInitTypeValidator is a schema validation function for cloud-init types.
+func CloudInitTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"configdrive2",
 		"nocloud",
 	}, false))
 }
 
-// AudioDevice is a schema validation function for audio devices.
-func AudioDevice() schema.SchemaValidateDiagFunc {
+// AudioDeviceValidator is a schema validation function for audio devices.
+func AudioDeviceValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"AC97",
 		"ich9-intel-hda",
@@ -300,15 +290,15 @@ func AudioDevice() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// AudioDriver is a schema validation function for audio drivers.
-func AudioDriver() schema.SchemaValidateDiagFunc {
+// AudioDriverValidator is a schema validation function for audio drivers.
+func AudioDriverValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"spice",
 	}, false))
 }
 
-// OperatingSystemType is a schema validation function for operating system types.
-func OperatingSystemType() schema.SchemaValidateDiagFunc {
+// OperatingSystemTypeValidator is a schema validation function for operating system types.
+func OperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"l24",
 		"l26",
@@ -326,8 +316,8 @@ func OperatingSystemType() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// SerialDevice is a schema validation function for serial devices.
-func SerialDevice() schema.SchemaValidateDiagFunc {
+// SerialDeviceValidator is a schema validation function for serial devices.
+func SerialDeviceValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)
 
