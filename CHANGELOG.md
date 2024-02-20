@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.46.5](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.4...v0.46.5) (2024-02-20)
+
+
+### Bug Fixes
+
+* **lxc:** panic on empty `initialization.ip_config.ipv4|6` block ([#1043](https://github.com/bpg/terraform-provider-proxmox/issues/1043)) ([69c4a66](https://github.com/bpg/terraform-provider-proxmox/commit/69c4a66345547b79f4e1add7cb34d04125c6d451))
+* **lxc:** panic when handling `network_interface.firewall` attribute ([#1042](https://github.com/bpg/terraform-provider-proxmox/issues/1042)) ([eb3e374](https://github.com/bpg/terraform-provider-proxmox/commit/eb3e3744321c2f5abc796b5e21e263703cff8916))
+
+
+### Miscellaneous
+
+* **deps:** Update module github.com/brianvoe/gofakeit/v6 (v6.28.0 → v7.0.0) ([#1044](https://github.com/bpg/terraform-provider-proxmox/issues/1044)) ([7fda43f](https://github.com/bpg/terraform-provider-proxmox/commit/7fda43f4ea78695d4c962b99df196fa0a1535dc5))
+* **docs:** update README.md ([#1045](https://github.com/bpg/terraform-provider-proxmox/issues/1045)) ([8e620dc](https://github.com/bpg/terraform-provider-proxmox/commit/8e620dc59b3562de84d94e9088c82158663a3b8c))
+* **vm:** refactoring, add acceptance tests ([#1040](https://github.com/bpg/terraform-provider-proxmox/issues/1040)) ([b648e5b](https://github.com/bpg/terraform-provider-proxmox/commit/b648e5bcb0ca21874aa7d7a081995ff0d7bc1040))
+
 ## [0.46.4](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.3...v0.46.4) (2024-02-16)
 
 
