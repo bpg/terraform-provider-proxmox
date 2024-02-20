@@ -16,6 +16,16 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
+// ContentType returns a schema validation function for a content type on a storage device.
+func ContentType() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"dump",
+		"iso",
+		"snippets",
+		"vztmpl",
+	}, false))
+}
+
 // FileFormat returns a schema validation function for a file format.
 func FileFormat() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{

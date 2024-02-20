@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package validator
+package resource
 
 import (
 	"testing"
@@ -32,7 +32,7 @@ func TestCPUType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			f := CPUType()
+			f := CPUTypeValidator()
 			res := f(tt.value, nil)
 
 			if tt.valid {
@@ -66,7 +66,7 @@ func TestMachineType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			f := MachineType()
+			f := MachineTypeValidator()
 			res := f(tt.value, nil)
 
 			if tt.valid {

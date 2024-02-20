@@ -11,7 +11,9 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/cluster/firewall"
+	container "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/container"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/firewall"
+	vm "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm"
 )
 
 func createResourceMap() map[string]*schema.Resource {
@@ -19,7 +21,7 @@ func createResourceMap() map[string]*schema.Resource {
 		"proxmox_virtual_environment_certificate":                     resource.Certificate(),
 		"proxmox_virtual_environment_cluster_firewall":                clusterfirewall.Firewall(),
 		"proxmox_virtual_environment_cluster_firewall_security_group": clusterfirewall.SecurityGroup(),
-		"proxmox_virtual_environment_container":                       resource.Container(),
+		"proxmox_virtual_environment_container":                       container.Container(),
 		"proxmox_virtual_environment_dns":                             resource.DNS(),
 		"proxmox_virtual_environment_file":                            resource.File(),
 		"proxmox_virtual_environment_firewall_alias":                  firewall.Alias(),
@@ -28,11 +30,10 @@ func createResourceMap() map[string]*schema.Resource {
 		"proxmox_virtual_environment_firewall_rules":                  firewall.Rules(),
 		"proxmox_virtual_environment_group":                           resource.Group(),
 		"proxmox_virtual_environment_hosts":                           resource.Hosts(),
-		// "proxmox_virtual_environment_network_linux_bridge":            resource.NetworkLinuxBridge(),
-		"proxmox_virtual_environment_pool": resource.Pool(),
-		"proxmox_virtual_environment_role": resource.Role(),
-		"proxmox_virtual_environment_time": resource.Time(),
-		"proxmox_virtual_environment_user": resource.User(),
-		"proxmox_virtual_environment_vm":   resource.VM(),
+		"proxmox_virtual_environment_pool":                            resource.Pool(),
+		"proxmox_virtual_environment_role":                            resource.Role(),
+		"proxmox_virtual_environment_time":                            resource.Time(),
+		"proxmox_virtual_environment_user":                            resource.User(),
+		"proxmox_virtual_environment_vm":                              vm.VM(),
 	}
 }
