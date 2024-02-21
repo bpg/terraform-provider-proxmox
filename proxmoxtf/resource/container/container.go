@@ -518,7 +518,7 @@ func Container() *schema.Resource {
 										ForceNew:    true,
 										Sensitive:   true,
 										Default:     dvInitializationUserAccountPassword,
-										DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+										DiffSuppressFunc: func(k, oldVal, _ string, _ *schema.ResourceData) bool {
 											return len(oldVal) > 0 &&
 												strings.ReplaceAll(oldVal, "*", "") == ""
 										},
@@ -604,7 +604,7 @@ func Container() *schema.Resource {
 							// 	// PVE strips leading slashes from the path, so we have to do the same
 							// 	return strings.TrimPrefix(i.(string), "/")
 							// },
-							DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
 								return "/"+oldVal == newVal
 							},
 						},
@@ -691,7 +691,7 @@ func Container() *schema.Resource {
 							Description: "The MAC address",
 							Optional:    true,
 							Default:     dvNetworkInterfaceMACAddress,
-							DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+							DiffSuppressFunc: func(_, _, newVal string, _ *schema.ResourceData) bool {
 								return newVal == ""
 							},
 							ValidateDiagFunc: validator.MACAddress(),

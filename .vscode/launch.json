@@ -8,7 +8,7 @@
             "mode": "test",
             "program": "${workspaceFolder}/fwprovider/tests",
             "envFile": "${workspaceFolder}/testacc.env",
-            "args": ["-debug", "-test.v", "-test.timeout", "30s"]
+            "args": ["-debug", "-test.v", "-test.timeout", "120s"]
             
         },
         {
