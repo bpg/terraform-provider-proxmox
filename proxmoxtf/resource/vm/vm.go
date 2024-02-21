@@ -5169,6 +5169,9 @@ func vmReadNetworkValues(
 					networkInterfaceNames[ri] = rv.Name
 				}
 			}
+
+			err = d.Set(mkMACAddresses, macAddresses)
+			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
