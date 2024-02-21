@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.46.6](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.5...v0.46.6) (2024-02-21)
+
+
+### Bug Fixes
+
+* **vm:** regression: `mac_addresses` list is missing some interfaces ([#1049](https://github.com/bpg/terraform-provider-proxmox/issues/1049)) ([518e25e](https://github.com/bpg/terraform-provider-proxmox/commit/518e25efaf6db6863d34ea3d83432eb0cd54d18a))
+
+
+### Miscellaneous
+
+* **lxc,vm:** refactor: move vm and container code to subpackages ([#1046](https://github.com/bpg/terraform-provider-proxmox/issues/1046)) ([0791194](https://github.com/bpg/terraform-provider-proxmox/commit/079119444d9f5a4c1266a4859c1aabe416c70b5d))
+
 ## [0.46.5](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.4...v0.46.5) (2024-02-20)
 
 
