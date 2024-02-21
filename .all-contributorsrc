@@ -866,6 +866,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Dr-Shadow",
+      "name": "Dr-Shadow",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5308086?v=4",
+      "profile": "https://github.com/Dr-Shadow",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
