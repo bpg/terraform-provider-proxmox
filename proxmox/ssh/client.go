@@ -256,7 +256,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 	sshPath := path.Join(homeDir, ".ssh")
 	if _, err = os.Stat(sshPath); os.IsNotExist(err) {
 		e := os.Mkdir(sshPath, 0o700)
-		if e != nil {
+		if e != nil && !os.IsExist(e) {
 			return nil, fmt.Errorf("failed to create %s: %w", sshPath, e)
 		}
 	}
