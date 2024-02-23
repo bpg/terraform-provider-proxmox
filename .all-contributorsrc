@@ -875,6 +875,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "FabFaeb",
+      "name": "Fabian Franz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10672940?v=4",
+      "profile": "https://github.com/FabFaeb",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
