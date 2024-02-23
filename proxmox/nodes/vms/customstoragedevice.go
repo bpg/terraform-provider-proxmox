@@ -6,6 +6,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/google/go-querystring/query"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -217,6 +219,8 @@ func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 
 // CustomStorageDevices handles map of QEMU storage device per disk interface.
 type CustomStorageDevices map[string]*CustomStorageDevice
+
+var _ query.Encoder = CustomStorageDevices{}
 
 // ByStorageInterface returns a map of CustomStorageDevices filtered by the given storage interface.
 func (d CustomStorageDevices) ByStorageInterface(storageInterface string) CustomStorageDevices {
