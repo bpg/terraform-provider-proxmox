@@ -45,5 +45,6 @@ jobs:
 
       - name: Lint code
         uses: golangci/golangci-lint-action@v4
+        if: steps.filter.outputs.go == 'true'
         with:
           version: v1.56.2
