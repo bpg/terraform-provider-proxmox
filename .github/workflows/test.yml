@@ -24,6 +24,9 @@ jobs:
           filters: |
             go:
               - '**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+              - '.github/workflows/test.yml'
 
       - name: Setup Go
         if: ${{ steps.filter.outputs.go == 'true' }}
@@ -99,6 +102,9 @@ jobs:
           filters: |
             go:
               - '**/*.go'
+              - 'go.mod'
+              - 'go.sum'
+              - '.github/workflows/test.yml'
 
 #      - name: Invoke acceptance tests workflow
 #        if: ${{ steps.filter.outputs.go == 'true' }}
