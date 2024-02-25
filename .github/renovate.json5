@@ -17,7 +17,12 @@
         "*",
       ],
       "semanticCommitScope": "deps",
-      "commitMessageExtra": "({{currentVersion}} → {{newVersion}})",
+    },
+    {
+      "matchFileNames": [
+        "hashicorp/terraform-plugin*",
+      ],
+      "groupName": ["terraform-plugin"],
     },
     {
       "matchFileNames": [
