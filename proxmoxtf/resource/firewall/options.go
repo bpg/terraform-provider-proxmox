@@ -14,7 +14,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
@@ -69,14 +69,14 @@ func Options() *schema.Resource {
 			Description:      "Log level for incoming traffic.",
 			Optional:         true,
 			Default:          dvLogLevelIN,
-			ValidateDiagFunc: validator.FirewallLogLevel(),
+			ValidateDiagFunc: validators.FirewallLogLevel(),
 		},
 		mkLogLevelOUT: {
 			Type:             schema.TypeString,
 			Description:      "Log level for outgoing traffic.",
 			Optional:         true,
 			Default:          dvLogLevelOUT,
-			ValidateDiagFunc: validator.FirewallLogLevel(),
+			ValidateDiagFunc: validators.FirewallLogLevel(),
 		},
 		mkMACFilter: {
 			Type:        schema.TypeBool,
@@ -95,14 +95,14 @@ func Options() *schema.Resource {
 			Description:      "Default policy for incoming traffic",
 			Optional:         true,
 			Default:          dvPolicyIn,
-			ValidateDiagFunc: validator.FirewallPolicy(),
+			ValidateDiagFunc: validators.FirewallPolicy(),
 		},
 		mkPolicyOut: {
 			Type:             schema.TypeString,
 			Description:      "Default policy for outgoing traffic",
 			Optional:         true,
 			Default:          dvPolicyOut,
-			ValidateDiagFunc: validator.FirewallPolicy(),
+			ValidateDiagFunc: validators.FirewallPolicy(),
 		},
 		mkRadv: {
 			Type:        schema.TypeBool,

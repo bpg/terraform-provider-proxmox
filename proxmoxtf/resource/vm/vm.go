@@ -11,14 +11,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -33,51 +32,39 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
-	dvRebootAfterCreation               = false
-	dvOnBoot                            = true
-	dvACPI                              = true
-	dvAgentEnabled                      = false
-	dvAgentTimeout                      = "15m"
-	dvAgentTrim                         = false
-	dvAgentType                         = "virtio"
-	dvAudioDeviceDevice                 = "intel-hda"
-	dvAudioDeviceDriver                 = "spice"
-	dvAudioDeviceEnabled                = true
-	dvBIOS                              = "seabios"
-	dvCDROMEnabled                      = false
-	dvCDROMFileID                       = ""
-	dvCDROMInterface                    = "ide3"
-	dvCloneDatastoreID                  = ""
-	dvCloneNodeName                     = ""
-	dvCloneFull                         = true
-	dvCloneRetries                      = 1
-	dvCPUArchitecture                   = "x86_64"
-	dvCPUCores                          = 1
-	dvCPUHotplugged                     = 0
-	dvCPULimit                          = 0
-	dvCPUNUMA                           = false
-	dvCPUSockets                        = 1
-	dvCPUType                           = "qemu64"
-	dvCPUUnits                          = 1024
-	dvDescription                       = ""
-	dvDiskInterface                     = "scsi0"
-	dvDiskDatastoreID                   = "local-lvm"
-	dvDiskFileFormat                    = "qcow2"
-	dvDiskFileID                        = ""
-	dvDiskSize                          = 8
-	dvDiskIOThread                      = false
-	dvDiskSSD                           = false
-	dvDiskDiscard                       = "ignore"
-	dvDiskCache                         = "none"
-	dvDiskSpeedRead                     = 0
-	dvDiskSpeedReadBurstable            = 0
-	dvDiskSpeedWrite                    = 0
-	dvDiskSpeedWriteBurstable           = 0
+	dvRebootAfterCreation = false
+	dvOnBoot              = true
+	dvACPI                = true
+	dvAgentEnabled        = false
+	dvAgentTimeout        = "15m"
+	dvAgentTrim           = false
+	dvAgentType           = "virtio"
+	dvAudioDeviceDevice   = "intel-hda"
+	dvAudioDeviceDriver   = "spice"
+	dvAudioDeviceEnabled  = true
+	dvBIOS                = "seabios"
+	dvCDROMEnabled        = false
+	dvCDROMFileID         = ""
+	dvCDROMInterface      = "ide3"
+	dvCloneDatastoreID    = ""
+	dvCloneNodeName       = ""
+	dvCloneFull           = true
+	dvCloneRetries        = 1
+	dvCPUArchitecture     = "x86_64"
+	dvCPUCores            = 1
+	dvCPUHotplugged       = 0
+	dvCPULimit            = 0
+	dvCPUNUMA             = false
+	dvCPUSockets          = 1
+	dvCPUType             = "qemu64"
+	dvCPUUnits            = 1024
+	dvDescription         = ""
+
 	dvEFIDiskDatastoreID                = "local-lvm"
 	dvEFIDiskFileFormat                 = "qcow2"
 	dvEFIDiskType                       = "2m"
@@ -150,57 +137,42 @@ const (
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
 
-	mkRebootAfterCreation               = "reboot"
-	mkOnBoot                            = "on_boot"
-	mkBootOrder                         = "boot_order"
-	mkACPI                              = "acpi"
-	mkAgent                             = "agent"
-	mkAgentEnabled                      = "enabled"
-	mkAgentTimeout                      = "timeout"
-	mkAgentTrim                         = "trim"
-	mkAgentType                         = "type"
-	mkAudioDevice                       = "audio_device"
-	mkAudioDeviceDevice                 = "device"
-	mkAudioDeviceDriver                 = "driver"
-	mkAudioDeviceEnabled                = "enabled"
-	mkBIOS                              = "bios"
-	mkCDROM                             = "cdrom"
-	mkCDROMEnabled                      = "enabled"
-	mkCDROMFileID                       = "file_id"
-	mkCDROMInterface                    = "interface"
-	mkClone                             = "clone"
-	mkCloneRetries                      = "retries"
-	mkCloneDatastoreID                  = "datastore_id"
-	mkCloneNodeName                     = "node_name"
-	mkCloneVMID                         = "vm_id"
-	mkCloneFull                         = "full"
-	mkCPU                               = "cpu"
-	mkCPUArchitecture                   = "architecture"
-	mkCPUCores                          = "cores"
-	mkCPUFlags                          = "flags"
-	mkCPUHotplugged                     = "hotplugged"
-	mkCPULimit                          = "limit"
-	mkCPUNUMA                           = "numa"
-	mkCPUSockets                        = "sockets"
-	mkCPUType                           = "type"
-	mkCPUUnits                          = "units"
-	mkDescription                       = "description"
-	mkDisk                              = "disk"
-	mkDiskInterface                     = "interface"
-	mkDiskDatastoreID                   = "datastore_id"
-	mkDiskPathInDatastore               = "path_in_datastore"
-	mkDiskFileFormat                    = "file_format"
-	mkDiskFileID                        = "file_id"
-	mkDiskSize                          = "size"
-	mkDiskIOThread                      = "iothread"
-	mkDiskSSD                           = "ssd"
-	mkDiskDiscard                       = "discard"
-	mkDiskCache                         = "cache"
-	mkDiskSpeed                         = "speed"
-	mkDiskSpeedRead                     = "read"
-	mkDiskSpeedReadBurstable            = "read_burstable"
-	mkDiskSpeedWrite                    = "write"
-	mkDiskSpeedWriteBurstable           = "write_burstable"
+	mkRebootAfterCreation = "reboot"
+	mkOnBoot              = "on_boot"
+	mkBootOrder           = "boot_order"
+	mkACPI                = "acpi"
+	mkAgent               = "agent"
+	mkAgentEnabled        = "enabled"
+	mkAgentTimeout        = "timeout"
+	mkAgentTrim           = "trim"
+	mkAgentType           = "type"
+	mkAudioDevice         = "audio_device"
+	mkAudioDeviceDevice   = "device"
+	mkAudioDeviceDriver   = "driver"
+	mkAudioDeviceEnabled  = "enabled"
+	mkBIOS                = "bios"
+	mkCDROM               = "cdrom"
+	mkCDROMEnabled        = "enabled"
+	mkCDROMFileID         = "file_id"
+	mkCDROMInterface      = "interface"
+	mkClone               = "clone"
+	mkCloneRetries        = "retries"
+	mkCloneDatastoreID    = "datastore_id"
+	mkCloneNodeName       = "node_name"
+	mkCloneVMID           = "vm_id"
+	mkCloneFull           = "full"
+	mkCPU                 = "cpu"
+	mkCPUArchitecture     = "architecture"
+	mkCPUCores            = "cores"
+	mkCPUFlags            = "flags"
+	mkCPUHotplugged       = "hotplugged"
+	mkCPULimit            = "limit"
+	mkCPUNUMA             = "numa"
+	mkCPUSockets          = "sockets"
+	mkCPUType             = "type"
+	mkCPUUnits            = "units"
+	mkDescription         = "description"
+
 	mkEFIDisk                           = "efi_disk"
 	mkEFIDiskDatastoreID                = "datastore_id"
 	mkEFIDiskFileFormat                 = "file_format"
@@ -288,7 +260,6 @@ const (
 	mkTemplate                          = "template"
 	mkTimeoutClone                      = "timeout_clone"
 	mkTimeoutCreate                     = "timeout_create"
-	mkTimeoutMoveDisk                   = "timeout_move_disk"
 	mkTimeoutMigrate                    = "timeout_migrate"
 	mkTimeoutReboot                     = "timeout_reboot"
 	mkTimeoutShutdownVM                 = "timeout_shutdown_vm"
@@ -310,1317 +281,1175 @@ const (
 
 // VM returns a resource that manages VMs.
 func VM() *schema.Resource {
-	return &schema.Resource{
-		Schema: map[string]*schema.Schema{
-			mkRebootAfterCreation: {
-				Type:        schema.TypeBool,
-				Description: "Whether to reboot vm after creation",
-				Optional:    true,
-				Default:     dvRebootAfterCreation,
-			},
-			mkOnBoot: {
-				Type:        schema.TypeBool,
-				Description: "Start VM on Node boot",
-				Optional:    true,
-				Default:     dvOnBoot,
-			},
-			mkBootOrder: {
-				Type:        schema.TypeList,
-				Description: "The guest will attempt to boot from devices in the order they appear here",
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-			},
-			mkACPI: {
-				Type:        schema.TypeBool,
-				Description: "Whether to enable ACPI",
-				Optional:    true,
-				Default:     dvACPI,
-			},
-			mkAgent: {
-				Type:        schema.TypeList,
-				Description: "The QEMU agent configuration",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkAgentEnabled: dvAgentEnabled,
-							mkAgentTimeout: dvAgentTimeout,
-							mkAgentTrim:    dvAgentTrim,
-							mkAgentType:    dvAgentType,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkAgentEnabled: {
-							Type:        schema.TypeBool,
-							Description: "Whether to enable the QEMU agent",
-							Optional:    true,
-							Default:     dvAgentEnabled,
-						},
-						mkAgentTimeout: {
-							Type:             schema.TypeString,
-							Description:      "The maximum amount of time to wait for data from the QEMU agent to become available",
-							Optional:         true,
-							Default:          dvAgentTimeout,
-							ValidateDiagFunc: TimeoutValidator(),
-						},
-						mkAgentTrim: {
-							Type:        schema.TypeBool,
-							Description: "Whether to enable the FSTRIM feature in the QEMU agent",
-							Optional:    true,
-							Default:     dvAgentTrim,
-						},
-						mkAgentType: {
-							Type:             schema.TypeString,
-							Description:      "The QEMU agent interface type",
-							Optional:         true,
-							Default:          dvAgentType,
-							ValidateDiagFunc: QEMUAgentTypeValidator(),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkKVMArguments: {
-				Type:        schema.TypeString,
-				Description: "The args implementation",
-				Optional:    true,
-				Default:     dvKVMArguments,
-			},
-			mkAudioDevice: {
-				Type:        schema.TypeList,
-				Description: "The audio devices",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkAudioDeviceDevice: {
-							Type:             schema.TypeString,
-							Description:      "The device",
-							Optional:         true,
-							Default:          dvAudioDeviceDevice,
-							ValidateDiagFunc: AudioDeviceValidator(),
-						},
-						mkAudioDeviceDriver: {
-							Type:             schema.TypeString,
-							Description:      "The driver",
-							Optional:         true,
-							Default:          dvAudioDeviceDriver,
-							ValidateDiagFunc: AudioDriverValidator(),
-						},
-						mkAudioDeviceEnabled: {
-							Type:        schema.TypeBool,
-							Description: "Whether to enable the audio device",
-							Optional:    true,
-							Default:     dvAudioDeviceEnabled,
-						},
-					},
-				},
-				MaxItems: maxResourceVirtualEnvironmentVMAudioDevices,
-				MinItems: 0,
-			},
-			mkBIOS: {
-				Type:             schema.TypeString,
-				Description:      "The BIOS implementation",
-				Optional:         true,
-				Default:          dvBIOS,
-				ValidateDiagFunc: BIOSValidator(),
-			},
-			mkCDROM: {
-				Type:        schema.TypeList,
-				Description: "The CDROM drive",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkCDROMEnabled:   dvCDROMEnabled,
-							mkCDROMFileID:    dvCDROMFileID,
-							mkCDROMInterface: dvCDROMInterface,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkCDROMEnabled: {
-							Type:        schema.TypeBool,
-							Description: "Whether to enable the CDROM drive",
-							Optional:    true,
-							Default:     dvCDROMEnabled,
-						},
-						mkCDROMFileID: {
-							Type:             schema.TypeString,
-							Description:      "The file id",
-							Optional:         true,
-							Default:          dvCDROMFileID,
-							ValidateDiagFunc: validator.FileID(),
-						},
-						mkCDROMInterface: {
-							Type:             schema.TypeString,
-							Description:      "The CDROM interface",
-							Optional:         true,
-							Default:          dvCDROMInterface,
-							ValidateDiagFunc: IDEInterfaceValidator(),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkClone: {
-				Type:        schema.TypeList,
-				Description: "The cloning configuration",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkCloneRetries: {
-							Type:        schema.TypeInt,
-							Description: "The number of Retries to create a clone",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     dvCloneRetries,
-						},
-						mkCloneDatastoreID: {
-							Type:        schema.TypeString,
-							Description: "The ID of the target datastore",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     dvCloneDatastoreID,
-						},
-						mkCloneNodeName: {
-							Type:        schema.TypeString,
-							Description: "The name of the source node",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     dvCloneNodeName,
-						},
-						mkCloneVMID: {
-							Type:             schema.TypeInt,
-							Description:      "The ID of the source VM",
-							Required:         true,
-							ForceNew:         true,
-							ValidateDiagFunc: VMIDValidator(),
-						},
-						mkCloneFull: {
-							Type:        schema.TypeBool,
-							Description: "The Clone Type, create a Full Clone (true) or a linked Clone (false)",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     dvCloneFull,
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkCPU: {
-				Type:        schema.TypeList,
-				Description: "The CPU allocation",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkCPUArchitecture: dvCPUArchitecture,
-							mkCPUCores:        dvCPUCores,
-							mkCPUFlags:        []interface{}{},
-							mkCPUHotplugged:   dvCPUHotplugged,
-							mkCPULimit:        dvCPULimit,
-							mkCPUNUMA:         dvCPUNUMA,
-							mkCPUSockets:      dvCPUSockets,
-							mkCPUType:         dvCPUType,
-							mkCPUUnits:        dvCPUUnits,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkCPUArchitecture: {
-							Type:             schema.TypeString,
-							Description:      "The CPU architecture",
-							Optional:         true,
-							Default:          dvCPUArchitecture,
-							ValidateDiagFunc: CPUArchitectureValidator(),
-						},
-						mkCPUCores: {
-							Type:             schema.TypeInt,
-							Description:      "The number of CPU cores",
-							Optional:         true,
-							Default:          dvCPUCores,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 2304)),
-						},
-						mkCPUFlags: {
-							Type:        schema.TypeList,
-							Description: "The CPU flags",
-							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
-							},
-							Elem: &schema.Schema{Type: schema.TypeString},
-						},
-						mkCPUHotplugged: {
-							Type:             schema.TypeInt,
-							Description:      "The number of hotplugged vCPUs",
-							Optional:         true,
-							Default:          dvCPUHotplugged,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
-						},
-						mkCPULimit: {
-							Type:        schema.TypeInt,
-							Description: "Limit of CPU usage",
-							Optional:    true,
-							Default:     dvCPULimit,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.IntBetween(0, 128),
-							),
-						},
-						mkCPUNUMA: {
-							Type:        schema.TypeBool,
-							Description: "Enable/disable NUMA.",
-							Optional:    true,
-							Default:     dvCPUNUMA,
-						},
-						mkCPUSockets: {
-							Type:             schema.TypeInt,
-							Description:      "The number of CPU sockets",
-							Optional:         true,
-							Default:          dvCPUSockets,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 16)),
-						},
-						mkCPUType: {
-							Type:             schema.TypeString,
-							Description:      "The emulated CPU type",
-							Optional:         true,
-							Default:          dvCPUType,
-							ValidateDiagFunc: CPUTypeValidator(),
-						},
-						mkCPUUnits: {
-							Type:        schema.TypeInt,
-							Description: "The CPU units",
-							Optional:    true,
-							Default:     dvCPUUnits,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.IntBetween(2, 262144),
-							),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkDescription: {
-				Type:        schema.TypeString,
-				Description: "The description",
-				Optional:    true,
-				Default:     dvDescription,
-				StateFunc: func(i interface{}) string {
-					// PVE always adds a newline to the description, so we have to do the same,
-					// also taking in account the CLRF case (Windows)
-					// Unlike container, VM description does not have trailing "\n"
-					if i.(string) != "" {
-						return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n")
-					}
-
-					return ""
-				},
-			},
-			mkDisk: {
-				Type:        schema.TypeList,
-				Description: "The disk devices",
-				Optional:    true,
-				ForceNew:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkDiskDatastoreID:     dvDiskDatastoreID,
-							mkDiskPathInDatastore: nil,
-							mkDiskFileID:          dvDiskFileID,
-							mkDiskInterface:       dvDiskInterface,
-							mkDiskSize:            dvDiskSize,
-							mkDiskIOThread:        dvDiskIOThread,
-							mkDiskSSD:             dvDiskSSD,
-							mkDiskDiscard:         dvDiskDiscard,
-							mkDiskCache:           dvDiskCache,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkDiskInterface: {
-							Type:        schema.TypeString,
-							Description: "The datastore name",
-							Required:    true,
-						},
-						mkDiskDatastoreID: {
-							Type:        schema.TypeString,
-							Description: "The datastore id",
-							Optional:    true,
-							Default:     dvDiskDatastoreID,
-						},
-						mkDiskPathInDatastore: {
-							Type:        schema.TypeString,
-							Description: "The in-datastore path to disk image",
-							Computed:    true,
-							Optional:    true,
-							Default:     nil,
-						},
-						mkDiskFileFormat: {
-							Type:             schema.TypeString,
-							Description:      "The file format",
-							Optional:         true,
-							ForceNew:         true,
-							Computed:         true,
-							ValidateDiagFunc: validator.FileFormat(),
-						},
-						mkDiskFileID: {
-							Type:             schema.TypeString,
-							Description:      "The file id for a disk image",
-							Optional:         true,
-							ForceNew:         true,
-							Default:          dvDiskFileID,
-							ValidateDiagFunc: validator.FileID(),
-						},
-						mkDiskSize: {
-							Type:             schema.TypeInt,
-							Description:      "The disk size in gigabytes",
-							Optional:         true,
-							Default:          dvDiskSize,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
-						},
-						mkDiskIOThread: {
-							Type:        schema.TypeBool,
-							Description: "Whether to use iothreads for this disk drive",
-							Optional:    true,
-							Default:     dvDiskIOThread,
-						},
-						mkDiskSSD: {
-							Type:        schema.TypeBool,
-							Description: "Whether to use ssd for this disk drive",
-							Optional:    true,
-							Default:     dvDiskSSD,
-						},
-						mkDiskDiscard: {
-							Type:        schema.TypeString,
-							Description: "Whether to pass discard/trim requests to the underlying storage.",
-							Optional:    true,
-							Default:     dvDiskDiscard,
-						},
-						mkDiskCache: {
-							Type:        schema.TypeString,
-							Description: "The drive’s cache mode",
-							Optional:    true,
-							Default:     dvDiskCache,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.StringInSlice([]string{
-									"none",
-									"writethrough",
-									"writeback",
-									"unsafe",
-									"directsync",
-								}, false),
-							),
-						},
-						mkDiskSpeed: {
-							Type:        schema.TypeList,
-							Description: "The speed limits",
-							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{
-									map[string]interface{}{
-										mkDiskSpeedRead:           dvDiskSpeedRead,
-										mkDiskSpeedReadBurstable:  dvDiskSpeedReadBurstable,
-										mkDiskSpeedWrite:          dvDiskSpeedWrite,
-										mkDiskSpeedWriteBurstable: dvDiskSpeedWriteBurstable,
-									},
-								}, nil
-							},
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									mkDiskSpeedRead: {
-										Type:        schema.TypeInt,
-										Description: "The maximum read speed in megabytes per second",
-										Optional:    true,
-										Default:     dvDiskSpeedRead,
-									},
-									mkDiskSpeedReadBurstable: {
-										Type:        schema.TypeInt,
-										Description: "The maximum burstable read speed in megabytes per second",
-										Optional:    true,
-										Default:     dvDiskSpeedReadBurstable,
-									},
-									mkDiskSpeedWrite: {
-										Type:        schema.TypeInt,
-										Description: "The maximum write speed in megabytes per second",
-										Optional:    true,
-										Default:     dvDiskSpeedWrite,
-									},
-									mkDiskSpeedWriteBurstable: {
-										Type:        schema.TypeInt,
-										Description: "The maximum burstable write speed in megabytes per second",
-										Optional:    true,
-										Default:     dvDiskSpeedWriteBurstable,
-									},
-								},
-							},
-							MaxItems: 1,
-							MinItems: 0,
-						},
-					},
-				},
-				MaxItems: 14,
-				MinItems: 0,
-			},
-			mkEFIDisk: {
-				Type:        schema.TypeList,
-				Description: "The efidisk device",
-				Optional:    true,
-				ForceNew:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkEFIDiskDatastoreID: {
-							Type:        schema.TypeString,
-							Description: "The datastore id",
-							Optional:    true,
-							Default:     dvEFIDiskDatastoreID,
-						},
-						mkEFIDiskFileFormat: {
-							Type:             schema.TypeString,
-							Description:      "The file format",
-							Optional:         true,
-							ForceNew:         true,
-							Computed:         true,
-							ValidateDiagFunc: validator.FileFormat(),
-						},
-						mkEFIDiskType: {
-							Type:        schema.TypeString,
-							Description: "Size and type of the OVMF EFI disk",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     dvEFIDiskType,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-								"2m",
-								"4m",
-							}, true)),
-						},
-						mkEFIDiskPreEnrolledKeys: {
-							Type: schema.TypeBool,
-							Description: "Use an EFI vars template with distribution-specific and Microsoft Standard " +
-								"keys enrolled, if used with efi type=`4m`.",
-							Optional: true,
-							ForceNew: true,
-							Default:  dvEFIDiskPreEnrolledKeys,
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkTPMState: {
-				Type:        schema.TypeList,
-				Description: "The tpmstate device",
-				Optional:    true,
-				ForceNew:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkTPMStateDatastoreID: {
-							Type:        schema.TypeString,
-							Description: "Datastore ID",
-							Optional:    true,
-							Default:     dvTPMStateDatastoreID,
-						},
-						mkTPMStateVersion: {
-							Type:        schema.TypeString,
-							Description: "TPM version",
-							Optional:    true,
-							ForceNew:    true,
-							Default:     dvTPMStateVersion,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
-								"v1.2",
-								"v2.0",
-							}, true)),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkInitialization: {
-				Type:        schema.TypeList,
-				Description: "The cloud-init configuration",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkInitializationDatastoreID: {
-							Type:        schema.TypeString,
-							Description: "The datastore id",
-							Optional:    true,
-							Default:     dvInitializationDatastoreID,
-						},
-						mkInitializationInterface: {
-							Type:             schema.TypeString,
-							Description:      "The IDE interface on which the CloudInit drive will be added",
-							Optional:         true,
-							Default:          dvInitializationInterface,
-							ValidateDiagFunc: CloudInitInterfaceValidator(),
-							DiffSuppressFunc: func(_, _, newValue string, _ *schema.ResourceData) bool {
-								return newValue == ""
-							},
-						},
-						mkInitializationDNS: {
-							Type:        schema.TypeList,
-							Description: "The DNS configuration",
-							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
-							},
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									mkInitializationDNSDomain: {
-										Type:        schema.TypeString,
-										Description: "The DNS search domain",
-										Optional:    true,
-										Default:     dvInitializationDNSDomain,
-									},
-									mkInitializationDNSServer: {
-										Type:        schema.TypeString,
-										Description: "The DNS server",
-										Deprecated: "The `server` attribute is deprecated and will be removed in a future release. " +
-											"Please use the `servers` attribute instead.",
-										Optional: true,
-										Default:  dvInitializationDNSServer,
-									},
-									mkInitializationDNSServers: {
-										Type:        schema.TypeList,
-										Description: "The list of DNS servers",
-										Optional:    true,
-										Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPAddress},
-										MinItems:    0,
-									},
-								},
-							},
-							MaxItems: 1,
-							MinItems: 0,
-						},
-						mkInitializationIPConfig: {
-							Type:        schema.TypeList,
-							Description: "The IP configuration",
-							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
-							},
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									mkInitializationIPConfigIPv4: {
-										Type:        schema.TypeList,
-										Description: "The IPv4 configuration",
-										Optional:    true,
-										DefaultFunc: func() (interface{}, error) {
-											return []interface{}{}, nil
-										},
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												mkInitializationIPConfigIPv4Address: {
-													Type:        schema.TypeString,
-													Description: "The IPv4 address",
-													Optional:    true,
-													Default:     dvInitializationIPConfigIPv4Address,
-												},
-												mkInitializationIPConfigIPv4Gateway: {
-													Type:        schema.TypeString,
-													Description: "The IPv4 gateway",
-													Optional:    true,
-													Default:     dvInitializationIPConfigIPv4Gateway,
-												},
-											},
-										},
-										MaxItems: 1,
-										MinItems: 0,
-									},
-									mkInitializationIPConfigIPv6: {
-										Type:        schema.TypeList,
-										Description: "The IPv6 configuration",
-										Optional:    true,
-										DefaultFunc: func() (interface{}, error) {
-											return []interface{}{}, nil
-										},
-										Elem: &schema.Resource{
-											Schema: map[string]*schema.Schema{
-												mkInitializationIPConfigIPv6Address: {
-													Type:        schema.TypeString,
-													Description: "The IPv6 address",
-													Optional:    true,
-													Default:     dvInitializationIPConfigIPv6Address,
-												},
-												mkInitializationIPConfigIPv6Gateway: {
-													Type:        schema.TypeString,
-													Description: "The IPv6 gateway",
-													Optional:    true,
-													Default:     dvInitializationIPConfigIPv6Gateway,
-												},
-											},
-										},
-										MaxItems: 1,
-										MinItems: 0,
-									},
-								},
-							},
-							MaxItems: 8,
-							MinItems: 0,
-						},
-						mkInitializationUserAccount: {
-							Type:        schema.TypeList,
-							Description: "The user account configuration",
-							Optional:    true,
-							ForceNew:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
-							},
-							Elem: &schema.Resource{
-								Schema: map[string]*schema.Schema{
-									mkInitializationUserAccountKeys: {
-										Type:        schema.TypeList,
-										Description: "The SSH keys",
-										Optional:    true,
-										ForceNew:    true,
-										Elem:        &schema.Schema{Type: schema.TypeString},
-									},
-									mkInitializationUserAccountPassword: {
-										Type:        schema.TypeString,
-										Description: "The SSH password",
-										Optional:    true,
-										ForceNew:    true,
-										Sensitive:   true,
-										Default:     dvInitializationUserAccountPassword,
-										DiffSuppressFunc: func(_, oldVal, _ string, _ *schema.ResourceData) bool {
-											return len(oldVal) > 0 &&
-												strings.ReplaceAll(oldVal, "*", "") == ""
-										},
-									},
-									mkInitializationUserAccountUsername: {
-										Type:        schema.TypeString,
-										Description: "The SSH username",
-										Optional:    true,
-										ForceNew:    true,
-									},
-								},
-							},
-							MaxItems: 1,
-							MinItems: 0,
-						},
-						mkInitializationUserDataFileID: {
-							Type:             schema.TypeString,
-							Description:      "The ID of a file containing custom user data",
-							Optional:         true,
-							ForceNew:         true,
-							Default:          dvInitializationUserDataFileID,
-							ValidateDiagFunc: validator.FileID(),
-						},
-						mkInitializationVendorDataFileID: {
-							Type:             schema.TypeString,
-							Description:      "The ID of a file containing vendor data",
-							Optional:         true,
-							ForceNew:         true,
-							Default:          dvInitializationVendorDataFileID,
-							ValidateDiagFunc: validator.FileID(),
-						},
-						mkInitializationNetworkDataFileID: {
-							Type:             schema.TypeString,
-							Description:      "The ID of a file containing network config",
-							Optional:         true,
-							ForceNew:         true,
-							Default:          dvInitializationNetworkDataFileID,
-							ValidateDiagFunc: validator.FileID(),
-						},
-						mkInitializationMetaDataFileID: {
-							Type:             schema.TypeString,
-							Description:      "The ID of a file containing meta data config",
-							Optional:         true,
-							ForceNew:         true,
-							Default:          dvInitializationMetaDataFileID,
-							ValidateDiagFunc: validator.FileID(),
-						},
-						mkInitializationType: {
-							Type:             schema.TypeString,
-							Description:      "The cloud-init configuration format",
-							Optional:         true,
-							ForceNew:         true,
-							Default:          dvInitializationType,
-							ValidateDiagFunc: CloudInitTypeValidator(),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkIPv4Addresses: {
-				Type:        schema.TypeList,
-				Description: "The IPv4 addresses published by the QEMU agent",
-				Computed:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeList,
-					Elem: &schema.Schema{Type: schema.TypeString},
-				},
-			},
-			mkIPv6Addresses: {
-				Type:        schema.TypeList,
-				Description: "The IPv6 addresses published by the QEMU agent",
-				Computed:    true,
-				Elem: &schema.Schema{
-					Type: schema.TypeList,
-					Elem: &schema.Schema{Type: schema.TypeString},
-				},
-			},
-			mkHostPCI: {
-				Type:        schema.TypeList,
-				Description: "The Host PCI devices mapped to the VM",
-				Optional:    true,
-				ForceNew:    false,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkHostPCIDevice: {
-							Type:        schema.TypeString,
-							Description: "The PCI device name for Proxmox, in form of 'hostpciX' where X is a sequential number from 0 to 3",
-							Required:    true,
-						},
-						mkHostPCIDeviceID: {
-							Type: schema.TypeString,
-							Description: "The PCI ID of the device, for example 0000:00:1f.0 (or 0000:00:1f.0;0000:00:1f.1 for multiple " +
-								"device functions, or 0000:00:1f for all functions). Use either this or mapping.",
-							Optional: true,
-						},
-						mkHostPCIDeviceMapping: {
-							Type:        schema.TypeString,
-							Description: "The resource mapping name of the device, for example gpu. Use either this or id.",
-							Optional:    true,
-						},
-						mkHostPCIDeviceMDev: {
-							Type:        schema.TypeString,
-							Description: "The the mediated device to use",
-							Optional:    true,
-						},
-						mkHostPCIDevicePCIE: {
-							Type: schema.TypeBool,
-							Description: "Tells Proxmox VE to use a PCIe or PCI port. Some guests/device combination require PCIe rather " +
-								"than PCI. PCIe is only available for q35 machine types.",
-							Optional: true,
-						},
-						mkHostPCIDeviceROMBAR: {
-							Type:        schema.TypeBool,
-							Description: "Makes the firmware ROM visible for the guest. Default is true",
-							Optional:    true,
-						},
-						mkHostPCIDeviceROMFile: {
-							Type:        schema.TypeString,
-							Description: "A path to a ROM file for the device to use. This is a relative path under /usr/share/kvm/",
-							Optional:    true,
-						},
-						mkHostPCIDeviceXVGA: {
-							Type: schema.TypeBool,
-							Description: "Marks the PCI(e) device as the primary GPU of the VM. With this enabled, " +
-								"the vga configuration argument will be ignored.",
-							Optional: true,
-						},
-					},
-				},
-			},
-			mkHostUSB: {
-				Type:        schema.TypeList,
-				Description: "The Host USB devices mapped to the VM",
-				Optional:    true,
-				ForceNew:    false,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkHostUSBDevice: {
-							Type:        schema.TypeString,
-							Description: "The USB device ID for Proxmox, in form of '<MANUFACTURER>:<ID>'",
-							Required:    true,
-						},
-						mkHostUSBDeviceMapping: {
-							Type:        schema.TypeString,
-							Description: "The resource mapping name of the device, for example usbdisk. Use either this or id.",
-							Optional:    true,
-						},
-						mkHostUSBDeviceUSB3: {
-							Type:        schema.TypeBool,
-							Description: "Makes the USB device a USB3 device for the machine. Default is false",
-							Optional:    true,
-						},
-					},
-				},
-			},
-			mkKeyboardLayout: {
-				Type:             schema.TypeString,
-				Description:      "The keyboard layout",
-				Optional:         true,
-				Default:          dvKeyboardLayout,
-				ValidateDiagFunc: KeyboardLayoutValidator(),
-			},
-			mkMachine: {
-				Type:             schema.TypeString,
-				Description:      "The VM machine type, either default `pc` or `q35`",
-				Optional:         true,
-				Default:          dvMachineType,
-				ValidateDiagFunc: MachineTypeValidator(),
-			},
-			mkMACAddresses: {
-				Type:        schema.TypeList,
-				Description: "The MAC addresses for the network interfaces",
-				Computed:    true,
-				Optional:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			mkMemory: {
-				Type:        schema.TypeList,
-				Description: "The memory allocation",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkMemoryDedicated: dvMemoryDedicated,
-							mkMemoryFloating:  dvMemoryFloating,
-							mkMemoryShared:    dvMemoryShared,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkMemoryDedicated: {
-							Type:        schema.TypeInt,
-							Description: "The dedicated memory in megabytes",
-							Optional:    true,
-							Default:     dvMemoryDedicated,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.IntBetween(64, 268435456),
-							),
-						},
-						mkMemoryFloating: {
-							Type:        schema.TypeInt,
-							Description: "The floating memory in megabytes (balloon)",
-							Optional:    true,
-							Default:     dvMemoryFloating,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.IntBetween(0, 268435456),
-							),
-						},
-						mkMemoryShared: {
-							Type:        schema.TypeInt,
-							Description: "The shared memory in megabytes",
-							Optional:    true,
-							Default:     dvMemoryShared,
-							ValidateDiagFunc: validation.ToDiagFunc(
-								validation.IntBetween(0, 268435456),
-							),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkName: {
-				Type:        schema.TypeString,
-				Description: "The name",
-				Optional:    true,
-				Default:     dvName,
-			},
-			mkNetworkDevice: {
-				Type:        schema.TypeList,
-				Description: "The network devices",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return make([]interface{}, 1), nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkNetworkDeviceBridge: {
-							Type:        schema.TypeString,
-							Description: "The bridge",
-							Optional:    true,
-							Default:     dvNetworkDeviceBridge,
-						},
-						mkNetworkDeviceEnabled: {
-							Type:        schema.TypeBool,
-							Description: "Whether to enable the network device",
-							Optional:    true,
-							Default:     dvNetworkDeviceEnabled,
-						},
-						mkNetworkDeviceFirewall: {
-							Type:        schema.TypeBool,
-							Description: "Whether this interface's firewall rules should be used",
-							Optional:    true,
-							Default:     dvNetworkDeviceFirewall,
-						},
-						mkNetworkDeviceMACAddress: {
-							Type:             schema.TypeString,
-							Description:      "The MAC address",
-							Optional:         true,
-							Computed:         true,
-							ValidateDiagFunc: validator.MACAddress(),
-						},
-						mkNetworkDeviceModel: {
-							Type:             schema.TypeString,
-							Description:      "The model",
-							Optional:         true,
-							Default:          dvNetworkDeviceModel,
-							ValidateDiagFunc: NetworkDeviceModelValidator(),
-						},
-						mkNetworkDeviceQueues: {
-							Type:             schema.TypeInt,
-							Description:      "Number of packet queues to be used on the device",
-							Optional:         true,
-							Default:          dvNetworkDeviceQueues,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 64)),
-						},
-						mkNetworkDeviceRateLimit: {
-							Type:        schema.TypeFloat,
-							Description: "The rate limit in megabytes per second",
-							Optional:    true,
-							Default:     dvNetworkDeviceRateLimit,
-						},
-						mkNetworkDeviceVLANID: {
-							Type:        schema.TypeInt,
-							Description: "The VLAN identifier",
-							Optional:    true,
-							Default:     dvNetworkDeviceVLANID,
-						},
-						mkNetworkDeviceMTU: {
-							Type:        schema.TypeInt,
-							Description: "Maximum transmission unit (MTU)",
-							Optional:    true,
-							Default:     dvNetworkDeviceMTU,
-						},
-					},
-				},
-				MaxItems: maxResourceVirtualEnvironmentVMNetworkDevices,
-				MinItems: 0,
-			},
-			mkNetworkInterfaceNames: {
-				Type:        schema.TypeList,
-				Description: "The network interface names published by the QEMU agent",
-				Computed:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-			},
-			mkNodeName: {
-				Type:        schema.TypeString,
-				Description: "The node name",
-				Required:    true,
-			},
-			mkMigrate: {
-				Type:        schema.TypeBool,
-				Description: "Whether to migrate the VM on node change instead of re-creating it",
-				Optional:    true,
-				Default:     dvMigrate,
-			},
-			mkOperatingSystem: {
-				Type:        schema.TypeList,
-				Description: "The operating system configuration",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkOperatingSystemType: dvOperatingSystemType,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkOperatingSystemType: {
-							Type:             schema.TypeString,
-							Description:      "The type",
-							Optional:         true,
-							Default:          dvOperatingSystemType,
-							ValidateDiagFunc: OperatingSystemTypeValidator(),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkPoolID: {
-				Type:        schema.TypeString,
-				Description: "The ID of the pool to assign the virtual machine to",
-				Optional:    true,
-				Default:     dvPoolID,
-			},
-			mkSerialDevice: {
-				Type:        schema.TypeList,
-				Description: "The serial devices",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkSerialDeviceDevice: dvSerialDeviceDevice,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkSerialDeviceDevice: {
-							Type:             schema.TypeString,
-							Description:      "The device",
-							Optional:         true,
-							Default:          dvSerialDeviceDevice,
-							ValidateDiagFunc: SerialDeviceValidator(),
-						},
-					},
-				},
-				MaxItems: maxResourceVirtualEnvironmentVMSerialDevices,
-				MinItems: 0,
-			},
-			mkSMBIOS: {
-				Type:        schema.TypeList,
-				Description: "Specifies SMBIOS (type1) settings for the VM",
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkSMBIOSFamily: {
-							Type:        schema.TypeString,
-							Description: "Sets SMBIOS family string",
-							Optional:    true,
-							Default:     dvSMBIOSFamily,
-						},
-						mkSMBIOSManufacturer: {
-							Type:        schema.TypeString,
-							Description: "Sets SMBIOS manufacturer",
-							Optional:    true,
-							Default:     dvSMBIOSManufacturer,
-						},
-						mkSMBIOSProduct: {
-							Type:        schema.TypeString,
-							Description: "Sets SMBIOS product ID",
-							Optional:    true,
-							Default:     dvSMBIOSProduct,
-						},
-						mkSMBIOSSerial: {
-							Type:        schema.TypeString,
-							Description: "Sets SMBIOS serial number",
-							Optional:    true,
-							Default:     dvSMBIOSSerial,
-						},
-						mkSMBIOSSKU: {
-							Type:        schema.TypeString,
-							Description: "Sets SMBIOS SKU",
-							Optional:    true,
-							Default:     dvSMBIOSSKU,
-						},
-						mkSMBIOSUUID: {
-							Type:        schema.TypeString,
-							Description: "Sets SMBIOS UUID",
-							Optional:    true,
-							Computed:    true,
-						},
-						mkSMBIOSVersion: {
-							Type:        schema.TypeString,
-							Description: "Sets SMBIOS version",
-							Optional:    true,
-							Default:     dvSMBIOSVersion,
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkStarted: {
-				Type:        schema.TypeBool,
-				Description: "Whether to start the virtual machine",
-				Optional:    true,
-				Default:     dvStarted,
-				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
-					return d.Get(mkTemplate).(bool)
-				},
-			},
-			mkStartup: {
-				Type:        schema.TypeList,
-				Description: "Defines startup and shutdown behavior of the VM",
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkStartupOrder: {
-							Type:        schema.TypeInt,
-							Description: "A non-negative number defining the general startup order",
-							Optional:    true,
-							Default:     dvStartupOrder,
-						},
-						mkStartupUpDelay: {
-							Type:        schema.TypeInt,
-							Description: "A non-negative number defining the delay in seconds before the next VM is started",
-							Optional:    true,
-							Default:     dvStartupUpDelay,
-						},
-						mkStartupDownDelay: {
-							Type:        schema.TypeInt,
-							Description: "A non-negative number defining the delay in seconds before the next VM is shut down",
-							Optional:    true,
-							Default:     dvStartupDownDelay,
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkTabletDevice: {
-				Type:        schema.TypeBool,
-				Description: "Whether to enable the USB tablet device",
-				Optional:    true,
-				Default:     dvTabletDevice,
-			},
-			mkTags: {
-				Type:        schema.TypeList,
-				Description: "Tags of the virtual machine. This is only meta information.",
-				Optional:    true,
-				Elem: &schema.Schema{
-					Type:         schema.TypeString,
-					ValidateFunc: validation.StringIsNotEmpty,
-				},
-				DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
-				DiffSuppressOnRefresh: true,
-			},
-			mkTemplate: {
-				Type:        schema.TypeBool,
-				Description: "Whether to create a template",
-				Optional:    true,
-				ForceNew:    true,
-				Default:     dvTemplate,
-			},
-			mkTimeoutClone: {
-				Type:        schema.TypeInt,
-				Description: "Clone VM timeout",
-				Optional:    true,
-				Default:     dvTimeoutClone,
-			},
-			mkTimeoutCreate: {
-				Type:        schema.TypeInt,
-				Description: "Create VM timeout",
-				Optional:    true,
-				Default:     dvTimeoutCreate,
-			},
-			mkTimeoutMoveDisk: {
-				Type:        schema.TypeInt,
-				Description: "MoveDisk timeout",
-				Optional:    true,
-				Default:     dvTimeoutMoveDisk,
-			},
-			mkTimeoutMigrate: {
-				Type:        schema.TypeInt,
-				Description: "Migrate VM timeout",
-				Optional:    true,
-				Default:     dvTimeoutMigrate,
-			},
-			mkTimeoutReboot: {
-				Type:        schema.TypeInt,
-				Description: "Reboot timeout",
-				Optional:    true,
-				Default:     dvTimeoutReboot,
-			},
-			mkTimeoutShutdownVM: {
-				Type:        schema.TypeInt,
-				Description: "Shutdown timeout",
-				Optional:    true,
-				Default:     dvTimeoutShutdownVM,
-			},
-			mkTimeoutStartVM: {
-				Type:        schema.TypeInt,
-				Description: "Start VM timeout",
-				Optional:    true,
-				Default:     dvTimeoutStartVM,
-			},
-			mkTimeoutStopVM: {
-				Type:        schema.TypeInt,
-				Description: "Stop VM timeout",
-				Optional:    true,
-				Default:     dvTimeoutStopVM,
-			},
-			mkVGA: {
-				Type:        schema.TypeList,
-				Description: "The VGA configuration",
-				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
-							mkVGAEnabled: dvVGAEnabled,
-							mkVGAMemory:  dvVGAMemory,
-							mkVGAType:    dvVGAType,
-						},
-					}, nil
-				},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						mkVGAEnabled: {
-							Type:        schema.TypeBool,
-							Description: "Whether to enable the VGA device",
-							Optional:    true,
-							Default:     dvVGAEnabled,
-						},
-						mkVGAMemory: {
-							Type:             schema.TypeInt,
-							Description:      "The VGA memory in megabytes (4-512 MB)",
-							Optional:         true,
-							Default:          dvVGAMemory,
-							ValidateDiagFunc: VGAMemoryValidator(),
-						},
-						mkVGAType: {
-							Type:             schema.TypeString,
-							Description:      "The VGA type",
-							Optional:         true,
-							Default:          dvVGAType,
-							ValidateDiagFunc: VGATypeValidator(),
-						},
-					},
-				},
-				MaxItems: 1,
-				MinItems: 0,
-			},
-			mkVMID: {
-				Type:        schema.TypeInt,
-				Description: "The VM identifier",
-				Optional:    true,
-				Computed:    true,
-				// "ForceNew: true" handled in CustomizeDiff, making sure VMs with legacy configs with vm_id = -1
-				// do not require re-creation.
-				ValidateDiagFunc: VMIDValidator(),
-			},
-			mkSCSIHardware: {
-				Type:             schema.TypeString,
-				Description:      "The SCSI hardware type",
-				Optional:         true,
-				Default:          dvSCSIHardware,
-				ValidateDiagFunc: SCSIHardwareValidator(),
-			},
-			mkHookScriptFileID: {
-				Type:        schema.TypeString,
-				Description: "A hook script",
-				Optional:    true,
-				Default:     dvHookScript,
-			},
-			mkStopOnDestroy: {
-				Type:        schema.TypeBool,
-				Description: "Whether to stop rather than shutdown on VM destroy",
-				Optional:    true,
-				Default:     dvStopOnDestroy,
+	s := map[string]*schema.Schema{
+		mkRebootAfterCreation: {
+			Type:        schema.TypeBool,
+			Description: "Whether to reboot vm after creation",
+			Optional:    true,
+			Default:     dvRebootAfterCreation,
+		},
+		mkOnBoot: {
+			Type:        schema.TypeBool,
+			Description: "Start VM on Node boot",
+			Optional:    true,
+			Default:     dvOnBoot,
+		},
+		mkBootOrder: {
+			Type:        schema.TypeList,
+			Description: "The guest will attempt to boot from devices in the order they appear here",
+			Optional:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
 			},
 		},
+		mkACPI: {
+			Type:        schema.TypeBool,
+			Description: "Whether to enable ACPI",
+			Optional:    true,
+			Default:     dvACPI,
+		},
+		mkAgent: {
+			Type:        schema.TypeList,
+			Description: "The QEMU agent configuration",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{
+					map[string]interface{}{
+						mkAgentEnabled: dvAgentEnabled,
+						mkAgentTimeout: dvAgentTimeout,
+						mkAgentTrim:    dvAgentTrim,
+						mkAgentType:    dvAgentType,
+					},
+				}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkAgentEnabled: {
+						Type:        schema.TypeBool,
+						Description: "Whether to enable the QEMU agent",
+						Optional:    true,
+						Default:     dvAgentEnabled,
+					},
+					mkAgentTimeout: {
+						Type:             schema.TypeString,
+						Description:      "The maximum amount of time to wait for data from the QEMU agent to become available",
+						Optional:         true,
+						Default:          dvAgentTimeout,
+						ValidateDiagFunc: TimeoutValidator(),
+					},
+					mkAgentTrim: {
+						Type:        schema.TypeBool,
+						Description: "Whether to enable the FSTRIM feature in the QEMU agent",
+						Optional:    true,
+						Default:     dvAgentTrim,
+					},
+					mkAgentType: {
+						Type:             schema.TypeString,
+						Description:      "The QEMU agent interface type",
+						Optional:         true,
+						Default:          dvAgentType,
+						ValidateDiagFunc: QEMUAgentTypeValidator(),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkKVMArguments: {
+			Type:        schema.TypeString,
+			Description: "The args implementation",
+			Optional:    true,
+			Default:     dvKVMArguments,
+		},
+		mkAudioDevice: {
+			Type:        schema.TypeList,
+			Description: "The audio devices",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkAudioDeviceDevice: {
+						Type:             schema.TypeString,
+						Description:      "The device",
+						Optional:         true,
+						Default:          dvAudioDeviceDevice,
+						ValidateDiagFunc: AudioDeviceValidator(),
+					},
+					mkAudioDeviceDriver: {
+						Type:             schema.TypeString,
+						Description:      "The driver",
+						Optional:         true,
+						Default:          dvAudioDeviceDriver,
+						ValidateDiagFunc: AudioDriverValidator(),
+					},
+					mkAudioDeviceEnabled: {
+						Type:        schema.TypeBool,
+						Description: "Whether to enable the audio device",
+						Optional:    true,
+						Default:     dvAudioDeviceEnabled,
+					},
+				},
+			},
+			MaxItems: maxResourceVirtualEnvironmentVMAudioDevices,
+			MinItems: 0,
+		},
+		mkBIOS: {
+			Type:             schema.TypeString,
+			Description:      "The BIOS implementation",
+			Optional:         true,
+			Default:          dvBIOS,
+			ValidateDiagFunc: BIOSValidator(),
+		},
+		mkCDROM: {
+			Type:        schema.TypeList,
+			Description: "The CDROM drive",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{
+					map[string]interface{}{
+						mkCDROMEnabled:   dvCDROMEnabled,
+						mkCDROMFileID:    dvCDROMFileID,
+						mkCDROMInterface: dvCDROMInterface,
+					},
+				}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkCDROMEnabled: {
+						Type:        schema.TypeBool,
+						Description: "Whether to enable the CDROM drive",
+						Optional:    true,
+						Default:     dvCDROMEnabled,
+					},
+					mkCDROMFileID: {
+						Type:             schema.TypeString,
+						Description:      "The file id",
+						Optional:         true,
+						Default:          dvCDROMFileID,
+						ValidateDiagFunc: validators.FileID(),
+					},
+					mkCDROMInterface: {
+						Type:             schema.TypeString,
+						Description:      "The CDROM interface",
+						Optional:         true,
+						Default:          dvCDROMInterface,
+						ValidateDiagFunc: IDEInterfaceValidator(),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkClone: {
+			Type:        schema.TypeList,
+			Description: "The cloning configuration",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkCloneRetries: {
+						Type:        schema.TypeInt,
+						Description: "The number of Retries to create a clone",
+						Optional:    true,
+						ForceNew:    true,
+						Default:     dvCloneRetries,
+					},
+					mkCloneDatastoreID: {
+						Type:        schema.TypeString,
+						Description: "The ID of the target datastore",
+						Optional:    true,
+						ForceNew:    true,
+						Default:     dvCloneDatastoreID,
+					},
+					mkCloneNodeName: {
+						Type:        schema.TypeString,
+						Description: "The name of the source node",
+						Optional:    true,
+						ForceNew:    true,
+						Default:     dvCloneNodeName,
+					},
+					mkCloneVMID: {
+						Type:             schema.TypeInt,
+						Description:      "The ID of the source VM",
+						Required:         true,
+						ForceNew:         true,
+						ValidateDiagFunc: VMIDValidator(),
+					},
+					mkCloneFull: {
+						Type:        schema.TypeBool,
+						Description: "The Clone Type, create a Full Clone (true) or a linked Clone (false)",
+						Optional:    true,
+						ForceNew:    true,
+						Default:     dvCloneFull,
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkCPU: {
+			Type:        schema.TypeList,
+			Description: "The CPU allocation",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{
+					map[string]interface{}{
+						mkCPUArchitecture: dvCPUArchitecture,
+						mkCPUCores:        dvCPUCores,
+						mkCPUFlags:        []interface{}{},
+						mkCPUHotplugged:   dvCPUHotplugged,
+						mkCPULimit:        dvCPULimit,
+						mkCPUNUMA:         dvCPUNUMA,
+						mkCPUSockets:      dvCPUSockets,
+						mkCPUType:         dvCPUType,
+						mkCPUUnits:        dvCPUUnits,
+					},
+				}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkCPUArchitecture: {
+						Type:             schema.TypeString,
+						Description:      "The CPU architecture",
+						Optional:         true,
+						Default:          dvCPUArchitecture,
+						ValidateDiagFunc: CPUArchitectureValidator(),
+					},
+					mkCPUCores: {
+						Type:             schema.TypeInt,
+						Description:      "The number of CPU cores",
+						Optional:         true,
+						Default:          dvCPUCores,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 2304)),
+					},
+					mkCPUFlags: {
+						Type:        schema.TypeList,
+						Description: "The CPU flags",
+						Optional:    true,
+						DefaultFunc: func() (interface{}, error) {
+							return []interface{}{}, nil
+						},
+						Elem: &schema.Schema{Type: schema.TypeString},
+					},
+					mkCPUHotplugged: {
+						Type:             schema.TypeInt,
+						Description:      "The number of hotplugged vCPUs",
+						Optional:         true,
+						Default:          dvCPUHotplugged,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
+					},
+					mkCPULimit: {
+						Type:        schema.TypeInt,
+						Description: "Limit of CPU usage",
+						Optional:    true,
+						Default:     dvCPULimit,
+						ValidateDiagFunc: validation.ToDiagFunc(
+							validation.IntBetween(0, 128),
+						),
+					},
+					mkCPUNUMA: {
+						Type:        schema.TypeBool,
+						Description: "Enable/disable NUMA.",
+						Optional:    true,
+						Default:     dvCPUNUMA,
+					},
+					mkCPUSockets: {
+						Type:             schema.TypeInt,
+						Description:      "The number of CPU sockets",
+						Optional:         true,
+						Default:          dvCPUSockets,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 16)),
+					},
+					mkCPUType: {
+						Type:             schema.TypeString,
+						Description:      "The emulated CPU type",
+						Optional:         true,
+						Default:          dvCPUType,
+						ValidateDiagFunc: CPUTypeValidator(),
+					},
+					mkCPUUnits: {
+						Type:        schema.TypeInt,
+						Description: "The CPU units",
+						Optional:    true,
+						Default:     dvCPUUnits,
+						ValidateDiagFunc: validation.ToDiagFunc(
+							validation.IntBetween(2, 262144),
+						),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkDescription: {
+			Type:        schema.TypeString,
+			Description: "The description",
+			Optional:    true,
+			Default:     dvDescription,
+			StateFunc: func(i interface{}) string {
+				// PVE always adds a newline to the description, so we have to do the same,
+				// also taking in account the CLRF case (Windows)
+				// Unlike container, VM description does not have trailing "\n"
+				if i.(string) != "" {
+					return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n")
+				}
+
+				return ""
+			},
+		},
+		mkEFIDisk: {
+			Type:        schema.TypeList,
+			Description: "The efidisk device",
+			Optional:    true,
+			ForceNew:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkEFIDiskDatastoreID: {
+						Type:        schema.TypeString,
+						Description: "The datastore id",
+						Optional:    true,
+						Default:     dvEFIDiskDatastoreID,
+					},
+					mkEFIDiskFileFormat: {
+						Type:             schema.TypeString,
+						Description:      "The file format",
+						Optional:         true,
+						ForceNew:         true,
+						Computed:         true,
+						ValidateDiagFunc: validators.FileFormat(),
+					},
+					mkEFIDiskType: {
+						Type:        schema.TypeString,
+						Description: "Size and type of the OVMF EFI disk",
+						Optional:    true,
+						ForceNew:    true,
+						Default:     dvEFIDiskType,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							"2m",
+							"4m",
+						}, true)),
+					},
+					mkEFIDiskPreEnrolledKeys: {
+						Type: schema.TypeBool,
+						Description: "Use an EFI vars template with distribution-specific and Microsoft Standard " +
+							"keys enrolled, if used with efi type=`4m`.",
+						Optional: true,
+						ForceNew: true,
+						Default:  dvEFIDiskPreEnrolledKeys,
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkTPMState: {
+			Type:        schema.TypeList,
+			Description: "The tpmstate device",
+			Optional:    true,
+			ForceNew:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkTPMStateDatastoreID: {
+						Type:        schema.TypeString,
+						Description: "Datastore ID",
+						Optional:    true,
+						Default:     dvTPMStateDatastoreID,
+					},
+					mkTPMStateVersion: {
+						Type:        schema.TypeString,
+						Description: "TPM version",
+						Optional:    true,
+						ForceNew:    true,
+						Default:     dvTPMStateVersion,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							"v1.2",
+							"v2.0",
+						}, true)),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkInitialization: {
+			Type:        schema.TypeList,
+			Description: "The cloud-init configuration",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkInitializationDatastoreID: {
+						Type:        schema.TypeString,
+						Description: "The datastore id",
+						Optional:    true,
+						Default:     dvInitializationDatastoreID,
+					},
+					mkInitializationInterface: {
+						Type:             schema.TypeString,
+						Description:      "The IDE interface on which the CloudInit drive will be added",
+						Optional:         true,
+						Default:          dvInitializationInterface,
+						ValidateDiagFunc: CloudInitInterfaceValidator(),
+						DiffSuppressFunc: func(_, _, newValue string, _ *schema.ResourceData) bool {
+							return newValue == ""
+						},
+					},
+					mkInitializationDNS: {
+						Type:        schema.TypeList,
+						Description: "The DNS configuration",
+						Optional:    true,
+						DefaultFunc: func() (interface{}, error) {
+							return []interface{}{}, nil
+						},
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								mkInitializationDNSDomain: {
+									Type:        schema.TypeString,
+									Description: "The DNS search domain",
+									Optional:    true,
+									Default:     dvInitializationDNSDomain,
+								},
+								mkInitializationDNSServer: {
+									Type:        schema.TypeString,
+									Description: "The DNS server",
+									Deprecated: "The `server` attribute is deprecated and will be removed in a future release. " +
+										"Please use the `servers` attribute instead.",
+									Optional: true,
+									Default:  dvInitializationDNSServer,
+								},
+								mkInitializationDNSServers: {
+									Type:        schema.TypeList,
+									Description: "The list of DNS servers",
+									Optional:    true,
+									Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPAddress},
+									MinItems:    0,
+								},
+							},
+						},
+						MaxItems: 1,
+						MinItems: 0,
+					},
+					mkInitializationIPConfig: {
+						Type:        schema.TypeList,
+						Description: "The IP configuration",
+						Optional:    true,
+						DefaultFunc: func() (interface{}, error) {
+							return []interface{}{}, nil
+						},
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								mkInitializationIPConfigIPv4: {
+									Type:        schema.TypeList,
+									Description: "The IPv4 configuration",
+									Optional:    true,
+									DefaultFunc: func() (interface{}, error) {
+										return []interface{}{}, nil
+									},
+									Elem: &schema.Resource{
+										Schema: map[string]*schema.Schema{
+											mkInitializationIPConfigIPv4Address: {
+												Type:        schema.TypeString,
+												Description: "The IPv4 address",
+												Optional:    true,
+												Default:     dvInitializationIPConfigIPv4Address,
+											},
+											mkInitializationIPConfigIPv4Gateway: {
+												Type:        schema.TypeString,
+												Description: "The IPv4 gateway",
+												Optional:    true,
+												Default:     dvInitializationIPConfigIPv4Gateway,
+											},
+										},
+									},
+									MaxItems: 1,
+									MinItems: 0,
+								},
+								mkInitializationIPConfigIPv6: {
+									Type:        schema.TypeList,
+									Description: "The IPv6 configuration",
+									Optional:    true,
+									DefaultFunc: func() (interface{}, error) {
+										return []interface{}{}, nil
+									},
+									Elem: &schema.Resource{
+										Schema: map[string]*schema.Schema{
+											mkInitializationIPConfigIPv6Address: {
+												Type:        schema.TypeString,
+												Description: "The IPv6 address",
+												Optional:    true,
+												Default:     dvInitializationIPConfigIPv6Address,
+											},
+											mkInitializationIPConfigIPv6Gateway: {
+												Type:        schema.TypeString,
+												Description: "The IPv6 gateway",
+												Optional:    true,
+												Default:     dvInitializationIPConfigIPv6Gateway,
+											},
+										},
+									},
+									MaxItems: 1,
+									MinItems: 0,
+								},
+							},
+						},
+						MaxItems: 8,
+						MinItems: 0,
+					},
+					mkInitializationUserAccount: {
+						Type:        schema.TypeList,
+						Description: "The user account configuration",
+						Optional:    true,
+						ForceNew:    true,
+						DefaultFunc: func() (interface{}, error) {
+							return []interface{}{}, nil
+						},
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								mkInitializationUserAccountKeys: {
+									Type:        schema.TypeList,
+									Description: "The SSH keys",
+									Optional:    true,
+									ForceNew:    true,
+									Elem:        &schema.Schema{Type: schema.TypeString},
+								},
+								mkInitializationUserAccountPassword: {
+									Type:        schema.TypeString,
+									Description: "The SSH password",
+									Optional:    true,
+									ForceNew:    true,
+									Sensitive:   true,
+									Default:     dvInitializationUserAccountPassword,
+									DiffSuppressFunc: func(_, oldVal, _ string, _ *schema.ResourceData) bool {
+										return len(oldVal) > 0 &&
+											strings.ReplaceAll(oldVal, "*", "") == ""
+									},
+								},
+								mkInitializationUserAccountUsername: {
+									Type:        schema.TypeString,
+									Description: "The SSH username",
+									Optional:    true,
+									ForceNew:    true,
+								},
+							},
+						},
+						MaxItems: 1,
+						MinItems: 0,
+					},
+					mkInitializationUserDataFileID: {
+						Type:             schema.TypeString,
+						Description:      "The ID of a file containing custom user data",
+						Optional:         true,
+						ForceNew:         true,
+						Default:          dvInitializationUserDataFileID,
+						ValidateDiagFunc: validators.FileID(),
+					},
+					mkInitializationVendorDataFileID: {
+						Type:             schema.TypeString,
+						Description:      "The ID of a file containing vendor data",
+						Optional:         true,
+						ForceNew:         true,
+						Default:          dvInitializationVendorDataFileID,
+						ValidateDiagFunc: validators.FileID(),
+					},
+					mkInitializationNetworkDataFileID: {
+						Type:             schema.TypeString,
+						Description:      "The ID of a file containing network config",
+						Optional:         true,
+						ForceNew:         true,
+						Default:          dvInitializationNetworkDataFileID,
+						ValidateDiagFunc: validators.FileID(),
+					},
+					mkInitializationMetaDataFileID: {
+						Type:             schema.TypeString,
+						Description:      "The ID of a file containing meta data config",
+						Optional:         true,
+						ForceNew:         true,
+						Default:          dvInitializationMetaDataFileID,
+						ValidateDiagFunc: validators.FileID(),
+					},
+					mkInitializationType: {
+						Type:             schema.TypeString,
+						Description:      "The cloud-init configuration format",
+						Optional:         true,
+						ForceNew:         true,
+						Default:          dvInitializationType,
+						ValidateDiagFunc: CloudInitTypeValidator(),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkIPv4Addresses: {
+			Type:        schema.TypeList,
+			Description: "The IPv4 addresses published by the QEMU agent",
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeList,
+				Elem: &schema.Schema{Type: schema.TypeString},
+			},
+		},
+		mkIPv6Addresses: {
+			Type:        schema.TypeList,
+			Description: "The IPv6 addresses published by the QEMU agent",
+			Computed:    true,
+			Elem: &schema.Schema{
+				Type: schema.TypeList,
+				Elem: &schema.Schema{Type: schema.TypeString},
+			},
+		},
+		mkHostPCI: {
+			Type:        schema.TypeList,
+			Description: "The Host PCI devices mapped to the VM",
+			Optional:    true,
+			ForceNew:    false,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkHostPCIDevice: {
+						Type:        schema.TypeString,
+						Description: "The PCI device name for Proxmox, in form of 'hostpciX' where X is a sequential number from 0 to 3",
+						Required:    true,
+					},
+					mkHostPCIDeviceID: {
+						Type: schema.TypeString,
+						Description: "The PCI ID of the device, for example 0000:00:1f.0 (or 0000:00:1f.0;0000:00:1f.1 for multiple " +
+							"device functions, or 0000:00:1f for all functions). Use either this or mapping.",
+						Optional: true,
+					},
+					mkHostPCIDeviceMapping: {
+						Type:        schema.TypeString,
+						Description: "The resource mapping name of the device, for example gpu. Use either this or id.",
+						Optional:    true,
+					},
+					mkHostPCIDeviceMDev: {
+						Type:        schema.TypeString,
+						Description: "The the mediated device to use",
+						Optional:    true,
+					},
+					mkHostPCIDevicePCIE: {
+						Type: schema.TypeBool,
+						Description: "Tells Proxmox VE to use a PCIe or PCI port. Some guests/device combination require PCIe rather " +
+							"than PCI. PCIe is only available for q35 machine types.",
+						Optional: true,
+					},
+					mkHostPCIDeviceROMBAR: {
+						Type:        schema.TypeBool,
+						Description: "Makes the firmware ROM visible for the guest. Default is true",
+						Optional:    true,
+					},
+					mkHostPCIDeviceROMFile: {
+						Type:        schema.TypeString,
+						Description: "A path to a ROM file for the device to use. This is a relative path under /usr/share/kvm/",
+						Optional:    true,
+					},
+					mkHostPCIDeviceXVGA: {
+						Type: schema.TypeBool,
+						Description: "Marks the PCI(e) device as the primary GPU of the VM. With this enabled, " +
+							"the vga configuration argument will be ignored.",
+						Optional: true,
+					},
+				},
+			},
+		},
+		mkHostUSB: {
+			Type:        schema.TypeList,
+			Description: "The Host USB devices mapped to the VM",
+			Optional:    true,
+			ForceNew:    false,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkHostUSBDevice: {
+						Type:        schema.TypeString,
+						Description: "The USB device ID for Proxmox, in form of '<MANUFACTURER>:<ID>'",
+						Required:    true,
+					},
+					mkHostUSBDeviceMapping: {
+						Type:        schema.TypeString,
+						Description: "The resource mapping name of the device, for example usbdisk. Use either this or id.",
+						Optional:    true,
+					},
+					mkHostUSBDeviceUSB3: {
+						Type:        schema.TypeBool,
+						Description: "Makes the USB device a USB3 device for the machine. Default is false",
+						Optional:    true,
+					},
+				},
+			},
+		},
+		mkKeyboardLayout: {
+			Type:             schema.TypeString,
+			Description:      "The keyboard layout",
+			Optional:         true,
+			Default:          dvKeyboardLayout,
+			ValidateDiagFunc: KeyboardLayoutValidator(),
+		},
+		mkMachine: {
+			Type:             schema.TypeString,
+			Description:      "The VM machine type, either default `pc` or `q35`",
+			Optional:         true,
+			Default:          dvMachineType,
+			ValidateDiagFunc: MachineTypeValidator(),
+		},
+		mkMACAddresses: {
+			Type:        schema.TypeList,
+			Description: "The MAC addresses for the network interfaces",
+			Computed:    true,
+			Optional:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		mkMemory: {
+			Type:        schema.TypeList,
+			Description: "The memory allocation",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{
+					map[string]interface{}{
+						mkMemoryDedicated: dvMemoryDedicated,
+						mkMemoryFloating:  dvMemoryFloating,
+						mkMemoryShared:    dvMemoryShared,
+					},
+				}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkMemoryDedicated: {
+						Type:        schema.TypeInt,
+						Description: "The dedicated memory in megabytes",
+						Optional:    true,
+						Default:     dvMemoryDedicated,
+						ValidateDiagFunc: validation.ToDiagFunc(
+							validation.IntBetween(64, 268435456),
+						),
+					},
+					mkMemoryFloating: {
+						Type:        schema.TypeInt,
+						Description: "The floating memory in megabytes (balloon)",
+						Optional:    true,
+						Default:     dvMemoryFloating,
+						ValidateDiagFunc: validation.ToDiagFunc(
+							validation.IntBetween(0, 268435456),
+						),
+					},
+					mkMemoryShared: {
+						Type:        schema.TypeInt,
+						Description: "The shared memory in megabytes",
+						Optional:    true,
+						Default:     dvMemoryShared,
+						ValidateDiagFunc: validation.ToDiagFunc(
+							validation.IntBetween(0, 268435456),
+						),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkName: {
+			Type:        schema.TypeString,
+			Description: "The name",
+			Optional:    true,
+			Default:     dvName,
+		},
+		mkNetworkDevice: {
+			Type:        schema.TypeList,
+			Description: "The network devices",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return make([]interface{}, 1), nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkNetworkDeviceBridge: {
+						Type:        schema.TypeString,
+						Description: "The bridge",
+						Optional:    true,
+						Default:     dvNetworkDeviceBridge,
+					},
+					mkNetworkDeviceEnabled: {
+						Type:        schema.TypeBool,
+						Description: "Whether to enable the network device",
+						Optional:    true,
+						Default:     dvNetworkDeviceEnabled,
+					},
+					mkNetworkDeviceFirewall: {
+						Type:        schema.TypeBool,
+						Description: "Whether this interface's firewall rules should be used",
+						Optional:    true,
+						Default:     dvNetworkDeviceFirewall,
+					},
+					mkNetworkDeviceMACAddress: {
+						Type:             schema.TypeString,
+						Description:      "The MAC address",
+						Optional:         true,
+						Computed:         true,
+						ValidateDiagFunc: validators.MACAddress(),
+					},
+					mkNetworkDeviceModel: {
+						Type:             schema.TypeString,
+						Description:      "The model",
+						Optional:         true,
+						Default:          dvNetworkDeviceModel,
+						ValidateDiagFunc: NetworkDeviceModelValidator(),
+					},
+					mkNetworkDeviceQueues: {
+						Type:             schema.TypeInt,
+						Description:      "Number of packet queues to be used on the device",
+						Optional:         true,
+						Default:          dvNetworkDeviceQueues,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 64)),
+					},
+					mkNetworkDeviceRateLimit: {
+						Type:        schema.TypeFloat,
+						Description: "The rate limit in megabytes per second",
+						Optional:    true,
+						Default:     dvNetworkDeviceRateLimit,
+					},
+					mkNetworkDeviceVLANID: {
+						Type:        schema.TypeInt,
+						Description: "The VLAN identifier",
+						Optional:    true,
+						Default:     dvNetworkDeviceVLANID,
+					},
+					mkNetworkDeviceMTU: {
+						Type:        schema.TypeInt,
+						Description: "Maximum transmission unit (MTU)",
+						Optional:    true,
+						Default:     dvNetworkDeviceMTU,
+					},
+				},
+			},
+			MaxItems: maxResourceVirtualEnvironmentVMNetworkDevices,
+			MinItems: 0,
+		},
+		mkNetworkInterfaceNames: {
+			Type:        schema.TypeList,
+			Description: "The network interface names published by the QEMU agent",
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
+		mkNodeName: {
+			Type:        schema.TypeString,
+			Description: "The node name",
+			Required:    true,
+		},
+		mkMigrate: {
+			Type:        schema.TypeBool,
+			Description: "Whether to migrate the VM on node change instead of re-creating it",
+			Optional:    true,
+			Default:     dvMigrate,
+		},
+		mkOperatingSystem: {
+			Type:        schema.TypeList,
+			Description: "The operating system configuration",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{
+					map[string]interface{}{
+						mkOperatingSystemType: dvOperatingSystemType,
+					},
+				}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkOperatingSystemType: {
+						Type:             schema.TypeString,
+						Description:      "The type",
+						Optional:         true,
+						Default:          dvOperatingSystemType,
+						ValidateDiagFunc: OperatingSystemTypeValidator(),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkPoolID: {
+			Type:        schema.TypeString,
+			Description: "The ID of the pool to assign the virtual machine to",
+			Optional:    true,
+			Default:     dvPoolID,
+		},
+		mkSerialDevice: {
+			Type:        schema.TypeList,
+			Description: "The serial devices",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{
+					map[string]interface{}{
+						mkSerialDeviceDevice: dvSerialDeviceDevice,
+					},
+				}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkSerialDeviceDevice: {
+						Type:             schema.TypeString,
+						Description:      "The device",
+						Optional:         true,
+						Default:          dvSerialDeviceDevice,
+						ValidateDiagFunc: SerialDeviceValidator(),
+					},
+				},
+			},
+			MaxItems: maxResourceVirtualEnvironmentVMSerialDevices,
+			MinItems: 0,
+		},
+		mkSMBIOS: {
+			Type:        schema.TypeList,
+			Description: "Specifies SMBIOS (type1) settings for the VM",
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkSMBIOSFamily: {
+						Type:        schema.TypeString,
+						Description: "Sets SMBIOS family string",
+						Optional:    true,
+						Default:     dvSMBIOSFamily,
+					},
+					mkSMBIOSManufacturer: {
+						Type:        schema.TypeString,
+						Description: "Sets SMBIOS manufacturer",
+						Optional:    true,
+						Default:     dvSMBIOSManufacturer,
+					},
+					mkSMBIOSProduct: {
+						Type:        schema.TypeString,
+						Description: "Sets SMBIOS product ID",
+						Optional:    true,
+						Default:     dvSMBIOSProduct,
+					},
+					mkSMBIOSSerial: {
+						Type:        schema.TypeString,
+						Description: "Sets SMBIOS serial number",
+						Optional:    true,
+						Default:     dvSMBIOSSerial,
+					},
+					mkSMBIOSSKU: {
+						Type:        schema.TypeString,
+						Description: "Sets SMBIOS SKU",
+						Optional:    true,
+						Default:     dvSMBIOSSKU,
+					},
+					mkSMBIOSUUID: {
+						Type:        schema.TypeString,
+						Description: "Sets SMBIOS UUID",
+						Optional:    true,
+						Computed:    true,
+					},
+					mkSMBIOSVersion: {
+						Type:        schema.TypeString,
+						Description: "Sets SMBIOS version",
+						Optional:    true,
+						Default:     dvSMBIOSVersion,
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkStarted: {
+			Type:        schema.TypeBool,
+			Description: "Whether to start the virtual machine",
+			Optional:    true,
+			Default:     dvStarted,
+			DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
+				return d.Get(mkTemplate).(bool)
+			},
+		},
+		mkStartup: {
+			Type:        schema.TypeList,
+			Description: "Defines startup and shutdown behavior of the VM",
+			Optional:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkStartupOrder: {
+						Type:        schema.TypeInt,
+						Description: "A non-negative number defining the general startup order",
+						Optional:    true,
+						Default:     dvStartupOrder,
+					},
+					mkStartupUpDelay: {
+						Type:        schema.TypeInt,
+						Description: "A non-negative number defining the delay in seconds before the next VM is started",
+						Optional:    true,
+						Default:     dvStartupUpDelay,
+					},
+					mkStartupDownDelay: {
+						Type:        schema.TypeInt,
+						Description: "A non-negative number defining the delay in seconds before the next VM is shut down",
+						Optional:    true,
+						Default:     dvStartupDownDelay,
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkTabletDevice: {
+			Type:        schema.TypeBool,
+			Description: "Whether to enable the USB tablet device",
+			Optional:    true,
+			Default:     dvTabletDevice,
+		},
+		mkTags: {
+			Type:        schema.TypeList,
+			Description: "Tags of the virtual machine. This is only meta information.",
+			Optional:    true,
+			Elem: &schema.Schema{
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringIsNotEmpty,
+			},
+			DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
+			DiffSuppressOnRefresh: true,
+		},
+		mkTemplate: {
+			Type:        schema.TypeBool,
+			Description: "Whether to create a template",
+			Optional:    true,
+			ForceNew:    true,
+			Default:     dvTemplate,
+		},
+		mkTimeoutClone: {
+			Type:        schema.TypeInt,
+			Description: "Clone VM timeout",
+			Optional:    true,
+			Default:     dvTimeoutClone,
+		},
+		mkTimeoutCreate: {
+			Type:        schema.TypeInt,
+			Description: "Create VM timeout",
+			Optional:    true,
+			Default:     dvTimeoutCreate,
+		},
+		disk.MkTimeoutMoveDisk: {
+			Type:        schema.TypeInt,
+			Description: "MoveDisk timeout",
+			Optional:    true,
+			Default:     dvTimeoutMoveDisk,
+		},
+		mkTimeoutMigrate: {
+			Type:        schema.TypeInt,
+			Description: "Migrate VM timeout",
+			Optional:    true,
+			Default:     dvTimeoutMigrate,
+		},
+		mkTimeoutReboot: {
+			Type:        schema.TypeInt,
+			Description: "Reboot timeout",
+			Optional:    true,
+			Default:     dvTimeoutReboot,
+		},
+		mkTimeoutShutdownVM: {
+			Type:        schema.TypeInt,
+			Description: "Shutdown timeout",
+			Optional:    true,
+			Default:     dvTimeoutShutdownVM,
+		},
+		mkTimeoutStartVM: {
+			Type:        schema.TypeInt,
+			Description: "Start VM timeout",
+			Optional:    true,
+			Default:     dvTimeoutStartVM,
+		},
+		mkTimeoutStopVM: {
+			Type:        schema.TypeInt,
+			Description: "Stop VM timeout",
+			Optional:    true,
+			Default:     dvTimeoutStopVM,
+		},
+		mkVGA: {
+			Type:        schema.TypeList,
+			Description: "The VGA configuration",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{
+					map[string]interface{}{
+						mkVGAEnabled: dvVGAEnabled,
+						mkVGAMemory:  dvVGAMemory,
+						mkVGAType:    dvVGAType,
+					},
+				}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkVGAEnabled: {
+						Type:        schema.TypeBool,
+						Description: "Whether to enable the VGA device",
+						Optional:    true,
+						Default:     dvVGAEnabled,
+					},
+					mkVGAMemory: {
+						Type:             schema.TypeInt,
+						Description:      "The VGA memory in megabytes (4-512 MB)",
+						Optional:         true,
+						Default:          dvVGAMemory,
+						ValidateDiagFunc: VGAMemoryValidator(),
+					},
+					mkVGAType: {
+						Type:             schema.TypeString,
+						Description:      "The VGA type",
+						Optional:         true,
+						Default:          dvVGAType,
+						ValidateDiagFunc: VGATypeValidator(),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkVMID: {
+			Type:        schema.TypeInt,
+			Description: "The VM identifier",
+			Optional:    true,
+			Computed:    true,
+			// "ForceNew: true" handled in CustomizeDiff, making sure VMs with legacy configs with vm_id = -1
+			// do not require re-creation.
+			ValidateDiagFunc: VMIDValidator(),
+		},
+		mkSCSIHardware: {
+			Type:             schema.TypeString,
+			Description:      "The SCSI hardware type",
+			Optional:         true,
+			Default:          dvSCSIHardware,
+			ValidateDiagFunc: SCSIHardwareValidator(),
+		},
+		mkHookScriptFileID: {
+			Type:        schema.TypeString,
+			Description: "A hook script",
+			Optional:    true,
+			Default:     dvHookScript,
+		},
+		mkStopOnDestroy: {
+			Type:        schema.TypeBool,
+			Description: "Whether to stop rather than shutdown on VM destroy",
+			Optional:    true,
+			Default:     dvStopOnDestroy,
+		},
+	}
+
+	structure.MergeSchema(s, disk.Schema())
+
+	return &schema.Resource{
+		Schema:        s,
 		CreateContext: vmCreate,
 		ReadContext:   vmRead,
 		UpdateContext: vmUpdate,
@@ -2257,9 +2086,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	disk := d.Get(mkDisk).([]interface{})
-	efiDisk := d.Get(mkEFIDisk).([]interface{})
-
 	vmConfig, e = vmAPI.GetVM(ctx)
 	if e != nil {
 		if strings.Contains(e.Error(), "HTTP 404") ||
@@ -2272,104 +2098,21 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	allDiskInfo := getDiskInfo(vmConfig, d) // from the cloned VM
+	/////////////////
 
-	diskDeviceObjects, e := vmGetDiskDeviceObjects(d, nil) // from the resource config
+	allDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
+
+	planDisks, e := disk.GetDiskDeviceObjects(d, VM(), nil) // from the resource config
 	if e != nil {
 		return diag.FromErr(e)
 	}
 
-	for i := range disk {
-		diskBlock := disk[i].(map[string]interface{})
-		diskInterface := diskBlock[mkDiskInterface].(string)
-		dataStoreID := diskBlock[mkDiskDatastoreID].(string)
-		diskSize := int64(diskBlock[mkDiskSize].(int))
-		prefix := diskDigitPrefix(diskInterface)
-
-		currentDiskInfo := allDiskInfo[diskInterface]
-		configuredDiskInfo := diskDeviceObjects[prefix][diskInterface]
-
-		if currentDiskInfo == nil {
-			diskUpdateBody := &vms.UpdateRequestBody{}
-
-			switch prefix {
-			case "virtio":
-				if diskUpdateBody.VirtualIODevices == nil {
-					diskUpdateBody.VirtualIODevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.VirtualIODevices[diskInterface] = configuredDiskInfo
-			case "sata":
-				if diskUpdateBody.SATADevices == nil {
-					diskUpdateBody.SATADevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.SATADevices[diskInterface] = configuredDiskInfo
-			case "scsi":
-				if diskUpdateBody.SCSIDevices == nil {
-					diskUpdateBody.SCSIDevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.SCSIDevices[diskInterface] = configuredDiskInfo
-			}
-
-			e = vmAPI.UpdateVM(ctx, diskUpdateBody)
-			if e != nil {
-				return diag.FromErr(e)
-			}
-
-			continue
-		}
-
-		if diskSize < currentDiskInfo.Size.InGigabytes() {
-			return diag.Errorf(
-				"disk resize fails requests size (%dG) is lower than current size (%d)",
-				diskSize,
-				*currentDiskInfo.Size,
-			)
-		}
-
-		deleteOriginalDisk := types.CustomBool(true)
-
-		diskMoveBody := &vms.MoveDiskRequestBody{
-			DeleteOriginalDisk: &deleteOriginalDisk,
-			Disk:               diskInterface,
-			TargetStorage:      dataStoreID,
-		}
-
-		diskResizeBody := &vms.ResizeDiskRequestBody{
-			Disk: diskInterface,
-			Size: *types.DiskSizeFromGigabytes(diskSize),
-		}
-
-		moveDisk := false
-
-		if dataStoreID != "" {
-			moveDisk = true
-
-			if allDiskInfo[diskInterface] != nil {
-				fileIDParts := strings.Split(allDiskInfo[diskInterface].FileVolume, ":")
-				moveDisk = dataStoreID != fileIDParts[0]
-			}
-		}
-
-		timeout := d.Get(mkTimeoutMoveDisk).(int)
-
-		if moveDisk {
-			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, timeout)
-			if e != nil {
-				return diag.FromErr(e)
-			}
-		}
-
-		if diskSize > currentDiskInfo.Size.InGigabytes() {
-			e = vmAPI.ResizeVMDisk(ctx, diskResizeBody, timeout)
-			if e != nil {
-				return diag.FromErr(e)
-			}
-		}
+	e = disk.CreateClone(ctx, d, planDisks, allDiskInfo, vmAPI)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
+	efiDisk := d.Get(mkEFIDisk).([]interface{})
 	efiDiskInfo := vmGetEfiDisk(d, nil) // from the resource config
 
 	for i := range efiDisk {
@@ -2420,7 +2163,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		if moveDisk {
-			moveDiskTimeout := d.Get(mkTimeoutMoveDisk).(int)
+			moveDiskTimeout := d.Get(disk.MkTimeoutMoveDisk).(int)
 
 			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
 			if e != nil {
@@ -2473,7 +2216,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		if moveDisk {
-			moveDiskTimeout := d.Get(mkTimeoutMoveDisk).(int)
+			moveDiskTimeout := d.Get(disk.MkTimeoutMoveDisk).(int)
 
 			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
 			if e != nil {
@@ -2566,11 +2309,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	description := d.Get(mkDescription).(string)
 
-	diskDeviceObjects, err := vmGetDiskDeviceObjects(d, nil)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	var efiDisk *vms.CustomEFIDisk
 
 	efiDiskBlock := d.Get(mkEFIDisk).([]interface{})
@@ -2611,6 +2349,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			FileVolume: fmt.Sprintf("%s:1", datastoreID),
 			Version:    &version,
 		}
+	}
+
+	diskDeviceObjects, err := disk.GetDiskDeviceObjects(d, resource, nil)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	virtioDeviceObjects := diskDeviceObjects["virtio"]
@@ -2879,166 +2622,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	d.SetId(strconv.Itoa(vmID))
 
-	return vmCreateCustomDisks(ctx, d, m)
-}
-
-func vmCreateCustomDisks(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	vmID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	//nolint:prealloc
-	var commands []string
-
-	// Determine the ID of the next disk.
-	disk := d.Get(mkDisk).([]interface{})
-	diskCount := 0
-
-	for _, d := range disk {
-		block := d.(map[string]interface{})
-		fileID, _ := block[mkDiskFileID].(string)
-
-		if fileID == "" {
-			diskCount++
-		}
-	}
-
-	// Retrieve some information about the disk schema.
-	resourceSchema := VM().Schema
-	diskSchemaElem := resourceSchema[mkDisk].Elem
-	diskSchemaResource := diskSchemaElem.(*schema.Resource)
-	diskSpeedResource := diskSchemaResource.Schema[mkDiskSpeed]
-
-	// Generate the commands required to import the specified disks.
-	importedDiskCount := 0
-
-	for _, d := range disk {
-		block := d.(map[string]interface{})
-
-		fileID, _ := block[mkDiskFileID].(string)
-
-		if fileID == "" {
-			continue
-		}
-
-		datastoreID, _ := block[mkDiskDatastoreID].(string)
-		fileFormat, _ := block[mkDiskFileFormat].(string)
-		size, _ := block[mkDiskSize].(int)
-		speed := block[mkDiskSpeed].([]interface{})
-		diskInterface, _ := block[mkDiskInterface].(string)
-		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
-		ssd := types.CustomBool(block[mkDiskSSD].(bool))
-		discard, _ := block[mkDiskDiscard].(string)
-		cache, _ := block[mkDiskCache].(string)
-
-		if fileFormat == "" {
-			fileFormat = dvDiskFileFormat
-		}
-
-		if len(speed) == 0 {
-			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			speed = diskSpeedDefault.([]interface{})
-		}
-
-		speedBlock := speed[0].(map[string]interface{})
-		speedLimitRead := speedBlock[mkDiskSpeedRead].(int)
-		speedLimitReadBurstable := speedBlock[mkDiskSpeedReadBurstable].(int)
-		speedLimitWrite := speedBlock[mkDiskSpeedWrite].(int)
-		speedLimitWriteBurstable := speedBlock[mkDiskSpeedWriteBurstable].(int)
-
-		diskOptions := ""
-
-		if ioThread {
-			diskOptions += ",iothread=1"
-		}
-
-		if ssd {
-			diskOptions += ",ssd=1"
-		}
-
-		if discard != "" {
-			diskOptions += fmt.Sprintf(",discard=%s", discard)
-		}
-
-		if cache != "" {
-			diskOptions += fmt.Sprintf(",cache=%s", cache)
-		}
-
-		if speedLimitRead > 0 {
-			diskOptions += fmt.Sprintf(",mbps_rd=%d", speedLimitRead)
-		}
-
-		if speedLimitReadBurstable > 0 {
-			diskOptions += fmt.Sprintf(",mbps_rd_max=%d", speedLimitReadBurstable)
-		}
-
-		if speedLimitWrite > 0 {
-			diskOptions += fmt.Sprintf(",mbps_wr=%d", speedLimitWrite)
-		}
-
-		if speedLimitWriteBurstable > 0 {
-			diskOptions += fmt.Sprintf(",mbps_wr_max=%d", speedLimitWriteBurstable)
-		}
-
-		filePathTmp := fmt.Sprintf(
-			"/tmp/vm-%d-disk-%d.%s",
-			vmID,
-			diskCount+importedDiskCount,
-			fileFormat,
-		)
-
-		//nolint:lll
-		commands = append(
-			commands,
-			`set -e`,
-			ssh.TrySudo,
-			fmt.Sprintf(`file_id="%s"`, fileID),
-			fmt.Sprintf(`file_format="%s"`, fileFormat),
-			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
-			fmt.Sprintf(`disk_options="%s"`, diskOptions),
-			fmt.Sprintf(`disk_size="%d"`, size),
-			fmt.Sprintf(`disk_interface="%s"`, diskInterface),
-			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
-			fmt.Sprintf(`vm_id="%d"`, vmID),
-			`source_image=$(try_sudo "pvesm path $file_id")`,
-			`imported_disk="$(try_sudo "qm importdisk $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
-			`disk_id="${datastore_id_target}:$imported_disk${disk_options}"`,
-			`try_sudo "qm set $vm_id -${disk_interface} $disk_id"`,
-			`try_sudo "qm resize $vm_id ${disk_interface} ${disk_size}G"`,
-		)
-
-		importedDiskCount++
-	}
-
-	// Execute the commands on the node and wait for the result.
-	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
-	if len(commands) > 0 {
-		config := m.(proxmoxtf.ProviderConfiguration)
-
-		api, err := config.GetClient()
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		nodeName := d.Get(mkNodeName).(string)
-
-		out, err := api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
-		if err != nil {
-			if matches, e := regexp.Match(`pvesm: .* not found`, out); e == nil && matches {
-				return diag.FromErr(ssh.NewErrUserHasNoPermission(api.SSH().Username()))
-			}
-
-			return diag.FromErr(err)
-		}
-
-		tflog.Debug(ctx, "vmCreateCustomDisks", map[string]interface{}{
-			"output": string(out),
-		})
+	diags := disk.CreateCustomDisks(ctx, nodeName, d, resource, m)
+	if diags.HasError() {
+		return diags
 	}
 
 	return vmCreateStart(ctx, d, m)
@@ -3256,132 +2842,6 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 	}
 
 	return initializationConfig
-}
-
-func vmGetDiskDeviceObjects(
-	d *schema.ResourceData,
-	disks []interface{},
-) (map[string]map[string]*vms.CustomStorageDevice, error) {
-	var diskDevice []interface{}
-
-	if disks != nil {
-		diskDevice = disks
-	} else {
-		diskDevice = d.Get(mkDisk).([]interface{})
-	}
-
-	diskDeviceObjects := map[string]map[string]*vms.CustomStorageDevice{}
-	resource := VM()
-
-	for _, diskEntry := range diskDevice {
-		diskDevice := &vms.CustomStorageDevice{
-			Enabled: true,
-		}
-
-		block := diskEntry.(map[string]interface{})
-		datastoreID, _ := block[mkDiskDatastoreID].(string)
-		pathInDatastore := ""
-
-		if untyped, hasPathInDatastore := block[mkDiskPathInDatastore]; hasPathInDatastore {
-			pathInDatastore = untyped.(string)
-		}
-
-		fileFormat, _ := block[mkDiskFileFormat].(string)
-		fileID, _ := block[mkDiskFileID].(string)
-		size, _ := block[mkDiskSize].(int)
-		diskInterface, _ := block[mkDiskInterface].(string)
-		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
-		ssd := types.CustomBool(block[mkDiskSSD].(bool))
-		discard := block[mkDiskDiscard].(string)
-		cache := block[mkDiskCache].(string)
-
-		speedBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{mkDisk, mkDiskSpeed},
-			0,
-			false,
-		)
-		if err != nil {
-			return diskDeviceObjects, fmt.Errorf("error getting disk speed block: %w", err)
-		}
-
-		if fileFormat == "" {
-			fileFormat = dvDiskFileFormat
-		}
-
-		if fileID != "" {
-			diskDevice.Enabled = false
-		}
-
-		if pathInDatastore != "" {
-			if datastoreID != "" {
-				diskDevice.FileVolume = fmt.Sprintf("%s:%s", datastoreID, pathInDatastore)
-			} else {
-				// FileVolume is absolute path in the host filesystem
-				diskDevice.FileVolume = pathInDatastore
-			}
-		} else {
-			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
-		}
-
-		diskDevice.DatastoreID = &datastoreID
-		diskDevice.Interface = &diskInterface
-		diskDevice.Format = &fileFormat
-		diskDevice.FileID = &fileID
-		diskSize := types.DiskSizeFromGigabytes(int64(size))
-		diskDevice.Size = diskSize
-		diskDevice.IOThread = &ioThread
-		diskDevice.Discard = &discard
-		diskDevice.Cache = &cache
-
-		if !strings.HasPrefix(diskInterface, "virtio") {
-			diskDevice.SSD = &ssd
-		}
-
-		if len(speedBlock) > 0 {
-			speedLimitRead := speedBlock[mkDiskSpeedRead].(int)
-			speedLimitReadBurstable := speedBlock[mkDiskSpeedReadBurstable].(int)
-			speedLimitWrite := speedBlock[mkDiskSpeedWrite].(int)
-			speedLimitWriteBurstable := speedBlock[mkDiskSpeedWriteBurstable].(int)
-
-			if speedLimitRead > 0 {
-				diskDevice.MaxReadSpeedMbps = &speedLimitRead
-			}
-
-			if speedLimitReadBurstable > 0 {
-				diskDevice.BurstableReadSpeedMbps = &speedLimitReadBurstable
-			}
-
-			if speedLimitWrite > 0 {
-				diskDevice.MaxWriteSpeedMbps = &speedLimitWrite
-			}
-
-			if speedLimitWriteBurstable > 0 {
-				diskDevice.BurstableWriteSpeedMbps = &speedLimitWriteBurstable
-			}
-		}
-
-		baseDiskInterface := diskDigitPrefix(diskInterface)
-
-		if baseDiskInterface != "virtio" && baseDiskInterface != "scsi" &&
-			baseDiskInterface != "sata" {
-			errorMsg := fmt.Sprintf(
-				"Defined disk interface not supported. Interface was %s, but only virtio, sata and scsi are supported",
-				diskInterface,
-			)
-
-			return diskDeviceObjects, errors.New(errorMsg)
-		}
-
-		if _, present := diskDeviceObjects[baseDiskInterface]; !present {
-			diskDeviceObjects[baseDiskInterface] = map[string]*vms.CustomStorageDevice{}
-		}
-
-		diskDeviceObjects[baseDiskInterface][diskInterface] = diskDevice
-	}
-
-	return diskDeviceObjects, nil
 }
 
 func vmGetEfiDisk(d *schema.ResourceData, disk []interface{}) *vms.CustomEFIDisk {
@@ -3833,27 +3293,6 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	return vmReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
 }
 
-// orderedListFromMap generates a list from a map's values. The values are sorted based on the map's keys.
-func orderedListFromMap(inputMap map[string]interface{}) []interface{} {
-	itemCount := len(inputMap)
-	keyList := make([]string, itemCount)
-	i := 0
-
-	for key := range inputMap {
-		keyList[i] = key
-		i++
-	}
-
-	sort.Strings(keyList)
-
-	orderedList := make([]interface{}, itemCount)
-	for i, k := range keyList {
-		orderedList[i] = inputMap[k]
-	}
-
-	return orderedList
-}
-
 func vmReadCustom(
 	ctx context.Context,
 	d *schema.ResourceData,
@@ -4131,124 +3570,12 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	currentDiskList := d.Get(mkDisk).([]interface{})
-	diskMap := map[string]interface{}{}
-	diskObjects := getDiskInfo(vmConfig, d)
+	////////////////////
+	allDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
 
-	for di, dd := range diskObjects {
-		if dd == nil || dd.FileVolume == "none" || strings.HasPrefix(di, "ide") {
-			continue
-		}
+	diags = append(diags, disk.Read(ctx, d, allDiskInfo, vmID, api, nodeName, len(clone) > 0)...)
 
-		if dd.IsCloudInitDrive(vmID) {
-			continue
-		}
-
-		disk := map[string]interface{}{}
-
-		datastoreID, pathInDatastore, hasDatastoreID := strings.Cut(dd.FileVolume, ":")
-		if !hasDatastoreID {
-			// when no ':' separator is found, 'Cut' places the whole string to 'datastoreID',
-			// we want it in 'pathInDatastore' (it is absolute filesystem path)
-			pathInDatastore = datastoreID
-			datastoreID = ""
-		}
-
-		disk[mkDiskDatastoreID] = datastoreID
-		disk[mkDiskPathInDatastore] = pathInDatastore
-
-		if dd.Format == nil {
-			disk[mkDiskFileFormat] = dvDiskFileFormat
-
-			if datastoreID != "" {
-				// disk format may not be returned by config API if it is default for the storage, and that may be different
-				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-				volume, e := api.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
-				if e != nil {
-					diags = append(diags, diag.FromErr(e)...)
-					continue
-				}
-
-				disk[mkDiskFileFormat] = volume.FileFormat
-			}
-		} else {
-			disk[mkDiskFileFormat] = dd.Format
-		}
-
-		if dd.FileID != nil {
-			disk[mkDiskFileID] = dd.FileID
-		}
-
-		disk[mkDiskInterface] = di
-		disk[mkDiskSize] = dd.Size.InGigabytes()
-
-		if dd.BurstableReadSpeedMbps != nil ||
-			dd.BurstableWriteSpeedMbps != nil ||
-			dd.MaxReadSpeedMbps != nil ||
-			dd.MaxWriteSpeedMbps != nil {
-			speed := map[string]interface{}{}
-
-			if dd.MaxReadSpeedMbps != nil {
-				speed[mkDiskSpeedRead] = *dd.MaxReadSpeedMbps
-			} else {
-				speed[mkDiskSpeedRead] = 0
-			}
-
-			if dd.BurstableReadSpeedMbps != nil {
-				speed[mkDiskSpeedReadBurstable] = *dd.BurstableReadSpeedMbps
-			} else {
-				speed[mkDiskSpeedReadBurstable] = 0
-			}
-
-			if dd.MaxWriteSpeedMbps != nil {
-				speed[mkDiskSpeedWrite] = *dd.MaxWriteSpeedMbps
-			} else {
-				speed[mkDiskSpeedWrite] = 0
-			}
-
-			if dd.BurstableWriteSpeedMbps != nil {
-				speed[mkDiskSpeedWriteBurstable] = *dd.BurstableWriteSpeedMbps
-			} else {
-				speed[mkDiskSpeedWriteBurstable] = 0
-			}
-
-			disk[mkDiskSpeed] = []interface{}{speed}
-		} else {
-			disk[mkDiskSpeed] = []interface{}{}
-		}
-
-		if dd.IOThread != nil {
-			disk[mkDiskIOThread] = *dd.IOThread
-		} else {
-			disk[mkDiskIOThread] = false
-		}
-
-		if dd.SSD != nil {
-			disk[mkDiskSSD] = *dd.SSD
-		} else {
-			disk[mkDiskSSD] = false
-		}
-
-		if dd.Discard != nil {
-			disk[mkDiskDiscard] = *dd.Discard
-		} else {
-			disk[mkDiskDiscard] = dvDiskDiscard
-		}
-
-		if dd.Cache != nil {
-			disk[mkDiskCache] = *dd.Cache
-		} else {
-			disk[mkDiskCache] = dvDiskCache
-		}
-
-		diskMap[di] = disk
-	}
-
-	if len(clone) == 0 || len(currentDiskList) > 0 {
-		orderedDiskList := orderedListFromMap(diskMap)
-		err = d.Set(mkDisk, orderedDiskList)
-		diags = append(diags, diag.FromErr(err)...)
-	}
+	////////////////////////////
 
 	if vmConfig.EFIDisk != nil {
 		efiDisk := map[string]interface{}{}
@@ -4380,7 +3707,7 @@ func vmReadCustom(
 	}
 
 	if len(clone) == 0 || len(currentPCIList) > 0 {
-		orderedPCIList := orderedListFromMap(pciMap)
+		orderedPCIList := utils.OrderedListFromMap(pciMap)
 		err = d.Set(mkHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -4419,7 +3746,7 @@ func vmReadCustom(
 
 	if len(clone) == 0 || len(currentUSBList) > 0 {
 		// NOTE: reordering of devices by PVE may cause an issue here
-		orderedUSBList := orderedListFromMap(usbMap)
+		orderedUSBList := utils.OrderedListFromMap(usbMap)
 		err = d.Set(mkHostUSB, orderedUSBList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -5700,67 +5027,16 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Prepare the new disk device configuration.
+	allDiskInfo := disk.GetInfo(vmConfig, d)
 
-	if d.HasChange(mkDisk) {
-		diskDeviceObjects, err := vmGetDiskDeviceObjects(d, nil)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	planDisks, err := disk.GetDiskDeviceObjects(d, resource, nil)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-		diskDeviceInfo := getDiskInfo(vmConfig, d)
-
-		for prefix, diskMap := range diskDeviceObjects {
-			if diskMap == nil {
-				continue
-			}
-
-			for key, value := range diskMap {
-				if diskDeviceInfo[key] == nil {
-					return diag.Errorf("missing %s device %s", prefix, key)
-				}
-
-				tmp := diskDeviceInfo[key]
-				tmp.BurstableReadSpeedMbps = value.BurstableReadSpeedMbps
-				tmp.BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
-				tmp.MaxReadSpeedMbps = value.MaxReadSpeedMbps
-				tmp.MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
-				tmp.Cache = value.Cache
-
-				switch prefix {
-				case "virtio":
-					{
-						if updateBody.VirtualIODevices == nil {
-							updateBody.VirtualIODevices = vms.CustomStorageDevices{}
-						}
-
-						updateBody.VirtualIODevices[key] = tmp
-					}
-				case "sata":
-					{
-						if updateBody.SATADevices == nil {
-							updateBody.SATADevices = vms.CustomStorageDevices{}
-						}
-
-						updateBody.SATADevices[key] = tmp
-					}
-				case "scsi":
-					{
-						if updateBody.SCSIDevices == nil {
-							updateBody.SCSIDevices = vms.CustomStorageDevices{}
-						}
-
-						updateBody.SCSIDevices[key] = tmp
-					}
-				//nolint:revive
-				case "ide":
-					{
-						// Investigate whether to support IDE mapping.
-					}
-				default:
-					return diag.Errorf("device prefix %s not supported", prefix)
-				}
-			}
-		}
+	err = disk.Update(d, planDisks, allDiskInfo, updateBody)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	// Prepare the new efi disk configuration.
@@ -6051,19 +5327,23 @@ func vmUpdateDiskLocationAndSize(
 
 	// Determine if any of the disks are changing location and/or size, and initiate the necessary actions.
 	//nolint: nestif
-	if d.HasChange(mkDisk) {
-		diskOld, diskNew := d.GetChange(mkDisk)
+	if d.HasChange(disk.MkDisk) {
+		diskOld, diskNew := d.GetChange(disk.MkDisk)
 
-		diskOldEntries, err := vmGetDiskDeviceObjects(
+		resource := VM()
+
+		diskOldEntries, err := disk.GetDiskDeviceObjects(
 			d,
+			resource,
 			diskOld.([]interface{}),
 		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		diskNewEntries, err := vmGetDiskDeviceObjects(
+		diskNewEntries, err := disk.GetDiskDeviceObjects(
 			d,
+			resource,
 			diskNew.([]interface{}),
 		)
 		if err != nil {
@@ -6085,12 +5365,12 @@ func vmUpdateDiskLocationAndSize(
 			}
 
 			if oldEfiDisk != nil {
-				baseDiskInterface := diskDigitPrefix(*oldEfiDisk.Interface)
+				baseDiskInterface := disk.DigitPrefix(*oldEfiDisk.Interface)
 				diskOldEntries[baseDiskInterface][*oldEfiDisk.Interface] = oldEfiDisk
 			}
 
 			if newEfiDisk != nil {
-				baseDiskInterface := diskDigitPrefix(*newEfiDisk.Interface)
+				baseDiskInterface := disk.DigitPrefix(*newEfiDisk.Interface)
 				diskNewEntries[baseDiskInterface][*newEfiDisk.Interface] = newEfiDisk
 			}
 
@@ -6109,12 +5389,12 @@ func vmUpdateDiskLocationAndSize(
 			newTPMState := vmGetTPMStateAsStorageDevice(d, diskNew.([]interface{}))
 
 			if oldTPMState != nil {
-				baseDiskInterface := diskDigitPrefix(*oldTPMState.Interface)
+				baseDiskInterface := disk.DigitPrefix(*oldTPMState.Interface)
 				diskOldEntries[baseDiskInterface][*oldTPMState.Interface] = oldTPMState
 			}
 
 			if newTPMState != nil {
-				baseDiskInterface := diskDigitPrefix(*newTPMState.Interface)
+				baseDiskInterface := disk.DigitPrefix(*newTPMState.Interface)
 				diskNewEntries[baseDiskInterface][*newTPMState.Interface] = newTPMState
 			}
 
@@ -6193,7 +5473,7 @@ func vmUpdateDiskLocationAndSize(
 			}
 		}
 
-		timeout := d.Get(mkTimeoutMoveDisk).(int)
+		timeout := d.Get(disk.MkTimeoutMoveDisk).(int)
 
 		for _, reqBody := range diskMoveBodies {
 			err = vmAPI.MoveVMDisk(ctx, reqBody, timeout)
@@ -6306,100 +5586,9 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return nil
 }
 
-func diskDigitPrefix(s string) string {
-	for i, r := range s {
-		if unicode.IsDigit(r) {
-			return s[:i]
-		}
-	}
-
-	return s
-}
-
-func getDiskInfo(resp *vms.GetResponseData, d *schema.ResourceData) map[string]*vms.CustomStorageDevice {
-	currentDisk := d.Get(mkDisk)
-
-	currentDiskList := currentDisk.([]interface{})
-	currentDiskMap := map[string]map[string]interface{}{}
-
-	for _, v := range currentDiskList {
-		diskMap := v.(map[string]interface{})
-		diskInterface := diskMap[mkDiskInterface].(string)
-
-		currentDiskMap[diskInterface] = diskMap
-	}
-
-	storageDevices := map[string]*vms.CustomStorageDevice{}
-
-	storageDevices["ide0"] = resp.IDEDevice0
-	storageDevices["ide1"] = resp.IDEDevice1
-	storageDevices["ide2"] = resp.IDEDevice2
-	storageDevices["ide3"] = resp.IDEDevice3
-
-	storageDevices["sata0"] = resp.SATADevice0
-	storageDevices["sata1"] = resp.SATADevice1
-	storageDevices["sata2"] = resp.SATADevice2
-	storageDevices["sata3"] = resp.SATADevice3
-	storageDevices["sata4"] = resp.SATADevice4
-	storageDevices["sata5"] = resp.SATADevice5
-
-	storageDevices["scsi0"] = resp.SCSIDevice0
-	storageDevices["scsi1"] = resp.SCSIDevice1
-	storageDevices["scsi2"] = resp.SCSIDevice2
-	storageDevices["scsi3"] = resp.SCSIDevice3
-	storageDevices["scsi4"] = resp.SCSIDevice4
-	storageDevices["scsi5"] = resp.SCSIDevice5
-	storageDevices["scsi6"] = resp.SCSIDevice6
-	storageDevices["scsi7"] = resp.SCSIDevice7
-	storageDevices["scsi8"] = resp.SCSIDevice8
-	storageDevices["scsi9"] = resp.SCSIDevice9
-	storageDevices["scsi10"] = resp.SCSIDevice10
-	storageDevices["scsi11"] = resp.SCSIDevice11
-	storageDevices["scsi12"] = resp.SCSIDevice12
-	storageDevices["scsi13"] = resp.SCSIDevice13
-
-	storageDevices["virtio0"] = resp.VirtualIODevice0
-	storageDevices["virtio1"] = resp.VirtualIODevice1
-	storageDevices["virtio2"] = resp.VirtualIODevice2
-	storageDevices["virtio3"] = resp.VirtualIODevice3
-	storageDevices["virtio4"] = resp.VirtualIODevice4
-	storageDevices["virtio5"] = resp.VirtualIODevice5
-	storageDevices["virtio6"] = resp.VirtualIODevice6
-	storageDevices["virtio7"] = resp.VirtualIODevice7
-	storageDevices["virtio8"] = resp.VirtualIODevice8
-	storageDevices["virtio9"] = resp.VirtualIODevice9
-	storageDevices["virtio10"] = resp.VirtualIODevice10
-	storageDevices["virtio11"] = resp.VirtualIODevice11
-	storageDevices["virtio12"] = resp.VirtualIODevice12
-	storageDevices["virtio13"] = resp.VirtualIODevice13
-	storageDevices["virtio14"] = resp.VirtualIODevice14
-	storageDevices["virtio15"] = resp.VirtualIODevice15
-
-	for k, v := range storageDevices {
-		if v != nil {
-			if currentDiskMap[k] != nil {
-				if currentDiskMap[k][mkDiskFileID] != nil {
-					fileID := currentDiskMap[k][mkDiskFileID].(string)
-					v.FileID = &fileID
-				}
-			}
-
-			if v.Size == nil {
-				v.Size = new(types.DiskSize)
-			}
-
-			// defensive copy of the loop variable
-			iface := k
-			v.Interface = &iface
-		}
-	}
-
-	return storageDevices
-}
-
 // getDiskDatastores returns a list of the used datastores in a VM.
 func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string {
-	storageDevices := getDiskInfo(vm, d)
+	storageDevices := disk.GetInfo(vm, d)
 	datastoresSet := map[string]int{}
 
 	for _, diskInfo := range storageDevices {

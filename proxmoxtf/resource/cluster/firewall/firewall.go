@@ -15,7 +15,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 )
 
 const (
@@ -81,7 +81,7 @@ func Firewall() *schema.Resource {
 							Description:      "Frequency with which the burst bucket gets refilled",
 							Optional:         true,
 							Default:          dvLogRatelimitRate,
-							ValidateDiagFunc: validator.FirewallRate(),
+							ValidateDiagFunc: validators.FirewallRate(),
 						},
 					},
 				},
@@ -93,14 +93,14 @@ func Firewall() *schema.Resource {
 				Description:      "Default policy for incoming traffic",
 				Optional:         true,
 				Default:          dvPolicyIn,
-				ValidateDiagFunc: validator.FirewallPolicy(),
+				ValidateDiagFunc: validators.FirewallPolicy(),
 			},
 			mkPolicyOut: {
 				Type:             schema.TypeString,
 				Description:      "Default policy for outgoing traffic",
 				Optional:         true,
 				Default:          dvPolicyOut,
-				ValidateDiagFunc: validator.FirewallPolicy(),
+				ValidateDiagFunc: validators.FirewallPolicy(),
 			},
 		},
 		CreateContext: selectFirewallAPI(firewallCreate),

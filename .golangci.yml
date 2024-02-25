@@ -77,5 +77,6 @@ linters:
     - perfsprint
     - tagliatelle
     - testpackage
+    - tparallel
     - varnamelen
   fast: false
