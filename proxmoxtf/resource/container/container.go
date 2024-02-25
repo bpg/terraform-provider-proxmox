@@ -20,7 +20,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	resource "github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -637,7 +637,7 @@ func Container() *schema.Resource {
 							Description:      "Volume size (only used for volume mount points)",
 							Optional:         true,
 							Default:          dvMountPointSize,
-							ValidateDiagFunc: validator.FileSize(),
+							ValidateDiagFunc: validators.FileSize(),
 						},
 						mkMountPointVolume: {
 							Type:        schema.TypeString,
@@ -694,7 +694,7 @@ func Container() *schema.Resource {
 							DiffSuppressFunc: func(_, _, newVal string, _ *schema.ResourceData) bool {
 								return newVal == ""
 							},
-							ValidateDiagFunc: validator.MACAddress(),
+							ValidateDiagFunc: validators.MACAddress(),
 						},
 						mkNetworkInterfaceName: {
 							Type:        schema.TypeString,
@@ -742,7 +742,7 @@ func Container() *schema.Resource {
 							Description:      "The ID of an OS template file",
 							Required:         true,
 							ForceNew:         true,
-							ValidateDiagFunc: validator.FileID(),
+							ValidateDiagFunc: validators.FileID(),
 						},
 						mkOperatingSystemType: {
 							Type:             schema.TypeString,

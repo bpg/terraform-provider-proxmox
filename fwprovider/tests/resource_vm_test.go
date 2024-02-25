@@ -80,9 +80,8 @@ func TestAccResourceVM(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest
 func TestAccResourceVMNetwork(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		name string
 		step resource.TestStep

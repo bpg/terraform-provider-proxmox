@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package validator
+package validators
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMACAddress(t *testing.T) {
+func TestFileID(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -22,10 +22,8 @@ func TestMACAddress(t *testing.T) {
 	}{
 		{"empty", "", true},
 		{"invalid", "invalid", false},
-		{"invalid: no dashes", "38-f9-d3-4b-f5-51", false},
-		{"valid", "38:f9:d3:4b:f5:51", true},
-		{"valid", "38:F9:D3:4B:F5:51", true},
-		{"valid", "00:15:5d:00:09:03", true},
+		{"valid", "local:vztmpl/zen-dns-0.1.tar.zst", true},
+		{"valid when datastore name has dots", "terraform.proxmox.storage.compute.zen:vztmpl/zen-dns-0.1.tar.zst", true},
 	}
 
 	for _, tt := range tests {
@@ -33,7 +31,7 @@ func TestMACAddress(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			f := MACAddress()
+			f := FileID()
 			res := f(tt.value, nil)
 
 			if tt.valid {

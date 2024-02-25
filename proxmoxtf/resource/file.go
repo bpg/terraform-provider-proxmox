@@ -32,7 +32,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -79,7 +79,7 @@ func File() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				Computed:         true,
-				ValidateDiagFunc: validator.ContentType(),
+				ValidateDiagFunc: validators.ContentType(),
 			},
 			mkResourceVirtualEnvironmentFileDatastoreID: {
 				Type:        schema.TypeString,
@@ -676,7 +676,7 @@ func fileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
 		}
 	}
 
-	ctValidator := validator.ContentType()
+	ctValidator := validators.ContentType()
 	diags := ctValidator(contentType, cty.GetAttrPath(mkResourceVirtualEnvironmentFileContentType))
 
 	return &contentType, diags

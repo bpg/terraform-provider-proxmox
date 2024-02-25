@@ -18,7 +18,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validator"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
@@ -74,7 +74,7 @@ func Rules() *schema.Resource {
 			Type:             schema.TypeString,
 			Description:      "Rules action ('ACCEPT', 'DROP', 'REJECT')",
 			Optional:         true,
-			ValidateDiagFunc: validator.FirewallPolicy(),
+			ValidateDiagFunc: validators.FirewallPolicy(),
 		},
 		mkRuleType: {
 			Type:             schema.TypeString,
@@ -117,7 +117,7 @@ func Rules() *schema.Resource {
 				" and containers ('net\\d+'). Host related rules can use arbitrary strings.",
 			Optional:         true,
 			Default:          dvRuleIface,
-			ValidateDiagFunc: validator.FirewallIFace(),
+			ValidateDiagFunc: validators.FirewallIFace(),
 		},
 		mkRuleLog: {
 			Type: schema.TypeString,
