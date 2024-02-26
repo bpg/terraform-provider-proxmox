@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -26,6 +25,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
@@ -33,9 +34,9 @@ import (
 )
 
 var (
-	_      resource.Resource              = &downloadFileResource{}
-	_      resource.ResourceWithConfigure = &downloadFileResource{}
-	httpRe                                = regexp.MustCompile(`https?://.*`)
+	_         resource.Resource              = &downloadFileResource{}
+	_         resource.ResourceWithConfigure = &downloadFileResource{}
+	httpRegex                                = regexp.MustCompile(`https?://.*`)
 )
 
 func sizeRequiresReplace() planmodifier.Int64 {
@@ -54,7 +55,7 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 		return
 	}
 
-	// // Do not replace on resource destroy.
+	// Do not replace on resource destroy.
 	if req.Plan.Raw.IsNull() {
 		return
 	}
@@ -157,9 +158,10 @@ type downloadFileModel struct {
 	ChecksumAlgorithm      types.String `tfsdk:"checksum_algorithm"`
 	Verify                 types.Bool   `tfsdk:"verify"`
 	Overwrite              types.Bool   `tfsdk:"overwrite"`
+	OverwriteUnmanaged     types.Bool   `tfsdk:"overwrite_unmanaged"`
 }
 
-// NewDownloadFileResource manages files downloaded using proxmomx API.
+// NewDownloadFileResource manages files downloaded using Proxmox API.
 func NewDownloadFileResource() resource.Resource {
 	return &downloadFileResource{}
 }
@@ -247,7 +249,7 @@ func (r *downloadFileResource) Schema(
 				Description: "The URL to download the file from. Format `https?://.*`.",
 				Required:    true,
 				Validators: []validator.String{
-					stringvalidator.RegexMatches(httpRe, "Must match http url regex"),
+					stringvalidator.RegexMatches(httpRegex, "Must match http url regex"),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -310,6 +312,14 @@ func (r *downloadFileResource) Schema(
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
+			},
+			"overwrite_unmanaged": schema.BoolAttribute{
+				Description: "If `true` and a file with the same name already exists in the datastore, " +
+					"it will be deleted and the new file will be downloaded. If `false` and the file already exists, " +
+					"an error will be returned.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
 			},
 		},
 	}
@@ -390,24 +400,36 @@ func (r *downloadFileResource) Create(
 		plan.UploadTimeout.ValueInt64(),
 	)
 
+	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
+		fileID := plan.Content.ValueString() + "/" + plan.FileName.ValueString()
+
+		err = storageClient.DeleteDatastoreFile(ctx, fileID)
+		if err != nil {
+			resp.Diagnostics.AddError("Error deleting file from datastore",
+				fmt.Sprintf("Could not delete file '%s', unexpected error: %s", fileID, err.Error()),
+			)
+		}
+
+		err = storageClient.DownloadFileByURL(
+			ctx,
+			&downloadFileReq,
+			plan.UploadTimeout.ValueInt64(),
+		)
+	}
+
 	if err != nil {
-		if strings.Contains(err.Error(), "refusing to override existing file") {
+		if isErrFileAlreadyExists(err) {
 			resp.Diagnostics.AddError(
-				"File already exists in a datastore, it was created outside of Terraform "+
+				"File already exists in the datastore, it was created outside of Terraform "+
 					"or is managed by another resource.",
-				fmt.Sprintf(
-					"File already exists in a datastore: `%s`, "+
-						"error: %s",
-					plan.FileName.ValueString(),
-					err.Error(),
+				fmt.Sprintf("File already exists in the datastore: '%s', error: %s",
+					plan.FileName.ValueString(), err.Error(),
 				),
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error creating Download File interface",
-				fmt.Sprintf(
-					"Could not DownloadFileByURL: `%s`, "+
-						"unexpected error: %s",
+				"Error downloading file from url",
+				fmt.Sprintf("Could not download file '%s', unexpected error: %s",
 					plan.FileName.ValueString(),
 					err.Error(),
 				),
@@ -606,4 +628,12 @@ func (r *downloadFileResource) Delete(
 			)
 		}
 	}
+}
+
+func isErrFileAlreadyExists(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "refusing to override existing file")
 }

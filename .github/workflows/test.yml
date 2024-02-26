@@ -29,6 +29,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
 
       - name: Get dependencies
         if: steps.filter.outputs.go == 'true'
@@ -60,6 +63,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
 
       - name: Get dependencies
         if: steps.filter.outputs.go == 'true'
@@ -69,3 +75,6 @@ jobs:
         if: steps.filter.outputs.go == 'true'
         timeout-minutes: 10
         run: go test -v -cover ./...
+
+      - name: Check for uncommitted changes in generated docs
+        run: make docs && git diff --exit-code
