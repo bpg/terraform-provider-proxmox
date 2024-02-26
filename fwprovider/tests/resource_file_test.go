@@ -85,12 +85,12 @@ func TestAccResourceFile(t *testing.T) {
 				Config:      testAccResourceFileMissingSourceConfig(),
 				ExpectError: regexp.MustCompile("missing argument"),
 			},
-			// Do not allow to overwrite the a file
+			// Do not allow to overwrite the file
 			{
 				Config:      testAccResourceFileCreatedConfig(snippetFile2.Name(), "overwrite = false"),
 				ExpectError: regexp.MustCompile("already exists"),
 			},
-			// Allow to overwrite the a file by default
+			// Allow to overwrite the file by default
 			{
 				Config: testAccResourceFileCreatedConfig(snippetFile2.Name()),
 				Check:  testAccResourceFileCreatedCheck("snippets", snippetFile2.Name()),

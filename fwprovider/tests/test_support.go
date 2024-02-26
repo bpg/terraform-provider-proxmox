@@ -9,6 +9,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sync"
 	"testing"
 
@@ -17,7 +18,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-mux/tf5to6server"
 	"github.com/hashicorp/terraform-plugin-mux/tf6muxserver"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider"
@@ -112,4 +115,37 @@ func getNodesClient() *nodes.Client {
 func getNodeStorageClient() *storage.Client {
 	nodesClient := getNodesClient()
 	return &storage.Client{Client: nodesClient, StorageName: accTestStorageName}
+}
+
+func testResourceAttributes(res string, attrs map[string]string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		for k, v := range attrs {
+			if err := resource.TestCheckResourceAttrWith(res, k, func(got string) error {
+				match, err := regexp.Match(v, []byte(got)) //nolint:mirror
+				if err != nil {
+					return fmt.Errorf("error matching '%s': %w", v, err)
+				}
+				if !match {
+					return fmt.Errorf("expected '%s' to match '%s'", got, v)
+				}
+				return nil
+			})(s); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+}
+
+func testNoResourceAttributes(res string, attrs []string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		for _, k := range attrs {
+			if err := resource.TestCheckNoResourceAttr(res, k)(s); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
 }

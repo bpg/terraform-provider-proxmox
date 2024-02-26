@@ -12,122 +12,164 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
-	accTestDownloadIsoFileName   = "proxmox_virtual_environment_download_file.iso_image"
-	accTestDownloadQcow2FileName = "proxmox_virtual_environment_download_file.qcow2_image"
+	fakeFileISO   = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
+	fakeFileQCOW2 = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
 )
 
 //nolint:paralleltest
 func TestAccResourceDownloadFile(t *testing.T) {
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"download iso file", []resource.TestStep{{
+			Config: fmt.Sprintf(`
+				resource "proxmox_virtual_environment_download_file" "iso_image" {
+					content_type = "iso"
+					node_name    = "%s"
+					datastore_id = "%s"
+					url          = "%s"
+				  }
+				 `, accTestNodeName, accTestStorageName, fakeFileISO),
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
+					"id":             "local:iso/fake_file.iso",
+					"node_name":      accTestNodeName,
+					"datastore_id":   accTestStorageName,
+					"url":            fakeFileISO,
+					"file_name":      "fake_file.iso",
+					"upload_timeout": "600",
+					"size":           "3",
+					"verify":         "true",
+				}),
+				testNoResourceAttributes("proxmox_virtual_environment_download_file.iso_image", []string{
+					"checksum",
+					"checksum_algorithm",
+					"decompression_algorithm",
+				}),
+			),
+		}}},
+		{"download qcow2 file", []resource.TestStep{{
+			Config: fmt.Sprintf(`
+				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
+					content_type       = "iso"
+					node_name          = "%s"
+					datastore_id       = "%s"
+					file_name          = "fake_qcow2_file.img"
+					url                =  "%s"
+					checksum           = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
+					checksum_algorithm = "sha256"
+				  }
+				 `, accTestNodeName, accTestStorageName, fakeFileQCOW2),
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_download_file.qcow2_image", map[string]string{
+					"id":                 "local:iso/fake_qcow2_file.img",
+					"content_type":       "iso",
+					"node_name":          accTestNodeName,
+					"datastore_id":       accTestStorageName,
+					"url":                fakeFileQCOW2,
+					"file_name":          "fake_qcow2_file.img",
+					"upload_timeout":     "600",
+					"size":               "3",
+					"verify":             "true",
+					"checksum":           "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6",
+					"checksum_algorithm": "sha256",
+				}),
+				testNoResourceAttributes("proxmox_virtual_environment_download_file.qcow2_image", []string{
+					"decompression_algorithm",
+				}),
+			),
+		}}},
+		{"update file", []resource.TestStep{{
+			Config: fmt.Sprintf(`
+				resource "proxmox_virtual_environment_download_file" "iso_image" {
+					content_type   = "iso"
+					node_name      = "%s"
+					datastore_id   = "%s"
+					file_name      = "fake_iso_file.img"
+					url            = "%s"
+					upload_timeout = 10000
+				  }
+				 `, accTestNodeName, accTestStorageName, fakeFileISO),
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
+					"id":             "local:iso/fake_iso_file.img",
+					"content_type":   "iso",
+					"node_name":      accTestNodeName,
+					"datastore_id":   accTestStorageName,
+					"url":            fakeFileISO,
+					"file_name":      "fake_iso_file.img",
+					"upload_timeout": "10000",
+					"size":           "3",
+					"verify":         "true",
+				}),
+				testNoResourceAttributes("proxmox_virtual_environment_download_file.iso_image", []string{
+					"checksum",
+					"checksum_algorithm",
+					"decompression_algorithm",
+				}),
+			),
+		}}},
+		{"override unmanaged file", []resource.TestStep{{
+			PreConfig: func() {
+				err := getNodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
+					Content:  types.StrPtr("iso"),
+					FileName: types.StrPtr("fake_file.iso"),
+					Node:     types.StrPtr(accTestNodeName),
+					Storage:  types.StrPtr(accTestStorageName),
+					URL:      types.StrPtr(fakeFileISO),
+				}, 600)
+				require.NoError(t, err)
+				t.Cleanup(func() {
+					err := getNodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
+					require.NoError(t, err)
+				})
+			},
+			Config: fmt.Sprintf(`
+				resource "proxmox_virtual_environment_download_file" "iso_image" {
+					content_type        = "iso"
+					node_name           = "%s"
+					datastore_id        = "%s"
+					url 		        = "%s"
+					overwrite_unmanaged = true
+				  }
+				 `, accTestNodeName, accTestStorageName, fakeFileISO),
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
+					"id":           "local:iso/fake_file.iso",
+					"content_type": "iso",
+					"node_name":    accTestNodeName,
+					"datastore_id": accTestStorageName,
+					"url":          fakeFileISO,
+					"file_name":    "fake_file.iso",
+					"size":         "3",
+					"verify":       "true",
+				}),
+				testNoResourceAttributes("proxmox_virtual_environment_download_file.iso_image", []string{
+					"checksum",
+					"checksum_algorithm",
+					"decompression_algorithm",
+				}),
+			),
+		}}},
+	}
+
 	accProviders := testAccMuxProviders(context.Background(), t)
 
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: accProviders,
-		Steps: []resource.TestStep{
-			// Create and Read testing
-			{
-				Config: testAccResourceDownloadIsoFileCreatedConfig(),
-				Check:  testAccResourceDownloadIsoFileCreatedCheck(),
-			},
-			{
-				Config: testAccResourceDownloadQcow2FileCreatedConfig(),
-				Check:  testAccResourceDownloadQcow2FileCreatedCheck(),
-			},
-			// Update testing
-			{
-				Config: testAccResourceDownloadIsoFileUpdatedConfig(),
-				Check:  testAccResourceDownloadIsoFileUpdatedCheck(),
-			},
-		},
-	})
-}
-
-func testAccResourceDownloadIsoFileCreatedConfig() string {
-	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_download_file" "iso_image" {
-		content_type = "iso"
-		node_name    = "%s"
-		datastore_id = "%s"
-		url = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
-	  }
-	 `, accTestNodeName, accTestStorageName)
-}
-
-func testAccResourceDownloadQcow2FileCreatedConfig() string {
-	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_download_file" "qcow2_image" {
-		content_type       = "iso"
-		node_name          = "%s"
-		datastore_id       = "%s"
-		file_name          = "fake_qcow2_file.img"
-		url                = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
-		checksum           = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
-		checksum_algorithm = "sha256"
-	  }
-	 `, accTestNodeName, accTestStorageName)
-}
-
-func testAccResourceDownloadIsoFileCreatedCheck() resource.TestCheckFunc {
-	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "id", "local:iso/fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "node_name", accTestNodeName),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "datastore_id", accTestStorageName),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "url", "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "file_name", "fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "upload_timeout", "600"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "size", "3"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "verify", "true"),
-		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "checksum"),
-		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "checksum_algorithm"),
-		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "decompression_algorithm"),
-	)
-}
-
-func testAccResourceDownloadQcow2FileCreatedCheck() resource.TestCheckFunc {
-	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "id", "local:iso/fake_qcow2_file.img"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "content_type", "iso"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "node_name", accTestNodeName),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "datastore_id", accTestStorageName),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "url", "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "file_name", "fake_qcow2_file.img"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "upload_timeout", "600"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "size", "3"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "verify", "true"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "checksum", "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"),
-		resource.TestCheckResourceAttr(accTestDownloadQcow2FileName, "checksum_algorithm", "sha256"),
-		resource.TestCheckNoResourceAttr(accTestDownloadQcow2FileName, "decompression_algorithm"),
-	)
-}
-
-func testAccResourceDownloadIsoFileUpdatedConfig() string {
-	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_download_file" "iso_image" {
-		content_type = "iso"
-		node_name    = "%s"
-		datastore_id = "%s"
-		file_name    = "fake_iso_file.img"
-		url = "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"
-		upload_timeout = 10000
-	  }
-	 `, accTestNodeName, accTestStorageName)
-}
-
-func testAccResourceDownloadIsoFileUpdatedCheck() resource.TestCheckFunc {
-	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "id", "local:iso/fake_iso_file.img"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "content_type", "iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "node_name", accTestNodeName),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "datastore_id", accTestStorageName),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "url", "https://cdn.githubraw.com/rafsaf/a4b19ea5e3485f8da6ca4acf46d09650/raw/d340ec3ddcef9b907ede02f64b5d3f694da5d081/fake_file.iso"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "file_name", "fake_iso_file.img"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "upload_timeout", "10000"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "size", "3"),
-		resource.TestCheckResourceAttr(accTestDownloadIsoFileName, "verify", "true"),
-		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "checksum"),
-		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "checksum_algorithm"),
-		resource.TestCheckNoResourceAttr(accTestDownloadIsoFileName, "decompression_algorithm"),
-	)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: accProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
 }
