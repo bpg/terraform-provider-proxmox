@@ -34,6 +34,9 @@ jobs:
         if: steps.filter.outputs.go == 'true'
         with:
           go-version-file: "go.mod"
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
 
       - name: Lint code
         if: steps.filter.outputs.go == 'true'
