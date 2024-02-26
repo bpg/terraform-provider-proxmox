@@ -69,3 +69,6 @@ jobs:
         if: steps.filter.outputs.go == 'true'
         timeout-minutes: 10
         run: go test -v -cover ./...
+
+      - name: Check for uncommitted changes in generated docs
+        run: make docs && git diff --exit-code
