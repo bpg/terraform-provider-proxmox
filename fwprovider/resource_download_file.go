@@ -400,7 +400,7 @@ func (r *downloadFileResource) Create(
 		plan.UploadTimeout.ValueInt64(),
 	)
 
-	if err != nil && isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
+	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
 		fileID := plan.Content.ValueString() + "/" + plan.FileName.ValueString()
 
 		err = storageClient.DeleteDatastoreFile(ctx, fileID)
@@ -631,5 +631,9 @@ func (r *downloadFileResource) Delete(
 }
 
 func isErrFileAlreadyExists(err error) bool {
+	if err == nil {
+		return false
+	}
+
 	return strings.Contains(err.Error(), "refusing to override existing file")
 }
