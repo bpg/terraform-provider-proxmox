@@ -18,16 +18,16 @@ type UserChangePasswordRequestBody struct {
 
 // UserCreateRequestBody contains the data for a user create request.
 type UserCreateRequestBody struct {
-	Comment        *string                `json:"comment,omitempty"   url:"comment,omitempty"`
-	Email          *string                `json:"email,omitempty"     url:"email,omitempty"`
-	Enabled        *types.CustomBool      `json:"enable,omitempty"    url:"enable,omitempty,int"`
-	ExpirationDate *types.CustomTimestamp `json:"expire,omitempty"    url:"expire,omitempty,unix"`
-	FirstName      *string                `json:"firstname,omitempty" url:"firstname,omitempty"`
-	Groups         []string               `json:"groups,omitempty"    url:"groups,omitempty,comma"`
-	ID             string                 `json:"userid"              url:"userid"`
-	Keys           *string                `json:"keys,omitempty"      url:"keys,omitempty"`
-	LastName       *string                `json:"lastname,omitempty"  url:"lastname,omitempty"`
-	Password       string                 `json:"password"            url:"password,omitempty"`
+	Comment        *string           `json:"comment,omitempty"   url:"comment,omitempty"`
+	Email          *string           `json:"email,omitempty"     url:"email,omitempty"`
+	Enabled        *types.CustomBool `json:"enable,omitempty"    url:"enable,omitempty,int"`
+	ExpirationDate *int64            `json:"expire,omitempty"    url:"expire,omitempty"`
+	FirstName      *string           `json:"firstname,omitempty" url:"firstname,omitempty"`
+	Groups         []string          `json:"groups,omitempty"    url:"groups,omitempty,comma"`
+	ID             string            `json:"userid"              url:"userid"`
+	Keys           *string           `json:"keys,omitempty"      url:"keys,omitempty"`
+	LastName       *string           `json:"lastname,omitempty"  url:"lastname,omitempty"`
+	Password       string            `json:"password"            url:"password,omitempty"`
 }
 
 // UserGetResponseBody contains the body from a user get response.
@@ -37,14 +37,14 @@ type UserGetResponseBody struct {
 
 // UserGetResponseData contains the data from an user get response.
 type UserGetResponseData struct {
-	Comment        *string                `json:"comment,omitempty"`
-	Email          *string                `json:"email,omitempty"`
-	Enabled        *types.CustomBool      `json:"enable,omitempty"`
-	ExpirationDate *types.CustomTimestamp `json:"expire,omitempty"`
-	FirstName      *string                `json:"firstname,omitempty"`
-	Groups         *[]string              `json:"groups,omitempty"`
-	Keys           *string                `json:"keys,omitempty"`
-	LastName       *string                `json:"lastname,omitempty"`
+	Comment        *string           `json:"comment,omitempty"`
+	Email          *string           `json:"email,omitempty"`
+	Enabled        *types.CustomBool `json:"enable,omitempty"`
+	ExpirationDate *int64            `json:"expire,omitempty"`
+	FirstName      *string           `json:"firstname,omitempty"`
+	Groups         *[]string         `json:"groups,omitempty"`
+	Keys           *string           `json:"keys,omitempty"`
+	LastName       *string           `json:"lastname,omitempty"`
 }
 
 // UserListResponseBody contains the body from a user list response.
@@ -54,26 +54,26 @@ type UserListResponseBody struct {
 
 // UserListResponseData contains the data from an user list response.
 type UserListResponseData struct {
-	Comment        *string                `json:"comment,omitempty"`
-	Email          *string                `json:"email,omitempty"`
-	Enabled        *types.CustomBool      `json:"enable,omitempty"`
-	ExpirationDate *types.CustomTimestamp `json:"expire,omitempty"`
-	FirstName      *string                `json:"firstname,omitempty"`
-	Groups         *[]string              `json:"groups,omitempty"`
-	ID             string                 `json:"userid"`
-	Keys           *string                `json:"keys,omitempty"`
-	LastName       *string                `json:"lastname,omitempty"`
+	Comment        *string           `json:"comment,omitempty"`
+	Email          *string           `json:"email,omitempty"`
+	Enabled        *types.CustomBool `json:"enable,omitempty"`
+	ExpirationDate *int64            `json:"expire,omitempty"`
+	FirstName      *string           `json:"firstname,omitempty"`
+	Groups         *[]string         `json:"groups,omitempty"`
+	ID             string            `json:"userid"`
+	Keys           *string           `json:"keys,omitempty"`
+	LastName       *string           `json:"lastname,omitempty"`
 }
 
 // UserUpdateRequestBody contains the data for an user update request.
 type UserUpdateRequestBody struct {
-	Append         *types.CustomBool      `json:"append,omitempty"    url:"append,omitempty"`
-	Comment        *string                `json:"comment,omitempty"   url:"comment,omitempty"`
-	Email          *string                `json:"email,omitempty"     url:"email,omitempty"`
-	Enabled        *types.CustomBool      `json:"enable,omitempty"    url:"enable,omitempty,int"`
-	ExpirationDate *types.CustomTimestamp `json:"expire,omitempty"    url:"expire,omitempty,unix"`
-	FirstName      *string                `json:"firstname,omitempty" url:"firstname,omitempty"`
-	Groups         []string               `json:"groups,omitempty"    url:"groups,omitempty,comma"`
-	Keys           *string                `json:"keys,omitempty"      url:"keys,omitempty"`
-	LastName       *string                `json:"lastname,omitempty"  url:"lastname,omitempty"`
+	Append         *types.CustomBool `json:"append,omitempty"    url:"append,omitempty"`
+	Comment        *string           `json:"comment,omitempty"   url:"comment,omitempty"`
+	Email          *string           `json:"email,omitempty"     url:"email,omitempty"`
+	Enabled        *types.CustomBool `json:"enable,omitempty"    url:"enable,omitempty,int"`
+	ExpirationDate *int64            `json:"expire,omitempty"    url:"expire,omitempty,int"`
+	FirstName      *string           `json:"firstname,omitempty" url:"firstname,omitempty"`
+	Groups         []string          `json:"groups,omitempty"    url:"groups,omitempty,comma"`
+	Keys           *string           `json:"keys,omitempty"      url:"keys,omitempty"`
+	LastName       *string           `json:"lastname,omitempty"  url:"lastname,omitempty"`
 }

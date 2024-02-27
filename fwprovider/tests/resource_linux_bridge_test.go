@@ -20,7 +20,6 @@ const (
 	accTestLinuxBridgeName = "proxmox_virtual_environment_network_linux_bridge.test"
 )
 
-//nolint:paralleltest
 func TestAccResourceLinuxBridge(t *testing.T) {
 	accProviders := testAccMuxProviders(context.Background(), t)
 

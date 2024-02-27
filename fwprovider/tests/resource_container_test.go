@@ -21,7 +21,6 @@ const (
 	accTestContainerCloneName = "proxmox_virtual_environment_container.test_container_clone"
 )
 
-//nolint:paralleltest
 func TestAccResourceContainer(t *testing.T) {
 	accProviders := testAccMuxProviders(context.Background(), t)
 

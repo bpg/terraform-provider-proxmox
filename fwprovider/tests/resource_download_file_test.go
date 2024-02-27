@@ -23,7 +23,6 @@ const (
 	fakeFileQCOW2 = "https://cdn.githubraw.com/rafsaf/036eece601975a3ad632a77fc2809046/raw/10500012fca9b4425b50de67a7258a12cba0c076/fake_file.qcow2"
 )
 
-//nolint:paralleltest
 func TestAccResourceDownloadFile(t *testing.T) {
 	tests := []struct {
 		name  string
