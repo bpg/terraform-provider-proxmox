@@ -126,6 +126,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ecanuto"><img src="https://avatars.githubusercontent.com/u/55260?v=4?s=100" width="100px;" alt="Everaldo Canuto"/><br /><sub><b>Everaldo Canuto</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ecanuto" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dr-Shadow"><img src="https://avatars.githubusercontent.com/u/5308086?v=4?s=100" width="100px;" alt="Dr-Shadow"/><br /><sub><b>Dr-Shadow</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3ADr-Shadow" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/FabFaeb"><img src="https://avatars.githubusercontent.com/u/10672940?v=4?s=100" width="100px;" alt="Fabian Franz"/><br /><sub><b>Fabian Franz</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=FabFaeb" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/s-vincent"><img src="https://avatars.githubusercontent.com/u/745464?v=4?s=100" width="100px;" alt="Sebastien Vincent"/><br /><sub><b>Sebastien Vincent</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3As-vincent" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>
