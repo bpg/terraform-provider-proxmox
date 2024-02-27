@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.47.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.6...v0.47.0) (2024-02-27)
+
+
+### Features
+
+* **file:** add `overwrite_unmanaged` attribute to `virtual_environment_download_file` resource ([#1064](https://github.com/bpg/terraform-provider-proxmox/issues/1064)) ([c64fcd2](https://github.com/bpg/terraform-provider-proxmox/commit/c64fcd2948bf6ffbcf6c907fb3f15931a5595596))
+
+
+### Bug Fixes
+
+* **provider:** race condition in`~/.ssh` path existence check ([#1052](https://github.com/bpg/terraform-provider-proxmox/issues/1052)) ([f7f67db](https://github.com/bpg/terraform-provider-proxmox/commit/f7f67dbd3d3edb2b6e092b77c898962d7641256f))
+* **user:** `expiration_date` attribute handling ([#1066](https://github.com/bpg/terraform-provider-proxmox/issues/1066)) ([3c52760](https://github.com/bpg/terraform-provider-proxmox/commit/3c5276093a6edc2282512aa8a489b7d5ad4eee51))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.8.0 → v1.8.1) ([#1063](https://github.com/bpg/terraform-provider-proxmox/issues/1063)) ([9b52c12](https://github.com/bpg/terraform-provider-proxmox/commit/9b52c127ba11a4e01f7d63e2b1d06d7090cbadcb))
+* **deps:** update golang.org/x/exp digest (v0.0.0-20240213143201-ec583247a57a → ) ([#1057](https://github.com/bpg/terraform-provider-proxmox/issues/1057)) ([4959480](https://github.com/bpg/terraform-provider-proxmox/commit/4959480f02f08354bfc009128ddc33c25aa22cae))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.0.0 → v7.0.1) ([#1058](https://github.com/bpg/terraform-provider-proxmox/issues/1058)) ([190ec39](https://github.com/bpg/terraform-provider-proxmox/commit/190ec39234bbe9a2d51f8cafa343dfa66df88e66))
+* **vm:** refactor: move disks code out of vm.go ([#1062](https://github.com/bpg/terraform-provider-proxmox/issues/1062)) ([493ad1c](https://github.com/bpg/terraform-provider-proxmox/commit/493ad1c1219e666e61e05a6ad50a5fe746b4a69c))
+
 ## [0.46.6](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.5...v0.46.6) (2024-02-21)
 
 
