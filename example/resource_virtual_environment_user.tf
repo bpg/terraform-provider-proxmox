@@ -5,14 +5,15 @@ resource "proxmox_virtual_environment_user" "example" {
     role_id   = "PVEVMAdmin"
   }
 
-  comment  = "Managed by Terraform"
-  password = "Test1234!"
-  user_id  = "terraform-provider-proxmox-example@pve"
+  comment         = "Managed by Terraform"
+  password        = "Test1234!"
+  user_id         = "terraform-provider-proxmox-example@pve"
+  expiration_date = "2035-12-31T23:59:59Z"
 }
 
 resource "proxmox_virtual_environment_user" "example2" {
-  comment  = "Managed by Terraform"
-  user_id  = "terraform-provider-proxmox-example2@pve"
+  comment = "Managed by Terraform"
+  user_id = "terraform-provider-proxmox-example2@pve"
 }
 
 output "resource_proxmox_virtual_environment_user_example_acl" {

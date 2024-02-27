@@ -138,7 +138,7 @@ func usersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		}
 
 		if v.ExpirationDate != nil {
-			t := time.Time(*v.ExpirationDate)
+			t := time.Unix(*v.ExpirationDate, 0)
 
 			if t.Unix() > 0 {
 				expirationDates[i] = t.UTC().Format(time.RFC3339)

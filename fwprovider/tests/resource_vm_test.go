@@ -77,7 +77,6 @@ func TestAccResourceVM(t *testing.T) {
 	}
 }
 
-//nolint:paralleltest
 func TestAccResourceVMNetwork(t *testing.T) {
 	tests := []struct {
 		name string

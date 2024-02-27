@@ -12,10 +12,8 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 func (c *Client) usersPath() string {
@@ -74,11 +72,6 @@ func (c *Client) GetUser(ctx context.Context, id string) (*UserGetResponseData, 
 		return nil, api.ErrNoDataObjectInResponse
 	}
 
-	if resBody.Data.ExpirationDate != nil {
-		expirationDate := types.CustomTimestamp(time.Time(*resBody.Data.ExpirationDate).UTC())
-		resBody.Data.ExpirationDate = &expirationDate
-	}
-
 	if resBody.Data.Groups != nil {
 		sort.Strings(*resBody.Data.Groups)
 	}
@@ -104,11 +97,6 @@ func (c *Client) ListUsers(ctx context.Context) ([]*UserListResponseData, error)
 	})
 
 	for i := range resBody.Data {
-		if resBody.Data[i].ExpirationDate != nil {
-			expirationDate := types.CustomTimestamp(time.Time(*resBody.Data[i].ExpirationDate).UTC())
-			resBody.Data[i].ExpirationDate = &expirationDate
-		}
-
 		if resBody.Data[i].Groups != nil {
 			sort.Strings(*resBody.Data[i].Groups)
 		}

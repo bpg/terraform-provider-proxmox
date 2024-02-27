@@ -23,6 +23,9 @@ issues:
     - path: _types\.go
       linters:
         - lll
+    - path: fwprovider/tests/.*\.go
+      linters:
+        - paralleltest
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true

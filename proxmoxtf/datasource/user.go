@@ -178,7 +178,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	diags = append(diags, diag.FromErr(err)...)
 
 	if v.ExpirationDate != nil {
-		t := time.Time(*v.ExpirationDate)
+		t := time.Unix(*v.ExpirationDate, 0)
 		if t.Unix() > 0 {
 			err = d.Set(
 				mkDataSourceVirtualEnvironmentUserExpirationDate,
