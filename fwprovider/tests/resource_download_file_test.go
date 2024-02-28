@@ -35,6 +35,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					node_name    = "%s"
 					datastore_id = "%s"
 					url          = "%s"
+					overwrite_unmanaged = true
 				  }
 				 `, accTestNodeName, accTestStorageName, fakeFileISO),
 			Check: resource.ComposeTestCheckFunc(
@@ -65,6 +66,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					url                =  "%s"
 					checksum           = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
 					checksum_algorithm = "sha256"
+					overwrite_unmanaged = true
 				  }
 				 `, accTestNodeName, accTestStorageName, fakeFileQCOW2),
 			Check: resource.ComposeTestCheckFunc(
@@ -95,6 +97,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					file_name      = "fake_iso_file.img"
 					url            = "%s"
 					upload_timeout = 10000
+					overwrite_unmanaged = true
 				  }
 				 `, accTestNodeName, accTestStorageName, fakeFileISO),
 			Check: resource.ComposeTestCheckFunc(

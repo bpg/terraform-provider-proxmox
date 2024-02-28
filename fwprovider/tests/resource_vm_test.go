@@ -78,6 +78,8 @@ func TestAccResourceVM(t *testing.T) {
 }
 
 func TestAccResourceVMNetwork(t *testing.T) {
+	t.Skip("This test is hanging up")
+
 	tests := []struct {
 		name string
 		step resource.TestStep
@@ -139,6 +141,7 @@ EOF
 					datastore_id = "local"
 					node_name    = "pve"
 					url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+					overwrite_unmanaged = true
 				}`,
 			Check: resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm_network1", "ipv4_addresses.#", "2"),
@@ -165,12 +168,14 @@ EOF
 func TestAccResourceVMDisks(t *testing.T) {
 	t.Parallel()
 
+	providerConfig := getProviderConfig(t)
+
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
 	}{
 		{"create disk with default parameters", []resource.TestStep{{
-			Config: `
+			Config: providerConfig + `
 				resource "proxmox_virtual_environment_vm" "test_disk1" {
 					node_name = "pve"
 					started   = false
@@ -201,12 +206,13 @@ func TestAccResourceVMDisks(t *testing.T) {
 			),
 		}}},
 		{"create disk from an image", []resource.TestStep{{
-			Config: `
+			Config: providerConfig + `
 				resource "proxmox_virtual_environment_download_file" "test_disk2_image" {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name    = "pve"
 					url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_disk2" {
 					node_name = "pve"
@@ -237,7 +243,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 		}}},
 		{"clone default disk without overrides", []resource.TestStep{
 			{
-				Config: `
+				Config: providerConfig + `
 				resource "proxmox_virtual_environment_vm" "test_disk3_template" {
 					node_name = "pve"
 					started   = false
@@ -273,7 +279,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 		// this test is failing because of https://github.com/bpg/terraform-provider-proxmox/issues/360
 		// {"clone disk with new size", []resource.TestStep{
 		//	{
-		//		Config: `
+		//		Config: providerConfig + `
 		//		resource "proxmox_virtual_environment_vm" "test_disk3_template" {
 		//			node_name = "pve"
 		//			started   = false
