@@ -161,6 +161,16 @@ func getProviderConfig(t *testing.T) string {
 	return fmt.Sprintf(`	
     provider "proxmox" {
 	  ssh {
+		agent = false
+		private_key = <<EOF
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+QyNTUxOQAAACD7K2a2i5/vsKSFEouMtD+tYwzFFlBGh+8jAipe7gmfcQAAAIhQEUhBUBFI
+QQAAAAtzc2gtZWQyNTUxOQAAACD7K2a2i5/vsKSFEouMtD+tYwzFFlBGh+8jAipe7gmfcQ
+AAAEB6KOEOo1/MzBoAuw55HC3E84XcE/YFv2kykfG/tuda8fsrZraLn++wpIUSi4y0P61j
+DMUWUEaH7yMCKl7uCZ9xAAAAAAECAwQF
+-----END OPENSSH PRIVATE KEY-----
+    EOF
 		node {
 		  name    = "%s"
 		  address = "%s"

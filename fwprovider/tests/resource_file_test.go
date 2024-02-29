@@ -129,7 +129,7 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
 
 	sshClient, err := ssh.NewClient(
-		sshUsername, "", true, sshAgentSocket,
+		sshUsername, "", true, sshAgentSocket, "",
 		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{

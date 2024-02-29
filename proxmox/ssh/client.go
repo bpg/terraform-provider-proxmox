@@ -58,6 +58,7 @@ type client struct {
 	password       string
 	agent          bool
 	agentSocket    string
+	privateKey     string
 	socks5Server   string
 	socks5Username string
 	socks5Password string
@@ -68,6 +69,7 @@ type client struct {
 func NewClient(
 	username string, password string,
 	agent bool, agentSocket string,
+	privateKey string,
 	socks5Server string, socks5Username string, socks5Password string,
 	nodeResolver NodeResolver,
 ) (Client, error) {
@@ -91,6 +93,7 @@ func NewClient(
 		password:       password,
 		agent:          agent,
 		agentSocket:    agentSocket,
+		privateKey:     privateKey,
 		socks5Server:   socks5Server,
 		socks5Username: socks5Username,
 		socks5Password: socks5Password,
@@ -309,12 +312,26 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 			return sshClient, nil
 		}
 
-		tflog.Error(ctx, "Failed ssh connection through agent, falling back to password authentication",
+		tflog.Error(ctx, "Failed SSH connection through agent",
 			map[string]interface{}{
 				"error": err,
 			})
 	}
 
+	if c.privateKey != "" {
+		sshClient, err = c.createSSHClientWithPrivateKey(ctx, cb, kh, sshHost)
+		if err == nil {
+			return sshClient, nil
+		}
+
+		tflog.Error(ctx, "Failed SSH connection with private key",
+			map[string]interface{}{
+				"error": err,
+			})
+
+	}
+
+	tflog.Info(ctx, "Falling back to password authentication for SSH connection")
 	sshClient, err = c.createSSHClient(ctx, cb, kh, sshHost)
 	if err != nil {
 		return nil, fmt.Errorf("unable to authenticate user %q over SSH to %q. Please verify that ssh-agent is "+
@@ -367,6 +384,27 @@ func (c *client) createSSHClientAgent(
 	sshConfig := &ssh.ClientConfig{
 		User:              c.username,
 		Auth:              []ssh.AuthMethod{ssh.PublicKeysCallback(ag.Signers), ssh.Password(c.password)},
+		HostKeyCallback:   cb,
+		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
+	}
+
+	return c.connect(ctx, sshHost, sshConfig)
+}
+
+func (c *client) createSSHClientWithPrivateKey(
+	ctx context.Context,
+	cb ssh.HostKeyCallback,
+	kh knownhosts.HostKeyCallback,
+	sshHost string,
+) (*ssh.Client, error) {
+	privateKey, err := ssh.ParsePrivateKey([]byte(c.privateKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse private key: %w", err)
+	}
+
+	sshConfig := &ssh.ClientConfig{
+		User:              c.username,
+		Auth:              []ssh.AuthMethod{ssh.PublicKeys(privateKey)},
 		HostKeyCallback:   cb,
 		HostKeyAlgorithms: kh.HostKeyAlgorithms(sshHost),
 	}

@@ -111,6 +111,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD", "PM_VE_SSH_PASSWORD")
 	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
 	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
@@ -137,6 +138,10 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	if _, ok := sshConf[mkProviderSSHAgentSocket]; !ok {
 		sshConf[mkProviderSSHAgentSocket] = sshAgentSocket
+	}
+
+	if _, ok := sshConf[mkProviderSSHPrivateKey]; !ok {
+		sshConf[mkProviderSSHPrivateKey] = sshPrivateKey
 	}
 
 	if _, ok := sshConf[mkProviderSSHSocks5Server]; !ok {
@@ -168,6 +173,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		sshConf[mkProviderSSHPassword].(string),
 		sshConf[mkProviderSSHAgent].(bool),
 		sshConf[mkProviderSSHAgentSocket].(string),
+		sshConf[mkProviderSSHPrivateKey].(string),
 		sshConf[mkProviderSSHSocks5Server].(string),
 		sshConf[mkProviderSSHSocks5Username].(string),
 		sshConf[mkProviderSSHSocks5Password].(string),

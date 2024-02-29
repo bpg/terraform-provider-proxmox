@@ -29,6 +29,7 @@ const (
 	mkProviderSSHPassword       = "password"
 	mkProviderSSHAgent          = "agent"
 	mkProviderSSHAgentSocket    = "agent_socket"
+	mkProviderSSHPrivateKey     = "private_key"
 	mkProviderSSHSocks5Server   = "socks5_server"
 	mkProviderSSHSocks5Username = "socks5_username"
 	mkProviderSSHSocks5Password = "socks5_password"
@@ -123,8 +124,9 @@ func createSchema() map[string]*schema.Schema {
 					mkProviderSSHAgent: {
 						Type:     schema.TypeBool,
 						Optional: true,
-						Description: "Whether to use the SSH agent for authentication. " +
-							"Defaults to `false`.",
+						Description: "Whether to use the SSH agent for authentication. Takes precedence over " +
+							"the `private_key` and `password` fields. Defaults to the value of the " +
+							"`PROXMOX_VE_SSH_AGENT` environment variable, or `false` if not set.",
 						DefaultFunc: func() (interface{}, error) {
 							for _, k := range []string{"PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT"} {
 								v := os.Getenv(k)
@@ -147,6 +149,13 @@ func createSchema() map[string]*schema.Schema {
 							nil,
 						),
 						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHPrivateKey: {
+						Type:      schema.TypeString,
+						Optional:  true,
+						Sensitive: true,
+						Description: "The unencrypted private key (in PEM format) used for the SSH connection. " +
+							"Defaults to the value of the `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable.",
 					},
 					mkProviderSSHSocks5Server: {
 						Type:     schema.TypeString,
