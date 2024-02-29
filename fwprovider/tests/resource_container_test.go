@@ -46,6 +46,7 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_container_template"
 	datastore_id = "local"
 	node_name    = "pve"
 	url = "http://download.proxmox.com/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
+    overwrite_unmanaged = true
 }
 resource "proxmox_virtual_environment_container" "test_container" {
   node_name = "%s"

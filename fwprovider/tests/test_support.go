@@ -9,6 +9,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"regexp"
 	"sync"
 	"testing"
@@ -148,4 +149,22 @@ func testNoResourceAttributes(res string, attrs []string) resource.TestCheckFunc
 
 		return nil
 	}
+}
+
+func getProviderConfig(t *testing.T) string {
+	t.Helper()
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.Parse(endpoint)
+	require.NoError(t, err)
+
+	return fmt.Sprintf(`	
+    provider "proxmox" {
+	  ssh {
+		node {
+		  name    = "%s"
+		  address = "%s"
+		}
+	  }
+	}`, accTestNodeName, u.Hostname())
 }
