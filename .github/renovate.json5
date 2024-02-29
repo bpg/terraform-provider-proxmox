@@ -19,9 +19,7 @@
       "semanticCommitScope": "deps",
     },
     {
-      "matchFileNames": [
-        "hashicorp/terraform-plugin*",
-      ],
+      "matchPackagePrefixes": ["github.com/hashicorp/terraform-plugin-"],
       "groupName": ["terraform-plugin"],
     },
     {
