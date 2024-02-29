@@ -328,10 +328,10 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 			map[string]interface{}{
 				"error": err,
 			})
-
 	}
 
 	tflog.Info(ctx, "Falling back to password authentication for SSH connection")
+
 	sshClient, err = c.createSSHClient(ctx, cb, kh, sshHost)
 	if err != nil {
 		return nil, fmt.Errorf("unable to authenticate user %q over SSH to %q. Please verify that ssh-agent is "+
