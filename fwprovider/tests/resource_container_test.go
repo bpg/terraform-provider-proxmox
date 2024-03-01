@@ -22,6 +22,7 @@ const (
 	accTestContainerCloneName = "proxmox_virtual_environment_container.test_container_clone"
 )
 
+//nolint:gochecknoglobals
 var (
 	accTestContainerID  = 100000 + rand.Intn(99999) //nolint:gosec
 	accCloneContainerID = 200000 + rand.Intn(99999) //nolint:gosec
