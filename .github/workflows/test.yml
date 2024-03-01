@@ -88,9 +88,6 @@ jobs:
         terraform: [ 1.6 ]
     runs-on: ${{ matrix.os }}
     environment: pve-acc
-    concurrency:
-      group: acceptance
-      cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
