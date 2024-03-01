@@ -161,7 +161,6 @@ func getProviderConfig(t *testing.T) string {
 	return fmt.Sprintf(`	
     provider "proxmox" {
 	  ssh {
-		agent = true
 		node {
 		  name    = "%s"
 		  address = "%s"
