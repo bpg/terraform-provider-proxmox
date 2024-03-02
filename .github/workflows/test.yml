@@ -29,9 +29,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-          cache-dependency-path: |
-            go.sum
-            tools/go.sum
+          cache-dependency-path: "**/*.sum"
 
       - name: Get dependencies
         if: steps.filter.outputs.go == 'true'
@@ -62,9 +60,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-          cache-dependency-path: |
-            go.sum
-            tools/go.sum
+          cache-dependency-path: "**/*.sum"
 
       - name: Get dependencies
         if: steps.filter.outputs.go == 'true'
@@ -75,8 +71,8 @@ jobs:
         timeout-minutes: 10
         run: go test -v -cover ./...
 
-#      - name: Check for uncommitted changes in generated docs
-#        run: make docs && git diff --exit-code
+      - name: Check for uncommitted changes in generated docs
+        run: make docs && git diff --exit-code
 
   acceptance:
     needs: build
@@ -97,9 +93,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-          cache-dependency-path: |
-            go.sum
-            tools/go.sum
+          cache-dependency-path: "**/*.sum"
 
       - uses: hashicorp/setup-terraform@a1502cd9e758c50496cc9ac5308c4843bcd56d36 # v3.0.0
         with:
@@ -116,5 +110,5 @@ jobs:
           PROXMOX_VE_SSH_AGENT: false
           PROXMOX_VE_SSH_USERNAME: "terraform"
           PROXMOX_VE_SSH_PRIVATE_KEY: "${{ secrets.PROXMOX_VE_SSH_PRIVATE_KEY }}"
-        run: go test -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/tests/...
+        run: make testacc
 
