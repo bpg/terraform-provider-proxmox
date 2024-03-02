@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -100,6 +101,7 @@ const (
 	dvNetworkDeviceQueues               = 0
 	dvNetworkDeviceRateLimit            = 0
 	dvNetworkDeviceVLANID               = 0
+	dvNetworkDeviceTrunks               = ""
 	dvNetworkDeviceMTU                  = 0
 	dvOperatingSystemType               = "other"
 	dvPoolID                            = ""
@@ -234,6 +236,7 @@ const (
 	mkNetworkDeviceQueues               = "queues"
 	mkNetworkDeviceRateLimit            = "rate_limit"
 	mkNetworkDeviceVLANID               = "vlan_id"
+	mkNetworkDeviceTrunks               = "trunks"
 	mkNetworkDeviceMTU                  = "mtu"
 	mkNetworkInterfaceNames             = "network_interface_names"
 	mkNodeName                          = "node_name"
@@ -1128,6 +1131,11 @@ func VM() *schema.Resource {
 						Description: "The VLAN identifier",
 						Optional:    true,
 						Default:     dvNetworkDeviceVLANID,
+					},
+					mkNetworkDeviceTrunks: {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "List of VLAN trunks for the network interface",
 					},
 					mkNetworkDeviceMTU: {
 						Type:        schema.TypeInt,
@@ -3040,6 +3048,7 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices 
 		queues := block[mkNetworkDeviceQueues].(int)
 		rateLimit := block[mkNetworkDeviceRateLimit].(float64)
 		vlanID := block[mkNetworkDeviceVLANID].(int)
+		trunks := block[mkNetworkDeviceTrunks].(string)
 		mtu := block[mkNetworkDeviceMTU].(int)
 
 		device := vms.CustomNetworkDevice{
@@ -3066,6 +3075,24 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices 
 
 		if vlanID != 0 {
 			device.Tag = &vlanID
+		}
+
+		if trunks != "" {
+			splitTrunks := strings.Split(trunks, ";")
+
+			var trunksAsInt []int
+
+			for _, numStr := range splitTrunks {
+				num, err := strconv.Atoi(numStr)
+				if err != nil {
+					// Error parsing VLAN trunks.
+					os.Exit(1)
+				}
+
+				trunksAsInt = append(trunksAsInt, num)
+			}
+
+			device.Trunks = trunksAsInt
 		}
 
 		if mtu != 0 {
@@ -4121,6 +4148,13 @@ func vmReadCustom(
 				networkDevice[mkNetworkDeviceVLANID] = nd.Tag
 			} else {
 				networkDevice[mkNetworkDeviceVLANID] = 0
+			}
+
+			if nd.Trunks != nil {
+				networkDevice[mkNetworkDeviceTrunks] = strings.Trim(
+					strings.Join(strings.Fields(fmt.Sprint(nd.Trunks)), ";"), "[]")
+			} else {
+				networkDevice[mkNetworkDeviceTrunks] = ""
 			}
 
 			if nd.MTU != nil {
