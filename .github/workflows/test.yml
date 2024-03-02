@@ -74,6 +74,10 @@ jobs:
       - name: Check for uncommitted changes in generated docs
         run: make docs && git diff --exit-code
 
+  testacc:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Invoke acceptance tests workflow
         uses: benc-uk/workflow-dispatch@v1
         with:
