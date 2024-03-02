@@ -12,7 +12,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Generate Short Lived OAuth App Token
-        uses: actions/create-github-app-token@e8e39f73bb84fdf315a015fa3104f314c0a258b4 # v1.8.1
+        uses: actions/create-github-app-token@f2acddfb5195534d487896a656232b016a682f3c # v1.9.0
         id: app-token
         with:
           app-id: "${{ secrets.BOT_APP_ID }}"
