@@ -77,3 +77,45 @@ jobs:
 
 #      - name: Check for uncommitted changes in generated docs
 #        run: make docs && git diff --exit-code
+
+  acceptance:
+    needs: build
+    strategy:
+      max-parallel: 1
+      matrix:
+        os: [ ubuntu-latest ]
+        terraform: [ 1.6 ]
+    runs-on: ${{ matrix.os }}
+    environment: pve-acc
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
+
+      - uses: hashicorp/setup-terraform@a1502cd9e758c50496cc9ac5308c4843bcd56d36 # v3.0.0
+        with:
+          terraform_version: ${{ matrix.terraform }}.*
+          terraform_wrapper: false
+
+      - name: Acceptance tests
+        timeout-minutes: 10
+        env:
+          TF_ACC: 1
+          TF_LOG: DEBUG
+          PROXMOX_VE_INSECURE: false
+          PROXMOX_VE_API_TOKEN: "${{ secrets.PROXMOX_VE_API_TOKEN }}"
+          PROXMOX_VE_ENDPOINT: "https://${{ secrets.PROXMOX_VE_HOST }}:8006/"
+          PROXMOX_VE_SSH_AGENT: false
+          PROXMOX_VE_SSH_USERNAME: "terraform"
+          PROXMOX_VE_SSH_PRIVATE_KEY: "${{ secrets.PROXMOX_VE_SSH_PRIVATE_KEY }}"
+        run: go test -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/tests/...
+
