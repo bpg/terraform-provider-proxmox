@@ -114,6 +114,41 @@ The provider does not use OS-specific SSH configuration files, such as `~/.ssh/c
 Instead, it uses the SSH protocol directly, and supports the `SSH_AUTH_SOCK` environment variable (or `agent_socket` argument) to connect to the `ssh-agent`.
 This allows the provider to use the SSH agent configured by the user, and to support multiple SSH agents running on the same machine.
 You can find more details on the SSH Agent [here](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#adding-your-ssh-keys-to-an-ssh-agent-to-avoid-typing-the-passphrase).
+The SSH agent authentication takes precedence over the `private_key` and `password` authentication.
+
+### SSH Private Key
+
+In some cases where SSH agent is not available, for example when running Terraform from a Windows machine, or when using a CI/CD pipeline that does not support SSH agent forwarding, 
+you can use the `private_key` argument in the `ssh` block (or alternatively `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable) to provide the private key for the SSH connection.
+
+The private key must be in PEM format, and can be loaded from a file:
+
+```terraform
+provider "proxmox" {
+  ...
+
+  ssh {
+    agent = false
+    private_key = file("~/.ssh/id_rsa")
+  }
+}
+```
+Not recommended, but you can also use a heredoc syntax to provide the private key as a string (note that the private key content must not be indented):
+```terraform
+provider "proxmox" {
+  ...
+
+  ssh {
+    agent = false
+    private_key = <<EOF
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+<SKIPPED>
+DMUWUEaH7yMCKl7uCZ9xAAAAAAECAwQF
+-----END OPENSSH PRIVATE KEY-----
+  }
+}
+```
 
 ### SSH User
 
@@ -317,6 +352,7 @@ In addition to [generic provider arguments](https://www.terraform.io/docs/config
     - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
     - `agent` - (Optional) Whether to use the SSH agent for the SSH authentication. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_AGENT`.
     - `agent_socket` - (Optional) The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
+    - `private_key` - (Optional) The private key to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_PRIVATE_KEY`. The private key must be in PEM format.
     - `socks5_server` - (Optional) The address of the SOCKS5 proxy server to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_SERVER`.
     - `socks5_username` - (Optional) The username to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_USERNAME`.
     - `socks5_password` - (Optional) The password to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_PASSWORD`.
