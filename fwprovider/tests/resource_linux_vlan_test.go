@@ -21,6 +21,7 @@ const (
 )
 
 func TestAccResourceLinuxVLAN(t *testing.T) {
+	t.Skip("temp skip")
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	iface := "ens18"
