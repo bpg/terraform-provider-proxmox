@@ -25,6 +25,7 @@ const (
 
 func TestAccResourceDownloadFile(t *testing.T) {
 	t.Skip("temp skip")
+
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
