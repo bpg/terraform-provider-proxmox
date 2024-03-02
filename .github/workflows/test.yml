@@ -73,8 +73,3 @@ jobs:
 
       - name: Check for uncommitted changes in generated docs
         run: make docs && git diff --exit-code
-
-  acceptance:
-    uses: ./.github/workflows/testacc.yml
-    with:
-      ref: ${{ github.event.inputs.ref }}

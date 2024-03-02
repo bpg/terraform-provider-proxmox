@@ -1,24 +1,14 @@
 name: Acceptance Tests
 
 on:
-  workflow_call:
-    inputs:
-      ref:
-        type: string
-        description: 'Branch or tag ref to run the acceptance tests against'
-        required: true
-        default: 'main'
-  workflow_dispatch:
-    inputs:
-      ref:
-        type: string
-        description: 'Branch or tag ref to run the acceptance tests against'
-        required: true
-        default: 'main'
+  workflow_run:
+    workflows: [Tests]
+    types:
+      - completed
 
 jobs:
-
   acceptance:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     strategy:
       max-parallel: 1
       matrix:
@@ -27,12 +17,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     environment: pve-acc
     steps:
+      - run: echo ${{ github.event.workflow_run }}
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          ref: ${{ github.event.inputs.ref }}
-
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Setup Go
         uses: actions/setup-go@v5
