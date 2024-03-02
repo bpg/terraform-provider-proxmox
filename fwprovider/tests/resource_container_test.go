@@ -29,7 +29,6 @@ var (
 )
 
 func TestAccResourceContainer(t *testing.T) {
-	t.Skip("temp skip")
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	resource.Test(t, resource.TestCase{

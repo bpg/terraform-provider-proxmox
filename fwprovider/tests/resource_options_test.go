@@ -16,7 +16,6 @@ import (
 const accTestClusterOptionsName = "proxmox_virtual_environment_cluster_options.test_options"
 
 func TestAccResourceClusterOptions(t *testing.T) {
-	t.Skip("temp skip")
 	t.Parallel()
 
 	accProviders := testAccMuxProviders(context.Background(), t)

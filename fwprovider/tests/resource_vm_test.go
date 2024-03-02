@@ -14,7 +14,6 @@ import (
 )
 
 func TestAccResourceVM(t *testing.T) {
-	t.Skip("temp skip")
 	t.Parallel()
 
 	tests := []struct {
@@ -167,7 +166,6 @@ EOF
 }
 
 func TestAccResourceVMDisks(t *testing.T) {
-	t.Skip("temp skip")
 	t.Parallel()
 
 	providerConfig := getProviderConfig(t)

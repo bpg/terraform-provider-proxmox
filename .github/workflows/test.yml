@@ -110,7 +110,6 @@ jobs:
         timeout-minutes: 10
         env:
           TF_ACC: 1
-          TF_LOG: DEBUG
           PROXMOX_VE_INSECURE: false
           PROXMOX_VE_API_TOKEN: "${{ secrets.PROXMOX_VE_API_TOKEN }}"
           PROXMOX_VE_ENDPOINT: "https://${{ secrets.PROXMOX_VE_HOST }}:8006/"
