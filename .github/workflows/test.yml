@@ -77,7 +77,7 @@ jobs:
         run: make docs && git diff --exit-code
 
   testacc:
-    if: "!contains(github.head_ref, 'renovate/')"
+    if: "!contains(github.head_ref, 'renovate/') && !contains(github.head_ref, 'release-please')"
     name: Dispatch Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
