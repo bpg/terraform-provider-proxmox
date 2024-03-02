@@ -19,7 +19,6 @@ on:
 jobs:
 
   acceptance:
-    needs: build
     strategy:
       max-parallel: 1
       matrix:
