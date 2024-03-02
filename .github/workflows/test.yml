@@ -82,4 +82,3 @@ jobs:
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: testacc.yml
-          ref: ${{ github.event.pull_request.head.ref }}
