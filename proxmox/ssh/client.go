@@ -300,6 +300,7 @@ func (c *client) NodeStreamUpload(
 	if err != nil {
 		return fmt.Errorf("failed to create SSH session: %w", err)
 	}
+
 	defer func(session *ssh.Session) {
 		e := session.Close()
 		if e != nil {
