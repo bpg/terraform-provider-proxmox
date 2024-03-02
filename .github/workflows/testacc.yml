@@ -10,6 +10,7 @@ on:
 
 jobs:
   acceptance:
+    #refs/heads/renovate/tools
     strategy:
       max-parallel: 1
       matrix:
@@ -18,7 +19,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     environment: pve-acc
     steps:
-      - run: echo ${{ github.event.workflow_run }}
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
 
       - name: Checkout
         uses: actions/checkout@v4
