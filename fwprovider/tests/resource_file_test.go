@@ -146,20 +146,12 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 	defer f.Close()
 
 	fname := filepath.Base(file.Name())
-	err = sshClient.NodeUpload(context.Background(), "pve", "/tmp/tfpve/testacc",
+	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/",
 		&api.FileUploadRequest{
 			ContentType: "snippets",
 			FileName:    fname,
 			File:        f,
 		})
-	require.NoError(t, err)
-
-	_, err = sshClient.ExecuteNodeCommands(context.Background(), "pve", []string{
-		fmt.Sprintf(`%s; try_sudo "mv /tmp/tfpve/testacc/snippets/%s /var/lib/vz/snippets/%s" && rm -rf /tmp/tfpve/testacc/`,
-			ssh.TrySudo,
-			fname, fname,
-		),
-	})
 	require.NoError(t, err)
 }
 

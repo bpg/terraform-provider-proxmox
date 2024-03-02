@@ -200,7 +200,7 @@ You can configure the `sudo` privilege for the user via the command line on the 
     ```sh
     terraform ALL=(root) NOPASSWD: /sbin/pvesm
     terraform ALL=(root) NOPASSWD: /sbin/qm
-    terraform ALL=(root) NOPASSWD: /usr/bin/mv /tmp/tfpve/* /var/lib/vz/*
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/*
     ```
 
   Save the file and exit.
