@@ -12,7 +12,6 @@ jobs:
   acceptance:
     #refs/heads/renovate/tools
     strategy:
-      max-parallel: 1
       matrix:
 #        os: [ ubuntu-latest, windows-latest, macos-latest ]
         os: [ windows-latest ]

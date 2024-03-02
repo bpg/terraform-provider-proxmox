@@ -211,7 +211,7 @@ resource "proxmox_virtual_environment_file" "test" {
   }
   %s
 }
-	`, getProviderConfig(t), accTestNodeName, fname, strings.Join(extra, "\n"))
+	`, getProviderConfig(t), accTestNodeName, strings.ReplaceAll(fname, `\`, `/`), strings.Join(extra, "\n"))
 }
 
 func testAccResourceFileTwoSourcesCreatedConfig(t *testing.T) string {
@@ -274,7 +274,7 @@ resource "proxmox_virtual_environment_file" "test" {
     path = "%s"
   }
 }
-	`, getProviderConfig(t), accTestNodeName, fname)
+	`, getProviderConfig(t), accTestNodeName, strings.ReplaceAll(fname, `\`, `/`))
 }
 
 func testAccResourceFileSnippetUpdatedCheck(fname string) resource.TestCheckFunc {
