@@ -73,3 +73,9 @@ jobs:
 
       - name: Check for uncommitted changes in generated docs
         run: make docs && git diff --exit-code
+
+      - name: Invoke acceptance tests workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: testacc.yaml
+          ref: ${{ github.event.pull_request.head.ref }}
