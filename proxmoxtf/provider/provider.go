@@ -136,23 +136,23 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		sshConf[mkProviderSSHAgent] = sshAgent
 	}
 
-	if _, ok := sshConf[mkProviderSSHAgentSocket]; !ok {
+	if v, ok := sshConf[mkProviderSSHAgentSocket]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHAgentSocket] = sshAgentSocket
 	}
 
-	if _, ok := sshConf[mkProviderSSHPrivateKey]; !ok {
+	if v, ok := sshConf[mkProviderSSHPrivateKey]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHPrivateKey] = sshPrivateKey
 	}
 
-	if _, ok := sshConf[mkProviderSSHSocks5Server]; !ok {
+	if v, ok := sshConf[mkProviderSSHSocks5Server]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHSocks5Server] = sshSocks5Server
 	}
 
-	if _, ok := sshConf[mkProviderSSHSocks5Username]; !ok {
+	if v, ok := sshConf[mkProviderSSHSocks5Username]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHSocks5Username] = sshSocks5Username
 	}
 
-	if _, ok := sshConf[mkProviderSSHSocks5Password]; !ok {
+	if v, ok := sshConf[mkProviderSSHSocks5Password]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHSocks5Password] = sshSocks5Password
 	}
 
