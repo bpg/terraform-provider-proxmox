@@ -10,11 +10,9 @@ on:
 
 jobs:
   acceptance:
-    #refs/heads/renovate/tools
     strategy:
       matrix:
-#        os: [ ubuntu-latest, windows-latest, macos-latest ]
-        os: [ windows-latest ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         terraform: [ 1.6 ]
     runs-on: ${{ matrix.os }}
     environment: pve-acc
