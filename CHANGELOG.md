@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.48.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.47.0...v0.48.0) (2024-03-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **file:** snippets upload using SSH input stream ([#1085](https://github.com/bpg/terraform-provider-proxmox/issues/1085))
+
+### Features
+
+* **file:** snippets upload using SSH input stream ([#1085](https://github.com/bpg/terraform-provider-proxmox/issues/1085)) ([3195b3c](https://github.com/bpg/terraform-provider-proxmox/commit/3195b3cdf4c7c9d0c9e23177b4bd097de3b1fa65))
+* **provider:** add support for private key authentication for SSH ([#1076](https://github.com/bpg/terraform-provider-proxmox/issues/1076)) ([2c6d3ad](https://github.com/bpg/terraform-provider-proxmox/commit/2c6d3ad01d7b6882597415d032380cd32cbaa68f))
+* **vm:** add `VLAN` trunk support ([#1086](https://github.com/bpg/terraform-provider-proxmox/issues/1086)) ([cb5fc27](https://github.com/bpg/terraform-provider-proxmox/commit/cb5fc279cd44de9b9782aff5749a771975f72f51))
+
+
+### Miscellaneous
+
+* **ci:** setup acceptance tests ([#1071](https://github.com/bpg/terraform-provider-proxmox/issues/1071)) ([0bf42d5](https://github.com/bpg/terraform-provider-proxmox/commit/0bf42d52e5af26c423730bd5c339bd295abf2533))
+* **ci:** split acceptance tests into a separate workflow ([#1084](https://github.com/bpg/terraform-provider-proxmox/issues/1084)) ([e38b45f](https://github.com/bpg/terraform-provider-proxmox/commit/e38b45f033a147f216228df0bf9a527665bbd808))
+* **ci:** update actions/create-github-app-token action (v1.8.1 → v1.9.0) ([66ec9f4](https://github.com/bpg/terraform-provider-proxmox/commit/66ec9f4b9b027eb963be6b9d1e8a56c6a4610fc4))
+* **ci:** update dorny/paths-filter action (v3.0.1 → v3.0.2) ([3d6cc75](https://github.com/bpg/terraform-provider-proxmox/commit/3d6cc75107c52d8eb42a46e83cd21673770968be))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1078](https://github.com/bpg/terraform-provider-proxmox/issues/1078)) ([2398f6c](https://github.com/bpg/terraform-provider-proxmox/commit/2398f6c339c891d78eae501648c673af470793a8))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.0.1 → v7.0.2) ([#1080](https://github.com/bpg/terraform-provider-proxmox/issues/1080)) ([0d4740f](https://github.com/bpg/terraform-provider-proxmox/commit/0d4740fb90dad40c16994269e03de8b73ffee5dd))
+* **deps:** update module github.com/stretchr/testify (v1.8.4 → v1.9.0) ([#1081](https://github.com/bpg/terraform-provider-proxmox/issues/1081)) ([dbd1655](https://github.com/bpg/terraform-provider-proxmox/commit/dbd1655974b31f1fae1f4c02766ef35cca77fa1e))
+* **deps:** update module golang.org/x/crypto (v0.19.0 → v0.20.0) ([#1082](https://github.com/bpg/terraform-provider-proxmox/issues/1082)) ([e3ddd6f](https://github.com/bpg/terraform-provider-proxmox/commit/e3ddd6f5fa70728607849077fdc426d71bcf2338))
+* switch to `terraform-plugin-testing` for acceptance tests ([#1067](https://github.com/bpg/terraform-provider-proxmox/issues/1067)) ([14fce33](https://github.com/bpg/terraform-provider-proxmox/commit/14fce3366da5cf3bca04511535a2898026c3210c))
+
 ## [0.47.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.46.6...v0.47.0) (2024-02-27)
 
 
