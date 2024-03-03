@@ -78,13 +78,11 @@ func TestAccResourceVM(t *testing.T) {
 }
 
 func TestAccResourceVMNetwork(t *testing.T) {
-	t.Skip("This test is hanging up")
-
 	tests := []struct {
 		name string
 		step resource.TestStep
 	}{
-		{"network interfaces mac", resource.TestStep{
+		{"network interfaces", resource.TestStep{
 			Config: `
 				resource "proxmox_virtual_environment_file" "cloud_config" {
 					content_type = "snippets"
@@ -133,6 +131,7 @@ EOF
 					}
 					network_device {
 						bridge = "vmbr0"
+						trunks = "10;20;30"
 					}
 				}
 
@@ -144,8 +143,12 @@ EOF
 					overwrite_unmanaged = true
 				}`,
 			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm_network1", "ipv4_addresses.#", "2"),
-				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm_network1", "mac_addresses.#", "2"),
+				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_network1", map[string]string{
+					"ipv4_addresses.#":        "2",
+					"mac_addresses.#":         "2",
+					"network_device.0.bridge": "vmbr0",
+					"network_device.0.trunks": "10;20;30",
+				}),
 			),
 		}},
 	}

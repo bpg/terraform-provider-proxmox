@@ -414,6 +414,9 @@ output "ubuntu_vm_public_key" {
     - `queues` - (Optional) The number of queues for VirtIO (1..64).
     - `rate_limit` - (Optional) The rate limit in megabytes per second.
     - `vlan_id` - (Optional) The VLAN identifier.
+    - `trunks` - (Optional) String containing a `;` separated list of VLAN trunks 
+        ("10;20;30"). Note that the VLAN-aware feature need to be enabled on the PVE
+        Linux Bridge to use trunks.
 - `node_name` - (Required) The name of the node to assign the virtual machine
     to.
 - `on_boot` - (Optional) Specifies whether a VM will be started during system

@@ -100,6 +100,7 @@ const (
 	dvNetworkDeviceQueues               = 0
 	dvNetworkDeviceRateLimit            = 0
 	dvNetworkDeviceVLANID               = 0
+	dvNetworkDeviceTrunks               = ""
 	dvNetworkDeviceMTU                  = 0
 	dvOperatingSystemType               = "other"
 	dvPoolID                            = ""
@@ -234,6 +235,7 @@ const (
 	mkNetworkDeviceQueues               = "queues"
 	mkNetworkDeviceRateLimit            = "rate_limit"
 	mkNetworkDeviceVLANID               = "vlan_id"
+	mkNetworkDeviceTrunks               = "trunks"
 	mkNetworkDeviceMTU                  = "mtu"
 	mkNetworkInterfaceNames             = "network_interface_names"
 	mkNodeName                          = "node_name"
@@ -1129,6 +1131,11 @@ func VM() *schema.Resource {
 						Optional:    true,
 						Default:     dvNetworkDeviceVLANID,
 					},
+					mkNetworkDeviceTrunks: {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "List of VLAN trunks for the network interface",
+					},
 					mkNetworkDeviceMTU: {
 						Type:        schema.TypeInt,
 						Description: "Maximum transmission unit (MTU)",
@@ -2012,7 +2019,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(networkDevice) > 0 {
-		updateBody.NetworkDevices = vmGetNetworkDeviceObjects(d)
+		updateBody.NetworkDevices, err = vmGetNetworkDeviceObjects(d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 
 		for i := 0; i < len(updateBody.NetworkDevices); i++ {
 			if !updateBody.NetworkDevices[i].Enabled {
@@ -2402,7 +2412,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	name := d.Get(mkName).(string)
 	tags := d.Get(mkTags).([]interface{})
 
-	networkDeviceObjects := vmGetNetworkDeviceObjects(d)
+	networkDeviceObjects, err := vmGetNetworkDeviceObjects(d)
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
 	nodeName := d.Get(mkNodeName).(string)
 
@@ -3025,7 +3038,7 @@ func vmGetHostUSBDeviceObjects(d *schema.ResourceData) vms.CustomUSBDevices {
 	return usbDeviceObjects
 }
 
-func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices {
+func vmGetNetworkDeviceObjects(d *schema.ResourceData) (vms.CustomNetworkDevices, error) {
 	networkDevice := d.Get(mkNetworkDevice).([]interface{})
 	networkDeviceObjects := make(vms.CustomNetworkDevices, len(networkDevice))
 
@@ -3040,6 +3053,7 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices 
 		queues := block[mkNetworkDeviceQueues].(int)
 		rateLimit := block[mkNetworkDeviceRateLimit].(float64)
 		vlanID := block[mkNetworkDeviceVLANID].(int)
+		trunks := block[mkNetworkDeviceTrunks].(string)
 		mtu := block[mkNetworkDeviceMTU].(int)
 
 		device := vms.CustomNetworkDevice{
@@ -3068,6 +3082,23 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices 
 			device.Tag = &vlanID
 		}
 
+		if trunks != "" {
+			splitTrunks := strings.Split(trunks, ";")
+
+			var trunksAsInt []int
+
+			for _, numStr := range splitTrunks {
+				num, err := strconv.Atoi(numStr)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing trunks: %w", err)
+				}
+
+				trunksAsInt = append(trunksAsInt, num)
+			}
+
+			device.Trunks = trunksAsInt
+		}
+
 		if mtu != 0 {
 			device.MTU = &mtu
 		}
@@ -3075,7 +3106,7 @@ func vmGetNetworkDeviceObjects(d *schema.ResourceData) vms.CustomNetworkDevices 
 		networkDeviceObjects[i] = device
 	}
 
-	return networkDeviceObjects
+	return networkDeviceObjects, nil
 }
 
 func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
@@ -4123,6 +4154,13 @@ func vmReadCustom(
 				networkDevice[mkNetworkDeviceVLANID] = 0
 			}
 
+			if nd.Trunks != nil {
+				networkDevice[mkNetworkDeviceTrunks] = strings.Trim(
+					strings.Join(strings.Fields(fmt.Sprint(nd.Trunks)), ";"), "[]")
+			} else {
+				networkDevice[mkNetworkDeviceTrunks] = ""
+			}
+
 			if nd.MTU != nil {
 				networkDevice[mkNetworkDeviceMTU] = nd.MTU
 			} else {
@@ -5148,7 +5186,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new memory configuration.
 	if d.HasChange(mkMemory) {
-		memoryBlock, err := structure.GetSchemaBlock(
+		memoryBlock, er := structure.GetSchemaBlock(
 			resource,
 			d,
 			[]string{mkMemory},
@@ -5156,7 +5194,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			true,
 		)
 		if err != nil {
-			return diag.FromErr(err)
+			return diag.FromErr(er)
 		}
 
 		memoryDedicated := memoryBlock[mkMemoryDedicated].(int)
@@ -5180,7 +5218,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new network device configuration.
 	if d.HasChange(mkNetworkDevice) {
-		updateBody.NetworkDevices = vmGetNetworkDeviceObjects(d)
+		updateBody.NetworkDevices, err = vmGetNetworkDeviceObjects(d)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 
 		for i := 0; i < len(updateBody.NetworkDevices); i++ {
 			if !updateBody.NetworkDevices[i].Enabled {
