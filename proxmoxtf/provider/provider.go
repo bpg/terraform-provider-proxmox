@@ -111,6 +111,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD", "PM_VE_SSH_PASSWORD")
 	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
 	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
@@ -135,19 +136,23 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		sshConf[mkProviderSSHAgent] = sshAgent
 	}
 
-	if _, ok := sshConf[mkProviderSSHAgentSocket]; !ok {
+	if v, ok := sshConf[mkProviderSSHAgentSocket]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHAgentSocket] = sshAgentSocket
 	}
 
-	if _, ok := sshConf[mkProviderSSHSocks5Server]; !ok {
+	if v, ok := sshConf[mkProviderSSHPrivateKey]; !ok || v.(string) == "" {
+		sshConf[mkProviderSSHPrivateKey] = sshPrivateKey
+	}
+
+	if v, ok := sshConf[mkProviderSSHSocks5Server]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHSocks5Server] = sshSocks5Server
 	}
 
-	if _, ok := sshConf[mkProviderSSHSocks5Username]; !ok {
+	if v, ok := sshConf[mkProviderSSHSocks5Username]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHSocks5Username] = sshSocks5Username
 	}
 
-	if _, ok := sshConf[mkProviderSSHSocks5Password]; !ok {
+	if v, ok := sshConf[mkProviderSSHSocks5Password]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHSocks5Password] = sshSocks5Password
 	}
 
@@ -168,6 +173,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		sshConf[mkProviderSSHPassword].(string),
 		sshConf[mkProviderSSHAgent].(bool),
 		sshConf[mkProviderSSHAgentSocket].(string),
+		sshConf[mkProviderSSHPrivateKey].(string),
 		sshConf[mkProviderSSHSocks5Server].(string),
 		sshConf[mkProviderSSHSocks5Username].(string),
 		sshConf[mkProviderSSHSocks5Password].(string),

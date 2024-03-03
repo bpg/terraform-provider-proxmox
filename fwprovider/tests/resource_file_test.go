@@ -125,11 +125,12 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 	u, err := url.ParseRequestURI(endpoint)
 	require.NoError(t, err)
 
+	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT")
 	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
-	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
-
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
+	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
 	sshClient, err := ssh.NewClient(
-		sshUsername, "", true, sshAgentSocket,
+		sshUsername, "", sshAgent, sshAgentSocket, sshPrivateKey,
 		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
@@ -146,20 +147,12 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 	defer f.Close()
 
 	fname := filepath.Base(file.Name())
-	err = sshClient.NodeUpload(context.Background(), "pve", "/tmp/tfpve/testacc",
+	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/",
 		&api.FileUploadRequest{
 			ContentType: "snippets",
 			FileName:    fname,
 			File:        f,
 		})
-	require.NoError(t, err)
-
-	_, err = sshClient.ExecuteNodeCommands(context.Background(), "pve", []string{
-		fmt.Sprintf(`%s; try_sudo "mv /tmp/tfpve/testacc/snippets/%s /var/lib/vz/snippets/%s" && rm -rf /tmp/tfpve/testacc/`,
-			ssh.TrySudo,
-			fname, fname,
-		),
-	})
 	require.NoError(t, err)
 }
 
@@ -218,7 +211,7 @@ resource "proxmox_virtual_environment_file" "test" {
   }
   %s
 }
-	`, getProviderConfig(t), accTestNodeName, fname, strings.Join(extra, "\n"))
+	`, getProviderConfig(t), accTestNodeName, strings.ReplaceAll(fname, `\`, `/`), strings.Join(extra, "\n"))
 }
 
 func testAccResourceFileTwoSourcesCreatedConfig(t *testing.T) string {
@@ -281,7 +274,7 @@ resource "proxmox_virtual_environment_file" "test" {
     path = "%s"
   }
 }
-	`, getProviderConfig(t), accTestNodeName, fname)
+	`, getProviderConfig(t), accTestNodeName, strings.ReplaceAll(fname, `\`, `/`))
 }
 
 func testAccResourceFileSnippetUpdatedCheck(fname string) resource.TestCheckFunc {

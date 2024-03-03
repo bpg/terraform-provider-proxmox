@@ -5,10 +5,10 @@ on:
   push:
     branches:
       - main
-      - "release/**"
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 1
 
       - name: Filter paths
-        uses: dorny/paths-filter@ebc4d7e9ebcb0b1eb21480bb8f43113e996ac77a # v3.0.1
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         id: filter
         with:
           filters: |
@@ -30,9 +30,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-          cache-dependency-path: |
-            go.sum
-            tools/go.sum
+          cache-dependency-path: "**/*.sum"
 
       - name: Get dependencies
         if: steps.filter.outputs.go == 'true'
@@ -43,6 +41,7 @@ jobs:
         run: go vet . && go build -v .
 
   test:
+    name: Unit Tests
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -52,7 +51,7 @@ jobs:
           fetch-depth: 1
 
       - name: Filter paths
-        uses: dorny/paths-filter@ebc4d7e9ebcb0b1eb21480bb8f43113e996ac77a # v3.0.1
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         id: filter
         with:
           filters: |
@@ -63,9 +62,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
-          cache-dependency-path: |
-            go.sum
-            tools/go.sum
+          cache-dependency-path: "**/*.sum"
 
       - name: Get dependencies
         if: steps.filter.outputs.go == 'true'
@@ -79,52 +76,15 @@ jobs:
       - name: Check for uncommitted changes in generated docs
         run: make docs && git diff --exit-code
 
-  acceptance:
+  testacc:
+    if: "!contains(github.head_ref, 'renovate/') && !contains(github.head_ref, 'release-please')"
+    name: Dispatch Acceptance Tests
     needs: build
-    strategy:
-      max-parallel: 1
-      matrix:
-        os: [ ubuntu-latest ]
-        terraform: [ 1.6 ]
-    runs-on: ${{ matrix.os }}
-    environment: pve-acc
-    concurrency:
-      group: acceptance
-      cancel-in-progress: true
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Invoke acceptance tests workflow
+        uses: benc-uk/workflow-dispatch@v1
         with:
-          fetch-depth: 1
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: "go.mod"
-          cache-dependency-path: |
-            go.sum
-            tools/go.sum
-
-      - name: Get dependencies
-        run: go mod download
-
-      - name: Setup ssh-agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.PROXMOX_VE_SSH_USER_PRIVATE_KEY }}
-
-      - uses: hashicorp/setup-terraform@a1502cd9e758c50496cc9ac5308c4843bcd56d36 # v3.0.0
-        with:
-          terraform_version: ${{ matrix.terraform }}.*
-          terraform_wrapper: false
-
-      - name: Acceptance tests
-        timeout-minutes: 10
-        env:
-          TF_ACC: 1
-          PROXMOX_VE_API_TOKEN: "${{ secrets.PROXMOX_VE_API_TOKEN }}"
-          PROXMOX_VE_ENDPOINT: "https://${{ secrets.PROXMOX_VE_HOST }}:8006/"
-          PROXMOX_VE_SSH_USERNAME: "terraform"
-          PROXMOX_VE_SSH_AGENT: true
-          PROXMOX_VE_INSECURE: false
-        run: make testacc
+          workflow: testacc.yml
+          ref: ${{ github.event.pull_request.head.ref }}
+          inputs: '{"ref": "${{ github.head_ref }}" }'

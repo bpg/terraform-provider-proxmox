@@ -9,6 +9,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -19,6 +20,12 @@ import (
 const (
 	accTestContainerName      = "proxmox_virtual_environment_container.test_container"
 	accTestContainerCloneName = "proxmox_virtual_environment_container.test_container_clone"
+)
+
+//nolint:gochecknoglobals
+var (
+	accTestContainerID  = 100000 + rand.Intn(99999) //nolint:gosec
+	accCloneContainerID = 200000 + rand.Intn(99999) //nolint:gosec
 )
 
 func TestAccResourceContainer(t *testing.T) {
@@ -50,7 +57,7 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_container_template"
 }
 resource "proxmox_virtual_environment_container" "test_container" {
   node_name = "%s"
-  vm_id     = 1100
+  vm_id     = %d
   template  = %t
 
   disk {
@@ -83,7 +90,7 @@ resource "proxmox_virtual_environment_container" "test_container" {
     type             = "ubuntu"
   }
 }
-`, accTestNodeName, isTemplate)
+`, accTestNodeName, accTestContainerID, isTemplate)
 }
 
 func testAccResourceContainerCreateCheck(t *testing.T) resource.TestCheckFunc {
@@ -92,8 +99,9 @@ func testAccResourceContainerCreateCheck(t *testing.T) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
 		func(*terraform.State) error {
-			err := getNodesClient().Container(1100).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			err := getNodesClient().Container(accTestContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
 			require.NoError(t, err, "container did not start")
+
 			return nil
 		},
 	)
@@ -105,17 +113,17 @@ resource "proxmox_virtual_environment_container" "test_container_clone" {
   depends_on = [proxmox_virtual_environment_container.test_container]
 
   node_name = "%s"
-  vm_id     = 1101
+  vm_id     = %d
 
   clone {
-	vm_id = 1100
+	vm_id = proxmox_virtual_environment_container.test_container.id
   }
 
   initialization {
     hostname = "test-clone"
   }
 }
-`, accTestNodeName)
+`, accTestNodeName, accCloneContainerID)
 }
 
 func testAccResourceContainerCreateCloneCheck(t *testing.T) resource.TestCheckFunc {
@@ -123,8 +131,9 @@ func testAccResourceContainerCreateCloneCheck(t *testing.T) resource.TestCheckFu
 
 	return resource.ComposeTestCheckFunc(
 		func(*terraform.State) error {
-			err := getNodesClient().Container(1101).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			err := getNodesClient().Container(accCloneContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
 			require.NoError(t, err, "container did not start")
+
 			return nil
 		},
 	)
