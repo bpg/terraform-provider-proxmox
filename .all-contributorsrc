@@ -893,6 +893,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "jackhodgkiss",
+      "name": "Jack Hodgkiss",
+      "avatar_url": "https://avatars.githubusercontent.com/u/52131498?v=4",
+      "profile": "https://github.com/jackhodgkiss",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
