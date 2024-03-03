@@ -51,6 +51,10 @@ type Client interface {
 	// NodeUpload uploads a file to a node.
 	NodeUpload(ctx context.Context, nodeName string,
 		remoteFileDir string, fileUploadRequest *api.FileUploadRequest) error
+
+	// NodeStreamUpload uploads a file to a node by streaming its content over SSH.
+	NodeStreamUpload(ctx context.Context, nodeName string,
+		remoteFileDir string, fileUploadRequest *api.FileUploadRequest) error
 }
 
 type client struct {
@@ -234,6 +238,112 @@ func (c *client) NodeUpload(
 		return fmt.Errorf("failed to upload file %s: %w", remoteFilePath, err)
 	}
 
+	if bytesUploaded != fileSize {
+		return fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
+			remoteFilePath, bytesUploaded, fileSize)
+	}
+
+	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
+		"remote_file_path": remoteFilePath,
+		"size":             bytesUploaded,
+	})
+
+	return nil
+}
+
+func (c *client) NodeStreamUpload(
+	ctx context.Context,
+	nodeName string,
+	remoteFileDir string,
+	d *api.FileUploadRequest,
+) error {
+	ip, err := c.nodeResolver.Resolve(ctx, nodeName)
+	if err != nil {
+		return fmt.Errorf("failed to find node endpoint: %w", err)
+	}
+
+	tflog.Debug(ctx, "uploading file to the node datastore via SSH input stream ", map[string]interface{}{
+		"node_address": ip,
+		"remote_dir":   remoteFileDir,
+		"file_name":    d.FileName,
+		"content_type": d.ContentType,
+	})
+
+	fileInfo, err := d.File.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	fileSize := fileInfo.Size()
+
+	sshClient, err := c.openNodeShell(ctx, ip)
+	if err != nil {
+		return fmt.Errorf("failed to open SSH client: %w", err)
+	}
+
+	defer func(sshClient *ssh.Client) {
+		e := sshClient.Close()
+		if e != nil {
+			tflog.Error(ctx, "failed to close SSH client", map[string]interface{}{
+				"error": e,
+			})
+		}
+	}(sshClient)
+
+	if d.ContentType != "" {
+		remoteFileDir = filepath.Join(remoteFileDir, d.ContentType)
+	}
+
+	remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, "/")
+
+	sshSession, err := sshClient.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create SSH session: %w", err)
+	}
+
+	defer func(session *ssh.Session) {
+		e := session.Close()
+		if e != nil {
+			tflog.Error(ctx, "failed to close SSH session", map[string]interface{}{
+				"error": e,
+			})
+		}
+	}(sshSession)
+
+	sshSession.Stdin = d.File
+
+	output, err := sshSession.CombinedOutput(
+		fmt.Sprintf(`%s; try_sudo "/usr/bin/tee %s"`, TrySudo, remoteFilePath),
+	)
+	if err != nil {
+		return fmt.Errorf("error transferring file: %s", string(output))
+	}
+
+	sftpClient, err := sftp.NewClient(sshClient)
+	if err != nil {
+		return fmt.Errorf("failed to create SFTP client: %w", err)
+	}
+
+	defer func(sftpClient *sftp.Client) {
+		e := sftpClient.Close()
+		if e != nil {
+			tflog.Error(ctx, "failed to close SFTP client", map[string]interface{}{
+				"error": e,
+			})
+		}
+	}(sftpClient)
+
+	remoteFile, err := sftpClient.Open(remoteFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to open remote file %s: %w", remoteFilePath, err)
+	}
+
+	remoteStat, err := remoteFile.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to read remote file %s: %w", remoteFilePath, err)
+	}
+
+	bytesUploaded := remoteStat.Size()
 	if bytesUploaded != fileSize {
 		return fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
 			remoteFilePath, bytesUploaded, fileSize)

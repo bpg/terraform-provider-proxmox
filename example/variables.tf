@@ -3,12 +3,12 @@ variable "virtual_environment_endpoint" {
   description = "The endpoint for the Proxmox Virtual Environment API (example: https://host:port)"
 }
 
-variable "virtual_environment_password" {
+variable "virtual_environment_api_token" {
   type        = string
-  description = "The password for the Proxmox Virtual Environment API"
+  description = "The API token for the Proxmox Virtual Environment API"
 }
 
-variable "virtual_environment_username" {
+variable "virtual_environment_ssh_username" {
   type        = string
-  description = "The username and realm for the Proxmox Virtual Environment API (example: root@pam)"
+  description = "The username for the Proxmox Virtual Environment API"
 }

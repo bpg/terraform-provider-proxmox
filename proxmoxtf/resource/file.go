@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -573,35 +572,12 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			}...)
 		}
 
-		// the temp directory is used to store the file on the node before moving it to the datastore
-		// will be created if it does not exist
-		tempFileDir := fmt.Sprintf("/tmp/tfpve/%s", uuid.NewString())
-
-		err = capi.SSH().NodeUpload(ctx, nodeName, tempFileDir, request)
+		err = capi.SSH().NodeStreamUpload(ctx, nodeName, *datastore.Path, request)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 			return diags
 		}
 
-		// handle the case where the file is uploaded to a subdirectory of the datastore
-		srcDir := tempFileDir
-		dstDir := *datastore.Path
-
-		if request.ContentType != "" {
-			srcDir = tempFileDir + "/" + request.ContentType
-			dstDir = *datastore.Path + "/" + request.ContentType
-		}
-
-		_, err := capi.SSH().ExecuteNodeCommands(ctx, nodeName, []string{
-			// the `mv` command should be scoped to the specific directories in sudoers!
-			fmt.Sprintf(`%s; try_sudo "mv %s/%s %s/%s" && rmdir %s && rmdir %s || echo`,
-				ssh.TrySudo,
-				srcDir, *fileName,
-				dstDir, *fileName,
-				srcDir,
-				tempFileDir,
-			),
-		})
 		if err != nil {
 			if matches, e := regexp.MatchString(`cannot move .* Permission denied`, err.Error()); e == nil && matches {
 				return diag.FromErr(ssh.NewErrUserHasNoPermission(capi.SSH().Username()))

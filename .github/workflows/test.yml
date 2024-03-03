@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -40,6 +41,7 @@ jobs:
         run: go vet . && go build -v .
 
   test:
+    name: Unit Tests
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -75,6 +77,8 @@ jobs:
         run: make docs && git diff --exit-code
 
   testacc:
+    if: "!contains(github.head_ref, 'renovate/') && !contains(github.head_ref, 'release-please')"
+    name: Dispatch Acceptance Tests
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -82,5 +86,5 @@ jobs:
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: testacc.yml
-          ref: "main"
+          ref: ${{ github.event.pull_request.head.ref }}
           inputs: '{"ref": "${{ github.head_ref }}" }'
