@@ -16,12 +16,14 @@ import (
 func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
+	providerConfig := getProviderConfig(t)
+
 	tests := []struct {
 		name string
 		step resource.TestStep
 	}{
 		{"multiline description", resource.TestStep{
-			Config: `
+			Config: providerConfig + `
 				resource "proxmox_virtual_environment_vm" "test_vm1" {
 					node_name = "pve"
 					started   = false
@@ -37,7 +39,7 @@ func TestAccResourceVM(t *testing.T) {
 			),
 		}},
 		{"single line description", resource.TestStep{
-			Config: `
+			Config: providerConfig + `
 				resource "proxmox_virtual_environment_vm" "test_vm2" {
 					node_name = "pve"
 					started   = false
@@ -78,12 +80,14 @@ func TestAccResourceVM(t *testing.T) {
 }
 
 func TestAccResourceVMNetwork(t *testing.T) {
+	providerConfig := getProviderConfig(t)
+
 	tests := []struct {
 		name string
 		step resource.TestStep
 	}{
 		{"network interfaces", resource.TestStep{
-			Config: `
+			Config: providerConfig + `
 				resource "proxmox_virtual_environment_file" "cloud_config" {
 					content_type = "snippets"
 					datastore_id = "local"
