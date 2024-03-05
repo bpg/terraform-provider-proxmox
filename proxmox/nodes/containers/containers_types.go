@@ -701,6 +701,7 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 				r.Tag = &iv
 			case "trunks":
 				var err error
+
 				if v[1] != "" {
 					trunks := strings.Split(v[1], ";")
 					a := make([]int, len(trunks))
@@ -769,6 +770,7 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 				r.Shared = &bv
 			case "size":
 				r.Size = new(types.DiskSize)
+
 				err := r.Size.UnmarshalJSON([]byte(v[1]))
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)

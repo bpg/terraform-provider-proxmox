@@ -518,7 +518,7 @@ func Container() *schema.Resource {
 										ForceNew:    true,
 										Sensitive:   true,
 										Default:     dvInitializationUserAccountPassword,
-										DiffSuppressFunc: func(k, oldVal, _ string, _ *schema.ResourceData) bool {
+										DiffSuppressFunc: func(_, oldVal, _ string, _ *schema.ResourceData) bool {
 											return len(oldVal) > 0 &&
 												strings.ReplaceAll(oldVal, "*", "") == ""
 										},
@@ -643,7 +643,7 @@ func Container() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "Volume, device or directory to mount into the container",
 							Required:    true,
-							DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
 								// For *new* volume mounts PVE returns an actual volume ID which is saved in the stare,
 								// so on reapply the provider will try override it:"
 								//   "local-lvm" -> "local-lvm:vm-101-disk-1"
@@ -768,7 +768,7 @@ func Container() *schema.Resource {
 				Description: "Whether to start the container",
 				Optional:    true,
 				Default:     dvStarted,
-				DiffSuppressFunc: func(k, _, _ string, d *schema.ResourceData) bool {
+				DiffSuppressFunc: func(_, _, _ string, d *schema.ResourceData) bool {
 					return d.Get(mkTemplate).(bool)
 				},
 			},
@@ -847,7 +847,7 @@ func Container() *schema.Resource {
 		UpdateContext: containerUpdate,
 		DeleteContext: containerDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				node, id, err := parseImportIDWithNodeName(d.Id())
 				if err != nil {
 					return nil, err

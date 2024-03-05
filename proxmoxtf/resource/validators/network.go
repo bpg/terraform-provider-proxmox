@@ -20,6 +20,7 @@ func MACAddress() schema.SchemaValidateDiagFunc {
 		v, ok := i.(string)
 
 		var ws []string
+
 		var es []error
 
 		if !ok {

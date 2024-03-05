@@ -525,7 +525,6 @@ func (r *clusterOptionsResource) read(ctx context.Context, model *clusterOptions
 	}
 
 	err = model.importFromOptionsAPI(ctx, options)
-
 	if err != nil {
 		diags.AddError(
 			"Error converting cluster options to a model",

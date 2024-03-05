@@ -401,6 +401,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 				defer utils.CloseOrLogError(ctx)(f)
 				ferr = knownhosts.WriteKnownHost(f, hostname, remote, key)
 			}
+
 			if ferr == nil {
 				tflog.Info(ctx, fmt.Sprintf("Added host %s to known_hosts", hostname))
 			} else {
@@ -408,8 +409,10 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 					"error": kherr,
 				})
 			}
+
 			return nil
 		}
+
 		return kherr
 	})
 

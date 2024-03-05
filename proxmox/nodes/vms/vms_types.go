@@ -1599,13 +1599,13 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 	for _, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 		if len(v) == 1 {
-			dIds := strings.Split(v[0], ";")
-			r.DeviceIDs = &dIds
+			dIDs := strings.Split(v[0], ";")
+			r.DeviceIDs = &dIDs
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "host":
-				dIds := strings.Split(v[1], ";")
-				r.DeviceIDs = &dIds
+				dIDs := strings.Split(v[1], ";")
+				r.DeviceIDs = &dIDs
 			case "mapping":
 				r.Mapping = &v[1]
 			case "mdev":
@@ -1865,6 +1865,7 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 
 			case "size":
 				d.Size = new(types.DiskSize)
+
 				err := d.Size.UnmarshalJSON([]byte(v[1]))
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)

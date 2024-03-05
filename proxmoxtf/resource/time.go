@@ -55,7 +55,7 @@ func Time() *schema.Resource {
 		UpdateContext: timeUpdate,
 		DeleteContext: timeDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				nodeName := d.Id()
 
 				err := d.Set(mkResourceVirtualEnvironmentTimeNodeName, nodeName)

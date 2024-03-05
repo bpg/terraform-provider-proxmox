@@ -87,7 +87,7 @@ func Pool() *schema.Resource {
 		UpdateContext: poolUpdate,
 		DeleteContext: poolDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				d.SetId(d.Id())
 				err := d.Set(mkResourceVirtualEnvironmentPoolPoolID, d.Id())
 				if err != nil {

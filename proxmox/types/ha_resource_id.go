@@ -21,8 +21,6 @@ import (
 // being passed to a JSON marshaler in the tests. As far as I can tell this is unnecessary, so I'm silencing the lint.
 
 // HAResourceID represents a HA resource identifier, composed of a resource type and identifier.
-//
-//nolint:musttag
 type HAResourceID struct {
 	Type HAResourceType // The type of this HA resource.
 	Name string         // The name of the element the HA resource refers to.

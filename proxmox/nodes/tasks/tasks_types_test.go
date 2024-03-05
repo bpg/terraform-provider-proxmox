@@ -96,11 +96,13 @@ func TestParseTaskID(t *testing.T) {
 		tt := tt // capture range variable
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := ParseTaskID(tt.taskID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseTaskID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseTaskID() got = %v, want %v", got, tt.want)
 			}

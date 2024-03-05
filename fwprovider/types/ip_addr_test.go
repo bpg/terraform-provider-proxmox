@@ -59,6 +59,7 @@ func Test_IPAddrTypeValueFromTerraform(t *testing.T) {
 			if err == nil && test.expectError {
 				t.Fatal("expected error, got no error")
 			}
+
 			if err != nil && !test.expectError {
 				t.Fatalf("got unexpected error: %s", err)
 			}
