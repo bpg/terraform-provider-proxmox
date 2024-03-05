@@ -121,31 +121,34 @@ The SSH agent authentication takes precedence over the `private_key` and `passwo
 In some cases where SSH agent is not available, for example when running Terraform from a Windows machine, or when using a CI/CD pipeline that does not support SSH agent forwarding, 
 you can use the `private_key` argument in the `ssh` block (or alternatively `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable) to provide the private key for the SSH connection.
 
-The private key must be in PEM format, and can be loaded from a file:
+The private key mut not be encrypted, and must be in PEM format.
 
+You can provide the private key from a file:
 ```terraform
 provider "proxmox" {
-  ...
-
+  // ...
   ssh {
-    agent = false
+    agent       = false
     private_key = file("~/.ssh/id_rsa")
   }
 }
 ```
-Not recommended, but you can also use a heredoc syntax to provide the private key as a string (note that the private key content must not be indented):
+
+Alternatively, although not recommended due to the increased risk of exposing an unprotected key, heredoc syntax can be used to supply the private key as a string.
+Note that the content of the private key must not be indented:
 ```terraform
 provider "proxmox" {
-  ...
+  // ...
 
   ssh {
-    agent = false
+    agent       = false
     private_key = <<EOF
 -----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
 <SKIPPED>
 DMUWUEaH7yMCKl7uCZ9xAAAAAAECAwQF
 -----END OPENSSH PRIVATE KEY-----
+EOF
   }
 }
 ```
@@ -157,10 +160,10 @@ This can be overridden by specifying the `username` argument in the `ssh` block 
 
 ```terraform
 provider "proxmox" {
-  ...
+  // ...
 
   ssh {
-    agent = true
+    agent    = true
     username = "terraform"
   }
 }
