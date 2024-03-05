@@ -201,11 +201,13 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		} else {
 			a := rule[mkRuleAction].(string)
 			t := rule[mkRuleType].(string)
+
 			if a == "" || t == "" {
 				diags = append(diags, diag.Errorf("Either '%s' OR both '%s' and '%s' must be defined for the rule #%d",
 					mkSecurityGroup, mkRuleAction, mkRuleType, i)...)
 				continue
 			}
+
 			ruleBody = firewall.RuleCreateRequestBody{
 				Action:   a,
 				Type:     t,
@@ -278,8 +280,10 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		for _, id := range ruleIDs {
 			ruleMap := map[string]interface{}{}
+
 			err = readRule(id.Pos, ruleMap)
 			if err != nil {
 				diags = append(diags, diag.FromErr(err)...)
@@ -347,6 +351,7 @@ func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	sort.Slice(rules, func(i, j int) bool {
 		ruleI := rules[i].(map[string]interface{})
 		ruleJ := rules[j].(map[string]interface{})
+
 		return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
 	})
 

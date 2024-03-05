@@ -268,6 +268,7 @@ func (c *client) DoRequest(
 				err,
 			)
 		}
+
 		if len(data) > 0 {
 			dr := dataResponse{}
 
@@ -276,6 +277,7 @@ func (c *client) DoRequest(
 					return nil
 				}
 			}
+
 			tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
 				"data": dr.Data,
 			})

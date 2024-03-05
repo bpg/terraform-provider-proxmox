@@ -127,11 +127,13 @@ func Test_fileParseVolumeID(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := fileParseVolumeID(tt.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("fileParseVolumeID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("fileParseVolumeID() got = %v, want %v", got, tt.want)
 			}
@@ -168,14 +170,17 @@ func Test_fileParseImportID(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			node, volID, err := fileParseImportID(tt.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("fileParseImportID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			if node != tt.node {
 				t.Errorf("fileParseImportID() got node = %v, want %v", node, tt.node)
 			}
+
 			if !reflect.DeepEqual(volID, tt.volID) {
 				t.Errorf("fileParseImportID() got volID = %v, want %v", volID, tt.volID)
 			}

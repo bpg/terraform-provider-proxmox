@@ -57,10 +57,12 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			r := &CustomStorageDevice{}
 			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			require.Equal(t, tt.want, r)
 		})
 	}
@@ -114,6 +116,7 @@ func TestCustomStorageDevice_IsCloudInitDrive(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := tt.device.IsCloudInitDrive(131)
 			assert.Equal(t, tt.want, got)
 		})
@@ -147,6 +150,7 @@ func TestCustomStorageDevice_StorageInterface(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := tt.device.StorageInterface()
 			assert.Equal(t, tt.want, got)
 		})
@@ -210,6 +214,7 @@ func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := tt.devices.ByStorageInterface(tt.iface)
 			assert.Equal(t, tt.want, got)
 		})
@@ -263,10 +268,12 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			r := &CustomPCIDevice{}
 			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			require.Equal(t, tt.want, r)
 		})
 	}
@@ -311,6 +318,7 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			r := &CustomUSBDevice{}
 			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)

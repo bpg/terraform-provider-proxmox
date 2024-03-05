@@ -30,10 +30,12 @@ func TestParseHAResourceType(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := ParseHAResourceType(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseHAResourceType() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if got != tt.want {
 				t.Errorf("ParseHAResourceType() got = %v, want %v", got, tt.want)
 			}
@@ -56,6 +58,7 @@ func TestHAResourceTypeToString(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			if got := tt.resType.String(); got != tt.want {
 				t.Errorf("HAResourceType.String() = %v, want %v", got, tt.want)
 			}
@@ -78,6 +81,7 @@ func TestHAResourceTypeToJSON(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := json.Marshal(tt.state)
 			if err != nil {
 				t.Errorf("json.Marshal(HAResourceType): err = %v", err)
@@ -114,6 +118,7 @@ func TestHAResourceTypeFromJSON(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("json.Unmarshal(HAResourceType) error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if err == nil && got != tt.want {
 				t.Errorf("json.Unmarshal(HAResourceType) got = %v, want %v", got, tt.want)
 			}

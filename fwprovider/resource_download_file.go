@@ -443,7 +443,6 @@ func (r *downloadFileResource) Create(
 		plan.Content.ValueString() + "/" + plan.FileName.ValueString())
 
 	err = r.read(ctx, &plan)
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error when reading file from datastore", err.Error(),

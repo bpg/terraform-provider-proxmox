@@ -33,10 +33,12 @@ func TestParseHAResourceState(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := ParseHAResourceState(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseHAResourceState() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if got != tt.want {
 				t.Errorf("ParseHAResourceState() got = %v, want %v", got, tt.want)
 			}
@@ -61,6 +63,7 @@ func TestHAResourceStateToString(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			if got := tt.state.String(); got != tt.want {
 				t.Errorf("HAResourceState.String() = %v, want %v", got, tt.want)
 			}
@@ -85,6 +88,7 @@ func TestHAResourceStateToJSON(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := json.Marshal(tt.state)
 			if err != nil {
 				t.Errorf("json.Marshal(HAResourceState): err = %v", err)
@@ -123,6 +127,7 @@ func TestHAResourceStateFromJSON(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("json.Unmarshal(HAResourceState) error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if err == nil && got != tt.want {
 				t.Errorf("json.Unmarshal(HAResourceState) got = %v, want %v", got, tt.want)
 			}

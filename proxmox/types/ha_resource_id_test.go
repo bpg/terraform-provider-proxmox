@@ -36,10 +36,12 @@ func TestParseHAResourceID(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := ParseHAResourceID(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseHAResourceID() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if got != tt.want {
 				t.Errorf("ParseHAResourceID() got = %v, want %v", got, tt.want)
 			}
@@ -62,6 +64,7 @@ func TestHAResourceIDToString(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			if got := tt.state.String(); got != tt.want {
 				t.Errorf("HAResourceID.String() = %v, want %v", got, tt.want)
 			}
@@ -84,6 +87,7 @@ func TestHAResourceIDToJSON(t *testing.T) {
 		tt := test
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got, err := json.Marshal(tt.state)
 			if err != nil {
 				t.Errorf("json.Marshal(HAResourceID): err = %v", err)
@@ -120,6 +124,7 @@ func TestHAResourceIDFromJSON(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("json.Unmarshal(HAResourceID) error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 			if got != tt.want {
 				t.Errorf("json.Unmarshal(HAResourceID) got = %v, want %v", got, tt.want)
 			}

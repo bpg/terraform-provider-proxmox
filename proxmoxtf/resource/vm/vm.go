@@ -1749,7 +1749,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			if err != nil {
 				return diag.FromErr(err)
 			}
-		} else {
+		} else { //nolint:wsl
 			// If the source and the target node are not the same and any used datastore in the source VM is
 			//  not shared, clone to the source node and then migrate to the target node. This is a workaround
 			//  for missing functionality in the proxmox api as recommended per

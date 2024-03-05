@@ -98,6 +98,7 @@ func (r *CustomLogRateLimit) UnmarshalJSON(b []byte) error {
 				if err != nil {
 					return fmt.Errorf("error converting burst to int: %w", err)
 				}
+
 				r.Burst = &iv
 			case "rate":
 				r.Rate = &v[1]

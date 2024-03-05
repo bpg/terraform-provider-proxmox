@@ -41,6 +41,7 @@ func FileID() schema.SchemaValidateDiagFunc {
 		v, ok := i.(string)
 
 		var ws []string
+
 		var es []error
 
 		if !ok {
@@ -56,6 +57,7 @@ func FileID() schema.SchemaValidateDiagFunc {
 				es = append(es, fmt.Errorf(
 					"expected %s to be a valid file identifier (datastore-name:iso/some-file.img), got %s", k, v,
 				))
+
 				return ws, es
 			}
 		}
@@ -68,6 +70,7 @@ func FileID() schema.SchemaValidateDiagFunc {
 func FileSize() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
 		v, ok := i.(string)
+
 		var es []error
 
 		if !ok {

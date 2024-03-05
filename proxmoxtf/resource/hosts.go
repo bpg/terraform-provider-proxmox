@@ -108,7 +108,7 @@ func Hosts() *schema.Resource {
 		UpdateContext: hostsUpdate,
 		DeleteContext: hostsDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(ctx context.Context, d *schema.ResourceData, i interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				nodeName := d.Id()
 
 				err := d.Set(mkResourceVirtualEnvironmentHostsNodeName, nodeName)

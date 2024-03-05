@@ -71,7 +71,6 @@ func (c *Client) APIUpload(
 		}
 
 		_, err = io.Copy(part, d.File)
-
 		if err != nil {
 			return
 		}
@@ -134,6 +133,7 @@ func (c *Client) APIUpload(
 	}
 
 	resBody := &DatastoreUploadResponseBody{}
+
 	err = c.DoRequest(
 		ctx,
 		http.MethodPost,
@@ -141,7 +141,6 @@ func (c *Client) APIUpload(
 		reqBody,
 		resBody,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("error uploading file to datastore %s: %w", c.StorageName, err)
 	}
