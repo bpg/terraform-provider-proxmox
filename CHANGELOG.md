@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.48.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.0...v0.48.1) (2024-03-05)
+
+
+### Bug Fixes
+
+* **ci:** TestAccResourceVMNetwork acc test fails when run on CI ([#1092](https://github.com/bpg/terraform-provider-proxmox/issues/1092)) ([61a0fcd](https://github.com/bpg/terraform-provider-proxmox/commit/61a0fcd936c3c88e6eb0b7b5d5517795b4c3c092))
+* **docs:** fix wrong startup delay attributes ([#1088](https://github.com/bpg/terraform-provider-proxmox/issues/1088)) ([85705fd](https://github.com/bpg/terraform-provider-proxmox/commit/85705fdd51b5e64662bea169d86922ff85f062cb))
+
+
+### Miscellaneous
+
+* **deps:** update tools ([#1017](https://github.com/bpg/terraform-provider-proxmox/issues/1017)) ([fbd04ed](https://github.com/bpg/terraform-provider-proxmox/commit/fbd04ed95061f23747e4bb7224901f6a409f7547))
+* **docs:** minor improvements around SSH private key usage ([#1091](https://github.com/bpg/terraform-provider-proxmox/issues/1091)) ([171dd2f](https://github.com/bpg/terraform-provider-proxmox/commit/171dd2f234b7e1effe00bbe66bc42c30f78f9e2d))
+
 ## [0.48.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.47.0...v0.48.0) (2024-03-03)
 
 
