@@ -121,6 +121,14 @@ func getNodeStorageClient() *storage.Client {
 func testResourceAttributes(res string, attrs map[string]string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for k, v := range attrs {
+			if v == "" {
+				if err := resource.TestCheckResourceAttr(res, k, "")(s); err != nil {
+					return fmt.Errorf("expected '%s' to be empty: %w", k, err)
+				}
+
+				continue
+			}
+
 			if err := resource.TestCheckResourceAttrWith(res, k, func(got string) error {
 				match, err := regexp.Match(v, []byte(got)) //nolint:mirror
 				if err != nil {
@@ -139,10 +147,22 @@ func testResourceAttributes(res string, attrs map[string]string) resource.TestCh
 	}
 }
 
-func testNoResourceAttributes(res string, attrs []string) resource.TestCheckFunc {
+func testNoResourceAttributesSet(res string, attrs []string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, k := range attrs {
 			if err := resource.TestCheckNoResourceAttr(res, k)(s); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+}
+
+func testResourceAttributesSet(res string, attrs []string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		for _, k := range attrs {
+			if err := resource.TestCheckResourceAttrSet(res, k)(s); err != nil {
 				return err
 			}
 		}

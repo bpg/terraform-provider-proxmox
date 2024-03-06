@@ -51,14 +51,12 @@ func TestAccResourceUser(t *testing.T) {
 					  first_name 		= "First One"
 				}
 				`,
-			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_user.user1", map[string]string{
-					"enabled":         "false",
-					"expiration_date": "2035-01-01T22:00:00Z",
-					"first_name":      "First One",
-					"user_id":         "user1@pve",
-				}),
-			),
+			Check: testResourceAttributes("proxmox_virtual_environment_user.user1", map[string]string{
+				"enabled":         "false",
+				"expiration_date": "2035-01-01T22:00:00Z",
+				"first_name":      "First One",
+				"user_id":         "user1@pve",
+			}),
 		}}},
 	}
 
