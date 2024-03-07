@@ -85,7 +85,7 @@ func createSchema() map[string]*schema.Schema {
 			Sensitive:   true,
 			Description: "The API token for the Proxmox VE API.",
 			ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
-				regexp.MustCompile(`^\S+@\w+!\S+=([a-zA-Z0-9-]+)$`),
+				regexp.MustCompile(`^\S+@\S+!\S+=([a-zA-Z0-9-]+)$`),
 				"Must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'",
 			)),
 		},
