@@ -49,7 +49,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"size":           "3",
 					"verify":         "true",
 				}),
-				testNoResourceAttributes("proxmox_virtual_environment_download_file.iso_image", []string{
+				testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
 					"checksum",
 					"checksum_algorithm",
 					"decompression_algorithm",
@@ -83,7 +83,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"checksum":           "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6",
 					"checksum_algorithm": "sha256",
 				}),
-				testNoResourceAttributes("proxmox_virtual_environment_download_file.qcow2_image", []string{
+				testNoResourceAttributesSet("proxmox_virtual_environment_download_file.qcow2_image", []string{
 					"decompression_algorithm",
 				}),
 			),
@@ -112,7 +112,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"size":           "3",
 					"verify":         "true",
 				}),
-				testNoResourceAttributes("proxmox_virtual_environment_download_file.iso_image", []string{
+				testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
 					"checksum",
 					"checksum_algorithm",
 					"decompression_algorithm",
@@ -154,7 +154,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"size":         "3",
 					"verify":       "true",
 				}),
-				testNoResourceAttributes("proxmox_virtual_environment_download_file.iso_image", []string{
+				testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
 					"checksum",
 					"checksum_algorithm",
 					"decompression_algorithm",

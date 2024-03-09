@@ -118,10 +118,10 @@ func (m *linuxBridgeResourceModel) importFromNetworkInterfaceList(
 		m.MTU = types.Int64Null()
 	}
 
+	// Comments can be set to an empty string in plant, which will translate to a "no value" in PVE
+	// So we don't want to set it to null if it's empty, as this will be indicated as a plan drift
 	if iface.Comments != nil {
 		m.Comment = types.StringValue(strings.TrimSpace(*iface.Comments))
-	} else {
-		m.Comment = types.StringNull()
 	}
 
 	if iface.BridgeVLANAware != nil {
@@ -372,9 +372,19 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 
 	var toDelete []string
 
-	if !plan.MTU.Equal(state.MTU) && (plan.MTU.IsUnknown() || plan.MTU.ValueInt64() == 0) {
+	if !plan.MTU.Equal(state.MTU) && plan.MTU.ValueInt64() == 0 {
 		toDelete = append(toDelete, "mtu")
 		body.MTU = nil
+	}
+
+	if !plan.Gateway.Equal(state.Gateway) && plan.Gateway.ValueString() == "" {
+		toDelete = append(toDelete, "gateway")
+		body.Gateway = nil
+	}
+
+	if !plan.Gateway6.Equal(state.Gateway6) && plan.Gateway6.ValueString() == "" {
+		toDelete = append(toDelete, "gateway6")
+		body.Gateway6 = nil
 	}
 
 	// VLANAware is computed, will never be null

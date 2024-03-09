@@ -198,10 +198,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}`,
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_disk1", map[string]string{
-					// those are empty by default, but we can't check for that
-					// "disk.0.cache":          "",
-					// "disk.0.discard":      	"",
-					// "disk.0.file_id":        "",
+					"disk.0.cache":             "none",
+					"disk.0.discard":           "ignore",
+					"disk.0.file_id":           "",
 					"disk.0.datastore_id":      "local-lvm",
 					"disk.0.file_format":       "raw",
 					"disk.0.interface":         "virtio0",

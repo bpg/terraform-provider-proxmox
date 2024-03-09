@@ -16,10 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-const (
-	accTestLinuxBridgeName = "proxmox_virtual_environment_network_linux_bridge.test"
-)
-
 func TestAccResourceLinuxBridge(t *testing.T) {
 	accProviders := testAccMuxProviders(context.Background(), t)
 
@@ -33,76 +29,70 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccResourceLinuxBridgeCreatedConfig(iface, ipV4cidr1),
-				Check:  testAccResourceLinuxBridgeCreatedCheck(iface, ipV4cidr1),
+				Config: fmt.Sprintf(`
+				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
+					address = "%s"
+					autostart = true
+					comment = "created by terraform"
+					mtu = 1499
+					name = "%s"
+					node_name = "%s"
+					vlan_aware = true
+				}
+				`, ipV4cidr1, iface, accTestNodeName),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
+						"address":    ipV4cidr1,
+						"autostart":  "true",
+						"comment":    "created by terraform",
+						"mtu":        "1499",
+						"name":       iface,
+						"vlan_aware": "true",
+					}),
+					testResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+						"id",
+					}),
+				),
 			},
 			// Update testing
 			{
-				Config: testAccResourceLinuxBridgeUpdatedConfig(iface, ipV4cidr2, ipV6cidr),
-				Check:  testAccResourceLinuxBridgeUpdatedCheck(iface, ipV4cidr2, ipV6cidr),
+				Config: fmt.Sprintf(`
+				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
+					address = "%s"
+					address6 = "%s"
+					autostart = false
+					comment = ""
+					mtu = null
+					name = "%s"
+					node_name = "%s"
+					vlan_aware = false
+				}`, ipV4cidr2, ipV6cidr, iface, accTestNodeName),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
+						"address":    ipV4cidr2,
+						"address6":   ipV6cidr,
+						"autostart":  "false",
+						"comment":    "",
+						"name":       iface,
+						"vlan_aware": "false",
+					}),
+					testNoResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+						"mtu",
+					}),
+					testResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+						"id",
+					}),
+				),
 			},
 			// ImportState testing
 			{
-				ResourceName:      accTestLinuxBridgeName,
+				ResourceName:      "proxmox_virtual_environment_network_linux_bridge.test",
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"comment", // "" comments translates to null in the PVE, but nulls are not imported as empty strings.
+				},
 			},
 		},
 	})
-}
-
-func testAccResourceLinuxBridgeCreatedConfig(name string, ipV4cidr string) string {
-	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_network_linux_bridge" "test" {
-		address = "%s"
-		autostart = true
-		comment = "created by terraform"
-		mtu = 1499
-		name = "%s"
-		node_name = "%s"
-		vlan_aware = true
-	}
-	`, ipV4cidr, name, accTestNodeName)
-}
-
-func testAccResourceLinuxBridgeCreatedCheck(name string, ipV4cidr string) resource.TestCheckFunc {
-	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "address", ipV4cidr),
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "autostart", "true"),
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "comment", "created by terraform"),
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "mtu", "1499"),
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "name", name),
-		resource.TestCheckResourceAttr(accTestLinuxBridgeName, "vlan_aware", "true"),
-		resource.TestCheckResourceAttrSet(accTestLinuxBridgeName, "id"),
-	)
-}
-
-func testAccResourceLinuxBridgeUpdatedConfig(name string, ipV4cidr string, ipV6cidr string) string {
-	return fmt.Sprintf(`
-	resource "proxmox_virtual_environment_network_linux_bridge" "test" {
-		address = "%s"
-		address6 = "%s"
-		autostart = false
-		comment = "updated by terraform"
-		mtu = null
-		name = "%s"
-		node_name = "%s"
-		vlan_aware = false
-	}
-	`, ipV4cidr, ipV6cidr, name, accTestNodeName)
-}
-
-func testAccResourceLinuxBridgeUpdatedCheck(name string, ipV4cidr string, ipV6cidr string) resource.TestCheckFunc {
-	return resource.ComposeTestCheckFunc(
-		resource.ComposeAggregateTestCheckFunc(
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "address", ipV4cidr),
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "address6", ipV6cidr),
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "autostart", "false"),
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "comment", "updated by terraform"),
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "name", name),
-			resource.TestCheckResourceAttr(accTestLinuxBridgeName, "vlan_aware", "false"),
-			resource.TestCheckNoResourceAttr(accTestLinuxBridgeName, "mtu"),
-			resource.TestCheckResourceAttrSet(accTestLinuxBridgeName, "id"),
-		),
-	)
 }
