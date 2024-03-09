@@ -5193,7 +5193,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			0,
 			true,
 		)
-		if err != nil {
+		if er != nil {
 			return diag.FromErr(er)
 		}
 

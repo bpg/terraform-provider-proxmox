@@ -17,7 +17,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -29,7 +28,6 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -578,15 +576,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			return diags
 		}
 
-		if err != nil {
-			if matches, e := regexp.MatchString(`cannot move .* Permission denied`, err.Error()); e == nil && matches {
-				return diag.FromErr(ssh.NewErrUserHasNoPermission(capi.SSH().Username()))
-			}
-
-			diags = append(diags, diag.Errorf("error moving file: %s", err.Error())...)
-
-			return diags
-		}
 	}
 
 	volID, di := fileGetVolumeID(d)
