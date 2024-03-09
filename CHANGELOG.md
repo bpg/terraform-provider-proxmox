@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.48.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.1...v0.48.2) (2024-03-09)
+
+
+### Bug Fixes
+
+* **network:** multiple fixes to `network_linux_bridge` resource ([#1095](https://github.com/bpg/terraform-provider-proxmox/issues/1095)) ([4aed7cb](https://github.com/bpg/terraform-provider-proxmox/commit/4aed7cb085c87aed68f3dc426644a9d76c075db1))
+* **provider:** allow LDAP realm API tokens ([#1101](https://github.com/bpg/terraform-provider-proxmox/issues/1101)) ([461321c](https://github.com/bpg/terraform-provider-proxmox/commit/461321cf5e15dfd1b89a506ecf6a410e24bc8c5d))
+
+
+### Miscellaneous
+
+* **deps:** bump gopkg.in/go-jose/go-jose.v2 from 2.6.1 to 2.6.3 in /tools ([#1102](https://github.com/bpg/terraform-provider-proxmox/issues/1102)) ([4bc7b29](https://github.com/bpg/terraform-provider-proxmox/commit/4bc7b291fe9cedd41eb0a1c26107ff77710cf517))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1096](https://github.com/bpg/terraform-provider-proxmox/issues/1096)) ([4cac320](https://github.com/bpg/terraform-provider-proxmox/commit/4cac320ff9008b1274a944af4a6b3b302af276e0))
+* **deps:** update module golang.org/x/crypto (v0.20.0 → v0.21.0) ([#1097](https://github.com/bpg/terraform-provider-proxmox/issues/1097)) ([3b9739a](https://github.com/bpg/terraform-provider-proxmox/commit/3b9739ab5986acc4e0b25772704ce57d20818384))
+* **deps:** update module golang.org/x/net (v0.21.0 → v0.22.0) ([#1105](https://github.com/bpg/terraform-provider-proxmox/issues/1105)) ([7dea6f6](https://github.com/bpg/terraform-provider-proxmox/commit/7dea6f6ee8d3d8b5ff8027eea388c62a559ef4d6))
+
 ## [0.48.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.0...v0.48.1) (2024-03-05)
 
 
