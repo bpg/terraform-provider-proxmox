@@ -95,7 +95,7 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 				Sensitive:   true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^\S+@\w+!\S+=([a-zA-Z0-9-]+)$`),
+						regexp.MustCompile(`^\S+@\S+!\S+=([a-zA-Z0-9-]+)$`),
 						`must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'`,
 					),
 				},
