@@ -387,33 +387,33 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 		return nil, fmt.Errorf("failed to read %s: %w", khPath, err)
 	}
 
-	// Create a custom permissive hostkey callback which still errors on hosts
+	// Create a custom permissive host key callback which still errors on hosts
 	// with changed keys, but allows unknown hosts and adds them to known_hosts
 	cb := ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-		kherr := kh(hostname, remote, key)
-		if knownhosts.IsHostKeyChanged(kherr) {
+		khErr := kh(hostname, remote, key)
+		if knownhosts.IsHostKeyChanged(khErr) {
 			return fmt.Errorf("REMOTE HOST IDENTIFICATION HAS CHANGED for host %s! This may indicate a MitM attack", hostname)
 		}
 
-		if knownhosts.IsHostUnknown(kherr) {
-			f, ferr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
-			if ferr == nil {
+		if knownhosts.IsHostUnknown(khErr) {
+			f, fErr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
+			if fErr == nil {
 				defer utils.CloseOrLogError(ctx)(f)
-				ferr = knownhosts.WriteKnownHost(f, hostname, remote, key)
+				fErr = knownhosts.WriteKnownHost(f, hostname, remote, key)
 			}
 
-			if ferr == nil {
+			if fErr == nil {
 				tflog.Info(ctx, fmt.Sprintf("Added host %s to known_hosts", hostname))
 			} else {
 				tflog.Error(ctx, fmt.Sprintf("Failed to add host %s to known_hosts", hostname), map[string]interface{}{
-					"error": kherr,
+					"error": khErr,
 				})
 			}
 
 			return nil
 		}
 
-		return kherr
+		return khErr
 	})
 
 	tflog.Info(ctx, fmt.Sprintf("agent is set to %t", c.agent))
@@ -568,10 +568,10 @@ func (c *client) socks5SSHClient(sshServerAddress string, sshConfig *ssh.ClientC
 		return nil, fmt.Errorf("failed to dial %s via SOCKS5 proxy %s: %w", sshServerAddress, c.socks5Server, err)
 	}
 
-	sshConn, chans, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
+	sshConn, ch, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSH client connection: %w", err)
 	}
 
-	return ssh.NewClient(sshConn, chans, reqs), nil
+	return ssh.NewClient(sshConn, ch, reqs), nil
 }
