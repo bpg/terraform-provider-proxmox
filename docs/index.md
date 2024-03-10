@@ -214,6 +214,8 @@ You can configure the `sudo` privilege for the user via the command line on the 
     ssh-copy-id terraform@<target-node>
     ```
 
+    or manually add your public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
+
 - Test the SSH connection and password-less `sudo`:
   
     ```sh
