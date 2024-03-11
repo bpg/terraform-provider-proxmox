@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -262,12 +263,22 @@ func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*stri
 
 // ResizeVMDisk resizes a virtual machine disk.
 func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody, timeout int) error {
-	taskID, err := c.ResizeVMDiskAsync(ctx, d)
-	if err != nil {
-		return err
-	}
+	err := retry.Do(func() error {
+		taskID, err := c.ResizeVMDiskAsync(ctx, d)
+		if err != nil {
+			return err
+		}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+		//nolint:wrapcheck
+		return c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	},
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(false),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "got timeout")
+		}),
+	)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM disk resize: %w", err)
 	}
