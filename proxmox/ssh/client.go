@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path"
@@ -122,21 +123,42 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 		"commands":     commands,
 	})
 
-	closeOrLogError := utils.CloseOrLogError(ctx)
-
 	sshClient, err := c.openNodeShell(ctx, node)
 	if err != nil {
 		return nil, err
 	}
 
-	defer closeOrLogError(sshClient)
+	defer func(sshClient *ssh.Client) {
+		e := sshClient.Close()
+		if e != nil {
+			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{
+				"error": e,
+			})
+		}
+	}(sshClient)
 
+	output, err := c.executeCommands(ctx, sshClient, commands)
+	if err != nil {
+		return nil, err
+	}
+
+	return output, nil
+}
+
+func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, commands []string) ([]byte, error) {
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSH session: %w", err)
 	}
 
-	defer closeOrLogError(sshSession)
+	defer func(session *ssh.Session) {
+		e := session.Close()
+		if e != nil && !errors.Is(e, io.EOF) {
+			tflog.Warn(ctx, "failed to close SSH session", map[string]interface{}{
+				"error": e,
+			})
+		}
+	}(sshSession)
 
 	script := strings.Join(commands, "; ")
 
@@ -188,7 +210,7 @@ func (c *client) NodeUpload(
 	defer func(sshClient *ssh.Client) {
 		e := sshClient.Close()
 		if e != nil {
-			tflog.Error(ctx, "failed to close SSH client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{
 				"error": e,
 			})
 		}
@@ -208,7 +230,7 @@ func (c *client) NodeUpload(
 	defer func(sftpClient *sftp.Client) {
 		e := sftpClient.Close()
 		if e != nil {
-			tflog.Error(ctx, "failed to close SFTP client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SFTP client", map[string]interface{}{
 				"error": e,
 			})
 		}
@@ -227,7 +249,7 @@ func (c *client) NodeUpload(
 	defer func(remoteFile *sftp.File) {
 		e := remoteFile.Close()
 		if e != nil {
-			tflog.Error(ctx, "failed to close remote file", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close remote file", map[string]interface{}{
 				"error": e,
 			})
 		}
@@ -284,7 +306,7 @@ func (c *client) NodeStreamUpload(
 	defer func(sshClient *ssh.Client) {
 		e := sshClient.Close()
 		if e != nil {
-			tflog.Error(ctx, "failed to close SSH client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{
 				"error": e,
 			})
 		}
@@ -296,6 +318,29 @@ func (c *client) NodeStreamUpload(
 
 	remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, "/")
 
+	err = c.uploadFile(ctx, sshClient, d, remoteFilePath)
+	if err != nil {
+		return err
+	}
+
+	err = c.checkUploadedFile(ctx, sshClient, remoteFilePath, fileSize)
+	if err != nil {
+		return err
+	}
+
+	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
+		"remote_file_path": remoteFilePath,
+	})
+
+	return nil
+}
+
+func (c *client) uploadFile(
+	ctx context.Context,
+	sshClient *ssh.Client,
+	req *api.FileUploadRequest,
+	remoteFilePath string,
+) error {
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create SSH session: %w", err)
@@ -303,14 +348,14 @@ func (c *client) NodeStreamUpload(
 
 	defer func(session *ssh.Session) {
 		e := session.Close()
-		if e != nil {
-			tflog.Error(ctx, "failed to close SSH session", map[string]interface{}{
+		if e != nil && !errors.Is(e, io.EOF) {
+			tflog.Warn(ctx, "failed to close SSH session", map[string]interface{}{
 				"error": e,
 			})
 		}
 	}(sshSession)
 
-	sshSession.Stdin = d.File
+	sshSession.Stdin = req.File
 
 	output, err := sshSession.CombinedOutput(
 		fmt.Sprintf(`%s; try_sudo "/usr/bin/tee %s"`, TrySudo, remoteFilePath),
@@ -319,6 +364,15 @@ func (c *client) NodeStreamUpload(
 		return fmt.Errorf("error transferring file: %s", string(output))
 	}
 
+	return nil
+}
+
+func (c *client) checkUploadedFile(
+	ctx context.Context,
+	sshClient *ssh.Client,
+	remoteFilePath string,
+	fileSize int64,
+) error {
 	sftpClient, err := sftp.NewClient(sshClient)
 	if err != nil {
 		return fmt.Errorf("failed to create SFTP client: %w", err)
@@ -327,7 +381,7 @@ func (c *client) NodeStreamUpload(
 	defer func(sftpClient *sftp.Client) {
 		e := sftpClient.Close()
 		if e != nil {
-			tflog.Error(ctx, "failed to close SFTP client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SFTP client", map[string]interface{}{
 				"error": e,
 			})
 		}
@@ -348,11 +402,6 @@ func (c *client) NodeStreamUpload(
 		return fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
 			remoteFilePath, bytesUploaded, fileSize)
 	}
-
-	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
-		"remote_file_path": remoteFilePath,
-		"size":             bytesUploaded,
-	})
 
 	return nil
 }
