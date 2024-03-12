@@ -65,6 +65,10 @@ func main() {
 		serveOpts = append(serveOpts, tf6server.WithManagedDebug())
 	}
 
+	// Remove any date and time prefix in log package function output to
+	// prevent duplicate timestamp and incorrect log level setting
+	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
+
 	err = tf6server.Serve(
 		"registry.terraform.io/bpg/proxmox",
 		muxServer.ProviderServer,
