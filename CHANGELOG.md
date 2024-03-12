@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.48.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.2...v0.48.3) (2024-03-12)
+
+
+### Bug Fixes
+
+* **provider:** EOF error when closing SSH session ([#1113](https://github.com/bpg/terraform-provider-proxmox/issues/1113)) ([b63f1b7](https://github.com/bpg/terraform-provider-proxmox/commit/b63f1b7889287558510526f8392cfdaa9d22524b))
+* **vm:** timeout when resizing a disk during clone ([#1103](https://github.com/bpg/terraform-provider-proxmox/issues/1103)) ([449f9fc](https://github.com/bpg/terraform-provider-proxmox/commit/449f9fc31c0d737d2094b4c0db7a207b3e764122))
+
+
+### Miscellaneous
+
+* **ci:** update google-github-actions/release-please-action action (v4.0.2 → v4.1.0) ([#1115](https://github.com/bpg/terraform-provider-proxmox/issues/1115)) ([04e7421](https://github.com/bpg/terraform-provider-proxmox/commit/04e74219e3cac4805c3ae9cedced42f7f64ed461))
+* **deps:** update module github.com/hashicorp/terraform-plugin-go (v0.22.0 → v0.22.1) ([#1114](https://github.com/bpg/terraform-provider-proxmox/issues/1114)) ([a059728](https://github.com/bpg/terraform-provider-proxmox/commit/a0597289b56219a07ece3296e587a8317b1251e9))
+* **docs:** update terraform local (2.4.1 → 2.5.1) ([#1116](https://github.com/bpg/terraform-provider-proxmox/issues/1116)) ([29d60f5](https://github.com/bpg/terraform-provider-proxmox/commit/29d60f593232f08440f7e2c9426d12c24eacd572))
+* minor cleanups and doc updates ([#1108](https://github.com/bpg/terraform-provider-proxmox/issues/1108)) ([27dbcad](https://github.com/bpg/terraform-provider-proxmox/commit/27dbcad5cdd732a4777e886806c5eeb1a06129a4))
+
 ## [0.48.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.1...v0.48.2) (2024-03-09)
 
 
