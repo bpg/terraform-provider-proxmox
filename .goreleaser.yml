@@ -2,7 +2,8 @@
 # behavior.
 before:
   hooks:
-    - go mod download
+    # this is just an example and not a requirement for provider building/publishing
+    - go mod tidy
 builds:
   - env:
       # goreleaser does not work with CGO, it could also complicate
@@ -32,13 +33,16 @@ archives:
   - format: zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 checksum:
+  extra_files:
+    - glob: 'terraform-registry-manifest.json'
+      name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
   name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
   algorithm: sha256
 signs:
   - artifacts: checksum
     args:
       # if you are using this in a GitHub action or some other automated pipeline, you
-      # need to pass the batch flag to indicate it's not interactive.
+      # need to pass the batch flag to indicate its not interactive.
       - "--batch"
       - "--local-user"
       - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
@@ -47,6 +51,10 @@ signs:
       - "--detach-sign"
       - "${artifact}"
 release:
-  draft: false
+  extra_files:
+    - glob: 'terraform-registry-manifest.json'
+      name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
+  # If you want to manually examine the release before its live, uncomment this line:
+  # draft: true
 changelog:
   skip: true
