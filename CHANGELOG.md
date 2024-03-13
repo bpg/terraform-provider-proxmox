@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.48.4](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.3...v0.48.4) (2024-03-13)
+
+
+### Bug Fixes
+
+* **ci:** missing releases from HashiCorp Registry ([#1118](https://github.com/bpg/terraform-provider-proxmox/issues/1118)) ([ffc64d2](https://github.com/bpg/terraform-provider-proxmox/commit/ffc64d209a392afb3198acee3ee5449b7392e579))
+
 ## [0.48.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.2...v0.48.3) (2024-03-12)
 
 
