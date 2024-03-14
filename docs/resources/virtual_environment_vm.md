@@ -235,7 +235,8 @@ output "ubuntu_vm_public_key" {
 - `disk` - (Optional) A disk (multiple blocks supported).
     - `aio` - (Optional) The disk AIO mode (defaults to `io_uring`).
         - `io_uring` - Use io_uring.
-        - `native` - Use native AIO.
+        - `native` - Use native AIO. Should be used with to unbuffered, O_DIRECT, raw block storage only, 
+            with the disk `cache` must be set to `none`. Raw block storage types include iSCSI, CEPH/RBD, and NVMe.
         - `threads` - Use thread-based AIO.
     - `backup` - (Optional) Whether the drive should be included when making backups (defaults to `true`).
     - `cache` - (Optional) The cache type (defaults to `none`).
