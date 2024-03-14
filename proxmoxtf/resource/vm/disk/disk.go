@@ -419,15 +419,18 @@ func CreateCustomDisks(
 			continue
 		}
 
+		aio, _ := block[mkDiskAIO].(string)
+		backup := types.CustomBool(block[mkDiskBackup].(bool))
+		cache, _ := block[mkDiskCache].(string)
 		datastoreID, _ := block[mkDiskDatastoreID].(string)
+		discard, _ := block[mkDiskDiscard].(string)
+		diskInterface, _ := block[mkDiskInterface].(string)
 		fileFormat, _ := block[mkDiskFileFormat].(string)
+		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
+		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
 		size, _ := block[mkDiskSize].(int)
 		speed := block[mkDiskSpeed].([]interface{})
-		diskInterface, _ := block[mkDiskInterface].(string)
-		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
-		discard, _ := block[mkDiskDiscard].(string)
-		cache, _ := block[mkDiskCache].(string)
 
 		if fileFormat == "" {
 			fileFormat = dvDiskFileFormat
@@ -443,6 +446,10 @@ func CreateCustomDisks(
 		}
 
 		speedBlock := speed[0].(map[string]interface{})
+		iopsRead := speedBlock[mkDiskIopsRead].(int)
+		iopsReadBurstable := speedBlock[mkDiskIopsReadBurstable].(int)
+		iopsWrite := speedBlock[mkDiskIopsWrite].(int)
+		iopsWriteBurstable := speedBlock[mkDiskIopsWriteBurstable].(int)
 		speedLimitRead := speedBlock[mkDiskSpeedRead].(int)
 		speedLimitReadBurstable := speedBlock[mkDiskSpeedReadBurstable].(int)
 		speedLimitWrite := speedBlock[mkDiskSpeedWrite].(int)
@@ -450,8 +457,24 @@ func CreateCustomDisks(
 
 		diskOptions := ""
 
+		if aio != "" {
+			diskOptions += fmt.Sprintf(",aio=%s", aio)
+		}
+
+		if backup {
+			diskOptions += ",backup=1"
+		} else {
+			diskOptions += ",backup=0"
+		}
+
 		if ioThread {
 			diskOptions += ",iothread=1"
+		}
+
+		if replicate {
+			diskOptions += ",replicate=1"
+		} else {
+			diskOptions += ",replicate=0"
 		}
 
 		if ssd {
@@ -464,6 +487,22 @@ func CreateCustomDisks(
 
 		if cache != "" {
 			diskOptions += fmt.Sprintf(",cache=%s", cache)
+		}
+
+		if iopsRead > 0 {
+			diskOptions += fmt.Sprintf(",iops_rd=%d", iopsRead)
+		}
+
+		if iopsReadBurstable > 0 {
+			diskOptions += fmt.Sprintf(",iops_rd_max=%d", iopsReadBurstable)
+		}
+
+		if iopsWrite > 0 {
+			diskOptions += fmt.Sprintf(",iops_wr=%d", iopsWrite)
+		}
+
+		if iopsWriteBurstable > 0 {
+			diskOptions += fmt.Sprintf(",iops_wr_max=%d", iopsWriteBurstable)
 		}
 
 		if speedLimitRead > 0 {
