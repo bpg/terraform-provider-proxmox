@@ -5072,10 +5072,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	err = disk.Update(d, planDisks, allDiskInfo, updateBody)
+	rr, err := disk.Update(d, planDisks, allDiskInfo, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	rebootRequired = rebootRequired || rr
 
 	// Prepare the new efi disk configuration.
 	if d.HasChange(mkEFIDisk) {

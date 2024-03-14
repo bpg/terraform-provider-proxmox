@@ -246,14 +246,17 @@ func GetDiskDeviceObjects(
 			pathInDatastore = untyped.(string)
 		}
 
+		aio := block[mkDiskAIO].(string)
+		backup := types.CustomBool(block[mkDiskBackup].(bool))
+		cache := block[mkDiskCache].(string)
+		discard := block[mkDiskDiscard].(string)
+		diskInterface, _ := block[mkDiskInterface].(string)
 		fileFormat, _ := block[mkDiskFileFormat].(string)
 		fileID, _ := block[mkDiskFileID].(string)
-		size, _ := block[mkDiskSize].(int)
-		diskInterface, _ := block[mkDiskInterface].(string)
 		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
+		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
+		size, _ := block[mkDiskSize].(int)
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
-		discard := block[mkDiskDiscard].(string)
-		cache := block[mkDiskCache].(string)
 
 		speedBlock, err := structure.GetSchemaBlock(
 			resource,
@@ -285,25 +288,50 @@ func GetDiskDeviceObjects(
 			diskDevice.FileVolume = fmt.Sprintf("%s:%d", datastoreID, size)
 		}
 
-		diskDevice.DatastoreID = &datastoreID
-		diskDevice.Interface = &diskInterface
-		diskDevice.Format = &fileFormat
-		diskDevice.FileID = &fileID
-		diskSize := types.DiskSizeFromGigabytes(int64(size))
-		diskDevice.Size = diskSize
-		diskDevice.IOThread = &ioThread
-		diskDevice.Discard = &discard
+		diskDevice.AIO = &aio
+		diskDevice.Backup = &backup
 		diskDevice.Cache = &cache
+		diskDevice.DatastoreID = &datastoreID
+		diskDevice.Discard = &discard
+		diskDevice.FileID = &fileID
+		diskDevice.Format = &fileFormat
+		diskDevice.Interface = &diskInterface
+		diskDevice.Replicate = &replicate
+		diskDevice.Size = types.DiskSizeFromGigabytes(int64(size))
 
 		if !strings.HasPrefix(diskInterface, "virtio") {
 			diskDevice.SSD = &ssd
 		}
 
+		if !strings.HasPrefix(diskInterface, "sata") {
+			diskDevice.IOThread = &ioThread
+		}
+
 		if len(speedBlock) > 0 {
+			iopsRead := speedBlock[mkDiskIopsRead].(int)
+			iopsReadBurstable := speedBlock[mkDiskIopsReadBurstable].(int)
+			iopsWrite := speedBlock[mkDiskIopsWrite].(int)
+			iopsWriteBurstable := speedBlock[mkDiskIopsWriteBurstable].(int)
 			speedLimitRead := speedBlock[mkDiskSpeedRead].(int)
 			speedLimitReadBurstable := speedBlock[mkDiskSpeedReadBurstable].(int)
 			speedLimitWrite := speedBlock[mkDiskSpeedWrite].(int)
 			speedLimitWriteBurstable := speedBlock[mkDiskSpeedWriteBurstable].(int)
+
+			if iopsRead > 0 {
+				diskDevice.IopsRead = &iopsRead
+			}
+
+			if iopsReadBurstable > 0 {
+				diskDevice.MaxIopsRead = &iopsReadBurstable
+			}
+
+			if iopsWrite > 0 {
+				diskDevice.IopsWrite = &iopsWrite
+			}
+
+			if iopsWriteBurstable > 0 {
+				diskDevice.MaxIopsWrite = &iopsWriteBurstable
+			}
 
 			if speedLimitRead > 0 {
 				diskDevice.MaxReadSpeedMbps = &speedLimitRead
@@ -391,15 +419,18 @@ func CreateCustomDisks(
 			continue
 		}
 
+		aio, _ := block[mkDiskAIO].(string)
+		backup := types.CustomBool(block[mkDiskBackup].(bool))
+		cache, _ := block[mkDiskCache].(string)
 		datastoreID, _ := block[mkDiskDatastoreID].(string)
+		discard, _ := block[mkDiskDiscard].(string)
+		diskInterface, _ := block[mkDiskInterface].(string)
 		fileFormat, _ := block[mkDiskFileFormat].(string)
+		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
+		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
 		size, _ := block[mkDiskSize].(int)
 		speed := block[mkDiskSpeed].([]interface{})
-		diskInterface, _ := block[mkDiskInterface].(string)
-		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
-		discard, _ := block[mkDiskDiscard].(string)
-		cache, _ := block[mkDiskCache].(string)
 
 		if fileFormat == "" {
 			fileFormat = dvDiskFileFormat
@@ -415,6 +446,10 @@ func CreateCustomDisks(
 		}
 
 		speedBlock := speed[0].(map[string]interface{})
+		iopsRead := speedBlock[mkDiskIopsRead].(int)
+		iopsReadBurstable := speedBlock[mkDiskIopsReadBurstable].(int)
+		iopsWrite := speedBlock[mkDiskIopsWrite].(int)
+		iopsWriteBurstable := speedBlock[mkDiskIopsWriteBurstable].(int)
 		speedLimitRead := speedBlock[mkDiskSpeedRead].(int)
 		speedLimitReadBurstable := speedBlock[mkDiskSpeedReadBurstable].(int)
 		speedLimitWrite := speedBlock[mkDiskSpeedWrite].(int)
@@ -422,8 +457,24 @@ func CreateCustomDisks(
 
 		diskOptions := ""
 
+		if aio != "" {
+			diskOptions += fmt.Sprintf(",aio=%s", aio)
+		}
+
+		if backup {
+			diskOptions += ",backup=1"
+		} else {
+			diskOptions += ",backup=0"
+		}
+
 		if ioThread {
 			diskOptions += ",iothread=1"
+		}
+
+		if replicate {
+			diskOptions += ",replicate=1"
+		} else {
+			diskOptions += ",replicate=0"
 		}
 
 		if ssd {
@@ -436,6 +487,22 @@ func CreateCustomDisks(
 
 		if cache != "" {
 			diskOptions += fmt.Sprintf(",cache=%s", cache)
+		}
+
+		if iopsRead > 0 {
+			diskOptions += fmt.Sprintf(",iops_rd=%d", iopsRead)
+		}
+
+		if iopsReadBurstable > 0 {
+			diskOptions += fmt.Sprintf(",iops_rd_max=%d", iopsReadBurstable)
+		}
+
+		if iopsWrite > 0 {
+			diskOptions += fmt.Sprintf(",iops_wr=%d", iopsWrite)
+		}
+
+		if iopsWriteBurstable > 0 {
+			diskOptions += fmt.Sprintf(",iops_wr_max=%d", iopsWriteBurstable)
 		}
 
 		if speedLimitRead > 0 {
@@ -573,11 +640,81 @@ func Read(
 		disk[mkDiskInterface] = di
 		disk[mkDiskSize] = dd.Size.InGigabytes()
 
-		if dd.BurstableReadSpeedMbps != nil ||
+		if dd.AIO != nil {
+			disk[mkDiskAIO] = *dd.AIO
+		} else {
+			disk[mkDiskAIO] = dvDiskAIO
+		}
+
+		if dd.Backup != nil {
+			disk[mkDiskBackup] = *dd.Backup
+		} else {
+			disk[mkDiskBackup] = true
+		}
+
+		if dd.IOThread != nil {
+			disk[mkDiskIOThread] = *dd.IOThread
+		} else {
+			disk[mkDiskIOThread] = false
+		}
+
+		if dd.Replicate != nil {
+			disk[mkDiskReplicate] = *dd.Replicate
+		} else {
+			disk[mkDiskReplicate] = true
+		}
+
+		if dd.SSD != nil {
+			disk[mkDiskSSD] = *dd.SSD
+		} else {
+			disk[mkDiskSSD] = false
+		}
+
+		if dd.Discard != nil {
+			disk[mkDiskDiscard] = *dd.Discard
+		} else {
+			disk[mkDiskDiscard] = dvDiskDiscard
+		}
+
+		if dd.Cache != nil {
+			disk[mkDiskCache] = *dd.Cache
+		} else {
+			disk[mkDiskCache] = dvDiskCache
+		}
+
+		if dd.IopsRead != nil ||
+			dd.MaxIopsRead != nil ||
+			dd.IopsWrite != nil ||
+			dd.MaxIopsWrite != nil ||
+			dd.BurstableReadSpeedMbps != nil ||
 			dd.BurstableWriteSpeedMbps != nil ||
 			dd.MaxReadSpeedMbps != nil ||
 			dd.MaxWriteSpeedMbps != nil {
 			speed := map[string]interface{}{}
+
+			if dd.IopsRead != nil {
+				speed[mkDiskIopsRead] = *dd.IopsRead
+			} else {
+				speed[mkDiskIopsRead] = 0
+			}
+
+			if dd.MaxIopsRead != nil {
+				speed[mkDiskIopsReadBurstable] = *dd.MaxIopsRead
+			} else {
+				speed[mkDiskIopsReadBurstable] = 0
+			}
+
+			if dd.IopsWrite != nil {
+				speed[mkDiskIopsWrite] = *dd.IopsWrite
+			} else {
+				speed[mkDiskIopsWrite] = 0
+			}
+
+			if dd.MaxIopsWrite != nil {
+				speed[mkDiskIopsWriteBurstable] = *dd.MaxIopsWrite
+			} else {
+				speed[mkDiskIopsWriteBurstable] = 0
+			}
 
 			if dd.MaxReadSpeedMbps != nil {
 				speed[mkDiskSpeedRead] = *dd.MaxReadSpeedMbps
@@ -608,30 +745,6 @@ func Read(
 			disk[mkDiskSpeed] = []interface{}{}
 		}
 
-		if dd.IOThread != nil {
-			disk[mkDiskIOThread] = *dd.IOThread
-		} else {
-			disk[mkDiskIOThread] = false
-		}
-
-		if dd.SSD != nil {
-			disk[mkDiskSSD] = *dd.SSD
-		} else {
-			disk[mkDiskSSD] = false
-		}
-
-		if dd.Discard != nil {
-			disk[mkDiskDiscard] = *dd.Discard
-		} else {
-			disk[mkDiskDiscard] = dvDiskDiscard
-		}
-
-		if dd.Cache != nil {
-			disk[mkDiskCache] = *dd.Cache
-		} else {
-			disk[mkDiskCache] = dvDiskCache
-		}
-
 		diskMap[di] = disk
 	}
 
@@ -650,7 +763,9 @@ func Update(
 	planDisks map[string]vms.CustomStorageDevices,
 	allDiskInfo vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
-) error {
+) (bool, error) {
+	rebootRequired := false
+
 	if d.HasChange(MkDisk) {
 		for prefix, diskMap := range planDisks {
 			if diskMap == nil {
@@ -659,15 +774,30 @@ func Update(
 
 			for key, value := range diskMap {
 				if allDiskInfo[key] == nil {
-					return fmt.Errorf("missing %s device %s", prefix, key)
+					return false, fmt.Errorf("missing %s device %s", prefix, key)
 				}
 
 				tmp := allDiskInfo[key]
+
+				if tmp.AIO != value.AIO {
+					rebootRequired = true
+					tmp.AIO = value.AIO
+				}
+
+				tmp.Backup = value.Backup
 				tmp.BurstableReadSpeedMbps = value.BurstableReadSpeedMbps
 				tmp.BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
+				tmp.Cache = value.Cache
+				tmp.Discard = value.Discard
+				tmp.IOThread = value.IOThread
+				tmp.IopsRead = value.IopsRead
+				tmp.IopsWrite = value.IopsWrite
+				tmp.MaxIopsRead = value.MaxIopsRead
+				tmp.MaxIopsWrite = value.MaxIopsWrite
 				tmp.MaxReadSpeedMbps = value.MaxReadSpeedMbps
 				tmp.MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
-				tmp.Cache = value.Cache
+				tmp.Replicate = value.Replicate
+				tmp.SSD = value.SSD
 
 				switch prefix {
 				case "virtio":
@@ -700,11 +830,11 @@ func Update(
 						// Investigate whether to support IDE mapping.
 					}
 				default:
-					return fmt.Errorf("device prefix %s not supported", prefix)
+					return false, fmt.Errorf("device prefix %s not supported", prefix)
 				}
 			}
 		}
 	}
 
-	return nil
+	return rebootRequired, nil
 }

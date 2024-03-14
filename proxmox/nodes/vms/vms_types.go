@@ -1827,10 +1827,55 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 
 			case "backup":
 				bv := types.CustomBool(v[1] == "1")
-				d.BackupEnabled = &bv
+				d.Backup = &bv
+
+			case "cache":
+				d.Cache = &v[1]
+
+			case "discard":
+				d.Discard = &v[1]
 
 			case "file":
 				d.FileVolume = v[1]
+
+			case "format":
+				d.Format = &v[1]
+
+			case "iops_rd":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert iops_rd to int: %w", err)
+				}
+
+				d.IopsRead = &iv
+
+			case "iops_rd_max":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert iops_rd_max to int: %w", err)
+				}
+
+				d.MaxIopsRead = &iv
+
+			case "iops_wr":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert iops_wr to int: %w", err)
+				}
+
+				d.IopsWrite = &iv
+
+			case "iops_wr_max":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert iops_wr_max to int: %w", err)
+				}
+
+				d.MaxIopsWrite = &iv
+
+			case "iothread":
+				bv := types.CustomBool(v[1] == "1")
+				d.IOThread = &bv
 
 			case "mbps_rd":
 				iv, err := strconv.Atoi(v[1])
@@ -1839,6 +1884,7 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				}
 
 				d.MaxReadSpeedMbps = &iv
+
 			case "mbps_rd_max":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
@@ -1846,6 +1892,7 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				}
 
 				d.BurstableReadSpeedMbps = &iv
+
 			case "mbps_wr":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
@@ -1853,6 +1900,7 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				}
 
 				d.MaxWriteSpeedMbps = &iv
+
 			case "mbps_wr_max":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
@@ -1860,8 +1908,13 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				}
 
 				d.BurstableWriteSpeedMbps = &iv
+
 			case "media":
 				d.Media = &v[1]
+
+			case "replicate":
+				bv := types.CustomBool(v[1] == "1")
+				d.Replicate = &bv
 
 			case "size":
 				d.Size = new(types.DiskSize)
@@ -1871,22 +1924,9 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)
 				}
 
-			case "format":
-				d.Format = &v[1]
-
-			case "iothread":
-				bv := types.CustomBool(v[1] == "1")
-				d.IOThread = &bv
-
 			case "ssd":
 				bv := types.CustomBool(v[1] == "1")
 				d.SSD = &bv
-
-			case "discard":
-				d.Discard = &v[1]
-
-			case "cache":
-				d.Cache = &v[1]
 			}
 		}
 	}

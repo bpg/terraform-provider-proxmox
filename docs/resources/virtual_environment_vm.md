@@ -233,6 +233,12 @@ output "ubuntu_vm_public_key" {
     - `units` - (Optional) The CPU units (defaults to `1024`).
 - `description` - (Optional) The description.
 - `disk` - (Optional) A disk (multiple blocks supported).
+    - `aio` - (Optional) The disk AIO mode (defaults to `io_uring`).
+        - `io_uring` - Use io_uring.
+        - `native` - Use native AIO. Should be used with to unbuffered, O_DIRECT, raw block storage only, 
+            with the disk `cache` must be set to `none`. Raw block storage types include iSCSI, CEPH/RBD, and NVMe.
+        - `threads` - Use thread-based AIO.
+    - `backup` - (Optional) Whether the drive should be included when making backups (defaults to `true`).
     - `cache` - (Optional) The cache type (defaults to `none`).
         - `none` - No cache.
         - `directsync` - Write to the host cache and wait for completion.
@@ -263,8 +269,13 @@ output "ubuntu_vm_public_key" {
         the second, etc.
     - `iothread` - (Optional) Whether to use iothreads for this disk (defaults
         to `false`).
+    - `replicate` - (Optional) Whether the drive should be considered for replication jobs (defaults to `true`).
     - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     - `speed` - (Optional) The speed limits.
+        - `iops_read` - (Optional) The maximum read I/O in operations per second.
+        - `iops_read_burstable` - (Optional) The maximum unthrottled read I/O pool in operations per second.
+        - `iops_write` - (Optional) The maximum write I/O in operations per second.
+        - `iops_write_burstable` - (Optional) The maximum unthrottled write I/O pool in operations per second.
         - `read` - (Optional) The maximum read speed in megabytes per second.
         - `read_burstable` - (Optional) The maximum burstable read speed in
             megabytes per second.
