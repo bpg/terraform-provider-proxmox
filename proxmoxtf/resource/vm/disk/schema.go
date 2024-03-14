@@ -8,37 +8,43 @@ import (
 )
 
 const (
-	dvDiskInterface           = "scsi0"
-	dvDiskDatastoreID         = "local-lvm"
-	dvDiskFileFormat          = "qcow2"
-	dvDiskFileID              = ""
-	dvDiskSize                = 8
-	dvDiskIOThread            = false
-	dvDiskSSD                 = false
-	dvDiskDiscard             = "ignore"
-	dvDiskCache               = "none"
-	dvDiskSpeedRead           = 0
-	dvDiskSpeedReadBurstable  = 0
-	dvDiskSpeedWrite          = 0
-	dvDiskSpeedWriteBurstable = 0
+	dvDiskInterface   = "scsi0"
+	dvDiskDatastoreID = "local-lvm"
+	dvDiskFileFormat  = "qcow2"
+	dvDiskSize        = 8
+	dvDiskAIO         = "io_uring"
+	dvDiskDiscard     = "ignore"
+	dvDiskCache       = "none"
 
 	// MkDisk is the name of the disk resource.
-	MkDisk                    = "disk"
-	mkDiskInterface           = "interface"
-	mkDiskDatastoreID         = "datastore_id"
-	mkDiskPathInDatastore     = "path_in_datastore"
-	mkDiskFileFormat          = "file_format"
-	mkDiskFileID              = "file_id"
-	mkDiskSize                = "size"
-	mkDiskIOThread            = "iothread"
-	mkDiskSSD                 = "ssd"
-	mkDiskDiscard             = "discard"
-	mkDiskCache               = "cache"
-	mkDiskSpeed               = "speed"
-	mkDiskSpeedRead           = "read"
-	mkDiskSpeedReadBurstable  = "read_burstable"
-	mkDiskSpeedWrite          = "write"
-	mkDiskSpeedWriteBurstable = "write_burstable"
+	MkDisk                     = "disk"
+	mkDiskAIO                  = "aio"
+	mkDiskBackup               = "backup"
+	mkDiskCache                = "cache"
+	mkDiskDatastoreID          = "datastore_id"
+	mkDiskDiscard              = "discard"
+	mkDiskFileFormat           = "file_format"
+	mkDiskFileID               = "file_id"
+	mkDiskInterface            = "interface"
+	mkDiskIops                 = "iops"
+	mkDiskIopsBurstable        = "iops_burstable"
+	mkDiskIopsBurstLength      = "iops_burst_length"
+	mkDiskIopsRead             = "iops_read"
+	mkDiskIopsReadBurstable    = "iops_read_burstable"
+	mkDiskIopsReadBurstLength  = "iops_read_burst_length"
+	mkDiskIopsWrite            = "iops_write"
+	mkDiskIopsWriteBurstable   = "iops_write_burstable"
+	mkDiskIopsWriteBurstLength = "iops_write_burst_length"
+	mkDiskIOThread             = "iothread"
+	mkDiskPathInDatastore      = "path_in_datastore"
+	mkDiskReplicate            = "replicate"
+	mkDiskSize                 = "size"
+	mkDiskSpeed                = "speed"
+	mkDiskSpeedRead            = "read"
+	mkDiskSpeedReadBurstable   = "read_burstable"
+	mkDiskSpeedWrite           = "write"
+	mkDiskSpeedWriteBurstable  = "write_burstable"
+	mkDiskSSD                  = "ssd"
 
 	// MkTimeoutMoveDisk is the name of the timeout_move_disk attribute.
 	MkTimeoutMoveDisk = "timeout_move_disk"
@@ -55,15 +61,18 @@ func Schema() map[string]*schema.Schema {
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{
 					map[string]interface{}{
-						mkDiskDatastoreID:     dvDiskDatastoreID,
-						mkDiskPathInDatastore: nil,
-						mkDiskFileID:          dvDiskFileID,
-						mkDiskInterface:       dvDiskInterface,
-						mkDiskSize:            dvDiskSize,
-						mkDiskIOThread:        dvDiskIOThread,
-						mkDiskSSD:             dvDiskSSD,
-						mkDiskDiscard:         dvDiskDiscard,
+						mkDiskAIO:             dvDiskAIO,
+						mkDiskBackup:          true,
 						mkDiskCache:           dvDiskCache,
+						mkDiskDatastoreID:     dvDiskDatastoreID,
+						mkDiskDiscard:         dvDiskDiscard,
+						mkDiskFileID:          "",
+						mkDiskInterface:       dvDiskInterface,
+						mkDiskIOThread:        false,
+						mkDiskPathInDatastore: nil,
+						mkDiskReplicate:       true,
+						mkDiskSize:            dvDiskSize,
+						mkDiskSSD:             false,
 					},
 				}, nil
 			},
@@ -95,12 +104,31 @@ func Schema() map[string]*schema.Schema {
 						Computed:         true,
 						ValidateDiagFunc: validators.FileFormat(),
 					},
+					mkDiskAIO: {
+						Type:        schema.TypeString,
+						Description: "The disk AIO mode",
+						Optional:    true,
+						Default:     dvDiskAIO,
+						ValidateDiagFunc: validation.ToDiagFunc(
+							validation.StringInSlice([]string{
+								"io_uring",
+								"native",
+								"threads",
+							}, false),
+						),
+					},
+					mkDiskBackup: {
+						Type:        schema.TypeBool,
+						Description: "Whether the drive should be included when making backups",
+						Optional:    true,
+						Default:     true,
+					},
 					mkDiskFileID: {
 						Type:             schema.TypeString,
 						Description:      "The file id for a disk image",
 						Optional:         true,
 						ForceNew:         true,
-						Default:          dvDiskFileID,
+						Default:          "",
 						ValidateDiagFunc: validators.FileID(),
 					},
 					mkDiskSize: {
@@ -114,13 +142,19 @@ func Schema() map[string]*schema.Schema {
 						Type:        schema.TypeBool,
 						Description: "Whether to use iothreads for this disk drive",
 						Optional:    true,
-						Default:     dvDiskIOThread,
+						Default:     false,
+					},
+					mkDiskReplicate: {
+						Type:        schema.TypeBool,
+						Description: "Whether the drive should be considered for replication jobs",
+						Optional:    true,
+						Default:     true,
 					},
 					mkDiskSSD: {
 						Type:        schema.TypeBool,
 						Description: "Whether to use ssd for this disk drive",
 						Optional:    true,
-						Default:     dvDiskSSD,
+						Default:     false,
 					},
 					mkDiskDiscard: {
 						Type:        schema.TypeString,
@@ -150,38 +184,101 @@ func Schema() map[string]*schema.Schema {
 						DefaultFunc: func() (interface{}, error) {
 							return []interface{}{
 								map[string]interface{}{
-									mkDiskSpeedRead:           dvDiskSpeedRead,
-									mkDiskSpeedReadBurstable:  dvDiskSpeedReadBurstable,
-									mkDiskSpeedWrite:          dvDiskSpeedWrite,
-									mkDiskSpeedWriteBurstable: dvDiskSpeedWriteBurstable,
+									mkDiskIops:                 0,
+									mkDiskIopsBurstable:        0,
+									mkDiskIopsBurstLength:      0,
+									mkDiskIopsRead:             0,
+									mkDiskIopsWrite:            0,
+									mkDiskIopsReadBurstable:    0,
+									mkDiskIopsReadBurstLength:  0,
+									mkDiskIopsWriteBurstable:   0,
+									mkDiskIopsWriteBurstLength: 0,
+									mkDiskSpeedRead:            0,
+									mkDiskSpeedReadBurstable:   0,
+									mkDiskSpeedWrite:           0,
+									mkDiskSpeedWriteBurstable:  0,
 								},
 							}, nil
 						},
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
+								mkDiskIops: {
+									Type:        schema.TypeInt,
+									Description: "The maximum r/w I/O in operations per second",
+									Optional:    true,
+									Default:     0,
+								},
+								mkDiskIopsBurstable: {
+									Type:        schema.TypeInt,
+									Description: "The maximum unthrottled r/w I/O pool in operations per second",
+									Optional:    true,
+									Default:     0,
+								},
+								mkDiskIopsBurstLength: {
+									Type:        schema.TypeInt,
+									Description: "The maximum length of I/O bursts in seconds",
+									Optional:    true,
+									Default:     0,
+								},
+								mkDiskIopsRead: {
+									Type:        schema.TypeInt,
+									Description: "The maximum read I/O in operations per second",
+									Optional:    true,
+									Default:     0,
+								},
+								mkDiskIopsWrite: {
+									Type:        schema.TypeInt,
+									Description: "The maximum write I/O in operations per second",
+									Optional:    true,
+									Default:     0,
+								},
+								mkDiskIopsReadBurstable: {
+									Type:        schema.TypeInt,
+									Description: "The maximum unthrottled read I/O pool in operations per second",
+									Optional:    true,
+									Default:     0,
+								},
+								mkDiskIopsReadBurstLength: {
+									Type:        schema.TypeInt,
+									Description: "The maximum length of read I/O bursts in seconds",
+									Optional:    true,
+									Default:     0,
+								},
+								mkDiskIopsWriteBurstable: {
+									Type:        schema.TypeInt,
+									Description: "The maximum unthrottled write I/O pool in operations per second",
+									Optional:    true,
+									Default:     0,
+								},
+								mkDiskIopsWriteBurstLength: {
+									Type:        schema.TypeInt,
+									Description: "The maximum length of write I/O bursts in seconds",
+									Optional:    true,
+									Default:     0,
+								},
 								mkDiskSpeedRead: {
 									Type:        schema.TypeInt,
 									Description: "The maximum read speed in megabytes per second",
 									Optional:    true,
-									Default:     dvDiskSpeedRead,
+									Default:     0,
 								},
 								mkDiskSpeedReadBurstable: {
 									Type:        schema.TypeInt,
 									Description: "The maximum burstable read speed in megabytes per second",
 									Optional:    true,
-									Default:     dvDiskSpeedReadBurstable,
+									Default:     0,
 								},
 								mkDiskSpeedWrite: {
 									Type:        schema.TypeInt,
 									Description: "The maximum write speed in megabytes per second",
 									Optional:    true,
-									Default:     dvDiskSpeedWrite,
+									Default:     0,
 								},
 								mkDiskSpeedWriteBurstable: {
 									Type:        schema.TypeInt,
 									Description: "The maximum burstable write speed in megabytes per second",
 									Optional:    true,
-									Default:     dvDiskSpeedWriteBurstable,
+									Default:     0,
 								},
 							},
 						},

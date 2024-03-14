@@ -11,24 +11,34 @@ import (
 
 // CustomStorageDevice handles QEMU SATA device parameters.
 type CustomStorageDevice struct {
-	AIO                     *string           `json:"aio,omitempty"         url:"aio,omitempty"`
-	BackupEnabled           *types.CustomBool `json:"backup,omitempty"      url:"backup,omitempty,int"`
-	BurstableReadSpeedMbps  *int              `json:"mbps_rd_max,omitempty" url:"mbps_rd_max,omitempty"`
-	Cache                   *string           `json:"cache,omitempty"       url:"cache,omitempty"`
-	BurstableWriteSpeedMbps *int              `json:"mbps_wr_max,omitempty" url:"mbps_wr_max,omitempty"`
-	Discard                 *string           `json:"discard,omitempty"     url:"discard,omitempty"`
-	Enabled                 bool              `json:"-"                     url:"-"`
-	FileVolume              string            `json:"file"                  url:"file"`
-	Format                  *string           `json:"format,omitempty"      url:"format,omitempty"`
-	IOThread                *types.CustomBool `json:"iothread,omitempty"    url:"iothread,omitempty,int"`
-	SSD                     *types.CustomBool `json:"ssd,omitempty"         url:"ssd,omitempty,int"`
-	MaxReadSpeedMbps        *int              `json:"mbps_rd,omitempty"     url:"mbps_rd,omitempty"`
-	MaxWriteSpeedMbps       *int              `json:"mbps_wr,omitempty"     url:"mbps_wr,omitempty"`
-	Media                   *string           `json:"media,omitempty"       url:"media,omitempty"`
-	Size                    *types.DiskSize   `json:"size,omitempty"        url:"size,omitempty"`
-	Interface               *string           `json:"-"                     url:"-"`
-	DatastoreID             *string           `json:"-"                     url:"-"`
-	FileID                  *string           `json:"-"                     url:"-"`
+	AIO                     *string           `json:"aio,omitempty"                url:"aio,omitempty"`
+	Backup                  *types.CustomBool `json:"backup,omitempty"             url:"backup,omitempty,int"`
+	BurstableReadSpeedMbps  *int              `json:"mbps_rd_max,omitempty"        url:"mbps_rd_max,omitempty"`
+	BurstableWriteSpeedMbps *int              `json:"mbps_wr_max,omitempty"        url:"mbps_wr_max,omitempty"`
+	Cache                   *string           `json:"cache,omitempty"              url:"cache,omitempty"`
+	Discard                 *string           `json:"discard,omitempty"            url:"discard,omitempty"`
+	FileVolume              string            `json:"file"                         url:"file"`
+	Format                  *string           `json:"format,omitempty"             url:"format,omitempty"`
+	Iops                    *int              `json:"iops,omitempty"               url:"iops,omitempty"`
+	IopsRead                *int              `json:"iops_rd,omitempty"            url:"iops_rd,omitempty"`
+	IopsWrite               *int              `json:"iops_wr,omitempty"            url:"iops_wr,omitempty"`
+	IOThread                *types.CustomBool `json:"iothread,omitempty"           url:"iothread,omitempty,int"`
+	MaxIops                 *int              `json:"iops_max,omitempty"           url:"iops_max,omitempty"`
+	MaxIopsLength           *int              `json:"iops_max_length,omitempty"    url:"iops_max_length,omitempty"`
+	MaxIopsRead             *int              `json:"iops_rd_max,omitempty"        url:"iops_rd_max,omitempty"`
+	MaxIopsReadLength       *int              `json:"iops_rd_max_length,omitempty" url:"iops_rd_max_length,omitempty"`
+	MaxIopsWrite            *int              `json:"iops_wr_max,omitempty"        url:"iops_wr_max,omitempty"`
+	MaxIopsWriteLength      *int              `json:"iops_wr_max_length,omitempty" url:"iops_wr_max_length,omitempty"`
+	MaxReadSpeedMbps        *int              `json:"mbps_rd,omitempty"            url:"mbps_rd,omitempty"`
+	MaxWriteSpeedMbps       *int              `json:"mbps_wr,omitempty"            url:"mbps_wr,omitempty"`
+	Media                   *string           `json:"media,omitempty"              url:"media,omitempty"`
+	Replicate               *types.CustomBool `json:"replicate,omitempty"          url:"replicate,omitempty,int"`
+	Size                    *types.DiskSize   `json:"size,omitempty"               url:"size,omitempty"`
+	SSD                     *types.CustomBool `json:"ssd,omitempty"                url:"ssd,omitempty,int"`
+	DatastoreID             *string           `json:"-"                            url:"-"`
+	Enabled                 bool              `json:"-"                            url:"-"`
+	FileID                  *string           `json:"-"                            url:"-"`
+	Interface               *string           `json:"-"                            url:"-"`
 }
 
 // PathInDatastore returns path part of FileVolume or nil if it is not yet allocated.
@@ -110,12 +120,48 @@ func (d CustomStorageDevice) EncodeOptions() string {
 		values = append(values, fmt.Sprintf("aio=%s", *d.AIO))
 	}
 
-	if d.BackupEnabled != nil {
-		if *d.BackupEnabled {
+	if d.Backup != nil {
+		if *d.Backup {
 			values = append(values, "backup=1")
 		} else {
 			values = append(values, "backup=0")
 		}
+	}
+
+	if d.Iops != nil {
+		values = append(values, fmt.Sprintf("iops=%d", *d.Iops))
+	}
+
+	if d.IopsRead != nil {
+		values = append(values, fmt.Sprintf("iops_rd=%d", *d.IopsRead))
+	}
+
+	if d.IopsWrite != nil {
+		values = append(values, fmt.Sprintf("iops_wr=%d", *d.IopsWrite))
+	}
+
+	if d.MaxIops != nil {
+		values = append(values, fmt.Sprintf("iops_max=%d", *d.MaxIops))
+	}
+
+	if d.MaxIopsLength != nil {
+		values = append(values, fmt.Sprintf("iops_max_length=%d", *d.MaxIopsLength))
+	}
+
+	if d.MaxIopsRead != nil {
+		values = append(values, fmt.Sprintf("iops_rd_max=%d", *d.MaxIopsRead))
+	}
+
+	if d.MaxIopsReadLength != nil {
+		values = append(values, fmt.Sprintf("iops_rd_max_length=%d", *d.MaxIopsReadLength))
+	}
+
+	if d.MaxIopsWrite != nil {
+		values = append(values, fmt.Sprintf("iops_wr_max=%d", *d.MaxIopsWrite))
+	}
+
+	if d.MaxIopsWriteLength != nil {
+		values = append(values, fmt.Sprintf("iops_wr_max_length=%d", *d.MaxIopsWriteLength))
 	}
 
 	if d.IOThread != nil {
@@ -158,6 +204,14 @@ func (d CustomStorageDevice) EncodeOptions() string {
 		values = append(values, fmt.Sprintf("mbps_wr=%d", *d.MaxWriteSpeedMbps))
 	}
 
+	if d.Replicate != nil {
+		if *d.Replicate {
+			values = append(values, "replicate=1")
+		} else {
+			values = append(values, "replicate=0")
+		}
+	}
+
 	return strings.Join(values, ",")
 }
 
@@ -190,23 +244,33 @@ func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 func (d CustomStorageDevice) Copy() *CustomStorageDevice {
 	return &CustomStorageDevice{
 		AIO:                     types.CopyString(d.AIO),
-		BackupEnabled:           d.BackupEnabled.Copy(),
+		Backup:                  d.Backup.Copy(),
 		BurstableReadSpeedMbps:  types.CopyInt(d.BurstableReadSpeedMbps),
-		Cache:                   types.CopyString(d.Cache),
 		BurstableWriteSpeedMbps: types.CopyInt(d.BurstableWriteSpeedMbps),
+		Cache:                   types.CopyString(d.Cache),
+		DatastoreID:             types.CopyString(d.DatastoreID),
 		Discard:                 types.CopyString(d.Discard),
 		Enabled:                 d.Enabled,
+		FileID:                  types.CopyString(d.FileID),
 		FileVolume:              d.FileVolume,
 		Format:                  types.CopyString(d.Format),
+		Interface:               types.CopyString(d.Interface),
+		Iops:                    types.CopyInt(d.Iops),
+		IopsRead:                types.CopyInt(d.IopsRead),
+		IopsWrite:               types.CopyInt(d.IopsWrite),
 		IOThread:                d.IOThread.Copy(),
-		SSD:                     d.SSD.Copy(),
+		MaxIops:                 types.CopyInt(d.MaxIops),
+		MaxIopsLength:           types.CopyInt(d.MaxIopsLength),
+		MaxIopsRead:             types.CopyInt(d.MaxIopsRead),
+		MaxIopsReadLength:       types.CopyInt(d.MaxIopsReadLength),
+		MaxIopsWrite:            types.CopyInt(d.MaxIopsWrite),
+		MaxIopsWriteLength:      types.CopyInt(d.MaxIopsWriteLength),
 		MaxReadSpeedMbps:        types.CopyInt(d.MaxReadSpeedMbps),
 		MaxWriteSpeedMbps:       types.CopyInt(d.MaxWriteSpeedMbps),
 		Media:                   types.CopyString(d.Media),
+		Replicate:               d.Replicate.Copy(),
 		Size:                    d.Size.Copy(),
-		Interface:               types.CopyString(d.Interface),
-		DatastoreID:             types.CopyString(d.DatastoreID),
-		FileID:                  types.CopyString(d.FileID),
+		SSD:                     d.SSD.Copy(),
 	}
 }
 

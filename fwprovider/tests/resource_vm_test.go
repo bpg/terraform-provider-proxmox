@@ -181,8 +181,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create disk with default parameters", []resource.TestStep{{
-			Config: providerConfig + `
+		{"create disk with default parameters, then update it", []resource.TestStep{
+			{
+				Config: providerConfig + `
 				resource "proxmox_virtual_environment_vm" "test_disk1" {
 					node_name = "pve"
 					started   = false
@@ -196,21 +197,60 @@ func TestAccResourceVMDisks(t *testing.T) {
 						size         = 8
 					}
 				}`,
-			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_vm.test_disk1", map[string]string{
-					"disk.0.cache":             "none",
-					"disk.0.discard":           "ignore",
-					"disk.0.file_id":           "",
-					"disk.0.datastore_id":      "local-lvm",
-					"disk.0.file_format":       "raw",
-					"disk.0.interface":         "virtio0",
-					"disk.0.iothread":          "false",
-					"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
-					"disk.0.size":              "8",
-					"disk.0.ssd":               "false",
-				}),
-			),
-		}}},
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_disk1", map[string]string{
+						"disk.0.aio":               "io_uring",
+						"disk.0.backup":            "true",
+						"disk.0.cache":             "none",
+						"disk.0.discard":           "ignore",
+						"disk.0.file_id":           "",
+						"disk.0.datastore_id":      "local-lvm",
+						"disk.0.file_format":       "raw",
+						"disk.0.interface":         "virtio0",
+						"disk.0.iothread":          "false",
+						"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
+						"disk.0.replicate":         "true",
+						"disk.0.size":              "8",
+						"disk.0.ssd":               "false",
+					}),
+				),
+			},
+			{
+				Config: providerConfig + `
+				resource "proxmox_virtual_environment_vm" "test_disk1" {
+					node_name = "pve"
+					started   = false
+					name 	  = "test-disk1"
+
+					disk {
+						// note: default qcow2 is not supported by lvm (?)
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 8
+						replicate    = false
+						aio          = "native"
+					}
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_disk1", map[string]string{
+						"disk.0.aio":               "native",
+						"disk.0.backup":            "true",
+						"disk.0.cache":             "none",
+						"disk.0.discard":           "ignore",
+						"disk.0.file_id":           "",
+						"disk.0.datastore_id":      "local-lvm",
+						"disk.0.file_format":       "raw",
+						"disk.0.interface":         "virtio0",
+						"disk.0.iothread":          "false",
+						"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
+						"disk.0.replicate":         "false",
+						"disk.0.size":              "8",
+						"disk.0.ssd":               "false",
+					}),
+				),
+			},
+		}},
 		{"create disk from an image", []resource.TestStep{{
 			Config: providerConfig + `
 				resource "proxmox_virtual_environment_download_file" "test_disk2_image" {
@@ -282,59 +322,62 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
-		// this test is failing because of https://github.com/bpg/terraform-provider-proxmox/issues/360
-		// {"clone disk with new size", []resource.TestStep{
-		//	{
-		//		Config: providerConfig + `
-		//		resource "proxmox_virtual_environment_vm" "test_disk3_template" {
-		//			node_name = "pve"
-		//			started   = false
-		//			name 	  = "test-disk3-template"
-		//			template  = "true"
-		//
-		//			disk {
-		//				file_format  = "raw"
-		//				datastore_id = "local-lvm"
-		//				interface    = "scsi0"
-		//				size         = 8
-		//				discard      = "on"
-		//				iothread     = true
-		//			}
-		//		}
-		//		resource "proxmox_virtual_environment_vm" "test_disk3" {
-		//			node_name = "pve"
-		//			started   = false
-		//			name 	  = "test-disk3"
-		//
-		//			clone {
-		//				vm_id = proxmox_virtual_environment_vm.test_disk3_template.id
-		//			}
-		//
-		//			disk {
-		//				interface    = "scsi0"
-		//				size = 10
-		//                //ssd = true
-		//			}
-		//		}
-		//		`,
-		//		Check: resource.ComposeTestCheckFunc(
-		//			testResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{
-		//				"disk.0.datastore_id":      "local-lvm",
-		//				"disk.0.discard":           "on",
-		//				"disk.0.file_format":       "raw",
-		//				"disk.0.interface":         "scsi0",
-		//				"disk.0.iothread":          "true",
-		//				"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
-		//				"disk.0.size":              "10",
-		//				"disk.0.ssd":               "false",
-		//			}),
-		//		),
-		//	},
-		//{
-		//	RefreshState: true,
-		//	Destroy:      false,
-		// },
-		// }},
+		{"clone disk with overrides", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// this test is failing because of https://github.com/bpg/terraform-provider-proxmox/issues/873
+					return true, nil
+				},
+				Config: providerConfig + `
+				resource "proxmox_virtual_environment_vm" "test_disk3_template" {
+					node_name = "pve"
+					started   = false
+					name 	  = "test-disk3-template"
+					template  = "true"
+		
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+						discard      = "on"
+						iothread     = true
+						ssd          = true
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "test_disk3" {
+					node_name = "pve"
+					started   = false
+					name 	  = "test-disk3"
+		
+					clone {
+						vm_id = proxmox_virtual_environment_vm.test_disk3_template.id
+					}
+		
+					disk {
+						interface    = "scsi0"
+						//size = 10
+					}
+				}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{
+						"disk.0.datastore_id":      "local-lvm",
+						"disk.0.discard":           "on",
+						"disk.0.file_format":       "raw",
+						"disk.0.interface":         "scsi0",
+						"disk.0.iothread":          "true",
+						"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
+						"disk.0.size":              "8",
+						"disk.0.ssd":               "true",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+				Destroy:      false,
+			},
+		}},
 	}
 
 	accProviders := testAccMuxProviders(context.Background(), t)
