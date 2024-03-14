@@ -272,15 +272,10 @@ output "ubuntu_vm_public_key" {
     - `replicate` - (Optional) Whether the drive should be considered for replication jobs (defaults to `true`).
     - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     - `speed` - (Optional) The speed limits.
-        - `iops` - (Optional) The maximum r/w I/O in operations per second.
-        - `iops_burstable` - (Optional) TThe maximum unthrottled r/w I/O pool in operations per second.
-        - `iops_burst_length` - (Optional) The maximum length of I/O bursts in seconds.
         - `iops_read` - (Optional) The maximum read I/O in operations per second.
         - `iops_read_burstable` - (Optional) The maximum unthrottled read I/O pool in operations per second.
-        - `iops_read_burst_length` - (Optional) The maximum length of read I/O bursts in seconds.
         - `iops_write` - (Optional) The maximum write I/O in operations per second.
         - `iops_write_burstable` - (Optional) The maximum unthrottled write I/O pool in operations per second.
-        - `iops_write_burst_length` - (Optional) The maximum length of write I/O bursts in seconds.
         - `read` - (Optional) The maximum read speed in megabytes per second.
         - `read_burstable` - (Optional) The maximum burstable read speed in
             megabytes per second.

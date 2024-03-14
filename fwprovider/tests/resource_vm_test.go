@@ -230,23 +230,33 @@ func TestAccResourceVMDisks(t *testing.T) {
 						size         = 8
 						replicate    = false
 						aio          = "native"
+						speed {
+						  iops_read = 100
+						  iops_read_burstable = 1000
+						  iops_write = 400
+						  iops_write_burstable = 800
+						}
 					}
 				}`,
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_disk1", map[string]string{
-						"disk.0.aio":               "native",
-						"disk.0.backup":            "true",
-						"disk.0.cache":             "none",
-						"disk.0.discard":           "ignore",
-						"disk.0.file_id":           "",
-						"disk.0.datastore_id":      "local-lvm",
-						"disk.0.file_format":       "raw",
-						"disk.0.interface":         "virtio0",
-						"disk.0.iothread":          "false",
-						"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
-						"disk.0.replicate":         "false",
-						"disk.0.size":              "8",
-						"disk.0.ssd":               "false",
+						"disk.0.aio":                          "native",
+						"disk.0.backup":                       "true",
+						"disk.0.cache":                        "none",
+						"disk.0.discard":                      "ignore",
+						"disk.0.file_id":                      "",
+						"disk.0.datastore_id":                 "local-lvm",
+						"disk.0.file_format":                  "raw",
+						"disk.0.interface":                    "virtio0",
+						"disk.0.iothread":                     "false",
+						"disk.0.path_in_datastore":            `vm-\d+-disk-\d+`,
+						"disk.0.replicate":                    "false",
+						"disk.0.size":                         "8",
+						"disk.0.ssd":                          "false",
+						"disk.0.speed.0.iops_read":            "100",
+						"disk.0.speed.0.iops_read_burstable":  "1000",
+						"disk.0.speed.0.iops_write":           "400",
+						"disk.0.speed.0.iops_write_burstable": "800",
 					}),
 				),
 			},

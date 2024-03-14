@@ -308,31 +308,14 @@ func GetDiskDeviceObjects(
 		}
 
 		if len(speedBlock) > 0 {
-			iops := speedBlock[mkDiskIops].(int)
-			iopsBurstable := speedBlock[mkDiskIopsBurstable].(int)
-			iopsBurstLength := speedBlock[mkDiskIopsBurstLength].(int)
 			iopsRead := speedBlock[mkDiskIopsRead].(int)
 			iopsReadBurstable := speedBlock[mkDiskIopsReadBurstable].(int)
-			iopsReadBurstLength := speedBlock[mkDiskIopsReadBurstLength].(int)
 			iopsWrite := speedBlock[mkDiskIopsWrite].(int)
 			iopsWriteBurstable := speedBlock[mkDiskIopsWriteBurstable].(int)
-			iopsWriteBurstLength := speedBlock[mkDiskIopsWriteBurstLength].(int)
 			speedLimitRead := speedBlock[mkDiskSpeedRead].(int)
 			speedLimitReadBurstable := speedBlock[mkDiskSpeedReadBurstable].(int)
 			speedLimitWrite := speedBlock[mkDiskSpeedWrite].(int)
 			speedLimitWriteBurstable := speedBlock[mkDiskSpeedWriteBurstable].(int)
-
-			if iops > 0 {
-				diskDevice.Iops = &iops
-			}
-
-			if iopsBurstable > 0 {
-				diskDevice.MaxIops = &iopsBurstable
-			}
-
-			if iopsBurstLength > 0 {
-				diskDevice.MaxIopsLength = &iopsBurstLength
-			}
 
 			if iopsRead > 0 {
 				diskDevice.IopsRead = &iopsRead
@@ -342,20 +325,12 @@ func GetDiskDeviceObjects(
 				diskDevice.MaxIopsRead = &iopsReadBurstable
 			}
 
-			if iopsReadBurstLength > 0 {
-				diskDevice.MaxIopsReadLength = &iopsReadBurstLength
-			}
-
 			if iopsWrite > 0 {
 				diskDevice.IopsWrite = &iopsWrite
 			}
 
 			if iopsWriteBurstable > 0 {
 				diskDevice.MaxIopsWrite = &iopsWriteBurstable
-			}
-
-			if iopsWriteBurstLength > 0 {
-				diskDevice.MaxIopsWriteLength = &iopsWriteBurstLength
 			}
 
 			if speedLimitRead > 0 {
@@ -668,38 +643,15 @@ func Read(
 			disk[mkDiskCache] = dvDiskCache
 		}
 
-		if dd.Iops != nil ||
-			dd.MaxIops != nil ||
-			dd.MaxIopsLength != nil ||
-			dd.IopsRead != nil ||
+		if dd.IopsRead != nil ||
 			dd.MaxIopsRead != nil ||
-			dd.MaxIopsReadLength != nil ||
 			dd.IopsWrite != nil ||
 			dd.MaxIopsWrite != nil ||
-			dd.MaxIopsWriteLength != nil ||
 			dd.BurstableReadSpeedMbps != nil ||
 			dd.BurstableWriteSpeedMbps != nil ||
 			dd.MaxReadSpeedMbps != nil ||
 			dd.MaxWriteSpeedMbps != nil {
 			speed := map[string]interface{}{}
-
-			if dd.Iops != nil {
-				speed[mkDiskIops] = *dd.Iops
-			} else {
-				speed[mkDiskIops] = 0
-			}
-
-			if dd.MaxIops != nil {
-				speed[mkDiskIopsBurstable] = *dd.MaxIops
-			} else {
-				speed[mkDiskIopsBurstable] = 0
-			}
-
-			if dd.MaxIopsLength != nil {
-				speed[mkDiskIopsBurstLength] = *dd.MaxIopsLength
-			} else {
-				speed[mkDiskIopsBurstLength] = 0
-			}
 
 			if dd.IopsRead != nil {
 				speed[mkDiskIopsRead] = *dd.IopsRead
@@ -713,12 +665,6 @@ func Read(
 				speed[mkDiskIopsReadBurstable] = 0
 			}
 
-			if dd.MaxIopsReadLength != nil {
-				speed[mkDiskIopsReadBurstLength] = *dd.MaxIopsReadLength
-			} else {
-				speed[mkDiskIopsReadBurstLength] = 0
-			}
-
 			if dd.IopsWrite != nil {
 				speed[mkDiskIopsWrite] = *dd.IopsWrite
 			} else {
@@ -729,12 +675,6 @@ func Read(
 				speed[mkDiskIopsWriteBurstable] = *dd.MaxIopsWrite
 			} else {
 				speed[mkDiskIopsWriteBurstable] = 0
-			}
-
-			if dd.MaxIopsWriteLength != nil {
-				speed[mkDiskIopsWriteBurstLength] = *dd.MaxIopsWriteLength
-			} else {
-				speed[mkDiskIopsWriteBurstLength] = 0
 			}
 
 			if dd.MaxReadSpeedMbps != nil {
@@ -811,15 +751,10 @@ func Update(
 				tmp.Cache = value.Cache
 				tmp.Discard = value.Discard
 				tmp.IOThread = value.IOThread
-				tmp.Iops = value.Iops
 				tmp.IopsRead = value.IopsRead
 				tmp.IopsWrite = value.IopsWrite
-				tmp.MaxIops = value.MaxIops
-				tmp.MaxIopsLength = value.MaxIopsLength
 				tmp.MaxIopsRead = value.MaxIopsRead
-				tmp.MaxIopsReadLength = value.MaxIopsReadLength
 				tmp.MaxIopsWrite = value.MaxIopsWrite
-				tmp.MaxIopsWriteLength = value.MaxIopsWriteLength
 				tmp.MaxReadSpeedMbps = value.MaxReadSpeedMbps
 				tmp.MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
 				tmp.Replicate = value.Replicate

@@ -1841,30 +1841,6 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "format":
 				d.Format = &v[1]
 
-			case "iops":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops to int: %w", err)
-				}
-
-				d.Iops = &iv
-
-			case "iops_max":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops_max to int: %w", err)
-				}
-
-				d.MaxIops = &iv
-
-			case "iops_max_length":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops_max_length to int: %w", err)
-				}
-
-				d.MaxIopsLength = &iv
-
 			case "iops_rd":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
@@ -1881,14 +1857,6 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 
 				d.MaxIopsRead = &iv
 
-			case "iops_rd_max_length":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops_rd_max_length to int: %w", err)
-				}
-
-				d.MaxIopsReadLength = &iv
-
 			case "iops_wr":
 				iv, err := strconv.Atoi(v[1])
 				if err != nil {
@@ -1904,14 +1872,6 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 				}
 
 				d.MaxIopsWrite = &iv
-
-			case "iops_wr_max_length":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops_wr_max_length to int: %w", err)
-				}
-
-				d.MaxIopsWriteLength = &iv
 
 			case "iothread":
 				bv := types.CustomBool(v[1] == "1")
