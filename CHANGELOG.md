@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.49.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.4...v0.49.0) (2024-03-15)
+
+
+### Features
+
+* **vm:** add support for `protection` attribute ([#1126](https://github.com/bpg/terraform-provider-proxmox/issues/1126)) ([cea65a8](https://github.com/bpg/terraform-provider-proxmox/commit/cea65a8a129168581451ecda5b84be8ddd2e3a3e))
+* **vm:** add support for disk `aio`, `backup`, `iops*` attributes ([#1124](https://github.com/bpg/terraform-provider-proxmox/issues/1124)) ([014b59e](https://github.com/bpg/terraform-provider-proxmox/commit/014b59e04f30fc08bc512f68cf471fe2cfdc481c))
+
+
+### Miscellaneous
+
+* **deps:** bump google.golang.org/protobuf from 1.31.0 to 1.33.0 in /tools ([#1121](https://github.com/bpg/terraform-provider-proxmox/issues/1121)) ([1ffc40b](https://github.com/bpg/terraform-provider-proxmox/commit/1ffc40b77ae6d76c8eccf64373ef982e2b14f4d1))
+* **deps:** update module github.com/skeema/knownhosts (v1.2.1 → v1.2.2) ([#1123](https://github.com/bpg/terraform-provider-proxmox/issues/1123)) ([732f018](https://github.com/bpg/terraform-provider-proxmox/commit/732f0188d798fc082fcc01312b41a9f5ded2ae0c))
+
 ## [0.48.4](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.3...v0.48.4) (2024-03-13)
 
 
