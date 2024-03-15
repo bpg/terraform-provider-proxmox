@@ -104,6 +104,7 @@ const (
 	dvNetworkDeviceMTU                  = 0
 	dvOperatingSystemType               = "other"
 	dvPoolID                            = ""
+	dvProtection                        = false
 	dvSerialDeviceDevice                = "socket"
 	dvSMBIOSFamily                      = ""
 	dvSMBIOSManufacturer                = ""
@@ -242,6 +243,7 @@ const (
 	mkOperatingSystem                   = "operating_system"
 	mkOperatingSystemType               = "type"
 	mkPoolID                            = "pool_id"
+	mkProtection                        = "protection"
 	mkSerialDevice                      = "serial_device"
 	mkSerialDeviceDevice                = "device"
 	mkSMBIOS                            = "smbios"
@@ -1195,6 +1197,12 @@ func VM() *schema.Resource {
 			Optional:    true,
 			Default:     dvPoolID,
 		},
+		mkProtection: {
+			Type:        schema.TypeBool,
+			Description: "Sets the protection flag of the VM. This will disable the remove VM and remove disk operations",
+			Optional:    true,
+			Default:     dvProtection,
+		},
 		mkSerialDevice: {
 			Type:        schema.TypeList,
 			Description: "The serial devices",
@@ -1822,6 +1830,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	serialDevice := d.Get(mkSerialDevice).([]interface{})
 	onBoot := types.CustomBool(d.Get(mkOnBoot).(bool))
 	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
+	protection := types.CustomBool(d.Get(mkProtection).(bool))
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	vga := d.Get(mkVGA).([]interface{})
 
@@ -2059,6 +2068,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	//nolint:gosimple
 	if tabletDevice != dvTabletDevice {
 		updateBody.TabletDeviceEnabled = &tabletDevice
+	}
+
+	//nolint:gosimple
+	if protection != dvProtection {
+		updateBody.DeletionProtection = &protection
 	}
 
 	if len(tags) > 0 {
@@ -2433,6 +2447,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	operatingSystemType := operatingSystem[mkOperatingSystemType].(string)
 
 	poolID := d.Get(mkPoolID).(string)
+	protection := types.CustomBool(d.Get(mkProtection).(bool))
 
 	serialDevices := vmGetSerialDeviceList(d)
 
@@ -2548,6 +2563,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		CPUSockets:          &cpuSockets,
 		CPUUnits:            &cpuUnits,
 		DedicatedMemory:     &memoryDedicated,
+		DeletionProtection:  &protection,
 		EFIDisk:             efiDisk,
 		TPMState:            tpmState,
 		FloatingMemory:      &memoryFloating,
@@ -4672,6 +4688,23 @@ func vmReadPrimitiveValues(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentProtection := d.Get(mkProtection).(bool)
+
+	//nolint:gosimple
+	if len(clone) == 0 || currentProtection != dvProtection {
+		if vmConfig.DeletionProtection != nil {
+			err = d.Set(
+				mkProtection,
+				bool(*vmConfig.DeletionProtection),
+			)
+		} else {
+			// Default value of "protection" is "0" according to the API documentation.
+			err = d.Set(mkProtection, false)
+		}
+
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	if !d.Get(mkTemplate).(bool) {
 		err = d.Set(mkStarted, vmStatus.Status == "running")
 		diags = append(diags, diag.FromErr(err)...)
@@ -4876,6 +4909,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		del = append(del, "name")
 	} else {
 		updateBody.Name = &name
+	}
+
+	if d.HasChange(mkProtection) {
+		protection := types.CustomBool(d.Get(mkProtection).(bool))
+		updateBody.DeletionProtection = &protection
 	}
 
 	if d.HasChange(mkTabletDevice) {
