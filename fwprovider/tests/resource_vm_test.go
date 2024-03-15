@@ -20,9 +20,9 @@ func TestAccResourceVM(t *testing.T) {
 
 	tests := []struct {
 		name string
-		step resource.TestStep
+		step []resource.TestStep
 	}{
-		{"multiline description", resource.TestStep{
+		{"multiline description", []resource.TestStep{{
 			Config: providerConfig + `
 				resource "proxmox_virtual_environment_vm" "test_vm1" {
 					node_name = "pve"
@@ -37,8 +37,8 @@ func TestAccResourceVM(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm1", "description", "my\ndescription\nvalue"),
 			),
-		}},
-		{"single line description", resource.TestStep{
+		}}},
+		{"single line description", []resource.TestStep{{
 			Config: providerConfig + `
 				resource "proxmox_virtual_environment_vm" "test_vm2" {
 					node_name = "pve"
@@ -49,8 +49,8 @@ func TestAccResourceVM(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm2", "description", "my description value"),
 			),
-		}},
-		{"no description", resource.TestStep{
+		}}},
+		{"no description", []resource.TestStep{{
 			Config: `
 				resource "proxmox_virtual_environment_vm" "test_vm3" {
 					node_name = "pve"
@@ -61,7 +61,32 @@ func TestAccResourceVM(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm3", "description", ""),
 			),
-		}},
+		}}},
+		{
+			"protection", []resource.TestStep{{
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm4" {
+					node_name = "pve"
+					started   = false
+					
+					protection = true
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm4", "protection", "true"),
+				),
+			}, {
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm4" {
+					node_name = "pve"
+					started   = false
+					
+					protection = false
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm4", "protection", "false"),
+				),
+			}},
+		},
 	}
 
 	accProviders := testAccMuxProviders(context.Background(), t)
@@ -73,7 +98,7 @@ func TestAccResourceVM(t *testing.T) {
 
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: accProviders,
-				Steps:                    []resource.TestStep{tt.step},
+				Steps:                    tt.step,
 			})
 		})
 	}

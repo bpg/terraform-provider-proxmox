@@ -238,7 +238,7 @@ type CreateRequestBody struct {
 	CPUUnits             *int                           `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
 	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
 	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
-	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"force,omitempty,int"`
+	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"protection,omitempty,int"`
 	Description          *string                        `json:"description,omitempty"        url:"description,omitempty"`
 	EFIDisk              *CustomEFIDisk                 `json:"efidisk0,omitempty"           url:"efidisk0,omitempty"`
 	FloatingMemory       *int                           `json:"balloon,omitempty"            url:"balloon,omitempty"`

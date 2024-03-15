@@ -447,10 +447,9 @@ output "ubuntu_vm_public_key" {
         - `win11` - Windows 11
         - `wvista` - Windows Vista.
         - `wxp` - Windows XP.
-- `pool_id` - (Optional) The identifier for a pool to assign the virtual machine
-    to.
-- `reboot` - (Optional) Reboot the VM after initial creation. (defaults
-    to `false`)
+- `pool_id` - (Optional) The identifier for a pool to assign the virtual machine to.
+- `protection` - (Optional) Sets the protection flag of the VM. This will disable the remove VM and remove disk operations (defaults to `false`).
+- `reboot` - (Optional) Reboot the VM after initial creation. (defaults to `false`)
 - `serial_device` - (Optional) A serial device (multiple blocks supported).
     - `device` - (Optional) The device (defaults to `socket`).
         - `/dev/*` - A host serial device.
