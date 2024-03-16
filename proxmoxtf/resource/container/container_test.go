@@ -28,7 +28,7 @@ func TestContainerInstantiation(t *testing.T) {
 func TestContainerSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Container()
+	s := Container().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkNodeName,

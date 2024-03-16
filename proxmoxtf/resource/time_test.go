@@ -28,7 +28,7 @@ func TestTimeInstantiation(t *testing.T) {
 func TestTimeSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Time()
+	s := Time().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentTimeNodeName,

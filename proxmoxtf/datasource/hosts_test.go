@@ -28,7 +28,7 @@ func TestHostsInstantiation(t *testing.T) {
 func TestHostsSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Hosts()
+	s := Hosts().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentHostsNodeName,

@@ -28,7 +28,7 @@ func TestCertificateInstantiation(t *testing.T) {
 func TestCertificateSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Certificate()
+	s := Certificate().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentCertificateCertificate,

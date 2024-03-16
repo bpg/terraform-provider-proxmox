@@ -28,7 +28,7 @@ func TestGroupInstantiation(t *testing.T) {
 func TestGroupSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Group()
+	s := Group().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentGroupID,

@@ -28,7 +28,7 @@ func TestPoolsInstantiation(t *testing.T) {
 func TestPoolsSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Pools()
+	s := Pools().Schema
 
 	test.AssertComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentPoolsPoolIDs,

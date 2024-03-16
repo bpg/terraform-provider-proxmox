@@ -29,7 +29,7 @@ func TestVMsInstantiation(t *testing.T) {
 func TestVMsSchema(t *testing.T) {
 	t.Parallel()
 
-	s := VMs()
+	s := VMs().Schema
 
 	test.AssertComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentVMs,

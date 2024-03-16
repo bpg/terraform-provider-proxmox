@@ -25,18 +25,18 @@ func TestAliasSchemaInstantiation(t *testing.T) {
 func TestAliasSchema(t *testing.T) {
 	t.Parallel()
 
-	r := schema.Resource{Schema: AliasSchema()}
+	s := AliasSchema()
 
-	test.AssertRequiredArguments(t, &r, []string{
+	test.AssertRequiredArguments(t, s, []string{
 		mkAliasName,
 	})
 
-	test.AssertComputedAttributes(t, &r, []string{
+	test.AssertComputedAttributes(t, s, []string{
 		mkAliasCIDR,
 		mkAliasComment,
 	})
 
-	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
+	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkAliasName:    schema.TypeString,
 		mkAliasCIDR:    schema.TypeString,
 		mkAliasComment: schema.TypeString,

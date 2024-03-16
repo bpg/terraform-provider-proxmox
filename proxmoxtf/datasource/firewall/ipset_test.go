@@ -25,24 +25,24 @@ func TestIPSetSchemaInstantiation(t *testing.T) {
 func TestIPSetSchema(t *testing.T) {
 	t.Parallel()
 
-	r := schema.Resource{Schema: IPSetSchema()}
+	s := IPSetSchema()
 
-	test.AssertRequiredArguments(t, &r, []string{
+	test.AssertRequiredArguments(t, s, []string{
 		mkIPSetName,
 	})
 
-	test.AssertComputedAttributes(t, &r, []string{
+	test.AssertComputedAttributes(t, s, []string{
 		mkIPSetCIDR,
 		mkIPSetCIDRComment,
 	})
 
-	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
+	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkIPSetName:        schema.TypeString,
 		mkIPSetCIDR:        schema.TypeList,
 		mkIPSetCIDRComment: schema.TypeString,
 	})
 
-	cird := test.AssertNestedSchemaExistence(t, &r, mkIPSetCIDR)
+	cird := test.AssertNestedSchemaExistence(t, s, mkIPSetCIDR)
 
 	test.AssertComputedAttributes(t, cird, []string{
 		mkIPSetCIDRName,

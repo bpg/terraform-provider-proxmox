@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
@@ -20,8 +21,8 @@ import (
 func TestVMInstantiation(t *testing.T) {
 	t.Parallel()
 
-	s := VM()
-	if s == nil {
+	r := VM()
+	if r == nil {
 		t.Fatalf("Cannot instantiate VM")
 	}
 }
@@ -30,7 +31,7 @@ func TestVMInstantiation(t *testing.T) {
 func TestVMSchema(t *testing.T) {
 	t.Parallel()
 
-	s := VM()
+	s := VM().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkNodeName,
@@ -56,7 +57,7 @@ func TestVMSchema(t *testing.T) {
 		mkMachine,
 		mkMemory,
 		mkName,
-		mkNetworkDevice,
+		network.MkNetworkDevice,
 		mkOperatingSystem,
 		mkPoolID,
 		mkSerialDevice,
@@ -67,45 +68,33 @@ func TestVMSchema(t *testing.T) {
 		mkSCSIHardware,
 	})
 
-	test.AssertComputedAttributes(t, s, []string{
-		mkIPv4Addresses,
-		mkIPv6Addresses,
-		mkMACAddresses,
-		mkNetworkInterfaceNames,
-	})
-
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkACPI:                  schema.TypeBool,
-		mkAgent:                 schema.TypeList,
-		mkAudioDevice:           schema.TypeList,
-		mkBIOS:                  schema.TypeString,
-		mkBootOrder:             schema.TypeList,
-		mkCDROM:                 schema.TypeList,
-		mkCPU:                   schema.TypeList,
-		mkDescription:           schema.TypeString,
-		disk.MkDisk:             schema.TypeList,
-		mkEFIDisk:               schema.TypeList,
-		mkHostPCI:               schema.TypeList,
-		mkHostUSB:               schema.TypeList,
-		mkInitialization:        schema.TypeList,
-		mkIPv4Addresses:         schema.TypeList,
-		mkIPv6Addresses:         schema.TypeList,
-		mkKeyboardLayout:        schema.TypeString,
-		mkKVMArguments:          schema.TypeString,
-		mkMachine:               schema.TypeString,
-		mkMemory:                schema.TypeList,
-		mkName:                  schema.TypeString,
-		mkNetworkDevice:         schema.TypeList,
-		mkMACAddresses:          schema.TypeList,
-		mkNetworkInterfaceNames: schema.TypeList,
-		mkOperatingSystem:       schema.TypeList,
-		mkPoolID:                schema.TypeString,
-		mkSerialDevice:          schema.TypeList,
-		mkStarted:               schema.TypeBool,
-		mkTabletDevice:          schema.TypeBool,
-		mkTemplate:              schema.TypeBool,
-		mkVMID:                  schema.TypeInt,
-		mkSCSIHardware:          schema.TypeString,
+		mkACPI:            schema.TypeBool,
+		mkAgent:           schema.TypeList,
+		mkAudioDevice:     schema.TypeList,
+		mkBIOS:            schema.TypeString,
+		mkBootOrder:       schema.TypeList,
+		mkCDROM:           schema.TypeList,
+		mkCPU:             schema.TypeList,
+		mkDescription:     schema.TypeString,
+		disk.MkDisk:       schema.TypeList,
+		mkEFIDisk:         schema.TypeList,
+		mkHostPCI:         schema.TypeList,
+		mkHostUSB:         schema.TypeList,
+		mkInitialization:  schema.TypeList,
+		mkKeyboardLayout:  schema.TypeString,
+		mkKVMArguments:    schema.TypeString,
+		mkMachine:         schema.TypeString,
+		mkMemory:          schema.TypeList,
+		mkName:            schema.TypeString,
+		mkOperatingSystem: schema.TypeList,
+		mkPoolID:          schema.TypeString,
+		mkSerialDevice:    schema.TypeList,
+		mkStarted:         schema.TypeBool,
+		mkTabletDevice:    schema.TypeBool,
+		mkTemplate:        schema.TypeBool,
+		mkVMID:            schema.TypeInt,
+		mkSCSIHardware:    schema.TypeString,
 	})
 
 	agentSchema := test.AssertNestedSchemaExistence(t, s, mkAgent)
@@ -187,44 +176,6 @@ func TestVMSchema(t *testing.T) {
 		mkCPUType:         schema.TypeString,
 		mkCPUUnits:        schema.TypeInt,
 	})
-
-	// diskSchema := test.AssertNestedSchemaExistence(t, s, mkDisk)
-	//
-	// test.AssertOptionalArguments(t, diskSchema, []string{
-	//	mkDiskDatastoreID,
-	//	mkDiskPathInDatastore,
-	//	mkDiskFileFormat,
-	//	mkDiskFileID,
-	//	mkDiskSize,
-	// })
-	//
-	// test.AssertValueTypes(t, diskSchema, map[string]schema.ValueType{
-	//	mkDiskDatastoreID:     schema.TypeString,
-	//	mkDiskPathInDatastore: schema.TypeString,
-	//	mkDiskFileFormat:      schema.TypeString,
-	//	mkDiskFileID:          schema.TypeString,
-	//	mkDiskSize:            schema.TypeInt,
-	// })
-	//
-	// diskSpeedSchema := test.AssertNestedSchemaExistence(
-	//	t,
-	//	diskSchema,
-	//	mkDiskSpeed,
-	//)
-	//
-	// test.AssertOptionalArguments(t, diskSpeedSchema, []string{
-	//	mkDiskSpeedRead,
-	//	mkDiskSpeedReadBurstable,
-	//	mkDiskSpeedWrite,
-	//	mkDiskSpeedWriteBurstable,
-	// })
-	//
-	// test.AssertValueTypes(t, diskSpeedSchema, map[string]schema.ValueType{
-	//	mkDiskSpeedRead:           schema.TypeInt,
-	//	mkDiskSpeedReadBurstable:  schema.TypeInt,
-	//	mkDiskSpeedWrite:          schema.TypeInt,
-	//	mkDiskSpeedWriteBurstable: schema.TypeInt,
-	// })
 
 	efiDiskSchema := test.AssertNestedSchemaExistence(t, s, mkEFIDisk)
 
@@ -388,32 +339,6 @@ func TestVMSchema(t *testing.T) {
 		mkMemoryDedicated: schema.TypeInt,
 		mkMemoryFloating:  schema.TypeInt,
 		mkMemoryShared:    schema.TypeInt,
-	})
-
-	networkDeviceSchema := test.AssertNestedSchemaExistence(
-		t,
-		s,
-		mkNetworkDevice,
-	)
-
-	test.AssertOptionalArguments(t, networkDeviceSchema, []string{
-		mkNetworkDeviceBridge,
-		mkNetworkDeviceEnabled,
-		mkNetworkDeviceMACAddress,
-		mkNetworkDeviceModel,
-		mkNetworkDeviceRateLimit,
-		mkNetworkDeviceVLANID,
-		mkNetworkDeviceMTU,
-	})
-
-	test.AssertValueTypes(t, networkDeviceSchema, map[string]schema.ValueType{
-		mkNetworkDeviceBridge:     schema.TypeString,
-		mkNetworkDeviceEnabled:    schema.TypeBool,
-		mkNetworkDeviceMACAddress: schema.TypeString,
-		mkNetworkDeviceModel:      schema.TypeString,
-		mkNetworkDeviceRateLimit:  schema.TypeFloat,
-		mkNetworkDeviceVLANID:     schema.TypeInt,
-		mkNetworkDeviceMTU:        schema.TypeInt,
 	})
 
 	operatingSystemSchema := test.AssertNestedSchemaExistence(

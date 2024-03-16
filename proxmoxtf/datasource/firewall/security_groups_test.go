@@ -25,13 +25,13 @@ func TestSecurityGroupsSchemaInstantiation(t *testing.T) {
 func TestSecurityGroupsSchema(t *testing.T) {
 	t.Parallel()
 
-	r := schema.Resource{Schema: SecurityGroupsSchema()}
+	s := SecurityGroupsSchema()
 
-	test.AssertComputedAttributes(t, &r, []string{
+	test.AssertComputedAttributes(t, s, []string{
 		mkSecurityGroupsSecurityGroupNames,
 	})
 
-	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
+	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkSecurityGroupsSecurityGroupNames: schema.TypeList,
 	})
 }

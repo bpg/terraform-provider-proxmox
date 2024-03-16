@@ -25,7 +25,7 @@ func TestRuleInstantiation(t *testing.T) {
 func TestRuleSchema(t *testing.T) {
 	t.Parallel()
 
-	rules := Rules()
+	rules := Rules().Schema
 
 	test.AssertRequiredArguments(t, rules, []string{
 		MkRule,

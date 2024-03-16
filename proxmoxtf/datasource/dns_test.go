@@ -28,7 +28,7 @@ func TestDNSInstantiation(t *testing.T) {
 func TestDNSSchema(t *testing.T) {
 	t.Parallel()
 
-	s := DNS()
+	s := DNS().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentDNSNodeName,

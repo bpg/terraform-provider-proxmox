@@ -28,7 +28,7 @@ func TestUserInstantiation(t *testing.T) {
 func TestUserSchema(t *testing.T) {
 	t.Parallel()
 
-	s := User()
+	s := User().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentUserUserID,

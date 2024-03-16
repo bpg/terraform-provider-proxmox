@@ -26,7 +26,7 @@ func TestSecurityGroupInstantiation(t *testing.T) {
 func TestSecurityGroupSchema(t *testing.T) {
 	t.Parallel()
 
-	s := SecurityGroup()
+	s := SecurityGroup().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkSecurityGroupName,

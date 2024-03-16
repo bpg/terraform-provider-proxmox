@@ -28,9 +28,7 @@ func TestProviderInstantiation(t *testing.T) {
 func TestProviderSchema(t *testing.T) {
 	t.Parallel()
 
-	s := &schema.Resource{
-		Schema: ProxmoxVirtualEnvironment().Schema,
-	}
+	s := ProxmoxVirtualEnvironment().Schema
 
 	test.AssertOptionalArguments(t, s, []string{
 		mkProviderUsername,

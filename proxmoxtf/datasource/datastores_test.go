@@ -28,7 +28,7 @@ func TestDatastoresInstantiation(t *testing.T) {
 func TestDatastoresSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Datastores()
+	s := Datastores().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentDatastoresNodeName,

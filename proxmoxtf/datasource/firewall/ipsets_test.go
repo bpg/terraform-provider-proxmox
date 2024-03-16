@@ -25,13 +25,13 @@ func TestIPSetsSchemaInstantiation(t *testing.T) {
 func TestIPSetsSchema(t *testing.T) {
 	t.Parallel()
 
-	r := schema.Resource{Schema: IPSetsSchema()}
+	s := IPSetsSchema()
 
-	test.AssertComputedAttributes(t, &r, []string{
+	test.AssertComputedAttributes(t, s, []string{
 		mkIPSetsIPSetNames,
 	})
 
-	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
+	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkIPSetsIPSetNames: schema.TypeList,
 	})
 }

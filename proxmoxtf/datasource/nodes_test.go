@@ -28,7 +28,7 @@ func TestNodesInstantiation(t *testing.T) {
 func TestNodesSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Nodes()
+	s := Nodes().Schema
 
 	test.AssertComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentNodesCPUCount,

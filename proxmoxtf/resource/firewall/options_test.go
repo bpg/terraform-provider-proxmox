@@ -25,7 +25,7 @@ func TestOptionsInstantiation(t *testing.T) {
 func TestOptionsSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Options()
+	s := Options().Schema
 
 	test.AssertOptionalArguments(t, s, []string{
 		mkDHCP,

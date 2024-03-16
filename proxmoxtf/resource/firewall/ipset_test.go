@@ -26,7 +26,7 @@ func TestIPSetInstantiation(t *testing.T) {
 func TestIPSetSchema(t *testing.T) {
 	t.Parallel()
 
-	s := IPSet()
+	s := IPSet().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkIPSetName,

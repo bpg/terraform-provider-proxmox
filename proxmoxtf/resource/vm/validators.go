@@ -144,11 +144,6 @@ func CPUTypeValidator() schema.SchemaValidateDiagFunc {
 	))
 }
 
-// NetworkDeviceModelValidator is a schema validation function for network device models.
-func NetworkDeviceModelValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringInSlice([]string{"e1000", "rtl8139", "virtio", "vmxnet3"}, false))
-}
-
 // QEMUAgentTypeValidator is a schema validation function for QEMU agent types.
 func QEMUAgentTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"isa", "virtio"}, false))

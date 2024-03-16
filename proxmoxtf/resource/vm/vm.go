@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 
 	"github.com/google/go-cmp/cmp"
@@ -93,48 +94,39 @@ const (
 	dvMemoryShared                      = 0
 	dvMigrate                           = false
 	dvName                              = ""
-	dvNetworkDeviceBridge               = "vmbr0"
-	dvNetworkDeviceEnabled              = true
-	dvNetworkDeviceFirewall             = false
-	dvNetworkDeviceModel                = "virtio"
-	dvNetworkDeviceQueues               = 0
-	dvNetworkDeviceRateLimit            = 0
-	dvNetworkDeviceVLANID               = 0
-	dvNetworkDeviceTrunks               = ""
-	dvNetworkDeviceMTU                  = 0
-	dvOperatingSystemType               = "other"
-	dvPoolID                            = ""
-	dvProtection                        = false
-	dvSerialDeviceDevice                = "socket"
-	dvSMBIOSFamily                      = ""
-	dvSMBIOSManufacturer                = ""
-	dvSMBIOSProduct                     = ""
-	dvSMBIOSSKU                         = ""
-	dvSMBIOSSerial                      = ""
-	dvSMBIOSVersion                     = ""
-	dvStarted                           = true
-	dvStartupOrder                      = -1
-	dvStartupUpDelay                    = -1
-	dvStartupDownDelay                  = -1
-	dvTabletDevice                      = true
-	dvTemplate                          = false
-	dvTimeoutClone                      = 1800
-	dvTimeoutCreate                     = 1800
-	dvTimeoutMoveDisk                   = 1800
-	dvTimeoutMigrate                    = 1800
-	dvTimeoutReboot                     = 1800
-	dvTimeoutShutdownVM                 = 1800
-	dvTimeoutStartVM                    = 1800
-	dvTimeoutStopVM                     = 300
-	dvVGAEnabled                        = true
-	dvVGAMemory                         = 16
-	dvVGAType                           = "std"
-	dvSCSIHardware                      = "virtio-scsi-pci"
-	dvStopOnDestroy                     = false
-	dvHookScript                        = ""
+
+	dvOperatingSystemType = "other"
+	dvPoolID              = ""
+	dvProtection          = false
+	dvSerialDeviceDevice  = "socket"
+	dvSMBIOSFamily        = ""
+	dvSMBIOSManufacturer  = ""
+	dvSMBIOSProduct       = ""
+	dvSMBIOSSKU           = ""
+	dvSMBIOSSerial        = ""
+	dvSMBIOSVersion       = ""
+	dvStarted             = true
+	dvStartupOrder        = -1
+	dvStartupUpDelay      = -1
+	dvStartupDownDelay    = -1
+	dvTabletDevice        = true
+	dvTemplate            = false
+	dvTimeoutClone        = 1800
+	dvTimeoutCreate       = 1800
+	dvTimeoutMoveDisk     = 1800
+	dvTimeoutMigrate      = 1800
+	dvTimeoutReboot       = 1800
+	dvTimeoutShutdownVM   = 1800
+	dvTimeoutStartVM      = 1800
+	dvTimeoutStopVM       = 300
+	dvVGAEnabled          = true
+	dvVGAMemory           = 16
+	dvVGAType             = "std"
+	dvSCSIHardware        = "virtio-scsi-pci"
+	dvStopOnDestroy       = false
+	dvHookScript          = ""
 
 	maxResourceVirtualEnvironmentVMAudioDevices   = 1
-	maxResourceVirtualEnvironmentVMNetworkDevices = 32
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
@@ -215,72 +207,59 @@ const (
 	mkInitializationVendorDataFileID    = "vendor_data_file_id"
 	mkInitializationNetworkDataFileID   = "network_data_file_id"
 	mkInitializationMetaDataFileID      = "meta_data_file_id"
-	mkIPv4Addresses                     = "ipv4_addresses"
-	mkIPv6Addresses                     = "ipv6_addresses"
-	mkKeyboardLayout                    = "keyboard_layout"
-	mkKVMArguments                      = "kvm_arguments"
-	mkMachine                           = "machine"
-	mkMACAddresses                      = "mac_addresses"
-	mkMemory                            = "memory"
-	mkMemoryDedicated                   = "dedicated"
-	mkMemoryFloating                    = "floating"
-	mkMemoryShared                      = "shared"
-	mkMigrate                           = "migrate"
-	mkName                              = "name"
-	mkNetworkDevice                     = "network_device"
-	mkNetworkDeviceBridge               = "bridge"
-	mkNetworkDeviceEnabled              = "enabled"
-	mkNetworkDeviceFirewall             = "firewall"
-	mkNetworkDeviceMACAddress           = "mac_address"
-	mkNetworkDeviceModel                = "model"
-	mkNetworkDeviceQueues               = "queues"
-	mkNetworkDeviceRateLimit            = "rate_limit"
-	mkNetworkDeviceVLANID               = "vlan_id"
-	mkNetworkDeviceTrunks               = "trunks"
-	mkNetworkDeviceMTU                  = "mtu"
-	mkNetworkInterfaceNames             = "network_interface_names"
-	mkNodeName                          = "node_name"
-	mkOperatingSystem                   = "operating_system"
-	mkOperatingSystemType               = "type"
-	mkPoolID                            = "pool_id"
-	mkProtection                        = "protection"
-	mkSerialDevice                      = "serial_device"
-	mkSerialDeviceDevice                = "device"
-	mkSMBIOS                            = "smbios"
-	mkSMBIOSFamily                      = "family"
-	mkSMBIOSManufacturer                = "manufacturer"
-	mkSMBIOSProduct                     = "product"
-	mkSMBIOSSKU                         = "sku"
-	mkSMBIOSSerial                      = "serial"
-	mkSMBIOSUUID                        = "uuid"
-	mkSMBIOSVersion                     = "version"
-	mkStarted                           = "started"
-	mkStartup                           = "startup"
-	mkStartupOrder                      = "order"
-	mkStartupUpDelay                    = "up_delay"
-	mkStartupDownDelay                  = "down_delay"
-	mkTabletDevice                      = "tablet_device"
-	mkTags                              = "tags"
-	mkTemplate                          = "template"
-	mkTimeoutClone                      = "timeout_clone"
-	mkTimeoutCreate                     = "timeout_create"
-	mkTimeoutMigrate                    = "timeout_migrate"
-	mkTimeoutReboot                     = "timeout_reboot"
-	mkTimeoutShutdownVM                 = "timeout_shutdown_vm"
-	mkTimeoutStartVM                    = "timeout_start_vm"
-	mkTimeoutStopVM                     = "timeout_stop_vm"
-	mkHostUSB                           = "usb"
-	mkHostUSBDevice                     = "host"
-	mkHostUSBDeviceMapping              = "mapping"
-	mkHostUSBDeviceUSB3                 = "usb3"
-	mkVGA                               = "vga"
-	mkVGAEnabled                        = "enabled"
-	mkVGAMemory                         = "memory"
-	mkVGAType                           = "type"
-	mkVMID                              = "vm_id"
-	mkSCSIHardware                      = "scsi_hardware"
-	mkHookScriptFileID                  = "hook_script_file_id"
-	mkStopOnDestroy                     = "stop_on_destroy"
+
+	mkKeyboardLayout  = "keyboard_layout"
+	mkKVMArguments    = "kvm_arguments"
+	mkMachine         = "machine"
+	mkMemory          = "memory"
+	mkMemoryDedicated = "dedicated"
+	mkMemoryFloating  = "floating"
+	mkMemoryShared    = "shared"
+	mkMigrate         = "migrate"
+	mkName            = "name"
+
+	mkNodeName             = "node_name"
+	mkOperatingSystem      = "operating_system"
+	mkOperatingSystemType  = "type"
+	mkPoolID               = "pool_id"
+	mkProtection           = "protection"
+	mkSerialDevice         = "serial_device"
+	mkSerialDeviceDevice   = "device"
+	mkSMBIOS               = "smbios"
+	mkSMBIOSFamily         = "family"
+	mkSMBIOSManufacturer   = "manufacturer"
+	mkSMBIOSProduct        = "product"
+	mkSMBIOSSKU            = "sku"
+	mkSMBIOSSerial         = "serial"
+	mkSMBIOSUUID           = "uuid"
+	mkSMBIOSVersion        = "version"
+	mkStarted              = "started"
+	mkStartup              = "startup"
+	mkStartupOrder         = "order"
+	mkStartupUpDelay       = "up_delay"
+	mkStartupDownDelay     = "down_delay"
+	mkTabletDevice         = "tablet_device"
+	mkTags                 = "tags"
+	mkTemplate             = "template"
+	mkTimeoutClone         = "timeout_clone"
+	mkTimeoutCreate        = "timeout_create"
+	mkTimeoutMigrate       = "timeout_migrate"
+	mkTimeoutReboot        = "timeout_reboot"
+	mkTimeoutShutdownVM    = "timeout_shutdown_vm"
+	mkTimeoutStartVM       = "timeout_start_vm"
+	mkTimeoutStopVM        = "timeout_stop_vm"
+	mkHostUSB              = "usb"
+	mkHostUSBDevice        = "host"
+	mkHostUSBDeviceMapping = "mapping"
+	mkHostUSBDeviceUSB3    = "usb3"
+	mkVGA                  = "vga"
+	mkVGAEnabled           = "enabled"
+	mkVGAMemory            = "memory"
+	mkVGAType              = "type"
+	mkVMID                 = "vm_id"
+	mkSCSIHardware         = "scsi_hardware"
+	mkHookScriptFileID     = "hook_script_file_id"
+	mkStopOnDestroy        = "stop_on_destroy"
 )
 
 // VM returns a resource that manages VMs.
@@ -897,24 +876,6 @@ func VM() *schema.Resource {
 			MaxItems: 1,
 			MinItems: 0,
 		},
-		mkIPv4Addresses: {
-			Type:        schema.TypeList,
-			Description: "The IPv4 addresses published by the QEMU agent",
-			Computed:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeList,
-				Elem: &schema.Schema{Type: schema.TypeString},
-			},
-		},
-		mkIPv6Addresses: {
-			Type:        schema.TypeList,
-			Description: "The IPv6 addresses published by the QEMU agent",
-			Computed:    true,
-			Elem: &schema.Schema{
-				Type: schema.TypeList,
-				Elem: &schema.Schema{Type: schema.TypeString},
-			},
-		},
 		mkHostPCI: {
 			Type:        schema.TypeList,
 			Description: "The Host PCI devices mapped to the VM",
@@ -1013,13 +974,6 @@ func VM() *schema.Resource {
 			Default:          dvMachineType,
 			ValidateDiagFunc: MachineTypeValidator(),
 		},
-		mkMACAddresses: {
-			Type:        schema.TypeList,
-			Description: "The MAC addresses for the network interfaces",
-			Computed:    true,
-			Optional:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
-		},
 		mkMemory: {
 			Type:        schema.TypeList,
 			Description: "The memory allocation",
@@ -1072,88 +1026,6 @@ func VM() *schema.Resource {
 			Description: "The name",
 			Optional:    true,
 			Default:     dvName,
-		},
-		mkNetworkDevice: {
-			Type:        schema.TypeList,
-			Description: "The network devices",
-			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return make([]interface{}, 1), nil
-			},
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					mkNetworkDeviceBridge: {
-						Type:        schema.TypeString,
-						Description: "The bridge",
-						Optional:    true,
-						Default:     dvNetworkDeviceBridge,
-					},
-					mkNetworkDeviceEnabled: {
-						Type:        schema.TypeBool,
-						Description: "Whether to enable the network device",
-						Optional:    true,
-						Default:     dvNetworkDeviceEnabled,
-					},
-					mkNetworkDeviceFirewall: {
-						Type:        schema.TypeBool,
-						Description: "Whether this interface's firewall rules should be used",
-						Optional:    true,
-						Default:     dvNetworkDeviceFirewall,
-					},
-					mkNetworkDeviceMACAddress: {
-						Type:             schema.TypeString,
-						Description:      "The MAC address",
-						Optional:         true,
-						Computed:         true,
-						ValidateDiagFunc: validators.MACAddress(),
-					},
-					mkNetworkDeviceModel: {
-						Type:             schema.TypeString,
-						Description:      "The model",
-						Optional:         true,
-						Default:          dvNetworkDeviceModel,
-						ValidateDiagFunc: NetworkDeviceModelValidator(),
-					},
-					mkNetworkDeviceQueues: {
-						Type:             schema.TypeInt,
-						Description:      "Number of packet queues to be used on the device",
-						Optional:         true,
-						Default:          dvNetworkDeviceQueues,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 64)),
-					},
-					mkNetworkDeviceRateLimit: {
-						Type:        schema.TypeFloat,
-						Description: "The rate limit in megabytes per second",
-						Optional:    true,
-						Default:     dvNetworkDeviceRateLimit,
-					},
-					mkNetworkDeviceVLANID: {
-						Type:        schema.TypeInt,
-						Description: "The VLAN identifier",
-						Optional:    true,
-						Default:     dvNetworkDeviceVLANID,
-					},
-					mkNetworkDeviceTrunks: {
-						Type:        schema.TypeString,
-						Optional:    true,
-						Description: "List of VLAN trunks for the network interface",
-					},
-					mkNetworkDeviceMTU: {
-						Type:        schema.TypeInt,
-						Description: "Maximum transmission unit (MTU)",
-						Optional:    true,
-						Default:     dvNetworkDeviceMTU,
-					},
-				},
-			},
-			MaxItems: maxResourceVirtualEnvironmentVMNetworkDevices,
-			MinItems: 0,
-		},
-		mkNetworkInterfaceNames: {
-			Type:        schema.TypeList,
-			Description: "The network interface names published by the QEMU agent",
-			Computed:    true,
-			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 		mkNodeName: {
 			Type:        schema.TypeString,
@@ -1462,6 +1334,7 @@ func VM() *schema.Resource {
 	}
 
 	structure.MergeSchema(s, disk.Schema())
+	structure.MergeSchema(s, network.Schema())
 
 	return &schema.Resource{
 		Schema:        s,
@@ -1470,27 +1343,7 @@ func VM() *schema.Resource {
 		UpdateContext: vmUpdate,
 		DeleteContext: vmDelete,
 		CustomizeDiff: customdiff.All(
-			customdiff.ComputedIf(
-				mkIPv4Addresses,
-				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
-					return d.HasChange(mkStarted) ||
-						d.HasChange(mkNetworkDevice)
-				},
-			),
-			customdiff.ComputedIf(
-				mkIPv6Addresses,
-				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
-					return d.HasChange(mkStarted) ||
-						d.HasChange(mkNetworkDevice)
-				},
-			),
-			customdiff.ComputedIf(
-				mkNetworkInterfaceNames,
-				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
-					return d.HasChange(mkStarted) ||
-						d.HasChange(mkNetworkDevice)
-				},
-			),
+			customdiff.All(network.CustomizeDiff()...),
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
@@ -1825,7 +1678,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	hostUSB := d.Get(mkHostUSB).([]interface{})
 	keyboardLayout := d.Get(mkKeyboardLayout).(string)
 	memory := d.Get(mkMemory).([]interface{})
-	networkDevice := d.Get(mkNetworkDevice).([]interface{})
 	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
 	serialDevice := d.Get(mkSerialDevice).([]interface{})
 	onBoot := types.CustomBool(d.Get(mkOnBoot).(bool))
@@ -2027,8 +1879,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
+	networkDevice := d.Get(network.MkNetworkDevice).([]interface{})
 	if len(networkDevice) > 0 {
-		updateBody.NetworkDevices, err = vmGetNetworkDeviceObjects(d)
+		updateBody.NetworkDevices, err = network.GetNetworkDeviceObjects(d)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2039,7 +1892,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			}
 		}
 
-		for i := len(updateBody.NetworkDevices); i < maxResourceVirtualEnvironmentVMNetworkDevices; i++ {
+		for i := len(updateBody.NetworkDevices); i < network.MaxNetworkDevices; i++ {
 			del = append(del, fmt.Sprintf("net%d", i))
 		}
 	}
@@ -2426,7 +2279,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	name := d.Get(mkName).(string)
 	tags := d.Get(mkTags).([]interface{})
 
-	networkDeviceObjects, err := vmGetNetworkDeviceObjects(d)
+	networkDeviceObjects, err := network.GetNetworkDeviceObjects(d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3054,77 +2907,6 @@ func vmGetHostUSBDeviceObjects(d *schema.ResourceData) vms.CustomUSBDevices {
 	return usbDeviceObjects
 }
 
-func vmGetNetworkDeviceObjects(d *schema.ResourceData) (vms.CustomNetworkDevices, error) {
-	networkDevice := d.Get(mkNetworkDevice).([]interface{})
-	networkDeviceObjects := make(vms.CustomNetworkDevices, len(networkDevice))
-
-	for i, networkDeviceEntry := range networkDevice {
-		block := networkDeviceEntry.(map[string]interface{})
-
-		bridge := block[mkNetworkDeviceBridge].(string)
-		enabled := block[mkNetworkDeviceEnabled].(bool)
-		firewall := types.CustomBool(block[mkNetworkDeviceFirewall].(bool))
-		macAddress := block[mkNetworkDeviceMACAddress].(string)
-		model := block[mkNetworkDeviceModel].(string)
-		queues := block[mkNetworkDeviceQueues].(int)
-		rateLimit := block[mkNetworkDeviceRateLimit].(float64)
-		vlanID := block[mkNetworkDeviceVLANID].(int)
-		trunks := block[mkNetworkDeviceTrunks].(string)
-		mtu := block[mkNetworkDeviceMTU].(int)
-
-		device := vms.CustomNetworkDevice{
-			Enabled:  enabled,
-			Firewall: &firewall,
-			Model:    model,
-		}
-
-		if bridge != "" {
-			device.Bridge = &bridge
-		}
-
-		if macAddress != "" {
-			device.MACAddress = &macAddress
-		}
-
-		if queues != 0 {
-			device.Queues = &queues
-		}
-
-		if rateLimit != 0 {
-			device.RateLimit = &rateLimit
-		}
-
-		if vlanID != 0 {
-			device.Tag = &vlanID
-		}
-
-		if trunks != "" {
-			splitTrunks := strings.Split(trunks, ";")
-
-			var trunksAsInt []int
-
-			for _, numStr := range splitTrunks {
-				num, err := strconv.Atoi(numStr)
-				if err != nil {
-					return nil, fmt.Errorf("error parsing trunks: %w", err)
-				}
-
-				trunksAsInt = append(trunksAsInt, num)
-			}
-
-			device.Trunks = trunksAsInt
-		}
-
-		if mtu != 0 {
-			device.MTU = &mtu
-		}
-
-		networkDeviceObjects[i] = device
-	}
-
-	return networkDeviceObjects, nil
-}
-
 func vmGetSerialDeviceList(d *schema.ResourceData) vms.CustomSerialDevices {
 	device := d.Get(mkSerialDevice).([]interface{})
 	list := make(vms.CustomSerialDevices, len(device))
@@ -3350,9 +3132,9 @@ func vmReadCustom(
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
-	if err != nil {
-		return diag.FromErr(err)
+	api, e := config.GetClient()
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	diags := vmReadPrimitiveValues(d, vmConfig, vmStatus)
@@ -3368,7 +3150,7 @@ func vmReadCustom(
 				d.Id(), storedVMID, vmID),
 		})
 
-		err = d.Set(mkVMID, vmID)
+		err := d.Set(mkVMID, vmID)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3418,7 +3200,7 @@ func vmReadCustom(
 
 			if len(clone) > 0 {
 				if len(currentAgent) > 0 {
-					err = d.Set(mkAgent, []interface{}{agent})
+					err := d.Set(mkAgent, []interface{}{agent})
 					diags = append(diags, diag.FromErr(err)...)
 				}
 			} else if len(currentAgent) > 0 ||
@@ -3426,16 +3208,16 @@ func vmReadCustom(
 				agent[mkAgentTimeout] != dvAgentTimeout ||
 				agent[mkAgentTrim] != dvAgentTrim ||
 				agent[mkAgentType] != dvAgentType {
-				err = d.Set(mkAgent, []interface{}{agent})
+				err := d.Set(mkAgent, []interface{}{agent})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(clone) > 0 {
 			if len(currentAgent) > 0 {
-				err = d.Set(mkAgent, []interface{}{})
+				err := d.Set(mkAgent, []interface{}{})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else {
-			err = d.Set(mkAgent, []interface{}{})
+			err := d.Set(mkAgent, []interface{}{})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -3474,7 +3256,7 @@ func vmReadCustom(
 	}
 
 	if len(clone) == 0 || len(currentAudioDevice) > 0 {
-		err = d.Set(mkAudioDevice, audioDevices[:audioDevicesCount])
+		err := d.Set(mkAudioDevice, audioDevices[:audioDevicesCount])
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3512,11 +3294,11 @@ func vmReadCustom(
 
 			cdrom[0] = cdromBlock
 
-			err = d.Set(mkCDROM, cdrom)
+			err := d.Set(mkCDROM, cdrom)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else {
-		err = d.Set(mkCDROM, []interface{}{})
+		err := d.Set(mkCDROM, []interface{}{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3601,7 +3383,7 @@ func vmReadCustom(
 
 	if len(clone) > 0 {
 		if len(currentCPU) > 0 {
-			err = d.Set(mkCPU, []interface{}{cpu})
+			err := d.Set(mkCPU, []interface{}{cpu})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentCPU) > 0 ||
@@ -3613,7 +3395,7 @@ func vmReadCustom(
 		cpu[mkCPUSockets] != dvCPUSockets ||
 		cpu[mkCPUType] != dvCPUType ||
 		cpu[mkCPUUnits] != dvCPUUnits {
-		err = d.Set(mkCPU, []interface{}{cpu})
+		err := d.Set(mkCPU, []interface{}{cpu})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3636,8 +3418,8 @@ func vmReadCustom(
 		} else {
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			volume, e := api.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
-			if e != nil {
+			volume, err := api.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
+			if err != nil {
 				diags = append(diags, diag.FromErr(e)...)
 			} else {
 				efiDisk[mkEFIDiskFileFormat] = volume.FileFormat
@@ -3660,7 +3442,7 @@ func vmReadCustom(
 
 		if len(clone) > 0 {
 			if len(currentEfiDisk) > 0 {
-				err = d.Set(mkEFIDisk, []interface{}{efiDisk})
+				err := d.Set(mkEFIDisk, []interface{}{efiDisk})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(currentEfiDisk) > 0 ||
@@ -3668,7 +3450,7 @@ func vmReadCustom(
 			efiDisk[mkEFIDiskType] != dvEFIDiskType ||
 			efiDisk[mkEFIDiskPreEnrolledKeys] != dvEFIDiskPreEnrolledKeys ||
 			efiDisk[mkEFIDiskFileFormat] != dvEFIDiskFileFormat {
-			err = d.Set(mkEFIDisk, []interface{}{efiDisk})
+			err := d.Set(mkEFIDisk, []interface{}{efiDisk})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -3685,13 +3467,13 @@ func vmReadCustom(
 
 		if len(clone) > 0 {
 			if len(currentTPMState) > 0 {
-				err = d.Set(mkTPMState, []interface{}{tpmState})
+				err := d.Set(mkTPMState, []interface{}{tpmState})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		} else if len(currentTPMState) > 0 ||
 			tpmState[mkTPMStateDatastoreID] != dvTPMStateDatastoreID ||
 			tpmState[mkTPMStateVersion] != dvTPMStateVersion {
-			err = d.Set(mkTPMState, []interface{}{tpmState})
+			err := d.Set(mkTPMState, []interface{}{tpmState})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -3755,7 +3537,7 @@ func vmReadCustom(
 
 	if len(clone) == 0 || len(currentPCIList) > 0 {
 		orderedPCIList := utils.OrderedListFromMap(pciMap)
-		err = d.Set(mkHostPCI, orderedPCIList)
+		err := d.Set(mkHostPCI, orderedPCIList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3794,7 +3576,7 @@ func vmReadCustom(
 	if len(clone) == 0 || len(currentUSBList) > 0 {
 		// NOTE: reordering of devices by PVE may cause an issue here
 		orderedUSBList := utils.OrderedListFromMap(usbMap)
-		err = d.Set(mkHostUSB, orderedUSBList)
+		err := d.Set(mkHostUSB, orderedUSBList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4022,18 +3804,18 @@ func vmReadCustom(
 	if len(clone) > 0 {
 		if len(currentInitialization) > 0 {
 			if len(initialization) > 0 {
-				err = d.Set(mkInitialization, []interface{}{initialization})
+				err := d.Set(mkInitialization, []interface{}{initialization})
 				diags = append(diags, diag.FromErr(err)...)
 			} else {
-				err = d.Set(mkInitialization, []interface{}{})
+				err := d.Set(mkInitialization, []interface{}{})
 				diags = append(diags, diag.FromErr(err)...)
 			}
 		}
 	} else if len(initialization) > 0 {
-		err = d.Set(mkInitialization, []interface{}{initialization})
+		err := d.Set(mkInitialization, []interface{}{initialization})
 		diags = append(diags, diag.FromErr(err)...)
 	} else {
-		err = d.Set(mkInitialization, []interface{}{})
+		err := d.Set(mkInitialization, []interface{}{})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4071,132 +3853,18 @@ func vmReadCustom(
 
 	if len(clone) > 0 {
 		if len(currentMemory) > 0 {
-			err = d.Set(mkMemory, []interface{}{memory})
+			err := d.Set(mkMemory, []interface{}{memory})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentMemory) > 0 ||
 		memory[mkMemoryDedicated] != dvMemoryDedicated ||
 		memory[mkMemoryFloating] != dvMemoryFloating ||
 		memory[mkMemoryShared] != dvMemoryShared {
-		err = d.Set(mkMemory, []interface{}{memory})
+		err := d.Set(mkMemory, []interface{}{memory})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	// Compare the network devices to those stored in the state.
-	currentNetworkDeviceList := d.Get(mkNetworkDevice).([]interface{})
-
-	macAddresses := make([]interface{}, maxResourceVirtualEnvironmentVMNetworkDevices)
-	networkDeviceLast := -1
-	networkDeviceList := make([]interface{}, maxResourceVirtualEnvironmentVMNetworkDevices)
-	networkDeviceObjects := []*vms.CustomNetworkDevice{
-		vmConfig.NetworkDevice0,
-		vmConfig.NetworkDevice1,
-		vmConfig.NetworkDevice2,
-		vmConfig.NetworkDevice3,
-		vmConfig.NetworkDevice4,
-		vmConfig.NetworkDevice5,
-		vmConfig.NetworkDevice6,
-		vmConfig.NetworkDevice7,
-		vmConfig.NetworkDevice8,
-		vmConfig.NetworkDevice9,
-		vmConfig.NetworkDevice10,
-		vmConfig.NetworkDevice11,
-		vmConfig.NetworkDevice12,
-		vmConfig.NetworkDevice13,
-		vmConfig.NetworkDevice14,
-		vmConfig.NetworkDevice15,
-		vmConfig.NetworkDevice16,
-		vmConfig.NetworkDevice17,
-		vmConfig.NetworkDevice18,
-		vmConfig.NetworkDevice19,
-		vmConfig.NetworkDevice20,
-		vmConfig.NetworkDevice21,
-		vmConfig.NetworkDevice22,
-		vmConfig.NetworkDevice23,
-		vmConfig.NetworkDevice24,
-		vmConfig.NetworkDevice25,
-		vmConfig.NetworkDevice26,
-		vmConfig.NetworkDevice27,
-		vmConfig.NetworkDevice28,
-		vmConfig.NetworkDevice29,
-		vmConfig.NetworkDevice30,
-		vmConfig.NetworkDevice31,
-	}
-
-	for ni, nd := range networkDeviceObjects {
-		networkDevice := map[string]interface{}{}
-
-		if nd != nil {
-			networkDeviceLast = ni
-
-			if nd.Bridge != nil {
-				networkDevice[mkNetworkDeviceBridge] = *nd.Bridge
-			} else {
-				networkDevice[mkNetworkDeviceBridge] = ""
-			}
-
-			networkDevice[mkNetworkDeviceEnabled] = nd.Enabled
-
-			if nd.Firewall != nil {
-				networkDevice[mkNetworkDeviceFirewall] = *nd.Firewall
-			} else {
-				networkDevice[mkNetworkDeviceFirewall] = false
-			}
-
-			if nd.MACAddress != nil {
-				macAddresses[ni] = *nd.MACAddress
-			} else {
-				macAddresses[ni] = ""
-			}
-
-			networkDevice[mkNetworkDeviceMACAddress] = macAddresses[ni]
-			networkDevice[mkNetworkDeviceModel] = nd.Model
-
-			if nd.Queues != nil {
-				networkDevice[mkNetworkDeviceQueues] = *nd.Queues
-			} else {
-				networkDevice[mkNetworkDeviceQueues] = 0
-			}
-
-			if nd.RateLimit != nil {
-				networkDevice[mkNetworkDeviceRateLimit] = *nd.RateLimit
-			} else {
-				networkDevice[mkNetworkDeviceRateLimit] = 0
-			}
-
-			if nd.Tag != nil {
-				networkDevice[mkNetworkDeviceVLANID] = nd.Tag
-			} else {
-				networkDevice[mkNetworkDeviceVLANID] = 0
-			}
-
-			if nd.Trunks != nil {
-				networkDevice[mkNetworkDeviceTrunks] = strings.Trim(
-					strings.Join(strings.Fields(fmt.Sprint(nd.Trunks)), ";"), "[]")
-			} else {
-				networkDevice[mkNetworkDeviceTrunks] = ""
-			}
-
-			if nd.MTU != nil {
-				networkDevice[mkNetworkDeviceMTU] = nd.MTU
-			} else {
-				networkDevice[mkNetworkDeviceMTU] = 0
-			}
-		} else {
-			macAddresses[ni] = ""
-			networkDevice[mkNetworkDeviceEnabled] = false
-		}
-
-		networkDeviceList[ni] = networkDevice
-	}
-
-	err = d.Set(mkMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
-	diags = append(diags, diag.FromErr(err)...)
-
-	if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-		err := d.Set(mkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
-		diags = append(diags, diag.FromErr(err)...)
-	}
+	diags = append(diags, network.ReadNetworkDeviceObjects(d, vmConfig)...)
 
 	// Compare the operating system configuration to the one stored in the state.
 	operatingSystem := map[string]interface{}{}
@@ -4455,112 +4123,23 @@ func vmReadCustom(
 		}
 	}
 
-	diags = append(
-		diags,
-		vmReadNetworkValues(ctx, d, m, vmID, vmConfig)...)
+	vmAPI := api.Node(nodeName).VM(vmID)
+	started := d.Get(mkStarted).(bool)
 
-	// during import these core attributes might not be set, so set them explicitly here
-	d.SetId(strconv.Itoa(vmID))
-	e := d.Set(mkVMID, vmID)
-	diags = append(diags, diag.FromErr(e)...)
-	e = d.Set(mkNodeName, nodeName)
-	diags = append(diags, diag.FromErr(e)...)
-
-	return diags
-}
-
-func vmReadNetworkValues(
-	ctx context.Context,
-	d *schema.ResourceData,
-	m interface{},
-	vmID int,
-	vmConfig *vms.GetResponseData,
-) diag.Diagnostics {
-	var diags diag.Diagnostics
-
-	config := m.(proxmoxtf.ProviderConfiguration)
-
-	api, e := config.GetClient()
+	agentTimeout, e := getAgentTimeout(d)
 	if e != nil {
 		return diag.FromErr(e)
 	}
 
-	nodeName := d.Get(mkNodeName).(string)
+	diags = append(
+		diags,
+		network.ReadNetworkValues(ctx, d, vmAPI, started, vmConfig, agentTimeout)...)
 
-	vmAPI := api.Node(nodeName).VM(vmID)
-
-	started := d.Get(mkStarted).(bool)
-
-	var ipv4Addresses []interface{}
-
-	var ipv6Addresses []interface{}
-
-	var networkInterfaceNames []interface{}
-
-	if started {
-		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
-			resource := VM()
-
-			agentBlock, err := structure.GetSchemaBlock(
-				resource,
-				d,
-				[]string{mkAgent},
-				0,
-				true,
-			)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			agentTimeout, err := time.ParseDuration(
-				agentBlock[mkAgentTimeout].(string),
-			)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			var macAddresses []interface{}
-
-			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, int(agentTimeout.Seconds()), 5, true)
-			if err == nil && networkInterfaces.Result != nil {
-				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
-				ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))
-				macAddresses = make([]interface{}, len(*networkInterfaces.Result))
-				networkInterfaceNames = make([]interface{}, len(*networkInterfaces.Result))
-
-				for ri, rv := range *networkInterfaces.Result {
-					var rvIPv4Addresses []interface{}
-
-					var rvIPv6Addresses []interface{}
-
-					if rv.IPAddresses != nil {
-						for _, ip := range *rv.IPAddresses {
-							switch ip.Type {
-							case "ipv4":
-								rvIPv4Addresses = append(rvIPv4Addresses, ip.Address)
-							case "ipv6":
-								rvIPv6Addresses = append(rvIPv6Addresses, ip.Address)
-							}
-						}
-					}
-
-					ipv4Addresses[ri] = rvIPv4Addresses
-					ipv6Addresses[ri] = rvIPv6Addresses
-					macAddresses[ri] = strings.ToUpper(rv.MACAddress)
-					networkInterfaceNames[ri] = rv.Name
-				}
-			}
-
-			err = d.Set(mkMACAddresses, macAddresses)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	}
-
-	e = d.Set(mkIPv4Addresses, ipv4Addresses)
+	// during import these core attributes might not be set, so set them explicitly here
+	d.SetId(strconv.Itoa(vmID))
+	e = d.Set(mkVMID, vmID)
 	diags = append(diags, diag.FromErr(e)...)
-	e = d.Set(mkIPv6Addresses, ipv6Addresses)
-	diags = append(diags, diag.FromErr(e)...)
-	e = d.Set(mkNetworkInterfaceNames, networkInterfaceNames)
+	e = d.Set(mkNodeName, nodeName)
 	diags = append(diags, diag.FromErr(e)...)
 
 	return diags
@@ -5257,8 +4836,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Prepare the new network device configuration.
-	if d.HasChange(mkNetworkDevice) {
-		updateBody.NetworkDevices, err = vmGetNetworkDeviceObjects(d)
+
+	if d.HasChange(network.MkNetworkDevice) {
+		updateBody.NetworkDevices, err = network.GetNetworkDeviceObjects(d)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -5269,7 +4849,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 		}
 
-		for i := len(updateBody.NetworkDevices); i < maxResourceVirtualEnvironmentVMNetworkDevices; i++ {
+		for i := len(updateBody.NetworkDevices); i < network.MaxNetworkDevices; i++ {
 			del = append(del, fmt.Sprintf("net%d", i))
 		}
 
@@ -5730,4 +5310,28 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
+}
+
+func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) {
+	resource := VM()
+
+	agentBlock, err := structure.GetSchemaBlock(
+		resource,
+		d,
+		[]string{mkAgent},
+		0,
+		true,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get agent block: %w", err)
+	}
+
+	agentTimeout, err := time.ParseDuration(
+		agentBlock[mkAgentTimeout].(string),
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse agent timeout: %w", err)
+	}
+
+	return agentTimeout, nil
 }
