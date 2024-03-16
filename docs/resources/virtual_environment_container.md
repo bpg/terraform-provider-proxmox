@@ -107,7 +107,7 @@ output "ubuntu_container_public_key" {
 - `console` - (Optional) The console configuration.
     - `enabled` - (Optional) Whether to enable the console device (defaults
         to `true`).
-    - `mode` - (Optional) The console mode (defaults to `tty`).
+    - `type` - (Optional) The console mode (defaults to `tty`).
         - `console` - Console.
         - `shell` - Shell.
         - `tty` - TTY.
