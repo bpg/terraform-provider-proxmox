@@ -109,9 +109,9 @@ func TestAccResourceVMNetwork(t *testing.T) {
 
 	tests := []struct {
 		name string
-		step resource.TestStep
+		step []resource.TestStep
 	}{
-		{"network interfaces", resource.TestStep{
+		{"network interfaces", []resource.TestStep{{
 			Config: providerConfig + `
 				resource "proxmox_virtual_environment_file" "cloud_config" {
 					content_type = "snippets"
@@ -179,7 +179,41 @@ EOF
 					"network_device.0.trunks": "10;20;30",
 				}),
 			),
-		}},
+		}}},
+		{"network device disconnected", []resource.TestStep{{
+			Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm_network2" {
+					node_name = "pve"
+					started   = false
+					
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`,
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_network2", map[string]string{
+					"network_device.0.bridge":       "vmbr0",
+					"network_device.0.disconnected": "false",
+				}),
+			),
+		}, {
+			Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm_network2" {
+					node_name = "pve"
+					started   = false
+					
+					network_device {
+						bridge = "vmbr0"
+						disconnected = true
+					}
+				}`,
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_network2", map[string]string{
+					"network_device.0.bridge":       "vmbr0",
+					"network_device.0.disconnected": "true",
+				}),
+			),
+		}}},
 	}
 
 	accProviders := testAccMuxProviders(context.Background(), t)
@@ -191,7 +225,7 @@ EOF
 
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: accProviders,
-				Steps:                    []resource.TestStep{tt.step},
+				Steps:                    tt.step,
 			})
 		})
 	}

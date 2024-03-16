@@ -89,16 +89,16 @@ type CustomEFIDisk struct {
 
 // CustomNetworkDevice handles QEMU network device parameters.
 type CustomNetworkDevice struct {
-	Model      string            `json:"model"               url:"model"`
-	Bridge     *string           `json:"bridge,omitempty"    url:"bridge,omitempty"`
 	Enabled    bool              `json:"-"                   url:"-"`
+	Bridge     *string           `json:"bridge,omitempty"    url:"bridge,omitempty"`
 	Firewall   *types.CustomBool `json:"firewall,omitempty"  url:"firewall,omitempty,int"`
 	LinkDown   *types.CustomBool `json:"link_down,omitempty" url:"link_down,omitempty,int"`
 	MACAddress *string           `json:"macaddr,omitempty"   url:"macaddr,omitempty"`
+	MTU        *int              `json:"mtu,omitempty"       url:"mtu,omitempty"`
+	Model      string            `json:"model"               url:"model"`
 	Queues     *int              `json:"queues,omitempty"    url:"queues,omitempty"`
 	RateLimit  *float64          `json:"rate,omitempty"      url:"rate,omitempty"`
 	Tag        *int              `json:"tag,omitempty"       url:"tag,omitempty"`
-	MTU        *int              `json:"mtu,omitempty"       url:"mtu,omitempty"`
 	Trunks     []int             `json:"trunks,omitempty"    url:"trunks,omitempty"`
 }
 

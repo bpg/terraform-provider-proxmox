@@ -23,15 +23,16 @@ func GetNetworkDeviceObjects(d *schema.ResourceData) (vms.CustomNetworkDevices, 
 		block := networkDeviceEntry.(map[string]interface{})
 
 		bridge := block[mkNetworkDeviceBridge].(string)
+		disconnected := types.CustomBool(block[mkNetworkDeviceDisconnected].(bool))
 		enabled := block[mkNetworkDeviceEnabled].(bool)
 		firewall := types.CustomBool(block[mkNetworkDeviceFirewall].(bool))
 		macAddress := block[mkNetworkDeviceMACAddress].(string)
 		model := block[mkNetworkDeviceModel].(string)
+		mtu := block[mkNetworkDeviceMTU].(int)
 		queues := block[mkNetworkDeviceQueues].(int)
 		rateLimit := block[mkNetworkDeviceRateLimit].(float64)
-		vlanID := block[mkNetworkDeviceVLANID].(int)
 		trunks := block[mkNetworkDeviceTrunks].(string)
-		mtu := block[mkNetworkDeviceMTU].(int)
+		vlanID := block[mkNetworkDeviceVLANID].(int)
 
 		device := vms.CustomNetworkDevice{
 			Enabled:  enabled,
@@ -41,6 +42,10 @@ func GetNetworkDeviceObjects(d *schema.ResourceData) (vms.CustomNetworkDevices, 
 
 		if bridge != "" {
 			device.Bridge = &bridge
+		}
+
+		if disconnected {
+			device.LinkDown = &disconnected
 		}
 
 		if macAddress != "" {
@@ -144,6 +149,12 @@ func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseD
 			}
 
 			networkDevice[mkNetworkDeviceEnabled] = nd.Enabled
+
+			if nd.LinkDown != nil {
+				networkDevice[mkNetworkDeviceDisconnected] = *nd.LinkDown
+			} else {
+				networkDevice[mkNetworkDeviceDisconnected] = false
+			}
 
 			if nd.Firewall != nil {
 				networkDevice[mkNetworkDeviceFirewall] = *nd.Firewall

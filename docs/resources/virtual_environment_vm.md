@@ -408,20 +408,17 @@ output "ubuntu_vm_public_key" {
     it (defaults to `false`).
 - `name` - (Optional) The virtual machine name.
 - `network_device` - (Optional) A network device (multiple blocks supported).
-    - `bridge` - (Optional) The name of the network bridge (defaults
-        to `vmbr0`).
-    - `enabled` - (Optional) Whether to enable the network device (defaults
-        to `true`).
-    - `firewall` - (Optional) Whether this interface's firewall rules should be
-        used (defaults to `false`).
+    - `bridge` - (Optional) The name of the network bridge (defaults to `vmbr0`).
+    - `disconnected` - (Optional) Whether to disconnect the network device from the network (defaults to `false`).
+    - `enabled` - (Optional) Whether to enable the network device (defaults to `true`).
+    - `firewall` - (Optional) Whether this interface's firewall rules should be used (defaults to `false`).
     - `mac_address` - (Optional) The MAC address.
     - `model` - (Optional) The network device model (defaults to `virtio`).
         - `e1000` - Intel E1000.
         - `rtl8139` - Realtek RTL8139.
         - `virtio` - VirtIO (paravirtualized).
         - `vmxnet3` - VMware vmxnet3.
-    - `mtu` - (Optional) Force MTU, for VirtIO only. Set to 1 to use the bridge
-        MTU. Cannot be larger than the bridge MTU.
+    - `mtu` - (Optional) Force MTU, for VirtIO only. Set to 1 to use the bridge MTU. Cannot be larger than the bridge MTU.
     - `queues` - (Optional) The number of queues for VirtIO (1..64).
     - `rate_limit` - (Optional) The rate limit in megabytes per second.
     - `vlan_id` - (Optional) The VLAN identifier.
