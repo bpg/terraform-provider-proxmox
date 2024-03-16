@@ -28,7 +28,7 @@ func TestRoleInstantiation(t *testing.T) {
 func TestRoleSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Role()
+	s := Role().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkDataSourceVirtualEnvironmentRoleID,

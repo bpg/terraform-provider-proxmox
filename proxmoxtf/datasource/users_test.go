@@ -28,7 +28,7 @@ func TestUsersInstantiation(t *testing.T) {
 func TestUsersSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Users()
+	s := Users().Schema
 
 	test.AssertComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentUsersComments,

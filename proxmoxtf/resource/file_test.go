@@ -29,7 +29,7 @@ func TestFileInstantiation(t *testing.T) {
 func TestFileSchema(t *testing.T) {
 	t.Parallel()
 
-	s := File()
+	s := File().Schema
 
 	test.AssertRequiredArguments(t, s, []string{
 		mkResourceVirtualEnvironmentFileDatastoreID,

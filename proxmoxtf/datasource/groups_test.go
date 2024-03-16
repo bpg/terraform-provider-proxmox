@@ -28,7 +28,7 @@ func TestGroupsInstantiation(t *testing.T) {
 func TestGroupsSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Groups()
+	s := Groups().Schema
 
 	test.AssertComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentGroupsComments,

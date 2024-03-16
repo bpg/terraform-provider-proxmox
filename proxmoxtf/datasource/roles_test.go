@@ -28,7 +28,7 @@ func TestRolesInstantiation(t *testing.T) {
 func TestRolesSchema(t *testing.T) {
 	t.Parallel()
 
-	s := Roles()
+	s := Roles().Schema
 
 	test.AssertComputedAttributes(t, s, []string{
 		mkDataSourceVirtualEnvironmentRolesPrivileges,

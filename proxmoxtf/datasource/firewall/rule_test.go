@@ -25,14 +25,14 @@ func TestRuleSchemaInstantiation(t *testing.T) {
 func TestRuleSchema(t *testing.T) {
 	t.Parallel()
 
-	r := schema.Resource{Schema: RuleSchema()}
+	s := RuleSchema()
 
-	test.AssertRequiredArguments(t, &r, []string{
+	test.AssertRequiredArguments(t, s, []string{
 		mkRuleAction,
 		mkRuleType,
 	})
 
-	test.AssertComputedAttributes(t, &r, []string{
+	test.AssertComputedAttributes(t, s, []string{
 		mkRuleComment,
 		mkRuleDest,
 		mkRuleDPort,
@@ -45,7 +45,7 @@ func TestRuleSchema(t *testing.T) {
 		mkRuleSPort,
 	})
 
-	test.AssertValueTypes(t, &r, map[string]schema.ValueType{
+	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkRulePos:     schema.TypeInt,
 		mkRuleAction:  schema.TypeString,
 		mkRuleType:    schema.TypeString,
