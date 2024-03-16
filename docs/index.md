@@ -186,12 +186,6 @@ You can configure the `sudo` privilege for the user via the command line on the 
     sudo useradd -m terraform
     ```
 
-- Add the user to the `sudo` group:
-
-    ```sh
-    sudo usermod -aG sudo terraform
-    ```
-
 - Configure the `sudo` privilege for the user:
 
     ```sh
