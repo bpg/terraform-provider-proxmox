@@ -17,30 +17,31 @@ const (
 	dvNetworkDeviceBridge    = "vmbr0"
 	dvNetworkDeviceEnabled   = true
 	dvNetworkDeviceFirewall  = false
+	dvNetworkDeviceMTU       = 0
 	dvNetworkDeviceModel     = "virtio"
 	dvNetworkDeviceQueues    = 0
 	dvNetworkDeviceRateLimit = 0
-	dvNetworkDeviceVLANID    = 0
 	dvNetworkDeviceTrunks    = ""
-	dvNetworkDeviceMTU       = 0
+	dvNetworkDeviceVLANID    = 0
 
 	mkIPv4Addresses = "ipv4_addresses"
 	mkIPv6Addresses = "ipv6_addresses"
 	mkMACAddresses  = "mac_addresses"
 
 	// MkNetworkDevice is the name of the network device.
-	MkNetworkDevice           = "network_device"
-	mkNetworkDeviceBridge     = "bridge"
-	mkNetworkDeviceEnabled    = "enabled"
-	mkNetworkDeviceFirewall   = "firewall"
-	mkNetworkDeviceMACAddress = "mac_address"
-	mkNetworkDeviceModel      = "model"
-	mkNetworkDeviceQueues     = "queues"
-	mkNetworkDeviceRateLimit  = "rate_limit"
-	mkNetworkDeviceVLANID     = "vlan_id"
-	mkNetworkDeviceTrunks     = "trunks"
-	mkNetworkDeviceMTU        = "mtu"
-	mkNetworkInterfaceNames   = "network_interface_names"
+	MkNetworkDevice             = "network_device"
+	mkNetworkDeviceBridge       = "bridge"
+	mkNetworkDeviceDisconnected = "disconnected"
+	mkNetworkDeviceEnabled      = "enabled"
+	mkNetworkDeviceFirewall     = "firewall"
+	mkNetworkDeviceMACAddress   = "mac_address"
+	mkNetworkDeviceMTU          = "mtu"
+	mkNetworkDeviceModel        = "model"
+	mkNetworkDeviceQueues       = "queues"
+	mkNetworkDeviceRateLimit    = "rate_limit"
+	mkNetworkDeviceTrunks       = "trunks"
+	mkNetworkDeviceVLANID       = "vlan_id"
+	mkNetworkInterfaceNames     = "network_interface_names"
 )
 
 // Schema returns the schema for the network resource.
@@ -85,6 +86,11 @@ func Schema() map[string]*schema.Schema {
 						Description: "The bridge",
 						Optional:    true,
 						Default:     dvNetworkDeviceBridge,
+					},
+					mkNetworkDeviceDisconnected: {
+						Type:        schema.TypeBool,
+						Description: "Whether the network device should be disconnected from the network",
+						Optional:    true,
 					},
 					mkNetworkDeviceEnabled: {
 						Type:        schema.TypeBool,
