@@ -131,6 +131,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/marvkos"><img src="https://avatars.githubusercontent.com/u/87067609?v=4?s=100" width="100px;" alt="marvkos"/><br /><sub><b>marvkos</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=marvkos" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Koloss5421"><img src="https://avatars.githubusercontent.com/u/26049477?v=4?s=100" width="100px;" alt="Koloss5421"/><br /><sub><b>Koloss5421</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Koloss5421" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://sa.m-h.ug/"><img src="https://avatars.githubusercontent.com/u/171470?v=4?s=100" width="100px;" alt="Sam Hug"/><br /><sub><b>Sam Hug</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=samhug" title="Documentation">📖</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>

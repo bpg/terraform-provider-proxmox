@@ -920,6 +920,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "samhug",
+      "name": "Sam Hug",
+      "avatar_url": "https://avatars.githubusercontent.com/u/171470?v=4",
+      "profile": "https://sa.m-h.ug/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
