@@ -148,6 +148,7 @@ resource "proxmox_virtual_environment_vm" "example" {
   }
 
   initialization {
+    datastore_id = local.datastore_id
     // if unspecified:
     //   - autodetected if there is a cloud-init device on the template
     //   - otherwise defaults to ide2
