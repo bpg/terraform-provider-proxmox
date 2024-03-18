@@ -133,6 +133,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://sa.m-h.ug/"><img src="https://avatars.githubusercontent.com/u/171470?v=4?s=100" width="100px;" alt="Sam Hug"/><br /><sub><b>Sam Hug</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=samhug" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/dyadMisha"><img src="https://avatars.githubusercontent.com/u/37950256?v=4?s=100" width="100px;" alt="dyadMisha"/><br /><sub><b>dyadMisha</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=dyadMisha" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
   <tfoot>
