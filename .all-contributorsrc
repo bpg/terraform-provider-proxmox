@@ -929,6 +929,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "dyadMisha",
+      "name": "dyadMisha",
+      "avatar_url": "https://avatars.githubusercontent.com/u/37950256?v=4",
+      "profile": "https://github.com/dyadMisha",
+      "contributions": [
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
