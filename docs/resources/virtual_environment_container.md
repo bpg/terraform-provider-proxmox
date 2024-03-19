@@ -225,6 +225,7 @@ output "ubuntu_container_public_key" {
     - `keyctl` - (Optional) Whether the container supports `keyctl()` system
       call (defaults to `false`)
     - `mount` - (Optional) List of allowed mount types (`cifs` or `nfs`)
+- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable).
 
 ## Attribute Reference
 

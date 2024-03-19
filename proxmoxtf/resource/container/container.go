@@ -49,6 +49,7 @@ const (
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
 	dvFeaturesFUSE                      = false
+	dvHookScript                        = ""
 	dvMemoryDedicated                   = 512
 	dvMemorySwap                        = 0
 	dvMountPointACL                     = false
@@ -100,6 +101,7 @@ const (
 	mkFeaturesKeyControl                = "keyctl"
 	mkFeaturesFUSE                      = "fuse"
 	mkFeaturesMountTypes                = "mount"
+	mkHookScriptFileID                  = "hook_script_file_id"
 	mkInitialization                    = "initialization"
 	mkInitializationDNS                 = "dns"
 	mkInitializationDNSDomain           = "domain"
@@ -374,6 +376,12 @@ func Container() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkHookScriptFileID: {
+				Type:        schema.TypeString,
+				Description: "A hook script",
+				Optional:    true,
+				Default:     dvHookScript,
 			},
 			mkInitialization: {
 				Type:        schema.TypeList,
@@ -996,6 +1004,12 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.CPUUnits = &cpuUnits
 	}
 
+	hookScript := d.Get(mkHookScriptFileID).(string)
+
+	if hookScript != "" {
+		updateBody.HookScript = &hookScript
+	}
+
 	var initializationIPConfigIPv4Address []string
 
 	var initializationIPConfigIPv4Gateway []string
@@ -1316,6 +1330,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
+	hookScript := d.Get(mkHookScriptFileID).(string)
+
 	initialization := d.Get(mkInitialization).([]interface{})
 	initializationDNSDomain := dvInitializationDNSDomain
 	initializationDNSServer := dvInitializationDNSServer
@@ -1630,6 +1646,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	if description != "" {
 		createBody.Description = &description
+	}
+
+	if hookScript != "" {
+		createBody.HookScript = &hookScript
 	}
 
 	if initializationDNSDomain != "" {
@@ -2595,6 +2615,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		updateBody.Features = features
+	}
+
+	if d.HasChange(mkHookScriptFileID) {
+		hookScript := d.Get(mkHookScriptFileID).(string)
+		if hookScript != "" {
+			updateBody.HookScript = &hookScript
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "hookscript")
+		}
 	}
 
 	// Prepare the new initialization configuration.
