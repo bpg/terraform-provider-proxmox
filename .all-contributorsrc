@@ -947,6 +947,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "soubinan",
+      "name": "Soubinan KACOU",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20760371?v=4",
+      "profile": "https://github.com/soubinan",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
