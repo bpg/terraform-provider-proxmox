@@ -938,6 +938,15 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "msdnna",
+      "name": "msdnna",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11697271?v=4",
+      "profile": "https://github.com/msdnna",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
