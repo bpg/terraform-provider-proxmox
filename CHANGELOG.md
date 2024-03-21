@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.50.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.49.0...v0.50.0) (2024-03-21)
+
+
+### Features
+
+* **lxc:** add configurable timeout for container creation ([#1146](https://github.com/bpg/terraform-provider-proxmox/issues/1146)) ([84440d8](https://github.com/bpg/terraform-provider-proxmox/commit/84440d8329c607d7a1fd7ced8a078251cf23908c))
+* **lxc:** support hook script for LXC ([#1140](https://github.com/bpg/terraform-provider-proxmox/issues/1140)) ([0deaf18](https://github.com/bpg/terraform-provider-proxmox/commit/0deaf1801ade7896500c43d4903a69ee5da240a3))
+* **vm:** add support for `disconnected` attribute in network interface ([#1129](https://github.com/bpg/terraform-provider-proxmox/issues/1129)) ([11ca880](https://github.com/bpg/terraform-provider-proxmox/commit/11ca880f28b68c7beec1feb7e9dc7a6fbf00bf40))
+
+
+### Bug Fixes
+
+* **docs:** fix `sudo` configuration steps ([#1132](https://github.com/bpg/terraform-provider-proxmox/issues/1132)) ([0c6ecb8](https://github.com/bpg/terraform-provider-proxmox/commit/0c6ecb85ed0cc236db13874f87bf5f1b17c6c933))
+* **docs:** typo in `container.console` attribute `mode` -&gt; `type` ([#1133](https://github.com/bpg/terraform-provider-proxmox/issues/1133)) ([5cd6b4a](https://github.com/bpg/terraform-provider-proxmox/commit/5cd6b4acdfd4777fb7eaa48b74328284a88e53ec))
+* **examples:** `datastore_id` is missing in `initialization` block for vm ([#1136](https://github.com/bpg/terraform-provider-proxmox/issues/1136)) ([6a5becc](https://github.com/bpg/terraform-provider-proxmox/commit/6a5beccf9133c3c8306be37d6812f90f97508799))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/docker/docker from 24.0.7+incompatible to 24.0.9+incompatible in /tools ([#1142](https://github.com/bpg/terraform-provider-proxmox/issues/1142)) ([f4c80ad](https://github.com/bpg/terraform-provider-proxmox/commit/f4c80ad297c11e139d7a0b2bb851b00dd02b7ff7))
+* **deps:** update golang.org/x/exp digest (814bf88 → c7f7c64) ([#1130](https://github.com/bpg/terraform-provider-proxmox/issues/1130)) ([ab51262](https://github.com/bpg/terraform-provider-proxmox/commit/ab512622f7f21bbfcbae48793cf9d0b24af5c2d5))
+* **deps:** update golang.org/x/exp digest (c7f7c64 → a85f2c6) ([#1139](https://github.com/bpg/terraform-provider-proxmox/issues/1139)) ([6f8a472](https://github.com/bpg/terraform-provider-proxmox/commit/6f8a472981a3d1f478f9a0fd44abb83f2e19d641))
+* **vm:** refactoring: extract network device code from vm.go ([#1127](https://github.com/bpg/terraform-provider-proxmox/issues/1127)) ([29b5438](https://github.com/bpg/terraform-provider-proxmox/commit/29b5438faf7c1d09291c549516ac359952e2a87b))
+
 ## [0.49.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.48.4...v0.49.0) (2024-03-15)
 
 
