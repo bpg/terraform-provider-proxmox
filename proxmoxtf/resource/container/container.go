@@ -75,6 +75,7 @@ const (
 	dvStartupDownDelay                  = -1
 	dvStartOnBoot                       = true
 	dvTemplate                          = false
+	dvTimeoutCreate                     = 1800
 	dvUnprivileged                      = false
 	dvVMID                              = -1
 
@@ -154,6 +155,7 @@ const (
 	mkStartOnBoot                       = "start_on_boot"
 	mkTags                              = "tags"
 	mkTemplate                          = "template"
+	mkTimeoutCreate                     = "timeout_create"
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
 )
@@ -833,6 +835,12 @@ func Container() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Default:     dvTemplate,
+			},
+			mkTimeoutCreate: {
+				Type:        schema.TypeInt,
+				Description: "Create container timeout",
+				Optional:    true,
+				Default:     dvTimeoutCreate,
 			},
 			mkUnprivileged: {
 				Type:        schema.TypeBool,
@@ -1721,8 +1729,10 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := api.Node(nodeName).Container(vmID)
 
+	createTimeout := d.Get(mkTimeoutCreate).(int)
+
 	// Start the container and wait for it to reach a running state before continuing.
-	err = containerAPI.StartContainer(ctx, 60)
+	err = containerAPI.StartContainer(ctx, createTimeout)
 	if err != nil {
 		return diag.FromErr(err)
 	}
