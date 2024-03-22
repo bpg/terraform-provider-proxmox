@@ -7,7 +7,7 @@
 package tests
 
 import (
-	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -16,16 +16,16 @@ import (
 func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
-	providerConfig := getProviderConfig(t)
+	te := initTestEnvironment(t)
 
 	tests := []struct {
 		name string
 		step []resource.TestStep
 	}{
 		{"multiline description", []resource.TestStep{{
-			Config: providerConfig + `
+			Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm1" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					
 					description = <<-EOT
@@ -33,7 +33,7 @@ func TestAccResourceVM(t *testing.T) {
 						description
 						value
 					EOT
-				}`,
+				}`, te.nodeName),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_vm1", map[string]string{
 					"description": "my\ndescription\nvalue",
@@ -41,13 +41,13 @@ func TestAccResourceVM(t *testing.T) {
 			),
 		}}},
 		{"single line description", []resource.TestStep{{
-			Config: providerConfig + `
+			Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm2" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					
 					description = "my description value"
-				}`,
+				}`, te.nodeName),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_vm2", map[string]string{
 					"description": "my description value",
@@ -55,13 +55,13 @@ func TestAccResourceVM(t *testing.T) {
 			),
 		}}},
 		{"no description", []resource.TestStep{{
-			Config: `
+			Config: fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm3" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					
 					description = ""
-				}`,
+				}`, te.nodeName),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_vm3", map[string]string{
 					"description": "",
@@ -70,26 +70,26 @@ func TestAccResourceVM(t *testing.T) {
 		}}},
 		{
 			"protection", []resource.TestStep{{
-				Config: `
+				Config: fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm4" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					
 					protection = true
-				}`,
+				}`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_vm4", map[string]string{
 						"protection": "true",
 					}),
 				),
 			}, {
-				Config: `
+				Config: fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm4" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					
 					protection = false
-				}`,
+				}`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_vm4", map[string]string{
 						"protection": "false",
@@ -165,14 +165,12 @@ func TestAccResourceVM(t *testing.T) {
 		},
 	}
 
-	accProviders := testAccMuxProviders(context.Background(), t)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: accProviders,
+				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.step,
 			})
 		})
@@ -264,18 +262,18 @@ EOF
 }
 
 func TestAccResourceVMNetwork(t *testing.T) {
-	providerConfig := getProviderConfig(t)
+	te := initTestEnvironment(t)
 
 	tests := []struct {
 		name string
 		step []resource.TestStep
 	}{
 		{"network interfaces", []resource.TestStep{{
-			Config: providerConfig + `
+			Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_file" "cloud_config" {
 					content_type = "snippets"
 					datastore_id = "local"
-					node_name    = "pve"
+					node_name    = "%[1]s"
 					source_raw {
 						data = <<EOF
 #cloud-config
@@ -290,7 +288,7 @@ EOF
 				}
 				
 				resource "proxmox_virtual_environment_vm" "test_vm_network1" {
-					node_name = "pve"
+					node_name = "%[1]s"
 					started   = true
 					agent {
 						enabled = true
@@ -326,10 +324,10 @@ EOF
 				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 					content_type = "iso"
 					datastore_id = "local"
-					node_name    = "pve"
+					node_name    = "%[1]s"
 					url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
 					overwrite_unmanaged = true
-				}`,
+				}`, te.nodeName),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_network1", map[string]string{
 					"ipv4_addresses.#":        "2",
@@ -340,15 +338,15 @@ EOF
 			),
 		}}},
 		{"network device disconnected", []resource.TestStep{{
-			Config: `
+			Config: fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm_network2" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					
 					network_device {
 						bridge = "vmbr0"
 					}
-				}`,
+				}`, te.nodeName),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_network2", map[string]string{
 					"network_device.0.bridge":       "vmbr0",
@@ -356,16 +354,16 @@ EOF
 				}),
 			),
 		}, {
-			Config: `
+			Config: fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm_network2" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					
 					network_device {
 						bridge = "vmbr0"
 						disconnected = true
 					}
-				}`,
+				}`, te.nodeName),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_network2", map[string]string{
 					"network_device.0.bridge":       "vmbr0",
@@ -375,14 +373,12 @@ EOF
 		}}},
 	}
 
-	accProviders := testAccMuxProviders(context.Background(), t)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: accProviders,
+				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.step,
 			})
 		})
@@ -392,7 +388,7 @@ EOF
 func TestAccResourceVMDisks(t *testing.T) {
 	t.Parallel()
 
-	providerConfig := getProviderConfig(t)
+	te := initTestEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -400,9 +396,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 	}{
 		{"create disk with default parameters, then update it", []resource.TestStep{
 			{
-				Config: providerConfig + `
+				Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_disk1" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					name 	  = "test-disk1"
 					
@@ -413,7 +409,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 						interface    = "virtio0"
 						size         = 8
 					}
-				}`,
+				}`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_disk1", map[string]string{
 						"disk.0.aio":               "io_uring",
@@ -433,9 +429,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 				),
 			},
 			{
-				Config: providerConfig + `
+				Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_disk1" {
-					node_name = "pve"
+					node_name = "%s"
 					started   = false
 					name 	  = "test-disk1"
 
@@ -454,7 +450,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 						  iops_write_burstable = 800
 						}
 					}
-				}`,
+				}`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_disk1", map[string]string{
 						"disk.0.aio":                          "native",
@@ -479,16 +475,16 @@ func TestAccResourceVMDisks(t *testing.T) {
 			},
 		}},
 		{"create disk from an image", []resource.TestStep{{
-			Config: providerConfig + `
+			Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_download_file" "test_disk2_image" {
 					content_type = "iso"
 					datastore_id = "local"
-					node_name    = "pve"
+					node_name    = "%[1]s"
 					url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_disk2" {
-					node_name = "pve"
+					node_name = "%[1]s"
 					started   = false
 					name 	  = "test-disk2"	
 					disk {
@@ -499,7 +495,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 						discard      = "on"
 						size         = 20
 					}
-				}`,
+				}`, te.nodeName),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_disk2", map[string]string{
 					"disk.0.cache":             "none",
@@ -516,9 +512,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 		}}},
 		{"clone default disk without overrides", []resource.TestStep{
 			{
-				Config: providerConfig + `
+				Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_disk3_template" {
-					node_name = "pve"
+					node_name = "%[1]s"
 					started   = false
 					name 	  = "test-disk3-template"
 					template  = "true"
@@ -531,7 +527,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					}
 				}
 				resource "proxmox_virtual_environment_vm" "test_disk3" {
-					node_name = "pve"
+					node_name = "%[1]s"
 					started   = false
 					name 	  = "test-disk3"
 
@@ -539,7 +535,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 						vm_id = proxmox_virtual_environment_vm.test_disk3_template.id
 					}
 				}
-				`,
+				`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					// fully cloned disk, does not have any attributes in state
 					resource.TestCheckNoResourceAttr("proxmox_virtual_environment_vm.test_disk3", "disk.0"),
@@ -556,9 +552,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 					// this test is failing because of https://github.com/bpg/terraform-provider-proxmox/issues/873
 					return true, nil
 				},
-				Config: providerConfig + `
+				Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_disk3_template" {
-					node_name = "pve"
+					node_name = "%[1]s"
 					started   = false
 					name 	  = "test-disk3-template"
 					template  = "true"
@@ -574,7 +570,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					}
 				}
 				resource "proxmox_virtual_environment_vm" "test_disk3" {
-					node_name = "pve"
+					node_name = "%[1]s"
 					started   = false
 					name 	  = "test-disk3"
 		
@@ -587,7 +583,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 						//size = 10
 					}
 				}
-				`,
+				`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{
 						"disk.0.datastore_id":      "local-lvm",
@@ -608,14 +604,12 @@ func TestAccResourceVMDisks(t *testing.T) {
 		}},
 	}
 
-	accProviders := testAccMuxProviders(context.Background(), t)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: accProviders,
+				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.steps,
 			})
 		})

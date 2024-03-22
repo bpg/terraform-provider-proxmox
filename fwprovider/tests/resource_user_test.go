@@ -7,13 +7,16 @@
 package tests
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccResourceUser(t *testing.T) {
+	t.Parallel()
+
+	te := initTestEnvironment(t)
+
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
@@ -27,7 +30,6 @@ func TestAccResourceUser(t *testing.T) {
 					  expiration_date 	= "2034-01-01T22:00:00Z"
 					  first_name 		= "First"
 					  last_name 		= "Last"
-					  //password 			= "password"
 					  user_id  			= "user1@pve"
 				}
 				`,
@@ -60,12 +62,10 @@ func TestAccResourceUser(t *testing.T) {
 		}}},
 	}
 
-	accProviders := testAccMuxProviders(context.Background(), t)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: accProviders,
+				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.steps,
 			})
 		})

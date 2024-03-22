@@ -7,7 +7,6 @@
 package tests
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 )
 
 func TestAccResourceLinuxBridge(t *testing.T) {
-	accProviders := testAccMuxProviders(context.Background(), t)
+	te := initTestEnvironment(t)
 
 	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
 	ipV4cidr1 := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
@@ -25,7 +24,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 	ipV6cidr := "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: accProviders,
+		ProtoV6ProviderFactories: te.accProviders,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
@@ -39,7 +38,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					node_name = "%s"
 					vlan_aware = true
 				}
-				`, ipV4cidr1, iface, accTestNodeName),
+				`, ipV4cidr1, iface, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
 						"address":    ipV4cidr1,
@@ -66,7 +65,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					name = "%s"
 					node_name = "%s"
 					vlan_aware = false
-				}`, ipV4cidr2, ipV6cidr, iface, accTestNodeName),
+				}`, ipV4cidr2, ipV6cidr, iface, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
 						"address":    ipV4cidr2,

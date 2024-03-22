@@ -43,7 +43,7 @@ func (c *nodeResolver) Resolve(_ context.Context, _ string) (ssh.ProxmoxNode, er
 func TestAccResourceFile(t *testing.T) {
 	t.Parallel()
 
-	accProviders := testAccMuxProviders(context.Background(), t)
+	te := initTestEnvironment(t)
 
 	snippetRaw := fmt.Sprintf("snippet-raw-%s.txt", gofakeit.Word())
 	snippetURL := "https://raw.githubusercontent.com/yaml/yaml-test-suite/main/src/229Q.yaml"
@@ -52,55 +52,55 @@ func TestAccResourceFile(t *testing.T) {
 	fileISO := createFile(t, "file-*.iso", "pretend it is an ISO")
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: accProviders,
+		ProtoV6ProviderFactories: te.accProviders,
 		PreCheck: func() {
 			uploadSnippetFile(t, snippetFile2)
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceFileSnippetRawCreatedConfig(t, snippetRaw),
+				Config: testAccResourceFileSnippetRawCreatedConfig(te, snippetRaw),
 				Check:  testAccResourceFileSnippetRawCreatedCheck(snippetRaw),
 			},
 			{
-				Config: testAccResourceFileCreatedConfig(t, snippetFile1.Name()),
+				Config: testAccResourceFileCreatedConfig(te, snippetFile1.Name()),
 				Check:  testAccResourceFileCreatedCheck("snippets", snippetFile1.Name()),
 			},
 			{
-				Config: testAccResourceFileCreatedConfig(t, snippetURL),
+				Config: testAccResourceFileCreatedConfig(te, snippetURL),
 				Check:  testAccResourceFileCreatedCheck("snippets", snippetURL),
 			},
 			{
-				Config: testAccResourceFileCreatedConfig(t, fileISO.Name()),
+				Config: testAccResourceFileCreatedConfig(te, fileISO.Name()),
 				Check:  testAccResourceFileCreatedCheck("iso", fileISO.Name()),
 			},
 			{
-				Config:      testAccResourceFileTwoSourcesCreatedConfig(t),
+				Config:      testAccResourceFileTwoSourcesCreatedConfig(te),
 				ExpectError: regexp.MustCompile("please specify .* - not both"),
 			},
 			{
-				Config:      testAccResourceFileCreatedConfig(t, "https://github.com", "content_type = \"iso\""),
+				Config:      testAccResourceFileCreatedConfig(te, "https://github.com", "content_type = \"iso\""),
 				ExpectError: regexp.MustCompile("failed to determine file name from the URL"),
 			},
 			{
-				Config:      testAccResourceFileMissingSourceConfig(t),
+				Config:      testAccResourceFileMissingSourceConfig(te),
 				ExpectError: regexp.MustCompile("missing argument"),
 			},
 			// Do not allow to overwrite the file
 			{
-				Config:      testAccResourceFileCreatedConfig(t, snippetFile2.Name(), "overwrite = false"),
+				Config:      testAccResourceFileCreatedConfig(te, snippetFile2.Name(), "overwrite = false"),
 				ExpectError: regexp.MustCompile("already exists"),
 			},
 			// Allow to overwrite the file by default
 			{
-				Config: testAccResourceFileCreatedConfig(t, snippetFile2.Name()),
+				Config: testAccResourceFileCreatedConfig(te, snippetFile2.Name()),
 				Check:  testAccResourceFileCreatedCheck("snippets", snippetFile2.Name()),
 			},
 			// Update testing
 			{
 				PreConfig: func() {
-					deleteSnippet(t, filepath.Base(snippetFile1.Name()))
+					deleteSnippet(te, filepath.Base(snippetFile1.Name()))
 				},
-				Config: testAccResourceFileSnippetUpdateConfig(t, snippetFile1.Name()),
+				Config: testAccResourceFileSnippetUpdateConfig(te, snippetFile1.Name()),
 				Check:  testAccResourceFileSnippetUpdatedCheck(snippetFile1.Name()),
 			},
 			// ImportState testing
@@ -174,15 +174,15 @@ func createFile(t *testing.T, namePattern string, content string) *os.File {
 	return f
 }
 
-func deleteSnippet(t *testing.T, fname string) {
-	t.Helper()
+func deleteSnippet(te *testEnvironment, fname string) {
+	te.t.Helper()
 
-	err := getNodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
-	require.NoError(t, err)
+	err := te.nodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
+	require.NoError(te.t, err)
 }
 
-func testAccResourceFileSnippetRawCreatedConfig(t *testing.T, fname string) string {
-	t.Helper()
+func testAccResourceFileSnippetRawCreatedConfig(te *testEnvironment, fname string) string {
+	te.t.Helper()
 
 	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test_raw" {
@@ -196,11 +196,11 @@ test snippet
     file_name = "%s"
   }
 }
-	`, getProviderConfig(t), accTestNodeName, fname)
+	`, te.providerConfig, te.nodeName, fname)
 }
 
-func testAccResourceFileCreatedConfig(t *testing.T, fname string, extra ...string) string {
-	t.Helper()
+func testAccResourceFileCreatedConfig(te *testEnvironment, fname string, extra ...string) string {
+	te.t.Helper()
 
 	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
@@ -211,11 +211,11 @@ resource "proxmox_virtual_environment_file" "test" {
   }
   %s
 }
-	`, getProviderConfig(t), accTestNodeName, strings.ReplaceAll(fname, `\`, `/`), strings.Join(extra, "\n"))
+	`, te.providerConfig, te.nodeName, strings.ReplaceAll(fname, `\`, `/`), strings.Join(extra, "\n"))
 }
 
-func testAccResourceFileTwoSourcesCreatedConfig(t *testing.T) string {
-	t.Helper()
+func testAccResourceFileTwoSourcesCreatedConfig(te *testEnvironment) string {
+	te.t.Helper()
 
 	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
@@ -231,18 +231,18 @@ test snippet
     path = "bar.yaml"
   }
 }
-	`, getProviderConfig(t), accTestNodeName)
+	`, te.providerConfig, te.nodeName)
 }
 
-func testAccResourceFileMissingSourceConfig(t *testing.T) string {
-	t.Helper()
+func testAccResourceFileMissingSourceConfig(te *testEnvironment) string {
+	te.t.Helper()
 
 	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
 }
-	`, getProviderConfig(t), accTestNodeName)
+	`, te.providerConfig, te.nodeName)
 }
 
 func testAccResourceFileSnippetRawCreatedCheck(fname string) resource.TestCheckFunc {
@@ -263,8 +263,8 @@ func testAccResourceFileCreatedCheck(ctype string, fname string) resource.TestCh
 	)
 }
 
-func testAccResourceFileSnippetUpdateConfig(t *testing.T, fname string) string {
-	t.Helper()
+func testAccResourceFileSnippetUpdateConfig(te *testEnvironment, fname string) string {
+	te.t.Helper()
 
 	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
@@ -274,7 +274,7 @@ resource "proxmox_virtual_environment_file" "test" {
     path = "%s"
   }
 }
-	`, getProviderConfig(t), accTestNodeName, strings.ReplaceAll(fname, `\`, `/`))
+	`, te.providerConfig, te.nodeName, strings.ReplaceAll(fname, `\`, `/`))
 }
 
 func testAccResourceFileSnippetUpdatedCheck(fname string) resource.TestCheckFunc {
