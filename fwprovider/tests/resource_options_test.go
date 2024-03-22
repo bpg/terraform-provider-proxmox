@@ -7,7 +7,6 @@
 package tests
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -18,10 +17,10 @@ const accTestClusterOptionsName = "proxmox_virtual_environment_cluster_options.t
 func TestAccResourceClusterOptions(t *testing.T) {
 	t.Parallel()
 
-	accProviders := testAccMuxProviders(context.Background(), t)
+	te := initTestEnvironment(t)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: accProviders,
+		ProtoV6ProviderFactories: te.accProviders,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{

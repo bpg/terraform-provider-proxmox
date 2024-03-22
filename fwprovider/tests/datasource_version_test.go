@@ -7,7 +7,6 @@
 package tests
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -18,12 +17,12 @@ import (
 func TestAccDatasourceVersion(t *testing.T) {
 	t.Parallel()
 
-	accProviders := testAccMuxProviders(context.Background(), t)
+	te := initTestEnvironment(t)
 
 	datasourceName := "data.proxmox_virtual_environment_version.test"
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: accProviders,
+		ProtoV6ProviderFactories: te.accProviders,
 		Steps: []resource.TestStep{
 			// Read testing
 			{
