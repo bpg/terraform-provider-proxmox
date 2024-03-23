@@ -60,3 +60,19 @@ func (c *Client) UpdateTime(ctx context.Context, d *UpdateTimeRequestBody) error
 
 	return nil
 }
+
+// GetInfo retrieves the information of the node.
+func (c *Client) GetInfo(ctx context.Context) (*GetInfoResponseData, error) {
+	resBody := &GetInfoResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("status"), nil, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get status of the node \"%s\": %w", c.NodeName, err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
+}
