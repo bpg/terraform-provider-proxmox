@@ -144,6 +144,13 @@ func CPUTypeValidator() schema.SchemaValidateDiagFunc {
 	))
 }
 
+// CPUAffinityValidator returns a schema validation function for a CPU affinity.
+func CPUAffinityValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(
+		validation.StringMatch(regexp.MustCompile(`^\d+[\d-,]*$`), "must contain numbers but also number ranges"),
+	)
+}
+
 // QEMUAgentTypeValidator is a schema validation function for QEMU agent types.
 func QEMUAgentTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"isa", "virtio"}, false))

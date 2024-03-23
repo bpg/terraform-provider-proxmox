@@ -231,11 +231,12 @@ output "ubuntu_vm_public_key" {
         - `custom-<model>` - Custom CPU model. All `custom-<model>` values
             should be defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
     - `units` - (Optional) The CPU units (defaults to `1024`).
+    - `affinity` - (Optional) The CPU cores that are used to run the VM’s vCPU.
 - `description` - (Optional) The description.
 - `disk` - (Optional) A disk (multiple blocks supported).
     - `aio` - (Optional) The disk AIO mode (defaults to `io_uring`).
         - `io_uring` - Use io_uring.
-        - `native` - Use native AIO. Should be used with to unbuffered, O_DIRECT, raw block storage only, 
+        - `native` - Use native AIO. Should be used with to unbuffered, O_DIRECT, raw block storage only,
             with the disk `cache` must be set to `none`. Raw block storage types include iSCSI, CEPH/RBD, and NVMe.
         - `threads` - Use thread-based AIO.
     - `backup` - (Optional) Whether the drive should be included when making backups (defaults to `true`).
@@ -422,7 +423,7 @@ output "ubuntu_vm_public_key" {
     - `queues` - (Optional) The number of queues for VirtIO (1..64).
     - `rate_limit` - (Optional) The rate limit in megabytes per second.
     - `vlan_id` - (Optional) The VLAN identifier.
-    - `trunks` - (Optional) String containing a `;` separated list of VLAN trunks 
+    - `trunks` - (Optional) String containing a `;` separated list of VLAN trunks
         ("10;20;30"). Note that the VLAN-aware feature need to be enabled on the PVE
         Linux Bridge to use trunks.
 - `node_name` - (Required) The name of the node to assign the virtual machine

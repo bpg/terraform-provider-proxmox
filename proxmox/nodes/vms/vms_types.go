@@ -236,6 +236,7 @@ type CreateRequestBody struct {
 	CPULimit             *int                           `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
 	CPUSockets           *int                           `json:"sockets,omitempty"            url:"sockets,omitempty"`
 	CPUUnits             *int                           `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
+	CPUAffinity          *string                        `json:"affinity,omitempty"           url:"affinity,omitempty"`
 	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
 	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
 	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"protection,omitempty,int"`
@@ -364,6 +365,7 @@ type GetResponseData struct {
 	CPULimit             *types.CustomInt                `json:"cpulimit,omitempty"`
 	CPUSockets           *int                            `json:"sockets,omitempty"`
 	CPUUnits             *int                            `json:"cpuunits,omitempty"`
+	CPUAffinity          *string                         `json:"affinity,omitempty"`
 	DedicatedMemory      *types.CustomInt64              `json:"memory,omitempty"`
 	DeletionProtection   *types.CustomBool               `json:"protection,omitempty"`
 	Description          *string                         `json:"description,omitempty"`
