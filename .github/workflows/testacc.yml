@@ -11,9 +11,17 @@ on:
 jobs:
   acceptance:
     strategy:
-      max-parallel: 1
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        include:
+          - os: ubuntu-latest
+            node: pve1
+            port: 13451
+          - os: windows-latest
+            node: pve2
+            port: 13452
+          - os: macos-latest
+            node: pve3
+            port: 13453
         terraform: [ 1.6 ]
     runs-on: ${{ matrix.os }}
     environment: pve-acc
@@ -53,5 +61,7 @@ jobs:
           PROXMOX_VE_SSH_AGENT: false
           PROXMOX_VE_SSH_USERNAME: "terraform"
           PROXMOX_VE_SSH_PRIVATE_KEY: "${{ secrets.PROXMOX_VE_SSH_PRIVATE_KEY }}"
+          PROXMOX_VE_ACC_NODE_NAME: ${{ matrix.node }}
+          PROXMOX_VE_ACC_NODE_SSH_ADDRESS: ${{ secrets.PROXMOX_VE_HOST }}
+          PROXMOX_VE_ACC_NODE_SSH_PORT: ${{ matrix.port }}
         run: make testacc
-

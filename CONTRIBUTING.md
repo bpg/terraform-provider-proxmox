@@ -61,6 +61,9 @@ PROXMOX_VE_API_TOKEN="root@pam!<token name>=<token value>"
 PROXMOX_VE_ENDPOINT="https://<pve instance>:8006/"
 PROXMOX_VE_SSH_AGENT="true"
 PROXMOX_VE_SSH_USERNAME="root"
+# optionally, youcan override the default node name and ssh address
+#PROXMOX_VE_ACC_NODE_NAME="pve1"
+#PROXMOX_VE_ACC_NODE_SSH_ADDRESS="10.0.0.11"
 ```
 
 Then use `make testacc` to run the acceptance tests.
