@@ -231,7 +231,10 @@ output "ubuntu_vm_public_key" {
         - `custom-<model>` - Custom CPU model. All `custom-<model>` values
             should be defined in `/etc/pve/virtual-guest/cpu-models.conf` file.
     - `units` - (Optional) The CPU units (defaults to `1024`).
-    - `affinity` - (Optional) The CPU cores that are used to run the VM’s vCPU.
+    - `affinity` - (Optional) The CPU cores that are used to run the VM’s vCPU. The
+        value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.
+        For example, `0,1,2,3` (which also can be shortened to `0-3`) means that the VM’s vCPUs are run on the first four
+        CPU cores. Setting `affinity` is only allowed for `root@pam` authenticated user.
 - `description` - (Optional) The description.
 - `disk` - (Optional) A disk (multiple blocks supported).
     - `aio` - (Optional) The disk AIO mode (defaults to `io_uring`).
