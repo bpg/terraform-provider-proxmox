@@ -64,6 +64,7 @@ const (
 	dvCPUSockets          = 1
 	dvCPUType             = "qemu64"
 	dvCPUUnits            = 1024
+	dvCPUAffinity         = ""
 	dvDescription         = ""
 
 	dvEFIDiskDatastoreID                = "local-lvm"
@@ -165,6 +166,7 @@ const (
 	mkCPUSockets          = "sockets"
 	mkCPUType             = "type"
 	mkCPUUnits            = "units"
+	mkCPUAffinity         = "affinity"
 	mkDescription         = "description"
 
 	mkEFIDisk                           = "efi_disk"
@@ -491,6 +493,7 @@ func VM() *schema.Resource {
 						mkCPUSockets:      dvCPUSockets,
 						mkCPUType:         dvCPUType,
 						mkCPUUnits:        dvCPUUnits,
+						mkCPUAffinity:     dvCPUAffinity,
 					},
 				}, nil
 			},
@@ -563,6 +566,13 @@ func VM() *schema.Resource {
 						ValidateDiagFunc: validation.ToDiagFunc(
 							validation.IntBetween(2, 262144),
 						),
+					},
+					mkCPUAffinity: {
+						Type:             schema.TypeString,
+						Description:      "The CPU affinity",
+						Optional:         true,
+						Default:          dvCPUAffinity,
+						ValidateDiagFunc: CPUAffinityValidator(),
 					},
 				},
 			},
@@ -1776,6 +1786,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cpuSockets := cpuBlock[mkCPUSockets].(int)
 		cpuType := cpuBlock[mkCPUType].(string)
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
+		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
 		cpuFlagsConverted := make([]string, len(cpuFlags))
 
@@ -1797,6 +1808,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.NUMAEnabled = &cpuNUMA
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
+
+		if cpuAffinity != "" {
+			updateBody.CPUAffinity = &cpuAffinity
+		}
 
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
@@ -2183,6 +2198,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
 	cpuType := cpuBlock[mkCPUType].(string)
 	cpuUnits := cpuBlock[mkCPUUnits].(int)
+	cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
 	description := d.Get(mkDescription).(string)
 
@@ -2463,6 +2479,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if cpuLimit > 0 {
 		createBody.CPULimit = &cpuLimit
+	}
+
+	if cpuAffinity != "" {
+		createBody.CPUAffinity = &cpuAffinity
 	}
 
 	if description != "" {
@@ -3377,6 +3397,12 @@ func vmReadCustom(
 	} else {
 		// Default value of "cpuunits" is "1024" according to the API documentation.
 		cpu[mkCPUUnits] = 1024
+	}
+
+	if vmConfig.CPUAffinity != nil {
+		cpu[mkCPUAffinity] = *vmConfig.CPUAffinity
+	} else {
+		cpu[mkCPUAffinity] = ""
 	}
 
 	currentCPU := d.Get(mkCPU).([]interface{})
@@ -4643,6 +4669,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuSockets := cpuBlock[mkCPUSockets].(int)
 		cpuType := cpuBlock[mkCPUType].(string)
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
+		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
 		if api.API().IsRootTicket() ||
@@ -4653,7 +4680,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
+		updateBody.CPUAffinity = &cpuAffinity
 		updateBody.NUMAEnabled = &cpuNUMA
+
+		if cpuAffinity != "" {
+			updateBody.CPUAffinity = &cpuAffinity
+		} else {
+			del = append(del, "affinity")
+		}
 
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
