@@ -34,6 +34,26 @@ type GetTimeResponseData struct {
 	UTCTime   types.CustomTimestamp `json:"time"`
 }
 
+// GetInfoResponseBody contains the body from a node info get response.
+type GetInfoResponseBody struct {
+	Data *GetInfoResponseData `json:"data,omitempty"`
+}
+
+// GetInfoResponseData contains the data from a node info response.
+type GetInfoResponseData struct {
+	CPUInfo struct {
+		CPUCores   *int    `json:"cores,omitempty"`
+		CPUSockets *int    `json:"sockets,omitempty"`
+		CPUModel   *string `json:"model"`
+	} `json:"cpuinfo"`
+	MemoryInfo struct {
+		Free  *int `json:"free,omitempty"`
+		Used  *int `json:"used,omitempty"`
+		Total *int `json:"total,omitempty"`
+	} `json:"memory"`
+	Uptime *int `json:"uptime"`
+}
+
 // ListResponseBody contains the body from a node list response.
 type ListResponseBody struct {
 	Data []*ListResponseData `json:"data,omitempty"`
