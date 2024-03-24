@@ -19,6 +19,7 @@ func createDatasourceMap() map[string]*schema.Resource {
 		"proxmox_virtual_environment_group":      datasource.Group(),
 		"proxmox_virtual_environment_groups":     datasource.Groups(),
 		"proxmox_virtual_environment_hosts":      datasource.Hosts(),
+		"proxmox_virtual_environment_node":       datasource.Node(),
 		"proxmox_virtual_environment_nodes":      datasource.Nodes(),
 		"proxmox_virtual_environment_pool":       datasource.Pool(),
 		"proxmox_virtual_environment_pools":      datasource.Pools(),
