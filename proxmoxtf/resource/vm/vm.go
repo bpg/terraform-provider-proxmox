@@ -1808,7 +1808,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.NUMAEnabled = &cpuNUMA
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
-		updateBody.CPUAffinity = &cpuAffinity
+
+		if cpuAffinity != "" {
+			updateBody.CPUAffinity = &cpuAffinity
+		}
 
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
@@ -2428,7 +2431,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		},
 		CPUSockets:          &cpuSockets,
 		CPUUnits:            &cpuUnits,
-		CPUAffinity:         &cpuAffinity,
 		DedicatedMemory:     &memoryDedicated,
 		DeletionProtection:  &protection,
 		EFIDisk:             efiDisk,
@@ -2477,6 +2479,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if cpuLimit > 0 {
 		createBody.CPULimit = &cpuLimit
+	}
+
+	if cpuAffinity != "" {
+		createBody.CPUAffinity = &cpuAffinity
 	}
 
 	if description != "" {
@@ -4676,6 +4682,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		updateBody.CPUUnits = &cpuUnits
 		updateBody.CPUAffinity = &cpuAffinity
 		updateBody.NUMAEnabled = &cpuNUMA
+
+		if cpuAffinity != "" {
+			updateBody.CPUAffinity = &cpuAffinity
+		} else {
+			del = append(del, "affinity")
+		}
 
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
