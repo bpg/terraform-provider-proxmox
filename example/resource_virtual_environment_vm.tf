@@ -128,6 +128,7 @@ resource "proxmox_virtual_environment_vm" "example" {
 
   memory {
     dedicated = 768
+    # hugepages = "2"
   }
 
   connection {

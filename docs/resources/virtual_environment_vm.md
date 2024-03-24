@@ -408,6 +408,15 @@ output "ubuntu_vm_public_key" {
     - `floating` - (Optional) The floating memory in megabytes (defaults
         to `0`).
     - `shared` - (Optional) The shared memory in megabytes (defaults to `0`).
+    - `hugepages` - (Optional) Enable/disable hugepages memory (defaults to disable).
+        - `2` - 2MB hugepages.
+        - `1024` - 1GB hugepages.
+        - `any` - Any hugepages.
+    - `keep_hugepages` - (Optional) Keep hugepages memory after the VM is stopped (defaults
+        to `false`).
+
+    Settings `hugepages` and `keep_hugepages` are only allowed for `root@pam` authenticated user.
+    And required `cpu.numa` to be enabled.
 - `migrate` - (Optional) Migrate the VM on node change instead of re-creating
     it (defaults to `false`).
 - `name` - (Optional) The virtual machine name.
