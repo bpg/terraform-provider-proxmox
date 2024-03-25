@@ -1901,8 +1901,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			return diag.FromErr(err)
 		}
 
-		for i := 0; i < len(updateBody.NetworkDevices); i++ {
-			if !updateBody.NetworkDevices[i].Enabled {
+		for i, ni := range updateBody.NetworkDevices {
+			if !ni.Enabled {
 				del = append(del, fmt.Sprintf("net%d", i))
 			}
 		}
@@ -2014,7 +2014,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		efiType := diskBlock[mkEFIDiskType].(string)
 
 		currentDiskInfo := vmConfig.EFIDisk
-		configuredDiskInfo := efiDiskInfo
+		configuredDiskInfo := efiDiskInfo //nolint:copyloopvar
 
 		if currentDiskInfo == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
@@ -2043,7 +2043,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			TargetStorage:      dataStoreID,
 		}
 
-		moveDisk := false
+		moveDisk := false //nolint:copyloopvar
 
 		if dataStoreID != "" {
 			moveDisk = true
@@ -2073,7 +2073,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		dataStoreID := diskBlock[mkTPMStateDatastoreID].(string)
 
 		currentTPMState := vmConfig.TPMState
-		configuredTPMStateInfo := tpmStateInfo
+		configuredTPMStateInfo := tpmStateInfo //nolint:copyloopvar
 
 		if currentTPMState == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
@@ -2096,7 +2096,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			TargetStorage:      dataStoreID,
 		}
 
-		moveDisk := false
+		moveDisk := false //nolint:copyloopvar
 
 		if dataStoreID != "" {
 			moveDisk = true
@@ -3037,10 +3037,10 @@ func vmGetTagsString(d *schema.ResourceData) string {
 	var sanitizedTags []string
 
 	tags := d.Get(mkTags).([]interface{})
-	for i := 0; i < len(tags); i++ {
-		tag := strings.TrimSpace(tags[i].(string))
-		if len(tag) > 0 {
-			sanitizedTags = append(sanitizedTags, tag)
+	for _, tag := range tags {
+		sanitizedTag := strings.TrimSpace(tag.(string))
+		if len(sanitizedTag) > 0 {
+			sanitizedTags = append(sanitizedTags, sanitizedTag)
 		}
 	}
 
@@ -4566,8 +4566,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if d.HasChange(mkAudioDevice) {
 		updateBody.AudioDevices = vmGetAudioDeviceList(d)
 
-		for i := 0; i < len(updateBody.AudioDevices); i++ {
-			if !updateBody.AudioDevices[i].Enabled {
+		for i, ad := range updateBody.AudioDevices {
+			if !ad.Enabled {
 				del = append(del, fmt.Sprintf("audio%d", i))
 			}
 		}
@@ -4877,8 +4877,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			return diag.FromErr(err)
 		}
 
-		for i := 0; i < len(updateBody.NetworkDevices); i++ {
-			if !updateBody.NetworkDevices[i].Enabled {
+		for i, nd := range updateBody.NetworkDevices {
+			if !nd.Enabled {
 				del = append(del, fmt.Sprintf("net%d", i))
 			}
 		}

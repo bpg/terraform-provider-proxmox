@@ -29,8 +29,7 @@ func TestParseHAResourceState(t *testing.T) {
 		{"empty value", "", HAResourceStateIgnored, true},
 		{"invalid value", "blah", HAResourceStateIgnored, true},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -59,8 +58,7 @@ func TestHAResourceStateToString(t *testing.T) {
 		{"stringify disabled", HAResourceStateDisabled, "disabled"},
 		{"stringify ignored", HAResourceStateIgnored, "ignored"},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -84,8 +82,7 @@ func TestHAResourceStateToJSON(t *testing.T) {
 		{"jsonify disabled", HAResourceStateDisabled, `"disabled"`},
 		{"jsonify ignored", HAResourceStateIgnored, `"ignored"`},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -116,8 +113,7 @@ func TestHAResourceStateFromJSON(t *testing.T) {
 		{"incompatible type", `["yo"]`, HAResourceStateIgnored, true},
 		{"invalid content", `"nope"`, HAResourceStateIgnored, true},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

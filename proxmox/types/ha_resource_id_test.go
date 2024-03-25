@@ -32,8 +32,7 @@ func TestParseHAResourceID(t *testing.T) {
 		{"container name too low", "ct:99", HAResourceID{}, true},
 		{"container name too high", "ct:1000000000", HAResourceID{}, true},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -60,8 +59,7 @@ func TestHAResourceIDToString(t *testing.T) {
 		{"stringify VM", HAResourceID{HAResourceTypeVM, "123"}, "vm:123"},
 		{"stringify CT", HAResourceID{HAResourceTypeContainer, "123"}, "ct:123"},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -83,8 +81,7 @@ func TestHAResourceIDToJSON(t *testing.T) {
 		{"jsonify VM", HAResourceID{HAResourceTypeVM, "123"}, `"vm:123"`},
 		{"jsonify CT", HAResourceID{HAResourceTypeContainer, "123"}, `"ct:123"`},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -113,8 +110,7 @@ func TestHAResourceIDFromJSON(t *testing.T) {
 		{"incompatible type", `["yo"]`, HAResourceID{}, true},
 		{"invalid content", `"nope:notatall"`, HAResourceID{}, true},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
