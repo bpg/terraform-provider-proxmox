@@ -104,6 +104,91 @@ func TestAccResourceVM(t *testing.T) {
 	}
 }
 
+func TestAccResourceVMInitialization(t *testing.T) {
+	providerConfig := getProviderConfig(t)
+
+	tests := []struct {
+		name string
+		step []resource.TestStep
+	}{
+		{"initialization works with cloud-init config provided over SCSI interface", []resource.TestStep{{
+			Config: providerConfig + `
+				resource "proxmox_virtual_environment_file" "cloud_config" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name    = "pve"
+					source_raw {
+						data = <<EOF
+#cloud-config
+runcmd:
+  - apt update
+  - apt install -y qemu-guest-agent
+  - systemctl enable qemu-guest-agent
+  - systemctl start qemu-guest-agent
+EOF
+						file_name = "cloud-config.yaml"
+					}
+				}
+
+				resource "proxmox_virtual_environment_vm" "test_vm_network1" {
+					node_name = "pve"
+					started   = true
+					agent {
+						enabled = true
+					}
+					cpu {
+						cores = 2
+					}
+					memory {
+						dedicated = 2048
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						interface    = "virtio0"
+						iothread     = true
+						discard      = "on"
+						size         = 20
+					}
+
+					initialization {
+						interface = "scsi1"
+						
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+
+				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+					content_type = "iso"
+					datastore_id = "local"
+					node_name    = "pve"
+					url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+					overwrite_unmanaged = true
+				}`,
+		}}},
+	}
+
+	accProviders := testAccMuxProviders(context.Background(), t)
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: accProviders,
+				Steps:                    tt.step,
+			})
+		})
+	}
+}
+
 func TestAccResourceVMNetwork(t *testing.T) {
 	providerConfig := getProviderConfig(t)
 
