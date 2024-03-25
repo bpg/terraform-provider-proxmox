@@ -76,6 +76,7 @@ const (
 	dvStartOnBoot                       = true
 	dvTemplate                          = false
 	dvTimeoutCreate                     = 1800
+	dvTimeoutStart                      = 300
 	dvUnprivileged                      = false
 	dvVMID                              = -1
 
@@ -156,6 +157,7 @@ const (
 	mkTags                              = "tags"
 	mkTemplate                          = "template"
 	mkTimeoutCreate                     = "timeout_create"
+	mkTimeoutStart                      = "timeout_start"
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
 )
@@ -841,6 +843,12 @@ func Container() *schema.Resource {
 				Description: "Create container timeout",
 				Optional:    true,
 				Default:     dvTimeoutCreate,
+			},
+			mkTimeoutStart: {
+				Type:        schema.TypeInt,
+				Description: "Start container timeout",
+				Optional:    true,
+				Default:     dvTimeoutStart,
 			},
 			mkUnprivileged: {
 				Type:        schema.TypeBool,
@@ -1617,6 +1625,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
 	vmID := d.Get(mkVMID).(int)
+	createTimeout := d.Get(mkTimeoutCreate).(int)
 
 	if vmID == -1 {
 		vmIDNew, e := api.Cluster().GetVMID(ctx)
@@ -1689,7 +1698,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Tags = &tagsString
 	}
 
-	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody, 60)
+	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody, createTimeout)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1729,10 +1738,10 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := api.Node(nodeName).Container(vmID)
 
-	createTimeout := d.Get(mkTimeoutCreate).(int)
+	startTimeout := d.Get(mkTimeoutStart).(int)
 
 	// Start the container and wait for it to reach a running state before continuing.
-	err = containerAPI.StartContainer(ctx, createTimeout)
+	err = containerAPI.StartContainer(ctx, startTimeout)
 	if err != nil {
 		return diag.FromErr(err)
 	}
