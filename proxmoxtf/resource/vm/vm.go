@@ -1412,33 +1412,115 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 // Check for an existing CloudInit IDE drive. If no such drive is found, return the specified `defaultValue`.
 func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, defaultValue string) string {
-	devices := []*vms.CustomStorageDevice{
-		vmConfig.IDEDevice0, vmConfig.IDEDevice1, vmConfig.IDEDevice2, vmConfig.IDEDevice3,
+	ideDevices := []*vms.CustomStorageDevice{
+		vmConfig.IDEDevice0,
+		vmConfig.IDEDevice1,
+		vmConfig.IDEDevice2,
+		vmConfig.IDEDevice3,
 	}
-	for i, device := range devices {
+	for i, device := range ideDevices {
 		if device != nil && device.Enabled && device.IsCloudInitDrive(vmID) {
 			return fmt.Sprintf("ide%d", i)
+		}
+	}
+
+	sataDevices := []*vms.CustomStorageDevice{
+		vmConfig.SATADevice0,
+		vmConfig.SATADevice1,
+		vmConfig.SATADevice2,
+		vmConfig.SATADevice3,
+		vmConfig.SATADevice4,
+		vmConfig.SATADevice5,
+	}
+	for i, device := range sataDevices {
+		if device != nil && device.Enabled && device.IsCloudInitDrive(vmID) {
+			return fmt.Sprintf("sata%d", i)
+		}
+	}
+
+	scsiDevices := []*vms.CustomStorageDevice{
+		vmConfig.SCSIDevice0,
+		vmConfig.SCSIDevice1,
+		vmConfig.SCSIDevice2,
+		vmConfig.SCSIDevice3,
+		vmConfig.SCSIDevice4,
+		vmConfig.SCSIDevice5,
+		vmConfig.SCSIDevice6,
+		vmConfig.SCSIDevice7,
+		vmConfig.SCSIDevice8,
+		vmConfig.SCSIDevice9,
+		vmConfig.SCSIDevice10,
+		vmConfig.SCSIDevice11,
+		vmConfig.SCSIDevice12,
+		vmConfig.SCSIDevice13,
+	}
+	for i, device := range scsiDevices {
+		if device != nil && device.Enabled && device.IsCloudInitDrive(vmID) {
+			return fmt.Sprintf("scsi%d", i)
 		}
 	}
 
 	return defaultValue
 }
 
-// Return a pointer to the IDE device configuration based on its name. The device name is assumed to be a
-// valid IDE interface name.
-func getIdeDevice(vmConfig *vms.GetResponseData, deviceName string) *vms.CustomStorageDevice {
-	ideDevice := vmConfig.IDEDevice3
-
+// Return a pointer to the storage device configuration based on a name. The device name is assumed to be a
+// valid ide, sata, or scsi interface name.
+func getStorageDevice(vmConfig *vms.GetResponseData, deviceName string) *vms.CustomStorageDevice {
 	switch deviceName {
 	case "ide0":
-		ideDevice = vmConfig.IDEDevice0
+		return vmConfig.IDEDevice0
 	case "ide1":
-		ideDevice = vmConfig.IDEDevice1
+		return vmConfig.IDEDevice1
 	case "ide2":
-		ideDevice = vmConfig.IDEDevice2
-	}
+		return vmConfig.IDEDevice2
+	case "ide3":
+		return vmConfig.IDEDevice3
 
-	return ideDevice
+	case "sata0":
+		return vmConfig.SATADevice0
+	case "sata1":
+		return vmConfig.SATADevice1
+	case "sata2":
+		return vmConfig.SATADevice2
+	case "sata3":
+		return vmConfig.SATADevice3
+	case "sata4":
+		return vmConfig.SATADevice4
+	case "sata5":
+		return vmConfig.SATADevice5
+
+	case "scsi0":
+		return vmConfig.SCSIDevice0
+	case "scsi1":
+		return vmConfig.SCSIDevice1
+	case "scsi2":
+		return vmConfig.SCSIDevice2
+	case "scsi3":
+		return vmConfig.SCSIDevice3
+	case "scsi4":
+		return vmConfig.SCSIDevice4
+	case "scsi5":
+		return vmConfig.SCSIDevice5
+	case "scsi6":
+		return vmConfig.SCSIDevice6
+	case "scsi7":
+		return vmConfig.SCSIDevice7
+	case "scsi8":
+		return vmConfig.SCSIDevice8
+	case "scsi9":
+		return vmConfig.SCSIDevice9
+	case "scsi10":
+		return vmConfig.SCSIDevice10
+	case "scsi11":
+		return vmConfig.SCSIDevice11
+	case "scsi12":
+		return vmConfig.SCSIDevice12
+	case "scsi13":
+		return vmConfig.SCSIDevice13
+
+	default:
+		return nil
+	}
 }
 
 // Delete IDE interfaces that can then be used for CloudInit. The first interface will always
@@ -3289,7 +3371,7 @@ func vmReadCustom(
 		currentInterface = currentBlock[mkCDROMInterface].(string)
 	}
 
-	cdromIDEDevice := getIdeDevice(vmConfig, currentInterface)
+	cdromIDEDevice := getStorageDevice(vmConfig, currentInterface)
 
 	if cdromIDEDevice != nil {
 		cdrom := make([]interface{}, 1)
@@ -3611,7 +3693,7 @@ func vmReadCustom(
 
 	initializationInterface := findExistingCloudInitDrive(vmConfig, vmID, "")
 	if initializationInterface != "" {
-		initializationDevice := getIdeDevice(vmConfig, initializationInterface)
+		initializationDevice := getStorageDevice(vmConfig, initializationInterface)
 		fileVolumeParts := strings.Split(initializationDevice.FileVolume, ":")
 
 		initialization[mkInitializationInterface] = initializationInterface
@@ -4801,7 +4883,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				stoppedBeforeUpdate = true
 				fileVolume = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 			} else {
-				ideDevice := getIdeDevice(vmConfig, existingInterface)
+				ideDevice := getStorageDevice(vmConfig, existingInterface)
 				fileVolume = ideDevice.FileVolume
 			}
 
