@@ -178,7 +178,6 @@ EOF
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: accProviders,
