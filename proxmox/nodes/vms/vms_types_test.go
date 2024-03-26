@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -29,26 +30,26 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			name: "simple volume",
 			line: `"local-lvm:vm-2041-disk-0,discard=on,ssd=1,iothread=1,size=8G,cache=writeback"`,
 			want: &CustomStorageDevice{
-				Cache:      types.StrPtr("writeback"),
-				Discard:    types.StrPtr("on"),
+				Cache:      ptr.Ptr("writeback"),
+				Discard:    ptr.Ptr("on"),
 				Enabled:    true,
 				FileVolume: "local-lvm:vm-2041-disk-0",
-				IOThread:   types.BoolPtr(true),
+				IOThread:   types.CustomBoolPtr(true),
 				Size:       ds8gig,
-				SSD:        types.BoolPtr(true),
+				SSD:        types.CustomBoolPtr(true),
 			},
 		},
 		{
 			name: "raw volume type",
 			line: `"nfs:2041/vm-2041-disk-0.raw,discard=ignore,ssd=1,iothread=1,size=8G"`,
 			want: &CustomStorageDevice{
-				Discard:    types.StrPtr("ignore"),
+				Discard:    ptr.Ptr("ignore"),
 				Enabled:    true,
 				FileVolume: "nfs:2041/vm-2041-disk-0.raw",
-				Format:     types.StrPtr("raw"),
-				IOThread:   types.BoolPtr(true),
+				Format:     ptr.Ptr("raw"),
+				IOThread:   types.CustomBoolPtr(true),
 				Size:       ds8gig,
-				SSD:        types.BoolPtr(true),
+				SSD:        types.CustomBoolPtr(true),
 			},
 		},
 	}
@@ -84,21 +85,21 @@ func TestCustomStorageDevice_IsCloudInitDrive(t *testing.T) {
 		}, {
 			name: "on directory storage",
 			device: CustomStorageDevice{
-				Media:      types.StrPtr("cdrom"),
+				Media:      ptr.Ptr("cdrom"),
 				FileVolume: "local:131/vm-131-cloudinit.qcow2",
 			},
 			want: true,
 		}, {
 			name: "on block storage",
 			device: CustomStorageDevice{
-				Media:      types.StrPtr("cdrom"),
+				Media:      ptr.Ptr("cdrom"),
 				FileVolume: "local-lvm:vm-131-cloudinit",
 			},
 			want: true,
 		}, {
 			name: "wrong VM ID",
 			device: CustomStorageDevice{
-				Media:      types.StrPtr("cdrom"),
+				Media:      ptr.Ptr("cdrom"),
 				FileVolume: "local-lvm:vm-123-cloudinit",
 			},
 			want: false,
@@ -132,13 +133,13 @@ func TestCustomStorageDevice_StorageInterface(t *testing.T) {
 		{
 			name: "virtio0",
 			device: CustomStorageDevice{
-				Interface: types.StrPtr("virtio0"),
+				Interface: ptr.Ptr("virtio0"),
 			},
 			want: "virtio",
 		}, {
 			name: "scsi13",
 			device: CustomStorageDevice{
-				Interface: types.StrPtr("scsi13"),
+				Interface: ptr.Ptr("scsi13"),
 			},
 			want: "scsi",
 		},
@@ -174,10 +175,10 @@ func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
 			iface: "sata",
 			devices: CustomStorageDevices{
 				"virtio0": &CustomStorageDevice{
-					Interface: types.StrPtr("virtio0"),
+					Interface: ptr.Ptr("virtio0"),
 				},
 				"scsi13": &CustomStorageDevice{
-					Interface: types.StrPtr("scsi13"),
+					Interface: ptr.Ptr("scsi13"),
 				},
 			},
 			want: CustomStorageDevices{},
@@ -187,21 +188,21 @@ func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
 			iface: "virtio",
 			devices: CustomStorageDevices{
 				"virtio0": &CustomStorageDevice{
-					Interface: types.StrPtr("virtio0"),
+					Interface: ptr.Ptr("virtio0"),
 				},
 				"scsi13": &CustomStorageDevice{
-					Interface: types.StrPtr("scsi13"),
+					Interface: ptr.Ptr("scsi13"),
 				},
 				"virtio1": &CustomStorageDevice{
-					Interface: types.StrPtr("virtio1"),
+					Interface: ptr.Ptr("virtio1"),
 				},
 			},
 			want: CustomStorageDevices{
 				"virtio0": &CustomStorageDevice{
-					Interface: types.StrPtr("virtio0"),
+					Interface: ptr.Ptr("virtio0"),
 				},
 				"virtio1": &CustomStorageDevice{
-					Interface: types.StrPtr("virtio1"),
+					Interface: ptr.Ptr("virtio1"),
 				},
 			},
 		},
@@ -239,10 +240,10 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			want: &CustomPCIDevice{
 				DeviceIDs:  &[]string{"81:00.4"},
 				MDev:       nil,
-				PCIExpress: types.BoolPtr(false),
-				ROMBAR:     types.BoolPtr(true),
+				PCIExpress: types.CustomBoolPtr(false),
+				ROMBAR:     types.CustomBoolPtr(true),
 				ROMFile:    nil,
-				XVGA:       types.BoolPtr(false),
+				XVGA:       types.CustomBoolPtr(false),
 			},
 		},
 		{
@@ -250,12 +251,12 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			line: `"mapping=mappeddevice,pcie=0,rombar=1,x-vga=0"`,
 			want: &CustomPCIDevice{
 				DeviceIDs:  nil,
-				Mapping:    types.StrPtr("mappeddevice"),
+				Mapping:    ptr.Ptr("mappeddevice"),
 				MDev:       nil,
-				PCIExpress: types.BoolPtr(false),
-				ROMBAR:     types.BoolPtr(true),
+				PCIExpress: types.CustomBoolPtr(false),
+				ROMBAR:     types.CustomBoolPtr(true),
 				ROMFile:    nil,
-				XVGA:       types.BoolPtr(false),
+				XVGA:       types.CustomBoolPtr(false),
 			},
 		},
 	}
@@ -328,15 +329,15 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 			name: "id only usb device",
 			line: `"host=0000:81"`,
 			want: &CustomUSBDevice{
-				HostDevice: types.StrPtr("0000:81"),
+				HostDevice: ptr.Ptr("0000:81"),
 			},
 		},
 		{
 			name: "usb device with more details",
 			line: `"host=81:00,usb3=0"`,
 			want: &CustomUSBDevice{
-				HostDevice: types.StrPtr("81:00"),
-				USB3:       types.BoolPtr(false),
+				HostDevice: ptr.Ptr("81:00"),
+				USB3:       types.CustomBoolPtr(false),
 			},
 		},
 		{
@@ -344,8 +345,8 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 			line: `"mapping=mappeddevice,usb=0"`,
 			want: &CustomUSBDevice{
 				HostDevice: nil,
-				Mapping:    types.StrPtr("mappeddevice"),
-				USB3:       types.BoolPtr(false),
+				Mapping:    ptr.Ptr("mappeddevice"),
+				USB3:       types.CustomBoolPtr(false),
 			},
 		},
 	}

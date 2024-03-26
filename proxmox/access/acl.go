@@ -20,7 +20,7 @@ func (c *Client) aclPath() string {
 }
 
 // GetACL retrieves the access control list.
-func (c *Client) GetACL(ctx context.Context) ([]*ACLGetResponseData, error) {
+func (c *Client) GetACL(ctx context.Context) ([]ACLGetResponseData, error) {
 	resBody := &ACLGetResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.aclPath(), nil, resBody)

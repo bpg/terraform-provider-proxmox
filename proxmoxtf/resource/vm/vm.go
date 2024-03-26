@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -3246,7 +3247,7 @@ func vmGetSMBIOS(d *schema.ResourceData) *vms.CustomSMBIOS {
 		}
 
 		if smbios.UUID == nil || *smbios.UUID == "" {
-			smbios.UUID = types.StrPtr(uuid.New().String())
+			smbios.UUID = ptr.Ptr(uuid.New().String())
 		}
 
 		return &smbios

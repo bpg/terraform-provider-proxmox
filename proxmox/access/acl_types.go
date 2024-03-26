@@ -12,7 +12,7 @@ import (
 
 // ACLGetResponseBody contains the body from an access control list response.
 type ACLGetResponseBody struct {
-	Data []*ACLGetResponseData `json:"data,omitempty"`
+	Data []ACLGetResponseData `json:"data,omitempty"`
 }
 
 // ACLGetResponseData contains the data from an access control list response.
@@ -31,5 +31,6 @@ type ACLUpdateRequestBody struct {
 	Path      string            `json:"path"                url:"path"`
 	Propagate *types.CustomBool `json:"propagate,omitempty" url:"propagate,omitempty,int"`
 	Roles     []string          `json:"roles"               url:"roles,comma"`
+	Tokens    []string          `json:"tokens,omitempty"    url:"tokens,omitempty,comma"`
 	Users     []string          `json:"users,omitempty"     url:"users,omitempty,comma"`
 }
