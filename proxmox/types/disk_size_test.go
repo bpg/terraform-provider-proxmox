@@ -37,8 +37,7 @@ func TestParseDiskSize(t *testing.T) {
 		{"error on unknown unit string", "2048W", -1, true},
 		{"error on arbitrary string", "something", -1, true},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -71,8 +70,7 @@ func TestFormatDiskSize(t *testing.T) {
 		{"handle gigabytes", 2147483648, "2G"},
 		{"handle terabytes", 2199023255552, "2T"},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -101,8 +99,7 @@ func TestToFromGigabytes(t *testing.T) {
 		{"handle 1024 GB", 1024, "1T"},
 		{"handle 1025 GB", 1025, "1.01T"},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

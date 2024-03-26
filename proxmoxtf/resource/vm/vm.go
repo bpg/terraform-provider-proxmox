@@ -64,6 +64,7 @@ const (
 	dvCPUSockets          = 1
 	dvCPUType             = "qemu64"
 	dvCPUUnits            = 1024
+	dvCPUAffinity         = ""
 	dvDescription         = ""
 
 	dvEFIDiskDatastoreID                = "local-lvm"
@@ -165,6 +166,7 @@ const (
 	mkCPUSockets          = "sockets"
 	mkCPUType             = "type"
 	mkCPUUnits            = "units"
+	mkCPUAffinity         = "affinity"
 	mkDescription         = "description"
 
 	mkEFIDisk                           = "efi_disk"
@@ -491,6 +493,7 @@ func VM() *schema.Resource {
 						mkCPUSockets:      dvCPUSockets,
 						mkCPUType:         dvCPUType,
 						mkCPUUnits:        dvCPUUnits,
+						mkCPUAffinity:     dvCPUAffinity,
 					},
 				}, nil
 			},
@@ -563,6 +566,13 @@ func VM() *schema.Resource {
 						ValidateDiagFunc: validation.ToDiagFunc(
 							validation.IntBetween(2, 262144),
 						),
+					},
+					mkCPUAffinity: {
+						Type:             schema.TypeString,
+						Description:      "The CPU affinity",
+						Optional:         true,
+						Default:          dvCPUAffinity,
+						ValidateDiagFunc: CPUAffinityValidator(),
 					},
 				},
 			},
@@ -1858,6 +1868,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cpuSockets := cpuBlock[mkCPUSockets].(int)
 		cpuType := cpuBlock[mkCPUType].(string)
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
+		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
 		cpuFlagsConverted := make([]string, len(cpuFlags))
 
@@ -1879,6 +1890,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.NUMAEnabled = &cpuNUMA
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
+
+		if cpuAffinity != "" {
+			updateBody.CPUAffinity = &cpuAffinity
+		}
 
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
@@ -1968,8 +1983,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			return diag.FromErr(err)
 		}
 
-		for i := 0; i < len(updateBody.NetworkDevices); i++ {
-			if !updateBody.NetworkDevices[i].Enabled {
+		for i, ni := range updateBody.NetworkDevices {
+			if !ni.Enabled {
 				del = append(del, fmt.Sprintf("net%d", i))
 			}
 		}
@@ -2081,7 +2096,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		efiType := diskBlock[mkEFIDiskType].(string)
 
 		currentDiskInfo := vmConfig.EFIDisk
-		configuredDiskInfo := efiDiskInfo
+		configuredDiskInfo := efiDiskInfo //nolint:copyloopvar
 
 		if currentDiskInfo == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
@@ -2110,7 +2125,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			TargetStorage:      dataStoreID,
 		}
 
-		moveDisk := false
+		moveDisk := false //nolint:copyloopvar
 
 		if dataStoreID != "" {
 			moveDisk = true
@@ -2140,7 +2155,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		dataStoreID := diskBlock[mkTPMStateDatastoreID].(string)
 
 		currentTPMState := vmConfig.TPMState
-		configuredTPMStateInfo := tpmStateInfo
+		configuredTPMStateInfo := tpmStateInfo //nolint:copyloopvar
 
 		if currentTPMState == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
@@ -2163,7 +2178,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			TargetStorage:      dataStoreID,
 		}
 
-		moveDisk := false
+		moveDisk := false //nolint:copyloopvar
 
 		if dataStoreID != "" {
 			moveDisk = true
@@ -2265,6 +2280,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
 	cpuType := cpuBlock[mkCPUType].(string)
 	cpuUnits := cpuBlock[mkCPUUnits].(int)
+	cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
 	description := d.Get(mkDescription).(string)
 
@@ -2545,6 +2561,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if cpuLimit > 0 {
 		createBody.CPULimit = &cpuLimit
+	}
+
+	if cpuAffinity != "" {
+		createBody.CPUAffinity = &cpuAffinity
 	}
 
 	if description != "" {
@@ -3099,10 +3119,10 @@ func vmGetTagsString(d *schema.ResourceData) string {
 	var sanitizedTags []string
 
 	tags := d.Get(mkTags).([]interface{})
-	for i := 0; i < len(tags); i++ {
-		tag := strings.TrimSpace(tags[i].(string))
-		if len(tag) > 0 {
-			sanitizedTags = append(sanitizedTags, tag)
+	for _, tag := range tags {
+		sanitizedTag := strings.TrimSpace(tag.(string))
+		if len(sanitizedTag) > 0 {
+			sanitizedTags = append(sanitizedTags, sanitizedTag)
 		}
 	}
 
@@ -3459,6 +3479,12 @@ func vmReadCustom(
 	} else {
 		// Default value of "cpuunits" is "1024" according to the API documentation.
 		cpu[mkCPUUnits] = 1024
+	}
+
+	if vmConfig.CPUAffinity != nil {
+		cpu[mkCPUAffinity] = *vmConfig.CPUAffinity
+	} else {
+		cpu[mkCPUAffinity] = ""
 	}
 
 	currentCPU := d.Get(mkCPU).([]interface{})
@@ -4622,8 +4648,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if d.HasChange(mkAudioDevice) {
 		updateBody.AudioDevices = vmGetAudioDeviceList(d)
 
-		for i := 0; i < len(updateBody.AudioDevices); i++ {
-			if !updateBody.AudioDevices[i].Enabled {
+		for i, ad := range updateBody.AudioDevices {
+			if !ad.Enabled {
 				del = append(del, fmt.Sprintf("audio%d", i))
 			}
 		}
@@ -4725,6 +4751,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuSockets := cpuBlock[mkCPUSockets].(int)
 		cpuType := cpuBlock[mkCPUType].(string)
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
+		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
 		if api.API().IsRootTicket() ||
@@ -4735,7 +4762,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
+		updateBody.CPUAffinity = &cpuAffinity
 		updateBody.NUMAEnabled = &cpuNUMA
+
+		if cpuAffinity != "" {
+			updateBody.CPUAffinity = &cpuAffinity
+		} else {
+			del = append(del, "affinity")
+		}
 
 		if cpuHotplugged > 0 {
 			updateBody.VirtualCPUCount = &cpuHotplugged
@@ -4925,8 +4959,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			return diag.FromErr(err)
 		}
 
-		for i := 0; i < len(updateBody.NetworkDevices); i++ {
-			if !updateBody.NetworkDevices[i].Enabled {
+		for i, nd := range updateBody.NetworkDevices {
+			if !nd.Enabled {
 				del = append(del, fmt.Sprintf("net%d", i))
 			}
 		}

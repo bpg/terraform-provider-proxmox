@@ -49,6 +49,7 @@ const (
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
 	dvFeaturesFUSE                      = false
+	dvHookScript                        = ""
 	dvMemoryDedicated                   = 512
 	dvMemorySwap                        = 0
 	dvMountPointACL                     = false
@@ -74,6 +75,8 @@ const (
 	dvStartupDownDelay                  = -1
 	dvStartOnBoot                       = true
 	dvTemplate                          = false
+	dvTimeoutCreate                     = 1800
+	dvTimeoutStart                      = 300
 	dvUnprivileged                      = false
 	dvVMID                              = -1
 
@@ -100,6 +103,7 @@ const (
 	mkFeaturesKeyControl                = "keyctl"
 	mkFeaturesFUSE                      = "fuse"
 	mkFeaturesMountTypes                = "mount"
+	mkHookScriptFileID                  = "hook_script_file_id"
 	mkInitialization                    = "initialization"
 	mkInitializationDNS                 = "dns"
 	mkInitializationDNSDomain           = "domain"
@@ -152,6 +156,8 @@ const (
 	mkStartOnBoot                       = "start_on_boot"
 	mkTags                              = "tags"
 	mkTemplate                          = "template"
+	mkTimeoutCreate                     = "timeout_create"
+	mkTimeoutStart                      = "timeout_start"
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
 )
@@ -374,6 +380,12 @@ func Container() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkHookScriptFileID: {
+				Type:        schema.TypeString,
+				Description: "A hook script",
+				Optional:    true,
+				Default:     dvHookScript,
 			},
 			mkInitialization: {
 				Type:        schema.TypeList,
@@ -826,6 +838,18 @@ func Container() *schema.Resource {
 				ForceNew:    true,
 				Default:     dvTemplate,
 			},
+			mkTimeoutCreate: {
+				Type:        schema.TypeInt,
+				Description: "Create container timeout",
+				Optional:    true,
+				Default:     dvTimeoutCreate,
+			},
+			mkTimeoutStart: {
+				Type:        schema.TypeInt,
+				Description: "Start container timeout",
+				Optional:    true,
+				Default:     dvTimeoutStart,
+			},
 			mkUnprivileged: {
 				Type:        schema.TypeBool,
 				Description: "Whether the container runs as unprivileged on the host",
@@ -994,6 +1018,12 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.CPUArchitecture = &cpuArchitecture
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUUnits = &cpuUnits
+	}
+
+	hookScript := d.Get(mkHookScriptFileID).(string)
+
+	if hookScript != "" {
+		updateBody.HookScript = &hookScript
 	}
 
 	var initializationIPConfigIPv4Address []string
@@ -1194,8 +1224,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	updateBody.NetworkInterfaces = networkInterfaceArray
 
-	for i := 0; i < len(updateBody.NetworkInterfaces); i++ {
-		if !updateBody.NetworkInterfaces[i].Enabled {
+	for i, ni := range updateBody.NetworkInterfaces {
+		if !ni.Enabled {
 			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 		}
 	}
@@ -1315,6 +1345,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	hookScript := d.Get(mkHookScriptFileID).(string)
 
 	initialization := d.Get(mkInitialization).([]interface{})
 	initializationDNSDomain := dvInitializationDNSDomain
@@ -1593,6 +1625,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
 	vmID := d.Get(mkVMID).(int)
+	createTimeout := d.Get(mkTimeoutCreate).(int)
 
 	if vmID == -1 {
 		vmIDNew, e := api.Cluster().GetVMID(ctx)
@@ -1632,6 +1665,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Description = &description
 	}
 
+	if hookScript != "" {
+		createBody.HookScript = &hookScript
+	}
+
 	if initializationDNSDomain != "" {
 		createBody.DNSDomain = &initializationDNSDomain
 	}
@@ -1661,7 +1698,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Tags = &tagsString
 	}
 
-	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody, 60)
+	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody, createTimeout)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1701,8 +1738,10 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := api.Node(nodeName).Container(vmID)
 
+	startTimeout := d.Get(mkTimeoutStart).(int)
+
 	// Start the container and wait for it to reach a running state before continuing.
-	err = containerAPI.StartContainer(ctx, 60)
+	err = containerAPI.StartContainer(ctx, startTimeout)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1789,10 +1828,10 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	var sanitizedTags []string
 
 	tags := d.Get(mkTags).([]interface{})
-	for i := 0; i < len(tags); i++ {
-		tag := strings.TrimSpace(tags[i].(string))
-		if len(tag) > 0 {
-			sanitizedTags = append(sanitizedTags, tag)
+	for _, tag := range tags {
+		sanitizedTag := strings.TrimSpace(tag.(string))
+		if len(sanitizedTag) > 0 {
+			sanitizedTags = append(sanitizedTags, sanitizedTag)
 		}
 	}
 
@@ -2597,6 +2636,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		updateBody.Features = features
 	}
 
+	if d.HasChange(mkHookScriptFileID) {
+		hookScript := d.Get(mkHookScriptFileID).(string)
+		if hookScript != "" {
+			updateBody.HookScript = &hookScript
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "hookscript")
+		}
+	}
+
 	// Prepare the new initialization configuration.
 	initialization := d.Get(mkInitialization).([]interface{})
 	initializationDNSDomain := dvInitializationDNSDomain
@@ -2837,8 +2885,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 		updateBody.NetworkInterfaces = networkInterfaceArray
 
-		for i := 0; i < len(updateBody.NetworkInterfaces); i++ {
-			if !updateBody.NetworkInterfaces[i].Enabled {
+		for i, ni := range updateBody.NetworkInterfaces {
+			if !ni.Enabled {
 				updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 			}
 		}

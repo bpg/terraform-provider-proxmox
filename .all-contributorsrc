@@ -938,6 +938,34 @@
       "contributions": [
         "test"
       ]
+    },
+    {
+      "login": "msdnna",
+      "name": "msdnna",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11697271?v=4",
+      "profile": "https://github.com/msdnna",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "soubinan",
+      "name": "Soubinan KACOU",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20760371?v=4",
+      "profile": "https://github.com/soubinan",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "sergelogvinov",
+      "name": "Serge",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5407715?v=4",
+      "profile": "https://github.com/sergelogvinov",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

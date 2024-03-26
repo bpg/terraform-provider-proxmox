@@ -1,4 +1,4 @@
-# v1.55.2
+# v1.57.1
 issues:
   new-from-rev: 9101977dc81f64db077b9a1eda2fe401359854c9
   # Maximum issues count per one linter. Set to 0 to disable.
@@ -29,12 +29,8 @@ issues:
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true
-  govet:
-    check-shadowing: true
   cyclop:
     max-complexity: 25
-  maligned:
-    suggest-new: true
   dupl:
     threshold: 150
   goconst:

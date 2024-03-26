@@ -82,7 +82,7 @@ func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
 				return api.ErrNoDataObjectInResponse
 			}
 
-			return c.Tasks().WaitForTask(ctx, *resBody.Data, networkReloadTimeoutSec, 1) //nolint:wrapcheck
+			return c.Tasks().WaitForTask(ctx, *resBody.Data, networkReloadTimeoutSec, 1)
 		},
 		retry.Delay(1*time.Second),
 		retry.Attempts(3),

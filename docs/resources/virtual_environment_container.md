@@ -214,6 +214,8 @@ output "ubuntu_container_public_key" {
   difference on the resource. You may use the `ignore_changes` lifecycle
   meta-argument to ignore changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
+- `timeout_create` - (Optional) Timeout for creating a container in seconds (defaults to 1800).
+- `timeout_start` - (Optional) Timeout for starting a container in seconds (defaults to 300).
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on
   the host (defaults to `false`).
 - `vm_id` - (Optional) The container identifier
@@ -225,6 +227,7 @@ output "ubuntu_container_public_key" {
     - `keyctl` - (Optional) Whether the container supports `keyctl()` system
       call (defaults to `false`)
     - `mount` - (Optional) List of allowed mount types (`cifs` or `nfs`)
+- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable).
 
 ## Attribute Reference
 
