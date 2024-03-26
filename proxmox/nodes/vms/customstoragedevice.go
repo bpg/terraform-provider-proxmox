@@ -215,35 +215,6 @@ func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// Copy returns a deep copy of the CustomStorageDevice.
-func (d CustomStorageDevice) Copy() *CustomStorageDevice {
-	return &CustomStorageDevice{
-		AIO:                     types.CopyString(d.AIO),
-		Backup:                  d.Backup.Copy(),
-		BurstableReadSpeedMbps:  types.CopyInt(d.BurstableReadSpeedMbps),
-		BurstableWriteSpeedMbps: types.CopyInt(d.BurstableWriteSpeedMbps),
-		Cache:                   types.CopyString(d.Cache),
-		DatastoreID:             types.CopyString(d.DatastoreID),
-		Discard:                 types.CopyString(d.Discard),
-		Enabled:                 d.Enabled,
-		FileID:                  types.CopyString(d.FileID),
-		FileVolume:              d.FileVolume,
-		Format:                  types.CopyString(d.Format),
-		Interface:               types.CopyString(d.Interface),
-		IopsRead:                types.CopyInt(d.IopsRead),
-		IopsWrite:               types.CopyInt(d.IopsWrite),
-		IOThread:                d.IOThread.Copy(),
-		MaxIopsRead:             types.CopyInt(d.MaxIopsRead),
-		MaxIopsWrite:            types.CopyInt(d.MaxIopsWrite),
-		MaxReadSpeedMbps:        types.CopyInt(d.MaxReadSpeedMbps),
-		MaxWriteSpeedMbps:       types.CopyInt(d.MaxWriteSpeedMbps),
-		Media:                   types.CopyString(d.Media),
-		Replicate:               d.Replicate.Copy(),
-		Size:                    d.Size.Copy(),
-		SSD:                     d.SSD.Copy(),
-	}
-}
-
 // CustomStorageDevices handles map of QEMU storage device per disk interface.
 type CustomStorageDevices map[string]*CustomStorageDevice
 

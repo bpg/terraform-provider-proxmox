@@ -442,6 +442,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		NewLinuxBridgeResource,
 		NewLinuxVLANResource,
 		NewDownloadFileResource,
+		NewACLResource,
 	}
 }
 
@@ -508,7 +509,7 @@ func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.Proxmox
 		tflog.Debug(ctx, fmt.Sprintf("Attempting a DNS lookup of node %q.", nc.NodeName))
 
 		ips, err := net.LookupIP(nodeName)
-		if err != nil {
+		if err == nil {
 			for _, ip := range ips {
 				if ipv4 := ip.To4(); ipv4 != nil {
 					nodeAddress = ipv4.String()

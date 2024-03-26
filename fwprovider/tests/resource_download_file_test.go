@@ -14,8 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -122,11 +122,11 @@ func TestAccResourceDownloadFile(t *testing.T) {
 		{"override unmanaged file", []resource.TestStep{{
 			PreConfig: func() {
 				err := getNodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-					Content:  types.StrPtr("iso"),
-					FileName: types.StrPtr("fake_file.iso"),
-					Node:     types.StrPtr(accTestNodeName),
-					Storage:  types.StrPtr(accTestStorageName),
-					URL:      types.StrPtr(fakeFileISO),
+					Content:  ptr.Ptr("iso"),
+					FileName: ptr.Ptr("fake_file.iso"),
+					Node:     ptr.Ptr(accTestNodeName),
+					Storage:  ptr.Ptr(accTestStorageName),
+					URL:      ptr.Ptr(fakeFileISO),
 				}, 600)
 				require.NoError(t, err)
 				t.Cleanup(func() {
