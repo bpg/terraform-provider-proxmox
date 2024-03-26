@@ -26,8 +26,7 @@ func TestParseHAResourceType(t *testing.T) {
 		{"empty value", "", _haResourceTypeValue, true},
 		{"invalid value", "blah", _haResourceTypeValue, true},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -54,8 +53,7 @@ func TestHAResourceTypeToString(t *testing.T) {
 		{"stringify vm", HAResourceTypeVM, "vm"},
 		{"stringify ct", HAResourceTypeContainer, "ct"},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -77,8 +75,7 @@ func TestHAResourceTypeToJSON(t *testing.T) {
 		{"jsonify vm", HAResourceTypeVM, `"vm"`},
 		{"jsonify container", HAResourceTypeContainer, `"ct"`},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -107,8 +104,7 @@ func TestHAResourceTypeFromJSON(t *testing.T) {
 		{"incompatible type", `["yo"]`, HAResourceTypeVM, true},
 		{"invalid content", `"nope"`, HAResourceTypeVM, true},
 	}
-	for _, test := range tests {
-		tt := test
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

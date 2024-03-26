@@ -76,12 +76,13 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 
 	var sanitizedPorts []string
 
-	for i := 0; i < len(m.Ports); i++ {
-		port := strings.TrimSpace(m.Ports[i].ValueString())
+	for _, port := range m.Ports {
+		port := strings.TrimSpace(port.ValueString())
 		if len(port) > 0 {
 			sanitizedPorts = append(sanitizedPorts, port)
 		}
 	}
+
 	sort.Strings(sanitizedPorts)
 	bridgePorts := strings.Join(sanitizedPorts, " ")
 

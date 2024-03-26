@@ -92,7 +92,6 @@ func TestAccResourceVM(t *testing.T) {
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -219,7 +218,6 @@ EOF
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -452,7 +450,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 	accProviders := testAccMuxProviders(context.Background(), t)
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

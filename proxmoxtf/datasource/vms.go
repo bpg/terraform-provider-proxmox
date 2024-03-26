@@ -72,12 +72,13 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	var filterTags []string
 
 	tagsData := d.Get(mkDataSourceVirtualEnvironmentVMTags).([]interface{})
-	for i := 0; i < len(tagsData); i++ {
-		tag := strings.TrimSpace(tagsData[i].(string))
+	for _, tagData := range tagsData {
+		tag := strings.TrimSpace(tagData.(string))
 		if len(tag) > 0 {
 			filterTags = append(filterTags, tag)
 		}
 	}
+
 	sort.Strings(filterTags)
 
 	var vms []interface{}

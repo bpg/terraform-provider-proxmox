@@ -175,7 +175,7 @@ func CreateClone(
 			Size: *types.DiskSizeFromGigabytes(diskSize),
 		}
 
-		moveDisk := false
+		moveDisk := false //nolint:copyloopvar
 
 		if dataStoreID != "" {
 			moveDisk = true

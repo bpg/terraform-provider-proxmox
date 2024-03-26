@@ -1224,8 +1224,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	updateBody.NetworkInterfaces = networkInterfaceArray
 
-	for i := 0; i < len(updateBody.NetworkInterfaces); i++ {
-		if !updateBody.NetworkInterfaces[i].Enabled {
+	for i, ni := range updateBody.NetworkInterfaces {
+		if !ni.Enabled {
 			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 		}
 	}
@@ -1828,10 +1828,10 @@ func containerGetTagsString(d *schema.ResourceData) string {
 	var sanitizedTags []string
 
 	tags := d.Get(mkTags).([]interface{})
-	for i := 0; i < len(tags); i++ {
-		tag := strings.TrimSpace(tags[i].(string))
-		if len(tag) > 0 {
-			sanitizedTags = append(sanitizedTags, tag)
+	for _, tag := range tags {
+		sanitizedTag := strings.TrimSpace(tag.(string))
+		if len(sanitizedTag) > 0 {
+			sanitizedTags = append(sanitizedTags, sanitizedTag)
 		}
 	}
 
@@ -2885,8 +2885,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 		updateBody.NetworkInterfaces = networkInterfaceArray
 
-		for i := 0; i < len(updateBody.NetworkInterfaces); i++ {
-			if !updateBody.NetworkInterfaces[i].Enabled {
+		for i, ni := range updateBody.NetworkInterfaces {
+			if !ni.Enabled {
 				updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 			}
 		}

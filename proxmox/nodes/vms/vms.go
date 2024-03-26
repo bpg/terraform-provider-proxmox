@@ -33,7 +33,7 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, 
 		retries = 1
 	}
 
-	for i := 0; i < retries; i++ {
+	err = retry.Do(func() error {
 		err = c.DoRequest(ctx, http.MethodPost, c.ExpandPath("clone"), d, resBody)
 		if err != nil {
 			return fmt.Errorf("error cloning VM: %w", err)
@@ -43,14 +43,8 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody, 
 			return api.ErrNoDataObjectInResponse
 		}
 
-		err = c.Tasks().WaitForTask(ctx, *resBody.Data, timeout, 5)
-		if err == nil {
-			return nil
-		}
-
-		time.Sleep(10 * time.Second)
-	}
-
+		return c.Tasks().WaitForTask(ctx, *resBody.Data, timeout, 5)
+	}, retry.Attempts(uint(retries)), retry.Delay(10*time.Second))
 	if err != nil {
 		return fmt.Errorf("error waiting for VM clone: %w", err)
 	}
@@ -269,7 +263,6 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody, tim
 			return err
 		}
 
-		//nolint:wrapcheck
 		return c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
 	},
 		retry.Attempts(3),
