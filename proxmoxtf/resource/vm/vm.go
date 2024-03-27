@@ -93,6 +93,8 @@ const (
 	dvMemoryDedicated                   = 512
 	dvMemoryFloating                    = 0
 	dvMemoryShared                      = 0
+	dvMemoryHugepages                   = ""
+	dvMemoryKeepHugepages               = false
 	dvMigrate                           = false
 	dvName                              = ""
 
@@ -210,15 +212,17 @@ const (
 	mkInitializationNetworkDataFileID   = "network_data_file_id"
 	mkInitializationMetaDataFileID      = "meta_data_file_id"
 
-	mkKeyboardLayout  = "keyboard_layout"
-	mkKVMArguments    = "kvm_arguments"
-	mkMachine         = "machine"
-	mkMemory          = "memory"
-	mkMemoryDedicated = "dedicated"
-	mkMemoryFloating  = "floating"
-	mkMemoryShared    = "shared"
-	mkMigrate         = "migrate"
-	mkName            = "name"
+	mkKeyboardLayout      = "keyboard_layout"
+	mkKVMArguments        = "kvm_arguments"
+	mkMachine             = "machine"
+	mkMemory              = "memory"
+	mkMemoryDedicated     = "dedicated"
+	mkMemoryFloating      = "floating"
+	mkMemoryShared        = "shared"
+	mkMemoryHugepages     = "hugepages"
+	mkMemoryKeepHugepages = "keep_hugepages"
+	mkMigrate             = "migrate"
+	mkName                = "name"
 
 	mkNodeName             = "node_name"
 	mkOperatingSystem      = "operating_system"
@@ -991,9 +995,11 @@ func VM() *schema.Resource {
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{
 					map[string]interface{}{
-						mkMemoryDedicated: dvMemoryDedicated,
-						mkMemoryFloating:  dvMemoryFloating,
-						mkMemoryShared:    dvMemoryShared,
+						mkMemoryDedicated:     dvMemoryDedicated,
+						mkMemoryFloating:      dvMemoryFloating,
+						mkMemoryShared:        dvMemoryShared,
+						mkMemoryHugepages:     dvMemoryHugepages,
+						mkMemoryKeepHugepages: dvMemoryKeepHugepages,
 					},
 				}, nil
 			},
@@ -1025,6 +1031,25 @@ func VM() *schema.Resource {
 						ValidateDiagFunc: validation.ToDiagFunc(
 							validation.IntBetween(0, 268435456),
 						),
+					},
+					mkMemoryHugepages: {
+						Type:         schema.TypeString,
+						Description:  "Enable/disable hugepages memory",
+						Optional:     true,
+						Default:      dvMemoryHugepages,
+						RequiredWith: []string{"cpu.0.numa"},
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							"1024",
+							"2",
+							"any",
+						}, true)),
+					},
+					mkMemoryKeepHugepages: {
+						Type:         schema.TypeBool,
+						Description:  "Hugepages will not be deleted after VM shutdown and can be used for subsequent starts",
+						Optional:     true,
+						Default:      dvMemoryKeepHugepages,
+						RequiredWith: []string{"cpu.0.numa", "memory.0.hugepages"},
 					},
 				},
 			},
@@ -1962,6 +1987,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		memoryDedicated := memoryBlock[mkMemoryDedicated].(int)
 		memoryFloating := memoryBlock[mkMemoryFloating].(int)
 		memoryShared := memoryBlock[mkMemoryShared].(int)
+		hugepages := memoryBlock[mkMemoryHugepages].(string)
+		keepHugepages := types.CustomBool(memoryBlock[mkMemoryKeepHugepages].(bool))
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.FloatingMemory = &memoryFloating
@@ -1973,6 +2000,14 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 				Name: &memorySharedName,
 				Size: memoryShared,
 			}
+		}
+
+		if hugepages != "" {
+			updateBody.Hugepages = &hugepages
+		}
+
+		if keepHugepages {
+			updateBody.KeepHugepages = &keepHugepages
 		}
 	}
 
@@ -2372,6 +2407,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	memoryDedicated := memoryBlock[mkMemoryDedicated].(int)
 	memoryFloating := memoryBlock[mkMemoryFloating].(int)
 	memoryShared := memoryBlock[mkMemoryShared].(int)
+	memoryHugepages := memoryBlock[mkMemoryHugepages].(string)
+	memoryKeepHugepages := types.CustomBool(memoryBlock[mkMemoryKeepHugepages].(bool))
 
 	machine := d.Get(mkMachine).(string)
 	name := d.Get(mkName).(string)
@@ -2582,6 +2619,14 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if machine != "" {
 		createBody.Machine = &machine
+	}
+
+	if memoryHugepages != "" {
+		createBody.Hugepages = &memoryHugepages
+	}
+
+	if memoryKeepHugepages {
+		createBody.KeepHugepages = &memoryKeepHugepages
 	}
 
 	if name != "" {
@@ -3957,6 +4002,18 @@ func vmReadCustom(
 		memory[mkMemoryShared] = 0
 	}
 
+	if vmConfig.Hugepages != nil {
+		memory[mkMemoryHugepages] = *vmConfig.Hugepages
+	} else {
+		memory[mkMemoryHugepages] = ""
+	}
+
+	if vmConfig.KeepHugepages != nil {
+		memory[mkMemoryKeepHugepages] = *vmConfig.KeepHugepages
+	} else {
+		memory[mkMemoryKeepHugepages] = false
+	}
+
 	currentMemory := d.Get(mkMemory).([]interface{})
 
 	if len(clone) > 0 {
@@ -3967,7 +4024,9 @@ func vmReadCustom(
 	} else if len(currentMemory) > 0 ||
 		memory[mkMemoryDedicated] != dvMemoryDedicated ||
 		memory[mkMemoryFloating] != dvMemoryFloating ||
-		memory[mkMemoryShared] != dvMemoryShared {
+		memory[mkMemoryShared] != dvMemoryShared ||
+		memory[mkMemoryHugepages] != dvMemoryHugepages ||
+		memory[mkMemoryKeepHugepages] != dvMemoryKeepHugepages {
 		err := d.Set(mkMemory, []interface{}{memory})
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -4762,7 +4821,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUSockets = &cpuSockets
 		updateBody.CPUUnits = &cpuUnits
-		updateBody.CPUAffinity = &cpuAffinity
 		updateBody.NUMAEnabled = &cpuNUMA
 
 		if cpuAffinity != "" {
@@ -4935,6 +4993,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		memoryDedicated := memoryBlock[mkMemoryDedicated].(int)
 		memoryFloating := memoryBlock[mkMemoryFloating].(int)
 		memoryShared := memoryBlock[mkMemoryShared].(int)
+		memoryHugepages := memoryBlock[mkMemoryHugepages].(string)
+		memoryKeepHugepages := types.CustomBool(memoryBlock[mkMemoryKeepHugepages].(bool))
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.FloatingMemory = &memoryFloating
@@ -4946,6 +5006,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				Name: &memorySharedName,
 				Size: memoryShared,
 			}
+		}
+
+		if memoryHugepages != "" {
+			updateBody.Hugepages = &memoryHugepages
+			updateBody.KeepHugepages = &memoryKeepHugepages
+		} else {
+			del = append(del, "hugepages")
+			del = append(del, "keephugepages")
 		}
 
 		rebootRequired = true

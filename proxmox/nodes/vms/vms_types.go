@@ -249,6 +249,7 @@ type CreateRequestBody struct {
 	Hotplug              types.CustomCommaSeparatedList `json:"hotplug,omitempty"            url:"hotplug,omitempty,comma"`
 	Hugepages            *string                        `json:"hugepages,omitempty"          url:"hugepages,omitempty"`
 	IDEDevices           CustomStorageDevices           `json:"ide,omitempty"                url:",omitempty"`
+	KeepHugepages        *types.CustomBool              `json:"keephugepages,omitempty"      url:"keephugepages,omitempty,int"`
 	KeyboardLayout       *string                        `json:"keyboard,omitempty"           url:"keyboard,omitempty"`
 	KVMArguments         *string                        `json:"args,omitempty"               url:"args,omitempty,space"`
 	KVMEnabled           *types.CustomBool              `json:"kvm,omitempty"                url:"kvm,omitempty,int"`
@@ -412,6 +413,7 @@ type GetResponseData struct {
 	IPConfig29           *CustomCloudInitIPConfig        `json:"ipconfig29,omitempty"`
 	IPConfig30           *CustomCloudInitIPConfig        `json:"ipconfig30,omitempty"`
 	IPConfig31           *CustomCloudInitIPConfig        `json:"ipconfig31,omitempty"`
+	KeepHugepages        *types.CustomBool               `json:"keephugepages,omitempty"`
 	KeyboardLayout       *string                         `json:"keyboard,omitempty"`
 	KVMArguments         *string                         `json:"args,omitempty"`
 	KVMEnabled           *types.CustomBool               `json:"kvm,omitempty"`
