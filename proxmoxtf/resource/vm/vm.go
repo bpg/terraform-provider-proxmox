@@ -2131,7 +2131,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		efiType := diskBlock[mkEFIDiskType].(string)
 
 		currentDiskInfo := vmConfig.EFIDisk
-		configuredDiskInfo := efiDiskInfo //nolint:copyloopvar
+		configuredDiskInfo := efiDiskInfo
 
 		if currentDiskInfo == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
@@ -2160,7 +2160,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			TargetStorage:      dataStoreID,
 		}
 
-		moveDisk := false //nolint:copyloopvar
+		moveDisk := false
 
 		if dataStoreID != "" {
 			moveDisk = true
@@ -2190,7 +2190,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		dataStoreID := diskBlock[mkTPMStateDatastoreID].(string)
 
 		currentTPMState := vmConfig.TPMState
-		configuredTPMStateInfo := tpmStateInfo //nolint:copyloopvar
+		configuredTPMStateInfo := tpmStateInfo
 
 		if currentTPMState == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
@@ -2213,7 +2213,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			TargetStorage:      dataStoreID,
 		}
 
-		moveDisk := false //nolint:copyloopvar
+		moveDisk := false
 
 		if dataStoreID != "" {
 			moveDisk = true
