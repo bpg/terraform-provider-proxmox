@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.51.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.50.0...v0.51.0) (2024-03-30)
+
+
+### Features
+
+* **vm:** add proxmox_virtual_environment_node datasource ([#1151](https://github.com/bpg/terraform-provider-proxmox/issues/1151)) ([9fee8c1](https://github.com/bpg/terraform-provider-proxmox/commit/9fee8c1e2e24a61cd8e75c3744227f5d44662c0f))
+* **vm:** add support for cpu `affinity` attribute ([#1148](https://github.com/bpg/terraform-provider-proxmox/issues/1148)) ([#1153](https://github.com/bpg/terraform-provider-proxmox/issues/1153)) ([83a5971](https://github.com/bpg/terraform-provider-proxmox/commit/83a5971cf64451f41d9a24b6245f59cdfae14569))
+* **vm:** add support for memory `hugepages` and `keep_hugepages` attributes ([#1158](https://github.com/bpg/terraform-provider-proxmox/issues/1158)) ([a2f055a](https://github.com/bpg/terraform-provider-proxmox/commit/a2f055a916104b1ba8008b7b359080acacb605f6))
+
+
+### Bug Fixes
+
+* **lxc:** improve configurable timeouts for containers operations ([#1161](https://github.com/bpg/terraform-provider-proxmox/issues/1161)) ([c45e336](https://github.com/bpg/terraform-provider-proxmox/commit/c45e3367e7128f82e6931fdf88bd31f9736147fd))
+* prevent authenticating multiple times in parallel ([#1168](https://github.com/bpg/terraform-provider-proxmox/issues/1168)) ([e87bc4b](https://github.com/bpg/terraform-provider-proxmox/commit/e87bc4b941564aace95d60ff987b7ec0d508b437))
+* **vm:** re-use ide, sata, and scsi cloud-init storage ([#1083](https://github.com/bpg/terraform-provider-proxmox/issues/1083)) ([#1141](https://github.com/bpg/terraform-provider-proxmox/issues/1141)) ([d41463d](https://github.com/bpg/terraform-provider-proxmox/commit/d41463de79dbae512a5560926cc95c2e46aba70f))
+
+
+### Miscellaneous
+
+* **deps:** update golang.org/x/exp digest (a85f2c6 → a685a6e) ([#1171](https://github.com/bpg/terraform-provider-proxmox/issues/1171)) ([e60ee99](https://github.com/bpg/terraform-provider-proxmox/commit/e60ee990fa691228bdfe64c32d52ee8e381689a0))
+* **deps:** update module github.com/golangci/golangci-lint (v1.56.2 → v1.57.1) in /tools ([#1149](https://github.com/bpg/terraform-provider-proxmox/issues/1149)) ([48756b6](https://github.com/bpg/terraform-provider-proxmox/commit/48756b69ba8f1fcafd88b1186a925236cb93cc30))
+* **deps:** update module github.com/golangci/golangci-lint (v1.57.1 → v1.57.2) in /tools ([#1172](https://github.com/bpg/terraform-provider-proxmox/issues/1172)) ([02efdc4](https://github.com/bpg/terraform-provider-proxmox/commit/02efdc40bf28d85f08d7b1b185386063db81cd7a))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework (v1.6.1 → v1.7.0) ([#1150](https://github.com/bpg/terraform-provider-proxmox/issues/1150)) ([e5ef91e](https://github.com/bpg/terraform-provider-proxmox/commit/e5ef91e72d896b45fbe3e3d0c7179028db632b1d))
+
 ## [0.50.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.49.0...v0.50.0) (2024-03-21)
 
 
