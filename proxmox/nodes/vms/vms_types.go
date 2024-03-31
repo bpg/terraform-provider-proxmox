@@ -109,7 +109,7 @@ type CustomNetworkDevices []CustomNetworkDevice
 type CustomNUMADevice struct {
 	CPUIDs        []string  `json:"cpus"                url:"cpus,semicolon"`
 	HostNodeNames *[]string `json:"hostnodes,omitempty" url:"hostnodes,omitempty,semicolon"`
-	Memory        *float64  `json:"memory,omitempty"    url:"memory,omitempty"`
+	Memory        *int      `json:"memory,omitempty"    url:"memory,omitempty"`
 	Policy        *string   `json:"policy,omitempty"    url:"policy,omitempty"`
 }
 
@@ -455,8 +455,15 @@ type GetResponseData struct {
 	NetworkDevice29      *CustomNetworkDevice            `json:"net29,omitempty"`
 	NetworkDevice30      *CustomNetworkDevice            `json:"net30,omitempty"`
 	NetworkDevice31      *CustomNetworkDevice            `json:"net31,omitempty"`
-	NUMADevices          *CustomNUMADevices              `json:"numa_devices,omitempty"`
 	NUMAEnabled          *types.CustomBool               `json:"numa,omitempty"`
+	NUMADevices0         *CustomNUMADevice               `json:"numa0,omitempty"`
+	NUMADevices1         *CustomNUMADevice               `json:"numa1,omitempty"`
+	NUMADevices2         *CustomNUMADevice               `json:"numa2,omitempty"`
+	NUMADevices3         *CustomNUMADevice               `json:"numa3,omitempty"`
+	NUMADevices4         *CustomNUMADevice               `json:"numa4,omitempty"`
+	NUMADevices5         *CustomNUMADevice               `json:"numa5,omitempty"`
+	NUMADevices6         *CustomNUMADevice               `json:"numa6,omitempty"`
+	NUMADevices7         *CustomNUMADevice               `json:"numa7,omitempty"`
 	OSType               *string                         `json:"ostype,omitempty"`
 	Overwrite            *types.CustomBool               `json:"force,omitempty"`
 	PCIDevice0           *CustomPCIDevice                `json:"hostpci0,omitempty"`
@@ -939,7 +946,7 @@ func (r CustomNUMADevice) EncodeValues(key string, v *url.Values) error {
 	}
 
 	if r.Memory != nil {
-		values = append(values, fmt.Sprintf("memory=%f", *r.Memory))
+		values = append(values, fmt.Sprintf("memory=%d", *r.Memory))
 	}
 
 	if r.Policy != nil {
@@ -1586,6 +1593,41 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 	}
 
 	r.Enabled = true
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomNUMADevice string to an object.
+func (r *CustomNUMADevice) UnmarshalJSON(b []byte) error {
+	var s string
+
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomNUMADevice: %w", err)
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+		if len(v) == 2 {
+			switch v[0] {
+			case "cpus":
+				r.CPUIDs = strings.Split(v[1], ";")
+			case "hostnodes":
+				hostnodes := strings.Split(v[1], ";")
+				r.HostNodeNames = &hostnodes
+			case "memory":
+				memory, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to parse memory size: %w", err)
+				}
+
+				r.Memory = &memory
+			case "policy":
+				r.Policy = &v[1]
+			}
+		}
+	}
 
 	return nil
 }

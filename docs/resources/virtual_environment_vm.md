@@ -417,6 +417,17 @@ output "ubuntu_vm_public_key" {
 
     Settings `hugepages` and `keep_hugepages` are only allowed for `root@pam` authenticated user.
     And required `cpu.numa` to be enabled.
+- `numa` - (Optional) The NUMA configuration.
+    - `device` - (Required) The NUMA device name for Proxmox, in form
+        of `numaX` where `X` is a sequential number from 0 to 7.
+    - `cpus` - (Required) The CPU cores to assign to the NUMA node (format is `0-7;16-31`).
+    - `memory` - (Required) The memory in megabytes to assign to the NUMA node.
+    - `hostnodes` - (Optional) The NUMA host nodes.
+    - `policy` - (Optional) The NUMA policy (defaults to `preferred`).
+        - `interleave` - Interleave memory across nodes.
+        - `preferred` - Prefer the specified node.
+        - `bind` - Only use the specified node.
+
 - `migrate` - (Optional) Migrate the VM on node change instead of re-creating
     it (defaults to `false`).
 - `name` - (Optional) The virtual machine name.

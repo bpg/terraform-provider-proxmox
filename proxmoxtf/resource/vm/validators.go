@@ -338,3 +338,13 @@ func SerialDeviceValidator() schema.SchemaValidateDiagFunc {
 		return nil, es
 	})
 }
+
+// RangeSemicolonValidator is a proxmox list validation function for ranges with semicolon.
+func RangeSemicolonValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(
+		validation.StringMatch(
+			regexp.MustCompile(`^\d+(?:-\d+)?(?:;\d+(?:-\d+)?)*`),
+			"must contain numbers but also number ranges",
+		),
+	)
+}

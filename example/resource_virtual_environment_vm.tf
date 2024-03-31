@@ -131,6 +131,12 @@ resource "proxmox_virtual_environment_vm" "example" {
     # hugepages = "2"
   }
 
+  # numa {
+  #   device = "numa0"
+  #   cpus   = "0-1"
+  #   memory = 768
+  # }
+
   connection {
     type        = "ssh"
     agent       = false

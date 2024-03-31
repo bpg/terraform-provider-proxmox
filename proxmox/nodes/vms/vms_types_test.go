@@ -274,6 +274,47 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 	}
 }
 
+func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		line    string
+		want    *CustomNUMADevice
+		wantErr bool
+	}{
+		{
+			name: "numa device all options",
+			line: `"cpus=1-2;3-4,hostnodes=1-2,memory=1024,policy=preferred"`,
+			want: &CustomNUMADevice{
+				CPUIDs:        []string{"1-2", "3-4"},
+				HostNodeNames: &[]string{"1-2"},
+				Memory:        types.IntPtr(1024),
+				Policy:        types.StrPtr("preferred"),
+			},
+		},
+		{
+			name: "numa device cpus/memory only",
+			line: `"cpus=1-2,memory=1024"`,
+			want: &CustomNUMADevice{
+				CPUIDs: []string{"1-2"},
+				Memory: types.IntPtr(1024),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r := &CustomNUMADevice{}
+			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 	t.Parallel()
 
