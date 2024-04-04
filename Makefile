@@ -1,7 +1,7 @@
 NAME=terraform-provider-proxmox
 TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
-VERSION=0.51.0# x-release-please-version
+VERSION=0.51.1# x-release-please-version
 
 # check if opentofu is installed and use it if it is,
 # otherwise use terraform

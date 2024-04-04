@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.51.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.51.0...v0.51.1) (2024-04-04)
+
+
+### Bug Fixes
+
+* **vm:** regressions: provider always tries to update `cpu.affinity` even if it is not specified ([#1182](https://github.com/bpg/terraform-provider-proxmox/issues/1182)) ([82d435f](https://github.com/bpg/terraform-provider-proxmox/commit/82d435f575576e495e0558d4f32b1620bbc4f842))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.9.0 → v1.9.2) ([#1177](https://github.com/bpg/terraform-provider-proxmox/issues/1177)) ([7358257](https://github.com/bpg/terraform-provider-proxmox/commit/7358257dbaa0f5d4c9de2aaaa24c7142d390baf6))
+* **deps:** update golang.org/x/exp digest (a685a6e → c0f41cb) ([#1183](https://github.com/bpg/terraform-provider-proxmox/issues/1183)) ([e680aa9](https://github.com/bpg/terraform-provider-proxmox/commit/e680aa9318b638d0ea7d235893eccb6ef102c925))
+
 ## [0.51.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.50.0...v0.51.0) (2024-03-30)
 
 
