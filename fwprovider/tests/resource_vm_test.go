@@ -87,6 +87,35 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			}},
 		},
+		{
+			"update CPU block", []resource.TestStep{{
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm5" {
+					node_name = "pve"
+					started   = false
+					
+					cpu {
+						cores = 2
+					}
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm5", "cpu.0.cores", "2"),
+				),
+			}, {
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm5" {
+					node_name = "pve"
+					started   = false
+					
+					cpu {
+						cores = 1
+					}
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm5", "cpu.0.cores", "1"),
+				),
+			}},
+		},
 	}
 
 	accProviders := testAccMuxProviders(context.Background(), t)

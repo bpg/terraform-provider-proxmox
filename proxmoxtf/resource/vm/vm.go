@@ -4823,10 +4823,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		updateBody.CPUUnits = &cpuUnits
 		updateBody.NUMAEnabled = &cpuNUMA
 
-		if cpuAffinity != "" {
-			updateBody.CPUAffinity = &cpuAffinity
-		} else {
-			del = append(del, "affinity")
+		// CPU affinity is a special case, only root can change it.
+		// we can't even have it in the delete list, as PVE will return an error for non-root.
+		// Hence, checking explicitly if it has changed.
+		if d.HasChange(mkCPU + ".0." + mkCPUAffinity) {
+			if cpuAffinity != "" {
+				updateBody.CPUAffinity = &cpuAffinity
+			} else {
+				del = append(del, "affinity")
+			}
 		}
 
 		if cpuHotplugged > 0 {
