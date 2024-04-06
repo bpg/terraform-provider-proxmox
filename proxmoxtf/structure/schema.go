@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -86,7 +87,7 @@ func GetSchemaBlock(
 // recommended to use it only for small lists.
 // Ref: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
 func SuppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceData) bool {
-	// the key is a path to the list item, not the list itself, e.g. "tags.0"
+	// the key is a path to the list item, not the list itself, e.g. "tags.#"
 	lastDotIndex := strings.LastIndex(key, ".")
 	if lastDotIndex != -1 {
 		key = key[:lastDotIndex]
@@ -119,4 +120,53 @@ func SuppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceDa
 	sort.Strings(newEvents)
 
 	return reflect.DeepEqual(oldEvents, newEvents)
+}
+
+// SuppressIfListsOfMapsAreEqualIgnoringOrderByKey is a customdiff.SuppressionFunc that suppresses
+// changes to a list of resources if the old and new lists are equal, ignoring the order of the
+// elements.
+// It will be called for each resource attribute, so it is not super efficient. It is
+// recommended to use it only for small lists / small resources.
+// Note: The order of the attributes within the resource is still important.
+// Ref: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
+func SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(keyAttr string) schema.SchemaDiffSuppressFunc {
+	// the attr is a path to the item's attribute, not the list itself, e.g. "numa.0.device"
+	return func(attr, _, _ string, d *schema.ResourceData) bool {
+		lastDotIndex := strings.LastIndex(attr, ".")
+		if lastDotIndex != -1 {
+			attr = attr[:lastDotIndex]
+		}
+
+		lastDotIndex = strings.LastIndex(attr, ".")
+		if lastDotIndex != -1 {
+			attr = attr[:lastDotIndex]
+		}
+
+		oldData, newData := d.GetChange(attr)
+		if oldData == nil || newData == nil {
+			return false
+		}
+
+		oldArray := oldData.([]interface{})
+		newArray := newData.([]interface{})
+
+		if len(oldArray) != len(newArray) {
+			return false
+		}
+
+		oldKeys := utils.MapResourceList(oldArray, keyAttr)
+		newKeys := utils.MapResourceList(newArray, keyAttr)
+
+		for k, v := range oldKeys {
+			if _, ok := newKeys[k]; !ok {
+				return false
+			}
+
+			if !reflect.DeepEqual(v, newKeys[k]) {
+				return false
+			}
+		}
+
+		return true
+	}
 }

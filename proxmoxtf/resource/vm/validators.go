@@ -147,7 +147,7 @@ func CPUTypeValidator() schema.SchemaValidateDiagFunc {
 // CPUAffinityValidator returns a schema validation function for a CPU affinity.
 func CPUAffinityValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(
-		validation.StringMatch(regexp.MustCompile(`^\d+[\d-,]*$`), "must contain numbers but also number ranges"),
+		validation.StringMatch(regexp.MustCompile(`^\d+[\d-,]*$`), "must contain numbers or number ranges separated by ','"),
 	)
 }
 
@@ -343,8 +343,8 @@ func SerialDeviceValidator() schema.SchemaValidateDiagFunc {
 func RangeSemicolonValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(
 		validation.StringMatch(
-			regexp.MustCompile(`^\d+(?:-\d+)?(?:;\d+(?:-\d+)?)*`),
-			"must contain numbers but also number ranges",
+			regexp.MustCompile(`^\d+(?:-\d+)?(?:;\d+(?:-\d+)?)*$`),
+			"must contain numbers or number ranges separated by ';'",
 		),
 	)
 }

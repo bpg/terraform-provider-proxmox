@@ -20,6 +20,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/utils"
+	"golang.org/x/exp/maps"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -1085,6 +1086,8 @@ func VM() *schema.Resource {
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{}, nil
 			},
+			DiffSuppressFunc:      structure.SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(mkNUMADevice),
+			DiffSuppressOnRefresh: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkNUMADevice: {
@@ -3637,7 +3640,17 @@ func vmReadCustom(
 	}
 
 	if len(clone) == 0 || len(currentNUMAList) > 0 {
-		err := d.Set(mkNUMA, utils.OrderedListFromMap(numaMap))
+		var numaList []interface{}
+
+		if len(currentNUMAList) > 0 {
+			resMap := utils.MapResourceList(currentNUMAList, mkNUMADevice)
+			devices := maps.Keys[map[string]interface{}](resMap)
+			numaList = utils.OrderedListFromMapByKeyValues(numaMap, devices)
+		} else {
+			numaList = utils.OrderedListFromMap(numaMap)
+		}
+
+		err := d.Set(mkNUMA, numaList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
