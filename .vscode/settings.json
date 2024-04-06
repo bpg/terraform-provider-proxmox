@@ -1,4 +1,11 @@
 {
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": true,
+    "editor.guides.bracketPairsHorizontal": true,
+    "editor.guides.highlightActiveBracketPair": true,
+    "editor.rulers": [
+        100
+    ],
     "git.alwaysSignOff": true,
     "cSpell.words": [
         "aarch",

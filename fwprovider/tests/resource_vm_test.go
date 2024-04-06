@@ -35,7 +35,9 @@ func TestAccResourceVM(t *testing.T) {
 					EOT
 				}`,
 			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm1", "description", "my\ndescription\nvalue"),
+				testResourceAttributes("proxmox_virtual_environment_vm.test_vm1", map[string]string{
+					"description": "my\ndescription\nvalue",
+				}),
 			),
 		}}},
 		{"single line description", []resource.TestStep{{
@@ -47,7 +49,9 @@ func TestAccResourceVM(t *testing.T) {
 					description = "my description value"
 				}`,
 			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm2", "description", "my description value"),
+				testResourceAttributes("proxmox_virtual_environment_vm.test_vm2", map[string]string{
+					"description": "my description value",
+				}),
 			),
 		}}},
 		{"no description", []resource.TestStep{{
@@ -59,7 +63,9 @@ func TestAccResourceVM(t *testing.T) {
 					description = ""
 				}`,
 			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm3", "description", ""),
+				testResourceAttributes("proxmox_virtual_environment_vm.test_vm3", map[string]string{
+					"description": "",
+				}),
 			),
 		}}},
 		{
@@ -72,7 +78,9 @@ func TestAccResourceVM(t *testing.T) {
 					protection = true
 				}`,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm4", "protection", "true"),
+					testResourceAttributes("proxmox_virtual_environment_vm.test_vm4", map[string]string{
+						"protection": "true",
+					}),
 				),
 			}, {
 				Config: `
@@ -83,7 +91,75 @@ func TestAccResourceVM(t *testing.T) {
 					protection = false
 				}`,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_vm4", "protection", "false"),
+					testResourceAttributes("proxmox_virtual_environment_vm.test_vm4", map[string]string{
+						"protection": "false",
+					}),
+				),
+			}},
+		},
+		{
+			"update cpu block", []resource.TestStep{{
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm5" {
+					node_name = "pve"
+					started   = false
+					
+					cpu {
+						cores = 2
+					}
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_vm5", map[string]string{
+						"cpu.0.sockets": "1",
+					}),
+				),
+			}, {
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm5" {
+					node_name = "pve"
+					started   = false
+					
+					cpu {
+						cores = 1
+					}
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_vm5", map[string]string{
+						"cpu.0.sockets": "1",
+					}),
+				),
+			}},
+		},
+		{
+			"update memory block", []resource.TestStep{{
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm6" {
+					node_name = "pve"
+					started   = false
+					
+					memory {
+						dedicated = 2048
+					}
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_vm6", map[string]string{
+						"memory.0.dedicated": "2048",
+					}),
+				),
+			}, {
+				Config: `
+				resource "proxmox_virtual_environment_vm" "test_vm6" {
+					node_name = "pve"
+					started   = false
+					
+					memory {
+						dedicated = 1024
+					}
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_vm6", map[string]string{
+						"memory.0.dedicated": "1024",
+					}),
 				),
 			}},
 		},
@@ -467,6 +543,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					// fully cloned disk, does not have any attributes in state
 					resource.TestCheckNoResourceAttr("proxmox_virtual_environment_vm.test_disk3", "disk.0"),
+					testResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{}),
 				),
 			},
 			{

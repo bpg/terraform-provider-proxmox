@@ -4972,10 +4972,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		updateBody.CPUUnits = &cpuUnits
 		updateBody.NUMAEnabled = &cpuNUMA
 
-		if cpuAffinity != "" {
-			updateBody.CPUAffinity = &cpuAffinity
-		} else {
-			del = append(del, "affinity")
+		// CPU affinity is a special case, only root can change it.
+		// we can't even have it in the delete list, as PVE will return an error for non-root.
+		// Hence, checking explicitly if it has changed.
+		if d.HasChange(mkCPU + ".0." + mkCPUAffinity) {
+			if cpuAffinity != "" {
+				updateBody.CPUAffinity = &cpuAffinity
+			} else {
+				del = append(del, "affinity")
+			}
 		}
 
 		if cpuHotplugged > 0 {
@@ -5168,12 +5173,20 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 		}
 
-		if memoryHugepages != "" {
-			updateBody.Hugepages = &memoryHugepages
-			updateBody.KeepHugepages = &memoryKeepHugepages
-		} else {
-			del = append(del, "hugepages")
-			del = append(del, "keephugepages")
+		if d.HasChange(mkMemory + ".0." + mkMemoryHugepages) {
+			if memoryHugepages != "" {
+				updateBody.Hugepages = &memoryHugepages
+			} else {
+				del = append(del, "hugepages")
+			}
+		}
+
+		if d.HasChange(mkMemory + ".0." + mkMemoryKeepHugepages) {
+			if memoryHugepages != "" {
+				updateBody.KeepHugepages = &memoryKeepHugepages
+			} else {
+				del = append(del, "keephugepages")
+			}
 		}
 
 		rebootRequired = true
