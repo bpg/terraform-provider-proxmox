@@ -6,11 +6,11 @@ toolchain go1.22.0
 
 replace github.com/nats-io/nkeys => github.com/nats-io/nkeys v0.4.7
 
-replace go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0
+replace go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.50.0
 
 require (
 	github.com/golangci/golangci-lint v1.57.2
-	github.com/goreleaser/goreleaser v1.24.0
+	github.com/goreleaser/goreleaser v1.25.1
 	github.com/hashicorp/terraform-plugin-docs v0.18.0
 )
 
