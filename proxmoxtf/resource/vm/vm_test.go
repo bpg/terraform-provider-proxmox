@@ -341,6 +341,21 @@ func TestVMSchema(t *testing.T) {
 		mkMemoryShared:    schema.TypeInt,
 	})
 
+	numaSchema := test.AssertNestedSchemaExistence(t, s, mkNUMA)
+
+	test.AssertOptionalArguments(t, numaSchema, []string{
+		mkNUMAHostNodeNames,
+		mkNUMAPolicy,
+	})
+
+	test.AssertValueTypes(t, numaSchema, map[string]schema.ValueType{
+		mkNUMADevice:        schema.TypeString,
+		mkNUMACPUIDs:        schema.TypeString,
+		mkNUMAMemory:        schema.TypeInt,
+		mkNUMAHostNodeNames: schema.TypeString,
+		mkNUMAPolicy:        schema.TypeString,
+	})
+
 	operatingSystemSchema := test.AssertNestedSchemaExistence(
 		t,
 		s,

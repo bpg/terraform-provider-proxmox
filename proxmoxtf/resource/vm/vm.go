@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/utils"
+	"golang.org/x/exp/maps"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -133,6 +135,8 @@ const (
 	maxResourceVirtualEnvironmentVMSerialDevices  = 4
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
+	// hardcoded /usr/share/perl5/PVE/QemuServer/Memory.pm: "our $MAX_NUMA = 8".
+	maxResourceVirtualEnvironmentVMNUMADevices = 8
 
 	mkRebootAfterCreation = "reboot"
 	mkOnBoot              = "on_boot"
@@ -170,6 +174,13 @@ const (
 	mkCPUUnits            = "units"
 	mkCPUAffinity         = "affinity"
 	mkDescription         = "description"
+
+	mkNUMA              = "numa"
+	mkNUMADevice        = "device"
+	mkNUMACPUIDs        = "cpus"
+	mkNUMAHostNodeNames = "hostnodes"
+	mkNUMAMemory        = "memory"
+	mkNUMAPolicy        = "policy"
 
 	mkEFIDisk                           = "efi_disk"
 	mkEFIDiskDatastoreID                = "datastore_id"
@@ -1049,7 +1060,7 @@ func VM() *schema.Resource {
 						Description:  "Hugepages will not be deleted after VM shutdown and can be used for subsequent starts",
 						Optional:     true,
 						Default:      dvMemoryKeepHugepages,
-						RequiredWith: []string{"cpu.0.numa", "memory.0.hugepages"},
+						RequiredWith: []string{"cpu.0.numa"},
 					},
 				},
 			},
@@ -1066,6 +1077,68 @@ func VM() *schema.Resource {
 			Type:        schema.TypeString,
 			Description: "The node name",
 			Required:    true,
+		},
+		mkNUMA: {
+			Type:        schema.TypeList,
+			Description: "The NUMA topology",
+			Optional:    true,
+			ForceNew:    false,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			DiffSuppressFunc:      structure.SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(mkNUMADevice),
+			DiffSuppressOnRefresh: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkNUMADevice: {
+						Type:         schema.TypeString,
+						Description:  "Numa node device ID",
+						Optional:     false,
+						Required:     true,
+						RequiredWith: []string{"cpu.0.numa"},
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
+							regexp.MustCompile(`^numa\d+$`),
+							"numa node device ID must be in the format 'numaX' where X is a number",
+						)),
+					},
+					mkNUMACPUIDs: {
+						Type:             schema.TypeString,
+						Description:      "CPUs accessing this NUMA node",
+						Optional:         false,
+						Required:         true,
+						RequiredWith:     []string{"cpu.0.numa"},
+						ValidateDiagFunc: RangeSemicolonValidator(),
+					},
+					mkNUMAMemory: {
+						Type:         schema.TypeInt,
+						Description:  "Amount of memory this NUMA node provides",
+						Optional:     false,
+						Required:     true,
+						RequiredWith: []string{"cpu.0.numa"},
+						ValidateDiagFunc: validation.ToDiagFunc(
+							validation.IntBetween(64, 268435456),
+						),
+					},
+					mkNUMAHostNodeNames: {
+						Type:             schema.TypeString,
+						Description:      "Host NUMA nodes to use",
+						Optional:         true,
+						RequiredWith:     []string{"cpu.0.numa"},
+						ValidateDiagFunc: RangeSemicolonValidator(),
+					},
+					mkNUMAPolicy: {
+						Type:        schema.TypeString,
+						Description: "NUMA policy",
+						Optional:    true,
+						Default:     "preferred",
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							"bind",
+							"interleave",
+							"preferred",
+						}, true)),
+					},
+				},
+			},
 		},
 		mkMigrate: {
 			Type:        schema.TypeBool,
@@ -1795,6 +1868,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	hostUSB := d.Get(mkHostUSB).([]interface{})
 	keyboardLayout := d.Get(mkKeyboardLayout).(string)
 	memory := d.Get(mkMemory).([]interface{})
+	numa := d.Get(mkNUMA).([]interface{})
 	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
 	serialDevice := d.Get(mkSerialDevice).([]interface{})
 	onBoot := types.CustomBool(d.Get(mkOnBoot).(bool))
@@ -1967,6 +2041,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if len(hostPCI) > 0 {
 		updateBody.PCIDevices = vmGetHostPCIDeviceObjects(d)
+	}
+
+	if len(numa) > 0 {
+		updateBody.NUMADevices = vmGetNumaDeviceObjects(d)
 	}
 
 	if len(hostUSB) > 0 {
@@ -2389,6 +2467,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	pciDeviceObjects := vmGetHostPCIDeviceObjects(d)
 
+	numaDeviceObjects := vmGetNumaDeviceObjects(d)
+
 	usbDeviceObjects := vmGetHostUSBDeviceObjects(d)
 
 	keyboardLayout := d.Get(mkKeyboardLayout).(string)
@@ -2559,6 +2639,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		KeyboardLayout:      &keyboardLayout,
 		NetworkDevices:      networkDeviceObjects,
 		NUMAEnabled:         &cpuNUMA,
+		NUMADevices:         numaDeviceObjects,
 		OSType:              &operatingSystemType,
 		PCIDevices:          pciDeviceObjects,
 		SCSIHardware:        &scsiHardware,
@@ -3029,6 +3110,49 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 	return pciDeviceObjects
 }
 
+func vmGetNumaDeviceObjects(d *schema.ResourceData) vms.CustomNUMADevices {
+	numaNode := d.Get(mkNUMA).([]interface{})
+	numaNodeObjects := make(vms.CustomNUMADevices, len(numaNode))
+
+	for i, numaNodeEntry := range numaNode {
+		block := numaNodeEntry.(map[string]interface{})
+
+		deviceName := block[mkNUMADevice].(string)
+		ids := block[mkNUMACPUIDs].(string)
+		hostNodes, _ := block[mkNUMAHostNodeNames].(string)
+		memory, _ := block[mkNUMAMemory].(int)
+		policy, _ := block[mkNUMAPolicy].(string)
+
+		device := vms.CustomNUMADevice{
+			Memory: &memory,
+			Policy: &policy,
+		}
+
+		if ids != "" {
+			dIDs := strings.Split(ids, ";")
+			device.CPUIDs = dIDs
+		}
+
+		if hostNodes != "" {
+			dHostNodes := strings.Split(hostNodes, ";")
+			device.HostNodeNames = &dHostNodes
+		}
+
+		if strings.HasPrefix(deviceName, "numa") {
+			deviceID, err := strconv.Atoi(deviceName[4:])
+			if err == nil {
+				numaNodeObjects[deviceID] = device
+
+				continue
+			}
+		}
+
+		numaNodeObjects[i] = device
+	}
+
+	return numaNodeObjects
+}
+
 func vmGetHostUSBDeviceObjects(d *schema.ResourceData) vms.CustomUSBDevices {
 	usbDevice := d.Get(mkHostUSB).([]interface{})
 	usbDeviceObjects := make(vms.CustomUSBDevices, len(usbDevice))
@@ -3490,6 +3614,44 @@ func vmReadCustom(
 	} else {
 		// Default value of "numa" is "false" according to the API documentation.
 		cpu[mkCPUNUMA] = false
+	}
+
+	currentNUMAList := d.Get(mkNUMA).([]interface{})
+	numaMap := map[string]interface{}{}
+
+	numaDevices := getNUMAInfo(vmConfig, d)
+	for ni, np := range numaDevices {
+		if np == nil || np.CPUIDs == nil || np.HostNodeNames == nil {
+			continue
+		}
+
+		numaNode := map[string]interface{}{}
+		numaNode[mkNUMADevice] = ni
+
+		if len(np.CPUIDs) > 0 {
+			numaNode[mkNUMACPUIDs] = strings.Join(np.CPUIDs, ";")
+		}
+
+		numaNode[mkNUMAHostNodeNames] = strings.Join(*np.HostNodeNames, ";")
+		numaNode[mkNUMAMemory] = np.Memory
+		numaNode[mkNUMAPolicy] = np.Policy
+
+		numaMap[ni] = numaNode
+	}
+
+	if len(clone) == 0 || len(currentNUMAList) > 0 {
+		var numaList []interface{}
+
+		if len(currentNUMAList) > 0 {
+			resMap := utils.MapResourceList(currentNUMAList, mkNUMADevice)
+			devices := maps.Keys[map[string]interface{}](resMap)
+			numaList = utils.OrderedListFromMapByKeyValues(numaMap, devices)
+		} else {
+			numaList = utils.OrderedListFromMap(numaMap)
+		}
+
+		err := d.Set(mkNUMA, numaList)
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	if vmConfig.CPUSockets != nil {
@@ -4971,6 +5133,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		rebootRequired = true
 	}
 
+	// Prepare the new numa devices configuration.
+	if d.HasChange(mkNUMA) {
+		updateBody.NUMADevices = vmGetNumaDeviceObjects(d)
+
+		for i := len(updateBody.NUMADevices); i < maxResourceVirtualEnvironmentVMNUMADevices; i++ {
+			del = append(del, fmt.Sprintf("numa%d", i))
+		}
+
+		rebootRequired = true
+	}
+
 	// Prepare the new usb devices configuration.
 	if d.HasChange(mkHostUSB) {
 		updateBody.USBDevices = vmGetHostUSBDeviceObjects(d)
@@ -5475,6 +5648,21 @@ func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string
 	}
 
 	return datastores
+}
+
+func getNUMAInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomNUMADevice {
+	numaDevices := map[string]*vms.CustomNUMADevice{}
+
+	numaDevices["numa0"] = resp.NUMADevices0
+	numaDevices["numa1"] = resp.NUMADevices1
+	numaDevices["numa2"] = resp.NUMADevices2
+	numaDevices["numa3"] = resp.NUMADevices3
+	numaDevices["numa4"] = resp.NUMADevices4
+	numaDevices["numa5"] = resp.NUMADevices5
+	numaDevices["numa6"] = resp.NUMADevices6
+	numaDevices["numa7"] = resp.NUMADevices7
+
+	return numaDevices
 }
 
 func getPCIInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomPCIDevice {

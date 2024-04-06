@@ -1,3 +1,3 @@
 #!/bin/sh
 
-TF_ACC=1 env $(cat testacc.env | xargs) go test -v  -timeout 120s -run "$1" github.com/bpg/terraform-provider-proxmox/fwprovider/tests $2
+TF_ACC=1 env $(cat testacc.env | xargs) go test -v  -timeout 360s -run "$1" github.com/bpg/terraform-provider-proxmox/fwprovider/tests $2
