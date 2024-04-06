@@ -5013,12 +5013,20 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 		}
 
-		if memoryHugepages != "" {
-			updateBody.Hugepages = &memoryHugepages
-			updateBody.KeepHugepages = &memoryKeepHugepages
-		} else {
-			del = append(del, "hugepages")
-			del = append(del, "keephugepages")
+		if d.HasChange(mkMemory + ".0." + mkMemoryHugepages) {
+			if memoryHugepages != "" {
+				updateBody.Hugepages = &memoryHugepages
+			} else {
+				del = append(del, "hugepages")
+			}
+		}
+
+		if d.HasChange(mkMemory + ".0." + mkMemoryKeepHugepages) {
+			if memoryHugepages != "" {
+				updateBody.KeepHugepages = &memoryKeepHugepages
+			} else {
+				del = append(del, "keephugepages")
+			}
 		}
 
 		rebootRequired = true
