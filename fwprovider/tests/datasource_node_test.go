@@ -7,7 +7,6 @@
 package tests
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -17,12 +16,14 @@ import (
 func TestAccDatasourceNode(t *testing.T) {
 	t.Parallel()
 
+	te := initTestEnvironment(t)
+
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
 	}{
 		{"read node attributes", []resource.TestStep{{
-			Config: fmt.Sprintf(`data "proxmox_virtual_environment_node" "test" { node_name = "%s" }`, accTestNodeName),
+			Config: fmt.Sprintf(`data "proxmox_virtual_environment_node" "test" { node_name = "%s" }`, te.nodeName),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributesSet("data.proxmox_virtual_environment_node.test", []string{
 					"cpu_count",
@@ -37,14 +38,12 @@ func TestAccDatasourceNode(t *testing.T) {
 		}}},
 	}
 
-	accProviders := testAccMuxProviders(context.Background(), t)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: accProviders,
+				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.steps,
 			})
 		})

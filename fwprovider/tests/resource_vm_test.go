@@ -99,30 +99,28 @@ func TestAccResourceVM(t *testing.T) {
 		},
 		{
 			"update cpu block", []resource.TestStep{{
-				Config: `
-				resource "proxmox_virtual_environment_vm" "test_vm5" {
-					node_name = "pve"
+				Config: fmt.Sprintf(`resource "proxmox_virtual_environment_vm" "test_vm5" {
+					node_name = "%s"
 					started   = false
 					
 					cpu {
 						cores = 2
 					}
-				}`,
+				}`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_vm5", map[string]string{
 						"cpu.0.sockets": "1",
 					}),
 				),
 			}, {
-				Config: `
-				resource "proxmox_virtual_environment_vm" "test_vm5" {
-					node_name = "pve"
+				Config: fmt.Sprintf(`resource "proxmox_virtual_environment_vm" "test_vm5" {
+					node_name = "%s"
 					started   = false
 					
 					cpu {
 						cores = 1
 					}
-				}`,
+				}`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_vm5", map[string]string{
 						"cpu.0.sockets": "1",
@@ -132,30 +130,28 @@ func TestAccResourceVM(t *testing.T) {
 		},
 		{
 			"update memory block", []resource.TestStep{{
-				Config: `
-				resource "proxmox_virtual_environment_vm" "test_vm6" {
-					node_name = "pve"
+				Config: fmt.Sprintf(`resource "proxmox_virtual_environment_vm" "test_vm6" {
+					node_name = "%s"
 					started   = false
 					
 					memory {
 						dedicated = 2048
 					}
-				}`,
+				}`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_vm6", map[string]string{
 						"memory.0.dedicated": "2048",
 					}),
 				),
 			}, {
-				Config: `
-				resource "proxmox_virtual_environment_vm" "test_vm6" {
-					node_name = "pve"
+				Config: fmt.Sprintf(`resource "proxmox_virtual_environment_vm" "test_vm6" {
+					node_name = "%s"
 					started   = false
 					
 					memory {
 						dedicated = 1024
 					}
-				}`,
+				}`, te.nodeName),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_vm.test_vm6", map[string]string{
 						"memory.0.dedicated": "1024",
@@ -178,18 +174,18 @@ func TestAccResourceVM(t *testing.T) {
 }
 
 func TestAccResourceVMInitialization(t *testing.T) {
-	providerConfig := getProviderConfig(t)
+	te := initTestEnvironment(t)
 
 	tests := []struct {
 		name string
 		step []resource.TestStep
 	}{
 		{"initialization works with cloud-init config provided over SCSI interface", []resource.TestStep{{
-			Config: providerConfig + `
+			Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_file" "cloud_config" {
 					content_type = "snippets"
 					datastore_id = "local"
-					node_name    = "pve"
+					node_name    = "%[1]s"
 					source_raw {
 						data = <<EOF
 #cloud-config
@@ -204,7 +200,7 @@ EOF
 				}
 
 				resource "proxmox_virtual_environment_vm" "test_vm_network1" {
-					node_name = "pve"
+					node_name = "%[1]s"
 					started   = true
 					agent {
 						enabled = true
@@ -242,19 +238,17 @@ EOF
 				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 					content_type = "iso"
 					datastore_id = "local"
-					node_name    = "pve"
+					node_name    = "%[1]s"
 					url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
 					overwrite_unmanaged = true
-				}`,
+				}`, te.nodeName),
 		}}},
 	}
-
-	accProviders := testAccMuxProviders(context.Background(), t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: accProviders,
+				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.step,
 			})
 		})
