@@ -24,6 +24,8 @@ const (
 )
 
 func TestAccResourceDownloadFile(t *testing.T) {
+	te := initTestEnvironment(t)
+
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
@@ -37,11 +39,11 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					url          = "%s"
 					overwrite_unmanaged = true
 				  }
-				 `, accTestNodeName, accTestStorageName, fakeFileISO),
+				 `, te.nodeName, accTestStorageName, fakeFileISO),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
 					"id":             "local:iso/fake_file.iso",
-					"node_name":      accTestNodeName,
+					"node_name":      te.nodeName,
 					"datastore_id":   accTestStorageName,
 					"url":            fakeFileISO,
 					"file_name":      "fake_file.iso",
@@ -68,12 +70,12 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					checksum_algorithm = "sha256"
 					overwrite_unmanaged = true
 				  }
-				 `, accTestNodeName, accTestStorageName, fakeFileQCOW2),
+				 `, te.nodeName, accTestStorageName, fakeFileQCOW2),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_download_file.qcow2_image", map[string]string{
 					"id":                 "local:iso/fake_qcow2_file.img",
 					"content_type":       "iso",
-					"node_name":          accTestNodeName,
+					"node_name":          te.nodeName,
 					"datastore_id":       accTestStorageName,
 					"url":                fakeFileQCOW2,
 					"file_name":          "fake_qcow2_file.img",
@@ -99,12 +101,12 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					upload_timeout = 10000
 					overwrite_unmanaged = true
 				  }
-				 `, accTestNodeName, accTestStorageName, fakeFileISO),
+				 `, te.nodeName, accTestStorageName, fakeFileISO),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
 					"id":             "local:iso/fake_iso_file.img",
 					"content_type":   "iso",
-					"node_name":      accTestNodeName,
+					"node_name":      te.nodeName,
 					"datastore_id":   accTestStorageName,
 					"url":            fakeFileISO,
 					"file_name":      "fake_iso_file.img",
@@ -121,16 +123,16 @@ func TestAccResourceDownloadFile(t *testing.T) {
 		}}},
 		{"override unmanaged file", []resource.TestStep{{
 			PreConfig: func() {
-				err := getNodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
+				err := te.nodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
 					Content:  types.StrPtr("iso"),
 					FileName: types.StrPtr("fake_file.iso"),
-					Node:     types.StrPtr(accTestNodeName),
+					Node:     types.StrPtr(te.nodeName),
 					Storage:  types.StrPtr(accTestStorageName),
 					URL:      types.StrPtr(fakeFileISO),
 				}, 600)
 				require.NoError(t, err)
 				t.Cleanup(func() {
-					err := getNodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
+					err := te.nodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
 					require.NoError(t, err)
 				})
 			},
@@ -142,12 +144,12 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					url 		        = "%s"
 					overwrite_unmanaged = true
 				  }
-				 `, accTestNodeName, accTestStorageName, fakeFileISO),
+				 `, te.nodeName, accTestStorageName, fakeFileISO),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
 					"id":           "local:iso/fake_file.iso",
 					"content_type": "iso",
-					"node_name":    accTestNodeName,
+					"node_name":    te.nodeName,
 					"datastore_id": accTestStorageName,
 					"url":          fakeFileISO,
 					"file_name":    "fake_file.iso",
@@ -163,12 +165,10 @@ func TestAccResourceDownloadFile(t *testing.T) {
 		}}},
 	}
 
-	accProviders := testAccMuxProviders(context.Background(), t)
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: accProviders,
+				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.steps,
 			})
 		})

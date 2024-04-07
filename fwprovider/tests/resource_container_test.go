@@ -28,35 +28,40 @@ var (
 	accCloneContainerID = 200000 + rand.Intn(99999) //nolint:gosec
 )
 
-func TestAccResourceContainer(t *testing.T) {
-	accProviders := testAccMuxProviders(context.Background(), t)
+func TestAccResourceContainer(t *testing.T) { //nolint:wsl
+	// download fails with 404 or "exit code 8" if run in parallel
+	// t.Parallel()
+
+	te := initTestEnvironment(t)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: accProviders,
+		ProtoV6ProviderFactories: te.accProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceContainerCreateConfig(false),
-				Check:  testAccResourceContainerCreateCheck(t),
+				Config: testAccResourceContainerCreateConfig(te, false),
+				Check:  testAccResourceContainerCreateCheck(te),
 			},
 			{
-				Config: testAccResourceContainerCreateConfig(true) + testAccResourceContainerCreateCloneConfig(),
-				Check:  testAccResourceContainerCreateCloneCheck(t),
+				Config: testAccResourceContainerCreateConfig(te, true) + testAccResourceContainerCreateCloneConfig(te),
+				Check:  testAccResourceContainerCreateCloneCheck(te),
 			},
 		},
 	})
 }
 
-func testAccResourceContainerCreateConfig(isTemplate bool) string {
+func testAccResourceContainerCreateConfig(te *testEnvironment, isTemplate bool) string {
+	te.t.Helper()
+
 	return fmt.Sprintf(`
 resource "proxmox_virtual_environment_download_file" "ubuntu_container_template" {
 	content_type = "vztmpl"
 	datastore_id = "local"
-	node_name    = "pve"
+	node_name    = "%[1]s"
 	url = "http://download.proxmox.com/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
     overwrite_unmanaged = true
 }
 resource "proxmox_virtual_environment_container" "test_container" {
-  node_name = "%s"
+  node_name = "%[1]s"
   vm_id     = %d
   template  = %t
 
@@ -90,24 +95,26 @@ resource "proxmox_virtual_environment_container" "test_container" {
     type             = "ubuntu"
   }
 }
-`, accTestNodeName, accTestContainerID, isTemplate)
+`, te.nodeName, accTestContainerID, isTemplate)
 }
 
-func testAccResourceContainerCreateCheck(t *testing.T) resource.TestCheckFunc {
-	t.Helper()
+func testAccResourceContainerCreateCheck(te *testEnvironment) resource.TestCheckFunc {
+	te.t.Helper()
 
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
 		func(*terraform.State) error {
-			err := getNodesClient().Container(accTestContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
-			require.NoError(t, err, "container did not start")
+			err := te.nodeClient().Container(accTestContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			require.NoError(te.t, err, "container did not start")
 
 			return nil
 		},
 	)
 }
 
-func testAccResourceContainerCreateCloneConfig() string {
+func testAccResourceContainerCreateCloneConfig(te *testEnvironment) string {
+	te.t.Helper()
+
 	return fmt.Sprintf(`
 resource "proxmox_virtual_environment_container" "test_container_clone" {
   depends_on = [proxmox_virtual_environment_container.test_container]
@@ -123,16 +130,16 @@ resource "proxmox_virtual_environment_container" "test_container_clone" {
     hostname = "test-clone"
   }
 }
-`, accTestNodeName, accCloneContainerID)
+`, te.nodeName, accCloneContainerID)
 }
 
-func testAccResourceContainerCreateCloneCheck(t *testing.T) resource.TestCheckFunc {
-	t.Helper()
+func testAccResourceContainerCreateCloneCheck(te *testEnvironment) resource.TestCheckFunc {
+	te.t.Helper()
 
 	return resource.ComposeTestCheckFunc(
 		func(*terraform.State) error {
-			err := getNodesClient().Container(accCloneContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
-			require.NoError(t, err, "container did not start")
+			err := te.nodeClient().Container(accCloneContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			require.NoError(te.t, err, "container did not start")
 
 			return nil
 		},
