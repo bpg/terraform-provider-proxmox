@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.52.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.51.1...v0.52.0) (2024-04-07)
+
+
+### Features
+
+* **vm:** add support for numa architecture attribute ([#1156](https://github.com/bpg/terraform-provider-proxmox/issues/1156)) ([#1175](https://github.com/bpg/terraform-provider-proxmox/issues/1175)) ([dbbd966](https://github.com/bpg/terraform-provider-proxmox/commit/dbbd966736716ab730da04ef1099cc82d2e85019))
+
+
+### Bug Fixes
+
+* **vm:** regression: provider always tries to update `memory.*hugepages` even if it is not specified ([#1188](https://github.com/bpg/terraform-provider-proxmox/issues/1188)) ([31b6812](https://github.com/bpg/terraform-provider-proxmox/commit/31b6812ce281da214261786f633ed7e93c197fb0))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.9.2 → v1.9.3) ([#1190](https://github.com/bpg/terraform-provider-proxmox/issues/1190)) ([24daca5](https://github.com/bpg/terraform-provider-proxmox/commit/24daca59410bb3974045e7dd5825fdbe0ef1356e))
+* **deps:** update tools ([#1184](https://github.com/bpg/terraform-provider-proxmox/issues/1184)) ([f4e5ef8](https://github.com/bpg/terraform-provider-proxmox/commit/f4e5ef8aaacdee4063eb65cd5fb53d197229335a))
+* improve acceptance tests on CI ([#1173](https://github.com/bpg/terraform-provider-proxmox/issues/1173)) ([268c861](https://github.com/bpg/terraform-provider-proxmox/commit/268c8616494219463fc2f20b2279a166f17c791a))
+
 ## [0.51.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.51.0...v0.51.1) (2024-04-04)
 
 
