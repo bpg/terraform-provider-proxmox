@@ -28,7 +28,7 @@ var (
 	accCloneContainerID = 200000 + rand.Intn(99999) //nolint:gosec
 )
 
-func TestAccResourceContainer(t *testing.T) {
+func TestAccResourceContainer(t *testing.T) { //nolint:wsl
 	// download fails with 404 or "exit code 8" if run in parallel
 	// t.Parallel()
 
