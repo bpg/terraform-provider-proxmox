@@ -184,7 +184,7 @@ func deleteSnippet(te *testEnvironment, fname string) {
 func testAccResourceFileSnippetRawCreatedConfig(te *testEnvironment, fname string) string {
 	te.t.Helper()
 
-	return fmt.Sprintf(`%s
+	return te.providerConfig + fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test_raw" {
   content_type = "snippets"
   datastore_id = "local"
@@ -202,7 +202,7 @@ test snippet
 func testAccResourceFileCreatedConfig(te *testEnvironment, fname string, extra ...string) string {
 	te.t.Helper()
 
-	return fmt.Sprintf(`%s
+	return te.providerConfig + fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
@@ -217,7 +217,7 @@ resource "proxmox_virtual_environment_file" "test" {
 func testAccResourceFileTwoSourcesCreatedConfig(te *testEnvironment) string {
 	te.t.Helper()
 
-	return fmt.Sprintf(`%s
+	return te.providerConfig + fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
@@ -237,7 +237,7 @@ test snippet
 func testAccResourceFileMissingSourceConfig(te *testEnvironment) string {
 	te.t.Helper()
 
-	return fmt.Sprintf(`%s
+	return te.providerConfig + fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
@@ -266,7 +266,7 @@ func testAccResourceFileCreatedCheck(ctype string, fname string) resource.TestCh
 func testAccResourceFileSnippetUpdateConfig(te *testEnvironment, fname string) string {
 	te.t.Helper()
 
-	return fmt.Sprintf(`%s
+	return te.providerConfig + fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
