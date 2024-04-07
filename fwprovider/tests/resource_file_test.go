@@ -129,13 +129,14 @@ func uploadSnippetFile(t *testing.T, file *os.File) {
 	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
 	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
+	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
 	sshClient, err := ssh.NewClient(
 		sshUsername, "", sshAgent, sshAgentSocket, sshPrivateKey,
 		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
 				Address: u.Hostname(),
-				Port:    22,
+				Port:    int32(sshPort),
 			},
 		},
 	)
@@ -184,7 +185,7 @@ func deleteSnippet(te *testEnvironment, fname string) {
 func testAccResourceFileSnippetRawCreatedConfig(te *testEnvironment, fname string) string {
 	te.t.Helper()
 
-	return te.providerConfig + fmt.Sprintf(`%s
+	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test_raw" {
   content_type = "snippets"
   datastore_id = "local"
@@ -202,7 +203,7 @@ test snippet
 func testAccResourceFileCreatedConfig(te *testEnvironment, fname string, extra ...string) string {
 	te.t.Helper()
 
-	return te.providerConfig + fmt.Sprintf(`%s
+	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
@@ -217,7 +218,7 @@ resource "proxmox_virtual_environment_file" "test" {
 func testAccResourceFileTwoSourcesCreatedConfig(te *testEnvironment) string {
 	te.t.Helper()
 
-	return te.providerConfig + fmt.Sprintf(`%s
+	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
@@ -237,7 +238,7 @@ test snippet
 func testAccResourceFileMissingSourceConfig(te *testEnvironment) string {
 	te.t.Helper()
 
-	return te.providerConfig + fmt.Sprintf(`%s
+	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
@@ -266,7 +267,7 @@ func testAccResourceFileCreatedCheck(ctype string, fname string) resource.TestCh
 func testAccResourceFileSnippetUpdateConfig(te *testEnvironment, fname string) string {
 	te.t.Helper()
 
-	return te.providerConfig + fmt.Sprintf(`%s
+	return fmt.Sprintf(`%s
 resource "proxmox_virtual_environment_file" "test" {
   datastore_id = "local"
   node_name    = "%s"
