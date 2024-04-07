@@ -12,7 +12,10 @@ on:
 jobs:
   acceptance:
     strategy:
+      fail-fast: false
       matrix:
+        terraform: [ 1.6 ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         include:
           - os: ubuntu-latest
             node: pve1
@@ -23,7 +26,6 @@ jobs:
           - os: macos-latest
             node: pve3
             port: 13453
-        terraform: [ 1.6 ]
     runs-on: ${{ matrix.os }}
     environment: pve-acc
     steps:
