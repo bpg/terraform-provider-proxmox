@@ -68,7 +68,8 @@ provider "proxmox" {
 	  port    = %s
 	}
   }
-}`, nodeName, nodeAddress, nodePort)
+}
+`, nodeName, nodeAddress, nodePort)
 
 	return &testEnvironment{
 		t:              t,

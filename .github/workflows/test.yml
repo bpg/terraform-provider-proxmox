@@ -99,11 +99,3 @@ jobs:
           filters: |
             go:
               - '**/*.go'
-
-#      - name: Invoke acceptance tests workflow
-#        if: ${{ steps.filter.outputs.go == 'true' }}
-#        uses: benc-uk/workflow-dispatch@v1
-#        with:
-#          workflow: testacc.yml
-#          ref: ${{ github.event.pull_request.head.ref }}
-#          inputs: '{"ref": "${{ github.head_ref }}" }'

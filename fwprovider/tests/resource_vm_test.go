@@ -332,7 +332,7 @@ EOF
 			),
 		}}},
 		{"network device disconnected", []resource.TestStep{{
-			Config: fmt.Sprintf(`
+			Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm_network2" {
 					node_name = "%s"
 					started   = false
@@ -348,7 +348,7 @@ EOF
 				}),
 			),
 		}, {
-			Config: fmt.Sprintf(`
+			Config: te.providerConfig + fmt.Sprintf(`
 				resource "proxmox_virtual_environment_vm" "test_vm_network2" {
 					node_name = "%s"
 					started   = false
