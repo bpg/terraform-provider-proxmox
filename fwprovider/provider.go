@@ -444,6 +444,8 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		network.NewLinuxVLANResource,
 		NewClusterOptionsResource,
 		NewDownloadFileResource,
+		NewHardwareMappingPCIResource,
+		NewHardwareMappingUSBResource,
 	}
 }
 
@@ -454,6 +456,9 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		ha.NewHAResourcesDataSource,
 		ha.NewHAResourceDataSource,
 		NewVersionDataSource,
+		NewHardwareMappingPCIDatasource,
+		NewHardwareMappingUSBDatasource,
+		NewHardwareMappingsDatasource,
 	}
 }
 
