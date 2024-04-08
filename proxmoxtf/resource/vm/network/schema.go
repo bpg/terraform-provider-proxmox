@@ -118,6 +118,7 @@ func Schema() map[string]*schema.Schema {
 						Default:     dvNetworkDeviceModel,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 							"e1000",
+							"e1000e",
 							"rtl8139",
 							"virtio",
 							"vmxnet3",
