@@ -27,11 +27,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-const (
-	accTestFileRawName = "proxmox_virtual_environment_file.test_raw"
-	accTestFileName    = "proxmox_virtual_environment_file.test"
-)
-
 type nodeResolver struct {
 	node ssh.ProxmoxNode
 }
@@ -41,8 +36,6 @@ func (c *nodeResolver) Resolve(_ context.Context, _ string) (ssh.ProxmoxNode, er
 }
 
 func TestAccResourceFile(t *testing.T) {
-	t.Parallel()
-
 	te := initTestEnvironment(t)
 
 	snippetRaw := fmt.Sprintf("snippet-raw-%s.txt", gofakeit.Word())
@@ -68,7 +61,7 @@ func TestAccResourceFile(t *testing.T) {
 		_ = os.Remove(fileISO)
 	})
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.accProviders,
 		PreCheck: func() {
 			uploadSnippetFile(t, snippetFile2)

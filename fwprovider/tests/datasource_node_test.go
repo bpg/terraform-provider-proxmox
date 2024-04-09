@@ -13,8 +13,6 @@ import (
 )
 
 func TestAccDatasourceNode(t *testing.T) {
-	t.Parallel()
-
 	te := initTestEnvironment(t)
 
 	tests := []struct {
@@ -39,9 +37,7 @@ func TestAccDatasourceNode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.steps,
 			})

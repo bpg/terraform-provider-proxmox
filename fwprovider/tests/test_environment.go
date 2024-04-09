@@ -26,15 +26,12 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-const (
-	accTestStorageName = "local"
-)
-
 type testEnvironment struct {
 	t              *testing.T
 	templateVars   map[string]any
 	providerConfig string
 	nodeName       string
+	datastoreID    string
 
 	accProviders map[string]func() (tfprotov6.ProviderServer, error)
 	once         sync.Once
@@ -75,14 +72,18 @@ provider "proxmox" {
 }
 `, nodeName, nodeAddress, nodePort)
 
+	const datastoreID = "local"
+
 	return &testEnvironment{
 		t: t,
 		templateVars: map[string]any{
 			"ProviderConfig": pc,
 			"NodeName":       nodeName,
+			"DatastoreID":    datastoreID,
 		},
 		providerConfig: pc,
 		nodeName:       nodeName,
+		datastoreID:    datastoreID,
 		accProviders:   muxProviders(t),
 	}
 }
@@ -141,7 +142,7 @@ func (e *testEnvironment) nodeClient() *nodes.Client {
 
 func (e *testEnvironment) nodeStorageClient() *storage.Client {
 	nodesClient := e.nodeClient()
-	return &storage.Client{Client: nodesClient, StorageName: accTestStorageName}
+	return &storage.Client{Client: nodesClient, StorageName: e.datastoreID}
 }
 
 // testAccMuxProviders returns a map of mux servers for the acceptance tests.
