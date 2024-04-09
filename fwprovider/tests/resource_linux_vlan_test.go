@@ -33,7 +33,7 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccResourceLinuxVLANCreatedConfig(te, iface, vlan1),
+				Config: te.renderConfig(testAccResourceLinuxVLANCreatedConfig(iface, vlan1)),
 				Check:  testAccResourceLinuxVLANCreatedCheck(iface, vlan1),
 			},
 			// ImportState testing
@@ -44,7 +44,7 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 			},
 			// Create and Read with a custom name
 			{
-				Config: testAccResourceLinuxVLANCustomNameCreatedConfig(te, customName, iface, vlan2),
+				Config: te.renderConfig(testAccResourceLinuxVLANCustomNameCreatedConfig(customName, iface, vlan2)),
 				Check:  testAccResourceLinuxVLANCustomNameCreatedCheck(customName, iface, vlan2),
 				// PVE API is unreliable. Sometimes it returns a wrong VLAN ID for this second interface.
 				SkipFunc: func() (bool, error) {
@@ -53,22 +53,22 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 			},
 			// Update testing
 			{
-				Config: testAccResourceLinuxVLANUpdatedConfig(te, iface, vlan1, ipV4cidr),
+				Config: te.renderConfig(testAccResourceLinuxVLANUpdatedConfig(iface, vlan1, ipV4cidr)),
 				Check:  testAccResourceLinuxVLANUpdatedCheck(iface, vlan1, ipV4cidr),
 			},
 		},
 	})
 }
 
-func testAccResourceLinuxVLANCreatedConfig(te *testEnvironment, iface string, vlan int) string {
+func testAccResourceLinuxVLANCreatedConfig(iface string, vlan int) string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_network_linux_vlan" "test" {
 		comment = "created by terraform"
 		mtu = 1499
 		name = "%s.%d"
-		node_name = "%s"
+		node_name = "{{.NodeName}}"
 	}
-	`, iface, vlan, te.nodeName)
+	`, iface, vlan)
 }
 
 func testAccResourceLinuxVLANCreatedCheck(iface string, vlan int) resource.TestCheckFunc {
@@ -81,17 +81,17 @@ func testAccResourceLinuxVLANCreatedCheck(iface string, vlan int) resource.TestC
 	)
 }
 
-func testAccResourceLinuxVLANCustomNameCreatedConfig(te *testEnvironment, name string, iface string, vlan int) string {
+func testAccResourceLinuxVLANCustomNameCreatedConfig(name string, iface string, vlan int) string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_network_linux_vlan" "%s" {
 		comment = "created by terraform"
 		interface = "%s"
 		mtu = 1499
 		name = "%s"
-		node_name = "%s"
+		node_name = "{{.NodeName}}"
 		vlan = %d
 	}
-	`, name, iface, name, te.nodeName, vlan)
+	`, name, iface, name, vlan)
 }
 
 func testAccResourceLinuxVLANCustomNameCreatedCheck(name string, iface string, vlan int) resource.TestCheckFunc {
@@ -106,16 +106,16 @@ func testAccResourceLinuxVLANCustomNameCreatedCheck(name string, iface string, v
 	)
 }
 
-func testAccResourceLinuxVLANUpdatedConfig(te *testEnvironment, iface string, vlan int, ipV4cidr string) string {
+func testAccResourceLinuxVLANUpdatedConfig(iface string, vlan int, ipV4cidr string) string {
 	return fmt.Sprintf(`
 	resource "proxmox_virtual_environment_network_linux_vlan" "test" {
 		address = "%s"
 		address6 = "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"
 		comment = "updated by terraform"
 		name = "%s.%d"
-		node_name = "%s"
+		node_name = "{{.NodeName}}"
 	}
-	`, ipV4cidr, iface, vlan, te.nodeName)
+	`, ipV4cidr, iface, vlan)
 }
 
 func testAccResourceLinuxVLANUpdatedCheck(iface string, vlan int, ipV4cidr string) resource.TestCheckFunc {

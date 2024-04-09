@@ -21,9 +21,9 @@ func TestAccResourceUser(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create and update user", []resource.TestStep{{
-			Config: `
-				resource "proxmox_virtual_environment_user" "user1" {
+		{"create and update user", []resource.TestStep{
+			{
+				Config: `resource "proxmox_virtual_environment_user" "user1" {
 					  comment  			= "Managed by Terraform"
 					  email 			= "user1@pve"
 					  enabled 			= true
@@ -31,10 +31,8 @@ func TestAccResourceUser(t *testing.T) {
 					  first_name 		= "First"
 					  last_name 		= "Last"
 					  user_id  			= "user1@pve"
-				}
-				`,
-			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_user.user1", map[string]string{
+				}`,
+				Check: testResourceAttributes("proxmox_virtual_environment_user.user1", map[string]string{
 					"comment":         "Managed by Terraform",
 					"email":           "user1@pve",
 					"enabled":         "true",
@@ -43,23 +41,22 @@ func TestAccResourceUser(t *testing.T) {
 					"last_name":       "Last",
 					"user_id":         "user1@pve",
 				}),
-			),
-		}, {
-			Config: `
-				resource "proxmox_virtual_environment_user" "user1" {
+			},
+			{
+				Config: `resource "proxmox_virtual_environment_user" "user1" {
 					  enabled 			= false
 					  expiration_date 	= "2035-01-01T22:00:00Z"
 					  user_id  			= "user1@pve"
 					  first_name 		= "First One"
-				}
-				`,
-			Check: testResourceAttributes("proxmox_virtual_environment_user.user1", map[string]string{
-				"enabled":         "false",
-				"expiration_date": "2035-01-01T22:00:00Z",
-				"first_name":      "First One",
-				"user_id":         "user1@pve",
-			}),
-		}}},
+				}`,
+				Check: testResourceAttributes("proxmox_virtual_environment_user.user1", map[string]string{
+					"enabled":         "false",
+					"expiration_date": "2035-01-01T22:00:00Z",
+					"first_name":      "First One",
+					"user_id":         "user1@pve",
+				}),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

@@ -7,15 +7,12 @@
 package tests
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccDatasourceNode(t *testing.T) {
-	t.Parallel()
-
 	te := initTestEnvironment(t)
 
 	tests := []struct {
@@ -23,7 +20,7 @@ func TestAccDatasourceNode(t *testing.T) {
 		steps []resource.TestStep
 	}{
 		{"read node attributes", []resource.TestStep{{
-			Config: fmt.Sprintf(`data "proxmox_virtual_environment_node" "test" { node_name = "%s" }`, te.nodeName),
+			Config: te.renderConfig(`data "proxmox_virtual_environment_node" "test" { node_name = "{{.NodeName}}" }`),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributesSet("data.proxmox_virtual_environment_node.test", []string{
 					"cpu_count",
@@ -40,9 +37,7 @@ func TestAccDatasourceNode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.steps,
 			})

@@ -15,13 +15,11 @@ import (
 )
 
 func TestAccDatasourceVersion(t *testing.T) {
-	t.Parallel()
-
 	te := initTestEnvironment(t)
 
 	datasourceName := "data.proxmox_virtual_environment_version.test"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.accProviders,
 		Steps: []resource.TestStep{
 			// Read testing
