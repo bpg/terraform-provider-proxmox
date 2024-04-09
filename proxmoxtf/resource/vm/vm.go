@@ -2890,7 +2890,9 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 			sshKeys := make(vms.CustomCloudInitSSHKeys, len(keys))
 
 			for i, k := range keys {
-				sshKeys[i] = k.(string)
+				if k != nil {
+					sshKeys[i] = k.(string)
+				}
 			}
 
 			initializationConfig.SSHKeys = &sshKeys
