@@ -52,19 +52,18 @@ func TestAccResourceFile(t *testing.T) {
 		"FileISO":      fileISO,
 	})
 
-	t.Cleanup(func() {
-		deleteSnippet(te, filepath.Base(snippetFile1))
-		deleteSnippet(te, filepath.Base(snippetFile2))
-
-		_ = os.Remove(snippetFile1)
-		_ = os.Remove(snippetFile2)
-		_ = os.Remove(fileISO)
-	})
-
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.accProviders,
 		PreCheck: func() {
 			uploadSnippetFile(t, snippetFile2)
+			t.Cleanup(func() {
+				deleteSnippet(te, filepath.Base(snippetFile1))
+				deleteSnippet(te, filepath.Base(snippetFile2))
+
+				_ = os.Remove(snippetFile1)
+				_ = os.Remove(snippetFile2)
+				_ = os.Remove(fileISO)
+			})
 		},
 		Steps: []resource.TestStep{
 			{
