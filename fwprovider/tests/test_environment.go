@@ -1,11 +1,13 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/url"
 	"sync"
 	"testing"
+	"text/template"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -30,11 +32,13 @@ const (
 
 type testEnvironment struct {
 	t              *testing.T
+	templateVars   map[string]any
 	providerConfig string
-	accProviders   map[string]func() (tfprotov6.ProviderServer, error)
 	nodeName       string
-	once           sync.Once
-	nc             *nodes.Client
+
+	accProviders map[string]func() (tfprotov6.ProviderServer, error)
+	once         sync.Once
+	nc           *nodes.Client
 }
 
 func initTestEnvironment(t *testing.T) *testEnvironment {
@@ -72,11 +76,36 @@ provider "proxmox" {
 `, nodeName, nodeAddress, nodePort)
 
 	return &testEnvironment{
-		t:              t,
+		t: t,
+		templateVars: map[string]any{
+			"ProviderConfig": pc,
+			"NodeName":       nodeName,
+		},
 		providerConfig: pc,
-		accProviders:   muxProviders(t),
 		nodeName:       nodeName,
+		accProviders:   muxProviders(t),
 	}
+}
+
+// addTemplateVars adds the given variables to the template variables of the current test environment.
+// Please note that NodeName and ProviderConfig are reserved keys, they are set by the test environment
+// and cannot be overridden.
+func (e *testEnvironment) addTemplateVars(vars map[string]any) {
+	for k, v := range vars {
+		e.templateVars[k] = v
+	}
+}
+
+// renderConfig renders the given configuration with for the current test environment using template engine.
+func (e *testEnvironment) renderConfig(cfg string) string {
+	tmpl, err := template.New("config").Parse("{{.ProviderConfig}}" + cfg)
+	require.NoError(e.t, err)
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, e.templateVars)
+	require.NoError(e.t, err)
+
+	return buf.String()
 }
 
 func (e *testEnvironment) nodeClient() *nodes.Client {

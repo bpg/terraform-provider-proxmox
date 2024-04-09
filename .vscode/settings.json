@@ -26,6 +26,7 @@
         "cputype",
         "cpuunits",
         "customdiff",
+        "Datasource",
         "deepcode",
         "directsync",
         "efidisk",

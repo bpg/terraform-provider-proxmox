@@ -7,7 +7,6 @@
 package tests
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -23,7 +22,7 @@ func TestAccDatasourceNode(t *testing.T) {
 		steps []resource.TestStep
 	}{
 		{"read node attributes", []resource.TestStep{{
-			Config: fmt.Sprintf(`data "proxmox_virtual_environment_node" "test" { node_name = "%s" }`, te.nodeName),
+			Config: te.renderConfig(`data "proxmox_virtual_environment_node" "test" { node_name = "{{.NodeName}}" }`),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributesSet("data.proxmox_virtual_environment_node.test", []string{
 					"cpu_count",

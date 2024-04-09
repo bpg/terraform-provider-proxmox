@@ -38,11 +38,11 @@ func TestAccResourceContainer(t *testing.T) { //nolint:wsl
 		ProtoV6ProviderFactories: te.accProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceContainerCreateConfig(te, false),
+				Config: te.renderConfig(testAccResourceContainerCreateConfig(te, false)),
 				Check:  testAccResourceContainerCreateCheck(te),
 			},
 			{
-				Config: testAccResourceContainerCreateConfig(te, true) + testAccResourceContainerCreateCloneConfig(te),
+				Config: te.renderConfig(testAccResourceContainerCreateConfig(te, true) + testAccResourceContainerCreateCloneConfig(te)),
 				Check:  testAccResourceContainerCreateCloneCheck(te),
 			},
 		},
@@ -56,12 +56,12 @@ func testAccResourceContainerCreateConfig(te *testEnvironment, isTemplate bool) 
 resource "proxmox_virtual_environment_download_file" "ubuntu_container_template" {
 	content_type = "vztmpl"
 	datastore_id = "local"
-	node_name    = "%[1]s"
+	node_name = "{{.NodeName}}"
 	url = "http://download.proxmox.com/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
     overwrite_unmanaged = true
 }
 resource "proxmox_virtual_environment_container" "test_container" {
-  node_name = "%[1]s"
+  node_name = "{{.NodeName}}"
   vm_id     = %d
   template  = %t
 
@@ -95,7 +95,7 @@ resource "proxmox_virtual_environment_container" "test_container" {
     type             = "ubuntu"
   }
 }
-`, te.nodeName, accTestContainerID, isTemplate)
+`, accTestContainerID, isTemplate)
 }
 
 func testAccResourceContainerCreateCheck(te *testEnvironment) resource.TestCheckFunc {
@@ -118,8 +118,7 @@ func testAccResourceContainerCreateCloneConfig(te *testEnvironment) string {
 	return fmt.Sprintf(`
 resource "proxmox_virtual_environment_container" "test_container_clone" {
   depends_on = [proxmox_virtual_environment_container.test_container]
-
-  node_name = "%s"
+  node_name = "{{.NodeName}}"
   vm_id     = %d
 
   clone {
@@ -130,7 +129,7 @@ resource "proxmox_virtual_environment_container" "test_container_clone" {
     hostname = "test-clone"
   }
 }
-`, te.nodeName, accCloneContainerID)
+`, accCloneContainerID)
 }
 
 func testAccResourceContainerCreateCloneCheck(te *testEnvironment) resource.TestCheckFunc {
