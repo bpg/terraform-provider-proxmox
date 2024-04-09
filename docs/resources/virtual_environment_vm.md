@@ -439,6 +439,7 @@ output "ubuntu_vm_public_key" {
     - `mac_address` - (Optional) The MAC address.
     - `model` - (Optional) The network device model (defaults to `virtio`).
         - `e1000` - Intel E1000.
+        - `e1000e` - Intel E1000E.
         - `rtl8139` - Realtek RTL8139.
         - `virtio` - VirtIO (paravirtualized).
         - `vmxnet3` - VMware vmxnet3.
