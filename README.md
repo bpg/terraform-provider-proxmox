@@ -134,5 +134,6 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Elias Alvord](https://github.com/elias314)
 - [laktosterror](https://github.com/laktosterror)
 - [Radosław Szamszur](https://github.com/rszamszur)
+- [Ben Bouillet](https://github.com/benbouillet)
 
 Thanks again for your support, it is much appreciated! 🙏
