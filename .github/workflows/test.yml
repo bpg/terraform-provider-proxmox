@@ -81,21 +81,3 @@ jobs:
       - name: Check for uncommitted changes in generated docs
         run: make docs && git diff --exit-code
 
-  testacc:
-    if: ${{ !contains(github.head_ref, 'renovate/') && !contains(github.head_ref, 'release-please') && !contains(github.head_ref, 'dependabot') && github.repository == 'bpg/terraform-provider-proxmox' }}
-    name: Dispatch Acceptance Tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Filter paths
-        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
-        id: filter
-        with:
-          filters: |
-            go:
-              - '**/*.go'

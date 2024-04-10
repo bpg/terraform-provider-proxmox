@@ -7,9 +7,6 @@ on:
         description: 'Branch or tag to run tests against'
         required: true
         default: 'main'
-  push:
-    branches:
-      - main
 
 jobs:
   acceptance:
