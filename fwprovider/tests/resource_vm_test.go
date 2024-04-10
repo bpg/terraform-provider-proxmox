@@ -183,7 +183,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 		name string
 		step []resource.TestStep
 	}{
-		{"initialization works with cloud-init config provided over SCSI interface", []resource.TestStep{{
+		{"custom cloud-init: use SCSI interface", []resource.TestStep{{
 			Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_file" "cloud_config" {
 					content_type = "snippets"
@@ -202,7 +202,7 @@ EOF
 					}
 				}
 
-				resource "proxmox_virtual_environment_vm" "test_vm_network1" {
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit1" {
 					node_name = "{{.NodeName}}"
 					started   = true
 					agent {
@@ -246,6 +246,37 @@ EOF
 					overwrite_unmanaged = true
 				}`),
 		}}},
+		{"native cloud-init: upgrade packages by default", []resource.TestStep{{
+			Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit2" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit2", map[string]string{
+					"initialization.0.upgrade": "true",
+				}),
+			),
+		}}},
+		{"native cloud-init: do not upgrade packages", []resource.TestStep{
+			{
+				Config: te.renderConfig(`
+			resource "proxmox_virtual_environment_vm" "test_vm_cloudinit3" {
+				node_name = "{{.NodeName}}"
+				started   = false
+				initialization {
+					upgrade = false
+				}
+			}`),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit3", map[string]string{
+						"initialization.0.upgrade": "false",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

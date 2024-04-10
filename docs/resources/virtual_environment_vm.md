@@ -372,6 +372,7 @@ output "ubuntu_vm_public_key" {
         all vendor data passed to the VM via cloud-init.
     - `meta_data_file_id` - (Optional) The identifier for a file containing
         all meta data passed to the VM via cloud-init.
+    - `upgrade` - (Optional) Whether to do an automatic package upgrade after the first boot (defaults to `true`).
 - `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`).
     - `da` - Danish.
     - `de` - German.

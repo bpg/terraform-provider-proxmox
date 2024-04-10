@@ -49,6 +49,7 @@ type CustomCloudInitConfig struct {
 	SearchDomain *string                   `json:"searchdomain,omitempty" url:"searchdomain,omitempty"`
 	SSHKeys      *CustomCloudInitSSHKeys   `json:"sshkeys,omitempty"      url:"sshkeys,omitempty"`
 	Type         *string                   `json:"citype,omitempty"       url:"citype,omitempty"`
+	Upgrade      *types.CustomBool         `json:"ciupgrade,omitempty"    url:"ciupgrade,omitempty,int"`
 	Username     *string                   `json:"ciuser,omitempty"       url:"ciuser,omitempty"`
 }
 
@@ -360,6 +361,7 @@ type GetResponseData struct {
 	CloudInitSSHKeys     *CustomCloudInitSSHKeys         `json:"sshkeys,omitempty"`
 	CloudInitType        *string                         `json:"citype,omitempty"`
 	CloudInitUsername    *string                         `json:"ciuser,omitempty"`
+	CloudInitUpgrade     *types.CustomBool               `json:"ciupgrade,omitempty"`
 	CPUArchitecture      *string                         `json:"arch,omitempty"`
 	CPUCores             *int                            `json:"cores,omitempty"`
 	CPUEmulation         *CustomCPUEmulation             `json:"cpu,omitempty"`
@@ -798,6 +800,14 @@ func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
 
 	if r.Type != nil {
 		v.Add("citype", *r.Type)
+	}
+
+	if r.Upgrade != nil {
+		if *r.Upgrade {
+			v.Add("ciupgrade", "1")
+		} else {
+			v.Add("ciupgrade", "0")
+		}
 	}
 
 	if r.Username != nil {
