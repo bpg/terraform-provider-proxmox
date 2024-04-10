@@ -115,9 +115,8 @@ func Rules() *schema.Resource {
 			Type: schema.TypeString,
 			Description: "Network interface name. You have to use network configuration key names for VMs" +
 				" and containers ('net\\d+'). Host related rules can use arbitrary strings.",
-			Optional:         true,
-			Default:          dvRuleIface,
-			ValidateDiagFunc: validators.FirewallIFace(),
+			Optional: true,
+			Default:  dvRuleIface,
 		},
 		mkRuleLog: {
 			Type: schema.TypeString,
