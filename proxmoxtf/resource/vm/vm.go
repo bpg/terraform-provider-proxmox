@@ -17,10 +17,11 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/utils"
-	"golang.org/x/exp/maps"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -222,6 +223,7 @@ const (
 	mkInitializationVendorDataFileID    = "vendor_data_file_id"
 	mkInitializationNetworkDataFileID   = "network_data_file_id"
 	mkInitializationMetaDataFileID      = "meta_data_file_id"
+	mkInitializationUpgrade             = "upgrade"
 
 	mkKeyboardLayout      = "keyboard_layout"
 	mkKVMArguments        = "kvm_arguments"
@@ -895,6 +897,13 @@ func VM() *schema.Resource {
 						ForceNew:         true,
 						Default:          dvInitializationType,
 						ValidateDiagFunc: CloudInitTypeValidator(),
+					},
+					mkInitializationUpgrade: {
+						Type:        schema.TypeBool,
+						Description: "Whether to upgrade the cloud-init configuration",
+						Optional:    true,
+						ForceNew:    true,
+						Default:     true,
 					},
 				},
 			},
@@ -2899,18 +2908,15 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		}
 
 		password := initializationUserAccountBlock[mkInitializationUserAccountPassword].(string)
-
 		if password != "" {
 			initializationConfig.Password = &password
 		}
 
 		username := initializationUserAccountBlock[mkInitializationUserAccountUsername].(string)
-
 		initializationConfig.Username = &username
 	}
 
 	initializationUserDataFileID := initializationBlock[mkInitializationUserDataFileID].(string)
-
 	if initializationUserDataFileID != "" {
 		initializationConfig.Files = &vms.CustomCloudInitFiles{
 			UserVolume: &initializationUserDataFileID,
@@ -2918,7 +2924,6 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 	}
 
 	initializationVendorDataFileID := initializationBlock[mkInitializationVendorDataFileID].(string)
-
 	if initializationVendorDataFileID != "" {
 		if initializationConfig.Files == nil {
 			initializationConfig.Files = &vms.CustomCloudInitFiles{}
@@ -2928,7 +2933,6 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 	}
 
 	initializationNetworkDataFileID := initializationBlock[mkInitializationNetworkDataFileID].(string)
-
 	if initializationNetworkDataFileID != "" {
 		if initializationConfig.Files == nil {
 			initializationConfig.Files = &vms.CustomCloudInitFiles{}
@@ -2938,7 +2942,6 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 	}
 
 	initializationMetaDataFileID := initializationBlock[mkInitializationMetaDataFileID].(string)
-
 	if initializationMetaDataFileID != "" {
 		if initializationConfig.Files == nil {
 			initializationConfig.Files = &vms.CustomCloudInitFiles{}
@@ -2948,9 +2951,13 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 	}
 
 	initializationType := initializationBlock[mkInitializationType].(string)
-
 	if initializationType != "" {
 		initializationConfig.Type = &initializationType
+	}
+
+	if initializationBlock[mkInitializationUpgrade] != nil {
+		v := types.CustomBool(initializationBlock[mkInitializationUpgrade].(bool))
+		initializationConfig.Upgrade = &v
 	}
 
 	return initializationConfig
@@ -4113,6 +4120,12 @@ func vmReadCustom(
 		initialization[mkInitializationType] = *vmConfig.CloudInitType
 	} else if len(initialization) > 0 {
 		initialization[mkInitializationType] = ""
+	}
+
+	if vmConfig.CloudInitUpgrade != nil {
+		initialization[mkInitializationUpgrade] = *vmConfig.CloudInitUpgrade
+	} else {
+		initialization[mkInitializationUpgrade] = false
 	}
 
 	currentInitialization := d.Get(mkInitialization).([]interface{})
