@@ -2463,7 +2463,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	virtioDeviceObjects := diskDeviceObjects["virtio"]
 	scsiDeviceObjects := diskDeviceObjects["scsi"]
-	// ideDeviceObjects := getOrderedDiskDeviceList(diskDeviceObjects, "ide")
+	ideDeviceObjects := diskDeviceObjects["ide"]
 	sataDeviceObjects := diskDeviceObjects["sata"]
 
 	initializationConfig := vmGetCloudInitConfig(d)
@@ -2576,6 +2576,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	bootOrder := d.Get(mkBootOrder).([]interface{})
 
 	if len(bootOrder) == 0 {
+		if ideDeviceObjects != nil {
+			bootOrderConverted = append(bootOrderConverted, "ide0")
+		}
+
 		if sataDeviceObjects != nil {
 			bootOrderConverted = append(bootOrderConverted, "sata0")
 		}
@@ -2604,17 +2608,19 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	ideDevice2Media := "cdrom"
-	ideDevices := vms.CustomStorageDevices{
-		cdromCloudInitInterface: &vms.CustomStorageDevice{
+	ideDevices := vms.CustomStorageDevices{}
+
+	if cdromCloudInitEnabled {
+		ideDevices[cdromCloudInitInterface] = &vms.CustomStorageDevice{
 			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
-		},
-		cdromInterface: &vms.CustomStorageDevice{
+		}
+		ideDevices[cdromInterface] = &vms.CustomStorageDevice{
 			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &ideDevice2Media,
-		},
+		}
 	}
 
 	if memoryShared > 0 {
@@ -2670,6 +2676,16 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		USBDevices:          usbDeviceObjects,
 		VGADevice:           vgaDevice,
 		VMID:                vmID,
+	}
+
+	if ideDeviceObjects != nil {
+		for deviceName, device := range ideDeviceObjects {
+			if _, exists := createBody.IDEDevices[deviceName]; exists {
+				return diag.Errorf("duplicate IDE device name '%s'", deviceName)
+			}
+
+			createBody.IDEDevices[deviceName] = device
+		}
 	}
 
 	if sataDeviceObjects != nil {
