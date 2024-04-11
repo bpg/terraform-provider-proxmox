@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.53.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.52.0...v0.53.0) (2024-04-10)
+
+
+### Features
+
+* **vm:** add Intel E1000E support ([#1191](https://github.com/bpg/terraform-provider-proxmox/issues/1191)) ([f0a7afa](https://github.com/bpg/terraform-provider-proxmox/commit/f0a7afa57d7dc538320efe436890e23cc89993e3))
+* **vm:** add support for `initialization.upgrade` attribute ([#1203](https://github.com/bpg/terraform-provider-proxmox/issues/1203)) ([59972dc](https://github.com/bpg/terraform-provider-proxmox/commit/59972dc1b5c4171224c4e3ad3d9790a6efc66759))
+
+
+### Bug Fixes
+
+* **firewall:** remove strict validation for `rule.iface` attribute ([#1199](https://github.com/bpg/terraform-provider-proxmox/issues/1199)) ([ae88cf6](https://github.com/bpg/terraform-provider-proxmox/commit/ae88cf603d1d7e3ca86ba1506944be0f23f9301c))
+* **vm:** panic if `initialization.user_account_keys` contains `null` ([#1197](https://github.com/bpg/terraform-provider-proxmox/issues/1197)) ([b4174a7](https://github.com/bpg/terraform-provider-proxmox/commit/b4174a7c82398970f9f318955fdd07d7ab378360))
+* **vm:** panic if `numa` block is empty ([#1196](https://github.com/bpg/terraform-provider-proxmox/issues/1196)) ([c273111](https://github.com/bpg/terraform-provider-proxmox/commit/c27311183ab74bec3e12228917e1b5468a4b941c))
+
+
+### Miscellaneous
+
+* **deps:** update golang.org/x/exp digest (c0f41cb → 93d18d7) ([#1201](https://github.com/bpg/terraform-provider-proxmox/issues/1201)) ([ead36dc](https://github.com/bpg/terraform-provider-proxmox/commit/ead36dcafbe1a475748dd846b0a05c94b831c600))
+* **docs:** minor documentation updates ([#1200](https://github.com/bpg/terraform-provider-proxmox/issues/1200)) ([c14b7eb](https://github.com/bpg/terraform-provider-proxmox/commit/c14b7ebe1d524783badf299cb4e146168011729e))
+* refactor acceptance tests ([#1195](https://github.com/bpg/terraform-provider-proxmox/issues/1195)) ([c772fb3](https://github.com/bpg/terraform-provider-proxmox/commit/c772fb3cf658fcda9051f8305125fdfc78ce3b3b))
+
 ## [0.52.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.51.1...v0.52.0) (2024-04-07)
 
 
