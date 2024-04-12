@@ -90,6 +90,7 @@ const (
 	dvInitializationNetworkDataFileID   = ""
 	dvInitializationMetaDataFileID      = ""
 	dvInitializationType                = ""
+	dvInitializationUpgrade             = true
 	dvKeyboardLayout                    = "en-us"
 	dvKVMArguments                      = ""
 	dvMachineType                       = ""
@@ -900,10 +901,9 @@ func VM() *schema.Resource {
 					},
 					mkInitializationUpgrade: {
 						Type:        schema.TypeBool,
-						Description: "Whether to upgrade the cloud-init configuration",
+						Description: "Whether to do an automatic package upgrade after the first boot",
 						Optional:    true,
-						ForceNew:    true,
-						Default:     true,
+						Default:     dvInitializationUpgrade,
 					},
 				},
 			},
@@ -3723,12 +3723,9 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	////////////////////
 	allDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
 
 	diags = append(diags, disk.Read(ctx, d, allDiskInfo, vmID, api, nodeName, len(clone) > 0)...)
-
-	////////////////////////////
 
 	if vmConfig.EFIDisk != nil {
 		efiDisk := map[string]interface{}{}
@@ -4124,8 +4121,8 @@ func vmReadCustom(
 
 	if vmConfig.CloudInitUpgrade != nil {
 		initialization[mkInitializationUpgrade] = *vmConfig.CloudInitUpgrade
-	} else {
-		initialization[mkInitializationUpgrade] = false
+	} else if len(initialization) > 0 {
+		initialization[mkInitializationUpgrade] = dvInitializationUpgrade
 	}
 
 	currentInitialization := d.Get(mkInitialization).([]interface{})
