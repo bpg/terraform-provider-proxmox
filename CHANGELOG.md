@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.53.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.53.0...v0.53.1) (2024-04-12)
+
+
+### Bug Fixes
+
+* **vm:** error 'resizing of efidisks is not supported' when clonning a VM with re-defined `efi_disk` ([#1206](https://github.com/bpg/terraform-provider-proxmox/issues/1206)) ([46d323d](https://github.com/bpg/terraform-provider-proxmox/commit/46d323d31b1568af363bbee84f7ea7e6a46a62cc))
+* **vm:** regression: force VM recreation due to `initialization.upgrade` when it is not in the plan ([#1209](https://github.com/bpg/terraform-provider-proxmox/issues/1209)) ([628d0f1](https://github.com/bpg/terraform-provider-proxmox/commit/628d0f15dd7499a15b7ae1a00441a72191b130be))
+
+
+### Miscellaneous
+
+* **deps:** bump github.com/sigstore/cosign/v2 from 2.2.3 to 2.2.4 in /tools ([#1207](https://github.com/bpg/terraform-provider-proxmox/issues/1207)) ([19a13be](https://github.com/bpg/terraform-provider-proxmox/commit/19a13bee0a023c850854be02310a424762b7ed8c))
+
 ## [0.53.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.52.0...v0.53.0) (2024-04-10)
 
 
