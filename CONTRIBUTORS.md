@@ -140,6 +140,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/batonogov"><img src="https://avatars.githubusercontent.com/u/52496117?v=4?s=100" width="100px;" alt="Fedor Batonogov"/><br /><sub><b>Fedor Batonogov</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Abatonogov" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://devminer.xyz"><img src="https://avatars.githubusercontent.com/u/29845135?v=4?s=100" width="100px;" alt="DevMiner"/><br /><sub><b>DevMiner</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=TheDevMinerTV" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/tyxieblub"><img src="https://avatars.githubusercontent.com/u/5111464?v=4?s=100" width="100px;" alt="joris"/><br /><sub><b>joris</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=tyxieblub" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
