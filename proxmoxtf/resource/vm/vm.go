@@ -2233,7 +2233,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			continue
 		}
 
-		if &efiType != currentDiskInfo.Type {
+		if efiType != *currentDiskInfo.Type {
 			return diag.Errorf(
 				"resizing of efidisks is not supported.",
 			)

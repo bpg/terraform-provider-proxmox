@@ -155,6 +155,12 @@ resource "proxmox_virtual_environment_vm" "example" {
     serial = "my-custom-serial"
   }
 
+  efi_disk {
+    datastore_id = local.datastore_id
+    file_format  = "raw"
+    type         = "4m"
+  }
+
   initialization {
     datastore_id = local.datastore_id
     // if unspecified:
