@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"golang.org/x/exp/maps"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
@@ -24,18 +25,6 @@ import (
 
 // GetInfo returns the disk information for a VM.
 func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
-	currentDisk := d.Get(MkDisk)
-
-	currentDiskList := currentDisk.([]interface{})
-	currentDiskMap := map[string]map[string]interface{}{}
-
-	for _, v := range currentDiskList {
-		diskMap := v.(map[string]interface{})
-		diskInterface := diskMap[mkDiskInterface].(string)
-
-		currentDiskMap[diskInterface] = diskMap
-	}
-
 	storageDevices := vms.CustomStorageDevices{}
 
 	storageDevices["ide0"] = resp.IDEDevice0
@@ -82,11 +71,14 @@ func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorag
 	storageDevices["virtio14"] = resp.VirtualIODevice14
 	storageDevices["virtio15"] = resp.VirtualIODevice15
 
+	currentDisk := d.Get(MkDisk)
+
+	diskMap := utils.MapResourceList(currentDisk.([]interface{}), mkDiskInterface)
+
 	for k, v := range storageDevices {
-		if v != nil {
-			if currentDiskMap[k] != nil {
-				if currentDiskMap[k][mkDiskFileID] != nil {
-					fileID := currentDiskMap[k][mkDiskFileID].(string)
+		if v != nil && diskMap[k] != nil {
+			if d, ok := diskMap[k].(map[string]interface{}); ok {
+				if fileID, ok := d[mkDiskFileID].(string); ok && fileID != "" {
 					v.FileID = &fileID
 				}
 			}
@@ -749,8 +741,17 @@ func Read(
 	}
 
 	if !isClone || len(currentDiskList) > 0 {
-		orderedDiskList := utils.OrderedListFromMap(diskMap)
-		err := d.Set(MkDisk, orderedDiskList)
+		var diskList []interface{}
+
+		if len(currentDiskList) > 0 {
+			resMap := utils.MapResourceList(currentDiskList, mkDiskInterface)
+			interfaces := maps.Keys[map[string]interface{}](resMap)
+			diskList = utils.OrderedListFromMapByKeyValues(diskMap, interfaces)
+		} else {
+			diskList = utils.OrderedListFromMap(diskMap)
+		}
+
+		err := d.Set(MkDisk, diskList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 

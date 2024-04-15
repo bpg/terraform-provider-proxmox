@@ -3723,7 +3723,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	allDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
+	allDiskInfo := disk.GetInfo(vmConfig, d)
 
 	diags = append(diags, disk.Read(ctx, d, allDiskInfo, vmID, api, nodeName, len(clone) > 0)...)
 
