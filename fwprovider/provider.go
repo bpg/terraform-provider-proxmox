@@ -25,6 +25,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/ha"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
@@ -436,22 +438,22 @@ func (p *proxmoxProvider) Configure(
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewHAGroupResource,
-		NewHAResourceResource,
+		ha.NewHAGroupResource,
+		ha.NewHAResourceResource,
+		network.NewLinuxBridgeResource,
+		network.NewLinuxVLANResource,
 		NewClusterOptionsResource,
-		NewLinuxBridgeResource,
-		NewLinuxVLANResource,
 		NewDownloadFileResource,
 	}
 }
 
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		ha.NewHAGroupsDataSource,
+		ha.NewHAGroupDataSource,
+		ha.NewHAResourcesDataSource,
+		ha.NewHAResourceDataSource,
 		NewVersionDataSource,
-		NewHAGroupsDataSource,
-		NewHAGroupDataSource,
-		NewHAResourcesDataSource,
-		NewHAResourceDataSource,
 	}
 }
 

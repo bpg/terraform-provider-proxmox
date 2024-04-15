@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package fwprovider
+package ha
 
 import (
 	"context"
@@ -15,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -57,7 +55,7 @@ func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequ
 				Description: "The identifier of the Proxmox HA resource to read.",
 				Required:    true,
 				Validators: []validator.String{
-					validators.HAResourceIDValidator(),
+					resourceIDValidator(),
 				},
 			},
 			"type": schema.StringAttribute{
@@ -112,7 +110,7 @@ func (d *haResourceDatasource) Configure(
 
 // Read fetches the specified HA resource.
 func (d *haResourceDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data haResourceModel
+	var data ResourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
@@ -140,6 +138,6 @@ func (d *haResourceDatasource) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	data.importFromAPI(resource)
+	data.ImportFromAPI(resource)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
