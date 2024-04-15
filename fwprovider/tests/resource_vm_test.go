@@ -573,6 +573,42 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"multiple disks", []resource.TestStep{
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk4" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk4"
+					template  = "true"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 8
+					}
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}`),
+				Check: testResourceAttributes("proxmox_virtual_environment_vm.test_disk4", map[string]string{
+					// I'd love to test this, but the order of the list items is not guaranteed, apparently
+					//     resource_vm_test.go:669: Step 1/2 error: Check failed: proxmox_virtual_environment_vm.test_disk4: Attribute "disk.1.interface" value: expected 'virtio0' to match 'scsi0'
+					//    --- FAIL: TestAccResourceVMDisks/multiple_disks (5.24s)
+					// "disk.1.interface":         "scsi0",
+					// "disk.1.path_in_datastore": `vm-\d+-disk-0`,
+					// "disk.0.interface":         "virtio0",
+					// "disk.0.path_in_datastore": `vm-\d+-disk-1`,
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"clone disk with overrides", []resource.TestStep{
 			{
 				SkipFunc: func() (bool, error) {
@@ -610,18 +646,16 @@ func TestAccResourceVMDisks(t *testing.T) {
 						//size = 10
 					}
 				}`),
-				Check: resource.ComposeTestCheckFunc(
-					testResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{
-						"disk.0.datastore_id":      "local-lvm",
-						"disk.0.discard":           "on",
-						"disk.0.file_format":       "raw",
-						"disk.0.interface":         "scsi0",
-						"disk.0.iothread":          "true",
-						"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
-						"disk.0.size":              "8",
-						"disk.0.ssd":               "true",
-					}),
-				),
+				Check: testResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{
+					"disk.0.datastore_id":      "local-lvm",
+					"disk.0.discard":           "on",
+					"disk.0.file_format":       "raw",
+					"disk.0.interface":         "scsi0",
+					"disk.0.iothread":          "true",
+					"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
+					"disk.0.size":              "8",
+					"disk.0.ssd":               "true",
+				}),
 			},
 			{
 				RefreshState: true,

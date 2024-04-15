@@ -1,8 +1,11 @@
 {
     "recommendations": [
+        "britesnow.vscode-toggle-quotes",
         "davidanson.vscode-markdownlint",
+        "EditorConfig.editorconfig",
         "golang.go",
         "hashicorp.terraform",
         "joshbolduc.commitlint",
+        "PKief.material-icon-theme",
     ]
 }

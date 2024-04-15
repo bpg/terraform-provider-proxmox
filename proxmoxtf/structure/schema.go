@@ -12,8 +12,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bpg/terraform-provider-proxmox/utils"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 // MergeSchema merges the map[string]*schema.Schema from src into dst.
@@ -127,9 +128,15 @@ func SuppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceDa
 // elements.
 // It will be called for each resource attribute, so it is not super efficient. It is
 // recommended to use it only for small lists / small resources.
-// Note: The order of the attributes within the resource is still important.
+// The keyAttr is the attribute that will be used as the key to compare the resources.
+// The ignoreKeys are the keys that will be ignored when comparing the resources. Include computed read-only
+// attributes here.
+//
 // Ref: https://github.com/hashicorp/terraform-plugin-sdk/issues/477
-func SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(keyAttr string) schema.SchemaDiffSuppressFunc {
+func SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(
+	keyAttr string,
+	ignoreKeys ...string,
+) schema.SchemaDiffSuppressFunc {
 	// the attr is a path to the item's attribute, not the list itself, e.g. "numa.0.device"
 	return func(attr, _, _ string, d *schema.ResourceData) bool {
 		lastDotIndex := strings.LastIndex(attr, ".")
@@ -147,22 +154,34 @@ func SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(keyAttr string) schema.Sche
 			return false
 		}
 
-		oldArray := oldData.([]interface{})
-		newArray := newData.([]interface{})
+		oldArray, ok := oldData.([]interface{})
+		if !ok {
+			return false
+		}
+
+		newArray, ok := newData.([]interface{})
+		if !ok {
+			return false
+		}
 
 		if len(oldArray) != len(newArray) {
 			return false
 		}
 
-		oldKeys := utils.MapResourceList(oldArray, keyAttr)
-		newKeys := utils.MapResourceList(newArray, keyAttr)
+		oldMap := utils.MapResourceList(oldArray, keyAttr)
+		newMap := utils.MapResourceList(newArray, keyAttr)
 
-		for k, v := range oldKeys {
-			if _, ok := newKeys[k]; !ok {
+		for k, v := range oldMap {
+			if _, ok := newMap[k]; !ok {
 				return false
 			}
 
-			if !reflect.DeepEqual(v, newKeys[k]) {
+			for _, ignoreKey := range ignoreKeys {
+				delete(v.(map[string]interface{}), ignoreKey)
+				delete(newMap[k].(map[string]interface{}), ignoreKey)
+			}
+
+			if !reflect.DeepEqual(v, newMap[k]) {
 				return false
 			}
 		}

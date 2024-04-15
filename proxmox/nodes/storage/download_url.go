@@ -34,7 +34,7 @@ func (c *Client) DownloadFileByURL(
 	taskErr := c.Tasks().WaitForTask(ctx, *resBody.TaskID, int(uploadTimeout), 5)
 	if taskErr != nil {
 		err = fmt.Errorf(
-			"error download file to datastore %s: failed waiting for url download - %w",
+			"error download file to datastore %s: failed waiting for url download: %w",
 			c.StorageName,
 			taskErr,
 		)

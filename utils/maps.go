@@ -32,8 +32,9 @@ func MapResourceList(resourceList []interface{}, attrName string) map[string]int
 		}
 
 		r := resource.(map[string]interface{})
-		key := r[attrName].(string)
-		m[key] = r
+		if key, ok := r[attrName].(string); ok {
+			m[key] = r
+		}
 	}
 
 	return m
