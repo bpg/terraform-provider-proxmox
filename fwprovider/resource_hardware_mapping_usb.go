@@ -4,7 +4,6 @@
 	file, You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-//nolint:nolintlint,gofumpt,wsl // wsl linter is random-linter-loop-broken and only causes code to become unreadable.
 package fwprovider
 
 import (
