@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package fwprovider
+package ha
 
 import (
 	"context"
@@ -105,7 +105,7 @@ func (d *haGroupDatasource) Configure(
 
 // Read fetches the list of HA groups from the Proxmox cluster then converts it to a list of strings.
 func (d *haGroupDatasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state haGroupModel
+	var state GroupModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
 
@@ -127,6 +127,6 @@ func (d *haGroupDatasource) Read(ctx context.Context, req datasource.ReadRequest
 
 	state.ID = types.StringValue(groupID)
 
-	resp.Diagnostics.Append(state.importFromAPI(*group)...)
+	resp.Diagnostics.Append(state.ImportFromAPI(*group)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

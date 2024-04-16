@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package fwprovider
+package ha
 
 import (
 	"fmt"
@@ -18,8 +18,8 @@ import (
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
-// haGroupModel is the model used to represent a High Availability group.
-type haGroupModel struct {
+// GroupModel is the model used to represent a High Availability group.
+type GroupModel struct {
 	ID         types.String `tfsdk:"id"`          // Identifier used by Terraform
 	Group      types.String `tfsdk:"group"`       // HA group name
 	Comment    types.String `tfsdk:"comment"`     // Comment, if present
@@ -28,8 +28,8 @@ type haGroupModel struct {
 	Restricted types.Bool   `tfsdk:"restricted"`  // Flag that prevents execution on other member nodes
 }
 
-// Import the contents of a HA group model from the API's response data.
-func (m *haGroupModel) importFromAPI(group hagroups.HAGroupGetResponseData) diag.Diagnostics {
+// ImportFromAPI imports the contents of a HA group model from the API's response data.
+func (m *GroupModel) ImportFromAPI(group hagroups.HAGroupGetResponseData) diag.Diagnostics {
 	m.Comment = types.StringPointerValue(group.Comment)
 	m.NoFailback = group.NoFailback.ToValue()
 	m.Restricted = group.Restricted.ToValue()
@@ -39,7 +39,7 @@ func (m *haGroupModel) importFromAPI(group hagroups.HAGroupGetResponseData) diag
 
 // Parse the list of member nodes. The list is received from the Proxmox API as a string. It must
 // be converted into a map value. Errors will be returned as Terraform diagnostics.
-func (m *haGroupModel) parseHAGroupNodes(nodes string) diag.Diagnostics {
+func (m *GroupModel) parseHAGroupNodes(nodes string) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	nodesIn := strings.Split(nodes, ",")

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package fwprovider
+package ha
 
 import (
 	"fmt"
@@ -15,8 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// haResourceModel maps the schema data for the High Availability resource data source.
-type haResourceModel struct {
+// ResourceModel maps the schema data for the High Availability resource data source.
+type ResourceModel struct {
 	// The Terraform resource identifier
 	ID types.String `tfsdk:"id"`
 	// The Proxmox HA resource identifier
@@ -35,8 +35,8 @@ type haResourceModel struct {
 	MaxRestart types.Int64 `tfsdk:"max_restart"`
 }
 
-// importFromAPI imports the contents of a HA resource model from the API's response data.
-func (d *haResourceModel) importFromAPI(data *haresources.HAResourceGetResponseData) {
+// ImportFromAPI imports the contents of a HA resource model from the API's response data.
+func (d *ResourceModel) ImportFromAPI(data *haresources.HAResourceGetResponseData) {
 	d.ID = data.ID.ToValue()
 	d.ResourceID = data.ID.ToValue()
 	d.Type = data.Type.ToValue()
@@ -48,7 +48,7 @@ func (d *haResourceModel) importFromAPI(data *haresources.HAResourceGetResponseD
 }
 
 // toRequestBase builds the common request data structure for HA resource creation or update API calls.
-func (d *haResourceModel) toRequestBase() haresources.HAResourceDataBase {
+func (d *ResourceModel) toRequestBase() haresources.HAResourceDataBase {
 	var state proxmoxtypes.HAResourceState
 
 	if d.State.IsNull() {
@@ -74,8 +74,8 @@ func (d *haResourceModel) toRequestBase() haresources.HAResourceDataBase {
 	}
 }
 
-// toCreateRequest builds the request data structure for creating a new HA resource.
-func (d *haResourceModel) toCreateRequest(resID proxmoxtypes.HAResourceID) *haresources.HAResourceCreateRequestBody {
+// ToCreateRequest builds the request data structure for creating a new HA resource.
+func (d *ResourceModel) ToCreateRequest(resID proxmoxtypes.HAResourceID) *haresources.HAResourceCreateRequestBody {
 	return &haresources.HAResourceCreateRequestBody{
 		ID:                 resID,
 		Type:               &resID.Type,
@@ -83,8 +83,8 @@ func (d *haResourceModel) toCreateRequest(resID proxmoxtypes.HAResourceID) *hare
 	}
 }
 
-// toUpdateRequest builds the request data structure for updating an existing HA resource.
-func (d *haResourceModel) toUpdateRequest(state *haResourceModel) *haresources.HAResourceUpdateRequestBody {
+// ToUpdateRequest builds the request data structure for updating an existing HA resource.
+func (d *ResourceModel) ToUpdateRequest(state *ResourceModel) *haresources.HAResourceUpdateRequestBody {
 	var del []string
 
 	if d.Comment.IsNull() && !state.Comment.IsNull() {
