@@ -77,7 +77,7 @@ type CustomCPUEmulation struct {
 	Flags      *[]string         `json:"flags,omitempty"        url:"flags,omitempty,semicolon"`
 	Hidden     *types.CustomBool `json:"hidden,omitempty"       url:"hidden,omitempty,int"`
 	HVVendorID *string           `json:"hv-vendor-id,omitempty" url:"hv-vendor-id,omitempty"`
-	Type       string            `json:"cputype,omitempty"      url:"cputype,omitempty"`
+	Type       *string           `json:"cputype,omitempty"      url:"cputype,omitempty"`
 }
 
 // CustomEFIDisk handles QEMU EFI disk parameters.
@@ -820,7 +820,7 @@ func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
 // EncodeValues converts a CustomCPUEmulation struct to a URL vlaue.
 func (r CustomCPUEmulation) EncodeValues(key string, v *url.Values) error {
 	values := []string{
-		fmt.Sprintf("cputype=%s", r.Type),
+		fmt.Sprintf("cputype=%s", *r.Type),
 	}
 
 	if r.Flags != nil && len(*r.Flags) > 0 {
@@ -1464,11 +1464,11 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
-			r.Type = v[0]
+			r.Type = &v[0]
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "cputype":
-				r.Type = v[1]
+				r.Type = &v[1]
 			case "flags":
 				if v[1] != "" {
 					f := strings.Split(v[1], ";")

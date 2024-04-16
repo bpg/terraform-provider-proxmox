@@ -8,7 +8,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
-func TestVMSchema(t *testing.T) {
+func TestDiskSchema(t *testing.T) {
 	t.Parallel()
 
 	s := Schema()

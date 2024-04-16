@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -59,15 +60,6 @@ const (
 	dvCloneNodeName       = ""
 	dvCloneFull           = true
 	dvCloneRetries        = 1
-	dvCPUArchitecture     = "x86_64"
-	dvCPUCores            = 1
-	dvCPUHotplugged       = 0
-	dvCPULimit            = 0
-	dvCPUNUMA             = false
-	dvCPUSockets          = 1
-	dvCPUType             = "qemu64"
-	dvCPUUnits            = 1024
-	dvCPUAffinity         = ""
 	dvDescription         = ""
 
 	dvEFIDiskDatastoreID                = "local-lvm"
@@ -164,17 +156,6 @@ const (
 	mkCloneNodeName       = "node_name"
 	mkCloneVMID           = "vm_id"
 	mkCloneFull           = "full"
-	mkCPU                 = "cpu"
-	mkCPUArchitecture     = "architecture"
-	mkCPUCores            = "cores"
-	mkCPUFlags            = "flags"
-	mkCPUHotplugged       = "hotplugged"
-	mkCPULimit            = "limit"
-	mkCPUNUMA             = "numa"
-	mkCPUSockets          = "sockets"
-	mkCPUType             = "type"
-	mkCPUUnits            = "units"
-	mkCPUAffinity         = "affinity"
 	mkDescription         = "description"
 
 	mkNUMA              = "numa"
@@ -489,108 +470,6 @@ func VM() *schema.Resource {
 						Optional:    true,
 						ForceNew:    true,
 						Default:     dvCloneFull,
-					},
-				},
-			},
-			MaxItems: 1,
-			MinItems: 0,
-		},
-		mkCPU: {
-			Type:        schema.TypeList,
-			Description: "The CPU allocation",
-			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
-						mkCPUArchitecture: dvCPUArchitecture,
-						mkCPUCores:        dvCPUCores,
-						mkCPUFlags:        []interface{}{},
-						mkCPUHotplugged:   dvCPUHotplugged,
-						mkCPULimit:        dvCPULimit,
-						mkCPUNUMA:         dvCPUNUMA,
-						mkCPUSockets:      dvCPUSockets,
-						mkCPUType:         dvCPUType,
-						mkCPUUnits:        dvCPUUnits,
-						mkCPUAffinity:     dvCPUAffinity,
-					},
-				}, nil
-			},
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					mkCPUArchitecture: {
-						Type:             schema.TypeString,
-						Description:      "The CPU architecture",
-						Optional:         true,
-						Default:          dvCPUArchitecture,
-						ValidateDiagFunc: CPUArchitectureValidator(),
-					},
-					mkCPUCores: {
-						Type:             schema.TypeInt,
-						Description:      "The number of CPU cores",
-						Optional:         true,
-						Default:          dvCPUCores,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 2304)),
-					},
-					mkCPUFlags: {
-						Type:        schema.TypeList,
-						Description: "The CPU flags",
-						Optional:    true,
-						DefaultFunc: func() (interface{}, error) {
-							return []interface{}{}, nil
-						},
-						Elem: &schema.Schema{Type: schema.TypeString},
-					},
-					mkCPUHotplugged: {
-						Type:             schema.TypeInt,
-						Description:      "The number of hotplugged vCPUs",
-						Optional:         true,
-						Default:          dvCPUHotplugged,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(0, 2304)),
-					},
-					mkCPULimit: {
-						Type:        schema.TypeInt,
-						Description: "Limit of CPU usage",
-						Optional:    true,
-						Default:     dvCPULimit,
-						ValidateDiagFunc: validation.ToDiagFunc(
-							validation.IntBetween(0, 128),
-						),
-					},
-					mkCPUNUMA: {
-						Type:        schema.TypeBool,
-						Description: "Enable/disable NUMA.",
-						Optional:    true,
-						Default:     dvCPUNUMA,
-					},
-					mkCPUSockets: {
-						Type:             schema.TypeInt,
-						Description:      "The number of CPU sockets",
-						Optional:         true,
-						Default:          dvCPUSockets,
-						ValidateDiagFunc: validation.ToDiagFunc(validation.IntBetween(1, 16)),
-					},
-					mkCPUType: {
-						Type:             schema.TypeString,
-						Description:      "The emulated CPU type",
-						Optional:         true,
-						Default:          dvCPUType,
-						ValidateDiagFunc: CPUTypeValidator(),
-					},
-					mkCPUUnits: {
-						Type:        schema.TypeInt,
-						Description: "The CPU units",
-						Optional:    true,
-						Default:     dvCPUUnits,
-						ValidateDiagFunc: validation.ToDiagFunc(
-							validation.IntBetween(2, 262144),
-						),
-					},
-					mkCPUAffinity: {
-						Type:             schema.TypeString,
-						Description:      "The CPU affinity",
-						Optional:         true,
-						Default:          dvCPUAffinity,
-						ValidateDiagFunc: CPUAffinityValidator(),
 					},
 				},
 			},
@@ -1450,6 +1329,7 @@ func VM() *schema.Resource {
 		},
 	}
 
+	structure.MergeSchema(s, cpu.Schema())
 	structure.MergeSchema(s, disk.Schema())
 	structure.MergeSchema(s, network.Schema())
 
@@ -1871,7 +1751,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	kvmArguments := d.Get(mkKVMArguments).(string)
 	scsiHardware := d.Get(mkSCSIHardware).(string)
 	cdrom := d.Get(mkCDROM).([]interface{})
-	cpu := d.Get(mkCPU).([]interface{})
 	initialization := d.Get(mkInitialization).([]interface{})
 	hostPCI := d.Get(mkHostPCI).([]interface{})
 	hostUSB := d.Get(mkHostUSB).([]interface{})
@@ -1964,53 +1843,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
-	if len(cpu) > 0 && cpu[0] != nil {
-		cpuBlock := cpu[0].(map[string]interface{})
-
-		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
-		cpuCores := cpuBlock[mkCPUCores].(int)
-		cpuFlags := cpuBlock[mkCPUFlags].([]interface{})
-		cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
-		cpuLimit := cpuBlock[mkCPULimit].(int)
-		cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
-		cpuSockets := cpuBlock[mkCPUSockets].(int)
-		cpuType := cpuBlock[mkCPUType].(string)
-		cpuUnits := cpuBlock[mkCPUUnits].(int)
-		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
-
-		cpuFlagsConverted := make([]string, len(cpuFlags))
-
-		for fi, flag := range cpuFlags {
-			cpuFlagsConverted[fi] = flag.(string)
-		}
-
-		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if api.API().IsRootTicket() ||
-			cpuArchitecture != dvCPUArchitecture {
-			updateBody.CPUArchitecture = &cpuArchitecture
-		}
-
-		updateBody.CPUCores = &cpuCores
-		updateBody.CPUEmulation = &vms.CustomCPUEmulation{
-			Flags: &cpuFlagsConverted,
-			Type:  cpuType,
-		}
-		updateBody.NUMAEnabled = &cpuNUMA
-		updateBody.CPUSockets = &cpuSockets
-		updateBody.CPUUnits = &cpuUnits
-
-		if cpuAffinity != "" {
-			updateBody.CPUAffinity = &cpuAffinity
-		}
-
-		if cpuHotplugged > 0 {
-			updateBody.VirtualCPUCount = &cpuHotplugged
-		}
-
-		if cpuLimit > 0 {
-			updateBody.CPULimit = &cpuLimit
-		}
-	}
+	cpu.UpdateWhenClone(d, api, updateBody)
 
 	vmConfig, err := vmAPI.GetVM(ctx)
 	if err != nil {
@@ -2193,8 +2026,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		return diag.FromErr(e)
 	}
-
-	/////////////////
 
 	allDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
 
@@ -2382,28 +2213,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		cdromFileID = "cdrom"
 	}
 
-	cpuBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkCPU},
-		0,
-		true,
-	)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
-	cpuCores := cpuBlock[mkCPUCores].(int)
-	cpuFlags := cpuBlock[mkCPUFlags].([]interface{})
-	cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
-	cpuLimit := cpuBlock[mkCPULimit].(int)
-	cpuSockets := cpuBlock[mkCPUSockets].(int)
-	cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
-	cpuType := cpuBlock[mkCPUType].(string)
-	cpuUnits := cpuBlock[mkCPUUnits].(int)
-	cpuAffinity := cpuBlock[mkCPUAffinity].(string)
-
 	description := d.Get(mkDescription).(string)
 
 	var efiDisk *vms.CustomEFIDisk
@@ -2590,11 +2399,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		}
 	}
 
-	cpuFlagsConverted := make([]string, len(cpuFlags))
-	for fi, flag := range cpuFlags {
-		cpuFlagsConverted[fi] = flag.(string)
-	}
-
 	ideDevice2Media := "cdrom"
 	ideDevices := vms.CustomStorageDevices{
 		cdromCloudInitInterface: &vms.CustomStorageDevice{
@@ -2631,14 +2435,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		Boot: &vms.CustomBoot{
 			Order: &bootOrderConverted,
 		},
-		CloudInitConfig: initializationConfig,
-		CPUCores:        &cpuCores,
-		CPUEmulation: &vms.CustomCPUEmulation{
-			Flags: &cpuFlagsConverted,
-			Type:  cpuType,
-		},
-		CPUSockets:          &cpuSockets,
-		CPUUnits:            &cpuUnits,
+		CloudInitConfig:     initializationConfig,
 		DedicatedMemory:     &memoryDedicated,
 		DeletionProtection:  &protection,
 		EFIDisk:             efiDisk,
@@ -2647,7 +2444,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		IDEDevices:          ideDevices,
 		KeyboardLayout:      &keyboardLayout,
 		NetworkDevices:      networkDeviceObjects,
-		NUMAEnabled:         &cpuNUMA,
 		NUMADevices:         numaDeviceObjects,
 		OSType:              &operatingSystemType,
 		PCIDevices:          pciDeviceObjects,
@@ -2664,6 +2460,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		VMID:                &vmID,
 	}
 
+	err = cpu.Create(resource, d, api, createBody)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if sataDeviceObjects != nil {
 		createBody.SATADevices = sataDeviceObjects
 	}
@@ -2674,24 +2475,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if virtioDeviceObjects != nil {
 		createBody.VirtualIODevices = virtioDeviceObjects
-	}
-
-	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-	if api.API().IsRootTicket() ||
-		cpuArchitecture != dvCPUArchitecture {
-		createBody.CPUArchitecture = &cpuArchitecture
-	}
-
-	if cpuHotplugged > 0 {
-		createBody.VirtualCPUCount = &cpuHotplugged
-	}
-
-	if cpuLimit > 0 {
-		createBody.CPULimit = &cpuLimit
-	}
-
-	if cpuAffinity != "" {
-		createBody.CPUAffinity = &cpuAffinity
 	}
 
 	if description != "" {
@@ -3582,48 +3365,8 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	// Compare the CPU configuration to the one stored in the state.
-	cpu := map[string]interface{}{}
-
-	if vmConfig.CPUArchitecture != nil {
-		cpu[mkCPUArchitecture] = *vmConfig.CPUArchitecture
-	} else {
-		// Default value of "arch" is "" according to the API documentation.
-		// However, assume the provider's default value as a workaround when the root account is not being used.
-		if !api.API().IsRootTicket() {
-			cpu[mkCPUArchitecture] = dvCPUArchitecture
-		} else {
-			cpu[mkCPUArchitecture] = ""
-		}
-	}
-
-	if vmConfig.CPUCores != nil {
-		cpu[mkCPUCores] = *vmConfig.CPUCores
-	} else {
-		// Default value of "cores" is "1" according to the API documentation.
-		cpu[mkCPUCores] = 1
-	}
-
-	if vmConfig.VirtualCPUCount != nil {
-		cpu[mkCPUHotplugged] = *vmConfig.VirtualCPUCount
-	} else {
-		// Default value of "vcpus" is "1" according to the API documentation.
-		cpu[mkCPUHotplugged] = 0
-	}
-
-	if vmConfig.CPULimit != nil {
-		cpu[mkCPULimit] = *vmConfig.CPULimit
-	} else {
-		// Default value of "cpulimit" is "0" according to the API documentation.
-		cpu[mkCPULimit] = 0
-	}
-
-	if vmConfig.NUMAEnabled != nil {
-		cpu[mkCPUNUMA] = *vmConfig.NUMAEnabled
-	} else {
-		// Default value of "numa" is "false" according to the API documentation.
-		cpu[mkCPUNUMA] = false
-	}
+	err := cpu.Read(vmConfig, api, d, len(clone) > 0)
+	diags = append(diags, diag.FromErr(err)...)
 
 	currentNUMAList := d.Get(mkNUMA).([]interface{})
 	numaMap := map[string]interface{}{}
@@ -3660,66 +3403,6 @@ func vmReadCustom(
 		}
 
 		err := d.Set(mkNUMA, numaList)
-		diags = append(diags, diag.FromErr(err)...)
-	}
-
-	if vmConfig.CPUSockets != nil {
-		cpu[mkCPUSockets] = *vmConfig.CPUSockets
-	} else {
-		// Default value of "sockets" is "1" according to the API documentation.
-		cpu[mkCPUSockets] = 1
-	}
-
-	if vmConfig.CPUEmulation != nil {
-		if vmConfig.CPUEmulation.Flags != nil {
-			convertedFlags := make([]interface{}, len(*vmConfig.CPUEmulation.Flags))
-
-			for fi, fv := range *vmConfig.CPUEmulation.Flags {
-				convertedFlags[fi] = fv
-			}
-
-			cpu[mkCPUFlags] = convertedFlags
-		} else {
-			cpu[mkCPUFlags] = []interface{}{}
-		}
-
-		cpu[mkCPUType] = vmConfig.CPUEmulation.Type
-	} else {
-		cpu[mkCPUFlags] = []interface{}{}
-		// Default value of "cputype" is "qemu64" according to the QEMU documentation.
-		cpu[mkCPUType] = "qemu64"
-	}
-
-	if vmConfig.CPUUnits != nil {
-		cpu[mkCPUUnits] = *vmConfig.CPUUnits
-	} else {
-		// Default value of "cpuunits" is "1024" according to the API documentation.
-		cpu[mkCPUUnits] = 1024
-	}
-
-	if vmConfig.CPUAffinity != nil {
-		cpu[mkCPUAffinity] = *vmConfig.CPUAffinity
-	} else {
-		cpu[mkCPUAffinity] = ""
-	}
-
-	currentCPU := d.Get(mkCPU).([]interface{})
-
-	if len(clone) > 0 {
-		if len(currentCPU) > 0 {
-			err := d.Set(mkCPU, []interface{}{cpu})
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else if len(currentCPU) > 0 ||
-		cpu[mkCPUArchitecture] != dvCPUArchitecture ||
-		cpu[mkCPUCores] != dvCPUCores ||
-		len(cpu[mkCPUFlags].([]interface{})) > 0 ||
-		cpu[mkCPUHotplugged] != dvCPUHotplugged ||
-		cpu[mkCPULimit] != dvCPULimit ||
-		cpu[mkCPUSockets] != dvCPUSockets ||
-		cpu[mkCPUType] != dvCPUType ||
-		cpu[mkCPUUnits] != dvCPUUnits {
-		err := d.Set(mkCPU, []interface{}{cpu})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -4961,78 +4644,13 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 	}
 
-	// Prepare the new CPU configuration.
-
-	if d.HasChange(mkCPU) {
-		cpuBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{mkCPU},
-			0,
-			true,
-		)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
-		cpuCores := cpuBlock[mkCPUCores].(int)
-		cpuFlags := cpuBlock[mkCPUFlags].([]interface{})
-		cpuHotplugged := cpuBlock[mkCPUHotplugged].(int)
-		cpuLimit := cpuBlock[mkCPULimit].(int)
-		cpuNUMA := types.CustomBool(cpuBlock[mkCPUNUMA].(bool))
-		cpuSockets := cpuBlock[mkCPUSockets].(int)
-		cpuType := cpuBlock[mkCPUType].(string)
-		cpuUnits := cpuBlock[mkCPUUnits].(int)
-		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
-
-		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if api.API().IsRootTicket() ||
-			cpuArchitecture != dvCPUArchitecture {
-			updateBody.CPUArchitecture = &cpuArchitecture
-		}
-
-		updateBody.CPUCores = &cpuCores
-		updateBody.CPUSockets = &cpuSockets
-		updateBody.CPUUnits = &cpuUnits
-		updateBody.NUMAEnabled = &cpuNUMA
-
-		// CPU affinity is a special case, only root can change it.
-		// we can't even have it in the delete list, as PVE will return an error for non-root.
-		// Hence, checking explicitly if it has changed.
-		if d.HasChange(mkCPU + ".0." + mkCPUAffinity) {
-			if cpuAffinity != "" {
-				updateBody.CPUAffinity = &cpuAffinity
-			} else {
-				del = append(del, "affinity")
-			}
-		}
-
-		if cpuHotplugged > 0 {
-			updateBody.VirtualCPUCount = &cpuHotplugged
-		} else {
-			del = append(del, "vcpus")
-		}
-
-		if cpuLimit > 0 {
-			updateBody.CPULimit = &cpuLimit
-		} else {
-			del = append(del, "cpulimit")
-		}
-
-		cpuFlagsConverted := make([]string, len(cpuFlags))
-
-		for fi, flag := range cpuFlags {
-			cpuFlagsConverted[fi] = flag.(string)
-		}
-
-		updateBody.CPUEmulation = &vms.CustomCPUEmulation{
-			Flags: &cpuFlagsConverted,
-			Type:  cpuType,
-		}
-
-		rebootRequired = true
+	dd, rr, err := cpu.Update(d, resource, api, updateBody)
+	if err != nil {
+		return diag.FromErr(err)
 	}
+
+	del = append(del, dd...)
+	rebootRequired = rebootRequired || rr
 
 	// Prepare the new disk device configuration.
 	allDiskInfo := disk.GetInfo(vmConfig, d)
@@ -5042,7 +4660,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	rr, err := disk.Update(d, planDisks, allDiskInfo, updateBody)
+	rr, err = disk.Update(d, planDisks, allDiskInfo, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}

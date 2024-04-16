@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/disk"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/vm/network"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
@@ -45,7 +46,7 @@ func TestVMSchema(t *testing.T) {
 		mkBootOrder,
 		mkCDROM,
 		mkClone,
-		mkCPU,
+		cpu.MkCPU,
 		mkDescription,
 		disk.MkDisk,
 		mkEFIDisk,
@@ -75,7 +76,7 @@ func TestVMSchema(t *testing.T) {
 		mkBIOS:            schema.TypeString,
 		mkBootOrder:       schema.TypeList,
 		mkCDROM:           schema.TypeList,
-		mkCPU:             schema.TypeList,
+		cpu.MkCPU:         schema.TypeList,
 		mkDescription:     schema.TypeString,
 		disk.MkDisk:       schema.TypeList,
 		mkEFIDisk:         schema.TypeList,
@@ -151,30 +152,6 @@ func TestVMSchema(t *testing.T) {
 		mkCloneDatastoreID: schema.TypeString,
 		mkCloneNodeName:    schema.TypeString,
 		mkCloneVMID:        schema.TypeInt,
-	})
-
-	cpuSchema := test.AssertNestedSchemaExistence(t, s, mkCPU)
-
-	test.AssertOptionalArguments(t, cpuSchema, []string{
-		mkCPUArchitecture,
-		mkCPUCores,
-		mkCPUFlags,
-		mkCPUHotplugged,
-		mkCPUNUMA,
-		mkCPUSockets,
-		mkCPUType,
-		mkCPUUnits,
-	})
-
-	test.AssertValueTypes(t, cpuSchema, map[string]schema.ValueType{
-		mkCPUArchitecture: schema.TypeString,
-		mkCPUCores:        schema.TypeInt,
-		mkCPUFlags:        schema.TypeList,
-		mkCPUHotplugged:   schema.TypeInt,
-		mkCPUNUMA:         schema.TypeBool,
-		mkCPUSockets:      schema.TypeInt,
-		mkCPUType:         schema.TypeString,
-		mkCPUUnits:        schema.TypeInt,
 	})
 
 	efiDiskSchema := test.AssertNestedSchemaExistence(t, s, mkEFIDisk)
