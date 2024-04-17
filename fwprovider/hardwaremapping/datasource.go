@@ -4,7 +4,7 @@
 	file, You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-package fwprovider
+package hardwaremapping
 
 import (
 	"context"
@@ -22,26 +22,22 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
 // Ensure the implementation satisfies the required interfaces.
 var (
-	_ datasource.DataSource              = &hardwareMappingsDatasource{}
-	_ datasource.DataSourceWithConfigure = &hardwareMappingsDatasource{}
+	_ datasource.DataSource              = &dataSource{}
+	_ datasource.DataSourceWithConfigure = &dataSource{}
 )
 
-// hardwareMappingsDatasource is the data source implementation for a hardware mapping.
-type hardwareMappingsDatasource struct {
+// dataSource is the data source implementation for a hardware mapping.
+type dataSource struct {
 	client *mapping.Client
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *hardwareMappingsDatasource) Configure(
-	_ context.Context,
-	req datasource.ConfigureRequest,
-	resp *datasource.ConfigureResponse,
-) {
+func (d *dataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -60,21 +56,13 @@ func (d *hardwareMappingsDatasource) Configure(
 }
 
 // Metadata returns the data source type name.
-func (d *hardwareMappingsDatasource) Metadata(
-	_ context.Context,
-	req datasource.MetadataRequest,
-	resp *datasource.MetadataResponse,
-) {
+func (d *dataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mappings"
 }
 
 // Read fetches the list of hardware mappings from the Proxmox VE API then converts it to a list of strings.
-func (d *hardwareMappingsDatasource) Read(
-	ctx context.Context,
-	req datasource.ReadRequest,
-	resp *datasource.ReadResponse,
-) {
-	var hm hardwareMappingsModel
+func (d *dataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var hm model
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &hm)...)
 
@@ -82,7 +70,7 @@ func (d *hardwareMappingsDatasource) Read(
 		return
 	}
 
-	hmType, err := proxmoxtypes.ParseHardwareMappingType(hm.Type.ValueString())
+	hmType, err := proxmoxtypes.ParseType(hm.Type.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Could not parse hardware mapping type", err.Error())
 		return
@@ -98,22 +86,19 @@ func (d *hardwareMappingsDatasource) Read(
 		return
 	}
 
-	createCheckDiagnostics := func(
-		hmID string,
-		input []mapping.HardwareMappingNodeCheckDiagnostic,
-	) []hardwareMappingsNodeCheckDiagnosticModel {
-		checks := make([]hardwareMappingsNodeCheckDiagnosticModel, len(input))
+	createCheckDiagnostics := func(hmID string, input []mapping.NodeCheckDiag) []modelNodeCheckDiag {
+		checks := make([]modelNodeCheckDiag, len(input))
 
 		for idx, check := range input {
-			model := hardwareMappingsNodeCheckDiagnosticModel{
+			m := modelNodeCheckDiag{
 				MappingID: types.StringValue(hmID),
 				Severity:  types.StringPointerValue(check.Severity),
 			}
 			// Strip the unnecessary new line control character (\n) from the end of the message that is, for whatever reason,
 			// returned this way by the Proxmox VE API.
 			msg := strings.TrimSuffix(types.StringPointerValue(check.Message).ValueString(), "\n")
-			model.Message = types.StringPointerValue(&msg)
-			checks[idx] = model
+			m.Message = types.StringPointerValue(&msg)
+			checks[idx] = m
 		}
 
 		return checks
@@ -128,15 +113,15 @@ func (d *hardwareMappingsDatasource) Read(
 		// array.
 		if (data.ChecksPCI != nil && len(data.ChecksPCI) > 0) || (data.ChecksUSB != nil && len(data.ChecksUSB) > 0) {
 			switch data.Type {
-			case proxmoxtypes.HardwareMappingTypePCI:
+			case proxmoxtypes.TypePCI:
 				hm.Checks = append(hm.Checks, createCheckDiagnostics(data.ID, data.ChecksPCI)...)
-			case proxmoxtypes.HardwareMappingTypeUSB:
+			case proxmoxtypes.TypeUSB:
 				hm.Checks = append(hm.Checks, createCheckDiagnostics(data.ID, data.ChecksUSB)...)
 			}
 		}
 		// Ensure to keep the order of the diagnostic entries to prevent random plan changes.
 		slices.SortStableFunc(
-			hm.Checks, func(a, b hardwareMappingsNodeCheckDiagnosticModel) int {
+			hm.Checks, func(a, b modelNodeCheckDiag) int {
 				return strings.Compare(a.MappingID.ValueString(), b.MappingID.ValueString())
 			},
 		)
@@ -157,7 +142,7 @@ func (d *hardwareMappingsDatasource) Read(
 }
 
 // Schema returns the schema for the data source.
-func (d *hardwareMappingsDatasource) Schema(
+func (d *dataSource) Schema(
 	_ context.Context,
 	_ datasource.SchemaRequest,
 	resp *datasource.SchemaResponse,
@@ -165,46 +150,46 @@ func (d *hardwareMappingsDatasource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a list of hardware mapping resources.",
 		Attributes: map[string]schema.Attribute{
-			hardwareMappingsSchemaAttrNameChecks: schema.ListNestedAttribute{
+			schemaAttrNameChecks: schema.ListNestedAttribute{
 				Computed:    true,
 				Description: `Might contain relevant diagnostics about incorrect configurations.`,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						hardwareMappingsSchemaAttrNameChecksDiagnosticsMappingID: schema.StringAttribute{
+						schemaAttrNameChecksDiagsMappingID: schema.StringAttribute{
 							Computed:    true,
 							Description: "The corresponding hardware mapping ID of the node check diagnostic entry.",
 						},
-						hardwareMappingsSchemaAttrNameChecksDiagnosticsMessage: schema.StringAttribute{
+						schemaAttrNameChecksDiagsMessage: schema.StringAttribute{
 							Computed:    true,
 							Description: "The message of the node check diagnostic entry.",
 						},
-						hardwareMappingsSchemaAttrNameChecksDiagnosticsSeverity: schema.StringAttribute{
+						schemaAttrNameChecksDiagsSeverity: schema.StringAttribute{
 							Computed:    true,
 							Description: "The severity of the node check diagnostic entry.",
 						},
 					},
 				},
 			},
-			hardwareMappingsSchemaAttrNameCheckNode: schema.StringAttribute{
+			schemaAttrNameCheckNode: schema.StringAttribute{
 				Description: "The name of the node whose configurations should be checked for correctness.",
 				Optional:    true,
 			},
-			hardwareMappingsSchemaAttrNameHardwareMappingIDs: schema.SetAttribute{
+			schemaAttrNameHWMIDs: schema.SetAttribute{
 				ElementType: types.StringType,
 				Computed:    true,
 				Description: "The identifiers of the hardware mappings.",
 			},
-			hardwareMappingSchemaAttrNameTerraformID: structure.IDAttribute(
+			schemaAttrNameTerraformID: structure.IDAttribute(
 				"The unique identifier of this hardware mappings data source.",
 			),
-			hardwareMappingSchemaAttrNameType: schema.StringAttribute{
+			schemaAttrNameType: schema.StringAttribute{
 				Description: "The type of the hardware mappings.",
 				Required:    true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						[]string{
-							proxmoxtypes.HardwareMappingTypePCI.String(),
-							proxmoxtypes.HardwareMappingTypeUSB.String(),
+							proxmoxtypes.TypePCI.String(),
+							proxmoxtypes.TypeUSB.String(),
 						}...,
 					),
 				},
@@ -213,8 +198,8 @@ func (d *hardwareMappingsDatasource) Schema(
 	}
 }
 
-// NewHardwareMappingsDatasource returns a new data source for hardware mappings.
+// NewDataSource returns a new data source for hardware mappings.
 // This is a helper function to simplify the provider implementation.
-func NewHardwareMappingsDatasource() datasource.DataSource {
-	return &hardwareMappingsDatasource{}
+func NewDataSource() datasource.DataSource {
+	return &dataSource{}
 }

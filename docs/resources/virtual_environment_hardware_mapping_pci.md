@@ -63,8 +63,8 @@ Required:
 Optional:
 
 - `comment` (String) The comment of the mapped PCI device.
-- `iommu_group` (Number) The IOMMU group of the map. Not mandatory for the Proxmox API call, but causes a PCI hardware mapping to be incomplete when not set
-- `subsystem_id` (String) The subsystem ID group of the map. Not mandatory for the Proxmox API call, but causes a PCI hardware mapping to be incomplete when not set
+- `iommu_group` (Number) The IOMMU group of the map. Not mandatory for the Proxmox VE API call, but causes a PCI hardware mapping to be incomplete when not set
+- `subsystem_id` (String) The subsystem ID group of the map. Not mandatory for the Proxmox VE API call, but causes a PCI hardware mapping to be incomplete when not set
 
 ## Import
 

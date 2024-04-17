@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
 // Client is an interface for accessing the Proxmox cluster mapping API.
@@ -23,7 +23,7 @@ func (c *Client) basePath() string {
 }
 
 // ExpandPath expands a relative path to a full hardware mapping API path.
-func (c *Client) ExpandPath(hmType types.HardwareMappingType, path string) string {
+func (c *Client) ExpandPath(hmType proxmoxtypes.Type, path string) string {
 	ep := c.basePath()
 	if hmType.String() != "" {
 		ep = fmt.Sprintf("%s/%s", ep, hmType.String())

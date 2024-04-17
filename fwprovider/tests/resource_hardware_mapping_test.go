@@ -18,10 +18,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	hwm "github.com/bpg/terraform-provider-proxmox/fwprovider/hardwaremapping"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
 const (
@@ -52,7 +52,7 @@ func testAccResourceHardwareMappingInit(t *testing.T) (*accTestHardwareMappingFa
 			Example:     "8086:5916",
 			Output:      "string",
 			Generate: func(f *gofakeit.Faker, _ *gofakeit.MapParams, _ *gofakeit.Info) (any, error) {
-				return f.Regex(proxmoxtypes.HardwareMappingDeviceIDAttrValueRegEx.String()), nil
+				return f.Regex(proxmoxtypes.DeviceIDAttrValueRegEx.String()), nil
 			},
 		},
 	)
@@ -64,7 +64,7 @@ func testAccResourceHardwareMappingInit(t *testing.T) (*accTestHardwareMappingFa
 			Example:     "0000:00:02.0",
 			Output:      "string",
 			Generate: func(f *gofakeit.Faker, _ *gofakeit.MapParams, _ *gofakeit.Info) (any, error) {
-				return f.Regex(types.HardwareMappingPathPCIValueRegEx.String()), nil
+				return f.Regex(customtypes.PathPCIValueRegEx.String()), nil
 			},
 		},
 	)
@@ -76,7 +76,7 @@ func testAccResourceHardwareMappingInit(t *testing.T) (*accTestHardwareMappingFa
 			Example:     "1-5.2",
 			Output:      "string",
 			Generate: func(f *gofakeit.Faker, _ *gofakeit.MapParams, _ *gofakeit.Info) (any, error) {
-				return f.Regex(types.HardwareMappingPathUSBValueRegEx.String()), nil
+				return f.Regex(customtypes.PathUSBValueRegEx.String()), nil
 			},
 		},
 	)
@@ -370,7 +370,7 @@ func TestAccResourceHardwareMappingPCIInvalidInput(t *testing.T) {
 							// References:
 							//   1. https://pkg.go.dev/regexp/syntax
 							`(?s).*%s(?s).*`,
-							fwprovider.HardwareMappingResourceErrMessageInvalidPath(proxmoxtypes.HardwareMappingTypePCI),
+							hwm.ErrResourceMessageInvalidPath(proxmoxtypes.TypePCI),
 						),
 					),
 					Config: fmt.Sprintf(
@@ -674,7 +674,7 @@ func TestAccResourceHardwareMappingUSBInvalidInput(t *testing.T) {
 							// References:
 							//   1. https://pkg.go.dev/regexp/syntax
 							`(?s).*%s(?s).*`,
-							fwprovider.HardwareMappingResourceErrMessageInvalidPath(proxmoxtypes.HardwareMappingTypeUSB),
+							hwm.ErrResourceMessageInvalidPath(proxmoxtypes.TypeUSB),
 						),
 					),
 					Config: fmt.Sprintf(

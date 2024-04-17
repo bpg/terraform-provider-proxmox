@@ -4,7 +4,7 @@
 	file, You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-package fwprovider
+package hardwaremapping
 
 import (
 	"context"
@@ -16,26 +16,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
-	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
 // Ensure the implementation satisfies the required interfaces.
 var (
-	_ datasource.DataSource              = &hardwareMappingUSBDatasource{}
-	_ datasource.DataSourceWithConfigure = &hardwareMappingUSBDatasource{}
+	_ datasource.DataSource              = &datasourceUSB{}
+	_ datasource.DataSourceWithConfigure = &datasourceUSB{}
 )
 
-// hardwareMappingUSBDatasource is the data source implementation for a USB hardware mapping.
-type hardwareMappingUSBDatasource struct {
+// datasourceUSB is the data source implementation for a USB hardware mapping.
+type datasourceUSB struct {
 	client *mappings.Client
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *hardwareMappingUSBDatasource) Configure(
+func (d *datasourceUSB) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -58,21 +58,13 @@ func (d *hardwareMappingUSBDatasource) Configure(
 }
 
 // Metadata returns the data source type name.
-func (d *hardwareMappingUSBDatasource) Metadata(
-	_ context.Context,
-	req datasource.MetadataRequest,
-	resp *datasource.MetadataResponse,
-) {
+func (d *datasourceUSB) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mapping_usb"
 }
 
 // Read fetches the specified USB hardware mapping from the Proxmox VE API.
-func (d *hardwareMappingUSBDatasource) Read(
-	ctx context.Context,
-	req datasource.ReadRequest,
-	resp *datasource.ReadResponse,
-) {
-	var hm hardwareMappingUSBModel
+func (d *datasourceUSB) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var hm modelUSB
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &hm)...)
 
@@ -84,7 +76,7 @@ func (d *hardwareMappingUSBDatasource) Read(
 	// Ensure to keep both in sync since the name represents the ID.
 	hm.ID = hm.Name
 
-	data, err := d.client.Get(ctx, proxmoxtypes.HardwareMappingTypeUSB, hmID)
+	data, err := d.client.Get(ctx, proxmoxtypes.TypeUSB, hmID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Unable to read USB hardware mapping %q", hmID),
@@ -99,12 +91,8 @@ func (d *hardwareMappingUSBDatasource) Read(
 }
 
 // Schema defines the schema for the USB hardware mapping.
-func (d *hardwareMappingUSBDatasource) Schema(
-	_ context.Context,
-	_ datasource.SchemaRequest,
-	resp *datasource.SchemaResponse,
-) {
-	comment := hardwareMappingDataSourceSchemaWithBaseAttrComment
+func (d *datasourceUSB) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	comment := dataSourceSchemaBaseAttrComment
 	comment.Optional = false
 	comment.Computed = true
 	comment.Description = "The comment of this USB hardware mapping."
@@ -114,29 +102,29 @@ func (d *hardwareMappingUSBDatasource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a USB hardware mapping from a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
-			hardwareMappingSchemaAttrNameComment: comment,
-			hardwareMappingSchemaAttrNameMap: schema.SetNestedAttribute{
+			schemaAttrNameComment: comment,
+			schemaAttrNameMap: schema.SetNestedAttribute{
 				Computed:    true,
 				Description: "The actual map of devices for the hardware mapping.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						hardwareMappingSchemaAttrNameComment: commentMap,
-						hardwareMappingSchemaAttrNameMapDeviceID: schema.StringAttribute{
+						schemaAttrNameComment: commentMap,
+						schemaAttrNameMapDeviceID: schema.StringAttribute{
 							Computed:    true,
 							Description: "The ID attribute of the map.",
 							Validators: []validator.String{
 								validators.HardwareMappingDeviceIDValidator(),
 							},
 						},
-						hardwareMappingSchemaAttrNameMapNode: schema.StringAttribute{
+						schemaAttrNameMapNode: schema.StringAttribute{
 							Computed:    true,
 							Description: "The node name attribute of the map.",
 						},
-						hardwareMappingSchemaAttrNameMapPath: schema.StringAttribute{
+						schemaAttrNameMapPath: schema.StringAttribute{
 							// For hardware mappings of type USB the path is optional and indicates that the device is mapped through
 							// the device ID instead of ports.
 							Computed:    true,
-							CustomType:  customtypes.HardwareMappingPathType{},
+							CustomType:  customtypes.PathType{},
 							Description: "The path attribute of the map.",
 						},
 					},
@@ -145,19 +133,19 @@ func (d *hardwareMappingUSBDatasource) Schema(
 					setvalidator.SizeAtLeast(1),
 				},
 			},
-			hardwareMappingSchemaAttrNameName: schema.StringAttribute{
+			schemaAttrNameName: schema.StringAttribute{
 				Description: "The name of this USB hardware mapping.",
 				Required:    true,
 			},
-			hardwareMappingSchemaAttrNameTerraformID: structure.IDAttribute(
+			schemaAttrNameTerraformID: structure.IDAttribute(
 				"The unique identifier of this USB hardware mapping data source.",
 			),
 		},
 	}
 }
 
-// NewHardwareMappingUSBDatasource returns a new data source for a USB hardware mapping.
+// NewDataSourceUSB returns a new data source for a USB hardware mapping.
 // This is a helper function to simplify the provider implementation.
-func NewHardwareMappingUSBDatasource() datasource.DataSource {
-	return &hardwareMappingUSBDatasource{}
+func NewDataSourceUSB() datasource.DataSource {
+	return &datasourceUSB{}
 }

@@ -9,7 +9,7 @@ package validators
 import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
 const (
@@ -19,5 +19,5 @@ const (
 
 // HardwareMappingDeviceIDValidator validates a hardware mapping device ID.
 func HardwareMappingDeviceIDValidator() validator.String {
-	return NewParseValidator(proxmoxtypes.ParseHardwareMappingDeviceID, HardwareMappingDeviceIDValidatorErrMessage)
+	return NewParseValidator(proxmoxtypes.ParseDeviceID, HardwareMappingDeviceIDValidatorErrMessage)
 }

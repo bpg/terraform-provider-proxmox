@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package types
+package hardwaremapping
 
 import (
 	"context"
@@ -13,35 +13,35 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
-func TestHardwareMappingPathValueFromTerraform(t *testing.T) {
+func TestPathValueFromTerraform(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
 		val         tftypes.Value
-		expected    func(val HardwareMappingPathValue) bool
+		expected    func(val PathValue) bool
 		expectError bool
 	}{
 		"null value": {
 			val: tftypes.NewValue(tftypes.String, nil),
-			expected: func(val HardwareMappingPathValue) bool {
+			expected: func(val PathValue) bool {
 				return val.IsNull()
 			},
 		},
 		"unknown value": {
 			val: tftypes.NewValue(tftypes.String, tftypes.UnknownValue),
-			expected: func(val HardwareMappingPathValue) bool {
+			expected: func(val PathValue) bool {
 				return val.IsUnknown()
 			},
 		},
 		"valid for PCI type": {
 			val: tftypes.NewValue(tftypes.String, "8086:5916"),
-			expected: func(val HardwareMappingPathValue) bool {
+			expected: func(val PathValue) bool {
 				return val.ValueString() == "8086:5916"
 			},
 		},
 		"valid for USB type": {
 			val: tftypes.NewValue(tftypes.String, "1-5.2"),
-			expected: func(val HardwareMappingPathValue) bool {
+			expected: func(val PathValue) bool {
 				return val.ValueString() == "1-5.2"
 			},
 		},
@@ -53,7 +53,7 @@ func TestHardwareMappingPathValueFromTerraform(t *testing.T) {
 				t.Parallel()
 
 				ctx := context.TODO()
-				val, err := HardwareMappingPathType{}.ValueFromTerraform(ctx, test.val)
+				val, err := PathType{}.ValueFromTerraform(ctx, test.val)
 
 				if err == nil && test.expectError {
 					t.Fatal("expected error, got no error")
@@ -63,7 +63,7 @@ func TestHardwareMappingPathValueFromTerraform(t *testing.T) {
 					t.Fatalf("got unexpected error: %s", err)
 				}
 
-				if !test.expected(val.(HardwareMappingPathValue)) {
+				if !test.expected(val.(PathValue)) {
 					t.Errorf("unexpected result")
 				}
 			},

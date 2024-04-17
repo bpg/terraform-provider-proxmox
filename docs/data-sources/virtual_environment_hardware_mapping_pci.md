@@ -47,4 +47,4 @@ Read-Only:
 - `iommu_group` (Number) The IOMMU group attribute of the map.
 - `node` (String) The node name attribute of the map.
 - `path` (String) The path attribute of the map.
-- `subsystem_id` (String) The subsystem ID attribute of the map.Not mandatory for the Proxmox API call, but causes a PCI hardware mapping to be incomplete when not set.
+- `subsystem_id` (String) The subsystem ID attribute of the map.Not mandatory for the Proxmox VE API call, but causes a PCI hardware mapping to be incomplete when not set.

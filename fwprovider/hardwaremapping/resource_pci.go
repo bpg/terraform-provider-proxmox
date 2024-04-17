@@ -4,7 +4,7 @@
 	file, You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-package fwprovider
+package hardwaremapping
 
 import (
 	"context"
@@ -23,41 +23,33 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
-	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
 // Ensure the resource implements the required interfaces.
 var (
-	_ resource.Resource                = &hardwareMappingPCIResource{}
-	_ resource.ResourceWithConfigure   = &hardwareMappingPCIResource{}
-	_ resource.ResourceWithImportState = &hardwareMappingPCIResource{}
+	_ resource.Resource                = &resourcePCI{}
+	_ resource.ResourceWithConfigure   = &resourcePCI{}
+	_ resource.ResourceWithImportState = &resourcePCI{}
 )
 
-// HardwareMappingResourceErrMessageInvalidPath is the error message for an invalid Linux device path for a hardware
-// mapping of the specified type.
-// Extracting the message helps to reduce duplicated code and allows to use it in automated unit and acceptance tests.
-//
-//nolint:gochecknoglobals
-var HardwareMappingResourceErrMessageInvalidPath = func(hmType proxmoxtypes.HardwareMappingType) string {
-	return fmt.Sprintf("not a valid Linux device path for hardware mapping of type %q", hmType)
-}
-
-// hardwareMappingPCIResource contains the PCI hardware mapping resource's internal data.
-type hardwareMappingPCIResource struct {
+// resourcePCI contains the PCI hardware mapping resource's internal data.
+type resourcePCI struct {
 	// client is the hardware mapping API client.
 	client mappings.Client
 }
 
 // read reads information about a PCI hardware mapping from the Proxmox VE API.
-func (r *hardwareMappingPCIResource) read(ctx context.Context, hm *hardwareMappingPCIModel) (bool, diag.Diagnostics) {
+func (r *resourcePCI) read(ctx context.Context, hm *modelPCI) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	hmName := hm.Name.ValueString()
-	data, err := r.client.Get(ctx, proxmoxtypes.HardwareMappingTypePCI, hmName)
+	data, err := r.client.Get(ctx, proxmoxtypes.TypePCI, hmName)
+
 	if err != nil {
 		if strings.Contains(err.Error(), "no such resource") {
 			diags.AddError("Could not read PCI hardware mapping", err.Error())
@@ -71,15 +63,10 @@ func (r *hardwareMappingPCIResource) read(ctx context.Context, hm *hardwareMappi
 	return true, nil
 }
 
-// readBack reads information about a created or modified PCI hardware mapping from the Proxmox API then updates the
+// readBack reads information about a created or modified PCI hardware mapping from the Proxmox VE API then updates the
 // response state accordingly.
 // The Terraform resource identifier must have been set in the state before this method is called!
-func (r *hardwareMappingPCIResource) readBack(
-	ctx context.Context,
-	hm *hardwareMappingPCIModel,
-	respDiags *diag.Diagnostics,
-	respState *tfsdk.State,
-) {
+func (r *resourcePCI) readBack(ctx context.Context, hm *modelPCI, respDiags *diag.Diagnostics, respState *tfsdk.State) {
 	found, diags := r.read(ctx, hm)
 
 	respDiags.Append(diags...)
@@ -97,11 +84,7 @@ func (r *hardwareMappingPCIResource) readBack(
 }
 
 // Configure adds the provider-configured client to the resource.
-func (r *hardwareMappingPCIResource) Configure(
-	_ context.Context,
-	req resource.ConfigureRequest,
-	resp *resource.ConfigureResponse,
-) {
+func (r *resourcePCI) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -118,12 +101,8 @@ func (r *hardwareMappingPCIResource) Configure(
 }
 
 // Create creates a new PCI hardware mapping.
-func (r *hardwareMappingPCIResource) Create(
-	ctx context.Context,
-	req resource.CreateRequest,
-	resp *resource.CreateResponse,
-) {
-	var hm hardwareMappingPCIModel
+func (r *resourcePCI) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var hm modelPCI
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &hm)...)
 
@@ -135,7 +114,7 @@ func (r *hardwareMappingPCIResource) Create(
 	// Ensure to keep both in sync since the name represents the ID.
 	hm.ID = hm.Name
 
-	if err := r.client.Create(ctx, proxmoxtypes.HardwareMappingTypePCI, hm.toCreateRequest()); err != nil {
+	if err := r.client.Create(ctx, proxmoxtypes.TypePCI, hm.toCreateRequest()); err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Could not create PCI hardware mapping %q.", hmName),
 			err.Error(),
@@ -148,12 +127,8 @@ func (r *hardwareMappingPCIResource) Create(
 }
 
 // Delete deletes an existing PCI hardware mapping.
-func (r *hardwareMappingPCIResource) Delete(
-	ctx context.Context,
-	req resource.DeleteRequest,
-	resp *resource.DeleteResponse,
-) {
-	var hm hardwareMappingPCIModel
+func (r *resourcePCI) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var hm modelPCI
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &hm)...)
 
@@ -163,7 +138,7 @@ func (r *hardwareMappingPCIResource) Delete(
 
 	hmID := hm.Name.ValueString()
 
-	if err := r.client.Delete(ctx, proxmoxtypes.HardwareMappingTypePCI, hmID); err != nil {
+	if err := r.client.Delete(ctx, proxmoxtypes.TypePCI, hmID); err != nil {
 		if strings.Contains(err.Error(), "no such resource") {
 			resp.Diagnostics.AddWarning(
 				"PCI hardware mapping does not exist",
@@ -179,34 +154,28 @@ func (r *hardwareMappingPCIResource) Delete(
 }
 
 // ImportState imports a PCI hardware mapping from the Proxmox VE API.
-func (r *hardwareMappingPCIResource) ImportState(
+func (r *resourcePCI) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	data := hardwareMappingPCIModel{
+	data := modelPCI{
 		ID:   types.StringValue(req.ID),
 		Name: types.StringValue(req.ID),
 	}
 
-	resource.ImportStatePassthroughID(ctx, path.Root(hardwareMappingSchemaAttrNameTerraformID), req, resp)
+	resource.ImportStatePassthroughID(ctx, path.Root(schemaAttrNameTerraformID), req, resp)
 	r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
 }
 
 // Metadata defines the name of the PCI hardware mapping.
-func (r *hardwareMappingPCIResource) Metadata(
-	_ context.Context,
-	req resource.MetadataRequest,
-	resp *resource.MetadataResponse,
-) {
+func (r *resourcePCI) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mapping_pci"
 }
 
 // Read reads the PCI hardware mapping.
-//
-
-func (r *hardwareMappingPCIResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data hardwareMappingPCIModel
+func (r *resourcePCI) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data modelPCI
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -227,12 +196,8 @@ func (r *hardwareMappingPCIResource) Read(ctx context.Context, req resource.Read
 }
 
 // Schema defines the schema for the PCI hardware mapping.
-func (r *hardwareMappingPCIResource) Schema(
-	_ context.Context,
-	_ resource.SchemaRequest,
-	resp *resource.SchemaResponse,
-) {
-	comment := hardwareMappingResourceSchemaWithBaseAttrComment
+func (r *resourcePCI) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	comment := resourceSchemaBaseAttrComment
 	comment.Description = "The comment of this PCI hardware mapping."
 	commentMap := comment
 	commentMap.Description = "The comment of the mapped PCI device."
@@ -240,42 +205,42 @@ func (r *hardwareMappingPCIResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages a PCI hardware mapping in a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
-			hardwareMappingSchemaAttrNameComment: comment,
-			hardwareMappingSchemaAttrNameMap: schema.SetNestedAttribute{
+			schemaAttrNameComment: comment,
+			schemaAttrNameMap: schema.SetNestedAttribute{
 				Description: "The actual map of devices for the PCI hardware mapping.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						hardwareMappingSchemaAttrNameComment: commentMap,
-						hardwareMappingSchemaAttrNameMapDeviceID: schema.StringAttribute{
+						schemaAttrNameComment: commentMap,
+						schemaAttrNameMapDeviceID: schema.StringAttribute{
 							Description: "The ID of the map.",
 							Required:    true,
 							Validators: []validator.String{
 								validators.HardwareMappingDeviceIDValidator(),
 							},
 						},
-						hardwareMappingSchemaAttrNameMapIOMMUGroup: schema.Int64Attribute{
-							Description: "The IOMMU group of the map. Not mandatory for the Proxmox API call, " +
+						schemaAttrNameMapIOMMUGroup: schema.Int64Attribute{
+							Description: "The IOMMU group of the map. Not mandatory for the Proxmox VE API call, " +
 								"but causes a PCI hardware mapping to be incomplete when not set",
 							Optional: true,
 						},
-						hardwareMappingSchemaAttrNameMapNode: schema.StringAttribute{
+						schemaAttrNameMapNode: schema.StringAttribute{
 							Description: "The node name of the map.",
 							Required:    true,
 						},
-						hardwareMappingSchemaAttrNameMapPath: schema.StringAttribute{
-							CustomType:  customtypes.HardwareMappingPathType{},
+						schemaAttrNameMapPath: schema.StringAttribute{
+							CustomType:  customtypes.PathType{},
 							Description: "The path of the map.",
 							// For hardware mappings of type PCI, the path is required while it is optional for USB.
 							Required: true,
 							Validators: []validator.String{
 								stringvalidator.RegexMatches(
-									customtypes.HardwareMappingPathPCIValueRegEx,
-									HardwareMappingResourceErrMessageInvalidPath(proxmoxtypes.HardwareMappingTypePCI),
+									customtypes.PathPCIValueRegEx,
+									ErrResourceMessageInvalidPath(proxmoxtypes.TypePCI),
 								),
 							},
 						},
-						hardwareMappingSchemaAttrNameMapSubsystemID: schema.StringAttribute{
-							Description: "The subsystem ID group of the map. Not mandatory for the Proxmox API call, " +
+						schemaAttrNameMapSubsystemID: schema.StringAttribute{
+							Description: "The subsystem ID group of the map. Not mandatory for the Proxmox VE API call, " +
 								"but causes a PCI hardware mapping to be incomplete when not set",
 							Optional: true,
 							Validators: []validator.String{
@@ -289,17 +254,17 @@ func (r *hardwareMappingPCIResource) Schema(
 					setvalidator.SizeAtLeast(1),
 				},
 			},
-			hardwareMappingSchemaAttrNameMediatedDevices: schema.BoolAttribute{
+			schemaAttrNameMediatedDevices: schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 				Description: "Indicates whether to enable mediated devices.",
 			},
-			hardwareMappingSchemaAttrNameName: schema.StringAttribute{
+			schemaAttrNameName: schema.StringAttribute{
 				Description: "The name of this PCI hardware mapping.",
 				Required:    true,
 			},
-			hardwareMappingSchemaAttrNameTerraformID: structure.IDAttribute(
+			schemaAttrNameTerraformID: structure.IDAttribute(
 				"The unique identifier of this PCI hardware mapping resource.",
 			),
 		},
@@ -307,12 +272,8 @@ func (r *hardwareMappingPCIResource) Schema(
 }
 
 // Update updates an existing PCI hardware mapping.
-func (r *hardwareMappingPCIResource) Update(
-	ctx context.Context,
-	req resource.UpdateRequest,
-	resp *resource.UpdateResponse,
-) {
-	var hmCurrent, hmPlan hardwareMappingPCIModel
+func (r *resourcePCI) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var hmCurrent, hmPlan modelPCI
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &hmPlan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &hmCurrent)...)
@@ -325,7 +286,7 @@ func (r *hardwareMappingPCIResource) Update(
 
 	if err := r.client.Update(
 		ctx,
-		proxmoxtypes.HardwareMappingTypePCI,
+		proxmoxtypes.TypePCI,
 		hmName,
 		hmPlan.toUpdateRequest(&hmCurrent),
 	); err != nil {
@@ -340,8 +301,8 @@ func (r *hardwareMappingPCIResource) Update(
 	r.readBack(ctx, &hmPlan, &resp.Diagnostics, &resp.State)
 }
 
-// NewHardwareMappingPCIResource returns a new resource for managing a PCI hardware mapping.
+// NewResourcePCI returns a new resource for managing a PCI hardware mapping.
 // This is a helper function to simplify the provider implementation.
-func NewHardwareMappingPCIResource() resource.Resource {
-	return &hardwareMappingPCIResource{}
+func NewResourcePCI() resource.Resource {
+	return &resourcePCI{}
 }

@@ -4,7 +4,7 @@
 	file, You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-package fwprovider
+package hardwaremapping
 
 import (
 	"context"
@@ -16,27 +16,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
-	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
 // Ensure the implementation satisfies the required interfaces.
 var (
-	_ datasource.DataSource              = &hardwareMappingPCIDatasource{}
-	_ datasource.DataSourceWithConfigure = &hardwareMappingPCIDatasource{}
+	_ datasource.DataSource              = &dataSourcePCI{}
+	_ datasource.DataSourceWithConfigure = &dataSourcePCI{}
 )
 
-// hardwareMappingPCIDatasource is the data source implementation for a PCI hardware mapping.
-type hardwareMappingPCIDatasource struct {
+// dataSourcePCI is the data source implementation for a PCI hardware mapping.
+type dataSourcePCI struct {
 	// client is the hardware mapping API client.
 	client *mappings.Client
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *hardwareMappingPCIDatasource) Configure(
+func (d *dataSourcePCI) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -59,21 +59,13 @@ func (d *hardwareMappingPCIDatasource) Configure(
 }
 
 // Metadata returns the data source type name.
-func (d *hardwareMappingPCIDatasource) Metadata(
-	_ context.Context,
-	req datasource.MetadataRequest,
-	resp *datasource.MetadataResponse,
-) {
+func (d *dataSourcePCI) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mapping_pci"
 }
 
 // Read fetches the specified PCI hardware mapping from the Proxmox VE API.
-func (d *hardwareMappingPCIDatasource) Read(
-	ctx context.Context,
-	req datasource.ReadRequest,
-	resp *datasource.ReadResponse,
-) {
-	var hm hardwareMappingPCIModel
+func (d *dataSourcePCI) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var hm modelPCI
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &hm)...)
 
@@ -85,7 +77,7 @@ func (d *hardwareMappingPCIDatasource) Read(
 	// Ensure to keep both in sync since the name represents the ID.
 	hm.ID = hm.Name
 
-	data, err := d.client.Get(ctx, proxmoxtypes.HardwareMappingTypePCI, hmID)
+	data, err := d.client.Get(ctx, proxmoxtypes.TypePCI, hmID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Unable to read PCI hardware mapping %q", hmID),
@@ -101,12 +93,8 @@ func (d *hardwareMappingPCIDatasource) Read(
 }
 
 // Schema defines the schema for the PCI hardware mapping.
-func (d *hardwareMappingPCIDatasource) Schema(
-	_ context.Context,
-	_ datasource.SchemaRequest,
-	resp *datasource.SchemaResponse,
-) {
-	comment := hardwareMappingDataSourceSchemaWithBaseAttrComment
+func (d *dataSourcePCI) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	comment := dataSourceSchemaBaseAttrComment
 	comment.Optional = false
 	comment.Computed = true
 	comment.Description = "The comment of this PCI hardware mapping."
@@ -116,39 +104,39 @@ func (d *hardwareMappingPCIDatasource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a PCI hardware mapping from a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
-			hardwareMappingSchemaAttrNameComment: comment,
-			hardwareMappingSchemaAttrNameMap: schema.SetNestedAttribute{
+			schemaAttrNameComment: comment,
+			schemaAttrNameMap: schema.SetNestedAttribute{
 				Computed:    true,
 				Description: "The actual map of devices for the hardware mapping.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						hardwareMappingSchemaAttrNameComment: commentMap,
-						hardwareMappingSchemaAttrNameMapIOMMUGroup: schema.Int64Attribute{
+						schemaAttrNameComment: commentMap,
+						schemaAttrNameMapIOMMUGroup: schema.Int64Attribute{
 							Computed:    true,
 							Description: "The IOMMU group attribute of the map.",
 						},
-						hardwareMappingSchemaAttrNameMapDeviceID: schema.StringAttribute{
+						schemaAttrNameMapDeviceID: schema.StringAttribute{
 							Computed:    true,
 							Description: "The ID attribute of the map.",
 							Validators: []validator.String{
 								validators.HardwareMappingDeviceIDValidator(),
 							},
 						},
-						hardwareMappingSchemaAttrNameMapNode: schema.StringAttribute{
+						schemaAttrNameMapNode: schema.StringAttribute{
 							Computed:    true,
 							Description: "The node name attribute of the map.",
 						},
-						hardwareMappingSchemaAttrNameMapPath: schema.StringAttribute{
+						schemaAttrNameMapPath: schema.StringAttribute{
 							// For hardware mappings of type PCI, the path is required while it is optional for USB.
 							Computed:    true,
-							CustomType:  customtypes.HardwareMappingPathType{},
+							CustomType:  customtypes.PathType{},
 							Description: "The path attribute of the map.",
 						},
-						hardwareMappingSchemaAttrNameMapSubsystemID: schema.StringAttribute{
+						schemaAttrNameMapSubsystemID: schema.StringAttribute{
 							Computed: true,
 							Description: "The subsystem ID attribute of the map." +
-								"Not mandatory for the Proxmox API call, but causes a PCI hardware mapping to be incomplete when not " +
-								"set.",
+								"Not mandatory for the Proxmox VE API call, but causes a PCI hardware mapping to be incomplete when " +
+								"not set.",
 							Validators: []validator.String{
 								validators.HardwareMappingDeviceIDValidator(),
 							},
@@ -159,23 +147,23 @@ func (d *hardwareMappingPCIDatasource) Schema(
 					setvalidator.SizeAtLeast(1),
 				},
 			},
-			hardwareMappingSchemaAttrNameMediatedDevices: schema.BoolAttribute{
+			schemaAttrNameMediatedDevices: schema.BoolAttribute{
 				Computed:    true,
 				Description: "Indicates whether to use with mediated devices.",
 			},
-			hardwareMappingSchemaAttrNameName: schema.StringAttribute{
+			schemaAttrNameName: schema.StringAttribute{
 				Description: "The name of this PCI hardware mapping.",
 				Required:    true,
 			},
-			hardwareMappingSchemaAttrNameTerraformID: structure.IDAttribute(
+			schemaAttrNameTerraformID: structure.IDAttribute(
 				"The unique identifier of this PCI hardware mapping data source.",
 			),
 		},
 	}
 }
 
-// NewHardwareMappingPCIDatasource returns a new data source for a PCI hardware mapping.
+// NewDataSourcePCI returns a new data source for a PCI hardware mapping.
 // This is a helper function to simplify the provider implementation.
-func NewHardwareMappingPCIDatasource() datasource.DataSource {
-	return &hardwareMappingPCIDatasource{}
+func NewDataSourcePCI() datasource.DataSource {
+	return &dataSourcePCI{}
 }

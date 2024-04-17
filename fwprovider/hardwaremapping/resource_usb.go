@@ -4,7 +4,7 @@
 	file, You can obtain one at https://mozilla.org/MPL/2.0/.
 */
 
-package fwprovider
+package hardwaremapping
 
 import (
 	"context"
@@ -22,32 +22,33 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
-	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
 
 // Ensure the resource implements the required interfaces.
 var (
-	_ resource.Resource                = &hardwareMappingUSBResource{}
-	_ resource.ResourceWithConfigure   = &hardwareMappingUSBResource{}
-	_ resource.ResourceWithImportState = &hardwareMappingUSBResource{}
+	_ resource.Resource                = &resourceUSB{}
+	_ resource.ResourceWithConfigure   = &resourceUSB{}
+	_ resource.ResourceWithImportState = &resourceUSB{}
 )
 
-// hardwareMappingUSBResource contains the USB hardware mapping resource's internal data.
-type hardwareMappingUSBResource struct {
+// resourceUSB contains the USB hardware mapping resource's internal data.
+type resourceUSB struct {
 	// client is the hardware mapping API client.
 	client mappings.Client
 }
 
-// read reads information about a USB hardware mapping from the Proxmox API.
-func (r *hardwareMappingUSBResource) read(ctx context.Context, hm *hardwareMappingUSBModel) (bool, diag.Diagnostics) {
+// read reads information about a USB hardware mapping from the Proxmox VE API.
+func (r *resourceUSB) read(ctx context.Context, hm *modelUSB) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	hmName := hm.Name.ValueString()
-	data, err := r.client.Get(ctx, proxmoxtypes.HardwareMappingTypeUSB, hmName)
+	data, err := r.client.Get(ctx, proxmoxtypes.TypeUSB, hmName)
+
 	if err != nil {
 		if strings.Contains(err.Error(), "no such resource") {
 			diags.AddError("Could not read USB hardware mapping", err.Error())
@@ -61,15 +62,10 @@ func (r *hardwareMappingUSBResource) read(ctx context.Context, hm *hardwareMappi
 	return true, nil
 }
 
-// readBack reads information about a created or modified USB hardware mapping from the Proxmox API then updates the
+// readBack reads information about a created or modified USB hardware mapping from the Proxmox VE API then updates the
 // response state accordingly.
 // The Terraform resource identifier must have been set in the state before this method is called!
-func (r *hardwareMappingUSBResource) readBack(
-	ctx context.Context,
-	hm *hardwareMappingUSBModel,
-	respDiags *diag.Diagnostics,
-	respState *tfsdk.State,
-) {
+func (r *resourceUSB) readBack(ctx context.Context, hm *modelUSB, respDiags *diag.Diagnostics, respState *tfsdk.State) {
 	found, diags := r.read(ctx, hm)
 
 	respDiags.Append(diags...)
@@ -87,11 +83,7 @@ func (r *hardwareMappingUSBResource) readBack(
 }
 
 // Configure adds the provider-configured client to the resource.
-func (r *hardwareMappingUSBResource) Configure(
-	_ context.Context,
-	req resource.ConfigureRequest,
-	resp *resource.ConfigureResponse,
-) {
+func (r *resourceUSB) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -109,12 +101,8 @@ func (r *hardwareMappingUSBResource) Configure(
 }
 
 // Create creates a new USB hardware mapping.
-func (r *hardwareMappingUSBResource) Create(
-	ctx context.Context,
-	req resource.CreateRequest,
-	resp *resource.CreateResponse,
-) {
-	var hm hardwareMappingUSBModel
+func (r *resourceUSB) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var hm modelUSB
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &hm)...)
 
@@ -128,7 +116,7 @@ func (r *hardwareMappingUSBResource) Create(
 
 	apiReq := hm.toCreateRequest()
 
-	if err := r.client.Create(ctx, proxmoxtypes.HardwareMappingTypeUSB, apiReq); err != nil {
+	if err := r.client.Create(ctx, proxmoxtypes.TypeUSB, apiReq); err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Could not create USB hardware mapping %q.", hmName),
 			err.Error(),
@@ -141,12 +129,8 @@ func (r *hardwareMappingUSBResource) Create(
 }
 
 // Delete deletes an existing USB hardware mapping.
-func (r *hardwareMappingUSBResource) Delete(
-	ctx context.Context,
-	req resource.DeleteRequest,
-	resp *resource.DeleteResponse,
-) {
-	var hm hardwareMappingUSBModel
+func (r *resourceUSB) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var hm modelUSB
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &hm)...)
 
@@ -156,7 +140,7 @@ func (r *hardwareMappingUSBResource) Delete(
 
 	hmID := hm.Name.ValueString()
 
-	if err := r.client.Delete(ctx, proxmoxtypes.HardwareMappingTypeUSB, hmID); err != nil {
+	if err := r.client.Delete(ctx, proxmoxtypes.TypeUSB, hmID); err != nil {
 		if strings.Contains(err.Error(), "no such resource") {
 			resp.Diagnostics.AddWarning(
 				"USB hardware mapping does not exist",
@@ -172,34 +156,30 @@ func (r *hardwareMappingUSBResource) Delete(
 }
 
 // ImportState imports a USB hardware mapping from the Proxmox VE API.
-func (r *hardwareMappingUSBResource) ImportState(
+func (r *resourceUSB) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	data := hardwareMappingUSBModel{
+	data := modelUSB{
 		ID:   types.StringValue(req.ID),
 		Name: types.StringValue(req.ID),
 	}
 
-	resource.ImportStatePassthroughID(ctx, path.Root(hardwareMappingSchemaAttrNameTerraformID), req, resp)
+	resource.ImportStatePassthroughID(ctx, path.Root(schemaAttrNameTerraformID), req, resp)
 	r.readBack(ctx, &data, &resp.Diagnostics, &resp.State)
 }
 
 // Metadata defines the name of the USB hardware mapping.
-func (r *hardwareMappingUSBResource) Metadata(
-	_ context.Context,
-	req resource.MetadataRequest,
-	resp *resource.MetadataResponse,
-) {
+func (r *resourceUSB) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mapping_usb"
 }
 
 // Read reads the USB hardware mapping.
 //
 
-func (r *hardwareMappingUSBResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data hardwareMappingUSBModel
+func (r *resourceUSB) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data modelUSB
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -220,12 +200,8 @@ func (r *hardwareMappingUSBResource) Read(ctx context.Context, req resource.Read
 }
 
 // Schema defines the schema for the USB hardware mapping.
-func (r *hardwareMappingUSBResource) Schema(
-	_ context.Context,
-	_ resource.SchemaRequest,
-	resp *resource.SchemaResponse,
-) {
-	comment := hardwareMappingResourceSchemaWithBaseAttrComment
+func (r *resourceUSB) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	comment := resourceSchemaBaseAttrComment
 	comment.Description = "The comment of this USB hardware mapping."
 	commentMap := comment
 	commentMap.Description = "The comment of the mapped USB device."
@@ -233,32 +209,32 @@ func (r *hardwareMappingUSBResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages a USB hardware mapping in a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
-			hardwareMappingSchemaAttrNameComment: comment,
-			hardwareMappingSchemaAttrNameMap: schema.SetNestedAttribute{
+			schemaAttrNameComment: comment,
+			schemaAttrNameMap: schema.SetNestedAttribute{
 				Description: "The actual map of devices for the hardware mapping.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						hardwareMappingSchemaAttrNameComment: commentMap,
-						hardwareMappingSchemaAttrNameMapDeviceID: schema.StringAttribute{
+						schemaAttrNameComment: commentMap,
+						schemaAttrNameMapDeviceID: schema.StringAttribute{
 							Description: "The ID of the map.",
 							Required:    true,
 							Validators: []validator.String{
 								validators.HardwareMappingDeviceIDValidator(),
 							},
 						},
-						hardwareMappingSchemaAttrNameMapNode: schema.StringAttribute{
+						schemaAttrNameMapNode: schema.StringAttribute{
 							Description: "The node name of the map.",
 							Required:    true,
 						},
-						hardwareMappingSchemaAttrNameMapPath: schema.StringAttribute{
-							CustomType: customtypes.HardwareMappingPathType{},
+						schemaAttrNameMapPath: schema.StringAttribute{
+							CustomType: customtypes.PathType{},
 							Description: "The path of the map. For hardware mappings of type USB the path is optional and indicates" +
 								" that the device is mapped through the device ID instead of ports.",
 							Optional: true,
 							Validators: []validator.String{
 								stringvalidator.RegexMatches(
-									customtypes.HardwareMappingPathUSBValueRegEx,
-									HardwareMappingResourceErrMessageInvalidPath(proxmoxtypes.HardwareMappingTypeUSB),
+									customtypes.PathUSBValueRegEx,
+									ErrResourceMessageInvalidPath(proxmoxtypes.TypeUSB),
 								),
 							},
 						},
@@ -269,11 +245,11 @@ func (r *hardwareMappingUSBResource) Schema(
 					setvalidator.SizeAtLeast(1),
 				},
 			},
-			hardwareMappingSchemaAttrNameName: schema.StringAttribute{
+			schemaAttrNameName: schema.StringAttribute{
 				Description: "The name of this hardware mapping.",
 				Required:    true,
 			},
-			hardwareMappingSchemaAttrNameTerraformID: structure.IDAttribute(
+			schemaAttrNameTerraformID: structure.IDAttribute(
 				"The unique identifier of this USB hardware mapping resource.",
 			),
 		},
@@ -281,12 +257,8 @@ func (r *hardwareMappingUSBResource) Schema(
 }
 
 // Update updates an existing USB hardware mapping.
-func (r *hardwareMappingUSBResource) Update(
-	ctx context.Context,
-	req resource.UpdateRequest,
-	resp *resource.UpdateResponse,
-) {
-	var hmCurrent, hmPlan hardwareMappingUSBModel
+func (r *resourceUSB) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var hmCurrent, hmPlan modelUSB
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &hmPlan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &hmCurrent)...)
@@ -299,7 +271,7 @@ func (r *hardwareMappingUSBResource) Update(
 
 	apiReq := hmPlan.toUpdateRequest(&hmCurrent)
 
-	if err := r.client.Update(ctx, proxmoxtypes.HardwareMappingTypeUSB, hmName, apiReq); err != nil {
+	if err := r.client.Update(ctx, proxmoxtypes.TypeUSB, hmName, apiReq); err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Could not update USB hardware mapping %q.", hmName),
 			err.Error(),
@@ -311,8 +283,8 @@ func (r *hardwareMappingUSBResource) Update(
 	r.readBack(ctx, &hmPlan, &resp.Diagnostics, &resp.State)
 }
 
-// NewHardwareMappingUSBResource returns a new resource for managing a USB hardware mapping.
+// NewResourceUSB returns a new resource for managing a USB hardware mapping.
 // This is a helper function to simplify the provider implementation.
-func NewHardwareMappingUSBResource() resource.Resource {
-	return &hardwareMappingUSBResource{}
+func NewResourceUSB() resource.Resource {
+	return &resourceUSB{}
 }
