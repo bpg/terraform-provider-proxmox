@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/avast/retry-go/v4"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
@@ -25,13 +27,7 @@ func (c *Client) GetTaskStatus(ctx context.Context, upid string) (*GetTaskStatus
 		return nil, fmt.Errorf("error building path for task status: %w", err)
 	}
 
-	err = c.DoRequest(
-		ctx,
-		http.MethodGet,
-		path,
-		nil,
-		resBody,
-	)
+	err = c.DoRequest(ctx, http.MethodGet, path, nil, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving task status: %w", err)
 	}
@@ -55,13 +51,7 @@ func (c *Client) GetTaskLog(ctx context.Context, upid string) ([]string, error) 
 		return lines, fmt.Errorf("error building path for task status: %w", err)
 	}
 
-	err = c.DoRequest(
-		ctx,
-		http.MethodGet,
-		path,
-		nil,
-		resBody,
-	)
+	err = c.DoRequest(ctx, http.MethodGet, path, nil, resBody)
 	if err != nil {
 		return lines, fmt.Errorf("error retrieving task status: %w", err)
 	}
@@ -84,14 +74,12 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 		return fmt.Errorf("error creating task path: %w", err)
 	}
 
-	err = c.DoRequest(
-		ctx,
-		http.MethodDelete,
-		path,
-		nil,
-		nil,
-	)
+	err = c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
 	if err != nil {
+		if api.IsHttpDoesNotExistError(err) {
+			return nil
+		}
+
 		return fmt.Errorf("error deleting task: %w", err)
 	}
 
@@ -99,62 +87,60 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 }
 
 // WaitForTask waits for a specific task to complete.
-func (c *Client) WaitForTask(ctx context.Context, upid string, timeoutSec, delaySec int) error {
-	timeDelay := int64(delaySec)
-	timeMax := float64(timeoutSec)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
-
-	isCriticalError := func(err error) bool {
-		var target *api.HTTPError
-		if errors.As(err, &target) {
-			if target.Code != http.StatusBadRequest {
-				// this is a special case to account for eventual consistency
-				// when creating a task -- the task may not be available via status API
-				// immediately after creation
-				return true
-			}
-		}
-
-		return err != nil
+func (c *Client) WaitForTask(ctx context.Context, upid string, timeout time.Duration) error {
+	if timeout < time.Second {
+		return errors.New("timeout must be at least 1 second")
 	}
 
-	for timeElapsed.Seconds() < timeMax {
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	errStillRunning := errors.New("still running")
+
+	status, err := retry.DoWithData(
+		func() (*GetTaskStatusResponseData, error) {
 			status, err := c.GetTaskStatus(ctx, upid)
-			if isCriticalError(err) {
-				return err
+			if err != nil {
+				return nil, err
 			}
 
-			if status.Status != "running" {
-				if status.ExitCode != "OK" {
-					return fmt.Errorf(
-						"task \"%s\" failed to complete with exit code: %s",
-						upid,
-						status.ExitCode,
-					)
+			if status.Status == "running" {
+				return nil, errStillRunning
+			}
+
+			return status, err
+		},
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			var target *api.HTTPError
+			if errors.As(err, &target) {
+				if target.Code == http.StatusBadRequest {
+					// this is a special case to account for eventual consistency
+					// when creating a task -- the task may not be available via status API
+					// immediately after creation
+					return true
 				}
-
-				return nil
 			}
 
-			time.Sleep(1 * time.Second)
-		}
+			return errors.Is(err, errStillRunning)
+		}),
+		retry.LastErrorOnly(true),
+		retry.Attempts(0), // retry until context deadline
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(time.Second),
+	)
 
-		time.Sleep(200 * time.Millisecond)
-
-		timeElapsed = time.Since(timeStart)
-
-		if ctx.Err() != nil {
-			return fmt.Errorf(
-				"context error while waiting for task \"%s\" to complete: %w",
-				upid, ctx.Err(),
-			)
-		}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf("timeout while waiting for task %q to complete", upid)
 	}
 
-	return fmt.Errorf(
-		"timeout while waiting for task \"%s\" to complete",
-		upid,
-	)
+	if err != nil {
+		return fmt.Errorf("error while waiting for task %q to complete: %w", upid, err)
+	}
+
+	if status.ExitCode != "OK" {
+		return fmt.Errorf("task %q failed to complete with exit code: %s", upid, status.ExitCode)
+	}
+
+	return nil
 }

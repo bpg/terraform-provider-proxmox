@@ -27,13 +27,13 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error 
 }
 
 // CreateContainer creates a container.
-func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody, timeout int) error {
+func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody, timeout time.Duration) error {
 	taskID, err := c.CreateContainerAsync(ctx, d)
 	if err != nil {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout)
 	if err != nil {
 		return fmt.Errorf("error waiting for container created: %w", err)
 	}
@@ -120,7 +120,7 @@ func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) 
 }
 
 // StartContainer starts a container if is not already running.
-func (c *Client) StartContainer(ctx context.Context, timeout int) error {
+func (c *Client) StartContainer(ctx context.Context, timeout time.Duration) error {
 	status, err := c.GetContainerStatus(ctx)
 	if err != nil {
 		return fmt.Errorf("error retrieving container status: %w", err)
@@ -135,13 +135,13 @@ func (c *Client) StartContainer(ctx context.Context, timeout int) error {
 		return fmt.Errorf("error starting container: %w", err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID, timeout)
 	if err != nil {
 		return fmt.Errorf("error waiting for container start: %w", err)
 	}
 
 	// the timeout here should probably be configurable
-	err = c.WaitForContainerStatus(ctx, "running", timeout*2, 5)
+	err = c.WaitForContainerStatus(ctx, "running", int(timeout.Seconds())*2, 5)
 	if err != nil {
 		return fmt.Errorf("error waiting for container start: %w", err)
 	}

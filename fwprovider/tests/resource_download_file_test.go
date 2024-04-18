@@ -9,6 +9,7 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -132,12 +133,12 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					Node:     types.StrPtr(te.nodeName),
 					Storage:  types.StrPtr(te.datastoreID),
 					URL:      types.StrPtr(fakeFileISO),
-				}, 600)
-				require.NoError(t, err)
+				}, 600*time.Second)
 				t.Cleanup(func() {
 					err := te.nodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
 					require.NoError(t, err)
 				})
+				require.NoError(t, err)
 			},
 			Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_download_file" "iso_image3" {

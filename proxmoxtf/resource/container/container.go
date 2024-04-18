@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -1625,7 +1626,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
 	vmID := d.Get(mkVMID).(int)
-	createTimeout := d.Get(mkTimeoutCreate).(int)
 
 	if vmID == -1 {
 		vmIDNew, e := api.Cluster().GetVMID(ctx)
@@ -1698,6 +1698,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Tags = &tagsString
 	}
 
+	createTimeout := time.Duration(d.Get(mkTimeoutCreate).(int)) * time.Second
 	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody, createTimeout)
 	if err != nil {
 		return diag.FromErr(err)
@@ -1738,7 +1739,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := api.Node(nodeName).Container(vmID)
 
-	startTimeout := d.Get(mkTimeoutStart).(int)
+	startTimeout := time.Duration(d.Get(mkTimeoutStart).(int)) * time.Second
 
 	// Start the container and wait for it to reach a running state before continuing.
 	err = containerAPI.StartContainer(ctx, startTimeout)

@@ -6,7 +6,10 @@
 
 package api
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Error is a sentinel error type for API errors.
 type Error string
@@ -18,6 +21,9 @@ func (err Error) Error() string {
 // ErrNoDataObjectInResponse is returned when the server does not include a data object in the response.
 const ErrNoDataObjectInResponse Error = "the server did not include a data object in the response"
 
+// ErrResourceDoesNotExist is returned when the requested resource does not exist.
+const ErrResourceDoesNotExist Error = "the requested resource does not exist"
+
 // HTTPError is a generic error type for HTTP errors.
 type HTTPError struct {
 	Code    int
@@ -26,4 +32,10 @@ type HTTPError struct {
 
 func (err *HTTPError) Error() string {
 	return fmt.Sprintf("received an HTTP %d response - Reason: %s", err.Code, err.Message)
+}
+
+// IsHttpDoesNotExistError returns true if the error returned from the PVE API indicates that resource does not exist.
+func IsHttpDoesNotExistError(err error) bool {
+	return err != nil && (strings.Contains(err.Error(), "HTTP 404") ||
+		(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")))
 }

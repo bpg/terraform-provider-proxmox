@@ -537,7 +537,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	switch *contentType {
 	case "iso", "vztmpl":
-		uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
+		uploadTimeout := time.Duration(d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)) * time.Second
 
 		_, err = capi.Node(nodeName).Storage(datastoreID).APIUpload(ctx, request, uploadTimeout, config.TempDir())
 		if err != nil {

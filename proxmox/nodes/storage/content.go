@@ -13,6 +13,8 @@ import (
 	"net/url"
 	"sort"
 
+	"github.com/avast/retry-go/v4"
+
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
@@ -21,18 +23,11 @@ func (c *Client) DeleteDatastoreFile(
 	ctx context.Context,
 	volumeID string,
 ) error {
-	err := c.DoRequest(
-		ctx,
-		http.MethodDelete,
-		c.ExpandPath(
-			fmt.Sprintf(
-				"content/%s",
-				url.PathEscape(volumeID),
-			),
-		),
-		nil,
-		nil,
-	)
+	path := c.ExpandPath(fmt.Sprintf("content/%s", url.PathEscape(volumeID)))
+
+	err := retry.Do(func() error {
+		return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
+	})
 	if err != nil {
 		return fmt.Errorf("error deleting file %s from datastore %s: %w", volumeID, c.StorageName, err)
 	}
