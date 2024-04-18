@@ -26,6 +26,10 @@ issues:
     - path: fwprovider/tests/.*\.go
       linters:
         - paralleltest
+    # Exclude `lll` issues for long lines with URLs.
+    - linters:
+        - lll
+      source: "^.*https?://.*$"
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true
