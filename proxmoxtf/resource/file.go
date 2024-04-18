@@ -307,6 +307,11 @@ func fileParseImportID(id string) (string, fileVolumeID, error) {
 }
 
 func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(uploadTimeout)*time.Second)
+	defer cancel()
+
 	var diags diag.Diagnostics
 
 	contentType, dg := fileGetContentType(d)
@@ -537,9 +542,9 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	switch *contentType {
 	case "iso", "vztmpl":
-		uploadTimeout := time.Duration(d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)) * time.Second
-
-		_, err = capi.Node(nodeName).Storage(datastoreID).APIUpload(ctx, request, uploadTimeout, config.TempDir())
+		_, err = capi.Node(nodeName).Storage(datastoreID).APIUpload(
+			ctx, request, config.TempDir(),
+		)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 			return diags

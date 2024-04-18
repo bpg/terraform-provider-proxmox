@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -179,17 +178,15 @@ func CreateClone(
 			}
 		}
 
-		timeout := time.Duration(d.Get(MkTimeoutMoveDisk).(int)) * time.Second
-
 		if moveDisk {
-			err := vmAPI.MoveVMDisk(ctx, diskMoveBody, timeout)
+			err := vmAPI.MoveVMDisk(ctx, diskMoveBody)
 			if err != nil {
 				return fmt.Errorf("disk move fails: %w", err)
 			}
 		}
 
 		if diskSize > currentDiskInfo.Size.InGigabytes() {
-			err := vmAPI.ResizeVMDisk(ctx, diskResizeBody, timeout)
+			err := vmAPI.ResizeVMDisk(ctx, diskResizeBody)
 			if err != nil {
 				return fmt.Errorf("disk resize fails: %w", err)
 			}

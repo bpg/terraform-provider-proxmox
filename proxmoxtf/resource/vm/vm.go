@@ -121,7 +121,6 @@ const (
 	dvTemplate            = false
 	dvTimeoutClone        = 1800
 	dvTimeoutCreate       = 1800
-	dvTimeoutMoveDisk     = 1800
 	dvTimeoutMigrate      = 1800
 	dvTimeoutReboot       = 1800
 	dvTimeoutShutdownVM   = 1800
@@ -1345,11 +1344,13 @@ func VM() *schema.Resource {
 			Optional:    true,
 			Default:     dvTimeoutCreate,
 		},
-		disk.MkTimeoutMoveDisk: {
+		"timeout_move_disk": {
 			Type:        schema.TypeInt,
 			Description: "MoveDisk timeout",
 			Optional:    true,
-			Default:     dvTimeoutMoveDisk,
+			Default:     1800,
+			Deprecated: "This field is deprecated and will be removed in a future release. " +
+				"An overall operation timeout (timeout_create / timeout_clone / timeout_migrate) is used instead.",
 		},
 		mkTimeoutMigrate: {
 			Type:        schema.TypeInt,
@@ -1654,15 +1655,18 @@ func deleteIdeDrives(ctx context.Context, vmAPI *vms.Client, itf1 string, itf2 s
 
 // Start the VM, then wait for it to actually start; it may not be started immediately if running in HA mode.
 func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
-	var diags diag.Diagnostics
-
 	tflog.Debug(ctx, "Starting VM")
 
-	startVMTimeout := time.Duration(d.Get(mkTimeoutStartVM).(int)) * time.Second
+	startTimeoutSec := d.Get(mkTimeoutStartVM).(int)
 
-	log, e := vmAPI.StartVM(ctx, startVMTimeout)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(startTimeoutSec)*time.Second)
+	defer cancel()
+
+	var diags diag.Diagnostics
+
+	log, e := vmAPI.StartVM(ctx, startTimeoutSec)
 	if e != nil {
-		return append(diags, diag.FromErr(e)...)
+		return diag.FromErr(e)
 	}
 
 	if len(log) > 0 {
@@ -1673,7 +1677,7 @@ func vmStart(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) dia
 		})
 	}
 
-	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "running", startVMTimeout))...)
+	return append(diags, diag.FromErr(vmAPI.WaitForVMStatus(ctx, "running"))...)
 }
 
 // Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if
@@ -1683,34 +1687,44 @@ func vmShutdown(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) 
 
 	forceStop := types.CustomBool(true)
 	shutdownTimeoutSec := d.Get(mkTimeoutShutdownVM).(int)
-	shutdownTimeout := time.Duration(shutdownTimeoutSec) * time.Second
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(shutdownTimeoutSec)*time.Second)
+	defer cancel()
 
 	e := vmAPI.ShutdownVM(ctx, &vms.ShutdownRequestBody{
 		ForceStop: &forceStop,
 		Timeout:   &shutdownTimeoutSec,
-	}, shutdownTimeout)
+	})
 	if e != nil {
 		return diag.FromErr(e)
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped", shutdownTimeout))
+	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
 }
 
 // Forcefully stop the VM, then wait for it to actually stop.
 func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag.Diagnostics {
 	tflog.Debug(ctx, "Stopping VM")
 
-	stopTimeout := time.Duration(d.Get(mkTimeoutStopVM).(int)) * time.Second
+	stopTimeout := d.Get(mkTimeoutStopVM).(int)
 
-	e := vmAPI.StopVM(ctx, stopTimeout+30)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(stopTimeout)*time.Second)
+	defer cancel()
+
+	e := vmAPI.StopVM(ctx)
 	if e != nil {
 		return diag.FromErr(e)
 	}
 
-	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped", stopTimeout))
+	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
 }
 
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	cloneTimeoutSec := d.Get(mkTimeoutClone).(int)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(cloneTimeoutSec)*time.Second)
+	defer cancel()
+
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, e := config.GetClient()
@@ -1771,8 +1785,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cloneBody.PoolID = &poolID
 	}
 
-	cloneTimeout := time.Duration(d.Get(mkTimeoutClone).(int)) * time.Second
-
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		// Check if any used datastores of the source VM are not shared
 		vmConfig, err := client.Node(cloneNodeName).VM(cloneVMID).GetVM(ctx)
@@ -1802,12 +1814,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			//  on a different node is currently not supported by proxmox.
 			cloneBody.TargetNodeName = &nodeName
 
-			err = client.Node(cloneNodeName).VM(cloneVMID).CloneVM(
-				ctx,
-				cloneRetries,
-				cloneBody,
-				cloneTimeout,
-			)
+			err = client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -1818,14 +1825,14 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			//  https://forum.proxmox.com/threads/500-cant-clone-to-non-shared-storage-local.49078/#post-229727
 
 			// Temporarily clone to local node
-			err = client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
+			err = client.Node(cloneNodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 
 			// Wait for the virtual machine to be created and its configuration lock to be released before migrating.
 
-			err = client.Node(cloneNodeName).VM(vmID).WaitForVMConfigUnlock(ctx, 600*time.Second, true)
+			err = client.Node(cloneNodeName).VM(vmID).WaitForVMConfigUnlock(ctx, true)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -1841,13 +1848,13 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 				migrateBody.TargetStorage = &cloneDatastoreID
 			}
 
-			err = client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody, cloneTimeout)
+			err = client.Node(cloneNodeName).VM(vmID).MigrateVM(ctx, migrateBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 		}
 	} else {
-		e = client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody, cloneTimeout)
+		e = client.Node(nodeName).VM(cloneVMID).CloneVM(ctx, cloneRetries, cloneBody)
 	}
 
 	if e != nil {
@@ -1859,7 +1866,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	vmAPI := client.Node(nodeName).VM(vmID)
 
 	// Wait for the virtual machine to be created and its configuration lock to be released.
-	e = vmAPI.WaitForVMConfigUnlock(ctx, 600*time.Second, true)
+	e = vmAPI.WaitForVMConfigUnlock(ctx, true)
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -2259,9 +2266,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		if moveDisk {
-			moveDiskTimeout := time.Duration(d.Get(disk.MkTimeoutMoveDisk).(int)) * time.Second
-
-			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
+			e = vmAPI.MoveVMDisk(ctx, diskMoveBody)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -2312,9 +2317,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		if moveDisk {
-			moveDiskTimeout := time.Duration(d.Get(disk.MkTimeoutMoveDisk).(int)) * time.Second
-
-			e = vmAPI.MoveVMDisk(ctx, diskMoveBody, moveDiskTimeout)
+			e = vmAPI.MoveVMDisk(ctx, diskMoveBody)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -2325,6 +2328,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 }
 
 func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	createTimeoutSec := d.Get(mkTimeoutCreate).(int)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(createTimeoutSec)*time.Second)
+	defer cancel()
+
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()
@@ -2732,9 +2740,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		createBody.HookScript = &hookScript
 	}
 
-	createTimeout := time.Duration(d.Get(mkTimeoutClone).(int)) * time.Second
-
-	err = api.Node(nodeName).VM(0).CreateVM(ctx, createBody, createTimeout)
+	err = api.Node(nodeName).VM(0).CreateVM(ctx, createBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2780,15 +2786,13 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if reboot {
-		timeoutSec := d.Get(mkTimeoutReboot).(int)
-		rebootTimeout := time.Duration(timeoutSec) * time.Second
+		rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
 		err := vmAPI.RebootVM(
 			ctx,
 			&vms.RebootRequestBody{
-				Timeout: &timeoutSec,
+				Timeout: &rebootTimeoutSec,
 			},
-			rebootTimeout,
 		)
 		if err != nil {
 			return diag.FromErr(err)
@@ -4729,11 +4733,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// If the node name has changed we need to migrate the VM to the new node before we do anything else.
 	if d.HasChange(mkNodeName) {
+		migrateTimeoutSec := d.Get(mkTimeoutMigrate).(int)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Duration(migrateTimeoutSec)*time.Second)
+		defer cancel()
+
 		oldNodeNameValue, _ := d.GetChange(mkNodeName)
 		oldNodeName := oldNodeNameValue.(string)
 		vmAPI := api.Node(oldNodeName).VM(vmID)
 
-		migrateTimeout := time.Duration(d.Get(mkTimeoutMigrate).(int)) * time.Second
 		trueValue := types.CustomBool(true)
 		migrateBody := &vms.MigrateRequestBody{
 			TargetNode:      nodeName,
@@ -4741,7 +4749,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			OnlineMigration: &trueValue,
 		}
 
-		err := vmAPI.MigrateVM(ctx, migrateBody, migrateTimeout)
+		err := vmAPI.MigrateVM(ctx, migrateBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -5515,17 +5523,15 @@ func vmUpdateDiskLocationAndSize(
 			}
 		}
 
-		timeout := time.Duration(d.Get(disk.MkTimeoutMoveDisk).(int)) * time.Second
-
 		for _, reqBody := range diskMoveBodies {
-			err = vmAPI.MoveVMDisk(ctx, reqBody, timeout)
+			err = vmAPI.MoveVMDisk(ctx, reqBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
 		}
 
 		for _, reqBody := range diskResizeBodies {
-			err = vmAPI.ResizeVMDisk(ctx, reqBody, timeout)
+			err = vmAPI.ResizeVMDisk(ctx, reqBody)
 			if err != nil {
 				return diag.FromErr(err)
 			}
@@ -5549,15 +5555,13 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		if vmStatus.Status != "stopped" {
-			timeoutSec := d.Get(mkTimeoutReboot).(int)
-			rebootTimeout := time.Duration(timeoutSec) * time.Second
+			rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
 			err := vmAPI.RebootVM(
 				ctx,
 				&vms.RebootRequestBody{
-					Timeout: &timeoutSec,
+					Timeout: &rebootTimeoutSec,
 				},
-				rebootTimeout,
 			)
 			if err != nil {
 				return diag.FromErr(err)
@@ -5569,6 +5573,16 @@ func vmUpdateDiskLocationAndSize(
 }
 
 func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	timeout := d.Get(mkTimeoutStopVM).(int)
+	shutdownTimeout := d.Get(mkTimeoutShutdownVM).(int)
+
+	if shutdownTimeout > timeout {
+		timeout = shutdownTimeout
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+	defer cancel()
+
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -5606,7 +5620,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 	}
 
-	err = vmAPI.DeleteVM(ctx, 10*time.Second)
+	err = vmAPI.DeleteVM(ctx)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
@@ -5617,7 +5631,7 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the VM.
-	err = vmAPI.WaitForVMStatus(ctx, "", 60*time.Second)
+	err = vmAPI.WaitForVMStatus(ctx, "")
 	if err == nil {
 		return diag.Errorf("failed to delete VM \"%d\"", vmID)
 	}

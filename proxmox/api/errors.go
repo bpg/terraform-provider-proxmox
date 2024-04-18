@@ -34,8 +34,9 @@ func (err *HTTPError) Error() string {
 	return fmt.Sprintf("received an HTTP %d response - Reason: %s", err.Code, err.Message)
 }
 
-// IsHttpDoesNotExistError returns true if the error returned from the PVE API indicates that resource does not exist.
-func IsHttpDoesNotExistError(err error) bool {
+// IsHTTPResourceDoesNotExistError returns true if the error returned from the PVE API indicates
+// that resource does not exist.
+func IsHTTPResourceDoesNotExistError(err error) bool {
 	return err != nil && (strings.Contains(err.Error(), "HTTP 404") ||
 		(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")))
 }

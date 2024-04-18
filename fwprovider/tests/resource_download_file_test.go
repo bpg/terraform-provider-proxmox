@@ -127,18 +127,24 @@ func TestAccResourceDownloadFile(t *testing.T) {
 		}},
 		{"override unmanaged file", []resource.TestStep{{
 			PreConfig: func() {
-				err := te.nodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
+				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+				defer cancel()
+
+				_ = te.nodeStorageClient().DeleteDatastoreFile(ctx, "iso/fake_file.iso") //nolint: errcheck
+
+				err := te.nodeStorageClient().DownloadFileByURL(ctx, &storage.DownloadURLPostRequestBody{
 					Content:  types.StrPtr("iso"),
 					FileName: types.StrPtr("fake_file.iso"),
 					Node:     types.StrPtr(te.nodeName),
 					Storage:  types.StrPtr(te.datastoreID),
 					URL:      types.StrPtr(fakeFileISO),
-				}, 600*time.Second)
-				t.Cleanup(func() {
-					err := te.nodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
-					require.NoError(t, err)
 				})
 				require.NoError(t, err)
+
+				t.Cleanup(func() {
+					e := te.nodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
+					require.NoError(t, e)
+				})
 			},
 			Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_download_file" "iso_image3" {

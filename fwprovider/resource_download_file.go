@@ -362,6 +362,11 @@ func (r *downloadFileResource) Create(
 		return
 	}
 
+	timeout := time.Duration(plan.UploadTimeout.ValueInt64()) * time.Second
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	fileMetadata, err := r.getURLMetadata(
 		ctx,
 		&plan,
@@ -395,9 +400,8 @@ func (r *downloadFileResource) Create(
 	}
 
 	storageClient := nodesClient.Storage(plan.Storage.ValueString())
-	timeout := time.Duration(plan.UploadTimeout.ValueInt64()) * time.Second
 
-	err = storageClient.DownloadFileByURL(ctx, &downloadFileReq, timeout)
+	err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
 
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
 		fileID := plan.Content.ValueString() + "/" + plan.FileName.ValueString()
@@ -409,7 +413,7 @@ func (r *downloadFileResource) Create(
 			)
 		}
 
-		err = storageClient.DownloadFileByURL(ctx, &downloadFileReq, timeout)
+		err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
 	}
 
 	if err != nil {

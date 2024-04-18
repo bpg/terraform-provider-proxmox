@@ -7,7 +7,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
@@ -18,7 +17,6 @@ import (
 func (c *Client) APIUpload(
 	ctx context.Context,
 	d *api.FileUploadRequest,
-	uploadTimeout time.Duration,
 	tempDir string,
 ) (*DatastoreUploadResponseBody, error) {
 	tflog.Debug(ctx, "uploading file to datastore using PVE API", map[string]interface{}{
@@ -150,7 +148,7 @@ func (c *Client) APIUpload(
 		return nil, fmt.Errorf("error uploading file to datastore %s: no uploadID", c.StorageName)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *resBody.UploadID, uploadTimeout)
+	err = c.Tasks().WaitForTask(ctx, *resBody.UploadID)
 	if err != nil {
 		return nil, fmt.Errorf("error uploading file to datastore %s: failed waiting for upload - %w", c.StorageName, err)
 	}

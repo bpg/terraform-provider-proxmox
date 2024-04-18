@@ -76,7 +76,7 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 
 	err = c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
 	if err != nil {
-		if api.IsHttpDoesNotExistError(err) {
+		if api.IsHTTPResourceDoesNotExistError(err) {
 			return nil
 		}
 
@@ -87,14 +87,7 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 }
 
 // WaitForTask waits for a specific task to complete.
-func (c *Client) WaitForTask(ctx context.Context, upid string, timeout time.Duration) error {
-	if timeout < time.Second {
-		return errors.New("timeout must be at least 1 second")
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
+func (c *Client) WaitForTask(ctx context.Context, upid string) error {
 	errStillRunning := errors.New("still running")
 
 	status, err := retry.DoWithData(
