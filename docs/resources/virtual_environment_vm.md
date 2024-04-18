@@ -515,8 +515,6 @@ output "ubuntu_vm_public_key" {
     1800).
 - `timeout_create` - (Optional) Timeout for creating a VM in seconds (defaults to
     1800).
-- `timeout_move_disk` - (Optional) Timeout for moving the disk of a VM in
-    seconds (defaults to 1800).
 - `timeout_migrate` - (Optional) Timeout for migrating the VM (defaults to
     1800).
 - `timeout_reboot` - (Optional) Timeout for rebooting a VM in seconds (defaults
