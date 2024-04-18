@@ -48,8 +48,8 @@ func (r *resourcePCI) read(ctx context.Context, hm *modelPCI) (bool, diag.Diagno
 	var diags diag.Diagnostics
 
 	hmName := hm.Name.ValueString()
-	data, err := r.client.Get(ctx, proxmoxtypes.TypePCI, hmName)
 
+	data, err := r.client.Get(ctx, proxmoxtypes.TypePCI, hmName)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such resource") {
 			diags.AddError("Could not read PCI hardware mapping", err.Error())

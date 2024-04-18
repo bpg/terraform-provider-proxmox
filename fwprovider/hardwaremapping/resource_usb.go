@@ -47,8 +47,8 @@ func (r *resourceUSB) read(ctx context.Context, hm *modelUSB) (bool, diag.Diagno
 	var diags diag.Diagnostics
 
 	hmName := hm.Name.ValueString()
-	data, err := r.client.Get(ctx, proxmoxtypes.TypeUSB, hmName)
 
+	data, err := r.client.Get(ctx, proxmoxtypes.TypeUSB, hmName)
 	if err != nil {
 		if strings.Contains(err.Error(), "no such resource") {
 			diags.AddError("Could not read USB hardware mapping", err.Error())
