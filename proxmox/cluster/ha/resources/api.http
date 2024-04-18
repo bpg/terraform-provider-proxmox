@@ -1,0 +1,19 @@
+### Create Proxmox VE API acsess ticket
+POST {{host}}:{{port}}/{{api-path-base}}/access/ticket
+Accept: application/json
+Content-Type: application/x-www-form-urlencoded
+
+username = {{api-user}} &
+password = {{api-user-password}}
+
+// Save the ticket into a global variable to use in other calls.
+> {%
+  client.global.set("pve_api_access_ticket", response.body.data.ticket);
+  client.global.set("pve_api_access_ticket_csrf_prevention_token", response.body.data.CSRFPreventionToken);
+  client.log(`Received Proxmox VE API access ticket "${client.global.get("pve_api_access_ticket")}"`)
+%}
+
+### List HA resources
+GET {{host}}:{{port}}/{{api-path-base}}/cluster/ha/resources
+Accept: application/json
+Cookie: PVEAuthCookie={{pve_api_access_ticket}}
