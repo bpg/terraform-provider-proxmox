@@ -664,19 +664,6 @@ func TestAccResourceHardwareMappingUSBInvalidInput(t *testing.T) {
 				// Test the "Create" method implementation where all possible attributes are specified, but an error is expected
 				// when using an invalid device path.
 				{
-					ExpectError: regexp.MustCompile(
-						fmt.Sprintf(
-							// The error line is, for whatever reason, broken down into multiple lines in acceptance tests, so we need
-							// to capture newline characters.
-							// Note that the regular expression syntax used by Go does not capture newlines with the "." matcher,
-							// so we need to enable the "s" flag that enabled "."
-							// to match "\n".
-							// References:
-							//   1. https://pkg.go.dev/regexp/syntax
-							`(?s).*%s(?s).*`,
-							hwm.ErrResourceMessageInvalidPath(proxmoxtypes.TypeUSB),
-						),
-					),
 					Config: fmt.Sprintf(
 						`
 					resource "proxmox_virtual_environment_hardware_mapping_usb" "test" {
@@ -699,6 +686,7 @@ func TestAccResourceHardwareMappingUSBInvalidInput(t *testing.T) {
 						data.MapDeviceIDs[0],
 						te.nodeName,
 					),
+					ExpectError: regexp.MustCompile(`valid Linux device path for hardware mapping of type "usb"`),
 				},
 			},
 		},
