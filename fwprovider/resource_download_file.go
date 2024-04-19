@@ -8,6 +8,7 @@ package fwprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -27,6 +28,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
@@ -407,7 +409,7 @@ func (r *downloadFileResource) Create(
 		fileID := plan.Content.ValueString() + "/" + plan.FileName.ValueString()
 
 		err = storageClient.DeleteDatastoreFile(ctx, fileID)
-		if err != nil {
+		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError("Error deleting file from datastore",
 				fmt.Sprintf("Could not delete file '%s', unexpected error: %s", fileID, err.Error()),
 			)
@@ -609,7 +611,7 @@ func (r *downloadFileResource) Delete(
 		ctx,
 		state.ID.ValueString(),
 	)
-	if err != nil {
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		if strings.Contains(err.Error(), "unable to parse") {
 			resp.Diagnostics.AddWarning(
 				"Datastore file does not exists",

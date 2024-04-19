@@ -30,6 +30,10 @@ func (c *Client) CreatePool(ctx context.Context, d *PoolCreateRequestBody) error
 func (c *Client) DeletePool(ctx context.Context, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, nil)
 	if err != nil {
+		if api.IsHTTPResourceDoesNotExistError(err) {
+			err = api.ErrResourceDoesNotExist
+		}
+
 		return fmt.Errorf("error deleting pool: %w", err)
 	}
 
@@ -42,6 +46,10 @@ func (c *Client) GetPool(ctx context.Context, id string) (*PoolGetResponseData, 
 
 	err := c.DoRequest(ctx, http.MethodGet, fmt.Sprintf("pools/%s", url.PathEscape(id)), nil, resBody)
 	if err != nil {
+		if api.IsHTTPResourceDoesNotExistError(err) {
+			err = api.ErrResourceDoesNotExist
+		}
+
 		return nil, fmt.Errorf("error getting pool: %w", err)
 	}
 

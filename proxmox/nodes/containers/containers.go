@@ -76,6 +76,10 @@ func (c *Client) GetContainer(ctx context.Context) (*GetResponseData, error) {
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("config"), nil, resBody)
 	if err != nil {
+		if api.IsHTTPResourceDoesNotExistError(err) {
+			err = api.ErrResourceDoesNotExist
+		}
+
 		return nil, fmt.Errorf("error retrieving container: %w", err)
 	}
 

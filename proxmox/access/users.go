@@ -53,6 +53,10 @@ func (c *Client) CreateUser(ctx context.Context, d *UserCreateRequestBody) error
 func (c *Client) DeleteUser(ctx context.Context, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.userPath(id), nil, nil)
 	if err != nil {
+		if api.IsHTTPResourceDoesNotExistError(err) {
+			err = api.ErrResourceDoesNotExist
+		}
+
 		return fmt.Errorf("error deleting user: %w", err)
 	}
 
@@ -65,6 +69,10 @@ func (c *Client) GetUser(ctx context.Context, id string) (*UserGetResponseData, 
 
 	err := c.DoRequest(ctx, http.MethodGet, c.userPath(id), nil, resBody)
 	if err != nil {
+		if api.IsHTTPResourceDoesNotExistError(err) {
+			err = api.ErrResourceDoesNotExist
+		}
+
 		return nil, fmt.Errorf("error retrieving user: %w", err)
 	}
 

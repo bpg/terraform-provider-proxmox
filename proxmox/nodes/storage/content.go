@@ -8,6 +8,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -25,9 +26,23 @@ func (c *Client) DeleteDatastoreFile(
 ) error {
 	path := c.ExpandPath(fmt.Sprintf("content/%s", url.PathEscape(volumeID)))
 
-	err := retry.Do(func() error {
-		return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
-	})
+	err := retry.Do(
+		func() error {
+			err := c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
+			if err != nil {
+				if api.IsHTTPResourceDoesNotExistError(err) {
+					err = api.ErrResourceDoesNotExist
+				}
+			}
+
+			return err
+		},
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			return !errors.Is(err, api.ErrResourceDoesNotExist)
+		}),
+		retry.LastErrorOnly(true),
+	)
 	if err != nil {
 		return fmt.Errorf("error deleting file %s from datastore %s: %w", volumeID, c.StorageName, err)
 	}

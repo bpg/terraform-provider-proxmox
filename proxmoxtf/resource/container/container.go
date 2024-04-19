@@ -8,6 +8,7 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -18,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -1951,7 +1953,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetClient()
+	client, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -1963,13 +1965,12 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Retrieve the entire configuration in order to compare it to the state.
 	containerConfig, e := containerAPI.GetContainer(ctx)
 	if e != nil {
-		if strings.Contains(e.Error(), "HTTP 404") ||
-			(strings.Contains(e.Error(), "HTTP 500") && strings.Contains(e.Error(), "does not exist")) {
+		if errors.Is(e, api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
 			return nil
@@ -3029,7 +3030,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -3041,7 +3042,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 		return diag.FromErr(err)
 	}
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Shut down the container before deleting it.
 	status, err := containerAPI.GetContainerStatus(ctx)
@@ -3071,7 +3072,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	err = containerAPI.DeleteContainer(ctx)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
 			return nil

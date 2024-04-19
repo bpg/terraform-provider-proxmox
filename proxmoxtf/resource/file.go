@@ -11,6 +11,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -910,13 +911,7 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 
 	err = capi.Node(nodeName).Storage(datastoreID).DeleteDatastoreFile(ctx, d.Id())
-
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
-			d.SetId("")
-			return nil
-		}
-
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		return diag.FromErr(err)
 	}
 
