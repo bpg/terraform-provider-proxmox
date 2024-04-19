@@ -39,3 +39,12 @@ func CopyInt(i *int) *int {
 
 	return IntPtr(*i)
 }
+
+// Int64PtrToIntPtr converts an int64 pointer to an int pointer.
+func Int64PtrToIntPtr(i *int64) *int {
+	if i == nil {
+		return nil
+	}
+
+	return IntPtr(int(*i))
+}
