@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.54.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.53.1...v0.54.0) (2024-04-19)
+
+
+### Features
+
+* **cluster:** Implement initial support for "hardware mappings" ([#1213](https://github.com/bpg/terraform-provider-proxmox/issues/1213)) ([76c1c22](https://github.com/bpg/terraform-provider-proxmox/commit/76c1c2282bb24ccc01cd5dd138ad19e830633d10))
+
+
+### Bug Fixes
+
+* **vm,lxc,file:** improve timeouts handling ([#1222](https://github.com/bpg/terraform-provider-proxmox/issues/1222)) ([0c9c206](https://github.com/bpg/terraform-provider-proxmox/commit/0c9c2066fd88abf2ec422423113de29651be0417))
+* **vm:** state drift due to disk re-ordering ([#1215](https://github.com/bpg/terraform-provider-proxmox/issues/1215)) ([ad036a6](https://github.com/bpg/terraform-provider-proxmox/commit/ad036a67e8129ce6a50096792c33cb1ce364967e))
+
+
+### Miscellaneous
+
+* **code:** reorganize HA & node network code ([#1218](https://github.com/bpg/terraform-provider-proxmox/issues/1218)) ([163a773](https://github.com/bpg/terraform-provider-proxmox/commit/163a7730888dac2d436988499af87d4ff8f7d118))
+* **deps:** bump golang.org/x/net from 0.22.0 to 0.23.0 in /tools ([#1225](https://github.com/bpg/terraform-provider-proxmox/issues/1225)) ([7e4710d](https://github.com/bpg/terraform-provider-proxmox/commit/7e4710d3f01ab076d2ed702885f660fd1d14b90f))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1228](https://github.com/bpg/terraform-provider-proxmox/issues/1228)) ([5a606ec](https://github.com/bpg/terraform-provider-proxmox/commit/5a606ec18e27a89289880cff06d767758f716ce6))
+* **deps:** update go (1.22.0 → 1.22.2) in /tools ([#1227](https://github.com/bpg/terraform-provider-proxmox/issues/1227)) ([c7e36ee](https://github.com/bpg/terraform-provider-proxmox/commit/c7e36ee1a18375e15fbc365e7014f9fa9d7be24b))
+* **deps:** update golang.org/x/exp digest (93d18d7 → fe59bbe) ([#1226](https://github.com/bpg/terraform-provider-proxmox/issues/1226)) ([83d835f](https://github.com/bpg/terraform-provider-proxmox/commit/83d835ff3ebaf05e960ab500192feb12e4ef6cc6))
+* **deps:** update module github.com/avast/retry-go/v4 (v4.5.1 → v4.6.0) ([#1229](https://github.com/bpg/terraform-provider-proxmox/issues/1229)) ([9387845](https://github.com/bpg/terraform-provider-proxmox/commit/938784531f331afddc1e0639a11b75e96e96af17))
+* **deps:** update tools ([#1216](https://github.com/bpg/terraform-provider-proxmox/issues/1216)) ([1bf3bf0](https://github.com/bpg/terraform-provider-proxmox/commit/1bf3bf0f68bf73efd82e153d3efdc1ed4db75dd1))
+* **vm2:** initial experimental VM resource implementation using Plugin Framework ([#1230](https://github.com/bpg/terraform-provider-proxmox/issues/1230)) ([d8202dd](https://github.com/bpg/terraform-provider-proxmox/commit/d8202dd7a1c4f41ba9503f83b97633bd1cba30d4))
+* **vm:** fix acceptance test for hardware mapping ([#1223](https://github.com/bpg/terraform-provider-proxmox/issues/1223)) ([653e6f2](https://github.com/bpg/terraform-provider-proxmox/commit/653e6f25f848ccd13549b6e5d6ca7ba2e713ecc4))
+
 ## [0.53.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.53.0...v0.53.1) (2024-04-12)
 
 
