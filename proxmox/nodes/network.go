@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	networkReloadTimeout = 5 * time.Second
+	networkReloadTimeout = 10 * time.Second
 )
 
 // reloadLock is used to prevent concurrent network reloads.

@@ -263,7 +263,7 @@ const (
 	mkTemplate             = "template"
 	mkTimeoutClone         = "timeout_clone"
 	mkTimeoutCreate        = "timeout_create"
-	mkTimeoutMigrate       = "timeout_migrate"
+	mkTimeoutMigrate       = "timeout_migrate" // this is essentially an "timeout_update", needs to be refactored
 	mkTimeoutReboot        = "timeout_reboot"
 	mkTimeoutShutdownVM    = "timeout_shutdown_vm"
 	mkTimeoutStartVM       = "timeout_start_vm"
