@@ -118,7 +118,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string) error {
 			return errors.Is(err, errStillRunning)
 		}),
 		retry.LastErrorOnly(true),
-		retry.Attempts(0), // retry until context deadline
+		retry.UntilSucceeded(),
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(time.Second),
 	)
