@@ -28,14 +28,7 @@ func (c *Client) DeleteDatastoreFile(
 
 	err := retry.Do(
 		func() error {
-			err := c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
-			if err != nil {
-				if api.IsHTTPResourceDoesNotExistError(err) {
-					err = api.ErrResourceDoesNotExist
-				}
-			}
-
-			return err
+			return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
 		},
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {

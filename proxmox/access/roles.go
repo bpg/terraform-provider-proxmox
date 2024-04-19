@@ -39,10 +39,6 @@ func (c *Client) CreateRole(ctx context.Context, d *RoleCreateRequestBody) error
 func (c *Client) DeleteRole(ctx context.Context, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.rolePath(id), nil, nil)
 	if err != nil {
-		if api.IsHTTPResourceDoesNotExistError(err) {
-			err = api.ErrResourceDoesNotExist
-		}
-
 		return fmt.Errorf("error deleting role: %w", err)
 	}
 
@@ -55,10 +51,6 @@ func (c *Client) GetRole(ctx context.Context, id string) (*types.CustomPrivilege
 
 	err := c.DoRequest(ctx, http.MethodGet, c.rolePath(id), nil, resBody)
 	if err != nil {
-		if api.IsHTTPResourceDoesNotExistError(err) {
-			err = api.ErrResourceDoesNotExist
-		}
-
 		return nil, fmt.Errorf("error getting role: %w", err)
 	}
 

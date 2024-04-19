@@ -38,10 +38,6 @@ func (c *Client) CreateGroup(ctx context.Context, d *GroupCreateRequestBody) err
 func (c *Client) DeleteGroup(ctx context.Context, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.groupPath(id), nil, nil)
 	if err != nil {
-		if api.IsHTTPResourceDoesNotExistError(err) {
-			err = api.ErrResourceDoesNotExist
-		}
-
 		return fmt.Errorf("failed to delete access group: %w", err)
 	}
 
@@ -54,10 +50,6 @@ func (c *Client) GetGroup(ctx context.Context, id string) (*GroupGetResponseData
 
 	err := c.DoRequest(ctx, http.MethodGet, c.groupPath(id), nil, resBody)
 	if err != nil {
-		if api.IsHTTPResourceDoesNotExistError(err) {
-			err = api.ErrResourceDoesNotExist
-		}
-
 		return nil, fmt.Errorf("failed to get access group: %w", err)
 	}
 

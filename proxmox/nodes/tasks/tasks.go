@@ -76,7 +76,7 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 
 	err = c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
 	if err != nil {
-		if api.IsHTTPResourceDoesNotExistError(err) {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			return nil
 		}
 

@@ -106,14 +106,7 @@ func (c *Client) DeleteVMAsync(ctx context.Context) (*string, error) {
 
 	err := retry.Do(
 		func() error {
-			err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath("?destroy-unreferenced-disks=1&purge=1"), nil, resBody)
-			if err != nil {
-				if api.IsHTTPResourceDoesNotExistError(err) {
-					err = api.ErrResourceDoesNotExist
-				}
-			}
-
-			return err
+			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath("?destroy-unreferenced-disks=1&purge=1"), nil, resBody)
 		},
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
@@ -134,10 +127,6 @@ func (c *Client) GetVM(ctx context.Context) (*GetResponseData, error) {
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("config"), nil, resBody)
 	if err != nil {
-		if api.IsHTTPResourceDoesNotExistError(err) {
-			err = api.ErrResourceDoesNotExist
-		}
-
 		return nil, fmt.Errorf("error retrieving VM %d: %w", c.VMID, err)
 	}
 
