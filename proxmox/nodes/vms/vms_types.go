@@ -296,7 +296,12 @@ type CreateRequestBody struct {
 
 // CreateResponseBody contains the body from a create response.
 type CreateResponseBody struct {
-	Data *string `json:"data,omitempty"`
+	TaskID *string `json:"data,omitempty"`
+}
+
+// DeleteResponseBody contains the body from a delete response.
+type DeleteResponseBody struct {
+	TaskID *string `json:"data,omitempty"`
 }
 
 // GetQEMUNetworkInterfacesResponseBody contains the body from a QEMU get network interfaces response.

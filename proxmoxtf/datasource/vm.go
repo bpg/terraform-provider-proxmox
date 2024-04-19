@@ -8,6 +8,7 @@ package datasource
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
@@ -61,7 +63,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -69,10 +71,9 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
 	vmID := d.Get(mkDataSourceVirtualEnvironmentVMVMID).(int)
 
-	vmStatus, err := api.Node(nodeName).VM(vmID).GetVMStatus(ctx)
+	vmStatus, err := client.Node(nodeName).VM(vmID).GetVMStatus(ctx)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") ||
-			(strings.Contains(err.Error(), "HTTP 500") && strings.Contains(err.Error(), "does not exist")) {
+		if errors.Is(err, api.ErrNoDataObjectInResponse) {
 			d.SetId("")
 
 			return nil

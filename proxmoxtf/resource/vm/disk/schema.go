@@ -41,9 +41,6 @@ const (
 	mkDiskSpeedWrite          = "write"
 	mkDiskSpeedWriteBurstable = "write_burstable"
 	mkDiskSSD                 = "ssd"
-
-	// MkTimeoutMoveDisk is the name of the timeout_move_disk attribute.
-	MkTimeoutMoveDisk = "timeout_move_disk"
 )
 
 // Schema returns the schema for the disk resource.
