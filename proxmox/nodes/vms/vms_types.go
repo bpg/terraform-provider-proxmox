@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -666,6 +667,23 @@ type UpdateAsyncResponseBody struct {
 
 // UpdateRequestBody contains the data for an virtual machine update request.
 type UpdateRequestBody CreateRequestBody
+
+// ToDelete adds a field to the delete list.
+func (u *UpdateRequestBody) ToDelete(fieldName string) error {
+	if u == nil {
+		return errors.New("update request body is nil")
+	}
+
+	if field, ok := reflect.TypeOf(*u).FieldByName(fieldName); ok {
+		fieldTag := field.Tag.Get("url")
+		name := strings.Split(fieldTag, ",")[0]
+		u.Delete = append(u.Delete, name)
+	} else {
+		return fmt.Errorf("field %s not found in struct %s", fieldName, reflect.TypeOf(u).Name())
+	}
+
+	return nil
+}
 
 // EncodeValues converts a CustomAgent struct to a URL vlaue.
 func (r CustomAgent) EncodeValues(key string, v *url.Values) error {
