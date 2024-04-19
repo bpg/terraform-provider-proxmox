@@ -92,7 +92,6 @@ func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, res
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	// vmID := int(plan.VMID.ValueInt64())
 	vmID := int(plan.ID.ValueInt64())
 	if vmID == 0 {
 		id, err := r.client.Cluster().GetVMID(ctx)
