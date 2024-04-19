@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	networkReloadTimeoutSec = 5
+	networkReloadTimeout = 10 * time.Second
 )
 
 // reloadLock is used to prevent concurrent network reloads.
@@ -66,6 +66,9 @@ func (c *Client) CreateNetworkInterface(ctx context.Context, d *NetworkInterface
 
 // ReloadNetworkConfiguration reloads the network configuration for a specific node.
 func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, networkReloadTimeout)
+	defer cancel()
+
 	reloadLock.Lock()
 	defer reloadLock.Unlock()
 
@@ -82,8 +85,9 @@ func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
 				return api.ErrNoDataObjectInResponse
 			}
 
-			return c.Tasks().WaitForTask(ctx, *resBody.Data, networkReloadTimeoutSec, 1)
+			return c.Tasks().WaitForTask(ctx, *resBody.Data)
 		},
+		retry.Context(ctx),
 		retry.Delay(1*time.Second),
 		retry.Attempts(3),
 		retry.RetryIf(func(err error) bool {

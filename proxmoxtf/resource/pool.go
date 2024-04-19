@@ -8,12 +8,13 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -129,15 +130,15 @@ func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	poolID := d.Id()
-	pool, err := api.Pool().GetPool(ctx, poolID)
+	pool, err := client.Pool().GetPool(ctx, poolID)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
 			return nil
 		}
@@ -206,21 +207,15 @@ func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func poolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	poolID := d.Id()
-	err = api.Pool().DeletePool(ctx, poolID)
 
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
-			d.SetId("")
-
-			return nil
-		}
-
+	err = client.Pool().DeletePool(ctx, poolID)
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		return diag.FromErr(err)
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
@@ -35,4 +36,9 @@ func (c *Client) Firewall() clusterfirewall.API {
 // HA returns a client for managing the cluster's High Availability features.
 func (c *Client) HA() *ha.Client {
 	return &ha.Client{Client: c}
+}
+
+// HardwareMapping returns a client for managing the cluster's hardware mapping features.
+func (c *Client) HardwareMapping() *mapping.Client {
+	return &mapping.Client{Client: c}
 }

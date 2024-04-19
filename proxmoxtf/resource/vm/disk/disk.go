@@ -178,17 +178,15 @@ func CreateClone(
 			}
 		}
 
-		timeout := d.Get(MkTimeoutMoveDisk).(int)
-
 		if moveDisk {
-			err := vmAPI.MoveVMDisk(ctx, diskMoveBody, timeout)
+			err := vmAPI.MoveVMDisk(ctx, diskMoveBody)
 			if err != nil {
 				return fmt.Errorf("disk move fails: %w", err)
 			}
 		}
 
 		if diskSize > currentDiskInfo.Size.InGigabytes() {
-			err := vmAPI.ResizeVMDisk(ctx, diskResizeBody, timeout)
+			err := vmAPI.ResizeVMDisk(ctx, diskResizeBody)
 			if err != nil {
 				return fmt.Errorf("disk resize fails: %w", err)
 			}

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package fwprovider
+package ha
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -74,7 +73,7 @@ func (r *haResourceResource) Schema(
 				Description: "The Proxmox HA resource identifier",
 				Required:    true,
 				Validators: []validator.String{
-					validators.HAResourceIDValidator(),
+					resourceIDValidator(),
 				},
 			},
 			"state": schema.StringAttribute{
@@ -83,7 +82,7 @@ func (r *haResourceResource) Schema(
 				Computed:    true,
 				Default:     stringdefault.StaticString("started"),
 				Validators: []validator.String{
-					validators.HAResourceStateValidator(),
+					resourceStateValidator(),
 				},
 			},
 			"type": schema.StringAttribute{
@@ -91,7 +90,7 @@ func (r *haResourceResource) Schema(
 				Computed:            true,
 				Optional:            true,
 				Validators: []validator.String{
-					validators.HAResourceTypeValidator(),
+					resourceTypeValidator(),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -158,7 +157,7 @@ func (r *haResourceResource) Configure(
 
 // Create creates a new HA resource.
 func (r *haResourceResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data haResourceModel
+	var data ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
@@ -176,7 +175,7 @@ func (r *haResourceResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
-	createRequest := data.toCreateRequest(resID)
+	createRequest := data.ToCreateRequest(resID)
 
 	err = r.client.Create(ctx, createRequest)
 	if err != nil {
@@ -199,7 +198,7 @@ func (r *haResourceResource) Update(
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
 ) {
-	var data, state haResourceModel
+	var data, state ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -218,7 +217,7 @@ func (r *haResourceResource) Update(
 		return
 	}
 
-	updateRequest := data.toUpdateRequest(&state)
+	updateRequest := data.ToUpdateRequest(&state)
 
 	err = r.client.Update(ctx, resID, updateRequest)
 	if err == nil {
@@ -238,7 +237,7 @@ func (r *haResourceResource) Delete(
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
-	var data haResourceModel
+	var data ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -282,7 +281,7 @@ func (r *haResourceResource) Read(
 	req resource.ReadRequest,
 	resp *resource.ReadResponse,
 ) {
-	var data haResourceModel
+	var data ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
@@ -309,7 +308,7 @@ func (r *haResourceResource) ImportState(
 	resp *resource.ImportStateResponse,
 ) {
 	reqID := req.ID
-	data := haResourceModel{
+	data := ResourceModel{
 		ID:         types.StringValue(reqID),
 		ResourceID: types.StringValue(reqID),
 	}
@@ -318,7 +317,7 @@ func (r *haResourceResource) ImportState(
 
 // read reads information about a HA resource from the cluster. The Terraform resource identifier must have been set
 // in the model before this function is called.
-func (r *haResourceResource) read(ctx context.Context, data *haResourceModel) (bool, diag.Diagnostics) {
+func (r *haResourceResource) read(ctx context.Context, data *ResourceModel) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	resID, err := proxmoxtypes.ParseHAResourceID(data.ID.ValueString())
@@ -340,7 +339,7 @@ func (r *haResourceResource) read(ctx context.Context, data *haResourceModel) (b
 		return false, diags
 	}
 
-	data.importFromAPI(res)
+	data.ImportFromAPI(res)
 
 	return true, nil
 }
@@ -349,7 +348,7 @@ func (r *haResourceResource) read(ctx context.Context, data *haResourceModel) (b
 // state accordingly. It is assumed that the `state`'s identifier is set.
 func (r *haResourceResource) readBack(
 	ctx context.Context,
-	data *haResourceModel,
+	data *ResourceModel,
 	respDiags *diag.Diagnostics,
 	respState *tfsdk.State,
 ) {

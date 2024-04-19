@@ -11,6 +11,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -307,6 +308,11 @@ func fileParseImportID(id string) (string, fileVolumeID, error) {
 }
 
 func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(uploadTimeout)*time.Second)
+	defer cancel()
+
 	var diags diag.Diagnostics
 
 	contentType, dg := fileGetContentType(d)
@@ -537,9 +543,9 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	switch *contentType {
 	case "iso", "vztmpl":
-		uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
-
-		_, err = capi.Node(nodeName).Storage(datastoreID).APIUpload(ctx, request, uploadTimeout, config.TempDir())
+		_, err = capi.Node(nodeName).Storage(datastoreID).APIUpload(
+			ctx, request, config.TempDir(),
+		)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 			return diags
@@ -905,13 +911,7 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 
 	err = capi.Node(nodeName).Storage(datastoreID).DeleteDatastoreFile(ctx, d.Id())
-
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
-			d.SetId("")
-			return nil
-		}
-
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		return diag.FromErr(err)
 	}
 

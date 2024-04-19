@@ -8,10 +8,13 @@ package containers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/avast/retry-go/v4"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -27,13 +30,13 @@ func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error 
 }
 
 // CreateContainer creates a container.
-func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody, timeout int) error {
+func (c *Client) CreateContainer(ctx context.Context, d *CreateRequestBody) error {
 	taskID, err := c.CreateContainerAsync(ctx, d)
 	if err != nil {
 		return err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID)
 	if err != nil {
 		return fmt.Errorf("error waiting for container created: %w", err)
 	}
@@ -120,7 +123,7 @@ func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) 
 }
 
 // StartContainer starts a container if is not already running.
-func (c *Client) StartContainer(ctx context.Context, timeout int) error {
+func (c *Client) StartContainer(ctx context.Context) error {
 	status, err := c.GetContainerStatus(ctx)
 	if err != nil {
 		return fmt.Errorf("error retrieving container status: %w", err)
@@ -135,13 +138,13 @@ func (c *Client) StartContainer(ctx context.Context, timeout int) error {
 		return fmt.Errorf("error starting container: %w", err)
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID, timeout, 5)
+	err = c.Tasks().WaitForTask(ctx, *taskID)
 	if err != nil {
 		return fmt.Errorf("error waiting for container start: %w", err)
 	}
 
 	// the timeout here should probably be configurable
-	err = c.WaitForContainerStatus(ctx, "running", timeout*2, 5)
+	err = c.WaitForContainerStatus(ctx, "running")
 	if err != nil {
 		return fmt.Errorf("error waiting for container start: %w", err)
 	}
@@ -186,74 +189,77 @@ func (c *Client) UpdateContainer(ctx context.Context, d *UpdateRequestBody) erro
 }
 
 // WaitForContainerStatus waits for a container to reach a specific state.
-func (c *Client) WaitForContainerStatus(ctx context.Context, status string, timeout int, delay int) error {
+func (c *Client) WaitForContainerStatus(ctx context.Context, status string) error {
 	status = strings.ToLower(status)
 
-	timeDelay := int64(delay)
-	timeMax := float64(timeout)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
+	unexpectedStatus := fmt.Errorf("unexpected status %q", status)
 
-	for timeElapsed.Seconds() < timeMax {
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
+	err := retry.Do(
+		func() error {
 			data, err := c.GetContainerStatus(ctx)
 			if err != nil {
-				return fmt.Errorf("error retrieving container status: %w", err)
+				return err
 			}
 
-			if data.Status == status {
-				return nil
+			if data.Status != status {
+				return unexpectedStatus
 			}
 
-			time.Sleep(1 * time.Second)
-		}
+			return nil
+		},
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, unexpectedStatus)
+		}),
+		retry.Attempts(0), // retry until context deadline
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+	)
 
-		time.Sleep(200 * time.Millisecond)
-
-		timeElapsed = time.Since(timeStart)
-
-		if ctx.Err() != nil {
-			return fmt.Errorf("context error: %w", ctx.Err())
-		}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf("timeout while waiting for container %d to enter the status %q", c.VMID, status)
 	}
 
-	return fmt.Errorf(
-		"timeout while waiting for container \"%d\" to enter the status \"%s\"",
-		c.VMID,
-		status,
-	)
+	if err != nil {
+		return fmt.Errorf("error waiting for container %d to enter the status %q: %w", c.VMID, status, err)
+	}
+
+	return nil
 }
 
-// WaitForContainerLock waits for a container lock to be released.
-func (c *Client) WaitForContainerLock(ctx context.Context, timeout int, delay int, ignoreErrorResponse bool) error {
-	timeDelay := int64(delay)
-	timeMax := float64(timeout)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
+// WaitForContainerConfigUnlock waits for a container lock to be released.
+func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorResponse bool) error {
+	stillLocked := errors.New("still locked")
 
-	for timeElapsed.Seconds() < timeMax {
-		if int64(timeElapsed.Seconds())%timeDelay == 0 {
+	err := retry.Do(
+		func() error {
 			data, err := c.GetContainerStatus(ctx)
-
 			if err != nil {
-				if !ignoreErrorResponse {
-					return fmt.Errorf("error retrieving container status: %w", err)
-				}
-			} else if data.Lock == nil || *data.Lock == "" {
-				return nil
+				return err
 			}
 
-			time.Sleep(1 * time.Second)
-		}
+			if data.Lock != nil && *data.Lock != "" {
+				return stillLocked
+			}
 
-		time.Sleep(200 * time.Millisecond)
+			return nil
+		},
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, stillLocked) || ignoreErrorResponse
+		}),
+		retry.Attempts(0), // retry until context deadline
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+	)
 
-		timeElapsed = time.Since(timeStart)
-
-		if ctx.Err() != nil {
-			return fmt.Errorf("context error: %w", ctx.Err())
-		}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf("timeout while waiting for container %d configuration to become unlocked", c.VMID)
 	}
 
-	return fmt.Errorf("timeout while waiting for container \"%d\" to become unlocked", c.VMID)
+	if err != nil && !ignoreErrorResponse {
+		return fmt.Errorf("error waiting for container %d configuration to become unlocked: %w", c.VMID, err)
+	}
+
+	return nil
 }

@@ -13,6 +13,8 @@ import (
 )
 
 func TestAccDatasourceNode(t *testing.T) {
+	t.Parallel()
+
 	te := initTestEnvironment(t)
 
 	tests := []struct {
