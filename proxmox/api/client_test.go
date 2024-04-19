@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -19,7 +20,7 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
 }
 
-// NewTestClient returns *http.Client with Transport replaced to avoid making real calls
+// NewTestClient returns *http.Client with Transport replaced to avoid making real calls.
 func newTestClient(fn RoundTripFunc) *http.Client {
 	return &http.Client{
 		Transport: fn,
@@ -36,30 +37,13 @@ func (dummyAuthenticator) IsRootTicket() bool {
 	return false
 }
 
-func (dummyAuthenticator) AuthenticateRequest(ctx context.Context, req *http.Request) error {
+func (dummyAuthenticator) AuthenticateRequest(_ context.Context, _ *http.Request) error {
 	return nil
 }
 
-//func Test_client_DoRequest(t *testing.T) {
-//
-//
-//	c := client{
-//		conn: &Connection{
-//			endpoint: "http://localhost",
-//			httpClient: newTestClient(func(req *http.Request) *http.Response {
-//				return &http.Response{
-//					StatusCode: 200,
-//					Body:       nil,
-//				}
-//			}),
-//		},
-//		auth: dummyAuthenticator{},
-//	}
-//
-//	c.DoRequest(context.Background(), http.MethodGet, "/test", nil, nil)
-//}
+func TestClientDoRequest(t *testing.T) {
+	t.Parallel()
 
-func Test_client_DoRequest(t *testing.T) {
 	tests := []struct {
 		name    string
 		status  string
@@ -68,7 +52,10 @@ func Test_client_DoRequest(t *testing.T) {
 		{name: "no error", status: "200 OK", wantErr: nil},
 		{name: "not exists - 404 status", status: "404 missing", wantErr: ErrResourceDoesNotExist},
 		{name: "not exists - 500 status", status: "500 This thing does not exist", wantErr: ErrResourceDoesNotExist},
-		//{name: "500 status", status: "500 Internal Server Error", wantErr: HTTPError{}},
+		{name: "500 status", status: "500 Internal Server Error", wantErr: &HTTPError{
+			Code:    500,
+			Message: "Internal Server Error",
+		}},
 	}
 
 	for _, tt := range tests {
@@ -92,7 +79,25 @@ func Test_client_DoRequest(t *testing.T) {
 			}
 
 			err := c.DoRequest(context.Background(), "POST", "any", nil, nil)
-			if !errors.Is(err, tt.wantErr) {
+			fail := false
+
+			switch {
+			case err == nil && tt.wantErr == nil:
+				return
+			case err != nil && tt.wantErr == nil:
+				fallthrough
+			case err == nil && tt.wantErr != nil:
+				fail = true
+			default:
+				var he, we *HTTPError
+				if errors.As(err, &he) && errors.As(tt.wantErr, &we) {
+					fail = !reflect.DeepEqual(he, we)
+				} else {
+					fail = !errors.Is(err, tt.wantErr)
+				}
+			}
+
+			if fail {
 				t.Errorf("DoRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
