@@ -576,7 +576,7 @@ func (c *Client) WaitForVMConfigUnlock(ctx context.Context, ignoreErrorResponse 
 		retry.RetryIf(func(err error) bool {
 			return errors.Is(err, stillLocked) || ignoreErrorResponse
 		}),
-		retry.Attempts(0), // retry until context deadline
+		retry.UntilSucceeded(),
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(true),
 	)
@@ -615,7 +615,7 @@ func (c *Client) WaitForVMStatus(ctx context.Context, status string) error {
 		retry.RetryIf(func(err error) bool {
 			return errors.Is(err, unexpectedStatus)
 		}),
-		retry.Attempts(0), // retry until context deadline
+		retry.UntilSucceeded(),
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(true),
 	)
