@@ -1,12 +1,14 @@
 package vm
 
 import (
-	"errors"
+	"context"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type vmModel struct {
@@ -14,19 +16,33 @@ type vmModel struct {
 	ID          types.Int64    `tfsdk:"id"`
 	Name        types.String   `tfsdk:"name"`
 	NodeName    types.String   `tfsdk:"node_name"`
+	Tags        types.Set      `tfsdk:"tags"`
 	Timeouts    timeouts.Value `tfsdk:"timeouts"`
 }
 
-func (m *vmModel) updateFromAPI(config vms.GetResponseData, status vms.GetStatusResponseData) error {
-	if status.VMID == nil {
-		return errors.New("VM ID is missing in status API response")
+func (m *vmModel) tagsString(ctx context.Context, diags diag.Diagnostics) *string {
+	if m.Tags.IsNull() {
+		return nil
 	}
 
-	m.ID = types.Int64Value(int64(*status.VMID))
+	elems := make([]types.String, 0, len(m.Tags.Elements()))
+	d := m.Tags.ElementsAs(ctx, &elems, false)
+	diags.Append(d...)
 
-	// Optional fields can be removed from the model, use StringPointerValue to handle removal on nil
-	m.Description = types.StringPointerValue(config.Description)
-	m.Name = types.StringPointerValue(config.Name)
+	if d.HasError() {
+		return nil
+	}
 
-	return nil
+	var sanitizedTags []string
+	for _, el := range elems {
+		if el.IsNull() || el.IsUnknown() {
+			continue
+		}
+		sanitizedTag := strings.TrimSpace(el.ValueString())
+		if len(sanitizedTag) > 0 {
+			sanitizedTags = append(sanitizedTags, sanitizedTag)
+		}
+	}
+
+	return proxmoxtypes.StrPtr(strings.Join(sanitizedTags, ";"))
 }

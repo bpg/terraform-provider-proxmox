@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccResourcePVEVM(t *testing.T) {
+func TestAccResourceVM2(t *testing.T) {
 	t.Parallel()
 
 	te := initTestEnvironment(t)
@@ -28,7 +28,7 @@ func TestAccResourcePVEVM(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create minimal vm", []resource.TestStep{{
+		{"create minimal VM", []resource.TestStep{{
 			Config: te.renderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
@@ -42,7 +42,7 @@ func TestAccResourcePVEVM(t *testing.T) {
 				}),
 			),
 		}}},
-		{"create minimal vm with ID", []resource.TestStep{{
+		{"create minimal VM with ID", []resource.TestStep{{
 			Config: te.renderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
@@ -56,7 +56,7 @@ func TestAccResourcePVEVM(t *testing.T) {
 				}),
 			),
 		}}},
-		{"set and invalid VM name", []resource.TestStep{{
+		{"set an invalid VM name", []resource.TestStep{{
 			Config: te.renderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
@@ -103,6 +103,94 @@ func TestAccResourcePVEVM(t *testing.T) {
 				ImportStateIdPrefix: te.nodeName + "/",
 			},
 		}},
+		{"set, update, import with tags", []resource.TestStep{
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					
+					name = "test-tags"
+					tags = ["tag2", "tag1"]
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag2"),
+				),
+			},
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					
+					name = "test-tags"
+					tags = ["tag1"]
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "tags.#", "1"),
+					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+				),
+			},
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					
+					name = "test-tags"
+				}`),
+				Check: testNoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					"tags",
+				}),
+			},
+			//{
+			//	Config: te.renderConfig(`
+			//	resource "proxmox_virtual_environment_vm2" "test_vm" {
+			//		node_name = "{{.NodeName}}"
+			//
+			//		name = "test-vm"
+			//	}`),
+			//	Check: resource.ComposeTestCheckFunc(
+			//		testResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+			//			"name": "test-vm",
+			//		}),
+			//		testNoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+			//			"description",
+			//		}),
+			//	),
+			//},
+			//{
+			//	ResourceName:        "proxmox_virtual_environment_vm2.test_vm",
+			//	ImportState:         true,
+			//	ImportStateVerify:   true,
+			//	ImportStateIdPrefix: te.nodeName + "/",
+			//},
+		}},
+		{"a VM can't have empty tags set", []resource.TestStep{{
+			Config: te.renderConfig(`
+			resource "proxmox_virtual_environment_vm2" "test_vm" {
+				node_name = "{{.NodeName}}"
+				
+				tags = []
+			}`),
+			ExpectError: regexp.MustCompile(`tags set must contain at least 1 elements`),
+		}}},
+		{"a VM can't have empty tags", []resource.TestStep{{
+			Config: te.renderConfig(`
+			resource "proxmox_virtual_environment_vm2" "test_vm" {
+				node_name = "{{.NodeName}}"
+				
+				tags = ["", "tag1"]
+			}`),
+			ExpectError: regexp.MustCompile(`string length must be at least 1, got: 0`),
+		}}},
+		{"a VM can't have empty tags", []resource.TestStep{{
+			Config: te.renderConfig(`
+			resource "proxmox_virtual_environment_vm2" "test_vm" {
+				node_name = "{{.NodeName}}"
+				
+				tags = [" ", "tag1"]
+			}`),
+			ExpectError: regexp.MustCompile(`must be a non-empty and non-whitespace string`),
+		}}},
 		{"multiline description", []resource.TestStep{{
 			Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
