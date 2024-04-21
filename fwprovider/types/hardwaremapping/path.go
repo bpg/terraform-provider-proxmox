@@ -32,6 +32,7 @@ var (
 //
 //nolint:gochecknoglobals
 var ErrValueConversion = func(format string, attrs ...any) error {
+	// bpg: this doesn't seem to be a proper use of the function.NewFuncError
 	return function.NewFuncError(fmt.Sprintf(format, attrs...))
 }
 

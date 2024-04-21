@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/tags"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
@@ -110,7 +110,7 @@ func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, res
 	createBody := &vms.CreateRequestBody{
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
-		Tags:        plan.tagsString(ctx, resp.Diagnostics),
+		Tags:        plan.Tags.ValueStringPointer(ctx, resp.Diagnostics),
 		VMID:        &vmID,
 	}
 
@@ -225,7 +225,7 @@ func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, res
 		if plan.Tags.IsNull() || len(plan.Tags.Elements()) == 0 {
 			del("Tags")
 		} else {
-			updateBody.Tags = plan.tagsString(ctx, resp.Diagnostics)
+			updateBody.Tags = plan.Tags.ValueStringPointer(ctx, resp.Diagnostics)
 		}
 	}
 
@@ -388,23 +388,7 @@ func (r *vmResource) read(ctx context.Context, vmAPI *vms.Client, model *vmModel
 	// Optional fields can be removed from the model, use StringPointerValue to handle removal on nil
 	model.Description = types.StringPointerValue(config.Description)
 	model.Name = types.StringPointerValue(config.Name)
-
-	if config.Tags != nil {
-		tags := strings.Split(*config.Tags, ";")
-		elems := make([]attr.Value, len(tags))
-
-		for i, tag := range tags {
-			elems[i] = types.StringValue(tag)
-		}
-
-		setValue, d := types.SetValue(types.StringType, elems)
-		diags.Append(d...)
-
-		model.Tags = setValue
-
-	} else {
-		model.Tags = types.SetNull(types.StringType)
-	}
+	model.Tags = tags.SetValue(config.Tags, diags)
 
 	return true
 }

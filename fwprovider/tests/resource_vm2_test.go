@@ -141,28 +141,6 @@ func TestAccResourceVM2(t *testing.T) {
 					"tags",
 				}),
 			},
-			//{
-			//	Config: te.renderConfig(`
-			//	resource "proxmox_virtual_environment_vm2" "test_vm" {
-			//		node_name = "{{.NodeName}}"
-			//
-			//		name = "test-vm"
-			//	}`),
-			//	Check: resource.ComposeTestCheckFunc(
-			//		testResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-			//			"name": "test-vm",
-			//		}),
-			//		testNoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
-			//			"description",
-			//		}),
-			//	),
-			//},
-			//{
-			//	ResourceName:        "proxmox_virtual_environment_vm2.test_vm",
-			//	ImportState:         true,
-			//	ImportStateVerify:   true,
-			//	ImportStateIdPrefix: te.nodeName + "/",
-			//},
 		}},
 		{"a VM can't have empty tags set", []resource.TestStep{{
 			Config: te.renderConfig(`

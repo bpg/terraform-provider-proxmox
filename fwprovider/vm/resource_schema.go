@@ -5,14 +5,14 @@ import (
 	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/tags"
 )
 
 // Schema defines the schema for the resource.
@@ -55,18 +55,7 @@ func (r *vmResource) Schema(
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
-			"tags": schema.SetAttribute{
-				Description: "The tags assigned to the VM.",
-				Optional:    true,
-				ElementType: types.StringType,
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-					setvalidator.ValueStringsAre(
-						stringvalidator.RegexMatches(regexp.MustCompile(`(.|\s)*\S(.|\s)*`), "must be a non-empty and non-whitespace string"),
-						stringvalidator.LengthAtLeast(1),
-					),
-				},
-			},
+			"tags": tags.ResourceAttribute(),
 			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
 				Create: true,
 				Read:   true,

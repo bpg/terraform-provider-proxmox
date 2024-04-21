@@ -26,7 +26,7 @@ This is an experimental implementation of a Proxmox VM resource using Plugin Fra
 - `description` (String) The description of the VM.
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
 - `name` (String) The name of the VM. Doesn't have to be unique.
-- `tags` (Set of String) The tags assigned to the VM.
+- `tags` (Set of String) The tags assigned to the resource.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 <a id="nestedatt--timeouts"></a>
