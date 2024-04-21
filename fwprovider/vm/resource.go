@@ -9,11 +9,13 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/tags"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
@@ -108,7 +110,12 @@ func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, res
 	createBody := &vms.CreateRequestBody{
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
+		Tags:        plan.Tags.ValueStringPointer(ctx, resp.Diagnostics),
 		VMID:        &vmID,
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	err := vmAPI.CreateVM(ctx, createBody)
@@ -121,11 +128,7 @@ func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// read back the VM from the PVE API to populate computed fields
-	exists, err := r.read(ctx, vmAPI, &plan)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to read VM", err.Error())
-	}
-
+	exists := r.read(ctx, vmAPI, &plan, resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError("VM does not exist after creation", "")
 	}
@@ -155,10 +158,7 @@ func (r *vmResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 	vmAPI := r.client.Node(state.NodeName.ValueString()).VM(int(state.ID.ValueInt64()))
 
-	exists, err := r.read(ctx, vmAPI, &state)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to read VM", err.Error())
-	}
+	exists := r.read(ctx, vmAPI, &state, resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -221,6 +221,14 @@ func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, res
 		}
 	}
 
+	if !plan.Tags.Equal(state.Tags) {
+		if plan.Tags.IsNull() || len(plan.Tags.Elements()) == 0 {
+			del("Tags")
+		} else {
+			updateBody.Tags = plan.Tags.ValueStringPointer(ctx, resp.Diagnostics)
+		}
+	}
+
 	err := vmAPI.UpdateVM(ctx, updateBody)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update VM", err.Error())
@@ -231,11 +239,7 @@ func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, res
 	}
 
 	// read back the VM from the PVE API to populate computed fields
-	exists, err := r.read(ctx, vmAPI, &plan)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to read VM", err.Error())
-	}
-
+	exists := r.read(ctx, vmAPI, &plan, resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError("VM does not exist after update", "")
 	}
@@ -338,11 +342,7 @@ func (r *vmResource) ImportState(
 		Timeouts: ts,
 	}
 
-	exists, err := r.read(ctx, vmAPI, &state)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to read VM", err.Error())
-	}
-
+	exists := r.read(ctx, vmAPI, &state, resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError(fmt.Sprintf("VM %d does not exist on node %s", id, nodeName), "")
 	}
@@ -357,32 +357,40 @@ func (r *vmResource) ImportState(
 
 // read retrieves the current state of the resource from the API and updates the state.
 // Returns false if the resource does not exist, so the caller can remove it from the state if necessary.
-func (r *vmResource) read(ctx context.Context, vmAPI *vms.Client, model *vmModel) (bool, error) {
+func (r *vmResource) read(ctx context.Context, vmAPI *vms.Client, model *vmModel, diags diag.Diagnostics) bool {
 	// Retrieve the entire configuration in order to compare it to the state.
-	vmConfig, err := vmAPI.GetVM(ctx)
+	config, err := vmAPI.GetVM(ctx)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			tflog.Info(ctx, "VM does not exist, removing from the state", map[string]interface{}{
 				"vm_id": vmAPI.VMID,
 			})
-
-			return false, nil
+		} else {
+			diags.AddError("Failed to get VM", err.Error())
 		}
 
-		return false, fmt.Errorf("failed to get VM: %w", err)
+		return false
 	}
 
-	vmStatus, err := vmAPI.GetVMStatus(ctx)
+	status, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to get VM status: %w", err)
+		diags.AddError("Failed to get VM status", err.Error())
+		return false
 	}
 
-	err = model.updateFromAPI(*vmConfig, *vmStatus)
-	if err != nil {
-		return false, fmt.Errorf("failed to update VM from API: %w", err)
+	if status.VMID == nil {
+		diags.AddError("VM ID is missing in status API response", "")
+		return false
 	}
 
-	return true, nil
+	model.ID = types.Int64Value(int64(*status.VMID))
+
+	// Optional fields can be removed from the model, use StringPointerValue to handle removal on nil
+	model.Description = types.StringPointerValue(config.Description)
+	model.Name = types.StringPointerValue(config.Name)
+	model.Tags = tags.SetValue(config.Tags, diags)
+
+	return true
 }
 
 // Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if

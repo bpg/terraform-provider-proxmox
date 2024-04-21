@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/tags"
 )
 
 // Schema defines the schema for the resource.
@@ -25,6 +27,10 @@ func (r *vmResource) Schema(
 			"<br><br>It is a Proof of Concept, highly experimental and **will** change in future. " +
 			"It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.",
 		Attributes: map[string]schema.Attribute{
+			"description": schema.StringAttribute{
+				Description: "The description of the VM.",
+				Optional:    true,
+			},
 			"id": schema.Int64Attribute{
 				Computed: true,
 				Optional: true,
@@ -33,11 +39,6 @@ func (r *vmResource) Schema(
 					int64planmodifier.RequiresReplace(),
 				},
 				Description: "The unique identifier of the VM in the Proxmox cluster.",
-			},
-
-			"description": schema.StringAttribute{
-				Description: "The description of the VM.",
-				Optional:    true,
 			},
 			"name": schema.StringAttribute{
 				Description:         "The name of the VM.",
@@ -54,6 +55,7 @@ func (r *vmResource) Schema(
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
+			"tags": tags.ResourceAttribute(),
 			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
 				Create: true,
 				Read:   true,
