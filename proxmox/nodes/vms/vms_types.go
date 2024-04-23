@@ -290,7 +290,7 @@ type CreateRequestBody struct {
 	VirtualCPUCount      *int                           `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
 	VirtualIODevices     CustomStorageDevices           `json:"virtio,omitempty"             url:"virtio,omitempty"`
 	VMGenerationID       *string                        `json:"vmgenid,omitempty"            url:"vmgenid,omitempty"`
-	VMID                 *int                           `json:"vmid,omitempty"               url:"vmid,omitempty"`
+	VMID                 int                            `json:"vmid,omitempty"               url:"vmid,omitempty"`
 	VMStateDatastoreID   *string                        `json:"vmstatestorage,omitempty"     url:"vmstatestorage,omitempty"`
 	WatchdogDevice       *CustomWatchdogDevice          `json:"watchdog,omitempty"           url:"watchdog,omitempty"`
 }

@@ -94,33 +94,24 @@ func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, res
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	vmID := int(plan.ID.ValueInt64())
-	if vmID == 0 {
+	if plan.ID.ValueInt64() == 0 {
 		id, err := r.client.Cluster().GetVMID(ctx)
 		if err != nil {
 			resp.Diagnostics.AddError("Failed to get VM ID", err.Error())
 			return
 		}
 
-		vmID = *id
-	}
-
-	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(vmID)
-
-	createBody := &vms.CreateRequestBody{
-		Description: plan.Description.ValueStringPointer(),
-		Name:        plan.Name.ValueStringPointer(),
-		Tags:        plan.Tags.ValueStringPointer(ctx, resp.Diagnostics),
-		VMID:        &vmID,
+		plan.ID = types.Int64Value(int64(*id))
 	}
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	err := vmAPI.CreateVM(ctx, createBody)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to create VM", err.Error())
+	if plan.Clone != nil {
+		r.clone(ctx, plan, &resp.Diagnostics)
+	} else {
+		r.create(ctx, plan, &resp.Diagnostics)
 	}
 
 	if resp.Diagnostics.HasError() {
@@ -128,7 +119,7 @@ func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// read back the VM from the PVE API to populate computed fields
-	exists := r.read(ctx, vmAPI, &plan, resp.Diagnostics)
+	exists := r.read(ctx, &plan, &resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError("VM does not exist after creation", "")
 	}
@@ -139,6 +130,70 @@ func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, res
 
 	// set state to the updated plan data
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+}
+
+func (r *vmResource) create(ctx context.Context, plan vmModel, diags *diag.Diagnostics) {
+	createBody := &vms.CreateRequestBody{
+		Description: plan.Description.ValueStringPointer(),
+		Name:        plan.Name.ValueStringPointer(),
+		Tags:        plan.Tags.ValueStringPointer(ctx, diags),
+		Template:    proxmoxtypes.CustomBoolPtr(plan.Template.ValueBoolPointer()),
+		VMID:        int(plan.ID.ValueInt64()),
+	}
+
+	if diags.HasError() {
+		return
+	}
+
+	// .VM(0) is used to create a new VM, the VM ID is not used in the API URL
+	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(0)
+
+	err := vmAPI.CreateVM(ctx, createBody)
+	if err != nil {
+		diags.AddError("Failed to create VM", err.Error())
+	}
+}
+
+func (r *vmResource) clone(ctx context.Context, plan vmModel, diags *diag.Diagnostics) {
+	if plan.Clone == nil {
+		diags.AddError("Clone configuration is missing", "")
+		return
+	}
+
+	sourceID := int(plan.Clone.ID.ValueInt64())
+	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(sourceID)
+
+	// name and description for the clone are optional, but they are not copied from the source VM.
+	cloneBody := &vms.CloneRequestBody{
+		Description: plan.Description.ValueStringPointer(),
+		Name:        plan.Name.ValueStringPointer(),
+		VMIDNew:     int(plan.ID.ValueInt64()),
+	}
+
+	err := vmAPI.CloneVM(ctx, int(plan.Clone.Retries.ValueInt64()), cloneBody)
+	if err != nil {
+		diags.AddError("Failed to clone VM", err.Error())
+	}
+
+	if diags.HasError() {
+		return
+	}
+
+	// now load the clone's configuration into a temporary model and update what is needed comparing to the plan
+	clone := vmModel{
+		ID:          plan.ID,
+		Name:        plan.Name,
+		Description: plan.Description,
+		NodeName:    plan.NodeName,
+	}
+
+	r.read(ctx, &clone, diags)
+
+	if diags.HasError() {
+		return
+	}
+
+	r.update(ctx, plan, clone, diags)
 }
 
 func (r *vmResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -156,9 +211,7 @@ func (r *vmResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	vmAPI := r.client.Node(state.NodeName.ValueString()).VM(int(state.ID.ValueInt64()))
-
-	exists := r.read(ctx, vmAPI, &state, resp.Diagnostics)
+	exists := r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -193,53 +246,10 @@ func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, res
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
-
-	updateBody := &vms.UpdateRequestBody{
-		VMID: proxmoxtypes.Int64PtrToIntPtr(plan.ID.ValueInt64Pointer()),
-	}
-
-	var errs []error
-
-	del := func(field string) {
-		errs = append(errs, updateBody.ToDelete(field))
-	}
-
-	if !plan.Description.Equal(state.Description) {
-		if plan.Description.IsNull() {
-			del("Description")
-		} else {
-			updateBody.Description = plan.Description.ValueStringPointer()
-		}
-	}
-
-	if !plan.Name.Equal(state.Name) {
-		if plan.Name.IsNull() {
-			del("Name")
-		} else {
-			updateBody.Name = plan.Name.ValueStringPointer()
-		}
-	}
-
-	if !plan.Tags.Equal(state.Tags) {
-		if plan.Tags.IsNull() || len(plan.Tags.Elements()) == 0 {
-			del("Tags")
-		} else {
-			updateBody.Tags = plan.Tags.ValueStringPointer(ctx, resp.Diagnostics)
-		}
-	}
-
-	err := vmAPI.UpdateVM(ctx, updateBody)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to update VM", err.Error())
-	}
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	r.update(ctx, plan, state, &resp.Diagnostics)
 
 	// read back the VM from the PVE API to populate computed fields
-	exists := r.read(ctx, vmAPI, &plan, resp.Diagnostics)
+	exists := r.read(ctx, &plan, &resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError("VM does not exist after update", "")
 	}
@@ -250,6 +260,50 @@ func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	// set state to the updated plan data
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+}
+
+func (r *vmResource) update(ctx context.Context, new, old vmModel, diags *diag.Diagnostics) {
+	vmAPI := r.client.Node(new.NodeName.ValueString()).VM(int(new.ID.ValueInt64()))
+
+	updateBody := &vms.UpdateRequestBody{
+		VMID: int(new.ID.ValueInt64()),
+	}
+
+	var errs []error
+
+	del := func(field string) {
+		errs = append(errs, updateBody.ToDelete(field))
+	}
+
+	if !new.Description.Equal(old.Description) {
+		if new.Description.IsNull() {
+			del("Description")
+		} else {
+			updateBody.Description = new.Description.ValueStringPointer()
+		}
+	}
+
+	if !new.Name.Equal(old.Name) {
+		if new.Name.IsNull() {
+			del("Name")
+		} else {
+			updateBody.Name = new.Name.ValueStringPointer()
+		}
+	}
+
+	if !new.Tags.Equal(old.Tags) {
+		if new.Tags.IsNull() || len(new.Tags.Elements()) == 0 { // only for computed
+			del("Tags")
+		} else {
+			updateBody.Tags = new.Tags.ValueStringPointer(ctx, diags)
+		}
+	}
+
+	err := vmAPI.UpdateVM(ctx, updateBody)
+	if err != nil {
+		diags.AddError("Failed to update VM", err.Error())
+		return
+	}
 }
 
 func (r *vmResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -326,8 +380,6 @@ func (r *vmResource) ImportState(
 		return
 	}
 
-	vmAPI := r.client.Node(nodeName).VM(id)
-
 	var ts timeouts.Value
 
 	resp.Diagnostics.Append(resp.State.GetAttribute(ctx, path.Root("timeouts"), &ts)...)
@@ -342,7 +394,7 @@ func (r *vmResource) ImportState(
 		Timeouts: ts,
 	}
 
-	exists := r.read(ctx, vmAPI, &state, resp.Diagnostics)
+	exists := r.read(ctx, &state, &resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError(fmt.Sprintf("VM %d does not exist on node %s", id, nodeName), "")
 	}
@@ -357,7 +409,9 @@ func (r *vmResource) ImportState(
 
 // read retrieves the current state of the resource from the API and updates the state.
 // Returns false if the resource does not exist, so the caller can remove it from the state if necessary.
-func (r *vmResource) read(ctx context.Context, vmAPI *vms.Client, model *vmModel, diags diag.Diagnostics) bool {
+func (r *vmResource) read(ctx context.Context, model *vmModel, diags *diag.Diagnostics) bool {
+	vmAPI := r.client.Node(model.NodeName.ValueString()).VM(int(model.ID.ValueInt64()))
+
 	// Retrieve the entire configuration in order to compare it to the state.
 	config, err := vmAPI.GetVM(ctx)
 	if err != nil {
@@ -389,6 +443,7 @@ func (r *vmResource) read(ctx context.Context, vmAPI *vms.Client, model *vmModel
 	model.Description = types.StringPointerValue(config.Description)
 	model.Name = types.StringPointerValue(config.Name)
 	model.Tags = tags.SetValue(config.Tags, diags)
+	model.Template = types.BoolPointerValue(config.Template.PointerBool())
 
 	return true
 }

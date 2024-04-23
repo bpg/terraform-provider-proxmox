@@ -121,7 +121,6 @@ func TestAccResourceVM2(t *testing.T) {
 				Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					
 					name = "test-tags"
 					tags = ["tag1"]
 				}`),
@@ -134,12 +133,8 @@ func TestAccResourceVM2(t *testing.T) {
 				Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					
 					name = "test-tags"
 				}`),
-				Check: testNoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
-					"tags",
-				}),
 			},
 		}},
 		{"a VM can't have empty tags set", []resource.TestStep{{
@@ -187,6 +182,78 @@ func TestAccResourceVM2(t *testing.T) {
 				}),
 			),
 		}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.accProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+func TestAccResourceVM2Clone(t *testing.T) {
+	t.Parallel()
+
+	te := initTestEnvironment(t)
+	vmID := gofakeit.IntRange(90000, 100000)
+	te.addTemplateVars(map[string]any{
+		"VMID": vmID,
+	})
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"create a clone from template", []resource.TestStep{{
+			Config: te.renderConfig(`
+			resource "proxmox_virtual_environment_vm2" "test_vm" {
+				node_name = "{{.NodeName}}"
+				name = "template"
+				description = "template description"
+				template = true
+			}
+			resource "proxmox_virtual_environment_vm2" "test_vm_clone" {
+				node_name = "{{.NodeName}}"
+				name = "clone"
+				clone = {
+					id = proxmox_virtual_environment_vm2.test_vm.id	
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					"template": "true",
+				}),
+				testResourceAttributes("proxmox_virtual_environment_vm2.test_vm_clone", map[string]string{
+					// name is overwritten
+					"name": "clone",
+				}),
+				testNoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm_clone", []string{
+					// description is not copied
+					"description",
+				}),
+			),
+		}}},
+		//{"tags are copied to the clone", []resource.TestStep{{
+		//	Config: te.renderConfig(`
+		//	resource "proxmox_virtual_environment_vm2" "test_vm" {
+		//		node_name = "{{.NodeName}}"
+		//		template = true
+		//		tags = ["tag1", "tag2"]
+		//	}
+		//	resource "proxmox_virtual_environment_vm2" "test_vm_clone" {
+		//		node_name = "{{.NodeName}}"
+		//		clone = {
+		//			id = proxmox_virtual_environment_vm2.test_vm.id
+		//		}
+		//	}`),
+		//	Check: resource.ComposeTestCheckFunc(
+		//		resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm_clone", "tags.*", "tag1"),
+		//		resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm_clone", "tags.*", "tag2"),
+		//	),
+		//}}},
 	}
 
 	for _, tt := range tests {

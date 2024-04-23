@@ -38,6 +38,15 @@ type CustomPrivileges []string
 // CustomTimestamp allows a JSON boolean value to also be a unix timestamp.
 type CustomTimestamp time.Time
 
+// CustomBoolPtr creates a CustomBool pointer from a boolean pointer.
+func CustomBoolPtr(v *bool) *CustomBool {
+	if v == nil {
+		return nil
+	}
+
+	return BoolPtr(*v)
+}
+
 // MarshalJSON converts a boolean to a JSON value.
 func (r CustomBool) MarshalJSON() ([]byte, error) {
 	buffer := new(bytes.Buffer)

@@ -9,7 +9,7 @@ description: |-
 
 # Resource: proxmox_virtual_environment_vm2
 
-~> **DO NOT USE**
+!> **DO NOT USE**
 This is an experimental implementation of a Proxmox VM resource using Plugin Framework.<br><br>It is a Proof of Concept, highly experimental and **will** change in future. It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.
 
 
@@ -23,11 +23,25 @@ This is an experimental implementation of a Proxmox VM resource using Plugin Fra
 
 ### Optional
 
+- `clone` (Attributes) The cloning configuration. (see [below for nested schema](#nestedatt--clone))
 - `description` (String) The description of the VM.
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
 - `name` (String) The name of the VM. Doesn't have to be unique.
 - `tags` (Set of String) The tags assigned to the resource.
+- `template` (Boolean) Set to true to create a VM template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
+
+<a id="nestedatt--clone"></a>
+### Nested Schema for `clone`
+
+Required:
+
+- `id` (Number) The ID of the VM to clone.
+
+Optional:
+
+- `retries` (Number) The number of retries to perform when cloning the VM (default: 3).
+
 
 <a id="nestedatt--timeouts"></a>
 ### Nested Schema for `timeouts`

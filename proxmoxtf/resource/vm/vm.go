@@ -2669,7 +2669,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		Template:            &template,
 		USBDevices:          usbDeviceObjects,
 		VGADevice:           vgaDevice,
-		VMID:                &vmID,
+		VMID:                vmID,
 	}
 
 	if sataDeviceObjects != nil {
