@@ -94,36 +94,3 @@ func (r *vmResource) Schema(
 		},
 	}
 }
-
-//
-//// useStateForUnknownModifier implements the plan modifier.
-//type forceNullModifier struct{}
-//
-//// Description returns a human-readable description of the plan modifier.
-//func (m forceNullModifier) Description(_ context.Context) string {
-//	return "Forces null value."
-//}
-//
-//// MarkdownDescription returns a markdown description of the plan modifier.
-//func (m forceNullModifier) MarkdownDescription(_ context.Context) string {
-//	return "Forces null value."
-//}
-//
-//// PlanModifyBool implements the plan modification logic.
-//func (m forceNullModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-//	//if req.StateValue.IsNull() {
-//	//	return
-//	//}
-//	//
-//	//if !req.PlanValue.IsUnknown() {
-//	//	return
-//	//}
-//
-//	// forceNullIfUnconfiguredComputed
-//
-//	path, diagnostics := req.Plan.Schema.AttributeAtPath(ctx, req.Path)
-//	path.IsComputed()
-//	if req.ConfigValue.IsUnknown() || req.ConfigValue.IsNull() {
-//		resp.PlanValue = types.StringNull()
-//	}
-//}

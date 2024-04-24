@@ -262,11 +262,11 @@ func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, res
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-func (r *vmResource) update(ctx context.Context, new, old vmModel, diags *diag.Diagnostics) {
-	vmAPI := r.client.Node(new.NodeName.ValueString()).VM(int(new.ID.ValueInt64()))
+func (r *vmResource) update(ctx context.Context, plan, state vmModel, diags *diag.Diagnostics) {
+	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
 
 	updateBody := &vms.UpdateRequestBody{
-		VMID: int(new.ID.ValueInt64()),
+		VMID: int(plan.ID.ValueInt64()),
 	}
 
 	var errs []error
@@ -275,32 +275,33 @@ func (r *vmResource) update(ctx context.Context, new, old vmModel, diags *diag.D
 		errs = append(errs, updateBody.ToDelete(field))
 	}
 
-	if !new.Description.Equal(old.Description) {
-		if new.Description.IsNull() {
+	if !plan.Description.Equal(state.Description) {
+		if plan.Description.IsNull() {
 			del("Description")
 		} else {
-			updateBody.Description = new.Description.ValueStringPointer()
+			updateBody.Description = plan.Description.ValueStringPointer()
 		}
 	}
 
-	if !new.Name.Equal(old.Name) {
-		if new.Name.IsNull() {
+	if !plan.Name.Equal(state.Name) {
+		if plan.Name.IsNull() {
 			del("Name")
 		} else {
-			updateBody.Name = new.Name.ValueStringPointer()
+			updateBody.Name = plan.Name.ValueStringPointer()
 		}
 	}
 
 	// For optional computed fields only:
-	// the first condition is for the clone case, where the tags (old) are copied from the source VM
-	// then if the clone config does not have tags, we keep the cloned ones
-	// otherwise if the clone config has empty tags we remove them
-	// and finally if the clone config has tags we update them
-	if !new.Tags.Equal(old.Tags) && !new.Tags.IsUnknown() {
-		if new.Tags.IsNull() || len(new.Tags.Elements()) == 0 {
+	// The first condition is for the clone case, where the tags (captured in `state.Tags`)
+	// have already been copied from the source VM to the clone during the cloning process.
+	// Then, if the clone config does not have tags, we keep the cloned ones in the VM.
+	// Otherwise, if the clone config has empty tags we remove them from the VM.
+	// And finally, if the clone config has tags we update them in th VM
+	if !plan.Tags.Equal(state.Tags) && !plan.Tags.IsUnknown() {
+		if plan.Tags.IsNull() || len(plan.Tags.Elements()) == 0 {
 			del("Tags")
 		} else {
-			updateBody.Tags = new.Tags.ValueStringPointer(ctx, diags)
+			updateBody.Tags = plan.Tags.ValueStringPointer(ctx, diags)
 		}
 	}
 

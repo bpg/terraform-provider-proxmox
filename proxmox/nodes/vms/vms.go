@@ -83,7 +83,6 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 		retry.LastErrorOnly(true),
 		retry.Attempts(3),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("error creating VM: %w", err)
 	}
