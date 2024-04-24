@@ -243,24 +243,24 @@ func TestAccResourceVM2Clone(t *testing.T) {
 				}),
 			),
 		}}},
-		//{"tags are copied to the clone", []resource.TestStep{{
-		//	Config: te.renderConfig(`
-		//	resource "proxmox_virtual_environment_vm2" "test_vm" {
-		//		node_name = "{{.NodeName}}"
-		//		template = true
-		//		tags = ["tag1", "tag2"]
-		//	}
-		//	resource "proxmox_virtual_environment_vm2" "test_vm_clone" {
-		//		node_name = "{{.NodeName}}"
-		//		clone = {
-		//			id = proxmox_virtual_environment_vm2.test_vm.id
-		//		}
-		//	}`),
-		//	Check: resource.ComposeTestCheckFunc(
-		//		resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm_clone", "tags.*", "tag1"),
-		//		resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm_clone", "tags.*", "tag2"),
-		//	),
-		//}}},
+		{"tags are copied to the clone", []resource.TestStep{{
+			Config: te.renderConfig(`
+			resource "proxmox_virtual_environment_vm2" "test_vm" {
+				node_name = "{{.NodeName}}"
+				template = true
+				tags = ["tag1", "tag2"]
+			}
+			resource "proxmox_virtual_environment_vm2" "test_vm_clone" {
+				node_name = "{{.NodeName}}"
+				clone = {
+					id = proxmox_virtual_environment_vm2.test_vm.id
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm_clone", "tags.*", "tag1"),
+				resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm_clone", "tags.*", "tag2"),
+			),
+		}}},
 	}
 
 	for _, tt := range tests {

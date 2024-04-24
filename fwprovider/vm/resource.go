@@ -291,8 +291,13 @@ func (r *vmResource) update(ctx context.Context, new, old vmModel, diags *diag.D
 		}
 	}
 
-	if !new.Tags.Equal(old.Tags) {
-		if new.Tags.IsNull() || len(new.Tags.Elements()) == 0 { // only for computed
+	// For optional computed fields only:
+	// the first condition is for the clone case, where the tags (old) are copied from the source VM
+	// then if the clone config does not have tags, we keep the cloned ones
+	// otherwise if the clone config has empty tags we remove them
+	// and finally if the clone config has tags we update them
+	if !new.Tags.Equal(old.Tags) && !new.Tags.IsUnknown() {
+		if new.Tags.IsNull() || len(new.Tags.Elements()) == 0 {
 			del("Tags")
 		} else {
 			updateBody.Tags = new.Tags.ValueStringPointer(ctx, diags)
