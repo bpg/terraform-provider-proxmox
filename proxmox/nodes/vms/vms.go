@@ -72,7 +72,17 @@ func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) error {
 func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*string, error) {
 	resBody := &CreateResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
+	err := retry.Do(
+		func() error {
+			return c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
+		},
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "Reason: got no worker upid")
+		}),
+		retry.LastErrorOnly(true),
+		retry.Attempts(3),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating VM: %w", err)
 	}

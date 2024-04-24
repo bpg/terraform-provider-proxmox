@@ -41,8 +41,8 @@ func (v Value) Equal(o attr.Value) bool {
 }
 
 // ValueStringPointer returns a pointer to the string representation of tags set value.
-func (v Value) ValueStringPointer(ctx context.Context, diags diag.Diagnostics) *string {
-	if v.IsNull() {
+func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics) *string {
+	if v.IsNull() || v.IsUnknown() || len(v.Elements()) == 0 {
 		return nil
 	}
 
@@ -71,7 +71,7 @@ func (v Value) ValueStringPointer(ctx context.Context, diags diag.Diagnostics) *
 }
 
 // SetValue converts a string of tags to a tags set value.
-func SetValue(tagsStr *string, diags diag.Diagnostics) Value {
+func SetValue(tagsStr *string, diags *diag.Diagnostics) Value {
 	if tagsStr == nil {
 		return Value{types.SetNull(types.StringType)}
 	}

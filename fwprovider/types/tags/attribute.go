@@ -20,9 +20,10 @@ func ResourceAttribute() schema.SetAttribute {
 		},
 		Description: "The tags assigned to the resource.",
 		Optional:    true,
+		Computed:    true,
 		ElementType: types.StringType,
 		Validators: []validator.Set{
-			setvalidator.SizeAtLeast(1),
+			// NOTE: we allow empty list to remove all previously set tags
 			setvalidator.ValueStringsAre(
 				stringvalidator.RegexMatches(
 					regexp.MustCompile(`(.|\s)*\S(.|\s)*`),

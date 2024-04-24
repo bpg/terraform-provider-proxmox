@@ -8,7 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
@@ -27,6 +30,25 @@ func (r *vmResource) Schema(
 			"<br><br>It is a Proof of Concept, highly experimental and **will** change in future. " +
 			"It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.",
 		Attributes: map[string]schema.Attribute{
+			"clone": schema.SingleNestedAttribute{
+				Description: "The cloning configuration.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"id": schema.Int64Attribute{
+						Description: "The ID of the VM to clone.",
+						Required:    true,
+					},
+					"retries": schema.Int64Attribute{
+						Description: "The number of retries to perform when cloning the VM (default: 3).",
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(3),
+					},
+				},
+			},
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
 				Optional:    true,
@@ -56,6 +78,13 @@ func (r *vmResource) Schema(
 				Required:    true,
 			},
 			"tags": tags.ResourceAttribute(),
+			"template": schema.BoolAttribute{
+				Description: "Set to true to create a VM template.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
 			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
 				Create: true,
 				Read:   true,
