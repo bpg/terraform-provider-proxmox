@@ -23,6 +23,18 @@ resource "proxmox_virtual_environment_cluster_options" "options" {
   max_workers               = 5
   migration_cidr            = "10.0.0.0/8"
   migration_type            = "secure"
+  next_id = {
+    lower = 100
+    upper = 999999999
+  }
+  notify = {
+    ha_fencing_mode            = "never"
+    ha_fencing_target          = "default-matcher"
+    package_updates            = "always"
+    package_updates_target     = "default-matcher"
+    package_replication        = "always"
+    package_replication_target = "default-matcher"
+  }
 }
 ```
 
@@ -49,10 +61,33 @@ resource "proxmox_virtual_environment_cluster_options" "options" {
 - `max_workers` (Number) Defines how many workers (per node) are maximal started on actions like 'stopall VMs' or task from the ha-manager.
 - `migration_cidr` (String) Cluster wide migration network CIDR.
 - `migration_type` (String) Cluster wide migration type. Must be `secure` | `unsecure` (default is `secure`).
+- `next_id` (Attributes) The ranges for the next free VM ID auto-selection pool. (see [below for nested schema](#nestedatt--next_id))
+- `notify` (Attributes) Cluster-wide notification settings. (see [below for nested schema](#nestedatt--notify))
 
 ### Read-Only
 
 - `id` (String) The unique identifier of this resource.
+
+<a id="nestedatt--next_id"></a>
+### Nested Schema for `next_id`
+
+Optional:
+
+- `lower` (Number) The minimum number for the next free VM ID. Must be higher or equal to 100
+- `upper` (Number) The maximum number for the next free VM ID. Must be less or equal to 999999999
+
+
+<a id="nestedatt--notify"></a>
+### Nested Schema for `notify`
+
+Optional:
+
+- `ha_fencing_mode` (String) Cluster-wide notification settings for the HA fencing mode. Must be `always` | `never`.
+- `ha_fencing_target` (String) Cluster-wide notification settings for the HA fencing target.
+- `package_updates` (String) Cluster-wide notification settings for package updates. Must be `auto` | `always` | `never`.
+- `package_updates_target` (String) Cluster-wide notification settings for the package updates target.
+- `replication` (String) Cluster-wide notification settings for replication. Must be `always` | `never`.
+- `replication_target` (String) Cluster-wide notification settings for the replication target.
 
 ## Import
 
