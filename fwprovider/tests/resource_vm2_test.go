@@ -110,11 +110,35 @@ func TestAccResourceVM2(t *testing.T) {
 					node_name = "{{.NodeName}}"
 					
 					name = "test-tags"
-					tags = ["tag2", "tag1"]
+					//tags = ["tag2", "tag1"]
+					tags = "tag2;tag1" 
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
-					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag2"),
+					testResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+						"tags": "tag2;tag1",
+					}),
+				),
+				//Check: resource.ComposeTestCheckFunc(
+				//	resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+				//	resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag2"),
+				//),
+			},
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-tags"
+					//tags = ["tag1"]
+					tags = "tag1"
+				}`),
+				//Check: resource.ComposeTestCheckFunc(
+				//	resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "tags.#", "1"),
+				//	resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+				//),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+						"tags": "tag1",
+					}),
 				),
 			},
 			{
@@ -122,11 +146,17 @@ func TestAccResourceVM2(t *testing.T) {
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-tags"
-					tags = ["tag1"]
+					//tags = ["tag1"]
+					//tags = "tag1"
 				}`),
+				//Check: resource.ComposeTestCheckFunc(
+				//	resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "tags.#", "1"),
+				//	resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+				//),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "tags.#", "1"),
-					resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+					testResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+						"tags": "tag1",
+					}),
 				),
 			},
 			{
@@ -134,7 +164,18 @@ func TestAccResourceVM2(t *testing.T) {
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-tags"
+					//tags = ["tag1"]
+					tags = ""
 				}`),
+				//Check: resource.ComposeTestCheckFunc(
+				//	resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "tags.#", "1"),
+				//	resource.TestCheckTypeSetElemAttr("proxmox_virtual_environment_vm2.test_vm", "tags.*", "tag1"),
+				//),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+						"tags": "",
+					}),
+				),
 			},
 		}},
 		{"a VM can't have empty tags set", []resource.TestStep{{
@@ -142,28 +183,35 @@ func TestAccResourceVM2(t *testing.T) {
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
 				
-				tags = []
+				//tags = []
+				tags = ""
 			}`),
-			ExpectError: regexp.MustCompile(`tags set must contain at least 1 elements`),
+			//ExpectError: regexp.MustCompile(`string length must be at least 1,`),
+			//ExpectError: regexp.MustCompile(`tags set must contain at least 1 elements`),
+			Check: resource.ComposeTestCheckFunc(
+				testResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					"tags": "",
+				}),
+			),
 		}}},
-		{"a VM can't have empty tags", []resource.TestStep{{
-			Config: te.renderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"
-				
-				tags = ["", "tag1"]
-			}`),
-			ExpectError: regexp.MustCompile(`string length must be at least 1, got: 0`),
-		}}},
-		{"a VM can't have empty tags", []resource.TestStep{{
-			Config: te.renderConfig(`
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"
-				
-				tags = [" ", "tag1"]
-			}`),
-			ExpectError: regexp.MustCompile(`must be a non-empty and non-whitespace string`),
-		}}},
+		//{"a VM can't have empty tags", []resource.TestStep{{
+		//	Config: te.renderConfig(`
+		//	resource "proxmox_virtual_environment_vm2" "test_vm" {
+		//		node_name = "{{.NodeName}}"
+		//
+		//		tags = ["", "tag1"]
+		//	}`),
+		//	ExpectError: regexp.MustCompile(`string length must be at least 1, got: 0`),
+		//}}},
+		//{"a VM can't have empty tags", []resource.TestStep{{
+		//	Config: te.renderConfig(`
+		//	resource "proxmox_virtual_environment_vm2" "test_vm" {
+		//		node_name = "{{.NodeName}}"
+		//
+		//		tags = [" ", "tag1"]
+		//	}`),
+		//	ExpectError: regexp.MustCompile(`must be a non-empty and non-whitespace string`),
+		//}}},
 		{"multiline description", []resource.TestStep{{
 			Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {

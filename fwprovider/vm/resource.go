@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/tags"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
@@ -136,9 +135,14 @@ func (r *vmResource) create(ctx context.Context, plan vmModel, diags *diag.Diagn
 	createBody := &vms.CreateRequestBody{
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
-		Tags:        plan.Tags.ValueStringPointer(ctx, diags),
-		Template:    proxmoxtypes.CustomBoolPtr(plan.Template.ValueBoolPointer()),
-		VMID:        int(plan.ID.ValueInt64()),
+		//Tags:        plan.Tags.ValueStringPointer(ctx, diags),
+		//Tags:     plan.Tags.ValueStringPointer(),
+		Template: proxmoxtypes.CustomBoolPtr(plan.Template.ValueBoolPointer()),
+		VMID:     int(plan.ID.ValueInt64()),
+	}
+
+	if len(strings.TrimSpace(plan.Tags.ValueString())) > 0 {
+		createBody.Tags = plan.Tags.ValueStringPointer()
 	}
 
 	if diags.HasError() {
@@ -292,12 +296,20 @@ func (r *vmResource) update(ctx context.Context, new, old vmModel, diags *diag.D
 	}
 
 	if !new.Tags.Equal(old.Tags) {
-		if new.Tags.IsNull() || len(new.Tags.Elements()) == 0 { // only for computed
+		if new.Tags.IsNull() || len(new.Tags.ValueString()) == 0 { // only for computed
 			del("Tags")
 		} else {
-			updateBody.Tags = new.Tags.ValueStringPointer(ctx, diags)
+			updateBody.Tags = new.Tags.ValueStringPointer()
 		}
 	}
+
+	//if !new.Tags.Equal(old.Tags) {
+	//	if new.Tags.IsNull() || len(new.Tags.Elements()) == 0 { // only for computed
+	//		del("Tags")
+	//	} else {
+	//		updateBody.Tags = new.Tags.ValueStringPointer(ctx, diags)
+	//	}
+	//}
 
 	err := vmAPI.UpdateVM(ctx, updateBody)
 	if err != nil {
@@ -442,7 +454,15 @@ func (r *vmResource) read(ctx context.Context, model *vmModel, diags *diag.Diagn
 	// Optional fields can be removed from the model, use StringPointerValue to handle removal on nil
 	model.Description = types.StringPointerValue(config.Description)
 	model.Name = types.StringPointerValue(config.Name)
-	model.Tags = tags.SetValue(config.Tags, diags)
+
+	if model.Tags.IsNull() || model.Tags.IsUnknown() { // only for computed
+		model.Tags = types.StringPointerValue(config.Tags)
+		//} else {
+		//	if model.Tags.ValueString() == "" && config.Tags == nil {
+		//		model.Tags = types.StringNull()
+		//	}
+	}
+	//model.Tags = tags.SetValue(config.Tags, diags)
 	model.Template = types.BoolPointerValue(config.Template.PointerBool())
 
 	return true
