@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/tags"
 )
 
 // Schema defines the schema for the resource.
@@ -75,18 +77,7 @@ func (r *vmResource) Schema(
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
-			//"tags": tags.ResourceAttribute(),
-			"tags": schema.StringAttribute{
-				Description: "Tags string",
-				Optional:    true,
-				Computed:    true,
-				//Validators: []validator.String{
-				//	stringvalidator.LengthAtLeast(1),
-				//},
-				//PlanModifiers: []planmodifier.String{
-				//	forceNullModifier{},
-				//},
-			},
+			"tags": tags.ResourceAttribute(),
 			"template": schema.BoolAttribute{
 				Description: "Set to true to create a VM template.",
 				Optional:    true,

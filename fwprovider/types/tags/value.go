@@ -42,7 +42,7 @@ func (v Value) Equal(o attr.Value) bool {
 
 // ValueStringPointer returns a pointer to the string representation of tags set value.
 func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics) *string {
-	if v.IsNull() || v.IsUnknown() {
+	if v.IsNull() || v.IsUnknown() || len(v.Elements()) == 0 {
 		return nil
 	}
 
