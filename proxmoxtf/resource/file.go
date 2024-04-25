@@ -35,7 +35,6 @@ import (
 )
 
 const (
-	dvResourceVirtualEnvironmentFileContentType        = ""
 	dvResourceVirtualEnvironmentFileSourceFileChanged  = false
 	dvResourceVirtualEnvironmentFileSourceFileChecksum = ""
 	dvResourceVirtualEnvironmentFileSourceFileFileName = ""

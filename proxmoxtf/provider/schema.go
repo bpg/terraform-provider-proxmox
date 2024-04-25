@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	dvProviderOTP               = ""
 	mkProviderEndpoint          = "endpoint"
 	mkProviderInsecure          = "insecure"
 	mkProviderMinTLS            = "min_tls"

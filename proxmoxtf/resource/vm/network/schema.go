@@ -21,7 +21,6 @@ const (
 	dvNetworkDeviceModel     = "virtio"
 	dvNetworkDeviceQueues    = 0
 	dvNetworkDeviceRateLimit = 0
-	dvNetworkDeviceTrunks    = ""
 	dvNetworkDeviceVLANID    = 0
 
 	mkIPv4Addresses = "ipv4_addresses"

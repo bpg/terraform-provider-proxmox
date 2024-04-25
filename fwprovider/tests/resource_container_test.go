@@ -19,8 +19,7 @@ import (
 )
 
 const (
-	accTestContainerName      = "proxmox_virtual_environment_container.test_container"
-	accTestContainerCloneName = "proxmox_virtual_environment_container.test_container_clone"
+	accTestContainerName = "proxmox_virtual_environment_container.test_container"
 )
 
 //nolint:gochecknoglobals

@@ -15,7 +15,7 @@ This repository is a fork of <https://github.com/danitso/terraform-provider-prox
 
 ## Compatibility promise
 
-This provider is compatible with the latest version of Proxmox VE (currently 8.1).
+This provider is compatible with the latest version of Proxmox VE (currently 8.2).
 While it may work with older 7.x versions, it is not guaranteed to do so.
 
 While provider is on version 0.x, it is not guaranteed to be backwards compatible with all previous minor versions.
