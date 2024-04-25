@@ -2335,7 +2335,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2553,7 +2553,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	vmID := vmIDUntyped.(int)
 
 	if !hasVMID {
-		vmIDNew, e := api.Cluster().GetVMID(ctx)
+		vmIDNew, e := client.Cluster().GetVMID(ctx)
 		if e != nil {
 			return diag.FromErr(e)
 		}
@@ -2685,7 +2685,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-	if api.API().IsRootTicket() ||
+	if client.API().IsRootTicket() ||
 		cpuArchitecture != dvCPUArchitecture {
 		createBody.CPUArchitecture = &cpuArchitecture
 	}
@@ -2740,7 +2740,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		createBody.HookScript = &hookScript
 	}
 
-	err = api.Node(nodeName).VM(0).CreateVM(ctx, createBody)
+	err = client.Node(nodeName).VM(0).CreateVM(ctx, createBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2766,7 +2766,7 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2778,7 +2778,7 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(err)
 	}
 
-	vmAPI := api.Node(nodeName).VM(vmID)
+	vmAPI := client.Node(nodeName).VM(vmID)
 
 	// Start the virtual machine and wait for it to reach a running state before continuing.
 	if diags := vmStart(ctx, vmAPI, d); diags != nil {
@@ -3415,7 +3415,7 @@ func vmReadCustom(
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetClient()
+	client, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -3593,7 +3593,7 @@ func vmReadCustom(
 	} else {
 		// Default value of "arch" is "" according to the API documentation.
 		// However, assume the provider's default value as a workaround when the root account is not being used.
-		if !api.API().IsRootTicket() {
+		if !client.API().IsRootTicket() {
 			cpu[mkCPUArchitecture] = dvCPUArchitecture
 		} else {
 			cpu[mkCPUArchitecture] = ""
@@ -3728,7 +3728,7 @@ func vmReadCustom(
 
 	allDiskInfo := disk.GetInfo(vmConfig, d)
 
-	diags = append(diags, disk.Read(ctx, d, allDiskInfo, vmID, api, nodeName, len(clone) > 0)...)
+	diags = append(diags, disk.Read(ctx, d, allDiskInfo, vmID, client, nodeName, len(clone) > 0)...)
 
 	if vmConfig.EFIDisk != nil {
 		efiDisk := map[string]interface{}{}
@@ -3742,7 +3742,7 @@ func vmReadCustom(
 		} else {
 			// disk format may not be returned by config API if it is default for the storage, and that may be different
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-			volume, err := api.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
+			volume, err := client.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
 			if err != nil {
 				diags = append(diags, diag.FromErr(e)...)
 			} else {
@@ -4467,7 +4467,7 @@ func vmReadCustom(
 		}
 	}
 
-	vmAPI := api.Node(nodeName).VM(vmID)
+	vmAPI := client.Node(nodeName).VM(vmID)
 	started := d.Get(mkStarted).(bool)
 
 	agentTimeout, e := getAgentTimeout(d)
@@ -4713,7 +4713,7 @@ func vmUpdatePool(
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetClient()
+	client, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -4726,7 +4726,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(e)
 	}
 
-	e = vmUpdatePool(ctx, d, api.Pool(), vmID)
+	e = vmUpdatePool(ctx, d, client.Pool(), vmID)
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -4740,7 +4740,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		oldNodeNameValue, _ := d.GetChange(mkNodeName)
 		oldNodeName := oldNodeNameValue.(string)
-		vmAPI := api.Node(oldNodeName).VM(vmID)
+		vmAPI := client.Node(oldNodeName).VM(vmID)
 
 		trueValue := types.CustomBool(true)
 		migrateBody := &vms.MigrateRequestBody{
@@ -4755,7 +4755,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 	}
 
-	vmAPI := api.Node(nodeName).VM(vmID)
+	vmAPI := client.Node(nodeName).VM(vmID)
 
 	updateBody := &vms.UpdateRequestBody{
 		IDEDevices: vms.CustomStorageDevices{
@@ -4994,7 +4994,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if api.API().IsRootTicket() ||
+		if client.API().IsRootTicket() ||
 			cpuArchitecture != dvCPUArchitecture {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
@@ -5359,7 +5359,7 @@ func vmUpdateDiskLocationAndSize(
 ) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -5373,7 +5373,7 @@ func vmUpdateDiskLocationAndSize(
 		return diag.FromErr(err)
 	}
 
-	vmAPI := api.Node(nodeName).VM(vmID)
+	vmAPI := client.Node(nodeName).VM(vmID)
 
 	// Determine if any of the disks are changing location and/or size, and initiate the necessary actions.
 	//nolint: nestif

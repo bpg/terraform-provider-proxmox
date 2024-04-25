@@ -154,7 +154,7 @@ func User() *schema.Resource {
 
 func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -197,7 +197,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Password:       password,
 	}
 
-	err = api.Access().CreateUser(ctx, body)
+	err = client.Access().CreateUser(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -221,7 +221,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -349,7 +349,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -389,14 +389,14 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	}
 
 	userID := d.Id()
-	err = api.Access().UpdateUser(ctx, userID, body)
+	err = client.Access().UpdateUser(ctx, userID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentUserPassword) {
 		password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
-		err = api.Access().ChangeUserPassword(ctx, userID, password)
+		err = client.Access().ChangeUserPassword(ctx, userID, password)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -420,7 +420,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -443,7 +443,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}

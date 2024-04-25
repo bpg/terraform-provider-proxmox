@@ -94,7 +94,7 @@ func Group() *schema.Resource {
 
 func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -107,7 +107,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		ID:      groupID,
 	}
 
-	err = api.Access().CreateGroup(ctx, body)
+	err = client.Access().CreateGroup(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -131,7 +131,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -203,7 +203,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -215,7 +215,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		Comment: &comment,
 	}
 
-	err = api.Access().UpdateGroup(ctx, groupID, body)
+	err = client.Access().UpdateGroup(ctx, groupID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -238,7 +238,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -261,7 +261,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}

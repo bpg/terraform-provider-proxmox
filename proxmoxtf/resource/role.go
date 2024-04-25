@@ -53,7 +53,7 @@ func Role() *schema.Resource {
 
 func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -71,7 +71,7 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Privileges: customPrivileges,
 	}
 
-	err = api.Access().CreateRole(ctx, body)
+	err = client.Access().CreateRole(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -113,7 +113,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -130,7 +130,7 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Privileges: customPrivileges,
 	}
 
-	err = api.Access().UpdateRole(ctx, roleID, body)
+	err = client.Access().UpdateRole(ctx, roleID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}

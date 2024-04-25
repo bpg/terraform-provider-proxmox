@@ -7,13 +7,7 @@
 package firewall
 
 import (
-	"context"
-
-	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 )
 
 const (
@@ -30,24 +24,4 @@ func SecurityGroupsSchema() map[string]*schema.Schema {
 			Elem:        &schema.Schema{Type: schema.TypeString},
 		},
 	}
-}
-
-// SecurityGroupsRead reads the security groups.
-func SecurityGroupsRead(ctx context.Context, api firewall.SecurityGroup, d *schema.ResourceData) diag.Diagnostics {
-	groups, err := api.ListGroups(ctx)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	groupNames := make([]interface{}, len(groups))
-
-	for i, v := range groups {
-		groupNames[i] = v.Group
-	}
-
-	d.SetId(uuid.New().String())
-
-	err = d.Set(mkSecurityGroupsSecurityGroupNames, groupNames)
-
-	return diag.FromErr(err)
 }

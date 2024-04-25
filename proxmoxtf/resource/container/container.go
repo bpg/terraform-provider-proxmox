@@ -934,7 +934,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -961,7 +961,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	vmID := d.Get(mkVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, e := api.Cluster().GetVMID(ctx)
+		vmIDNew, e := client.Cluster().GetVMID(ctx)
 		if e != nil {
 			return diag.FromErr(e)
 		}
@@ -995,9 +995,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = api.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
+		err = client.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	} else {
-		err = api.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
+		err = client.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	}
 
 	if err != nil {
@@ -1006,7 +1006,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	d.SetId(strconv.Itoa(vmID))
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Wait for the container to be created and its configuration lock to be released.
 	err = containerAPI.WaitForContainerConfigUnlock(ctx, true)
@@ -1312,16 +1312,16 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkNodeName).(string)
-	resource := Container()
+	container := Container()
 
 	consoleBlock, err := structure.GetSchemaBlock(
-		resource,
+		container,
 		d,
 		[]string{mkConsole},
 		0,
@@ -1338,7 +1338,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	consoleTTYCount := consoleBlock[mkConsoleTTYCount].(int)
 
 	cpuBlock, err := structure.GetSchemaBlock(
-		resource,
+		container,
 		d,
 		[]string{mkCPU},
 		0,
@@ -1355,7 +1355,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	description := d.Get(mkDescription).(string)
 
 	diskBlock, err := structure.GetSchemaBlock(
-		resource,
+		container,
 		d,
 		[]string{mkDisk},
 		0,
@@ -1378,7 +1378,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	features, err := containerGetFeatures(resource, d)
+	features, err := containerGetFeatures(container, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1489,7 +1489,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	memoryBlock, err := structure.GetSchemaBlock(
-		resource,
+		container,
 		d,
 		[]string{mkMemory},
 		0,
@@ -1664,7 +1664,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	vmID := d.Get(mkVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, e := api.Cluster().GetVMID(ctx)
+		vmIDNew, e := client.Cluster().GetVMID(ctx)
 		if e != nil {
 			return diag.FromErr(e)
 		}
@@ -1672,7 +1672,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		vmID = *vmIDNew
 	}
 
-	// Attempt to create the resource using the retrieved values.
+	// Attempt to create the container using the retrieved values.
 	createBody := containers.CreateRequestBody{
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
@@ -1734,7 +1734,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Tags = &tagsString
 	}
 
-	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
+	err = client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1742,7 +1742,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(strconv.Itoa(vmID))
 
 	// Wait for the container's lock to be released.
-	err = api.Node(nodeName).Container(vmID).WaitForContainerConfigUnlock(ctx, true)
+	err = client.Node(nodeName).Container(vmID).WaitForContainerConfigUnlock(ctx, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1760,7 +1760,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1772,7 +1772,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Start the container and wait for it to reach a running state before continuing.
 	err = containerAPI.StartContainer(ctx)
@@ -2580,7 +2580,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetClient()
+	client, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -2592,7 +2592,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		return diag.FromErr(e)
 	}
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Prepare the new request object.
 	updateBody := containers.UpdateRequestBody{
@@ -2600,7 +2600,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	rebootRequired := false
-	resource := Container()
+	container := Container()
 
 	// Retrieve the clone argument as the update logic varies for clones.
 	clone := d.Get(mkClone).([]interface{})
@@ -2618,7 +2618,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	// Prepare the new console configuration.
 	if d.HasChange(mkConsole) {
 		consoleBlock, err := structure.GetSchemaBlock(
-			resource,
+			container,
 			d,
 			[]string{mkConsole},
 			0,
@@ -2644,7 +2644,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkCPU) {
 		cpuBlock, err := structure.GetSchemaBlock(
-			resource,
+			container,
 			d,
 			[]string{mkCPU},
 			0,
@@ -2666,7 +2666,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	if d.HasChange(mkFeatures) {
-		features, err := containerGetFeatures(resource, d)
+		features, err := containerGetFeatures(container, d)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2775,7 +2775,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	// Prepare the new memory configuration.
 	if d.HasChange(mkMemory) {
 		memoryBlock, err := structure.GetSchemaBlock(
-			resource,
+			container,
 			d,
 			[]string{mkMemory},
 			0,
@@ -2946,7 +2946,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkOperatingSystem) {
 		operatingSystem, err := structure.GetSchemaBlock(
-			resource,
+			container,
 			d,
 			[]string{mkOperatingSystem},
 			0,
