@@ -28,7 +28,7 @@ import (
 
 // Temporary: while migrating to the TF framework, we need to copy the generated docs to the right place
 // for the resources / data sources that have been migrated.
-//go:generate cp -R ../build/docs-gen/guides/ ../docs/guides/
+//go:generate cp -R ../build/docs-gen/guides/ ../docs
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_version.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_hagroup.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_hagroups.md ../docs/data-sources/
