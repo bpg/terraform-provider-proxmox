@@ -143,6 +143,7 @@
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/tyxieblub"><img src="https://avatars.githubusercontent.com/u/5111464?v=4?s=100" width="100px;" alt="joris"/><br /><sub><b>joris</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=tyxieblub" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.nordtheme.com"><img src="https://avatars.githubusercontent.com/u/13448100?v=4?s=100" width="100px;" alt="Sven Greb"/><br /><sub><b>Sven Greb</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=svengreb" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/niektoniekde"><img src="https://avatars.githubusercontent.com/u/271951?v=4?s=100" width="100px;" alt="Jaroslav Petras"/><br /><sub><b>Jaroslav Petras</b></sub></a><br /><a href="#financial-niektoniekde" title="Financial">💵</a></td>
     </tr>
   </tbody>
   <tfoot>
