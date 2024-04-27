@@ -995,6 +995,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "svengreb",
+      "name": "Sven Greb",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13448100?v=4",
+      "profile": "https://www.nordtheme.com",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
