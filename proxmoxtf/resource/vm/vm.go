@@ -2679,13 +2679,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	if ideDeviceObjects != nil {
-		for deviceName, device := range ideDeviceObjects {
-			if _, exists := createBody.IDEDevices[deviceName]; exists {
-				return diag.Errorf("duplicate IDE device name '%s'", deviceName)
-			}
-
-			createBody.IDEDevices[deviceName] = device
-		}
+		createBody.IDEDevices = ideDeviceObjects
 	}
 
 	if sataDeviceObjects != nil {

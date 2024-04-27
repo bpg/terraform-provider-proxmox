@@ -609,6 +609,54 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"ide disks", []resource.TestStep{
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disks" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disks-ide"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "ide0"
+						size         = 8
+					}
+				}`),
+				Check: testResourceAttributes("proxmox_virtual_environment_vm.test_disks", map[string]string{
+					"disk.0.interface":         "ide0",
+					"disk.0.path_in_datastore": `vm-\d+-disk-0`,
+				}),
+			},
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disks" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disks-ide"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "ide0"
+						size         = 8
+					}
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "ide1"
+						size         = 8
+					}
+				}`),
+				Check: testResourceAttributes("proxmox_virtual_environment_vm.test_disks", map[string]string{
+					"disk.#": "2",
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"clone disk with overrides", []resource.TestStep{
 			{
 				SkipFunc: func() (bool, error) {

@@ -139,8 +139,7 @@ func (d CustomStorageDevice) EncodeOptions() string {
 		values = append(values, fmt.Sprintf("iops_wr_max=%d", *d.MaxIopsWrite))
 	}
 
-	if d.IOThread != nil && d.StorageInterface() != "ide" {
-		// IDE doesn't have the iothread option
+	if d.IOThread != nil {
 		if *d.IOThread {
 			values = append(values, "iothread=1")
 		} else {

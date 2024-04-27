@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -24,7 +23,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-var supportedDiskInterfaces = []string{"virtio", "sata", "scsi", "ide"}
+const supportedDiskInterfaces = "virtio, sata, scsi, ide"
 
 // GetInfo returns the disk information for a VM.
 func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
@@ -303,7 +302,7 @@ func GetDiskDeviceObjects(
 			diskDevice.SSD = &ssd
 		}
 
-		if !strings.HasPrefix(diskInterface, "sata") {
+		if !strings.HasPrefix(diskInterface, "sata") && !strings.HasPrefix(diskInterface, "ide") {
 			diskDevice.IOThread = &ioThread
 		}
 
@@ -351,12 +350,10 @@ func GetDiskDeviceObjects(
 		}
 
 		baseDiskInterface := DigitPrefix(diskInterface)
-
-		if !slices.Contains(supportedDiskInterfaces, baseDiskInterface) {
+		if !strings.Contains(supportedDiskInterfaces, baseDiskInterface) {
 			errorMsg := fmt.Sprintf(
 				"Defined disk interface not supported. Interface was %s, but only %s are supported",
-				diskInterface,
-				strings.Join(supportedDiskInterfaces, ", "),
+				diskInterface, supportedDiskInterfaces,
 			)
 
 			return diskDeviceObjects, errors.New(errorMsg)
@@ -594,7 +591,7 @@ func Read(
 	var diags diag.Diagnostics
 
 	for di, dd := range diskObjects {
-		if dd == nil || dd.FileVolume == "none" || strings.HasPrefix(di, "ide") {
+		if dd == nil || dd.FileVolume == "none" {
 			continue
 		}
 
