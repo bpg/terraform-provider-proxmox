@@ -995,6 +995,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "svengreb",
+      "name": "Sven Greb",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13448100?v=4",
+      "profile": "https://www.nordtheme.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "niektoniekde",
+      "name": "Jaroslav Petras",
+      "avatar_url": "https://avatars.githubusercontent.com/u/271951?v=4",
+      "profile": "https://github.com/niektoniekde",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
