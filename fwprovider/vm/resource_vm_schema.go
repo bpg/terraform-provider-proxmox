@@ -15,11 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/tags"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 )
 
 // Schema defines the schema for the resource.
-func (r *vmResource) Schema(
+func (r *Resource) Schema(
 	ctx context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
@@ -49,6 +50,7 @@ func (r *vmResource) Schema(
 					},
 				},
 			},
+			"cpu": cpu.Schema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
 				Optional:    true,
@@ -77,7 +79,7 @@ func (r *vmResource) Schema(
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
-			"tags": tags.ResourceAttribute(),
+			"tags": stringset.ResourceAttribute("The tags assigned to the resource.", ""),
 			"template": schema.BoolAttribute{
 				Description: "Set to true to create a VM template.",
 				Optional:    true,

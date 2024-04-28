@@ -1,4 +1,4 @@
-package tags
+package stringset
 
 import (
 	"context"
@@ -15,7 +15,7 @@ var (
 	_ basetypes.SetTypable = Type{}
 )
 
-// Type defines the type for tags.
+// Type defines the type for string set.
 type Type struct {
 	basetypes.SetType
 }
@@ -33,7 +33,7 @@ func (t Type) Equal(o attr.Type) bool {
 
 // String returns a string representation of the type.
 func (t Type) String() string {
-	return "TagsType"
+	return "StringSetType"
 }
 
 // ValueFromSet converts the set value to a SetValuable type.
@@ -45,11 +45,11 @@ func (t Type) ValueFromSet(_ context.Context, in basetypes.SetValue) (basetypes.
 	return value, nil
 }
 
-// ValueFromTerraform converts the Terraform value to a SetValue type.
+// ValueFromTerraform converts the Terraform value to a NewValue type.
 func (t Type) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.SetType.ValueFromTerraform(ctx, in)
 	if err != nil {
-		return nil, fmt.Errorf("error converting Terraform value to SetValue")
+		return nil, fmt.Errorf("error converting Terraform value to NewValue")
 	}
 
 	setValue, ok := attrValue.(basetypes.SetValue)
@@ -59,7 +59,7 @@ func (t Type) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Va
 
 	setValuable, diags := t.ValueFromSet(ctx, setValue)
 	if diags.HasError() {
-		return nil, fmt.Errorf("error converting SetValue to SetValuable: %v", diags)
+		return nil, fmt.Errorf("error converting NewValue to SetValuable: %v", diags)
 	}
 
 	return setValuable, nil

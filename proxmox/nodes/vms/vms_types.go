@@ -234,11 +234,11 @@ type CreateRequestBody struct {
 	CDROM                *string                        `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
 	CloudInitConfig      *CustomCloudInitConfig         `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
 	CPUArchitecture      *string                        `json:"arch,omitempty"               url:"arch,omitempty"`
-	CPUCores             *int                           `json:"cores,omitempty"              url:"cores,omitempty"`
+	CPUCores             *int64                         `json:"cores,omitempty"              url:"cores,omitempty"`
 	CPUEmulation         *CustomCPUEmulation            `json:"cpu,omitempty"                url:"cpu,omitempty"`
-	CPULimit             *int                           `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
-	CPUSockets           *int                           `json:"sockets,omitempty"            url:"sockets,omitempty"`
-	CPUUnits             *int                           `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
+	CPULimit             *int64                         `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
+	CPUSockets           *int64                         `json:"sockets,omitempty"            url:"sockets,omitempty"`
+	CPUUnits             *int64                         `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
 	CPUAffinity          *string                        `json:"affinity,omitempty"           url:"affinity,omitempty"`
 	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
 	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
@@ -288,7 +288,7 @@ type CreateRequestBody struct {
 	TPMState             *CustomTPMState                `json:"tpmstate0,omitempty"          url:"tpmstate0,omitempty"`
 	USBDevices           CustomUSBDevices               `json:"usb,omitempty"                url:"usb,omitempty"`
 	VGADevice            *CustomVGADevice               `json:"vga,omitempty"                url:"vga,omitempty"`
-	VirtualCPUCount      *int                           `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
+	VirtualCPUCount      *int64                         `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
 	VirtualIODevices     CustomStorageDevices           `json:"virtio,omitempty"             url:"virtio,omitempty"`
 	VMGenerationID       *string                        `json:"vmgenid,omitempty"            url:"vmgenid,omitempty"`
 	VMID                 int                            `json:"vmid,omitempty"               url:"vmid,omitempty"`
@@ -370,11 +370,11 @@ type GetResponseData struct {
 	CloudInitUsername    *string                         `json:"ciuser,omitempty"`
 	CloudInitUpgrade     *types.CustomBool               `json:"ciupgrade,omitempty"`
 	CPUArchitecture      *string                         `json:"arch,omitempty"`
-	CPUCores             *int                            `json:"cores,omitempty"`
+	CPUCores             *int64                          `json:"cores,omitempty"`
 	CPUEmulation         *CustomCPUEmulation             `json:"cpu,omitempty"`
-	CPULimit             *types.CustomInt                `json:"cpulimit,omitempty"`
-	CPUSockets           *int                            `json:"sockets,omitempty"`
-	CPUUnits             *int                            `json:"cpuunits,omitempty"`
+	CPULimit             *types.CustomInt64              `json:"cpulimit,omitempty"`
+	CPUSockets           *int64                          `json:"sockets,omitempty"`
+	CPUUnits             *int64                          `json:"cpuunits,omitempty"`
 	CPUAffinity          *string                         `json:"affinity,omitempty"`
 	DedicatedMemory      *types.CustomInt64              `json:"memory,omitempty"`
 	DeletionProtection   *types.CustomBool               `json:"protection,omitempty"`
@@ -523,7 +523,7 @@ type GetResponseData struct {
 	USBDevice2           *CustomUSBDevice                `json:"usb2,omitempty"`
 	USBDevice3           *CustomUSBDevice                `json:"usb3,omitempty"`
 	VGADevice            *CustomVGADevice                `json:"vga,omitempty"`
-	VirtualCPUCount      *int                            `json:"vcpus,omitempty"`
+	VirtualCPUCount      *int64                          `json:"vcpus,omitempty"`
 	VirtualIODevice0     *CustomStorageDevice            `json:"virtio0,omitempty"`
 	VirtualIODevice1     *CustomStorageDevice            `json:"virtio1,omitempty"`
 	VirtualIODevice2     *CustomStorageDevice            `json:"virtio2,omitempty"`
@@ -553,7 +553,7 @@ type GetStatusResponseBody struct {
 // GetStatusResponseData contains the data from a VM get status response.
 type GetStatusResponseData struct {
 	AgentEnabled     *types.CustomBool `json:"agent,omitempty"`
-	CPUCount         *float64          `json:"cpus,omitempty"`
+	CPUCount         *int64            `json:"cpus,omitempty"`
 	Lock             *string           `json:"lock,omitempty"`
 	MemoryAllocation *int64            `json:"maxmem,omitempty"`
 	Name             *string           `json:"name,omitempty"`
@@ -669,7 +669,7 @@ type UpdateAsyncResponseBody struct {
 // UpdateRequestBody contains the data for an virtual machine update request.
 type UpdateRequestBody CreateRequestBody
 
-// ToDelete adds a field to the delete list.
+// ToDelete adds a field to the delete list. The field name should be the **actual** field name in the struct.
 func (u *UpdateRequestBody) ToDelete(fieldName string) error {
 	if u == nil {
 		return errors.New("update request body is nil")
@@ -686,7 +686,16 @@ func (u *UpdateRequestBody) ToDelete(fieldName string) error {
 	return nil
 }
 
-// EncodeValues converts a CustomAgent struct to a URL vlaue.
+// IsEmpty checks if the update request body is empty.
+func (u *UpdateRequestBody) IsEmpty() bool {
+	if u == nil {
+		return true
+	}
+
+	return reflect.DeepEqual(*u, UpdateRequestBody{})
+}
+
+// EncodeValues converts a CustomAgent struct to a URL value.
 func (r CustomAgent) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
@@ -717,7 +726,7 @@ func (r CustomAgent) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomAudioDevice struct to a URL vlaue.
+// EncodeValues converts a CustomAudioDevice struct to a URL value.
 func (r CustomAudioDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{fmt.Sprintf("device=%s", r.Device)}
 
@@ -833,7 +842,7 @@ func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomCPUEmulation struct to a URL vlaue.
+// EncodeValues converts a CustomCPUEmulation struct to a URL value.
 func (r CustomCPUEmulation) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("cputype=%s", r.Type),
@@ -860,7 +869,7 @@ func (r CustomCPUEmulation) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomEFIDisk struct to a URL vlaue.
+// EncodeValues converts a CustomEFIDisk struct to a URL value.
 func (r CustomEFIDisk) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("file=%s", r.FileVolume),
@@ -887,7 +896,7 @@ func (r CustomEFIDisk) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomNetworkDevice struct to a URL vlaue.
+// EncodeValues converts a CustomNetworkDevice struct to a URL value.
 func (r CustomNetworkDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("model=%s", r.Model),
@@ -961,7 +970,7 @@ func (r CustomNetworkDevices) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomNUMADevice struct to a URL vlaue.
+// EncodeValues converts a CustomNUMADevice struct to a URL value.
 func (r CustomNUMADevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("cpus=%s", strings.Join(r.CPUIDs, ";")),
@@ -995,7 +1004,7 @@ func (r CustomNUMADevices) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomPCIDevice struct to a URL vlaue.
+// EncodeValues converts a CustomPCIDevice struct to a URL value.
 func (r CustomPCIDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{}
 
@@ -1068,7 +1077,7 @@ func (r CustomSerialDevices) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomSharedMemory struct to a URL vlaue.
+// EncodeValues converts a CustomSharedMemory struct to a URL value.
 func (r CustomSharedMemory) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("size=%d", r.Size),
@@ -1083,7 +1092,7 @@ func (r CustomSharedMemory) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomSMBIOS struct to a URL vlaue.
+// EncodeValues converts a CustomSMBIOS struct to a URL value.
 func (r CustomSMBIOS) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
@@ -1130,7 +1139,7 @@ func (r CustomSMBIOS) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomSpiceEnhancements struct to a URL vlaue.
+// EncodeValues converts a CustomSpiceEnhancements struct to a URL value.
 func (r CustomSpiceEnhancements) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
@@ -1153,7 +1162,7 @@ func (r CustomSpiceEnhancements) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomStartupOrder struct to a URL vlaue.
+// EncodeValues converts a CustomStartupOrder struct to a URL value.
 func (r CustomStartupOrder) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
@@ -1176,7 +1185,7 @@ func (r CustomStartupOrder) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomTPMState struct to a URL vlaue.
+// EncodeValues converts a CustomTPMState struct to a URL value.
 func (r CustomTPMState) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("file=%s", r.FileVolume),
@@ -1191,7 +1200,7 @@ func (r CustomTPMState) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomUSBDevice struct to a URL vlaue.
+// EncodeValues converts a CustomUSBDevice struct to a URL value.
 func (r CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 	if r.HostDevice == nil && r.Mapping == nil {
 		return fmt.Errorf("either device ID or resource mapping must be set")
@@ -1229,7 +1238,7 @@ func (r CustomUSBDevices) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomVGADevice struct to a URL vlaue.
+// EncodeValues converts a CustomVGADevice struct to a URL value.
 func (r CustomVGADevice) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
@@ -1246,7 +1255,7 @@ func (r CustomVGADevice) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomVirtualIODevice struct to a URL vlaue.
+// EncodeValues converts a CustomVirtualIODevice struct to a URL value.
 func (r CustomVirtualIODevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("file=%s", r.FileVolume),
@@ -1282,7 +1291,7 @@ func (r CustomVirtualIODevices) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomWatchdogDevice struct to a URL vlaue.
+// EncodeValues converts a CustomWatchdogDevice struct to a URL value.
 func (r CustomWatchdogDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("model=%+v", r.Model),

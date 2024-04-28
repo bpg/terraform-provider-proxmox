@@ -147,6 +147,11 @@ func (r *CustomInt64) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// PointerInt64 returns a pointer to an int64.
+func (r *CustomInt64) PointerInt64() *int64 {
+	return (*int64)(r)
+}
+
 // MarshalJSON converts a boolean to a JSON value.
 func (r *CustomLineBreakSeparatedList) MarshalJSON() ([]byte, error) {
 	s := strings.Join(*r, "\n")
