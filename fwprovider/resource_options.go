@@ -29,9 +29,19 @@ import (
 
 const (
 	// ClusterOptionsNextIDLowerMaximum is the maximum number for the "lower" range for the next VM ID option.
+	// Note that this value is not documented in the section about the cluster options in the Proxmox VE API explorer but
+	// [in the sections about QEMU (POST)] as well as [the dedicated Proxmox VE documentations about QEMU/KVM].
+	//
+	// [in the sections about QEMU (POST)]: https://pve.proxmox.com/pve-docs/api-viewer/#/nodes/{node}/qemu
+	// [the dedicated Proxmox VE documentations about QEMU/KVM]: https://pve.proxmox.com/pve-docs/pve-admin-guide.html#_strong_qm_strong_qemu_kvm_virtual_machine_manager
 	ClusterOptionsNextIDLowerMaximum = 999999999
 
 	// ClusterOptionsNextIDLowerMinimum is the minimum number for the "lower" range for the next VM ID option.
+	// Note that this value is not documented in the section about the cluster options in the Proxmox VE API explorer but
+	// [in the sections about QEMU (POST)] as well as [the dedicated Proxmox VE documentations about QEMU/KVM].
+	//
+	// [in the sections about QEMU (POST)]: https://pve.proxmox.com/pve-docs/api-viewer/#/nodes/{node}/qemu
+	// [the dedicated Proxmox VE documentations about QEMU/KVM]: https://pve.proxmox.com/pve-docs/pve-admin-guide.html#_strong_qm_strong_qemu_kvm_virtual_machine_manager
 	ClusterOptionsNextIDLowerMinimum = 100
 )
 
@@ -547,8 +557,6 @@ func (r *clusterOptionsResource) Schema(
 						MarkdownDescription: "The minimum number for the next free VM ID. " +
 							fmt.Sprintf("Must be higher or equal to %d", ClusterOptionsNextIDLowerMinimum),
 						Optional: true,
-						// Unfortunately the range requirements are not documented in the Proxmox VE API explorer itself, but the web UI
-						// has validations in the form fields.
 						Validators: []validator.Int64{
 							int64validator.AtLeast(ClusterOptionsNextIDLowerMinimum),
 						},
@@ -558,8 +566,6 @@ func (r *clusterOptionsResource) Schema(
 						MarkdownDescription: "The maximum number for the next free VM ID. " +
 							fmt.Sprintf("Must be less or equal to %d", ClusterOptionsNextIDLowerMaximum),
 						Optional: true,
-						// Unfortunately the range requirements are not documented in the Proxmox VE API explorer itself, but the web UI
-						// has validations in the form fields.
 						Validators: []validator.Int64{
 							int64validator.AtMost(ClusterOptionsNextIDLowerMaximum),
 						},
