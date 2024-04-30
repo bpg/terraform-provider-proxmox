@@ -9,9 +9,11 @@ package fwprovider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -21,9 +23,26 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+)
+
+const (
+	// ClusterOptionsNextIDLowerMaximum is the maximum number for the "lower" range for the next VM ID option.
+	// Note that this value is not documented in the section about the cluster options in the Proxmox VE API explorer but
+	// [in the sections about QEMU (POST)] as well as [the dedicated Proxmox VE documentations about QEMU/KVM].
+	//
+	// [in the sections about QEMU (POST)]: https://pve.proxmox.com/pve-docs/api-viewer/#/nodes/{node}/qemu
+	// [the dedicated Proxmox VE documentations about QEMU/KVM]: https://pve.proxmox.com/pve-docs/pve-admin-guide.html#_strong_qm_strong_qemu_kvm_virtual_machine_manager
+	ClusterOptionsNextIDLowerMaximum = 999999999
+
+	// ClusterOptionsNextIDLowerMinimum is the minimum number for the "lower" range for the next VM ID option.
+	// Note that this value is not documented in the section about the cluster options in the Proxmox VE API explorer but
+	// [in the sections about QEMU (POST)] as well as [the dedicated Proxmox VE documentations about QEMU/KVM].
+	//
+	// [in the sections about QEMU (POST)]: https://pve.proxmox.com/pve-docs/api-viewer/#/nodes/{node}/qemu
+	// [the dedicated Proxmox VE documentations about QEMU/KVM]: https://pve.proxmox.com/pve-docs/pve-admin-guide.html#_strong_qm_strong_qemu_kvm_virtual_machine_manager
+	ClusterOptionsNextIDLowerMinimum = 100
 )
 
 var (
@@ -33,25 +52,41 @@ var (
 )
 
 type clusterOptionsModel struct {
-	ID                      types.String `tfsdk:"id"`
-	BandwidthLimitClone     types.Int64  `tfsdk:"bandwidth_limit_clone"`
-	BandwidthLimitDefault   types.Int64  `tfsdk:"bandwidth_limit_default"`
-	BandwidthLimitMigration types.Int64  `tfsdk:"bandwidth_limit_migration"`
-	BandwidthLimitMove      types.Int64  `tfsdk:"bandwidth_limit_move"`
-	BandwidthLimitRestore   types.Int64  `tfsdk:"bandwidth_limit_restore"`
-	Console                 types.String `tfsdk:"console"`
-	CrsHA                   types.String `tfsdk:"crs_ha"`
-	CrsHARebalanceOnStart   types.Bool   `tfsdk:"crs_ha_rebalance_on_start"`
-	Description             types.String `tfsdk:"description"`
-	EmailFrom               types.String `tfsdk:"email_from"`
-	HAShutdownPolicy        types.String `tfsdk:"ha_shutdown_policy"`
-	HTTPProxy               types.String `tfsdk:"http_proxy"`
-	Keyboard                types.String `tfsdk:"keyboard"`
-	Language                types.String `tfsdk:"language"`
-	MacPrefix               types.String `tfsdk:"mac_prefix"`
-	MaxWorkers              types.Int64  `tfsdk:"max_workers"`
-	MigrationNetwork        types.String `tfsdk:"migration_cidr"`
-	MigrationType           types.String `tfsdk:"migration_type"`
+	ID                      types.String               `tfsdk:"id"`
+	BandwidthLimitClone     types.Int64                `tfsdk:"bandwidth_limit_clone"`
+	BandwidthLimitDefault   types.Int64                `tfsdk:"bandwidth_limit_default"`
+	BandwidthLimitMigration types.Int64                `tfsdk:"bandwidth_limit_migration"`
+	BandwidthLimitMove      types.Int64                `tfsdk:"bandwidth_limit_move"`
+	BandwidthLimitRestore   types.Int64                `tfsdk:"bandwidth_limit_restore"`
+	Console                 types.String               `tfsdk:"console"`
+	CrsHA                   types.String               `tfsdk:"crs_ha"`
+	CrsHARebalanceOnStart   types.Bool                 `tfsdk:"crs_ha_rebalance_on_start"`
+	Description             types.String               `tfsdk:"description"`
+	EmailFrom               types.String               `tfsdk:"email_from"`
+	HAShutdownPolicy        types.String               `tfsdk:"ha_shutdown_policy"`
+	HTTPProxy               types.String               `tfsdk:"http_proxy"`
+	Keyboard                types.String               `tfsdk:"keyboard"`
+	Language                types.String               `tfsdk:"language"`
+	MacPrefix               types.String               `tfsdk:"mac_prefix"`
+	MaxWorkers              types.Int64                `tfsdk:"max_workers"`
+	MigrationNetwork        types.String               `tfsdk:"migration_cidr"`
+	MigrationType           types.String               `tfsdk:"migration_type"`
+	NextID                  *clusterOptionsNextIDModel `tfsdk:"next_id"`
+	Notify                  *clusterOptionsNotifyModel `tfsdk:"notify"`
+}
+
+type clusterOptionsNextIDModel struct {
+	Lower types.Int64 `tfsdk:"lower"`
+	Upper types.Int64 `tfsdk:"upper"`
+}
+
+type clusterOptionsNotifyModel struct {
+	HAFencingMode        types.String `tfsdk:"ha_fencing_mode"`
+	HAFencingTarget      types.String `tfsdk:"ha_fencing_target"`
+	PackageUpdates       types.String `tfsdk:"package_updates"`
+	PackageUpdatesTarget types.String `tfsdk:"package_updates_target"`
+	Replication          types.String `tfsdk:"replication"`
+	ReplicationTarget    types.String `tfsdk:"replication_target"`
 }
 
 // haData returns HA settings parameter string for API, HA settings are
@@ -85,6 +120,82 @@ func (m *clusterOptionsModel) migrationData() string {
 
 	if len(migrationDataParams) > 0 {
 		return strings.Join(migrationDataParams, ",")
+	}
+
+	return ""
+}
+
+// nextIDData returns settings for the "next-id" parameter string of the Proxmox VE API, if defined, otherwise an empty
+// string is returned.
+func (m *clusterOptionsModel) nextIDData() string {
+	var nextIDDataParams []string
+
+	if m.NextID == nil {
+		return ""
+	}
+
+	if !m.NextID.Lower.IsNull() {
+		nextIDDataParams = append(nextIDDataParams, fmt.Sprintf("lower=%d", m.NextID.Lower.ValueInt64()))
+	}
+
+	if !m.NextID.Upper.IsNull() {
+		nextIDDataParams = append(nextIDDataParams, fmt.Sprintf("upper=%d", m.NextID.Upper.ValueInt64()))
+	}
+
+	if len(nextIDDataParams) > 0 {
+		return strings.Join(nextIDDataParams, ",")
+	}
+
+	return ""
+}
+
+// notifyData returns settings for the "notify" parameter string of the Proxmox VE API, if defined, otherwise an empty
+// string is returned.
+func (m *clusterOptionsModel) notifyData() string {
+	var notifyDataParams []string
+
+	if m.Notify == nil {
+		return ""
+	}
+
+	if !m.Notify.HAFencingMode.IsNull() {
+		notifyDataParams = append(notifyDataParams, fmt.Sprintf("fencing=%s", m.Notify.HAFencingMode.ValueString()))
+	}
+
+	if !m.Notify.HAFencingTarget.IsNull() {
+		notifyDataParams = append(
+			notifyDataParams,
+			fmt.Sprintf("target-fencing=%s", m.Notify.HAFencingTarget.ValueString()),
+		)
+	}
+
+	if !m.Notify.PackageUpdates.IsNull() {
+		notifyDataParams = append(
+			notifyDataParams,
+			fmt.Sprintf("package-updates=%s", m.Notify.PackageUpdates.ValueString()),
+		)
+	}
+
+	if !m.Notify.PackageUpdatesTarget.IsNull() {
+		notifyDataParams = append(
+			notifyDataParams,
+			fmt.Sprintf("target-package-updates=%s", m.Notify.PackageUpdatesTarget.ValueString()),
+		)
+	}
+
+	if !m.Notify.Replication.IsNull() {
+		notifyDataParams = append(notifyDataParams, fmt.Sprintf("replication=%s", m.Notify.Replication.ValueString()))
+	}
+
+	if !m.Notify.ReplicationTarget.IsNull() {
+		notifyDataParams = append(
+			notifyDataParams,
+			fmt.Sprintf("target-replication=%s", m.Notify.ReplicationTarget.ValueString()),
+		)
+	}
+
+	if len(notifyDataParams) > 0 {
+		return strings.Join(notifyDataParams, ",")
 	}
 
 	return ""
@@ -168,6 +279,16 @@ func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData
 		body.MaxWorkers = m.MaxWorkers.ValueInt64Pointer()
 	}
 
+	nextIDData := m.nextIDData()
+	if nextIDData != "" {
+		body.NextID = &nextIDData
+	}
+
+	notifyData := m.notifyData()
+	if notifyData != "" {
+		body.Notify = &notifyData
+	}
+
 	if !m.Console.IsUnknown() {
 		body.Console = m.Console.ValueStringPointer()
 	}
@@ -207,10 +328,7 @@ func (m *clusterOptionsModel) toOptionsRequestBody() *cluster.OptionsRequestData
 	return body
 }
 
-func (m *clusterOptionsModel) importFromOptionsAPI(
-	_ context.Context,
-	opts *cluster.OptionsResponseData,
-) error {
+func (m *clusterOptionsModel) importFromOptionsAPI(_ context.Context, opts *cluster.OptionsResponseData) error {
 	m.BandwidthLimitClone = types.Int64Null()
 	m.BandwidthLimitDefault = types.Int64Null()
 	m.BandwidthLimitMigration = types.Int64Null()
@@ -283,6 +401,24 @@ func (m *clusterOptionsModel) importFromOptionsAPI(
 	} else {
 		m.MigrationType = types.StringNull()
 		m.MigrationNetwork = types.StringNull()
+	}
+
+	if opts.NextID != nil {
+		m.NextID = &clusterOptionsNextIDModel{}
+		lower := int64(*opts.NextID.Lower)
+		upper := int64(*opts.NextID.Upper)
+		m.NextID.Lower = types.Int64PointerValue(&lower)
+		m.NextID.Upper = types.Int64PointerValue(&upper)
+	}
+
+	if opts.Notify != nil {
+		m.Notify = &clusterOptionsNotifyModel{}
+		m.Notify.HAFencingMode = types.StringPointerValue(opts.Notify.HAFencingMode)
+		m.Notify.HAFencingTarget = types.StringPointerValue(opts.Notify.HAFencingTarget)
+		m.Notify.PackageUpdates = types.StringPointerValue(opts.Notify.PackageUpdates)
+		m.Notify.PackageUpdatesTarget = types.StringPointerValue(opts.Notify.PackageUpdatesTarget)
+		m.Notify.Replication = types.StringPointerValue(opts.Notify.Replication)
+		m.Notify.ReplicationTarget = types.StringPointerValue(opts.Notify.ReplicationTarget)
 	}
 
 	if opts.ClusterResourceScheduling != nil {
@@ -412,6 +548,108 @@ func (r *clusterOptionsResource) Schema(
 			},
 			"migration_cidr": schema.StringAttribute{
 				Description: "Cluster wide migration network CIDR.",
+				Optional:    true,
+			},
+			"next_id": schema.SingleNestedAttribute{
+				Attributes: map[string]schema.Attribute{
+					"lower": schema.Int64Attribute{
+						Description: "The minimum number for the next free VM ID.",
+						MarkdownDescription: "The minimum number for the next free VM ID. " +
+							fmt.Sprintf("Must be higher or equal to %d", ClusterOptionsNextIDLowerMinimum),
+						Optional: true,
+						Validators: []validator.Int64{
+							int64validator.AtLeast(ClusterOptionsNextIDLowerMinimum),
+						},
+					},
+					"upper": schema.Int64Attribute{
+						Description: "The maximum number for the next free VM ID.",
+						MarkdownDescription: "The maximum number for the next free VM ID. " +
+							fmt.Sprintf("Must be less or equal to %d", ClusterOptionsNextIDLowerMaximum),
+						Optional: true,
+						Validators: []validator.Int64{
+							int64validator.AtMost(ClusterOptionsNextIDLowerMaximum),
+						},
+					},
+				},
+				Description: "The ranges for the next free VM ID auto-selection pool.",
+				Optional:    true,
+			},
+			"notify": schema.SingleNestedAttribute{
+				Attributes: map[string]schema.Attribute{
+					"ha_fencing_mode": schema.StringAttribute{
+						Description:         "Cluster-wide notification settings for the HA fencing mode.",
+						MarkdownDescription: "Cluster-wide notification settings for the HA fencing mode. Must be `always` | `never`.",
+						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.OneOf(
+								[]string{
+									"always",
+									"never",
+								}...,
+							),
+						},
+					},
+					"ha_fencing_target": schema.StringAttribute{
+						Description:         "Cluster-wide notification settings for the HA fencing target.",
+						MarkdownDescription: "Cluster-wide notification settings for the HA fencing target.",
+						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.UTF8LengthAtLeast(1),
+							stringvalidator.RegexMatches(regexp.MustCompile(`^\S|^$`), "must not start with whitespace"),
+							stringvalidator.RegexMatches(regexp.MustCompile(`\S$|^$`), "must not end with whitespace"),
+						},
+					},
+					"package_updates": schema.StringAttribute{
+						Description: "Cluster-wide notification settings for package updates.",
+						MarkdownDescription: "Cluster-wide notification settings for package updates. " +
+							"Must be `auto` | `always` | `never`. ",
+						Optional: true,
+						Validators: []validator.String{
+							stringvalidator.OneOf(
+								[]string{
+									"auto",
+									"always",
+									"never",
+								}...,
+							),
+						},
+					},
+					"package_updates_target": schema.StringAttribute{
+						Description:         "Cluster-wide notification settings for the package updates target.",
+						MarkdownDescription: "Cluster-wide notification settings for the package updates target.",
+						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.UTF8LengthAtLeast(1),
+							stringvalidator.RegexMatches(regexp.MustCompile(`^\S|^$`), "must not start with whitespace"),
+							stringvalidator.RegexMatches(regexp.MustCompile(`\S$|^$`), "must not end with whitespace"),
+						},
+					},
+					"replication": schema.StringAttribute{
+						Description: "Cluster-wide notification settings for replication.",
+						MarkdownDescription: "Cluster-wide notification settings for replication. " +
+							"Must be `always` | `never`. ",
+						Optional: true,
+						Validators: []validator.String{
+							stringvalidator.OneOf(
+								[]string{
+									"always",
+									"never",
+								}...,
+							),
+						},
+					},
+					"replication_target": schema.StringAttribute{
+						Description:         "Cluster-wide notification settings for the replication target.",
+						MarkdownDescription: "Cluster-wide notification settings for the replication target.",
+						Optional:            true,
+						Validators: []validator.String{
+							stringvalidator.UTF8LengthAtLeast(1),
+							stringvalidator.RegexMatches(regexp.MustCompile(`^\S|^$`), "must not start with whitespace"),
+							stringvalidator.RegexMatches(regexp.MustCompile(`\S$|^$`), "must not end with whitespace"),
+						},
+					},
+				},
+				Description: "Cluster-wide notification settings.",
 				Optional:    true,
 			},
 			"crs_ha": schema.StringAttribute{
@@ -595,6 +833,14 @@ func (r *clusterOptionsResource) Update(
 		toDelete = append(toDelete, "migration")
 	}
 
+	if plan.nextIDData() != state.nextIDData() && plan.nextIDData() == "" {
+		toDelete = append(toDelete, "next-id")
+	}
+
+	if plan.notifyData() != state.notifyData() && plan.notifyData() == "" {
+		toDelete = append(toDelete, "notify")
+	}
+
 	if !plan.EmailFrom.Equal(state.EmailFrom) && plan.EmailFrom.ValueString() == "" {
 		toDelete = append(toDelete, "email_from")
 	}
@@ -677,6 +923,14 @@ func (r *clusterOptionsResource) Delete(
 
 	if state.migrationData() != "" {
 		toDelete = append(toDelete, "migration")
+	}
+
+	if state.nextIDData() != "" {
+		toDelete = append(toDelete, "next-id")
+	}
+
+	if state.notifyData() != "" {
+		toDelete = append(toDelete, "notify")
 	}
 
 	if !state.EmailFrom.IsNull() && state.EmailFrom.ValueString() != "" {
