@@ -23,6 +23,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
+const supportedDiskInterfaces = "virtio, sata, scsi, ide"
+
 // GetInfo returns the disk information for a VM.
 func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
 	storageDevices := vms.CustomStorageDevices{}
@@ -137,6 +139,13 @@ func CreateClone(
 				}
 
 				diskUpdateBody.SCSIDevices[diskInterface] = configuredDiskInfo
+
+			case "ide":
+				if diskUpdateBody.IDEDevices == nil {
+					diskUpdateBody.IDEDevices = vms.CustomStorageDevices{}
+				}
+
+				diskUpdateBody.IDEDevices[diskInterface] = configuredDiskInfo
 			}
 
 			err := vmAPI.UpdateVM(ctx, diskUpdateBody)
@@ -293,7 +302,7 @@ func GetDiskDeviceObjects(
 			diskDevice.SSD = &ssd
 		}
 
-		if !strings.HasPrefix(diskInterface, "sata") {
+		if !strings.HasPrefix(diskInterface, "sata") && !strings.HasPrefix(diskInterface, "ide") {
 			diskDevice.IOThread = &ioThread
 		}
 
@@ -341,12 +350,10 @@ func GetDiskDeviceObjects(
 		}
 
 		baseDiskInterface := DigitPrefix(diskInterface)
-
-		if baseDiskInterface != "virtio" && baseDiskInterface != "scsi" &&
-			baseDiskInterface != "sata" {
+		if !strings.Contains(supportedDiskInterfaces, baseDiskInterface) {
 			errorMsg := fmt.Sprintf(
-				"Defined disk interface not supported. Interface was %s, but only virtio, sata and scsi are supported",
-				diskInterface,
+				"Defined disk interface not supported. Interface was %s, but only %s are supported",
+				diskInterface, supportedDiskInterfaces,
 			)
 
 			return diskDeviceObjects, errors.New(errorMsg)
@@ -584,7 +591,7 @@ func Read(
 	var diags diag.Diagnostics
 
 	for di, dd := range diskObjects {
-		if dd == nil || dd.FileVolume == "none" || strings.HasPrefix(di, "ide") {
+		if dd == nil || dd.FileVolume == "none" {
 			continue
 		}
 
@@ -823,10 +830,13 @@ func Update(
 
 						updateBody.SCSIDevices[key] = tmp
 					}
-				//nolint:revive
 				case "ide":
 					{
-						// Investigate whether to support IDE mapping.
+						if updateBody.IDEDevices == nil {
+							updateBody.IDEDevices = vms.CustomStorageDevices{}
+						}
+
+						updateBody.IDEDevices[key] = tmp
 					}
 				default:
 					return false, fmt.Errorf("device prefix %s not supported", prefix)
