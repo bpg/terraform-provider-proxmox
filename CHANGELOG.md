@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.55.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.54.0...v0.55.0) (2024-04-30)
+
+
+### Features
+
+* **cluster:** Extend the available attributes for the `proxmox_virtual_environment_cluster_options` resource ([#1241](https://github.com/bpg/terraform-provider-proxmox/issues/1241)) ([2eb36f4](https://github.com/bpg/terraform-provider-proxmox/commit/2eb36f4134a7f89e2e3fb1f69f39d359730c2acc))
+* **vm:** add initial support for IDE ([#1237](https://github.com/bpg/terraform-provider-proxmox/issues/1237)) ([bd195d6](https://github.com/bpg/terraform-provider-proxmox/commit/bd195d66069485fc290e13fc66d2b80b220ea731))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v4.1.1 → v4.1.3) ([bb44a8d](https://github.com/bpg/terraform-provider-proxmox/commit/bb44a8d84491cdca770bbbf58df4d8b0c5605f1e))
+* **ci:** update actions/checkout action (v4.1.3 → v4.1.4) ([229883b](https://github.com/bpg/terraform-provider-proxmox/commit/229883b110f6e6ab22b9e79a52167d044971c4c8))
+* **ci:** update hashicorp/setup-terraform action (v3.0.0 → v3.1.0) ([84778a3](https://github.com/bpg/terraform-provider-proxmox/commit/84778a39656cc8c2bb36f767d1ce55916353073c))
+* **ci:** update jetbrains/qodana-action action (v2024.1.1 → v2024.1.2) ([4da06ec](https://github.com/bpg/terraform-provider-proxmox/commit/4da06ecb94b1d3097e2a0fb12c7aeafc907d60a1))
+* **ci:** update lycheeverse/lychee-action action (v1.9.3 → v1.10.0) ([0839c92](https://github.com/bpg/terraform-provider-proxmox/commit/0839c92ba69eb3ba53aa098a0b3a970ba405a533))
+* **deps:** update go (1.22.0 → 1.22.2) ([#1234](https://github.com/bpg/terraform-provider-proxmox/issues/1234)) ([ee939a3](https://github.com/bpg/terraform-provider-proxmox/commit/ee939a38a35bf4a490cbb549c14a8a5538e47e23))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.19.1 → v0.19.2) in /tools ([#1247](https://github.com/bpg/terraform-provider-proxmox/issues/1247)) ([b9429cb](https://github.com/bpg/terraform-provider-proxmox/commit/b9429cbd682ab1fff65f05fd67bc9f34bd6f5906))
+* **deps:** update tools ([#1238](https://github.com/bpg/terraform-provider-proxmox/issues/1238)) ([e13bb03](https://github.com/bpg/terraform-provider-proxmox/commit/e13bb03ddafac41e7e9ca815ab3e615b839b56e3))
+* remove unused code ([#1236](https://github.com/bpg/terraform-provider-proxmox/issues/1236)) ([efd0d7b](https://github.com/bpg/terraform-provider-proxmox/commit/efd0d7b4662b0bb0bebf7827f9b3b508a2f298b6))
+* **vm2:** experiment with sets, add `tags` support ([#1232](https://github.com/bpg/terraform-provider-proxmox/issues/1232)) ([961404d](https://github.com/bpg/terraform-provider-proxmox/commit/961404dd0b2be71c1b612201cc454226ac12c04e))
+* **vm2:** experimental support for `clone` and inherited attributes ([#1235](https://github.com/bpg/terraform-provider-proxmox/issues/1235)) ([7209fe0](https://github.com/bpg/terraform-provider-proxmox/commit/7209fe03215c7fda32dd74ab9647b9824e0b8d61))
+
 ## [0.54.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.53.1...v0.54.0) (2024-04-19)
 
 
