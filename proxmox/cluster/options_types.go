@@ -25,7 +25,12 @@ type crs struct {
 	HA                 *string           `json:"ha,omitempty"`
 }
 type notify struct {
-	PackageUpdates *string `json:"package-updates,omitempty"`
+	HAFencingMode        *string `json:"fencing,omitempty"`
+	HAFencingTarget      *string `json:"target-fencing,omitempty"`
+	PackageUpdates       *string `json:"package-updates,omitempty"`
+	PackageUpdatesTarget *string `json:"target-package-updates,omitempty"`
+	Replication          *string `json:"replication,omitempty"`
+	ReplicationTarget    *string `json:"target-replication,omitempty"`
 }
 type migration struct {
 	Network *string `json:"network,omitempty"`
@@ -36,8 +41,8 @@ type haSettings struct {
 	ShutdownPolicy *string `json:"shutdown_policy,omitempty"`
 }
 type nextID struct {
-	Upper *string `json:"upper,omitempty"`
-	Lower *string `json:"lower,omitempty"`
+	Upper *types.CustomInt64 `json:"upper,omitempty"`
+	Lower *types.CustomInt64 `json:"lower,omitempty"`
 }
 type webauthn struct {
 	ID     *string `json:"id,omitempty"`
