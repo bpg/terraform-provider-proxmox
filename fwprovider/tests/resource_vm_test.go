@@ -609,6 +609,30 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"efi disk", []resource.TestStep{
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-efi-disk"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk", map[string]string{
+						"efi_disk.0.datastore_id": "local-lvm",
+						"efi_disk.0.type":         "4m",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"ide disks", []resource.TestStep{
 			{
 				Config: te.renderConfig(`

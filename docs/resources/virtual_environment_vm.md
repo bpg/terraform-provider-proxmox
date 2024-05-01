@@ -293,7 +293,7 @@ output "ubuntu_vm_public_key" {
     to `ovmf`)
     - `datastore_id` (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
-    - `file_format` (Optional) The file format.
+    - `file_format` (Optional) The file format (defaults to `raw`).
     - `type` (Optional) Size and type of the OVMF EFI disk. `4m` is newer and
         recommended, and required for Secure Boot. For backwards compatibility
         use `2m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults

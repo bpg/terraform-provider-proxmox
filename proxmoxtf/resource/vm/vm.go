@@ -72,7 +72,7 @@ const (
 	dvDescription         = ""
 
 	dvEFIDiskDatastoreID                = "local-lvm"
-	dvEFIDiskFileFormat                 = "qcow2"
+	dvEFIDiskFileFormat                 = "raw"
 	dvEFIDiskType                       = "2m"
 	dvEFIDiskPreEnrolledKeys            = false
 	dvTPMStateDatastoreID               = "local-lvm"
