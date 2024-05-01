@@ -2970,7 +2970,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		initializationConfig.Type = &initializationType
 	}
 
-	if initializationBlock[mkInitializationUpgrade] != nil {
+	if initializationBlock[mkInitializationUpgrade] != nil && initializationConfig.Files == nil {
 		v := types.CustomBool(initializationBlock[mkInitializationUpgrade].(bool))
 		initializationConfig.Upgrade = &v
 	}
