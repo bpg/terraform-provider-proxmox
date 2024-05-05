@@ -11,7 +11,7 @@ Retrieves basic information about all available user groups.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_groups" "available_groups" {}
 ```
 

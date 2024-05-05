@@ -12,7 +12,7 @@ Use the navigation to the left to read about the available resources.
 
 ## Example Usage
 
-```terraform
+```hcl
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
   # TODO: use terraform variable or remove the line, and use PROXMOX_VE_USERNAME environment variable
@@ -41,7 +41,7 @@ Static credentials can be provided to the `proxmox` block through either a `api_
 
 Static credentials can be provided by adding a `username` and `password`, or `api_token` in-line in the Proxmox provider block:
 
-```terraform
+```hcl
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
   username = "username@realm"
@@ -51,7 +51,7 @@ provider "proxmox" {
 
 A better approach is to extract these values into Terraform variables, and reference the variables instead:
 
-```terraform
+```hcl
 provider "proxmox" {
   endpoint = var.virtual_environment_endpoint
   username = var.virtual_environment_username
@@ -67,7 +67,7 @@ See the [Terraform documentation](https://www.terraform.io/docs/configuration/va
 Instead of using static arguments, credentials can be handled through the use of environment variables.
 For example:
 
-```terraform
+```hcl
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
 }
@@ -91,7 +91,7 @@ For example, to import VM disks, or to uploading certain type of resources, such
 
 The SSH connection configuration is provided via the optional `ssh` block in the `provider` block:
 
-```terraform
+```hcl
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
   username = "username@realm"
@@ -124,7 +124,7 @@ you can use the `private_key` argument in the `ssh` block (or alternatively `PRO
 The private key mut not be encrypted, and must be in PEM format.
 
 You can provide the private key from a file:
-```terraform
+```hcl
 provider "proxmox" {
   // ...
   ssh {
@@ -135,20 +135,20 @@ provider "proxmox" {
 ```
 
 Alternatively, although not recommended due to the increased risk of exposing an unprotected key, heredoc syntax can be used to supply the private key as a string.
-Note that the content of the private key must not be indented:
-```terraform
+Note that the content of the private key is injected using `<<-` format to ignore indentation:
+```hcl
 provider "proxmox" {
   // ...
 
   ssh {
     agent       = false
-    private_key = <<EOF
------BEGIN OPENSSH PRIVATE KEY-----
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-<SKIPPED>
-DMUWUEaH7yMCKl7uCZ9xAAAAAAECAwQF
------END OPENSSH PRIVATE KEY-----
-EOF
+    private_key = <<-EOF
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+    <SKIPPED>
+    DMUWUEaH7yMCKl7uCZ9xAAAAAAECAwQF
+    -----END OPENSSH PRIVATE KEY-----
+    EOF
   }
 }
 ```
@@ -158,7 +158,7 @@ EOF
 By default, the provider will use the same username for the SSH connection as the one used for the Proxmox API connection (when using PAM authentication).
 This can be overridden by specifying the `username` argument in the `ssh` block (or alternatively a username in the `PROXMOX_VE_SSH_USERNAME` environment variable):
 
-```terraform
+```hcl
 provider "proxmox" {
   // ...
 
@@ -234,7 +234,7 @@ In some cases this may not be the desired behavior, for example, when the node h
 To override the node IP address used for SSH connection, you can use the optional `node` blocks in the `ssh` block, and specify the desired IP address (or FQDN) for each node.
 For example:
 
-```terraform
+```hcl
 provider "proxmox" {
   // ...
   ssh {
@@ -257,7 +257,7 @@ The provider supports SSH connection to the target node via a SOCKS5 proxy.
 
 To enable the SOCKS5 proxy, you need to configure the `ssh` block in the `provider` block, and specify the `socks5_server` argument:
 
-```terraform
+```hcl
 provider "proxmox" {
   // ...
   ssh {
@@ -309,7 +309,7 @@ Refer to the upstream docs as needed for additional details concerning [PVE User
 
 Generating the token will output a table containing the token's ID and secret which are meant to be concatenated into a single string for use with either the `api_token` field of the `provider` block (fine for testing but should be avoided) or sourced from the `PROXMOX_VE_API_TOKEN` environment variable.
 
-```terraform
+```hcl
 provider "proxmox" {
   endpoint  = var.virtual_environment_endpoint
   api_token = "terraform@pve!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"

@@ -11,7 +11,7 @@ Retrieves information about all VMs in the Proxmox cluster.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_vms" "ubuntu_vms" {
   tags      = ["ubuntu"]
 }

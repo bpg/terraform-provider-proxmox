@@ -11,7 +11,7 @@ Manages a role.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_role" "operations_monitoring" {
   role_id = "operations-monitoring"
 

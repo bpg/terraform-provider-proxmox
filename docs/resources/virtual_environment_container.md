@@ -11,7 +11,7 @@ Manages a container.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_container" "ubuntu_container" {
   description = "Managed by Terraform"
 

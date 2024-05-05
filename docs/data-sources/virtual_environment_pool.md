@@ -11,7 +11,7 @@ Retrieves information about a specific resource pool.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_pool" "operations_pool" {
   pool_id = "operations"
 }

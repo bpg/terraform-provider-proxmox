@@ -11,7 +11,7 @@ Manages firewall options on the cluster level.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_cluster_firewall" "example" {
   enabled = false
 

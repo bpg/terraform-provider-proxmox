@@ -13,7 +13,7 @@ with rules to open the http and https ports.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserver" {
   name    = "webserver"
   comment = "Managed by Terraform"

@@ -37,7 +37,8 @@ If applicable, add screenshots to help explain your problem.
 Add any other context about the problem here.
 
 - Single or clustered Proxmox:
+- Proxmox version:
 - Provider version (ideally it should be the latest version):
-- Terraform version:
-- OS (where you run Terraform from):
+- Terraform/OpenTofu version:
+- OS (where you run Terraform/OpenTofu from):
 - Debug logs (`TF_LOG=DEBUG terraform apply`):

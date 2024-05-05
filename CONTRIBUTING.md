@@ -78,7 +78,7 @@ testing changes to the provider before submitting a PR.
 
 - Create a $HOME/.terraformrc (POSIX) or %APPDATA%/terraform.rc (Windows) file with the following contents:
 
-  ```terraform
+  ```hcl
   provider_installation {
 
     dev_overrides {
