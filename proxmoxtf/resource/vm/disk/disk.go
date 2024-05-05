@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"unicode"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -272,6 +270,7 @@ func GetDiskDeviceObjects(
 			fileFormat = dvDiskFileFormat
 		}
 
+		// Explicitly disable the disk, so it won't be encoded in "Create" or "Update" operations.
 		if fileID != "" {
 			diskDevice.Enabled = false
 		}
@@ -372,204 +371,80 @@ func GetDiskDeviceObjects(
 // CreateCustomDisks creates custom disks for a VM.
 func CreateCustomDisks(
 	ctx context.Context,
+	client proxmox.Client,
 	nodeName string,
-	d *schema.ResourceData,
-	resource *schema.Resource,
-	m interface{},
+	vmID int,
+	storageDevices map[string]vms.CustomStorageDevices,
 ) diag.Diagnostics {
-	vmID, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	// flatten the map of disk devices
+	var disks []vms.CustomStorageDevice
 
-	//nolint:prealloc
-	var commands []string
-
-	// Determine the ID of the next disk.
-	disk := d.Get(MkDisk).([]interface{})
-	diskCount := 0
-
-	for _, d := range disk {
-		block := d.(map[string]interface{})
-		fileID, _ := block[mkDiskFileID].(string)
-
-		if fileID == "" {
-			diskCount++
+	for _, diskDevice := range storageDevices {
+		for _, disk := range diskDevice {
+			if disk != nil {
+				disks = append(disks, *disk)
+			}
 		}
 	}
 
-	// Retrieve some information about the disk schema.
-	resourceSchema := resource.Schema
-	diskSchemaElem := resourceSchema[MkDisk].Elem
-	diskSchemaResource := diskSchemaElem.(*schema.Resource)
-	diskSpeedResource := diskSchemaResource.Schema[mkDiskSpeed]
+	commands := make([]string, 0, len(disks))
+	resizes := make([]*vms.ResizeDiskRequestBody, 0, len(disks))
 
-	// Generate the commands required to import the specified disks.
-	importedDiskCount := 0
-
-	for _, d := range disk {
-		block := d.(map[string]interface{})
-
-		fileID, _ := block[mkDiskFileID].(string)
-
-		if fileID == "" {
+	for _, d := range disks {
+		if d.FileID == nil || *d.FileID == "" {
 			continue
 		}
 
-		aio, _ := block[mkDiskAIO].(string)
-		backup := types.CustomBool(block[mkDiskBackup].(bool))
-		cache, _ := block[mkDiskCache].(string)
-		datastoreID, _ := block[mkDiskDatastoreID].(string)
-		discard, _ := block[mkDiskDiscard].(string)
-		diskInterface, _ := block[mkDiskInterface].(string)
-		fileFormat, _ := block[mkDiskFileFormat].(string)
-		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
-		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
-		size, _ := block[mkDiskSize].(int)
-		speed := block[mkDiskSpeed].([]interface{})
-		ssd := types.CustomBool(block[mkDiskSSD].(bool))
-
-		if fileFormat == "" {
-			fileFormat = dvDiskFileFormat
+		fileFormat := dvDiskFileFormat
+		if d.Format != nil && *d.Format != "" {
+			fileFormat = *d.Format
 		}
-
-		if len(speed) == 0 {
-			diskSpeedDefault, err := diskSpeedResource.DefaultValue()
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			speed = diskSpeedDefault.([]interface{})
-		}
-
-		speedBlock := speed[0].(map[string]interface{})
-		iopsRead := speedBlock[mkDiskIopsRead].(int)
-		iopsReadBurstable := speedBlock[mkDiskIopsReadBurstable].(int)
-		iopsWrite := speedBlock[mkDiskIopsWrite].(int)
-		iopsWriteBurstable := speedBlock[mkDiskIopsWriteBurstable].(int)
-		speedLimitRead := speedBlock[mkDiskSpeedRead].(int)
-		speedLimitReadBurstable := speedBlock[mkDiskSpeedReadBurstable].(int)
-		speedLimitWrite := speedBlock[mkDiskSpeedWrite].(int)
-		speedLimitWriteBurstable := speedBlock[mkDiskSpeedWriteBurstable].(int)
-
-		diskOptions := ""
-
-		if aio != "" {
-			diskOptions += fmt.Sprintf(",aio=%s", aio)
-		}
-
-		if backup {
-			diskOptions += ",backup=1"
-		} else {
-			diskOptions += ",backup=0"
-		}
-
-		if ioThread {
-			diskOptions += ",iothread=1"
-		}
-
-		if replicate {
-			diskOptions += ",replicate=1"
-		} else {
-			diskOptions += ",replicate=0"
-		}
-
-		if ssd {
-			diskOptions += ",ssd=1"
-		}
-
-		if discard != "" {
-			diskOptions += fmt.Sprintf(",discard=%s", discard)
-		}
-
-		if cache != "" {
-			diskOptions += fmt.Sprintf(",cache=%s", cache)
-		}
-
-		if iopsRead > 0 {
-			diskOptions += fmt.Sprintf(",iops_rd=%d", iopsRead)
-		}
-
-		if iopsReadBurstable > 0 {
-			diskOptions += fmt.Sprintf(",iops_rd_max=%d", iopsReadBurstable)
-		}
-
-		if iopsWrite > 0 {
-			diskOptions += fmt.Sprintf(",iops_wr=%d", iopsWrite)
-		}
-
-		if iopsWriteBurstable > 0 {
-			diskOptions += fmt.Sprintf(",iops_wr_max=%d", iopsWriteBurstable)
-		}
-
-		if speedLimitRead > 0 {
-			diskOptions += fmt.Sprintf(",mbps_rd=%d", speedLimitRead)
-		}
-
-		if speedLimitReadBurstable > 0 {
-			diskOptions += fmt.Sprintf(",mbps_rd_max=%d", speedLimitReadBurstable)
-		}
-
-		if speedLimitWrite > 0 {
-			diskOptions += fmt.Sprintf(",mbps_wr=%d", speedLimitWrite)
-		}
-
-		if speedLimitWriteBurstable > 0 {
-			diskOptions += fmt.Sprintf(",mbps_wr_max=%d", speedLimitWriteBurstable)
-		}
-
-		filePathTmp := fmt.Sprintf(
-			"/tmp/vm-%d-disk-%d.%s",
-			vmID,
-			diskCount+importedDiskCount,
-			fileFormat,
-		)
 
 		//nolint:lll
 		commands = append(
 			commands,
 			`set -e`,
 			ssh.TrySudo,
-			fmt.Sprintf(`file_id="%s"`, fileID),
+			fmt.Sprintf(`file_id="%s"`, *d.FileID),
 			fmt.Sprintf(`file_format="%s"`, fileFormat),
-			fmt.Sprintf(`datastore_id_target="%s"`, datastoreID),
-			fmt.Sprintf(`disk_options="%s"`, diskOptions),
-			fmt.Sprintf(`disk_size="%d"`, size),
-			fmt.Sprintf(`disk_interface="%s"`, diskInterface),
-			fmt.Sprintf(`file_path_tmp="%s"`, filePathTmp),
+			fmt.Sprintf(`datastore_id_target="%s"`, *d.DatastoreID),
 			fmt.Sprintf(`vm_id="%d"`, vmID),
+			fmt.Sprintf(`disk_options="%s"`, d.EncodeOptions()),
+			fmt.Sprintf(`disk_interface="%s"`, *d.Interface),
 			`source_image=$(try_sudo "pvesm path $file_id")`,
 			`imported_disk="$(try_sudo "qm importdisk $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
-			`disk_id="${datastore_id_target}:$imported_disk${disk_options}"`,
+			`disk_id="${datastore_id_target}:$imported_disk,${disk_options}"`,
 			`try_sudo "qm set $vm_id -${disk_interface} $disk_id"`,
-			`try_sudo "qm resize $vm_id ${disk_interface} ${disk_size}G"`,
 		)
 
-		importedDiskCount++
+		resizes = append(resizes, &vms.ResizeDiskRequestBody{
+			Disk: *d.Interface,
+			Size: *d.Size,
+		})
 	}
 
 	// Execute the commands on the node and wait for the result.
 	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
 	if len(commands) > 0 {
-		config := m.(proxmoxtf.ProviderConfiguration)
-
-		api, err := config.GetClient()
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		out, err := api.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
+		out, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
 		if err != nil {
 			if matches, e := regexp.Match(`pvesm: .* not found`, out); e == nil && matches {
-				return diag.FromErr(ssh.NewErrUserHasNoPermission(api.SSH().Username()))
+				return diag.FromErr(ssh.NewErrUserHasNoPermission(client.SSH().Username()))
 			}
 
 			return diag.FromErr(err)
 		}
 
-		tflog.Debug(ctx, "vmCreateCustomDisks", map[string]interface{}{
+		tflog.Debug(ctx, "vmCreateCustomDisks: commands", map[string]interface{}{
 			"output": string(out),
 		})
+
+		for _, resize := range resizes {
+			err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, resize)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
 	return nil

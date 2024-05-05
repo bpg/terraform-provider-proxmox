@@ -2456,16 +2456,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		}
 	}
 
-	diskDeviceObjects, err := disk.GetDiskDeviceObjects(d, resource, nil)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	virtioDeviceObjects := diskDeviceObjects["virtio"]
-	scsiDeviceObjects := diskDeviceObjects["scsi"]
-	ideDeviceObjects := diskDeviceObjects["ide"]
-	sataDeviceObjects := diskDeviceObjects["sata"]
-
 	initializationConfig := vmGetCloudInitConfig(d)
 
 	if initializationConfig != nil {
@@ -2566,7 +2556,15 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		}
 	}
 
-	var memorySharedObject *vms.CustomSharedMemory
+	diskDeviceObjects, err := disk.GetDiskDeviceObjects(d, resource, nil)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	virtioDeviceObjects := diskDeviceObjects["virtio"]
+	scsiDeviceObjects := diskDeviceObjects["scsi"]
+	ideDeviceObjects := diskDeviceObjects["ide"]
+	sataDeviceObjects := diskDeviceObjects["sata"]
 
 	var bootOrderConverted []string
 	if cdromEnabled {
@@ -2622,6 +2620,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			Media:      &ideDevice2Media,
 		}
 	}
+
+	var memorySharedObject *vms.CustomSharedMemory
 
 	if memoryShared > 0 {
 		memorySharedName := fmt.Sprintf("vm-%d-ivshmem", vmID)
@@ -2757,7 +2757,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	d.SetId(strconv.Itoa(vmID))
 
-	diags := disk.CreateCustomDisks(ctx, nodeName, d, resource, m)
+	diags := disk.CreateCustomDisks(ctx, client, nodeName, vmID, diskDeviceObjects)
 	if diags.HasError() {
 		return diags
 	}
