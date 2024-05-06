@@ -903,7 +903,7 @@ func VM() *schema.Resource {
 						Type:        schema.TypeBool,
 						Description: "Whether to do an automatic package upgrade after the first boot",
 						Optional:    true,
-						Default:     dvInitializationUpgrade,
+						Computed:    true,
 					},
 				},
 			},
