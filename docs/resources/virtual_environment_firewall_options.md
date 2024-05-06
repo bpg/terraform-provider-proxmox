@@ -11,7 +11,7 @@ Manages firewall options on VM / Container level.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_firewall_options" "example" {
   depends_on = [proxmox_virtual_environment_vm.example]
 

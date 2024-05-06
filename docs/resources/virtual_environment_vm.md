@@ -13,7 +13,7 @@ Manages a virtual machine.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   name        = "terraform-provider-proxmox-ubuntu-vm"
   description = "Managed by Terraform"
@@ -634,7 +634,7 @@ attaching one disk to multiple VM will cause errors or even data corruption.
 Do *not* move or resize `data_vm` disks.
 (Resource `data_user_vm` should reject attempts to move or resize non-owned disks.)
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_vm" "data_vm" {
   node_name = "first-node"
   started = false

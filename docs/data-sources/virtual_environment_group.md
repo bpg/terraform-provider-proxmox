@@ -11,7 +11,7 @@ Retrieves information about a specific user group.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_group" "operations_team" {
   group_id = "operations-team"
 }

@@ -12,11 +12,10 @@ description: |-
 !> **DO NOT USE**
 This is an experimental implementation of a Proxmox VM resource using Plugin Framework.<br><br>It is a Proof of Concept, highly experimental and **will** change in future. It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.
 
--> Note: Many attributes are marked as **optional** _and_ **computed** in the schema,
+-> Many attributes are marked as **optional** _and_ **computed** in the schema,
 hence you may seem added to the plan with "(known after apply)" status, even if they are not set in the configuration.
 This is done to support the `clone` operation, when a VM is created from an existing one,
-and attributes of the original VM are copied to the new one.
-
+and attributes of the original VM are copied to the new one.<br><br>
 Computed attributes allow the provider to set those attributes without user input.
 The attributes are marked as optional to allow the user to set (or overwrite) them if needed.
 In order to remove the computed attribute from the plan, you can set it to an empty value (e.g. `""` for string, `[]` for collection).

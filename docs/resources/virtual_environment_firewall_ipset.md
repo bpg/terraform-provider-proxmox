@@ -12,7 +12,7 @@ created on the cluster level, on VM / Container level.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
   depends_on = [proxmox_virtual_environment_vm.example]
 

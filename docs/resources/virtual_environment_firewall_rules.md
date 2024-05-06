@@ -14,7 +14,7 @@ level, on VM / Container level.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_firewall_rules" "inbound" {
   depends_on = [
     proxmox_virtual_environment_vm.example,

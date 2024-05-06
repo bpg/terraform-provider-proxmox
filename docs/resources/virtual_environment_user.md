@@ -11,7 +11,7 @@ Manages a user.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_user" "operations_automation" {
   acl {
     path      = "/vms/1234"

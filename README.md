@@ -142,3 +142,10 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Ben Bouillet](https://github.com/benbouillet)
 
 Thanks again for your support, it is much appreciated! 🙏
+
+
+## Acknowledgements
+
+This project has been developed with **GoLand** IDE under the [JetBrains Open Source license](https://www.jetbrains.com/community/opensource/#support), generously provided by JetBrains s.r.o.
+
+<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/GoLand_icon.png" alt="GoLand logo" width="80">
