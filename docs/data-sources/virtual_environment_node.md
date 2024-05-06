@@ -11,7 +11,7 @@ Retrieves information about node.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_node" "node" {}
 ```
 

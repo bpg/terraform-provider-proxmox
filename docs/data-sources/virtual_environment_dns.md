@@ -11,7 +11,7 @@ Retrieves the DNS configuration for a specific node.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_dns" "first_node" {
   node_name = "first-node"
 }

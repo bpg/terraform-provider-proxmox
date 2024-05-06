@@ -11,7 +11,7 @@ Retrieves information about all the available users.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_users" "available_users" {}
 ```
 

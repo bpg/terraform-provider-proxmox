@@ -11,7 +11,7 @@ Manages a user group.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_group" "operations_team" {
   comment  = "Managed by Terraform"
   group_id = "operations-team"

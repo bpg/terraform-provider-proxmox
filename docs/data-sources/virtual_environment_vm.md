@@ -11,7 +11,7 @@ Retrieves information about a specific VM.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_vm" "test_vm" {
     node_name = "test"
     vm_id = 100

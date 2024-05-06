@@ -11,7 +11,7 @@ Manages the custom SSL/TLS certificate for a specific node.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_certificate" "example" {
   certificate = tls_self_signed_cert.proxmox_virtual_environment_certificate.cert_pem
   node_name   = "first-node"

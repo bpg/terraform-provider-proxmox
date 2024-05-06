@@ -903,7 +903,7 @@ func VM() *schema.Resource {
 						Type:        schema.TypeBool,
 						Description: "Whether to do an automatic package upgrade after the first boot",
 						Optional:    true,
-						Default:     dvInitializationUpgrade,
+						Computed:    true,
 					},
 				},
 			},
@@ -2970,7 +2970,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		initializationConfig.Type = &initializationType
 	}
 
-	if initializationBlock[mkInitializationUpgrade] != nil {
+	if initializationBlock[mkInitializationUpgrade] != nil && initializationConfig.Files == nil {
 		v := types.CustomBool(initializationBlock[mkInitializationUpgrade].(bool))
 		initializationConfig.Upgrade = &v
 	}
