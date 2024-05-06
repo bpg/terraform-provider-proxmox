@@ -317,7 +317,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				}`),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
-					"initialization.0.upgrade": "true",
+					"initialization.0.upgrade": "false",
 				}),
 			),
 		}}},
