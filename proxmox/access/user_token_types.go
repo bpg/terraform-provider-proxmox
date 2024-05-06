@@ -40,9 +40,9 @@ type UserTokenGetResponseBody struct {
 
 // UserTokenGetResponseData contains the data from a user token get response.
 type UserTokenGetResponseData struct {
-	Comment        *string           `json:"comment,omitempty" url:"comment,omitempty"`
-	PrivSeparate   *types.CustomBool `json:"privsep,omitempty" url:"privsep,omitempty,int"`
-	ExpirationDate *int64            `json:"expire,omitempty"  url:"expire,omitempty"`
+	Comment        *string            `json:"comment,omitempty" url:"comment,omitempty"`
+	PrivSeparate   *types.CustomBool  `json:"privsep,omitempty" url:"privsep,omitempty,int"`
+	ExpirationDate *types.CustomInt64 `json:"expire,omitempty"  url:"expire,omitempty"`
 }
 
 // UserTokenListResponseBody contains the body from a user token list response.

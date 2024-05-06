@@ -82,11 +82,11 @@ func TestAccResourceUserToken(t *testing.T) {
 			{
 				Config: `resource "proxmox_virtual_environment_user" "user1" {
 					comment  			= "Managed by Terraform"
-					email 			= "user1@pve"
+					email 				= "user1@pve"
 					enabled 			= true
 					expiration_date 	= "2034-01-01T22:00:00Z"
-					first_name 		= "First"
-					last_name 		= "Last"
+					first_name 			= "First"
+					last_name 			= "Last"
 					user_id  			= "user1@pve"
 				}
 				resource "proxmox_virtual_environment_user_token" "user1_token" {
@@ -94,28 +94,33 @@ func TestAccResourceUserToken(t *testing.T) {
 					expiration_date 	= "2034-01-01T22:00:00Z"
 					id 					= "tk1"
 					user_id  			= proxmox_virtual_environment_user.user1.user_id
-				}
-				`,
+				}`,
 				Check: testResourceAttributes("proxmox_virtual_environment_user_token.user1_token", map[string]string{
-					"comment": "Managed by Terraform",
-					"user_id": "user1@pve",
-					"value":   `user1@pve!tk1=.*`,
+					"comment":         "Managed by Terraform",
+					"expiration_date": "2034-01-01T22:00:00Z",
+					"user_id":         "user1@pve",
+					"value":           `user1@pve!tk1=.*`,
 				}),
 			},
-			//{
-			//	Config: `resource "proxmox_virtual_environment_user" "user1" {
-			//		  enabled 			= false
-			//		  expiration_date 	= "2035-01-01T22:00:00Z"
-			//		  user_id  			= "user1@pve"
-			//		  first_name 		= "First One"
-			//	}`,
-			//	Check: testResourceAttributes("proxmox_virtual_environment_user.user1", map[string]string{
-			//		"enabled":         "false",
-			//		"expiration_date": "2035-01-01T22:00:00Z",
-			//		"first_name":      "First One",
-			//		"user_id":         "user1@pve",
-			//	}),
-			//},
+			{
+				Config: `resource "proxmox_virtual_environment_user_token" "user1_token" {
+					comment  			= "Managed by Terraform 2"
+					expiration_date 	= "2033-01-01T01:01:01Z"
+					id 					= "tk1"
+					user_id				= "user1@pve"
+				}`,
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_user.user1", map[string]string{
+						"comment":         "Managed by Terraform 2",
+						"expiration_date": "2033-01-01T01:01:01Z",
+						"id":              "tk1",
+						"user_id":         "user1@pve",
+					}),
+					testNoResourceAttributesSet("proxmox_virtual_environment_user.user1", []string{
+						"value",
+					}),
+				),
+			},
 		}},
 	}
 

@@ -26,3 +26,7 @@ User API tokens.
 - `comment` (String) Comment for the token.
 - `expiration_date` (String) Expiration date for the token.
 - `privileges_separation` (Boolean) Restrict API token privileges with separate ACLs (default), Restrict API token privileges with separate ACLs (default), or give full privileges of corresponding user.
+
+### Read-Only
+
+- `value` (String) API token value used for authentication.
