@@ -13,27 +13,46 @@ import (
 // UserTokenCreateRequestBody contains the data for a user token create request.
 type UserTokenCreateRequestBody struct {
 	Comment        *string           `json:"comment,omitempty" url:"comment,omitempty"`
-	PrivSeparate   *types.CustomBool `json:"privsep,omitempty" url:"privsep,omitempty,int"`
 	ExpirationDate *int64            `json:"expire,omitempty"  url:"expire,omitempty"`
-	ID             string            `json:"userid"            url:"userid"`
-	TokenID        string            `json:"tokenid"           url:"tokenid"`
+	PrivSeparate   *types.CustomBool `json:"privsep,omitempty" url:"privsep,omitempty,int"`
 }
 
-// UserTokenResponseBody contains the body from a user get token response.
-type UserTokenResponseBody struct {
+// UserTokenUpdateRequestBody contains the data for a user token update request.
+type UserTokenUpdateRequestBody UserTokenCreateRequestBody
+
+// UserTokenCreateResponseBody contains the body from a user token create response.
+type UserTokenCreateResponseBody struct {
+	Data *UserTokenCreateResponseData `json:"data,omitempty"`
+}
+
+// UserTokenCreateResponseData contains the data from a user token create response.
+type UserTokenCreateResponseData struct {
+	// The full token id, format "<userid>!<tokenid>"
+	FullTokenID string                   `json:"full-tokenid"`
+	Info        UserTokenGetResponseData `json:"info"`
+	Value       string                   `json:"value"`
+}
+
+// UserTokenGetResponseBody contains the body from a user token get response.
+type UserTokenGetResponseBody struct {
 	Data *UserTokenGetResponseData `json:"data,omitempty"`
 }
 
-// UserTokenGetResponseData contains the data from an user token response.
+// UserTokenGetResponseData contains the data from a user token get response.
 type UserTokenGetResponseData struct {
 	Comment        *string           `json:"comment,omitempty" url:"comment,omitempty"`
 	PrivSeparate   *types.CustomBool `json:"privsep,omitempty" url:"privsep,omitempty,int"`
 	ExpirationDate *int64            `json:"expire,omitempty"  url:"expire,omitempty"`
-	ID             *string           `json:"userid"            url:"userid"`
-	TokenID        *string           `json:"tokenid"           url:"tokenid"`
 }
 
-// UserListResponseBody contains the body from a user list response.
+// UserTokenListResponseBody contains the body from a user token list response.
 type UserTokenListResponseBody struct {
-	Data []*UserTokenGetResponseData `json:"data,omitempty"`
+	Data []*UserTokenListResponseData `json:"data,omitempty"`
+}
+
+// UserTokenListResponseData contains the data from a user token list response.
+type UserTokenListResponseData struct {
+	UserTokenGetResponseData
+
+	TokenID string `json:"tokenid"`
 }

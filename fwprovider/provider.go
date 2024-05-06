@@ -28,6 +28,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/network"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/user"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -446,6 +447,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		hardwaremapping.NewResourceUSB,
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
+		user.NewUserTokenResource,
 		vm.NewVMResource,
 		NewClusterOptionsResource,
 		NewDownloadFileResource,

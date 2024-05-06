@@ -45,4 +45,5 @@ import (
 //go:generate cp ../build/docs-gen/resources/virtual_environment_haresource.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_cluster_options.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_download_file.md ../docs/resources/
+//go:generate cp ../build/docs-gen/resources/virtual_environment_user_token.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_vm2.md ../docs/resources/

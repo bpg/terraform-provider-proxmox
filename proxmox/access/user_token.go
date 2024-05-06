@@ -24,13 +24,20 @@ func (c *Client) userTokenPath(userid, id string) string {
 }
 
 // CreateUserToken creates a user token.
-func (c *Client) CreateUserToken(ctx context.Context, userid string, id string, d *UserTokenCreateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.userTokenPath(userid, id), d, nil)
+func (c *Client) CreateUserToken(
+	ctx context.Context,
+	userid string,
+	id string,
+	d *UserTokenCreateRequestBody,
+) (string, error) {
+	resBody := &UserTokenCreateResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.userTokenPath(userid, id), d, resBody)
 	if err != nil {
-		return fmt.Errorf("error creating user token: %w", err)
+		return "", fmt.Errorf("error creating user token: %w", err)
 	}
 
-	return nil
+	return resBody.Data.FullTokenID + "=" + resBody.Data.Value, nil
 }
 
 // DeleteUserToken deletes an user token.
@@ -45,11 +52,11 @@ func (c *Client) DeleteUserToken(ctx context.Context, userid string, id string) 
 
 // GetUserToken retrieves a user token.
 func (c *Client) GetUserToken(ctx context.Context, userid string, id string) (*UserTokenGetResponseData, error) {
-	resBody := &UserTokenResponseBody{}
+	resBody := &UserTokenGetResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.userTokenPath(userid, id), nil, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving user: %w", err)
+		return nil, fmt.Errorf("error retrieving user token: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -60,12 +67,12 @@ func (c *Client) GetUserToken(ctx context.Context, userid string, id string) (*U
 }
 
 // ListUserTokens retrieves a list of user tokens.
-func (c *Client) ListUserTokens(ctx context.Context, userid string) ([]*UserTokenGetResponseData, error) {
+func (c *Client) ListUserTokens(ctx context.Context, userid string) ([]*UserTokenListResponseData, error) {
 	resBody := &UserTokenListResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.userTokensPath(userid), nil, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error listing users: %w", err)
+		return nil, fmt.Errorf("error listing user tokens: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -76,7 +83,7 @@ func (c *Client) ListUserTokens(ctx context.Context, userid string) ([]*UserToke
 }
 
 // UpdateUserToken updates the user token.
-func (c *Client) UpdateUserToken(ctx context.Context, userid string, id string, d *UserTokenCreateRequestBody) error {
+func (c *Client) UpdateUserToken(ctx context.Context, userid string, id string, d *UserTokenUpdateRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPut, c.userTokenPath(userid, id), d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating user token: %w", err)
