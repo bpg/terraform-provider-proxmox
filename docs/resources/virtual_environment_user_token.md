@@ -29,5 +29,5 @@ User API tokens.
 
 ### Read-Only
 
-- `id` (String) A unique identifier with format `<user_id>!<token_name>`.
+- `id` (String) Unique token identifier with format `<user_id>!<token_name>`.
 - `value` (String, Sensitive) API token value used for authentication.
