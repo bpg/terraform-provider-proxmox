@@ -118,7 +118,7 @@ The SSH agent authentication takes precedence over the `private_key` and `passwo
 
 ### SSH Private Key
 
-In some cases where SSH agent is not available, for example when running Terraform from a Windows machine, or when using a CI/CD pipeline that does not support SSH agent forwarding, 
+In some cases where SSH agent is not available, for example when using a CI/CD pipeline that does not support SSH agent forwarding, 
 you can use the `private_key` argument in the `ssh` block (or alternatively `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable) to provide the private key for the SSH connection.
 
 The private key mut not be encrypted, and must be in PEM format.
