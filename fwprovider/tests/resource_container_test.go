@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -18,8 +19,7 @@ import (
 )
 
 const (
-	accTestContainerName      = "proxmox_virtual_environment_container.test_container"
-	accTestContainerCloneName = "proxmox_virtual_environment_container.test_container_clone"
+	accTestContainerName = "proxmox_virtual_environment_container.test_container"
 )
 
 //nolint:gochecknoglobals
@@ -38,11 +38,11 @@ func TestAccResourceContainer(t *testing.T) { //nolint:wsl
 		ProtoV6ProviderFactories: te.accProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceContainerCreateConfig(te, false),
+				Config: te.renderConfig(testAccResourceContainerCreateConfig(te, false)),
 				Check:  testAccResourceContainerCreateCheck(te),
 			},
 			{
-				Config: testAccResourceContainerCreateConfig(te, true) + testAccResourceContainerCreateCloneConfig(te),
+				Config: te.renderConfig(testAccResourceContainerCreateConfig(te, true) + testAccResourceContainerCreateCloneConfig(te)),
 				Check:  testAccResourceContainerCreateCloneCheck(te),
 			},
 		},
@@ -56,12 +56,12 @@ func testAccResourceContainerCreateConfig(te *testEnvironment, isTemplate bool) 
 resource "proxmox_virtual_environment_download_file" "ubuntu_container_template" {
 	content_type = "vztmpl"
 	datastore_id = "local"
-	node_name    = "%[1]s"
+	node_name = "{{.NodeName}}"
 	url = "http://download.proxmox.com/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
     overwrite_unmanaged = true
 }
 resource "proxmox_virtual_environment_container" "test_container" {
-  node_name = "%[1]s"
+  node_name = "{{.NodeName}}"
   vm_id     = %d
   template  = %t
 
@@ -95,7 +95,7 @@ resource "proxmox_virtual_environment_container" "test_container" {
     type             = "ubuntu"
   }
 }
-`, te.nodeName, accTestContainerID, isTemplate)
+`, accTestContainerID, isTemplate)
 }
 
 func testAccResourceContainerCreateCheck(te *testEnvironment) resource.TestCheckFunc {
@@ -104,7 +104,10 @@ func testAccResourceContainerCreateCheck(te *testEnvironment) resource.TestCheck
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
 		func(*terraform.State) error {
-			err := te.nodeClient().Container(accTestContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			err := te.nodeClient().Container(accTestContainerID).WaitForContainerStatus(ctx, "running")
 			require.NoError(te.t, err, "container did not start")
 
 			return nil
@@ -118,8 +121,7 @@ func testAccResourceContainerCreateCloneConfig(te *testEnvironment) string {
 	return fmt.Sprintf(`
 resource "proxmox_virtual_environment_container" "test_container_clone" {
   depends_on = [proxmox_virtual_environment_container.test_container]
-
-  node_name = "%s"
+  node_name = "{{.NodeName}}"
   vm_id     = %d
 
   clone {
@@ -130,7 +132,7 @@ resource "proxmox_virtual_environment_container" "test_container_clone" {
     hostname = "test-clone"
   }
 }
-`, te.nodeName, accCloneContainerID)
+`, accCloneContainerID)
 }
 
 func testAccResourceContainerCreateCloneCheck(te *testEnvironment) resource.TestCheckFunc {
@@ -138,7 +140,10 @@ func testAccResourceContainerCreateCloneCheck(te *testEnvironment) resource.Test
 
 	return resource.ComposeTestCheckFunc(
 		func(*terraform.State) error {
-			err := te.nodeClient().Container(accCloneContainerID).WaitForContainerStatus(context.Background(), "running", 10, 1)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			err := te.nodeClient().Container(accCloneContainerID).WaitForContainerStatus(ctx, "running")
 			require.NoError(te.t, err, "container did not start")
 
 			return nil

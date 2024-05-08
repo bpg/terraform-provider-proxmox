@@ -15,7 +15,7 @@ This repository is a fork of <https://github.com/danitso/terraform-provider-prox
 
 ## Compatibility promise
 
-This provider is compatible with the latest version of Proxmox VE (currently 8.1).
+This provider is compatible with the latest version of Proxmox VE (currently 8.2).
 While it may work with older 7.x versions, it is not guaranteed to do so.
 
 While provider is on version 0.x, it is not guaranteed to be backwards compatible with all previous minor versions.
@@ -116,6 +116,11 @@ resource "proxmox_virtual_environment_vm" "example" {
 Due to limitations in the Proxmox VE API, certain files (snippets, backups) need to be uploaded using SFTP.
 This requires the use of a PAM account (standard Linux account).
 
+### Cluster hardware mappings cannot be created by non-PAM accounts
+
+Due to limitations in the Proxmox VE API, cluster hardware mappings must be created using the `root` PAM account (standard Linux account) due to [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit#Virtualization) interactions.
+Hardware mappings allow to use [PCI "passthrough"](https://pve.proxmox.com/wiki/PCI_Passthrough) and [map physical USB ports](https://pve.proxmox.com/wiki/USB_Physical_Port_Mapping).
+
 ## Contributors
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this project.
@@ -134,5 +139,13 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Elias Alvord](https://github.com/elias314)
 - [laktosterror](https://github.com/laktosterror)
 - [Radosław Szamszur](https://github.com/rszamszur)
+- [Ben Bouillet](https://github.com/benbouillet)
 
 Thanks again for your support, it is much appreciated! 🙏
+
+
+## Acknowledgements
+
+This project has been developed with **GoLand** IDE under the [JetBrains Open Source license](https://www.jetbrains.com/community/opensource/#support), generously provided by JetBrains s.r.o.
+
+<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/GoLand_icon.png" alt="GoLand logo" width="80">

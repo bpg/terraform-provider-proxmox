@@ -13,9 +13,9 @@ Manages a file.
 
 ### Backups (`dump`)
 
--> **Note:** The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
+-> The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_file" "backup" {
   content_type = "dump"
   datastore_id = "local"
@@ -29,9 +29,9 @@ resource "proxmox_virtual_environment_file" "backup" {
 
 ### Images
 
-**Consider using `proxmox_virtual_environment_download_file` resource instead. Using this resource for images is less efficient (requires to transfer uploaded image to node) though still supported.**
+-> Consider using `proxmox_virtual_environment_download_file` resource instead. Using this resource for images is less efficient (requires to transfer uploaded image to node) though still supported.
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
   content_type = "iso"
   datastore_id = "local"
@@ -45,11 +45,11 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 
 ### Snippets
 
--> **Note:**  Snippets are not enabled by default in new Proxmox installations. You need to enable them in the 'Datacenter>Storage' section of the proxmox interface before first using this resource.
+-> Snippets are not enabled by default in new Proxmox installations. You need to enable them in the 'Datacenter>Storage' section of the proxmox interface before first using this resource.
 
--> **Note:** The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
+-> The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_file" "cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
@@ -82,9 +82,9 @@ EOF
 
 ### Container Template (`vztmpl`)
 
-**Consider using `proxmox_virtual_environment_download_file` resource instead. Using this resource for container images is less efficient (requires to transfer uploaded image to node) though still supported.**
+-> Consider using `proxmox_virtual_environment_download_file` resource instead. Using this resource for container images is less efficient (requires to transfer uploaded image to node) though still supported.
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
   content_type = "vztmpl"
   datastore_id = "local"

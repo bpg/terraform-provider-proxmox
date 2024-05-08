@@ -8,7 +8,7 @@ package resource
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -153,7 +154,7 @@ func User() *schema.Resource {
 
 func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -196,7 +197,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Password:       password,
 	}
 
-	err = api.Access().CreateUser(ctx, body)
+	err = client.Access().CreateUser(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -220,7 +221,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -231,15 +232,15 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	userID := d.Id()
-	user, err := api.Access().GetUser(ctx, userID)
+	user, err := client.Access().GetUser(ctx, userID)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
 			return nil
@@ -247,7 +248,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	acl, err := api.Access().GetACL(ctx)
+	acl, err := client.Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -348,7 +349,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -388,14 +389,14 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	}
 
 	userID := d.Id()
-	err = api.Access().UpdateUser(ctx, userID, body)
+	err = client.Access().UpdateUser(ctx, userID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	if d.HasChange(mkResourceVirtualEnvironmentUserPassword) {
 		password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
-		err = api.Access().ChangeUserPassword(ctx, userID, password)
+		err = client.Access().ChangeUserPassword(ctx, userID, password)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -419,7 +420,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -442,7 +443,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -453,7 +454,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -476,20 +477,14 @@ func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			Users:     []string{userID},
 		}
 
-		err = api.Access().UpdateACL(ctx, aclBody)
+		err = client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = api.Access().DeleteUser(ctx, userID)
-
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
-			d.SetId("")
-
-			return nil
-		}
+	err = client.Access().DeleteUser(ctx, userID)
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		return diag.FromErr(err)
 	}
 

@@ -5,12 +5,35 @@ import (
 	"testing"
 )
 
+func TestOrderedListFromMap(t *testing.T) {
+	t.Parallel()
+
+	inputMap := map[string]interface{}{
+		"value1": map[string]interface{}{"name": "resource1", "attr": "value1"},
+		"value3": map[string]interface{}{"name": "resource3", "attr": "value3"},
+		"value2": map[string]interface{}{"name": "resource2", "attr": "value2"},
+	}
+
+	expected := []interface{}{
+		map[string]interface{}{"name": "resource1", "attr": "value1"},
+		map[string]interface{}{"name": "resource2", "attr": "value2"},
+		map[string]interface{}{"name": "resource3", "attr": "value3"},
+	}
+
+	result := OrderedListFromMap(inputMap)
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("MapResourceList() = %v, want %v", result, expected)
+	}
+}
+
 func TestMapResourceList(t *testing.T) {
 	t.Parallel()
 
 	resourceList := []interface{}{
 		map[string]interface{}{"name": "resource1", "attr": "value1"},
 		map[string]interface{}{"name": "resource2", "attr": "value2"},
+		nil,
 		map[string]interface{}{"name": "resource3", "attr": "value3"},
 	}
 

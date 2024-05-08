@@ -8,12 +8,13 @@ package resource
 
 import (
 	"context"
-	"strings"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -93,7 +94,7 @@ func Group() *schema.Resource {
 
 func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -106,7 +107,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		ID:      groupID,
 	}
 
-	err = api.Access().CreateGroup(ctx, body)
+	err = client.Access().CreateGroup(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -130,7 +131,7 @@ func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -143,15 +144,15 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	groupID := d.Id()
-	group, err := api.Access().GetGroup(ctx, groupID)
+	group, err := client.Access().GetGroup(ctx, groupID)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
 			return nil
@@ -159,7 +160,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 		return diag.FromErr(err)
 	}
 
-	acl, err := api.Access().GetACL(ctx)
+	acl, err := client.Access().GetACL(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -202,7 +203,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -214,7 +215,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 		Comment: &comment,
 	}
 
-	err = api.Access().UpdateGroup(ctx, groupID, body)
+	err = client.Access().UpdateGroup(ctx, groupID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -237,7 +238,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -260,7 +261,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err := api.Access().UpdateACL(ctx, aclBody)
+		err := client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -271,7 +272,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 
 func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -294,20 +295,15 @@ func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 			Roles:     []string{aclEntry[mkResourceVirtualEnvironmentGroupACLRoleID].(string)},
 		}
 
-		err = api.Access().UpdateACL(ctx, aclBody)
+		err = client.Access().UpdateACL(ctx, aclBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 	}
 
-	err = api.Access().DeleteGroup(ctx, groupID)
+	err = client.Access().DeleteGroup(ctx, groupID)
 
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
-			d.SetId("")
-
-			return nil
-		}
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		return diag.FromErr(err)
 	}
 

@@ -13,7 +13,7 @@ Manages a virtual machine.
 
 ## Example Usage
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   name        = "terraform-provider-proxmox-ubuntu-vm"
   description = "Managed by Terraform"
@@ -293,7 +293,7 @@ output "ubuntu_vm_public_key" {
     to `ovmf`)
     - `datastore_id` (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
-    - `file_format` (Optional) The file format.
+    - `file_format` (Optional) The file format (defaults to `raw`).
     - `type` (Optional) Size and type of the OVMF EFI disk. `4m` is newer and
         recommended, and required for Secure Boot. For backwards compatibility
         use `2m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
@@ -372,6 +372,7 @@ output "ubuntu_vm_public_key" {
         all vendor data passed to the VM via cloud-init.
     - `meta_data_file_id` - (Optional) The identifier for a file containing
         all meta data passed to the VM via cloud-init.
+    - `upgrade` - (Optional) Whether to do an automatic package upgrade after the first boot (defaults to `true`).
 - `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`).
     - `da` - Danish.
     - `de` - German.
@@ -439,6 +440,7 @@ output "ubuntu_vm_public_key" {
     - `mac_address` - (Optional) The MAC address.
     - `model` - (Optional) The network device model (defaults to `virtio`).
         - `e1000` - Intel E1000.
+        - `e1000e` - Intel E1000E.
         - `rtl8139` - Realtek RTL8139.
         - `virtio` - VirtIO (paravirtualized).
         - `vmxnet3` - VMware vmxnet3.
@@ -513,8 +515,6 @@ output "ubuntu_vm_public_key" {
     1800).
 - `timeout_create` - (Optional) Timeout for creating a VM in seconds (defaults to
     1800).
-- `timeout_move_disk` - (Optional) Timeout for moving the disk of a VM in
-    seconds (defaults to 1800).
 - `timeout_migrate` - (Optional) Timeout for migrating the VM (defaults to
     1800).
 - `timeout_reboot` - (Optional) Timeout for rebooting a VM in seconds (defaults
@@ -634,7 +634,7 @@ attaching one disk to multiple VM will cause errors or even data corruption.
 Do *not* move or resize `data_vm` disks.
 (Resource `data_user_vm` should reject attempts to move or resize non-owned disks.)
 
-```terraform
+```hcl
 resource "proxmox_virtual_environment_vm" "data_vm" {
   node_name = "first-node"
   started = false

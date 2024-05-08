@@ -8,15 +8,18 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -76,7 +79,9 @@ const (
 	dvStartOnBoot                       = true
 	dvTemplate                          = false
 	dvTimeoutCreate                     = 1800
-	dvTimeoutStart                      = 300
+	dvTimeoutClone                      = 1800
+	dvTimeoutUpdate                     = 1800
+	dvTimeoutDelete                     = 60
 	dvUnprivileged                      = false
 	dvVMID                              = -1
 
@@ -157,7 +162,9 @@ const (
 	mkTags                              = "tags"
 	mkTemplate                          = "template"
 	mkTimeoutCreate                     = "timeout_create"
-	mkTimeoutStart                      = "timeout_start"
+	mkTimeoutClone                      = "timeout_clone"
+	mkTimeoutUpdate                     = "timeout_update"
+	mkTimeoutDelete                     = "timeout_delete"
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
 )
@@ -844,11 +851,31 @@ func Container() *schema.Resource {
 				Optional:    true,
 				Default:     dvTimeoutCreate,
 			},
-			mkTimeoutStart: {
+			mkTimeoutClone: {
+				Type:        schema.TypeInt,
+				Description: "Clone container timeout",
+				Optional:    true,
+				Default:     dvTimeoutClone,
+			},
+			mkTimeoutUpdate: {
+				Type:        schema.TypeInt,
+				Description: "Update container timeout",
+				Optional:    true,
+				Default:     dvTimeoutUpdate,
+			},
+			mkTimeoutDelete: {
+				Type:        schema.TypeInt,
+				Description: "Delete container timeout",
+				Optional:    true,
+				Default:     dvTimeoutDelete,
+			},
+			"timeout_start": {
 				Type:        schema.TypeInt,
 				Description: "Start container timeout",
 				Optional:    true,
-				Default:     dvTimeoutStart,
+				Default:     300,
+				Deprecated: "This field is deprecated and will be removed in a future release. " +
+					"An overall operation timeout (`timeout_create` / `timeout_clone`) is used instead.",
 			},
 			mkUnprivileged: {
 				Type:        schema.TypeBool,
@@ -900,9 +927,14 @@ func containerCreate(ctx context.Context, d *schema.ResourceData, m interface{})
 }
 
 func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	cloneTimeoutSec := d.Get(mkTimeoutClone).(int)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(cloneTimeoutSec)*time.Second)
+	defer cancel()
+
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -929,7 +961,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	vmID := d.Get(mkVMID).(int)
 
 	if vmID == -1 {
-		vmIDNew, e := api.Cluster().GetVMID(ctx)
+		vmIDNew, e := client.Cluster().GetVMID(ctx)
 		if e != nil {
 			return diag.FromErr(e)
 		}
@@ -963,9 +995,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	if cloneNodeName != "" && cloneNodeName != nodeName {
 		cloneBody.TargetNodeName = &nodeName
 
-		err = api.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
+		err = client.Node(cloneNodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	} else {
-		err = api.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
+		err = client.Node(nodeName).Container(cloneVMID).CloneContainer(ctx, cloneBody)
 	}
 
 	if err != nil {
@@ -974,10 +1006,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	d.SetId(strconv.Itoa(vmID))
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Wait for the container to be created and its configuration lock to be released.
-	err = containerAPI.WaitForContainerLock(ctx, 600, 5, true)
+	err = containerAPI.WaitForContainerConfigUnlock(ctx, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1264,7 +1296,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	// Wait for the container's lock to be released.
-	err = containerAPI.WaitForContainerLock(ctx, 600, 5, true)
+	err = containerAPI.WaitForContainerConfigUnlock(ctx, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1273,18 +1305,23 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 }
 
 func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	createTimeoutSec := d.Get(mkTimeoutCreate).(int)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(createTimeoutSec)*time.Second)
+	defer cancel()
+
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkNodeName).(string)
-	resource := Container()
+	container := Container()
 
 	consoleBlock, err := structure.GetSchemaBlock(
-		resource,
+		container,
 		d,
 		[]string{mkConsole},
 		0,
@@ -1301,7 +1338,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	consoleTTYCount := consoleBlock[mkConsoleTTYCount].(int)
 
 	cpuBlock, err := structure.GetSchemaBlock(
-		resource,
+		container,
 		d,
 		[]string{mkCPU},
 		0,
@@ -1318,7 +1355,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	description := d.Get(mkDescription).(string)
 
 	diskBlock, err := structure.GetSchemaBlock(
-		resource,
+		container,
 		d,
 		[]string{mkDisk},
 		0,
@@ -1341,7 +1378,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	features, err := containerGetFeatures(resource, d)
+	features, err := containerGetFeatures(container, d)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1452,7 +1489,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	memoryBlock, err := structure.GetSchemaBlock(
-		resource,
+		container,
 		d,
 		[]string{mkMemory},
 		0,
@@ -1625,10 +1662,9 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
 	vmID := d.Get(mkVMID).(int)
-	createTimeout := d.Get(mkTimeoutCreate).(int)
 
 	if vmID == -1 {
-		vmIDNew, e := api.Cluster().GetVMID(ctx)
+		vmIDNew, e := client.Cluster().GetVMID(ctx)
 		if e != nil {
 			return diag.FromErr(e)
 		}
@@ -1636,7 +1672,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		vmID = *vmIDNew
 	}
 
-	// Attempt to create the resource using the retrieved values.
+	// Attempt to create the container using the retrieved values.
 	createBody := containers.CreateRequestBody{
 		ConsoleEnabled:       &consoleEnabled,
 		ConsoleMode:          &consoleMode,
@@ -1698,7 +1734,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		createBody.Tags = &tagsString
 	}
 
-	err = api.Node(nodeName).Container(0).CreateContainer(ctx, &createBody, createTimeout)
+	err = client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1706,7 +1742,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	d.SetId(strconv.Itoa(vmID))
 
 	// Wait for the container's lock to be released.
-	err = api.Node(nodeName).Container(vmID).WaitForContainerLock(ctx, 600, 5, true)
+	err = client.Node(nodeName).Container(vmID).WaitForContainerConfigUnlock(ctx, true)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1724,7 +1760,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1736,12 +1772,10 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	containerAPI := api.Node(nodeName).Container(vmID)
-
-	startTimeout := d.Get(mkTimeoutStart).(int)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Start the container and wait for it to reach a running state before continuing.
-	err = containerAPI.StartContainer(ctx, startTimeout)
+	err = containerAPI.StartContainer(ctx)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -1919,7 +1953,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetClient()
+	client, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -1931,13 +1965,12 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Retrieve the entire configuration in order to compare it to the state.
 	containerConfig, e := containerAPI.GetContainer(ctx)
 	if e != nil {
-		if strings.Contains(e.Error(), "HTTP 404") ||
-			(strings.Contains(e.Error(), "HTTP 500") && strings.Contains(e.Error(), "does not exist")) {
+		if errors.Is(e, api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
 			return nil
@@ -2540,9 +2573,14 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 }
 
 func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	updateTimeoutSec := d.Get(mkTimeoutUpdate).(int)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(updateTimeoutSec)*time.Second)
+	defer cancel()
+
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, e := config.GetClient()
+	client, e := config.GetClient()
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -2554,7 +2592,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		return diag.FromErr(e)
 	}
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Prepare the new request object.
 	updateBody := containers.UpdateRequestBody{
@@ -2562,7 +2600,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	rebootRequired := false
-	resource := Container()
+	container := Container()
 
 	// Retrieve the clone argument as the update logic varies for clones.
 	clone := d.Get(mkClone).([]interface{})
@@ -2580,7 +2618,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	// Prepare the new console configuration.
 	if d.HasChange(mkConsole) {
 		consoleBlock, err := structure.GetSchemaBlock(
-			resource,
+			container,
 			d,
 			[]string{mkConsole},
 			0,
@@ -2606,7 +2644,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	// Prepare the new CPU configuration.
 	if d.HasChange(mkCPU) {
 		cpuBlock, err := structure.GetSchemaBlock(
-			resource,
+			container,
 			d,
 			[]string{mkCPU},
 			0,
@@ -2628,7 +2666,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	if d.HasChange(mkFeatures) {
-		features, err := containerGetFeatures(resource, d)
+		features, err := containerGetFeatures(container, d)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -2737,7 +2775,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	// Prepare the new memory configuration.
 	if d.HasChange(mkMemory) {
 		memoryBlock, err := structure.GetSchemaBlock(
-			resource,
+			container,
 			d,
 			[]string{mkMemory},
 			0,
@@ -2908,7 +2946,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	// Prepare the new operating system configuration.
 	if d.HasChange(mkOperatingSystem) {
 		operatingSystem, err := structure.GetSchemaBlock(
-			resource,
+			container,
 			d,
 			[]string{mkOperatingSystem},
 			0,
@@ -2941,7 +2979,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	if d.HasChange(mkStarted) && !bool(template) {
 		if started {
-			e = containerAPI.StartContainer(ctx, 60)
+			e = containerAPI.StartContainer(ctx)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -2957,7 +2995,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 				return diag.FromErr(e)
 			}
 
-			e = containerAPI.WaitForContainerStatus(ctx, "stopped", 300, 5)
+			e = containerAPI.WaitForContainerStatus(ctx, "stopped")
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -2985,9 +3023,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 }
 
 func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	deleteTimeoutSec := d.Get(mkTimeoutDelete).(int)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(deleteTimeoutSec)*time.Second)
+	defer cancel()
+
 	config := m.(proxmoxtf.ProviderConfiguration)
 
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -2999,7 +3042,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 		return diag.FromErr(err)
 	}
 
-	containerAPI := api.Node(nodeName).Container(vmID)
+	containerAPI := client.Node(nodeName).Container(vmID)
 
 	// Shut down the container before deleting it.
 	status, err := containerAPI.GetContainerStatus(ctx)
@@ -3009,20 +3052,19 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	if status.Status != "stopped" {
 		forceStop := types.CustomBool(true)
-		shutdownTimeout := 300
 
 		err = containerAPI.ShutdownContainer(
 			ctx,
 			&containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
-				Timeout:   &shutdownTimeout,
+				Timeout:   &deleteTimeoutSec,
 			},
 		)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		err = containerAPI.WaitForContainerStatus(ctx, "stopped", 30, 5)
+		err = containerAPI.WaitForContainerStatus(ctx, "stopped")
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -3030,7 +3072,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	err = containerAPI.DeleteContainer(ctx)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
 			return nil
@@ -3040,7 +3082,7 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Wait for the state to become unavailable as that clearly indicates the destruction of the container.
-	err = containerAPI.WaitForContainerStatus(ctx, "", 60, 2)
+	err = containerAPI.WaitForContainerStatus(ctx, "")
 	if err == nil {
 		return diag.Errorf("failed to delete container \"%d\"", vmID)
 	}

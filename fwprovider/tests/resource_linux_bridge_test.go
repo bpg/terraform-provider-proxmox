@@ -28,17 +28,17 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: fmt.Sprintf(`
+				Config: te.renderConfig(fmt.Sprintf(`
 				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 					address = "%s"
 					autostart = true
 					comment = "created by terraform"
 					mtu = 1499
 					name = "%s"
-					node_name = "%s"
+					node_name = "{{.NodeName}}"
 					vlan_aware = true
 				}
-				`, ipV4cidr1, iface, te.nodeName),
+				`, ipV4cidr1, iface)),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
 						"address":    ipV4cidr1,
@@ -55,7 +55,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 			},
 			// Update testing
 			{
-				Config: fmt.Sprintf(`
+				Config: te.renderConfig(fmt.Sprintf(`
 				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 					address = "%s"
 					address6 = "%s"
@@ -63,9 +63,9 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					comment = ""
 					mtu = null
 					name = "%s"
-					node_name = "%s"
+					node_name = "{{.NodeName}}"
 					vlan_aware = false
-				}`, ipV4cidr2, ipV6cidr, iface, te.nodeName),
+				}`, ipV4cidr2, ipV6cidr, iface)),
 				Check: resource.ComposeTestCheckFunc(
 					testResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
 						"address":    ipV4cidr2,

@@ -8,8 +8,8 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -26,57 +26,33 @@ const (
 func TestAccResourceDownloadFile(t *testing.T) {
 	te := initTestEnvironment(t)
 
+	te.addTemplateVars(map[string]interface{}{
+		"FakeFileISO":   fakeFileISO,
+		"FakeFileQCOW2": fakeFileQCOW2,
+	})
+
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"download iso file", []resource.TestStep{{
-			Config: fmt.Sprintf(`
-				resource "proxmox_virtual_environment_download_file" "iso_image" {
-					content_type = "iso"
-					node_name    = "%s"
-					datastore_id = "%s"
-					url          = "%s"
-					overwrite_unmanaged = true
-				  }
-				 `, te.nodeName, accTestStorageName, fakeFileISO),
-			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
-					"id":             "local:iso/fake_file.iso",
-					"node_name":      te.nodeName,
-					"datastore_id":   accTestStorageName,
-					"url":            fakeFileISO,
-					"file_name":      "fake_file.iso",
-					"upload_timeout": "600",
-					"size":           "3",
-					"verify":         "true",
-				}),
-				testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
-					"checksum",
-					"checksum_algorithm",
-					"decompression_algorithm",
-				}),
-			),
-		}}},
 		{"download qcow2 file", []resource.TestStep{{
-			Config: fmt.Sprintf(`
+			Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
 					content_type       = "iso"
-					node_name          = "%s"
-					datastore_id       = "%s"
+					node_name          = "{{.NodeName}}"
+					datastore_id       = "{{.DatastoreID}}"
 					file_name          = "fake_qcow2_file.img"
-					url                =  "%s"
+					url                =  "{{.FakeFileQCOW2}}"
 					checksum           = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
 					checksum_algorithm = "sha256"
 					overwrite_unmanaged = true
-				  }
-				 `, te.nodeName, accTestStorageName, fakeFileQCOW2),
+				  }`),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_download_file.qcow2_image", map[string]string{
 					"id":                 "local:iso/fake_qcow2_file.img",
 					"content_type":       "iso",
 					"node_name":          te.nodeName,
-					"datastore_id":       accTestStorageName,
+					"datastore_id":       te.datastoreID,
 					"url":                fakeFileQCOW2,
 					"file_name":          "fake_qcow2_file.img",
 					"upload_timeout":     "600",
@@ -90,73 +66,107 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				}),
 			),
 		}}},
-		{"update file", []resource.TestStep{{
-			Config: fmt.Sprintf(`
+		{"download & update iso file", []resource.TestStep{
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_download_file" "iso_image" {
+					content_type = "iso"
+					node_name    = "{{.NodeName}}"
+					datastore_id = "{{.DatastoreID}}"
+					url          = "{{.FakeFileISO}}"
+					overwrite_unmanaged = true
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
+						"id":             "local:iso/fake_file.iso",
+						"node_name":      te.nodeName,
+						"datastore_id":   te.datastoreID,
+						"url":            fakeFileISO,
+						"file_name":      "fake_file.iso",
+						"upload_timeout": "600",
+						"size":           "3",
+						"verify":         "true",
+					}),
+					testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
+						"checksum",
+						"checksum_algorithm",
+						"decompression_algorithm",
+					}),
+				),
+			},
+			{
+				Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_download_file" "iso_image" {
 					content_type   = "iso"
-					node_name      = "%s"
-					datastore_id   = "%s"
+					node_name      = "{{.NodeName}}"
+					datastore_id   = "{{.DatastoreID}}"
 					file_name      = "fake_iso_file.img"
-					url            = "%s"
+					url            = "{{.FakeFileISO}}"
 					upload_timeout = 10000
 					overwrite_unmanaged = true
-				  }
-				 `, te.nodeName, accTestStorageName, fakeFileISO),
-			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
-					"id":             "local:iso/fake_iso_file.img",
-					"content_type":   "iso",
-					"node_name":      te.nodeName,
-					"datastore_id":   accTestStorageName,
-					"url":            fakeFileISO,
-					"file_name":      "fake_iso_file.img",
-					"upload_timeout": "10000",
-					"size":           "3",
-					"verify":         "true",
-				}),
-				testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
-					"checksum",
-					"checksum_algorithm",
-					"decompression_algorithm",
-				}),
-			),
-		}}},
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
+						"id":             "local:iso/fake_iso_file.img",
+						"content_type":   "iso",
+						"node_name":      te.nodeName,
+						"datastore_id":   te.datastoreID,
+						"url":            fakeFileISO,
+						"file_name":      "fake_iso_file.img",
+						"upload_timeout": "10000",
+						"size":           "3",
+						"verify":         "true",
+					}),
+					testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
+						"checksum",
+						"checksum_algorithm",
+						"decompression_algorithm",
+					}),
+				),
+			},
+		}},
 		{"override unmanaged file", []resource.TestStep{{
 			PreConfig: func() {
-				err := te.nodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
+				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+				defer cancel()
+
+				_ = te.nodeStorageClient().DeleteDatastoreFile(ctx, "iso/fake_file.iso") //nolint: errcheck
+
+				err := te.nodeStorageClient().DownloadFileByURL(ctx, &storage.DownloadURLPostRequestBody{
 					Content:  ptr.Ptr("iso"),
 					FileName: ptr.Ptr("fake_file.iso"),
 					Node:     ptr.Ptr(te.nodeName),
-					Storage:  ptr.Ptr(accTestStorageName),
+					Storage:  ptr.Ptr(te.datastoreID),
 					URL:      ptr.Ptr(fakeFileISO),
-				}, 600)
+				})
 				require.NoError(t, err)
+
 				t.Cleanup(func() {
-					err := te.nodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
-					require.NoError(t, err)
+					e := te.nodeStorageClient().DeleteDatastoreFile(context.Background(), "iso/fake_file.iso")
+					require.NoError(t, e)
 				})
 			},
-			Config: fmt.Sprintf(`
-				resource "proxmox_virtual_environment_download_file" "iso_image" {
+			Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_download_file" "iso_image3" {
 					content_type        = "iso"
-					node_name           = "%s"
-					datastore_id        = "%s"
-					url 		        = "%s"
+					node_name           = "{{.NodeName}}"
+					datastore_id        = "{{.DatastoreID}}"
+					url 		        = "{{.FakeFileISO}}"
+					file_name           = "fake_iso_file3.iso"
 					overwrite_unmanaged = true
-				  }
-				 `, te.nodeName, accTestStorageName, fakeFileISO),
+				  }`),
 			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image", map[string]string{
-					"id":           "local:iso/fake_file.iso",
+				testResourceAttributes("proxmox_virtual_environment_download_file.iso_image3", map[string]string{
+					"id":           "local:iso/fake_iso_file3.iso",
 					"content_type": "iso",
 					"node_name":    te.nodeName,
-					"datastore_id": accTestStorageName,
+					"datastore_id": te.datastoreID,
 					"url":          fakeFileISO,
-					"file_name":    "fake_file.iso",
+					"file_name":    "fake_iso_file3.iso",
 					"size":         "3",
 					"verify":       "true",
 				}),
-				testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image", []string{
+				testNoResourceAttributesSet("proxmox_virtual_environment_download_file.iso_image3", []string{
 					"checksum",
 					"checksum_algorithm",
 					"decompression_algorithm",
@@ -167,7 +177,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.accProviders,
 				Steps:                    tt.steps,
 			})

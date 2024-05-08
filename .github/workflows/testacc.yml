@@ -7,9 +7,6 @@ on:
         description: 'Branch or tag to run tests against'
         required: true
         default: 'main'
-  push:
-    branches:
-      - main
 
 jobs:
   acceptance:
@@ -51,7 +48,7 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
-      - uses: hashicorp/setup-terraform@a1502cd9e758c50496cc9ac5308c4843bcd56d36 # v3.0.0
+      - uses: hashicorp/setup-terraform@97f030cf6dc0b4f5e0da352c7bca9cca34579800 # v3.1.0
         with:
           terraform_version: ${{ matrix.terraform }}.*
           terraform_wrapper: false

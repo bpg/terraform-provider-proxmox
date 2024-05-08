@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
 
 const (
@@ -40,9 +41,6 @@ const (
 	mkDiskSpeedWrite          = "write"
 	mkDiskSpeedWriteBurstable = "write_burstable"
 	mkDiskSSD                 = "ssd"
-
-	// MkTimeoutMoveDisk is the name of the timeout_move_disk attribute.
-	MkTimeoutMoveDisk = "timeout_move_disk"
 )
 
 // Schema returns the schema for the disk resource.
@@ -71,6 +69,10 @@ func Schema() map[string]*schema.Schema {
 					},
 				}, nil
 			},
+			DiffSuppressFunc: structure.SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(
+				mkDiskInterface, mkDiskPathInDatastore,
+			),
+			DiffSuppressOnRefresh: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkDiskInterface: {

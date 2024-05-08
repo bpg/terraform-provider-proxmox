@@ -11,7 +11,7 @@ Retrieves information about all available nodes.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_nodes" "available_nodes" {}
 ```
 

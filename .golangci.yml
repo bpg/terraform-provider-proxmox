@@ -26,6 +26,10 @@ issues:
     - path: fwprovider/tests/.*\.go
       linters:
         - paralleltest
+    # Exclude `lll` issues for long lines with URLs.
+    - linters:
+        - lll
+      source: "^.*https?://.*$"
 linters-settings:
   exhaustive:
     default-signifies-exhaustive: true
@@ -46,6 +50,7 @@ linters:
   disable:
     # deprecated
     - deadcode
+    - execinquery
     - gocyclo
     - golint
     - ifshort
@@ -63,14 +68,16 @@ linters:
     - funlen
     - gocognit
     # others
+    - canonicalheader
     - depguard
     - exhaustivestruct
     - exhaustruct
     - gci
-    - goerr113
+    - err113
     - gomnd
     - ireturn
     - maintidx
+    - mnd
     - nestif
     - nlreturn
     - perfsprint

@@ -8,10 +8,12 @@ package fwprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -26,6 +28,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
@@ -361,6 +364,11 @@ func (r *downloadFileResource) Create(
 		return
 	}
 
+	timeout := time.Duration(plan.UploadTimeout.ValueInt64()) * time.Second
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	fileMetadata, err := r.getURLMetadata(
 		ctx,
 		&plan,
@@ -394,27 +402,20 @@ func (r *downloadFileResource) Create(
 	}
 
 	storageClient := nodesClient.Storage(plan.Storage.ValueString())
-	err = storageClient.DownloadFileByURL(
-		ctx,
-		&downloadFileReq,
-		plan.UploadTimeout.ValueInt64(),
-	)
+
+	err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
 
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
 		fileID := plan.Content.ValueString() + "/" + plan.FileName.ValueString()
 
 		err = storageClient.DeleteDatastoreFile(ctx, fileID)
-		if err != nil {
+		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError("Error deleting file from datastore",
 				fmt.Sprintf("Could not delete file '%s', unexpected error: %s", fileID, err.Error()),
 			)
 		}
 
-		err = storageClient.DownloadFileByURL(
-			ctx,
-			&downloadFileReq,
-			plan.UploadTimeout.ValueInt64(),
-		)
+		err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
 	}
 
 	if err != nil {
@@ -610,7 +611,7 @@ func (r *downloadFileResource) Delete(
 		ctx,
 		state.ID.ValueString(),
 	)
-	if err != nil {
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		if strings.Contains(err.Error(), "unable to parse") {
 			resp.Diagnostics.AddWarning(
 				"Datastore file does not exists",

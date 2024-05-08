@@ -11,7 +11,7 @@ Retrieves information about all the datastores available to a specific node.
 
 ## Example Usage
 
-```terraform
+```hcl
 data "proxmox_virtual_environment_datastores" "first_node" {
   node_name = "first-node"
 }

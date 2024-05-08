@@ -21,7 +21,6 @@ const (
 	dvNetworkDeviceModel     = "virtio"
 	dvNetworkDeviceQueues    = 0
 	dvNetworkDeviceRateLimit = 0
-	dvNetworkDeviceTrunks    = ""
 	dvNetworkDeviceVLANID    = 0
 
 	mkIPv4Addresses = "ipv4_addresses"
@@ -118,6 +117,7 @@ func Schema() map[string]*schema.Schema {
 						Default:     dvNetworkDeviceModel,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 							"e1000",
+							"e1000e",
 							"rtl8139",
 							"virtio",
 							"vmxnet3",

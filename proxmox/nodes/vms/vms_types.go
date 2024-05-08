@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -49,6 +50,7 @@ type CustomCloudInitConfig struct {
 	SearchDomain *string                   `json:"searchdomain,omitempty" url:"searchdomain,omitempty"`
 	SSHKeys      *CustomCloudInitSSHKeys   `json:"sshkeys,omitempty"      url:"sshkeys,omitempty"`
 	Type         *string                   `json:"citype,omitempty"       url:"citype,omitempty"`
+	Upgrade      *types.CustomBool         `json:"ciupgrade,omitempty"    url:"ciupgrade,omitempty,int"`
 	Username     *string                   `json:"ciuser,omitempty"       url:"ciuser,omitempty"`
 }
 
@@ -288,14 +290,19 @@ type CreateRequestBody struct {
 	VirtualCPUCount      *int                           `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
 	VirtualIODevices     CustomStorageDevices           `json:"virtio,omitempty"             url:"virtio,omitempty"`
 	VMGenerationID       *string                        `json:"vmgenid,omitempty"            url:"vmgenid,omitempty"`
-	VMID                 *int                           `json:"vmid,omitempty"               url:"vmid,omitempty"`
+	VMID                 int                            `json:"vmid,omitempty"               url:"vmid,omitempty"`
 	VMStateDatastoreID   *string                        `json:"vmstatestorage,omitempty"     url:"vmstatestorage,omitempty"`
 	WatchdogDevice       *CustomWatchdogDevice          `json:"watchdog,omitempty"           url:"watchdog,omitempty"`
 }
 
 // CreateResponseBody contains the body from a create response.
 type CreateResponseBody struct {
-	Data *string `json:"data,omitempty"`
+	TaskID *string `json:"data,omitempty"`
+}
+
+// DeleteResponseBody contains the body from a delete response.
+type DeleteResponseBody struct {
+	TaskID *string `json:"data,omitempty"`
 }
 
 // GetQEMUNetworkInterfacesResponseBody contains the body from a QEMU get network interfaces response.
@@ -360,6 +367,7 @@ type GetResponseData struct {
 	CloudInitSSHKeys     *CustomCloudInitSSHKeys         `json:"sshkeys,omitempty"`
 	CloudInitType        *string                         `json:"citype,omitempty"`
 	CloudInitUsername    *string                         `json:"ciuser,omitempty"`
+	CloudInitUpgrade     *types.CustomBool               `json:"ciupgrade,omitempty"`
 	CPUArchitecture      *string                         `json:"arch,omitempty"`
 	CPUCores             *int                            `json:"cores,omitempty"`
 	CPUEmulation         *CustomCPUEmulation             `json:"cpu,omitempty"`
@@ -660,6 +668,23 @@ type UpdateAsyncResponseBody struct {
 // UpdateRequestBody contains the data for an virtual machine update request.
 type UpdateRequestBody CreateRequestBody
 
+// ToDelete adds a field to the delete list.
+func (u *UpdateRequestBody) ToDelete(fieldName string) error {
+	if u == nil {
+		return errors.New("update request body is nil")
+	}
+
+	if field, ok := reflect.TypeOf(*u).FieldByName(fieldName); ok {
+		fieldTag := field.Tag.Get("url")
+		name := strings.Split(fieldTag, ",")[0]
+		u.Delete = append(u.Delete, name)
+	} else {
+		return fmt.Errorf("field %s not found in struct %s", fieldName, reflect.TypeOf(u).Name())
+	}
+
+	return nil
+}
+
 // EncodeValues converts a CustomAgent struct to a URL vlaue.
 func (r CustomAgent) EncodeValues(key string, v *url.Values) error {
 	var values []string
@@ -798,6 +823,14 @@ func (r CustomCloudInitConfig) EncodeValues(_ string, v *url.Values) error {
 
 	if r.Type != nil {
 		v.Add("citype", *r.Type)
+	}
+
+	if r.Upgrade != nil {
+		if *r.Upgrade {
+			v.Add("ciupgrade", "1")
+		} else {
+			v.Add("ciupgrade", "0")
+		}
 	}
 
 	if r.Username != nil {

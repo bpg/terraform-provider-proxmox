@@ -290,8 +290,8 @@ func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
 			want: &CustomNUMADevice{
 				CPUIDs:        []string{"1-2", "3-4"},
 				HostNodeNames: &[]string{"1-2"},
-				Memory:        types.IntPtr(1024),
-				Policy:        types.StrPtr("preferred"),
+				Memory:        ptr.Ptr(1024),
+				Policy:        ptr.Ptr("preferred"),
 			},
 		},
 		{
@@ -299,7 +299,7 @@ func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
 			line: `"cpus=1-2,memory=1024"`,
 			want: &CustomNUMADevice{
 				CPUIDs: []string{"1-2"},
-				Memory: types.IntPtr(1024),
+				Memory: ptr.Ptr(1024),
 			},
 		},
 	}

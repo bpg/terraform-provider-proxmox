@@ -15,12 +15,7 @@ func OrderedListFromMap(inputMap map[string]interface{}) []interface{} {
 
 	sort.Strings(keyList)
 
-	orderedList := make([]interface{}, itemCount)
-	for i, k := range keyList {
-		orderedList[i] = inputMap[k]
-	}
-
-	return orderedList
+	return OrderedListFromMapByKeyValues(inputMap, keyList)
 }
 
 // MapResourceList generates a list of strings from a Terraform resource list (list of maps).
@@ -32,9 +27,14 @@ func MapResourceList(resourceList []interface{}, attrName string) map[string]int
 	m := make(map[string]interface{}, len(resourceList))
 
 	for _, resource := range resourceList {
+		if resource == nil {
+			continue
+		}
+
 		r := resource.(map[string]interface{})
-		key := r[attrName].(string)
-		m[key] = r
+		if key, ok := r[attrName].(string); ok {
+			m[key] = r
+		}
 	}
 
 	return m

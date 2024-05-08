@@ -977,6 +977,51 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "TheDevMinerTV",
+      "name": "DevMiner",
+      "avatar_url": "https://avatars.githubusercontent.com/u/29845135?v=4",
+      "profile": "https://devminer.xyz",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "tyxieblub",
+      "name": "joris",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5111464?v=4",
+      "profile": "https://github.com/tyxieblub",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "svengreb",
+      "name": "Sven Greb",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13448100?v=4",
+      "profile": "https://www.nordtheme.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "niektoniekde",
+      "name": "Jaroslav Petras",
+      "avatar_url": "https://avatars.githubusercontent.com/u/271951?v=4",
+      "profile": "https://github.com/niektoniekde",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "nankeen",
+      "name": "Kai",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6895854?v=4",
+      "profile": "http://nankeen.me",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

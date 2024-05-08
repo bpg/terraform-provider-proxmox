@@ -40,12 +40,12 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     version      = "v2.0"
   }
 
-  #  disk {
-  #    datastore_id = local.datastore_id
-  #    file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
-  #    interface    = "virtio0"
-  #    iothread     = true
-  #  }
+  disk {
+    datastore_id = local.datastore_id
+    file_format  = "raw"
+    interface    = "ide0"
+    size         = 8
+  }
 
   disk {
     datastore_id = local.datastore_id
@@ -153,6 +153,12 @@ resource "proxmox_virtual_environment_vm" "example" {
 
   smbios {
     serial = "my-custom-serial"
+  }
+
+  efi_disk {
+    datastore_id = local.datastore_id
+    file_format  = "raw"
+    type         = "4m"
   }
 
   initialization {

@@ -15,26 +15,24 @@ import (
 )
 
 func TestAccDatasourceVersion(t *testing.T) {
-	t.Parallel()
-
 	te := initTestEnvironment(t)
 
 	datasourceName := "data.proxmox_virtual_environment_version.test"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.accProviders,
 		Steps: []resource.TestStep{
 			// Read testing
 			{
 				Config: `data "proxmox_virtual_environment_version" "test" {}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "release", "8.1"),
+					resource.TestCheckResourceAttr(datasourceName, "release", "8.2"),
 					resource.TestCheckResourceAttrSet(datasourceName, "repository_id"),
 					resource.TestCheckResourceAttrWith(datasourceName, "version", func(value string) error {
-						if strings.HasPrefix(value, "8.1") {
+						if strings.HasPrefix(value, "8.2") {
 							return nil
 						}
-						return fmt.Errorf("version %s does not start with 8.1", value)
+						return fmt.Errorf("version %s does not start with 8.2", value)
 					}),
 					resource.TestCheckResourceAttrSet(datasourceName, "id"),
 				),

@@ -8,12 +8,13 @@ package resource
 
 import (
 	"context"
-	"strings"
+	"errors"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -52,7 +53,7 @@ func Role() *schema.Resource {
 
 func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -70,7 +71,7 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Privileges: customPrivileges,
 	}
 
-	err = api.Access().CreateRole(ctx, body)
+	err = client.Access().CreateRole(ctx, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -82,15 +83,15 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
-	role, err := api.Access().GetRole(ctx, roleID)
+	role, err := client.Access().GetRole(ctx, roleID)
 	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
 
 			return nil
@@ -112,7 +113,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -129,7 +130,7 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		Privileges: customPrivileges,
 	}
 
-	err = api.Access().UpdateRole(ctx, roleID, body)
+	err = client.Access().UpdateRole(ctx, roleID, body)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -139,20 +140,15 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
-	api, err := config.GetClient()
+	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
-	err = api.Access().DeleteRole(ctx, roleID)
 
-	if err != nil {
-		if strings.Contains(err.Error(), "HTTP 404") {
-			d.SetId("")
-
-			return nil
-		}
+	err = client.Access().DeleteRole(ctx, roleID)
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		return diag.FromErr(err)
 	}
 
