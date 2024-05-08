@@ -48,7 +48,7 @@ resource "proxmox_virtual_environment_user_token" "user_token" {
 ### Read-Only
 
 - `id` (String) Unique token identifier with format `<user_id>!<token_name>`.
-- `value` (String, Sensitive) API token value used for authentication.
+- `value` (String, Sensitive) API token value used for authentication. It is populated only when creating a new token, and can't be retrieved at import.
 
 ## Import
 

@@ -97,8 +97,10 @@ func (r *userTokenResource) Schema(
 			},
 			"value": schema.StringAttribute{
 				Description: "API token value used for authentication.",
-				Computed:    true,
-				Sensitive:   true,
+				MarkdownDescription: "API token value used for authentication. It is populated only when creating a new token, " +
+					"and can't be retrieved at import.",
+				Computed:  true,
+				Sensitive: true,
 			},
 		},
 	}
