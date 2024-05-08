@@ -5,6 +5,7 @@ go 1.22
 toolchain go1.22.2
 
 require (
+	github.com/Microsoft/go-winio v0.6.2
 	github.com/avast/retry-go/v4 v4.6.0
 	github.com/brianvoe/gofakeit/v7 v7.0.2
 	github.com/google/go-cmp v0.6.0
