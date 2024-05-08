@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider"
@@ -35,7 +36,7 @@ type testEnvironment struct {
 
 	accProviders map[string]func() (tfprotov6.ProviderServer, error)
 	once         sync.Once
-	nc           *nodes.Client
+	c            api.Client
 }
 
 func initTestEnvironment(t *testing.T) *testEnvironment {
@@ -109,8 +110,8 @@ func (e *testEnvironment) renderConfig(cfg string) string {
 	return buf.String()
 }
 
-func (e *testEnvironment) nodeClient() *nodes.Client {
-	if e.nc == nil {
+func (e *testEnvironment) client() api.Client {
+	if e.c == nil {
 		e.once.Do(
 			func() {
 				username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
@@ -128,21 +129,26 @@ func (e *testEnvironment) nodeClient() *nodes.Client {
 					panic(err)
 				}
 
-				client, err := api.NewClient(creds, conn)
+				e.c, err = api.NewClient(creds, conn)
 				if err != nil {
 					panic(err)
 				}
-
-				e.nc = &nodes.Client{Client: client, NodeName: e.nodeName}
 			})
 	}
 
-	return e.nc
+	return e.c
+}
+
+func (e *testEnvironment) accessClient() *access.Client {
+	return &access.Client{Client: e.client()}
+}
+
+func (e *testEnvironment) nodeClient() *nodes.Client {
+	return &nodes.Client{Client: e.client(), NodeName: e.nodeName}
 }
 
 func (e *testEnvironment) nodeStorageClient() *storage.Client {
-	nodesClient := e.nodeClient()
-	return &storage.Client{Client: nodesClient, StorageName: e.datastoreID}
+	return &storage.Client{Client: e.nodeClient(), StorageName: e.datastoreID}
 }
 
 // testAccMuxProviders returns a map of mux servers for the acceptance tests.
