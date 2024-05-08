@@ -246,20 +246,6 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					overwrite_unmanaged = true
 				}`),
 		}}},
-		{"native cloud-init: upgrade packages by default", []resource.TestStep{{
-			Config: te.renderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit2" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					initialization {
-					}
-				}`),
-			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit2", map[string]string{
-					"initialization.0.upgrade": "true",
-				}),
-			),
-		}}},
 		{"native cloud-init: do not upgrade packages", []resource.TestStep{{
 			Config: te.renderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit3" {
@@ -317,7 +303,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				}`),
 			Check: resource.ComposeTestCheckFunc(
 				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
-					"initialization.0.upgrade": "true",
+					"initialization.0.upgrade": "false",
 				}),
 			),
 		}}},

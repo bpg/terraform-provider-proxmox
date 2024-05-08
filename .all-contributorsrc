@@ -1013,6 +1013,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "nankeen",
+      "name": "Kai",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6895854?v=4",
+      "profile": "http://nankeen.me",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
