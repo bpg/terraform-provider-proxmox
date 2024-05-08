@@ -1,19 +1,23 @@
-package user
+package access
 
 import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -35,6 +39,7 @@ type userTokenModel struct {
 	ID             types.String `tfsdk:"id"`
 	PrivSeparation types.Bool   `tfsdk:"privileges_separation"`
 	UserID         types.String `tfsdk:"user_id"`
+	TokenName      types.String `tfsdk:"token_name"`
 	Value          types.String `tfsdk:"value"`
 }
 
@@ -58,9 +63,22 @@ func (r *userTokenResource) Schema(
 			"expiration_date": schema.StringAttribute{
 				Description: "Expiration date for the token.",
 				Optional:    true,
-				// TODO: add validator
+				Validators: []validator.String{
+					validators.NewParseValidator(func(s string) (time.Time, error) {
+						return time.Parse(time.RFC3339, s)
+					}, "must be a valid RFC3339 date"),
+				},
 			},
-			"id": schema.StringAttribute{
+			"id": structure.IDAttribute("Unique token identifier with format `<user_id>!<token_name>`."),
+			"privileges_separation": schema.BoolAttribute{
+				Description: "Restrict API token privileges with separate ACLs (default)",
+				MarkdownDescription: "Restrict API token privileges with separate ACLs (default), " +
+					"or give full privileges of corresponding user.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(true),
+			},
+			"token_name": schema.StringAttribute{
 				Description: "User-specific token identifier.",
 				Required:    true,
 				Validators: []validator.String{
@@ -68,15 +86,7 @@ func (r *userTokenResource) Schema(
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
 				},
-			},
-			"privileges_separation": schema.BoolAttribute{
-				Description: "Restrict API token privileges with separate ACLs (default)",
-				MarkdownDescription: "Restrict API token privileges with separate ACLs (default), " +
-					"Restrict API token privileges with separate ACLs (default), " +
-					"or give full privileges of corresponding user.",
-				Optional: true,
 			},
 			"user_id": schema.StringAttribute{
 				Description: "User identifier.",
@@ -87,8 +97,8 @@ func (r *userTokenResource) Schema(
 			},
 			"value": schema.StringAttribute{
 				Description: "API token value used for authentication.",
-				Optional:    false,
 				Computed:    true,
+				Sensitive:   true,
 			},
 		},
 	}
@@ -149,7 +159,7 @@ func (r *userTokenResource) Create(ctx context.Context, req resource.CreateReque
 		body.ExpirationDate = &v
 	}
 
-	value, err := r.client.Access().CreateUserToken(ctx, plan.UserID.ValueString(), plan.ID.ValueString(), &body)
+	value, err := r.client.Access().CreateUserToken(ctx, plan.UserID.ValueString(), plan.TokenName.ValueString(), &body)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating user token", err.Error())
 	}
@@ -158,6 +168,7 @@ func (r *userTokenResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
+	plan.ID = types.StringValue(plan.UserID.ValueString() + "!" + plan.TokenName.ValueString())
 	plan.Value = types.StringValue(value)
 	resp.State.Set(ctx, plan)
 }
@@ -171,7 +182,7 @@ func (r *userTokenResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	data, err := r.client.Access().GetUserToken(ctx, state.UserID.ValueString(), state.ID.ValueString())
+	data, err := r.client.Access().GetUserToken(ctx, state.UserID.ValueString(), state.TokenName.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading user token", err.Error())
 		return
@@ -184,7 +195,7 @@ func (r *userTokenResource) Read(ctx context.Context, req resource.ReadRequest, 
 		state.ExpirationDate = types.StringValue(dt)
 	}
 
-	//state.PrivSeparation = types.BoolPointerValue(data.PrivSeparate.PointerBool())
+	state.PrivSeparation = types.BoolPointerValue(data.PrivSeparate.PointerBool())
 
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
@@ -219,7 +230,7 @@ func (r *userTokenResource) Update(ctx context.Context, req resource.UpdateReque
 		body.ExpirationDate = &v
 	}
 
-	err := r.client.Access().UpdateUserToken(ctx, plan.UserID.ValueString(), plan.ID.ValueString(), &body)
+	err := r.client.Access().UpdateUserToken(ctx, plan.UserID.ValueString(), plan.TokenName.ValueString(), &body)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating user token", err.Error())
 	}
@@ -228,13 +239,66 @@ func (r *userTokenResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
+	plan.Value = types.StringNull()
+
 	resp.State.Set(ctx, plan)
 }
 
 func (r *userTokenResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state userTokenModel
 
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := r.client.Access().DeleteUserToken(ctx, state.UserID.ValueString(), state.TokenName.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error deleting user token", err.Error())
+		return
+	}
+
+	resp.State.RemoveResource(ctx)
 }
 
-func (r *userTokenResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *userTokenResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	idParts := strings.Split(req.ID, "!")
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: 'user_id!token_name'. Got: %q", req.ID),
+		)
 
+		return
+	}
+
+	userID := idParts[0]
+	tokenName := idParts[1]
+
+	data, err := r.client.Access().GetUserToken(ctx, userID, tokenName)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading user token", err.Error())
+		return
+	}
+
+	state := userTokenModel{
+		Comment:        types.StringPointerValue(data.Comment),
+		ID:             types.StringValue(req.ID),
+		PrivSeparation: types.BoolPointerValue(data.PrivSeparate.PointerBool()),
+		UserID:         types.StringValue(userID),
+		TokenName:      types.StringValue(tokenName),
+		Value:          types.StringNull(),
+	}
+
+	if data.ExpirationDate != nil {
+		state.ExpirationDate = types.StringValue(time.Unix(int64(*data.ExpirationDate), 0).UTC().Format(time.RFC3339))
+	}
+
+	diags := resp.State.Set(ctx, state)
+	resp.Diagnostics.Append(diags...)
 }

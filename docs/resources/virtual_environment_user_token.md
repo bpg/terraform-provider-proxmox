@@ -18,15 +18,16 @@ User API tokens.
 
 ### Required
 
-- `id` (String) User-specific token identifier.
+- `token_name` (String) User-specific token identifier.
 - `user_id` (String) User identifier.
 
 ### Optional
 
 - `comment` (String) Comment for the token.
 - `expiration_date` (String) Expiration date for the token.
-- `privileges_separation` (Boolean) Restrict API token privileges with separate ACLs (default), Restrict API token privileges with separate ACLs (default), or give full privileges of corresponding user.
+- `privileges_separation` (Boolean) Restrict API token privileges with separate ACLs (default), or give full privileges of corresponding user.
 
 ### Read-Only
 
-- `value` (String) API token value used for authentication.
+- `id` (String) A unique identifier with format `<user_id>!<token_name>`.
+- `value` (String, Sensitive) API token value used for authentication.
