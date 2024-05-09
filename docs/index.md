@@ -116,6 +116,9 @@ This allows the provider to use the SSH agent configured by the user, and to sup
 You can find more details on the SSH Agent [here](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#adding-your-ssh-keys-to-an-ssh-agent-to-avoid-typing-the-passphrase).
 The SSH agent authentication takes precedence over the `private_key` and `password` authentication.
 
+> [!NOTE]
+> By default on Windows, the provider will assume the SSH agent is at `\\.\pipe\openssh-ssh-agent`.
+
 ### SSH Private Key
 
 In some cases where SSH agent is not available, for example when using a CI/CD pipeline that does not support SSH agent forwarding, 
