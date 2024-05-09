@@ -23,9 +23,9 @@ func TestAccResourceUser(t *testing.T) {
 
 	te := initTestEnvironment(t)
 
-	username := fmt.Sprintf("%s@pve", gofakeit.Username())
+	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
 	te.addTemplateVars(map[string]any{
-		"Username": username,
+		"UserID": userID,
 	})
 
 	tests := []struct {
@@ -36,35 +36,35 @@ func TestAccResourceUser(t *testing.T) {
 			{
 				Config: te.renderConfig(`resource "proxmox_virtual_environment_user" "user" {
 					  comment  			= "Managed by Terraform"
-					  email 			= "{{.Username}}"
+					  email 			= "{{.UserID}}"
 					  enabled 			= true
 					  expiration_date 	= "2034-01-01T22:00:00Z"
 					  first_name 		= "First"
 					  last_name 		= "Last"
-					  user_id  			= "{{.Username}}"
+					  user_id  			= "{{.UserID}}"
 				}`),
 				Check: testResourceAttributes("proxmox_virtual_environment_user.user", map[string]string{
 					"comment":         "Managed by Terraform",
-					"email":           username,
+					"email":           userID,
 					"enabled":         "true",
 					"expiration_date": "2034-01-01T22:00:00Z",
 					"first_name":      "First",
 					"last_name":       "Last",
-					"user_id":         username,
+					"user_id":         userID,
 				}),
 			},
 			{
 				Config: te.renderConfig(`resource "proxmox_virtual_environment_user" "user" {
 					  enabled 			= false
 					  expiration_date 	= "2035-01-01T22:00:00Z"
-					  user_id  			= "{{.Username}}"
+					  user_id  			= "{{.UserID}}"
 					  first_name 		= "First One"
 				}`),
 				Check: testResourceAttributes("proxmox_virtual_environment_user.user", map[string]string{
 					"enabled":         "false",
 					"expiration_date": "2035-01-01T22:00:00Z",
 					"first_name":      "First One",
-					"user_id":         username,
+					"user_id":         userID,
 				}),
 			},
 			{
@@ -89,11 +89,11 @@ func TestAccResourceUserToken(t *testing.T) {
 	t.Parallel()
 
 	te := initTestEnvironment(t)
-	username := fmt.Sprintf("%s@pve", gofakeit.Username())
+	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
 	tokenName := gofakeit.Word()
 
 	te.addTemplateVars(map[string]any{
-		"Username":  username,
+		"UserID":    userID,
 		"TokenName": tokenName,
 	})
 
@@ -106,13 +106,13 @@ func TestAccResourceUserToken(t *testing.T) {
 			"create and update user token",
 			func() {
 				err := te.accessClient().CreateUser(context.Background(), &access.UserCreateRequestBody{
-					ID:       username,
+					ID:       userID,
 					Password: gofakeit.Password(true, true, true, true, false, 8),
 				})
 				require.NoError(t, err)
 
 				t.Cleanup(func() {
-					err := te.accessClient().DeleteUser(context.Background(), username)
+					err := te.accessClient().DeleteUser(context.Background(), userID)
 					require.NoError(t, err)
 				})
 			},
@@ -122,14 +122,14 @@ func TestAccResourceUserToken(t *testing.T) {
 					comment  			= "Managed by Terraform"
 					expiration_date 	= "2034-01-01T22:00:00Z"
 					token_name 			= "{{.TokenName}}"
-					user_id  			= "{{.Username}}"
+					user_id  			= "{{.UserID}}"
 				}`),
 					Check: testResourceAttributes("proxmox_virtual_environment_user_token.user_token", map[string]string{
 						"comment":         "Managed by Terraform",
 						"expiration_date": "2034-01-01T22:00:00Z",
-						"id":              fmt.Sprintf("%s!%s", username, tokenName),
-						"user_id":         username,
-						"value":           fmt.Sprintf("%s!%s=.*", username, tokenName),
+						"id":              fmt.Sprintf("%s!%s", userID, tokenName),
+						"user_id":         userID,
+						"value":           fmt.Sprintf("%s!%s=.*", userID, tokenName),
 					}),
 				},
 				{
@@ -138,7 +138,7 @@ func TestAccResourceUserToken(t *testing.T) {
 					expiration_date 	  = "2033-01-01T01:01:01Z"
 					privileges_separation = false
 					token_name 			  = "{{.TokenName}}"
-					user_id  			  = "{{.Username}}"
+					user_id  			  = "{{.UserID}}"
 				}`),
 					Check: resource.ComposeTestCheckFunc(
 						testResourceAttributes("proxmox_virtual_environment_user_token.user_token", map[string]string{
@@ -146,7 +146,7 @@ func TestAccResourceUserToken(t *testing.T) {
 							"expiration_date":       "2033-01-01T01:01:01Z",
 							"privileges_separation": "false",
 							"token_name":            tokenName,
-							"user_id":               username,
+							"user_id":               userID,
 						}),
 						testNoResourceAttributesSet("proxmox_virtual_environment_user_token.user_token", []string{
 							"value",

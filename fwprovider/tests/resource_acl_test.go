@@ -7,50 +7,86 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"regexp"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 )
 
 func TestAccAcl_User(t *testing.T) {
-	resourceName := "proxmox_virtual_environment_acl.test"
-
 	te := initTestEnvironment(t)
+
+	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
+	te.addTemplateVars(map[string]any{
+		"UserID": userID,
+	})
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: te.accProviders,
 		CheckDestroy:             nil,
+		PreCheck: func() {
+			err := te.accessClient().CreateUser(context.Background(), &access.UserCreateRequestBody{
+				ID:       userID,
+				Password: gofakeit.Password(true, true, true, true, false, 8),
+			})
+			require.NoError(t, err)
+
+			t.Cleanup(func() {
+				err := te.accessClient().DeleteUser(context.Background(), userID)
+				require.NoError(t, err)
+			})
+		},
 		Steps: []resource.TestStep{
 			{
-				Config: testAccConfigACLUser("provider_test@pve", "NoAccess"),
+				Config: te.renderConfig(`resource "proxmox_virtual_environment_acl" "test" {
+					user_id = "{{.UserID}}"
+					path = "/"
+					role_id = "NoAccess"
+				}`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "path", "/"),
-					resource.TestCheckResourceAttr(resourceName, "role_id", "NoAccess"),
-					resource.TestCheckResourceAttr(resourceName, "user_id", "provider_test@pve"),
-					resource.TestCheckResourceAttr(resourceName, "propagate", "true"),
-					resource.TestCheckNoResourceAttr(resourceName, "group_id"),
-					resource.TestCheckNoResourceAttr(resourceName, "token_id"),
+					testResourceAttributes("proxmox_virtual_environment_acl.test", map[string]string{
+						"path":      "/",
+						"role_id":   "NoAccess",
+						"user_id":   userID,
+						"propagate": "true",
+					}),
+					testNoResourceAttributesSet("proxmox_virtual_environment_acl.test", []string{
+						"group_id",
+						"token_id",
+					}),
 				),
 			},
 			{
-				ResourceName:      resourceName,
+				ResourceName:      "proxmox_virtual_environment_acl.test",
 				ImportState:       true,
 				ImportStateIdFunc: testAccACLImportStateIDFunc(),
 				ImportStateVerify: true,
 			},
 			{
-				Config: testAccConfigACLUser("provider_test@pve", "PVEPoolUser"),
+				Config: te.renderConfig(`resource "proxmox_virtual_environment_acl" "test" {
+					user_id = "{{.UserID}}"
+					path = "/"
+					role_id = "PVEPoolUser"
+				}`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "path", "/"),
-					resource.TestCheckResourceAttr(resourceName, "role_id", "PVEPoolUser"),
-					resource.TestCheckResourceAttr(resourceName, "user_id", "provider_test@pve"),
-					resource.TestCheckResourceAttr(resourceName, "propagate", "true"),
-					resource.TestCheckNoResourceAttr(resourceName, "group_id"),
-					resource.TestCheckNoResourceAttr(resourceName, "token_id"),
+					testResourceAttributes("proxmox_virtual_environment_acl.test", map[string]string{
+						"path":      "/",
+						"role_id":   "PVEPoolUser",
+						"user_id":   userID,
+						"propagate": "true",
+					}),
+					testNoResourceAttributesSet("proxmox_virtual_environment_acl.test", []string{
+						"group_id",
+						"token_id",
+					}),
 				),
 			},
 		},
@@ -67,23 +103,44 @@ func TestAccAcl_Validators(t *testing.T) {
 		CheckDestroy:             nil,
 		Steps: []resource.TestStep{
 			{
-				PlanOnly:    true,
-				Config:      testAccConfigACLValidators("test", "test", ""),
+				PlanOnly: true,
+				Config: `resource "proxmox_virtual_environment_acl" "test" {
+					group_id = "test"
+					path = "/"
+					role_id = "test"
+					token_id = "test"
+				}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
 			},
 			{
-				PlanOnly:    true,
-				Config:      testAccConfigACLValidators("", "test", "test"),
+				PlanOnly: true,
+				Config: `resource "proxmox_virtual_environment_acl" "test" {
+					path = "/"
+					role_id = "test"
+					token_id = "test"
+					user_id = "test"
+				}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
 			},
 			{
-				PlanOnly:    true,
-				Config:      testAccConfigACLValidators("test", "", "test"),
+				PlanOnly: true,
+				Config: `resource "proxmox_virtual_environment_acl" "test" {
+					group_id = "test"
+					path = "/"
+					role_id = "test"
+					user_id = "test"
+				}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
 			},
 			{
-				PlanOnly:    true,
-				Config:      testAccConfigACLValidators("test", "test", "test"),
+				PlanOnly: true,
+				Config: `resource "proxmox_virtual_environment_acl" "test" {
+					group_id = "test"
+					path = "/"
+					role_id = "test"
+					token_id = "test"
+					user_id = "test"
+				}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
 			},
 		},
@@ -114,38 +171,4 @@ func testAccACLImportStateIDFunc() resource.ImportStateIdFunc {
 
 		return path + "?" + v.Encode(), nil
 	}
-}
-
-func testAccConfigACLUser(userID string, roleID string) string {
-	return fmt.Sprintf(`
-resource "proxmox_virtual_environment_acl" "test" {
-  user_id = %q
-  path = "/"
-  role_id = %q
-}
-`, userID, roleID)
-}
-
-func testAccConfigACLValidators(groupID string, tokenID string, userID string) string {
-	var groupAttr string
-	if groupID != "" {
-		groupAttr = fmt.Sprintf("\n  group_id = %q", groupID)
-	}
-
-	var tokenAttr string
-	if tokenID != "" {
-		tokenAttr = fmt.Sprintf("\n  token_id = %q", tokenID)
-	}
-
-	var userAttr string
-	if userID != "" {
-		userAttr = fmt.Sprintf("\n  user_id = %q", userID)
-	}
-
-	return fmt.Sprintf(`
-resource "proxmox_virtual_environment_acl" "test" {%v%v%v
-  path = "/"
-  role_id = "test"
-}
-`, groupAttr, tokenAttr, userAttr)
 }

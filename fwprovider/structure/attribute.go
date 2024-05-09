@@ -15,11 +15,11 @@ import (
 // IDAttribute generates an attribute definition suitable for the always-present `id` attribute.
 func IDAttribute(desc ...string) schema.StringAttribute {
 	attr := schema.StringAttribute{
-		Computed: true,
+		Computed:    true,
+		Description: "The unique identifier of this resource.",
 		PlanModifiers: []planmodifier.String{
 			stringplanmodifier.UseStateForUnknown(),
 		},
-		Description: "The unique identifier of this resource.",
 	}
 
 	if len(desc) > 0 {
