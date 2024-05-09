@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // Ensure the implementations satisfy the required interfaces.
@@ -67,7 +67,7 @@ func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics) 
 		}
 	}
 
-	return proxmoxtypes.StrPtr(strings.Join(sanitizedTags, ";"))
+	return ptr.Ptr(strings.Join(sanitizedTags, ";"))
 }
 
 // SetValue converts a string of tags to a tags set value.

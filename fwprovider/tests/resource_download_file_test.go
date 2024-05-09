@@ -14,8 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 const (
@@ -133,11 +133,11 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				_ = te.nodeStorageClient().DeleteDatastoreFile(ctx, "iso/fake_file.iso") //nolint: errcheck
 
 				err := te.nodeStorageClient().DownloadFileByURL(ctx, &storage.DownloadURLPostRequestBody{
-					Content:  types.StrPtr("iso"),
-					FileName: types.StrPtr("fake_file.iso"),
-					Node:     types.StrPtr(te.nodeName),
-					Storage:  types.StrPtr(te.datastoreID),
-					URL:      types.StrPtr(fakeFileISO),
+					Content:  ptr.Ptr("iso"),
+					FileName: ptr.Ptr("fake_file.iso"),
+					Node:     ptr.Ptr(te.nodeName),
+					Storage:  ptr.Ptr(te.datastoreID),
+					URL:      ptr.Ptr(fakeFileISO),
 				})
 				require.NoError(t, err)
 

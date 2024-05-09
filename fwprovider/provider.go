@@ -451,6 +451,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		vm.NewVMResource,
 		NewClusterOptionsResource,
 		NewDownloadFileResource,
+		access.NewACLResource,
 	}
 }
 
