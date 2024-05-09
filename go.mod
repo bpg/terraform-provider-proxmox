@@ -2,7 +2,7 @@ module github.com/bpg/terraform-provider-proxmox
 
 go 1.22
 
-toolchain go1.22.2
+toolchain go1.22.3
 
 require (
 	github.com/avast/retry-go/v4 v4.6.0
