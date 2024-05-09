@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"runtime"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -115,6 +116,11 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
 	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
+
+	// On Windows, binaries using SSH typically assume a hardcoded name for the ssh-agent socket
+	if runtime.GOOS == "windows" && sshAgentSocket == "" {
+		sshAgentSocket = `\\.\pipe\openssh-ssh-agent`
+	}
 
 	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
 		if sshUsername != "" {
