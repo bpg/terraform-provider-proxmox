@@ -535,11 +535,6 @@ func (c *client) createSSHClientAgent(
 	kh knownhosts.HostKeyCallback,
 	sshHost string,
 ) (*ssh.Client, error) {
-	if c.agentSocket == "" {
-		return nil, errors.New("failed connecting to SSH agent socket: the socket file is not defined, " +
-			"authentication will fall back to password")
-	}
-
 	conn, err := dialSocket(c.agentSocket)
 	if err != nil {
 		return nil, fmt.Errorf("failed connecting to SSH auth socket '%s': %w", c.agentSocket, err)
