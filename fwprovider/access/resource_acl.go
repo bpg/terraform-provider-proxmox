@@ -144,11 +144,7 @@ func (r *aclResource) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	err = plan.generateID()
-	if err != nil {
-		resp.Diagnostics.AddError("Unable to create ACL", "failed to generate ID: "+err.Error())
-		return
-	}
+	plan.ID = plan.generateID()
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
