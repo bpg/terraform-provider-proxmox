@@ -78,9 +78,13 @@ func NewClient(
 	socks5Server string, socks5Username string, socks5Password string,
 	nodeResolver NodeResolver,
 ) (Client, error) {
-	if agent && runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "freebsd" {
+	if agent &&
+		runtime.GOOS != "linux" &&
+		runtime.GOOS != "darwin" &&
+		runtime.GOOS != "freebsd" &&
+		runtime.GOOS != "windows" {
 		return nil, errors.New(
-			"the ssh agent flag is only supported on POSIX systems, please set it to 'false'" +
+			"the ssh agent flag is only supported on POSIX and Windows systems, please set it to 'false'" +
 				" or remove it from your provider configuration",
 		)
 	}
@@ -531,12 +535,7 @@ func (c *client) createSSHClientAgent(
 	kh knownhosts.HostKeyCallback,
 	sshHost string,
 ) (*ssh.Client, error) {
-	if c.agentSocket == "" {
-		return nil, errors.New("failed connecting to SSH agent socket: the socket file is not defined, " +
-			"authentication will fall back to password")
-	}
-
-	conn, err := net.Dial("unix", c.agentSocket)
+	conn, err := dialSocket(c.agentSocket)
 	if err != nil {
 		return nil, fmt.Errorf("failed connecting to SSH auth socket '%s': %w", c.agentSocket, err)
 	}

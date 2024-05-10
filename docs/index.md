@@ -116,9 +116,11 @@ This allows the provider to use the SSH agent configured by the user, and to sup
 You can find more details on the SSH Agent [here](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#adding-your-ssh-keys-to-an-ssh-agent-to-avoid-typing-the-passphrase).
 The SSH agent authentication takes precedence over the `private_key` and `password` authentication.
 
+-> By default on Windows, the provider will assume the SSH agent is at `\\.\pipe\openssh-ssh-agent`.
+
 ### SSH Private Key
 
-In some cases where SSH agent is not available, for example when running Terraform from a Windows machine, or when using a CI/CD pipeline that does not support SSH agent forwarding, 
+In some cases where SSH agent is not available, for example when using a CI/CD pipeline that does not support SSH agent forwarding, 
 you can use the `private_key` argument in the `ssh` block (or alternatively `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable) to provide the private key for the SSH connection.
 
 The private key mut not be encrypted, and must be in PEM format.
