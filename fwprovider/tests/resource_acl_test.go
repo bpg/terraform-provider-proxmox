@@ -9,7 +9,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"regexp"
 	"testing"
 
@@ -161,14 +160,10 @@ func testAccACLImportStateIDFunc() resource.ImportStateIdFunc {
 		groupID := rs.Primary.Attributes["group_id"]
 		tokenID := rs.Primary.Attributes["token_id"]
 		userID := rs.Primary.Attributes["user_id"]
+		entityID := groupID + tokenID + userID
 
 		roleID := rs.Primary.Attributes["role_id"]
 
-		v := url.Values{
-			"entity_id": []string{groupID + tokenID + userID},
-			"role_id":   []string{roleID},
-		}
-
-		return path + "?" + v.Encode(), nil
+		return path + "?" + entityID + "?" + roleID, nil
 	}
 }

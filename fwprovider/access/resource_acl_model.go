@@ -8,10 +8,8 @@ package access
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
-	"github.com/gorilla/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -30,70 +28,41 @@ type aclResourceModel struct {
 	UserID    types.String `tfsdk:"user_id"`
 }
 
-type aclResourceIDFields struct {
-	EntityID string `schema:"entity_id"`
-	RoleID   string `schema:"role_id"`
-}
+const aclIDFormat = "{path}?{group|user@realm|user@realm!token}?{role}"
 
-const aclIDFormat = "{path}?entity_id={group|user@realm|user@realm!token}?role_id={role}"
+func (r *aclResourceModel) generateID() types.String {
+	entityID := r.GroupID.ValueString() + r.TokenID.ValueString() + r.UserID.ValueString()
 
-func (r *aclResourceModel) generateID() error {
-	encoder := schema.NewEncoder()
-
-	fields := aclResourceIDFields{
-		EntityID: r.GroupID.ValueString() + r.TokenID.ValueString() + r.UserID.ValueString(),
-		RoleID:   r.RoleID,
-	}
-	v := url.Values{}
-
-	err := encoder.Encode(fields, v)
-	if err != nil {
-		return fmt.Errorf("failed to encode ACL resource ID: %w", err)
-	}
-
-	r.ID = types.StringValue(r.Path + "?" + v.Encode())
-
-	return nil
+	return types.StringValue(r.Path + "?" + entityID + "?" + r.RoleID)
 }
 
 func parseACLResourceModelFromID(id string) (*aclResourceModel, error) {
-	path, query, found := strings.Cut(id, "?")
-
-	if !found {
+	parts := strings.Split(id, "?")
+	if len(parts) != 3 {
 		return nil, fmt.Errorf("invalid ACL resource ID format %#v, expected %v", id, aclIDFormat)
 	}
 
-	v, err := url.ParseQuery(query)
-	if err != nil {
-		return nil, fmt.Errorf("invalid ACL resource ID format %#v, expected %v: %w", id, aclIDFormat, err)
-	}
-
-	decoder := schema.NewDecoder()
-
-	fields := aclResourceIDFields{}
-
-	err = decoder.Decode(&fields, v)
-	if err != nil {
-		return nil, fmt.Errorf("invalid ACL resource ID format %#v, expected %v: %w", id, aclIDFormat, err)
-	}
+	path := parts[0]
+	entityID := parts[1]
+	roleID := parts[2]
 
 	model := &aclResourceModel{
 		ID:        types.StringValue(id),
 		GroupID:   types.StringNull(),
 		Path:      path,
 		Propagate: false,
-		RoleID:    fields.RoleID,
+		RoleID:    roleID,
 		TokenID:   types.StringNull(),
 		UserID:    types.StringNull(),
 	}
 
 	switch {
-	case strings.Contains(fields.EntityID, "!"):
-		model.TokenID = types.StringValue(fields.EntityID)
-	case strings.Contains(fields.EntityID, "@"):
-		model.UserID = types.StringValue(fields.EntityID)
+	case strings.Contains(entityID, "!"):
+		model.TokenID = types.StringValue(entityID)
+	case strings.Contains(entityID, "@"):
+		model.UserID = types.StringValue(entityID)
 	default:
-		model.GroupID = types.StringValue(fields.EntityID)
+		model.GroupID = types.StringValue(entityID)
 	}
 
 	return model, nil
