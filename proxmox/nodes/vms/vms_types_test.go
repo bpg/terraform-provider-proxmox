@@ -34,9 +34,9 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 				Discard:    ptr.Ptr("on"),
 				Enabled:    true,
 				FileVolume: "local-lvm:vm-2041-disk-0",
-				IOThread:   types.CustomBoolPtr(true),
+				IOThread:   types.CustomBool(true).Pointer(),
 				Size:       ds8gig,
-				SSD:        types.CustomBoolPtr(true),
+				SSD:        types.CustomBool(true).Pointer(),
 			},
 		},
 		{
@@ -47,9 +47,9 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 				Enabled:    true,
 				FileVolume: "nfs:2041/vm-2041-disk-0.raw",
 				Format:     ptr.Ptr("raw"),
-				IOThread:   types.CustomBoolPtr(true),
+				IOThread:   types.CustomBool(true).Pointer(),
 				Size:       ds8gig,
-				SSD:        types.CustomBoolPtr(true),
+				SSD:        types.CustomBool(true).Pointer(),
 			},
 		},
 	}
@@ -240,10 +240,10 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 			want: &CustomPCIDevice{
 				DeviceIDs:  &[]string{"81:00.4"},
 				MDev:       nil,
-				PCIExpress: types.CustomBoolPtr(false),
-				ROMBAR:     types.CustomBoolPtr(true),
+				PCIExpress: types.CustomBool(false).Pointer(),
+				ROMBAR:     types.CustomBool(true).Pointer(),
 				ROMFile:    nil,
-				XVGA:       types.CustomBoolPtr(false),
+				XVGA:       types.CustomBool(false).Pointer(),
 			},
 		},
 		{
@@ -253,10 +253,10 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 				DeviceIDs:  nil,
 				Mapping:    ptr.Ptr("mappeddevice"),
 				MDev:       nil,
-				PCIExpress: types.CustomBoolPtr(false),
-				ROMBAR:     types.CustomBoolPtr(true),
+				PCIExpress: types.CustomBool(false).Pointer(),
+				ROMBAR:     types.CustomBool(true).Pointer(),
 				ROMFile:    nil,
-				XVGA:       types.CustomBoolPtr(false),
+				XVGA:       types.CustomBool(false).Pointer(),
 			},
 		},
 	}
@@ -337,7 +337,7 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 			line: `"host=81:00,usb3=0"`,
 			want: &CustomUSBDevice{
 				HostDevice: ptr.Ptr("81:00"),
-				USB3:       types.CustomBoolPtr(false),
+				USB3:       types.CustomBool(false).Pointer(),
 			},
 		},
 		{
@@ -346,7 +346,7 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 			want: &CustomUSBDevice{
 				HostDevice: nil,
 				Mapping:    ptr.Ptr("mappeddevice"),
-				USB3:       types.CustomBoolPtr(false),
+				USB3:       types.CustomBool(false).Pointer(),
 			},
 		},
 	}
