@@ -72,7 +72,7 @@ func (r *aclResourceModel) intoUpdateBody() *access.ACLUpdateRequestBody {
 	body := &access.ACLUpdateRequestBody{
 		Groups:    nil,
 		Path:      r.Path,
-		Propagate: proxmoxtypes.CustomBoolPtr(r.Propagate),
+		Propagate: proxmoxtypes.CustomBool(r.Propagate).Pointer(),
 		Roles:     []string{r.RoleID},
 		Tokens:    nil,
 		Users:     nil,

@@ -137,7 +137,7 @@ func (r *vmResource) create(ctx context.Context, plan vmModel, diags *diag.Diagn
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
 		Tags:        plan.Tags.ValueStringPointer(ctx, diags),
-		Template:    proxmoxtypes.CustomBoolPtr(plan.Template.ValueBool()),
+		Template:    proxmoxtypes.CustomBoolPtr(plan.Template.ValueBoolPointer()),
 		VMID:        int(plan.ID.ValueInt64()),
 	}
 

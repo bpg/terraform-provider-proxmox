@@ -41,8 +41,12 @@ type CustomPrivileges []string
 type CustomTimestamp time.Time
 
 // CustomBoolPtr creates a pointer to a CustomBool.
-func CustomBoolPtr(b bool) *CustomBool {
-	return ptr.Ptr(CustomBool(b))
+func CustomBoolPtr(b *bool) *CustomBool {
+	if b == nil {
+		return nil
+	}
+
+	return ptr.Ptr(CustomBool(*b))
 }
 
 // MarshalJSON converts a boolean to a JSON value.

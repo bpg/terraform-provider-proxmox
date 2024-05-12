@@ -144,7 +144,7 @@ func (r *userTokenResource) Create(ctx context.Context, req resource.CreateReque
 
 	body := access.UserTokenCreateRequestBody{
 		Comment:      plan.Comment.ValueStringPointer(),
-		PrivSeparate: proxmoxtypes.CustomBoolPtr(plan.PrivSeparation.ValueBool()),
+		PrivSeparate: proxmoxtypes.CustomBoolPtr(plan.PrivSeparation.ValueBoolPointer()),
 	}
 
 	if !plan.ExpirationDate.IsNull() && plan.ExpirationDate.ValueString() != "" {
@@ -215,7 +215,7 @@ func (r *userTokenResource) Update(ctx context.Context, req resource.UpdateReque
 
 	body := access.UserTokenUpdateRequestBody{
 		Comment:      plan.Comment.ValueStringPointer(),
-		PrivSeparate: proxmoxtypes.CustomBoolPtr(plan.PrivSeparation.ValueBool()),
+		PrivSeparate: proxmoxtypes.CustomBoolPtr(plan.PrivSeparation.ValueBoolPointer()),
 	}
 
 	if !plan.ExpirationDate.IsNull() && plan.ExpirationDate.ValueString() != "" {
