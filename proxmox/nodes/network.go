@@ -78,7 +78,7 @@ func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
 		func() error {
 			err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("network"), nil, resBody)
 			if err != nil {
-				return err //nolint:wrapcheck
+				return err
 			}
 
 			if resBody.Data == nil {

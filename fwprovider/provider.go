@@ -29,6 +29,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/network"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -443,6 +444,8 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 	return []func() resource.Resource{
 		NewClusterOptionsResource,
 		NewDownloadFileResource,
+		apt.NewResourceRepo,
+		apt.NewResourceStandardRepo,
 		access.NewACLResource,
 		access.NewUserTokenResource,
 		ha.NewHAGroupResource,
@@ -458,6 +461,8 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
+		apt.NewDataSourceRepo,
+		apt.NewDataSourceStandardRepo,
 		ha.NewHAGroupDataSource,
 		ha.NewHAGroupsDataSource,
 		ha.NewHAResourceDataSource,

@@ -45,6 +45,10 @@ linters-settings:
     statements: 60
   errcheck:
     check-blank: true
+  wrapcheck:
+    ignorePackageGlobs:
+      # Prevent false-positive matches for errors from packages of the own module.
+      - github.com/bpg/terraform-provider-proxmox/*
 linters:
   enable-all: true
   disable:
