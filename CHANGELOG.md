@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.56.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.55.1...v0.56.0) (2024-05-12)
+
+
+### Features
+
+* **access:** add ACL resource ([#1166](https://github.com/bpg/terraform-provider-proxmox/issues/1166)) ([afcbb41](https://github.com/bpg/terraform-provider-proxmox/commit/afcbb415a30fdf67912fc0c8ecace338c88fd003))
+* **access:** add proxmox user token ([#1159](https://github.com/bpg/terraform-provider-proxmox/issues/1159)) ([8220271](https://github.com/bpg/terraform-provider-proxmox/commit/8220271eee5755e1d0d87f5064bfb00304a307bb))
+* **provider:** add support for `ssh-agent` on Windows ([#1270](https://github.com/bpg/terraform-provider-proxmox/issues/1270)) ([ccf4834](https://github.com/bpg/terraform-provider-proxmox/commit/ccf4834c16797e099782a13254ab1ef011833133))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v4.1.4 → v4.1.5) ([#1278](https://github.com/bpg/terraform-provider-proxmox/issues/1278)) ([10774f4](https://github.com/bpg/terraform-provider-proxmox/commit/10774f49e17ec4585508989ed225b9d10c2710fb))
+* **ci:** update goreleaser/goreleaser-action action (v5.0.0 → v5.1.0) ([#1284](https://github.com/bpg/terraform-provider-proxmox/issues/1284)) ([78f9d6e](https://github.com/bpg/terraform-provider-proxmox/commit/78f9d6e2bfecebd47018c16ab1ec22e6f00eb878))
+* **ci:** update hashicorp/setup-terraform action (v3.1.0 → v3.1.1) ([#1279](https://github.com/bpg/terraform-provider-proxmox/issues/1279)) ([e79cf12](https://github.com/bpg/terraform-provider-proxmox/commit/e79cf12f44602d9ca9c6e90b1554ac602d79f2b7))
+* **ci:** update jetbrains/qodana-action action (v2024.1.3 → v2024.1.4) ([#1280](https://github.com/bpg/terraform-provider-proxmox/issues/1280)) ([6ae9b58](https://github.com/bpg/terraform-provider-proxmox/commit/6ae9b581df6e82cfe9bae2bb9174d8cc3b46ea6c))
+* **deps:** update go (1.22.2 → 1.22.3) ([#1273](https://github.com/bpg/terraform-provider-proxmox/issues/1273)) ([097f3f9](https://github.com/bpg/terraform-provider-proxmox/commit/097f3f947ca97708a6acf67e036205d459b9c0bd))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.0.2 → v7.0.3) ([#1274](https://github.com/bpg/terraform-provider-proxmox/issues/1274)) ([2be83eb](https://github.com/bpg/terraform-provider-proxmox/commit/2be83eba1ea4512579ea0188c77709fd5a409c29))
+* **deps:** update module github.com/gorilla/schema (v1.2.1 → v1.3.0) ([#1276](https://github.com/bpg/terraform-provider-proxmox/issues/1276)) ([1f80e9d](https://github.com/bpg/terraform-provider-proxmox/commit/1f80e9dc3132f16eca7533c918f2928e0eaf33e5))
+* **deps:** update module github.com/hashicorp/terraform-plugin-mux (v0.15.0 → v0.16.0) ([#1277](https://github.com/bpg/terraform-provider-proxmox/issues/1277)) ([ff98439](https://github.com/bpg/terraform-provider-proxmox/commit/ff9843945943ab0287535f84c3fe1bd60ec2b4d5))
+* **deps:** update tools ([#1275](https://github.com/bpg/terraform-provider-proxmox/issues/1275)) ([d3ea1ac](https://github.com/bpg/terraform-provider-proxmox/commit/d3ea1ac560620552ac4d4f67a9a0a0eb4de43012))
+
 ## [0.55.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.55.0...v0.55.1) (2024-05-06)
 
 
