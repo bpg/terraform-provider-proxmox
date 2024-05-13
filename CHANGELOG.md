@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.56.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.56.0...v0.56.1) (2024-05-13)
+
+
+### Bug Fixes
+
+* **vm:** `cdrom` is not attached when creating a VM from scratch ([#1287](https://github.com/bpg/terraform-provider-proxmox/issues/1287)) ([be4a3b7](https://github.com/bpg/terraform-provider-proxmox/commit/be4a3b7c6f73a441f5e562f2b97c1fafef06bad0))
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/goreleaser/goreleaser (v1.25.1 → v1.26.0) in /tools ([#1289](https://github.com/bpg/terraform-provider-proxmox/issues/1289)) ([7853a53](https://github.com/bpg/terraform-provider-proxmox/commit/7853a535270aa2a0782de8fad20a9d0c57f0b322))
+
 ## [0.56.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.55.1...v0.56.0) (2024-05-12)
 
 
