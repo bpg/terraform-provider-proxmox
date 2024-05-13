@@ -639,6 +639,28 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+
+		{"cdrom", []resource.TestStep{
+			{
+				Config: te.renderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-cdrom"
+					cdrom {
+						enabled   = true
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					testResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
+						"cdrom.0.enabled": "true",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"efi disk", []resource.TestStep{
 			{
 				Config: te.renderConfig(`
