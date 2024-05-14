@@ -119,27 +119,25 @@ func TestAccResourceUserToken(t *testing.T) {
 			[]resource.TestStep{
 				{
 					Config: te.renderConfig(`resource "proxmox_virtual_environment_user_token" "user_token" {
-					comment  			= "Managed by Terraform"
-					expiration_date 	= "2034-01-01T22:00:00Z"
-					token_name 			= "{{.TokenName}}"
-					user_id  			= "{{.UserID}}"
-				}`),
+						comment  			= "Managed by Terraform"
+						token_name 			= "{{.TokenName}}"
+						user_id  			= "{{.UserID}}"
+					}`),
 					Check: testResourceAttributes("proxmox_virtual_environment_user_token.user_token", map[string]string{
-						"comment":         "Managed by Terraform",
-						"expiration_date": "2034-01-01T22:00:00Z",
-						"id":              fmt.Sprintf("%s!%s", userID, tokenName),
-						"user_id":         userID,
-						"value":           fmt.Sprintf("%s!%s=.*", userID, tokenName),
+						"comment": "Managed by Terraform",
+						"id":      fmt.Sprintf("%s!%s", userID, tokenName),
+						"user_id": userID,
+						"value":   fmt.Sprintf("%s!%s=.*", userID, tokenName),
 					}),
 				},
 				{
 					Config: te.renderConfig(`resource "proxmox_virtual_environment_user_token" "user_token" {
-					comment  			  = "Managed by Terraform 2"
-					expiration_date 	  = "2033-01-01T01:01:01Z"
-					privileges_separation = false
-					token_name 			  = "{{.TokenName}}"
-					user_id  			  = "{{.UserID}}"
-				}`),
+						comment  			  = "Managed by Terraform 2"
+						expiration_date 	  = "2033-01-01T01:01:01Z"
+						privileges_separation = false
+						token_name 			  = "{{.TokenName}}"
+						user_id  			  = "{{.UserID}}"
+					}`),
 					Check: resource.ComposeTestCheckFunc(
 						testResourceAttributes("proxmox_virtual_environment_user_token.user_token", map[string]string{
 							"comment":               "Managed by Terraform 2",
@@ -149,6 +147,26 @@ func TestAccResourceUserToken(t *testing.T) {
 							"user_id":               userID,
 						}),
 						testNoResourceAttributesSet("proxmox_virtual_environment_user_token.user_token", []string{
+							"value",
+						}),
+					),
+				},
+				{
+					Config: te.renderConfig(`resource "proxmox_virtual_environment_user_token" "user_token" {
+						comment  			  = "Managed by Terraform 2"
+						privileges_separation = false
+						token_name 			  = "{{.TokenName}}"
+						user_id  			  = "{{.UserID}}"
+					}`),
+					Check: resource.ComposeTestCheckFunc(
+						testResourceAttributes("proxmox_virtual_environment_user_token.user_token", map[string]string{
+							"comment":               "Managed by Terraform 2",
+							"privileges_separation": "false",
+							"token_name":            tokenName,
+							"user_id":               userID,
+						}),
+						testNoResourceAttributesSet("proxmox_virtual_environment_user_token.user_token", []string{
+							"expiration_date",
 							"value",
 						}),
 					),

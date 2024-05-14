@@ -141,7 +141,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Radosław Szamszur](https://github.com/rszamszur)
 - [Ben Bouillet](https://github.com/benbouillet)
 
-Thanks again for your support, it is much appreciated! 🙏
+Thanks again for your continuous support, it is much appreciated! 🙏
 
 
 ## Acknowledgements

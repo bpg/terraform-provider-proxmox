@@ -192,7 +192,7 @@ func (r *userTokenResource) Read(ctx context.Context, req resource.ReadRequest, 
 
 	state.Comment = types.StringPointerValue(data.Comment)
 
-	if data.ExpirationDate != nil {
+	if data.ExpirationDate != nil && *data.ExpirationDate > 0 {
 		dt := time.Unix(int64(*data.ExpirationDate), 0).UTC().Format(time.RFC3339)
 		state.ExpirationDate = types.StringValue(dt)
 	}
@@ -214,11 +214,13 @@ func (r *userTokenResource) Update(ctx context.Context, req resource.UpdateReque
 	}
 
 	body := access.UserTokenUpdateRequestBody{
+		// note: PVE API does not support resetting comment to empty string
 		Comment:      plan.Comment.ValueStringPointer(),
 		PrivSeparate: proxmoxtypes.CustomBoolPtr(plan.PrivSeparation.ValueBoolPointer()),
 	}
 
 	if !plan.ExpirationDate.IsNull() && plan.ExpirationDate.ValueString() != "" {
+		// if planned value is not empty then set it
 		expirationDate, err := time.Parse(
 			time.RFC3339,
 			plan.ExpirationDate.ValueString(),
@@ -230,6 +232,9 @@ func (r *userTokenResource) Update(ctx context.Context, req resource.UpdateReque
 
 		v := expirationDate.Unix()
 		body.ExpirationDate = &v
+	} else if !state.ExpirationDate.IsNull() {
+		// if planned value is empty, but the current value is not then reset it
+		body.ExpirationDate = new(int64)
 	}
 
 	err := r.client.Access().UpdateUserToken(ctx, plan.UserID.ValueString(), plan.TokenName.ValueString(), &body)
@@ -297,7 +302,7 @@ func (r *userTokenResource) ImportState(
 		Value:          types.StringNull(),
 	}
 
-	if data.ExpirationDate != nil {
+	if data.ExpirationDate != nil && *data.ExpirationDate > 0 {
 		state.ExpirationDate = types.StringValue(time.Unix(int64(*data.ExpirationDate), 0).UTC().Format(time.RFC3339))
 	}
 
