@@ -22,6 +22,6 @@ jobs:
           repositories: "${{ github.event.repository.name }}"
 
       - name: Create / Update Release PR
-        uses: google-github-actions/release-please-action@a37ac6e4f6449ce8b3f7607e4d97d0146028dc0b # v4.1.0
+        uses: google-github-actions/release-please-action@e4dc86ba9405554aeba3c6bb2d169500e7d3b4ee # v4.1.1
         with:
           token: "${{ steps.app-token.outputs.token }}"
