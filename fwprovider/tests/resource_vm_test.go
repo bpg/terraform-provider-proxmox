@@ -261,52 +261,6 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				}),
 			),
 		}}},
-		{"cloud-init: clone", []resource.TestStep{{
-			Config: te.renderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit_template" {
-					node_name = "{{.NodeName}}"
-					name 	  = "test-vm-cloudinit-template"
-					started   = false
-					template  = "true"	
-					initialization {
-						upgrade = false
-					}
-				}
-				resource "proxmox_virtual_environment_file" "cloud_config" {
-					content_type = "snippets"
-					datastore_id = "local"
-					node_name    = "{{.NodeName}}"
-					source_raw {
-						data = <<-EOF
-							#cloud-config
-							runcmd:
-							  - apt update
-							  - apt install -y qemu-guest-agent
-							  - systemctl enable qemu-guest-agent
-							  - systemctl start qemu-guest-agent
-							EOF
-						file_name = "cloud-config.yaml"
-					}
-				}
-				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit" {
-					node_name   = "{{.NodeName}}"
-					name        = "test-vm-cloudinit"
-					started     = false
-					description = "Example to cause ciupgrade issue"
-					clone {
-						vm_id = proxmox_virtual_environment_vm.test_vm_cloudinit_template.id
-					}
-					
-					initialization {
-						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
-					}
-				}`),
-			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
-					"initialization.0.upgrade": "false",
-				}),
-			),
-		}}},
 	}
 
 	for _, tt := range tests {

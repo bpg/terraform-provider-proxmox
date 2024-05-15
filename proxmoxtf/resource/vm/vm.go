@@ -904,6 +904,7 @@ func VM() *schema.Resource {
 						Description: "Whether to do an automatic package upgrade after the first boot",
 						Optional:    true,
 						Computed:    true,
+						Deprecated:  "The `upgrade` attribute is deprecated and will be removed in a future release.",
 					},
 				},
 			},
@@ -2973,11 +2974,6 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		initializationConfig.Type = &initializationType
 	}
 
-	if initializationBlock[mkInitializationUpgrade] != nil && initializationConfig.Files == nil {
-		v := types.CustomBool(initializationBlock[mkInitializationUpgrade].(bool))
-		initializationConfig.Upgrade = &v
-	}
-
 	return initializationConfig
 }
 
@@ -4133,12 +4129,6 @@ func vmReadCustom(
 		initialization[mkInitializationType] = *vmConfig.CloudInitType
 	} else if len(initialization) > 0 {
 		initialization[mkInitializationType] = ""
-	}
-
-	if vmConfig.CloudInitUpgrade != nil {
-		initialization[mkInitializationUpgrade] = *vmConfig.CloudInitUpgrade
-	} else if len(initialization) > 0 {
-		initialization[mkInitializationUpgrade] = dvInitializationUpgrade
 	}
 
 	currentInitialization := d.Get(mkInitialization).([]interface{})

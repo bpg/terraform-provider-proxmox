@@ -26,6 +26,8 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     # read 'Qemu guest agent' section, change to true only when ready
     enabled = false
   }
+  # if agent is not enabled, the VM may not be able to shutdown properly, and may need to be forced off
+  stop_on_destroy = true
 
   startup {
     order      = "3"
@@ -372,7 +374,6 @@ output "ubuntu_vm_public_key" {
         all vendor data passed to the VM via cloud-init.
     - `meta_data_file_id` - (Optional) The identifier for a file containing
         all meta data passed to the VM via cloud-init.
-    - `upgrade` - (Optional) Whether to do an automatic package upgrade after the first boot (defaults to `true`).
 - `keyboard_layout` - (Optional) The keyboard layout (defaults to `en-us`).
     - `da` - Danish.
     - `de` - German.
@@ -563,7 +564,10 @@ Qemu-guest-agent is an application which can be installed inside guest VM, see
 Documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_qemu_agent)
 
 For VM with `agent.enabled = false`, Proxmox uses ACPI for `Shutdown` and
-`Reboot`, and `qemu-guest-agent` is not needed inside the VM.
+`Reboot`, and `qemu-guest-agent` is not needed inside the VM. For some VMs,
+the shutdown process may not work, causing the VM to be stuck on destroying.
+Add `stop_on_destroy = true` to the VM configuration to stop the VM instead of
+shutting it down.
 
 Setting `agent.enabled = true` informs Proxmox that the guest agent is expected
 to be *running* inside the VM. Proxmox then uses `qemu-guest-agent` instead of
