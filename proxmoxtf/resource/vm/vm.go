@@ -17,8 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -3664,8 +3662,7 @@ func vmReadCustom(
 		var numaList []interface{}
 
 		if len(currentNUMAList) > 0 {
-			resMap := utils.MapResourceList(currentNUMAList, mkNUMADevice)
-			devices := maps.Keys[map[string]interface{}](resMap)
+			devices := utils.ListResourcesAttributeValue(currentNUMAList, mkNUMADevice)
 			numaList = utils.OrderedListFromMapByKeyValues(numaMap, devices)
 		} else {
 			numaList = utils.OrderedListFromMap(numaMap)

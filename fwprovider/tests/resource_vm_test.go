@@ -580,13 +580,10 @@ func TestAccResourceVMDisks(t *testing.T) {
 					}
 				}`),
 				Check: testResourceAttributes("proxmox_virtual_environment_vm.test_disk4", map[string]string{
-					// I'd love to test this, but the order of the list items is not guaranteed, apparently
-					//     resource_vm_test.go:669: Step 1/2 error: Check failed: proxmox_virtual_environment_vm.test_disk4: Attribute "disk.1.interface" value: expected 'virtio0' to match 'scsi0'
-					//    --- FAIL: TestAccResourceVMDisks/multiple_disks (5.24s)
-					// "disk.1.interface":         "scsi0",
-					// "disk.1.path_in_datastore": `vm-\d+-disk-0`,
-					// "disk.0.interface":         "virtio0",
-					// "disk.0.path_in_datastore": `vm-\d+-disk-1`,
+					"disk.0.interface":         "virtio0",
+					"disk.0.path_in_datastore": `vm-\d+-disk-1`,
+					"disk.1.interface":         "scsi0",
+					"disk.1.path_in_datastore": `vm-\d+-disk-0`,
 				}),
 			},
 			{

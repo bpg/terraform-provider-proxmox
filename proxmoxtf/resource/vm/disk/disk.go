@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"golang.org/x/exp/maps"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
@@ -73,7 +72,7 @@ func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorag
 
 	currentDisk := d.Get(MkDisk)
 
-	diskMap := utils.MapResourceList(currentDisk.([]interface{}), mkDiskInterface)
+	diskMap := utils.MapResourcesByAttribute(currentDisk.([]interface{}), mkDiskInterface)
 
 	for k, v := range storageDevices {
 		if v != nil && diskMap[k] != nil {
@@ -624,8 +623,7 @@ func Read(
 		var diskList []interface{}
 
 		if len(currentDiskList) > 0 {
-			resMap := utils.MapResourceList(currentDiskList, mkDiskInterface)
-			interfaces := maps.Keys[map[string]interface{}](resMap)
+			interfaces := utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface)
 			diskList = utils.OrderedListFromMapByKeyValues(diskMap, interfaces)
 		} else {
 			diskList = utils.OrderedListFromMap(diskMap)
