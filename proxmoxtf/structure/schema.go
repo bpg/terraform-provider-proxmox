@@ -168,8 +168,8 @@ func SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(
 			return false
 		}
 
-		oldMap := utils.MapResourceList(oldArray, keyAttr)
-		newMap := utils.MapResourceList(newArray, keyAttr)
+		oldMap := utils.MapResourcesByAttribute(oldArray, keyAttr)
+		newMap := utils.MapResourcesByAttribute(newArray, keyAttr)
 
 		for k, v := range oldMap {
 			if _, ok := newMap[k]; !ok {

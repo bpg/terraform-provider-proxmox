@@ -23,7 +23,7 @@ func TestOrderedListFromMap(t *testing.T) {
 	result := OrderedListFromMap(inputMap)
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("MapResourceList() = %v, want %v", result, expected)
+		t.Errorf("ListResourcesAttributeValue() = %v, want %v", result, expected)
 	}
 }
 
@@ -35,18 +35,20 @@ func TestMapResourceList(t *testing.T) {
 		map[string]interface{}{"name": "resource2", "attr": "value2"},
 		nil,
 		map[string]interface{}{"name": "resource3", "attr": "value3"},
+		map[string]interface{}{"name": "resource4", "attr": "value4"},
 	}
 
-	expected := map[string]interface{}{
-		"value1": map[string]interface{}{"name": "resource1", "attr": "value1"},
-		"value2": map[string]interface{}{"name": "resource2", "attr": "value2"},
-		"value3": map[string]interface{}{"name": "resource3", "attr": "value3"},
+	expected := []string{
+		"value1",
+		"value2",
+		"value3",
+		"value4",
 	}
 
-	result := MapResourceList(resourceList, "attr")
+	result := ListResourcesAttributeValue(resourceList, "attr")
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("MapResourceList() = %v, want %v", result, expected)
+		t.Errorf("ListResourcesAttributeValue() = %v, want %v", result, expected)
 	}
 }
 
