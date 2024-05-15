@@ -1031,6 +1031,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "AtaLuZiK",
+      "name": "Kil'jaeden",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15212835?v=4",
+      "profile": "https://kiljaeden.net",
+      "contributions": [
+        "test",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
