@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.57.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.56.1...v0.57.0) (2024-05-16)
+
+
+### Features
+
+* **vm:** remove support for `initialization.upgrade` attribute ([#1295](https://github.com/bpg/terraform-provider-proxmox/issues/1295)) ([2b7dd08](https://github.com/bpg/terraform-provider-proxmox/commit/2b7dd08020c542b5e08d241aa577be1627f19301))
+
+
+### Bug Fixes
+
+* **access:** user token `expiration_date` handling ([#1293](https://github.com/bpg/terraform-provider-proxmox/issues/1293)) ([a436c24](https://github.com/bpg/terraform-provider-proxmox/commit/a436c24923d314575bebcebb4e2173dffc753651))
+* **vm:** yet another fix for disk reordering ([#1297](https://github.com/bpg/terraform-provider-proxmox/issues/1297)) ([3180f81](https://github.com/bpg/terraform-provider-proxmox/commit/3180f81b4a14868bb0076ec8ab6299b3f6945510))
+
+
+### Miscellaneous
+
+* **ci:** update google-github-actions/release-please-action action (v4.1.0 → v4.1.1) ([#1296](https://github.com/bpg/terraform-provider-proxmox/issues/1296)) ([71480bf](https://github.com/bpg/terraform-provider-proxmox/commit/71480bf9340d11d3a06c72a4eb5425f920ea03e3))
+* **ci:** update release-please action ref ([bfb20e0](https://github.com/bpg/terraform-provider-proxmox/commit/bfb20e0bfdd7a326844351f6ece8d47c1a343085))
+* **deps:** update module github.com/goreleaser/goreleaser (v1.26.0 → v1.26.1) in /tools [security] ([#1301](https://github.com/bpg/terraform-provider-proxmox/issues/1301)) ([ea6bb93](https://github.com/bpg/terraform-provider-proxmox/commit/ea6bb93be5e8ae0ba645995165548a780424f008))
+
 ## [0.56.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.56.0...v0.56.1) (2024-05-13)
 
 
