@@ -33,6 +33,7 @@ In order to remove the computed attribute from the plan, you can set it to an em
 ### Optional
 
 - `clone` (Attributes) The cloning configuration. (see [below for nested schema](#nestedatt--clone))
+- `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `description` (String) The description of the VM.
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
 - `name` (String) The name of the VM. Doesn't have to be unique.
@@ -50,6 +51,23 @@ Required:
 Optional:
 
 - `retries` (Number) The number of retries to perform when cloning the VM (default: 3).
+
+
+<a id="nestedatt--cpu"></a>
+### Nested Schema for `cpu`
+
+Optional:
+
+- `affinity` (String) The CPU cores that are used to run the VM’s vCPU. The value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.  For example, `0,1,2,3` (which also can be shortened to `0-3`) means that the VM’s vCPUs are run on the first four CPU cores. Setting `affinity` is only allowed for `root@pam` authenticated user.
+- `architecture` (String) The CPU architecture `<aarch64 | x86_64>` (defaults to the host). Setting `affinity` is only allowed for `root@pam` authenticated user.
+- `cores` (Number) The number of CPU cores per socket (defaults to `1`).
+- `flags` (Set of String) Set of additional CPU flags. Use `+FLAG` to enable, `-FLAG` to disable a flag. Custom CPU models can specify any flag supported by QEMU/KVM, VM-specific flags must be from the following set for security reasons: `pcid`, `spec-ctrl`, `ibpb`, `ssbd`, `virt-ssbd`, `amd-ssbd`, `amd-no-ssb`, `pdpe1gb`, `md-clear`, `hv-tlbflush`, `hv-evmcs`, `aes`.
+- `hotplugged` (Number) The number of hotplugged vCPUs (defaults to `0`).
+- `limit` (Number) Limit of CPU usage (defaults to `0` which means no limit).
+- `numa` (Boolean) Enable NUMA (defaults to `false`).
+- `sockets` (Number) The number of CPU sockets (defaults to `1`).
+- `type` (String) Emulated CPU type, it's recommended to use `x86-64-v2-AES` or higher (defaults to `kvm64`). See https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings for more information.
+- `units` (Number) CPU weight for a VM. Argument is used in the kernel fair scheduler. The larger the number is, the more CPU time this VM gets. Number is relative to weights of all the other running VMs.
 
 
 <a id="nestedatt--timeouts"></a>

@@ -1,4 +1,4 @@
-package tags
+package stringset
 
 import (
 	"context"
@@ -17,7 +17,7 @@ var (
 	_ basetypes.SetValuable = Value{}
 )
 
-// Value defines the value for tags.
+// Value defines the value for string set.
 type Value struct {
 	basetypes.SetValue
 }
@@ -40,7 +40,7 @@ func (v Value) Equal(o attr.Value) bool {
 	return v.SetValue.Equal(other.SetValue)
 }
 
-// ValueStringPointer returns a pointer to the string representation of tags set value.
+// ValueStringPointer returns a pointer to the string representation of string set value.
 func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics) *string {
 	if v.IsNull() || v.IsUnknown() || len(v.Elements()) == 0 {
 		return nil
@@ -54,33 +54,33 @@ func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics) 
 		return nil
 	}
 
-	var sanitizedTags []string
+	var sanitizedItems []string
 
 	for _, el := range elems {
 		if el.IsNull() || el.IsUnknown() {
 			continue
 		}
 
-		sanitizedTag := strings.TrimSpace(el.ValueString())
-		if len(sanitizedTag) > 0 {
-			sanitizedTags = append(sanitizedTags, sanitizedTag)
+		sanitizedItem := strings.TrimSpace(el.ValueString())
+		if len(sanitizedItem) > 0 {
+			sanitizedItems = append(sanitizedItems, sanitizedItem)
 		}
 	}
 
-	return ptr.Ptr(strings.Join(sanitizedTags, ";"))
+	return ptr.Ptr(strings.Join(sanitizedItems, ";"))
 }
 
-// SetValue converts a string of tags to a tags set value.
-func SetValue(tagsStr *string, diags *diag.Diagnostics) Value {
-	if tagsStr == nil {
-		return Value{types.SetNull(types.StringType)}
+// NewValue converts a string of items to a new string set value.
+func NewValue(str *string, diags *diag.Diagnostics) Value {
+	if str == nil {
+		return Value{types.SetValueMust(types.StringType, []attr.Value{})}
 	}
 
-	tags := strings.Split(*tagsStr, ";")
-	elems := make([]attr.Value, len(tags))
+	items := strings.Split(*str, ";")
+	elems := make([]attr.Value, len(items))
 
-	for i, tag := range tags {
-		elems[i] = types.StringValue(tag)
+	for i, item := range items {
+		elems[i] = types.StringValue(item)
 	}
 
 	setValue, d := types.SetValue(types.StringType, elems)

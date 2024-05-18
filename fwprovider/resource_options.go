@@ -405,10 +405,8 @@ func (m *clusterOptionsModel) importFromOptionsAPI(_ context.Context, opts *clus
 
 	if opts.NextID != nil {
 		m.NextID = &clusterOptionsNextIDModel{}
-		lower := int64(*opts.NextID.Lower)
-		upper := int64(*opts.NextID.Upper)
-		m.NextID.Lower = types.Int64PointerValue(&lower)
-		m.NextID.Upper = types.Int64PointerValue(&upper)
+		m.NextID.Lower = types.Int64PointerValue(opts.NextID.Lower.PointerInt64())
+		m.NextID.Upper = types.Int64PointerValue(opts.NextID.Upper.PointerInt64())
 	}
 
 	if opts.Notify != nil {

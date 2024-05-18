@@ -15,7 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/tags"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
@@ -33,22 +34,23 @@ const (
 )
 
 var (
-	_ resource.Resource                = &vmResource{}
-	_ resource.ResourceWithConfigure   = &vmResource{}
-	_ resource.ResourceWithImportState = &vmResource{}
+	_ resource.Resource                = &Resource{}
+	_ resource.ResourceWithConfigure   = &Resource{}
+	_ resource.ResourceWithImportState = &Resource{}
 )
 
-type vmResource struct {
+// Resource implements the resource.Resource interface for managing VMs.
+type Resource struct {
 	client proxmox.Client
 }
 
 // NewVMResource creates a new resource for managing VMs.
 func NewVMResource() resource.Resource {
-	return &vmResource{}
+	return &Resource{}
 }
 
 // Metadata defines the name of the resource.
-func (r *vmResource) Metadata(
+func (r *Resource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
@@ -56,7 +58,8 @@ func (r *vmResource) Metadata(
 	resp.TypeName = req.ProviderTypeName + "_vm2"
 }
 
-func (r *vmResource) Configure(
+// Configure sets the client for the resource.
+func (r *Resource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -79,8 +82,9 @@ func (r *vmResource) Configure(
 	r.client = client
 }
 
-func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan vmModel
+// Create creates a new VM.
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan Model
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -132,7 +136,7 @@ func (r *vmResource) Create(ctx context.Context, req resource.CreateRequest, res
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-func (r *vmResource) create(ctx context.Context, plan vmModel, diags *diag.Diagnostics) {
+func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnostics) {
 	createBody := &vms.CreateRequestBody{
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
@@ -140,6 +144,9 @@ func (r *vmResource) create(ctx context.Context, plan vmModel, diags *diag.Diagn
 		Template:    proxmoxtypes.CustomBoolPtr(plan.Template.ValueBoolPointer()),
 		VMID:        int(plan.ID.ValueInt64()),
 	}
+
+	// fill out create body fields with values from other resource blocks
+	plan.CPU.FillCreateBody(ctx, createBody, diags)
 
 	if diags.HasError() {
 		return
@@ -154,7 +161,7 @@ func (r *vmResource) create(ctx context.Context, plan vmModel, diags *diag.Diagn
 	}
 }
 
-func (r *vmResource) clone(ctx context.Context, plan vmModel, diags *diag.Diagnostics) {
+func (r *Resource) clone(ctx context.Context, plan Model, diags *diag.Diagnostics) {
 	if plan.Clone == nil {
 		diags.AddError("Clone configuration is missing", "")
 		return
@@ -180,8 +187,9 @@ func (r *vmResource) clone(ctx context.Context, plan vmModel, diags *diag.Diagno
 	}
 
 	// now load the clone's configuration into a temporary model and update what is needed comparing to the plan
-	clone := vmModel{
+	clone := Model{
 		ID:          plan.ID,
+		CPU:         plan.CPU,
 		Name:        plan.Name,
 		Description: plan.Description,
 		NodeName:    plan.NodeName,
@@ -193,11 +201,11 @@ func (r *vmResource) clone(ctx context.Context, plan vmModel, diags *diag.Diagno
 		return
 	}
 
-	r.update(ctx, plan, clone, diags)
+	r.update(ctx, plan, clone, true, diags)
 }
 
-func (r *vmResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state vmModel
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state Model
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -230,8 +238,9 @@ func (r *vmResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
-func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state vmModel
+// Update updates the VM with the new configuration.
+func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state Model
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -246,7 +255,7 @@ func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, res
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	r.update(ctx, plan, state, &resp.Diagnostics)
+	r.update(ctx, plan, state, false, &resp.Diagnostics)
 
 	// read back the VM from the PVE API to populate computed fields
 	exists := r.read(ctx, &plan, &resp.Diagnostics)
@@ -262,12 +271,18 @@ func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, res
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-func (r *vmResource) update(ctx context.Context, plan, state vmModel, diags *diag.Diagnostics) {
+// update updates the VM with the new configuration.
+//
+// The isClone parameter is used to determine if the VM is being updated as part of a clone operation.
+// During a clone operation, the attributes are copied from the source VM to the clone, so for computed attributes
+// that are optional, we need to handle them differently. If they are not set in the clone configuration, we keep the
+// source VM's values.
+// During the normal update operation, if a computed attribute is not set in the plan, we remove it from the VM, so it
+// can assume its default PVE-provided value.
+func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, diags *diag.Diagnostics) {
 	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
 
-	updateBody := &vms.UpdateRequestBody{
-		VMID: int(plan.ID.ValueInt64()),
-	}
+	updateBody := &vms.UpdateRequestBody{}
 
 	var errs []error
 
@@ -305,15 +320,22 @@ func (r *vmResource) update(ctx context.Context, plan, state vmModel, diags *dia
 		}
 	}
 
-	err := vmAPI.UpdateVM(ctx, updateBody)
-	if err != nil {
-		diags.AddError("Failed to update VM", err.Error())
-		return
+	plan.CPU.FillUpdateBody(ctx, state.CPU, updateBody, isClone, diags)
+
+	if !updateBody.IsEmpty() {
+		updateBody.VMID = int(plan.ID.ValueInt64())
+
+		err := vmAPI.UpdateVM(ctx, updateBody)
+		if err != nil {
+			diags.AddError("Failed to update VM", err.Error())
+			return
+		}
 	}
 }
 
-func (r *vmResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state vmModel
+// Delete deletes the VM.
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state Model
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -366,7 +388,8 @@ func (r *vmResource) Delete(ctx context.Context, req resource.DeleteRequest, res
 	resp.State.RemoveResource(ctx)
 }
 
-func (r *vmResource) ImportState(
+// ImportState imports the state of the VM from the API.
+func (r *Resource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -394,7 +417,7 @@ func (r *vmResource) ImportState(
 		return
 	}
 
-	state := vmModel{
+	state := Model{
 		ID:       types.Int64Value(int64(id)),
 		NodeName: types.StringValue(nodeName),
 		Timeouts: ts,
@@ -415,7 +438,7 @@ func (r *vmResource) ImportState(
 
 // read retrieves the current state of the resource from the API and updates the state.
 // Returns false if the resource does not exist, so the caller can remove it from the state if necessary.
-func (r *vmResource) read(ctx context.Context, model *vmModel, diags *diag.Diagnostics) bool {
+func (r *Resource) read(ctx context.Context, model *Model, diags *diag.Diagnostics) bool {
 	vmAPI := r.client.Node(model.NodeName.ValueString()).VM(int(model.ID.ValueInt64()))
 
 	// Retrieve the entire configuration in order to compare it to the state.
@@ -448,11 +471,8 @@ func (r *vmResource) read(ctx context.Context, model *vmModel, diags *diag.Diagn
 	// Optional fields can be removed from the model, use StringPointerValue to handle removal on nil
 	model.Description = types.StringPointerValue(config.Description)
 	model.Name = types.StringPointerValue(config.Name)
-
-	if model.Tags.IsNull() || model.Tags.IsUnknown() { // only for computed
-		model.Tags = tags.SetValue(config.Tags, diags)
-	}
-
+	model.CPU = cpu.NewValue(ctx, config, diags)
+	model.Tags = stringset.NewValue(config.Tags, diags)
 	model.Template = types.BoolPointerValue(config.Template.PointerBool())
 
 	return true

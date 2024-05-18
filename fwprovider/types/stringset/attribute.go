@@ -1,4 +1,4 @@
-package tags
+package stringset
 
 import (
 	"regexp"
@@ -10,18 +10,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// ResourceAttribute returns a resource schema attribute for tags.
-func ResourceAttribute() schema.SetAttribute {
+// ResourceAttribute returns a resource schema attribute for string set.
+func ResourceAttribute(desc, markdownDesc string) schema.SetAttribute {
 	return schema.SetAttribute{
 		CustomType: Type{
 			SetType: types.SetType{
 				ElemType: types.StringType,
 			},
 		},
-		Description: "The tags assigned to the resource.",
-		Optional:    true,
-		Computed:    true,
-		ElementType: types.StringType,
+		Description:         desc,
+		MarkdownDescription: markdownDesc,
+		Optional:            true,
+		Computed:            true,
+		ElementType:         types.StringType,
 		Validators: []validator.Set{
 			// NOTE: we allow empty list to remove all previously set tags
 			setvalidator.ValueStringsAre(

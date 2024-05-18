@@ -1998,25 +1998,25 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
 
-		updateBody.CPUCores = &cpuCores
+		updateBody.CPUCores = ptr.Ptr(int64(cpuCores))
 		updateBody.CPUEmulation = &vms.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		}
 		updateBody.NUMAEnabled = &cpuNUMA
-		updateBody.CPUSockets = &cpuSockets
-		updateBody.CPUUnits = &cpuUnits
+		updateBody.CPUSockets = ptr.Ptr(int64(cpuSockets))
+		updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 
 		if cpuAffinity != "" {
 			updateBody.CPUAffinity = &cpuAffinity
 		}
 
 		if cpuHotplugged > 0 {
-			updateBody.VirtualCPUCount = &cpuHotplugged
+			updateBody.VirtualCPUCount = ptr.Ptr(int64(cpuHotplugged))
 		}
 
 		if cpuLimit > 0 {
-			updateBody.CPULimit = &cpuLimit
+			updateBody.CPULimit = ptr.Ptr(int64(cpuLimit))
 		}
 	}
 
@@ -2648,13 +2648,13 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			Order: &bootOrderConverted,
 		},
 		CloudInitConfig: initializationConfig,
-		CPUCores:        &cpuCores,
+		CPUCores:        ptr.Ptr(int64(cpuCores)),
 		CPUEmulation: &vms.CustomCPUEmulation{
 			Flags: &cpuFlagsConverted,
 			Type:  cpuType,
 		},
-		CPUSockets:          &cpuSockets,
-		CPUUnits:            &cpuUnits,
+		CPUSockets:          ptr.Ptr(int64(cpuSockets)),
+		CPUUnits:            ptr.Ptr(int64(cpuUnits)),
 		DedicatedMemory:     &memoryDedicated,
 		DeletionProtection:  &protection,
 		EFIDisk:             efiDisk,
@@ -2703,11 +2703,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	if cpuHotplugged > 0 {
-		createBody.VirtualCPUCount = &cpuHotplugged
+		createBody.VirtualCPUCount = ptr.Ptr(int64(cpuHotplugged))
 	}
 
 	if cpuLimit > 0 {
-		createBody.CPULimit = &cpuLimit
+		createBody.CPULimit = ptr.Ptr(int64(cpuLimit))
 	}
 
 	if cpuAffinity != "" {
@@ -3608,21 +3608,21 @@ func vmReadCustom(
 	}
 
 	if vmConfig.CPUCores != nil {
-		cpu[mkCPUCores] = *vmConfig.CPUCores
+		cpu[mkCPUCores] = int(*vmConfig.CPUCores)
 	} else {
 		// Default value of "cores" is "1" according to the API documentation.
 		cpu[mkCPUCores] = 1
 	}
 
 	if vmConfig.VirtualCPUCount != nil {
-		cpu[mkCPUHotplugged] = *vmConfig.VirtualCPUCount
+		cpu[mkCPUHotplugged] = int(*vmConfig.VirtualCPUCount)
 	} else {
 		// Default value of "vcpus" is "1" according to the API documentation.
 		cpu[mkCPUHotplugged] = 0
 	}
 
 	if vmConfig.CPULimit != nil {
-		cpu[mkCPULimit] = *vmConfig.CPULimit
+		cpu[mkCPULimit] = int(*vmConfig.CPULimit)
 	} else {
 		// Default value of "cpulimit" is "0" according to the API documentation.
 		cpu[mkCPULimit] = 0
@@ -3673,7 +3673,7 @@ func vmReadCustom(
 	}
 
 	if vmConfig.CPUSockets != nil {
-		cpu[mkCPUSockets] = *vmConfig.CPUSockets
+		cpu[mkCPUSockets] = int(*vmConfig.CPUSockets)
 	} else {
 		// Default value of "sockets" is "1" according to the API documentation.
 		cpu[mkCPUSockets] = 1
@@ -3700,7 +3700,7 @@ func vmReadCustom(
 	}
 
 	if vmConfig.CPUUnits != nil {
-		cpu[mkCPUUnits] = *vmConfig.CPUUnits
+		cpu[mkCPUUnits] = int(*vmConfig.CPUUnits)
 	} else {
 		// Default value of "cpuunits" is "1024" according to the API documentation.
 		cpu[mkCPUUnits] = 1024
@@ -4999,9 +4999,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
 
-		updateBody.CPUCores = &cpuCores
-		updateBody.CPUSockets = &cpuSockets
-		updateBody.CPUUnits = &cpuUnits
+		updateBody.CPUCores = ptr.Ptr(int64(cpuCores))
+		updateBody.CPUSockets = ptr.Ptr(int64(cpuSockets))
+		updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 		updateBody.NUMAEnabled = &cpuNUMA
 
 		// CPU affinity is a special case, only root can change it.
@@ -5016,13 +5016,13 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 
 		if cpuHotplugged > 0 {
-			updateBody.VirtualCPUCount = &cpuHotplugged
+			updateBody.VirtualCPUCount = ptr.Ptr(int64(cpuHotplugged))
 		} else {
 			del = append(del, "vcpus")
 		}
 
 		if cpuLimit > 0 {
-			updateBody.CPULimit = &cpuLimit
+			updateBody.CPULimit = ptr.Ptr(int64(cpuLimit))
 		} else {
 			del = append(del, "cpulimit")
 		}
