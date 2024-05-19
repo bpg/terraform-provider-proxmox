@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package fwprovider_test
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
 const accTestClusterOptionsName = "proxmox_virtual_environment_cluster_options.test_options"
@@ -20,11 +20,11 @@ const accTestClusterOptionsName = "proxmox_virtual_environment_cluster_options.t
 func TestAccResourceClusterOptions(t *testing.T) {
 	t.Parallel()
 
-	te := initTestEnvironment(t)
+	te := test.InitEnvironment(t)
 
 	resource.Test(
 		t, resource.TestCase{
-			ProtoV6ProviderFactories: te.accProviders,
+			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				// Create and Read testing
 				{
@@ -77,8 +77,8 @@ func testAccResourceClusterOptionsCreatedConfig() string {
     }
 	}
 	`,
-		fwprovider.ClusterOptionsNextIDLowerMinimum,
-		fwprovider.ClusterOptionsNextIDLowerMaximum,
+		100,
+		999999999,
 	)
 }
 
@@ -100,12 +100,12 @@ func testAccResourceClusterOptionsCreatedCheck() resource.TestCheckFunc {
 		resource.TestCheckResourceAttr(
 			accTestClusterOptionsName,
 			"next_id.lower",
-			fmt.Sprintf("%d", fwprovider.ClusterOptionsNextIDLowerMinimum),
+			fmt.Sprintf("%d", 100),
 		),
 		resource.TestCheckResourceAttr(
 			accTestClusterOptionsName,
 			"next_id.upper",
-			fmt.Sprintf("%d", fwprovider.ClusterOptionsNextIDLowerMaximum),
+			fmt.Sprintf("%d", 999999999),
 		),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "notify.ha_fencing_mode", "never"),
 		resource.TestCheckResourceAttr(accTestClusterOptionsName, "notify.ha_fencing_target", "default-matcher"),

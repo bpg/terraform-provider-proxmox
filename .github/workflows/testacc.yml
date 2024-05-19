@@ -26,6 +26,7 @@ jobs:
             node: pve3
             port: 13453
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     environment: pve-acc
     steps:
       - name: Dump GitHub context

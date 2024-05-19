@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package network_test
 
 import (
 	"fmt"
@@ -13,6 +13,8 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
 const (
@@ -20,7 +22,7 @@ const (
 )
 
 func TestAccResourceLinuxVLAN(t *testing.T) {
-	te := initTestEnvironment(t)
+	te := test.InitEnvironment(t)
 
 	iface := "ens18"
 	vlan1 := gofakeit.Number(10, 4094)
@@ -29,11 +31,11 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 	ipV4cidr := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.accProviders,
+		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: te.renderConfig(testAccResourceLinuxVLANCreatedConfig(iface, vlan1)),
+				Config: te.RenderConfig(testAccResourceLinuxVLANCreatedConfig(iface, vlan1)),
 				Check:  testAccResourceLinuxVLANCreatedCheck(iface, vlan1),
 			},
 			// ImportState testing
@@ -44,7 +46,7 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 			},
 			// Create and Read with a custom name
 			{
-				Config: te.renderConfig(testAccResourceLinuxVLANCustomNameCreatedConfig(customName, iface, vlan2)),
+				Config: te.RenderConfig(testAccResourceLinuxVLANCustomNameCreatedConfig(customName, iface, vlan2)),
 				Check:  testAccResourceLinuxVLANCustomNameCreatedCheck(customName, iface, vlan2),
 				// PVE API is unreliable. Sometimes it returns a wrong VLAN ID for this second interface.
 				SkipFunc: func() (bool, error) {
@@ -53,7 +55,7 @@ func TestAccResourceLinuxVLAN(t *testing.T) {
 			},
 			// Update testing
 			{
-				Config: te.renderConfig(testAccResourceLinuxVLANUpdatedConfig(iface, vlan1, ipV4cidr)),
+				Config: te.RenderConfig(testAccResourceLinuxVLANUpdatedConfig(iface, vlan1, ipV4cidr)),
 				Check:  testAccResourceLinuxVLANUpdatedCheck(iface, vlan1, ipV4cidr),
 			},
 		},

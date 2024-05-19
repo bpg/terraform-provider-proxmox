@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package access_test
 
 import (
 	"context"
@@ -17,47 +17,50 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
 )
 
 func TestAccAcl_User(t *testing.T) {
-	te := initTestEnvironment(t)
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
 
 	userID := fmt.Sprintf("%s@pve", gofakeit.Username())
-	te.addTemplateVars(map[string]any{
+	te.AddTemplateVars(map[string]any{
 		"UserID": userID,
 	})
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.accProviders,
+		ProtoV6ProviderFactories: te.AccProviders,
 		CheckDestroy:             nil,
 		PreCheck: func() {
-			err := te.accessClient().CreateUser(context.Background(), &access.UserCreateRequestBody{
+			err := te.AccessClient().CreateUser(context.Background(), &access.UserCreateRequestBody{
 				ID:       userID,
 				Password: gofakeit.Password(true, true, true, true, false, 8),
 			})
 			require.NoError(t, err)
 
 			t.Cleanup(func() {
-				err := te.accessClient().DeleteUser(context.Background(), userID)
+				err := te.AccessClient().DeleteUser(context.Background(), userID)
 				require.NoError(t, err)
 			})
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: te.renderConfig(`resource "proxmox_virtual_environment_acl" "test" {
+				Config: te.RenderConfig(`resource "proxmox_virtual_environment_acl" "test" {
 					user_id = "{{.UserID}}"
 					path = "/"
 					role_id = "NoAccess"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					testResourceAttributes("proxmox_virtual_environment_acl.test", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_acl.test", map[string]string{
 						"path":      "/",
 						"role_id":   "NoAccess",
 						"user_id":   userID,
 						"propagate": "true",
 					}),
-					testNoResourceAttributesSet("proxmox_virtual_environment_acl.test", []string{
+					test.NoResourceAttributesSet("proxmox_virtual_environment_acl.test", []string{
 						"group_id",
 						"token_id",
 					}),
@@ -70,19 +73,19 @@ func TestAccAcl_User(t *testing.T) {
 				ImportStateVerify: true,
 			},
 			{
-				Config: te.renderConfig(`resource "proxmox_virtual_environment_acl" "test" {
+				Config: te.RenderConfig(`resource "proxmox_virtual_environment_acl" "test" {
 					user_id = "{{.UserID}}"
 					path = "/"
 					role_id = "PVEPoolUser"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					testResourceAttributes("proxmox_virtual_environment_acl.test", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_acl.test", map[string]string{
 						"path":      "/",
 						"role_id":   "PVEPoolUser",
 						"user_id":   userID,
 						"propagate": "true",
 					}),
-					testNoResourceAttributesSet("proxmox_virtual_environment_acl.test", []string{
+					test.NoResourceAttributesSet("proxmox_virtual_environment_acl.test", []string{
 						"group_id",
 						"token_id",
 					}),
@@ -95,10 +98,10 @@ func TestAccAcl_User(t *testing.T) {
 func TestAccAcl_Validators(t *testing.T) {
 	t.Parallel()
 
-	te := initTestEnvironment(t)
+	te := test.InitEnvironment(t)
 
 	resource.UnitTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.accProviders,
+		ProtoV6ProviderFactories: te.AccProviders,
 		CheckDestroy:             nil,
 		Steps: []resource.TestStep{
 			{

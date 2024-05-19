@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package test
 
 import (
 	"testing"
@@ -15,16 +15,16 @@ import (
 func TestAccDatasourceNode(t *testing.T) {
 	t.Parallel()
 
-	te := initTestEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
 	}{
 		{"read node attributes", []resource.TestStep{{
-			Config: te.renderConfig(`data "proxmox_virtual_environment_node" "test" { node_name = "{{.NodeName}}" }`),
+			Config: te.RenderConfig(`data "proxmox_virtual_environment_node" "test" { node_name = "{{.NodeName}}" }`),
 			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributesSet("data.proxmox_virtual_environment_node.test", []string{
+				ResourceAttributesSet("data.proxmox_virtual_environment_node.test", []string{
 					"cpu_count",
 					"cpu_sockets",
 					"cpu_model",
@@ -40,7 +40,7 @@ func TestAccDatasourceNode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.ParallelTest(t, resource.TestCase{
-				ProtoV6ProviderFactories: te.accProviders,
+				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
 		})

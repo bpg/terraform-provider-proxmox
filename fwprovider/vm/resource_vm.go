@@ -146,7 +146,7 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	}
 
 	// fill out create body fields with values from other resource blocks
-	plan.CPU.FillCreateBody(ctx, createBody, diags)
+	cpu.FillCreateBody(ctx, plan.CPU, createBody, diags)
 
 	if diags.HasError() {
 		return
@@ -320,7 +320,7 @@ func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, 
 		}
 	}
 
-	plan.CPU.FillUpdateBody(ctx, state.CPU, updateBody, isClone, diags)
+	cpu.FillUpdateBody(ctx, plan.CPU, state.CPU, updateBody, isClone, diags)
 
 	if !updateBody.IsEmpty() {
 		updateBody.VMID = int(plan.ID.ValueInt64())

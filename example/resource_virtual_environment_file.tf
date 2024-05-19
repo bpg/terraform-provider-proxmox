@@ -8,21 +8,21 @@ resource "proxmox_virtual_environment_file" "user_config" {
   node_name    = data.proxmox_virtual_environment_datastores.example.node_name
 
   source_raw {
-    data = <<EOF
-#cloud-config
-chpasswd:
-  list: |
-    ubuntu:example
-  expire: false
-hostname: terraform-provider-proxmox-example
-users:
-  - default
-  - name: ubuntu
-    groups: sudo
-    shell: /bin/bash
-    ssh-authorized-keys:
-      - ${trimspace(tls_private_key.example.public_key_openssh)}
-    sudo: ALL=(ALL) NOPASSWD:ALL
+    data = <<-EOF
+    #cloud-config
+    chpasswd:
+      list: |
+        ubuntu:example
+      expire: false
+    hostname: terraform-provider-proxmox-example
+    users:
+      - default
+      - name: ubuntu
+        groups: sudo
+        shell: /bin/bash
+        ssh-authorized-keys:
+          - ${trimspace(tls_private_key.example.public_key_openssh)}
+        sudo: ALL=(ALL) NOPASSWD:ALL
     EOF
 
     file_name = "terraform-provider-proxmox-example-user-config.yaml"

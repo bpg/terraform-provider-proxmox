@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package test
 
 import (
 	"fmt"
@@ -14,7 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func testResourceAttributes(res string, attrs map[string]string) resource.TestCheckFunc {
+// ResourceAttributes is a helper function to test resource attributes.
+func ResourceAttributes(res string, attrs map[string]string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for k, v := range attrs {
 			if v == "" {
@@ -43,7 +44,8 @@ func testResourceAttributes(res string, attrs map[string]string) resource.TestCh
 	}
 }
 
-func testNoResourceAttributesSet(res string, attrs []string) resource.TestCheckFunc {
+// NoResourceAttributesSet is a helper function to test that no resource attributes are set.
+func NoResourceAttributesSet(res string, attrs []string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, k := range attrs {
 			if err := resource.TestCheckNoResourceAttr(res, k)(s); err != nil {
@@ -55,7 +57,8 @@ func testNoResourceAttributesSet(res string, attrs []string) resource.TestCheckF
 	}
 }
 
-func testResourceAttributesSet(res string, attrs []string) resource.TestCheckFunc {
+// ResourceAttributesSet is a helper function to test that all resource attributes are set.
+func ResourceAttributesSet(res string, attrs []string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		for _, k := range attrs {
 			if err := resource.TestCheckResourceAttrSet(res, k)(s); err != nil {
