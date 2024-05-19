@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package test
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ import (
 func TestAccResourceTime(t *testing.T) {
 	t.Parallel()
 
-	te := initTestEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -23,29 +23,29 @@ func TestAccResourceTime(t *testing.T) {
 	}{
 		{"change timezone", []resource.TestStep{
 			{
-				Config: te.renderConfig(`resource "proxmox_virtual_environment_time" "node_time" {
+				Config: te.RenderConfig(`resource "proxmox_virtual_environment_time" "node_time" {
 				  node_name = "{{.NodeName}}"
 				  time_zone = "America/New_York"
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_time.node_time", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_time.node_time", map[string]string{
 					"time_zone": "America/New_York",
 				}),
 			},
 			{
-				Config: te.renderConfig(`resource "proxmox_virtual_environment_time" "node_time" {
+				Config: te.RenderConfig(`resource "proxmox_virtual_environment_time" "node_time" {
 				  node_name = "{{.NodeName}}"
 				  time_zone = "UTC"
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_time.node_time", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_time.node_time", map[string]string{
 					"time_zone": "UTC",
 				}),
 			},
 			{
-				Config: te.renderConfig(`resource "proxmox_virtual_environment_time" "node_time" {
+				Config: te.RenderConfig(`resource "proxmox_virtual_environment_time" "node_time" {
 				  node_name = "{{.NodeName}}"
 				  time_zone = "UTC"
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_time.node_time", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_time.node_time", map[string]string{
 					"time_zone": "UTC",
 				}),
 			},
@@ -55,7 +55,7 @@ func TestAccResourceTime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: te.accProviders,
+				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
 		})

@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package network_test
 
 import (
 	"fmt"
@@ -13,10 +13,12 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
 func TestAccResourceLinuxBridge(t *testing.T) {
-	te := initTestEnvironment(t)
+	te := test.InitEnvironment(t)
 
 	iface := fmt.Sprintf("vmbr%d", gofakeit.Number(10, 9999))
 	ipV4cidr1 := fmt.Sprintf("%s/24", gofakeit.IPv4Address())
@@ -24,11 +26,11 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 	ipV6cidr := "FE80:0000:0000:0000:0202:B3FF:FE1E:8329/64"
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.accProviders,
+		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: te.renderConfig(fmt.Sprintf(`
+				Config: te.RenderConfig(fmt.Sprintf(`
 				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 					address = "%s"
 					autostart = true
@@ -40,7 +42,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 				}
 				`, ipV4cidr1, iface)),
 				Check: resource.ComposeTestCheckFunc(
-					testResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
 						"address":    ipV4cidr1,
 						"autostart":  "true",
 						"comment":    "created by terraform",
@@ -48,14 +50,14 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 						"name":       iface,
 						"vlan_aware": "true",
 					}),
-					testResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+					test.ResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
 						"id",
 					}),
 				),
 			},
 			// Update testing
 			{
-				Config: te.renderConfig(fmt.Sprintf(`
+				Config: te.RenderConfig(fmt.Sprintf(`
 				resource "proxmox_virtual_environment_network_linux_bridge" "test" {
 					address = "%s"
 					address6 = "%s"
@@ -67,7 +69,7 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 					vlan_aware = false
 				}`, ipV4cidr2, ipV6cidr, iface)),
 				Check: resource.ComposeTestCheckFunc(
-					testResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_network_linux_bridge.test", map[string]string{
 						"address":    ipV4cidr2,
 						"address6":   ipV6cidr,
 						"autostart":  "false",
@@ -75,10 +77,10 @@ func TestAccResourceLinuxBridge(t *testing.T) {
 						"name":       iface,
 						"vlan_aware": "false",
 					}),
-					testNoResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+					test.NoResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
 						"mtu",
 					}),
-					testResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
+					test.ResourceAttributesSet("proxmox_virtual_environment_network_linux_bridge.test", []string{
 						"id",
 					}),
 				),

@@ -9,11 +9,13 @@ import (
 )
 
 // Model represents the VM model.
+//
+// Note: for computed fields / blocks we have to use an Object type (or an alias),
+// or a custom type in order to hold an unknown value.
 type Model struct {
 	Description types.String `tfsdk:"description"`
-	// for computed fields / blocks we have to use an Object type (or an alias), or a custom type.
-	CPU   cpu.Value `tfsdk:"cpu"`
-	Clone *struct {
+	CPU         cpu.Value    `tfsdk:"cpu"`
+	Clone       *struct {
 		ID      types.Int64 `tfsdk:"id"`
 		Retries types.Int64 `tfsdk:"retries"`
 	} `tfsdk:"clone"`

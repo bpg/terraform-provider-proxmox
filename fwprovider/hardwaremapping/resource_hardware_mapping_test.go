@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package hardwaremapping_test
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/statecheck"
 	"github.com/hashicorp/terraform-plugin-testing/tfjsonpath"
 
-	hwm "github.com/bpg/terraform-provider-proxmox/fwprovider/hardwaremapping"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
@@ -41,7 +41,7 @@ type accTestHardwareMappingFakeData struct {
 	Names           []string `fake:"{noun}"               fakesize:"2"`
 }
 
-func testAccResourceHardwareMappingInit(t *testing.T) (*accTestHardwareMappingFakeData, *testEnvironment) {
+func testAccResourceHardwareMappingInit(t *testing.T) (*accTestHardwareMappingFakeData, *test.Environment) {
 	t.Helper()
 
 	// Register a new custom function to generate random Linux device IDs.
@@ -81,7 +81,7 @@ func testAccResourceHardwareMappingInit(t *testing.T) (*accTestHardwareMappingFa
 		},
 	)
 
-	te := initTestEnvironment(t)
+	te := test.InitEnvironment(t)
 
 	var data accTestHardwareMappingFakeData
 
@@ -102,7 +102,7 @@ func TestAccResourceHardwareMappingPCIValidInput(t *testing.T) {
 
 	resource.Test(
 		t, resource.TestCase{
-			ProtoV6ProviderFactories: te.accProviders,
+			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				// Test the "Create" and "Read" implementations where all possible attributes are specified.
 				{
@@ -129,7 +129,7 @@ func TestAccResourceHardwareMappingPCIValidInput(t *testing.T) {
 						data.MapComments[0],
 						data.MapDeviceIDs[0],
 						data.MapIOMMUGroups[0],
-						te.nodeName,
+						te.NodeName,
 						data.MapPathsPCI[0],
 						data.MapSubsystemIDs[0],
 						data.MediatedDevices,
@@ -142,7 +142,7 @@ func TestAccResourceHardwareMappingPCIValidInput(t *testing.T) {
 								"comment":      data.MapComments[0],
 								"id":           data.MapDeviceIDs[0],
 								"iommu_group":  strconv.Itoa(int(data.MapIOMMUGroups[0])),
-								"node":         te.nodeName,
+								"node":         te.NodeName,
 								"path":         data.MapPathsPCI[0],
 								"subsystem_id": data.MapSubsystemIDs[0],
 							},
@@ -189,7 +189,7 @@ func TestAccResourceHardwareMappingPCIValidInput(t *testing.T) {
 						data.MapComments[1],
 						data.MapDeviceIDs[0],
 						data.MapIOMMUGroups[1],
-						te.nodeName,
+						te.NodeName,
 						data.MapPathsPCI[1],
 						data.MapSubsystemIDs[1],
 						!data.MediatedDevices,
@@ -202,7 +202,7 @@ func TestAccResourceHardwareMappingPCIValidInput(t *testing.T) {
 								"comment":      data.MapComments[1],
 								"id":           data.MapDeviceIDs[0],
 								"iommu_group":  strconv.Itoa(int(data.MapIOMMUGroups[1])),
-								"node":         te.nodeName,
+								"node":         te.NodeName,
 								"path":         data.MapPathsPCI[1],
 								"subsystem_id": data.MapSubsystemIDs[1],
 							},
@@ -232,7 +232,7 @@ func TestAccResourceHardwareMappingPCIValidInputMinimal(t *testing.T) {
 
 	resource.Test(
 		t, resource.TestCase{
-			ProtoV6ProviderFactories: te.accProviders,
+			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				// Test the "Create" and "Read" implementations with only the minimum amount of attributes being set.
 				{
@@ -251,7 +251,7 @@ func TestAccResourceHardwareMappingPCIValidInputMinimal(t *testing.T) {
 					`,
 						data.Names[0],
 						data.MapDeviceIDs[0],
-						te.nodeName,
+						te.NodeName,
 						data.MapPathsPCI[0],
 					),
 					ConfigStateChecks: []statecheck.StateCheck{
@@ -273,7 +273,7 @@ func TestAccResourceHardwareMappingPCIValidInputMinimal(t *testing.T) {
 						resource.TestCheckTypeSetElemNestedAttrs(
 							accTestHardwareMappingNamePCI, "map.*", map[string]string{
 								"id":   data.MapDeviceIDs[0],
-								"node": te.nodeName,
+								"node": te.NodeName,
 								"path": data.MapPathsPCI[0],
 							},
 						),
@@ -314,7 +314,7 @@ func TestAccResourceHardwareMappingPCIValidInputMinimal(t *testing.T) {
 						data.MapComments[1],
 						data.MapDeviceIDs[0],
 						data.MapIOMMUGroups[1],
-						te.nodeName,
+						te.NodeName,
 						data.MapPathsPCI[1],
 						data.MapSubsystemIDs[1],
 						!data.MediatedDevices,
@@ -327,7 +327,7 @@ func TestAccResourceHardwareMappingPCIValidInputMinimal(t *testing.T) {
 								"comment":      data.MapComments[1],
 								"id":           data.MapDeviceIDs[0],
 								"iommu_group":  strconv.Itoa(int(data.MapIOMMUGroups[1])),
-								"node":         te.nodeName,
+								"node":         te.NodeName,
 								"path":         data.MapPathsPCI[1],
 								"subsystem_id": data.MapSubsystemIDs[1],
 							},
@@ -355,7 +355,7 @@ func TestAccResourceHardwareMappingPCIInvalidInput(t *testing.T) {
 
 	resource.Test(
 		t, resource.TestCase{
-			ProtoV6ProviderFactories: te.accProviders,
+			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				// Test the "Create" method implementation where all possible attributes are specified, but an error is expected
 				// when using an invalid device path.
@@ -370,7 +370,7 @@ func TestAccResourceHardwareMappingPCIInvalidInput(t *testing.T) {
 							// References:
 							//   1. https://pkg.go.dev/regexp/syntax
 							`(?s).*%s(?s).*`,
-							hwm.ErrResourceMessageInvalidPath(proxmoxtypes.TypePCI),
+							`not a valid Linux device path for hardware mapping of type "`+proxmoxtypes.TypePCI.String()+`"`,
 						),
 					),
 					Config: fmt.Sprintf(
@@ -397,7 +397,7 @@ func TestAccResourceHardwareMappingPCIInvalidInput(t *testing.T) {
 						data.Comments[1],
 						data.MapDeviceIDs[0],
 						data.MapIOMMUGroups[0],
-						te.nodeName,
+						te.NodeName,
 						data.MapSubsystemIDs[0],
 						data.MediatedDevices,
 					),
@@ -408,7 +408,7 @@ func TestAccResourceHardwareMappingPCIInvalidInput(t *testing.T) {
 
 	resource.Test(
 		t, resource.TestCase{
-			ProtoV6ProviderFactories: te.accProviders,
+			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				// Test the "Create" method implementation where all possible attributes are specified, but an error is expected
 				// when using an invalid device subsystem
@@ -439,7 +439,7 @@ func TestAccResourceHardwareMappingPCIInvalidInput(t *testing.T) {
 						data.Comments[1],
 						data.MapDeviceIDs[0],
 						data.MapIOMMUGroups[0],
-						te.nodeName,
+						te.NodeName,
 						data.MapPathsPCI[0],
 						data.MediatedDevices,
 					),
@@ -459,7 +459,7 @@ func TestAccResourceHardwareMappingUSBValidInput(t *testing.T) {
 
 	resource.Test(
 		t, resource.TestCase{
-			ProtoV6ProviderFactories: te.accProviders,
+			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				// Test the "Create" and "Read" implementations where all possible attributes are specified.
 				{
@@ -482,7 +482,7 @@ func TestAccResourceHardwareMappingUSBValidInput(t *testing.T) {
 						data.Names[0],
 						data.MapComments[0],
 						data.MapDeviceIDs[0],
-						te.nodeName,
+						te.NodeName,
 						data.MapPathsUSB[0],
 					),
 					Check: resource.ComposeTestCheckFunc(
@@ -492,7 +492,7 @@ func TestAccResourceHardwareMappingUSBValidInput(t *testing.T) {
 							accTestHardwareMappingNameUSB, "map.*", map[string]string{
 								"comment": data.MapComments[0],
 								"id":      data.MapDeviceIDs[0],
-								"node":    te.nodeName,
+								"node":    te.NodeName,
 								"path":    data.MapPathsUSB[0],
 							},
 						),
@@ -529,7 +529,7 @@ func TestAccResourceHardwareMappingUSBValidInput(t *testing.T) {
 						data.Names[0],
 						data.MapComments[1],
 						data.MapDeviceIDs[0],
-						te.nodeName,
+						te.NodeName,
 						data.MapPathsUSB[1],
 					),
 					Check: resource.ComposeTestCheckFunc(
@@ -539,7 +539,7 @@ func TestAccResourceHardwareMappingUSBValidInput(t *testing.T) {
 							accTestHardwareMappingNameUSB, "map.*", map[string]string{
 								"comment": data.MapComments[1],
 								"id":      data.MapDeviceIDs[0],
-								"node":    te.nodeName,
+								"node":    te.NodeName,
 								"path":    data.MapPathsUSB[1],
 							},
 						),
@@ -563,7 +563,7 @@ func TestAccResourceHardwareMappingUSBValidInputMinimal(t *testing.T) {
 
 	resource.Test(
 		t, resource.TestCase{
-			ProtoV6ProviderFactories: te.accProviders,
+			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				// Test the "Create" and "Read" implementations with only the minimum amount of attributes being set.
 				{
@@ -581,7 +581,7 @@ func TestAccResourceHardwareMappingUSBValidInputMinimal(t *testing.T) {
 					`,
 						data.Names[0],
 						data.MapDeviceIDs[0],
-						te.nodeName,
+						te.NodeName,
 					),
 					ConfigStateChecks: []statecheck.StateCheck{
 						// Optional attributes should all be unset.
@@ -600,7 +600,7 @@ func TestAccResourceHardwareMappingUSBValidInputMinimal(t *testing.T) {
 						resource.TestCheckTypeSetElemNestedAttrs(
 							accTestHardwareMappingNameUSB, "map.*", map[string]string{
 								"id":   data.MapDeviceIDs[0],
-								"node": te.nodeName,
+								"node": te.NodeName,
 							},
 						),
 						resource.TestCheckResourceAttr(accTestHardwareMappingNameUSB, "name", data.Names[0]),
@@ -628,7 +628,7 @@ func TestAccResourceHardwareMappingUSBValidInputMinimal(t *testing.T) {
 						data.Names[0],
 						data.Comments[1],
 						data.MapDeviceIDs[1],
-						te.nodeName,
+						te.NodeName,
 						data.MapPathsUSB[0],
 					),
 					Check: resource.ComposeTestCheckFunc(
@@ -638,7 +638,7 @@ func TestAccResourceHardwareMappingUSBValidInputMinimal(t *testing.T) {
 							accTestHardwareMappingNameUSB, "map.*", map[string]string{
 								"comment": data.Comments[1],
 								"id":      data.MapDeviceIDs[1],
-								"node":    te.nodeName,
+								"node":    te.NodeName,
 								"path":    data.MapPathsUSB[0],
 							},
 						),
@@ -659,7 +659,7 @@ func TestAccResourceHardwareMappingUSBInvalidInput(t *testing.T) {
 
 	resource.Test(
 		t, resource.TestCase{
-			ProtoV6ProviderFactories: te.accProviders,
+			ProtoV6ProviderFactories: te.AccProviders,
 			Steps: []resource.TestStep{
 				// Test the "Create" method implementation where all possible attributes are specified, but an error is expected
 				// when using an invalid device path.
@@ -684,7 +684,7 @@ func TestAccResourceHardwareMappingUSBInvalidInput(t *testing.T) {
 						data.Names[0],
 						data.Comments[1],
 						data.MapDeviceIDs[0],
-						te.nodeName,
+						te.NodeName,
 					),
 					ExpectError: regexp.MustCompile(`valid Linux device path for hardware mapping of type "usb"`),
 				},

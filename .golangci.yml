@@ -23,7 +23,7 @@ issues:
     - path: _types\.go
       linters:
         - lll
-    - path: fwprovider/tests/.*\.go
+    - path: fwprovider/.*_test\.go
       linters:
         - paralleltest
     # Exclude `lll` issues for long lines with URLs.

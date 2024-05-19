@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package test
 
 import (
 	"testing"
@@ -13,14 +13,14 @@ import (
 )
 
 func TestAccResourceClusterFirewall(t *testing.T) {
-	te := initTestEnvironment(t)
+	te := InitEnvironment(t)
 
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
 	}{
 		{"rules1", []resource.TestStep{{
-			Config: te.renderConfig(`
+			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_firewall_rules" "rules1" {
 				rule {
 					type   = "in"
@@ -32,7 +32,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
-				testResourceAttributes("proxmox_virtual_environment_firewall_rules.rules1", map[string]string{
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.rules1", map[string]string{
 					"rule.0.type":    "in",
 					"rule.0.action":  "ACCEPT",
 					"rule.0.iface":   "vmbr0",
@@ -40,7 +40,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 					"rule.0.proto":   "tcp",
 					"rule.0.comment": "PVE Admin Interface",
 				}),
-				testNoResourceAttributesSet("proxmox_virtual_environment_firewall_rules.rules1", []string{
+				NoResourceAttributesSet("proxmox_virtual_environment_firewall_rules.rules1", []string{
 					"node_name",
 				}),
 			),
@@ -50,7 +50,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.ParallelTest(t, resource.TestCase{
-				ProtoV6ProviderFactories: te.accProviders,
+				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
 		})

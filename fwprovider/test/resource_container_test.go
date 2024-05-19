@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package test
 
 import (
 	"context"
@@ -32,24 +32,24 @@ func TestAccResourceContainer(t *testing.T) { //nolint:wsl
 	// download fails with 404 or "exit code 8" if run in parallel
 	// t.Parallel()
 
-	te := initTestEnvironment(t)
+	te := InitEnvironment(t)
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.accProviders,
+		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: te.renderConfig(testAccResourceContainerCreateConfig(te, false)),
+				Config: te.RenderConfig(testAccResourceContainerCreateConfig(te, false)),
 				Check:  testAccResourceContainerCreateCheck(te),
 			},
 			{
-				Config: te.renderConfig(testAccResourceContainerCreateConfig(te, true) + testAccResourceContainerCreateCloneConfig(te)),
+				Config: te.RenderConfig(testAccResourceContainerCreateConfig(te, true) + testAccResourceContainerCreateCloneConfig(te)),
 				Check:  testAccResourceContainerCreateCloneCheck(te),
 			},
 		},
 	})
 }
 
-func testAccResourceContainerCreateConfig(te *testEnvironment, isTemplate bool) string {
+func testAccResourceContainerCreateConfig(te *Environment, isTemplate bool) string {
 	te.t.Helper()
 
 	return fmt.Sprintf(`
@@ -98,7 +98,7 @@ resource "proxmox_virtual_environment_container" "test_container" {
 `, accTestContainerID, isTemplate)
 }
 
-func testAccResourceContainerCreateCheck(te *testEnvironment) resource.TestCheckFunc {
+func testAccResourceContainerCreateCheck(te *Environment) resource.TestCheckFunc {
 	te.t.Helper()
 
 	return resource.ComposeTestCheckFunc(
@@ -107,7 +107,7 @@ func testAccResourceContainerCreateCheck(te *testEnvironment) resource.TestCheck
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			err := te.nodeClient().Container(accTestContainerID).WaitForContainerStatus(ctx, "running")
+			err := te.NodeClient().Container(accTestContainerID).WaitForContainerStatus(ctx, "running")
 			require.NoError(te.t, err, "container did not start")
 
 			return nil
@@ -115,7 +115,7 @@ func testAccResourceContainerCreateCheck(te *testEnvironment) resource.TestCheck
 	)
 }
 
-func testAccResourceContainerCreateCloneConfig(te *testEnvironment) string {
+func testAccResourceContainerCreateCloneConfig(te *Environment) string {
 	te.t.Helper()
 
 	return fmt.Sprintf(`
@@ -135,7 +135,7 @@ resource "proxmox_virtual_environment_container" "test_container_clone" {
 `, accCloneContainerID)
 }
 
-func testAccResourceContainerCreateCloneCheck(te *testEnvironment) resource.TestCheckFunc {
+func testAccResourceContainerCreateCloneCheck(te *Environment) resource.TestCheckFunc {
 	te.t.Helper()
 
 	return resource.ComposeTestCheckFunc(
@@ -143,7 +143,7 @@ func testAccResourceContainerCreateCloneCheck(te *testEnvironment) resource.Test
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			err := te.nodeClient().Container(accCloneContainerID).WaitForContainerStatus(ctx, "running")
+			err := te.NodeClient().Container(accCloneContainerID).WaitForContainerStatus(ctx, "running")
 			require.NoError(te.t, err, "container did not start")
 
 			return nil

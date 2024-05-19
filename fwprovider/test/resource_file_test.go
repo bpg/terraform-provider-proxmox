@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package tests
+package test
 
 import (
 	"context"
@@ -36,7 +36,7 @@ func (c *nodeResolver) Resolve(_ context.Context, _ string) (ssh.ProxmoxNode, er
 }
 
 func TestAccResourceFile(t *testing.T) {
-	te := initTestEnvironment(t)
+	te := InitEnvironment(t)
 
 	snippetRaw := fmt.Sprintf("snippet-raw-%s.txt", gofakeit.Word())
 	snippetURL := "https://raw.githubusercontent.com/yaml/yaml-test-suite/main/src/229Q.yaml"
@@ -44,7 +44,7 @@ func TestAccResourceFile(t *testing.T) {
 	snippetFile2 := strings.ReplaceAll(createFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file").Name(), `\`, `/`)
 	fileISO := strings.ReplaceAll(createFile(t, "file-*.iso", "pretend it is an ISO").Name(), `\`, `/`)
 
-	te.addTemplateVars(map[string]interface{}{
+	te.AddTemplateVars(map[string]interface{}{
 		"SnippetRaw":   snippetRaw,
 		"SnippetURL":   snippetURL,
 		"SnippetFile1": snippetFile1,
@@ -53,7 +53,7 @@ func TestAccResourceFile(t *testing.T) {
 	})
 
 	resource.ParallelTest(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.accProviders,
+		ProtoV6ProviderFactories: te.AccProviders,
 		PreCheck: func() {
 			uploadSnippetFile(t, snippetFile2)
 			t.Cleanup(func() {
@@ -67,7 +67,7 @@ func TestAccResourceFile(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test_raw" {
 				content_type = "snippets"
 				datastore_id = "local"
@@ -79,7 +79,7 @@ func TestAccResourceFile(t *testing.T) {
 					file_name = "{{.SnippetRaw}}"
 				}
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_file.test_raw", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test_raw", map[string]string{
 					"content_type":           "snippets",
 					"file_name":              snippetRaw,
 					"source_raw.0.file_name": snippetRaw,
@@ -88,7 +88,7 @@ func TestAccResourceFile(t *testing.T) {
 				}),
 			},
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
@@ -96,14 +96,14 @@ func TestAccResourceFile(t *testing.T) {
 					  path = "{{.SnippetFile1}}"
 					}
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
 					"content_type": "snippets",
 					"file_name":    filepath.Base(snippetFile1),
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile1)),
 				}),
 			},
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
@@ -111,14 +111,14 @@ func TestAccResourceFile(t *testing.T) {
 					  path = "{{.SnippetURL}}"
 					}
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
 					"content_type": "snippets",
 					"file_name":    filepath.Base(snippetURL),
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetURL)),
 				}),
 			},
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
@@ -126,14 +126,14 @@ func TestAccResourceFile(t *testing.T) {
 					  path = "{{.FileISO}}"
 					}
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
 					"content_type": "iso",
 					"file_name":    filepath.Base(fileISO),
 					"id":           fmt.Sprintf("local:iso/%s", filepath.Base(fileISO)),
 				}),
 			},
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 				  datastore_id = "local"
 				  node_name    = "{{.NodeName}}"
@@ -150,7 +150,7 @@ func TestAccResourceFile(t *testing.T) {
 				ExpectError: regexp.MustCompile("please specify .* - not both"),
 			},
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
@@ -162,7 +162,7 @@ func TestAccResourceFile(t *testing.T) {
 				ExpectError: regexp.MustCompile("failed to determine file name from the URL"),
 			},
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 				  datastore_id = "local"
 				  node_name    = "{{.NodeName}}"
@@ -171,7 +171,7 @@ func TestAccResourceFile(t *testing.T) {
 			},
 			// Do not allow to overwrite the file
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
@@ -184,7 +184,7 @@ func TestAccResourceFile(t *testing.T) {
 			},
 			// Allow to overwrite the file by default
 			{
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
@@ -192,7 +192,7 @@ func TestAccResourceFile(t *testing.T) {
 					  path = "{{.SnippetFile2}}"
 					}
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
 					"content_type": "snippets",
 					"file_name":    filepath.Base(snippetFile2),
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile2)),
@@ -203,7 +203,7 @@ func TestAccResourceFile(t *testing.T) {
 				PreConfig: func() {
 					deleteSnippet(te, filepath.Base(snippetFile1))
 				},
-				Config: te.renderConfig(`
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "test" {
 				  datastore_id = "local"
 				  node_name    = "{{.NodeName}}"
@@ -211,7 +211,7 @@ func TestAccResourceFile(t *testing.T) {
 					path = "{{.SnippetFile1}}"
 				  }
 				}`),
-				Check: testResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
 					"content_type": "snippets",
 					"file_name":    filepath.Base(snippetFile1),
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile1)),
@@ -278,9 +278,9 @@ func createFile(t *testing.T, namePattern string, content string) *os.File {
 	return f
 }
 
-func deleteSnippet(te *testEnvironment, fname string) {
+func deleteSnippet(te *Environment, fname string) {
 	te.t.Helper()
 
-	err := te.nodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
+	err := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("snippets/%s", fname))
 	require.NoError(te.t, err)
 }

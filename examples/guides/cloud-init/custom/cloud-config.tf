@@ -8,24 +8,24 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   node_name    = "pve"
 
   source_raw {
-    data = <<EOF
-#cloud-config
-users:
-  - default
-  - name: ubuntu
-    groups:
-      - sudo
-    shell: /bin/bash
-    ssh_authorized_keys:
-      - ${trimspace(data.local_file.ssh_public_key.content)}
-    sudo: ALL=(ALL) NOPASSWD:ALL
-runcmd:
-    - apt update
-    - apt install -y qemu-guest-agent net-tools
-    - timedatectl set-timezone America/Toronto
-    - systemctl enable qemu-guest-agent
-    - systemctl start qemu-guest-agent
-    - echo "done" > /tmp/cloud-config.done
+    data = <<-EOF
+    #cloud-config
+    users:
+      - default
+      - name: ubuntu
+        groups:
+          - sudo
+        shell: /bin/bash
+        ssh_authorized_keys:
+          - ${trimspace(data.local_file.ssh_public_key.content)}
+        sudo: ALL=(ALL) NOPASSWD:ALL
+    runcmd:
+        - apt update
+        - apt install -y qemu-guest-agent net-tools
+        - timedatectl set-timezone America/Toronto
+        - systemctl enable qemu-guest-agent
+        - systemctl start qemu-guest-agent
+        - echo "done" > /tmp/cloud-config.done
     EOF
 
     file_name = "cloud-config.yaml"
