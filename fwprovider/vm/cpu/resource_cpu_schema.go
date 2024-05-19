@@ -18,10 +18,8 @@ import (
 // Schema defines the schema for the CPU resource.
 func Schema() schema.Attribute {
 	return schema.SingleNestedAttribute{
-		CustomType: Type{
-			ObjectType: basetypes.ObjectType{
-				AttrTypes: attributeTypes(),
-			},
+		CustomType: basetypes.ObjectType{
+			AttrTypes: attributeTypes(),
 		},
 		Description: "The CPU configuration.",
 		Optional:    true,

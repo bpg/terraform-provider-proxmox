@@ -2,110 +2,19 @@ package cpu
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
-var (
-	_ basetypes.ObjectTypable  = Type{}
-	_ basetypes.ObjectValuable = Value{}
-)
-
-// Type is an attribute type that represents CPU settings.
-type Type struct {
-	basetypes.ObjectType
-}
-
-// String returns a human-readable representation of the type.
-func (t Type) String() string {
-	return "cpu.Type"
-}
-
-// ValueFromObject returns a Value given a basetypes.ObjectValue.
-func (t Type) ValueFromObject(
-	_ context.Context,
-	in basetypes.ObjectValue,
-) (basetypes.ObjectValuable, diag.Diagnostics) {
-	value := Value{
-		Object: in,
-	}
-
-	return value, nil
-}
-
-// ValueFromTerraform returns a Value given a tftypes.Value.
-// Value embeds the types.Object value returned from calling ValueFromTerraform on the
-// types.ObjectType embedded in Type.
-func (t Type) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
-	val, err := t.ObjectType.ValueFromTerraform(ctx, in)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert value to types.Object: %w", err)
-	}
-
-	obj, ok := val.(types.Object)
-	if !ok {
-		return nil, fmt.Errorf("%T cannot be used as types.Object", val)
-	}
-
-	return Value{obj}, nil
-}
-
-// ValueType returns the associated Value type for debugging.
-func (t Type) ValueType(context.Context) attr.Value {
-	// It does not need to be a fully valid implementation of the type.
-	return Value{}
-}
-
-// Equal returns true if `candidate` is also a Type and has the same
-// AttributeTypes.
-func (t Type) Equal(candidate attr.Type) bool {
-	other, ok := candidate.(Type)
-	if !ok {
-		return false
-	}
-
-	return t.ObjectType.Equal(other.ObjectType)
-}
-
-// Value represents an object containing values to be used as CPU settings.
-type Value struct {
-	types.Object
-}
-
-// Equal returns true if the Value is considered semantically equal
-// (same type and same value) to the attr.Value passed as an argument.
-func (v Value) Equal(c attr.Value) bool {
-	other, ok := c.(Value)
-
-	if !ok {
-		return false
-	}
-
-	return v.Object.Equal(other.Object)
-}
-
-// ToObjectValue returns the underlying ObjectValue.
-func (v Value) ToObjectValue(_ context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
-	return v.Object, nil
-}
-
-// Type returns a Type with the same attribute types as `t`.
-func (v Value) Type(ctx context.Context) attr.Type {
-	return Type{
-		types.ObjectType{
-			AttrTypes: v.AttributeTypes(ctx),
-		},
-	}
-}
+// Value represents the type for CPU settings.
+type Value = types.Object
 
 // NewValue returns a new Value with the given CPU settings from the PVE API.
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
@@ -147,20 +56,20 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diag
 	obj, d := types.ObjectValueFrom(ctx, attributeTypes(), cpu)
 	diags.Append(d...)
 
-	return Value{obj}
+	return obj
 }
 
 // FillCreateBody fills the CreateRequestBody with the CPU settings from the Value.
 //
 // In the 'create' context, v is the plan.
-func (v Value) FillCreateBody(ctx context.Context, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
+func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
 	var plan Model
 
-	if v.IsNull() || v.IsUnknown() {
+	if planValue.IsNull() || planValue.IsUnknown() {
 		return
 	}
 
-	d := v.Object.As(ctx, &plan, basetypes.ObjectAsOptions{})
+	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
 
 	if d.HasError() {
@@ -215,22 +124,22 @@ func (v Value) FillCreateBody(ctx context.Context, body *vms.CreateRequestBody, 
 // FillUpdateBody fills the UpdateRequestBody with the CPU settings from the Value.
 //
 // In the 'update' context, v is the plan and stateValue is the current state.
-func (v Value) FillUpdateBody(
+func FillUpdateBody(
 	ctx context.Context,
-	stateValue Value,
+	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
 	isClone bool,
 	diags *diag.Diagnostics,
 ) {
 	var plan, state Model
 
-	if v.IsNull() || v.IsUnknown() || v.Equal(stateValue) {
+	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
 		return
 	}
 
-	d := v.Object.As(ctx, &plan, basetypes.ObjectAsOptions{})
+	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
-	d = stateValue.Object.As(ctx, &state, basetypes.ObjectAsOptions{})
+	d = stateValue.As(ctx, &state, basetypes.ObjectAsOptions{})
 	diags.Append(d...)
 
 	if diags.HasError() {
