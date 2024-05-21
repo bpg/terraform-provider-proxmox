@@ -49,15 +49,18 @@ func (c *Client) ListDatastoreFiles(
 ) ([]*DatastoreFileListResponseData, error) {
 	resBody := &DatastoreFileListResponseBody{}
 
-	err := c.DoRequest(
-		ctx,
-		http.MethodGet,
-		c.ExpandPath("content"),
-		nil,
-		resBody,
+	err := retry.Do(
+		func() error {
+			return c.DoRequest(ctx, http.MethodGet, c.ExpandPath("content"), nil, resBody)
+		},
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			return !errors.Is(err, api.ErrResourceDoesNotExist)
+		}),
+		retry.LastErrorOnly(true),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving files from datastore %s: %w", c.StorageName, err)
+		return nil, fmt.Errorf("error listing files from datastore %s: %w", c.StorageName, err)
 	}
 
 	if resBody.Data == nil {
