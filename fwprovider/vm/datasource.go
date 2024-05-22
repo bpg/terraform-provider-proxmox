@@ -16,10 +16,12 @@ var (
 	_ datasource.DataSourceWithConfigure = &Datasource{}
 )
 
+// Datasource is the implementation of VM datasource.
 type Datasource struct {
 	client proxmox.Client
 }
 
+// NewDataSource creates a new VM datasource.
 func NewDataSource() datasource.DataSource {
 	return &Datasource{}
 }
@@ -57,6 +59,7 @@ func (d *Datasource) Configure(
 	d.client = client
 }
 
+//nolint:dupl
 func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config Model
 

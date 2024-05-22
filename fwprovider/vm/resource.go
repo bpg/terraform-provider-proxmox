@@ -203,6 +203,7 @@ func (r *Resource) clone(ctx context.Context, plan Model, diags *diag.Diagnostic
 	r.update(ctx, plan, clone, true, diags)
 }
 
+//nolint:dupl
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state Model
 
