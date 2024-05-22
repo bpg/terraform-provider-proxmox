@@ -441,30 +441,31 @@ func (p *proxmoxProvider) Configure(
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewClusterOptionsResource,
+		NewDownloadFileResource,
+		access.NewACLResource,
+		access.NewUserTokenResource,
 		ha.NewHAGroupResource,
 		ha.NewHAResourceResource,
 		hardwaremapping.NewResourcePCI,
 		hardwaremapping.NewResourceUSB,
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
-		access.NewUserTokenResource,
-		vm.NewVMResource,
-		NewClusterOptionsResource,
-		NewDownloadFileResource,
-		access.NewACLResource,
+		vm.NewResource,
 	}
 }
 
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		ha.NewHAGroupsDataSource,
+		NewVersionDataSource,
 		ha.NewHAGroupDataSource,
-		ha.NewHAResourcesDataSource,
+		ha.NewHAGroupsDataSource,
 		ha.NewHAResourceDataSource,
+		ha.NewHAResourcesDataSource,
+		hardwaremapping.NewDataSource,
 		hardwaremapping.NewDataSourcePCI,
 		hardwaremapping.NewDataSourceUSB,
-		hardwaremapping.NewDataSource,
-		NewVersionDataSource,
+		vm.NewDataSource,
 	}
 }
 

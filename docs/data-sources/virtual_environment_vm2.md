@@ -1,23 +1,15 @@
 ---
 layout: page
 title: proxmox_virtual_environment_vm2
-parent: Resources
+parent: Data Sources
 subcategory: Virtual Environment
 description: |-
-  This is an experimental implementation of a Proxmox VM resource using Plugin Framework.It is a Proof of Concept, highly experimental and will change in future. It does not support all features of the Proxmox API for VMs and MUST NOT be used in production.
+  This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
 ---
 
-# Resource: proxmox_virtual_environment_vm2
+# Data Source: proxmox_virtual_environment_vm2
 
-!> **DO NOT USE**
-This is an experimental implementation of a Proxmox VM resource using Plugin Framework.<br><br>It is a Proof of Concept, highly experimental and **will** change in future. It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.
-
--> Many attributes are marked as **optional** _and_ **computed** in the schema,
-hence you may seem added to the plan with "(known after apply)" status, even if they are not set in the configuration.
-This is done to support the `clone` operation, when a VM is created from an existing VM or template,
-and the source attributes are copied to the clone.<br><br>
-Computed attributes allow the provider to set those attributes without user input.
-The attributes are also marked as optional to allow the practitioner to set (or overwrite) them if needed.
+This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
 
 
 
@@ -26,6 +18,7 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 
 ### Required
 
+- `id` (Number) The unique identifier of the VM in the Proxmox cluster.
 - `node_name` (String) The name of the node where the VM is provisioned.
 
 ### Optional
@@ -33,10 +26,9 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 - `clone` (Attributes) The cloning configuration. (see [below for nested schema](#nestedatt--clone))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `description` (String) The description of the VM.
-- `id` (Number) The unique identifier of the VM in the Proxmox cluster.
-- `name` (String) The name of the VM. Doesn't have to be unique.
+- `name` (String) The name of the VM.
 - `tags` (Set of String) The tags assigned to the VM.
-- `template` (Boolean) Set to true to create a VM template.
+- `template` (Boolean) Whether the VM is a template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 
 <a id="nestedatt--clone"></a>
@@ -73,7 +65,4 @@ Optional:
 
 Optional:
 
-- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
-- `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
-- `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
