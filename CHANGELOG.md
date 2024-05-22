@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.57.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.57.0...v0.57.1) (2024-05-22)
+
+
+### Bug Fixes
+
+* **file:** upload timeout with 596 response code ([#1315](https://github.com/bpg/terraform-provider-proxmox/issues/1315)) ([a6c6b98](https://github.com/bpg/terraform-provider-proxmox/commit/a6c6b98d449e2039edb76a9bdbb0a71ed7fdeb16))
+* **vm:** allow `clone` to pass with warnings ([#1317](https://github.com/bpg/terraform-provider-proxmox/issues/1317)) ([fb1105d](https://github.com/bpg/terraform-provider-proxmox/commit/fb1105d93bd2fec4d9fe0cfa9155539d17d8b418))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v4.1.5 → v4.1.6) ([#1305](https://github.com/bpg/terraform-provider-proxmox/issues/1305)) ([0494fcb](https://github.com/bpg/terraform-provider-proxmox/commit/0494fcb16772cd69d510d42594badfc83ae2e0ac))
+* **ci:** update jetbrains/qodana-action action (v2024.1.4 → v2024.1.5) ([#1306](https://github.com/bpg/terraform-provider-proxmox/issues/1306)) ([48fdb03](https://github.com/bpg/terraform-provider-proxmox/commit/48fdb03c8aac90f15040e7a7cad317acb535c797))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1309](https://github.com/bpg/terraform-provider-proxmox/issues/1309)) ([7d1b400](https://github.com/bpg/terraform-provider-proxmox/commit/7d1b4006412962aeef40bd64d38021c807543e0e))
+* **deps:** update tools ([#1316](https://github.com/bpg/terraform-provider-proxmox/issues/1316)) ([3f97a7b](https://github.com/bpg/terraform-provider-proxmox/commit/3f97a7b5c3eb8926375e02f87f84d23a9b644d2c))
+* **vm2:** add datasource implementation  ([#1318](https://github.com/bpg/terraform-provider-proxmox/issues/1318)) ([e3dd31f](https://github.com/bpg/terraform-provider-proxmox/commit/e3dd31f55e41047e004ebff34a713a4e9ed8616f))
+* **vm2:** add support for `cpu` ([#1310](https://github.com/bpg/terraform-provider-proxmox/issues/1310)) ([aa309fd](https://github.com/bpg/terraform-provider-proxmox/commit/aa309fd9eabad00e7694b8bd7d63cad6180d7118))
+* **vm2:** cleanup `cpu` implementation, refactor rearrange acc tests ([#1311](https://github.com/bpg/terraform-provider-proxmox/issues/1311)) ([2e34c57](https://github.com/bpg/terraform-provider-proxmox/commit/2e34c57f6c95bff2f3e35ee617e783a78616c900))
+
 ## [0.57.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.56.1...v0.57.0) (2024-05-16)
 
 
