@@ -50,7 +50,7 @@ func (r *Resource) Schema(
 					},
 				},
 			},
-			"cpu": cpu.Schema(),
+			"cpu": cpu.ResourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
 				Optional:    true,
@@ -79,7 +79,7 @@ func (r *Resource) Schema(
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
-			"tags": stringset.ResourceAttribute("The tags assigned to the resource.", ""),
+			"tags": stringset.ResourceAttribute("The tags assigned to the VM.", ""),
 			"template": schema.BoolAttribute{
 				Description: "Set to true to create a VM template.",
 				Optional:    true,

@@ -35,7 +35,7 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 - `description` (String) The description of the VM.
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
 - `name` (String) The name of the VM. Doesn't have to be unique.
-- `tags` (Set of String) The tags assigned to the resource.
+- `tags` (Set of String) The tags assigned to the VM.
 - `template` (Boolean) Set to true to create a VM template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 

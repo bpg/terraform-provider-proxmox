@@ -15,8 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-// Schema defines the schema for the CPU resource.
-func Schema() schema.Attribute {
+// ResourceSchema defines the schema for the CPU resource.
+func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		CustomType: basetypes.ObjectType{
 			AttrTypes: attributeTypes(),
@@ -202,7 +202,8 @@ func Schema() schema.Attribute {
 				},
 			},
 			"units": schema.Int64Attribute{
-				Description: "CPU weight for a VM. Argument is used in the kernel fair scheduler. " +
+				Description: "CPU weight for a VM.",
+				MarkdownDescription: "CPU weight for a VM. Argument is used in the kernel fair scheduler. " +
 					"The larger the number is, the more CPU time this VM gets. " +
 					"Number is relative to weights of all the other running VMs.",
 				Optional: true,

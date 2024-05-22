@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -44,8 +43,8 @@ type Resource struct {
 	client proxmox.Client
 }
 
-// NewVMResource creates a new resource for managing VMs.
-func NewVMResource() resource.Resource {
+// NewResource creates a new resource for managing VMs.
+func NewResource() resource.Resource {
 	return &Resource{}
 }
 
@@ -123,7 +122,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	// read back the VM from the PVE API to populate computed fields
-	exists := r.read(ctx, &plan, &resp.Diagnostics)
+	exists := read(ctx, r.client, &plan, &resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError("VM does not exist after creation", "")
 	}
@@ -195,7 +194,7 @@ func (r *Resource) clone(ctx context.Context, plan Model, diags *diag.Diagnostic
 		NodeName:    plan.NodeName,
 	}
 
-	r.read(ctx, &clone, diags)
+	read(ctx, r.client, &clone, diags)
 
 	if diags.HasError() {
 		return
@@ -204,6 +203,7 @@ func (r *Resource) clone(ctx context.Context, plan Model, diags *diag.Diagnostic
 	r.update(ctx, plan, clone, true, diags)
 }
 
+//nolint:dupl
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state Model
 
@@ -219,7 +219,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	exists := r.read(ctx, &state, &resp.Diagnostics)
+	exists := read(ctx, r.client, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -258,7 +258,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	r.update(ctx, plan, state, false, &resp.Diagnostics)
 
 	// read back the VM from the PVE API to populate computed fields
-	exists := r.read(ctx, &plan, &resp.Diagnostics)
+	exists := read(ctx, r.client, &plan, &resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError("VM does not exist after update", "")
 	}
@@ -423,7 +423,7 @@ func (r *Resource) ImportState(
 		Timeouts: ts,
 	}
 
-	exists := r.read(ctx, &state, &resp.Diagnostics)
+	exists := read(ctx, r.client, &state, &resp.Diagnostics)
 	if !exists {
 		resp.Diagnostics.AddError(fmt.Sprintf("VM %d does not exist on node %s", id, nodeName), "")
 	}
@@ -434,48 +434,6 @@ func (r *Resource) ImportState(
 
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
-}
-
-// read retrieves the current state of the resource from the API and updates the state.
-// Returns false if the resource does not exist, so the caller can remove it from the state if necessary.
-func (r *Resource) read(ctx context.Context, model *Model, diags *diag.Diagnostics) bool {
-	vmAPI := r.client.Node(model.NodeName.ValueString()).VM(int(model.ID.ValueInt64()))
-
-	// Retrieve the entire configuration in order to compare it to the state.
-	config, err := vmAPI.GetVM(ctx)
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			tflog.Info(ctx, "VM does not exist, removing from the state", map[string]interface{}{
-				"vm_id": vmAPI.VMID,
-			})
-		} else {
-			diags.AddError("Failed to get VM", err.Error())
-		}
-
-		return false
-	}
-
-	status, err := vmAPI.GetVMStatus(ctx)
-	if err != nil {
-		diags.AddError("Failed to get VM status", err.Error())
-		return false
-	}
-
-	if status.VMID == nil {
-		diags.AddError("VM ID is missing in status API response", "")
-		return false
-	}
-
-	model.ID = types.Int64Value(int64(*status.VMID))
-
-	// Optional fields can be removed from the model, use StringPointerValue to handle removal on nil
-	model.Description = types.StringPointerValue(config.Description)
-	model.Name = types.StringPointerValue(config.Name)
-	model.CPU = cpu.NewValue(ctx, config, diags)
-	model.Tags = stringset.NewValue(config.Tags, diags)
-	model.Template = types.BoolPointerValue(config.Template.PointerBool())
-
-	return true
 }
 
 // Shutdown the VM, then wait for it to actually shut down (it may not be shut down immediately if
