@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
 )
 
 // CloneVM clones a virtual machine.
@@ -44,7 +45,8 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 			return api.ErrNoDataObjectInResponse
 		}
 
-		return c.Tasks().WaitForTask(ctx, *resBody.Data)
+		// ignoring warnings as per https://www.mail-archive.com/pve-devel@lists.proxmox.com/msg17724.html
+		return c.Tasks().WaitForTask(ctx, *resBody.Data, tasks.WithIgnoreWarnings())
 	}, retry.Attempts(uint(retries)), retry.Delay(10*time.Second))
 	if err != nil {
 		return fmt.Errorf("error waiting for VM clone: %w", err)

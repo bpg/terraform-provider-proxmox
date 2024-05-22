@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -86,9 +87,35 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 	return nil
 }
 
+type taskWaitOptions struct {
+	ignoreWarnings bool
+}
+
+// TaskWaitOption is an option for waiting for a task to complete.
+type TaskWaitOption interface {
+	apply(opts *taskWaitOptions)
+}
+
+type withIgnoreWarnings struct{}
+
+// WithIgnoreWarnings is an option to ignore warnings when waiting for a task to complete.
+func WithIgnoreWarnings() TaskWaitOption {
+	return withIgnoreWarnings{}
+}
+
+func (w withIgnoreWarnings) apply(opts *taskWaitOptions) {
+	opts.ignoreWarnings = true
+}
+
 // WaitForTask waits for a specific task to complete.
-func (c *Client) WaitForTask(ctx context.Context, upid string) error {
+func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitOption) error {
 	errStillRunning := errors.New("still running")
+
+	options := &taskWaitOptions{}
+
+	for _, opt := range opts {
+		opt.apply(options)
+	}
 
 	status, err := retry.DoWithData(
 		func() (*GetTaskStatusResponseData, error) {
@@ -132,6 +159,11 @@ func (c *Client) WaitForTask(ctx context.Context, upid string) error {
 	}
 
 	if status.ExitCode != "OK" {
+		if options.ignoreWarnings &&
+			strings.HasPrefix(status.Status, "WARNINGS: ") && !strings.Contains(status.Status, "ERROR") {
+			return nil
+		}
+
 		return fmt.Errorf("task %q failed to complete with exit code: %s", upid, status.ExitCode)
 	}
 
