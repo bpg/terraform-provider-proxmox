@@ -9,6 +9,7 @@ description: |-
 
 # Data Source: proxmox_virtual_environment_vm2
 
+!> **DO NOT USE**
 This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.
 
 
