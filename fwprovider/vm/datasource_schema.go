@@ -35,7 +35,7 @@ func (d *Datasource) Schema(
 					},
 				},
 			},
-			"cpu": cpu.ResourceSchema(),
+			"cpu": cpu.DataSourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
 				Optional:    true,
