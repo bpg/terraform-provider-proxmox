@@ -56,7 +56,7 @@ const (
 	dvMemoryDedicated                   = 512
 	dvMemorySwap                        = 0
 	dvMountPointACL                     = false
-	dvMountPointBackup                  = true
+	dvMountPointBackup                  = false
 	dvMountPointPath                    = ""
 	dvMountPointQuota                   = false
 	dvMountPointReadOnly                = false
@@ -2211,7 +2211,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if mp.Backup != nil {
 			mountPoint[mkMountPointBackup] = *mp.Backup
 		} else {
-			mountPoint[mkMountPointBackup] = true
+			mountPoint[mkMountPointBackup] = dvMountPointBackup
 		}
 
 		if mp.MountOptions != nil {
