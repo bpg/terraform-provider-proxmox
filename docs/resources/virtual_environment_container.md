@@ -156,7 +156,7 @@ output "ubuntu_container_public_key" {
 - `mount_point`
     - `acl` (Optional) Explicitly enable or disable ACL support.
     - `backup` (Optional) Whether to include the mount point in backups (only
-        used for volume mount points).
+        used for volume mount points, defaults to `false`).
     - `mount_options` (Optional) List of extra mount options.
     - `path` (Required) Path to the mount point as seen from inside the
         container.
