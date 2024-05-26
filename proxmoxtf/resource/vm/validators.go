@@ -228,6 +228,7 @@ func VGAMemoryValidator() schema.SchemaValidateDiagFunc {
 func VGATypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"cirrus",
+		"none",
 		"qxl",
 		"qxl2",
 		"qxl3",
@@ -238,6 +239,7 @@ func VGATypeValidator() schema.SchemaValidateDiagFunc {
 		"serial3",
 		"std",
 		"virtio",
+		"virtio-gl",
 		"vmware",
 	}, false))
 }
