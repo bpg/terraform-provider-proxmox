@@ -185,8 +185,9 @@ type CustomUSBDevices []CustomUSBDevice
 
 // CustomVGADevice handles QEMU VGA device parameters.
 type CustomVGADevice struct {
-	Memory *int    `json:"memory,omitempty" url:"memory,omitempty"`
-	Type   *string `json:"type,omitempty"   url:"type,omitempty"`
+	Clipboard *string `json:"clipboard,omitempty" url:"memory,omitempty"`
+	Memory    *int    `json:"memory,omitempty"    url:"memory,omitempty"`
+	Type      *string `json:"type,omitempty"      url:"type,omitempty"`
 }
 
 // CustomVirtualIODevice handles QEMU VirtIO device parameters.
@@ -1242,6 +1243,10 @@ func (r CustomUSBDevices) EncodeValues(key string, v *url.Values) error {
 func (r CustomVGADevice) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
+	if r.Clipboard != nil {
+		values = append(values, fmt.Sprintf("clipboard=%s", *r.Clipboard))
+	}
+
 	if r.Memory != nil {
 		values = append(values, fmt.Sprintf("memory=%d", *r.Memory))
 	}
@@ -2038,6 +2043,9 @@ func (r *CustomVGADevice) UnmarshalJSON(b []byte) error {
 			r.Type = &v[0]
 		} else if len(v) == 2 {
 			switch v[0] {
+			case "clipboard":
+				r.Clipboard = &v[1]
+
 			case "memory":
 				m, err := strconv.Atoi(v[1])
 				if err != nil {

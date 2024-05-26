@@ -162,6 +162,41 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			}},
 		},
+		{
+			"update vga block", []resource.TestStep{{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					vga {
+						type = "none"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"vga.0.type": "none",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					vga {
+						type = "virtio-gl"
+						clipboard = "vnc"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"vga.0.type":      "virtio-gl",
+						"vga.0.clipboard": "vnc",
+					}),
+				),
+			}},
+		},
 	}
 
 	for _, tt := range tests {

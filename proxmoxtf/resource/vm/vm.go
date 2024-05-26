@@ -124,7 +124,7 @@ const (
 	dvTimeoutShutdownVM   = 1800
 	dvTimeoutStartVM      = 1800
 	dvTimeoutStopVM       = 300
-	dvVGAEnabled          = true
+	dvVGAClipboard        = ""
 	dvVGAMemory           = 16
 	dvVGAType             = "std"
 	dvSCSIHardware        = "virtio-scsi-pci"
@@ -271,6 +271,7 @@ const (
 	mkHostUSBDeviceMapping = "mapping"
 	mkHostUSBDeviceUSB3    = "usb3"
 	mkVGA                  = "vga"
+	mkVGAClipboard         = "clipboard"
 	mkVGAEnabled           = "enabled"
 	mkVGAMemory            = "memory"
 	mkVGAType              = "type"
@@ -1388,19 +1389,29 @@ func VM() *schema.Resource {
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{
 					map[string]interface{}{
-						mkVGAEnabled: dvVGAEnabled,
-						mkVGAMemory:  dvVGAMemory,
-						mkVGAType:    dvVGAType,
+						mkVGAClipboard: dvVGAClipboard,
+						mkVGAMemory:    dvVGAMemory,
+						mkVGAType:      dvVGAType,
 					},
 				}, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
+					mkVGAClipboard: {
+						Type:        schema.TypeString,
+						Description: "Enable clipboard support. Set to `vnc` to enable clipboard support for VNC.",
+						Optional:    true,
+						Default:     dvVGAClipboard,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							"vnc",
+						}, true)),
+					},
 					mkVGAEnabled: {
-						Type:        schema.TypeBool,
+						Type: schema.TypeBool,
+						Deprecated: "The `enabled` attribute is deprecated and will be removed in a future release. " +
+							"Use type `none` instead.",
 						Description: "Whether to enable the VGA device",
 						Optional:    true,
-						Default:     dvVGAEnabled,
 					},
 					mkVGAMemory: {
 						Type:             schema.TypeInt,
@@ -3335,24 +3346,22 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) 
 		return nil, fmt.Errorf("error getting VGA block: %w", err)
 	}
 
-	vgaEnabled := types.CustomBool(vgaBlock[mkAgentEnabled].(bool))
+	vgaClipboard := vgaBlock[mkVGAClipboard].(string)
 	vgaMemory := vgaBlock[mkVGAMemory].(int)
 	vgaType := vgaBlock[mkVGAType].(string)
 
 	vgaDevice := &vms.CustomVGADevice{}
 
-	if vgaEnabled {
-		if vgaMemory > 0 {
-			vgaDevice.Memory = &vgaMemory
-		}
+	if vgaClipboard != "" {
+		vgaDevice.Clipboard = &vgaClipboard
+	}
 
+	if vgaMemory > 0 {
+		vgaDevice.Memory = &vgaMemory
+	}
+
+	if vgaType != "" {
 		vgaDevice.Type = &vgaType
-	} else {
-		vgaType = "none"
-
-		vgaDevice = &vms.CustomVGADevice{
-			Type: &vgaType,
-		}
 	}
 
 	return vgaDevice, nil
@@ -4413,29 +4422,23 @@ func vmReadCustom(
 	vga := map[string]interface{}{}
 
 	if vmConfig.VGADevice != nil {
-		vgaEnabled := true
-
-		if vmConfig.VGADevice.Type != nil {
-			vgaEnabled = *vmConfig.VGADevice.Type != "none"
+		if vmConfig.VGADevice.Clipboard != nil {
+			vga[mkVGAClipboard] = *vmConfig.VGADevice.Clipboard
+		} else {
+			vga[mkVGAClipboard] = dvVGAClipboard
 		}
-
-		vga[mkVGAEnabled] = vgaEnabled
 
 		if vmConfig.VGADevice.Memory != nil {
 			vga[mkVGAMemory] = *vmConfig.VGADevice.Memory
 		} else {
-			vga[mkVGAMemory] = 0
+			vga[mkVGAMemory] = dvVGAMemory
 		}
 
-		if vgaEnabled {
-			if vmConfig.VGADevice.Type != nil {
-				vga[mkVGAType] = *vmConfig.VGADevice.Type
-			} else {
-				vga[mkVGAType] = ""
-			}
+		if vmConfig.VGADevice.Type != nil {
+			vga[mkVGAType] = *vmConfig.VGADevice.Type
 		}
 	} else {
-		vga[mkVGAEnabled] = true
+		vga[mkVGAClipboard] = ""
 		vga[mkVGAMemory] = 0
 		vga[mkVGAType] = ""
 	}
@@ -4447,7 +4450,7 @@ func vmReadCustom(
 		err := d.Set(mkVGA, []interface{}{vga})
 		diags = append(diags, diag.FromErr(err)...)
 	case len(currentVGA) > 0 ||
-		vga[mkVGAEnabled] != dvVGAEnabled ||
+		vga[mkVGAClipboard] != dvVGAClipboard ||
 		vga[mkVGAMemory] != dvVGAMemory ||
 		vga[mkVGAType] != dvVGAType:
 		err := d.Set(mkVGA, []interface{}{vga})
