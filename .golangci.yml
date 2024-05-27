@@ -49,18 +49,9 @@ linters:
   enable-all: true
   disable:
     # deprecated
-    - deadcode
     - execinquery
     - gocyclo
-    - golint
-    - ifshort
-    - interfacer
-    - maligned
-    - nosnakecase
     - rowserrcheck
-    - scopelint
-    - structcheck
-    - varcheck
     - wastedassign
     # require massive refactoring
     - cyclop
@@ -70,7 +61,6 @@ linters:
     # others
     - canonicalheader
     - depguard
-    - exhaustivestruct
     - exhaustruct
     - gci
     - err113

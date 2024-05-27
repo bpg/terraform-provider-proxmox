@@ -160,7 +160,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 
 	if status.ExitCode != "OK" {
 		if options.ignoreWarnings &&
-			strings.HasPrefix(status.Status, "WARNINGS: ") && !strings.Contains(status.Status, "ERROR") {
+			strings.HasPrefix(status.ExitCode, "WARNINGS: ") && !strings.Contains(status.ExitCode, "ERROR") {
 			return nil
 		}
 
