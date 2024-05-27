@@ -1041,6 +1041,16 @@
         "test",
         "ideas"
       ]
+    },
+    {
+      "login": "Blefish",
+      "name": "Rudolf Tammekivi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1191779?v=4",
+      "profile": "https://www.linkedin.com/in/rudolf-tammekivi/",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
