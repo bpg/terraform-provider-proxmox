@@ -21,6 +21,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID}}
 				name = "test-cpu"
 			}`),
 			Check: resource.ComposeTestCheckFunc(
@@ -36,6 +37,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID}}
 				name = "test-cpu"
 				cpu = {
 					cores = 2
@@ -59,6 +61,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
+					id = {{.RandomVMID}}
 					name = "test-cpu"
 					cpu = {
 						# affinity = "0-1"          only root can set affinity
@@ -124,6 +127,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "template_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID1}}
 				name = "template-cpu"
 				cpu = {
 					cores = 2
@@ -132,7 +136,8 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"	
+				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID2}}
 				name = "test-cpu"
 				clone = {
 					id = proxmox_virtual_environment_vm2.template_vm.id
@@ -150,6 +155,7 @@ func TestAccResourceVM2CPU(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "template_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID1}}
 				name = "template-cpu"
 				cpu = {
 					cores = 2
@@ -158,7 +164,8 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"	
+				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID2}}
 				name = "test-cpu"
 				clone = {
 					id = proxmox_virtual_environment_vm2.template_vm.id

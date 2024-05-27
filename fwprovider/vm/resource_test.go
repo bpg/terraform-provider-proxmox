@@ -62,9 +62,8 @@ func TestAccResourceVM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-				
+				id = {{.RandomVMID}}
 				name = "not a valid DNS name"
-
 			}`),
 			ExpectError: regexp.MustCompile(`name must be a valid DNS name`),
 		}}},
@@ -73,7 +72,7 @@ func TestAccResourceVM(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					
+					id = {{.RandomVMID}}
 					name = "test-vm"
 					description = "test description"
 				}`),
@@ -86,7 +85,6 @@ func TestAccResourceVM(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					
 					name = "test-vm"
 				}`),
 				Check: resource.ComposeTestCheckFunc(
@@ -110,7 +108,7 @@ func TestAccResourceVM(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					
+					id = {{.RandomVMID}}
 					name = "test-tags"
 					tags = ["tag2", "tag1"]
 				}`),
@@ -159,7 +157,7 @@ func TestAccResourceVM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-		
+				id = {{.RandomVMID}}
 				tags = ["", "tag1"]
 			}`),
 			ExpectError: regexp.MustCompile(`string length must be at least 1, got: 0`),
@@ -168,7 +166,7 @@ func TestAccResourceVM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-		
+				id = {{.RandomVMID}}
 				tags = [" ", "tag1"]
 			}`),
 			ExpectError: regexp.MustCompile(`must be a non-empty and non-whitespace string`),
@@ -177,7 +175,7 @@ func TestAccResourceVM(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					
+					id = {{.RandomVMID}}
 					description = trimspace(<<-EOT
 						my
 						description
@@ -220,12 +218,14 @@ func TestAccResourceVM2Clone(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID1}}
 				name = "template"
 				description = "template description"
 				template = true
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm_clone" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID2}}
 				name = "clone"
 				clone = {
 					id = proxmox_virtual_environment_vm2.test_vm.id	
@@ -249,11 +249,13 @@ func TestAccResourceVM2Clone(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID1}}
 				template = true
 				tags = ["tag1", "tag2"]
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm_clone" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID2}}
 				clone = {
 					id = proxmox_virtual_environment_vm2.test_vm.id
 				}

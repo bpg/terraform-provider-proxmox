@@ -21,6 +21,7 @@ func TestAccResourceVM2VGA(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID}}
 				name = "test-vga"
 			}`),
 			Check: test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
@@ -32,6 +33,7 @@ func TestAccResourceVM2VGA(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID}}
 				name = "test-vga"
 				vga = {
 					type = "std"
@@ -52,6 +54,7 @@ func TestAccResourceVM2VGA(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
+					id = {{.RandomVMID}}
 					name = "test-vga"
 					vga = {
 						type = "std"
@@ -93,6 +96,7 @@ func TestAccResourceVM2VGA(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "template_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID1}}
 				name = "template-vga"
 				vga = {
 					type = "qxl"
@@ -101,6 +105,7 @@ func TestAccResourceVM2VGA(t *testing.T) {
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID2}}
 				name = "test-vga"
 				clone = {
 					id = proxmox_virtual_environment_vm2.template_vm.id
@@ -117,6 +122,7 @@ func TestAccResourceVM2VGA(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "template_vm" {
 				node_name = "{{.NodeName}}"
+				id = {{.RandomVMID1}}
 				name = "template-vga"
 				vga = {
 					type = "qxl"
@@ -126,6 +132,7 @@ func TestAccResourceVM2VGA(t *testing.T) {
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
 				name = "test-cpu"
+				id = {{.RandomVMID2}}
 				clone = {
 					id = proxmox_virtual_environment_vm2.template_vm.id
 				}
