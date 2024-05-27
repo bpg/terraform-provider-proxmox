@@ -180,6 +180,8 @@ When using a non-root user for the SSH connection, the user **must** have the `s
 
 -> `sudo` is not installed by default on Proxmox VE nodes. You can install it via the command line on the Proxmox host: `apt install sudo`
 
+~> The `root` user on the Proxmox node must be configured with `bash` as the default shell.
+
 You can configure the `sudo` privilege for the user via the command line on the Proxmox host. In the example below, we create a user `terraform` and assign the `sudo` privilege to it:
 
 - Create a new system user:
