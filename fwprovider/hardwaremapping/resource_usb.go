@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -249,7 +249,7 @@ func (r *resourceUSB) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Description: "The name of this hardware mapping.",
 				Required:    true,
 			},
-			schemaAttrNameTerraformID: structure.IDAttribute(
+			schemaAttrNameTerraformID: attribute.ID(
 				"The unique identifier of this USB hardware mapping resource.",
 			),
 		},

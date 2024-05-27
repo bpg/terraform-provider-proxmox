@@ -4,11 +4,11 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -153,65 +153,65 @@ func FillUpdateBody(
 	}
 
 	if !plan.Affinity.Equal(state.Affinity) {
-		if shouldBeRemoved(plan.Affinity, state.Affinity, isClone) {
+		if attribute.ShouldBeRemoved(plan.Affinity, state.Affinity, isClone) {
 			del("CPUAffinity")
-		} else if isDefined(plan.Affinity) {
+		} else if attribute.IsDefined(plan.Affinity) {
 			updateBody.CPUAffinity = plan.Affinity.ValueStringPointer()
 		}
 	}
 
 	if !plan.Architecture.Equal(state.Architecture) {
-		if shouldBeRemoved(plan.Architecture, state.Architecture, isClone) {
+		if attribute.ShouldBeRemoved(plan.Architecture, state.Architecture, isClone) {
 			del("CPUArchitecture")
-		} else if isDefined(plan.Architecture) {
+		} else if attribute.IsDefined(plan.Architecture) {
 			updateBody.CPUArchitecture = plan.Architecture.ValueStringPointer()
 		}
 	}
 
 	if !plan.Cores.Equal(state.Cores) {
-		if shouldBeRemoved(plan.Cores, state.Cores, isClone) {
+		if attribute.ShouldBeRemoved(plan.Cores, state.Cores, isClone) {
 			del("CPUCores")
-		} else if isDefined(plan.Cores) {
+		} else if attribute.IsDefined(plan.Cores) {
 			updateBody.CPUCores = plan.Cores.ValueInt64Pointer()
 		}
 	}
 
 	if !plan.Limit.Equal(state.Limit) {
-		if shouldBeRemoved(plan.Limit, state.Limit, isClone) {
+		if attribute.ShouldBeRemoved(plan.Limit, state.Limit, isClone) {
 			del("CPULimit")
-		} else if isDefined(plan.Sockets) {
+		} else if attribute.IsDefined(plan.Sockets) {
 			updateBody.CPULimit = plan.Limit.ValueInt64Pointer()
 		}
 	}
 
 	if !plan.Sockets.Equal(state.Sockets) {
-		if shouldBeRemoved(plan.Sockets, state.Sockets, isClone) {
+		if attribute.ShouldBeRemoved(plan.Sockets, state.Sockets, isClone) {
 			del("CPUSockets")
-		} else if isDefined(plan.Sockets) {
+		} else if attribute.IsDefined(plan.Sockets) {
 			updateBody.CPUSockets = plan.Sockets.ValueInt64Pointer()
 		}
 	}
 
 	if !plan.Units.Equal(state.Units) {
-		if shouldBeRemoved(plan.Units, state.Units, isClone) {
+		if attribute.ShouldBeRemoved(plan.Units, state.Units, isClone) {
 			del("CPUUnits")
-		} else if isDefined(plan.Units) {
+		} else if attribute.IsDefined(plan.Units) {
 			updateBody.CPUUnits = plan.Units.ValueInt64Pointer()
 		}
 	}
 
 	if !plan.Numa.Equal(state.Numa) {
-		if shouldBeRemoved(plan.Numa, state.Numa, isClone) {
+		if attribute.ShouldBeRemoved(plan.Numa, state.Numa, isClone) {
 			del("NUMAEnabled")
-		} else if isDefined(plan.Numa) {
+		} else if attribute.IsDefined(plan.Numa) {
 			updateBody.NUMAEnabled = proxmoxtypes.CustomBoolPtr(plan.Numa.ValueBoolPointer())
 		}
 	}
 
 	if !plan.Hotplugged.Equal(state.Hotplugged) {
-		if shouldBeRemoved(plan.Hotplugged, state.Hotplugged, isClone) {
+		if attribute.ShouldBeRemoved(plan.Hotplugged, state.Hotplugged, isClone) {
 			del("VirtualCPUCount")
-		} else if isDefined(plan.Hotplugged) {
+		} else if attribute.IsDefined(plan.Hotplugged) {
 			updateBody.VirtualCPUCount = plan.Hotplugged.ValueInt64Pointer()
 		}
 	}
@@ -221,17 +221,17 @@ func FillUpdateBody(
 	cpuEmulation := &vms.CustomCPUEmulation{}
 
 	if !plan.Type.Equal(state.Type) {
-		if shouldBeRemoved(plan.Type, state.Type, isClone) {
+		if attribute.ShouldBeRemoved(plan.Type, state.Type, isClone) {
 			delType = true
-		} else if isDefined(plan.Type) {
+		} else if attribute.IsDefined(plan.Type) {
 			cpuEmulation.Type = plan.Type.ValueString()
 		}
 	}
 
 	if !plan.Flags.Equal(state.Flags) {
-		if shouldBeRemoved(plan.Flags, state.Flags, isClone) {
+		if attribute.ShouldBeRemoved(plan.Flags, state.Flags, isClone) {
 			delFlags = true
-		} else if isDefined(plan.Flags) {
+		} else if attribute.IsDefined(plan.Flags) {
 			d = plan.Flags.ElementsAs(ctx, &cpuEmulation.Flags, false)
 			diags.Append(d...)
 		}
@@ -245,12 +245,4 @@ func FillUpdateBody(
 	case !reflect.DeepEqual(cpuEmulation, &vms.CustomCPUEmulation{}):
 		updateBody.CPUEmulation = cpuEmulation
 	}
-}
-
-func shouldBeRemoved(plan attr.Value, state attr.Value, isClone bool) bool {
-	return !isDefined(plan) && isDefined(state) && !isClone
-}
-
-func isDefined(v attr.Value) bool {
-	return !v.IsNull() && !v.IsUnknown()
 }

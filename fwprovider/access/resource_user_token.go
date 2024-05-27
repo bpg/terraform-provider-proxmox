@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
@@ -69,7 +69,7 @@ func (r *userTokenResource) Schema(
 					}, "must be a valid RFC3339 date"),
 				},
 			},
-			"id": structure.IDAttribute("Unique token identifier with format `<user_id>!<token_name>`."),
+			"id": attribute.ID("Unique token identifier with format `<user_id>!<token_name>`."),
 			"privileges_separation": schema.BoolAttribute{
 				Description: "Restrict API token privileges with separate ACLs (default)",
 				MarkdownDescription: "Restrict API token privileges with separate ACLs (default), " +

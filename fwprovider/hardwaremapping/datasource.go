@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
@@ -179,7 +179,7 @@ func (d *dataSource) Schema(
 				Computed:    true,
 				Description: "The identifiers of the hardware mappings.",
 			},
-			schemaAttrNameTerraformID: structure.IDAttribute(
+			schemaAttrNameTerraformID: attribute.ID(
 				"The unique identifier of this hardware mappings data source.",
 			),
 			schemaAttrNameType: schema.StringAttribute{

@@ -27,7 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -193,7 +193,7 @@ func (r *downloadFileResource) Schema(
 			"It can be fully compatible and faster replacement for image files created using " +
 			"`proxmox_virtual_environment_file`. Supports images for VMs (ISO images) and LXC (CT Templates).",
 		Attributes: map[string]schema.Attribute{
-			"id": structure.IDAttribute(),
+			"id": attribute.ID(),
 			"content_type": schema.StringAttribute{
 				Description: "The file content type. Must be `iso` for VM images or `vztmpl` for LXC images.",
 				Required:    true,

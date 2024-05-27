@@ -541,9 +541,9 @@ output "ubuntu_vm_public_key" {
         - `serial3` - Serial Terminal 3.
         - `std` - Standard VGA.
         - `virtio` - VirtIO-GPU.
-        - `virtio-gl` - VirtIO-GPU with 3D acceleration (VirGL). VirGL support needs some extra libraries that aren’t installed by default. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8.for more information.
+        - `virtio-gl` - VirtIO-GPU with 3D acceleration (VirGL). VirGL support needs some extra libraries that aren’t installed by default. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information.
         - `vmware` - VMware Compatible.
-    - `clipboard` - (Optional) Enable VNC clipboard by setting to `vnc`. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8.for more information.
+    - `clipboard` - (Optional) Enable VNC clipboard by setting to `vnc`. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information.
 - `vm_id` - (Optional) The VM identifier.
 - `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable).
 

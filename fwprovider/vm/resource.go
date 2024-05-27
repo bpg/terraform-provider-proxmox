@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
@@ -146,6 +147,7 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 
 	// fill out create body fields with values from other resource blocks
 	cpu.FillCreateBody(ctx, plan.CPU, createBody, diags)
+	vga.FillCreateBody(ctx, plan.VGA, createBody, diags)
 
 	if diags.HasError() {
 		return
@@ -321,6 +323,7 @@ func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, 
 	}
 
 	cpu.FillUpdateBody(ctx, plan.CPU, state.CPU, updateBody, isClone, diags)
+	vga.FillUpdateBody(ctx, plan.VGA, state.VGA, updateBody, isClone, diags)
 
 	if !updateBody.IsEmpty() {
 		updateBody.VMID = int(plan.ID.ValueInt64())

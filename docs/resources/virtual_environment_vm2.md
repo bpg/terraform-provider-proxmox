@@ -38,6 +38,7 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 - `tags` (Set of String) The tags assigned to the VM.
 - `template` (Boolean) Set to true to create a VM template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `vga` (Attributes) Configure the VGA Hardware. If you want to use high resolution modes (>= 1280x1024x16) you may need to increase the vga memory option. Since QEMU 2.9 the default VGA display type is `std` for all OS types besides some Windows versions (XP and older) which use `cirrus`. The `qxl` option enables the SPICE display server. For win* OS you can select how many independent displays you want, Linux guests can add displays themself. You can also run without any graphic card, using a serial device as terminal. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information and available configuration parameters. (see [below for nested schema](#nestedatt--vga))
 
 <a id="nestedatt--clone"></a>
 ### Nested Schema for `clone`
@@ -77,3 +78,13 @@ Optional:
 - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+
+
+<a id="nestedatt--vga"></a>
+### Nested Schema for `vga`
+
+Optional:
+
+- `clipboard` (String) Enable a specific clipboard. If not set, depending on the display type the SPICE one will be added. Currently only `vnc` is available. Migration with VNC clipboard is not supported by Proxmox.
+- `memory` (Number) The VGA memory in megabytes (4-512 MB). Has no effect with serial display.
+- `type` (String) The VGA type (defaults to `std`).

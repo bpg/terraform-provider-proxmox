@@ -11,6 +11,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -32,6 +33,7 @@ type Model struct {
 	Tags     stringset.Value `tfsdk:"tags"`
 	Template types.Bool      `tfsdk:"template"`
 	Timeouts timeouts.Value  `tfsdk:"timeouts"`
+	VGA      vga.Value       `tfsdk:"vga"`
 }
 
 // read retrieves the current state of the resource from the API and updates the state.
@@ -69,9 +71,12 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 	// Optional fields can be removed from the model, use StringPointerValue to handle removal on nil
 	model.Description = types.StringPointerValue(config.Description)
 	model.Name = types.StringPointerValue(config.Name)
-	model.CPU = cpu.NewValue(ctx, config, diags)
 	model.Tags = stringset.NewValue(config.Tags, diags)
 	model.Template = types.BoolPointerValue(config.Template.PointerBool())
+
+	// Blocks
+	model.CPU = cpu.NewValue(ctx, config, diags)
+	model.VGA = vga.NewValue(ctx, config, diags)
 
 	return true
 }

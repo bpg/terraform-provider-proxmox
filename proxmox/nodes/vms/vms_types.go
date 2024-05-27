@@ -186,7 +186,7 @@ type CustomUSBDevices []CustomUSBDevice
 // CustomVGADevice handles QEMU VGA device parameters.
 type CustomVGADevice struct {
 	Clipboard *string `json:"clipboard,omitempty" url:"memory,omitempty"`
-	Memory    *int    `json:"memory,omitempty"    url:"memory,omitempty"`
+	Memory    *int64  `json:"memory,omitempty"    url:"memory,omitempty"`
 	Type      *string `json:"type,omitempty"      url:"type,omitempty"`
 }
 
@@ -2047,7 +2047,7 @@ func (r *CustomVGADevice) UnmarshalJSON(b []byte) error {
 				r.Clipboard = &v[1]
 
 			case "memory":
-				m, err := strconv.Atoi(v[1])
+				m, err := strconv.ParseInt(v[1], 10, 64)
 				if err != nil {
 					return fmt.Errorf("failed to convert memory to int: %w", err)
 				}

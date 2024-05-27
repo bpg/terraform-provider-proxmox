@@ -23,7 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
@@ -64,7 +64,7 @@ func (r *hagroupResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages a High Availability group in a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
-			"id": structure.IDAttribute(),
+			"id": attribute.ID(),
 			"group": schema.StringAttribute{
 				Description: "The identifier of the High Availability group to manage.",
 				Required:    true,

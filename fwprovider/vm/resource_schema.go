@@ -17,6 +17,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 )
 
 // Schema defines the schema for the resource.
@@ -93,6 +94,7 @@ func (r *Resource) Schema(
 				Update: true,
 				Delete: true,
 			}),
+			"vga": vga.ResourceSchema(),
 		},
 	}
 }

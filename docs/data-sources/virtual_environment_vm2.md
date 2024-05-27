@@ -31,6 +31,7 @@ This is an experimental implementation of a Proxmox VM datasource using Plugin F
 - `tags` (Set of String) The tags assigned to the VM.
 - `template` (Boolean) Whether the VM is a template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
+- `vga` (Attributes) The VGA configuration. (see [below for nested schema](#nestedatt--vga))
 
 <a id="nestedatt--clone"></a>
 ### Nested Schema for `clone`
@@ -67,3 +68,13 @@ Optional:
 Optional:
 
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
+
+
+<a id="nestedatt--vga"></a>
+### Nested Schema for `vga`
+
+Optional:
+
+- `clipboard` (String) Enable a specific clipboard.
+- `memory` (Number) The VGA memory in megabytes (4-512 MB). Has no effect with serial display.
+- `type` (String) The VGA type.
