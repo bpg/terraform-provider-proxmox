@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.58.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.57.1...v0.58.0) (2024-05-28)
+
+
+### Features
+
+* **vm:** add support for `vga.clipboard`, `virtio-gl` type ([#1326](https://github.com/bpg/terraform-provider-proxmox/issues/1326)) ([32de050](https://github.com/bpg/terraform-provider-proxmox/commit/32de05060527b68198a4746ec1402f531fe9c77f))
+
+
+### Bug Fixes
+
+* **lxc:** `mount_point.backup` should be `false` by default ([#1327](https://github.com/bpg/terraform-provider-proxmox/issues/1327)) ([206fc4b](https://github.com/bpg/terraform-provider-proxmox/commit/206fc4b03ddfcc7ecf43b01ee22df2e66a4505b5))
+* **vm:** check task warning status against exit code ([#1330](https://github.com/bpg/terraform-provider-proxmox/issues/1330)) ([b7afd02](https://github.com/bpg/terraform-provider-proxmox/commit/b7afd02cc3bccfc43ab91f2484bf0bca4f532cbc))
+
+
+### Miscellaneous
+
+* **deps:** update golang.org/x/exp digest (9bf2ced → 4c93da0) ([#1321](https://github.com/bpg/terraform-provider-proxmox/issues/1321)) ([1c6b9e4](https://github.com/bpg/terraform-provider-proxmox/commit/1c6b9e4935d448a00552323c0e8679656bf6978d))
+* **deps:** update module github.com/golangci/golangci-lint (v1.58.2 → v1.59.0) in /tools ([#1332](https://github.com/bpg/terraform-provider-proxmox/issues/1332)) ([e0097d9](https://github.com/bpg/terraform-provider-proxmox/commit/e0097d9880698203b9b293c4b9c76e46a697f662))
+* **deps:** update module github.com/goreleaser/goreleaser (v1.26.1 → v1.26.2) in /tools ([#1322](https://github.com/bpg/terraform-provider-proxmox/issues/1322)) ([93f86b1](https://github.com/bpg/terraform-provider-proxmox/commit/93f86b1e13ca092bb77ad0972927e52463358b5d))
+* **docs:** document expectations for the default `root` shell on PVE nodes ([#1329](https://github.com/bpg/terraform-provider-proxmox/issues/1329)) ([ffffa56](https://github.com/bpg/terraform-provider-proxmox/commit/ffffa56518aed38ae93706ebdb22f5386baffcb1))
+* **vm2:** add support for `vga` ([#1328](https://github.com/bpg/terraform-provider-proxmox/issues/1328)) ([d843e46](https://github.com/bpg/terraform-provider-proxmox/commit/d843e46b375e27a9cb0364537adad272beb3bcdb))
+
 ## [0.57.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.57.0...v0.57.1) (2024-05-22)
 
 
