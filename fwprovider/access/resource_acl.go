@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -54,7 +54,7 @@ func (r *aclResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"id": structure.IDAttribute(),
+			"id": attribute.ID(),
 			"path": schema.StringAttribute{
 				Description: "Access control path",
 				Required:    true,

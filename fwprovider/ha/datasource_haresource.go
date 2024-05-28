@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -50,7 +50,7 @@ func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequ
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability resources.",
 		Attributes: map[string]schema.Attribute{
-			"id": structure.IDAttribute(),
+			"id": attribute.ID(),
 			"resource_id": schema.StringAttribute{
 				Description: "The identifier of the Proxmox HA resource to read.",
 				Required:    true,

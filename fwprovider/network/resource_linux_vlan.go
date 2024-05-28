@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -146,7 +146,7 @@ func (r *linuxVLANResource) Schema(
 		Description: "Manages a Linux VLAN network interface in a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			// Base attributes
-			"id": structure.IDAttribute("A unique identifier with format `<node name>:<iface>`."),
+			"id": attribute.ID("A unique identifier with format `<node name>:<iface>`."),
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node.",
 				Required:    true,

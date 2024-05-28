@@ -3357,7 +3357,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) 
 	}
 
 	if vgaMemory > 0 {
-		vgaDevice.Memory = &vgaMemory
+		vgaDevice.Memory = ptr.Ptr(int64(vgaMemory))
 	}
 
 	if vgaType != "" {
@@ -4429,7 +4429,7 @@ func vmReadCustom(
 		}
 
 		if vmConfig.VGADevice.Memory != nil {
-			vga[mkVGAMemory] = *vmConfig.VGADevice.Memory
+			vga[mkVGAMemory] = int(*vmConfig.VGADevice.Memory)
 		} else {
 			vga[mkVGAMemory] = dvVGAMemory
 		}

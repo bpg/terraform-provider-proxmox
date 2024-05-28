@@ -9,6 +9,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 )
 
 // Schema defines the schema for the resource.
@@ -60,6 +61,7 @@ func (d *Datasource) Schema(
 			"timeouts": timeouts.Attributes(ctx, timeouts.Opts{
 				Read: true,
 			}),
+			"vga": vga.DataSourceSchema(),
 		},
 	}
 }

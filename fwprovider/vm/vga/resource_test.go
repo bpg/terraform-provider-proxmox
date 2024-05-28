@@ -1,4 +1,4 @@
-package cpu_test
+package vga_test
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-func TestAccResourceVM2CPU(t *testing.T) {
+func TestAccResourceVM2VGA(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
@@ -17,105 +17,74 @@ func TestAccResourceVM2CPU(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create VM with no cpu params", []resource.TestStep{{
+		{"create VM with no vga params", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
 				id = {{.RandomVMID}}
-				name = "test-cpu"
+				name = "test-vga"
 			}`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					// default values that are set by PVE if not specified
-					"cpu.cores":   "1",
-					"cpu.sockets": "1",
-					"cpu.type":    "kvm64",
-				}),
-			),
+			Check: test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+				// PVE does not set / return anything by default
+				"vga.type",
+			}),
 		}}},
-		{"create VM with some cpu params", []resource.TestStep{{
+		{"create VM with some vga params", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
 				id = {{.RandomVMID}}
-				name = "test-cpu"
-				cpu = {
-					cores = 2
-					sockets = 2
-					type = "host"
-					flags = ["+aes"]
+				name = "test-vga"
+				vga = {
+					type = "std"
 				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"cpu.cores":   "2",
-					"cpu.sockets": "2",
-					"cpu.type":    "host",
-					"cpu.flags.#": "1",
-					"cpu.flags.0": `\+aes`,
+					"vga.type": "std",
+				}),
+				test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					"vga.clipboard",
+					"vga.memory",
 				}),
 			),
 		}}},
-		{"create VM with all cpu params and then update them", []resource.TestStep{
+		{"create VM with VGA params and then update them", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
 					id = {{.RandomVMID}}
-					name = "test-cpu"
-					cpu = {
-						# affinity = "0-1"          only root can set affinity
-						# architecture = "x86_64"   only root can set architecture
-						cores = 2
-						hotplugged = 2
-						limit = 64
-						numa = false
-						sockets = 2
-						type = "host"
-						units = 1024
-						flags = ["+aes"]
+					name = "test-vga"
+					vga = {
+						type = "std"
+						memory = 16
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-						"cpu.cores":      "2",
-						"cpu.hotplugged": "2",
-						"cpu.limit":      "64",
-						"cpu.numa":       "false",
-						"cpu.sockets":    "2",
-						"cpu.type":       "host",
-						"cpu.units":      "1024",
+						"vga.type":   "std",
+						"vga.memory": "16",
 					}),
 				),
 			},
-			{ // now update the cpu params and check if they are updated
+			{ // now update the vga params and check if they are updated
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
 					name = "test-cpu"
-					cpu = {
-						cores = 4
-						hotplugged = 2
-						limit = null     # setting to null is the same as removal
-						# numa = false
-						# sockets = 2    remove sockets, so it should fall back to 1 (PVE default)
-						# type = "host"  remove type, so it should fall back to kvm64 (PVE default)
-						units = 2048
-						# flags = ["+aes"]
+					vga = {
+						type = "qxl"
+						clipboard = "vnc"
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-						"cpu.cores":      "4",
-						"cpu.hotplugged": "2",
-						"cpu.sockets":    "1",     // default value, but it is a special case.
-						"cpu.type":       "kvm64", // default value, but it is a special case.
-						"cpu.units":      "2048",
+						"vga.type":      "qxl",
+						"vga.clipboard": "vnc",
 					}),
 					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
-						"cpu.limit", // other defaults are not set in the state
-						"cpu.numa",
-						"cpu.flags",
+						"vga.memory",
 					}),
 				),
 			},
@@ -123,64 +92,60 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
-		{"clone VM with some cpu params", []resource.TestStep{{
+		{"clone VM with some vga params", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "template_vm" {
 				node_name = "{{.NodeName}}"
 				id = {{.RandomVMID1}}
-				name = "template-cpu"
-				cpu = {
-					cores = 2
-					sockets = 2
-					type = "host"
+				name = "template-vga"
+				vga = {
+					type = "qxl"
+					clipboard = "vnc"
 				}
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
 				id = {{.RandomVMID2}}
-				name = "test-cpu"
+				name = "test-vga"
 				clone = {
 					id = proxmox_virtual_environment_vm2.template_vm.id
-				}	
+				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"cpu.cores":   "2",
-					"cpu.sockets": "2",
-					"cpu.type":    "host",
+					"vga.type":      "qxl",
+					"vga.clipboard": "vnc",
 				}),
 			),
 		}}},
-		{"clone VM with some cpu params and updating them in the clone", []resource.TestStep{{
+		{"clone VM with some vga params and updating them in the clone", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "template_vm" {
 				node_name = "{{.NodeName}}"
 				id = {{.RandomVMID1}}
-				name = "template-cpu"
-				cpu = {
-					cores = 2
-					sockets = 2
-					type = "host"
+				name = "template-vga"
+				vga = {
+					type = "qxl"
+					clipboard = "vnc"
 				}
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-				id = {{.RandomVMID2}}
 				name = "test-cpu"
+				id = {{.RandomVMID2}}
 				clone = {
 					id = proxmox_virtual_environment_vm2.template_vm.id
 				}
-				cpu = {
-					cores = 4
-					units = 1024
+				vga = {
+					type = "std"
+					memory = 16
 				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"cpu.cores":   "4",
-					"cpu.sockets": "2",
-					"cpu.type":    "host",
-					"cpu.units":   "1024",
+					"vga.type":      "std",
+					"vga.memory":    "16",
+					"vga.clipboard": "vnc",
 				}),
 			),
 		}}},

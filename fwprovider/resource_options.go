@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
@@ -456,7 +456,7 @@ func (r *clusterOptionsResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages Proxmox VE Cluster Datacenter options.",
 		Attributes: map[string]schema.Attribute{
-			"id": structure.IDAttribute(),
+			"id": attribute.ID(),
 			"email_from": schema.StringAttribute{
 				Description: "email address to send notification from (default is root@$hostname).",
 				Optional:    true,

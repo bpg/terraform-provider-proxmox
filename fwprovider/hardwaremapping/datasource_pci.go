@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -155,7 +155,7 @@ func (d *dataSourcePCI) Schema(_ context.Context, _ datasource.SchemaRequest, re
 				Description: "The name of this PCI hardware mapping.",
 				Required:    true,
 			},
-			schemaAttrNameTerraformID: structure.IDAttribute(
+			schemaAttrNameTerraformID: attribute.ID(
 				"The unique identifier of this PCI hardware mapping data source.",
 			),
 		},
