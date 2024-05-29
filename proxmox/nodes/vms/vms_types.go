@@ -1207,8 +1207,9 @@ func (r CustomUSBDevice) EncodeValues(key string, v *url.Values) error {
 		return fmt.Errorf("either device ID or resource mapping must be set")
 	}
 
-	values := []string{
-		fmt.Sprintf("host=%s", *(r.HostDevice)),
+	values := []string{}
+	if r.HostDevice != nil {
+		values = append(values, fmt.Sprintf("host=%s", *(r.HostDevice)))
 	}
 
 	if r.Mapping != nil {

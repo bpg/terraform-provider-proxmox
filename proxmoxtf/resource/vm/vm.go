@@ -979,7 +979,7 @@ func VM() *schema.Resource {
 					mkHostUSBDevice: {
 						Type:        schema.TypeString,
 						Description: "The USB device ID for Proxmox, in form of '<MANUFACTURER>:<ID>'",
-						Required:    true,
+						Optional:    true,
 					},
 					mkHostUSBDeviceMapping: {
 						Type:        schema.TypeString,
@@ -3197,9 +3197,13 @@ func vmGetHostUSBDeviceObjects(d *schema.ResourceData) vms.CustomUSBDevices {
 		mapping, _ := block[mkHostUSBDeviceMapping].(string)
 
 		device := vms.CustomUSBDevice{
-			HostDevice: &host,
-			USB3:       &usb3,
+			USB3: &usb3,
 		}
+
+		if host != "" {
+			device.HostDevice = &host
+		}
+
 		if mapping != "" {
 			device.Mapping = &mapping
 		}
