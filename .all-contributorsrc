@@ -1051,6 +1051,15 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "karliemeads",
+      "name": "Karlie Meads",
+      "avatar_url": "https://avatars.githubusercontent.com/u/68717336?v=4",
+      "profile": "https://github.com/karliemeads",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
