@@ -375,75 +375,68 @@ func CreateCustomDisks(
 	vmID int,
 	storageDevices map[string]vms.CustomStorageDevices,
 ) diag.Diagnostics {
-	// flatten the map of disk devices
-	var disks []vms.CustomStorageDevice
-
 	for _, diskDevice := range storageDevices {
 		for _, disk := range diskDevice {
-			if disk != nil {
-				disks = append(disks, *disk)
+			if disk != nil && disk.FileID != nil && *disk.FileID != "" {
+				// only custom disks with defined file ID
+				err := createCustomDisk(ctx, client, nodeName, vmID, *disk)
+				if err != nil {
+					return diag.FromErr(err)
+				}
 			}
 		}
 	}
 
-	commands := make([]string, 0, len(disks))
-	resizes := make([]*vms.ResizeDiskRequestBody, 0, len(disks))
+	return nil
+}
 
-	for _, d := range disks {
-		if d.FileID == nil || *d.FileID == "" {
-			continue
-		}
-
-		fileFormat := dvDiskFileFormat
-		if d.Format != nil && *d.Format != "" {
-			fileFormat = *d.Format
-		}
-
-		//nolint:lll
-		commands = append(
-			commands,
-			`set -e`,
-			ssh.TrySudo,
-			fmt.Sprintf(`file_id="%s"`, *d.FileID),
-			fmt.Sprintf(`file_format="%s"`, fileFormat),
-			fmt.Sprintf(`datastore_id_target="%s"`, *d.DatastoreID),
-			fmt.Sprintf(`vm_id="%d"`, vmID),
-			fmt.Sprintf(`disk_options="%s"`, d.EncodeOptions()),
-			fmt.Sprintf(`disk_interface="%s"`, *d.Interface),
-			`source_image=$(try_sudo "pvesm path $file_id")`,
-			`imported_disk="$(try_sudo "qm importdisk $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
-			`disk_id="${datastore_id_target}:$imported_disk,${disk_options}"`,
-			`try_sudo "qm set $vm_id -${disk_interface} $disk_id"`,
-		)
-
-		resizes = append(resizes, &vms.ResizeDiskRequestBody{
-			Disk: *d.Interface,
-			Size: *d.Size,
-		})
+func createCustomDisk(
+	ctx context.Context,
+	client proxmox.Client,
+	nodeName string,
+	vmID int,
+	d vms.CustomStorageDevice,
+) error {
+	fileFormat := dvDiskFileFormat
+	if d.Format != nil && *d.Format != "" {
+		fileFormat = *d.Format
 	}
 
-	// Execute the commands on the node and wait for the result.
-	// This is a highly experimental approach to disk imports and is not recommended by Proxmox.
-	if len(commands) > 0 {
-		out, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
-		if err != nil {
-			if matches, e := regexp.Match(`pvesm: .* not found`, out); e == nil && matches {
-				return diag.FromErr(ssh.NewErrUserHasNoPermission(client.SSH().Username()))
-			}
+	//nolint:lll
+	commands := []string{
+		`set -e`,
+		ssh.TrySudo,
+		fmt.Sprintf(`file_id="%s"`, *d.FileID),
+		fmt.Sprintf(`file_format="%s"`, fileFormat),
+		fmt.Sprintf(`datastore_id_target="%s"`, *d.DatastoreID),
+		fmt.Sprintf(`vm_id="%d"`, vmID),
+		fmt.Sprintf(`disk_options="%s"`, d.EncodeOptions()),
+		fmt.Sprintf(`disk_interface="%s"`, *d.Interface),
+		`source_image=$(try_sudo "pvesm path $file_id")`,
+		`imported_disk="$(try_sudo "qm importdisk $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
+		`disk_id="${datastore_id_target}:$imported_disk,${disk_options}"`,
+		`try_sudo "qm set $vm_id -${disk_interface} $disk_id"`,
+	}
 
-			return diag.FromErr(err)
+	out, err := client.SSH().ExecuteNodeCommands(ctx, nodeName, commands)
+	if err != nil {
+		if matches, e := regexp.Match(`pvesm: .* not found`, out); e == nil && matches {
+			err = ssh.NewErrUserHasNoPermission(client.SSH().Username())
 		}
 
-		tflog.Debug(ctx, "vmCreateCustomDisks: commands", map[string]interface{}{
-			"output": string(out),
-		})
+		return fmt.Errorf("creating custom disk: %w", err)
+	}
 
-		for _, resize := range resizes {
-			err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, resize)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-		}
+	tflog.Debug(ctx, "vmCreateCustomDisks: commands", map[string]interface{}{
+		"output": string(out),
+	})
+
+	err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
+		Disk: *d.Interface,
+		Size: *d.Size,
+	})
+	if err != nil {
+		return fmt.Errorf("resizing disk: %w", err)
 	}
 
 	return nil
@@ -455,7 +448,7 @@ func Read(
 	d *schema.ResourceData,
 	diskObjects vms.CustomStorageDevices,
 	vmID int,
-	api proxmox.Client,
+	client proxmox.Client,
 	nodeName string,
 	isClone bool,
 ) diag.Diagnostics {
@@ -492,7 +485,7 @@ func Read(
 			if datastoreID != "" {
 				// disk format may not be returned by config API if it is default for the storage, and that may be different
 				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
-				volume, e := api.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
+				volume, e := client.Node(nodeName).Storage(datastoreID).GetDatastoreFile(ctx, dd.FileVolume)
 				if e != nil {
 					diags = append(diags, diag.FromErr(e)...)
 					continue
@@ -638,9 +631,13 @@ func Read(
 
 // Update updates the disk configuration of a VM.
 func Update(
+	ctx context.Context,
+	client proxmox.Client,
+	nodeName string,
+	vmID int,
 	d *schema.ResourceData,
 	planDisks map[string]vms.CustomStorageDevices,
-	allDiskInfo vms.CustomStorageDevices,
+	currentDisks vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
 ) (bool, error) {
 	rebootRequired := false
@@ -651,32 +648,52 @@ func Update(
 				continue
 			}
 
-			for key, value := range diskMap {
-				if allDiskInfo[key] == nil {
+			for key, disk := range diskMap {
+				var tmp *vms.CustomStorageDevice
+
+				switch {
+				case currentDisks[key] == nil && disk != nil:
+					if disk.FileID != nil && *disk.FileID != "" {
+						// only disks with defined file ID are custom image disks that need to be created via import.
+						err := createCustomDisk(ctx, client, nodeName, vmID, *disk)
+						if err != nil {
+							return false, fmt.Errorf("creating custom disk: %w", err)
+						}
+					} else {
+						// otherwise this is a blank disk that can be added directly via update API
+						tmp = disk
+					}
+				case currentDisks[key] != nil:
+					// update existing disk
+					tmp = currentDisks[key]
+				default:
+					// something went wrong
 					return false, fmt.Errorf("missing %s device %s", prefix, key)
 				}
 
-				tmp := allDiskInfo[key]
-
-				if tmp.AIO != value.AIO {
-					rebootRequired = true
-					tmp.AIO = value.AIO
+				if tmp == nil || disk == nil {
+					continue
 				}
 
-				tmp.Backup = value.Backup
-				tmp.BurstableReadSpeedMbps = value.BurstableReadSpeedMbps
-				tmp.BurstableWriteSpeedMbps = value.BurstableWriteSpeedMbps
-				tmp.Cache = value.Cache
-				tmp.Discard = value.Discard
-				tmp.IOThread = value.IOThread
-				tmp.IopsRead = value.IopsRead
-				tmp.IopsWrite = value.IopsWrite
-				tmp.MaxIopsRead = value.MaxIopsRead
-				tmp.MaxIopsWrite = value.MaxIopsWrite
-				tmp.MaxReadSpeedMbps = value.MaxReadSpeedMbps
-				tmp.MaxWriteSpeedMbps = value.MaxWriteSpeedMbps
-				tmp.Replicate = value.Replicate
-				tmp.SSD = value.SSD
+				if tmp.AIO != disk.AIO {
+					rebootRequired = true
+					tmp.AIO = disk.AIO
+				}
+
+				tmp.Backup = disk.Backup
+				tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
+				tmp.BurstableWriteSpeedMbps = disk.BurstableWriteSpeedMbps
+				tmp.Cache = disk.Cache
+				tmp.Discard = disk.Discard
+				tmp.IOThread = disk.IOThread
+				tmp.IopsRead = disk.IopsRead
+				tmp.IopsWrite = disk.IopsWrite
+				tmp.MaxIopsRead = disk.MaxIopsRead
+				tmp.MaxIopsWrite = disk.MaxIopsWrite
+				tmp.MaxReadSpeedMbps = disk.MaxReadSpeedMbps
+				tmp.MaxWriteSpeedMbps = disk.MaxWriteSpeedMbps
+				tmp.Replicate = disk.Replicate
+				tmp.SSD = disk.SSD
 
 				switch prefix {
 				case "virtio":

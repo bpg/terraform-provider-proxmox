@@ -5057,7 +5057,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	rr, err := disk.Update(d, planDisks, allDiskInfo, updateBody)
+	rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -5473,7 +5473,7 @@ func vmUpdateDiskLocationAndSize(
 			for oldKey, oldDisk := range diskMap {
 				if _, present := diskNewEntries[prefix][oldKey]; !present {
 					return diag.Errorf(
-						"deletion of disks not supported. Please delete disk by hand. Old Interface was %s",
+						"deletion of disks not supported. Please delete disk by hand. Old interface was %q",
 						*oldDisk.Interface,
 					)
 				}

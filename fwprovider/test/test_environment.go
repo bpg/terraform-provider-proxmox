@@ -78,12 +78,24 @@ provider "proxmox" {
 
 	const datastoreID = "local"
 
+	cloudImagesServer := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER")
+	if cloudImagesServer == "" {
+		cloudImagesServer = "https://cloud-images.ubuntu.com"
+	}
+
+	containerImagesServer := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CONTAINER_IMAGES_SERVER")
+	if containerImagesServer == "" {
+		containerImagesServer = "http://download.proxmox.com"
+	}
+
 	return &Environment{
 		t: t,
 		templateVars: map[string]any{
-			"ProviderConfig": pc,
-			"NodeName":       nodeName,
-			"DatastoreID":    datastoreID,
+			"ProviderConfig":        pc,
+			"NodeName":              nodeName,
+			"DatastoreID":           datastoreID,
+			"CloudImagesServer":     cloudImagesServer,
+			"ContainerImagesServer": containerImagesServer,
 		},
 		providerConfig: pc,
 		NodeName:       nodeName,
