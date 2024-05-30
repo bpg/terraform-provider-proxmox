@@ -149,6 +149,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://kiljaeden.net"><img src="https://avatars.githubusercontent.com/u/15212835?v=4?s=100" width="100px;" alt="Kil'jaeden"/><br /><sub><b>Kil'jaeden</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=AtaLuZiK" title="Tests">⚠️</a> <a href="#ideas-AtaLuZiK" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/rudolf-tammekivi/"><img src="https://avatars.githubusercontent.com/u/1191779?v=4?s=100" width="100px;" alt="Rudolf Tammekivi"/><br /><sub><b>Rudolf Tammekivi</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3ABlefish" title="Bug reports">🐛</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Blefish" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/karliemeads"><img src="https://avatars.githubusercontent.com/u/68717336?v=4?s=100" width="100px;" alt="Karlie Meads"/><br /><sub><b>Karlie Meads</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=karliemeads" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
