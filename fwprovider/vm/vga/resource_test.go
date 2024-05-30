@@ -66,6 +66,9 @@ func TestAccResourceVM2VGA(t *testing.T) {
 						"vga.type":   "std",
 						"vga.memory": "16",
 					}),
+					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+						"vga.clipboard",
+					}),
 				),
 			},
 			{ // now update the vga params and check if they are updated

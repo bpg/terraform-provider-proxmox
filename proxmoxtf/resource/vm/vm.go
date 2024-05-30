@@ -1403,6 +1403,7 @@ func VM() *schema.Resource {
 						Optional:    true,
 						Default:     dvVGAClipboard,
 						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							"",
 							"vnc",
 						}, true)),
 					},

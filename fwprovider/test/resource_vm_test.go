@@ -175,7 +175,8 @@ func TestAccResourceVM(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-						"vga.0.type": "none",
+						"vga.0.type":      "none",
+						"vga.0.clipboard": "",
 					}),
 				),
 			}, {
@@ -193,6 +194,23 @@ func TestAccResourceVM(t *testing.T) {
 					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
 						"vga.0.type":      "virtio-gl",
 						"vga.0.clipboard": "vnc",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					vga {
+						type = "virtio-gl"
+						clipboard = ""
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"vga.0.type":      "virtio-gl",
+						"vga.0.clipboard": "",
 					}),
 				),
 			}},

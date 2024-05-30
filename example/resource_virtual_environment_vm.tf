@@ -107,6 +107,10 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   serial_device {}
 
+  vga {
+    type = "qxl"
+  }
+
   template = true
 
   // use auto-generated vm_id
