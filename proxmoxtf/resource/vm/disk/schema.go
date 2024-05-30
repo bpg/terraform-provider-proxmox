@@ -50,7 +50,6 @@ func Schema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Description: "The disk devices",
 			Optional:    true,
-			ForceNew:    true,
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{
 					map[string]interface{}{
@@ -97,7 +96,6 @@ func Schema() map[string]*schema.Schema {
 						Type:             schema.TypeString,
 						Description:      "The file format",
 						Optional:         true,
-						ForceNew:         true,
 						Computed:         true,
 						ValidateDiagFunc: validators.FileFormat(),
 					},

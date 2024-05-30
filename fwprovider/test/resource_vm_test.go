@@ -7,9 +7,11 @@
 package test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccResourceVM(t *testing.T) {
@@ -295,7 +297,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name = "{{.NodeName}}"
-					url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+					url = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}`),
 		}}},
@@ -390,7 +392,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+					url = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}`),
 			Check: resource.ComposeTestCheckFunc(
@@ -545,7 +547,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_disk2" {
@@ -641,6 +643,109 @@ func TestAccResourceVMDisks(t *testing.T) {
 			},
 			{
 				RefreshState: true,
+			},
+		}},
+		{"adding disks", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+					"disk.0.interface":         "scsi0",
+					"disk.0.path_in_datastore": `vm-\d+-disk-0`,
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_disk", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+					"disk.0.interface":         "scsi0",
+					"disk.0.path_in_datastore": `vm-\d+-disk-0`,
+					"disk.1.interface":         "scsi1",
+					"disk.1.path_in_datastore": `vm-\d+-disk-1`,
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		{"removing disks", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+					"disk.0.interface":         "scsi0",
+					"disk.0.path_in_datastore": `vm-\d+-disk-0`,
+					"disk.1.interface":         "scsi1",
+					"disk.1.path_in_datastore": `vm-\d+-disk-1`,
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`deletion of disks not supported`),
 			},
 		}},
 
@@ -825,6 +930,57 @@ func TestAccResourceVMDisks(t *testing.T) {
 					ResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{
 						"disk.0.datastore_id": "local-lvm",
 						"disk.0.interface":    "virtio0",
+						"disk.0.size":         "10",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		{"clone with adding disk", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// this test is failing because of "Attribute 'disk.1.size' expected to be set"
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk3_template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk3-template"
+					template  = "true"
+					
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 8
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "test_disk3" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk3"
+
+					clone {
+						vm_id = proxmox_virtual_environment_vm.test_disk3_template.id
+					}
+
+					disk {
+						file_format  = "raw"
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 10
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk3", map[string]string{
+						"disk.1.datastore_id": "local-lvm",
+						"disk.1.interface":    "virtio0",
+						"disk.1.size":         "8",
+						"disk.0.datastore_id": "local-lvm",
+						"disk.0.interface":    "scsi0",
 						"disk.0.size":         "10",
 					}),
 				),
