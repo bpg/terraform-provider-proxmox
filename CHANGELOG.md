@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.58.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.58.0...v0.58.1) (2024-05-30)
+
+
+### Bug Fixes
+
+* **vm:** adding disks causes VM to be re-created ([#1336](https://github.com/bpg/terraform-provider-proxmox/issues/1336)) ([d02dc1e](https://github.com/bpg/terraform-provider-proxmox/commit/d02dc1eb0a524d89a06b4b96b1d36c504ab737fe))
+* **vm:** host parameter is optional if using mapping for usb ([#1338](https://github.com/bpg/terraform-provider-proxmox/issues/1338)) ([76d9806](https://github.com/bpg/terraform-provider-proxmox/commit/76d980683c5349ac2376d4f8523df241c5c05e0b))
+* **vm:** regression: `vga.clipboard` attribute check ([#1340](https://github.com/bpg/terraform-provider-proxmox/issues/1340)) ([2785c40](https://github.com/bpg/terraform-provider-proxmox/commit/2785c40d44ca950742cbd78e6b720b25bb6e7826))
+
+
+### Miscellaneous
+
+* **deps:** update golang.org/x/exp digest (4c93da0 → 23cca88) ([#1333](https://github.com/bpg/terraform-provider-proxmox/issues/1333)) ([804b498](https://github.com/bpg/terraform-provider-proxmox/commit/804b498453621d308a3d3a4caae168076d494a08))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.19.2 → v0.19.3) in /tools ([#1334](https://github.com/bpg/terraform-provider-proxmox/issues/1334)) ([2f87941](https://github.com/bpg/terraform-provider-proxmox/commit/2f87941f2b370bdda681d4f51dde78ca0e40154a))
+
 ## [0.58.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.57.1...v0.58.0) (2024-05-28)
 
 
