@@ -9,6 +9,7 @@ package resource
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -46,7 +47,16 @@ func Role() *schema.Resource {
 		UpdateContext: roleUpdate,
 		DeleteContext: roleDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+				roleID := d.Id()
+
+				err := d.Set(mkResourceVirtualEnvironmentRoleRoleID, roleID)
+				if err != nil {
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
+				}
+
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 	}
 }
