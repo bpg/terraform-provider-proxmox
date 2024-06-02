@@ -2468,9 +2468,9 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	initializationConfig := vmGetCloudInitConfig(d)
+	initialization := d.Get(mkInitialization).([]interface{})
 
-	if initializationConfig != nil {
-		initialization := d.Get(mkInitialization).([]interface{})
+	if initializationConfig != nil && len(initialization) > 0 && initialization[0] != nil {
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
 
@@ -4944,7 +4944,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		old, _ := d.GetChange(mkCDROM)
 
-		if len(old.([]interface{})) > 0 {
+		if len(old.([]interface{})) > 0 && old.([]interface{})[0] != nil {
 			oldList := old.([]interface{})[0]
 			oldBlock := oldList.(map[string]interface{})
 
@@ -5090,10 +5090,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		updateBody.CloudInitConfig = initializationConfig
 
-		if updateBody.CloudInitConfig != nil {
+		initialization := d.Get(mkInitialization).([]interface{})
+
+		if updateBody.CloudInitConfig != nil && len(initialization) > 0 && initialization[0] != nil {
 			var fileVolume string
 
-			initialization := d.Get(mkInitialization).([]interface{})
 			initializationBlock := initialization[0].(map[string]interface{})
 			initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
 			initializationInterface := initializationBlock[mkInitializationInterface].(string)
