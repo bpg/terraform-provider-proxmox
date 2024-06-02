@@ -63,6 +63,7 @@ func Role() *schema.Resource {
 
 func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -93,12 +94,14 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
+
 	role, err := client.Access().GetRole(ctx, roleID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -106,6 +109,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 			return nil
 		}
+
 		return diag.FromErr(err)
 	}
 
@@ -118,11 +122,13 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	err = d.Set(mkResourceVirtualEnvironmentRolePrivileges, privileges)
+
 	return diag.FromErr(err)
 }
 
 func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -150,6 +156,7 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
