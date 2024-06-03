@@ -9,6 +9,7 @@ package resource
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -46,13 +47,23 @@ func Role() *schema.Resource {
 		UpdateContext: roleUpdate,
 		DeleteContext: roleDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+				roleID := d.Id()
+
+				err := d.Set(mkResourceVirtualEnvironmentRoleRoleID, roleID)
+				if err != nil {
+					return nil, fmt.Errorf("failed setting state during import: %w", err)
+				}
+
+				return []*schema.ResourceData{d}, nil
+			},
 		},
 	}
 }
 
 func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -83,12 +94,14 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	roleID := d.Id()
+
 	role, err := client.Access().GetRole(ctx, roleID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -96,6 +109,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 			return nil
 		}
+
 		return diag.FromErr(err)
 	}
 
@@ -108,11 +122,13 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	err = d.Set(mkResourceVirtualEnvironmentRolePrivileges, privileges)
+
 	return diag.FromErr(err)
 }
 
 func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -140,6 +156,7 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func roleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
