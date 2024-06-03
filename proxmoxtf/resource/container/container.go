@@ -950,7 +950,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	initialization := d.Get(mkInitialization).([]interface{})
 	initializationHostname := ""
 
-	if len(initialization) > 0 {
+	if len(initialization) > 0 && initialization[0] != nil {
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationHostname = initializationBlock[mkInitializationHostname].(string)
 	}
@@ -1024,7 +1024,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	console := d.Get(mkConsole).([]interface{})
 
-	if len(console) > 0 {
+	if len(console) > 0 && console[0] != nil {
 		consoleBlock := console[0].(map[string]interface{})
 
 		consoleEnabled := types.CustomBool(
@@ -1040,7 +1040,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	cpu := d.Get(mkCPU).([]interface{})
 
-	if len(cpu) > 0 {
+	if len(cpu) > 0 && cpu[0] != nil {
 		cpuBlock := cpu[0].(map[string]interface{})
 
 		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
@@ -1066,11 +1066,11 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	var initializationIPConfigIPv6Gateway []string
 
-	if len(initialization) > 0 {
+	if len(initialization) > 0 && initialization[0] != nil {
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
 
-		if len(initializationDNS) > 0 {
+		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
 			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
 			initializationDNSDomain := initializationDNSBlock[mkInitializationDNSDomain].(string)
 			updateBody.DNSDomain = &initializationDNSDomain
@@ -1099,7 +1099,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 			configBlock := c.(map[string]interface{})
 			ipv4 := configBlock[mkInitializationIPConfigIPv4].([]interface{})
 
-			if len(ipv4) > 0 {
+			if len(ipv4) > 0 && ipv4[0] != nil {
 				ipv4Block := ipv4[0].(map[string]interface{})
 
 				initializationIPConfigIPv4Address = append(
@@ -1118,7 +1118,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 			ipv6 := configBlock[mkInitializationIPConfigIPv6].([]interface{})
 
-			if len(ipv6) > 0 {
+			if len(ipv6) > 0 && ipv6[0] != nil {
 				ipv6Block := ipv6[0].(map[string]interface{})
 
 				initializationIPConfigIPv6Address = append(
@@ -1138,7 +1138,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 		initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]interface{})
 
-		if len(initializationUserAccount) > 0 {
+		if len(initializationUserAccount) > 0 && initializationUserAccount[0] != nil {
 			initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
 			keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]interface{})
 
@@ -1169,7 +1169,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	memory := d.Get(mkMemory).([]interface{})
 
-	if len(memory) > 0 {
+	if len(memory) > 0 && memory[0] != nil {
 		memoryBlock := memory[0].(map[string]interface{})
 
 		memoryDedicated := memoryBlock[mkMemoryDedicated].(int)
@@ -1268,7 +1268,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
 
-	if len(operatingSystem) > 0 {
+	if len(operatingSystem) > 0 && operatingSystem[0] != nil {
 		operatingSystemBlock := operatingSystem[0].(map[string]interface{})
 
 		operatingSystemTemplateFileID := operatingSystemBlock[mkOperatingSystemTemplateFileID].(string)
@@ -1401,11 +1401,11 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	initializationUserAccountKeys := containers.CustomSSHKeys{}
 	initializationUserAccountPassword := dvInitializationUserAccountPassword
 
-	if len(initialization) > 0 {
+	if len(initialization) > 0 && initialization[0] != nil {
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
 
-		if len(initializationDNS) > 0 {
+		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
 			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
 			initializationDNSDomain = initializationDNSBlock[mkInitializationDNSDomain].(string)
 
@@ -1471,7 +1471,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 		initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]interface{})
 
-		if len(initializationUserAccount) > 0 {
+		if len(initializationUserAccount) > 0 && initializationUserAccount[0] != nil {
 			initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
 
 			keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]interface{})
@@ -1643,7 +1643,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
 
-	if len(operatingSystem) == 0 {
+	if len(operatingSystem) == 0 || operatingSystem[0] == nil {
 		return diag.Errorf(
 			"\"%s\": required field is not set",
 			mkOperatingSystem,
@@ -1876,7 +1876,7 @@ func containerGetTagsString(d *schema.ResourceData) string {
 
 func containerGetStartupBehavior(d *schema.ResourceData) *containers.CustomStartupBehavior {
 	startup := d.Get(mkStartup).([]interface{})
-	if len(startup) > 0 {
+	if len(startup) > 0 && startup[0] != nil {
 		startupBlock := startup[0].(map[string]interface{})
 		startupOrder := startupBlock[mkStartupOrder].(int)
 		startupUpDelay := startupBlock[mkStartupUpDelay].(int)
@@ -2088,7 +2088,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	currentDisk := d.Get(mkDisk).([]interface{})
 
 	if len(clone) > 0 {
-		if len(currentDisk) > 0 {
+		if len(currentDisk) > 0 && currentDisk[0] != nil {
 			// do not override the rootfs size if it was not changed during the clone operation
 			if currentDisk[0].(map[string]interface{})[mkDiskSize] == dvDiskSize {
 				disk[mkDiskSize] = dvDiskSize
@@ -2149,11 +2149,11 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		currentInitializationDNSBlock := map[string]interface{}{}
 		currentInitialization := d.Get(mkInitialization).([]interface{})
 
-		if len(currentInitialization) > 0 {
+		if len(currentInitialization) > 0 && currentInitialization[0] != nil {
 			currentInitializationBlock := currentInitialization[0].(map[string]interface{})
 			currentInitializationDNS := currentInitializationBlock[mkInitializationDNS].([]interface{})
 
-			if len(currentInitializationDNS) > 0 {
+			if len(currentInitializationDNS) > 0 && currentInitializationDNS[0] != nil {
 				currentInitializationDNSBlock = currentInitializationDNS[0].(map[string]interface{})
 			}
 		}
@@ -2389,14 +2389,14 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	currentInitialization := d.Get(mkInitialization).([]interface{})
 
-	if len(currentInitialization) > 0 {
+	if len(currentInitialization) > 0 && currentInitialization[0] != nil {
 		currentInitializationMap := currentInitialization[0].(map[string]interface{})
 
 		initialization[mkInitializationUserAccount] = currentInitializationMap[mkInitializationUserAccount].([]interface{})
 	}
 
 	if len(clone) > 0 {
-		if len(currentInitialization) > 0 {
+		if len(currentInitialization) > 0 && currentInitialization[0] != nil {
 			currentInitializationBlock := currentInitialization[0].(map[string]interface{})
 			currentInitializationDNS := currentInitializationBlock[mkInitializationDNS].([]interface{})
 
@@ -2504,7 +2504,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	currentOperatingSystem := d.Get(mkOperatingSystem).([]interface{})
 
-	if len(currentOperatingSystem) > 0 {
+	if len(currentOperatingSystem) > 0 && currentOperatingSystem[0] != nil {
 		currentOperatingSystemMap := currentOperatingSystem[0].(map[string]interface{})
 
 		operatingSystem[mkOperatingSystemTemplateFileID] = currentOperatingSystemMap[mkOperatingSystemTemplateFileID]
@@ -2697,7 +2697,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	var initializationIPConfigIPv6Gateway []string
 
-	if len(initialization) > 0 {
+	if len(initialization) > 0 && initialization[0] != nil {
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
 
