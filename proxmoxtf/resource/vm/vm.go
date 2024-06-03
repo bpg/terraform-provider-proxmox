@@ -2468,9 +2468,11 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	initializationConfig := vmGetCloudInitConfig(d)
-	initialization := d.Get(mkInitialization).([]interface{})
+	initializationAttr := d.Get(mkInitialization)
 
-	if initializationConfig != nil && len(initialization) > 0 && initialization[0] != nil {
+	if initializationConfig != nil && initializationAttr != nil {
+		initialization := initializationAttr.([]interface{})
+
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
 
