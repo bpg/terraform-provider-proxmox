@@ -88,6 +88,11 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   machine = "q35"
   name    = "terraform-provider-proxmox-example-template"
 
+  cdrom {
+    enabled = true
+    file_id = "none"
+  }
+
   network_device {
     mtu    = 1450
     queues = 2

@@ -136,7 +136,7 @@ output "ubuntu_vm_public_key" {
     - `enabled` - (Optional) Whether to enable the CDROM drive (defaults
         to `false`).
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
-        in the physical drive).
+        in the physical drive). Use `none` to leave the CDROM drive empty.
     - `interface` - (Optional) A hardware interface to connect CDROM drive to,
         must be `ideN` (defaults to `ide3`). Note that `q35` machine type only
         supports `ide0` and `ide2`.

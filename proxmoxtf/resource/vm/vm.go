@@ -427,11 +427,14 @@ func VM() *schema.Resource {
 						Default:     dvCDROMEnabled,
 					},
 					mkCDROMFileID: {
-						Type:             schema.TypeString,
-						Description:      "The file id",
-						Optional:         true,
-						Default:          dvCDROMFileID,
-						ValidateDiagFunc: validators.FileID(),
+						Type:        schema.TypeString,
+						Description: "The file id",
+						Optional:    true,
+						Default:     dvCDROMFileID,
+						ValidateDiagFunc: validation.AnyDiag(
+							validation.ToDiagFunc(validation.StringInSlice([]string{"none", "cdrom"}, false)),
+							validators.FileID(),
+						),
 					},
 					mkCDROMInterface: {
 						Type:             schema.TypeString,
