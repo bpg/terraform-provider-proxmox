@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.59.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.58.1...v0.59.0) (2024-06-05)
+
+
+### Features
+
+* **vm:** allow `none` `cdrom` ([#1347](https://github.com/bpg/terraform-provider-proxmox/issues/1347)) ([994f367](https://github.com/bpg/terraform-provider-proxmox/commit/994f367cc2bb444a61ecc5b04e1280394aa6b345))
+
+
+### Bug Fixes
+
+* **access:** fix `user` and `role` import ([#1346](https://github.com/bpg/terraform-provider-proxmox/issues/1346)) ([bdd9225](https://github.com/bpg/terraform-provider-proxmox/commit/bdd9225041d1dbbc834f7df6adc7463bb3c09b9f))
+* **lxc,vm:** fix panics when a resource block is empty ([#1345](https://github.com/bpg/terraform-provider-proxmox/issues/1345)) ([9bbbf8d](https://github.com/bpg/terraform-provider-proxmox/commit/9bbbf8db390ed43291126eca2d3fc391b7308acc))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.10.0 → v1.10.1) ([#1356](https://github.com/bpg/terraform-provider-proxmox/issues/1356)) ([92476d4](https://github.com/bpg/terraform-provider-proxmox/commit/92476d4f4024c9746c3da987a0d7e210525b14ab))
+* **ci:** Update goreleaser/goreleaser-action action (v5.1.0 → v6.0.0) ([#1362](https://github.com/bpg/terraform-provider-proxmox/issues/1362)) ([9dbee1a](https://github.com/bpg/terraform-provider-proxmox/commit/9dbee1a12c2435db00fbf2011d45fbeffdb2b15c))
+* **deps:** update go (1.22.3 → 1.22.4) ([#1357](https://github.com/bpg/terraform-provider-proxmox/issues/1357)) ([ea509b2](https://github.com/bpg/terraform-provider-proxmox/commit/ea509b289ec002a085d500521519c93873eb0f65))
+* **deps:** update golang.org/x/exp digest (23cca88 → fd00a4e) ([#1343](https://github.com/bpg/terraform-provider-proxmox/issues/1343)) ([eaeff08](https://github.com/bpg/terraform-provider-proxmox/commit/eaeff08571e390cd29f037f00b0c08086e704f70))
+* **deps:** update golang.org/x/exp digest (fd00a4e → fc45aab) ([#1355](https://github.com/bpg/terraform-provider-proxmox/issues/1355)) ([8fb6410](https://github.com/bpg/terraform-provider-proxmox/commit/8fb64105075e370945c007411b0e74f703e51f4d))
+* **deps:** Update module github.com/goreleaser/goreleaser (v1.26.2 → v2.0.0) in /tools ([#1363](https://github.com/bpg/terraform-provider-proxmox/issues/1363)) ([7064f12](https://github.com/bpg/terraform-provider-proxmox/commit/7064f1259a7830e493e7a3e07a2dce79eef030fc))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework (v1.8.0 → v1.9.0) ([#1359](https://github.com/bpg/terraform-provider-proxmox/issues/1359)) ([27ad93e](https://github.com/bpg/terraform-provider-proxmox/commit/27ad93e793864310d0944591802876efcbfafbc2))
+* **deps:** update tools ([#1358](https://github.com/bpg/terraform-provider-proxmox/issues/1358)) ([9c4b9db](https://github.com/bpg/terraform-provider-proxmox/commit/9c4b9dbcbad247d2926d9ee8b6407efc0ab91cb8))
+
 ## [0.58.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.58.0...v0.58.1) (2024-05-30)
 
 
