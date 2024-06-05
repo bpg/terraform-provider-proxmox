@@ -2,7 +2,7 @@ module github.com/bpg/terraform-provider-proxmox/tools
 
 go 1.22
 
-toolchain go1.22.3
+toolchain go1.22.4
 
 replace github.com/nats-io/nkeys => github.com/nats-io/nkeys v0.4.7
 
@@ -11,7 +11,7 @@ replace go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.open
 require (
 	github.com/golangci/golangci-lint v1.59.0
 	github.com/goreleaser/goreleaser v1.26.2
-	github.com/hashicorp/terraform-plugin-docs v0.19.3
+	github.com/hashicorp/terraform-plugin-docs v0.19.4
 )
 
 require (
