@@ -10,7 +10,7 @@ replace go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.open
 
 require (
 	github.com/golangci/golangci-lint v1.59.0
-	github.com/goreleaser/goreleaser v1.26.2
+	github.com/goreleaser/goreleaser/v2 v2.0.0
 	github.com/hashicorp/terraform-plugin-docs v0.19.4
 )
 
