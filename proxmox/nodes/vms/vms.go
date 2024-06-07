@@ -376,7 +376,7 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) 
 		return nil, err
 	}
 
-	err = c.Tasks().WaitForTask(ctx, *taskID)
+	err = c.Tasks().WaitForTask(ctx, *taskID, tasks.WithIgnoreStatus(599))
 	if err != nil {
 		log, e := c.Tasks().GetTaskLog(ctx, *taskID)
 		if e != nil {

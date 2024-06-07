@@ -88,7 +88,8 @@ func (c *Client) DeleteTask(ctx context.Context, upid string) error {
 }
 
 type taskWaitOptions struct {
-	ignoreWarnings bool
+	ignoreWarnings   bool
+	ignoreStatusCode int
 }
 
 // TaskWaitOption is an option for waiting for a task to complete.
@@ -105,6 +106,19 @@ func WithIgnoreWarnings() TaskWaitOption {
 
 func (w withIgnoreWarnings) apply(opts *taskWaitOptions) {
 	opts.ignoreWarnings = true
+}
+
+type withIgnoreStatus struct {
+	statusCode int
+}
+
+// WithIgnoreStatus is an option to ignore particular status code from PVE API when waiting for a task to complete.
+func WithIgnoreStatus(statusCode int) TaskWaitOption {
+	return withIgnoreStatus{statusCode: statusCode}
+}
+
+func (w withIgnoreStatus) apply(opts *taskWaitOptions) {
+	opts.ignoreStatusCode = w.statusCode
 }
 
 // WaitForTask waits for a specific task to complete.
@@ -138,6 +152,10 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 					// this is a special case to account for eventual consistency
 					// when creating a task -- the task may not be available via status API
 					// immediately after creation
+					return true
+				}
+
+				if options.ignoreStatusCode != 0 && target.Code == options.ignoreStatusCode {
 					return true
 				}
 			}
