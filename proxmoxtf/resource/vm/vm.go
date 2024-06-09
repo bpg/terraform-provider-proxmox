@@ -2215,8 +2215,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	/////////////////
-
 	allDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
 
 	planDisks, e := disk.GetDiskDeviceObjects(d, VM(), nil) // from the resource config
