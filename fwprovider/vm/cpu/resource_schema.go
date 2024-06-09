@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package cpu
 
 import (
@@ -8,25 +14,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // ResourceSchema defines the schema for the CPU resource.
 func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
-		CustomType: basetypes.ObjectType{
-			AttrTypes: attributeTypes(),
-		},
 		Description: "The CPU configuration.",
 		Optional:    true,
 		Computed:    true,
-		PlanModifiers: []planmodifier.Object{
-			objectplanmodifier.UseStateForUnknown(),
-		},
 		Attributes: map[string]schema.Attribute{
 			"affinity": schema.StringAttribute{
 				Description: "List of host cores used to execute guest processes, for example: '0,5,8-11'",

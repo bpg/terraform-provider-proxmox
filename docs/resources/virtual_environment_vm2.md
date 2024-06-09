@@ -30,6 +30,7 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 
 ### Optional
 
+- `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. (see [below for nested schema](#nestedatt--cdrom))
 - `clone` (Attributes) The cloning configuration. (see [below for nested schema](#nestedatt--clone))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `description` (String) The description of the VM.
@@ -39,6 +40,14 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 - `template` (Boolean) Set to true to create a VM template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `vga` (Attributes) Configure the VGA Hardware. If you want to use high resolution modes (>= 1280x1024x16) you may need to increase the vga memory option. Since QEMU 2.9 the default VGA display type is `std` for all OS types besides some Windows versions (XP and older) which use `cirrus`. The `qxl` option enables the SPICE display server. For win* OS you can select how many independent displays you want, Linux guests can add displays themself. You can also run without any graphic card, using a serial device as terminal. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information and available configuration parameters. (see [below for nested schema](#nestedatt--vga))
+
+<a id="nestedatt--cdrom"></a>
+### Nested Schema for `cdrom`
+
+Optional:
+
+- `file_id` (String) The file ID of the CD-ROM, or `cdrom|none`. Defaults to `none` to leave the CD-ROM empty. Use `cdrom` to connect to the physical drive.
+
 
 <a id="nestedatt--clone"></a>
 ### Nested Schema for `clone`

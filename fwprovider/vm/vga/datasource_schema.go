@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-// DataSourceSchema defines the schema for the VGA resource.
+// DataSourceSchema defines the schema for the VGA datasource.
 func DataSourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		CustomType: basetypes.ObjectType{

@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package vm
 
 import (
@@ -16,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 )
@@ -51,7 +58,8 @@ func (r *Resource) Schema(
 					},
 				},
 			},
-			"cpu": cpu.ResourceSchema(),
+			"cdrom": cdrom.ResourceSchema(),
+			"cpu":   cpu.ResourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",
 				Optional:    true,

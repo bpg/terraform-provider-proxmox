@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-// DataSourceSchema defines the schema for the CPU resource.
+// DataSourceSchema defines the schema for the CPU datasource.
 func DataSourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		CustomType: basetypes.ObjectType{

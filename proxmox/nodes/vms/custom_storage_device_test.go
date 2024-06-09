@@ -267,7 +267,8 @@ func TestMapCustomStorageDevices(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			assert.Equalf(t, tt.want, MapCustomStorageDevices(tt.args.resp), "MapCustomStorageDevices(%v)", tt.args.resp)
+			devices := MapCustomStorageDevices(tt.args.resp)
+			assert.Equalf(t, tt.want, devices, "MapCustomStorageDevices(%v)", tt.args.resp)
 		})
 	}
 }

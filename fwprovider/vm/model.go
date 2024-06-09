@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package vm
 
 import (
@@ -10,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -22,6 +29,7 @@ import (
 // or a custom type in order to hold an unknown value.
 type Model struct {
 	Description types.String `tfsdk:"description"`
+	CDROM       cdrom.Value  `tfsdk:"cdrom"`
 	CPU         cpu.Value    `tfsdk:"cpu"`
 	Clone       *struct {
 		ID      types.Int64 `tfsdk:"id"`
@@ -77,6 +85,8 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 	// Blocks
 	model.CPU = cpu.NewValue(ctx, config, diags)
 	model.VGA = vga.NewValue(ctx, config, diags)
+
+	model.CDROM = cdrom.NewValue(ctx, config, diags)
 
 	return true
 }

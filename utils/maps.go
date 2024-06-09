@@ -1,6 +1,15 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package utils
 
-import "sort"
+import (
+	"reflect"
+	"sort"
+)
 
 // OrderedListFromMap generates a list from a map's values. The values are sorted based on the map's keys.
 func OrderedListFromMap(inputMap map[string]interface{}) []interface{} {
@@ -70,4 +79,32 @@ func OrderedListFromMapByKeyValues(inputMap map[string]interface{}, keyList []st
 	}
 
 	return orderedList
+}
+
+// MapDiff compares the difference between two maps and returns the elements that are in the plan but not
+// in the state (toCreate), the elements that are in the plan and in the state but are different (toUpdate),
+// and the elements that are in the state but not in the plan (toDelete).
+// The keyFunc is used to extract a unique key from each element to compare them.
+func MapDiff[T any](plan map[string]T, state map[string]T) (map[string]T, map[string]T, map[string]T) {
+	toCreate := map[string]T{}
+	toUpdate := map[string]T{}
+	toDelete := map[string]T{}
+
+	for key, p := range plan {
+		s, ok := state[key]
+		if !ok {
+			toCreate[key] = p
+		} else if !reflect.DeepEqual(p, s) {
+			toUpdate[key] = p
+		}
+	}
+
+	for key, s := range state {
+		_, ok := plan[key]
+		if !ok {
+			toDelete[key] = s
+		}
+	}
+
+	return toCreate, toUpdate, toDelete
 }
