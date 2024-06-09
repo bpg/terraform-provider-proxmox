@@ -1,8 +1,18 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package vms
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
+	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -36,8 +46,11 @@ type CustomStorageDevice struct {
 	Interface               *string           `json:"-"                     url:"-"`
 }
 
+// CustomStorageDevices handles map of QEMU storage device per disk interface.
+type CustomStorageDevices map[string]*CustomStorageDevice
+
 // PathInDatastore returns path part of FileVolume or nil if it is not yet allocated.
-func (d CustomStorageDevice) PathInDatastore() *string {
+func (d *CustomStorageDevice) PathInDatastore() *string {
 	probablyDatastoreID, pathInDatastore, hasDatastoreID := strings.Cut(d.FileVolume, ":")
 	if !hasDatastoreID {
 		// when no ':' separator is found, 'Cut' places the whole string to 'probablyDatastoreID',
@@ -67,7 +80,7 @@ func (d CustomStorageDevice) PathInDatastore() *string {
 
 // IsOwnedBy returns true, if CustomStorageDevice is owned by given VM.
 // Not yet allocated volumes are not owned by any VM.
-func (d CustomStorageDevice) IsOwnedBy(vmID int) bool {
+func (d *CustomStorageDevice) IsOwnedBy(vmID int) bool {
 	pathInDatastore := d.PathInDatastore()
 	if pathInDatastore == nil {
 		// not yet allocated volume, consider disk not owned by any VM
@@ -89,14 +102,14 @@ func (d CustomStorageDevice) IsOwnedBy(vmID int) bool {
 }
 
 // IsCloudInitDrive returns true, if CustomStorageDevice is a cloud-init drive.
-func (d CustomStorageDevice) IsCloudInitDrive(vmID int) bool {
+func (d *CustomStorageDevice) IsCloudInitDrive(vmID int) bool {
 	return d.Media != nil && *d.Media == "cdrom" &&
 		strings.Contains(d.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID))
 }
 
 // StorageInterface returns the storage interface of the CustomStorageDevice,
 // e.g. "virtio" or "scsi" for "virtio0" or "scsi2".
-func (d CustomStorageDevice) StorageInterface() string {
+func (d *CustomStorageDevice) StorageInterface() string {
 	for i, r := range *d.Interface {
 		if unicode.IsDigit(r) {
 			return (*d.Interface)[:i]
@@ -108,7 +121,7 @@ func (d CustomStorageDevice) StorageInterface() string {
 }
 
 // EncodeOptions converts a CustomStorageDevice's common options a URL value.
-func (d CustomStorageDevice) EncodeOptions() string {
+func (d *CustomStorageDevice) EncodeOptions() string {
 	values := []string{}
 
 	if d.AIO != nil {
@@ -191,7 +204,7 @@ func (d CustomStorageDevice) EncodeOptions() string {
 }
 
 // EncodeValues converts a CustomStorageDevice struct to a URL value.
-func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
+func (d *CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
 		fmt.Sprintf("file=%s", d.FileVolume),
 	}
@@ -215,15 +228,157 @@ func (d CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// CustomStorageDevices handles map of QEMU storage device per disk interface.
-type CustomStorageDevices map[string]*CustomStorageDevice
+// UnmarshalJSON converts a CustomStorageDevice string to an object.
+func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
+	var s string
+
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("failed to unmarshal CustomStorageDevice: %w", err)
+	}
+
+	pairs := strings.Split(s, ",")
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		//nolint:nestif
+		if len(v) == 1 {
+			d.FileVolume = v[0]
+
+			ext := filepath.Ext(v[0])
+			if ext != "" {
+				format := string([]byte(ext)[1:])
+				d.Format = &format
+			}
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "aio":
+				d.AIO = &v[1]
+
+			case "backup":
+				bv := types.CustomBool(v[1] == "1")
+				d.Backup = &bv
+
+			case "cache":
+				d.Cache = &v[1]
+
+			case "discard":
+				d.Discard = &v[1]
+
+			case "file":
+				d.FileVolume = v[1]
+
+			case "format":
+				d.Format = &v[1]
+
+			case "iops_rd":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert iops_rd to int: %w", err)
+				}
+
+				d.IopsRead = &iv
+
+			case "iops_rd_max":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert iops_rd_max to int: %w", err)
+				}
+
+				d.MaxIopsRead = &iv
+
+			case "iops_wr":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert iops_wr to int: %w", err)
+				}
+
+				d.IopsWrite = &iv
+
+			case "iops_wr_max":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert iops_wr_max to int: %w", err)
+				}
+
+				d.MaxIopsWrite = &iv
+
+			case "iothread":
+				bv := types.CustomBool(v[1] == "1")
+				d.IOThread = &bv
+
+			case "mbps_rd":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert mbps_rd to int: %w", err)
+				}
+
+				d.MaxReadSpeedMbps = &iv
+
+			case "mbps_rd_max":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert mbps_rd_max to int: %w", err)
+				}
+
+				d.BurstableReadSpeedMbps = &iv
+
+			case "mbps_wr":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert mbps_wr to int: %w", err)
+				}
+
+				d.MaxWriteSpeedMbps = &iv
+
+			case "mbps_wr_max":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("failed to convert mbps_wr_max to int: %w", err)
+				}
+
+				d.BurstableWriteSpeedMbps = &iv
+
+			case "media":
+				d.Media = &v[1]
+
+			case "replicate":
+				bv := types.CustomBool(v[1] == "1")
+				d.Replicate = &bv
+
+			case "size":
+				d.Size = new(types.DiskSize)
+
+				err := d.Size.UnmarshalJSON([]byte(v[1]))
+				if err != nil {
+					return fmt.Errorf("failed to unmarshal disk size: %w", err)
+				}
+
+			case "ssd":
+				bv := types.CustomBool(v[1] == "1")
+				d.SSD = &bv
+			}
+		}
+	}
+
+	d.Enabled = true
+
+	return nil
+}
 
 // ByStorageInterface returns a map of CustomStorageDevices filtered by the given storage interface.
 func (d CustomStorageDevices) ByStorageInterface(storageInterface string) CustomStorageDevices {
+	return d.Filter(func(d *CustomStorageDevice) bool {
+		return d.StorageInterface() == storageInterface
+	})
+}
+
+// Filter returns a map of CustomStorageDevices filtered by the given function.
+func (d CustomStorageDevices) Filter(fn func(*CustomStorageDevice) bool) CustomStorageDevices {
 	result := make(CustomStorageDevices)
 
 	for k, v := range d {
-		if v.StorageInterface() == storageInterface {
+		if fn(v) {
 			result[k] = v
 		}
 	}
@@ -242,4 +397,28 @@ func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 	}
 
 	return nil
+}
+
+// MapCustomStorageDevices maps the custom storage devices from the API response.
+func MapCustomStorageDevices(resp GetResponseData) CustomStorageDevices {
+	csd := CustomStorageDevices{}
+
+	mapDevice(csd, resp, "ide", "IDE", 3)
+	mapDevice(csd, resp, "sata", "SATA", 5)
+	mapDevice(csd, resp, "scsi", "SCSI", 13)
+	mapDevice(csd, resp, "virtio", "VirtualIO", 15)
+
+	return csd
+}
+
+func mapDevice(csd CustomStorageDevices, resp GetResponseData, keyPrefix, fieldPrefix string, end int) {
+	for i := 0; i <= end; i++ {
+		field := reflect.ValueOf(resp).FieldByName(fieldPrefix + "Device" + strconv.Itoa(i))
+		if !field.IsZero() {
+			val := field.Interface()
+			if val != nil {
+				csd[keyPrefix+strconv.Itoa(i)] = val.(*CustomStorageDevice)
+			}
+		}
+	}
 }

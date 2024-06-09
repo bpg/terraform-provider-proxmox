@@ -171,7 +171,7 @@ func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
 			want:    CustomStorageDevices{},
 		},
 		{
-			name:  "not in the list",
+			name:  "nothing matches",
 			iface: "sata",
 			devices: CustomStorageDevices{
 				"virtio0": &CustomStorageDevice{
@@ -184,7 +184,7 @@ func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
 			want: CustomStorageDevices{},
 		},
 		{
-			name:  "not in the list",
+			name:  "partially matches",
 			iface: "virtio",
 			devices: CustomStorageDevices{
 				"virtio0": &CustomStorageDevice{
@@ -218,45 +218,47 @@ func TestCustomStorageDevices_ByStorageInterface(t *testing.T) {
 	}
 }
 
-func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
+func TestMapCustomStorageDevices(t *testing.T) {
 	t.Parallel()
 
+	type args struct {
+		resp GetResponseData
+	}
+
 	tests := []struct {
-		name    string
-		line    string
-		want    *CustomPCIDevice
-		wantErr bool
+		name string
+		args args
+		want CustomStorageDevices
 	}{
+		{"no storage devices", args{GetResponseData{}}, CustomStorageDevices{}},
 		{
-			name: "id only pci device",
-			line: `"0000:81:00.2"`,
-			want: &CustomPCIDevice{
-				DeviceIDs: &[]string{"0000:81:00.2"},
-			},
+			"ide0 storage devices",
+			args{GetResponseData{IDEDevice0: &CustomStorageDevice{}}},
+			map[string]*CustomStorageDevice{"ide0": {}},
 		},
 		{
-			name: "pci device with more details",
-			line: `"host=81:00.4,pcie=0,rombar=1,x-vga=0"`,
-			want: &CustomPCIDevice{
-				DeviceIDs:  &[]string{"81:00.4"},
-				MDev:       nil,
-				PCIExpress: types.CustomBool(false).Pointer(),
-				ROMBAR:     types.CustomBool(true).Pointer(),
-				ROMFile:    nil,
-				XVGA:       types.CustomBool(false).Pointer(),
-			},
+			"multiple ide storage devices",
+			args{GetResponseData{
+				IDEDevice1: &CustomStorageDevice{},
+				IDEDevice3: &CustomStorageDevice{},
+			}},
+			map[string]*CustomStorageDevice{"ide1": {}, "ide3": {}},
 		},
 		{
-			name: "pci device with mapping",
-			line: `"mapping=mappeddevice,pcie=0,rombar=1,x-vga=0"`,
-			want: &CustomPCIDevice{
-				DeviceIDs:  nil,
-				Mapping:    ptr.Ptr("mappeddevice"),
-				MDev:       nil,
-				PCIExpress: types.CustomBool(false).Pointer(),
-				ROMBAR:     types.CustomBool(true).Pointer(),
-				ROMFile:    nil,
-				XVGA:       types.CustomBool(false).Pointer(),
+			"mixed storage devices",
+			args{GetResponseData{
+				IDEDevice1:       &CustomStorageDevice{},
+				VirtualIODevice5: &CustomStorageDevice{},
+				SATADevice0:      &CustomStorageDevice{},
+				IDEDevice3:       &CustomStorageDevice{},
+				SCSIDevice10:     &CustomStorageDevice{},
+			}},
+			map[string]*CustomStorageDevice{
+				"ide1":    {},
+				"virtio5": {},
+				"sata0":   {},
+				"ide3":    {},
+				"scsi10":  {},
 			},
 		},
 	}
@@ -265,100 +267,7 @@ func TestCustomPCIDevice_UnmarshalJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			r := &CustomPCIDevice{}
-			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
-				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			require.Equal(t, tt.want, r)
-		})
-	}
-}
-
-func TestCustomNUMADevice_UnmarshalJSON(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		line    string
-		want    *CustomNUMADevice
-		wantErr bool
-	}{
-		{
-			name: "numa device all options",
-			line: `"cpus=1-2;3-4,hostnodes=1-2,memory=1024,policy=preferred"`,
-			want: &CustomNUMADevice{
-				CPUIDs:        []string{"1-2", "3-4"},
-				HostNodeNames: &[]string{"1-2"},
-				Memory:        ptr.Ptr(1024),
-				Policy:        ptr.Ptr("preferred"),
-			},
-		},
-		{
-			name: "numa device cpus/memory only",
-			line: `"cpus=1-2,memory=1024"`,
-			want: &CustomNUMADevice{
-				CPUIDs: []string{"1-2"},
-				Memory: ptr.Ptr(1024),
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			r := &CustomNUMADevice{}
-			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
-				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		line    string
-		want    *CustomUSBDevice
-		wantErr bool
-	}{
-		{
-			name: "id only usb device",
-			line: `"host=0000:81"`,
-			want: &CustomUSBDevice{
-				HostDevice: ptr.Ptr("0000:81"),
-			},
-		},
-		{
-			name: "usb device with more details",
-			line: `"host=81:00,usb3=0"`,
-			want: &CustomUSBDevice{
-				HostDevice: ptr.Ptr("81:00"),
-				USB3:       types.CustomBool(false).Pointer(),
-			},
-		},
-		{
-			name: "usb device with mapping",
-			line: `"mapping=mappeddevice,usb=0"`,
-			want: &CustomUSBDevice{
-				HostDevice: nil,
-				Mapping:    ptr.Ptr("mappeddevice"),
-				USB3:       types.CustomBool(false).Pointer(),
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			r := &CustomUSBDevice{}
-			if err := r.UnmarshalJSON([]byte(tt.line)); (err != nil) != tt.wantErr {
-				t.Errorf("UnmarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			assert.Equalf(t, tt.want, MapCustomStorageDevices(tt.args.resp), "MapCustomStorageDevices(%v)", tt.args.resp)
 		})
 	}
 }
