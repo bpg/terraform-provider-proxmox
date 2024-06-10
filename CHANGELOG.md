@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.59.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.59.0...v0.59.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* **vm:** ignore 599 task status response when waiting for VM start ([#1365](https://github.com/bpg/terraform-provider-proxmox/issues/1365)) ([5d4193b](https://github.com/bpg/terraform-provider-proxmox/commit/5d4193b6beb2b4b71b9f5be7507d4ddc6ea3b6b7))
+
+
+### Miscellaneous
+
+* **api:** refactor `nodes/vms/vms_types.go`: split into multiple files ([#1368](https://github.com/bpg/terraform-provider-proxmox/issues/1368)) ([580381f](https://github.com/bpg/terraform-provider-proxmox/commit/580381f89248f40ad645d8f9208e2223c66d6e4f))
+* **code:** fix code inspection warnings ([#1375](https://github.com/bpg/terraform-provider-proxmox/issues/1375)) ([e647b21](https://github.com/bpg/terraform-provider-proxmox/commit/e647b21e3a90d49f0f1300fcaaa9e23312f67b2b))
+* **deps:** update module github.com/golangci/golangci-lint (v1.59.0 → v1.59.1) in /tools ([#1373](https://github.com/bpg/terraform-provider-proxmox/issues/1373)) ([24f9990](https://github.com/bpg/terraform-provider-proxmox/commit/24f9990249037893312636abdae8f30391cff207))
+* **docs:** clarify `disk.file_id` format ([#1374](https://github.com/bpg/terraform-provider-proxmox/issues/1374)) ([f3ac15a](https://github.com/bpg/terraform-provider-proxmox/commit/f3ac15ad12b0638ed421e25b561f1d16f7d3a41d))
+* **vm2:** add initial support for `cdrom` ([#1370](https://github.com/bpg/terraform-provider-proxmox/issues/1370)) ([80cafa6](https://github.com/bpg/terraform-provider-proxmox/commit/80cafa689f3795a808dc0c2ecbcf81608181e370))
+
 ## [0.59.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.58.1...v0.59.0) (2024-06-05)
 
 
