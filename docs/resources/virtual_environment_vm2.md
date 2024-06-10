@@ -30,7 +30,7 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 
 ### Optional
 
-- `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. (see [below for nested schema](#nestedatt--cdrom))
+- `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces. (see [below for nested schema](#nestedatt--cdrom))
 - `clone` (Attributes) The cloning configuration. (see [below for nested schema](#nestedatt--clone))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `description` (String) The description of the VM.
