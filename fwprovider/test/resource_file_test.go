@@ -248,7 +248,9 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 	f, err := os.Open(fileName)
 	require.NoError(t, err)
 
-	defer f.Close()
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
 
 	fname := filepath.Base(fileName)
 	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/",
@@ -269,7 +271,9 @@ func createFile(t *testing.T, namePattern string, content string) *os.File {
 	_, err = f.WriteString(content)
 	require.NoError(t, err)
 
-	defer f.Close()
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
 
 	t.Cleanup(func() {
 		_ = os.Remove(f.Name())
