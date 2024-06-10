@@ -89,7 +89,6 @@ const (
 	dvInitializationNetworkDataFileID   = ""
 	dvInitializationMetaDataFileID      = ""
 	dvInitializationType                = ""
-	dvInitializationUpgrade             = true
 	dvKeyboardLayout                    = "en-us"
 	dvKVMArguments                      = ""
 	dvMachineType                       = ""
@@ -1513,16 +1512,6 @@ func VM() *schema.Resource {
 	}
 }
 
-// ConvertToStringSlice helps convert interface slice to string slice.
-func ConvertToStringSlice(interfaceSlice []interface{}) []string {
-	resultSlice := []string{}
-	for _, val := range interfaceSlice {
-		resultSlice = append(resultSlice, val.(string))
-	}
-
-	return resultSlice
-}
-
 func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	clone := d.Get(mkClone).([]interface{})
 
@@ -2873,7 +2862,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		deprecatedServer := initializationDNSBlock[mkInitializationDNSServer].(string)
 
 		if len(servers) > 0 {
-			nameserver := strings.Join(ConvertToStringSlice(servers), " ")
+			nameserver := strings.Join(utils.ConvertToStringSlice(servers), " ")
 
 			initializationConfig.Nameserver = &nameserver
 		} else if deprecatedServer != "" {

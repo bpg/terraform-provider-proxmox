@@ -70,7 +70,7 @@ func (r *hagroupResource) Schema(
 				Required:    true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_\.]*[a-zA-Z0-9]$`),
+						regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-_.]*[a-zA-Z0-9]$`),
 						"must start with a letter, end with a letter or number, be composed of "+
 							"letters, numbers, '-', '_' and '.', and must be at least 2 characters long",
 					),

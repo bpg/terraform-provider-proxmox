@@ -22,7 +22,7 @@ type CustomVGADevice struct {
 }
 
 // EncodeValues converts a CustomVGADevice struct to a URL value.
-func (r CustomVGADevice) EncodeValues(key string, v *url.Values) error {
+func (r *CustomVGADevice) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
 	if r.Clipboard != nil {
