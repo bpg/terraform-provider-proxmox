@@ -1,8 +1,10 @@
 version: "1.0"
+# renovate: datasource=docker depName=jetbrains/qodana-go
 linter: jetbrains/qodana-go:2024.1
 include:
   - name: CheckDependencyLicenses
   - name: RegExpRedundantEscape
+  - name: RegExpSimplifiable
 exclude:
   - name: All
     paths:
