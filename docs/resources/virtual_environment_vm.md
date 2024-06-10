@@ -354,7 +354,7 @@ output "ubuntu_vm_public_key" {
                 autodiscovery.
             - `gateway` - (Optional) The IPv4 gateway (must be omitted
                 when `dhcp` is used as the address).
-        - `ipv6` - (Optional) The IPv4 configuration.
+        - `ipv6` - (Optional) The IPv6 configuration.
             - `address` - (Optional) The IPv6 address in CIDR notation
                 (e.g. fd1c:000:0000::0000:000:7334/64). Alternatively, set this
                 to `dhcp` for autodiscovery.
