@@ -1060,6 +1060,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "chrodrigues",
+      "name": "Charles Rodrigues",
+      "avatar_url": "https://avatars.githubusercontent.com/u/56375916?v=4",
+      "profile": "https://www.linkedin.com/in/charles-rodrigues-313ba9179/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
