@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package disk
 
 import (
@@ -23,6 +29,7 @@ import (
 const supportedDiskInterfaces = "virtio, sata, scsi, ide"
 
 // GetInfo returns the disk information for a VM.
+// Deprecated: use vms.MapCustomStorageDevices from proxmox/nodes/vms instead.
 func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
 	storageDevices := vms.CustomStorageDevices{}
 

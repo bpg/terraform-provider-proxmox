@@ -400,6 +400,8 @@ func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 }
 
 // MapCustomStorageDevices maps the custom storage devices from the API response.
+//
+// NOTE: CustomStorageDevice.FileID and CustomStorageDevice.DatastoreID are not set in this function.
 func MapCustomStorageDevices(resp GetResponseData) CustomStorageDevices {
 	csd := CustomStorageDevices{}
 
@@ -411,13 +413,13 @@ func MapCustomStorageDevices(resp GetResponseData) CustomStorageDevices {
 	return csd
 }
 
-func mapDevice(csd CustomStorageDevices, resp GetResponseData, keyPrefix, fieldPrefix string, end int) {
+func mapDevice(csds CustomStorageDevices, resp GetResponseData, keyPrefix, fieldPrefix string, end int) {
 	for i := 0; i <= end; i++ {
 		field := reflect.ValueOf(resp).FieldByName(fieldPrefix + "Device" + strconv.Itoa(i))
 		if !field.IsZero() {
 			val := field.Interface()
 			if val != nil {
-				csd[keyPrefix+strconv.Itoa(i)] = val.(*CustomStorageDevice)
+				csds[keyPrefix+strconv.Itoa(i)] = val.(*CustomStorageDevice)
 			}
 		}
 	}
