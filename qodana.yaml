@@ -1,5 +1,5 @@
 version: "1.0"
-linter: jetbrains/qodana-go:2023.3
+linter: jetbrains/qodana-go:2024.1
 include:
   - name: CheckDependencyLicenses
   - name: RegExpRedundantEscape
