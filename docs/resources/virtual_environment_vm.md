@@ -266,9 +266,9 @@ output "ubuntu_vm_public_key" {
         - `qcow2` - QEMU Disk Image v2.
         - `raw` - Raw Disk Image.
         - `vmdk` - VMware Disk Image.
-    - `file_id` - (Optional) The file ID for a disk image (experimental -
-        might cause high CPU utilization during import, especially with large
-        disk images).
+    - `file_id` - (Optional) The file ID for a disk image. The ID format is
+          `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`. Can be also taken from
+          `proxmox_virtual_environment_download_file` resource.
     - `interface` - (Required) The disk interface for Proxmox, currently `scsi`,
         `sata` and `virtio` interfaces are supported. Append the disk index at
         the end, for example, `virtio0` for the first virtio disk, `virtio1` for
