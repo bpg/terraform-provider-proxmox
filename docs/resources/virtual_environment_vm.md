@@ -276,6 +276,7 @@ output "ubuntu_vm_public_key" {
     - `iothread` - (Optional) Whether to use iothreads for this disk (defaults
         to `false`).
     - `replicate` - (Optional) Whether the drive should be considered for replication jobs (defaults to `true`).
+    - `serial` - (Optional) The serial number of the disk, up to 20 bytes long.
     - `size` - (Optional) The disk size in gigabytes (defaults to `8`).
     - `speed` - (Optional) The speed limits.
         - `iops_read` - (Optional) The maximum read I/O in operations per second.
