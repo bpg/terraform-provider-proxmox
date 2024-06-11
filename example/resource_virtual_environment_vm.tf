@@ -53,6 +53,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     interface    = "scsi0"
     discard      = "on"
     cache        = "writeback"
+    serial	     = "dead_beef"
     ssd          = true
   }
 
