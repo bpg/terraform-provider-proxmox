@@ -258,6 +258,7 @@ func GetDiskDeviceObjects(
 		fileID, _ := block[mkDiskFileID].(string)
 		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
 		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
+		serial := block[mkDiskSerial].(string)
 		size, _ := block[mkDiskSize].(int)
 		ssd := types.CustomBool(block[mkDiskSSD].(bool))
 
@@ -301,6 +302,7 @@ func GetDiskDeviceObjects(
 		diskDevice.Format = &fileFormat
 		diskDevice.Interface = &diskInterface
 		diskDevice.Replicate = &replicate
+		diskDevice.Serial = &serial
 		diskDevice.Size = types.DiskSizeFromGigabytes(int64(size))
 
 		if !strings.HasPrefix(diskInterface, "virtio") {
@@ -535,6 +537,12 @@ func Read(
 			disk[mkDiskReplicate] = true
 		}
 
+		if dd.Serial != nil {
+			disk[mkDiskSerial] = *dd.Serial
+		} else {
+			disk[mkDiskSerial] = ""
+		}
+
 		if dd.SSD != nil {
 			disk[mkDiskSSD] = *dd.SSD
 		} else {
@@ -700,6 +708,7 @@ func Update(
 				tmp.MaxReadSpeedMbps = disk.MaxReadSpeedMbps
 				tmp.MaxWriteSpeedMbps = disk.MaxWriteSpeedMbps
 				tmp.Replicate = disk.Replicate
+				tmp.Serial = disk.Serial
 				tmp.SSD = disk.SSD
 
 				switch prefix {

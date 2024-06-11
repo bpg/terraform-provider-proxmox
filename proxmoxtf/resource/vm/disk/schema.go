@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package disk
 
 import (
@@ -34,6 +40,7 @@ const (
 	mkDiskIOThread            = "iothread"
 	mkDiskPathInDatastore     = "path_in_datastore"
 	mkDiskReplicate           = "replicate"
+	mkDiskSerial              = "serial"
 	mkDiskSize                = "size"
 	mkDiskSpeed               = "speed"
 	mkDiskSpeedRead           = "read"
@@ -63,6 +70,7 @@ func Schema() map[string]*schema.Schema {
 						mkDiskIOThread:        false,
 						mkDiskPathInDatastore: nil,
 						mkDiskReplicate:       true,
+						mkDiskSerial:          "",
 						mkDiskSize:            dvDiskSize,
 						mkDiskSSD:             false,
 					},
@@ -125,6 +133,13 @@ func Schema() map[string]*schema.Schema {
 						ForceNew:         true,
 						Default:          "",
 						ValidateDiagFunc: validators.FileID(),
+					},
+					mkDiskSerial: {
+						Type:             schema.TypeString,
+						Description:      "The drive’s reported serial number",
+						Optional:         true,
+						Default:          "",
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringLenBetween(0, 20)),
 					},
 					mkDiskSize: {
 						Type:             schema.TypeInt,

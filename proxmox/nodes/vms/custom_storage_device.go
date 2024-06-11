@@ -38,6 +38,7 @@ type CustomStorageDevice struct {
 	MaxWriteSpeedMbps       *int              `json:"mbps_wr,omitempty"     url:"mbps_wr,omitempty"`
 	Media                   *string           `json:"media,omitempty"       url:"media,omitempty"`
 	Replicate               *types.CustomBool `json:"replicate,omitempty"   url:"replicate,omitempty,int"`
+	Serial                  *string           `json:"serial,omitempty"      url:"serial,omitempty"`
 	Size                    *types.DiskSize   `json:"size,omitempty"        url:"size,omitempty"`
 	SSD                     *types.CustomBool `json:"ssd,omitempty"         url:"ssd,omitempty,int"`
 	DatastoreID             *string           `json:"-"                     url:"-"`
@@ -158,6 +159,10 @@ func (d *CustomStorageDevice) EncodeOptions() string {
 		} else {
 			values = append(values, "iothread=0")
 		}
+	}
+
+	if d.Serial != nil && *d.Serial != "" {
+		values = append(values, fmt.Sprintf("serial=%s", *d.Serial))
 	}
 
 	if d.SSD != nil {
@@ -345,6 +350,9 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			case "replicate":
 				bv := types.CustomBool(v[1] == "1")
 				d.Replicate = &bv
+
+			case "serial":
+				d.Serial = &v[1]
 
 			case "size":
 				d.Size = new(types.DiskSize)
