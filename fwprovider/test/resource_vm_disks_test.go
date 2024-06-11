@@ -69,7 +69,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
-						serial	     = "dead_beef"
+						serial	     = "-dead_beef-"
 						size         = 8
 						replicate    = false
 						aio          = "native"
@@ -94,7 +94,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 						"disk.0.iothread":                     "false",
 						"disk.0.path_in_datastore":            `vm-\d+-disk-\d+`,
 						"disk.0.replicate":                    "false",
-						"disk.0.serial":                       "deadbeef",
+						"disk.0.serial":                       "-dead_beef-",
 						"disk.0.size":                         "8",
 						"disk.0.ssd":                          "false",
 						"disk.0.speed.0.iops_read":            "100",
