@@ -152,6 +152,7 @@
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/karliemeads"><img src="https://avatars.githubusercontent.com/u/68717336?v=4?s=100" width="100px;" alt="Karlie Meads"/><br /><sub><b>Karlie Meads</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=karliemeads" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/charles-rodrigues-313ba9179/"><img src="https://avatars.githubusercontent.com/u/56375916?v=4?s=100" width="100px;" alt="Charles Rodrigues"/><br /><sub><b>Charles Rodrigues</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=chrodrigues" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/connor-creek-318a86107/"><img src="https://avatars.githubusercontent.com/u/33628343?v=4?s=100" width="100px;" alt="Connor Creek"/><br /><sub><b>Connor Creek</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=CCreek96" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
