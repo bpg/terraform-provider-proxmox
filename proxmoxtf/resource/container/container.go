@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
@@ -83,7 +84,6 @@ const (
 	dvTimeoutUpdate                     = 1800
 	dvTimeoutDelete                     = 60
 	dvUnprivileged                      = false
-	dvVMID                              = -1
 
 	maxResourceVirtualEnvironmentContainerNetworkInterfaces = 8
 
@@ -888,8 +888,7 @@ func Container() *schema.Resource {
 				Type:             schema.TypeInt,
 				Description:      "The VM identifier",
 				Optional:         true,
-				ForceNew:         true,
-				Default:          dvVMID,
+				Computed:         true,
 				ValidateDiagFunc: resource.VMIDValidator(),
 			},
 		},
@@ -897,6 +896,18 @@ func Container() *schema.Resource {
 		ReadContext:   containerRead,
 		UpdateContext: containerUpdate,
 		DeleteContext: containerDelete,
+		CustomizeDiff: customdiff.All(
+			customdiff.ForceNewIf(
+				mkVMID,
+				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+					newValue := d.Get(mkVMID)
+
+					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
+					// (automatic fix from -1 to actual vm_id must not re-create VM)
+					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+		),
 		Importer: &schema.ResourceImporter{
 			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				node, id, err := parseImportIDWithNodeName(d.Id())
@@ -958,15 +969,21 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	nodeName := d.Get(mkNodeName).(string)
 	poolID := d.Get(mkPoolID).(string)
 	tags := d.Get(mkTags).([]interface{})
-	vmID := d.Get(mkVMID).(int)
+	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
+	vmID := vmIDUntyped.(int)
 
-	if vmID == -1 {
-		vmIDNew, e := client.Cluster().GetVMID(ctx)
-		if e != nil {
-			return diag.FromErr(e)
+	if !hasVMID {
+		vmIDNew, err := client.Cluster().GetVMID(ctx)
+		if err != nil {
+			return diag.FromErr(err)
 		}
 
 		vmID = *vmIDNew
+
+		err = d.Set(mkVMID, vmID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	fullCopy := types.CustomBool(true)
@@ -1661,15 +1678,21 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	tags := d.Get(mkTags).([]interface{})
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
-	vmID := d.Get(mkVMID).(int)
+	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
+	vmID := vmIDUntyped.(int)
 
-	if vmID == -1 {
-		vmIDNew, e := client.Cluster().GetVMID(ctx)
-		if e != nil {
-			return diag.FromErr(e)
+	if !hasVMID {
+		vmIDNew, err := client.Cluster().GetVMID(ctx)
+		if err != nil {
+			return diag.FromErr(err)
 		}
 
 		vmID = *vmIDNew
+
+		err = d.Set(mkVMID, vmID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
 	}
 
 	// Attempt to create the container using the retrieved values.
@@ -1977,6 +2000,18 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		return diag.FromErr(e)
+	}
+
+	// Fix terraform.tfstate, by replacing '-1' (the old default value) with actual vm_id value
+	if storedVMID := d.Get(mkVMID).(int); storedVMID == -1 {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary: fmt.Sprintf("VM %s has stored legacy vm_id %d, setting vm_id to its correct value %d.",
+				d.Id(), storedVMID, vmID),
+		})
+
+		err := d.Set(mkVMID, vmID)
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	clone := d.Get(mkClone).([]interface{})
