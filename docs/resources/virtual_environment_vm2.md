@@ -30,11 +30,12 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 
 ### Optional
 
-- `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces. (see [below for nested schema](#nestedatt--cdrom))
+- `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces. (see [below for nested schema](#nestedatt--cdrom))
 - `clone` (Attributes) The cloning configuration. (see [below for nested schema](#nestedatt--clone))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `description` (String) The description of the VM.
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
+- `initialization` (Attributes) The cloud-init configuration. (see [below for nested schema](#nestedatt--initialization))
 - `name` (String) The name of the VM. Doesn't have to be unique.
 - `stop_on_destroy` (Boolean) Set to true to stop (rather than shutdown) the VM on destroy (defaults to `false`).
 - `tags` (Set of String) The tags assigned to the VM.
@@ -77,6 +78,25 @@ Optional:
 - `sockets` (Number) The number of CPU sockets (defaults to `1`).
 - `type` (String) Emulated CPU type, it's recommended to use `x86-64-v2-AES` or higher (defaults to `kvm64`). See https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings for more information.
 - `units` (Number) CPU weight for a VM. Argument is used in the kernel fair scheduler. The larger the number is, the more CPU time this VM gets. Number is relative to weights of all the other running VMs.
+
+
+<a id="nestedatt--initialization"></a>
+### Nested Schema for `initialization`
+
+Optional:
+
+- `datastore_id` (String) The identifier for the datastore to create the cloud-init disk in (defaults to `local-lvm`)
+- `dns` (Attributes) The DNS configuration. (see [below for nested schema](#nestedatt--initialization--dns))
+- `interface` (String) The hardware interface to connect the cloud-init image to. Must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. Will be detected if the setting is missing but a cloud-init image is present, otherwise defaults to `ide2`. Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces.
+
+<a id="nestedatt--initialization--dns"></a>
+### Nested Schema for `initialization.dns`
+
+Optional:
+
+- `domain` (String) The domain name to use for the VM.
+- `servers` (List of String) The list of DNS servers to use.
+
 
 
 <a id="nestedatt--timeouts"></a>

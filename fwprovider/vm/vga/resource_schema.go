@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package vga
 
 import (
@@ -7,15 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // ResourceSchema defines the schema for the CPU resource.
 func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
-		CustomType: basetypes.ObjectType{
-			AttrTypes: attributeTypes(),
-		},
 		Description: "The VGA configuration.",
 		MarkdownDescription: "Configure the VGA Hardware. If you want to use high resolution modes (>= 1280x1024x16) " +
 			"you may need to increase the vga memory option. Since QEMU 2.9 the default VGA display type is `std` " +
