@@ -24,6 +24,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cloudinit"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 )
@@ -74,6 +75,7 @@ func (r *Resource) Schema(
 				},
 				Description: "The unique identifier of the VM in the Proxmox cluster.",
 			},
+			"initialization": cloudinit.ResourceSchema(),
 			"name": schema.StringAttribute{
 				Description:         "The name of the VM.",
 				MarkdownDescription: "The name of the VM. Doesn't have to be unique.",
