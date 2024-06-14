@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.60.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.59.1...v0.60.0) (2024-06-14)
+
+
+### Features
+
+* **vm:** add support for `disk.serial` attribute  ([#1385](https://github.com/bpg/terraform-provider-proxmox/issues/1385)) ([de34952](https://github.com/bpg/terraform-provider-proxmox/commit/de349523fedac8185468620a7088c55deefdbd79))
+
+
+### Bug Fixes
+
+* **docs:** add more details about the `usb` block in VM ([#1382](https://github.com/bpg/terraform-provider-proxmox/issues/1382)) ([1eb64a2](https://github.com/bpg/terraform-provider-proxmox/commit/1eb64a25226d6c2ae48ac5cc4c24499e0bbb84cf))
+* **docs:** update virtual_environment_vm.md ([#1377](https://github.com/bpg/terraform-provider-proxmox/issues/1377)) ([63f0cbf](https://github.com/bpg/terraform-provider-proxmox/commit/63f0cbfd27387a9d4fd0b5aa853be9a5a52475f2))
+* **lxc:** make container vm_id computed ([#1386](https://github.com/bpg/terraform-provider-proxmox/issues/1386)) ([bc079c0](https://github.com/bpg/terraform-provider-proxmox/commit/bc079c0c192d1b3cb99c2b646f639a57cfbff7f6))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v4.1.6 → v4.1.7) ([#1390](https://github.com/bpg/terraform-provider-proxmox/issues/1390)) ([fbf41dd](https://github.com/bpg/terraform-provider-proxmox/commit/fbf41dde93ff344950e4b879102b0070406bb227))
+* **ci:** update googleapis/release-please-action action (v4.1.1 → v4.1.3) ([#1380](https://github.com/bpg/terraform-provider-proxmox/issues/1380)) ([77f62e1](https://github.com/bpg/terraform-provider-proxmox/commit/77f62e1500e7d8468a4dcf60fba3bda907d5c7d9))
+* **code:** remove goreleaser from `/tools` ([#1384](https://github.com/bpg/terraform-provider-proxmox/issues/1384)) ([cfe1b1c](https://github.com/bpg/terraform-provider-proxmox/commit/cfe1b1cc4b151a7ab5fee7a051429ecf57b497d6))
+* **deps:** update golang.org/x/exp digest (fc45aab → 7f521ea) ([#1391](https://github.com/bpg/terraform-provider-proxmox/issues/1391)) ([f22858c](https://github.com/bpg/terraform-provider-proxmox/commit/f22858ce4e311395f3127da4dd22d45c533caa2e))
+* **deps:** Update module github.com/goreleaser/goreleaser (v1.26.2 → v2.0.0) in /tools ([#1381](https://github.com/bpg/terraform-provider-proxmox/issues/1381)) ([095be69](https://github.com/bpg/terraform-provider-proxmox/commit/095be69d8d6ad281db0670d4a22d88c860eff0ff))
+
 ## [0.59.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.59.0...v0.59.1) (2024-06-10)
 
 
