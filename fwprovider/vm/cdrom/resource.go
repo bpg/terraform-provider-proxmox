@@ -22,7 +22,7 @@ type Value = types.Map
 // NewValue returns a new Value with the given CD-ROM settings from the PVE API.
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
 	// find storage devices with media=cdrom
-	cdroms := vms.MapCustomStorageDevices(*config).Filter(func(device *vms.CustomStorageDevice) bool {
+	cdroms := config.CustomStorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
 		return device.Media != nil && *device.Media == "cdrom"
 	})
 
@@ -57,10 +57,7 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 	}
 
 	for iface, cdrom := range plan {
-		err := body.AddCustomStorageDevice(cdrom.exportToCustomStorageDevice(iface))
-		if err != nil {
-			diags.AddError(err.Error(), "")
-		}
+		body.AddCustomStorageDevice(iface, cdrom.exportToCustomStorageDevice())
 	}
 }
 
@@ -91,18 +88,12 @@ func FillUpdateBody(
 	toCreate, toUpdate, toDelete := utils.MapDiff(plan, state)
 
 	for iface, dev := range toCreate {
-		err := updateBody.AddCustomStorageDevice(dev.exportToCustomStorageDevice(iface))
-		if err != nil {
-			diags.AddError(err.Error(), "")
-		}
+		updateBody.AddCustomStorageDevice(iface, dev.exportToCustomStorageDevice())
 	}
 
 	for iface, dev := range toUpdate {
 		// for CD-ROMs, the update fully override the existing device, we don't do per-attribute check
-		err := updateBody.AddCustomStorageDevice(dev.exportToCustomStorageDevice(iface))
-		if err != nil {
-			diags.AddError(err.Error(), "")
-		}
+		updateBody.AddCustomStorageDevice(iface, dev.exportToCustomStorageDevice())
 	}
 
 	for iface := range toDelete {

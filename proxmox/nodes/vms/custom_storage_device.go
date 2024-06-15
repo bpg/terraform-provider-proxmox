@@ -11,13 +11,16 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
+
+// StorageInterfaces is a list of supported storage interfaces.
+//
+//nolint:gochecknoglobals
+var StorageInterfaces = []string{"ide", "sata", "scsi", "virtio"}
 
 // CustomStorageDevice handles QEMU SATA device parameters.
 type CustomStorageDevice struct {
@@ -44,7 +47,6 @@ type CustomStorageDevice struct {
 	DatastoreID             *string           `json:"-"                     url:"-"`
 	Enabled                 bool              `json:"-"                     url:"-"`
 	FileID                  *string           `json:"-"                     url:"-"`
-	Interface               *string           `json:"-"                     url:"-"`
 }
 
 // CustomStorageDevices handles map of QEMU storage device per disk interface.
@@ -106,19 +108,6 @@ func (d *CustomStorageDevice) IsOwnedBy(vmID int) bool {
 func (d *CustomStorageDevice) IsCloudInitDrive(vmID int) bool {
 	return d.Media != nil && *d.Media == "cdrom" &&
 		strings.Contains(d.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID))
-}
-
-// StorageInterface returns the storage interface of the CustomStorageDevice,
-// e.g. "virtio" or "scsi" for "virtio0" or "scsi2".
-func (d *CustomStorageDevice) StorageInterface() string {
-	for i, r := range *d.Interface {
-		if unicode.IsDigit(r) {
-			return (*d.Interface)[:i]
-		}
-	}
-
-	// panic(fmt.Sprintf("cannot determine storage interface for disk interface '%s'", *d.Interface))
-	return ""
 }
 
 // EncodeOptions converts a CustomStorageDevice's common options a URL value.
@@ -374,13 +363,6 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// ByStorageInterface returns a map of CustomStorageDevices filtered by the given storage interface.
-func (d CustomStorageDevices) ByStorageInterface(storageInterface string) CustomStorageDevices {
-	return d.Filter(func(d *CustomStorageDevice) bool {
-		return d.StorageInterface() == storageInterface
-	})
-}
-
 // Filter returns a map of CustomStorageDevices filtered by the given function.
 func (d CustomStorageDevices) Filter(fn func(*CustomStorageDevice) bool) CustomStorageDevices {
 	result := make(CustomStorageDevices)
@@ -405,30 +387,4 @@ func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 	}
 
 	return nil
-}
-
-// MapCustomStorageDevices maps the custom storage devices from the API response.
-//
-// NOTE: CustomStorageDevice.FileID and CustomStorageDevice.DatastoreID are not set in this function.
-func MapCustomStorageDevices(resp GetResponseData) CustomStorageDevices {
-	csd := CustomStorageDevices{}
-
-	mapDevice(csd, resp, "ide", "IDE", 3)
-	mapDevice(csd, resp, "sata", "SATA", 5)
-	mapDevice(csd, resp, "scsi", "SCSI", 13)
-	mapDevice(csd, resp, "virtio", "VirtualIO", 15)
-
-	return csd
-}
-
-func mapDevice(csds CustomStorageDevices, resp GetResponseData, keyPrefix, fieldPrefix string, end int) {
-	for i := 0; i <= end; i++ {
-		field := reflect.ValueOf(resp).FieldByName(fieldPrefix + "Device" + strconv.Itoa(i))
-		if !field.IsZero() {
-			val := field.Interface()
-			if val != nil {
-				csds[keyPrefix+strconv.Itoa(i)] = val.(*CustomStorageDevice)
-			}
-		}
-	}
 }

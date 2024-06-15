@@ -7,9 +7,11 @@
 package vms
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -60,7 +62,6 @@ type CreateRequestBody struct {
 	HookScript           *string                        `json:"hookscript,omitempty"         url:"hookscript,omitempty"`
 	Hotplug              types.CustomCommaSeparatedList `json:"hotplug,omitempty"            url:"hotplug,omitempty,comma"`
 	Hugepages            *string                        `json:"hugepages,omitempty"          url:"hugepages,omitempty"`
-	IDEDevices           CustomStorageDevices           `json:"ide,omitempty"                url:",omitempty"`
 	KeepHugepages        *types.CustomBool              `json:"keephugepages,omitempty"      url:"keephugepages,omitempty,int"`
 	KeyboardLayout       *string                        `json:"keyboard,omitempty"           url:"keyboard,omitempty"`
 	KVMArguments         *string                        `json:"args,omitempty"               url:"args,omitempty,space"`
@@ -79,8 +80,6 @@ type CreateRequestBody struct {
 	PCIDevices           CustomPCIDevices               `json:"hostpci,omitempty"            url:"hostpci,omitempty"`
 	PoolID               *string                        `json:"pool,omitempty"               url:"pool,omitempty"`
 	Revert               *string                        `json:"revert,omitempty"             url:"revert,omitempty"`
-	SATADevices          CustomStorageDevices           `json:"sata,omitempty"               url:"sata,omitempty"`
-	SCSIDevices          CustomStorageDevices           `json:"scsi,omitempty"               url:"scsi,omitempty"`
 	SCSIHardware         *string                        `json:"scsihw,omitempty"             url:"scsihw,omitempty"`
 	SerialDevices        CustomSerialDevices            `json:"serial,omitempty"             url:"serial,omitempty"`
 	SharedMemory         *CustomSharedMemory            `json:"ivshmem,omitempty"            url:"ivshmem,omitempty"`
@@ -98,51 +97,22 @@ type CreateRequestBody struct {
 	USBDevices           CustomUSBDevices               `json:"usb,omitempty"                url:"usb,omitempty"`
 	VGADevice            *CustomVGADevice               `json:"vga,omitempty"                url:"vga,omitempty"`
 	VirtualCPUCount      *int64                         `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
-	VirtualIODevices     CustomStorageDevices           `json:"virtio,omitempty"             url:"virtio,omitempty"`
 	VMGenerationID       *string                        `json:"vmgenid,omitempty"            url:"vmgenid,omitempty"`
 	VMID                 int                            `json:"vmid,omitempty"               url:"vmid,omitempty"`
 	VMStateDatastoreID   *string                        `json:"vmstatestorage,omitempty"     url:"vmstatestorage,omitempty"`
 	WatchdogDevice       *CustomWatchdogDevice          `json:"watchdog,omitempty"           url:"watchdog,omitempty"`
+	CustomStorageDevices CustomStorageDevices           `json:"-"`
 }
 
 // AddCustomStorageDevice adds a custom storage device to the create request body.
-func (b *CreateRequestBody) AddCustomStorageDevice(device CustomStorageDevice) error {
+func (b *CreateRequestBody) AddCustomStorageDevice(iface string, device CustomStorageDevice) {
 	device.Enabled = true
 
-	switch device.StorageInterface() {
-	case "ide":
-		if b.IDEDevices == nil {
-			b.IDEDevices = make(CustomStorageDevices, 1)
-		}
-
-		b.IDEDevices[*device.Interface] = &device
-
-	case "sata":
-		if b.SATADevices == nil {
-			b.SATADevices = make(CustomStorageDevices, 1)
-		}
-
-		b.SATADevices[*device.Interface] = &device
-
-	case "scsi":
-		if b.SCSIDevices == nil {
-			b.SCSIDevices = make(CustomStorageDevices, 1)
-		}
-
-		b.SCSIDevices[*device.Interface] = &device
-
-	case "virtio":
-		if b.VirtualIODevices == nil {
-			b.VirtualIODevices = make(CustomStorageDevices, 1)
-		}
-
-		b.VirtualIODevices[*device.Interface] = &device
-
-	default:
-		return fmt.Errorf("unsupported storage interface: %s", device.StorageInterface())
+	if b.CustomStorageDevices == nil {
+		b.CustomStorageDevices = make(CustomStorageDevices, 1)
 	}
 
-	return nil
+	b.CustomStorageDevices[iface] = &device
 }
 
 // CreateResponseBody contains the body from a create response.
@@ -235,10 +205,6 @@ type GetResponseData struct {
 	HookScript           *string                         `json:"hookscript,omitempty"`
 	Hotplug              *types.CustomCommaSeparatedList `json:"hotplug,omitempty"`
 	Hugepages            *string                         `json:"hugepages,omitempty"`
-	IDEDevice0           *CustomStorageDevice            `json:"ide0,omitempty"`
-	IDEDevice1           *CustomStorageDevice            `json:"ide1,omitempty"`
-	IDEDevice2           *CustomStorageDevice            `json:"ide2,omitempty"`
-	IDEDevice3           *CustomStorageDevice            `json:"ide3,omitempty"`
 	IPConfig0            *CustomCloudInitIPConfig        `json:"ipconfig0,omitempty"`
 	IPConfig1            *CustomCloudInitIPConfig        `json:"ipconfig1,omitempty"`
 	IPConfig2            *CustomCloudInitIPConfig        `json:"ipconfig2,omitempty"`
@@ -330,26 +296,6 @@ type GetResponseData struct {
 	PCIDevice3           *CustomPCIDevice                `json:"hostpci3,omitempty"`
 	PoolID               *string                         `json:"pool,omitempty"`
 	Revert               *string                         `json:"revert,omitempty"`
-	SATADevice0          *CustomStorageDevice            `json:"sata0,omitempty"`
-	SATADevice1          *CustomStorageDevice            `json:"sata1,omitempty"`
-	SATADevice2          *CustomStorageDevice            `json:"sata2,omitempty"`
-	SATADevice3          *CustomStorageDevice            `json:"sata3,omitempty"`
-	SATADevice4          *CustomStorageDevice            `json:"sata4,omitempty"`
-	SATADevice5          *CustomStorageDevice            `json:"sata5,omitempty"`
-	SCSIDevice0          *CustomStorageDevice            `json:"scsi0,omitempty"`
-	SCSIDevice1          *CustomStorageDevice            `json:"scsi1,omitempty"`
-	SCSIDevice2          *CustomStorageDevice            `json:"scsi2,omitempty"`
-	SCSIDevice3          *CustomStorageDevice            `json:"scsi3,omitempty"`
-	SCSIDevice4          *CustomStorageDevice            `json:"scsi4,omitempty"`
-	SCSIDevice5          *CustomStorageDevice            `json:"scsi5,omitempty"`
-	SCSIDevice6          *CustomStorageDevice            `json:"scsi6,omitempty"`
-	SCSIDevice7          *CustomStorageDevice            `json:"scsi7,omitempty"`
-	SCSIDevice8          *CustomStorageDevice            `json:"scsi8,omitempty"`
-	SCSIDevice9          *CustomStorageDevice            `json:"scsi9,omitempty"`
-	SCSIDevice10         *CustomStorageDevice            `json:"scsi10,omitempty"`
-	SCSIDevice11         *CustomStorageDevice            `json:"scsi11,omitempty"`
-	SCSIDevice12         *CustomStorageDevice            `json:"scsi12,omitempty"`
-	SCSIDevice13         *CustomStorageDevice            `json:"scsi13,omitempty"`
 	SCSIHardware         *string                         `json:"scsihw,omitempty"`
 	SerialDevice0        *string                         `json:"serial0,omitempty"`
 	SerialDevice1        *string                         `json:"serial1,omitempty"`
@@ -373,25 +319,10 @@ type GetResponseData struct {
 	USBDevice3           *CustomUSBDevice                `json:"usb3,omitempty"`
 	VGADevice            *CustomVGADevice                `json:"vga,omitempty"`
 	VirtualCPUCount      *int64                          `json:"vcpus,omitempty"`
-	VirtualIODevice0     *CustomStorageDevice            `json:"virtio0,omitempty"`
-	VirtualIODevice1     *CustomStorageDevice            `json:"virtio1,omitempty"`
-	VirtualIODevice2     *CustomStorageDevice            `json:"virtio2,omitempty"`
-	VirtualIODevice3     *CustomStorageDevice            `json:"virtio3,omitempty"`
-	VirtualIODevice4     *CustomStorageDevice            `json:"virtio4,omitempty"`
-	VirtualIODevice5     *CustomStorageDevice            `json:"virtio5,omitempty"`
-	VirtualIODevice6     *CustomStorageDevice            `json:"virtio6,omitempty"`
-	VirtualIODevice7     *CustomStorageDevice            `json:"virtio7,omitempty"`
-	VirtualIODevice8     *CustomStorageDevice            `json:"virtio8,omitempty"`
-	VirtualIODevice9     *CustomStorageDevice            `json:"virtio9,omitempty"`
-	VirtualIODevice10    *CustomStorageDevice            `json:"virtio10,omitempty"`
-	VirtualIODevice11    *CustomStorageDevice            `json:"virtio11,omitempty"`
-	VirtualIODevice12    *CustomStorageDevice            `json:"virtio12,omitempty"`
-	VirtualIODevice13    *CustomStorageDevice            `json:"virtio13,omitempty"`
-	VirtualIODevice14    *CustomStorageDevice            `json:"virtio14,omitempty"`
-	VirtualIODevice15    *CustomStorageDevice            `json:"virtio15,omitempty"`
 	VMGenerationID       *string                         `json:"vmgenid,omitempty"`
 	VMStateDatastoreID   *string                         `json:"vmstatestorage,omitempty"`
 	WatchdogDevice       *CustomWatchdogDevice           `json:"watchdog,omitempty"`
+	CustomStorageDevices CustomStorageDevices            `json:"-"`
 }
 
 // GetStatusResponseBody contains the body from a VM get status response.
@@ -517,6 +448,48 @@ type UpdateAsyncResponseBody struct {
 
 // UpdateRequestBody contains the data for an virtual machine update request.
 type UpdateRequestBody = CreateRequestBody
+
+// UnmarshalJSON unmarshals the custom storage devices from the JSON data.
+func (d *GetResponseData) UnmarshalJSON(b []byte) error {
+	type Alias GetResponseData
+
+	var data Alias
+
+	// get original struct
+	if err := json.Unmarshal(b, &data); err != nil {
+		return fmt.Errorf("failed to unmarshal data: %w", err)
+	}
+
+	var byAttr map[string]interface{}
+
+	// now get map by attribute name
+	err := json.Unmarshal(b, &byAttr)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal data: %w", err)
+	}
+
+	allDevices := make(CustomStorageDevices)
+
+	for key, value := range byAttr {
+		for _, prefix := range StorageInterfaces {
+			r := regexp.MustCompile(`^` + prefix + `\d+$`)
+			if r.MatchString(key) {
+				var device CustomStorageDevice
+				if err := json.Unmarshal([]byte(`"`+value.(string)+`"`), &device); err != nil {
+					return fmt.Errorf("failed to unmarshal %s: %w", key, err)
+				}
+
+				allDevices[key] = &device
+			}
+		}
+	}
+
+	data.CustomStorageDevices = allDevices
+
+	*d = GetResponseData(data)
+
+	return nil
+}
 
 // ToDelete adds a field to the delete list. The field name should be the **actual** field name in the struct.
 func (b *UpdateRequestBody) ToDelete(fieldName string) error {

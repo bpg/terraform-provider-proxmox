@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 
@@ -26,56 +27,10 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-const supportedDiskInterfaces = "virtio, sata, scsi, ide"
-
 // GetInfo returns the disk information for a VM.
 // Deprecated: use vms.MapCustomStorageDevices from proxmox/nodes/vms instead.
 func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
-	storageDevices := vms.CustomStorageDevices{}
-
-	storageDevices["ide0"] = resp.IDEDevice0
-	storageDevices["ide1"] = resp.IDEDevice1
-	storageDevices["ide2"] = resp.IDEDevice2
-	storageDevices["ide3"] = resp.IDEDevice3
-
-	storageDevices["sata0"] = resp.SATADevice0
-	storageDevices["sata1"] = resp.SATADevice1
-	storageDevices["sata2"] = resp.SATADevice2
-	storageDevices["sata3"] = resp.SATADevice3
-	storageDevices["sata4"] = resp.SATADevice4
-	storageDevices["sata5"] = resp.SATADevice5
-
-	storageDevices["scsi0"] = resp.SCSIDevice0
-	storageDevices["scsi1"] = resp.SCSIDevice1
-	storageDevices["scsi2"] = resp.SCSIDevice2
-	storageDevices["scsi3"] = resp.SCSIDevice3
-	storageDevices["scsi4"] = resp.SCSIDevice4
-	storageDevices["scsi5"] = resp.SCSIDevice5
-	storageDevices["scsi6"] = resp.SCSIDevice6
-	storageDevices["scsi7"] = resp.SCSIDevice7
-	storageDevices["scsi8"] = resp.SCSIDevice8
-	storageDevices["scsi9"] = resp.SCSIDevice9
-	storageDevices["scsi10"] = resp.SCSIDevice10
-	storageDevices["scsi11"] = resp.SCSIDevice11
-	storageDevices["scsi12"] = resp.SCSIDevice12
-	storageDevices["scsi13"] = resp.SCSIDevice13
-
-	storageDevices["virtio0"] = resp.VirtualIODevice0
-	storageDevices["virtio1"] = resp.VirtualIODevice1
-	storageDevices["virtio2"] = resp.VirtualIODevice2
-	storageDevices["virtio3"] = resp.VirtualIODevice3
-	storageDevices["virtio4"] = resp.VirtualIODevice4
-	storageDevices["virtio5"] = resp.VirtualIODevice5
-	storageDevices["virtio6"] = resp.VirtualIODevice6
-	storageDevices["virtio7"] = resp.VirtualIODevice7
-	storageDevices["virtio8"] = resp.VirtualIODevice8
-	storageDevices["virtio9"] = resp.VirtualIODevice9
-	storageDevices["virtio10"] = resp.VirtualIODevice10
-	storageDevices["virtio11"] = resp.VirtualIODevice11
-	storageDevices["virtio12"] = resp.VirtualIODevice12
-	storageDevices["virtio13"] = resp.VirtualIODevice13
-	storageDevices["virtio14"] = resp.VirtualIODevice14
-	storageDevices["virtio15"] = resp.VirtualIODevice15
+	storageDevices := resp.CustomStorageDevices
 
 	currentDisk := d.Get(MkDisk)
 
@@ -92,10 +47,6 @@ func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorag
 			if v.Size == nil {
 				v.Size = new(types.DiskSize)
 			}
-
-			// defensive copy of the loop variable
-			iface := k
-			v.Interface = &iface
 		}
 	}
 
@@ -106,7 +57,7 @@ func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorag
 func CreateClone(
 	ctx context.Context,
 	d *schema.ResourceData,
-	planDisks map[string]vms.CustomStorageDevices,
+	planDisks vms.CustomStorageDevices,
 	allDiskInfo vms.CustomStorageDevices,
 	vmAPI *vms.Client,
 ) error {
@@ -116,45 +67,18 @@ func CreateClone(
 		diskInterface := diskBlock[mkDiskInterface].(string)
 		dataStoreID := diskBlock[mkDiskDatastoreID].(string)
 		diskSize := int64(diskBlock[mkDiskSize].(int))
-		prefix := DigitPrefix(diskInterface)
 
 		currentDiskInfo := allDiskInfo[diskInterface]
-		configuredDiskInfo := planDisks[prefix][diskInterface]
+		configuredDiskInfo := planDisks[diskInterface]
 
 		if currentDiskInfo == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
 
-			switch prefix {
-			case "virtio":
-				if diskUpdateBody.VirtualIODevices == nil {
-					diskUpdateBody.VirtualIODevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.VirtualIODevices[diskInterface] = configuredDiskInfo
-			case "sata":
-				if diskUpdateBody.SATADevices == nil {
-					diskUpdateBody.SATADevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.SATADevices[diskInterface] = configuredDiskInfo
-			case "scsi":
-				if diskUpdateBody.SCSIDevices == nil {
-					diskUpdateBody.SCSIDevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.SCSIDevices[diskInterface] = configuredDiskInfo
-
-			case "ide":
-				if diskUpdateBody.IDEDevices == nil {
-					diskUpdateBody.IDEDevices = vms.CustomStorageDevices{}
-				}
-
-				diskUpdateBody.IDEDevices[diskInterface] = configuredDiskInfo
-			}
+			diskUpdateBody.AddCustomStorageDevice(diskInterface, *configuredDiskInfo)
 
 			err := vmAPI.UpdateVM(ctx, diskUpdateBody)
 			if err != nil {
-				return fmt.Errorf("disk create fails: %w", err)
+				return fmt.Errorf("disk update fails: %w", err)
 			}
 
 			continue
@@ -225,7 +149,7 @@ func GetDiskDeviceObjects(
 	d *schema.ResourceData,
 	resource *schema.Resource,
 	disks []interface{},
-) (map[string]vms.CustomStorageDevices, error) {
+) (vms.CustomStorageDevices, error) {
 	var diskDevices []interface{}
 
 	if disks != nil {
@@ -234,7 +158,7 @@ func GetDiskDeviceObjects(
 		diskDevices = d.Get(MkDisk).([]interface{})
 	}
 
-	diskDeviceObjects := map[string]vms.CustomStorageDevices{}
+	diskDeviceObjects := vms.CustomStorageDevices{}
 
 	for _, diskEntry := range diskDevices {
 		diskDevice := &vms.CustomStorageDevice{
@@ -300,7 +224,6 @@ func GetDiskDeviceObjects(
 		diskDevice.Discard = &discard
 		diskDevice.FileID = &fileID
 		diskDevice.Format = &fileFormat
-		diskDevice.Interface = &diskInterface
 		diskDevice.Replicate = &replicate
 		diskDevice.Serial = &serial
 		diskDevice.Size = types.DiskSizeFromGigabytes(int64(size))
@@ -356,21 +279,16 @@ func GetDiskDeviceObjects(
 			}
 		}
 
-		baseDiskInterface := DigitPrefix(diskInterface)
-		if !strings.Contains(supportedDiskInterfaces, baseDiskInterface) {
+		if !slices.Contains(vms.StorageInterfaces, DigitPrefix(diskInterface)) {
 			errorMsg := fmt.Sprintf(
-				"Defined disk interface not supported. Interface was %s, but only %s are supported",
-				diskInterface, supportedDiskInterfaces,
+				"Defined disk interface not supported. Interface was %s, but only %v are supported",
+				diskInterface, vms.StorageInterfaces,
 			)
 
 			return diskDeviceObjects, errors.New(errorMsg)
 		}
 
-		if _, present := diskDeviceObjects[baseDiskInterface]; !present {
-			diskDeviceObjects[baseDiskInterface] = vms.CustomStorageDevices{}
-		}
-
-		diskDeviceObjects[baseDiskInterface][diskInterface] = diskDevice
+		diskDeviceObjects[diskInterface] = diskDevice
 	}
 
 	return diskDeviceObjects, nil
@@ -382,16 +300,14 @@ func CreateCustomDisks(
 	client proxmox.Client,
 	nodeName string,
 	vmID int,
-	storageDevices map[string]vms.CustomStorageDevices,
+	storageDevices vms.CustomStorageDevices,
 ) diag.Diagnostics {
-	for _, diskDevice := range storageDevices {
-		for _, disk := range diskDevice {
-			if disk != nil && disk.FileID != nil && *disk.FileID != "" {
-				// only custom disks with defined file ID
-				err := createCustomDisk(ctx, client, nodeName, vmID, *disk)
-				if err != nil {
-					return diag.FromErr(err)
-				}
+	for iface, disk := range storageDevices {
+		if disk != nil && disk.FileID != nil && *disk.FileID != "" {
+			// only custom disks with defined file ID
+			err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
+			if err != nil {
+				return diag.FromErr(err)
 			}
 		}
 	}
@@ -404,23 +320,24 @@ func createCustomDisk(
 	client proxmox.Client,
 	nodeName string,
 	vmID int,
-	d vms.CustomStorageDevice,
+	iface string,
+	disk vms.CustomStorageDevice,
 ) error {
 	fileFormat := dvDiskFileFormat
-	if d.Format != nil && *d.Format != "" {
-		fileFormat = *d.Format
+	if disk.Format != nil && *disk.Format != "" {
+		fileFormat = *disk.Format
 	}
 
 	//nolint:lll
 	commands := []string{
 		`set -e`,
 		ssh.TrySudo,
-		fmt.Sprintf(`file_id="%s"`, *d.FileID),
+		fmt.Sprintf(`file_id="%s"`, *disk.FileID),
 		fmt.Sprintf(`file_format="%s"`, fileFormat),
-		fmt.Sprintf(`datastore_id_target="%s"`, *d.DatastoreID),
+		fmt.Sprintf(`datastore_id_target="%s"`, *disk.DatastoreID),
 		fmt.Sprintf(`vm_id="%d"`, vmID),
-		fmt.Sprintf(`disk_options="%s"`, d.EncodeOptions()),
-		fmt.Sprintf(`disk_interface="%s"`, *d.Interface),
+		fmt.Sprintf(`disk_options="%s"`, disk.EncodeOptions()),
+		fmt.Sprintf(`disk_interface="%s"`, iface),
 		`source_image=$(try_sudo "pvesm path $file_id")`,
 		`imported_disk="$(try_sudo "qm importdisk $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
 		`disk_id="${datastore_id_target}:$imported_disk,${disk_options}"`,
@@ -441,8 +358,8 @@ func createCustomDisk(
 	})
 
 	err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
-		Disk: *d.Interface,
-		Size: *d.Size,
+		Disk: iface,
+		Size: *disk.Size,
 	})
 	if err != nil {
 		return fmt.Errorf("resizing disk: %w", err)
@@ -651,103 +568,62 @@ func Update(
 	nodeName string,
 	vmID int,
 	d *schema.ResourceData,
-	planDisks map[string]vms.CustomStorageDevices,
+	planDisks vms.CustomStorageDevices,
 	currentDisks vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
 ) (bool, error) {
 	rebootRequired := false
 
 	if d.HasChange(MkDisk) {
-		for prefix, diskMap := range planDisks {
-			if diskMap == nil {
+		for iface, disk := range planDisks {
+			var tmp *vms.CustomStorageDevice
+
+			switch {
+			case currentDisks[iface] == nil && disk != nil:
+				if disk.FileID != nil && *disk.FileID != "" {
+					// only disks with defined file ID are custom image disks that need to be created via import.
+					err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
+					if err != nil {
+						return false, fmt.Errorf("creating custom disk: %w", err)
+					}
+				} else {
+					// otherwise this is a blank disk that can be added directly via update API
+					tmp = disk
+				}
+			case currentDisks[iface] != nil:
+				// update existing disk
+				tmp = currentDisks[iface]
+			default:
+				// something went wrong
+				return false, fmt.Errorf("missing device %s", iface)
+			}
+
+			if tmp == nil || disk == nil {
 				continue
 			}
 
-			for key, disk := range diskMap {
-				var tmp *vms.CustomStorageDevice
-
-				switch {
-				case currentDisks[key] == nil && disk != nil:
-					if disk.FileID != nil && *disk.FileID != "" {
-						// only disks with defined file ID are custom image disks that need to be created via import.
-						err := createCustomDisk(ctx, client, nodeName, vmID, *disk)
-						if err != nil {
-							return false, fmt.Errorf("creating custom disk: %w", err)
-						}
-					} else {
-						// otherwise this is a blank disk that can be added directly via update API
-						tmp = disk
-					}
-				case currentDisks[key] != nil:
-					// update existing disk
-					tmp = currentDisks[key]
-				default:
-					// something went wrong
-					return false, fmt.Errorf("missing %s device %s", prefix, key)
-				}
-
-				if tmp == nil || disk == nil {
-					continue
-				}
-
-				if tmp.AIO != disk.AIO {
-					rebootRequired = true
-					tmp.AIO = disk.AIO
-				}
-
-				tmp.Backup = disk.Backup
-				tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
-				tmp.BurstableWriteSpeedMbps = disk.BurstableWriteSpeedMbps
-				tmp.Cache = disk.Cache
-				tmp.Discard = disk.Discard
-				tmp.IOThread = disk.IOThread
-				tmp.IopsRead = disk.IopsRead
-				tmp.IopsWrite = disk.IopsWrite
-				tmp.MaxIopsRead = disk.MaxIopsRead
-				tmp.MaxIopsWrite = disk.MaxIopsWrite
-				tmp.MaxReadSpeedMbps = disk.MaxReadSpeedMbps
-				tmp.MaxWriteSpeedMbps = disk.MaxWriteSpeedMbps
-				tmp.Replicate = disk.Replicate
-				tmp.Serial = disk.Serial
-				tmp.SSD = disk.SSD
-
-				switch prefix {
-				case "virtio":
-					{
-						if updateBody.VirtualIODevices == nil {
-							updateBody.VirtualIODevices = vms.CustomStorageDevices{}
-						}
-
-						updateBody.VirtualIODevices[key] = tmp
-					}
-				case "sata":
-					{
-						if updateBody.SATADevices == nil {
-							updateBody.SATADevices = vms.CustomStorageDevices{}
-						}
-
-						updateBody.SATADevices[key] = tmp
-					}
-				case "scsi":
-					{
-						if updateBody.SCSIDevices == nil {
-							updateBody.SCSIDevices = vms.CustomStorageDevices{}
-						}
-
-						updateBody.SCSIDevices[key] = tmp
-					}
-				case "ide":
-					{
-						if updateBody.IDEDevices == nil {
-							updateBody.IDEDevices = vms.CustomStorageDevices{}
-						}
-
-						updateBody.IDEDevices[key] = tmp
-					}
-				default:
-					return false, fmt.Errorf("device prefix %s not supported", prefix)
-				}
+			if tmp.AIO != disk.AIO {
+				rebootRequired = true
+				tmp.AIO = disk.AIO
 			}
+
+			tmp.Backup = disk.Backup
+			tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
+			tmp.BurstableWriteSpeedMbps = disk.BurstableWriteSpeedMbps
+			tmp.Cache = disk.Cache
+			tmp.Discard = disk.Discard
+			tmp.IOThread = disk.IOThread
+			tmp.IopsRead = disk.IopsRead
+			tmp.IopsWrite = disk.IopsWrite
+			tmp.MaxIopsRead = disk.MaxIopsRead
+			tmp.MaxIopsWrite = disk.MaxIopsWrite
+			tmp.MaxReadSpeedMbps = disk.MaxReadSpeedMbps
+			tmp.MaxWriteSpeedMbps = disk.MaxWriteSpeedMbps
+			tmp.Replicate = disk.Replicate
+			tmp.Serial = disk.Serial
+			tmp.SSD = disk.SSD
+
+			updateBody.AddCustomStorageDevice(iface, *tmp)
 		}
 	}
 
