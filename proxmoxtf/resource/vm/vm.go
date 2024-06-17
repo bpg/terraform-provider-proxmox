@@ -1849,23 +1849,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.SCSIHardware = &scsiHardware
 	}
 
-	if len(cdrom) > 0 || len(initialization) > 0 {
-		ideDevices = vms.CustomStorageDevices{
-			"ide0": &vms.CustomStorageDevice{
-				Enabled: false,
-			},
-			"ide1": &vms.CustomStorageDevice{
-				Enabled: false,
-			},
-			"ide2": &vms.CustomStorageDevice{
-				Enabled: false,
-			},
-			"ide3": &vms.CustomStorageDevice{
-				Enabled: false,
-			},
-		}
-	}
-
 	if len(cdrom) > 0 && cdrom[0] != nil {
 		cdromBlock := cdrom[0].(map[string]interface{})
 
