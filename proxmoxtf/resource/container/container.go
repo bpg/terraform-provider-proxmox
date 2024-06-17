@@ -1384,17 +1384,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	diskDatastoreID := diskBlock[mkDiskDatastoreID].(string)
 
-	var rootFS *containers.CustomRootFS
-
-	diskSize := diskBlock[mkDiskSize].(int)
-	if diskSize != dvDiskSize && diskDatastoreID != "" {
-		// This is a special case where the rootfs size is set to a non-default value at creation time.
-		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
-		rootFS = &containers.CustomRootFS{
-			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
-		}
-	}
-
 	features, err := containerGetFeatures(container, d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -1592,6 +1581,17 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 
 		mountPointArray = append(mountPointArray, mountPointObject)
+	}
+
+	var rootFS *containers.CustomRootFS
+
+	diskSize := diskBlock[mkDiskSize].(int)
+	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPointArray) > 0) {
+		// This is a special case where the rootfs size is set to a non-default value at creation time.
+		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
+		rootFS = &containers.CustomRootFS{
+			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+		}
 	}
 
 	networkInterface := d.Get(mkNetworkInterface).([]interface{})

@@ -67,7 +67,13 @@ resource "proxmox_virtual_environment_container" "test_container" {
 
   disk {
     datastore_id = "local-lvm"
-    size         = 8
+    size         = 4
+  }
+
+  mount_point {
+    volume = "local-lvm"
+    size   = "4G"
+    path   = "mnt/local"
   }
 
   description = <<-EOT
