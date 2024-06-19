@@ -7,8 +7,6 @@
 package cdrom
 
 import (
-	"regexp"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -29,10 +27,7 @@ func ResourceSchema() schema.Attribute {
 		Computed: true,
 		Validators: []validator.Map{
 			mapvalidator.KeysAre(
-				stringvalidator.RegexMatches(
-					regexp.MustCompile(`^(ide[0-3]|sata[0-5]|scsi([0-9]|1[0-3]))$`),
-					"one of `ide[0-3]`, `sata[0-5]`, `scsi[0-13]`",
-				),
+				validators.CDROMInterface(),
 			),
 		},
 		NestedObject: schema.NestedAttributeObject{

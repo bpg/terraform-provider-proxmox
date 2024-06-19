@@ -20,10 +20,10 @@ import (
 type Value = types.Map
 
 // NewValue returns a new Value with the given CD-ROM settings from the PVE API.
-func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
+func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags *diag.Diagnostics) Value {
 	// find storage devices with media=cdrom
 	cdroms := config.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
-		return device.Media != nil && *device.Media == "cdrom"
+		return device.Media != nil && *device.Media == "cdrom" && !device.IsCloudInitDrive(vmID)
 	})
 
 	elements := make(map[string]Model, len(cdroms))
