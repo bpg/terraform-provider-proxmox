@@ -17,6 +17,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cloudinit"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -30,19 +31,19 @@ import (
 type Model struct {
 	Description types.String `tfsdk:"description"`
 	CDROM       cdrom.Value  `tfsdk:"cdrom"`
-	CPU         cpu.Value    `tfsdk:"cpu"`
 	Clone       *struct {
 		ID      types.Int64 `tfsdk:"id"`
 		Retries types.Int64 `tfsdk:"retries"`
 	} `tfsdk:"clone"`
-	ID            types.Int64     `tfsdk:"id"`
-	Name          types.String    `tfsdk:"name"`
-	NodeName      types.String    `tfsdk:"node_name"`
-	StopOnDestroy types.Bool      `tfsdk:"stop_on_destroy"`
-	Tags          stringset.Value `tfsdk:"tags"`
-	Template      types.Bool      `tfsdk:"template"`
-	Timeouts      timeouts.Value  `tfsdk:"timeouts"`
-	VGA           vga.Value       `tfsdk:"vga"`
+	CloudInit cloudinit.Value `tfsdk:"initialization"`
+	CPU       cpu.Value       `tfsdk:"cpu"`
+	ID        types.Int64     `tfsdk:"id"`
+	Name      types.String    `tfsdk:"name"`
+	NodeName  types.String    `tfsdk:"node_name"`
+	StopOnDestroy types.Bool      `tfsdk:"stop_on_destroy"`Tags      stringset.Value `tfsdk:"tags"`
+	Template  types.Bool      `tfsdk:"template"`
+	Timeouts  timeouts.Value  `tfsdk:"timeouts"`
+	VGA       vga.Value       `tfsdk:"vga"`
 }
 
 // read retrieves the current state of the resource from the API and updates the state.
@@ -84,10 +85,10 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 	model.Template = types.BoolPointerValue(config.Template.PointerBool())
 
 	// Blocks
+	model.CDROM = cdrom.NewValue(ctx, config, *status.VMID, diags)
+	model.CloudInit = cloudinit.NewValue(ctx, config, *status.VMID, diags)
 	model.CPU = cpu.NewValue(ctx, config, diags)
 	model.VGA = vga.NewValue(ctx, config, diags)
-
-	model.CDROM = cdrom.NewValue(ctx, config, diags)
 
 	return true
 }

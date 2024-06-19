@@ -7,14 +7,13 @@
 package cloudinit
 
 import (
-	"regexp"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 )
 
 // ResourceSchema defines the schema for the CPU resource.
@@ -42,11 +41,9 @@ func ResourceSchema() schema.Attribute {
 					"`ide0` and `ide2` of IDE interfaces.",
 				Optional: true,
 				Computed: true,
+				Default:  stringdefault.StaticString("ide2"),
 				Validators: []validator.String{
-					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^(ide[0-3]|sata[0-5]|scsi([0-9]|1[0-3]))$`),
-						"one of `ide[0-3]`, `sata[0-5]`, `scsi[0-13]`",
-					),
+					validators.CDROMInterface(),
 				},
 			},
 			"dns": schema.SingleNestedAttribute{
