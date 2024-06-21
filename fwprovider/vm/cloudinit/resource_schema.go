@@ -9,7 +9,9 @@ package cloudinit
 import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
@@ -21,7 +23,6 @@ func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		Description: "The cloud-init configuration.",
 		Optional:    true,
-		Computed:    true,
 		Attributes: map[string]schema.Attribute{
 			"datastore_id": schema.StringAttribute{
 				Description: "The identifier for the datastore to create the cloud-init disk in (defaults to `local-lvm`)",
@@ -30,6 +31,10 @@ func ResourceSchema() schema.Attribute {
 				Default:     stringdefault.StaticString("local-lvm"),
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
+				},
+				// TODO: add support for datastore migration
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"interface": schema.StringAttribute{
@@ -45,22 +50,22 @@ func ResourceSchema() schema.Attribute {
 				Validators: []validator.String{
 					validators.CDROMInterface(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"dns": schema.SingleNestedAttribute{
 				Description: "The DNS configuration.",
 				Optional:    true,
-				Computed:    true,
 				Attributes: map[string]schema.Attribute{
 					"domain": schema.StringAttribute{
 						Description: "The domain name to use for the VM.",
 						Optional:    true,
-						Computed:    true,
 					},
 					"servers": schema.ListAttribute{
 						Description: "The list of DNS servers to use.",
 						ElementType: customtypes.IPAddrType{},
 						Optional:    true,
-						Computed:    true,
 					},
 				},
 			},
