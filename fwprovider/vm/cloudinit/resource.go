@@ -14,33 +14,28 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 )
 
-// Value represents the type for CPU settings.
-type Value = types.Object
-
-type DNSValue = types.Object
-
 // NewValue returns a new Value with the given CPU settings from the PVE API.
-func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags *diag.Diagnostics) Value {
-	cloudinit := Model{}
+func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags *diag.Diagnostics) *Model {
+	ci := Model{}
 
 	devices := config.CustomStorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
 		return device.IsCloudInitDrive(vmID)
 	})
 
 	if len(devices) != 1 {
-		return types.ObjectNull(attributeTypes())
+		return nil
 	}
 
 	for iface, device := range devices {
-		cloudinit.Interface = types.StringValue(iface)
-		cloudinit.DatastoreId = types.StringValue(device.GetDatastoreID())
+		ci.Interface = types.StringValue(iface)
+		ci.DatastoreID = types.StringValue(device.GetDatastoreID())
 
 		dns := ModelDNS{}
 		dns.Domain = types.StringPointerValue(config.CloudInitDNSDomain)
@@ -56,41 +51,25 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags 
 		}
 
 		if !reflect.DeepEqual(dns, ModelDNS{}) {
-			dnsObj, d := types.ObjectValueFrom(ctx, attributeTypesDNS(), dns)
-			diags.Append(d...)
-
-			cloudinit.DNS = dnsObj
+			ci.DNS = &dns
 		}
 
-		obj, d := types.ObjectValueFrom(ctx, attributeTypes(), cloudinit)
-		diags.Append(d...)
-
-		return obj
+		return &ci
 	}
 
-	return types.ObjectNull(attributeTypes())
+	return nil
 }
 
-func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
-	var plan Model
-
-	if planValue.IsNull() || planValue.IsUnknown() {
-		return
-	}
-
-	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
-
-	if d.HasError() {
+// FillCreateBody fills the CreateRequestBody with the Cloud-Init settings from the Value.
+func FillCreateBody(ctx context.Context, plan *Model, body *vms.CreateRequestBody) {
+	if plan == nil {
 		return
 	}
 
 	ci := vms.CustomCloudInitConfig{}
 
-	if !plan.DNS.IsUnknown() {
-		var dns ModelDNS
-
-		plan.DNS.As(ctx, &dns, basetypes.ObjectAsOptions{})
+	if plan.DNS != nil {
+		dns := *plan.DNS
 
 		if !dns.Domain.IsUnknown() {
 			ci.SearchDomain = dns.Domain.ValueStringPointer()
@@ -98,6 +77,7 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 
 		if !dns.Servers.IsUnknown() {
 			var servers []string
+
 			dns.Servers.ElementsAs(ctx, &servers, false)
 
 			ci.Nameserver = ptr.Ptr(strings.Join(servers, " "))
@@ -108,9 +88,67 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 
 	device := vms.CustomStorageDevice{
 		Enabled:    true,
-		FileVolume: fmt.Sprintf("%s:cloudinit", plan.DatastoreId.ValueString()),
+		FileVolume: fmt.Sprintf("%s:cloudinit", plan.DatastoreID.ValueString()),
 		Media:      ptr.Ptr("cdrom"),
 	}
 
 	body.AddCustomStorageDevice(plan.Interface.ValueString(), device)
+}
+
+// FillUpdateBody fills the UpdateRequestBody with the CPU settings from the Value.
+func FillUpdateBody(
+	ctx context.Context,
+	plan, state *Model,
+	updateBody *vms.UpdateRequestBody,
+	isClone bool,
+	diags *diag.Diagnostics,
+) {
+	if plan == nil || reflect.DeepEqual(plan, state) {
+		return
+	}
+
+	del := func(field ...string) {
+		updateBody.Delete = append(updateBody.Delete, field...)
+	}
+
+	// TODO: migrate cloud init to another datastore
+
+	if !reflect.DeepEqual(plan.DNS, state.DNS) {
+		if plan.DNS == nil && state.DNS != nil && !isClone {
+			del("searchdomain", "nameserver")
+		} else if plan.DNS != nil {
+			ci := vms.CustomCloudInitConfig{}
+
+			planDNS := plan.DNS
+			stateDNS := state.DNS
+
+			if !planDNS.Domain.Equal(stateDNS.Domain) {
+				if attribute.ShouldBeRemoved(planDNS.Domain, stateDNS.Domain, isClone) {
+					del("searchdomain")
+				} else if attribute.IsDefined(planDNS.Domain) {
+					ci.SearchDomain = planDNS.Domain.ValueStringPointer()
+				}
+			}
+
+			if !planDNS.Servers.Equal(stateDNS.Servers) {
+				if attribute.ShouldBeRemoved(planDNS.Servers, stateDNS.Servers, isClone) {
+					del("nameserver")
+				} else if attribute.IsDefined(planDNS.Servers) {
+					// TODO: duplicates code from FillCreateBody
+					var servers []string
+
+					planDNS.Servers.ElementsAs(ctx, &servers, false)
+
+					//// special case for the servers list, if we want to remove them during update
+					//if len(servers) == 0 {
+					//	del("nameserver")
+					//} else {
+					ci.Nameserver = ptr.Ptr(strings.Join(servers, " "))
+					//}
+				}
+			}
+
+			updateBody.CloudInitConfig = &ci
+		}
+	}
 }
