@@ -82,7 +82,7 @@ jobs:
         run: go test -json -v ./... 2>&1 | tee /tmp/gotest.log | gotestfmt -hide empty-packages
 
       - name: Upload test log
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-log
