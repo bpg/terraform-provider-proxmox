@@ -10,8 +10,8 @@ package utils
 func ConvertToStringSlice(interfaceSlice []interface{}) []string {
 	resultSlice := make([]string, len(interfaceSlice))
 
-	for _, val := range interfaceSlice {
-		resultSlice = append(resultSlice, val.(string))
+	for i, val := range interfaceSlice {
+		resultSlice[i] = val.(string)
 	}
 
 	return resultSlice

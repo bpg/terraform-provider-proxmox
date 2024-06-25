@@ -374,18 +374,16 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	// stop := d.Get(mkStopOnDestroy).(bool)
-
 	if status.Status != "stopped" {
-		// if stop {
-		if e := vmStop(ctx, vmAPI); e != nil {
-			resp.Diagnostics.AddWarning("Failed to stop VM", e.Error())
+		if state.StopOnDestroy.ValueBool() {
+			if e := vmStop(ctx, vmAPI); e != nil {
+				resp.Diagnostics.AddWarning("Failed to stop VM", e.Error())
+			}
+		} else {
+			if e := vmShutdown(ctx, vmAPI); e != nil {
+				resp.Diagnostics.AddWarning("Failed to shut down VM", e.Error())
+			}
 		}
-		// } else {
-		// 	if e := vmShutdown(ctx, vmAPI); e != nil {
-		// 		resp.Diagnostics.AddWarning("Failed to shut down VM", e.Error())
-		// 	}
-		// }
 	}
 
 	err = vmAPI.DeleteVM(ctx)
