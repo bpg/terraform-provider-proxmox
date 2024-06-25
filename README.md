@@ -10,17 +10,17 @@
 [![Buy Me A Coffee](https://img.shields.io/badge/-buy%20me%20a%20coffee-5F7FFF?logo=buymeacoffee&labelColor=gray&logoColor=FFDD00)](https://www.buymeacoffee.com/bpgca)
 [![Wakatime](https://wakatime.com/badge/github/bpg/terraform-provider-proxmox.svg)](https://wakatime.com/@a51a1a51-85c3-497b-b88a-3b310a709909/projects/vdtgmpvjom)
 
-A Terraform / OpenTofu Provider which adds support for Proxmox solutions.
+A Terraform / OpenTofu Provider that adds support for Proxmox solutions.
 
 This repository is a fork of <https://github.com/danitso/terraform-provider-proxmox> which is no longer maintained.
 
-## Compatibility promise
+## Compatibility Promise
 
 This provider is compatible with the latest version of Proxmox VE (currently 8.2).
 While it may work with older 7.x versions, it is not guaranteed to do so.
 
-While provider is on version 0.x, it is not guaranteed to be backwards compatible with all previous minor versions.
-However, we will try to keep the backwards compatibility between provider versions as much as possible.
+While the provider is on version 0.x, it is not guaranteed to be backward compatible with all previous minor versions.
+However, we will try to maintain backward compatibility between provider versions as much as possible.
 
 ## Requirements
 
@@ -29,32 +29,32 @@ However, we will try to keep the backwards compatibility between provider versio
 - [Terraform](https://www.terraform.io/downloads.html) 1.5.x+ or [OpenTofu](https://opentofu.org) 1.6.x
 - [Go](https://golang.org/doc/install) 1.22 (to build the provider plugin)
 
-## Using the provider
+## Using the Provider
 
 You can find the latest release and its documentation in the [Terraform Registry](https://registry.terraform.io/providers/bpg/proxmox/latest).
 
-## Testing the provider
+## Testing the Provider
 
-In order to test the provider, you can simply run `make test`.
+To test the provider, simply run `make test`.
 
 ```sh
 make test
 ```
 
-Tests are limited to regression tests, ensuring backwards compatibility.
+Tests are limited to regression tests, ensuring backward compatibility.
 
 A limited number of acceptance tests are available in the `proxmoxtf/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
 These tests are not run by default, as they require a Proxmox VE environment to be available.
-They can be run using `make testacc`, the Proxmox connection can be configured using environment variables, see provider documentation for details.
+They can be run using `make testacc`. The Proxmox connection can be configured using environment variables; see the provider documentation for details.
 
-## Deploying the example resources
+## Deploying the Example Resources
 
-There are number of TF examples in the `example` directory, which can be used to deploy a Container, VM, or other Proxmox resources on your test Proxmox environment.
+There are a number of TF examples in the `example` directory, which can be used to deploy a Container, VM, or other Proxmox resources in your test Proxmox environment.
 The following assumptions are made about the test environment:
 
 - It has one node named `pve`
 - The node has local storages named `local` and `local-lvm`
-- The "Snippets" content type is enabled in `local` storage
+- The "Snippets" content type is enabled in the `local` storage
 
 Create `example/terraform.tfvars` with the following variables:
 
@@ -66,22 +66,22 @@ virtual_environment_api_token                = "root@pam!terraform=00000000-0000
 
 Then run `make example` to deploy the example resources.
 
-If you don't have free proxmox cluster to play with, there is dedicated [how-to tutorial](docs/guides/setup-proxmox-for-tests.md) how to setup Proxmox inside VM and run `make example` on it.
+If you don't have a free Proxmox cluster to play with, there is a dedicated [how-to tutorial](docs/guides/setup-proxmox-for-tests.md) on how to set up Proxmox inside a VM and run `make example` on it.
 
-## Future work
+## Future Work
 
 The provider is using the [Terraform SDKv2](https://developer.hashicorp.com/terraform/plugin/sdkv2), which is considered legacy and is in maintenance mode.
-The work has started to migrate the provider to the new [Terraform Plugin Framework](https://www.terraform.io/docs/extend/plugin-sdk.html), with aim to release it as a new major version **1.0**.
+Work has started to migrate the provider to the new [Terraform Plugin Framework](https://www.terraform.io/docs/extend/plugin-sdk.html), with the aim of releasing it as a new major version **1.0**.
 
-## Known issues
+## Known Issues
 
-### Disk images cannot be imported by non-PAM accounts
+### Disk Images Cannot Be Imported by Non-PAM Accounts
 
 Due to limitations in the Proxmox VE API, certain actions need to be performed using SSH. This requires the use of a PAM account (standard Linux account).
 
-### Disk images from VMware cannot be uploaded or imported
+### Disk Images from VMware Cannot Be Uploaded or Imported
 
-Proxmox VE is not currently supporting VMware disk images directly.
+Proxmox VE does not currently support VMware disk images directly.
 However, you can still use them as disk images by using this workaround:
 
 ```hcl
@@ -112,15 +112,15 @@ resource "proxmox_virtual_environment_vm" "example" {
 }
 ```
 
-### Snippets cannot be uploaded by non-PAM accounts
+### Snippets Cannot Be Uploaded by Non-PAM Accounts
 
 Due to limitations in the Proxmox VE API, certain files (snippets, backups) need to be uploaded using SFTP.
 This requires the use of a PAM account (standard Linux account).
 
-### Cluster hardware mappings cannot be created by non-PAM accounts
+### Cluster Hardware Mappings Cannot Be Created by Non-PAM Accounts
 
 Due to limitations in the Proxmox VE API, cluster hardware mappings must be created using the `root` PAM account (standard Linux account) due to [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit#Virtualization) interactions.
-Hardware mappings allow to use [PCI "passthrough"](https://pve.proxmox.com/wiki/PCI_Passthrough) and [map physical USB ports](https://pve.proxmox.com/wiki/USB_Physical_Port_Mapping).
+Hardware mappings allow the use of [PCI "passthrough"](https://pve.proxmox.com/wiki/PCI_Passthrough) and [map physical USB ports](https://pve.proxmox.com/wiki/USB_Physical_Port_Mapping).
 
 ## Contributors
 
@@ -143,7 +143,6 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Ben Bouillet](https://github.com/benbouillet)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
-
 
 ## Acknowledgements
 
