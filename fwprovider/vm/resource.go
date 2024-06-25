@@ -374,11 +374,8 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		return
 	}
 
-	// stop := d.Get(mkStopOnDestroy).(bool)
-	stop := false
-
 	if status.Status != "stopped" {
-		if stop {
+		if state.StopOnDestroy.ValueBool() {
 			if e := vmStop(ctx, vmAPI); e != nil {
 				resp.Diagnostics.AddWarning("Failed to stop VM", e.Error())
 			}
@@ -444,6 +441,9 @@ func (r *Resource) ImportState(
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// not clear why this is needed, but ImportStateVerify fails without it
+	state.StopOnDestroy = types.BoolValue(false)
 
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)

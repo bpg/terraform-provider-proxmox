@@ -101,8 +101,8 @@ func (r *haResourceResource) Schema(
 				Optional:    true,
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
-					stringvalidator.RegexMatches(regexp.MustCompile(`^[^\s]|^$`), "must not start with whitespace"),
-					stringvalidator.RegexMatches(regexp.MustCompile(`[^\s]$|^$`), "must not end with whitespace"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^\S|^$`), "must not start with whitespace"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`\S$|^$`), "must not end with whitespace"),
 				},
 			},
 			"group": schema.StringAttribute{

@@ -49,6 +49,9 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
+      - name: Set up gotestfmt
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
+
       - uses: hashicorp/setup-terraform@651471c36a6092792c552e8b1bef71e592b462d8 # v3.1.1
         with:
           terraform_version: ${{ matrix.terraform }}.*
@@ -78,4 +81,3 @@ jobs:
         with:
           name: test-log
           path: /tmp/gotest.log
-          if-no-files-found: error

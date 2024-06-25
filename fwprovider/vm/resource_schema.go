@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
@@ -87,6 +88,13 @@ func (r *Resource) Schema(
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
+			},
+			"stop_on_destroy": schema.BoolAttribute{
+				Description:         "Set to true to stop (rather than shutdown) the VM on destroy.",
+				MarkdownDescription: "Set to true to stop (rather than shutdown) the VM on destroy (defaults to `false`).",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
 			},
 			"tags": stringset.ResourceAttribute("The tags assigned to the VM.", ""),
 			"template": schema.BoolAttribute{
