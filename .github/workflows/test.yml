@@ -83,7 +83,7 @@ jobs:
 
       - name: Upload test log
         uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ steps.filter.outputs.go == 'true' }}
         with:
           name: test-log
           path: /tmp/gotest.log
