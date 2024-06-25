@@ -1,3 +1,5 @@
+//go:build acceptance || all
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -13,146 +15,248 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
 const (
 	accTestContainerName = "proxmox_virtual_environment_container.test_container"
 )
 
-//nolint:gochecknoglobals
-var (
-	accTestContainerID  = 100000 + rand.Intn(99999) //nolint:gosec
-	accCloneContainerID = 200000 + rand.Intn(99999) //nolint:gosec
-)
-
-func TestAccResourceContainer(t *testing.T) { //nolint:wsl
-	// download fails with 404 or "exit code 8" if run in parallel
-	// t.Parallel()
+func TestAccResourceContainer(t *testing.T) {
+	t.Parallel()
 
 	te := InitEnvironment(t)
 
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: te.AccProviders,
-		Steps: []resource.TestStep{
-			{
-				Config: te.RenderConfig(testAccResourceContainerCreateConfig(te, false)),
-				Check:  testAccResourceContainerCreateCheck(te),
-			},
-			{
-				Config: te.RenderConfig(testAccResourceContainerCreateConfig(te, true) + testAccResourceContainerCreateCloneConfig(te)),
-				Check:  testAccResourceContainerCreateCloneCheck(te),
-			},
-		},
+	imageFileName := gofakeit.Word() + "-ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDClone := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":        imageFileName,
+		"TestContainerID":      accTestContainerID,
+		"TestContainerIDClone": accTestContainerIDClone,
 	})
-}
 
-func testAccResourceContainerCreateConfig(te *Environment, isTemplate bool) string {
-	te.t.Helper()
+	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
+		Content:  ptr.Ptr("vztmpl"),
+		FileName: ptr.Ptr(imageFileName),
+		Node:     ptr.Ptr(te.NodeName),
+		Storage:  ptr.Ptr(te.DatastoreID),
+		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst", te.ContainerImagesServer)),
+	})
+	require.NoError(t, err)
 
-	return fmt.Sprintf(`
-resource "proxmox_virtual_environment_download_file" "ubuntu_container_template" {
-	content_type = "vztmpl"
-	datastore_id = "local"
-	node_name = "{{.NodeName}}"
-	url = "{{.ContainerImagesServer}}/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
-    overwrite_unmanaged = true
-}
-resource "proxmox_virtual_environment_container" "test_container" {
-  node_name = "{{.NodeName}}"
-  vm_id     = %d
-  template  = %t
+	t.Cleanup(func() {
+		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName))
+		require.NoError(t, e)
+	})
 
-  disk {
-    datastore_id = "local-lvm"
-    size         = 4
-  }
+	tests := []struct {
+		name string
+		step []resource.TestStep
+	}{
+		{"crete and start container", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				mount_point {
+					volume = "local-lvm"
+					size   = "4G"
+					path   = "mnt/local"
+				}
+				description = <<-EOT
+					my
+					description
+					value
+				EOT
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+						  address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "ubuntu"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
+				func(*terraform.State) error {
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					defer cancel()
 
-  mount_point {
-    volume = "local-lvm"
-    size   = "4G"
-    path   = "mnt/local"
-  }
+					err := te.NodeClient().Container(accTestContainerID).WaitForContainerStatus(ctx, "running")
+					require.NoError(te.t, err, "container did not start")
 
-  description = <<-EOT
-    my
-    description
-    value
-  EOT
+					return nil
+				},
+			),
+		}}},
+		{"update mount points", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// mount point deletion: https://github.com/bpg/terraform-provider-proxmox/issues/1392
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+				    vm_id     = {{.RandomVMID}}
+				  	started   = false
+				    disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+				    mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "mnt/local1"
+				    }
+					mount_point {
+						volume = "local"
+						size   = "8G"
+						path   = "mnt/local2"
+				    }
+				    initialization {
+				  		hostname = "test"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+				    }
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+					"mount_point.#": "2",
+				}),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// mount point deletion: https://github.com/bpg/terraform-provider-proxmox/issues/1392
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+				    node_name = "{{.NodeName}}"
+				  	started   = false
+				    disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+				    mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "mnt/local1"
+				    }
+				    initialization {
+				  		hostname = "test"
+						ip_config {
+						  	ipv4 {
+								address = "dhcp"
+						  	}
+						}
+				    }
+				    network_interface {
+				  	    name = "vmbr0"
+				    }
+				    operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+				    }
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
+					"mount_point.#": "2",
+				}),
+			},
+		}},
+		{"clone container", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.RandomVMID}}
+				template  = true
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				mount_point {
+					volume = "local-lvm"
+					size   = "4G"
+					path   = "mnt/local"
+				}
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+						  address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "ubuntu"
+				}
+			}
+			resource "proxmox_virtual_environment_container" "test_container_clone" {
+				depends_on = [proxmox_virtual_environment_container.test_container]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDClone}}
+				
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container.id
+				}
+				
+				initialization {
+					hostname = "test-clone"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				func(*terraform.State) error {
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					defer cancel()
 
-  initialization {
-    hostname = "test"
+					err := te.NodeClient().Container(accTestContainerIDClone).WaitForContainerStatus(ctx, "running")
+					require.NoError(te.t, err, "container did not start")
 
-    ip_config {
-      ipv4 {
-        address = "dhcp"
-      }
-    }
-  }
+					return nil
+				},
+			),
+		}}},
+	}
 
-  network_interface {
-    name = "vmbr0"
-  }
-
-  operating_system {
-	template_file_id = proxmox_virtual_environment_download_file.ubuntu_container_template.id
-    type             = "ubuntu"
-  }
-}
-`, accTestContainerID, isTemplate)
-}
-
-func testAccResourceContainerCreateCheck(te *Environment) resource.TestCheckFunc {
-	te.t.Helper()
-
-	return resource.ComposeTestCheckFunc(
-		resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
-		func(*terraform.State) error {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-
-			err := te.NodeClient().Container(accTestContainerID).WaitForContainerStatus(ctx, "running")
-			require.NoError(te.t, err, "container did not start")
-
-			return nil
-		},
-	)
-}
-
-func testAccResourceContainerCreateCloneConfig(te *Environment) string {
-	te.t.Helper()
-
-	return fmt.Sprintf(`
-resource "proxmox_virtual_environment_container" "test_container_clone" {
-  depends_on = [proxmox_virtual_environment_container.test_container]
-  node_name = "{{.NodeName}}"
-  vm_id     = %d
-
-  clone {
-	vm_id = proxmox_virtual_environment_container.test_container.id
-  }
-
-  initialization {
-    hostname = "test-clone"
-  }
-}
-`, accCloneContainerID)
-}
-
-func testAccResourceContainerCreateCloneCheck(te *Environment) resource.TestCheckFunc {
-	te.t.Helper()
-
-	return resource.ComposeTestCheckFunc(
-		func(*terraform.State) error {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-
-			err := te.NodeClient().Container(accCloneContainerID).WaitForContainerStatus(ctx, "running")
-			require.NoError(te.t, err, "container did not start")
-
-			return nil
-		},
-	)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.step,
+			})
+		})
+	}
 }
