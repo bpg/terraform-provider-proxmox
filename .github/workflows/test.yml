@@ -73,11 +73,21 @@ jobs:
         if: ${{ steps.filter.outputs.go == 'true' }}
         run: go mod download
 
+      - name: Set up gotestfmt
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
+
       - name: Unit tests
         if: ${{ steps.filter.outputs.go == 'true' }}
         timeout-minutes: 10
-        run: go test -v -cover ./...
+        run:  go test -json -v -cover ./... 2>&1 | tee /tmp/gotest.log | gotestfmt -hide empty-packages
+
+      - name: Upload test log
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: test-log
+          path: /tmp/gotest.log
+          if-no-files-found: error
 
       - name: Check for uncommitted changes in generated docs
         run: make docs && git diff --exit-code
-
