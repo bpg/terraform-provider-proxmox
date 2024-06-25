@@ -69,4 +69,13 @@ jobs:
           PROXMOX_VE_ACC_NODE_SSH_PORT: ${{ matrix.port }}
           PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER: ${{ secrets.PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER }}
           PROXMOX_VE_ACC_CONTAINER_IMAGES_SERVER: ${{ secrets.PROXMOX_VE_ACC_CONTAINER_IMAGES_SERVER }}
-        run: make testacc
+        run:
+          go test -json --timeout=30m --tags=acceptance -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/... 2>&1 | tee /tmp/gotest.log | gotestfmt -hide empty-packages
+
+      - name: Upload test log
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: test-log
+          path: /tmp/gotest.log
+          if-no-files-found: error
