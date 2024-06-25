@@ -442,6 +442,9 @@ func (r *Resource) ImportState(
 		return
 	}
 
+	// not clear why this is needed, but ImportStateVerify fails without it
+	state.StopOnDestroy = types.BoolValue(false)
+
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 }
