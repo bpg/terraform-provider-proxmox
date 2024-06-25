@@ -42,7 +42,7 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   operating_system {
     template_file_id = proxmox_virtual_environment_file.latest_ubuntu_22_jammy_lxc_img.id
     # Or you can use a volume ID, as obtained from a "pvesm list <storage>"
-    # template_file_id = "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
+    # template_file_id = "local:vztmpl/jammy-server-cloudimg-amd64.tar.gz"
     type             = "ubuntu"
   }
 
