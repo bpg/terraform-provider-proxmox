@@ -1,3 +1,5 @@
+//go:build acceptance || all
+
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -31,18 +33,17 @@ func TestAccResourceContainer(t *testing.T) {
 
 	te := InitEnvironment(t)
 
-	ctx := context.Background()
-
 	imageFileName := gofakeit.Word() + "-ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
 	accTestContainerID := 100000 + rand.Intn(99999)
 	accTestContainerIDClone := 100000 + rand.Intn(99999)
+
 	te.AddTemplateVars(map[string]interface{}{
 		"ImageFileName":        imageFileName,
 		"TestContainerID":      accTestContainerID,
 		"TestContainerIDClone": accTestContainerIDClone,
 	})
 
-	err := te.NodeStorageClient().DownloadFileByURL(ctx, &storage.DownloadURLPostRequestBody{
+	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
 		Content:  ptr.Ptr("vztmpl"),
 		FileName: ptr.Ptr(imageFileName),
 		Node:     ptr.Ptr(te.NodeName),
