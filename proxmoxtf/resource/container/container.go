@@ -2831,13 +2831,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	// Prepare the new mount point configuration.
 	if d.HasChange(mkMountPoint) {
-		mountPoint := d.Get(mkMountPoint).([]interface{})
+		_, newMountPoints := d.GetChange(mkMountPoint)
+
+		mountPoints := newMountPoints.([]interface{})
 		mountPointArray := make(
 			containers.CustomMountPointArray,
-			len(mountPoint),
+			len(mountPoints),
 		)
 
-		for i, mp := range mountPoint {
+		for i, mp := range mountPoints {
 			mountPointMap := mp.(map[string]interface{})
 			mountPointObject := containers.CustomMountPoint{}
 
@@ -2861,7 +2863,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			mountPointObject.Volume = volume
 
 			if len(mountOptions) > 0 {
-				mountOptionsArray := make([]string, 0, len(mountPoint))
+				mountOptionsArray := make([]string, 0, len(mountPoints))
 
 				for _, option := range mountOptions {
 					mountOptionsArray = append(mountOptionsArray, option.(string))
@@ -3040,7 +3042,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
-	if !bool(template) && rebootRequired {
+	if !bool(template) && started && rebootRequired {
 		rebootTimeout := 300
 
 		e = containerAPI.RebootContainer(

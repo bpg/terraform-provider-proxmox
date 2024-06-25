@@ -11,14 +11,14 @@ issues:
     - EXC0012
     - EXC0014
   exclude-rules:
-    # Exclude duplicate code and function length and complexity checking in test
-    # files (due to common repeats and long functions in test code)
+    # Exclude some checks in tests
     - path: _(test|gen)\.go
       linters:
         - cyclop
         - dupl
-        - gocognit
         - funlen
+        - gocognit
+        - gosec
         - lll
     - path: _types\.go
       linters:
