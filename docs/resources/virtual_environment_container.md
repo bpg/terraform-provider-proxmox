@@ -41,6 +41,8 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
 
   operating_system {
     template_file_id = proxmox_virtual_environment_file.latest_ubuntu_22_jammy_lxc_img.id
+    # Or you can use a volume ID, as obtained from a "pvesm list <storage>"
+    # template_file_id = "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
     type             = "ubuntu"
   }
 
@@ -187,6 +189,8 @@ output "ubuntu_container_public_key" {
 - `node_name` - (Required) The name of the node to assign the container to.
 - `operating_system` - (Required) The Operating System configuration.
     - `template_file_id` - (Required) The identifier for an OS template file.
+       This can be a `Volid` from the output of `pvesm list <storage>`, amongst
+       other choices.
     - `type` - (Optional) The type (defaults to `unmanaged`).
         - `alpine` - Alpine.
         - `archlinux` - Arch Linux.
