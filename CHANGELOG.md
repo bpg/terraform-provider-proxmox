@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.60.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.60.0...v0.60.1) (2024-06-25)
+
+
+### Bug Fixes
+
+* **docs:** Mention alternate valid use of Volid's for containers ([#1407](https://github.com/bpg/terraform-provider-proxmox/issues/1407)) ([763654a](https://github.com/bpg/terraform-provider-proxmox/commit/763654ac8f88787de7c4d64e18aaf33e82990719))
+* **lxc:** use default rootfs size (4Gb) prevents creation of mount points ([#1398](https://github.com/bpg/terraform-provider-proxmox/issues/1398)) ([4a8bf8d](https://github.com/bpg/terraform-provider-proxmox/commit/4a8bf8da27295d6fcca4be8cae05aedfe48d7cf3))
+
+
+### Miscellaneous
+
+* **code:** fix code quality warnings ([#1409](https://github.com/bpg/terraform-provider-proxmox/issues/1409)) ([4f70459](https://github.com/bpg/terraform-provider-proxmox/commit/4f70459c264e1d9d3e6541fa7276d5de57fa5d46))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.0.3 → v7.0.4) ([#1405](https://github.com/bpg/terraform-provider-proxmox/issues/1405)) ([c926484](https://github.com/bpg/terraform-provider-proxmox/commit/c926484249af93b75c64d2acba3e1460f16f35da))
+* refactor container acc test ([#1408](https://github.com/bpg/terraform-provider-proxmox/issues/1408)) ([a0d9300](https://github.com/bpg/terraform-provider-proxmox/commit/a0d9300f0ff1f49b4df08691f4c2286b276f84b5))
+* **vm:** fix regression after storage devices refactoring ([#1399](https://github.com/bpg/terraform-provider-proxmox/issues/1399)) ([5d1c8c6](https://github.com/bpg/terraform-provider-proxmox/commit/5d1c8c606d61d91360325228655ccd372848602a))
+* **vm:** refactor storage devices handling from/to API ([#1394](https://github.com/bpg/terraform-provider-proxmox/issues/1394)) ([cc7fc63](https://github.com/bpg/terraform-provider-proxmox/commit/cc7fc63ec1c167344191cd2d3496139747e5c112))
+
 ## [0.60.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.59.1...v0.60.0) (2024-06-14)
 
 
