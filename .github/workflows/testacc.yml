@@ -80,5 +80,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-log
+          name: test-log-${{ matrix.os }}
           path: ${{ runner.temp }}/gotest-${{ matrix.os }}.log
