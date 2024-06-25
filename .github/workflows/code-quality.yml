@@ -10,6 +10,7 @@ on:
 jobs:
   qodana:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'bpg'
     permissions:
       contents: write
       pull-requests: write

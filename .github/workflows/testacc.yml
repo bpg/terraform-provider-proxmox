@@ -10,6 +10,7 @@ on:
 
 jobs:
   acceptance:
+    if: github.repository_owner == 'bpg'
     strategy:
       fail-fast: false
       matrix:
