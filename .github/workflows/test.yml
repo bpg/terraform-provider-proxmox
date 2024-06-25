@@ -79,7 +79,7 @@ jobs:
       - name: Unit tests
         if: ${{ steps.filter.outputs.go == 'true' }}
         timeout-minutes: 10
-        run:  go test -json -v -cover ./... 2>&1 | tee /tmp/gotest.log | gotestfmt -hide empty-packages
+        run:  go test -json -v ./... 2>&1 | tee /tmp/gotest.log | gotestfmt -hide empty-packages
 
       - name: Upload test log
         uses: actions/upload-artifact@v2
