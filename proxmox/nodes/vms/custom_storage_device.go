@@ -112,7 +112,7 @@ func (d *CustomStorageDevice) IsCloudInitDrive(vmID int) bool {
 
 // EncodeOptions converts a CustomStorageDevice's common options a URL value.
 func (d *CustomStorageDevice) EncodeOptions() string {
-	values := []string{}
+	var values []string
 
 	if d.AIO != nil {
 		values = append(values, fmt.Sprintf("aio=%s", *d.AIO))

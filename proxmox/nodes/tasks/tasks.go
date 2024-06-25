@@ -45,7 +45,7 @@ func (c *Client) GetTaskStatus(ctx context.Context, upid string) (*GetTaskStatus
 // Reads first 50 lines by default.
 func (c *Client) GetTaskLog(ctx context.Context, upid string) ([]string, error) {
 	resBody := &GetTaskLogResponseBody{}
-	lines := []string{}
+	var lines []string
 
 	path, err := c.BuildPath(upid, "log")
 	if err != nil {
