@@ -154,6 +154,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/charles-rodrigues-313ba9179/"><img src="https://avatars.githubusercontent.com/u/56375916?v=4?s=100" width="100px;" alt="Charles Rodrigues"/><br /><sub><b>Charles Rodrigues</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=chrodrigues" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/connor-creek-318a86107/"><img src="https://avatars.githubusercontent.com/u/33628343?v=4?s=100" width="100px;" alt="Connor Creek"/><br /><sub><b>Connor Creek</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=CCreek96" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://blog.lucid.net.au"><img src="https://avatars.githubusercontent.com/u/1295960?v=4?s=100" width="100px;" alt="Jason Lingohr"/><br /><sub><b>Jason Lingohr</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=lingfish" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/thanks"><img src="https://avatars.githubusercontent.com/u/1121545?v=4?s=100" width="100px;" alt="thanks"/><br /><sub><b>thanks</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=thanks" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
   <tfoot>
