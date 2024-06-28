@@ -1087,6 +1087,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "simonebenati",
+      "name": "Simone Benati",
+      "avatar_url": "https://avatars.githubusercontent.com/u/102557087?v=4",
+      "profile": "https://github.com/simonebenati",
+      "contributions": [
+        "bug",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
