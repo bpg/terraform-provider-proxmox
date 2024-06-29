@@ -28,6 +28,8 @@ import (
 // Temporary: while migrating to the TF framework, we need to copy the generated docs to the right place
 // for the resources / data sources that have been migrated.
 //go:generate cp -R ../build/docs-gen/guides/ ../docs/guides/
+//go:generate cp ../build/docs-gen/data-sources/virtual_environment_apt_repository.md ../docs/data-sources/
+//go:generate cp ../build/docs-gen/data-sources/virtual_environment_apt_standard_repository.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_hagroup.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_hagroups.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_hardware_mapping_pci.md ../docs/data-sources/
@@ -38,6 +40,8 @@ import (
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_version.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_vm2.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_acl.md ../docs/resources/
+//go:generate cp ../build/docs-gen/resources/virtual_environment_apt_repository.md ../docs/resources/
+//go:generate cp ../build/docs-gen/resources/virtual_environment_apt_standard_repository.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_cluster_options.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_download_file.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_hagroup.md ../docs/resources/
