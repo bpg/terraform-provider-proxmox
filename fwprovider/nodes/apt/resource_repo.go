@@ -1,8 +1,8 @@
 /*
-	This Source Code Form is subject to the terms of the Mozilla Public
-	License, v. 2.0. If a copy of the MPL was not distributed with this
-	file, You can obtain one at https://mozilla.org/MPL/2.0/.
-*/
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package apt
 
@@ -26,7 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	api "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt/repositories"
@@ -302,7 +302,7 @@ func (r *resourceRepo) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Description: "The list of package distributions.",
 				ElementType: types.StringType,
 			},
-			SchemaAttrNameTerraformID: structure.IDAttribute("The unique identifier of this APT repository resource."),
+			SchemaAttrNameTerraformID: attribute.ID("The unique identifier of this APT repository resource."),
 			SchemaAttrNameURIs: schema.ListAttribute{
 				Computed:    true,
 				Description: "The list of repository URIs.",

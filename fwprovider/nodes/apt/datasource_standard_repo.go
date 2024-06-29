@@ -1,8 +1,8 @@
 /*
-	This Source Code Form is subject to the terms of the Mozilla Public
-	License, v. 2.0. If a copy of the MPL was not distributed with this
-	file, You can obtain one at https://mozilla.org/MPL/2.0/.
-*/
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package apt
 
@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/structure"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -128,7 +128,7 @@ func (d *dataSourceStandardRepo) Schema(
 				Computed:    true,
 				Description: "Indicates the activation status.",
 			},
-			SchemaAttrNameTerraformID: structure.IDAttribute(
+			SchemaAttrNameTerraformID: attribute.ID(
 				"The unique identifier of this APT standard repository data source.",
 			),
 		},
