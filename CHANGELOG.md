@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.60.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.60.1...v0.60.2) (2024-06-29)
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.10.1 → v1.10.2) ([#1416](https://github.com/bpg/terraform-provider-proxmox/issues/1416)) ([692ea94](https://github.com/bpg/terraform-provider-proxmox/commit/692ea944c34d85ec54d40c8b1d5f15ed887f42d9))
+
 ## [0.60.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.60.0...v0.60.1) (2024-06-25)
 
 
