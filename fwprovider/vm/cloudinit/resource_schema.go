@@ -7,6 +7,7 @@
 package cloudinit
 
 import (
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -14,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute/planmodifiers"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 )
@@ -23,6 +25,7 @@ func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		Description: "The cloud-init configuration.",
 		Optional:    true,
+		Computed:    true,
 		Attributes: map[string]schema.Attribute{
 			"datastore_id": schema.StringAttribute{
 				Description: "The identifier for the datastore to create the cloud-init disk in (defaults to `local-lvm`)",
@@ -57,15 +60,30 @@ func ResourceSchema() schema.Attribute {
 			"dns": schema.SingleNestedAttribute{
 				Description: "The DNS configuration.",
 				Optional:    true,
+				Computed:    true,
 				Attributes: map[string]schema.Attribute{
 					"domain": schema.StringAttribute{
 						Description: "The domain name to use for the VM.",
 						Optional:    true,
+						Computed:    true,
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
+						PlanModifiers: []planmodifier.String{
+							planmodifiers.UseUnknownForNullConfigString(),
+						},
 					},
 					"servers": schema.ListAttribute{
 						Description: "The list of DNS servers to use.",
 						ElementType: customtypes.IPAddrType{},
 						Optional:    true,
+						Computed:    true,
+						Validators: []validator.List{
+							listvalidator.SizeAtLeast(1),
+						},
+						PlanModifiers: []planmodifier.List{
+							planmodifiers.UseUnknownForNullConfigList(customtypes.IPAddrType{}),
+						},
 					},
 				},
 			},

@@ -7,6 +7,7 @@
 package cloudinit_test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -14,15 +15,10 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-const resourceName = "proxmox_virtual_environment_vm2.test_vm"
-
-func TestAccResourceVM2CloudInit(t *testing.T) {
+func TestResource_VM2_CloudInit_Create(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
-	te.AddTemplateVars(map[string]interface{}{
-		"UpdateVMID": te.RandomVMID(),
-	})
 
 	tests := []struct {
 		name  string
@@ -33,136 +29,241 @@ func TestAccResourceVM2CloudInit(t *testing.T) {
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
 				id = {{.RandomVMID}}
-				name = "test-cloudinit"
+				name = "test-ci"
 				initialization = {
 					dns = {
 						domain = "example.com"
 			        }
 				}
 			}`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"initialization.datastore_id": te.DatastoreID,
-					"initialization.interface":    "ide2",
-				}),
-			),
+			Check: test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+				"initialization.datastore_id": te.DatastoreID,
+				"initialization.interface":    "ide2",
+			}),
 		}}},
-		{"update VM with cloud-init", []resource.TestStep{
-			//{
-			//	Config: te.RenderConfig(`
-			//	resource "proxmox_virtual_environment_vm2" "test_vm" {
-			//		node_name = "{{.NodeName}}"
-			//		id = {{.UpdateVMID}}
-			//		name = "test-cloudinit"
-			//		initialization = {
-			//			dns = {
-			//				domain = "example.com"
-			//			}
-			//		}
-			//	}`),
-			//	Destroy: false,
-			//},
-			//{
-			//	Config: te.RenderConfig(`
-			//	resource "proxmox_virtual_environment_vm2" "test_vm" {
-			//		node_name = "{{.NodeName}}"
-			//		id = {{.UpdateVMID}}
-			//		name = "test-cloudinit"
-			//		initialization = {
-			//			dns = {
-			//				domain = "example.com"
-			//				servers = [
-			//					"1.1.1.1",
-			//					"8.8.8.8"
-			//				]
-			//			}
-			//		}
-			//	}`),
-			//	Destroy: false,
-			//},
-			//{
-			//	Config: te.RenderConfig(`
-			//	resource "proxmox_virtual_environment_vm2" "test_vm" {
-			//		node_name = "{{.NodeName}}"
-			//		id = {{.UpdateVMID}}
-			//		name = "test-cloudinit"
-			//		initialization = {
-			//			dns = {
-			//				domain = "another.domain.com"
-			//				servers = [
-			//					"8.8.8.8",
-			//					"1.1.1.1"
-			//				]
-			//			}
-			//		}
-			//	}`),
-			//	Destroy: false,
-			//},
+		{"domain can't be empty", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					id = {{.RandomVMID}}
+					name = "test-ci"
+					initialization = {
+						dns = {
+							domain = ""
+						}
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`string length must be at least 1, got: 0`),
+		}}},
+		{"servers can't be empty", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					id = {{.RandomVMID}}
+					name = "test-ci"
+					initialization = {
+						dns = {
+							servers = []
+						}
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`list must contain at least 1 elements`),
+		}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+func TestResource_VM2_CloudInit_Update(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"add servers", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					id = {{.UpdateVMID}}
-					name = "test-cloudinit"
+					id = {{.RandomVMID}}
+					name = "test-ci"
 					initialization = {
 						dns = {
+							domain = "example.com"
+						}
+					}
+				}`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-ci"
+					initialization = {
+						dns = {
+							domain = "example.com"
+							servers = [
+								"1.1.1.1",
+								"8.8.8.8"
+							]
+						}
+					}
+				}`),
+			},
+		}},
+		{"change domain and servers", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					id = {{.RandomVMID}}
+					name = "test-ci"
+					initialization = {
+						dns = {
+							domain = "example.com"
+							servers = [
+								"1.1.1.1",
+								"8.8.8.8"
+							]
+						}
+					}
+				}`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-ci"
+					initialization = {
+						dns = {
+							domain = "another.domain.com"
+							servers = [
+								"8.8.8.8",
+								"1.1.1.1"
+							]
+						}
+					}
+				}`),
+			},
+		}},
+		{"update VM: delete dns.domain", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					id = {{.RandomVMID}}
+					name = "test-ci"
+					initialization = {
+						dns = {
+							domain = "example.com"
+						}
+					}
+				}`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-ci"
+					initialization = {
+						dns = {}
+					}
+				}`),
+				Check: test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+					"initialization.dns.domain",
+				}),
+			},
+		}},
+		{"delete one of the servers", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					id = {{.RandomVMID}}
+					name = "test-ci"
+					initialization = {
+						dns = {
+							servers = [
+								"1.1.1.1",
+								"8.8.8.8"
+							]
+						}
+					}
+				}`),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-ci"
+					initialization = {
+						dns = {
+							domain = "another.domain.com"
 							servers = [
 								"1.1.1.1"
 							]
 						}
 					}
 				}`),
-				Destroy: false,
 				Check: resource.ComposeTestCheckFunc(
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
-						"initialization.dns.domain",
-					}),
-					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-						"initialization.dns.servers.#": "1",
-					}),
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "initialization.dns.servers.#", "1"),
 				),
 			},
+		}},
+		{"delete servers", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					id = {{.UpdateVMID}}
-					name = "test-cloudinit"
+					id = {{.RandomVMID}}
+					name = "test-ci"
 					initialization = {
 						dns = {
-							//servers = []
+							servers = [
+								"1.1.1.1",
+								"8.8.8.8"
+							]
 						}
 					}
 				}`),
-				Destroy: false,
-				Check: resource.ComposeTestCheckFunc(
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
-						"initialization.dns.servers",
-					}),
-				),
 			},
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					id = {{.UpdateVMID}}
-					name = "test-cloudinit"
+					name = "test-ci"
 					initialization = {
-						dns = {}
+						dns = {
+							// remove, or set to servers = null
+						}
 					}
 				}`),
-				Destroy: false,
-			},
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "test_vm" {
-					node_name = "{{.NodeName}}"
-					id = {{.UpdateVMID}}
-					name = "test-cloudinit"
-					initialization = {}
-				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm2.test_vm", "initialization.dns.servers.#", "0"),
+				),
 			},
 		}},
+		//	{
+		//		// step 9: update the VM: remove the dns block
+		//		Config: te.RenderConfig(`
+		//		resource "proxmox_virtual_environment_vm2" "test_vm" {
+		//			node_name = "{{.NodeName}}"
+		//			name = "test-ci"
+		//			initialization = {}
+		//		}`),
+		//	},
+		//}},
+
 	}
 
 	for _, tt := range tests {

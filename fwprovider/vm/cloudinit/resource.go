@@ -40,7 +40,7 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags 
 		dns := ModelDNS{}
 		dns.Domain = types.StringPointerValue(config.CloudInitDNSDomain)
 
-		if config.CloudInitDNSServer != nil {
+		if config.CloudInitDNSServer != nil && strings.Trim(*config.CloudInitDNSServer, " ") != "" {
 			dnsServers := strings.Split(*config.CloudInitDNSServer, " ")
 			servers, d := types.ListValueFrom(ctx, customtypes.IPAddrType{}, dnsServers)
 			diags.Append(d...)
@@ -95,7 +95,7 @@ func FillCreateBody(ctx context.Context, plan *Model, body *vms.CreateRequestBod
 	body.AddCustomStorageDevice(plan.Interface.ValueString(), device)
 }
 
-// FillUpdateBody fills the UpdateRequestBody with the CPU settings from the Value.
+// FillUpdateBody fills the UpdateRequestBody with the Cloud-Init settings from the Value.
 func FillUpdateBody(
 	ctx context.Context,
 	plan, state *Model,
