@@ -2,7 +2,7 @@ module github.com/bpg/terraform-provider-proxmox/tools
 
 go 1.22
 
-toolchain go1.22.4
+toolchain go1.22.5
 
 replace github.com/nats-io/nkeys => github.com/nats-io/nkeys v0.4.7
 
