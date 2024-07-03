@@ -2,7 +2,7 @@ module github.com/bpg/terraform-provider-proxmox
 
 go 1.22
 
-toolchain go1.22.4
+toolchain go1.22.5
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
