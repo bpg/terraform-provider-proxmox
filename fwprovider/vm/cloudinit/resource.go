@@ -14,6 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
@@ -21,8 +22,13 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 )
 
+// Value represents the type for CPU settings.
+type Value = types.Object
+
+type DNSValue = types.Object
+
 // NewValue returns a new Value with the given CPU settings from the PVE API.
-func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags *diag.Diagnostics) *Model {
+func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags *diag.Diagnostics) Value {
 	ci := Model{}
 
 	devices := config.CustomStorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
@@ -30,7 +36,7 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags 
 	})
 
 	if len(devices) != 1 {
-		return nil
+		types.ObjectNull(attributeTypes())
 	}
 
 	for iface, device := range devices {
@@ -51,25 +57,43 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags 
 		}
 
 		if !reflect.DeepEqual(dns, ModelDNS{}) {
-			ci.DNS = &dns
+			dnsObj, d := types.ObjectValueFrom(ctx, attributeTypesDNS(), dns)
+			diags.Append(d...)
+
+			ci.DNS = dnsObj
 		}
 
-		return &ci
+		obj, d := types.ObjectValueFrom(ctx, attributeTypes(), ci)
+		diags.Append(d...)
+
+		return obj
 	}
 
-	return nil
+	return types.ObjectNull(attributeTypes())
 }
 
 // FillCreateBody fills the CreateRequestBody with the Cloud-Init settings from the Value.
-func FillCreateBody(ctx context.Context, plan *Model, body *vms.CreateRequestBody) {
-	if plan == nil {
+func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
+	var plan Model
+
+	if planValue.IsNull() || planValue.IsUnknown() {
+		return
+	}
+
+	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
+	diags.Append(d...)
+
+	if d.HasError() {
 		return
 	}
 
 	ci := vms.CustomCloudInitConfig{}
 
-	if plan.DNS != nil {
-		dns := *plan.DNS
+	// TODO: should we check for !null?
+	if !plan.DNS.IsUnknown() {
+		var dns ModelDNS
+
+		plan.DNS.As(ctx, &dns, basetypes.ObjectAsOptions{})
 
 		if !dns.Domain.IsUnknown() {
 			ci.SearchDomain = dns.Domain.ValueStringPointer()
@@ -98,12 +122,23 @@ func FillCreateBody(ctx context.Context, plan *Model, body *vms.CreateRequestBod
 // FillUpdateBody fills the UpdateRequestBody with the Cloud-Init settings from the Value.
 func FillUpdateBody(
 	ctx context.Context,
-	plan, state *Model,
+	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
 	isClone bool,
 	diags *diag.Diagnostics,
 ) {
-	if plan == nil || reflect.DeepEqual(plan, state) {
+	var plan, state Model
+
+	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {
+		return
+	}
+
+	d := planValue.As(ctx, &plan, basetypes.ObjectAsOptions{})
+	diags.Append(d...)
+	d = stateValue.As(ctx, &state, basetypes.ObjectAsOptions{})
+	diags.Append(d...)
+
+	if diags.HasError() {
 		return
 	}
 
@@ -114,13 +149,20 @@ func FillUpdateBody(
 	// TODO: migrate cloud init to another datastore
 
 	if !reflect.DeepEqual(plan.DNS, state.DNS) {
-		if plan.DNS == nil && state.DNS != nil && !isClone {
+		if attribute.ShouldBeRemoved(plan.DNS, state.DNS, isClone) {
 			del("searchdomain", "nameserver")
-		} else if plan.DNS != nil {
+		} else if attribute.IsDefined(plan.DNS) {
 			ci := vms.CustomCloudInitConfig{}
 
-			planDNS := plan.DNS
-			stateDNS := state.DNS
+			var planDNS, stateDNS ModelDNS
+			d = plan.DNS.As(ctx, &planDNS, basetypes.ObjectAsOptions{})
+			diags.Append(d...)
+			d = state.DNS.As(ctx, &stateDNS, basetypes.ObjectAsOptions{})
+			diags.Append(d...)
+
+			if diags.HasError() {
+				return
+			}
 
 			if !planDNS.Domain.Equal(stateDNS.Domain) {
 				if attribute.ShouldBeRemoved(planDNS.Domain, stateDNS.Domain, isClone) {
@@ -134,17 +176,11 @@ func FillUpdateBody(
 				if attribute.ShouldBeRemoved(planDNS.Servers, stateDNS.Servers, isClone) {
 					del("nameserver")
 				} else if attribute.IsDefined(planDNS.Servers) {
-					// TODO: duplicates code from FillCreateBody
 					var servers []string
 
 					planDNS.Servers.ElementsAs(ctx, &servers, false)
 
-					//// special case for the servers list, if we want to remove them during update
-					//if len(servers) == 0 {
-					//	del("nameserver")
-					//} else {
 					ci.Nameserver = ptr.Ptr(strings.Join(servers, " "))
-					//}
 				}
 			}
 

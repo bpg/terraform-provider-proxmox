@@ -7,17 +7,33 @@
 package cloudinit
 
 import (
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Model represents the cloud-init model.
+// Model represents the Cloud-Init model.
 type Model struct {
 	DatastoreID types.String `tfsdk:"datastore_id"`
 	Interface   types.String `tfsdk:"interface"`
-	DNS         *ModelDNS    `tfsdk:"dns"`
+	DNS         DNSValue     `tfsdk:"dns"`
 }
 
 type ModelDNS struct {
 	Domain  types.String `tfsdk:"domain"`
 	Servers types.List   `tfsdk:"servers"`
+}
+
+func attributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"datastore_id": types.StringType,
+		"interface":    types.StringType,
+		"dns":          types.ObjectType{}.WithAttributeTypes(attributeTypesDNS()),
+	}
+}
+
+func attributeTypesDNS() map[string]attr.Type {
+	return map[string]attr.Type{
+		"domain":  types.StringType,
+		"servers": types.ListType{ElemType: types.StringType},
+	}
 }

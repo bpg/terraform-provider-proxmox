@@ -155,7 +155,7 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 
 	// fill out create body fields with values from other resource blocks
 	cdrom.FillCreateBody(ctx, plan.CDROM, createBody, diags)
-	cloudinit.FillCreateBody(ctx, plan.CloudInit, createBody)
+	cloudinit.FillCreateBody(ctx, plan.CloudInit, createBody, diags)
 	cpu.FillCreateBody(ctx, plan.CPU, createBody, diags)
 	vga.FillCreateBody(ctx, plan.VGA, createBody, diags)
 

@@ -10,13 +10,18 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 )
 
-// UseUnknownForNullConfigList returns a plan modifier sets the value of an attribute
-// to Unknown if the attribute is missing from the plan and the config is null.
-// Use this for optional computed attributes that can be reset / removed by the user.
+// UseUnknownForNullConfigList returns a plan modifier that sets the value of an attribute
+// to Unknown if the attribute is missing from the plan and the config is null AND the resource is not a clone.
+//
+// Use this for optional computed attributes that can be reset / removed by the user. If the resource is a clone,
+// the value will be copied from the prior state (e.g. the clone source).
 //
 // The behavior for Terraform for Optional + Computed attributes is to copy the prior state
 // if there is no configuration for it. This plan modifier will instead set the value to Unknown,
@@ -43,11 +48,26 @@ func (m useUnknownForNullConfigList) MarkdownDescription(_ context.Context) stri
 
 // PlanModifyList implements the plan modification logic.
 func (m useUnknownForNullConfigList) PlanModifyList(
-	_ context.Context,
+	ctx context.Context,
 	req planmodifier.ListRequest,
 	resp *planmodifier.ListResponse,
 ) {
-	if !req.PlanValue.IsNull() && req.ConfigValue.IsNull() {
+	if !m.isClone(ctx, req) {
+		if req.PlanValue.IsNull() {
+			return
+		}
+
+		if !req.ConfigValue.IsNull() {
+			return
+		}
+
 		resp.PlanValue = types.ListUnknown(m.elementType)
 	}
+}
+
+func (m useUnknownForNullConfigList) isClone(ctx context.Context, req planmodifier.ListRequest) bool {
+	var cloneID types.Int64
+	_ = req.Plan.GetAttribute(ctx, path.Root("clone").AtName("id"), &cloneID)
+
+	return attribute.IsDefined(cloneID)
 }

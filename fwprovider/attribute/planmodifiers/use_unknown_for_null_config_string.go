@@ -9,13 +9,18 @@ package planmodifiers
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 )
 
-// UseUnknownForNullConfigString returns a plan modifier sets the value of an attribute
-// to Unknown if the attribute is missing from the plan and the config is null.
-// Use this for optional computed attributes that can be reset / removed by the user.
+// UseUnknownForNullConfigString returns a plan modifier that sets the value of an attribute
+// to Unknown if the attribute is missing from the plan and the config is null AND the resource is not a clone.
+//
+// Use this for optional computed attributes that can be reset / removed by the user. If the resource is a clone,
+// the value will be copied from the prior state (e.g. the clone source).
 //
 // The behavior for Terraform for Optional + Computed attributes is to copy the prior state
 // if there is no configuration for it. This plan modifier will instead set the value to Unknown,
@@ -40,11 +45,26 @@ func (m useUnknownForNullConfigString) MarkdownDescription(_ context.Context) st
 
 // PlanModifyString implements the plan modification logic.
 func (m useUnknownForNullConfigString) PlanModifyString(
-	_ context.Context,
+	ctx context.Context,
 	req planmodifier.StringRequest,
 	resp *planmodifier.StringResponse,
 ) {
-	if !req.PlanValue.IsNull() && req.ConfigValue.IsNull() {
+	if !m.isClone(ctx, req) {
+		if req.PlanValue.IsNull() {
+			return
+		}
+
+		if !req.ConfigValue.IsNull() {
+			return
+		}
+
 		resp.PlanValue = types.StringUnknown()
 	}
+}
+
+func (m useUnknownForNullConfigString) isClone(ctx context.Context, req planmodifier.StringRequest) bool {
+	var cloneID types.Int64
+	_ = req.Plan.GetAttribute(ctx, path.Root("clone").AtName("id"), &cloneID)
+
+	return attribute.IsDefined(cloneID)
 }
