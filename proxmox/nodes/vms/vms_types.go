@@ -354,9 +354,11 @@ type ListResponseBody struct {
 
 // ListResponseData contains the data from an virtual machine list response.
 type ListResponseData struct {
-	Name *string `json:"name,omitempty"`
-	Tags *string `json:"tags,omitempty"`
-	VMID int     `json:"vmid,omitempty"`
+	Name     *string           `json:"name,omitempty"`
+	Tags     *string           `json:"tags,omitempty"`
+	Template *types.CustomBool `json:"template,omitempty"`
+	Status   *string           `json:"status,omitempty"`
+	VMID     int               `json:"vmid,omitempty"`
 }
 
 // MigrateRequestBody contains the body for a VM migration request.

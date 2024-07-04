@@ -24,6 +24,8 @@ const (
 	mkDataSourceVirtualEnvironmentVMName     = "name"
 	mkDataSourceVirtualEnvironmentVMNodeName = "node_name"
 	mkDataSourceVirtualEnvironmentVMTags     = "tags"
+	mkDataSourceVirtualEnvironmentVMTemplate = "template"
+	mkDataSourceVirtualEnvironmentVMStatus   = "status"
 	mkDataSourceVirtualEnvironmentVMVMID     = "vm_id"
 )
 
@@ -46,6 +48,16 @@ func VM() *schema.Resource {
 				Description: "Tags of the VM",
 				Computed:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			mkDataSourceVirtualEnvironmentVMTemplate: {
+				Type:        schema.TypeBool,
+				Description: "Is VM a template (true) or a regular VM (false)",
+				Optional:    true,
+			},
+			mkDataSourceVirtualEnvironmentVMStatus: {
+				Type:        schema.TypeString,
+				Description: "Status of the VM",
+				Optional:    true,
 			},
 			mkDataSourceVirtualEnvironmentVMVMID: {
 				Type:        schema.TypeInt,
@@ -82,6 +94,11 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 		return diag.FromErr(err)
 	}
 
+	vmConfig, err := client.Node(nodeName).VM(vmID).GetVM(ctx)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	if vmStatus.Name != nil {
 		err = d.Set(mkDataSourceVirtualEnvironmentVMName, *vmStatus.Name)
 	} else {
@@ -102,6 +119,17 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 
 		sort.Strings(tags)
 	}
+
+	err = d.Set(mkDataSourceVirtualEnvironmentVMStatus, vmStatus.Status)
+	diags = append(diags, diag.FromErr(err)...)
+
+	if vmConfig.Template == nil {
+		err = d.Set(mkDataSourceVirtualEnvironmentVMTemplate, false)
+	} else {
+		err = d.Set(mkDataSourceVirtualEnvironmentVMTemplate, *vmConfig.Template)
+	}
+
+	diags = append(diags, diag.FromErr(err)...)
 
 	err = d.Set(mkDataSourceVirtualEnvironmentVMTags, tags)
 	diags = append(diags, diag.FromErr(err)...)

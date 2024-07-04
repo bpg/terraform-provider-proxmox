@@ -38,6 +38,7 @@ func TestVMsSchema(t *testing.T) {
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
 		mkDataSourceVirtualEnvironmentVMNodeName: schema.TypeString,
 		mkDataSourceVirtualEnvironmentVMTags:     schema.TypeList,
+		mkDataSourceFilter:                       schema.TypeList,
 		mkDataSourceVirtualEnvironmentVMs:        schema.TypeList,
 	})
 
@@ -53,5 +54,11 @@ func TestVMsSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentVMNodeName: schema.TypeString,
 		mkDataSourceVirtualEnvironmentVMTags:     schema.TypeList,
 		mkDataSourceVirtualEnvironmentVMVMID:     schema.TypeInt,
+	})
+
+	filterSchema := test.AssertNestedSchemaExistence(t, s, mkDataSourceFilter)
+	test.AssertValueTypes(t, filterSchema, map[string]schema.ValueType{
+		mkDataSourceFilterName:   schema.TypeString,
+		mkDataSourceFilterValues: schema.TypeList,
 	})
 }

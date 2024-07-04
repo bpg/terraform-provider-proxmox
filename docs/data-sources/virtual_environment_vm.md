@@ -27,3 +27,5 @@ data "proxmox_virtual_environment_vm" "test_vm" {
 
 - `name` - The virtual machine name.
 - `tags` - A list of tags of the VM.
+- `status` - Status of the VM
+- `template` - Is VM a template (true) or a regular VM (false)
