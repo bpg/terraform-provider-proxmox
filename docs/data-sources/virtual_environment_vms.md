@@ -18,6 +18,7 @@ data "proxmox_virtual_environment_vms" "ubuntu_vms" {
 
 data "proxmox_virtual_environment_vms" "ubuntu_templates" {
   tags      = ["template", "latest"]
+
   filter {
     name   = "template"
     values = [true]
@@ -30,19 +31,26 @@ data "proxmox_virtual_environment_vms" "ubuntu_templates" {
 
   filter {
     name   = "name"
-    values = ["^ubuntu-20.*$", "^ubuntu-22.04$"]
+    regex  = true
+    values = ["^ubuntu-20.*$"]
+  }
+
+  filter {
+    name   = "node_name"
+    regex  = true
+    values = ["node_us_[1-3]", "node_eu_[1-3]"]
   }
 }
 ```
 
 ## Argument Reference
 
-- `node_name` - (Optional) The node name.
+- `node_name` - (Optional) The node name. All cluster nodes will be queried in case this is omitted
 - `tags` - (Optional) A list of tags to filter the VMs. The VM must have all
   the tags to be included in the result.
-- `filter` - (Optional) Filter blocks. All blocks should match to pass the filter (AND logic)
-    - `name` - Name of the VM attribute to filter on. One of [`name`, `template`, `status`]
-    - `value` - List of values to pass the filter (OR logic)
+- `filter` - (Optional) Filter blocks. The VM must satisfy all filter blocks to be included in the result.
+    - `name` - Name of the VM attribute to filter on. One of [`name`, `template`, `status`, `node_name`]
+    - `values` - List of values to pass the filter. VM's attribute should match at least one value in the list.
 
 ## Attribute Reference
 

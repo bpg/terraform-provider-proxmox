@@ -16,12 +16,18 @@ data "proxmox_virtual_environment_vms" "template_example" {
 
   filter {
     name   = "template"
-    values = [true]
+    values = [false]
   }
 
   filter {
     name   = "status"
-    values = ["stopped"]
+    values = ["running"]
+  }
+
+  filter {
+    name   = "name"
+    regex  = true
+    values = [".*ubuntu.*"]
   }
 }
 
