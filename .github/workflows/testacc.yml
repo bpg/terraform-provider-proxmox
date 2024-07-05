@@ -10,6 +10,7 @@ on:
 
 jobs:
   acceptance:
+    if: github.repository_owner == 'bpg'
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +50,9 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
+      - name: Set up gotestfmt
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
+
       - uses: hashicorp/setup-terraform@651471c36a6092792c552e8b1bef71e592b462d8 # v3.1.1
         with:
           terraform_version: ${{ matrix.terraform }}.*
@@ -69,4 +73,12 @@ jobs:
           PROXMOX_VE_ACC_NODE_SSH_PORT: ${{ matrix.port }}
           PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER: ${{ secrets.PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER }}
           PROXMOX_VE_ACC_CONTAINER_IMAGES_SERVER: ${{ secrets.PROXMOX_VE_ACC_CONTAINER_IMAGES_SERVER }}
-        run: make testacc
+        run:
+          go test -json --timeout=30m --tags=acceptance -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/... 2>&1 | tee ${{ runner.temp }}/gotest-${{ matrix.os }}.log | gotestfmt -hide empty-packages
+
+      - name: Upload test log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-log-${{ matrix.os }}
+          path: ${{ runner.temp }}/gotest-${{ matrix.os }}.log

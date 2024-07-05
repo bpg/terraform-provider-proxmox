@@ -9,7 +9,9 @@ package datasource
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -18,11 +20,16 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
 const (
 	mkDataSourceVirtualEnvironmentVMs = "vms"
+	mkDataSourceFilter                = "filter"
+	mkDataSourceFilterName            = "name"
+	mkDataSourceFilterValues          = "values"
+	mkDataSourceFilterRegex           = "regex"
 )
 
 // VMs returns a resource for the Proxmox VMs.
@@ -32,13 +39,39 @@ func VMs() *schema.Resource {
 			mkDataSourceVirtualEnvironmentVMNodeName: {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The node name",
+				Description: "The node name. All cluster nodes will be queried in case this is omitted",
 			},
 			mkDataSourceVirtualEnvironmentVMTags: {
 				Type:        schema.TypeList,
 				Description: "Tags of the VM to match",
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			mkDataSourceFilter: {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Filter blocks",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkDataSourceFilterName: {
+							Type:        schema.TypeString,
+							Description: "Attribute to filter on. One of [name, template, status, node_name]",
+							Required:    true,
+						},
+						mkDataSourceFilterValues: {
+							Type:        schema.TypeList,
+							Description: "List of values to pass the filter (OR logic)",
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+						},
+						mkDataSourceFilterRegex: {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Treat values as regex patterns",
+						},
+					},
+				},
 			},
 			mkDataSourceVirtualEnvironmentVMs: {
 				Type:        schema.TypeList,
@@ -80,6 +113,8 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	}
 
 	sort.Strings(filterTags)
+
+	filters := d.Get(mkDataSourceFilter).([]interface{})
 
 	var vms []interface{}
 
@@ -127,6 +162,23 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 				}
 			}
 
+			if data.Template != (*types.CustomBool)(nil) && *data.Template {
+				vm[mkDataSourceVirtualEnvironmentVMTemplate] = true
+			} else {
+				vm[mkDataSourceVirtualEnvironmentVMTemplate] = false
+			}
+
+			vm[mkDataSourceVirtualEnvironmentVMStatus] = *data.Status
+
+			if len(filters) > 0 {
+				allFiltersMatched, err := checkVMMatchFilters(vm, filters)
+				diags = append(diags, diag.FromErr(err)...)
+
+				if !allFiltersMatched {
+					continue
+				}
+			}
+
 			vms = append(vms, vm)
 		}
 	}
@@ -159,4 +211,56 @@ func getNodeNames(ctx context.Context, d *schema.ResourceData, api proxmox.Clien
 	sort.Strings(nodeNames)
 
 	return nodeNames, nil
+}
+
+func checkVMMatchFilters(vm map[string]interface{}, filters []interface{}) (bool, error) {
+	for _, v := range filters {
+		filter := v.(map[string]interface{})
+		filterName := filter["name"]
+		filterValues := filter["values"].([]interface{})
+		filterRegex := filter["regex"].(bool)
+
+		var vmValue string
+
+		switch filterName {
+		case "template":
+			vmValue = strconv.FormatBool(vm[mkDataSourceVirtualEnvironmentVMTemplate].(bool))
+		case "status":
+			vmValue = vm[mkDataSourceVirtualEnvironmentVMStatus].(string)
+		case "name":
+			vmValue = vm[mkDataSourceVirtualEnvironmentVMName].(string)
+		case "node_name":
+			vmValue = vm[mkDataSourceVirtualEnvironmentVMNodeName].(string)
+		default:
+			return false, fmt.Errorf(
+				"unknown filter name '%s', should be one of [name, template, status, node_name]",
+				filterName,
+			)
+		}
+
+		atLeastOneValueMatched := false
+
+		for _, filterValue := range filterValues {
+			if filterRegex {
+				r, err := regexp.Compile(filterValue.(string))
+				if err != nil {
+					return false, fmt.Errorf("error interpreting filter '%s' value '%s' as regex: %w", filterName, filterValue, err)
+				}
+
+				if r.MatchString(vmValue) {
+					atLeastOneValueMatched = true
+					break
+				}
+			} else if filterValue == vmValue {
+				atLeastOneValueMatched = true
+				break
+			}
+		}
+
+		if !atLeastOneValueMatched {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }

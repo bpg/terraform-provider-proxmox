@@ -25,10 +25,9 @@ func attributeTypes() map[string]attr.Type {
 	}
 }
 
-func (m *Model) exportToCustomStorageDevice(iface string) vms.CustomStorageDevice {
+func (m *Model) exportToCustomStorageDevice() vms.CustomStorageDevice {
 	return vms.CustomStorageDevice{
 		FileVolume: m.FileID.ValueString(),
-		Interface:  &iface,
 		Media:      ptr.Ptr("cdrom"),
 	}
 }

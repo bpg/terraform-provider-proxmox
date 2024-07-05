@@ -41,6 +41,8 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
 
   operating_system {
     template_file_id = proxmox_virtual_environment_file.latest_ubuntu_22_jammy_lxc_img.id
+    # Or you can use a volume ID, as obtained from a "pvesm list <storage>"
+    # template_file_id = "local:vztmpl/jammy-server-cloudimg-amd64.tar.gz"
     type             = "ubuntu"
   }
 
@@ -187,6 +189,8 @@ output "ubuntu_container_public_key" {
 - `node_name` - (Required) The name of the node to assign the container to.
 - `operating_system` - (Required) The Operating System configuration.
     - `template_file_id` - (Required) The identifier for an OS template file.
+       The ID format is `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/jammy-server-cloudimg-amd64.tar.gz`. Can be also taken from
+       `proxmox_virtual_environment_download_file` resource, or from the output of `pvesm list <storage>`.
     - `type` - (Optional) The type (defaults to `unmanaged`).
         - `alpine` - Alpine.
         - `archlinux` - Arch Linux.

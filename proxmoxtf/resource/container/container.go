@@ -1384,17 +1384,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	diskDatastoreID := diskBlock[mkDiskDatastoreID].(string)
 
-	var rootFS *containers.CustomRootFS
-
-	diskSize := diskBlock[mkDiskSize].(int)
-	if diskSize != dvDiskSize && diskDatastoreID != "" {
-		// This is a special case where the rootfs size is set to a non-default value at creation time.
-		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
-		rootFS = &containers.CustomRootFS{
-			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
-		}
-	}
-
 	features, err := containerGetFeatures(container, d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -1592,6 +1581,17 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 
 		mountPointArray = append(mountPointArray, mountPointObject)
+	}
+
+	var rootFS *containers.CustomRootFS
+
+	diskSize := diskBlock[mkDiskSize].(int)
+	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPointArray) > 0) {
+		// This is a special case where the rootfs size is set to a non-default value at creation time.
+		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
+		rootFS = &containers.CustomRootFS{
+			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+		}
 	}
 
 	networkInterface := d.Get(mkNetworkInterface).([]interface{})
@@ -2831,13 +2831,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	// Prepare the new mount point configuration.
 	if d.HasChange(mkMountPoint) {
-		mountPoint := d.Get(mkMountPoint).([]interface{})
+		_, newMountPoints := d.GetChange(mkMountPoint)
+
+		mountPoints := newMountPoints.([]interface{})
 		mountPointArray := make(
 			containers.CustomMountPointArray,
-			len(mountPoint),
+			len(mountPoints),
 		)
 
-		for i, mp := range mountPoint {
+		for i, mp := range mountPoints {
 			mountPointMap := mp.(map[string]interface{})
 			mountPointObject := containers.CustomMountPoint{}
 
@@ -2861,7 +2863,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			mountPointObject.Volume = volume
 
 			if len(mountOptions) > 0 {
-				mountOptionsArray := make([]string, 0, len(mountPoint))
+				mountOptionsArray := make([]string, 0, len(mountPoints))
 
 				for _, option := range mountOptions {
 					mountOptionsArray = append(mountOptionsArray, option.(string))
@@ -3040,7 +3042,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// As a final step in the update procedure, we might need to reboot the container.
-	if !bool(template) && rebootRequired {
+	if !bool(template) && started && rebootRequired {
 		rebootTimeout := 300
 
 		e = containerAPI.RebootContainer(

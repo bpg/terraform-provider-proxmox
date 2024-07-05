@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package test
 
 import (
@@ -36,9 +42,11 @@ type Environment struct {
 	NodeName       string
 	DatastoreID    string
 
-	AccProviders map[string]func() (tfprotov6.ProviderServer, error)
-	once         sync.Once
-	c            api.Client
+	AccProviders          map[string]func() (tfprotov6.ProviderServer, error)
+	once                  sync.Once
+	c                     api.Client
+	CloudImagesServer     string
+	ContainerImagesServer string
 }
 
 // InitEnvironment initializes a new test environment for acceptance tests.
@@ -97,10 +105,12 @@ provider "proxmox" {
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
 		},
-		providerConfig: pc,
-		NodeName:       nodeName,
-		DatastoreID:    datastoreID,
-		AccProviders:   muxProviders(t),
+		providerConfig:        pc,
+		NodeName:              nodeName,
+		DatastoreID:           datastoreID,
+		AccProviders:          muxProviders(t),
+		CloudImagesServer:     cloudImagesServer,
+		ContainerImagesServer: containerImagesServer,
 	}
 }
 
