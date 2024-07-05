@@ -40,6 +40,8 @@ func TestVMSchema(t *testing.T) {
 		mkDataSourceVirtualEnvironmentVMName:     schema.TypeString,
 		mkDataSourceVirtualEnvironmentVMNodeName: schema.TypeString,
 		mkDataSourceVirtualEnvironmentVMTags:     schema.TypeList,
+		mkDataSourceVirtualEnvironmentVMTemplate: schema.TypeBool,
+		mkDataSourceVirtualEnvironmentVMStatus:   schema.TypeString,
 		mkDataSourceVirtualEnvironmentVMVMID:     schema.TypeInt,
 	})
 }
