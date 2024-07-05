@@ -10,7 +10,7 @@ on:
 jobs:
   qodana:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'bpg'
+    if: github.event.pull_request.head.repo.owner.login == 'bpg' || github.event.ref == 'refs/heads/main'
     permissions:
       contents: write
       pull-requests: write
