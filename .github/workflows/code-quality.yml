@@ -2,12 +2,15 @@ name: Qodana
 on:
   workflow_dispatch:
   push:
-    branches: # Specify your branches here
-      - main # The 'main' branch
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   qodana:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.owner.login == 'bpg' || github.event.ref == 'refs/heads/main'
     permissions:
       contents: write
       pull-requests: write
@@ -19,5 +22,7 @@ jobs:
           fetch-depth: 0  # a full history is required for pull request analysis
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2024.1.5
+        with:
+          post-pr-comment: false
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
