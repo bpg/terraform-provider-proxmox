@@ -155,7 +155,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 				}
 			}
 
-			if data.Template != (*types.CustomBool)(nil) && *data.Template == true {
+			if data.Template != (*types.CustomBool)(nil) && *data.Template {
 				vm[mkDataSourceVirtualEnvironmentVMTemplate] = true
 			} else {
 				vm[mkDataSourceVirtualEnvironmentVMTemplate] = false
@@ -164,7 +164,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 			vm[mkDataSourceVirtualEnvironmentVMStatus] = *data.Status
 
 			if len(filters) > 0 {
-				allFiltersMatched, err := checkVmMatchFilters(ctx, vm, filters)
+				allFiltersMatched, err := checkVMMatchFilters(vm, filters)
 				diags = append(diags, diag.FromErr(err)...)
 
 				if !allFiltersMatched {
@@ -206,7 +206,7 @@ func getNodeNames(ctx context.Context, d *schema.ResourceData, api proxmox.Clien
 	return nodeNames, nil
 }
 
-func checkVmMatchFilters(ctx context.Context, vm map[string]interface{}, filters []interface{}) (bool, error) {
+func checkVMMatchFilters(vm map[string]interface{}, filters []interface{}) (bool, error) {
 	for _, v := range filters {
 		filter := v.(map[string]interface{})
 		filterName := filter["name"]
@@ -219,7 +219,11 @@ func checkVmMatchFilters(ctx context.Context, vm map[string]interface{}, filters
 			case "template":
 				value, err := strconv.ParseBool(filterValue.(string))
 				if err != nil {
-					return false, err
+					return false, fmt.Errorf(
+						"values for 'template' filter should be one of [false, true], got '%s': %w",
+						filterValue,
+						err,
+					)
 				}
 
 				if vm[mkDataSourceVirtualEnvironmentVMTemplate] == value {
@@ -238,7 +242,7 @@ func checkVmMatchFilters(ctx context.Context, vm map[string]interface{}, filters
 					break
 				}
 			default:
-				return false, fmt.Errorf("Unknown filter name '%s', should be one of [name, template, status]", filterName)
+				return false, fmt.Errorf("unknown filter name '%s', should be one of [name, template, status]", filterName)
 			}
 		}
 
