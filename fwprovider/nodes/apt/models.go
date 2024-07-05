@@ -136,7 +136,7 @@ type modelStandardRepo struct {
 	// Node is the name of the Proxmox VE node for the APT standard repository.
 	Node types.String `tfsdk:"node"`
 
-	// Status is the configuration and activation statis of the APT standard repository.
+	// Status is the configuration and activation status of the APT standard repository.
 	Status types.Int64 `tfsdk:"status"`
 }
 
