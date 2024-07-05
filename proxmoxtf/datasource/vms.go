@@ -251,11 +251,9 @@ func checkVMMatchFilters(vm map[string]interface{}, filters []interface{}) (bool
 					atLeastOneValueMatched = true
 					break
 				}
-			} else {
-				if filterValue == vmValue {
-					atLeastOneValueMatched = true
-					break
-				}
+			} else if filterValue == vmValue {
+				atLeastOneValueMatched = true
+				break
 			}
 		}
 

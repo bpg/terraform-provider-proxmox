@@ -60,5 +60,6 @@ func TestVMsSchema(t *testing.T) {
 	test.AssertValueTypes(t, filterSchema, map[string]schema.ValueType{
 		mkDataSourceFilterName:   schema.TypeString,
 		mkDataSourceFilterValues: schema.TypeList,
+		mkDataSourceFilterRegex:  schema.TypeBool,
 	})
 }
