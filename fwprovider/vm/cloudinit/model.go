@@ -18,6 +18,7 @@ type Model struct {
 	DNS         DNSValue     `tfsdk:"dns"`
 }
 
+// ModelDNS represents the DNS model of the Cloud-Init.
 type ModelDNS struct {
 	Domain  types.String `tfsdk:"domain"`
 	Servers types.List   `tfsdk:"servers"`

@@ -81,6 +81,7 @@ func (d *CustomStorageDevice) PathInDatastore() *string {
 	return &pathInDatastore
 }
 
+// GetDatastoreID returns datastore ID part of FileVolume or empty string if it is not yet allocated.
 func (d *CustomStorageDevice) GetDatastoreID() string {
 	if datastoreID, _, found := strings.Cut(d.FileVolume, ":"); found {
 		return datastoreID
