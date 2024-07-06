@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.61.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.60.1...v0.61.0) (2024-07-06)
+
+
+### Features
+
+* **node:** implement initial support to manage APT repositories ([#1325](https://github.com/bpg/terraform-provider-proxmox/issues/1325)) ([357f7c7](https://github.com/bpg/terraform-provider-proxmox/commit/357f7c70a701c42dda62e0adef1337d319aaed04))
+* **vm:** implement filtering in vms data source. ([#1423](https://github.com/bpg/terraform-provider-proxmox/issues/1423)) ([65f8ba5](https://github.com/bpg/terraform-provider-proxmox/commit/65f8ba5bfe3a8ca3872fd87830b1a858f24a7237))
+
+
+### Bug Fixes
+
+* **repo:** fix source.list path validation on Windows ([#1429](https://github.com/bpg/terraform-provider-proxmox/issues/1429)) ([6103e67](https://github.com/bpg/terraform-provider-proxmox/commit/6103e67ae97434991e1d85d368dbea738f6c8041))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.10.1 → v1.10.2) ([#1416](https://github.com/bpg/terraform-provider-proxmox/issues/1416)) ([692ea94](https://github.com/bpg/terraform-provider-proxmox/commit/692ea944c34d85ec54d40c8b1d5f15ed887f42d9))
+* **ci:** update actions/create-github-app-token action (v1.10.2 → v1.10.3) ([#1419](https://github.com/bpg/terraform-provider-proxmox/issues/1419)) ([877251c](https://github.com/bpg/terraform-provider-proxmox/commit/877251c86eaa01aa1cce3f69afeb0e0214e87486))
+* **ci:** update jetbrains/qodana-action action (v2024.1.5 → v2024.1.8) ([#1425](https://github.com/bpg/terraform-provider-proxmox/issues/1425)) ([91a16af](https://github.com/bpg/terraform-provider-proxmox/commit/91a16af747332215b9bfccc58cccb13a478222b2))
+* **deps:** update go (1.22.4 → 1.22.5) ([#1420](https://github.com/bpg/terraform-provider-proxmox/issues/1420)) ([a521c60](https://github.com/bpg/terraform-provider-proxmox/commit/a521c60f0c7e9b36eac94ac78c9cfac83856e294))
+* **deps:** update go (1.22.4 → 1.22.5) in /tools ([#1421](https://github.com/bpg/terraform-provider-proxmox/issues/1421)) ([d55f670](https://github.com/bpg/terraform-provider-proxmox/commit/d55f6706a49232869efd7319a6d3fda14e9e9372))
+* **deps:** update module go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp (v0.52.0 → v0.53.0) in /tools ([#1426](https://github.com/bpg/terraform-provider-proxmox/issues/1426)) ([cf1142e](https://github.com/bpg/terraform-provider-proxmox/commit/cf1142e24b4c308637bfa481107f82d149a3b585))
+* **deps:** update module golang.org/x/crypto (v0.24.0 → v0.25.0) ([#1427](https://github.com/bpg/terraform-provider-proxmox/issues/1427)) ([3ad5b0a](https://github.com/bpg/terraform-provider-proxmox/commit/3ad5b0a9e10ff8d6a5e707dd2dfb2a9f0d70bd4b))
+* **deps:** update module golang.org/x/net (v0.26.0 → v0.27.0) ([#1430](https://github.com/bpg/terraform-provider-proxmox/issues/1430)) ([6436967](https://github.com/bpg/terraform-provider-proxmox/commit/6436967903970e7cdece9f85bbddc00afa9ce8f9))
+
 ## [0.60.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.60.0...v0.60.1) (2024-06-25)
 
 
