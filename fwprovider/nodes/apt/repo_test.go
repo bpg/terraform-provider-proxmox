@@ -36,15 +36,8 @@ const (
 	testAccResourceStandardRepoHandle = "no-subscription"
 )
 
-func testAccRepoInit(t *testing.T) *test.Environment {
-	t.Helper()
-	t.Parallel()
-
-	return test.InitEnvironment(t)
-}
-
 func TestAccDataSourceRepo(t *testing.T) {
-	te := testAccRepoInit(t)
+	te := test.InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -213,7 +206,6 @@ func TestAccDataSourceStandardRepo(t *testing.T) {
 // [Read]: https://developer.hashicorp.com/terraform/plugin/framework/resources/read
 // [Update]: https://developer.hashicorp.com/terraform/plugin/framework/resources/update
 func TestAccResourceRepoValidInput(t *testing.T) {
-	t.Helper()
 	t.Parallel()
 
 	te := test.InitEnvironment(t)

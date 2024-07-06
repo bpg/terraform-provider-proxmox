@@ -9,7 +9,6 @@ package apt
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -179,7 +178,7 @@ func (r *resourceRepo) ImportState(
 
 	rp.Node = types.StringValue(parts[0])
 
-	if !filepath.IsAbs(parts[1]) {
+	if !strings.HasPrefix(parts[1], "/") {
 		resp.Diagnostics.AddError(
 			"Invalid resource ID",
 			fmt.Sprintf("given source list file path %q is not an absolute path: %s", parts[1], idFormatErrMsg),

@@ -1,15 +1,15 @@
 /*
-	This Source Code Form is subject to the terms of the Mozilla Public
-	License, v. 2.0. If a copy of the MPL was not distributed with this
-	file, You can obtain one at https://mozilla.org/MPL/2.0/.
-*/
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
 
 package validators
 
 import (
 	"fmt"
-	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -19,7 +19,7 @@ import (
 func AbsoluteFilePathValidator() validator.String {
 	return NewParseValidator(
 		func(s string) (string, error) {
-			if filepath.IsAbs(s) {
+			if strings.HasPrefix(s, "/") {
 				return s, nil
 			}
 
