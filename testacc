@@ -7,4 +7,4 @@
 #
 
 # shellcheck disable=SC2046
-TF_ACC=1 env $(xargs < testacc.env) go test -v -count 1 -timeout 360s -run "$1" github.com/bpg/terraform-provider-proxmox/fwprovider/... $2
+TF_ACC=1 env $(xargs < testacc.env) go test -v -count 1 --tags=acceptance -timeout 360s -run "$1" github.com/bpg/terraform-provider-proxmox/fwprovider/... $2
