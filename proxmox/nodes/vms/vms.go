@@ -79,9 +79,6 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 			return c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
 		},
 		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "Reason: got no worker upid")
-		}),
 		retry.OnRetry(func(n uint, err error) {
 			tflog.Warn(ctx, "retrying VM creation", map[string]interface{}{
 				"attempt": n,
