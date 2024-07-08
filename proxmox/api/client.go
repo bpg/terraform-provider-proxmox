@@ -238,7 +238,8 @@ func (c *client) DoRequest(
 		},
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
-			if urlErr, ok := err.(*url.Error); ok {
+			var urlErr *url.Error
+			if errors.As(err, &urlErr) {
 				return strings.ToUpper(urlErr.Op) == http.MethodGet
 			}
 
@@ -247,7 +248,6 @@ func (c *client) DoRequest(
 		retry.LastErrorOnly(true),
 		retry.Attempts(3),
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %w",
 			method,
