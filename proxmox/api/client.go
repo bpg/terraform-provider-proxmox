@@ -231,9 +231,9 @@ func (c *client) DoRequest(
 		)
 	}
 
+	//nolint:bodyclose
 	res, err := retry.DoWithData(
 		func() (*http.Response, error) {
-			//nolint:bodyclose
 			return c.conn.httpClient.Do(req)
 		},
 		retry.Context(ctx),
