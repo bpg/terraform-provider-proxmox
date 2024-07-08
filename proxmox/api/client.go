@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
@@ -230,8 +231,23 @@ func (c *client) DoRequest(
 		)
 	}
 
-	//nolint:bodyclose
-	res, err := c.conn.httpClient.Do(req)
+	res, err := retry.DoWithData(
+		func() (*http.Response, error) {
+			//nolint:bodyclose
+			return c.conn.httpClient.Do(req)
+		},
+		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			if urlErr, ok := err.(*url.Error); ok {
+				return strings.ToUpper(urlErr.Op) == http.MethodGet
+			}
+
+			return false
+		}),
+		retry.LastErrorOnly(true),
+		retry.Attempts(3),
+	)
+
 	if err != nil {
 		return fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %w",
 			method,

@@ -82,7 +82,20 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 		retry.RetryIf(func(err error) bool {
 			return strings.Contains(err.Error(), "Reason: got no worker upid")
 		}),
-		retry.LastErrorOnly(true),
+		retry.OnRetry(func(n uint, err error) {
+			tflog.Warn(ctx, "retrying VM creation", map[string]interface{}{
+				"attempt": n,
+				"error":   err.Error(),
+			})
+
+			e := c.DeleteVM(ctx)
+			if e != nil {
+				tflog.Warn(ctx, "deleting VM after failed creation", map[string]interface{}{
+					"error": e,
+				})
+			}
+		}),
+		retry.LastErrorOnly(false),
 		retry.Attempts(3),
 	)
 	if err != nil {

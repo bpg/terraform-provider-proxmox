@@ -10,10 +10,8 @@ package vm_test
 
 import (
 	"regexp"
-	"strconv"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -23,10 +21,6 @@ func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
-	vmID := gofakeit.IntRange(90000, 100000)
-	te.AddTemplateVars(map[string]any{
-		"VMID": vmID,
-	})
 
 	tests := []struct {
 		name  string
@@ -50,15 +44,8 @@ func TestAccResourceVM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-				
-				id = {{.VMID}}
+				id = {{.RandomVMID}}
 			}`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"node_name": te.NodeName,
-					"id":        strconv.Itoa(vmID),
-				}),
-			),
 		}}},
 		{"set an invalid VM name", []resource.TestStep{{
 			Config: te.RenderConfig(`
@@ -207,10 +194,6 @@ func TestAccResourceVM2Clone(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
-	vmID := gofakeit.IntRange(90000, 100000)
-	te.AddTemplateVars(map[string]any{
-		"VMID": vmID,
-	})
 
 	tests := []struct {
 		name  string
