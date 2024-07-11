@@ -46,6 +46,13 @@ func TestCustomUSBDevice_UnmarshalJSON(t *testing.T) {
 				USB3:       types.CustomBool(false).Pointer(),
 			},
 		},
+		{
+			name: "spice usb device",
+			line: `"spice"`,
+			want: &CustomUSBDevice{
+				HostDevice: ptr.Ptr("spice"),
+			},
+		},
 	}
 
 	for _, tt := range tests {
