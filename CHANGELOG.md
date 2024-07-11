@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.61.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.61.0...v0.61.1) (2024-07-11)
+
+
+### Bug Fixes
+
+* **time:** embed timezone data to fix set/get TZ on windows  ([#1436](https://github.com/bpg/terraform-provider-proxmox/issues/1436)) ([b4d4e4f](https://github.com/bpg/terraform-provider-proxmox/commit/b4d4e4f9d4d1c38a5954e76beb0067f20652da19))
+* **vm:** improve reliability of VM create / get operations ([#1431](https://github.com/bpg/terraform-provider-proxmox/issues/1431)) ([d193abd](https://github.com/bpg/terraform-provider-proxmox/commit/d193abd33e8f09aae0dc00d2405297908b21b7d5))
+* **vm:** panic when reading VM with SPICE USB passthrough ([#1438](https://github.com/bpg/terraform-provider-proxmox/issues/1438)) ([fc42ac3](https://github.com/bpg/terraform-provider-proxmox/commit/fc42ac3a5e49daf391af21ec7cce7d97ecf8af20))
+
+
+### Miscellaneous
+
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1437](https://github.com/bpg/terraform-provider-proxmox/issues/1437)) ([b63c98b](https://github.com/bpg/terraform-provider-proxmox/commit/b63c98b13f7f4dde06f3fbc873939be9898571f8))
+* **deps:** update golang.org/x/exp digest (7f521ea → 46b0784) ([#1432](https://github.com/bpg/terraform-provider-proxmox/issues/1432)) ([0a978e5](https://github.com/bpg/terraform-provider-proxmox/commit/0a978e566417156b55a5973b2535a5314db992fd))
+
 ## [0.61.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.60.1...v0.61.0) (2024-07-06)
 
 
