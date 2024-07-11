@@ -27,10 +27,10 @@ func TestAccResourceTime(t *testing.T) {
 			{
 				Config: te.RenderConfig(`resource "proxmox_virtual_environment_time" "node_time" {
 				  node_name = "{{.NodeName}}"
-				  time_zone = "America/New_York"
+				  time_zone = "Europe/Amsterdam"
 				}`),
 				Check: ResourceAttributes("proxmox_virtual_environment_time.node_time", map[string]string{
-					"time_zone": "America/New_York",
+					"time_zone": "Europe/Amsterdam",
 				}),
 			},
 			{
