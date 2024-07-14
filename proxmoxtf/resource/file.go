@@ -886,7 +886,6 @@ func readURL(
 		if httpLastModified != "" {
 			var timeParsed time.Time
 			timeParsed, err = time.Parse(time.RFC1123, httpLastModified)
-
 			if err != nil {
 				timeParsed, err = time.Parse(time.RFC1123Z, httpLastModified)
 				if err != nil {

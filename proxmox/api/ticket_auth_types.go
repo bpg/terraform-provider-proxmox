@@ -19,10 +19,15 @@ type AuthenticationResponseBody struct {
 type AuthenticationResponseCapabilities struct {
 	Access     *types.CustomPrivileges `json:"access,omitempty"`
 	Datacenter *types.CustomPrivileges `json:"dc,omitempty"`
+	Mapping    *types.CustomPrivileges `json:"mapping,omitempty"`
 	Nodes      *types.CustomPrivileges `json:"nodes,omitempty"`
+	SDN        *types.CustomPrivileges `json:"sdn,omitempty"`
 	Storage    *types.CustomPrivileges `json:"storage,omitempty"`
 	VMs        *types.CustomPrivileges `json:"vms,omitempty"`
 }
+
+// custom bool to handle: int, text, bool // ref: https://stackoverflow.com/questions/4278430/convert-string-to-integer-type-in-go
+type cBool bool
 
 // AuthenticationResponseData contains the data from an authentication response.
 type AuthenticationResponseData struct {
@@ -31,4 +36,5 @@ type AuthenticationResponseData struct {
 	Capabilities        *AuthenticationResponseCapabilities `json:"cap,omitempty"`
 	Ticket              *string                             `json:"ticket,omitempty"`
 	Username            string                              `json:"username"`
+	NeedTFA             *cBool                              `json:"NeedTFA,omitempty"`
 }
