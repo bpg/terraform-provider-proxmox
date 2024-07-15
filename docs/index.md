@@ -294,6 +294,8 @@ You can create an API Token for a user via the Proxmox UI, or via the command li
     sudo pveum role add Terraform -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt User.Modify"
     ```
 
+- As identified in [#1439](https://github.com/bpg/terraform-provider-proxmox/issues/1439), the [proxmox_virtual_environment_download_file](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_download_file) resource requires both the ''Sys.Audit'' and ''Sys.Modify'' privileges. These should be added to the previously mentioned role if this resource will be used. 
+
   ~> The list of privileges above is only an example, please review it and adjust to your needs.
   Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
 
