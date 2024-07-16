@@ -288,7 +288,7 @@ You can create an API Token for a user via the Proxmox UI, or via the command li
     sudo pveum user add terraform@pve
     ```
 
-- Create a role for the user (you can skip this step if you want to use the any of the existing roles):
+- Create a role for the user (you can skip this step if you want to use any of the existing roles):
 
     ```sh
     sudo pveum role add Terraform -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt User.Modify"
