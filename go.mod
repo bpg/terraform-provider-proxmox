@@ -21,7 +21,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.34.0
 	github.com/hashicorp/terraform-plugin-testing v1.9.0
 	github.com/pkg/sftp v1.13.6
-	github.com/skeema/knownhosts v1.2.2
+	github.com/skeema/knownhosts v1.3.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.25.0
 	golang.org/x/exp v0.0.0-20240716175740-e3f259677ff7
