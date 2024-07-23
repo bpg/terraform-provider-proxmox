@@ -128,7 +128,8 @@ func NewClient(creds *Credentials, conn *Connection) (Client, error) {
 
 	var err error
 
-	// todo maybe move NewTicketAuthenticator cred-input-logic to here
+	//nolint:godox
+	// todo: maybe move NewTicketAuthenticator cred-input-logic to here
 	// aka: creds.AuthTicket and  creds.AuthTicket != "" && creds.CSRFPreventionToken to here
 	if creds.APIToken != nil {
 		auth, err = NewTokenAuthenticator(*creds.APIToken)
