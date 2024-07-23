@@ -73,8 +73,8 @@ func NewTicketAuthenticator(conn *Connection, creds *Credentials) (Authenticator
 			return nil, fmt.Errorf("external auth_payload contains key NeedTFA and requires two-factor authentication")
 		}
 
-		creds.Username = resBody.Data.Username                              // todo: exclude line? - is creds.Username needed/used anywhere other than new-auth reqs?
-		if creds.Username != "" && !strings.Contains(creds.Username, "@") { // todo: improve this vs copy-pasta from credentials.go
+		creds.Username = resBody.Data.Username                              //nolint:lll //nolint:godox // todo: exclude line? - is creds.Username needed/used anywhere other than new-auth reqs?
+		if creds.Username != "" && !strings.Contains(creds.Username, "@") { //nolint:lll //nolint:godox // todo: improve this vs copy-pasta from credentials.go
 			return nil, errors.New(
 				"make sure the username for the Proxmox Virtual Environment API ends in '@pve or @pam'",
 			)
@@ -94,12 +94,12 @@ func NewTicketAuthenticator(conn *Connection, creds *Credentials) (Authenticator
 		authTicketSplits := strings.Split(creds.AuthTicket, ":")
 
 		if len(authTicketSplits) > 3 {
-			creds.Username = strings.Split(creds.AuthTicket, ":")[1] // todo: exclude line? - is creds.Username needed/used anywhere other than new-auth reqs?
+			creds.Username = strings.Split(creds.AuthTicket, ":")[1] //nolint:lll //nolint:godox // todo: exclude line? - is creds.Username needed/used anywhere other than new-auth reqs?
 		} else {
 			return nil, errors.New("auth_ticket is set to an invalid value")
 		}
 
-		if creds.Username != "" && !strings.Contains(creds.Username, "@") { // todo: improve this vs copy-pasta from credentials.go
+		if creds.Username != "" && !strings.Contains(creds.Username, "@") { //nolint:lll //nolint:godox // todo: improve this vs copy-pasta from credentials.go
 			return nil, errors.New(
 				"make sure the username for the Proxmox Virtual Environment API ends in '@pve or @pam'",
 			)
