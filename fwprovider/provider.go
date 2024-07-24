@@ -463,6 +463,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
 		acme.NewACMEAccountsDataSource,
+		acme.NewACMEAccountDataSource,
 		apt.NewDataSourceRepo,
 		apt.NewDataSourceStandardRepo,
 		ha.NewHAGroupDataSource,
