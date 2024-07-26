@@ -245,6 +245,23 @@ func (r *acmeAccountResource) Update(ctx context.Context, req resource.UpdateReq
 
 // Delete removes an existing ACME account from the Proxmox cluster.
 func (r *acmeAccountResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state acmeAccountModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := r.client.Delete(ctx, state.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to delete ACME account '%s'", state.Name),
+			err.Error(),
+		)
+
+		return
+	}
 }
 
 // ImportState retrieves the current state of an existing ACME account from the Proxmox cluster.
