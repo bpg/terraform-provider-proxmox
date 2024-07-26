@@ -78,9 +78,23 @@ func (c *Client) Create(ctx context.Context, data *ACMEAccountCreateRequestBody)
 
 // Update updates an existing ACME account.
 func (c *Client) Update(ctx context.Context, accountName string, data *ACMEAccountUpdateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(url.PathEscape(accountName)), data, nil)
+	resBody := &ACMEAccountUpdateResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(url.PathEscape(accountName)), data, resBody)
 	if err != nil {
 		return fmt.Errorf("error updating ACME account: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return api.ErrNoDataObjectInResponse
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+	if err != nil {
+		return fmt.Errorf(
+			"error updating ACME account: failed waiting for task: %w",
+			err,
+		)
 	}
 
 	return nil

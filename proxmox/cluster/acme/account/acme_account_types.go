@@ -61,3 +61,8 @@ type ACMEAccountUpdateRequestBody struct {
 	// Name is the ACME account config file name.
 	Name string `url:"name,omitempty"`
 }
+
+// ACMEAccountUpdateResponseBody contains the body from an ACME account update request.
+type ACMEAccountUpdateResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
