@@ -445,6 +445,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 	return []func() resource.Resource{
 		NewClusterOptionsResource,
 		NewDownloadFileResource,
+		acme.NewACMEAccountResource,
 		apt.NewResourceRepo,
 		apt.NewResourceStandardRepo,
 		access.NewACLResource,
