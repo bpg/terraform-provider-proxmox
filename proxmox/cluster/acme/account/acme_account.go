@@ -54,9 +54,23 @@ func (c *Client) Get(ctx context.Context, name string) (*ACMEAccountGetResponseD
 
 // Create creates a new ACME account.
 func (c *Client) Create(ctx context.Context, data *ACMEAccountCreateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(""), data, nil)
+	resBody := &ACMEAccountCreateResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(""), data, resBody)
 	if err != nil {
 		return fmt.Errorf("error creating ACME account: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return api.ErrNoDataObjectInResponse
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+	if err != nil {
+		return fmt.Errorf(
+			"error updating ACME account: failed waiting for task: %w",
+			err,
+		)
 	}
 
 	return nil

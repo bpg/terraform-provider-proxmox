@@ -49,6 +49,11 @@ type ACMEAccountCreateRequestBody struct {
 	TOS string `url:"tos_url,omitempty"`
 }
 
+// ACMEAccountCreateResponseBody contains the body from an ACME account create request.
+type ACMEAccountCreateResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
+
 // ACMEAccountUpdateRequestBody contains the body for updating an existing ACME account.
 type ACMEAccountUpdateRequestBody struct {
 	// Contact is the contact email addresses.
