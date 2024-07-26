@@ -203,6 +203,44 @@ func (r *acmeAccountResource) Read(ctx context.Context, req resource.ReadRequest
 
 // Update modifies an existing ACME account on the Proxmox cluster.
 func (r *acmeAccountResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan acmeAccountModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateRequest := &account.ACMEAccountUpdateRequestBody{}
+	updateRequest.Contact = plan.Contact.ValueString()
+	updateRequest.Name = plan.Name.ValueString() // XXX name can't be changed?
+
+	err := r.client.Update(ctx, plan.Name.ValueString(), updateRequest)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to update ACME account '%s'", plan.Name),
+			err.Error(),
+		)
+
+		return
+	}
+
+	account, err := r.client.Get(ctx, plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to read ACME account '%s'", plan.Name),
+			err.Error(),
+		)
+
+		return
+	}
+
+	plan.Directory = types.StringValue(account.Directory)
+	plan.TOS = types.StringValue(account.TOS)
+	// XXX account.Location?
+	// XXX account.Account?
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
 // Delete removes an existing ACME account from the Proxmox cluster.
