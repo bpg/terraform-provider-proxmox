@@ -169,6 +169,36 @@ func (r *acmeAccountResource) Create(ctx context.Context, req resource.CreateReq
 
 // Read retrieves the current state of the ACME account from the Proxmox cluster.
 func (r *acmeAccountResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state acmeAccountModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	account, err := r.client.Get(ctx, state.Name.ValueString())
+	if err != nil {
+		if !strings.Contains(err.Error(), "does not exist") {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("Unable to read ACME account '%s'", state.Name),
+				err.Error(),
+			)
+
+			return
+		}
+
+		resp.State.RemoveResource(ctx)
+
+		return
+	}
+
+	state.Directory = types.StringValue(account.Directory)
+	state.TOS = types.StringValue(account.TOS)
+	// XXX account.Location?
+	// XXX account.Account?
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
 // Update modifies an existing ACME account on the Proxmox cluster.
