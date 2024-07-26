@@ -102,9 +102,23 @@ func (c *Client) Update(ctx context.Context, accountName string, data *ACMEAccou
 
 // Delete removes an ACME account.
 func (c *Client) Delete(ctx context.Context, accountName string) error {
-	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(url.PathEscape(accountName)), nil, nil)
+	resBody := &ACMEAccountDeleteResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(url.PathEscape(accountName)), nil, resBody)
 	if err != nil {
 		return fmt.Errorf("error deleting ACME account: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return api.ErrNoDataObjectInResponse
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+	if err != nil {
+		return fmt.Errorf(
+			"error deleting ACME account: failed waiting for task: %w",
+			err,
+		)
 	}
 
 	return nil

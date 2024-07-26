@@ -66,3 +66,8 @@ type ACMEAccountUpdateRequestBody struct {
 type ACMEAccountUpdateResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
+
+// ACMEAccountDeleteResponseBody contains the body from an ACME account delete request.
+type ACMEAccountDeleteResponseBody struct {
+	Data *string `json:"data,omitempty"`
+}
