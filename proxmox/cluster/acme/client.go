@@ -11,6 +11,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/account"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/plugins"
 )
 
 // Client is an interface for accessing the Proxmox ACME API.
@@ -18,7 +19,7 @@ type Client struct {
 	api.Client
 }
 
-// ExpandPath expands a relative path to a full cluster API path.
+// ExpandPath expands a relative path to a full cluster ACME API path.
 func (c *Client) ExpandPath(path string) string {
 	return fmt.Sprintf("cluster/acme/%s", path)
 }
@@ -26,4 +27,9 @@ func (c *Client) ExpandPath(path string) string {
 // Account returns a client for managing the cluster's ACME account.
 func (c *Client) Account() *account.Client {
 	return &account.Client{Client: c.Client}
+}
+
+// Plugins returns a client for managing the cluster's ACME plugins.
+func (c *Client) Plugins() *plugins.Client {
+	return &plugins.Client{Client: c.Client}
 }
