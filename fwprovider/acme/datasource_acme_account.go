@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -34,12 +35,26 @@ type acmeAccountDatasource struct {
 	client *account.Client
 }
 
+type accountDataModel struct {
+	Contact   []types.String `tfsdk:"contact"`
+	CreatedAt types.String   `tfsdk:"created_at"`
+	Status    types.String   `tfsdk:"status"`
+}
+
+func (m *accountDataModel) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"contact":    types.ListType{ElemType: types.StringType},
+		"created_at": types.StringType,
+		"status":     types.StringType,
+	}
+}
+
 // accountModel is the model used to represent an ACME account.
 type accountModel struct {
 	// Name is the ACME account config file name.
 	Name types.String `tfsdk:"name"`
 	// Account is the ACME account information.
-	// Account types.Map `tfsdk:"account"` // XXX
+	Account types.Object `tfsdk:"account"`
 	// Directory is the URL of the ACME CA directory endpoint.
 	Directory types.String `tfsdk:"directory"`
 	// Location is the location of the ACME account.
@@ -70,11 +85,25 @@ func (d *acmeAccountDatasource) Schema(
 				Description: "The identifier of the ACME account to read.",
 				Optional:    true,
 			},
-			// "account": schema.MapAttribute{
-			// 	Description: "The ACME account information.",
-			// 	ElementType: types.StringType,
-			// 	Computed:    true,
-			// }, // XXX
+			"account": schema.SingleNestedAttribute{
+				Description: "The ACME account information.",
+				Computed:    true,
+				Attributes: map[string]schema.Attribute{
+					"contact": schema.ListAttribute{
+						Description: "An array of contact email addresses.",
+						ElementType: types.StringType,
+						Computed:    true,
+					},
+					"created_at": schema.StringAttribute{
+						Description: "The timestamp of the account creation.",
+						Computed:    true,
+					},
+					"status": schema.StringAttribute{
+						Description: "The status of the account. Can be one of 'valid', 'deactivated' or 'revoked'.",
+						Computed:    true,
+					},
+				},
+			},
 			"directory": schema.StringAttribute{
 				Description: "The directory URL of the ACME account.",
 				Computed:    true,
@@ -137,10 +166,21 @@ func (d *acmeAccountDatasource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	// mapValue, diags := types.MapValueFrom(ctx, types.StringType, account.Account)
-	// state.Account = mapValue
-	// resp.Diagnostics.Append(diags...)
-	// XXX
+	contactList := make([]types.String, len(account.Account.Contact))
+	for i, contact := range account.Account.Contact {
+		contactList[i] = types.StringValue(contact)
+	}
+
+	data := &accountDataModel{
+		Contact:   contactList,
+		CreatedAt: types.StringValue(account.Account.CreatedAt),
+		Status:    types.StringValue(account.Account.Status),
+	}
+
+	accountObject, diags := types.ObjectValueFrom(ctx, data.attrTypes(), data)
+	resp.Diagnostics.Append(diags...)
+
+	state.Account = accountObject
 
 	state.Directory = types.StringValue(account.Directory)
 	state.Location = types.StringValue(account.Location)
