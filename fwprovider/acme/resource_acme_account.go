@@ -54,6 +54,8 @@ type acmeAccountModel struct {
 	EABKID types.String `tfsdk:"eab_kid"`
 	// URL of CA TermsOfService - setting this indicates agreement.
 	TOS types.String `tfsdk:"tos"`
+	// Location of the ACME account.
+	Location types.String `tfsdk:"location"`
 }
 
 // Metadata defines the name of the resource.
@@ -91,6 +93,10 @@ func (r *acmeAccountResource) Schema(
 					),
 				},
 				Optional: true,
+			},
+			"location": schema.StringAttribute{
+				Description: "The location of the ACME account.",
+				Computed:    true,
 			},
 			"eab_hmac_key": schema.StringAttribute{
 				Description: "The HMAC key for External Account Binding.",
@@ -196,7 +202,7 @@ func (r *acmeAccountResource) Read(ctx context.Context, req resource.ReadRequest
 
 	state.Directory = types.StringValue(account.Directory)
 	state.TOS = types.StringValue(account.TOS)
-	// XXX account.Location?
+	state.Location = types.StringValue(account.Location)
 	// XXX account.Account?
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
@@ -238,7 +244,6 @@ func (r *acmeAccountResource) Update(ctx context.Context, req resource.UpdateReq
 
 	plan.Directory = types.StringValue(account.Directory)
 	plan.TOS = types.StringValue(account.TOS)
-	// XXX account.Location?
 	// XXX account.Account?
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
