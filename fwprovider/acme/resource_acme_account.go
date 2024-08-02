@@ -212,7 +212,10 @@ func (r *acmeAccountResource) Read(ctx context.Context, req resource.ReadRequest
 func (r *acmeAccountResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan acmeAccountModel
 
+	var state acmeAccountModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -220,9 +223,8 @@ func (r *acmeAccountResource) Update(ctx context.Context, req resource.UpdateReq
 
 	updateRequest := &account.ACMEAccountUpdateRequestBody{}
 	updateRequest.Contact = plan.Contact.ValueString()
-	updateRequest.Name = plan.Name.ValueString() // XXX name can't be changed?
 
-	err := r.client.Update(ctx, plan.Name.ValueString(), updateRequest)
+	err := r.client.Update(ctx, state.Name.ValueString(), updateRequest)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Unable to update ACME account '%s'", plan.Name),
