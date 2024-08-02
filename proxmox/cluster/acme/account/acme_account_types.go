@@ -21,10 +21,20 @@ type ACMEAccountGetResponseBody struct {
 	Data *ACMEAccountGetResponseData `json:"data,omitempty"`
 }
 
+// ACMEAccountData contains the data from a ACME account.
+type ACMEAccountData struct {
+	// An array of contact email addresses.
+	Contact []string `json:"contact"`
+	// Timestamp of the account creation.
+	CreatedAt string `json:"createdAt"`
+	// Status of the account. Can be one of "valid", "deactivated" or "revoked".
+	Status string `json:"status"`
+}
+
 // ACMEAccountGetResponseData contains the data from a ACME account get response.
 type ACMEAccountGetResponseData struct {
 	// Account is the ACME account data.
-	Account map[string]interface{} `json:"account"`
+	Account ACMEAccountData `json:"account"`
 	// Directory is the URL of the ACME CA directory endpoint.
 	Directory string `json:"directory"`
 	// Location is the location of the ACME account.
