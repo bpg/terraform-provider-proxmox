@@ -178,8 +178,6 @@ When using a non-root user for the SSH connection, the user **must** have the `s
 
 -> If you run clustered Proxmox VE, you will need to configure the `sudo` privilege for the user on all nodes in the cluster.
 
--> `sudo` is not installed by default on Proxmox VE nodes. You can install it via the command line on the Proxmox host: `apt install sudo`
-
 ~> The `root` user on the Proxmox node must be configured with `bash` as the default shell.
 
 You can configure the `sudo` privilege for the user via the command line on the Proxmox host. In the example below, we create a user `terraform` and assign the `sudo` privilege to it:
@@ -196,7 +194,7 @@ You can configure the `sudo` privilege for the user via the command line on the 
     sudo visudo
     ```
 
-  Add the following lines to the end of the file:
+  Add the following lines to the end of the file, but **before** the `@includedir /etc/sudoers.d` line:
 
     ```sh
     terraform ALL=(root) NOPASSWD: /sbin/pvesm
@@ -206,13 +204,7 @@ You can configure the `sudo` privilege for the user via the command line on the 
 
   Save the file and exit.
 
-- Copy your SSH public key to the new user on the target node:
-
-    ```sh
-    ssh-copy-id terraform@<target-node>
-    ```
-
-    or manually add your public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
+- Copy your SSH public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
 
 - Test the SSH connection and password-less `sudo`:
   
