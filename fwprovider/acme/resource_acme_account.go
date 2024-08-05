@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -85,6 +86,8 @@ func (r *acmeAccountResource) Schema(
 			"name": schema.StringAttribute{
 				Description: "The ACME account config file name.",
 				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString("default"),
 			},
 			"directory": schema.StringAttribute{
 				Description: "The URL of the ACME CA directory endpoint.",
