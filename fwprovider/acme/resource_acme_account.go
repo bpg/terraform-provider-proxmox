@@ -13,10 +13,12 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -171,7 +173,7 @@ func (r *acmeAccountResource) Create(ctx context.Context, req resource.CreateReq
 		)
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	r.readBack(ctx, &plan, &resp.Diagnostics, &resp.State)
 }
 
 // Read retrieves the current state of the ACME account from the Proxmox cluster.
@@ -184,28 +186,16 @@ func (r *acmeAccountResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	account, err := r.client.Get(ctx, state.Name.ValueString())
-	if err != nil {
-		if !strings.Contains(err.Error(), "does not exist") {
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("Unable to read ACME account '%s'", state.Name),
-				err.Error(),
-			)
+	found, diags := r.read(ctx, &state)
+	resp.Diagnostics.Append(diags...)
 
-			return
+	if !resp.Diagnostics.HasError() {
+		if found {
+			resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+		} else {
+			resp.State.RemoveResource(ctx)
 		}
-
-		resp.State.RemoveResource(ctx)
-
-		return
 	}
-
-	state.Directory = types.StringValue(account.Directory)
-	state.TOS = types.StringValue(account.TOS)
-	state.Location = types.StringValue(account.Location)
-	// XXX account.Account?
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
 // Update modifies an existing ACME account on the Proxmox cluster.
@@ -234,21 +224,7 @@ func (r *acmeAccountResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	account, err := r.client.Get(ctx, plan.Name.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Unable to read ACME account '%s'", plan.Name),
-			err.Error(),
-		)
-
-		return
-	}
-
-	plan.Directory = types.StringValue(account.Directory)
-	plan.TOS = types.StringValue(account.TOS)
-	// XXX account.Account?
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	r.readBack(ctx, &plan, &resp.Diagnostics, &resp.State)
 }
 
 // Delete removes an existing ACME account from the Proxmox cluster.
@@ -279,4 +255,56 @@ func (r *acmeAccountResource) ImportState(
 	resp *resource.ImportStateResponse,
 ) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+}
+
+func (r *acmeAccountResource) readBack(
+	ctx context.Context,
+	data *acmeAccountModel,
+	respDiags *diag.Diagnostics,
+	respState *tfsdk.State,
+) {
+	found, diags := r.read(ctx, data)
+
+	respDiags.Append(diags...)
+
+	if !found {
+		respDiags.AddError(
+			fmt.Sprintf("ACME account '%s' not found after update", data.Name),
+			"Failed to find ACME account when trying to read back the updated ACME account's data.",
+		)
+	}
+
+	if !respDiags.HasError() {
+		respDiags.Append(respState.Set(ctx, data)...)
+	}
+}
+
+func (r *acmeAccountResource) read(ctx context.Context, data *acmeAccountModel) (bool, diag.Diagnostics) {
+	name := data.Name.ValueString()
+
+	account, err := r.client.Get(ctx, name)
+	if err != nil {
+		var diags diag.Diagnostics
+
+		if !strings.Contains(err.Error(), "does not exist") {
+			diags.AddError(
+				fmt.Sprintf("Unable to read ACME account '%s'", name),
+				err.Error(),
+			)
+		}
+
+		return false, diags
+	}
+
+	var contact string
+	if len(account.Account.Contact) > 0 {
+		contact = strings.Replace(account.Account.Contact[0], "mailto:", "", 1)
+	}
+
+	data.Directory = types.StringValue(account.Directory)
+	data.TOS = types.StringValue(account.TOS)
+	data.Location = types.StringValue(account.Location)
+	data.Contact = types.StringValue(contact)
+
+	return true, nil
 }
