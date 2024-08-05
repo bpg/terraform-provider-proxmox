@@ -213,7 +213,6 @@ func (r *acmeAccountResource) Update(ctx context.Context, req resource.UpdateReq
 
 	updateRequest := &account.ACMEAccountUpdateRequestBody{}
 	updateRequest.Contact = plan.Contact.ValueString()
-	updateRequest.Name = plan.Name.ValueString() // XXX name can't be changed?
 
 	err := r.client.Update(ctx, plan.Name.ValueString(), updateRequest)
 	if err != nil {
