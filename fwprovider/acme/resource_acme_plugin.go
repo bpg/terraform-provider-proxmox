@@ -298,6 +298,21 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 
 // Delete removes an existing ACME plugin from the Proxmox cluster.
 func (r *acmePluginResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state acmePluginCreateModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := r.client.Delete(ctx, state.Plugin.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to delete ACME plugin '%s'", state.Plugin.ValueString()),
+			err.Error(),
+		)
+	}
 }
 
 // ImportState retrieves the current state of an existing ACME plugin from the Proxmox cluster.
