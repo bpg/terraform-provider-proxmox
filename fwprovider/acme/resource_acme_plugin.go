@@ -212,6 +212,37 @@ func (r *acmePluginResource) Create(ctx context.Context, req resource.CreateRequ
 
 // Read retrieves the current state of the ACME plugin from the Proxmox cluster.
 func (r *acmePluginResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state acmePluginCreateModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	id := state.Plugin.ValueString()
+
+	plugin, err := r.client.Get(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read ACME plugin",
+			err.Error(),
+		)
+
+		return
+	}
+
+	state.API = types.StringValue(plugin.API)
+	state.Type = types.StringValue(plugin.Type)
+	state.Digest = types.StringValue(plugin.Digest)
+	state.ValidationDelay = types.Int64Value(plugin.ValidationDelay)
+
+	mapValue, diags := types.MapValueFrom(ctx, types.StringType, plugin.Data)
+	resp.Diagnostics.Append(diags...)
+
+	state.Data = mapValue
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Update modifies an existing ACME plugin on the Proxmox cluster.
