@@ -247,6 +247,53 @@ func (r *acmePluginResource) Read(ctx context.Context, req resource.ReadRequest,
 
 // Update modifies an existing ACME plugin on the Proxmox cluster.
 func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan acmePluginCreateModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateRequest := &plugins.ACMEPluginsUpdateRequestBody{}
+	updateRequest.Plugin = plan.Plugin.ValueString()
+	updateRequest.API = plan.API.ValueString()
+
+	data := make(plugins.DNSPluginData)
+
+	plan.Data.ElementsAs(ctx, &data, false)
+
+	updateRequest.Data = &data
+
+	updateRequest.Delete = plan.Delete.ValueString()
+	updateRequest.Digest = plan.Digest.ValueString()
+	updateRequest.Disable = plan.Disable.ValueBool()
+	updateRequest.Nodes = plan.Nodes.ValueString()
+	updateRequest.ValidationDelay = plan.ValidationDelay.ValueInt64()
+
+	err := r.client.Update(ctx, plan.Plugin.ValueString(), updateRequest)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Unable to update ACME account '%s'", plan.Plugin.ValueString()),
+			err.Error(),
+		)
+
+		return
+	}
+
+	plugin, err := r.client.Get(ctx, plan.Plugin.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to read ACME plugin",
+			err.Error(),
+		)
+
+		return
+	}
+
+	plan.Digest = types.StringValue(plugin.Digest)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
 // Delete removes an existing ACME plugin from the Proxmox cluster.
