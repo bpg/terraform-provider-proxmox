@@ -78,6 +78,8 @@ func (r *acmeAccountResource) Schema(
 ) {
 	resp.Schema = schema.Schema{
 		Description: "Manages an ACME account in a Proxmox VE cluster.",
+		MarkdownDescription: "Manages an ACME account in a Proxmox VE cluster.\n\n" +
+			"~> This resource requires `root@pam` authentication.",
 		Attributes: map[string]schema.Attribute{
 			"contact": schema.StringAttribute{
 				Description: "The contact email addresses.",

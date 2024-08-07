@@ -5,11 +5,14 @@ parent: Resources
 subcategory: Virtual Environment
 description: |-
   Manages an ACME account in a Proxmox VE cluster.
+  ~> This resource requires root@pam authentication.
 ---
 
 # Resource: proxmox_virtual_environment_acme_account
 
 Manages an ACME account in a Proxmox VE cluster.
+
+~> This resource requires `root@pam` authentication.
 
 ## Example Usage
 
