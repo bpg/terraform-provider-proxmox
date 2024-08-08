@@ -9,6 +9,7 @@ package validators
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -64,6 +65,35 @@ func FileID() schema.SchemaValidateDiagFunc {
 
 		return ws, es
 	})
+}
+
+// FileMode is a schema validation function for file mode.
+func FileMode() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(
+		func(i interface{}, k string) ([]string, []error) {
+			var errs []error
+
+			v, ok := i.(string)
+			if !ok {
+				errs = append(errs, fmt.Errorf(
+					`expected string in octal format (e.g. "0o700" or "0700"") for %q, but got %v of type %T`, k, v, i))
+				return nil, errs
+			}
+
+			mode, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("failed to parse file mode %q: %w", v, err))
+				return nil, errs
+			}
+
+			if mode < 1 || mode > int64(^uint32(0)) {
+				errs = append(errs, fmt.Errorf("%q must be in the range (%d - %d), got %d", v, 1, ^uint32(0), mode))
+				return nil, errs
+			}
+
+			return []string{}, errs
+		},
+	)
 }
 
 // FileSize is a schema validation function for file size.

@@ -16,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -269,8 +270,31 @@ func (c *client) NodeUpload(
 			remoteFilePath, bytesUploaded, fileSize)
 	}
 
+	remoteStat, err := remoteFile.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to read file info of uploaded file %s: %w", remoteFilePath, err)
+	}
+
+	remoteFileMode := remoteStat.Mode()
+
+	if d.Mode != "" {
+		parsedFileMode, parseErr := strconv.ParseUint(d.Mode, 8, 12)
+		if parseErr != nil {
+			return fmt.Errorf("failed to parse file mode %q: %w", d.Mode, err)
+		}
+
+		targetFileMode := os.FileMode(uint32(parsedFileMode))
+		if err = sftpClient.Chmod(remoteFilePath, targetFileMode); err != nil {
+			return fmt.Errorf("failed to change file mode of remote file from %#o (%s) to %#o (%s): %w",
+				remoteFileMode.Perm(), remoteFileMode, targetFileMode.Perm(), targetFileMode, err)
+		}
+
+		remoteFileMode = targetFileMode
+	}
+
 	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
 		"remote_file_path": remoteFilePath,
+		"remote_file_mode": fmt.Sprintf("%#o (%s)", remoteFileMode, remoteFileMode),
 		"size":             bytesUploaded,
 	})
 
@@ -330,6 +354,17 @@ func (c *client) NodeStreamUpload(
 	err = c.checkUploadedFile(ctx, sshClient, remoteFilePath, fileSize)
 	if err != nil {
 		return err
+	}
+
+	if d.Mode != "" {
+		parsedFileMode, parseErr := strconv.ParseUint(d.Mode, 8, 12)
+		if parseErr != nil {
+			return fmt.Errorf("failed to parse file mode %q: %w", d.Mode, err)
+		}
+
+		if err = c.changeModeUploadedFile(ctx, sshClient, remoteFilePath, os.FileMode(uint32(parsedFileMode))); err != nil {
+			return err
+		}
 	}
 
 	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
@@ -406,6 +441,49 @@ func (c *client) checkUploadedFile(
 		return fmt.Errorf("failed to upload file %s: uploaded %d bytes, expected %d bytes",
 			remoteFilePath, bytesUploaded, fileSize)
 	}
+
+	return nil
+}
+
+func (c *client) changeModeUploadedFile(
+	ctx context.Context,
+	sshClient *ssh.Client,
+	remoteFilePath string,
+	fileMode os.FileMode,
+) error {
+	sftpClient, err := sftp.NewClient(sshClient)
+	if err != nil {
+		return fmt.Errorf("failed to create SFTP client: %w", err)
+	}
+
+	defer func(sftpClient *sftp.Client) {
+		e := sftpClient.Close()
+		if e != nil {
+			tflog.Warn(ctx, "failed to close SFTP client", map[string]interface{}{
+				"error": e,
+			})
+		}
+	}(sftpClient)
+
+	remoteFile, err := sftpClient.Open(remoteFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to open remote file %s: %w", remoteFilePath, err)
+	}
+
+	remoteStat, err := remoteFile.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to read remote file %s: %w", remoteFilePath, err)
+	}
+
+	if err = sftpClient.Chmod(remoteFilePath, fileMode); err != nil {
+		return fmt.Errorf("failed to change file mode of remote file from %#o (%s) to %#o (%s): %w",
+			remoteStat.Mode().Perm(), remoteStat.Mode(), fileMode.Perm(), fileMode, err)
+	}
+
+	tflog.Debug(ctx, "changed mode of uploaded file", map[string]interface{}{
+		"before": fmt.Sprintf("%#o (%s)", remoteStat.Mode().Perm(), remoteStat.Mode()),
+		"after":  fmt.Sprintf("%#o (%s)", fileMode.Perm(), fileMode),
+	})
 
 	return nil
 }
