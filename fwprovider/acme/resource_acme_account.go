@@ -47,18 +47,20 @@ type acmeAccountResource struct {
 type acmeAccountModel struct {
 	// Contact email addresses.
 	Contact types.String `tfsdk:"contact"`
-	// ACME account config file name.
-	Name types.String `tfsdk:"name"`
+	// CreatedAt timestamp of the account creation.
+	CreatedAt types.String `tfsdk:"created_at"`
 	// URL of ACME CA directory endpoint.
 	Directory types.String `tfsdk:"directory"`
 	// HMAC key for External Account Binding.
 	EABHMACKey types.String `tfsdk:"eab_hmac_key"`
 	// Key Identifier for External Account Binding.
 	EABKID types.String `tfsdk:"eab_kid"`
-	// URL of CA TermsOfService - setting this indicates agreement.
-	TOS types.String `tfsdk:"tos"`
 	// Location of the ACME account.
 	Location types.String `tfsdk:"location"`
+	// ACME account config file name.
+	Name types.String `tfsdk:"name"`
+	// URL of CA TermsOfService - setting this indicates agreement.
+	TOS types.String `tfsdk:"tos"`
 }
 
 // Metadata defines the name of the resource.
@@ -85,11 +87,9 @@ func (r *acmeAccountResource) Schema(
 				Description: "The contact email addresses.",
 				Required:    true,
 			},
-			"name": schema.StringAttribute{
-				Description: "The ACME account config file name.",
-				Optional:    true,
+			"created_at": schema.StringAttribute{
+				Description: "The timestamp of the ACME account creation.",
 				Computed:    true,
-				Default:     stringdefault.StaticString("default"),
 			},
 			"directory": schema.StringAttribute{
 				Description: "The URL of the ACME CA directory endpoint.",
@@ -101,10 +101,6 @@ func (r *acmeAccountResource) Schema(
 				},
 				Optional: true,
 			},
-			"location": schema.StringAttribute{
-				Description: "The location of the ACME account.",
-				Computed:    true,
-			},
 			"eab_hmac_key": schema.StringAttribute{
 				Description: "The HMAC key for External Account Binding.",
 				Optional:    true,
@@ -112,6 +108,16 @@ func (r *acmeAccountResource) Schema(
 			"eab_kid": schema.StringAttribute{
 				Description: "The Key Identifier for External Account Binding.",
 				Optional:    true,
+			},
+			"location": schema.StringAttribute{
+				Description: "The location of the ACME account.",
+				Computed:    true,
+			},
+			"name": schema.StringAttribute{
+				Description: "The ACME account config file name.",
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString("default"),
 			},
 			"tos": schema.StringAttribute{
 				Description: "The URL of CA TermsOfService - setting this indicates agreement.",
@@ -284,7 +290,7 @@ func (r *acmeAccountResource) readBack(
 func (r *acmeAccountResource) read(ctx context.Context, data *acmeAccountModel) (bool, diag.Diagnostics) {
 	name := data.Name.ValueString()
 
-	account, err := r.client.Get(ctx, name)
+	acc, err := r.client.Get(ctx, name)
 	if err != nil {
 		var diags diag.Diagnostics
 
@@ -299,14 +305,15 @@ func (r *acmeAccountResource) read(ctx context.Context, data *acmeAccountModel) 
 	}
 
 	var contact string
-	if len(account.Account.Contact) > 0 {
-		contact = strings.Replace(account.Account.Contact[0], "mailto:", "", 1)
+	if len(acc.Account.Contact) > 0 {
+		contact = strings.Replace(acc.Account.Contact[0], "mailto:", "", 1)
 	}
 
-	data.Directory = types.StringValue(account.Directory)
-	data.TOS = types.StringValue(account.TOS)
-	data.Location = types.StringValue(account.Location)
+	data.Directory = types.StringValue(acc.Directory)
+	data.TOS = types.StringValue(acc.TOS)
+	data.Location = types.StringValue(acc.Location)
 	data.Contact = types.StringValue(contact)
+	data.CreatedAt = types.StringValue(acc.Account.CreatedAt)
 
 	return true, nil
 }

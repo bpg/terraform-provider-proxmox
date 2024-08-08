@@ -99,8 +99,9 @@ func (d *acmeAccountDatasource) Schema(
 						Computed:    true,
 					},
 					"status": schema.StringAttribute{
-						Description: "The status of the account. Can be one of 'valid', 'deactivated' or 'revoked'.",
-						Computed:    true,
+						Description:         "The status of the account.",
+						MarkdownDescription: "The status of the account. Can be one of `valid`, `deactivated` or `revoked`.",
+						Computed:            true,
 					},
 				},
 			},

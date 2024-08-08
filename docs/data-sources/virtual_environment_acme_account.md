@@ -49,4 +49,4 @@ Read-Only:
 
 - `contact` (List of String) An array of contact email addresses.
 - `created_at` (String) The timestamp of the account creation.
-- `status` (String) The status of the account. Can be one of 'valid', 'deactivated' or 'revoked'.
+- `status` (String) The status of the account. Can be one of `valid`, `deactivated` or `revoked`.
