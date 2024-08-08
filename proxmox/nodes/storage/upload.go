@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -112,6 +113,11 @@ func (c *Client) APIUpload(
 	defer func(fileReader *os.File) {
 		e := fileReader.Close()
 		if e != nil {
+			if errors.Is(e, os.ErrClosed) {
+				// We can ignore the error in the case that the file was already closed.
+				return
+			}
+
 			tflog.Error(ctx, "failed to close file reader", map[string]interface{}{
 				"error": e,
 			})
