@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.62.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.61.1...v0.62.0) (2024-08-08)
+
+
+### Features
+
+* **acme:** implement resources and data sources for ACME accounts ([#1455](https://github.com/bpg/terraform-provider-proxmox/issues/1455)) ([9de4037](https://github.com/bpg/terraform-provider-proxmox/commit/9de4037a8222fbf9d524df989d0b670c0ae13771))
+
+
+### Bug Fixes
+
+* **docs:** document role privileges required by `proxmox_virtual_environment_download_file` ([#1442](https://github.com/bpg/terraform-provider-proxmox/issues/1442)) ([2475d99](https://github.com/bpg/terraform-provider-proxmox/commit/2475d99317bbef3f4a2372ed1377c64590ad5df8))
+* **storage:** ignore `os.ErrClosed` from deferred `fileReader.Close()` in storage.APIUpload ([#1468](https://github.com/bpg/terraform-provider-proxmox/issues/1468)) ([e8bd1fc](https://github.com/bpg/terraform-provider-proxmox/commit/e8bd1fcda7c60de485714af6ab788f6e6a99d28f))
+* **tools:** ensure docs/guides files are copied correctly ([#1464](https://github.com/bpg/terraform-provider-proxmox/issues/1464)) ([f7c3560](https://github.com/bpg/terraform-provider-proxmox/commit/f7c35602608a7cfcdebceadd725ebae02c9b6cf6))
+
+
+### Miscellaneous
+
+* **deps:** update go (1.22.5 → 1.22.6) ([#1469](https://github.com/bpg/terraform-provider-proxmox/issues/1469)) ([966ea7a](https://github.com/bpg/terraform-provider-proxmox/commit/966ea7aa40e89990177ead67598a642bce355b27))
+* **deps:** update go (1.22.5 → 1.22.6) in /tools ([#1470](https://github.com/bpg/terraform-provider-proxmox/issues/1470)) ([10b2340](https://github.com/bpg/terraform-provider-proxmox/commit/10b2340c5b820260ffd3efdb930f830783aea330))
+* **deps:** update golang.org/x/exp digest (46b0784 → e3f2596) ([#1448](https://github.com/bpg/terraform-provider-proxmox/issues/1448)) ([1ba422a](https://github.com/bpg/terraform-provider-proxmox/commit/1ba422a68ef86ef8903aafd0030a4dcdb76023e1))
+* **deps:** update golang.org/x/exp digest (e3f2596 → 8a7402a) ([#1452](https://github.com/bpg/terraform-provider-proxmox/issues/1452)) ([76ce03f](https://github.com/bpg/terraform-provider-proxmox/commit/76ce03f6142f5811400ba3f3724a9a35decbefc3))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework (v1.10.0 → v1.11.0) ([#1471](https://github.com/bpg/terraform-provider-proxmox/issues/1471)) ([b7a110e](https://github.com/bpg/terraform-provider-proxmox/commit/b7a110e8fbe341f4347f517153ef36da286e1ae8))
+* **deps:** update module github.com/skeema/knownhosts (v1.2.2 → v1.3.0) ([#1449](https://github.com/bpg/terraform-provider-proxmox/issues/1449)) ([f116127](https://github.com/bpg/terraform-provider-proxmox/commit/f1161276ad4106033a88de0ed99ceb1258817ea7))
+* **deps:** update module golang.org/x/crypto (v0.25.0 → v0.26.0) ([#1472](https://github.com/bpg/terraform-provider-proxmox/issues/1472)) ([e641b55](https://github.com/bpg/terraform-provider-proxmox/commit/e641b55734944ebe8b359c158e5ea2ee798f433d))
+* **deps:** update module golang.org/x/net (v0.27.0 → v0.28.0) ([#1474](https://github.com/bpg/terraform-provider-proxmox/issues/1474)) ([56b98bd](https://github.com/bpg/terraform-provider-proxmox/commit/56b98bd4e698ab26aef773dcd7ec2aa94be9ae35))
+* **docs:** minor documentation updates ([#1463](https://github.com/bpg/terraform-provider-proxmox/issues/1463)) ([2bf9a94](https://github.com/bpg/terraform-provider-proxmox/commit/2bf9a9456210b7b0f60f7a5059b3dca108eef7b3))
+
 ## [0.61.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.61.0...v0.61.1) (2024-07-11)
 
 
