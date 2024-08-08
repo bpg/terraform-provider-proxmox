@@ -39,6 +39,7 @@ func TestFileSchema(t *testing.T) {
 	test.AssertOptionalArguments(t, s, []string{
 		mkResourceVirtualEnvironmentFileContentType,
 		mkResourceVirtualEnvironmentFileSourceFile,
+		mkResourceVirtualEnvironmentFileFileMode,
 		mkResourceVirtualEnvironmentFileSourceRaw,
 		mkResourceVirtualEnvironmentFileTimeoutUpload,
 	})
@@ -55,6 +56,7 @@ func TestFileSchema(t *testing.T) {
 		mkResourceVirtualEnvironmentFileDatastoreID:          schema.TypeString,
 		mkResourceVirtualEnvironmentFileFileModificationDate: schema.TypeString,
 		mkResourceVirtualEnvironmentFileFileName:             schema.TypeString,
+		mkResourceVirtualEnvironmentFileFileMode:             schema.TypeString,
 		mkResourceVirtualEnvironmentFileFileSize:             schema.TypeInt,
 		mkResourceVirtualEnvironmentFileFileTag:              schema.TypeString,
 		mkResourceVirtualEnvironmentFileNodeName:             schema.TypeString,

@@ -41,3 +41,39 @@ func TestFileID(t *testing.T) {
 		})
 	}
 }
+
+func TestFileMode(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		value string
+		valid bool
+	}{
+		{"valid", "0700", true},
+		{"invalid", "invalid", false},
+		// Even though Go supports octal prefixes, we should not allow them in the string value to reduce the complexity.
+		{"invalid", "0o700", false},
+		{"invalid", "0x700", false},
+		// Maximum value for uint32, incremented by one.
+		{"too large", "4294967296", false},
+		{"too small", "0", false},
+		{"negative", "-1", false},
+		{"empty", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := FileMode()
+			res := f(tt.value, nil)
+
+			if tt.valid {
+				require.Empty(t, res, "validate: '%s'", tt.value)
+			} else {
+				require.NotEmpty(t, res, "validate: '%s'", tt.value)
+			}
+		})
+	}
+}

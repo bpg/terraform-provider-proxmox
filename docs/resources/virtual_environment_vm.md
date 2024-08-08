@@ -545,7 +545,7 @@ output "ubuntu_vm_public_key" {
         - `vmware` - VMware Compatible.
     - `clipboard` - (Optional) Enable VNC clipboard by setting to `vnc`. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information.
 - `vm_id` - (Optional) The VM identifier.
-- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable).
+- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute). 
 
 ## Attribute Reference
 
