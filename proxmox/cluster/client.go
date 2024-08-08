@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme"
 	clusterfirewall "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
@@ -41,4 +42,9 @@ func (c *Client) HA() *ha.Client {
 // HardwareMapping returns a client for managing the cluster's hardware mapping features.
 func (c *Client) HardwareMapping() *mapping.Client {
 	return &mapping.Client{Client: c}
+}
+
+// ACME returns a client for managing the cluster's ACME features.
+func (c *Client) ACME() *acme.Client {
+	return &acme.Client{Client: c}
 }

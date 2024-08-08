@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/access"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/acme"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/network"
@@ -444,6 +445,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 	return []func() resource.Resource{
 		NewClusterOptionsResource,
 		NewDownloadFileResource,
+		acme.NewACMEAccountResource,
 		apt.NewResourceRepo,
 		apt.NewResourceStandardRepo,
 		access.NewACLResource,
@@ -461,6 +463,8 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
+		acme.NewACMEAccountsDataSource,
+		acme.NewACMEAccountDataSource,
 		apt.NewDataSourceRepo,
 		apt.NewDataSourceStandardRepo,
 		ha.NewHAGroupDataSource,
