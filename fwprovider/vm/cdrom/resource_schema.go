@@ -7,8 +7,6 @@
 package cdrom
 
 import (
-	"regexp"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -23,16 +21,13 @@ func ResourceSchema() schema.Attribute {
 	return schema.MapNestedAttribute{
 		Description: "The CD-ROM configuration",
 		MarkdownDescription: "The CD-ROM configuration. The key is the interface of the CD-ROM, " +
-			"could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. " +
+			"must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. " +
 			"Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces.",
 		Optional: true,
 		Computed: true,
 		Validators: []validator.Map{
 			mapvalidator.KeysAre(
-				stringvalidator.RegexMatches(
-					regexp.MustCompile(`^(ide[0-3]|sata[0-5]|scsi([0-9]|1[0-3]))$`),
-					"one of `ide[0-3]`, `sata[0-5]`, `scsi[0-13]`",
-				),
+				validators.CDROMInterface(),
 			),
 		},
 		NestedObject: schema.NestedAttributeObject{

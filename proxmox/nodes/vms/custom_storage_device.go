@@ -81,6 +81,15 @@ func (d *CustomStorageDevice) PathInDatastore() *string {
 	return &pathInDatastore
 }
 
+// GetDatastoreID returns datastore ID part of FileVolume or empty string if it is not yet allocated.
+func (d *CustomStorageDevice) GetDatastoreID() string {
+	if datastoreID, _, found := strings.Cut(d.FileVolume, ":"); found {
+		return datastoreID
+	}
+
+	return ""
+}
+
 // IsOwnedBy returns true, if CustomStorageDevice is owned by given VM.
 // Not yet allocated volumes are not owned by any VM.
 func (d *CustomStorageDevice) IsOwnedBy(vmID int) bool {

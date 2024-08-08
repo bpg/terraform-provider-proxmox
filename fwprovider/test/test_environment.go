@@ -123,14 +123,19 @@ func (e *Environment) AddTemplateVars(vars map[string]any) {
 	}
 }
 
+// RandomVMID returns a random VM ID.
+func (e *Environment) RandomVMID() int {
+	return gofakeit.IntRange(100_000, 999_999)
+}
+
 // RenderConfig renders the given configuration with for the current test environment using template engine.
 func (e *Environment) RenderConfig(cfg string) string {
 	tmpl, err := template.New("config").Parse("{{.ProviderConfig}}" + cfg)
 	require.NoError(e.t, err)
 
-	e.templateVars["RandomVMID"] = gofakeit.IntRange(100_000, 999_999)
-	e.templateVars["RandomVMID1"] = gofakeit.IntRange(100_000, 999_999)
-	e.templateVars["RandomVMID2"] = gofakeit.IntRange(100_000, 999_999)
+	e.templateVars["RandomVMID"] = e.RandomVMID()
+	e.templateVars["RandomVMID1"] = e.RandomVMID()
+	e.templateVars["RandomVMID2"] = e.RandomVMID()
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, e.templateVars)
