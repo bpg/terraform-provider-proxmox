@@ -29,4 +29,9 @@ type FileUploadRequest struct {
 	ContentType string
 	FileName    string
 	File        *os.File
+	// Will be handled as unsigned 32-bit integer since the underlying type of os.FileMode is the same, but must be parsed
+	// as string due to the conversion of the octal format.
+	// References:
+	//   1. https://en.wikipedia.org/wiki/Chmod#Special_modes
+	Mode string
 }
