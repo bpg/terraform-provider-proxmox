@@ -1118,6 +1118,16 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "ZauberNerd",
+      "name": "Björn Brauer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/249542?v=4",
+      "profile": "https://github.com/ZauberNerd",
+      "contributions": [
+        "code",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
