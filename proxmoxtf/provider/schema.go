@@ -8,30 +8,32 @@ package provider
 
 import (
 	"os"
-	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 const (
-	mkProviderEndpoint          = "endpoint"
-	mkProviderInsecure          = "insecure"
-	mkProviderMinTLS            = "min_tls"
-	mkProviderOTP               = "otp"
-	mkProviderPassword          = "password"
-	mkProviderUsername          = "username"
-	mkProviderAPIToken          = "api_token"
-	mkProviderTmpDir            = "tmp_dir"
-	mkProviderSSH               = "ssh"
-	mkProviderSSHUsername       = "username"
-	mkProviderSSHPassword       = "password"
-	mkProviderSSHAgent          = "agent"
-	mkProviderSSHAgentSocket    = "agent_socket"
-	mkProviderSSHPrivateKey     = "private_key"
-	mkProviderSSHSocks5Server   = "socks5_server"
-	mkProviderSSHSocks5Username = "socks5_username"
-	mkProviderSSHSocks5Password = "socks5_password"
+	mkProviderEndpoint            = "endpoint"
+	mkProviderInsecure            = "insecure"
+	mkProviderMinTLS              = "min_tls"
+	mkProviderAuthPayload         = "auth_payload"
+	mkProviderAuthTicket          = "auth_ticket"
+	mkProviderCSRFPreventionToken = "csrf_prevention_token" // #nosec G101
+	mkProviderAPIToken            = "api_token"
+	mkProviderOTP                 = "otp"
+	mkProviderPassword            = "password"
+	mkProviderUsername            = "username"
+	mkProviderTmpDir              = "tmp_dir"
+	mkProviderSSH                 = "ssh"
+	mkProviderSSHUsername         = "username"
+	mkProviderSSHPassword         = "password"
+	mkProviderSSHAgent            = "agent"
+	mkProviderSSHAgentSocket      = "agent_socket"
+	mkProviderSSHPrivateKey       = "private_key"
+	mkProviderSSHSocks5Server     = "socks5_server"
+	mkProviderSSHSocks5Username   = "socks5_username"
+	mkProviderSSHSocks5Password   = "socks5_password"
 
 	mkProviderSSHNode        = "node"
 	mkProviderSSHNodeName    = "name"
@@ -58,6 +60,34 @@ func createSchema() map[string]*schema.Schema {
 			Description: "The minimum required TLS version for API calls." +
 				"Supported values: `1.0|1.1|1.2|1.3`. Defaults to `1.3`.",
 		},
+		mkProviderAuthPayload: {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Sensitive:    true,
+			Description:  "The pre-authd full Ticket Payload json for the Proxmox VE API (takes precedence over auth_ticket).",
+			ValidateFunc: validation.StringIsNotEmpty,
+		},
+		mkProviderAuthTicket: {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Sensitive:    true,
+			Description:  "The pre-authd Ticket for the Proxmox VE API.",
+			ValidateFunc: validation.StringIsNotEmpty,
+		},
+		mkProviderCSRFPreventionToken: {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Sensitive:    true,
+			Description:  "The pre-authd CSRF Prevention Token for the Proxmox VE API.",
+			ValidateFunc: validation.StringIsNotEmpty,
+		},
+		mkProviderAPIToken: {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Sensitive:    true,
+			Description:  "The API token for the Proxmox VE API.",
+			ValidateFunc: validation.StringIsNotEmpty,
+		},
 		mkProviderOTP: {
 			Type:        schema.TypeString,
 			Optional:    true,
@@ -65,28 +95,18 @@ func createSchema() map[string]*schema.Schema {
 			Deprecated: "The `otp` attribute is deprecated and will be removed in a future release. " +
 				"Please use the `api_token` attribute instead.",
 		},
-		mkProviderPassword: {
-			Type:         schema.TypeString,
-			Optional:     true,
-			Sensitive:    true,
-			Description:  "The password for the Proxmox VE API.",
-			ValidateFunc: validation.StringIsNotEmpty,
-		},
 		mkProviderUsername: {
 			Type:         schema.TypeString,
 			Optional:     true,
 			Description:  "The username for the Proxmox VE API.",
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
-		mkProviderAPIToken: {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Sensitive:   true,
-			Description: "The API token for the Proxmox VE API.",
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
-				regexp.MustCompile(`^\S+@\S+!\S+=([a-zA-Z0-9-]+)$`),
-				"Must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'",
-			)),
+		mkProviderPassword: {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Sensitive:    true,
+			Description:  "The password for the Proxmox VE API.",
+			ValidateFunc: validation.StringIsNotEmpty,
 		},
 		mkProviderSSH: {
 			Type:        schema.TypeList,
