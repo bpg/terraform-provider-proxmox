@@ -12,8 +12,7 @@
 		}
 	},
 	
-	// Workaround for https://github.com/orgs/community/discussions/75161
-	"postAttachCommand": "unset GIT_COMMITTER_NAME; unset GIT_COMMITTER_EMAIL;",
+	"postAttachCommand": ["bash", "./.devcontainer/post-attach.sh"],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
