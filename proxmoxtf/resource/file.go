@@ -99,11 +99,10 @@ func File() *schema.Resource {
 			mkResourceVirtualEnvironmentFileFileMode: {
 				Type: schema.TypeString,
 				Description: `The file mode in octal format, e.g. "0700" or "600".` +
-					`Note that the prefix "0o" or "0x" is not supported!`,
+					`Note that the prefixes "0o" and "0x" are not supported!`,
 				Optional:         true,
 				ValidateDiagFunc: validators.FileMode(),
-				// Allow to update only the file mode even when the content has not changed.
-				ForceNew: true,
+				ForceNew:         true,
 			},
 			mkResourceVirtualEnvironmentFileFileSize: {
 				Type:        schema.TypeInt,
