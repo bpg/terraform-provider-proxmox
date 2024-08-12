@@ -76,8 +76,6 @@ func IPSet() *schema.Resource {
 					},
 				},
 			},
-			MaxItems: 14,
-			MinItems: 0,
 		},
 	}
 
