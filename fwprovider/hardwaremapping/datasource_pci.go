@@ -25,18 +25,18 @@ import (
 
 // Ensure the implementation satisfies the required interfaces.
 var (
-	_ datasource.DataSource              = &dataSourcePCI{}
-	_ datasource.DataSourceWithConfigure = &dataSourcePCI{}
+	_ datasource.DataSource              = &pciDataSource{}
+	_ datasource.DataSourceWithConfigure = &pciDataSource{}
 )
 
-// dataSourcePCI is the data source implementation for a PCI hardware mapping.
-type dataSourcePCI struct {
+// pciDataSource is the data source implementation for a PCI hardware mapping.
+type pciDataSource struct {
 	// client is the hardware mapping API client.
 	client *mappings.Client
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *dataSourcePCI) Configure(
+func (d *pciDataSource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -59,12 +59,12 @@ func (d *dataSourcePCI) Configure(
 }
 
 // Metadata returns the data source type name.
-func (d *dataSourcePCI) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *pciDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mapping_pci"
 }
 
 // Read fetches the specified PCI hardware mapping from the Proxmox VE API.
-func (d *dataSourcePCI) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *pciDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var hm modelPCI
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &hm)...)
@@ -93,7 +93,7 @@ func (d *dataSourcePCI) Read(ctx context.Context, req datasource.ReadRequest, re
 }
 
 // Schema defines the schema for the PCI hardware mapping.
-func (d *dataSourcePCI) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *pciDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	comment := dataSourceSchemaBaseAttrComment
 	comment.Optional = false
 	comment.Computed = true
@@ -162,8 +162,8 @@ func (d *dataSourcePCI) Schema(_ context.Context, _ datasource.SchemaRequest, re
 	}
 }
 
-// NewDataSourcePCI returns a new data source for a PCI hardware mapping.
+// NewPCIDataSource returns a new data source for a PCI hardware mapping.
 // This is a helper function to simplify the provider implementation.
-func NewDataSourcePCI() datasource.DataSource {
-	return &dataSourcePCI{}
+func NewPCIDataSource() datasource.DataSource {
+	return &pciDataSource{}
 }

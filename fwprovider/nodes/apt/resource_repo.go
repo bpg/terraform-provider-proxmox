@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	// ResourceRepoIDPrefix is the prefix for the resource ID of resourceRepo.
+	// ResourceRepoIDPrefix is the prefix for the resource ID of repositoryResource.
 	ResourceRepoIDPrefix = "apt_repository"
 
 	// ResourceRepoActivationStatus is the default activation status for newly created or imported APT repositories.
@@ -43,20 +43,20 @@ const (
 
 // Ensure the resource implements the required interfaces.
 var (
-	_ resource.Resource                = &resourceRepo{}
-	_ resource.ResourceWithConfigure   = &resourceRepo{}
-	_ resource.ResourceWithImportState = &resourceRepo{}
+	_ resource.Resource                = &repositoryResource{}
+	_ resource.ResourceWithConfigure   = &repositoryResource{}
+	_ resource.ResourceWithImportState = &repositoryResource{}
 )
 
-// resourceRepo contains the APT repository resource's internal data.
-type resourceRepo struct {
+// repositoryResource contains the APT repository resource's internal data.
+type repositoryResource struct {
 	// client is the Proxmox VE API client.
 	client proxmox.Client
 }
 
 // read reads information about an APT repository from the Proxmox VE API.
 // Note that the name of the node must be set before this method is called!
-func (r *resourceRepo) read(ctx context.Context, rp *modelRepo) (bool, diag.Diagnostics) {
+func (r *repositoryResource) read(ctx context.Context, rp *modelRepo) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	data, err := r.client.Node(rp.Node.ValueString()).APT().Repositories().Get(ctx)
@@ -78,7 +78,7 @@ func (r *resourceRepo) read(ctx context.Context, rp *modelRepo) (bool, diag.Diag
 // readBack reads information about an APT repository from the Proxmox VE API and then updates the response state
 // accordingly.
 // Note that the Terraform resource identifier must be set in the state before this method is called!
-func (r *resourceRepo) readBack(ctx context.Context, rp *modelRepo, diags *diag.Diagnostics, state *tfsdk.State) {
+func (r *repositoryResource) readBack(ctx context.Context, rp *modelRepo, diags *diag.Diagnostics, state *tfsdk.State) {
 	found, readDiags := r.read(ctx, rp)
 
 	diags.Append(readDiags...)
@@ -96,7 +96,11 @@ func (r *resourceRepo) readBack(ctx context.Context, rp *modelRepo, diags *diag.
 }
 
 // Configure adds the provider-configured client to the resource.
-func (r *resourceRepo) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *repositoryResource) Configure(
+	_ context.Context,
+	req resource.ConfigureRequest,
+	resp *resource.ConfigureResponse,
+) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -119,7 +123,11 @@ func (r *resourceRepo) Configure(_ context.Context, req resource.ConfigureReques
 // to the repository lists.
 // The name of this method might be a bit confusing for this resource, but this is due to the way how the Proxmox VE API
 // works for APT repositories.
-func (r *resourceRepo) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *repositoryResource) Create(
+	ctx context.Context,
+	req resource.CreateRequest,
+	resp *resource.CreateResponse,
+) {
 	var rp modelRepo
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &rp)...)
@@ -152,11 +160,11 @@ func (r *resourceRepo) Create(ctx context.Context, req resource.CreateRequest, r
 //
 // [caveats]: https://developer.hashicorp.com/terraform/plugin/framework/resources/delete#caveats
 // [recommendations]: https://developer.hashicorp.com/terraform/plugin/framework/resources/delete#recommendations
-func (r *resourceRepo) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
+func (r *repositoryResource) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
 }
 
 // ImportState imports an APT repository from the Proxmox VE API.
-func (r *resourceRepo) ImportState(
+func (r *repositoryResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -206,7 +214,7 @@ func (r *resourceRepo) ImportState(
 }
 
 // Metadata defines the name of the APT repository resource.
-func (r *resourceRepo) Metadata(
+func (r *repositoryResource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
@@ -215,7 +223,7 @@ func (r *resourceRepo) Metadata(
 }
 
 // Read reads the APT repository.
-func (r *resourceRepo) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *repositoryResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var rp modelRepo
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &rp)...)
@@ -237,7 +245,7 @@ func (r *resourceRepo) Read(ctx context.Context, req resource.ReadRequest, resp 
 }
 
 // Schema defines the schema for the APT repository.
-func (r *resourceRepo) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *repositoryResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages an APT repository of a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
@@ -312,7 +320,7 @@ func (r *resourceRepo) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 }
 
 // Update updates an existing APT repository.
-func (r *resourceRepo) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *repositoryResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var rpPlan modelRepo
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &rpPlan)...)
@@ -345,8 +353,8 @@ func (r *resourceRepo) Update(ctx context.Context, req resource.UpdateRequest, r
 	r.readBack(ctx, &rpPlan, &resp.Diagnostics, &resp.State)
 }
 
-// NewResourceRepo returns a new resource for managing an APT repository.
+// NewRepositoryResource returns a new resource for managing an APT repository.
 // This is a helper function to simplify the provider implementation.
-func NewResourceRepo() resource.Resource {
-	return &resourceRepo{}
+func NewRepositoryResource() resource.Resource {
+	return &repositoryResource{}
 }
