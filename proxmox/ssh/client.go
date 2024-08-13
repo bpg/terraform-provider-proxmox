@@ -270,31 +270,8 @@ func (c *client) NodeUpload(
 			remoteFilePath, bytesUploaded, fileSize)
 	}
 
-	remoteStat, err := remoteFile.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to read file info of uploaded file %s: %w", remoteFilePath, err)
-	}
-
-	remoteFileMode := remoteStat.Mode()
-
-	if d.Mode != "" {
-		parsedFileMode, parseErr := strconv.ParseUint(d.Mode, 8, 12)
-		if parseErr != nil {
-			return fmt.Errorf("failed to parse file mode %q: %w", d.Mode, err)
-		}
-
-		targetFileMode := os.FileMode(uint32(parsedFileMode))
-		if err = sftpClient.Chmod(remoteFilePath, targetFileMode); err != nil {
-			return fmt.Errorf("failed to change file mode of remote file from %#o (%s) to %#o (%s): %w",
-				remoteFileMode.Perm(), remoteFileMode, targetFileMode.Perm(), targetFileMode, err)
-		}
-
-		remoteFileMode = targetFileMode
-	}
-
 	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
 		"remote_file_path": remoteFilePath,
-		"remote_file_mode": fmt.Sprintf("%#o (%s)", remoteFileMode, remoteFileMode),
 		"size":             bytesUploaded,
 	})
 
