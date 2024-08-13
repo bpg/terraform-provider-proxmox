@@ -23,18 +23,18 @@ import (
 
 // Ensure the implementation satisfies the required interfaces.
 var (
-	_ datasource.DataSource              = &dataSourceRepo{}
-	_ datasource.DataSourceWithConfigure = &dataSourceRepo{}
+	_ datasource.DataSource              = &repositoryDataSource{}
+	_ datasource.DataSourceWithConfigure = &repositoryDataSource{}
 )
 
-// dataSourceRepo is the data source implementation for an APT repository.
-type dataSourceRepo struct {
+// repositoryDataSource is the data source implementation for an APT repository.
+type repositoryDataSource struct {
 	// client is the Proxmox VE API client.
 	client proxmox.Client
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *dataSourceRepo) Configure(
+func (d *repositoryDataSource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -58,7 +58,7 @@ func (d *dataSourceRepo) Configure(
 }
 
 // Metadata returns the data source type name.
-func (d *dataSourceRepo) Metadata(
+func (d *repositoryDataSource) Metadata(
 	_ context.Context,
 	req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
@@ -67,7 +67,11 @@ func (d *dataSourceRepo) Metadata(
 }
 
 // Read fetches the specified APT repository from the Proxmox VE API.
-func (d *dataSourceRepo) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *repositoryDataSource) Read(
+	ctx context.Context,
+	req datasource.ReadRequest,
+	resp *datasource.ReadResponse,
+) {
 	var rp modelRepo
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &rp)...)
@@ -93,7 +97,7 @@ func (d *dataSourceRepo) Read(ctx context.Context, req datasource.ReadRequest, r
 }
 
 // Schema defines the schema for the APT repository.
-func (d *dataSourceRepo) Schema(
+func (d *repositoryDataSource) Schema(
 	_ context.Context,
 	_ datasource.SchemaRequest,
 	resp *datasource.SchemaResponse,
@@ -159,8 +163,8 @@ func (d *dataSourceRepo) Schema(
 	}
 }
 
-// NewDataSourceRepo returns a new data source for an APT repository.
+// NewRepositoryDataSource returns a new data source for an APT repository.
 // This is a helper function to simplify the provider implementation.
-func NewDataSourceRepo() datasource.DataSource {
-	return &dataSourceRepo{}
+func NewRepositoryDataSource() datasource.DataSource {
+	return &repositoryDataSource{}
 }

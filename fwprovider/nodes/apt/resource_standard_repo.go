@@ -29,26 +29,26 @@ import (
 )
 
 const (
-	// ResourceStandardRepoIDPrefix is the prefix for the resource ID of resourceStandardRepo.
+	// ResourceStandardRepoIDPrefix is the prefix for the resource ID of standardRepositoryResource.
 	ResourceStandardRepoIDPrefix = "apt_standard_repository"
 )
 
 // Ensure the resource implements the required interfaces.
 var (
-	_ resource.Resource                = &resourceStandardRepo{}
-	_ resource.ResourceWithConfigure   = &resourceStandardRepo{}
-	_ resource.ResourceWithImportState = &resourceStandardRepo{}
+	_ resource.Resource                = &standardRepositoryResource{}
+	_ resource.ResourceWithConfigure   = &standardRepositoryResource{}
+	_ resource.ResourceWithImportState = &standardRepositoryResource{}
 )
 
-// resourceStandardRepo contains the APT standard repository resource's internal data.
-type resourceStandardRepo struct {
+// standardRepositoryResource contains the APT standard repository resource's internal data.
+type standardRepositoryResource struct {
 	// client is the Proxmox VE API client.
 	client proxmox.Client
 }
 
 // read reads information about an APT standard repository from the Proxmox VE API.
 // Note that the name of the node must be set before this method is called!
-func (r *resourceStandardRepo) read(ctx context.Context, srp *modelStandardRepo) (bool, diag.Diagnostics) {
+func (r *standardRepositoryResource) read(ctx context.Context, srp *modelStandardRepo) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	data, err := r.client.Node(srp.Node.ValueString()).APT().Repositories().Get(ctx)
@@ -74,7 +74,7 @@ func (r *resourceStandardRepo) read(ctx context.Context, srp *modelStandardRepo)
 
 // readBack reads information about an APT standard repository from the Proxmox VE API and then updates the response
 // state accordingly.
-func (r *resourceStandardRepo) readBack(
+func (r *standardRepositoryResource) readBack(
 	ctx context.Context,
 	srp *modelStandardRepo,
 	diags *diag.Diagnostics,
@@ -97,7 +97,7 @@ func (r *resourceStandardRepo) readBack(
 }
 
 // Configure adds the provider-configured client to the resource.
-func (r *resourceStandardRepo) Configure(
+func (r *standardRepositoryResource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -123,7 +123,11 @@ func (r *resourceStandardRepo) Configure(
 // Create adds an APT standard repository to the repository source lists.
 // The name of this method might be a bit confusing for this resource, but this is due to the way how the Proxmox VE API
 // works for APT standard repositories.
-func (r *resourceStandardRepo) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *standardRepositoryResource) Create(
+	ctx context.Context,
+	req resource.CreateRequest,
+	resp *resource.CreateResponse,
+) {
 	var srp modelStandardRepo
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &srp)...)
@@ -153,11 +157,11 @@ func (r *resourceStandardRepo) Create(ctx context.Context, req resource.CreateRe
 //
 // [caveats]: https://developer.hashicorp.com/terraform/plugin/framework/resources/delete#caveats
 // [recommendations]: https://developer.hashicorp.com/terraform/plugin/framework/resources/delete#recommendations
-func (r *resourceStandardRepo) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
+func (r *standardRepositoryResource) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
 }
 
 // ImportState imports an APT standard repository from the Proxmox VE API.
-func (r *resourceStandardRepo) ImportState(
+func (r *standardRepositoryResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -184,7 +188,7 @@ func (r *resourceStandardRepo) ImportState(
 }
 
 // Metadata defines the name of the APT standard repository resource.
-func (r *resourceStandardRepo) Metadata(
+func (r *standardRepositoryResource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
@@ -193,7 +197,11 @@ func (r *resourceStandardRepo) Metadata(
 }
 
 // Read reads the APT standard repository.
-func (r *resourceStandardRepo) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *standardRepositoryResource) Read(
+	ctx context.Context,
+	req resource.ReadRequest,
+	resp *resource.ReadResponse,
+) {
 	var srp modelStandardRepo
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &srp)...)
@@ -215,7 +223,11 @@ func (r *resourceStandardRepo) Read(ctx context.Context, req resource.ReadReques
 }
 
 // Schema defines the schema for the APT standard repository.
-func (r *resourceStandardRepo) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *standardRepositoryResource) Schema(
+	_ context.Context,
+	_ resource.SchemaRequest,
+	resp *resource.SchemaResponse,
+) {
 	resp.Schema = schema.Schema{
 		Description: "Manages an APT standard repository of a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
@@ -276,11 +288,11 @@ func (r *resourceStandardRepo) Schema(_ context.Context, _ resource.SchemaReques
 //
 // [caveats]: https://developer.hashicorp.com/terraform/plugin/framework/resources/delete#caveats
 // [recommendations]: https://developer.hashicorp.com/terraform/plugin/framework/resources/delete#recommendations
-func (r *resourceStandardRepo) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
+func (r *standardRepositoryResource) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
 }
 
-// NewResourceStandardRepo returns a new resource for managing an APT standard repository.
+// NewStandardRepositoryResource returns a new resource for managing an APT standard repository.
 // This is a helper function to simplify the provider implementation.
-func NewResourceStandardRepo() resource.Resource {
-	return &resourceStandardRepo{}
+func NewStandardRepositoryResource() resource.Resource {
+	return &standardRepositoryResource{}
 }

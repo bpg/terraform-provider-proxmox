@@ -25,17 +25,17 @@ import (
 
 // Ensure the implementation satisfies the required interfaces.
 var (
-	_ datasource.DataSource              = &datasourceUSB{}
-	_ datasource.DataSourceWithConfigure = &datasourceUSB{}
+	_ datasource.DataSource              = &usbDataSource{}
+	_ datasource.DataSourceWithConfigure = &usbDataSource{}
 )
 
-// datasourceUSB is the data source implementation for a USB hardware mapping.
-type datasourceUSB struct {
+// usbDataSource is the data source implementation for a USB hardware mapping.
+type usbDataSource struct {
 	client *mappings.Client
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *datasourceUSB) Configure(
+func (d *usbDataSource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -58,12 +58,12 @@ func (d *datasourceUSB) Configure(
 }
 
 // Metadata returns the data source type name.
-func (d *datasourceUSB) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *usbDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mapping_usb"
 }
 
 // Read fetches the specified USB hardware mapping from the Proxmox VE API.
-func (d *datasourceUSB) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *usbDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var hm modelUSB
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &hm)...)
@@ -91,7 +91,7 @@ func (d *datasourceUSB) Read(ctx context.Context, req datasource.ReadRequest, re
 }
 
 // Schema defines the schema for the USB hardware mapping.
-func (d *datasourceUSB) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *usbDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	comment := dataSourceSchemaBaseAttrComment
 	comment.Optional = false
 	comment.Computed = true
@@ -144,8 +144,8 @@ func (d *datasourceUSB) Schema(_ context.Context, _ datasource.SchemaRequest, re
 	}
 }
 
-// NewDataSourceUSB returns a new data source for a USB hardware mapping.
+// NewUSBDataSource returns a new data source for a USB hardware mapping.
 // This is a helper function to simplify the provider implementation.
-func NewDataSourceUSB() datasource.DataSource {
-	return &datasourceUSB{}
+func NewUSBDataSource() datasource.DataSource {
+	return &usbDataSource{}
 }

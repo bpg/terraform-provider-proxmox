@@ -22,18 +22,18 @@ import (
 
 // Ensure the implementation satisfies the required interfaces.
 var (
-	_ datasource.DataSource              = &dataSourceStandardRepo{}
-	_ datasource.DataSourceWithConfigure = &dataSourceStandardRepo{}
+	_ datasource.DataSource              = &standardRepositoryDataSource{}
+	_ datasource.DataSourceWithConfigure = &standardRepositoryDataSource{}
 )
 
-// dataSourceStandardRepo is the data source implementation for an APT standard repository.
-type dataSourceStandardRepo struct {
+// standardRepositoryDataSource is the data source implementation for an APT standard repository.
+type standardRepositoryDataSource struct {
 	// client is the Proxmox VE API client.
 	client proxmox.Client
 }
 
 // Configure adds the provider-configured client to the data source.
-func (d *dataSourceStandardRepo) Configure(
+func (d *standardRepositoryDataSource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -57,7 +57,7 @@ func (d *dataSourceStandardRepo) Configure(
 }
 
 // Metadata returns the data source type name.
-func (d *dataSourceStandardRepo) Metadata(
+func (d *standardRepositoryDataSource) Metadata(
 	_ context.Context,
 	req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
@@ -66,7 +66,11 @@ func (d *dataSourceStandardRepo) Metadata(
 }
 
 // Read fetches the specified APT standard repository from the Proxmox VE API.
-func (d *dataSourceStandardRepo) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *standardRepositoryDataSource) Read(
+	ctx context.Context,
+	req datasource.ReadRequest,
+	resp *datasource.ReadResponse,
+) {
 	var srp modelStandardRepo
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &srp)...)
@@ -88,7 +92,7 @@ func (d *dataSourceStandardRepo) Read(ctx context.Context, req datasource.ReadRe
 }
 
 // Schema defines the schema for the APT standard repository.
-func (d *dataSourceStandardRepo) Schema(
+func (d *standardRepositoryDataSource) Schema(
 	_ context.Context,
 	_ datasource.SchemaRequest,
 	resp *datasource.SchemaResponse,
@@ -135,8 +139,8 @@ func (d *dataSourceStandardRepo) Schema(
 	}
 }
 
-// NewDataSourceStandardRepo returns a new data source for an APT standard repository.
+// NewStandardRepositoryDataSource returns a new data source for an APT standard repository.
 // This is a helper function to simplify the provider implementation.
-func NewDataSourceStandardRepo() datasource.DataSource {
-	return &dataSourceStandardRepo{}
+func NewStandardRepositoryDataSource() datasource.DataSource {
+	return &standardRepositoryDataSource{}
 }

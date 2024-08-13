@@ -31,19 +31,19 @@ import (
 
 // Ensure the resource implements the required interfaces.
 var (
-	_ resource.Resource                = &resourceUSB{}
-	_ resource.ResourceWithConfigure   = &resourceUSB{}
-	_ resource.ResourceWithImportState = &resourceUSB{}
+	_ resource.Resource                = &usbResource{}
+	_ resource.ResourceWithConfigure   = &usbResource{}
+	_ resource.ResourceWithImportState = &usbResource{}
 )
 
-// resourceUSB contains the USB hardware mapping resource's internal data.
-type resourceUSB struct {
+// usbResource contains the USB hardware mapping resource's internal data.
+type usbResource struct {
 	// client is the hardware mapping API client.
 	client mappings.Client
 }
 
 // read reads information about a USB hardware mapping from the Proxmox VE API.
-func (r *resourceUSB) read(ctx context.Context, hm *modelUSB) (bool, diag.Diagnostics) {
+func (r *usbResource) read(ctx context.Context, hm *modelUSB) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	hmName := hm.Name.ValueString()
@@ -65,7 +65,7 @@ func (r *resourceUSB) read(ctx context.Context, hm *modelUSB) (bool, diag.Diagno
 // readBack reads information about a created or modified USB hardware mapping from the Proxmox VE API then updates the
 // response state accordingly.
 // The Terraform resource identifier must have been set in the state before this method is called!
-func (r *resourceUSB) readBack(ctx context.Context, hm *modelUSB, respDiags *diag.Diagnostics, respState *tfsdk.State) {
+func (r *usbResource) readBack(ctx context.Context, hm *modelUSB, respDiags *diag.Diagnostics, respState *tfsdk.State) {
 	found, diags := r.read(ctx, hm)
 
 	respDiags.Append(diags...)
@@ -83,7 +83,7 @@ func (r *resourceUSB) readBack(ctx context.Context, hm *modelUSB, respDiags *dia
 }
 
 // Configure adds the provider-configured client to the resource.
-func (r *resourceUSB) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *usbResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -101,7 +101,7 @@ func (r *resourceUSB) Configure(_ context.Context, req resource.ConfigureRequest
 }
 
 // Create creates a new USB hardware mapping.
-func (r *resourceUSB) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *usbResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var hm modelUSB
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &hm)...)
@@ -129,7 +129,7 @@ func (r *resourceUSB) Create(ctx context.Context, req resource.CreateRequest, re
 }
 
 // Delete deletes an existing USB hardware mapping.
-func (r *resourceUSB) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *usbResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var hm modelUSB
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &hm)...)
@@ -156,7 +156,7 @@ func (r *resourceUSB) Delete(ctx context.Context, req resource.DeleteRequest, re
 }
 
 // ImportState imports a USB hardware mapping from the Proxmox VE API.
-func (r *resourceUSB) ImportState(
+func (r *usbResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -171,14 +171,14 @@ func (r *resourceUSB) ImportState(
 }
 
 // Metadata defines the name of the USB hardware mapping.
-func (r *resourceUSB) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *usbResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mapping_usb"
 }
 
 // Read reads the USB hardware mapping.
 //
 
-func (r *resourceUSB) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *usbResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data modelUSB
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -200,7 +200,7 @@ func (r *resourceUSB) Read(ctx context.Context, req resource.ReadRequest, resp *
 }
 
 // Schema defines the schema for the USB hardware mapping.
-func (r *resourceUSB) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *usbResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	comment := resourceSchemaBaseAttrComment
 	comment.Description = "The comment of this USB hardware mapping."
 	commentMap := comment
@@ -257,7 +257,7 @@ func (r *resourceUSB) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 }
 
 // Update updates an existing USB hardware mapping.
-func (r *resourceUSB) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *usbResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var hmCurrent, hmPlan modelUSB
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &hmPlan)...)
@@ -283,8 +283,8 @@ func (r *resourceUSB) Update(ctx context.Context, req resource.UpdateRequest, re
 	r.readBack(ctx, &hmPlan, &resp.Diagnostics, &resp.State)
 }
 
-// NewResourceUSB returns a new resource for managing a USB hardware mapping.
+// NewUSBResource returns a new resource for managing a USB hardware mapping.
 // This is a helper function to simplify the provider implementation.
-func NewResourceUSB() resource.Resource {
-	return &resourceUSB{}
+func NewUSBResource() resource.Resource {
+	return &usbResource{}
 }

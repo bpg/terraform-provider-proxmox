@@ -32,19 +32,19 @@ import (
 
 // Ensure the resource implements the required interfaces.
 var (
-	_ resource.Resource                = &resourcePCI{}
-	_ resource.ResourceWithConfigure   = &resourcePCI{}
-	_ resource.ResourceWithImportState = &resourcePCI{}
+	_ resource.Resource                = &pciResource{}
+	_ resource.ResourceWithConfigure   = &pciResource{}
+	_ resource.ResourceWithImportState = &pciResource{}
 )
 
-// resourcePCI contains the PCI hardware mapping resource's internal data.
-type resourcePCI struct {
+// pciResource contains the PCI hardware mapping resource's internal data.
+type pciResource struct {
 	// client is the hardware mapping API client.
 	client mappings.Client
 }
 
 // read reads information about a PCI hardware mapping from the Proxmox VE API.
-func (r *resourcePCI) read(ctx context.Context, hm *modelPCI) (bool, diag.Diagnostics) {
+func (r *pciResource) read(ctx context.Context, hm *modelPCI) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
 	hmName := hm.Name.ValueString()
@@ -66,7 +66,7 @@ func (r *resourcePCI) read(ctx context.Context, hm *modelPCI) (bool, diag.Diagno
 // readBack reads information about a created or modified PCI hardware mapping from the Proxmox VE API then updates the
 // response state accordingly.
 // The Terraform resource identifier must have been set in the state before this method is called!
-func (r *resourcePCI) readBack(ctx context.Context, hm *modelPCI, respDiags *diag.Diagnostics, respState *tfsdk.State) {
+func (r *pciResource) readBack(ctx context.Context, hm *modelPCI, respDiags *diag.Diagnostics, respState *tfsdk.State) {
 	found, diags := r.read(ctx, hm)
 
 	respDiags.Append(diags...)
@@ -84,7 +84,7 @@ func (r *resourcePCI) readBack(ctx context.Context, hm *modelPCI, respDiags *dia
 }
 
 // Configure adds the provider-configured client to the resource.
-func (r *resourcePCI) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *pciResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -101,7 +101,7 @@ func (r *resourcePCI) Configure(_ context.Context, req resource.ConfigureRequest
 }
 
 // Create creates a new PCI hardware mapping.
-func (r *resourcePCI) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *pciResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var hm modelPCI
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &hm)...)
@@ -127,7 +127,7 @@ func (r *resourcePCI) Create(ctx context.Context, req resource.CreateRequest, re
 }
 
 // Delete deletes an existing PCI hardware mapping.
-func (r *resourcePCI) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *pciResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var hm modelPCI
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &hm)...)
@@ -154,7 +154,7 @@ func (r *resourcePCI) Delete(ctx context.Context, req resource.DeleteRequest, re
 }
 
 // ImportState imports a PCI hardware mapping from the Proxmox VE API.
-func (r *resourcePCI) ImportState(
+func (r *pciResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -169,12 +169,12 @@ func (r *resourcePCI) ImportState(
 }
 
 // Metadata defines the name of the PCI hardware mapping.
-func (r *resourcePCI) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *pciResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hardware_mapping_pci"
 }
 
 // Read reads the PCI hardware mapping.
-func (r *resourcePCI) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *pciResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data modelPCI
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
@@ -196,7 +196,7 @@ func (r *resourcePCI) Read(ctx context.Context, req resource.ReadRequest, resp *
 }
 
 // Schema defines the schema for the PCI hardware mapping.
-func (r *resourcePCI) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *pciResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	comment := resourceSchemaBaseAttrComment
 	comment.Description = "The comment of this PCI hardware mapping."
 	commentMap := comment
@@ -272,7 +272,7 @@ func (r *resourcePCI) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 }
 
 // Update updates an existing PCI hardware mapping.
-func (r *resourcePCI) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *pciResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var hmCurrent, hmPlan modelPCI
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &hmPlan)...)
@@ -301,8 +301,8 @@ func (r *resourcePCI) Update(ctx context.Context, req resource.UpdateRequest, re
 	r.readBack(ctx, &hmPlan, &resp.Diagnostics, &resp.State)
 }
 
-// NewResourcePCI returns a new resource for managing a PCI hardware mapping.
+// NewPCIResource returns a new resource for managing a PCI hardware mapping.
 // This is a helper function to simplify the provider implementation.
-func NewResourcePCI() resource.Resource {
-	return &resourcePCI{}
+func NewPCIResource() resource.Resource {
+	return &pciResource{}
 }
