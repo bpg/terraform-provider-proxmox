@@ -80,6 +80,27 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
 }
 ```
 
+The `file_mode` attribute can be used to make a script file executable, e.g. when referencing the file in the `hook_script_file_id` attribute of [a container](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_container#hook_script_file_id) or [a VM](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_vm#hook_script_file_id) resource which is a requirement enforced by the Proxmox VE API.
+
+```hcl
+resource "proxmox_virtual_environment_file" "hook_script" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = "pve"
+  # Hook scripts must be executable, otherwise the Proxmox VE API will reject the configuration for the VM/CT.
+  file_mode    = "0700"
+
+  source_raw {
+    data      = <<-EOF
+      #!/usr/bin/env bash
+
+      echo "Running hook script"
+      EOF
+    file_name = "prepare-hook.sh"
+  }
+}
+```
+
 ### Container Template (`vztmpl`)
 
 -> Consider using `proxmox_virtual_environment_download_file` resource instead. Using this resource for container images is less efficient (requires to transfer uploaded image to node) though still supported.

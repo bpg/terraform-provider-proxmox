@@ -63,24 +63,3 @@ local-hostname: myhost.internal
     file_name = "meta-config.yaml"
   }
 }
-
-#===============================================================================
-# Snippets
-#===============================================================================
-
-resource "proxmox_virtual_environment_file" "hook_script" {
-  content_type = "snippets"
-  datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local"))
-  node_name    = data.proxmox_virtual_environment_datastores.example.node_name
-  # Hook scripts must be executable, otherwise the Proxmox VE API will reject the configuration for the VM/CT.
-  file_mode = "0700"
-
-  source_raw {
-    data = <<-EOF
-      #!/usr/bin/env bash
-
-      echo "Running hook script"
-      EOF
-    file_name = "prepare-hook.sh"
-  }
-}
