@@ -48,6 +48,7 @@ const (
 	mkResourceVirtualEnvironmentFileDatastoreID          = "datastore_id"
 	mkResourceVirtualEnvironmentFileFileModificationDate = "file_modification_date"
 	mkResourceVirtualEnvironmentFileFileName             = "file_name"
+	mkResourceVirtualEnvironmentFileFileMode             = "file_mode"
 	mkResourceVirtualEnvironmentFileFileSize             = "file_size"
 	mkResourceVirtualEnvironmentFileFileTag              = "file_tag"
 	mkResourceVirtualEnvironmentFileNodeName             = "node_name"
@@ -94,6 +95,15 @@ func File() *schema.Resource {
 				Type:        schema.TypeString,
 				Description: "The file name",
 				Computed:    true,
+			},
+			mkResourceVirtualEnvironmentFileFileMode: {
+				Type: schema.TypeString,
+				Description: `The file mode in octal format, e.g. "0700" or "600".` +
+					`Note that the prefixes "0o" and "0x" are not supported!` +
+					`Setting this attribute is also only allowed for "root@pam" authenticated user.`,
+				Optional:         true,
+				ValidateDiagFunc: validators.FileMode(),
+				ForceNew:         true,
 			},
 			mkResourceVirtualEnvironmentFileFileSize: {
 				Type:        schema.TypeInt,
@@ -308,6 +318,7 @@ func fileParseImportID(id string) (string, fileVolumeID, error) {
 
 func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
+	fileMode := d.Get(mkResourceVirtualEnvironmentFileFileMode).(string)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(uploadTimeout)*time.Second)
 	defer cancel()
@@ -538,6 +549,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		ContentType: *contentType,
 		FileName:    *fileName,
 		File:        file,
+		Mode:        fileMode,
 	}
 
 	switch *contentType {
