@@ -145,14 +145,13 @@ func (e *Environment) Client() api.Client {
 		e.once.Do(
 			func() {
 				endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
-				authPayload := utils.GetAnyStringEnv("PROXMOX_VE_AUTH_PAYLOAD")
 				authTicket := utils.GetAnyStringEnv("PROXMOX_VE_AUTH_TICKET")
 				csrfPreventionToken := utils.GetAnyStringEnv("PROXMOX_VE_CSRF_PREVENTION_TOKEN")
 				apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
 				username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
 				password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
 
-				creds, err := api.NewCredentials(username, password, "", apiToken, authTicket, csrfPreventionToken, authPayload)
+				creds, err := api.NewCredentials(username, password, "", apiToken, authTicket, csrfPreventionToken)
 				if err != nil {
 					panic(err)
 				}

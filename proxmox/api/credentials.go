@@ -17,7 +17,6 @@ const rootUsername = "root@pam"
 // Credentials is a struct that holds the credentials for the Proxmox Virtual
 // Environment API.
 type Credentials struct {
-	AuthPayload         string
 	AuthTicket          string
 	CSRFPreventionToken string
 	APIToken            *string
@@ -29,11 +28,10 @@ type Credentials struct {
 // NewCredentials creates a new Credentials struct.
 //
 //nolint:lll
-func NewCredentials(username, password, otp, apiToken string, authTicket string, csrfPreventionToken string, authPayload string) (*Credentials, error) {
+func NewCredentials(username, password, otp, apiToken string, authTicket string, csrfPreventionToken string) (*Credentials, error) {
 	errorAuthTicketCommonMsg := "the Proxmox Virtual Environment API requires auth params; "
 
 	switch {
-	case authPayload != "":
 	case authTicket != "" && csrfPreventionToken != "":
 		switch {
 		case authTicket == "":
@@ -59,7 +57,7 @@ func NewCredentials(username, password, otp, apiToken string, authTicket string,
 		}
 	default:
 		return nil, errors.New(errorAuthTicketCommonMsg +
-			"choose either: authPayload, authTicket + csrfPreventionToken, apiToken; username + password")
+			"choose either: authTicket + csrfPreventionToken, apiToken; username + password")
 	}
 
 	if username != "" && !strings.Contains(username, "@") {
@@ -69,7 +67,6 @@ func NewCredentials(username, password, otp, apiToken string, authTicket string,
 	}
 
 	c := &Credentials{
-		AuthPayload:         authPayload,
 		AuthTicket:          authTicket,
 		CSRFPreventionToken: csrfPreventionToken,
 		Username:            username,

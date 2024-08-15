@@ -50,7 +50,6 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT")
 	insecure := utils.GetAnyBoolEnv("PROXMOX_VE_INSECURE", "PM_VE_INSECURE")
 	minTLS := utils.GetAnyStringEnv("PROXMOX_VE_MIN_TLS", "PM_VE_MIN_TLS")
-	authPayload := utils.GetAnyStringEnv("PROXMOX_VE_AUTH_PAYLOAD", "PM_VE_AUTH_PAYLOAD")
 	authTicket := utils.GetAnyStringEnv("PROXMOX_VE_AUTH_TICKET", "PM_VE_AUTH_TICKET")
 	csrfPreventionToken := utils.GetAnyStringEnv("PROXMOX_VE_CSRF_PREVENTION_TOKEN", "PM_VE_CSRF_PREVENTION_TOKEN")
 	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN")
@@ -68,10 +67,6 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	if v, ok := d.GetOk(mkProviderMinTLS); ok {
 		minTLS = v.(string)
-	}
-
-	if v, ok := d.GetOk(mkProviderAuthPayload); ok {
-		authPayload = v.(string)
 	}
 
 	if v, ok := d.GetOk(mkProviderAuthTicket); ok {
@@ -98,7 +93,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		password = v.(string)
 	}
 
-	creds, err = api.NewCredentials(username, password, otp, apiToken, authTicket, csrfPreventionToken, authPayload)
+	creds, err = api.NewCredentials(username, password, otp, apiToken, authTicket, csrfPreventionToken)
 	diags = append(diags, diag.FromErr(err)...)
 
 	conn, err = api.NewConnection(endpoint, insecure, minTLS)

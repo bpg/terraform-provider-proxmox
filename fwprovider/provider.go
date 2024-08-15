@@ -62,7 +62,6 @@ type proxmoxProviderModel struct {
 	Endpoint            types.String `tfsdk:"endpoint"`
 	Insecure            types.Bool   `tfsdk:"insecure"`
 	MinTLS              types.String `tfsdk:"min_tls"`
-	AuthPayload         types.String `tfsdk:"auth_payload"`
 	AuthTicket          types.String `tfsdk:"auth_ticket"`
 	CSRFPreventionToken types.String `tfsdk:"csrf_prevention_token"`
 	APIToken            types.String `tfsdk:"api_token"`
@@ -99,6 +98,21 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 	resp.Schema = schema.Schema{
 		// Attributes specified in alphabetical order.
 		Attributes: map[string]schema.Attribute{
+			"api_token": schema.StringAttribute{
+				Description: "The API token for the Proxmox VE API.",
+				Optional:    true,
+				Sensitive:   true,
+			},
+			"auth_ticket": schema.StringAttribute{
+				Description: "The pre-authenticated Ticket for the Proxmox VE API.",
+				Optional:    true,
+				Sensitive:   true,
+			},
+			"csrf_prevention_token": schema.StringAttribute{
+				Description: "The pre-authenticated CSRF Prevention Token for the Proxmox VE API.",
+				Optional:    true,
+				Sensitive:   true,
+			},
 			"endpoint": schema.StringAttribute{
 				Description: "The endpoint for the Proxmox VE API.",
 				Optional:    true,
@@ -114,26 +128,6 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 				Description: "The minimum required TLS version for API calls." +
 					"Supported values: `1.0|1.1|1.2|1.3`. Defaults to `1.3`.",
 				Optional: true,
-			},
-			"auth_payload": schema.StringAttribute{
-				Description: "The pre-authd full Ticket Payload json for the Proxmox VE API (takes precedence over auth_ticket).",
-				Optional:    true,
-				Sensitive:   true,
-			},
-			"auth_ticket": schema.StringAttribute{
-				Description: "The pre-authd Ticket for the Proxmox VE API.",
-				Optional:    true,
-				Sensitive:   true,
-			},
-			"csrf_prevention_token": schema.StringAttribute{
-				Description: "The pre-authd CSRF Prevention Token for the Proxmox VE API.",
-				Optional:    true,
-				Sensitive:   true,
-			},
-			"api_token": schema.StringAttribute{
-				Description: "The API token for the Proxmox VE API.",
-				Optional:    true,
-				Sensitive:   true,
 			},
 			"otp": schema.StringAttribute{
 				Description: "The one-time password for the Proxmox VE API.",
@@ -280,7 +274,6 @@ func (p *proxmoxProvider) Configure(
 	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
 	insecure := utils.GetAnyBoolEnv("PROXMOX_VE_INSECURE")
 	minTLS := utils.GetAnyStringEnv("PROXMOX_VE_MIN_TLS")
-	authPayload := utils.GetAnyStringEnv("PROXMOX_VE_AUTH_PAYLOAD")
 	authTicket := utils.GetAnyStringEnv("PROXMOX_VE_AUTH_TICKET")
 	csrfPreventionToken := utils.GetAnyStringEnv("PROXMOX_VE_CSRF_PREVENTION_TOKEN")
 	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
@@ -297,10 +290,6 @@ func (p *proxmoxProvider) Configure(
 
 	if !config.MinTLS.IsNull() {
 		minTLS = config.MinTLS.ValueString()
-	}
-
-	if !config.AuthPayload.IsNull() {
-		authPayload = config.AuthPayload.ValueString()
 	}
 
 	if !config.AuthTicket.IsNull() {
@@ -339,7 +328,7 @@ func (p *proxmoxProvider) Configure(
 
 	// Create the Proxmox VE API client
 
-	creds, err := api.NewCredentials(username, password, "", apiToken, authTicket, csrfPreventionToken, authPayload)
+	creds, err := api.NewCredentials(username, password, "", apiToken, authTicket, csrfPreventionToken)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Proxmox VE API credentials",

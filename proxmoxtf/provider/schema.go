@@ -17,7 +17,6 @@ const (
 	mkProviderEndpoint            = "endpoint"
 	mkProviderInsecure            = "insecure"
 	mkProviderMinTLS              = "min_tls"
-	mkProviderAuthPayload         = "auth_payload"
 	mkProviderAuthTicket          = "auth_ticket"
 	mkProviderCSRFPreventionToken = "csrf_prevention_token" // #nosec G101
 	mkProviderAPIToken            = "api_token"
@@ -60,25 +59,18 @@ func createSchema() map[string]*schema.Schema {
 			Description: "The minimum required TLS version for API calls." +
 				"Supported values: `1.0|1.1|1.2|1.3`. Defaults to `1.3`.",
 		},
-		mkProviderAuthPayload: {
-			Type:         schema.TypeString,
-			Optional:     true,
-			Sensitive:    true,
-			Description:  "The pre-authd full Ticket Payload json for the Proxmox VE API (takes precedence over auth_ticket).",
-			ValidateFunc: validation.StringIsNotEmpty,
-		},
 		mkProviderAuthTicket: {
 			Type:         schema.TypeString,
 			Optional:     true,
 			Sensitive:    true,
-			Description:  "The pre-authd Ticket for the Proxmox VE API.",
+			Description:  "The pre-authenticated Ticket for the Proxmox VE API.",
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
 		mkProviderCSRFPreventionToken: {
 			Type:         schema.TypeString,
 			Optional:     true,
 			Sensitive:    true,
-			Description:  "The pre-authd CSRF Prevention Token for the Proxmox VE API.",
+			Description:  "The pre-authenticated CSRF Prevention Token for the Proxmox VE API.",
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
 		mkProviderAPIToken: {

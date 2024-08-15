@@ -16,9 +16,6 @@ Use the navigation to the left to read about the available resources.
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
 
-  # TODO: use terraform variable or remove the line, and use PROXMOX_VE_AUTH_PAYLOAD environment variable
-  # auth_payload = '{"data":{"CSRFPreventionToken":"12345678:some_blob","username":"username@realm","ticket":"PVE:username@realmy:12345678::some_base64_payload==","cap":{"access":{"User.Modify":1}}}}'
-
   # TODO: use terraform variable or remove the line, and use PROXMOX_VE_AUTH_TICKET environment variable
   # auth_ticket           = "PVE:username@realm:12345678::some_base64_payload=="
   # TODO: use terraform variable or remove the line, and use PROXMOX_VE_CSRF_PREVENTION_TOKEN= environment variable
@@ -49,26 +46,17 @@ provider "proxmox" {
 
 The Proxmox provider offers a flexible means of providing credentials for authentication.
 Static credentials and pre-authenticated session-ticket can be provided to the `proxmox` block through one the choices of arguments below, ordered by precedence:
-- `auth_payload`
 - `auth_ticket` and `csrf_prevention_token`
 - `api_token`
 - `username` and `password`
 
 !> Hard-coding credentials into any Terraform configuration is not recommended, and risks secret leakage should this file ever be committed to a public version control system.
 
-Static credentials can be provided in-line in the Proxmox provider block, by adding one of the arguments above:
+Static credentials can be provided in-line in the Proxmox provider block, by adding one of the arguments above (example with username and password):
 
 ```hcl
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
-
-  auth_payload = "{\"data\":{\"CSRFPreventionToken\":\"12345678:some_blob\",\"username\":\"username@realm\",\"ticket\":\"PVE:username@realmn:12345678::some_base64_payload==\",\"cap\":{\"access\":{\"User.Modify\":1}}}}"
-  # setting the auth_payload into terraform will need (at least) its double-quotes escaped; even better to use as an environment-variable
-
-  auth_ticket = "PVE:username@realm:12345678::some_base64_payload=="
-  csrf_prevention_token = "12345678:some_blob"
-
-  api_token = "username@realm!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
   username = "username@realm"
   password = "a-strong-password"
@@ -80,13 +68,6 @@ A better approach is to extract these values into Terraform variables, and refer
 ```hcl
 provider "proxmox" {
   endpoint = var.virtual_environment_endpoint
-
-  auth_payload = var.virtual_environment_auth_payload
-
-  auth_ticket           = var.virtual_environment_auth_ticket
-  csrf_prevention_token = var.virtual_environment_csrf_prevention_token
-
-  api_token = var.virtual_environment_api_token
 
   username = var.virtual_environment_username
   password = var.virtual_environment_password
@@ -109,13 +90,6 @@ provider "proxmox" {
 ```
 
 ```sh
-export PROXMOX_VE_AUTH_PAYLOAD='{"data":{"CSRFPreventionToken":"12345678:some_blob","username":"username@realm","ticket":"PVE:username@realm:12345678::some_base64_payload==","cap":{"access":{"User.Modify":1}}}}'
-
-export PROXMOX_VE_AUTH_TICKET='PVE:username@realm:12345678::some_base64_payload=='
-export PROXMOX_VE_CSRF_PREVENTION_TOKEN='12345678:some_blob'
-
-export PROXMOX_VE_API_TOKEN='username@realm!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-
 export PROXMOX_VE_USERNAME="username@realm"
 export PROXMOX_VE_PASSWORD='a-strong-password'
 terraform plan
@@ -125,29 +99,36 @@ See the [Argument Reference](#argument-reference) section for the supported vari
 
 ## Pre-Authentication, or Passing an Authentication Ticket into the provider
 
-It is possible to generate a session ticket with the api, and to pass the ticket-json into the provider with 1 of 2 methods:
-  - env-var `PROXMOX_VE_AUTH_PAYLOAD` (or auth_payload)
+It is possible to generate a session ticket with the api, and to pass the ticket and csrf_prevention_token into the provider with:
   - env-vars `PROXMOX_VE_AUTH_TICKET` with `PROXMOX_VE_CSRF_PREVENTION_TOKEN` (auth_ticket with csrf_prevention_token)
 
-An example `bash` of using `curl` and `jq` to query the proxmox api to get a proxmox session ticket; it is also very easy to pass in a TOTP password this way
-- Note: the export'ing of the 3x vars are redundant and shown for demonstration purposes, pick either: `PROXMOX_VE_AUTH_PAYLOAD` or `PROXMOX_VE_AUTH_TICKET` with `PROXMOX_VE_CSRF_PREVENTION_TOKEN`
+An example of using `curl` and `jq` to query the proxmox api to get a proxmox session ticket; it is also very easy to pass in a TOTP password this way:
+
+
+```hcl
+provider "proxmox" {
+  endpoint = "https://10.0.0.2:8006/"
+}
+```
+
 
 ```bash
 #!/usr/bin/bash
 
 ## assume vars are set: PROXMOX_VE_ENDPOINT, PROXMOX_VE_USERNAME, PROXMOX_VE_PASSWORD
-## end-goal: automatically set PROXMOX_VE_AUTH_PAYLOAD
+## end-goal: automatically set PROXMOX_VE_AUTH_TICKET and PROXMOX_VE_CSRF_PREVENTION_TOKEN
 
 _user_totp_password='123456' ## optional TOTP password
 
+
 proxmox_api_ticket_path='api2/json/access/ticket' ## cannot have double "//" - ensure endpoint ends with a "/" and this string does not begin with a "/", or vice-versa
 
-
+## call the auth api endpoint
 resp=$( curl -q -s -k --data-urlencode "username=${PROXMOX_VE_USERNAME}"  --data-urlencode "password=${PROXMOX_VE_PASSWORD}"  "${PROXMOX_VE_ENDPOINT}${proxmox_api_ticket_path}" )
 auth_ticket=$( jq -r '.data.ticket' <<<"${resp}" )
 resp_csrf=$( jq -r '.data.CSRFPreventionToken' <<<"${resp}" )
 
-
+## check if the response payload needs a TFA (totp) passed, call the auth-api endpoint again
 if [[ $(jq -r '.data.NeedTFA' <<<"${resp}") == 1 ]]; then
   resp=$( curl -q -s -k  -H "CSRFPreventionToken: ${resp_csrf}" --data-urlencode  "username=${PROXMOX_VE_USERNAME}" --data-urlencode "tfa-challenge=${auth_ticket}" --data-urlencode "password=totp:${_user_totp_password}"  "${PROXMOX_VE_ENDPOINT}${proxmox_api_ticket_path}" )
   auth_ticket=$( jq -r '.data.ticket' <<<"${resp}" )
@@ -155,16 +136,13 @@ if [[ $(jq -r '.data.NeedTFA' <<<"${resp}") == 1 ]]; then
 fi
 
 
-
-## PROXMOX_VE_AUTH_PAYLOAD
-export PROXMOX_VE_AUTH_PAYLOAD="${resp}"
-
-
-## PROXMOX_VE_AUTH_TICKET  with  PROXMOX_VE_CSRF_PREVENTION_TOKEN
 export PROXMOX_VE_AUTH_TICKET="${auth_ticket}"
 export PROXMOX_VE_CSRF_PREVENTION_TOKEN="${resp_csrf}"
 
+terraform plan
 ```
+
+
 
 ## SSH Connection
 
@@ -434,8 +412,6 @@ In addition to [generic provider arguments](https://www.terraform.io/docs/config
 - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is `https://<your-cluster-endpoint>:8006/`. **Do not** include `/api2/json` at the end.
 - `insecure` - (Optional) Whether to skip the TLS verification step (can also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults to `false`.
 - `min_tls` - (Optional) The minimum required TLS version for API calls (can also be sourced from `PROXMOX_VE_MIN_TLS`). Supported values: `1.0|1.1|1.2|1.3`. If omitted, defaults to `1.3`.
-
-- `auth_payload` - (Optional) The full authentication ticket json from an external auth call (can also be sourced from `PROXMOX_VE_AUTH_PAYLOAD`). Takes precedence over other api auth-methods. For example, `{"data":{"CSRFPreventionToken":"12345678:some_blob","username":"username@realm","ticket":"PVE:username@realm:12345678::some_base64_payload==","cap":{"access":{"User.Modify":1}}}}`.
 
 - `auth_ticket` - (Optional) The auth ticket from an external auth call (can also be sourced from `PROXMOX_VE_AUTH_TICKET`). To be used in conjunction with `csrf_prevention_token`, takes precedence over `api_token` and `username` with `password`. For example, `PVE:username@realm:12345678::some_base64_payload==`.
 - `csrf_prevention_token` - (Optional) The CSRF Prevention Token from an external auth call (can also be sourced from `PROXMOX_VE_CSRF_PREVENTION_TOKEN`). For example, `12345678:some_blob`.
