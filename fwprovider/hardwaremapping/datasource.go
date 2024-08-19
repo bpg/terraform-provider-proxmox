@@ -111,7 +111,7 @@ func (d *dataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		// name.
 		// Note that the Proxmox VE API, for whatever reason, only returns one error at a time, even though the field is an
 		// array.
-		if (data.ChecksPCI != nil && len(data.ChecksPCI) > 0) || (data.ChecksUSB != nil && len(data.ChecksUSB) > 0) {
+		if (len(data.ChecksPCI) > 0) || len(data.ChecksUSB) > 0 {
 			switch data.Type {
 			case proxmoxtypes.TypePCI:
 				hm.Checks = append(hm.Checks, createCheckDiagnostics(data.ID, data.ChecksPCI)...)

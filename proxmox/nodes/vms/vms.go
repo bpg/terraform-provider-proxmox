@@ -515,7 +515,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 
 				tflog.Warn(ctx, msg)
 
-				return nil, fmt.Errorf(msg)
+				return nil, errors.New(msg)
 			}
 		default:
 		}
