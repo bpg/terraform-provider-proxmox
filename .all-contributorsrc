@@ -1128,6 +1128,15 @@
         "code",
         "ideas"
       ]
+    },
+    {
+      "login": "Diskoteket",
+      "name": "Tim Wetterek",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69105072?v=4",
+      "profile": "https://github.com/Diskoteket",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
