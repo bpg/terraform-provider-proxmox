@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.63.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.62.0...v0.63.0) (2024-08-21)
+
+
+### Features
+
+* **file:** add support to set the file mode ([#1478](https://github.com/bpg/terraform-provider-proxmox/issues/1478)) ([cc9d0e7](https://github.com/bpg/terraform-provider-proxmox/commit/cc9d0e713190d736861883f97058c1ec7f0a179d))
+
+
+### Bug Fixes
+
+* **doc:** update virtual_environment_vm.md ([#1495](https://github.com/bpg/terraform-provider-proxmox/issues/1495)) ([4f8e18d](https://github.com/bpg/terraform-provider-proxmox/commit/4f8e18da04419c0077d53c3eaf90e5d18a8d947f))
+* **firewall:** remove limit for number of CIRDs in `ipset` ([#1487](https://github.com/bpg/terraform-provider-proxmox/issues/1487)) ([55bfe14](https://github.com/bpg/terraform-provider-proxmox/commit/55bfe14ce18a432849e544360561d7b9091ac4d8))
+
+
+### Miscellaneous
+
+* **ci:** update hashicorp/setup-terraform action (v3.1.1 → v3.1.2) ([#1498](https://github.com/bpg/terraform-provider-proxmox/issues/1498)) ([3f6bc5e](https://github.com/bpg/terraform-provider-proxmox/commit/3f6bc5eba223c789e9b87bf74af6ec8c49bb6b60))
+* **ci:** update jetbrains/qodana-action action (v2024.1.8 → v2024.1.9) ([#1484](https://github.com/bpg/terraform-provider-proxmox/issues/1484)) ([dd6d5ec](https://github.com/bpg/terraform-provider-proxmox/commit/dd6d5ec88ffefc41cf68aeac6260915a05450463))
+* **code:** align resource/datasource names in the fwprovider code ([#1488](https://github.com/bpg/terraform-provider-proxmox/issues/1488)) ([8f82d1a](https://github.com/bpg/terraform-provider-proxmox/commit/8f82d1a3848571f09aea400960b252d4b6c39fb1))
+* **deps:** update go (1.22.6 → 1.23.0) ([#1489](https://github.com/bpg/terraform-provider-proxmox/issues/1489)) ([3343a93](https://github.com/bpg/terraform-provider-proxmox/commit/3343a938409adc2d61658e7d2c2a52b452c50d48))
+* **deps:** update golang.org/x/exp digest (8a7402a → 0cdaa3a) ([#1483](https://github.com/bpg/terraform-provider-proxmox/issues/1483)) ([e566c4e](https://github.com/bpg/terraform-provider-proxmox/commit/e566c4e35e6680c2d24cbc42fb78aa1e753f1dd1))
+* **deps:** update module github.com/hashicorp/terraform-plugin-testing (v1.9.0 → v1.10.0) ([#1485](https://github.com/bpg/terraform-provider-proxmox/issues/1485)) ([767f680](https://github.com/bpg/terraform-provider-proxmox/commit/767f680cc3428484a6c5fe15c22c6ab7acf1dce8))
+* **deps:** update tools ([#1490](https://github.com/bpg/terraform-provider-proxmox/issues/1490)) ([6635c89](https://github.com/bpg/terraform-provider-proxmox/commit/6635c89f632f61041382ea08344380f777ee54ba))
+* **devcontainer:** configure provider override in post attach command ([#1481](https://github.com/bpg/terraform-provider-proxmox/issues/1481)) ([daaedf2](https://github.com/bpg/terraform-provider-proxmox/commit/daaedf2d99ee56a1873aeb6da4af94eb06fc7d5f))
+* **example:** update links to container images, use faster mirror ([#1497](https://github.com/bpg/terraform-provider-proxmox/issues/1497)) ([abb0be4](https://github.com/bpg/terraform-provider-proxmox/commit/abb0be4684fa21dd5e7b600f238348c509b6c9af))
+
 ## [0.62.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.61.1...v0.62.0) (2024-08-08)
 
 
