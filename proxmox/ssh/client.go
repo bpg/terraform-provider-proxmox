@@ -339,7 +339,8 @@ func (c *client) NodeStreamUpload(
 			return fmt.Errorf("failed to parse file mode %q: %w", d.Mode, err)
 		}
 
-		if err = c.changeModeUploadedFile(ctx, sshClient, remoteFilePath, os.FileMode(uint32(parsedFileMode))); err != nil {
+		mode := uint32(parsedFileMode) //nolint:gosec // no overflows possible
+		if err = c.changeModeUploadedFile(ctx, sshClient, remoteFilePath, os.FileMode(mode)); err != nil {
 			return err
 		}
 	}

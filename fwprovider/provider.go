@@ -389,7 +389,7 @@ func (p *proxmoxProvider) Configure(
 		}
 
 		for _, n := range config.SSH[0].Nodes {
-			nodePort := int32(n.Port.ValueInt64())
+			nodePort := int32(n.Port.ValueInt64()) //nolint:gosec // no risk of overflow, value is capped by the schema
 			if nodePort == 0 {
 				nodePort = 22
 			}

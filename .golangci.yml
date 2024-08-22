@@ -1,4 +1,4 @@
-# v1.57.1
+# v1.60.2
 issues:
   new-from-rev: 9101977dc81f64db077b9a1eda2fe401359854c9
   # Maximum issues count per one linter. Set to 0 to disable.
@@ -54,6 +54,7 @@ linters:
   disable:
     # deprecated
     - execinquery
+    - exportloopref
     - gocyclo
     - rowserrcheck
     - wastedassign
