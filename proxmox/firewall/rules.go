@@ -58,7 +58,7 @@ func (c *Client) GetRulesID() string {
 	id := uuid.New().ID()
 	finalID := timestamp + int64(id)
 
-	return fmt.Sprintf("sg-%d", finalID)
+	return fmt.Sprintf("role-%d", finalID)
 }
 
 // CreateRule creates a firewall rule.
