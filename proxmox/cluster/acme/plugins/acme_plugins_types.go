@@ -106,7 +106,7 @@ func (d DNSPluginData) EncodeValues(key string, v *url.Values) error {
 		values = append(values, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	v.Add(key, base64.StdEncoding.EncodeToString([]byte(strings.Join(values, "\n"))))
+	v.Add(key, base64.StdEncoding.EncodeToString([]byte(strings.Join(values, `\n`))))
 
 	return nil
 }
@@ -120,7 +120,7 @@ func (d *DNSPluginData) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("error unmarshaling json: %w", err)
 	}
 
-	for _, line := range strings.Split(s, "\n") {
+	for _, line := range strings.Split(s, `\n`) {
 		before, after, found := strings.Cut(line, "=")
 		if !found {
 			return fmt.Errorf("invalid DNS plugin data: %s", line)

@@ -38,7 +38,7 @@ resource "proxmox_virtual_environment_acme_plugin" "example" {
 - `api` (String) API plugin name.
 - `data` (Map of String) DNS plugin data.
 - `delete` (String) A list of settings you want to delete.
-- `digest` (String) Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.
+- `digest` (String) SHA1 digest of the current configuration. Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.
 - `disable` (Boolean) Flag to disable the config.
 - `nodes` (String) List of cluster node names.
 - `validation_delay` (Number) Extra delay in seconds to wait before requesting validation. Allows to cope with a long TTL of DNS records (0 - 172800).

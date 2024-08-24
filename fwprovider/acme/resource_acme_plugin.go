@@ -96,7 +96,9 @@ func (r *acmePluginResource) Schema(
 				Optional:    true,
 			},
 			"digest": schema.StringAttribute{
-				Description: "Prevent changes if current configuration file has a different digest. " +
+				Description: "SHA1 digest of the current configuration.",
+				MarkdownDescription: "SHA1 digest of the current configuration. " +
+					"Prevent changes if current configuration file has a different digest. " +
 					"This can be used to prevent concurrent modifications.",
 				Optional: true,
 				Computed: true,
@@ -121,7 +123,8 @@ func (r *acmePluginResource) Schema(
 				},
 			},
 			"validation_delay": schema.Int64Attribute{
-				Description: "Extra delay in seconds to wait before requesting validation. " +
+				Description: "Extra delay in seconds to wait before requesting validation.",
+				MarkdownDescription: "Extra delay in seconds to wait before requesting validation. " +
 					"Allows to cope with a long TTL of DNS records (0 - 172800).",
 				Optional: true,
 				Computed: true,
