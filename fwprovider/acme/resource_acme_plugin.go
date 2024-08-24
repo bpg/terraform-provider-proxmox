@@ -260,7 +260,6 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 
 	updateRequest := &plugins.ACMEPluginsUpdateRequestBody{}
-	updateRequest.Plugin = plan.Plugin.ValueString()
 	updateRequest.API = plan.API.ValueString()
 
 	data := make(plugins.DNSPluginData)

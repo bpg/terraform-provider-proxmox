@@ -14,85 +14,71 @@ import (
 	"strings"
 )
 
-// ACMEPluginsListResponseBody contains the body from a ACME plugins list response.
+// BaseACMEPluginData contains common fields for ACME plugin data.
+type BaseACMEPluginData struct {
+	// ACME challenge type (dns, standalone).
+	Type string `json:"type,omitempty" url:"type,omitempty"`
+	// Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.
+	Digest string `json:"digest,omitempty" url:"digest,omitempty"`
+	// API plugin name
+	API string `json:"api,omitempty" url:"api,omitempty"`
+	// Extra delay in seconds to wait before requesting validation. Allows to cope with a long TTL of DNS records (0 - 172800).
+	ValidationDelay int64 `json:"validation-delay,omitempty" url:"validation-delay,omitempty"`
+}
+
+// ACMEPluginsListResponseBody contains the body from an ACME plugins list response.
 type ACMEPluginsListResponseBody struct {
 	// Unique identifier for ACME plugin instance.
 	Data []*ACMEPluginsListResponseData `json:"data,omitempty"`
 }
 
-// ACMEPluginsListResponseData contains the data from a ACME plugins list response.
+// ACMEPluginsListResponseData contains the data from an ACME plugins list response.
 type ACMEPluginsListResponseData struct {
-	// Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.
-	Digest string `json:"digest"`
-	// ACME challenge type (dns, standalone).
-	Type string `json:"type"`
+	BaseACMEPluginData
 	// ACME Plugin ID name
-	Plugin string `json:"plugin"`
-	// API plugin name
-	API string `json:"api,omitempty"`
+	Plugin string `json:"plugin" url:"plugin"`
 	// DNS plugin data.
 	Data *DNSPluginData `json:"data,omitempty"`
-	// Extra delay in seconds to wait before requesting validation. Allows to cope with a long TTL of DNS records (0 - 172800).
-	ValidationDelay int64 `json:"validation-delay"`
 }
 
-// ACMEPluginsGetResponseBody contains the body from a ACME plugins get response.
+// ACMEPluginsGetResponseBody contains the body from an ACME plugins get response.
 type ACMEPluginsGetResponseBody struct {
 	Data *ACMEPluginsGetResponseData `json:"data,omitempty"`
 }
 
-// ACMEPluginsGetResponseData contains the data from a ACME plugins get response.
+// ACMEPluginsGetResponseData contains the data from an ACME plugins get response.
 type ACMEPluginsGetResponseData struct {
-	// ACME challenge type (dns, standalone).
-	Type string `json:"type"`
+	BaseACMEPluginData
 	// ACME Plugin ID name
-	Plugin string `json:"plugin"`
-	// Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.
-	Digest string `json:"digest"`
+	Plugin string `json:"plugin" url:"plugin"`
 	// DNS plugin data.
 	Data *DNSPluginData `json:"data"`
-	// API plugin name
-	API string `json:"api"`
-	// Extra delay in seconds to wait before requesting validation. Allows to cope with a long TTL of DNS records (0 - 172800).
-	ValidationDelay int64 `json:"validation-delay"`
 }
 
-// ACMEPluginsCreateRequestBody contains the body for creating a new ACME plugins.
+// ACMEPluginsCreateRequestBody contains the body for creating a new ACME plugin.
 type ACMEPluginsCreateRequestBody struct {
+	BaseACMEPluginData
 	// ACME Plugin ID name
-	Plugin string `url:"id"`
-	// ACME challenge type (dns, standalone).
-	Type string `url:"type"`
-	// API plugin name
-	API string `url:"api,omitempty"`
+	Plugin string `json:"id" url:"id"`
 	// DNS plugin data. (base64 encoded)
 	Data *DNSPluginData `url:"data,omitempty"`
 	// Flag to disable the config.
 	Disable bool `url:"disable,omitempty"`
 	// List of cluster node names.
 	Nodes string `url:"nodes,omitempty"`
-	// Extra delay in seconds to wait before requesting validation. Allows to cope with a long TTL of DNS records (0 - 172800).
-	ValidationDelay int64 `url:"validation-delay,omitempty"`
 }
 
-// ACMEPluginsUpdateRequestBody contains the body for updating an existing ACME plugins.
+// ACMEPluginsUpdateRequestBody contains the body for updating an existing ACME plugin.
 type ACMEPluginsUpdateRequestBody struct {
-	// ACME Plugin ID name
-	Plugin string `url:"id"`
-	// API plugin name
-	API string `url:"api,omitempty"`
+	BaseACMEPluginData
 	// DNS plugin data. (base64 encoded)
 	Data *DNSPluginData `url:"data,omitempty"`
 	// A list of settings you want to delete.
 	Delete string `url:"delete,omitempty"`
-	// Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.
-	Digest string `url:"digest,omitempty"`
 	// Flag to disable the config.
 	Disable bool `url:"disable,omitempty"`
 	// List of cluster node names.
 	Nodes string `url:"nodes,omitempty"`
-	// Extra delay in seconds to wait before requesting validation. Allows to cope with a long TTL of DNS records (0 - 172800).
-	ValidationDelay int64 `url:"validation-delay,omitempty"`
 }
 
 // DNSPluginData is a map of DNS plugin data.
