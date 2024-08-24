@@ -4,7 +4,7 @@ go 1.23.0
 
 replace github.com/nats-io/nkeys => github.com/nats-io/nkeys v0.4.7
 
-replace go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0
+replace go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0
 
 require (
 	github.com/golangci/golangci-lint v1.60.3
