@@ -46,8 +46,6 @@ type acmePluginCreateModel struct {
 	API types.String `tfsdk:"api"`
 	// DNS plugin data
 	Data types.Map `tfsdk:"data"`
-	// A list of settings you want to delete.
-	Delete types.String `tfsdk:"delete"`
 	// Prevent changes if current configuration file has a different digest.
 	// This can be used to prevent concurrent modifications.
 	Digest types.String `tfsdk:"digest"`
@@ -85,10 +83,6 @@ func (r *acmePluginResource) Schema(
 				Description: "DNS plugin data.",
 				Optional:    true,
 				ElementType: types.StringType,
-			},
-			"delete": schema.StringAttribute{
-				Description: "A list of settings you want to delete.",
-				Optional:    true,
 			},
 			"digest": schema.StringAttribute{
 				Description: "SHA1 digest of the current configuration.",
@@ -250,7 +244,6 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	updateRequest.Data = &data
 
-	updateRequest.Delete = plan.Delete.ValueString()
 	updateRequest.Digest = plan.Digest.ValueString()
 	updateRequest.Disable = plan.Disable.ValueBool()
 	updateRequest.ValidationDelay = plan.ValidationDelay.ValueInt64()
