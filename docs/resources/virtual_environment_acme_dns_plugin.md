@@ -1,21 +1,20 @@
 ---
 layout: page
-title: proxmox_virtual_environment_acme_plugin
+title: proxmox_virtual_environment_acme_dns_plugin
 parent: Resources
 subcategory: Virtual Environment
 description: |-
   Manages an ACME plugin in a Proxmox VE cluster.
 ---
 
-# Resource: proxmox_virtual_environment_acme_plugin
+# Resource: proxmox_virtual_environment_acme_dns_plugin
 
 Manages an ACME plugin in a Proxmox VE cluster.
 
 ## Example Usage
 
 ```terraform
-resource "proxmox_virtual_environment_acme_plugin" "example" {
-  type   = "dns"
+resource "proxmox_virtual_environment_acme_dns_plugin" "example" {
   plugin = "test"
   api    = "aws"
   data = {
@@ -30,12 +29,11 @@ resource "proxmox_virtual_environment_acme_plugin" "example" {
 
 ### Required
 
+- `api` (String) API plugin name.
 - `plugin` (String) ACME Plugin ID name.
-- `type` (String) ACME challenge type (dns, standalone).
 
 ### Optional
 
-- `api` (String) API plugin name.
 - `data` (Map of String) DNS plugin data.
 - `delete` (String) A list of settings you want to delete.
 - `digest` (String) SHA1 digest of the current configuration. Prevent changes if current configuration file has a different digest. This can be used to prevent concurrent modifications.
@@ -50,5 +48,5 @@ Import is supported using the following syntax:
 ```shell
 #!/usr/bin/env sh
 # ACME accounts can be imported using their name, e.g.:
-terraform import proxmox_virtual_environment_acme_plugin.example test
+terraform import proxmox_virtual_environment_acme_dns_plugin.example test
 ```

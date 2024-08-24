@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -58,8 +57,6 @@ type acmePluginCreateModel struct {
 	Plugin types.String `tfsdk:"plugin"`
 	// List of cluster node names
 	Nodes types.String `tfsdk:"nodes"`
-	// ACME challenge type (dns, standalone)
-	Type types.String `tfsdk:"type"`
 	// Extra delay in seconds to wait before requesting validation (0 - 172800)
 	ValidationDelay types.Int64 `tfsdk:"validation_delay"`
 }
@@ -70,7 +67,7 @@ func (r *acmePluginResource) Metadata(
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_acme_plugin"
+	resp.TypeName = req.ProviderTypeName + "_acme_dns_plugin"
 }
 
 // Schema defines the schema for the resource.
@@ -84,7 +81,7 @@ func (r *acmePluginResource) Schema(
 		Attributes: map[string]schema.Attribute{
 			"api": schema.StringAttribute{
 				Description: "API plugin name.",
-				Optional:    true,
+				Required:    true,
 			},
 			"data": schema.MapAttribute{
 				Description: "DNS plugin data.",
@@ -114,13 +111,6 @@ func (r *acmePluginResource) Schema(
 			"plugin": schema.StringAttribute{
 				Description: "ACME Plugin ID name.",
 				Required:    true,
-			},
-			"type": schema.StringAttribute{
-				Description: "ACME challenge type (dns, standalone).",
-				Required:    true,
-				Validators: []validator.String{
-					stringvalidator.OneOf("dns", "standalone"),
-				},
 			},
 			"validation_delay": schema.Int64Attribute{
 				Description: "Extra delay in seconds to wait before requesting validation.",
@@ -171,7 +161,7 @@ func (r *acmePluginResource) Create(ctx context.Context, req resource.CreateRequ
 
 	createRequest := &plugins.ACMEPluginsCreateRequestBody{}
 	createRequest.Plugin = plan.Plugin.ValueString()
-	createRequest.Type = plan.Type.ValueString()
+	createRequest.Type = "dns"
 	createRequest.API = plan.API.ValueString()
 	data := make(plugins.DNSPluginData)
 
@@ -237,7 +227,6 @@ func (r *acmePluginResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	state.API = types.StringValue(plugin.API)
-	state.Type = types.StringValue(plugin.Type)
 	state.Digest = types.StringValue(plugin.Digest)
 	state.ValidationDelay = types.Int64Value(plugin.ValidationDelay)
 

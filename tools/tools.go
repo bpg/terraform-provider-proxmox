@@ -45,7 +45,7 @@ import (
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_vm2.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_acl.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_acme_account.md ../docs/resources/
-//go:generate cp ../build/docs-gen/resources/virtual_environment_acme_plugin.md ../docs/resources/
+//go:generate cp ../build/docs-gen/resources/virtual_environment_acme_dns_plugin.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_apt_repository.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_apt_standard_repository.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_cluster_options.md ../docs/resources/
