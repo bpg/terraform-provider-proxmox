@@ -10,12 +10,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/google/uuid"
 )
 
 // Rule is an interface for the Proxmox firewall rule API.
@@ -54,7 +53,12 @@ func (c *Client) rulePath(pos int) string {
 
 // GetRulesID returns the ID of the rules object.
 func (c *Client) GetRulesID() string {
-	return "rule-" + strconv.Itoa(schema.HashString(c.rulesPath()))
+	// Creates unique id in every being called by using unix timestamp
+	timestamp := time.Now().UnixNano() / int64(time.Microsecond)
+	id := uuid.New().ID()
+	finalID := timestamp + int64(id)
+
+	return fmt.Sprintf("sg-%d", finalID)
 }
 
 // CreateRule creates a firewall rule.
