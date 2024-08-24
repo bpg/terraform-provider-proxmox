@@ -64,8 +64,6 @@ type ACMEPluginsCreateRequestBody struct {
 	Data *DNSPluginData `url:"data,omitempty"`
 	// Flag to disable the config.
 	Disable bool `url:"disable,omitempty"`
-	// List of cluster node names.
-	Nodes string `url:"nodes,omitempty"`
 }
 
 // ACMEPluginsUpdateRequestBody contains the body for updating an existing ACME plugin.
@@ -77,8 +75,6 @@ type ACMEPluginsUpdateRequestBody struct {
 	Delete string `url:"delete,omitempty"`
 	// Flag to disable the config.
 	Disable bool `url:"disable,omitempty"`
-	// List of cluster node names.
-	Nodes string `url:"nodes,omitempty"`
 }
 
 // DNSPluginData is a map of DNS plugin data.

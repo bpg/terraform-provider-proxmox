@@ -55,8 +55,6 @@ type acmePluginCreateModel struct {
 	Disable types.Bool `tfsdk:"disable"`
 	// Plugin ID name
 	Plugin types.String `tfsdk:"plugin"`
-	// List of cluster node names
-	Nodes types.String `tfsdk:"nodes"`
 	// Extra delay in seconds to wait before requesting validation (0 - 172800)
 	ValidationDelay types.Int64 `tfsdk:"validation_delay"`
 }
@@ -102,10 +100,6 @@ func (r *acmePluginResource) Schema(
 			},
 			"disable": schema.BoolAttribute{
 				Description: "Flag to disable the config.",
-				Optional:    true,
-			},
-			"nodes": schema.StringAttribute{
-				Description: "List of cluster node names.",
 				Optional:    true,
 			},
 			"plugin": schema.StringAttribute{
@@ -169,7 +163,6 @@ func (r *acmePluginResource) Create(ctx context.Context, req resource.CreateRequ
 
 	createRequest.Data = &data
 	createRequest.Disable = plan.Disable.ValueBool()
-	createRequest.Nodes = plan.Nodes.ValueString()
 	createRequest.ValidationDelay = plan.ValidationDelay.ValueInt64()
 
 	err := r.client.Create(ctx, createRequest)
@@ -260,7 +253,6 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 	updateRequest.Delete = plan.Delete.ValueString()
 	updateRequest.Digest = plan.Digest.ValueString()
 	updateRequest.Disable = plan.Disable.ValueBool()
-	updateRequest.Nodes = plan.Nodes.ValueString()
 	updateRequest.ValidationDelay = plan.ValidationDelay.ValueInt64()
 
 	err := r.client.Update(ctx, plan.Plugin.ValueString(), updateRequest)
