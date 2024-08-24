@@ -227,9 +227,12 @@ func (r *acmePluginResource) Read(ctx context.Context, req resource.ReadRequest,
 
 // Update modifies an existing ACME plugin on the Proxmox cluster.
 func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan acmePluginCreateModel
+	var plan, state acmePluginCreateModel
+
+	toDelete := make([]string, 0)
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -242,11 +245,29 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	plan.Data.ElementsAs(ctx, &data, false)
 
-	updateRequest.Data = &data
+	if plan.Data.IsNull() && !state.Data.IsNull() {
+		toDelete = append(toDelete, "data")
+	} else {
+		updateRequest.Data = &data
+	}
 
 	updateRequest.Digest = plan.Digest.ValueString()
-	updateRequest.Disable = plan.Disable.ValueBool()
-	updateRequest.ValidationDelay = plan.ValidationDelay.ValueInt64()
+
+	if plan.Disable.IsNull() && !state.Disable.IsNull() {
+		toDelete = append(toDelete, "disable")
+	} else {
+		updateRequest.Disable = plan.Disable.ValueBool()
+	}
+
+	if plan.ValidationDelay.IsNull() && !state.ValidationDelay.IsNull() {
+		toDelete = append(toDelete, "validation_delay")
+	} else {
+		updateRequest.ValidationDelay = plan.ValidationDelay.ValueInt64()
+	}
+
+	if len(toDelete) > 0 {
+		updateRequest.Delete = strings.Join(toDelete, ",")
+	}
 
 	err := r.client.Update(ctx, plan.Plugin.ValueString(), updateRequest)
 	if err != nil {
