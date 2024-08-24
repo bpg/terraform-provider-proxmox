@@ -103,11 +103,11 @@ func (d *DNSPluginData) UnmarshalJSON(b []byte) error {
 	}
 
 	for _, line := range strings.Split(s, `\n`) {
-		before, after, found := strings.Cut(line, "=")
-		if !found {
-			return fmt.Errorf("invalid DNS plugin data: %s", line)
+		if line == "" {
+			continue
 		}
 
+		before, after, _ := strings.Cut(line, "=")
 		mapData[before] = after
 	}
 
