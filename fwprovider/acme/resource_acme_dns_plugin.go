@@ -236,7 +236,7 @@ func (r *acmePluginResource) Update(ctx context.Context, req resource.UpdateRequ
 
 	updateRequest.Digest = plan.Digest.ValueString()
 
-	if plan.Disable.IsNull() && !state.Disable.IsNull() {
+	if plan.Disable.IsNull() && !state.Disable.IsNull() || !plan.Disable.ValueBool() {
 		toDelete = append(toDelete, "disable")
 	} else {
 		updateRequest.Disable = plan.Disable.ValueBool()
