@@ -2,10 +2,6 @@ module github.com/bpg/terraform-provider-proxmox/tools
 
 go 1.23.0
 
-replace github.com/nats-io/nkeys => github.com/nats-io/nkeys v0.4.7
-
-replace go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0
-
 require (
 	github.com/golangci/golangci-lint v1.60.3
 	github.com/hashicorp/terraform-plugin-docs v0.19.4
