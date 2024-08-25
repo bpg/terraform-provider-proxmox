@@ -202,6 +202,7 @@ output "ubuntu_container_public_key" {
         - `ubuntu` - Ubuntu.
         - `unmanaged` - Unmanaged.
 - `pool_id` - (Optional) The identifier for a pool to assign the container to.
+- `protection` - (Optional) Whether to set the protection flag of the container (defaults to `false`). This will prevent the container itself and its disk for remove/update operations.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
 - `startup` - (Optional) Defines startup and shutdown behavior of the container.
     - `order` - (Required) A non-negative number defining the general startup

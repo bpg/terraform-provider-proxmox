@@ -73,6 +73,7 @@ const (
 	dvNetworkInterfaceMTU               = 0
 	dvOperatingSystemType               = "unmanaged"
 	dvPoolID                            = ""
+	dvProtection                        = false
 	dvStarted                           = true
 	dvStartupOrder                      = -1
 	dvStartupUpDelay                    = -1
@@ -153,6 +154,7 @@ const (
 	mkOperatingSystemTemplateFileID     = "template_file_id"
 	mkOperatingSystemType               = "type"
 	mkPoolID                            = "pool_id"
+	mkProtection                        = "protection"
 	mkStarted                           = "started"
 	mkStartup                           = "startup"
 	mkStartupOrder                      = "order"
@@ -782,6 +784,14 @@ func Container() *schema.Resource {
 				ForceNew:    true,
 				Default:     dvPoolID,
 			},
+			mkProtection: {
+				Type: schema.TypeBool,
+				Description: "Whether to set the protection flag of the container. " +
+					"This will prevent the container itself and its disk for remove/update operations.",
+				Optional: true,
+				ForceNew: false,
+				Default:  dvProtection,
+			},
 			mkStarted: {
 				Type:        schema.TypeBool,
 				Description: "Whether to start the container",
@@ -1036,6 +1046,9 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	startOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
 	updateBody.StartOnBoot = &startOnBoot
+
+	protection := types.CustomBool(d.Get(mkProtection).(bool))
+	updateBody.Protection = &protection
 
 	updateBody.StartupBehavior = containerGetStartupBehavior(d)
 
@@ -1672,6 +1685,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	operatingSystemType := operatingSystemBlock[mkOperatingSystemType].(string)
 
 	poolID := d.Get(mkPoolID).(string)
+	protection := types.CustomBool(d.Get(mkProtection).(bool))
 	started := types.CustomBool(d.Get(mkStarted).(bool))
 	startOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
 	startupBehavior := containerGetStartupBehavior(d)
@@ -1709,6 +1723,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		NetworkInterfaces:    networkInterfaceArray,
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
 		OSType:               &operatingSystemType,
+		Protection:           &protection,
 		RootFS:               rootFS,
 		Start:                &started,
 		StartOnBoot:          &startOnBoot,
@@ -2559,6 +2574,22 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentProtection := types.CustomBool(d.Get(mkProtection).(bool))
+
+	//nolint:gosimple
+	if len(clone) == 0 || currentProtection != dvProtection {
+		if containerConfig.Protection != nil {
+			e = d.Set(
+				mkProtection,
+				bool(*containerConfig.Protection),
+			)
+		} else {
+			e = d.Set(mkProtection, false)
+		}
+
+		diags = append(diags, diag.FromErr(e)...)
+	}
+
 	currentTags := d.Get(mkTags).([]interface{})
 
 	if len(clone) == 0 || len(currentTags) > 0 {
@@ -2998,6 +3029,11 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		updateBody.OSType = &operatingSystemType
 
 		rebootRequired = true
+	}
+
+	if d.HasChange(mkProtection) {
+		protection := types.CustomBool(d.Get(mkProtection).(bool))
+		updateBody.Protection = &protection
 	}
 
 	if d.HasChange(mkTags) {

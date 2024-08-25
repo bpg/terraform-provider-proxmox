@@ -85,7 +85,9 @@ resource "proxmox_virtual_environment_container" "example" {
 
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
   pool_id   = proxmox_virtual_environment_pool.example.id
-  vm_id     = 2043
+  # Set the protection flag to prevent the deletion/update operations for the container and its disks.
+  protection = true
+  vm_id      = 2043
 }
 
 output "resource_proxmox_virtual_environment_container_example_id" {
