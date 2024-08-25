@@ -40,23 +40,6 @@ type acmePluginResource struct {
 	client plugins.Client
 }
 
-// acmePluginCreateModel maps the schema data for an ACME plugin.
-type acmePluginCreateModel struct {
-	// API plugin name
-	API types.String `tfsdk:"api"`
-	// DNS plugin data
-	Data types.Map `tfsdk:"data"`
-	// Prevent changes if current configuration file has a different digest.
-	// This can be used to prevent concurrent modifications.
-	Digest types.String `tfsdk:"digest"`
-	// Flag to disable the config
-	Disable types.Bool `tfsdk:"disable"`
-	// Plugin ID name
-	Plugin types.String `tfsdk:"plugin"`
-	// Extra delay in seconds to wait before requesting validation (0 - 172800)
-	ValidationDelay types.Int64 `tfsdk:"validation_delay"`
-}
-
 // Metadata defines the name of the resource.
 func (r *acmePluginResource) Metadata(
 	_ context.Context,

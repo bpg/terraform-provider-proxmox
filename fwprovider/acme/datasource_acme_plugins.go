@@ -37,21 +37,6 @@ type acmePluginsDatasource struct {
 	client *plugins.Client
 }
 
-// acmePluginsModel maps the schema data for the ACME plugins data source.
-type acmePluginsModel struct {
-	Plugins []acmePluginModel `tfsdk:"plugins"`
-}
-
-// acmePluginModel maps the schema data for an ACME plugin.
-type acmePluginModel struct {
-	API             types.String `tfsdk:"api"`
-	Data            types.Map    `tfsdk:"data"`
-	Digest          types.String `tfsdk:"digest"`
-	Plugin          types.String `tfsdk:"plugin"`
-	Type            types.String `tfsdk:"type"`
-	ValidationDelay types.Int64  `tfsdk:"validation_delay"`
-}
-
 // Metadata returns the data source type name.
 func (d *acmePluginsDatasource) Metadata(
 	_ context.Context,
@@ -158,12 +143,14 @@ func (d *acmePluginsDatasource) Read(ctx context.Context, _ datasource.ReadReque
 		resp.Diagnostics.Append(diags...)
 
 		state.Plugins = append(state.Plugins, acmePluginModel{
-			API:             types.StringValue(plugin.API),
-			Data:            mapValue,
-			Digest:          types.StringValue(plugin.Digest),
-			Plugin:          types.StringValue(plugin.Plugin),
-			Type:            types.StringValue(plugin.Type),
-			ValidationDelay: types.Int64Value(plugin.ValidationDelay),
+			baseACMEPluginModel: baseACMEPluginModel{
+				API:             types.StringValue(plugin.API),
+				Data:            mapValue,
+				Digest:          types.StringValue(plugin.Digest),
+				Plugin:          types.StringValue(plugin.Plugin),
+				ValidationDelay: types.Int64Value(plugin.ValidationDelay),
+			},
+			Type: types.StringValue(plugin.Type),
 		})
 	}
 
