@@ -140,12 +140,12 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 				Optional:    true,
 				Sensitive:   true,
 			},
-			"username": schema.StringAttribute{
-				Description: "The username for the Proxmox VE API.",
-				Optional:    true,
-			},
 			"tmp_dir": schema.StringAttribute{
 				Description: "The alternative temporary directory.",
+				Optional:    true,
+			},
+			"username": schema.StringAttribute{
+				Description: "The username for the Proxmox VE API.",
 				Optional:    true,
 			},
 		},
@@ -170,12 +170,6 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 								"environment variable.",
 							Optional: true,
 						},
-						"private_key": schema.StringAttribute{
-							Description: "The unencrypted private key (in PEM format) used for the SSH connection. " +
-								"Defaults to the value of the `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable.",
-							Optional:  true,
-							Sensitive: true,
-						},
 						"password": schema.StringAttribute{
 							Description: "The password used for the SSH connection. " +
 								"Defaults to the value of the `password` field of the " +
@@ -183,11 +177,17 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 							Optional:  true,
 							Sensitive: true,
 						},
-						"username": schema.StringAttribute{
-							Description: "The username used for the SSH connection. " +
-								"Defaults to the value of the `username` field of the " +
-								"`provider` block.",
-							Optional: true,
+						"private_key": schema.StringAttribute{
+							Description: "The unencrypted private key (in PEM format) used for the SSH connection. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable.",
+							Optional:  true,
+							Sensitive: true,
+						},
+						"socks5_password": schema.StringAttribute{
+							Description: "The password for the SOCKS5 proxy server. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_PASSWORD` environment variable.",
+							Optional:  true,
+							Sensitive: true,
 						},
 						"socks5_server": schema.StringAttribute{
 							Description: "The address:port of the SOCKS5 proxy server. " +
@@ -199,11 +199,11 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_USERNAME` environment variable.",
 							Optional: true,
 						},
-						"socks5_password": schema.StringAttribute{
-							Description: "The password for the SOCKS5 proxy server. " +
-								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_PASSWORD` environment variable.",
-							Optional:  true,
-							Sensitive: true,
+						"username": schema.StringAttribute{
+							Description: "The username used for the SSH connection. " +
+								"Defaults to the value of the `username` field of the " +
+								"`provider` block.",
+							Optional: true,
 						},
 					},
 					Blocks: map[string]schema.Block{
@@ -211,12 +211,12 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 							Description: "Overrides for SSH connection configuration for a Proxmox VE node.",
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
-									"name": schema.StringAttribute{
-										Description: "The name of the Proxmox VE node.",
-										Required:    true,
-									},
 									"address": schema.StringAttribute{
 										Description: "The address of the Proxmox VE node.",
+										Required:    true,
+									},
+									"name": schema.StringAttribute{
+										Description: "The name of the Proxmox VE node.",
 										Required:    true,
 									},
 									"port": schema.Int64Attribute{
@@ -417,12 +417,12 @@ func (p *proxmoxProvider) Configure(
 		}
 	}
 
-	if sshUsername == "" {
-		sshUsername = strings.Split(creds.Username, "@")[0]
+	if sshUsername == "" && creds.UserCredentials != nil {
+		sshUsername = strings.Split(creds.UserCredentials.Username, "@")[0]
 	}
 
-	if sshPassword == "" {
-		sshPassword = creds.Password
+	if sshPassword == "" && creds.UserCredentials != nil {
+		sshPassword = creds.UserCredentials.Password
 	}
 
 	sshClient, err := ssh.NewClient(

@@ -42,7 +42,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	var sshClient ssh.Client
 
-	var creds *api.Credentials
+	var creds api.Credentials
 
 	var conn *api.Connection
 
@@ -129,16 +129,16 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
 		if sshUsername != "" {
 			sshConf[mkProviderSSHUsername] = sshUsername
-		} else {
-			sshConf[mkProviderSSHUsername] = strings.Split(creds.Username, "@")[0]
+		} else if creds.UserCredentials != nil {
+			sshConf[mkProviderSSHUsername] = strings.Split(creds.UserCredentials.Username, "@")[0]
 		}
 	}
 
 	if v, ok := sshConf[mkProviderSSHPassword]; !ok || v.(string) == "" {
 		if sshPassword != "" {
 			sshConf[mkProviderSSHPassword] = sshPassword
-		} else {
-			sshConf[mkProviderSSHPassword] = creds.Password
+		} else if creds.UserCredentials != nil {
+			sshConf[mkProviderSSHPassword] = creds.UserCredentials.Password
 		}
 	}
 

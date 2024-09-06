@@ -14,68 +14,89 @@ import (
 
 const rootUsername = "root@pam"
 
-// Credentials is a struct that holds the credentials for the Proxmox Virtual
-// Environment API.
+// Credentials contains the credentials for authenticating with the Proxmox VE API.
 type Credentials struct {
-	AuthTicket          string
-	CSRFPreventionToken string
-	APIToken            *string
-	OTP                 *string
-	Username            string
-	Password            string
+	UserCredentials   *UserCredentials
+	TokenCredentials  *TokenCredentials
+	TicketCredentials *TicketCredentials
 }
 
-// NewCredentials creates a new Credentials struct.
-//
-//nolint:lll
-func NewCredentials(username, password, otp, apiToken string, authTicket string, csrfPreventionToken string) (*Credentials, error) {
-	errorAuthTicketCommonMsg := "the Proxmox Virtual Environment API requires auth params; "
+// UserCredentials contains the username, password, and OTP for authenticating with the Proxmox VE API.
+type UserCredentials struct {
+	Username string
+	Password string
+	OTP      string
+}
 
-	switch {
-	case authTicket != "" && csrfPreventionToken != "":
-		switch {
-		case authTicket == "":
-			return nil, errors.New(errorAuthTicketCommonMsg + "detected csrfPreventionToken, but authTicket is unset")
-		case csrfPreventionToken == "":
-			return nil, errors.New(errorAuthTicketCommonMsg + "detected authTicket, but csrfPreventionToken is unset")
-		}
-	case apiToken != "":
-		re := regexp.MustCompile(`^\S+@\S+!\S+=([a-zA-Z0-9-]+)$`)
-		if !re.MatchString(apiToken) {
-			return nil, errors.New("must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'")
-		}
+// TokenCredentials contains the API token for authenticating with the Proxmox VE API.
+type TokenCredentials struct {
+	APIToken string
+}
 
-		return &Credentials{
-			APIToken: &apiToken,
-		}, nil
-	case (username != "" && password != "") || (username != "" || password != ""):
-		switch {
-		case username == "":
-			return nil, errors.New(errorAuthTicketCommonMsg + "detected password, but username is unset")
-		case password == "":
-			return nil, errors.New(errorAuthTicketCommonMsg + "detected username, but password is unset")
-		}
-	default:
-		return nil, errors.New(errorAuthTicketCommonMsg +
-			"choose either: authTicket + csrfPreventionToken, apiToken; username + password")
+// TicketCredentials contains the auth ticket and CSRF prevention token for authenticating with the Proxmox VE API.
+type TicketCredentials struct {
+	AuthTicket          string
+	CSRFPreventionToken string
+}
+
+// NewCredentials creates a new set of credentials for authenticating with the Proxmox VE API.
+// The order of precedence is:
+// 1. API token
+// 2. Ticket
+// 3. User credentials.
+func NewCredentials(username, password, otp, apiToken, authTicket, csrfPreventionToken string) (Credentials, error) {
+	tok, err := newTokenCredentials(apiToken)
+	if err == nil {
+		return Credentials{TokenCredentials: &tok}, nil
 	}
 
-	if username != "" && !strings.Contains(username, "@") {
-		return nil, errors.New(
-			"make sure the username for the Proxmox Virtual Environment API ends in '@pve or @pam'",
-		)
+	tic, err := newTicketCredentials(authTicket, csrfPreventionToken)
+	if err == nil {
+		return Credentials{TicketCredentials: &tic}, nil
 	}
 
-	c := &Credentials{
+	usr, err := newUserCredentials(username, password, otp)
+	if err == nil {
+		return Credentials{UserCredentials: &usr}, nil
+	}
+
+	return Credentials{}, errors.New("must provide either user credentials, an API token, or a ticket")
+}
+
+func newUserCredentials(username, password, otp string) (UserCredentials, error) {
+	if username == "" || password == "" {
+		return UserCredentials{}, errors.New("both username and password are required")
+	}
+
+	if !strings.Contains(username, "@") {
+		return UserCredentials{}, errors.New("username must end with '@pve' or '@pam'")
+	}
+
+	return UserCredentials{
+		Username: username,
+		Password: password,
+		OTP:      otp,
+	}, nil
+}
+
+func newTokenCredentials(apiToken string) (TokenCredentials, error) {
+	re := regexp.MustCompile(`^\S+@\S+!\S+=([a-zA-Z0-9-]+)$`)
+	if !re.MatchString(apiToken) {
+		return TokenCredentials{}, errors.New("must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'")
+	}
+
+	return TokenCredentials{
+		APIToken: apiToken,
+	}, nil
+}
+
+func newTicketCredentials(authTicket, csrfPreventionToken string) (TicketCredentials, error) {
+	if authTicket == "" || csrfPreventionToken == "" {
+		return TicketCredentials{}, errors.New("both authTicket and csrfPreventionToken are required")
+	}
+
+	return TicketCredentials{
 		AuthTicket:          authTicket,
 		CSRFPreventionToken: csrfPreventionToken,
-		Username:            username,
-		Password:            password,
-	}
-
-	if otp != "" {
-		c.OTP = &otp
-	}
-
-	return c, nil
+	}, nil
 }

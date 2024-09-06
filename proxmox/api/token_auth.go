@@ -19,10 +19,10 @@ type tokenAuthenticator struct {
 
 // NewTokenAuthenticator creates a new authenticator that uses a PVE API Token
 // for authentication.
-func NewTokenAuthenticator(token string) (Authenticator, error) {
+func NewTokenAuthenticator(toc TokenCredentials) (Authenticator, error) {
 	return &tokenAuthenticator{
-		username: strings.Split(token, "!")[0],
-		token:    token,
+		username: strings.Split(toc.APIToken, "!")[0],
+		token:    toc.APIToken,
 	}, nil
 }
 

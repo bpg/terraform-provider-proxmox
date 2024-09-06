@@ -115,11 +115,7 @@ type client struct {
 }
 
 // NewClient creates and initializes a VirtualEnvironmentClient instance.
-func NewClient(creds *Credentials, conn *Connection) (Client, error) {
-	if creds == nil {
-		return nil, errors.New("credentials must not be nil")
-	}
-
+func NewClient(creds Credentials, conn *Connection) (Client, error) {
 	if conn == nil {
 		return nil, errors.New("connection must not be nil")
 	}
@@ -128,17 +124,19 @@ func NewClient(creds *Credentials, conn *Connection) (Client, error) {
 
 	var err error
 
-	//nolint:godox
-	// todo: maybe move NewTicketAuthenticator cred-input-logic to here
-	// aka: creds.AuthTicket and  creds.AuthTicket != "" && creds.CSRFPreventionToken to here
-	if creds.APIToken != nil {
-		auth, err = NewTokenAuthenticator(*creds.APIToken)
-	} else {
-		auth, err = NewTicketAuthenticator(conn, creds)
+	switch {
+	case creds.TokenCredentials != nil:
+		auth, err = NewTokenAuthenticator(*creds.TokenCredentials)
+	case creds.TicketCredentials != nil:
+		auth, err = NewTicketAuthenticator(*creds.TicketCredentials)
+	case creds.UserCredentials != nil:
+		auth = NewUserAuthenticator(*creds.UserCredentials, conn)
+	default:
+		return nil, errors.New("must provide either user credentials, an API token, or a ticket")
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
 
 	return &client{
