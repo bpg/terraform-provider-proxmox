@@ -23,6 +23,17 @@ func TestAccResourceVMCDROM(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
+		{"default no cdrom", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-cdrom"
+				}`),
+				Check: NoResourceAttributesSet("proxmox_virtual_environment_vm.test_cdrom", []string{"cdrom.#"}),
+			},
+		}},
 		{"default cdrom", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
