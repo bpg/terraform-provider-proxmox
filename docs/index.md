@@ -178,31 +178,39 @@ When using a non-root user for the SSH connection, the user **must** have the `s
 
 -> If you run clustered Proxmox VE, you will need to configure the `sudo` privilege for the user on all nodes in the cluster.
 
+-> `sudo` may not be installed by default on Proxmox VE nodes. You can install it via the command line on the Proxmox host: `apt install sudo`
+
 ~> The `root` user on the Proxmox node must be configured with `bash` as the default shell.
 
-You can configure the `sudo` privilege for the user via the command line on the Proxmox host. In the example below, we create a user `terraform` and assign the `sudo` privilege to it:
+You can configure the `sudo` privilege for the user via the command line on the Proxmox host. 
+In the example below, we create a user `terraform` and assign the `sudo` privilege to it. Run the following commands on the Proxmox node in the root shell:
 
 - Create a new system user:
 
     ```sh
-    sudo useradd -m terraform
+    useradd -m terraform
     ```
 
-- Configure the `sudo` privilege for the user:
+- Configure the `sudo` privilege for the user, by adding a new sudoers file to the `/etc/sudoers.d` directory:
 
     ```sh
-    sudo visudo
+    visudo -f /etc/sudoers.d/terraform
     ```
 
-  Add the following lines to the end of the file, but **before** the `@includedir /etc/sudoers.d` line:
+  Add the following lines to the file:
 
-    ```sh
+    ```text
     terraform ALL=(root) NOPASSWD: /sbin/pvesm
     terraform ALL=(root) NOPASSWD: /sbin/qm
     terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/*
     ```
 
-  Save the file and exit.
+  If you're using a different datastore for snippets, not the default `local`, you should add the datastore's mount point to the sudoers file as well, for example: 
+  
+    ```text
+    terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/*
+    ```
+  You can find the mount point of the datastore by running `pvesh get /storage/<name>` on the Proxmox node.
 
 - Copy your SSH public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
 
