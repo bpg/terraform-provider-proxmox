@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.64.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.63.0...v0.64.0) (2024-09-08)
+
+
+### Features
+
+* **acme:** implement resources and data sources for ACME plugins ([#1479](https://github.com/bpg/terraform-provider-proxmox/issues/1479)) ([a6eb81a](https://github.com/bpg/terraform-provider-proxmox/commit/a6eb81af08f175ab078ae0369e0246425e77de6a))
+* **lxc:** Implement support for container's "protection flag" ([#1512](https://github.com/bpg/terraform-provider-proxmox/issues/1512)) ([9b34c48](https://github.com/bpg/terraform-provider-proxmox/commit/9b34c485ab6ee8e29e8df2269d7789820a980558))
+
+
+### Bug Fixes
+
+* **docs:** improve "SSH User" section describing `sudo` privileges ([#1522](https://github.com/bpg/terraform-provider-proxmox/issues/1522)) ([84d55cf](https://github.com/bpg/terraform-provider-proxmox/commit/84d55cf5690df0d7a5231e2d664f5fec38064df8))
+* **vm:** `cpu.architecture` showed as new attribute at re-apply after creation ([#1524](https://github.com/bpg/terraform-provider-proxmox/issues/1524)) ([c20d79d](https://github.com/bpg/terraform-provider-proxmox/commit/c20d79dfbe34b4f161d49a6c9b595354444bacd9))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.10.3 → v1.10.4) ([#1518](https://github.com/bpg/terraform-provider-proxmox/issues/1518)) ([112f058](https://github.com/bpg/terraform-provider-proxmox/commit/112f058e66a5bb410696d1d40b11e7216ab3986e))
+* **deps:** update golang.org/x/exp digest (0cdaa3a → 9b4947d) ([#1506](https://github.com/bpg/terraform-provider-proxmox/issues/1506)) ([0623bfd](https://github.com/bpg/terraform-provider-proxmox/commit/0623bfd1561a7a30771685d8fa3f46c9bfb4d1d8))
+* **deps:** update golang.org/x/exp digest (9b4947d → e7e105d) ([#1517](https://github.com/bpg/terraform-provider-proxmox/issues/1517)) ([273b3c9](https://github.com/bpg/terraform-provider-proxmox/commit/273b3c93b3ffafa448076ca07f6d53066844f164))
+* **deps:** update module github.com/golangci/golangci-lint (v1.60.1 → v1.60.2) in /tools ([#1499](https://github.com/bpg/terraform-provider-proxmox/issues/1499)) ([35cbe98](https://github.com/bpg/terraform-provider-proxmox/commit/35cbe98d6b26b47c0b8797dd6d4f084585f846c7))
+* **deps:** update module github.com/golangci/golangci-lint (v1.60.2 → v1.60.3) in /tools ([#1507](https://github.com/bpg/terraform-provider-proxmox/issues/1507)) ([5707fea](https://github.com/bpg/terraform-provider-proxmox/commit/5707feab06750a4782e66c0be0e5cc2edd612aa0))
+* **deps:** update module go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp (v0.53.0 → v0.54.0) in /tools ([#1509](https://github.com/bpg/terraform-provider-proxmox/issues/1509)) ([9172ec6](https://github.com/bpg/terraform-provider-proxmox/commit/9172ec6a9fd01e876e18fa3e8664aee3b639c891))
+* **deps:** update module golang.org/x/crypto (v0.26.0 → v0.27.0) ([#1519](https://github.com/bpg/terraform-provider-proxmox/issues/1519)) ([3951bda](https://github.com/bpg/terraform-provider-proxmox/commit/3951bdab4a958761e6978ab0dc03857b797bd417))
+* **deps:** update module golang.org/x/net (v0.28.0 → v0.29.0) ([#1520](https://github.com/bpg/terraform-provider-proxmox/issues/1520)) ([a0bce8d](https://github.com/bpg/terraform-provider-proxmox/commit/a0bce8d699b6d633acb309c55e43e8743afb7122))
+* **vm:** add acc test for no cdrom by default ([#1523](https://github.com/bpg/terraform-provider-proxmox/issues/1523)) ([35b6571](https://github.com/bpg/terraform-provider-proxmox/commit/35b6571bf468d09902c899f3e1782db9a13b78a0))
+
 ## [0.63.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.62.0...v0.63.0) (2024-08-21)
 
 
