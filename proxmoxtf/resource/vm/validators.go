@@ -55,6 +55,7 @@ func BIOSValidator() schema.SchemaValidateDiagFunc {
 // CPUArchitectureValidator returns a schema validation function for a CPU architecture.
 func CPUArchitectureValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"",
 		"aarch64",
 		"x86_64",
 	}, false))

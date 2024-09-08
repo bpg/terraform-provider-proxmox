@@ -58,7 +58,7 @@ const (
 	dvCloneNodeName       = ""
 	dvCloneFull           = true
 	dvCloneRetries        = 1
-	dvCPUArchitecture     = "x86_64"
+	dvCPUArchitecture     = ""
 	dvCPUCores            = 1
 	dvCPUHotplugged       = 0
 	dvCPULimit            = 0
@@ -1890,8 +1890,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if client.API().IsRootTicket() ||
-			cpuArchitecture != dvCPUArchitecture {
+		if client.API().IsRootTicket() && cpuArchitecture != "" {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
 
@@ -2574,8 +2573,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-	if client.API().IsRootTicket() ||
-		cpuArchitecture != dvCPUArchitecture {
+	if client.API().IsRootTicket() && cpuArchitecture != "" {
 		createBody.CPUArchitecture = &cpuArchitecture
 	}
 
@@ -4845,8 +4843,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
 		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if client.API().IsRootTicket() ||
-			cpuArchitecture != dvCPUArchitecture {
+		if client.API().IsRootTicket() && cpuArchitecture != "" {
 			updateBody.CPUArchitecture = &cpuArchitecture
 		}
 
