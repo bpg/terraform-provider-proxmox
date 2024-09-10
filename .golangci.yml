@@ -40,6 +40,9 @@ linters-settings:
   goconst:
     min-len: 10
     min-occurrences: 4
+  gosec:
+    excludes:
+      - G115
   funlen:
     lines: 80
     statements: 60
