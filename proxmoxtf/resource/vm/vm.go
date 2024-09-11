@@ -271,7 +271,6 @@ const (
 	mkHostUSBDeviceUSB3    = "usb3"
 	mkVGA                  = "vga"
 	mkVGAClipboard         = "clipboard"
-	mkVGAEnabled           = "enabled"
 	mkVGAMemory            = "memory"
 	mkVGAType              = "type"
 	mkVMID                 = "vm_id"
@@ -1408,13 +1407,6 @@ func VM() *schema.Resource {
 							"",
 							"vnc",
 						}, true)),
-					},
-					mkVGAEnabled: {
-						Type: schema.TypeBool,
-						Deprecated: "The `enabled` attribute is deprecated and will be removed in a future release. " +
-							"Use type `none` instead.",
-						Description: "Whether to enable the VGA device",
-						Optional:    true,
 					},
 					mkVGAMemory: {
 						Type:             schema.TypeInt,
