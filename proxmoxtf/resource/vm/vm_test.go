@@ -387,15 +387,13 @@ func TestVMSchema(t *testing.T) {
 	vgaSchema := test.AssertNestedSchemaExistence(t, s, mkVGA)
 
 	test.AssertOptionalArguments(t, vgaSchema, []string{
-		mkVGAEnabled,
 		mkVGAMemory,
 		mkVGAType,
 	})
 
 	test.AssertValueTypes(t, vgaSchema, map[string]schema.ValueType{
-		mkVGAEnabled: schema.TypeBool,
-		mkVGAMemory:  schema.TypeInt,
-		mkVGAType:    schema.TypeString,
+		mkVGAMemory: schema.TypeInt,
+		mkVGAType:   schema.TypeString,
 	})
 }
 
