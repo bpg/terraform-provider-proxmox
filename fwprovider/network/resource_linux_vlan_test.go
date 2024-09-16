@@ -26,7 +26,7 @@ const (
 func TestAccResourceLinuxVLAN(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	iface := "enp1s0"
+	iface := "ens18"
 	vlan1 := gofakeit.Number(10, 4094)
 	customName := fmt.Sprintf("iface_%s", gofakeit.Word())
 	vlan2 := gofakeit.Number(10, 4094)
