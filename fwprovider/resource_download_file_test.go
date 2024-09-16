@@ -10,15 +10,24 @@ package fwprovider_test
 
 import (
 	"context"
+	"net/url"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
@@ -128,7 +137,8 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				),
 			},
 		}},
-		{"override unmanaged file", []resource.TestStep{{
+		{"override file", []resource.TestStep{{
+			Destroy: false,
 			PreConfig: func() {
 				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 				defer cancel()
@@ -157,6 +167,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					url 		        = "{{.FakeFileISO}}"
 					file_name           = "fake_iso_file3.iso"
 					overwrite_unmanaged = true
+					overwrite           = false
 				  }`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_download_file.iso_image3", map[string]string{
@@ -175,6 +186,47 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"decompression_algorithm",
 				}),
 			),
+		}, {
+			Destroy: false,
+			PreConfig: func() {
+				isoFile := strings.ReplaceAll(createFile(t, "fake_iso_file3.iso", "updated iso").Name(), `\`, `/`)
+				uploadIsoFile(t, isoFile)
+			},
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "iso_image3" {
+					content_type        = "iso"
+					node_name           = "{{.NodeName}}"
+					datastore_id        = "{{.DatastoreID}}"
+					url 		        = "{{.FakeFileISO}}"
+					file_name           = "fake_iso_file3.iso"
+					overwrite_unmanaged = true
+					overwrite           = false
+				}`),
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PreApply: []plancheck.PlanCheck{
+					plancheck.ExpectEmptyPlan(),
+				},
+			},
+		}, {
+			PreConfig: func() {
+				isoFile := strings.ReplaceAll(createFile(t, "fake_iso_file3.iso", "updated iso again").Name(), `\`, `/`)
+				uploadIsoFile(t, isoFile)
+			},
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "iso_image3" {
+					content_type        = "iso"
+					node_name           = "{{.NodeName}}"
+					datastore_id        = "{{.DatastoreID}}"
+					url 		        = "{{.FakeFileISO}}"
+					file_name           = "fake_iso_file3.iso"
+					overwrite_unmanaged = true
+					overwrite           = true
+				}`),
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PreApply: []plancheck.PlanCheck{
+					plancheck.ExpectResourceAction("proxmox_virtual_environment_download_file.iso_image3", plancheck.ResourceActionDestroyBeforeCreate),
+				},
+			},
 		}}},
 	}
 
@@ -186,4 +238,73 @@ func TestAccResourceDownloadFile(t *testing.T) {
 			})
 		})
 	}
+}
+
+func uploadIsoFile(t *testing.T, fileName string) {
+	t.Helper()
+
+	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
+	u, err := url.ParseRequestURI(endpoint)
+	require.NoError(t, err)
+
+	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT")
+	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
+	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
+	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
+	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
+	sshClient, err := ssh.NewClient(
+		sshUsername, "", sshAgent, sshAgentSocket, sshPrivateKey,
+		"", "", "",
+		&nodeResolver{
+			node: ssh.ProxmoxNode{
+				Address: u.Hostname(),
+				Port:    int32(sshPort),
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	f, err := os.Open(fileName)
+	require.NoError(t, err)
+
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
+
+	fname := filepath.Base(fileName)
+	err = sshClient.NodeStreamUpload(context.Background(), "pve", "/var/lib/vz/template",
+		&api.FileUploadRequest{
+			ContentType: "iso",
+			FileName:    fname,
+			File:        f,
+		})
+	require.NoError(t, err)
+}
+
+type nodeResolver struct {
+	node ssh.ProxmoxNode
+}
+
+func (c *nodeResolver) Resolve(_ context.Context, _ string) (ssh.ProxmoxNode, error) {
+	return c.node, nil
+}
+
+func createFile(t *testing.T, namePattern string, content string) *os.File {
+	t.Helper()
+
+	f, err := os.Create(path.Join(os.TempDir(), namePattern))
+	require.NoError(t, err)
+
+	_, err = f.WriteString(content)
+	require.NoError(t, err)
+
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
+
+	t.Cleanup(func() {
+		_ = os.Remove(f.Name())
+	})
+
+	return f
 }

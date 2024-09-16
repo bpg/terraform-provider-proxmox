@@ -42,10 +42,6 @@ var (
 	httpRegex                                = regexp.MustCompile(`https?://.*`)
 )
 
-func sizeRequiresReplace() planmodifier.Int64 {
-	return sizeRequiresReplaceModifier{}
-}
-
 type sizeRequiresReplaceModifier struct{}
 
 func (r sizeRequiresReplaceModifier) PlanModifyInt64(
@@ -86,7 +82,7 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 			return
 		}
 
-		if state.Size.ValueInt64() != originalStateSize {
+		if state.Size.ValueInt64() != originalStateSize && plan.Overwrite.ValueBool() {
 			resp.RequiresReplace = true
 			resp.PlanValue = types.Int64Value(originalStateSize)
 
@@ -239,7 +235,7 @@ func (r *downloadFileResource) Schema(
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 					int64planmodifier.RequiresReplace(),
-					sizeRequiresReplace(),
+					sizeRequiresReplaceModifier{},
 				},
 			},
 			"upload_timeout": schema.Int64Attribute{
