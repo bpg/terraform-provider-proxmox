@@ -27,50 +27,50 @@ type CustomPCIDevice struct {
 }
 
 // CustomPCIDevices handles QEMU host PCI device mapping parameters.
-type CustomPCIDevices []CustomPCIDevice
+type CustomPCIDevices map[string]*CustomPCIDevice
 
 // EncodeValues converts a CustomPCIDevice struct to a URL value.
-func (r *CustomPCIDevice) EncodeValues(key string, v *url.Values) error {
+func (d *CustomPCIDevice) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
-	if r.DeviceIDs == nil && r.Mapping == nil {
+	if d.DeviceIDs == nil && d.Mapping == nil {
 		return fmt.Errorf("either device ID or resource mapping must be set")
 	}
 
-	if r.DeviceIDs != nil {
-		values = append(values, fmt.Sprintf("host=%s", strings.Join(*r.DeviceIDs, ";")))
+	if d.DeviceIDs != nil {
+		values = append(values, fmt.Sprintf("host=%s", strings.Join(*d.DeviceIDs, ";")))
 	}
 
-	if r.Mapping != nil {
-		values = append(values, fmt.Sprintf("mapping=%s", *r.Mapping))
+	if d.Mapping != nil {
+		values = append(values, fmt.Sprintf("mapping=%s", *d.Mapping))
 	}
 
-	if r.MDev != nil {
-		values = append(values, fmt.Sprintf("mdev=%s", *r.MDev))
+	if d.MDev != nil {
+		values = append(values, fmt.Sprintf("mdev=%s", *d.MDev))
 	}
 
-	if r.PCIExpress != nil {
-		if *r.PCIExpress {
+	if d.PCIExpress != nil {
+		if *d.PCIExpress {
 			values = append(values, "pcie=1")
 		} else {
 			values = append(values, "pcie=0")
 		}
 	}
 
-	if r.ROMBAR != nil {
-		if *r.ROMBAR {
+	if d.ROMBAR != nil {
+		if *d.ROMBAR {
 			values = append(values, "rombar=1")
 		} else {
 			values = append(values, "rombar=0")
 		}
 	}
 
-	if r.ROMFile != nil {
-		values = append(values, fmt.Sprintf("romfile=%s", *r.ROMFile))
+	if d.ROMFile != nil {
+		values = append(values, fmt.Sprintf("romfile=%s", *d.ROMFile))
 	}
 
-	if r.XVGA != nil {
-		if *r.XVGA {
+	if d.XVGA != nil {
+		if *d.XVGA {
 			values = append(values, "x-vga=1")
 		} else {
 			values = append(values, "x-vga=0")
@@ -83,10 +83,10 @@ func (r *CustomPCIDevice) EncodeValues(key string, v *url.Values) error {
 }
 
 // EncodeValues converts a CustomPCIDevices array to multiple URL values.
-func (r CustomPCIDevices) EncodeValues(key string, v *url.Values) error {
-	for i, d := range r {
-		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
-			return fmt.Errorf("failed to encode PCI device %d: %w", i, err)
+func (r CustomPCIDevices) EncodeValues(_ string, v *url.Values) error {
+	for s, d := range r {
+		if err := d.EncodeValues(s, v); err != nil {
+			return fmt.Errorf("failed to encode PCI device %s: %w", s, err)
 		}
 	}
 
@@ -94,7 +94,7 @@ func (r CustomPCIDevices) EncodeValues(key string, v *url.Values) error {
 }
 
 // UnmarshalJSON converts a CustomPCIDevice string to an object.
-func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
+func (d *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 	var s string
 
 	if err := json.Unmarshal(b, &s); err != nil {
@@ -107,27 +107,27 @@ func (r *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 		v := strings.Split(strings.TrimSpace(p), "=")
 		if len(v) == 1 {
 			dIDs := strings.Split(v[0], ";")
-			r.DeviceIDs = &dIDs
+			d.DeviceIDs = &dIDs
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "host":
 				dIDs := strings.Split(v[1], ";")
-				r.DeviceIDs = &dIDs
+				d.DeviceIDs = &dIDs
 			case "mapping":
-				r.Mapping = &v[1]
+				d.Mapping = &v[1]
 			case "mdev":
-				r.MDev = &v[1]
+				d.MDev = &v[1]
 			case "pcie":
 				bv := types.CustomBool(v[1] == "1")
-				r.PCIExpress = &bv
+				d.PCIExpress = &bv
 			case "rombar":
 				bv := types.CustomBool(v[1] == "1")
-				r.ROMBAR = &bv
+				d.ROMBAR = &bv
 			case "romfile":
-				r.ROMFile = &v[1]
+				d.ROMFile = &v[1]
 			case "x-vga":
 				bv := types.CustomBool(v[1] == "1")
-				r.XVGA = &bv
+				d.XVGA = &bv
 			}
 		}
 	}

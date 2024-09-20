@@ -30,7 +30,7 @@ import (
 // GetInfo returns the disk information for a VM.
 // Deprecated: use vms.MapCustomStorageDevices from proxmox/nodes/vms instead.
 func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
-	storageDevices := resp.CustomStorageDevices
+	storageDevices := resp.StorageDevices
 
 	currentDisk := d.Get(MkDisk)
 

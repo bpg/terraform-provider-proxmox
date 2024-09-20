@@ -25,7 +25,10 @@ func TestUnmarshalGetResponseData(t *testing.T) {
 		"ide2": "%[1]s",
 		"ide3": "%[1]s",
 		"virtio13": "%[1]s",
-		"scsi22": "%[1]s"
+		"scsi22": "%[1]s",
+		"hostpci0": "0000:81:00.2",
+		"hostpci1": "host=81:00.4,pcie=0,rombar=1,x-vga=0",
+		"hostpci12": "mapping=mappeddevice,pcie=0,rombar=1,x-vga=0"
 	}`, "local-lvm:vm-100-disk-0,aio=io_uring,backup=1,cache=none,discard=ignore,replicate=1,size=8G,ssd=1")
 
 	var data GetResponseData
@@ -34,20 +37,26 @@ func TestUnmarshalGetResponseData(t *testing.T) {
 
 	assert.Equal(t, "test", *data.BackupFile)
 
-	assert.NotNil(t, data.CustomStorageDevices)
-	assert.Len(t, data.CustomStorageDevices, 6)
-	assert.NotNil(t, data.CustomStorageDevices["ide0"])
-	assertDevice(t, data.CustomStorageDevices["ide0"])
-	assert.NotNil(t, data.CustomStorageDevices["ide1"])
-	assertDevice(t, data.CustomStorageDevices["ide1"])
-	assert.NotNil(t, data.CustomStorageDevices["ide2"])
-	assertDevice(t, data.CustomStorageDevices["ide2"])
-	assert.NotNil(t, data.CustomStorageDevices["ide3"])
-	assertDevice(t, data.CustomStorageDevices["ide3"])
-	assert.NotNil(t, data.CustomStorageDevices["virtio13"])
-	assertDevice(t, data.CustomStorageDevices["virtio13"])
-	assert.NotNil(t, data.CustomStorageDevices["scsi22"])
-	assertDevice(t, data.CustomStorageDevices["scsi22"])
+	assert.NotNil(t, data.StorageDevices)
+	assert.Len(t, data.StorageDevices, 6)
+	assert.NotNil(t, data.StorageDevices["ide0"])
+	assertDevice(t, data.StorageDevices["ide0"])
+	assert.NotNil(t, data.StorageDevices["ide1"])
+	assertDevice(t, data.StorageDevices["ide1"])
+	assert.NotNil(t, data.StorageDevices["ide2"])
+	assertDevice(t, data.StorageDevices["ide2"])
+	assert.NotNil(t, data.StorageDevices["ide3"])
+	assertDevice(t, data.StorageDevices["ide3"])
+	assert.NotNil(t, data.StorageDevices["virtio13"])
+	assertDevice(t, data.StorageDevices["virtio13"])
+	assert.NotNil(t, data.StorageDevices["scsi22"])
+	assertDevice(t, data.StorageDevices["scsi22"])
+
+	assert.NotNil(t, data.PCIDevices)
+	assert.Len(t, data.PCIDevices, 3)
+	assert.NotNil(t, data.PCIDevices["hostpci0"])
+	assert.NotNil(t, data.PCIDevices["hostpci1"])
+	assert.NotNil(t, data.PCIDevices["hostpci12"])
 }
 
 func assertDevice(t *testing.T, dev *CustomStorageDevice) {

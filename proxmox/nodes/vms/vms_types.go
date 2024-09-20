@@ -290,10 +290,6 @@ type GetResponseData struct {
 	NUMADevices7         *CustomNUMADevice               `json:"numa7,omitempty"`
 	OSType               *string                         `json:"ostype,omitempty"`
 	Overwrite            *types.CustomBool               `json:"force,omitempty"`
-	PCIDevice0           *CustomPCIDevice                `json:"hostpci0,omitempty"`
-	PCIDevice1           *CustomPCIDevice                `json:"hostpci1,omitempty"`
-	PCIDevice2           *CustomPCIDevice                `json:"hostpci2,omitempty"`
-	PCIDevice3           *CustomPCIDevice                `json:"hostpci3,omitempty"`
 	PoolID               *string                         `json:"pool,omitempty"`
 	Revert               *string                         `json:"revert,omitempty"`
 	SCSIHardware         *string                         `json:"scsihw,omitempty"`
@@ -322,7 +318,8 @@ type GetResponseData struct {
 	VMGenerationID       *string                         `json:"vmgenid,omitempty"`
 	VMStateDatastoreID   *string                         `json:"vmstatestorage,omitempty"`
 	WatchdogDevice       *CustomWatchdogDevice           `json:"watchdog,omitempty"`
-	CustomStorageDevices CustomStorageDevices            `json:"-"`
+	StorageDevices       CustomStorageDevices            `json:"-"`
+	PCIDevices           CustomPCIDevices                `json:"-"`
 }
 
 // GetStatusResponseBody contains the body from a VM get status response.
@@ -451,7 +448,7 @@ type UpdateAsyncResponseBody struct {
 // UpdateRequestBody contains the data for an virtual machine update request.
 type UpdateRequestBody = CreateRequestBody
 
-// UnmarshalJSON unmarshals the custom storage devices from the JSON data.
+// UnmarshalJSON unmarshals the data from the JSON response, populating the CustomStorageDevices field.
 func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 	type Alias GetResponseData
 
@@ -470,10 +467,13 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 
-	allDevices := make(CustomStorageDevices)
+	data.StorageDevices = make(CustomStorageDevices)
+	data.PCIDevices = make(CustomPCIDevices)
 
 	for key, value := range byAttr {
 		for _, prefix := range StorageInterfaces {
+			// the device names can overlap with other fields, for example`scsi0` and `scsihw`, so just checking
+			// the prefix is not enough
 			r := regexp.MustCompile(`^` + prefix + `\d+$`)
 			if r.MatchString(key) {
 				var device CustomStorageDevice
@@ -481,12 +481,19 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 					return fmt.Errorf("failed to unmarshal %s: %w", key, err)
 				}
 
-				allDevices[key] = &device
+				data.StorageDevices[key] = &device
 			}
 		}
-	}
 
-	data.CustomStorageDevices = allDevices
+		if r := regexp.MustCompile(`^hostpci\d+$`); r.MatchString(key) {
+			var device CustomPCIDevice
+			if err := json.Unmarshal([]byte(`"`+value.(string)+`"`), &device); err != nil {
+				return fmt.Errorf("failed to unmarshal %s: %w", key, err)
+			}
+
+			data.PCIDevices[key] = &device
+		}
+	}
 
 	*d = GetResponseData(data)
 

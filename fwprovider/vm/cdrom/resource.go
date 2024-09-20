@@ -22,7 +22,7 @@ type Value = types.Map
 // NewValue returns a new Value with the given CD-ROM settings from the PVE API.
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
 	// find storage devices with media=cdrom
-	cdroms := config.CustomStorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
+	cdroms := config.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
 		return device.Media != nil && *device.Media == "cdrom"
 	})
 
