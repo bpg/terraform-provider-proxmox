@@ -130,9 +130,10 @@ const (
 	dvStopOnDestroy       = false
 	dvHookScript          = ""
 
-	maxResourceVirtualEnvironmentVMAudioDevices   = 1
-	maxResourceVirtualEnvironmentVMSerialDevices  = 4
-	maxResourceVirtualEnvironmentVMHostPCIDevices = 8
+	maxResourceVirtualEnvironmentVMAudioDevices  = 1
+	maxResourceVirtualEnvironmentVMSerialDevices = 4
+	// see /usr/share/perl5/PVE/QemuServer/PCI.pm.
+	maxResourceVirtualEnvironmentVMHostPCIDevices = 16
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
 	// hardcoded /usr/share/perl5/PVE/QemuServer/Memory.pm: "our $MAX_NUMA = 8".
 	maxResourceVirtualEnvironmentVMNUMADevices = 8
@@ -966,6 +967,7 @@ func VM() *schema.Resource {
 					},
 				},
 			},
+			MaxItems: maxResourceVirtualEnvironmentVMHostPCIDevices,
 		},
 		mkHostUSB: {
 			Type:        schema.TypeList,
@@ -1516,7 +1518,7 @@ func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 // Check for an existing CloudInit IDE drive. If no such drive is found, return the specified `defaultValue`.
 func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, defaultValue string) string {
-	devs := vmConfig.CustomStorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
+	devs := vmConfig.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
 		return device.IsCloudInitDrive(vmID)
 	})
 
@@ -1530,7 +1532,7 @@ func findExistingCloudInitDrive(vmConfig *vms.GetResponseData, vmID int, default
 // Return a pointer to the storage device configuration based on a name. The device name is assumed to be a
 // valid ide, sata, or scsi interface name.
 func getStorageDevice(vmConfig *vms.GetResponseData, deviceName string) *vms.CustomStorageDevice {
-	if dev, ok := vmConfig.CustomStorageDevices[deviceName]; ok {
+	if dev, ok := vmConfig.StorageDevices[deviceName]; ok {
 		return dev
 	}
 
@@ -2949,9 +2951,10 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 	pciDevice := d.Get(mkHostPCI).([]interface{})
 	pciDeviceObjects := make(vms.CustomPCIDevices, len(pciDevice))
 
-	for i, pciDeviceEntry := range pciDevice {
+	for _, pciDeviceEntry := range pciDevice {
 		block := pciDeviceEntry.(map[string]interface{})
 
+		deviceName := block[mkHostPCIDevice].(string)
 		ids, _ := block[mkHostPCIDeviceID].(string)
 		mdev, _ := block[mkHostPCIDeviceMDev].(string)
 		pcie := types.CustomBool(block[mkHostPCIDevicePCIE].(bool))
@@ -2985,7 +2988,7 @@ func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
 			device.Mapping = &mapping
 		}
 
-		pciDeviceObjects[i] = device
+		pciDeviceObjects[deviceName] = &device
 	}
 
 	return pciDeviceObjects
@@ -3673,8 +3676,7 @@ func vmReadCustom(
 	currentPCIList := d.Get(mkHostPCI).([]interface{})
 	pciMap := map[string]interface{}{}
 
-	pciDevices := getPCIInfo(vmConfig, d)
-	for pi, pp := range pciDevices {
+	for pi, pp := range vmConfig.PCIDevices {
 		if (pp == nil) || (pp.DeviceIDs == nil && pp.Mapping == nil) {
 			continue
 		}
@@ -5522,17 +5524,6 @@ func getNUMAInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*
 	numaDevices["numa7"] = resp.NUMADevices7
 
 	return numaDevices
-}
-
-func getPCIInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomPCIDevice {
-	pciDevices := map[string]*vms.CustomPCIDevice{}
-
-	pciDevices["hostpci0"] = resp.PCIDevice0
-	pciDevices["hostpci1"] = resp.PCIDevice1
-	pciDevices["hostpci2"] = resp.PCIDevice2
-	pciDevices["hostpci3"] = resp.PCIDevice3
-
-	return pciDevices
 }
 
 func getUSBInfo(resp *vms.GetResponseData, _ *schema.ResourceData) map[string]*vms.CustomUSBDevice {

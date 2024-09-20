@@ -312,7 +312,7 @@ output "ubuntu_vm_public_key" {
         (defaults to `v2.0`).
 - `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
     - `device` - (Required) The PCI device name for Proxmox, in form
-        of `hostpciX` where `X` is a sequential number from 0 to 3.
+        of `hostpciX` where `X` is a sequential number from 0 to 15.
     - `id` - (Optional) The PCI device ID. This parameter is not compatible
         with `api_token` and requires the root `username` and `password`
         configured in the proxmox provider. Use either this or `mapping`.
