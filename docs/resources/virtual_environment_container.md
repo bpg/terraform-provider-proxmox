@@ -198,6 +198,7 @@ output "ubuntu_container_public_key" {
         - `debian` - Debian.
         - `fedora` - Fedora.
         - `gentoo` - Gentoo.
+        - `nixos` - NixOS.
         - `opensuse` - openSUSE.
         - `ubuntu` - Ubuntu.
         - `unmanaged` - Unmanaged.
