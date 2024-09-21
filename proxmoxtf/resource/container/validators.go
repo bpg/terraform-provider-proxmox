@@ -45,6 +45,7 @@ func OperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 		"archlinux",
 		"centos",
 		"debian",
+		"devuan",
 		"fedora",
 		"gentoo",
 		"nixos",
