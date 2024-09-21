@@ -139,13 +139,11 @@ output "ubuntu_container_public_key" {
     - `ip_config` - (Optional) The IP configuration (one block per network
         device).
         - `ipv4` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv4 address (use `dhcp` for
-                autodiscovery).
+            - `address` - (Optional) The IPv4 address (use `dhcp` for auto-discovery).
             - `gateway` - (Optional) The IPv4 gateway (must be omitted
                 when `dhcp` is used as the address).
         - `ipv6` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv6 address (use `dhcp` for
-                autodiscovery).
+            - `address` - (Optional) The IPv6 address (use `dhcp` for auto-discovery).
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
                 when `dhcp` is used as the address).
     - `user_account` - (Optional) The user account configuration.
@@ -189,15 +187,17 @@ output "ubuntu_container_public_key" {
 - `node_name` - (Required) The name of the node to assign the container to.
 - `operating_system` - (Required) The Operating System configuration.
     - `template_file_id` - (Required) The identifier for an OS template file.
-       The ID format is `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/jammy-server-cloudimg-amd64.tar.gz`. Can be also taken from
-       `proxmox_virtual_environment_download_file` resource, or from the output of `pvesm list <storage>`.
+       The ID format is `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/jammy-server-cloudimg-amd64.tar.gz`.
+       Can be also taken from `proxmox_virtual_environment_download_file` resource, or from the output of `pvesm list <storage>`.
     - `type` - (Optional) The type (defaults to `unmanaged`).
         - `alpine` - Alpine.
         - `archlinux` - Arch Linux.
         - `centos` - CentOS.
         - `debian` - Debian.
+        - `devuan` - Devuan.
         - `fedora` - Fedora.
         - `gentoo` - Gentoo.
+        - `nixos` - NixOS.
         - `opensuse` - openSUSE.
         - `ubuntu` - Ubuntu.
         - `unmanaged` - Unmanaged.
