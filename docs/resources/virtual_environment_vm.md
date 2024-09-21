@@ -631,12 +631,12 @@ VM `data_user_vm` attaches those disks as `scsi1` and `scsi2`.
 **VM `data_user_vm` can be *re-created/replaced* without losing data stored on disks
 owned by `data_vm`.**
 
-This functionality is **experimental**.
+~> **Experimental** Please test your configuration first in an environment where you can tolerate the potential data loss.
 
-Do *not* simultaneously run more than one VM using same disk. For most filesystems,
+~> Do *not* simultaneously run more than one VM using same disk. For most filesystems,
 attaching one disk to multiple VM will cause errors or even data corruption.
 
-Do *not* move or resize `data_vm` disks.
+~> Do *not* move or resize `data_vm` disks.
 (Resource `data_user_vm` should reject attempts to move or resize non-owned disks.)
 
 ```hcl
@@ -687,6 +687,37 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
   ...
 }
 ````
+
+## Example: Disk pass-through
+
+You can attach another physical disk from the PVE host to a VM. 
+This is done by setting the `path_in_datastore` to the path of the block device on the host.
+
+~> **Experimental** Please test your configuration first in an environment where you can tolerate the potential data loss.
+
+~> Do *not* attach the same disk to more than one VM as it may cause data corruption.
+
+
+```hcl
+resource "proxmox_virtual_environment_vm" "test_vm" {
+  ...
+
+  # boot disk
+  disk {
+    ...
+  }
+  
+  # attached disk
+  disk {
+    datastore_id = ""
+    path_in_datastore  = "/dev/path/to/block/device"
+    file_format = "raw"
+  }
+
+  ...
+}
+```
+
 
 ## Import
 
