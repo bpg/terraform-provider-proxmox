@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.65.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.64.0...v0.65.0) (2024-09-21)
+
+
+### Features
+
+* **vm:** remove deprecated `vga.enabled` ([#1533](https://github.com/bpg/terraform-provider-proxmox/issues/1533)) ([f4ee629](https://github.com/bpg/terraform-provider-proxmox/commit/f4ee6291ccd42ef6c6c7d0e8d6780f68a46ac218))
+
+
+### Bug Fixes
+
+* **file:** respect `download_file.override` attr when checking for the file size change ([#1537](https://github.com/bpg/terraform-provider-proxmox/issues/1537)) ([44e2814](https://github.com/bpg/terraform-provider-proxmox/commit/44e2814adf69588e219c522fa415fa38cef9dc3a))
+* **vm:** handle more than 4 `hostpci` devices ([#1543](https://github.com/bpg/terraform-provider-proxmox/issues/1543)) ([569db6d](https://github.com/bpg/terraform-provider-proxmox/commit/569db6df3bcacd86d0c1dab77512ca73d7b04560))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.10.4 → v1.11.0) ([#1532](https://github.com/bpg/terraform-provider-proxmox/issues/1532)) ([831207b](https://github.com/bpg/terraform-provider-proxmox/commit/831207b0e30ed0b91ec612681c130fb412210e61))
+* **ci:** update jetbrains/qodana-action action (v2024.1.9 → v2024.2.3) ([#1544](https://github.com/bpg/terraform-provider-proxmox/issues/1544)) ([13ceab8](https://github.com/bpg/terraform-provider-proxmox/commit/13ceab820501933c5b3b5d24aae1e9db69b2816b))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1545](https://github.com/bpg/terraform-provider-proxmox/issues/1545)) ([b5a4e32](https://github.com/bpg/terraform-provider-proxmox/commit/b5a4e32d7a9b7dc0328e114b60eaf42875d4fab6))
+* **deps:** update golang.org/x/exp digest (e7e105d → 701f63a) ([#1526](https://github.com/bpg/terraform-provider-proxmox/issues/1526)) ([b96532f](https://github.com/bpg/terraform-provider-proxmox/commit/b96532f884af73b562199d3b049b4ee4251fbf78))
+* **deps:** update module github.com/golangci/golangci-lint (v1.60.3 → v1.61.0) in /tools ([#1527](https://github.com/bpg/terraform-provider-proxmox/issues/1527)) ([356c978](https://github.com/bpg/terraform-provider-proxmox/commit/356c978ece6c60e3b130d753f9bcd644d8507fce))
+* **docs:** add example for host disk pass-through to VM ([#1547](https://github.com/bpg/terraform-provider-proxmox/issues/1547)) ([e23d2f3](https://github.com/bpg/terraform-provider-proxmox/commit/e23d2f375cb72a1e8a7f67490cbcbe1a3ea5d86f))
+* **docs:** improve `network_linux_bridge` documentation ([#1538](https://github.com/bpg/terraform-provider-proxmox/issues/1538)) ([8f9b036](https://github.com/bpg/terraform-provider-proxmox/commit/8f9b03685791088353b7ac0872130ebc7c832626))
+* **docs:** update terraform local (2.5.1 → 2.5.2) ([#1535](https://github.com/bpg/terraform-provider-proxmox/issues/1535)) ([f1ce62e](https://github.com/bpg/terraform-provider-proxmox/commit/f1ce62eeeb26d37ae1be2580869cd5baa95741be))
+* **docs:** update terraform tls (4.0.5 → 4.0.6) ([#1536](https://github.com/bpg/terraform-provider-proxmox/issues/1536)) ([a89cfbf](https://github.com/bpg/terraform-provider-proxmox/commit/a89cfbf045f2bddde3ac0d769686434467bb61d6))
+* **lxc:** update list of supported OS-es in `operating_system.type` ([#1548](https://github.com/bpg/terraform-provider-proxmox/issues/1548)) ([14a62a7](https://github.com/bpg/terraform-provider-proxmox/commit/14a62a712ae4109bc5345b6e09248bd5e68002b5))
+
 ## [0.64.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.63.0...v0.64.0) (2024-09-08)
 
 
