@@ -31,7 +31,7 @@ type DNSValue = types.Object
 func NewValue(ctx context.Context, config *vms.GetResponseData, vmID int, diags *diag.Diagnostics) Value {
 	ci := Model{}
 
-	devices := config.CustomStorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
+	devices := config.StorageDevices.Filter(func(device *vms.CustomStorageDevice) bool {
 		return device.IsCloudInitDrive(vmID)
 	})
 
