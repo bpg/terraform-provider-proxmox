@@ -2882,6 +2882,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			readOnly := types.CustomBool(mountPointMap[mkMountPointReadOnly].(bool))
 			replicate := types.CustomBool(mountPointMap[mkMountPointReplicate].(bool))
 			shared := types.CustomBool(mountPointMap[mkMountPointShared].(bool))
+			size := mountPointMap[mkMountPointSize].(string)
 			volume := mountPointMap[mkMountPointVolume].(string)
 
 			mountPointObject.ACL = &acl
@@ -2891,7 +2892,26 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			mountPointObject.ReadOnly = &readOnly
 			mountPointObject.Replicate = &replicate
 			mountPointObject.Shared = &shared
-			mountPointObject.Volume = volume
+
+			// this is a totally hackish way to determine if the mount point is new or not during the container update.
+			// an attached storage-backed MP has volume in the format "storage:disk file", i.e. `local-lvm:vm-123-disk-1`
+			// while a new storage-backed MP has just plain volume name, i.e. `local-lvm`
+			// device or directory MPs won't have a colon in the volume name either, and we don't need to do the special
+			// handling for them.
+			createNewMP := !strings.Contains(volume, ":")
+
+			if len(size) > 0 && createNewMP {
+				var ds types.DiskSize
+
+				ds, err := types.ParseDiskSize(size)
+				if err != nil {
+					return diag.Errorf("invalid disk size: %s", err.Error())
+				}
+
+				mountPointObject.Volume = fmt.Sprintf("%s:%d", volume, ds.InGigabytes())
+			} else {
+				mountPointObject.Volume = volume
+			}
 
 			if len(mountOptions) > 0 {
 				mountOptionsArray := make([]string, 0, len(mountPoints))

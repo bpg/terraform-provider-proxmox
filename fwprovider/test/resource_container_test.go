@@ -111,10 +111,6 @@ func TestAccResourceContainer(t *testing.T) {
 		}}},
 		{"update mount points", []resource.TestStep{
 			{
-				SkipFunc: func() (bool, error) {
-					// mount point deletion: https://github.com/bpg/terraform-provider-proxmox/issues/1392
-					return true, nil
-				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 				    node_name = "{{.NodeName}}"
@@ -128,11 +124,6 @@ func TestAccResourceContainer(t *testing.T) {
 						volume = "local-lvm"
 						size   = "4G"
 						path   = "mnt/local1"
-				    }
-					mount_point {
-						volume = "local"
-						size   = "8G"
-						path   = "mnt/local2"
 				    }
 				    initialization {
 				  		hostname = "test"
@@ -151,14 +142,10 @@ func TestAccResourceContainer(t *testing.T) {
 				    }
 				}`),
 				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
-					"mount_point.#": "2",
+					"mount_point.#": "1",
 				}),
 			},
 			{
-				SkipFunc: func() (bool, error) {
-					// mount point deletion: https://github.com/bpg/terraform-provider-proxmox/issues/1392
-					return true, nil
-				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 				    node_name = "{{.NodeName}}"
@@ -171,6 +158,12 @@ func TestAccResourceContainer(t *testing.T) {
 						volume = "local-lvm"
 						size   = "4G"
 						path   = "mnt/local1"
+				    }
+					// add a new mount point
+				    mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "mnt/local2"
 				    }
 				    initialization {
 				  		hostname = "test"
