@@ -22,7 +22,7 @@ type CustomWatchdogDevice struct {
 // EncodeValues converts a CustomWatchdogDevice struct to a URL value.
 func (r *CustomWatchdogDevice) EncodeValues(key string, v *url.Values) error {
 	values := []string{
-		fmt.Sprintf("model=%+v", r.Model),
+		fmt.Sprintf("model=%s", *r.Model),
 	}
 
 	if r.Action != nil {

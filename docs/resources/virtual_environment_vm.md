@@ -555,6 +555,18 @@ output "ubuntu_vm_public_key" {
     - `clipboard` - (Optional) Enable VNC clipboard by setting to `vnc`. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information.
 - `vm_id` - (Optional) The VM identifier.
 - `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
+- `watchdog` - (Optional) The watchdog configuration. Once enabled (by a guest action), the watchdog must be periodically polled by an agent inside the guest or else the watchdog will reset the guest (or execute the respective action specified).
+      - `enabled` - (Optional) Whether the watchdog is enabled (defaults to `false`).
+    - `model` - (Optional) The watchdog type to emulate (defaults to `i6300esb`).
+        - `i6300esb` - Intel 6300ESB.
+        - `ib700` - iBase IB700.
+    - `action` - (Optional) The action to perform if after activation the guest fails to poll the watchdog in time  (defaults to `none`).
+        - `debug`
+        - `none`
+        - `pause`
+        - `poweroff`
+        - `reset`
+        - `shutdown`
 
 ## Attribute Reference
 

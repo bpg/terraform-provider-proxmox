@@ -217,6 +217,62 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			}},
 		},
+		{
+			"update watchdog block", []resource.TestStep{{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					watchdog {
+						enabled = "true"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"watchdog.0.model":  "i6300esb",
+						"watchdog.0.action": "none",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+			
+					watchdog {
+						enabled = "true"
+						model   = "ib700"
+						action  = "reset"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"watchdog.0.model":  "ib700",
+						"watchdog.0.action": "reset",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+			
+					watchdog {
+						enabled = "false"
+						model   = "ib700"
+						action  = "reset"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"watchdog.0.enabled": "false",
+						"watchdog.0.model":   "ib700",
+						"watchdog.0.action":  "reset",
+					}),
+				),
+			}},
+		},
 	}
 
 	for _, tt := range tests {
