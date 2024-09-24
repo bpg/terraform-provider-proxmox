@@ -1137,6 +1137,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "andreaswolf",
+      "name": "Andreas Wolf",
+      "avatar_url": "https://avatars.githubusercontent.com/u/159919?v=4",
+      "profile": "https://a-w.io",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
