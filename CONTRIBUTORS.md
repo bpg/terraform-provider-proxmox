@@ -161,6 +161,7 @@
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ZauberNerd"><img src="https://avatars.githubusercontent.com/u/249542?v=4?s=100" width="100px;" alt="Björn Brauer"/><br /><sub><b>Björn Brauer</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=ZauberNerd" title="Code">💻</a> <a href="#ideas-ZauberNerd" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Diskoteket"><img src="https://avatars.githubusercontent.com/u/69105072?v=4?s=100" width="100px;" alt="Tim Wetterek"/><br /><sub><b>Tim Wetterek</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Diskoteket" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://a-w.io"><img src="https://avatars.githubusercontent.com/u/159919?v=4?s=100" width="100px;" alt="Andreas Wolf"/><br /><sub><b>Andreas Wolf</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aandreaswolf" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
   <tfoot>
