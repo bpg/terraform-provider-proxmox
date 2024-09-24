@@ -35,6 +35,16 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
     down_delay = "60"
   }
 
+  cpu {
+    cores        = 2
+    type         = "x86-64-v2-AES"  # recommended for modern CPUs
+  }
+
+  memory {
+    dedicated = 2048
+    floating  = 2048 # set equal to dedicated to enable ballooning
+  }
+
   disk {
     datastore_id = "local-lvm"
     file_id      = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_qcow2_img.id
@@ -405,17 +415,16 @@ output "ubuntu_vm_public_key" {
     - `pc` - Standard PC (i440FX + PIIX, 1996).
     - `q35` - Standard PC (Q35 + ICH9, 2009).
 - `memory` - (Optional) The memory configuration.
-    - `dedicated` - (Optional) The dedicated memory in megabytes (defaults
-        to `512`).
-    - `floating` - (Optional) The floating memory in megabytes (defaults
-        to `0`).
+    - `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`).
+    - `floating` - (Optional) The floating memory in megabytes. The default is `0`, which disables "ballooning device" for the VM.
+        Please note that Proxmox has ballooning enabled by default. To enable it, set `floating` to the same value as `dedicated`.
+        See [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_memory) section 10.2.6 for more information.
     - `shared` - (Optional) The shared memory in megabytes (defaults to `0`).
     - `hugepages` - (Optional) Enable/disable hugepages memory (defaults to disable).
         - `2` - 2MB hugepages.
         - `1024` - 1GB hugepages.
         - `any` - Any hugepages.
-    - `keep_hugepages` - (Optional) Keep hugepages memory after the VM is stopped (defaults
-        to `false`).
+    - `keep_hugepages` - (Optional) Keep hugepages memory after the VM is stopped (defaults to `false`).
 
     Settings `hugepages` and `keep_hugepages` are only allowed for `root@pam` authenticated user.
     And required `cpu.numa` to be enabled.
@@ -545,7 +554,7 @@ output "ubuntu_vm_public_key" {
         - `vmware` - VMware Compatible.
     - `clipboard` - (Optional) Enable VNC clipboard by setting to `vnc`. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information.
 - `vm_id` - (Optional) The VM identifier.
-- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute). 
+- `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
 
 ## Attribute Reference
 
@@ -690,13 +699,12 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
 
 ## Example: Disk pass-through
 
-You can attach another physical disk from the PVE host to a VM. 
+You can attach another physical disk from the PVE host to a VM.
 This is done by setting the `path_in_datastore` to the path of the block device on the host.
 
 ~> **Experimental** Please test your configuration first in an environment where you can tolerate the potential data loss.
 
 ~> Do *not* attach the same disk to more than one VM as it may cause data corruption.
-
 
 ```hcl
 resource "proxmox_virtual_environment_vm" "test_vm" {
@@ -717,7 +725,6 @@ resource "proxmox_virtual_environment_vm" "test_vm" {
   ...
 }
 ```
-
 
 ## Import
 
