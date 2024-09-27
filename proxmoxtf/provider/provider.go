@@ -127,18 +127,24 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
 
 	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
-		if sshUsername != "" {
+		switch {
+		case sshUsername != "":
 			sshConf[mkProviderSSHUsername] = sshUsername
-		} else if creds.UserCredentials != nil {
+		case creds.UserCredentials != nil:
 			sshConf[mkProviderSSHUsername] = strings.Split(creds.UserCredentials.Username, "@")[0]
+		default:
+			sshConf[mkProviderSSHUsername] = ""
 		}
 	}
 
 	if v, ok := sshConf[mkProviderSSHPassword]; !ok || v.(string) == "" {
-		if sshPassword != "" {
+		switch {
+		case sshPassword != "":
 			sshConf[mkProviderSSHPassword] = sshPassword
-		} else if creds.UserCredentials != nil {
+		case creds.UserCredentials != nil:
 			sshConf[mkProviderSSHPassword] = creds.UserCredentials.Password
+		default:
+			sshConf[mkProviderSSHPassword] = ""
 		}
 	}
 
