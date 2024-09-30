@@ -129,6 +129,8 @@ const (
 	dvSCSIHardware        = "virtio-scsi-pci"
 	dvStopOnDestroy       = false
 	dvHookScript          = ""
+	dvWatchdogModel       = "i6300esb"
+	dvWatchdogAction      = "none"
 
 	maxResourceVirtualEnvironmentVMAudioDevices  = 1
 	maxResourceVirtualEnvironmentVMSerialDevices = 4
@@ -278,6 +280,11 @@ const (
 	mkSCSIHardware         = "scsi_hardware"
 	mkHookScriptFileID     = "hook_script_file_id"
 	mkStopOnDestroy        = "stop_on_destroy"
+	mkWatchdog             = "watchdog"
+	// a workaround for the lack of proper support of default and undefined values in SDK.
+	mkWatchdogEnabled = "enabled"
+	mkWatchdogModel   = "model"
+	mkWatchdogAction  = "action"
 )
 
 // VM returns a resource that manages VMs.
@@ -1457,6 +1464,56 @@ func VM() *schema.Resource {
 			Optional:    true,
 			Default:     dvStopOnDestroy,
 		},
+		mkWatchdog: {
+			Type:        schema.TypeList,
+			Description: "The watchdog configuration",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{
+					map[string]interface{}{
+						mkWatchdogAction:  dvWatchdogAction,
+						mkWatchdogEnabled: false,
+						mkWatchdogModel:   dvWatchdogModel,
+					},
+				}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkWatchdogAction: {
+						Type:        schema.TypeString,
+						Description: "The watchdog action",
+						Optional:    true,
+						Default:     dvWatchdogAction,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							"debug",
+							"none",
+							"pause",
+							"poweroff",
+							"reset",
+							"shutdown",
+						}, true)),
+					},
+					mkWatchdogEnabled: {
+						Type:        schema.TypeBool,
+						Description: "Whether the watchdog is enabled",
+						Optional:    true,
+						Default:     false,
+					},
+					mkWatchdogModel: {
+						Type:        schema.TypeString,
+						Description: "The watchdog model",
+						Optional:    true,
+						Default:     dvWatchdogModel,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+							"i6300esb",
+							"ib700",
+						}, true)),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
 	}
 
 	structure.MergeSchema(s, disk.Schema())
@@ -1801,6 +1858,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	protection := types.CustomBool(d.Get(mkProtection).(bool))
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	vga := d.Get(mkVGA).([]interface{})
+	watchdog := d.Get(mkWatchdog).([]interface{})
 
 	updateBody := &vms.UpdateRequestBody{
 		AudioDevices: audioDevices,
@@ -2073,6 +2131,23 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.HookScript = &hookScript
 	} else if currentHookScript != nil {
 		del = append(del, "hookscript")
+	}
+
+	if len(watchdog) > 0 && watchdog[0] != nil {
+		watchdogBlock := watchdog[0].(map[string]interface{})
+
+		watchdogEnabled := types.CustomBool(
+			watchdogBlock[mkWatchdogEnabled].(bool),
+		)
+		if watchdogEnabled {
+			watchdogAction := watchdogBlock[mkWatchdogAction].(string)
+			watchdogModel := watchdogBlock[mkWatchdogModel].(string)
+
+			updateBody.WatchdogDevice = &vms.CustomWatchdogDevice{
+				Action: &watchdogAction,
+				Model:  &watchdogModel,
+			}
+		}
 	}
 
 	updateBody.Delete = del
@@ -2521,6 +2596,32 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	scsiHardware := d.Get(mkSCSIHardware).(string)
 
+	var watchdogObject *vms.CustomWatchdogDevice
+
+	watchdogBlock, err := structure.GetSchemaBlock(
+		resource,
+		d,
+		[]string{mkWatchdog},
+		0,
+		true,
+	)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	watchdogEnabled := types.CustomBool(
+		watchdogBlock[mkWatchdogEnabled].(bool),
+	)
+	if watchdogEnabled {
+		watchdogAction := watchdogBlock[mkWatchdogAction].(string)
+		watchdogModel := watchdogBlock[mkWatchdogModel].(string)
+
+		watchdogObject = &vms.CustomWatchdogDevice{
+			Action: &watchdogAction,
+			Model:  &watchdogModel,
+		}
+	}
+
 	createBody := &vms.CreateRequestBody{
 		ACPI: &acpi,
 		Agent: &vms.CustomAgent{
@@ -2563,6 +2664,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		USBDevices:           usbDeviceObjects,
 		VGADevice:            vgaDevice,
 		VMID:                 vmID,
+		WatchdogDevice:       watchdogObject,
 		CustomStorageDevices: diskDeviceObjects,
 	}
 
@@ -4325,6 +4427,51 @@ func vmReadCustom(
 		}
 	}
 
+	watchdog := map[string]interface{}{}
+
+	if vmConfig.WatchdogDevice != nil {
+		watchdog[mkWatchdogEnabled] = true
+
+		if vmConfig.WatchdogDevice.Action != nil {
+			watchdog[mkWatchdogAction] = *vmConfig.WatchdogDevice.Action
+		} else {
+			watchdog[mkWatchdogAction] = dvWatchdogAction
+		}
+
+		if vmConfig.WatchdogDevice.Model != nil {
+			watchdog[mkWatchdogModel] = *vmConfig.WatchdogDevice.Model
+		} else {
+			watchdog[mkWatchdogModel] = dvWatchdogModel
+		}
+	} else {
+		watchdog[mkWatchdogEnabled] = false
+		watchdog[mkWatchdogAction] = dvWatchdogAction
+		watchdog[mkWatchdogModel] = dvWatchdogModel
+	}
+
+	currentWatchdog := d.Get(mkWatchdog).([]interface{})
+	currentWatchdogEnabled := len(currentWatchdog) > 0 &&
+		currentWatchdog[0] != nil && currentWatchdog[0].(map[string]interface{})[mkWatchdogEnabled].(bool)
+	currentWatchdogDisabled := len(currentWatchdog) > 0 &&
+		currentWatchdog[0] != nil && !currentWatchdog[0].(map[string]interface{})[mkWatchdogEnabled].(bool)
+
+	switch {
+	case len(clone) > 0 && len(currentWatchdog) > 0:
+		err := d.Set(mkWatchdog, []interface{}{watchdog})
+		diags = append(diags, diag.FromErr(err)...)
+	case currentWatchdogEnabled ||
+		watchdog[mkWatchdogEnabled] != false ||
+		watchdog[mkWatchdogAction] != dvWatchdogAction ||
+		watchdog[mkWatchdogModel] != dvWatchdogModel:
+		err := d.Set(mkWatchdog, []interface{}{watchdog})
+		diags = append(diags, diag.FromErr(err)...)
+	case currentWatchdogDisabled && vmConfig.WatchdogDevice == nil:
+		// do nothing
+	default:
+		err := d.Set(mkWatchdog, []interface{}{})
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	vmAPI := client.Node(nodeName).VM(vmID)
 	started := d.Get(mkStarted).(bool)
 
@@ -5158,6 +5305,37 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		} else {
 			del = append(del, "hookscript")
 		}
+	}
+
+	// Prepare the new watchdog configuration.
+	if d.HasChange(mkWatchdog) {
+		watchdogBlock, err := structure.GetSchemaBlock(
+			resource,
+			d,
+			[]string{mkWatchdog},
+			0,
+			true,
+		)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		watchdogEnabled := types.CustomBool(
+			watchdogBlock[mkWatchdogEnabled].(bool),
+		)
+		if watchdogEnabled {
+			watchdogAction := watchdogBlock[mkWatchdogAction].(string)
+			watchdogModel := watchdogBlock[mkWatchdogModel].(string)
+
+			updateBody.WatchdogDevice = &vms.CustomWatchdogDevice{
+				Action: &watchdogAction,
+				Model:  &watchdogModel,
+			}
+		} else {
+			del = append(del, "watchdog")
+		}
+
+		rebootRequired = true
 	}
 
 	// Update the configuration now that everything has been prepared.
