@@ -16,9 +16,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
@@ -44,17 +44,17 @@ func (d *usbDataSource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
+	cfg, ok := req.ProviderData.(config.DataSource)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
+			"Unexpected DataSource Configure Type",
+			fmt.Sprintf("Expected config.DataSource, got: %T", req.ProviderData),
 		)
 
 		return
 	}
 
-	d.client = client.Cluster().HardwareMapping()
+	d.client = cfg.Client.Cluster().HardwareMapping()
 }
 
 // Metadata returns the data source type name.

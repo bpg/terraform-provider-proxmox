@@ -19,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/plugins"
 )
 
@@ -36,8 +36,8 @@ func NewACMEPluginResource() resource.Resource {
 
 // acmePluginResource contains the resource's internal data.
 type acmePluginResource struct {
-	// The ACME account API client
-	client plugins.Client
+	// The ACME plugin API client
+	client *plugins.Client
 }
 
 // Metadata defines the name of the resource.
@@ -108,16 +108,17 @@ func (r *acmePluginResource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-	if ok {
-		r.client = *client.Cluster().ACME().Plugins()
-	} else {
+	cfg, ok := req.ProviderData.(config.Resource)
+	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T",
-				req.ProviderData),
+			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
+
+		return
 	}
+
+	r.client = cfg.Client.Cluster().ACME().Plugins()
 }
 
 // Create creates a new ACME plugin on the Proxmox cluster.

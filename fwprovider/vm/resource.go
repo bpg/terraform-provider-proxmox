@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
@@ -75,8 +76,7 @@ func (r *Resource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-
+	cfg, ok := req.ProviderData.(config.Resource)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -86,7 +86,7 @@ func (r *Resource) Configure(
 		return
 	}
 
-	r.client = client
+	r.client = cfg.Client
 }
 
 // Create creates a new VM.

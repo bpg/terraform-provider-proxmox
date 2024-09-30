@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package vm
 
 import (
@@ -7,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
@@ -45,18 +52,17 @@ func (d *Datasource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-
+	cfg, ok := req.ProviderData.(config.DataSource)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
+			"Unexpected DataSource Configure Type",
+			fmt.Sprintf("Expected config.DataSource, got: %T", req.ProviderData),
 		)
 
 		return
 	}
 
-	d.client = client
+	d.client = cfg.Client
 }
 
 //nolint:dupl

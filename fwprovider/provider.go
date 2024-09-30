@@ -26,6 +26,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/access"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/acme"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/network"
@@ -242,8 +243,8 @@ func (p *proxmoxProvider) Configure(
 	tflog.Info(ctx, "Configuring the Proxmox provider...")
 
 	// Retrieve provider data from configuration
-	var config proxmoxProviderModel
-	diags := req.Config.Get(ctx, &config)
+	var cfg proxmoxProviderModel
+	diags := req.Config.Get(ctx, &cfg)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -253,7 +254,7 @@ func (p *proxmoxProvider) Configure(
 	// If practitioner provided a configuration value for any of the
 	// attributes, it must be a known value.
 
-	if config.Endpoint.IsUnknown() {
+	if cfg.Endpoint.IsUnknown() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("endpoint"),
 			"Unknown Proxmox VE API Endpoint",
@@ -280,36 +281,40 @@ func (p *proxmoxProvider) Configure(
 	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
 	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
 
-	if !config.Endpoint.IsNull() {
-		endpoint = config.Endpoint.ValueString()
+	if !cfg.APIToken.IsNull() {
+		apiToken = cfg.APIToken.ValueString()
 	}
 
-	if !config.Insecure.IsNull() {
-		insecure = config.Insecure.ValueBool()
+	if !cfg.Endpoint.IsNull() {
+		endpoint = cfg.Endpoint.ValueString()
 	}
 
-	if !config.MinTLS.IsNull() {
-		minTLS = config.MinTLS.ValueString()
+	if !cfg.Insecure.IsNull() {
+		insecure = cfg.Insecure.ValueBool()
 	}
 
-	if !config.AuthTicket.IsNull() {
-		authTicket = config.AuthTicket.ValueString()
+	if !cfg.MinTLS.IsNull() {
+		minTLS = cfg.MinTLS.ValueString()
 	}
 
-	if !config.CSRFPreventionToken.IsNull() {
-		csrfPreventionToken = config.CSRFPreventionToken.ValueString()
+	if !cfg.AuthTicket.IsNull() {
+		authTicket = cfg.AuthTicket.ValueString()
 	}
 
-	if !config.APIToken.IsNull() {
-		apiToken = config.APIToken.ValueString()
+	if !cfg.CSRFPreventionToken.IsNull() {
+		csrfPreventionToken = cfg.CSRFPreventionToken.ValueString()
 	}
 
-	if !config.Username.IsNull() {
-		username = config.Username.ValueString()
+	if !cfg.APIToken.IsNull() {
+		apiToken = cfg.APIToken.ValueString()
 	}
 
-	if !config.Password.IsNull() {
-		password = config.Password.ValueString()
+	if !cfg.Username.IsNull() {
+		username = cfg.Username.ValueString()
+	}
+
+	if !cfg.Password.IsNull() {
+		password = cfg.Password.ValueString()
 	}
 
 	if endpoint == "" {
@@ -371,40 +376,40 @@ func (p *proxmoxProvider) Configure(
 	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
 	//nolint: nestif
-	if len(config.SSH) > 0 {
-		if !config.SSH[0].Username.IsNull() {
-			sshUsername = config.SSH[0].Username.ValueString()
+	if len(cfg.SSH) > 0 {
+		if !cfg.SSH[0].Username.IsNull() {
+			sshUsername = cfg.SSH[0].Username.ValueString()
 		}
 
-		if !config.SSH[0].Password.IsNull() {
-			sshPassword = config.SSH[0].Password.ValueString()
+		if !cfg.SSH[0].Password.IsNull() {
+			sshPassword = cfg.SSH[0].Password.ValueString()
 		}
 
-		if !config.SSH[0].Agent.IsNull() {
-			sshAgent = config.SSH[0].Agent.ValueBool()
+		if !cfg.SSH[0].Agent.IsNull() {
+			sshAgent = cfg.SSH[0].Agent.ValueBool()
 		}
 
-		if !config.SSH[0].AgentSocket.IsNull() {
-			sshAgentSocket = config.SSH[0].AgentSocket.ValueString()
+		if !cfg.SSH[0].AgentSocket.IsNull() {
+			sshAgentSocket = cfg.SSH[0].AgentSocket.ValueString()
 		}
 
-		if !config.SSH[0].PrivateKey.IsNull() {
-			sshPrivateKey = config.SSH[0].PrivateKey.ValueString()
+		if !cfg.SSH[0].PrivateKey.IsNull() {
+			sshPrivateKey = cfg.SSH[0].PrivateKey.ValueString()
 		}
 
-		if !config.SSH[0].Socks5Server.IsNull() {
-			sshSocks5Server = config.SSH[0].Socks5Server.ValueString()
+		if !cfg.SSH[0].Socks5Server.IsNull() {
+			sshSocks5Server = cfg.SSH[0].Socks5Server.ValueString()
 		}
 
-		if !config.SSH[0].Socks5Username.IsNull() {
-			sshSocks5Username = config.SSH[0].Socks5Username.ValueString()
+		if !cfg.SSH[0].Socks5Username.IsNull() {
+			sshSocks5Username = cfg.SSH[0].Socks5Username.ValueString()
 		}
 
-		if !config.SSH[0].Socks5Password.IsNull() {
-			sshSocks5Password = config.SSH[0].Socks5Password.ValueString()
+		if !cfg.SSH[0].Socks5Password.IsNull() {
+			sshSocks5Password = cfg.SSH[0].Socks5Password.ValueString()
 		}
 
-		for _, n := range config.SSH[0].Nodes {
+		for _, n := range cfg.SSH[0].Nodes {
 			nodePort := int32(n.Port.ValueInt64())
 			if nodePort == 0 {
 				nodePort = 22
@@ -447,14 +452,19 @@ func (p *proxmoxProvider) Configure(
 	// Intentionally use 'PROXMOX_VE_TMPDIR' with 'TMP' instead of 'TEMP', to match os.TempDir's use of $TMPDIR
 	tmpDirOverride := utils.GetAnyStringEnv("PROXMOX_VE_TMPDIR", "PM_VE_TMPDIR")
 
-	if !config.TmpDir.IsNull() {
-		tmpDirOverride = config.TmpDir.ValueString()
+	if !cfg.TmpDir.IsNull() {
+		tmpDirOverride = cfg.TmpDir.ValueString()
 	}
 
 	client := proxmox.NewClient(apiClient, sshClient, tmpDirOverride)
 
-	resp.ResourceData = client
-	resp.DataSourceData = client
+	resp.ResourceData = config.Resource{
+		Client: client,
+	}
+
+	resp.DataSourceData = config.DataSource{
+		Client: client,
+	}
 }
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {

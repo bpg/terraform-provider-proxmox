@@ -28,6 +28,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -333,7 +334,7 @@ func (r *downloadFileResource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
+	cfg, ok := req.ProviderData.(config.Resource)
 
 	if !ok {
 		resp.Diagnostics.AddError(
@@ -344,7 +345,7 @@ func (r *downloadFileResource) Configure(
 		return
 	}
 
-	r.client = client
+	r.client = cfg.Client
 }
 
 func (r *downloadFileResource) Create(

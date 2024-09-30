@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -106,18 +107,17 @@ func (r *standardRepositoryResource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-
+	cfg, ok := req.ProviderData.(config.Resource)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected resource configuration type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
 
 		return
 	}
 
-	r.client = client
+	r.client = cfg.Client
 }
 
 // Create adds an APT standard repository to the repository source lists.

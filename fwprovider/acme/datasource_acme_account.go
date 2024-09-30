@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/acme/account"
 )
 
@@ -131,18 +131,17 @@ func (d *acmeAccountDatasource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
+	cfg, ok := req.ProviderData.(config.DataSource)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T",
-				req.ProviderData),
+			"Unexpected DataSource Configure Type",
+			fmt.Sprintf("Expected config.DataSource, got: %T", req.ProviderData),
 		)
 
 		return
 	}
 
-	d.client = client.Cluster().ACME().Account()
+	d.client = cfg.Client.Cluster().ACME().Account()
 }
 
 // Read retrieves the ACME account information.

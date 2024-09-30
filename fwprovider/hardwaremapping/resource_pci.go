@@ -23,9 +23,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	mappings "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/hardwaremapping"
 )
@@ -40,7 +40,7 @@ var (
 // pciResource contains the PCI hardware mapping resource's internal data.
 type pciResource struct {
 	// client is the hardware mapping API client.
-	client mappings.Client
+	client *mappings.Client
 }
 
 // read reads information about a PCI hardware mapping from the Proxmox VE API.
@@ -89,15 +89,17 @@ func (r *pciResource) Configure(_ context.Context, req resource.ConfigureRequest
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
+	cfg, ok := req.ProviderData.(config.Resource)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
+			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
+
+		return
 	}
 
-	r.client = *client.Cluster().HardwareMapping()
+	r.client = cfg.Client.Cluster().HardwareMapping()
 }
 
 // Create creates a new PCI hardware mapping.
