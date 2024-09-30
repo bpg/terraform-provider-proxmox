@@ -7,5 +7,6 @@
         "hashicorp.terraform",
         "joshbolduc.commitlint",
         "PKief.material-icon-theme",
+        "psioniq.psi-header"
     ]
 }

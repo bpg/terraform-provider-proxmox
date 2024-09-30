@@ -1,7 +1,7 @@
 {
     "editor.bracketPairColorization.enabled": true,
-    "editor.guides.bracketPairs": true,
-    "editor.guides.bracketPairsHorizontal": true,
+    "editor.guides.bracketPairs": false,
+    "editor.guides.bracketPairsHorizontal": false,
     "editor.guides.highlightActiveBracketPair": true,
     "editor.rulers": [
         100
@@ -26,12 +26,14 @@
         "cputype",
         "cpuunits",
         "customdiff",
-        "Datasource",
+        "datasource",
+        "datasources",
         "deepcode",
         "directsync",
         "efidisk",
         "efidisks",
         "FSTRIM",
+        "fwprovider",
         "gocritic",
         "gosimple",
         "hookscript",
@@ -110,4 +112,24 @@
         "version": "include",
         "datasource": "database",
     },
+    "psi-header.config": {
+		"forceToTop": true,
+		"blankLinesAfter": 1,
+		"license": "Apache-2.0",
+	},
+	"psi-header.changes-tracking": {
+        "include": ["go"],
+		"isActive": true,
+		"enforceHeader": true,
+	},
+    "psi-header.templates": [
+		{
+			"language": "*",
+			"template": [
+                "This Source Code Form is subject to the terms of the Mozilla Public",
+                "License, v. 2.0. If a copy of the MPL was not distributed with this",
+                "file, You can obtain one at https://mozilla.org/MPL/2.0/.",
+			],
+		},
+	]
 }
