@@ -1146,6 +1146,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "jordangarside",
+      "name": "Jordan Garside",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6321824?v=4",
+      "profile": "https://jordangarside.com/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
