@@ -473,7 +473,14 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 		return nil, fmt.Errorf("failed to determine the home directory: %w", err)
 	}
 
-	sshHost := fmt.Sprintf("%s:%d", node.Address, node.Port)
+	var sshHost string
+	if strings.Contains(node.Address, ":") {
+		// IPv6
+		sshHost = fmt.Sprintf("[%s]:%d", node.Address, node.Port)
+	} else {
+		// IPv4
+		sshHost = fmt.Sprintf("%s:%d", node.Address, node.Port)
+	}
 
 	sshPath := path.Join(homeDir, ".ssh")
 	if _, err = os.Stat(sshPath); os.IsNotExist(err) {
