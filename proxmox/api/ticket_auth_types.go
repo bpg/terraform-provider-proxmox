@@ -19,7 +19,9 @@ type AuthenticationResponseBody struct {
 type AuthenticationResponseCapabilities struct {
 	Access     *types.CustomPrivileges `json:"access,omitempty"`
 	Datacenter *types.CustomPrivileges `json:"dc,omitempty"`
+	Mapping    *types.CustomPrivileges `json:"mapping,omitempty"`
 	Nodes      *types.CustomPrivileges `json:"nodes,omitempty"`
+	SDN        *types.CustomPrivileges `json:"sdn,omitempty"`
 	Storage    *types.CustomPrivileges `json:"storage,omitempty"`
 	VMs        *types.CustomPrivileges `json:"vms,omitempty"`
 }

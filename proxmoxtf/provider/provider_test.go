@@ -31,21 +31,25 @@ func TestProviderSchema(t *testing.T) {
 	s := ProxmoxVirtualEnvironment().Schema
 
 	test.AssertOptionalArguments(t, s, []string{
-		mkProviderUsername,
-		mkProviderPassword,
 		mkProviderEndpoint,
 		mkProviderInsecure,
 		mkProviderMinTLS,
+		mkProviderAuthTicket,
+		mkProviderCSRFPreventionToken,
 		mkProviderOTP,
+		mkProviderUsername,
+		mkProviderPassword,
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkProviderUsername: schema.TypeString,
-		mkProviderPassword: schema.TypeString,
-		mkProviderEndpoint: schema.TypeString,
-		mkProviderInsecure: schema.TypeBool,
-		mkProviderMinTLS:   schema.TypeString,
-		mkProviderOTP:      schema.TypeString,
+		mkProviderEndpoint:            schema.TypeString,
+		mkProviderInsecure:            schema.TypeBool,
+		mkProviderMinTLS:              schema.TypeString,
+		mkProviderAuthTicket:          schema.TypeString,
+		mkProviderCSRFPreventionToken: schema.TypeString,
+		mkProviderOTP:                 schema.TypeString,
+		mkProviderUsername:            schema.TypeString,
+		mkProviderPassword:            schema.TypeString,
 	})
 
 	providerSSHSchema := test.AssertNestedSchemaExistence(t, s, mkProviderSSH)

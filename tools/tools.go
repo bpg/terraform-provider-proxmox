@@ -23,7 +23,7 @@ import (
 // to ensure the documentation is formatted properly.
 //go:generate terraform fmt -recursive ../examples/
 // Generate documentation.
-//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-dir ../ --rendered-website-dir ./build/docs-gen
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-dir ../ --rendered-website-dir ./build/docs-gen --provider-name "terraform-provider-proxmox" --rendered-provider-name "terraform-provider-proxmox" //nolint:lll
 
 // Temporary: while migrating to the TF framework, we need to copy the generated docs to the right place
 // for the resources / data sources that have been migrated.

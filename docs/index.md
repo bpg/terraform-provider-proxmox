@@ -15,10 +15,12 @@ Use the navigation to the left to read about the available resources.
 ```hcl
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
+
   # TODO: use terraform variable or remove the line, and use PROXMOX_VE_USERNAME environment variable
   username = "root@pam"
   # TODO: use terraform variable or remove the line, and use PROXMOX_VE_PASSWORD environment variable
   password = "the-password-set-during-installation-of-proxmox-ve"
+
   # because self-signed TLS certificate is in use
   insecure = true
   # uncomment (unless on Windows...)
@@ -35,15 +37,20 @@ provider "proxmox" {
 ## Authentication
 
 The Proxmox provider offers a flexible means of providing credentials for authentication.
-Static credentials can be provided to the `proxmox` block through either a `api_token` or a combination of `username` and `password` arguments.
+Static credentials and pre-authenticated session-ticket can be provided to the `proxmox` block through one the choices of arguments below, ordered by precedence:
+
+- `auth_ticket` and `csrf_prevention_token`
+- `api_token`
+- `username` and `password`
 
 !> Hard-coding credentials into any Terraform configuration is not recommended, and risks secret leakage should this file ever be committed to a public version control system.
 
-Static credentials can be provided by adding a `username` and `password`, or `api_token` in-line in the Proxmox provider block:
+Static credentials can be provided in-line in the Proxmox provider block, by adding one of the arguments above (example with username and password):
 
 ```hcl
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
+
   username = "username@realm"
   password = "a-strong-password"
 }
@@ -54,6 +61,7 @@ A better approach is to extract these values into Terraform variables, and refer
 ```hcl
 provider "proxmox" {
   endpoint = var.virtual_environment_endpoint
+
   username = var.virtual_environment_username
   password = var.virtual_environment_password
 }
@@ -75,11 +83,53 @@ provider "proxmox" {
 
 ```sh
 export PROXMOX_VE_USERNAME="username@realm"
-export PROXMOX_VE_PASSWORD="a-strong-password"
+export PROXMOX_VE_PASSWORD='a-strong-password'
 terraform plan
 ```
 
 See the [Argument Reference](#argument-reference) section for the supported variable names and use cases.
+
+## Pre-Authentication, or Passing an Authentication Ticket into the provider
+
+It is possible to generate a session ticket with the API, and to pass the ticket and csrf_prevention_token into the provider using environment variables `PROXMOX_VE_AUTH_TICKET` and `PROXMOX_VE_CSRF_PREVENTION_TOKEN` (or provider's arguments `auth_ticket` and `csrf_prevention_token`).
+
+An example of using `curl` and `jq` to query the Proxmox API to get a Proxmox session ticket; it is also very easy to pass in a TOTP password this way:
+
+```hcl
+provider "proxmox" {
+  endpoint = "https://10.0.0.2:8006/"
+}
+```
+
+```bash
+#!/usr/bin/bash
+
+## assume vars are set: PROXMOX_VE_ENDPOINT, PROXMOX_VE_USERNAME, PROXMOX_VE_PASSWORD
+## end-goal: automatically set PROXMOX_VE_AUTH_TICKET and PROXMOX_VE_CSRF_PREVENTION_TOKEN
+
+_user_totp_password='123456' ## optional TOTP password
+
+
+proxmox_api_ticket_path='api2/json/access/ticket' ## cannot have double "//" - ensure endpoint ends with a "/" and this string does not begin with a "/", or vice-versa
+
+## call the auth api endpoint
+resp=$( curl -q -s -k --data-urlencode "username=${PROXMOX_VE_USERNAME}"  --data-urlencode "password=${PROXMOX_VE_PASSWORD}"  "${PROXMOX_VE_ENDPOINT}${proxmox_api_ticket_path}" )
+auth_ticket=$( jq -r '.data.ticket' <<<"${resp}" )
+resp_csrf=$( jq -r '.data.CSRFPreventionToken' <<<"${resp}" )
+
+## check if the response payload needs a TFA (totp) passed, call the auth-api endpoint again
+if [[ $(jq -r '.data.NeedTFA' <<<"${resp}") == 1 ]]; then
+  resp=$( curl -q -s -k  -H "CSRFPreventionToken: ${resp_csrf}" --data-urlencode  "username=${PROXMOX_VE_USERNAME}" --data-urlencode "tfa-challenge=${auth_ticket}" --data-urlencode "password=totp:${_user_totp_password}"  "${PROXMOX_VE_ENDPOINT}${proxmox_api_ticket_path}" )
+  auth_ticket=$( jq -r '.data.ticket' <<<"${resp}" )
+  resp_csrf=$( jq -r '.data.CSRFPreventionToken' <<<"${resp}" )
+fi
+
+
+export PROXMOX_VE_AUTH_TICKET="${auth_ticket}"
+export PROXMOX_VE_CSRF_PREVENTION_TOKEN="${resp_csrf}"
+
+terraform plan
+```
 
 ## SSH Connection
 
@@ -120,12 +170,13 @@ The SSH agent authentication takes precedence over the `private_key` and `passwo
 
 ### SSH Private Key
 
-In some cases where SSH agent is not available, for example when using a CI/CD pipeline that does not support SSH agent forwarding, 
+In some cases where SSH agent is not available, for example when using a CI/CD pipeline that does not support SSH agent forwarding,
 you can use the `private_key` argument in the `ssh` block (or alternatively `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable) to provide the private key for the SSH connection.
 
 The private key mut not be encrypted, and must be in PEM format.
 
 You can provide the private key from a file:
+
 ```hcl
 provider "proxmox" {
   // ...
@@ -138,6 +189,7 @@ provider "proxmox" {
 
 Alternatively, although not recommended due to the increased risk of exposing an unprotected key, heredoc syntax can be used to supply the private key as a string.
 Note that the content of the private key is injected using `<<-` format to ignore indentation:
+
 ```hcl
 provider "proxmox" {
   // ...
@@ -273,7 +325,7 @@ provider "proxmox" {
 }
 ```
 
-If enabled, this method will be used for all SSH connections to the target nodes in the cluster. 
+If enabled, this method will be used for all SSH connections to the target nodes in the cluster.
 
 ## API Token Authentication
 
@@ -328,8 +380,8 @@ provider "proxmox" {
 -> The token authentication is taking precedence over the password authentication.
 
 -> Not all Proxmox API operations are supported via API Token.
-You may see errors like 
-`error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or 
+You may see errors like
+`error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or
 `error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` or
 `Permission check failed (user != root@pam)` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
 The workaround is to use password authentication for those operations.
@@ -349,10 +401,17 @@ In addition to [generic provider arguments](https://www.terraform.io/docs/config
 - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is `https://<your-cluster-endpoint>:8006/`. **Do not** include `/api2/json` at the end.
 - `insecure` - (Optional) Whether to skip the TLS verification step (can also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults to `false`.
 - `min_tls` - (Optional) The minimum required TLS version for API calls (can also be sourced from `PROXMOX_VE_MIN_TLS`). Supported values: `1.0|1.1|1.2|1.3`. If omitted, defaults to `1.3`.
+
+- `auth_ticket` - (Optional) The auth ticket from an external auth call (can also be sourced from `PROXMOX_VE_AUTH_TICKET`). To be used in conjunction with `csrf_prevention_token`, takes precedence over `api_token` and `username` with `password`. For example, `PVE:username@realm:12345678::some_base64_payload==`.
+- `csrf_prevention_token` - (Optional) The CSRF Prevention Token from an external auth call (can also be sourced from `PROXMOX_VE_CSRF_PREVENTION_TOKEN`). For example, `12345678:some_blob`.
+
+- `api_token` - (Optional) The API Token for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_API_TOKEN`). Takes precedence over `username` with `password`. For example, `username@realm!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
+
 - `otp` - (Optional, Deprecated) The one-time password for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_OTP`).
-- `password` - (Required) The password for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_PASSWORD`).
+
 - `username` - (Required) The username and realm for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_USERNAME`). For example, `root@pam`.
-- `api_token` - (Optional) The API Token for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_API_TOKEN`). For example, `root@pam!for-terraform-provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
+- `password` - (Required) The password for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_PASSWORD`).
+
 - `ssh` - (Optional) The SSH connection configuration to a Proxmox node. This is a block, whose fields are documented below.
     - `username` - (Optional) The username to use for the SSH connection. Defaults to the username used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_USERNAME`. Required when using API Token.
     - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.

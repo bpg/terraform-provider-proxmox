@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -60,14 +59,17 @@ type proxmoxProvider struct {
 
 // proxmoxProviderModel maps provider schema data.
 type proxmoxProviderModel struct {
-	APIToken types.String `tfsdk:"api_token"`
-	Endpoint types.String `tfsdk:"endpoint"`
-	Insecure types.Bool   `tfsdk:"insecure"`
-	MinTLS   types.String `tfsdk:"min_tls"`
-	OTP      types.String `tfsdk:"otp"`
-	Username types.String `tfsdk:"username"`
-	Password types.String `tfsdk:"password"`
-	SSH      []struct {
+	Endpoint            types.String `tfsdk:"endpoint"`
+	Insecure            types.Bool   `tfsdk:"insecure"`
+	MinTLS              types.String `tfsdk:"min_tls"`
+	AuthTicket          types.String `tfsdk:"auth_ticket"`
+	CSRFPreventionToken types.String `tfsdk:"csrf_prevention_token"`
+	APIToken            types.String `tfsdk:"api_token"`
+	OTP                 types.String `tfsdk:"otp"`
+	Username            types.String `tfsdk:"username"`
+	Password            types.String `tfsdk:"password"`
+
+	SSH []struct {
 		Agent          types.Bool   `tfsdk:"agent"`
 		AgentSocket    types.String `tfsdk:"agent_socket"`
 		PrivateKey     types.String `tfsdk:"private_key"`
@@ -100,12 +102,16 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 				Description: "The API token for the Proxmox VE API.",
 				Optional:    true,
 				Sensitive:   true,
-				Validators: []validator.String{
-					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^\S+@\S+!\S+=([a-zA-Z0-9-]+)$`),
-						`must be a valid API token, e.g. 'USER@REALM!TOKENID=UUID'`,
-					),
-				},
+			},
+			"auth_ticket": schema.StringAttribute{
+				Description: "The pre-authenticated Ticket for the Proxmox VE API.",
+				Optional:    true,
+				Sensitive:   true,
+			},
+			"csrf_prevention_token": schema.StringAttribute{
+				Description: "The pre-authenticated CSRF Prevention Token for the Proxmox VE API.",
+				Optional:    true,
+				Sensitive:   true,
 			},
 			"endpoint": schema.StringAttribute{
 				Description: "The endpoint for the Proxmox VE API.",
@@ -134,12 +140,12 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 				Optional:    true,
 				Sensitive:   true,
 			},
-			"username": schema.StringAttribute{
-				Description: "The username for the Proxmox VE API.",
-				Optional:    true,
-			},
 			"tmp_dir": schema.StringAttribute{
 				Description: "The alternative temporary directory.",
+				Optional:    true,
+			},
+			"username": schema.StringAttribute{
+				Description: "The username for the Proxmox VE API.",
 				Optional:    true,
 			},
 		},
@@ -164,12 +170,6 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 								"environment variable.",
 							Optional: true,
 						},
-						"private_key": schema.StringAttribute{
-							Description: "The unencrypted private key (in PEM format) used for the SSH connection. " +
-								"Defaults to the value of the `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable.",
-							Optional:  true,
-							Sensitive: true,
-						},
 						"password": schema.StringAttribute{
 							Description: "The password used for the SSH connection. " +
 								"Defaults to the value of the `password` field of the " +
@@ -177,11 +177,17 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 							Optional:  true,
 							Sensitive: true,
 						},
-						"username": schema.StringAttribute{
-							Description: "The username used for the SSH connection. " +
-								"Defaults to the value of the `username` field of the " +
-								"`provider` block.",
-							Optional: true,
+						"private_key": schema.StringAttribute{
+							Description: "The unencrypted private key (in PEM format) used for the SSH connection. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable.",
+							Optional:  true,
+							Sensitive: true,
+						},
+						"socks5_password": schema.StringAttribute{
+							Description: "The password for the SOCKS5 proxy server. " +
+								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_PASSWORD` environment variable.",
+							Optional:  true,
+							Sensitive: true,
 						},
 						"socks5_server": schema.StringAttribute{
 							Description: "The address:port of the SOCKS5 proxy server. " +
@@ -193,11 +199,11 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_USERNAME` environment variable.",
 							Optional: true,
 						},
-						"socks5_password": schema.StringAttribute{
-							Description: "The password for the SOCKS5 proxy server. " +
-								"Defaults to the value of the `PROXMOX_VE_SSH_SOCKS5_PASSWORD` environment variable.",
-							Optional:  true,
-							Sensitive: true,
+						"username": schema.StringAttribute{
+							Description: "The username used for the SSH connection. " +
+								"Defaults to the value of the `username` field of the " +
+								"`provider` block.",
+							Optional: true,
 						},
 					},
 					Blocks: map[string]schema.Block{
@@ -205,12 +211,12 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 							Description: "Overrides for SSH connection configuration for a Proxmox VE node.",
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
-									"name": schema.StringAttribute{
-										Description: "The name of the Proxmox VE node.",
-										Required:    true,
-									},
 									"address": schema.StringAttribute{
 										Description: "The address of the Proxmox VE node.",
+										Required:    true,
+									},
+									"name": schema.StringAttribute{
+										Description: "The name of the Proxmox VE node.",
 										Required:    true,
 									},
 									"port": schema.Int64Attribute{
@@ -265,16 +271,14 @@ func (p *proxmoxProvider) Configure(
 	// with Terraform configuration value if set.
 
 	// Check environment variables
-	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
 	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT")
 	insecure := utils.GetAnyBoolEnv("PROXMOX_VE_INSECURE")
 	minTLS := utils.GetAnyStringEnv("PROXMOX_VE_MIN_TLS")
+	authTicket := utils.GetAnyStringEnv("PROXMOX_VE_AUTH_TICKET")
+	csrfPreventionToken := utils.GetAnyStringEnv("PROXMOX_VE_CSRF_PREVENTION_TOKEN")
+	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN")
 	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME")
 	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD")
-
-	if !config.APIToken.IsNull() {
-		apiToken = config.APIToken.ValueString()
-	}
 
 	if !config.Endpoint.IsNull() {
 		endpoint = config.Endpoint.ValueString()
@@ -286,6 +290,18 @@ func (p *proxmoxProvider) Configure(
 
 	if !config.MinTLS.IsNull() {
 		minTLS = config.MinTLS.ValueString()
+	}
+
+	if !config.AuthTicket.IsNull() {
+		authTicket = config.AuthTicket.ValueString()
+	}
+
+	if !config.CSRFPreventionToken.IsNull() {
+		csrfPreventionToken = config.CSRFPreventionToken.ValueString()
+	}
+
+	if !config.APIToken.IsNull() {
+		apiToken = config.APIToken.ValueString()
 	}
 
 	if !config.Username.IsNull() {
@@ -312,7 +328,7 @@ func (p *proxmoxProvider) Configure(
 
 	// Create the Proxmox VE API client
 
-	creds, err := api.NewCredentials(username, password, "", apiToken)
+	creds, err := api.NewCredentials(username, password, "", apiToken, authTicket, csrfPreventionToken)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Proxmox VE API credentials",
@@ -401,12 +417,12 @@ func (p *proxmoxProvider) Configure(
 		}
 	}
 
-	if sshUsername == "" {
-		sshUsername = strings.Split(creds.Username, "@")[0]
+	if sshUsername == "" && creds.UserCredentials != nil {
+		sshUsername = strings.Split(creds.UserCredentials.Username, "@")[0]
 	}
 
-	if sshPassword == "" {
-		sshPassword = creds.Password
+	if sshPassword == "" && creds.UserCredentials != nil {
+		sshPassword = creds.UserCredentials.Password
 	}
 
 	sshClient, err := ssh.NewClient(

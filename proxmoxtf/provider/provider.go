@@ -42,22 +42,20 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 
 	var sshClient ssh.Client
 
-	var creds *api.Credentials
+	var creds api.Credentials
 
 	var conn *api.Connection
 
 	// Check environment variables
-	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN")
 	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT")
 	insecure := utils.GetAnyBoolEnv("PROXMOX_VE_INSECURE", "PM_VE_INSECURE")
 	minTLS := utils.GetAnyStringEnv("PROXMOX_VE_MIN_TLS", "PM_VE_MIN_TLS")
+	authTicket := utils.GetAnyStringEnv("PROXMOX_VE_AUTH_TICKET", "PM_VE_AUTH_TICKET")
+	csrfPreventionToken := utils.GetAnyStringEnv("PROXMOX_VE_CSRF_PREVENTION_TOKEN", "PM_VE_CSRF_PREVENTION_TOKEN")
+	apiToken := utils.GetAnyStringEnv("PROXMOX_VE_API_TOKEN", "PM_VE_API_TOKEN")
+	otp := utils.GetAnyStringEnv("PROXMOX_VE_OTP", "PM_VE_OTP")
 	username := utils.GetAnyStringEnv("PROXMOX_VE_USERNAME", "PM_VE_USERNAME")
 	password := utils.GetAnyStringEnv("PROXMOX_VE_PASSWORD", "PM_VE_PASSWORD")
-	otp := utils.GetAnyStringEnv("PROXMOX_VE_OTP", "PM_VE_OTP")
-
-	if v, ok := d.GetOk(mkProviderAPIToken); ok {
-		apiToken = v.(string)
-	}
 
 	if v, ok := d.GetOk(mkProviderEndpoint); ok {
 		endpoint = v.(string)
@@ -71,6 +69,22 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		minTLS = v.(string)
 	}
 
+	if v, ok := d.GetOk(mkProviderAuthTicket); ok {
+		authTicket = v.(string)
+	}
+
+	if v, ok := d.GetOk(mkProviderCSRFPreventionToken); ok {
+		csrfPreventionToken = v.(string)
+	}
+
+	if v, ok := d.GetOk(mkProviderAPIToken); ok {
+		apiToken = v.(string)
+	}
+
+	if v, ok := d.GetOk(mkProviderOTP); ok {
+		otp = v.(string)
+	}
+
 	if v, ok := d.GetOk(mkProviderUsername); ok {
 		username = v.(string)
 	}
@@ -79,11 +93,7 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		password = v.(string)
 	}
 
-	if v, ok := d.GetOk(mkProviderOTP); ok {
-		otp = v.(string)
-	}
-
-	creds, err = api.NewCredentials(username, password, otp, apiToken)
+	creds, err = api.NewCredentials(username, password, otp, apiToken, authTicket, csrfPreventionToken)
 	diags = append(diags, diag.FromErr(err)...)
 
 	conn, err = api.NewConnection(endpoint, insecure, minTLS)
@@ -117,18 +127,24 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	sshSocks5Password := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_PASSWORD")
 
 	if v, ok := sshConf[mkProviderSSHUsername]; !ok || v.(string) == "" {
-		if sshUsername != "" {
+		switch {
+		case sshUsername != "":
 			sshConf[mkProviderSSHUsername] = sshUsername
-		} else {
-			sshConf[mkProviderSSHUsername] = strings.Split(creds.Username, "@")[0]
+		case creds.UserCredentials != nil:
+			sshConf[mkProviderSSHUsername] = strings.Split(creds.UserCredentials.Username, "@")[0]
+		default:
+			sshConf[mkProviderSSHUsername] = ""
 		}
 	}
 
 	if v, ok := sshConf[mkProviderSSHPassword]; !ok || v.(string) == "" {
-		if sshPassword != "" {
+		switch {
+		case sshPassword != "":
 			sshConf[mkProviderSSHPassword] = sshPassword
-		} else {
-			sshConf[mkProviderSSHPassword] = creds.Password
+		case creds.UserCredentials != nil:
+			sshConf[mkProviderSSHPassword] = creds.UserCredentials.Password
+		default:
+			sshConf[mkProviderSSHPassword] = ""
 		}
 	}
 
