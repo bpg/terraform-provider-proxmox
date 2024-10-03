@@ -67,21 +67,21 @@ func (d *Datasource) Configure(
 
 //nolint:dupl
 func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config Model
+	var model Model
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &model)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := config.Timeouts.Read(ctx, defaultReadTimeout)
+	timeout, diags := model.Timeouts.Read(ctx, defaultReadTimeout)
 	resp.Diagnostics.Append(diags...)
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	exists := read(ctx, d.client, &config, &resp.Diagnostics)
+	exists := read(ctx, d.client, &model, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -89,12 +89,12 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 
 	if !exists {
 		tflog.Info(ctx, "VM does not exist, removing from the state", map[string]interface{}{
-			"id": config.ID.ValueInt64(),
+			"id": model.ID.ValueInt64(),
 		})
 		resp.State.RemoveResource(ctx)
 
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
 }

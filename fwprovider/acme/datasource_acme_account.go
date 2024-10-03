@@ -156,7 +156,7 @@ func (d *acmeAccountDatasource) Read(ctx context.Context, req datasource.ReadReq
 
 	name := state.Name.ValueString()
 
-	account, err := d.client.Get(ctx, name)
+	accountData, err := d.client.Get(ctx, name)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Unable to read ACME account '%s'", name),
@@ -166,15 +166,15 @@ func (d *acmeAccountDatasource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	contactList := make([]types.String, len(account.Account.Contact))
-	for i, contact := range account.Account.Contact {
+	contactList := make([]types.String, len(accountData.Account.Contact))
+	for i, contact := range accountData.Account.Contact {
 		contactList[i] = types.StringValue(contact)
 	}
 
 	data := &accountDataModel{
 		Contact:   contactList,
-		CreatedAt: types.StringValue(account.Account.CreatedAt),
-		Status:    types.StringValue(account.Account.Status),
+		CreatedAt: types.StringValue(accountData.Account.CreatedAt),
+		Status:    types.StringValue(accountData.Account.Status),
 	}
 
 	accountObject, diags := types.ObjectValueFrom(ctx, data.attrTypes(), data)
@@ -182,9 +182,9 @@ func (d *acmeAccountDatasource) Read(ctx context.Context, req datasource.ReadReq
 
 	state.Account = accountObject
 
-	state.Directory = types.StringValue(account.Directory)
-	state.Location = types.StringValue(account.Location)
-	state.TOS = types.StringValue(account.TOS)
+	state.Directory = types.StringValue(accountData.Directory)
+	state.Location = types.StringValue(accountData.Location)
+	state.TOS = types.StringValue(accountData.TOS)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

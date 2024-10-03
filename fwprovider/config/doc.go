@@ -4,7 +4,5 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-/*
-Package `config` provides the global provider's configuration for all resources and datasources.
-*/
+// Package config provides the global provider's configuration for all resources and datasources.
 package config
