@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cloudinit"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
@@ -154,6 +155,7 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 
 	// fill out create body fields with values from other resource blocks
 	cdrom.FillCreateBody(ctx, plan.CDROM, createBody, diags)
+	cloudinit.FillCreateBody(ctx, plan.CloudInit, createBody, diags)
 	cpu.FillCreateBody(ctx, plan.CPU, createBody, diags)
 	vga.FillCreateBody(ctx, plan.VGA, createBody, diags)
 
@@ -332,6 +334,7 @@ func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, 
 
 	// fill out update body fields with values from other resource blocks
 	cdrom.FillUpdateBody(ctx, plan.CDROM, state.CDROM, updateBody, isClone, diags)
+	cloudinit.FillUpdateBody(ctx, plan.CloudInit, state.CloudInit, updateBody, isClone, diags)
 	cpu.FillUpdateBody(ctx, plan.CPU, state.CPU, updateBody, isClone, diags)
 	vga.FillUpdateBody(ctx, plan.VGA, state.VGA, updateBody, isClone, diags)
 

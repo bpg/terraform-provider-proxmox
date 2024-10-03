@@ -66,8 +66,6 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diag
 }
 
 // FillCreateBody fills the CreateRequestBody with the CPU settings from the Value.
-//
-// In the 'create' context, v is the plan.
 func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateRequestBody, diags *diag.Diagnostics) {
 	var plan Model
 
@@ -128,8 +126,6 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 }
 
 // FillUpdateBody fills the UpdateRequestBody with the CPU settings from the Value.
-//
-// In the 'update' context, v is the plan and stateValue is the current state.
 func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
