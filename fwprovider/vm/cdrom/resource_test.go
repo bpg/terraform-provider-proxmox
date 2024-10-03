@@ -31,7 +31,6 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-				id = {{.RandomVMID}}
 				name = "test-cdrom"
 				cdrom = {
 					"ide3" = {}
@@ -46,7 +45,6 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-				id = {{.RandomVMID}}
 				name = "test-cdrom"
 				cdrom = {
 					"ide3" = {},
@@ -66,7 +64,6 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					id = {{.RandomVMID}}
 					name = "test-cdrom"
 					cdrom = {
 						"scsi2" = {
@@ -107,7 +104,6 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "template_vm" {
 				node_name = "{{.NodeName}}"
-				id = {{.RandomVMID1}}
 				name = "template-cdrom"
 				cdrom = {
 					"ide3" = {
@@ -117,7 +113,6 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-				id = {{.RandomVMID2}}
 				name = "test-cdrom"
 				clone = {
 					id = proxmox_virtual_environment_vm2.template_vm.id
@@ -132,7 +127,6 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "template_vm" {
 				node_name = "{{.NodeName}}"
-				id = {{.RandomVMID1}}
 				name = "template-cdrom"
 				cdrom = {
 					"ide1" = {
@@ -145,7 +139,6 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 			}
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-				id = {{.RandomVMID2}}
 				name = "test-cpu"
 				clone = {
 					id = proxmox_virtual_environment_vm2.template_vm.id

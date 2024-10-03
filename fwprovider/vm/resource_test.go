@@ -9,6 +9,7 @@
 package vm_test
 
 import (
+	"math/rand"
 	"regexp"
 	"testing"
 
@@ -21,6 +22,9 @@ func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
+	te.AddTemplateVars(map[string]interface{}{
+		"TestVMID": 100000 + rand.Intn(99999),
+	})
 
 	tests := []struct {
 		name  string
@@ -44,7 +48,7 @@ func TestAccResourceVM(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
 				node_name = "{{.NodeName}}"
-				id = {{.RandomVMID0}}
+				id = {{.TestVMID}}
 			}`),
 		}}},
 		{"set an invalid VM name", []resource.TestStep{{
