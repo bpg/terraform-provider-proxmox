@@ -389,12 +389,13 @@ The workaround is to use password authentication for those operations.
 
 -> You can also configure additional Proxmox users and roles using [`virtual_environment_user`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_user) and [`virtual_environment_role`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_role) resources of the provider.
 
-## VMs and Containers ID
+## VM and Container ID Assignment
 
-When creating VMs and Containers, you can specify an optional `vm_id` attribute to set the ID of the VM or Container. However, ID is a mandatory attribute in the Proxmox API, and must be unique within the cluster, so the provider will generate a unique ID if the `vm_id` attribute is not specified.
-The Proxmox API provides a helper function to retrieve a unique "next available" ID in the Proxmox cluster, but it is not guaranteed to be unique across multiple instance of the provider running in parallel. This can lead to conflicts or locking issues when multiple resources are created at the same time, which is a common scenario in Terraform.
+When creating VMs and Containers, you can specify the optional `vm_id` attribute to set the ID of the VM or Container. However, the ID is a mandatory attribute in the Proxmox API and must be unique within the cluster. If the `vm_id` attribute is not specified, the provider will generate a unique ID and assign it to the resource.
 
-To avoid this issue, you can set the `random_vm_ids` attribute to `true` in the `provider` block. This will generate a random ID for each VM or Container when the `vm_id` attribute is not specified. The generated ID will be checked for uniqueness via the Proxmox API before creating the resource, which drastically reduces the chance of conflicts.
+The Proxmox API offers a helper function to retrieve the "next available" unique ID in the cluster, but this is not guaranteed to be unique across multiple instances of the provider running in parallel. This can result in conflicts or locking issues when multiple resources are being created simultaneously, which is a common scenario in Terraform.
+
+To mitigate this issue, you can set the `random_vm_ids` attribute to `true` in the `provider` block. This will generate a random ID for each VM or Container when the `vm_id` attribute is not specified. The generated ID is checked for uniqueness through the Proxmox API before resource creation, significantly reducing the risk of conflicts.
 
 ## Temporary Directory
 
