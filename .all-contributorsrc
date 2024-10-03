@@ -1165,6 +1165,15 @@
         "code",
         "ideas"
       ]
+    },
+    {
+      "login": "seankoneill",
+      "name": "Sean O'Neill",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35414430?v=4",
+      "profile": "https://github.com/seankoneill",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
