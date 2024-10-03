@@ -163,6 +163,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Diskoteket"><img src="https://avatars.githubusercontent.com/u/69105072?v=4?s=100" width="100px;" alt="Tim Wetterek"/><br /><sub><b>Tim Wetterek</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Diskoteket" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://a-w.io"><img src="https://avatars.githubusercontent.com/u/159919?v=4?s=100" width="100px;" alt="Andreas Wolf"/><br /><sub><b>Andreas Wolf</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Aandreaswolf" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://jordangarside.com/"><img src="https://avatars.githubusercontent.com/u/6321824?v=4?s=100" width="100px;" alt="Jordan Garside"/><br /><sub><b>Jordan Garside</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=jordangarside" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://vanillasprinkles.com/"><img src="https://avatars.githubusercontent.com/u/577861?v=4?s=100" width="100px;" alt="vanillaSprinkles"/><br /><sub><b>vanillaSprinkles</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=vanillaSprinkles" title="Code">💻</a> <a href="#ideas-vanillaSprinkles" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
   <tfoot>
