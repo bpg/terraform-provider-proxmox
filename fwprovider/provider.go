@@ -34,6 +34,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -86,11 +87,13 @@ type proxmoxProviderModel struct {
 			Port    types.Int64  `tfsdk:"port"`
 		} `tfsdk:"node"`
 	} `tfsdk:"ssh"`
-	TmpDir types.String `tfsdk:"tmp_dir"`
+	TmpDir         types.String `tfsdk:"tmp_dir"`
+	RandomVMIDs    types.Bool   `tfsdk:"random_vm_ids"`
+	RandomVMIDStat types.Int64  `tfsdk:"random_vm_id_start"`
+	RandomVMIDEnd  types.Int64  `tfsdk:"random_vm_id_end"`
 }
 
 func (p *proxmoxProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	// resp.TypeName = "proxmox"
 	resp.TypeName = "proxmox_virtual_environment"
 	resp.Version = p.version
 }
@@ -140,6 +143,20 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 				Description: "The password for the Proxmox VE API.",
 				Optional:    true,
 				Sensitive:   true,
+			},
+			"random_vm_ids": schema.BoolAttribute{
+				Description: "Whether to generate random VM / Container IDs.",
+				Optional:    true,
+			},
+			"random_vm_id_start": schema.Int64Attribute{
+				Description: "The starting number for random VM / Container IDs.",
+				Optional:    true,
+				Validators:  []validator.Int64{int64validator.Between(100, 999999999)},
+			},
+			"random_vm_id_end": schema.Int64Attribute{
+				Description: "The ending number for random VM / Container IDs.",
+				Optional:    true,
+				Validators:  []validator.Int64{int64validator.Between(100, 999999999)},
 			},
 			"tmp_dir": schema.StringAttribute{
 				Description: "The alternative temporary directory.",
@@ -460,6 +477,14 @@ func (p *proxmoxProvider) Configure(
 
 	resp.ResourceData = config.Resource{
 		Client: client,
+		IDGenerator: cluster.NewIDGenerator(
+			client.Cluster(),
+			cluster.IDGeneratorConfig{
+				RandomIDs:    cfg.RandomVMIDs.ValueBool(),
+				RandomIDStat: int(cfg.RandomVMIDStat.ValueInt64()),
+				RandomIDEnd:  int(cfg.RandomVMIDEnd.ValueInt64()),
+			},
+		),
 	}
 
 	resp.DataSourceData = config.DataSource{

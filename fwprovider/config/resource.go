@@ -6,9 +6,14 @@
 
 package config
 
-import "github.com/bpg/terraform-provider-proxmox/proxmox"
+import (
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
+)
 
 // Resource is the global configuration for all resources.
 type Resource struct {
 	Client proxmox.Client
+
+	IDGenerator cluster.IDGenerator
 }

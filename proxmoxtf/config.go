@@ -12,6 +12,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 )
 
@@ -20,6 +21,7 @@ type ProviderConfiguration struct {
 	apiClient      api.Client
 	sshClient      ssh.Client
 	tmpDirOverride string
+	idGenerator    cluster.IDGenerator
 }
 
 // NewProviderConfiguration creates a new provider configuration.
@@ -27,12 +29,22 @@ func NewProviderConfiguration(
 	apiClient api.Client,
 	sshClient ssh.Client,
 	tmpDirOverride string,
-) ProviderConfiguration {
-	return ProviderConfiguration{
+	idCfg cluster.IDGeneratorConfig,
+) (ProviderConfiguration, error) {
+	cfg := ProviderConfiguration{
 		apiClient:      apiClient,
 		sshClient:      sshClient,
 		tmpDirOverride: tmpDirOverride,
 	}
+
+	client, err := cfg.GetClient()
+	if err != nil {
+		return cfg, err
+	}
+
+	cfg.idGenerator = cluster.NewIDGenerator(client.Cluster(), idCfg)
+
+	return cfg, nil
 }
 
 // GetClient returns the Proxmox API client.
@@ -59,4 +71,9 @@ func (c *ProviderConfiguration) TempDir() string {
 	}
 
 	return os.TempDir()
+}
+
+// GetIDGenerator returns the IDGenerator.
+func (c *ProviderConfiguration) GetIDGenerator() cluster.IDGenerator {
+	return c.idGenerator
 }

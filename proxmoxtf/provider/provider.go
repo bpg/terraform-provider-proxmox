@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -210,7 +211,24 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		tmpDirOverride = v.(string)
 	}
 
-	config := proxmoxtf.NewProviderConfiguration(apiClient, sshClient, tmpDirOverride)
+	idCfg := cluster.IDGeneratorConfig{}
+
+	if v, ok := d.GetOk(mkProviderRandomVMIDs); ok {
+		idCfg.RandomIDs = v.(bool)
+	}
+
+	if v, ok := d.GetOk(mkProviderRandomVMIDStart); ok {
+		idCfg.RandomIDStat = v.(int)
+	}
+
+	if v, ok := d.GetOk(mkProviderRandomVMIDEnd); ok {
+		idCfg.RandomIDEnd = v.(int)
+	}
+
+	config, err := proxmoxtf.NewProviderConfiguration(apiClient, sshClient, tmpDirOverride, idCfg)
+	if err != nil {
+		return nil, diag.Errorf("error creating provider's configuration: %s", err)
+	}
 
 	return config, nil
 }

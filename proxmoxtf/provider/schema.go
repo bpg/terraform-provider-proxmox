@@ -24,6 +24,9 @@ const (
 	mkProviderPassword            = "password"
 	mkProviderUsername            = "username"
 	mkProviderTmpDir              = "tmp_dir"
+	mkProviderRandomVMIDs         = "random_vm_ids"
+	mkProviderRandomVMIDStart     = "random_vm_id_start"
+	mkProviderRandomVMIDEnd       = "random_vm_id_end"
 	mkProviderSSH                 = "ssh"
 	mkProviderSSHUsername         = "username"
 	mkProviderSSHPassword         = "password"
@@ -239,6 +242,23 @@ func createSchema() map[string]*schema.Schema {
 			Optional:     true,
 			Description:  "The alternative temporary directory.",
 			ValidateFunc: validation.StringIsNotEmpty,
+		},
+		mkProviderRandomVMIDs: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			Description: "Whether to generate random VM / Container IDs.",
+		},
+		mkProviderRandomVMIDStart: {
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Description:  "The starting number for random VM / Container IDs.",
+			ValidateFunc: validation.IntBetween(100, 999999999),
+		},
+		mkProviderRandomVMIDEnd: {
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Description:  "The ending number for random VM / Container IDs.",
+			ValidateFunc: validation.IntBetween(100, 999999999),
 		},
 	}
 }

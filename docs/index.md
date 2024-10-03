@@ -234,7 +234,7 @@ When using a non-root user for the SSH connection, the user **must** have the `s
 
 ~> The `root` user on the Proxmox node must be configured with `bash` as the default shell.
 
-You can configure the `sudo` privilege for the user via the command line on the Proxmox host. 
+You can configure the `sudo` privilege for the user via the command line on the Proxmox host.
 In the example below, we create a user `terraform` and assign the `sudo` privilege to it. Run the following commands on the Proxmox node in the root shell:
 
 - Create a new system user:
@@ -257,11 +257,12 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
     terraform ALL=(root) NOPASSWD: /usr/bin/tee /var/lib/vz/*
     ```
 
-  If you're using a different datastore for snippets, not the default `local`, you should add the datastore's mount point to the sudoers file as well, for example: 
+  If you're using a different datastore for snippets, not the default `local`, you should add the datastore's mount point to the sudoers file as well, for example:
   
     ```text
     terraform ALL=(root) NOPASSWD: /usr/bin/tee /mnt/pve/cephfs/*
     ```
+
   You can find the mount point of the datastore by running `pvesh get /storage/<name>` on the Proxmox node.
 
 - Copy your SSH public key to the `~/.ssh/authorized_keys` file of the `terraform` user on the target node.
@@ -388,6 +389,13 @@ The workaround is to use password authentication for those operations.
 
 -> You can also configure additional Proxmox users and roles using [`virtual_environment_user`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_user) and [`virtual_environment_role`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_role) resources of the provider.
 
+## VMs and Containers ID
+
+When creating VMs and Containers, you can specify an optional `vm_id` attribute to set the ID of the VM or Container. However, ID is a mandatory attribute in the Proxmox API, and must be unique within the cluster, so the provider will generate a unique ID if the `vm_id` attribute is not specified.
+The Proxmox API provides a helper function to retrieve a unique "next available" ID in the Proxmox cluster, but it is not guaranteed to be unique across multiple instance of the provider running in parallel. This can lead to conflicts or locking issues when multiple resources are created at the same time, which is a common scenario in Terraform.
+
+To avoid this issue, you can set the `random_vm_ids` attribute to `true` in the `provider` block. This will generate a random ID for each VM or Container when the `vm_id` attribute is not specified. The generated ID will be checked for uniqueness via the Proxmox API before creating the resource, which drastically reduces the chance of conflicts.
+
 ## Temporary Directory
 
 Using `proxmox_virtual_environment_file` with `.iso` files or disk images can require large amount of space in the temporary directory of the computer running terraform.
@@ -426,3 +434,6 @@ In addition to [generic provider arguments](https://www.terraform.io/docs/config
         - `address` - (Required) The FQDN/IP address of the node.
         - `port` - (Optional) SSH port of the node. Defaults to 22.
 - `tmp_dir` - (Optional) Use custom temporary directory. (can also be sourced from `PROXMOX_VE_TMPDIR`)
+- `random_vm_ids` - (Optional) Use random VM ID for VMs and Containers when `vm_id` attribute is not specified. Defaults to `false`.
+- `random_vm_id_start` - (Optional) The start of the range for random VM IDs. Defaults to `10000`.
+- `random_vm_id_end` - (Optional) The end of the range for random VM IDs. Defaults to `99999`.
