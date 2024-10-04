@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.66.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.65.0...v0.66.0) (2024-10-04)
+
+
+### Features
+
+* **provider:** add support for pre(external) auth'd session tokens ([#1441](https://github.com/bpg/terraform-provider-proxmox/issues/1441)) ([eb2f36b](https://github.com/bpg/terraform-provider-proxmox/commit/eb2f36be21bc8a74bbd7e74bc7a7f3f6ed2d8daf))
+* **provider:** reliable sequential and random `vm_id` generation ([#1557](https://github.com/bpg/terraform-provider-proxmox/issues/1557)) ([72f7cb8](https://github.com/bpg/terraform-provider-proxmox/commit/72f7cb81a8bbe0fcd9aa739073db6e552820a7de))
+* **vm:** add support for `watchdog` ([#1556](https://github.com/bpg/terraform-provider-proxmox/issues/1556)) ([d226b59](https://github.com/bpg/terraform-provider-proxmox/commit/d226b59e2e37ffebc737e27cc9bb0182d4bda993))
+
+
+### Bug Fixes
+
+* **docs:** correct url for template download in container resource example ([#1563](https://github.com/bpg/terraform-provider-proxmox/issues/1563)) ([7266583](https://github.com/bpg/terraform-provider-proxmox/commit/72665830be975f0671c6aecca47fc52906cb21e2))
+* **lxc:** add new storage-backed mount point to existing container ([#1553](https://github.com/bpg/terraform-provider-proxmox/issues/1553)) ([89d72cd](https://github.com/bpg/terraform-provider-proxmox/commit/89d72cd37f63fd6238dbb09709ce90020e42e18a))
+* **provider:** handle IPv6 in ssh client ([#1558](https://github.com/bpg/terraform-provider-proxmox/issues/1558)) ([18a7f8e](https://github.com/bpg/terraform-provider-proxmox/commit/18a7f8ec358a158ccc4f927e0c07b5eab77b01dd))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v4.1.7 → v4.2.0) ([#1555](https://github.com/bpg/terraform-provider-proxmox/issues/1555)) ([471c5f2](https://github.com/bpg/terraform-provider-proxmox/commit/471c5f23bb67323abab77e57a359e07050ac536c))
+* **ci:** update peter-evans/create-issue-from-file action (v5.0.0 → v5.0.1) ([#1554](https://github.com/bpg/terraform-provider-proxmox/issues/1554)) ([049362a](https://github.com/bpg/terraform-provider-proxmox/commit/049362a94e585c17359a61ad410ad0c20b207d62))
+* **docs:** document specifics of "ballooning device" in the `vm.memory` block ([#1550](https://github.com/bpg/terraform-provider-proxmox/issues/1550)) ([0b29ae2](https://github.com/bpg/terraform-provider-proxmox/commit/0b29ae281ed5075aa1349fbe262176d8f8791dfc))
+
 ## [0.65.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.64.0...v0.65.0) (2024-09-21)
 
 
