@@ -167,6 +167,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/seankoneill"><img src="https://avatars.githubusercontent.com/u/35414430?v=4?s=100" width="100px;" alt="Sean O'Neill"/><br /><sub><b>Sean O'Neill</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=seankoneill" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/nrsmac"><img src="https://avatars.githubusercontent.com/u/8288816?v=4?s=100" width="100px;" alt="Noah Schill"/><br /><sub><b>Noah Schill</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=nrsmac" title="Documentation">📖</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/camaeel"><img src="https://avatars.githubusercontent.com/u/12999736?v=4?s=100" width="100px;" alt="Kamil Krzywicki"/><br /><sub><b>Kamil Krzywicki</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Acamaeel" title="Bug reports">🐛</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
