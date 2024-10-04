@@ -1183,6 +1183,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "camaeel",
+      "name": "Kamil Krzywicki",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12999736?v=4",
+      "profile": "https://github.com/camaeel",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
