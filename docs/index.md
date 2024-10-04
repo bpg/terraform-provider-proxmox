@@ -393,7 +393,7 @@ The workaround is to use password authentication for those operations.
 
 When creating VMs and Containers, you can specify the optional `vm_id` attribute to set the ID of the VM or Container. However, the ID is a mandatory attribute in the Proxmox API and must be unique within the cluster. If the `vm_id` attribute is not specified, the provider will generate a unique ID and assign it to the resource.
 
-The Proxmox API offers a helper function to retrieve the "next available" unique ID in the cluster, but this is not guaranteed to be unique across multiple instances of the provider running in parallel. This can result in conflicts or locking issues when multiple resources are being created simultaneously, which is a common scenario in Terraform.
+The Proxmox API provides a helper function to retrieve the “next available” unique ID in the cluster, but there is no option to reserve an ID before a resource is created. Instead, the provider uses a file-based locking technique to reserve retrieved sequential IDs and prevent duplicates. However, conflicts cannot be fully avoided, especially when multiple resources are created simultaneously by different provider instances.
 
 To mitigate this issue, you can set the `random_vm_ids` attribute to `true` in the `provider` block. This will generate a random ID for each VM or Container when the `vm_id` attribute is not specified. The generated ID is checked for uniqueness through the Proxmox API before resource creation, significantly reducing the risk of conflicts.
 
