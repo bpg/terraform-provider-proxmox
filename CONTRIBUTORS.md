@@ -165,6 +165,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://jordangarside.com/"><img src="https://avatars.githubusercontent.com/u/6321824?v=4?s=100" width="100px;" alt="Jordan Garside"/><br /><sub><b>Jordan Garside</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=jordangarside" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://vanillasprinkles.com/"><img src="https://avatars.githubusercontent.com/u/577861?v=4?s=100" width="100px;" alt="vanillaSprinkles"/><br /><sub><b>vanillaSprinkles</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=vanillaSprinkles" title="Code">💻</a> <a href="#ideas-vanillaSprinkles" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/seankoneill"><img src="https://avatars.githubusercontent.com/u/35414430?v=4?s=100" width="100px;" alt="Sean O'Neill"/><br /><sub><b>Sean O'Neill</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=seankoneill" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/nrsmac"><img src="https://avatars.githubusercontent.com/u/8288816?v=4?s=100" width="100px;" alt="Noah Schill"/><br /><sub><b>Noah Schill</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=nrsmac" title="Documentation">📖</a></td>
     </tr>
   </tbody>
   <tfoot>
