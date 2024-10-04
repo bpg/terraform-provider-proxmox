@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	haresources "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/resources"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
@@ -35,7 +35,7 @@ import (
 // and the entity name in the API is "ha resource", so...
 type haResourceResource struct {
 	// The HA resources API client
-	client haresources.Client
+	client *haresources.Client
 }
 
 // Ensure the resource implements the expected interfaces.
@@ -144,15 +144,17 @@ func (r *haResourceResource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-	if ok {
-		r.client = *client.Cluster().HA().Resources()
-	} else {
+	cfg, ok := req.ProviderData.(config.Resource)
+	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
+			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
+
+		return
 	}
+
+	r.client = cfg.Client.Cluster().HA().Resources()
 }
 
 // Create creates a new HA resource.

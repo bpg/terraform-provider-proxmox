@@ -16,8 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
@@ -77,18 +77,17 @@ func (d *haGroupsDatasource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
+	cfg, ok := req.ProviderData.(config.DataSource)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T",
-				req.ProviderData),
+			"Unexpected DataSource Configure Type",
+			fmt.Sprintf("Expected config.DataSource, got: %T", req.ProviderData),
 		)
 
 		return
 	}
 
-	d.client = client.Cluster().HA().Groups()
+	d.client = cfg.Client.Cluster().HA().Groups()
 }
 
 // Read fetches the list of HA groups from the Proxmox cluster then converts it to a list of strings.

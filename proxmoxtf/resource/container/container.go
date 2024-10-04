@@ -983,12 +983,12 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	vmID := vmIDUntyped.(int)
 
 	if !hasVMID {
-		vmIDNew, err := client.Cluster().GetVMID(ctx)
+		vmIDNew, err := config.GetIDGenerator().NextID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		vmID = *vmIDNew
+		vmID = vmIDNew
 
 		err = d.Set(mkVMID, vmID)
 		if err != nil {
@@ -1696,12 +1696,12 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	vmID := vmIDUntyped.(int)
 
 	if !hasVMID {
-		vmIDNew, err := client.Cluster().GetVMID(ctx)
+		vmIDNew, err := config.GetIDGenerator().NextID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		vmID = *vmIDNew
+		vmID = vmIDNew
 
 		err = d.Set(mkVMID, vmID)
 		if err != nil {

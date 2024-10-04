@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package vm
 
 import (
@@ -7,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 )
 
@@ -45,37 +52,36 @@ func (d *Datasource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-
+	cfg, ok := req.ProviderData.(config.DataSource)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
+			"Unexpected DataSource Configure Type",
+			fmt.Sprintf("Expected config.DataSource, got: %T", req.ProviderData),
 		)
 
 		return
 	}
 
-	d.client = client
+	d.client = cfg.Client
 }
 
 //nolint:dupl
 func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config Model
+	var model Model
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &model)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	timeout, diags := config.Timeouts.Read(ctx, defaultReadTimeout)
+	timeout, diags := model.Timeouts.Read(ctx, defaultReadTimeout)
 	resp.Diagnostics.Append(diags...)
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	exists := read(ctx, d.client, &config, &resp.Diagnostics)
+	exists := read(ctx, d.client, &model, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -83,12 +89,12 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 
 	if !exists {
 		tflog.Info(ctx, "VM does not exist, removing from the state", map[string]interface{}{
-			"id": config.ID.ValueInt64(),
+			"id": model.ID.ValueInt64(),
 		})
 		resp.State.RemoveResource(ctx)
 
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, model)...)
 }

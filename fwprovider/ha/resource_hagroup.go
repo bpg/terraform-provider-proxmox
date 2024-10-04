@@ -24,8 +24,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	hagroups "github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha/groups"
 )
 
@@ -43,7 +43,7 @@ func NewHAGroupResource() resource.Resource {
 // hagroupResource contains the resource's internal data.
 type hagroupResource struct {
 	// The HA groups API client
-	client hagroups.Client
+	client *hagroups.Client
 }
 
 // Metadata defines the name of the resource.
@@ -130,16 +130,17 @@ func (r *hagroupResource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-	if ok {
-		r.client = *client.Cluster().HA().Groups()
-	} else {
+	cfg, ok := req.ProviderData.(config.Resource)
+	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T",
-				req.ProviderData),
+			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
+
+		return
 	}
+
+	r.client = cfg.Client.Cluster().HA().Groups()
 }
 
 // Create creates a new HA group on the Proxmox cluster.

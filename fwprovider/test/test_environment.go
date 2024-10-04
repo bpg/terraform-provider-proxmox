@@ -15,7 +15,6 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
@@ -81,6 +80,7 @@ provider "proxmox" {
 	  port    = %s
 	}
   }
+  //random_vm_ids = true
 }
 `, nodeName, nodeAddress, nodePort)
 
@@ -127,10 +127,6 @@ func (e *Environment) AddTemplateVars(vars map[string]any) {
 func (e *Environment) RenderConfig(cfg string) string {
 	tmpl, err := template.New("config").Parse("{{.ProviderConfig}}" + cfg)
 	require.NoError(e.t, err)
-
-	e.templateVars["RandomVMID"] = gofakeit.IntRange(100_000, 999_999)
-	e.templateVars["RandomVMID1"] = gofakeit.IntRange(100_000, 999_999)
-	e.templateVars["RandomVMID2"] = gofakeit.IntRange(100_000, 999_999)
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, e.templateVars)

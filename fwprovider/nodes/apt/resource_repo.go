@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	api "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt/repositories"
@@ -105,18 +106,17 @@ func (r *repositoryResource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-
+	cfg, ok := req.ProviderData.(config.Resource)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected resource configuration type",
-			fmt.Sprintf("Expected *proxmox.Client, got: %T", req.ProviderData),
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
 
 		return
 	}
 
-	r.client = client
+	r.client = cfg.Client
 }
 
 // Create modifies the activation state of an existing APT repository, including the addition of standard repositories

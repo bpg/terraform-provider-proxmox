@@ -21,11 +21,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -48,7 +50,8 @@ var (
 
 // Resource implements the resource.Resource interface for managing VMs.
 type Resource struct {
-	client proxmox.Client
+	client      proxmox.Client
+	idGenerator cluster.IDGenerator
 }
 
 // NewResource creates a new resource for managing VMs.
@@ -75,8 +78,7 @@ func (r *Resource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(proxmox.Client)
-
+	cfg, ok := req.ProviderData.(config.Resource)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -86,7 +88,8 @@ func (r *Resource) Configure(
 		return
 	}
 
-	r.client = client
+	r.client = cfg.Client
+	r.idGenerator = cfg.IDGenerator
 }
 
 // Create creates a new VM.
@@ -106,13 +109,13 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	defer cancel()
 
 	if plan.ID.ValueInt64() == 0 {
-		id, err := r.client.Cluster().GetVMID(ctx)
+		id, err := r.idGenerator.NextID(ctx)
 		if err != nil {
-			resp.Diagnostics.AddError("Failed to get VM ID", err.Error())
+			resp.Diagnostics.AddError("Failed to generate VM ID", err.Error())
 			return
 		}
 
-		plan.ID = types.Int64Value(int64(*id))
+		plan.ID = types.Int64Value(int64(id))
 	}
 
 	if resp.Diagnostics.HasError() {

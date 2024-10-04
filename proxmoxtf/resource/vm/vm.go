@@ -1713,12 +1713,12 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	vmID := vmIDUntyped.(int)
 
 	if !hasVMID {
-		vmIDNew, err := client.Cluster().GetVMID(ctx)
+		vmIDNew, err := config.GetIDGenerator().NextID(ctx)
 		if err != nil {
 			return diag.FromErr(err)
 		}
 
-		vmID = *vmIDNew
+		vmID = vmIDNew
 
 		err = d.Set(mkVMID, vmID)
 		if err != nil {
@@ -2509,12 +2509,12 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	vmID := vmIDUntyped.(int)
 
 	if !hasVMID {
-		vmIDNew, e := client.Cluster().GetVMID(ctx)
+		vmIDNew, e := config.GetIDGenerator().NextID(ctx)
 		if e != nil {
 			return diag.FromErr(e)
 		}
 
-		vmID = *vmIDNew
+		vmID = vmIDNew
 		e = d.Set(mkVMID, vmID)
 
 		if e != nil {

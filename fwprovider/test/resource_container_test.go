@@ -114,7 +114,6 @@ func TestAccResourceContainer(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 				    node_name = "{{.NodeName}}"
-				    vm_id     = {{.RandomVMID}}
 				  	started   = false
 				    disk {
 						datastore_id = "local-lvm"
@@ -190,7 +189,6 @@ func TestAccResourceContainer(t *testing.T) {
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_container" "test_container" {
 				node_name = "{{.NodeName}}"
-				vm_id     = {{.RandomVMID}}
 				template  = true
 				disk {
 					datastore_id = "local-lvm"
