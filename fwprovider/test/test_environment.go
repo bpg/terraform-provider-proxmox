@@ -25,6 +25,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/access"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	sdkV2provider "github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -180,6 +181,11 @@ func (e *Environment) NodeClient() *nodes.Client {
 // NodeStorageClient returns a new storage client for the test environment.
 func (e *Environment) NodeStorageClient() *storage.Client {
 	return &storage.Client{Client: e.NodeClient(), StorageName: e.DatastoreID}
+}
+
+// ClusterClient returns a new cluster client for the test environment.
+func (e *Environment) ClusterClient() *cluster.Client {
+	return &cluster.Client{Client: e.Client()}
 }
 
 // testAccMuxProviders returns a map of mux servers for the acceptance tests.
