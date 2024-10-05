@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.66.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.0...v0.66.1) (2024-10-05)
+
+
+### Bug Fixes
+
+* **docs:** typo in container guide ([#1566](https://github.com/bpg/terraform-provider-proxmox/issues/1566)) ([77634cb](https://github.com/bpg/terraform-provider-proxmox/commit/77634cbd5978124b0c9a3979d47a91938a2d1479))
+* **provider:** sequentially generated `vm_id`s may clash with exiting VM / Container IDs ([#1574](https://github.com/bpg/terraform-provider-proxmox/issues/1574)) ([e838c6b](https://github.com/bpg/terraform-provider-proxmox/commit/e838c6b645f3bc70728d58384fb22a5ad1829ee4))
+
+
+### Miscellaneous
+
+* **deps:** update golang.org/x/exp digest (701f63a → 225e2ab) ([#1570](https://github.com/bpg/terraform-provider-proxmox/issues/1570)) ([65f35f3](https://github.com/bpg/terraform-provider-proxmox/commit/65f35f31c136b0e978c97d51d2f9f355aa46c652))
+* **deps:** update module golang.org/x/net (v0.29.0 → v0.30.0) ([#1572](https://github.com/bpg/terraform-provider-proxmox/issues/1572)) ([4379fca](https://github.com/bpg/terraform-provider-proxmox/commit/4379fcafa9d1063ae90f25e28fba78d73f6359e2))
+
 ## [0.66.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.65.0...v0.66.0) (2024-10-04)
 
 
