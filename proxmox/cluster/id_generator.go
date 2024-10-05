@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -24,8 +25,9 @@ import (
 )
 
 const (
-	idGeneratorLockFile     = "terraform-provider-proxmox-id-gen.lock"
-	idGeneratorSequenceFile = "terraform-provider-proxmox-id-gen.seq"
+	idGeneratorLockFile         = "terraform-provider-proxmox-id-gen.lock"
+	idGeneratorSequenceFile     = "terraform-provider-proxmox-id-gen.seq"
+	idGeneratorContentionWindow = 5 * time.Second
 )
 
 // IDGenerator is responsible for generating unique identifiers for VMs and Containers.
@@ -66,7 +68,7 @@ func NewIDGenerator(client *Client, config IDGeneratorConfig) IDGenerator {
 		// while giving some protection against parallel runs of the provider
 		// that might interfere with each other and reset the sequence at the same time
 		stat, err := os.Stat(config.seqFName)
-		if err == nil && time.Since(stat.ModTime()) > 10*time.Second {
+		if err == nil && time.Since(stat.ModTime()) > idGeneratorContentionWindow {
 			_ = os.Remove(config.seqFName)
 		}
 	}
@@ -86,13 +88,16 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 
 	defer unlock()
 
-	id, err := retry.DoWithData(func() (*int, error) {
-		var newID *int
+	ctx, cancel := context.WithTimeout(ctx, idGeneratorContentionWindow+time.Second)
+	defer cancel()
 
+	var newID *int
+
+	id, err := retry.DoWithData(func() (*int, error) {
 		if g.config.RandomIDs {
 			//nolint:gosec
 			newID = ptr.Ptr(rand.Intn(g.config.RandomIDEnd-g.config.RandomIDStat) + g.config.RandomIDStat)
-		} else {
+		} else if newID == nil {
 			newID, err = nextSequentialID(g.config.seqFName)
 			if err != nil {
 				return nil, err
@@ -100,7 +105,17 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 		}
 
 		return g.client.GetNextID(ctx, newID)
-	})
+	},
+		retry.OnRetry(func(_ uint, err error) {
+			if strings.Contains(err.Error(), "already exists") && newID != nil {
+				newID = ptr.Ptr(*newID + 1)
+			}
+		}),
+		retry.Context(ctx),
+		retry.UntilSucceeded(),
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(200*time.Millisecond),
+	)
 	if err != nil {
 		return -1, fmt.Errorf("unable to retrieve the next available VM identifier: %w", err)
 	}
