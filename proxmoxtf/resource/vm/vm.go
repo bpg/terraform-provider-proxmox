@@ -5523,12 +5523,19 @@ func vmUpdateDiskLocationAndSize(
 					)
 				} else {
 					return diag.Errorf(
-						"Cannot resize %s:%s in VM %d configuration, it is not owned by this VM!",
+						"Cannot resize %s:%s in VM %d, it is not owned by this VM!",
 						*oldDisk.DatastoreID,
 						*oldDisk.PathInDatastore(),
 						vmID,
 					)
 				}
+			} else {
+				return diag.Errorf(
+					"Cannot shrink %s:%s in VM %d, it is not supported!",
+					*oldDisk.DatastoreID,
+					*oldDisk.PathInDatastore(),
+					vmID,
+				)
 			}
 		}
 

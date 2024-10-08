@@ -19,3 +19,16 @@ func Or[T any](p *T, or T) T {
 
 	return or
 }
+
+// Eq compares two pointers and returns true if they are equal.
+func Eq[T comparable](a, b *T) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if a == nil || b == nil {
+		return false
+	}
+
+	return *a == *b
+}
