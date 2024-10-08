@@ -27,7 +27,7 @@ However, we will try to maintain backward compatibility between provider version
 - [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
 - [Terraform](https://www.terraform.io/downloads.html) 1.5.x+ or [OpenTofu](https://opentofu.org) 1.6.x
-- [Go](https://golang.org/doc/install) 1.22 (to build the provider plugin)
+- [Go](https://golang.org/doc/install) 1.23 (to build the provider plugin)
 
 ## Using the Provider
 
@@ -140,7 +140,6 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Elias Alvord](https://github.com/elias314)
 - [laktosterror](https://github.com/laktosterror)
 - [Radosław Szamszur](https://github.com/rszamszur)
-- [Ben Bouillet](https://github.com/benbouillet)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
