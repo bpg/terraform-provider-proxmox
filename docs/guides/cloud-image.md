@@ -81,7 +81,7 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 
 For [large images](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file#important-notes), you may want to use a dedicated temporary directory [configured](https://registry.terraform.io/providers/bpg/proxmox/latest/docs#tmp_dir) for provider via `tmp_dir` attribute, instead of system's default temporary directory. This is especially useful if you are deploying from a container with limited disk space.
 
-## Create a VM from an exiting image on Proxmox
+## Create a VM from an existing image on Proxmox
 
 If you already have a cloud image on Proxmox, you can use it to create a VM:
 
