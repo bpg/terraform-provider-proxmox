@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -602,7 +603,7 @@ func Update(
 				continue
 			}
 
-			if tmp.AIO != disk.AIO {
+			if !ptr.Eq(tmp.AIO, disk.AIO) {
 				rebootRequired = true
 				tmp.AIO = disk.AIO
 			}
