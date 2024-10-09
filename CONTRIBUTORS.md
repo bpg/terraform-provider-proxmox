@@ -169,6 +169,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/camaeel"><img src="https://avatars.githubusercontent.com/u/12999736?v=4?s=100" width="100px;" alt="Kamil Krzywicki"/><br /><sub><b>Kamil Krzywicki</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Acamaeel" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://stackoverflow.com/users/7487335/josh-correia"><img src="https://avatars.githubusercontent.com/u/86431308?v=4?s=100" width="100px;" alt="joshmcorreia"/><br /><sub><b>joshmcorreia</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=joshmcorreia" title="Documentation">📖</a></td>
     </tr>
   </tbody>
   <tfoot>
