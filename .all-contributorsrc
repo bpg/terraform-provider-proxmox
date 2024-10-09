@@ -1192,6 +1192,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "joshmcorreia",
+      "name": "joshmcorreia",
+      "avatar_url": "https://avatars.githubusercontent.com/u/86431308?v=4",
+      "profile": "https://stackoverflow.com/users/7487335/josh-correia",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
