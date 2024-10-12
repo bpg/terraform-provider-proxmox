@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.66.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.1...v0.66.2) (2024-10-12)
+
+
+### Bug Fixes
+
+* **docs:** typo in cloud-image.md guide, exiting -&gt; existing ([#1584](https://github.com/bpg/terraform-provider-proxmox/issues/1584)) ([af7b0e7](https://github.com/bpg/terraform-provider-proxmox/commit/af7b0e71303a27e22e94e5d854d1b4d83ba4ff34))
+* **docs:** update README.md ([#1578](https://github.com/bpg/terraform-provider-proxmox/issues/1578)) ([51d0338](https://github.com/bpg/terraform-provider-proxmox/commit/51d0338bbaec723ef103b256ae82a54f68a0149d))
+* **vm:** do not reboot at disk resize ([#1580](https://github.com/bpg/terraform-provider-proxmox/issues/1580)) ([90c50fc](https://github.com/bpg/terraform-provider-proxmox/commit/90c50fcb471c66448652f089039ed8cef9a3bbc7))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v4.2.0 → v4.2.1) ([#1581](https://github.com/bpg/terraform-provider-proxmox/issues/1581)) ([95f00ef](https://github.com/bpg/terraform-provider-proxmox/commit/95f00ef1e2f0717803b5d4bb3bf6993faa3af80f))
+* **ci:** Update lycheeverse/lychee-action action (v1.10.0 → v2.0.0) ([#1583](https://github.com/bpg/terraform-provider-proxmox/issues/1583)) ([d1d8228](https://github.com/bpg/terraform-provider-proxmox/commit/d1d8228d6a85f99e08d0cfeec8111794f37bb922))
+* **ci:** update lycheeverse/lychee-action action (v2.0.0 → v2.0.1) ([#1590](https://github.com/bpg/terraform-provider-proxmox/issues/1590)) ([dcb8b60](https://github.com/bpg/terraform-provider-proxmox/commit/dcb8b60ca72c6562e0436cec6f974fcd525dfc76))
+* **deps:** update golang.org/x/exp digest (225e2ab → f66d83c) ([#1586](https://github.com/bpg/terraform-provider-proxmox/issues/1586)) ([e103029](https://github.com/bpg/terraform-provider-proxmox/commit/e1030294ae3d882812b7e111b585a36c3e1f4125))
+
 ## [0.66.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.0...v0.66.1) (2024-10-05)
 
 
