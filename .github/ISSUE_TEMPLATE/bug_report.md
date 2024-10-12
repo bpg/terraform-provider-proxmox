@@ -27,6 +27,12 @@ Please also provide a minimal Terraform configuration that reproduces the issue.
 
 ```
 
+and the output of `terraform|tofu apply`.
+```text
+
+```
+
+
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
