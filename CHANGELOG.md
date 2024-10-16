@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.66.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.2...v0.66.3) (2024-10-16)
+
+
+### Bug Fixes
+
+* **tests:** add missing example.tfrc to test api-authentication folder ([#1596](https://github.com/bpg/terraform-provider-proxmox/issues/1596)) ([1e57684](https://github.com/bpg/terraform-provider-proxmox/commit/1e57684029a1052c58967fdba08be69f1d284047))
+
+
+### Miscellaneous
+
+* **ci:** update lycheeverse/lychee-action action (v2.0.1 → v2.0.2) ([#1595](https://github.com/bpg/terraform-provider-proxmox/issues/1595)) ([18fc8d4](https://github.com/bpg/terraform-provider-proxmox/commit/18fc8d418bc46c42407b3d83d65e7c362e1bc7e7))
+* **tests:** add script to test/view api-authentication successes/failures ([#1562](https://github.com/bpg/terraform-provider-proxmox/issues/1562)) ([bce2ceb](https://github.com/bpg/terraform-provider-proxmox/commit/bce2ceb5224a27c0deb5536a176c575dda69ca63))
+
 ## [0.66.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.1...v0.66.2) (2024-10-12)
 
 
