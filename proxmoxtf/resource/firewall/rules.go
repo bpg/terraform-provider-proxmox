@@ -8,9 +8,7 @@ package firewall
 
 import (
 	"context"
-	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -34,25 +32,22 @@ const (
 	dvRuleProto     = ""
 	dvRuleSPort     = ""
 	dvRuleSource    = ""
-
 	// MkRule defines the name of the rule resource in the schema.
-	MkRule = "rule"
-
+	MkRule          = "rule"
 	mkSecurityGroup = "security_group"
-
-	mkRuleAction  = "action"
-	mkRuleComment = "comment"
-	mkRuleDPort   = "dport"
-	mkRuleDest    = "dest"
-	mkRuleEnabled = "enabled"
-	mkRuleIFace   = "iface"
-	mkRuleLog     = "log"
-	mkRuleMacro   = "macro"
-	mkRulePos     = "pos"
-	mkRuleProto   = "proto"
-	mkRuleSource  = "source"
-	mkRuleSPort   = "sport"
-	mkRuleType    = "type"
+	mkRuleAction    = "action"
+	mkRuleComment   = "comment"
+	mkRuleDPort     = "dport"
+	mkRuleDest      = "dest"
+	mkRuleEnabled   = "enabled"
+	mkRuleIFace     = "iface"
+	mkRuleLog       = "log"
+	mkRuleMacro     = "macro"
+	mkRulePos       = "pos"
+	mkRuleProto     = "proto"
+	mkRuleSource    = "source"
+	mkRuleSPort     = "sport"
+	mkRuleType      = "type"
 )
 
 // Rules returns a resource that manages firewall rules.
@@ -222,81 +217,32 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		return diags
 	}
 
-	// reset rules, we re-read them (with proper positions) from the API
-	err := d.Set(MkRule, nil)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	d.SetId(api.GetRulesID())
 
 	return RulesRead(ctx, api, d)
 }
 
-// RulesRead reads rules from the API and updates the state.
+// RulesRead gets updates the tf state.
+//
+//nolint:revive,unused-parameter //bypass unused-parameter warning as ctx is needed for invokeRuleAPI.
 func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	readRule := func(pos int, ruleMap map[string]interface{}) error {
-		rule, err := api.GetRule(ctx, pos)
-		if err != nil {
-			if strings.Contains(err.Error(), "no rule at position") {
-				// this is not an error, the rule does not exist
-				return nil
-			}
-
-			return fmt.Errorf("error reading rule %d : %w", pos, err)
-		}
-
-		// pos in the map should be int!
-		ruleMap[mkRulePos] = pos
-
-		if rule.Type == "group" {
-			// this is a special case of security group insertion
-			ruleMap[mkSecurityGroup] = rule.Action
-			securityGroupBaseRuleToMap(&rule.BaseRule, ruleMap)
-		} else {
-			ruleMap[mkRuleAction] = rule.Action
-			ruleMap[mkRuleType] = rule.Type
-			baseRuleToMap(&rule.BaseRule, ruleMap)
-		}
-
-		return nil
-	}
-
 	rules := d.Get(MkRule).([]interface{})
-	if len(rules) > 0 {
-		// We have rules in the state, so we need to read them from the API
-		for _, v := range rules {
-			ruleMap := v.(map[string]interface{})
-			pos := ruleMap[mkRulePos].(int)
+	newRules := make([]map[string]interface{}, 0)
 
-			err := readRule(pos, ruleMap)
-			diags = append(diags, diag.FromErr(err)...)
-		}
-	} else {
-		ruleIDs, err := api.ListRules(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+	c := 0
 
-		for _, id := range ruleIDs {
-			ruleMap := map[string]interface{}{}
+	for _, rule := range rules {
+		ruleMap := rule.(map[string]interface{})
+		id := c
+		ruleMap[mkRulePos] = id
 
-			err = readRule(id.Pos, ruleMap)
-			if err != nil {
-				diags = append(diags, diag.FromErr(err)...)
-			} else if len(ruleMap) > 0 {
-				rules = append(rules, ruleMap)
-			}
-		}
+		newRules = append(newRules, ruleMap)
+		c++
 	}
 
-	if diags.HasError() {
-		return diags
-	}
-
-	err := d.Set(MkRule, rules)
+	err := d.Set(MkRule, newRules)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
@@ -442,62 +388,6 @@ func mapToSecurityGroupBaseRule(rule map[string]interface{}) *firewall.BaseRule 
 	}
 
 	return baseRule
-}
-
-func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
-	if baseRule.Comment != nil {
-		rule[mkRuleComment] = *baseRule.Comment
-	}
-
-	if baseRule.Dest != nil {
-		rule[mkRuleDest] = *baseRule.Dest
-	}
-
-	if baseRule.DPort != nil {
-		rule[mkRuleDPort] = *baseRule.DPort
-	}
-
-	if baseRule.Enable != nil {
-		rule[mkRuleEnabled] = *baseRule.Enable
-	}
-
-	if baseRule.IFace != nil {
-		rule[mkRuleIFace] = *baseRule.IFace
-	}
-
-	if baseRule.Log != nil {
-		rule[mkRuleLog] = *baseRule.Log
-	}
-
-	if baseRule.Macro != nil {
-		rule[mkRuleMacro] = *baseRule.Macro
-	}
-
-	if baseRule.Proto != nil {
-		rule[mkRuleProto] = *baseRule.Proto
-	}
-
-	if baseRule.Source != nil {
-		rule[mkRuleSource] = *baseRule.Source
-	}
-
-	if baseRule.SPort != nil {
-		rule[mkRuleSPort] = *baseRule.SPort
-	}
-}
-
-func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
-	if baseRule.Comment != nil {
-		rule[mkRuleComment] = *baseRule.Comment
-	}
-
-	if baseRule.Enable != nil {
-		rule[mkRuleEnabled] = *baseRule.Enable
-	}
-
-	if baseRule.IFace != nil {
-		rule[mkRuleIFace] = *baseRule.IFace
-	}
 }
 
 func invokeRuleAPI(
