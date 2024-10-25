@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.66.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.2...v0.66.3) (2024-10-25)
+
+
+### Bug Fixes
+
+* **tests:** add missing example.tfrc to test api-authentication folder ([#1596](https://github.com/bpg/terraform-provider-proxmox/issues/1596)) ([1e57684](https://github.com/bpg/terraform-provider-proxmox/commit/1e57684029a1052c58967fdba08be69f1d284047))
+* **vm:** incorrect detection of disk resize ([#1602](https://github.com/bpg/terraform-provider-proxmox/issues/1602)) ([2781d75](https://github.com/bpg/terraform-provider-proxmox/commit/2781d7525aa87801f652559318c66689b5ccc945))
+
+
+### Miscellaneous
+
+* **ci:** update actions/checkout action (v4.2.1 → v4.2.2) ([#1603](https://github.com/bpg/terraform-provider-proxmox/issues/1603)) ([547b314](https://github.com/bpg/terraform-provider-proxmox/commit/547b3148f74af916155267e3677c9bccff5d686f))
+* **ci:** update jetbrains/qodana-action action (v2024.2.3 → v2024.2.5) ([#1604](https://github.com/bpg/terraform-provider-proxmox/issues/1604)) ([c4a6190](https://github.com/bpg/terraform-provider-proxmox/commit/c4a6190a302d78251f28c028cee02a79f22272ed))
+* **ci:** update lycheeverse/lychee-action action (v2.0.1 → v2.0.2) ([#1595](https://github.com/bpg/terraform-provider-proxmox/issues/1595)) ([18fc8d4](https://github.com/bpg/terraform-provider-proxmox/commit/18fc8d418bc46c42407b3d83d65e7c362e1bc7e7))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework-validators (v0.13.0 → v0.14.0) ([#1598](https://github.com/bpg/terraform-provider-proxmox/issues/1598)) ([7a26cfe](https://github.com/bpg/terraform-provider-proxmox/commit/7a26cfe53c8281de30e4f4244f4e57a20c1935d6))
+* **deps:** update module github.com/pkg/sftp (v1.13.6 → v1.13.7) ([#1605](https://github.com/bpg/terraform-provider-proxmox/issues/1605)) ([0453e71](https://github.com/bpg/terraform-provider-proxmox/commit/0453e71f701ba3d0f4c68e20a22f2a42bb4b154f))
+* **tests:** add script to test/view api-authentication successes/failures ([#1562](https://github.com/bpg/terraform-provider-proxmox/issues/1562)) ([bce2ceb](https://github.com/bpg/terraform-provider-proxmox/commit/bce2ceb5224a27c0deb5536a176c575dda69ca63))
+
 ## [0.66.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.1...v0.66.2) (2024-10-12)
 
 
