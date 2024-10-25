@@ -5512,30 +5512,32 @@ func vmUpdateDiskLocationAndSize(
 				}
 			}
 
-			if *oldDisk.Size < *diskNewEntries[oldIface].Size {
-				if oldDisk.IsOwnedBy(vmID) {
-					diskResizeBodies = append(
-						diskResizeBodies,
-						&vms.ResizeDiskRequestBody{
-							Disk: oldIface,
-							Size: *diskNewEntries[oldIface].Size,
-						},
-					)
+			if *oldDisk.Size != *diskNewEntries[oldIface].Size {
+				if *oldDisk.Size < *diskNewEntries[oldIface].Size {
+					if oldDisk.IsOwnedBy(vmID) {
+						diskResizeBodies = append(
+							diskResizeBodies,
+							&vms.ResizeDiskRequestBody{
+								Disk: oldIface,
+								Size: *diskNewEntries[oldIface].Size,
+							},
+						)
+					} else {
+						return diag.Errorf(
+							"Cannot resize %s:%s in VM %d, it is not owned by this VM!",
+							*oldDisk.DatastoreID,
+							*oldDisk.PathInDatastore(),
+							vmID,
+						)
+					}
 				} else {
 					return diag.Errorf(
-						"Cannot resize %s:%s in VM %d, it is not owned by this VM!",
+						"Cannot shrink %s:%s in VM %d, it is not supported!",
 						*oldDisk.DatastoreID,
 						*oldDisk.PathInDatastore(),
 						vmID,
 					)
 				}
-			} else {
-				return diag.Errorf(
-					"Cannot shrink %s:%s in VM %d, it is not supported!",
-					*oldDisk.DatastoreID,
-					*oldDisk.PathInDatastore(),
-					vmID,
-				)
 			}
 		}
 
