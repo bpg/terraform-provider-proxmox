@@ -141,6 +141,7 @@ func ResourceSchema() schema.Attribute {
 						"EPYC-Rome",
 						"EPYC-Rome-v2",
 						"EPYC-v3",
+						"EPYC-v4",
 						"Haswell",
 						"Haswell-IBRS",
 						"Haswell-noTSX",
