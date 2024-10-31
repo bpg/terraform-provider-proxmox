@@ -1,4 +1,4 @@
-module github.com/Mrton0121/terraform-provider-proxmox
+module github.com/bpg/terraform-provider-proxmox
 
 go 1.23.0
 
