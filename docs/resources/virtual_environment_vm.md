@@ -199,7 +199,7 @@ output "ubuntu_vm_public_key" {
         - `Cascadelake-Server`/`Cascadelake-Server-noTSX`/`Cascadelake-Server-v2`/`Cascadelake-Server-v4`/`Cascadelake-Server-v5` - Intel Xeon 32xx/42xx/52xx/62xx/82xx/92xx (2019).
         - `Conroe` - Intel Celeron_4x0 (Conroe/Merom Class Core 2, 2006).
         - `Cooperlake`/`Cooperlake-v2`
-        - `EPYC`/`EPYC-IBPB`/`EPYC-Milan`/`EPYC-Rome`/`EPYC-Rome-v2`/`EPYC-v3` -
+        - `EPYC`/`EPYC-IBPB`/`EPYC-Milan`/`EPYC-Rome`/`EPYC-Rome-v2`/`EPYC-v3` / `EPYC-v4` -
             AMD EPYC Processor (2017).
         - `Haswell`/`Haswell-IBRS`/`Haswell-noTSX`/`Haswell-noTSX-IBRS` - Intel
             Core Processor (Haswell, 2013).
