@@ -537,12 +537,12 @@ func (r *clusterOptionsResource) Schema(
 			},
 			"migration_type": schema.StringAttribute{
 				Description: "Cluster wide migration type.",
-				MarkdownDescription: "Cluster wide migration type. Must be `secure` | `unsecure` " +
+				MarkdownDescription: "Cluster wide migration type. Must be `secure` | `insecure` " +
 					"(default is `secure`).",
 				Optional: true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
 					"secure",
-					"unsecure",
+					"insecure",
 				}...)},
 			},
 			"migration_cidr": schema.StringAttribute{
