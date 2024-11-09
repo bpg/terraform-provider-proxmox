@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/golangci/golangci-lint v1.61.0
-	github.com/hashicorp/terraform-plugin-docs v0.19.4
+	github.com/hashicorp/terraform-plugin-docs v0.20.0
 )
 
 require (
@@ -37,7 +37,7 @@ require (
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/bkielbasa/cyclop v1.2.1 // indirect
 	github.com/blizzy78/varnamelen v0.8.0 // indirect
-	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.7.1 // indirect
 	github.com/bombsimon/wsl/v4 v4.4.1 // indirect
 	github.com/breml/bidichk v0.2.7 // indirect
 	github.com/breml/errchkjson v0.3.6 // indirect
@@ -93,12 +93,13 @@ require (
 	github.com/hashicorp/go-checkpoint v0.5.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
-	github.com/hashicorp/hc-install v0.7.0 // indirect
+	github.com/hashicorp/hc-install v0.9.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/terraform-exec v0.21.0 // indirect
-	github.com/hashicorp/terraform-json v0.22.1 // indirect
+	github.com/hashicorp/terraform-json v0.23.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
@@ -191,9 +192,9 @@ require (
 	github.com/yagipy/maintidx v1.0.0 // indirect
 	github.com/yeya24/promlinter v0.3.0 // indirect
 	github.com/ykadowak/zerologlint v0.1.5 // indirect
-	github.com/yuin/goldmark v1.7.1 // indirect
+	github.com/yuin/goldmark v1.7.7 // indirect
 	github.com/yuin/goldmark-meta v1.1.0 // indirect
-	github.com/zclconf/go-cty v1.14.4 // indirect
+	github.com/zclconf/go-cty v1.15.0 // indirect
 	gitlab.com/bosi/decorder v0.4.2 // indirect
 	go-simpler.org/musttag v0.12.2 // indirect
 	go-simpler.org/sloglint v0.7.2 // indirect
@@ -208,7 +209,7 @@ require (
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
