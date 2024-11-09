@@ -1,53 +1,64 @@
 {
-  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   extends: [
-    "github>bpg/renovate-config",
-    "github>bpg/renovate-config:automerge-github-actions",
-    ":semanticCommitTypeAll(chore)",
+    'github>bpg/renovate-config',
+    'github>bpg/renovate-config:automerge-github-actions',
+    ':semanticCommitTypeAll(chore)',
   ],
-  "postUpdateOptions": [
-    "gomodTidy",
-    "gomodUpdateImportPaths",
+  postUpdateOptions: [
+    'gomodTidy',
+    'gomodUpdateImportPaths',
   ],
-  "ignorePaths": ["howtos/**"],
-  "rebaseWhen": "behind-base-branch",
-  "packageRules": [
+  ignorePaths: [
+    'howtos/**',
+  ],
+  rebaseWhen: 'behind-base-branch',
+  packageRules: [
     {
-      "matchPackagePatterns": [
-        "*",
+      semanticCommitScope: 'deps',
+      matchPackageNames: [
+        '*',
       ],
-      "semanticCommitScope": "deps",
     },
     {
-      "matchPackagePrefixes": ["github.com/hashicorp/terraform-plugin-"],
-      "groupName": ["github.com/hashicorp/terraform-plugin-*"],
-    },
-    {
-      "matchFileNames": [
-        "tools/go.mod",
-        "tools/go.sum",
+      groupName: 'github.com/hashicorp/terraform-plugin-*',
+      matchPackageNames: [
+        'github.com/hashicorp/terraform-plugin-{/,}**',
       ],
-      "commitMessageExtra": "({{currentVersion}} → {{newVersion}}) in /tools",
-      "groupName": ["tools"],
     },
     {
-      "matchFileNames": [
-        "examples/**",
-        "example/**",
-        "docs/**",
+      matchFileNames: [
+        'tools/go.mod',
+        'tools/go.sum',
       ],
-      "semanticCommitScope": "docs",
-      "automerge": true,
-      "automergeType": "branch",
-      "matchUpdateTypes": ["minor", "patch"],
+      commitMessageExtra: '({{currentVersion}} → {{newVersion}}) in /tools',
+      groupName: 'tools',
     },
     {
-      "matchManagers": ["github-actions"],
-      "semanticCommitScope": "ci",
+      matchFileNames: [
+        'examples/**',
+        'example/**',
+        'docs/**',
+      ],
+      semanticCommitScope: 'docs',
+      automerge: true,
+      automergeType: 'branch',
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
     },
     {
-      "matchUpdateTypes": ["major"],
-      "commitMessagePrefix": "{{semanticCommitType}}({{semanticCommitScope}}):",
+      matchManagers: [
+        'github-actions',
+      ],
+      semanticCommitScope: 'ci',
     },
-  ]
+    {
+      matchUpdateTypes: [
+        'major',
+      ],
+      commitMessagePrefix: '{{semanticCommitType}}({{semanticCommitScope}}):',
+    },
+  ],
 }
