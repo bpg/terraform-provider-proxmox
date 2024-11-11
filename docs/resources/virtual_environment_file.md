@@ -7,13 +7,15 @@ subcategory: Virtual Environment
 
 # Resource: proxmox_virtual_environment_file
 
-Manages a file.
+Use this resource to upload files to a Proxmox VE node. The file can be a backup, an ISO image, a snippet, or a container template depending on the `content_type` attribute.
 
 ## Example Usage
 
 ### Backups (`dump`)
 
 -> The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
+
+~> The provider currently does not support restoring backups. You can use the Proxmox VE web interface or the `qmrestore` / `pct restore` command to restore VM / Container from a backup.
 
 ```hcl
 resource "proxmox_virtual_environment_file" "backup" {
