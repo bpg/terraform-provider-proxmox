@@ -171,6 +171,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/camaeel"><img src="https://avatars.githubusercontent.com/u/12999736?v=4?s=100" width="100px;" alt="Kamil Krzywicki"/><br /><sub><b>Kamil Krzywicki</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Acamaeel" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://stackoverflow.com/users/7487335/josh-correia"><img src="https://avatars.githubusercontent.com/u/86431308?v=4?s=100" width="100px;" alt="joshmcorreia"/><br /><sub><b>joshmcorreia</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=joshmcorreia" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Mrton0121"><img src="https://avatars.githubusercontent.com/u/60232434?v=4?s=100" width="100px;" alt="Mrton0121"/><br /><sub><b>Mrton0121</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Mrton0121" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://dagi3d.net"><img src="https://avatars.githubusercontent.com/u/11283?v=4?s=100" width="100px;" alt="dagi3d"/><br /><sub><b>dagi3d</b></sub></a><br /><a href="#financial-dagi3d" title="Financial">💵</a></td>
     </tr>
   </tbody>
   <tfoot>
