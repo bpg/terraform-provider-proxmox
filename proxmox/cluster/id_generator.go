@@ -93,6 +93,8 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 
 	var newID *int
 
+	var errs []error
+
 	id, err := retry.DoWithData(func() (*int, error) {
 		if g.config.RandomIDs {
 			//nolint:gosec
@@ -109,6 +111,8 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 		retry.OnRetry(func(_ uint, err error) {
 			if strings.Contains(err.Error(), "already exists") && newID != nil {
 				newID = ptr.Ptr(*newID + 1)
+			} else {
+				errs = append(errs, err)
 			}
 		}),
 		retry.Context(ctx),
@@ -117,7 +121,8 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 		retry.Delay(200*time.Millisecond),
 	)
 	if err != nil {
-		return -1, fmt.Errorf("unable to retrieve the next available VM identifier: %w", err)
+		errs = append(errs, err)
+		return -1, fmt.Errorf("unable to retrieve the next available VM identifier: %w", errors.Join(errs...))
 	}
 
 	if !g.config.RandomIDs {
