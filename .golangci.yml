@@ -20,8 +20,13 @@ issues:
         - gocognit
         - gosec
         - lll
+    - path: .*/types/.+\.go
+      linters:
+        # types have both pointer and value receivers due to JSON marshalling
+        - recvcheck
     - path: _types\.go
       linters:
+        - recvcheck
         - lll
     - path: fwprovider/.*_test\.go
       linters:
@@ -56,7 +61,6 @@ linters:
   enable-all: true
   disable:
     # deprecated
-    - execinquery
     - exportloopref
     - gocyclo
     - rowserrcheck
@@ -72,7 +76,6 @@ linters:
     - exhaustruct
     - gci
     - err113
-    - gomnd
     - ireturn
     - maintidx
     - mnd
