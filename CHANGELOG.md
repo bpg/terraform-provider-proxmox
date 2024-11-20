@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.67.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.3...v0.67.0) (2024-11-20)
+
+
+### Features
+
+* **provider:** better error logging when provider can't generate a VM/Container ID ([#1645](https://github.com/bpg/terraform-provider-proxmox/issues/1645)) ([071cad4](https://github.com/bpg/terraform-provider-proxmox/commit/071cad4df2573d07d2c7cb4216cb2b33a0c98242))
+* **vm:** add CPU type support for EPYC-v4 ([#1611](https://github.com/bpg/terraform-provider-proxmox/issues/1611)) ([8b51e99](https://github.com/bpg/terraform-provider-proxmox/commit/8b51e9991efefc404eb9fb7f0d1bc9fd1c1ce010))
+
+
+### Bug Fixes
+
+* **cluster:** `insecure` `migration_type` validation ([#1607](https://github.com/bpg/terraform-provider-proxmox/issues/1607)) ([0ba36e4](https://github.com/bpg/terraform-provider-proxmox/commit/0ba36e48da8e07ad95b776fc8a9e0fe65430bd83))
+
+
+### Miscellaneous
+
+* **ci:** remove semgrep workflow ([#1644](https://github.com/bpg/terraform-provider-proxmox/issues/1644)) ([e1e55f9](https://github.com/bpg/terraform-provider-proxmox/commit/e1e55f9b3b6608d43b27833afb8b8567bc1e702f))
+* **ci:** update crazy-max/ghaction-import-gpg action (v6.1.0 → v6.2.0) ([#1613](https://github.com/bpg/terraform-provider-proxmox/issues/1613)) ([21dd8ee](https://github.com/bpg/terraform-provider-proxmox/commit/21dd8ee708ba7010cab389de1cb3530e7dc22d75))
+* **ci:** update goreleaser/goreleaser-action action (v6.0.0 → v6.1.0) ([#1627](https://github.com/bpg/terraform-provider-proxmox/issues/1627)) ([93c391c](https://github.com/bpg/terraform-provider-proxmox/commit/93c391cf0d7d4b40e91a31a53086b13e9b0ab644))
+* **ci:** update jetbrains/qodana-action action (v2024.2.5 → v2024.2.6) ([#1612](https://github.com/bpg/terraform-provider-proxmox/issues/1612)) ([46ab49c](https://github.com/bpg/terraform-provider-proxmox/commit/46ab49ccaeeebac86c3dc2f0d77be0cacfff2746))
+* **ci:** update lycheeverse/lychee-action action (v2.0.2 → v2.1.0) ([#1628](https://github.com/bpg/terraform-provider-proxmox/issues/1628)) ([32d6b7d](https://github.com/bpg/terraform-provider-proxmox/commit/32d6b7d80f10f71e707e05df0b65f82c02801d40))
+* **config:** migrate config .github/renovate.json5 ([2e27b4a](https://github.com/bpg/terraform-provider-proxmox/commit/2e27b4ad0db143bcedcbc618794176ba40538d77))
+* **config:** migrate renovate config ([#1632](https://github.com/bpg/terraform-provider-proxmox/issues/1632)) ([2e27b4a](https://github.com/bpg/terraform-provider-proxmox/commit/2e27b4ad0db143bcedcbc618794176ba40538d77))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1614](https://github.com/bpg/terraform-provider-proxmox/issues/1614)) ([be6b660](https://github.com/bpg/terraform-provider-proxmox/commit/be6b660495f68b5af293eeb491b9abd87408f9d5))
+* **deps:** update golang.org/x/exp digest (f66d83c → 2d47ceb) ([#1626](https://github.com/bpg/terraform-provider-proxmox/issues/1626)) ([eeefa36](https://github.com/bpg/terraform-provider-proxmox/commit/eeefa36680fcb6250f238df457856d3f35c044a8))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.0.4 → v7.1.2) ([#1606](https://github.com/bpg/terraform-provider-proxmox/issues/1606)) ([c0048db](https://github.com/bpg/terraform-provider-proxmox/commit/c0048db58a2bd0f2b0e13edbeb9f8186fa51e642))
+* **deps:** update module github.com/golangci/golangci-lint (v1.61.0 → v1.62.0) in /tools ([#1634](https://github.com/bpg/terraform-provider-proxmox/issues/1634)) ([e67a8f7](https://github.com/bpg/terraform-provider-proxmox/commit/e67a8f783d261991ceb1c105e542ee725578ccb8))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.19.4 → v0.20.0) in /tools ([#1629](https://github.com/bpg/terraform-provider-proxmox/issues/1629)) ([5aaf61e](https://github.com/bpg/terraform-provider-proxmox/commit/5aaf61ed9a932e68c0f7c07fb41fea12cbbd095e))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.34.0 → v2.35.0) ([#1615](https://github.com/bpg/terraform-provider-proxmox/issues/1615)) ([fea548c](https://github.com/bpg/terraform-provider-proxmox/commit/fea548c1e974458cea1e9734053eb1bc1e55def9))
+* **deps:** update module github.com/hashicorp/terraform-plugin-testing (v1.10.0 → v1.11.0) ([#1643](https://github.com/bpg/terraform-provider-proxmox/issues/1643)) ([8c17e81](https://github.com/bpg/terraform-provider-proxmox/commit/8c17e81476b71e4785a68656283fbe6de5de87c4))
+* **docs:** clarify use of `dump` content type in`proxmox_virtual_environment_file` resource ([#1635](https://github.com/bpg/terraform-provider-proxmox/issues/1635)) ([ca22717](https://github.com/bpg/terraform-provider-proxmox/commit/ca227179a60f9d593792fe09dd35e95c84c4709e))
+
 ## [0.66.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.2...v0.66.3) (2024-10-25)
 
 
