@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.67.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.67.0...v0.67.1) (2024-11-21)
+
+
+### Bug Fixes
+
+* **provider:** "context deadline exceeded" error when retrieving the next available VM identifier ([#1647](https://github.com/bpg/terraform-provider-proxmox/issues/1647)) ([2385975](https://github.com/bpg/terraform-provider-proxmox/commit/23859750b105b7793a15116bb6e63f4dcf94187c))
+
 ## [0.67.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.66.3...v0.67.0) (2024-11-20)
 
 
