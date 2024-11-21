@@ -98,7 +98,7 @@ func TestIDGenerator_Sequence(t *testing.T) {
 			defer wg.Done()
 
 			id, err := gen.NextID(ctx)
-			if err != nil {
+			if err == nil {
 				err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: id})
 				ids[i] = id
 			}
