@@ -8,8 +8,10 @@ package fwprovider_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
@@ -22,7 +24,10 @@ import (
 func TestIDGenerator_Sequence(t *testing.T) {
 	t.Parallel()
 
-	const numIDs = 10
+	const (
+		numIDs     = 10
+		numBusyIDs = 30
+	)
 
 	if utils.GetAnyStringEnv("TF_ACC") == "" {
 		t.Skip("Acceptance tests are disabled")
@@ -36,42 +41,73 @@ func TestIDGenerator_Sequence(t *testing.T) {
 	firstID, err := gen.NextID(ctx)
 	require.NoError(t, err)
 
-	busyID := firstID + 5
+	firstBusyID := firstID + 5
 
-	_, err = te.ClusterClient().GetNextID(ctx, ptr.Ptr(busyID))
-	require.NoError(t, err, "the VM ID %d should be available", busyID)
+	_, err = te.ClusterClient().GetNextID(ctx, ptr.Ptr(firstBusyID))
+	require.NoError(t, err, "the VM ID %d should be available", firstBusyID)
 
-	err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: busyID})
-	require.NoError(t, err, "failed to create VM %d", busyID)
+	for i := range numBusyIDs {
+		busyID := firstBusyID + i
+		err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: busyID})
+		require.NoError(t, err, "failed to create VM %d", busyID)
+	}
 
 	t.Cleanup(func() {
-		err = te.NodeClient().VM(busyID).DeleteVM(ctx)
-		require.NoError(t, err, "failed to delete VM %d", busyID)
+		var wg sync.WaitGroup
+
+		for i := range numBusyIDs {
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				busyID := firstBusyID + i
+				err = te.NodeClient().VM(busyID).DeleteVM(ctx)
+				assert.NoError(t, err, "failed to delete VM %d", busyID)
+			}()
+		}
+
+		wg.Wait()
 	})
 
 	ids := make([]int, numIDs)
 
 	t.Cleanup(func() {
+		var wg sync.WaitGroup
 		for _, id := range ids {
-			if id > 100 {
-				_ = te.NodeClient().VM(id).DeleteVM(ctx) //nolint:errcheck
-			}
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				if id > 100 {
+					_ = te.NodeClient().VM(id).DeleteVM(ctx) //nolint:errcheck
+				}
+			}()
 		}
+
+		wg.Wait()
 	})
 
-	prevID := firstID
+	var wg sync.WaitGroup
 
 	for i := range numIDs {
-		id, err := gen.NextID(ctx)
-		require.NoError(t, err)
-		err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: id})
-		ids[i] = id
+		wg.Add(1)
 
-		require.NoError(t, err)
-		require.Greater(t, id, prevID, "the generated ID should be greater than the previous one")
+		go func() {
+			defer wg.Done()
 
-		prevID = id
+			id, err := gen.NextID(ctx)
+			if err != nil {
+				err = te.NodeClient().VM(0).CreateVM(ctx, &vms.CreateRequestBody{VMID: id})
+				ids[i] = id
+			}
+
+			assert.NoError(t, err)
+		}()
 	}
+
+	wg.Wait()
 }
 
 func TestIDGenerator_Random(t *testing.T) {

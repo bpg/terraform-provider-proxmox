@@ -110,10 +110,10 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 	},
 		retry.OnRetry(func(_ uint, err error) {
 			if strings.Contains(err.Error(), "already exists") && newID != nil {
-				newID = ptr.Ptr(*newID + 1)
-			} else {
-				errs = append(errs, err)
+				newID, err = g.client.GetNextID(ctx, nil)
 			}
+
+			errs = append(errs, err)
 		}),
 		retry.Context(ctx),
 		retry.UntilSucceeded(),
