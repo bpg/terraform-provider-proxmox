@@ -35,19 +35,25 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 		retries = 1
 	}
 
-	err = retry.Do(func() error {
-		err = c.DoRequest(ctx, http.MethodPost, c.ExpandPath("clone"), d, resBody)
-		if err != nil {
-			return fmt.Errorf("error cloning VM: %w", err)
-		}
+	err = retry.Do(
+		func() error {
+			err = c.DoRequest(ctx, http.MethodPost, c.ExpandPath("clone"), d, resBody)
+			if err != nil {
+				return fmt.Errorf("error cloning VM: %w", err)
+			}
 
-		if resBody.Data == nil {
-			return api.ErrNoDataObjectInResponse
-		}
+			if resBody.Data == nil {
+				return api.ErrNoDataObjectInResponse
+			}
 
-		// ignoring warnings as per https://www.mail-archive.com/pve-devel@lists.proxmox.com/msg17724.html
-		return c.Tasks().WaitForTask(ctx, *resBody.Data, tasks.WithIgnoreWarnings())
-	}, retry.Attempts(uint(retries)), retry.Delay(10*time.Second))
+			// ignoring warnings as per https://www.mail-archive.com/pve-devel@lists.proxmox.com/msg17724.html
+			return c.Tasks().WaitForTask(ctx, *resBody.Data, tasks.WithIgnoreWarnings())
+		},
+		retry.Context(ctx),
+		retry.Attempts(uint(retries)),
+		retry.Delay(10*time.Second),
+		retry.LastErrorOnly(false),
+	)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM clone: %w", err)
 	}
@@ -79,6 +85,9 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 			return c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
 		},
 		retry.Context(ctx),
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(false),
 		retry.OnRetry(func(n uint, err error) {
 			tflog.Warn(ctx, "retrying VM creation", map[string]interface{}{
 				"attempt": n,
@@ -92,8 +101,6 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 				})
 			}
 		}),
-		retry.LastErrorOnly(false),
-		retry.Attempts(3),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating VM: %w", err)
@@ -131,10 +138,12 @@ func (c *Client) DeleteVMAsync(ctx context.Context) (*string, error) {
 			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath("?destroy-unreferenced-disks=1&purge=1"), nil, resBody)
 		},
 		retry.Context(ctx),
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
 		retry.RetryIf(func(err error) bool {
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
-		retry.LastErrorOnly(true),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error deleting VM: %w", err)
@@ -460,7 +469,18 @@ func (c *Client) StopVMAsync(ctx context.Context) (*string, error) {
 
 // UpdateVM updates a virtual machine.
 func (c *Client) UpdateVM(ctx context.Context, d *UpdateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
+	err := retry.Do(
+		func() error {
+			return c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
+		},
+		retry.Context(ctx),
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "got timeout")
+		}),
+	)
 	if err != nil {
 		return fmt.Errorf("error updating VM: %w", err)
 	}
@@ -595,12 +615,12 @@ func (c *Client) WaitForVMConfigUnlock(ctx context.Context, ignoreErrorResponse 
 			return nil
 		},
 		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
-			return errors.Is(err, stillLocked) || ignoreErrorResponse
-		}),
 		retry.UntilSucceeded(),
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, stillLocked) || ignoreErrorResponse
+		}),
 	)
 
 	if errors.Is(err, context.DeadlineExceeded) {
@@ -634,12 +654,12 @@ func (c *Client) WaitForVMStatus(ctx context.Context, status string) error {
 			return nil
 		},
 		retry.Context(ctx),
-		retry.RetryIf(func(err error) bool {
-			return errors.Is(err, unexpectedStatus)
-		}),
 		retry.UntilSucceeded(),
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, unexpectedStatus)
+		}),
 	)
 
 	if errors.Is(err, context.DeadlineExceeded) {
