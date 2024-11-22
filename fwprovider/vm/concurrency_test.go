@@ -56,7 +56,7 @@ func TestBatchCreate(t *testing.T) {
 			go func() {
 				defer wg.Done()
 
-				if id > 100 {
+				if id > 0 {
 					_ = te.NodeClient().VM(id).DeleteVM(ctx) //nolint:errcheck
 				}
 			}()
