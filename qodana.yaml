@@ -9,3 +9,4 @@ exclude:
     paths:
       - CONTRIBUTORS.md
       - README.md
+  - name: GoMixedReceiverTypes
