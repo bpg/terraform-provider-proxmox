@@ -268,7 +268,7 @@ func (r *downloadFileResource) Schema(
 			},
 			"decompression_algorithm": schema.StringAttribute{
 				Description: "Decompress the downloaded file using the " +
-					"specified compression algorithm. Must be one of `gz` | `lzo` | `zst`.",
+					"specified compression algorithm. Must be one of `gz` | `lzo` | `zst` | `bz2`.",
 				Optional: true,
 				Default:  nil,
 				Validators: []validator.String{
@@ -276,6 +276,7 @@ func (r *downloadFileResource) Schema(
 						"gz",
 						"lzo",
 						"zst",
+						"bz2",
 					}...),
 				},
 			},
