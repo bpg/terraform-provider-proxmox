@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.68.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.67.1...v0.68.0) (2024-11-26)
+
+
+### Features
+
+* **node:** add support for node config API ([#1482](https://github.com/bpg/terraform-provider-proxmox/issues/1482)) ([3e025fd](https://github.com/bpg/terraform-provider-proxmox/commit/3e025fd6c82d7b8d2bc141ce6c029f11b6da9ba3))
+* **vm:** add bz2 (bzip2) as a valid download file compression algorithm ([#1655](https://github.com/bpg/terraform-provider-proxmox/issues/1655)) ([e29dc53](https://github.com/bpg/terraform-provider-proxmox/commit/e29dc5364fa3d8de65010ffa321e3b44e79bd818))
+
+
+### Bug Fixes
+
+* **vm:** add retries to VM `update` operation ([#1650](https://github.com/bpg/terraform-provider-proxmox/issues/1650)) ([d92710d](https://github.com/bpg/terraform-provider-proxmox/commit/d92710d0b5c54a816fc06785553c13af8a13131c))
+
+
+### Miscellaneous
+
+* **ci:** remove mergify config ([#1652](https://github.com/bpg/terraform-provider-proxmox/issues/1652)) ([45eede7](https://github.com/bpg/terraform-provider-proxmox/commit/45eede724b70fedea6d4dd32f66409324e36930d))
+* **ci:** update qodana config ([#1653](https://github.com/bpg/terraform-provider-proxmox/issues/1653)) ([6dad660](https://github.com/bpg/terraform-provider-proxmox/commit/6dad6601370c15f3a2c5c39ac6acd28fd7a2be80))
+* **deps:** update module github.com/golangci/golangci-lint (v1.62.0 → v1.62.2) in /tools ([#1657](https://github.com/bpg/terraform-provider-proxmox/issues/1657)) ([826b406](https://github.com/bpg/terraform-provider-proxmox/commit/826b406d89160c44e66ed0cbddd874388bab51d3))
+* **deps:** update module github.com/stretchr/testify (v1.9.0 → v1.10.0) ([#1654](https://github.com/bpg/terraform-provider-proxmox/issues/1654)) ([7967299](https://github.com/bpg/terraform-provider-proxmox/commit/796729935ce8ff2ef97a2562f464113a446e6946))
+
 ## [0.67.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.67.0...v0.67.1) (2024-11-21)
 
 
