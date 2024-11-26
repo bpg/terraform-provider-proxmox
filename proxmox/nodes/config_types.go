@@ -32,6 +32,8 @@ type ConfigGetResponseData struct {
 	ACMEDomain3 *ACMEDomainConfig `json:"acmedomain3,omitempty"`
 	// ACME domain and validation plugin
 	ACMEDomain4 *ACMEDomainConfig `json:"acmedomain4,omitempty"`
+	// ACME domain and validation plugin
+	ACMEDomain5 *ACMEDomainConfig `json:"acmedomain5,omitempty"`
 	// Description for the Node. Shown in the web-interface node notes panel. This is saved as comment inside the configuration file.
 	Description *string `json:"description,omitempty"`
 	// Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.
@@ -143,15 +145,17 @@ func (a *ACMEDomainConfig) UnmarshalJSON(b []byte) error {
 		kv := strings.Split(part, "=")
 		if len(kv) == 1 {
 			config.Domain = kv[0]
-		}
-
-		switch kv[0] {
-		case "alias":
-			config.Alias = &kv[1]
-		case "plugin":
-			config.Plugin = &kv[1]
-		default:
-			return fmt.Errorf("unknown key: %s", kv[0])
+		} else {
+			switch kv[0] {
+			case "domain":
+				config.Domain = kv[1]
+			case "alias":
+				config.Alias = &kv[1]
+			case "plugin":
+				config.Plugin = &kv[1]
+			default:
+				return fmt.Errorf("unknown key: %s", kv[0])
+			}
 		}
 	}
 
@@ -200,15 +204,17 @@ func (a *WakeOnLandConfig) UnmarshalJSON(b []byte) error {
 		kv := strings.Split(part, "=")
 		if len(kv) == 1 {
 			config.MACAddress = kv[0]
-		}
-
-		switch kv[0] {
-		case "bind-interface":
-			config.BindInterface = &kv[1]
-		case "broadcast-address":
-			config.BroadcastAddress = &kv[1]
-		default:
-			return fmt.Errorf("unknown key: %s", kv[0])
+		} else {
+			switch kv[0] {
+			case "mac":
+				config.MACAddress = kv[1]
+			case "bind-interface":
+				config.BindInterface = &kv[1]
+			case "broadcast-address":
+				config.BroadcastAddress = &kv[1]
+			default:
+				return fmt.Errorf("unknown key: %s", kv[0])
+			}
 		}
 	}
 
