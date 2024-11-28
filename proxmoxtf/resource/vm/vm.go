@@ -1093,9 +1093,10 @@ func VM() *schema.Resource {
 			Default:     dvName,
 		},
 		mkNodeName: {
-			Type:        schema.TypeString,
-			Description: "The node name",
-			Required:    true,
+			Type:         schema.TypeString,
+			Description:  "The node name",
+			Required:     true,
+			ValidateFunc: validation.StringIsNotEmpty,
 		},
 		mkNUMA: {
 			Type:        schema.TypeList,
