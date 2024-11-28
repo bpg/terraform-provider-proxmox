@@ -204,9 +204,9 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}`),
 				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
 					"disk.0.interface":         "virtio0",
-					"disk.0.path_in_datastore": `vm-\d+-disk-1`,
+					"disk.0.path_in_datastore": `base-\d+-disk-1`,
 					"disk.1.interface":         "scsi0",
-					"disk.1.path_in_datastore": `vm-\d+-disk-0`,
+					"disk.1.path_in_datastore": `base-\d+-disk-0`,
 				}),
 			},
 			{
@@ -431,7 +431,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.file_format":       "raw",
 					"disk.0.interface":         "scsi0",
 					"disk.0.iothread":          "true",
-					"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
+					"disk.0.path_in_datastore": `base-\d+-disk-\d+`,
 					"disk.0.size":              "8",
 					"disk.0.ssd":               "true",
 				}),

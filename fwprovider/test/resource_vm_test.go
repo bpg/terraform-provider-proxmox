@@ -9,6 +9,7 @@
 package test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -69,6 +70,16 @@ func TestAccResourceVM(t *testing.T) {
 				}),
 			),
 		}}},
+		{
+			"empty node_name", []resource.TestStep{{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm4" {
+					node_name = ""
+					started   = false	
+				}`),
+				ExpectError: regexp.MustCompile("to not be an empty string"),
+			}},
+		},
 		{
 			"protection", []resource.TestStep{{
 				Config: te.RenderConfig(`

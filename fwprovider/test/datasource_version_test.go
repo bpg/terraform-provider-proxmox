@@ -31,10 +31,10 @@ func TestAccDatasourceVersion(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "release", "8.2"),
 					resource.TestCheckResourceAttrSet(datasourceName, "repository_id"),
 					resource.TestCheckResourceAttrWith(datasourceName, "version", func(value string) error {
-						if strings.HasPrefix(value, "8.2") {
+						if strings.HasPrefix(value, "8.3") {
 							return nil
 						}
-						return fmt.Errorf("version %s does not start with 8.2", value)
+						return fmt.Errorf("version %s does not start with 8.3", value)
 					}),
 					resource.TestCheckResourceAttrSet(datasourceName, "id"),
 				),
