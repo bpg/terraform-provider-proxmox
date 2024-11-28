@@ -73,11 +73,11 @@ func TestAccResourceVM(t *testing.T) {
 		{
 			"empty node_name", []resource.TestStep{{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm4" {
+				resource "proxmox_virtual_environment_vm" "test_empty_node_name" {
 					node_name = ""
 					started   = false	
 				}`),
-				ExpectError: regexp.MustCompile("to not be an empty string"),
+				ExpectError: regexp.MustCompile(`expected "node_name" to not be an empty string, got `),
 			}},
 		},
 		{
