@@ -1,4 +1,4 @@
-# Terraform Provider for Proxmox
+# Terraform / OpenTofu Provider for Proxmox VE
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/bpg/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/bpg/terraform-provider-proxmox)
 [![GoDoc](https://godoc.org/github.com/bpg/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/bpg/terraform-provider-proxmox)
@@ -9,13 +9,13 @@
 [![Conventional Commits](https://img.shields.io/badge/conventional%20commits-v1.0.0-ff69b4)](https://www.conventionalcommits.org/en/v1.0.0/)
 [![Wakatime](https://wakatime.com/badge/github/bpg/terraform-provider-proxmox.svg)](https://wakatime.com/@a51a1a51-85c3-497b-b88a-3b310a709909/projects/vdtgmpvjom)
 
-A Terraform / OpenTofu Provider that adds support for Proxmox solutions.
+A Terraform / OpenTofu Provider that adds support for Proxmox Virtual Environment.
 
 This repository is a fork of <https://github.com/danitso/terraform-provider-proxmox> which is no longer maintained.
 
 ## Compatibility Promise
 
-This provider is compatible with the latest version of Proxmox VE (currently 8.2).
+This provider is compatible with the latest version of Proxmox VE (currently **8.3**).
 While it may work with older 7.x versions, it is not guaranteed to do so.
 
 While the provider is on version 0.x, it is not guaranteed to be backward compatible with all previous minor versions.
@@ -23,7 +23,7 @@ However, we will try to maintain backward compatibility between provider version
 
 ## Requirements
 
-- [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x
+- [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x (not all features are available in 7.x, some features require latest 8.x)
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
 - [Terraform](https://www.terraform.io/downloads.html) 1.5.x+ or [OpenTofu](https://opentofu.org) 1.6.x
 - [Go](https://golang.org/doc/install) 1.23 (to build the provider plugin)
