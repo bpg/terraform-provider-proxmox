@@ -7,7 +7,6 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   node_name = "pve"
 
   initialization {
-
     ip_config {
       ipv4 {
         address = "192.168.3.233/24"

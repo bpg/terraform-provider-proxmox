@@ -2,7 +2,7 @@ data "local_file" "ssh_public_key" {
   filename = "./id_rsa.pub"
 }
 
-resource "proxmox_virtual_environment_file" "cloud_config" {
+resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = "pve"
@@ -10,6 +10,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   source_raw {
     data = <<-EOF
     #cloud-config
+    hostname: test-ubuntu
     users:
       - default
       - name: ubuntu
@@ -28,6 +29,6 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
         - echo "done" > /tmp/cloud-config.done
     EOF
 
-    file_name = "cloud-config.yaml"
+    file_name = "user-data-cloud-config.yaml"
   }
 }
