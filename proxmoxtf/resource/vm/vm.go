@@ -263,7 +263,7 @@ const (
 	mkTemplate             = "template"
 	mkTimeoutClone         = "timeout_clone"
 	mkTimeoutCreate        = "timeout_create"
-	mkTimeoutMigrate       = "timeout_migrate" // this is essentially an "timeout_update", needs to be refactored
+	mkTimeoutMigrate       = "timeout_migrate" // this is essentially a "timeout_update", needs to be refactored
 	mkTimeoutReboot        = "timeout_reboot"
 	mkTimeoutShutdownVM    = "timeout_shutdown_vm"
 	mkTimeoutStartVM       = "timeout_start_vm"
@@ -1566,6 +1566,9 @@ func VM() *schema.Resource {
 
 func vmCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	clone := d.Get(mkClone).([]interface{})
+
+	// reset the default timeout for the create operation
+	ctx = context.WithoutCancel(ctx)
 
 	if len(clone) > 0 {
 		return vmCreateClone(ctx, d, m)
