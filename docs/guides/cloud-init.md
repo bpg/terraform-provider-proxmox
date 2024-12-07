@@ -8,9 +8,9 @@ description: |-
 
 # Configure a VM with Cloud-Init
 
-## Native Proxmox Cloud-Init support
+## Native Proxmox Cloud-Init Support
 
-Proxmox supports Cloud-Init natively, so you can use the `initialization` block to configure your VM:
+Proxmox supports cloud-init natively, so you can use the `initialization` block to configure your VM:
 
 ```terraform
 data "local_file" "ssh_public_key" {
@@ -22,7 +22,6 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   node_name = "pve"
 
   initialization {
-
     ip_config {
       ipv4 {
         address = "192.168.3.233/24"
@@ -61,18 +60,20 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 
 Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
 
-## Custom Cloud-Init configuration
+## Custom Cloud-Init Configuration
 
-Because of several limitations of the native Proxmox cloud-init support, you may want to use a custom Cloud-Init configuration instead. This would allow you to adjust the VM configuration to your needs, and also install the `qemu-guest-agent` and additional packages.
+Due to several limitations of the native Proxmox cloud-init support, you may want to use a custom Cloud-Init configuration instead. This allows you to adjust the VM configuration to your needs and install the `qemu-guest-agent` and additional packages.
 
-In order to use a custom cloud-init configuration, you need to create a `cloud-config` snippet file and pass it to the VM as a `user_data_file_id` parameter. You can use the `proxmox_virtual_environment_file` resource to create the file. Make sure the "Snippets" content type is enabled on the target datastore in Proxmox before applying the configuration below.
+To use a custom cloud-init configuration, create a cloud-config snippet file and pass it to the VM as a `user_data_file_id` parameter. Use the `proxmox_virtual_environment_file` resource to create the file. Ensure the "Snippets" content type is enabled on the target datastore in Proxmox before applying the configuration below.
+
+Note that you need to explicitly set the `hostname` in the provided cloud-init configuration, as the custom user data cloud-init config overwrites the config set by Proxmox, as shown in the example below.
 
 ```terraform
 data "local_file" "ssh_public_key" {
   filename = "./id_rsa.pub"
 }
 
-resource "proxmox_virtual_environment_file" "cloud_config" {
+resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = "pve"
@@ -80,6 +81,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
   source_raw {
     data = <<-EOF
     #cloud-config
+    hostname: test-ubuntu
     users:
       - default
       - name: ubuntu
@@ -98,7 +100,7 @@ resource "proxmox_virtual_environment_file" "cloud_config" {
         - echo "done" > /tmp/cloud-config.done
     EOF
 
-    file_name = "cloud-config.yaml"
+    file_name = "user-data-cloud-config.yaml"
   }
 }
 ```
@@ -136,7 +138,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
       }
     }
 
-    user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+    user_data_file_id = proxmox_virtual_environment_file.user_data_cloud_config.id
   }
 
   network_device {
@@ -155,5 +157,38 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 
 output "vm_ipv4_address" {
   value = proxmox_virtual_environment_vm.ubuntu_vm.ipv4_addresses[1][0]
+}
+```
+
+If you wish to keep the user data cloud-init config generic, for example, when deploying multiple VMs for a Kubernetes cluster, you can use a separate snippet with the metadata cloud-init config to set the hostname. Note that it uses the `local-hostname` configuration parameter. See more details in the [cloud-init documentation](https://docs.cloud-init.io/en/latest/reference/yaml_examples/update_hostname.html).
+
+```terraform
+resource "proxmox_virtual_environment_file" "metadata_cloud_config" {
+  content_type = "snippets"
+  datastore_id = "local"
+  node_name    = "pve"
+
+  source_raw {
+    data = <<-EOF
+    #cloud-config
+    local-hostname: test-ubuntu
+    EOF
+
+    file_name = "metadata-cloud-config.yaml"
+  }
+}
+```
+
+```terraform
+resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
+  # ...
+
+  initialization {
+    # ...
+    user_data_file_id = proxmox_virtual_environment_file.user_data_cloud_config.id
+    metadata_file_id  = proxmox_virtual_environment_file.metadata_cloud_config.id
+  }
+
+  # ...
 }
 ```
