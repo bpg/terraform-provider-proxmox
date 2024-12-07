@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.68.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.68.0...v0.68.1) (2024-12-07)
+
+
+### Bug Fixes
+
+* **vm:** `timeout_create` / `timeout_clone` does not always apply ([#1671](https://github.com/bpg/terraform-provider-proxmox/issues/1671)) ([a57bd7e](https://github.com/bpg/terraform-provider-proxmox/commit/a57bd7e14cfb9d096eabae9b5a525be708bb658b))
+* **vm:** add validation for `node_name` values ([#1659](https://github.com/bpg/terraform-provider-proxmox/issues/1659)) ([106bcd2](https://github.com/bpg/terraform-provider-proxmox/commit/106bcd2ff9c92edaf0b33c12f209bddfc84a28c8))
+
+
+### Miscellaneous
+
+* **deps:** update github.com/hashicorp/go-cty digest (8598007 → a0325cb) ([#1661](https://github.com/bpg/terraform-provider-proxmox/issues/1661)) ([c865896](https://github.com/bpg/terraform-provider-proxmox/commit/c8658967e8b4fa196ff34315ff6fe4f9a91f3566))
+* **deps:** update golang.org/x/exp digest (2d47ceb → 43b7b7c) ([#1667](https://github.com/bpg/terraform-provider-proxmox/issues/1667)) ([4490fe8](https://github.com/bpg/terraform-provider-proxmox/commit/4490fe8b286c6b19d3b27c50ae079288692a40bd))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.20.0 → v0.20.1) in /tools ([#1662](https://github.com/bpg/terraform-provider-proxmox/issues/1662)) ([3a9764e](https://github.com/bpg/terraform-provider-proxmox/commit/3a9764e85ffb8c8e7d2a71c4ec2f25e52db5fe57))
+* **deps:** update module golang.org/x/crypto (v0.29.0 → v0.30.0) ([#1668](https://github.com/bpg/terraform-provider-proxmox/issues/1668)) ([b97df0b](https://github.com/bpg/terraform-provider-proxmox/commit/b97df0b6361399d6ce3e8c54e87059e360a67579))
+* **deps:** update module golang.org/x/net (v0.31.0 → v0.32.0) ([#1669](https://github.com/bpg/terraform-provider-proxmox/issues/1669)) ([e56c627](https://github.com/bpg/terraform-provider-proxmox/commit/e56c6275eaef0cb7ad2119f2c04a7e298a48b280))
+* **docs:** add examples with VM hostname configuration to cloud-init guide ([#1670](https://github.com/bpg/terraform-provider-proxmox/issues/1670)) ([dc73e0b](https://github.com/bpg/terraform-provider-proxmox/commit/dc73e0ba048bf3762c7816e61af6d859f5ad47f7))
+* **docs:** update README.md to PVE 8.3 ([#1663](https://github.com/bpg/terraform-provider-proxmox/issues/1663)) ([00497f3](https://github.com/bpg/terraform-provider-proxmox/commit/00497f3b3527a3c43ea6b5490b55a81935153de5))
+
 ## [0.68.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.67.1...v0.68.0) (2024-11-26)
 
 
