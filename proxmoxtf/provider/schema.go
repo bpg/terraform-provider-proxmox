@@ -77,11 +77,11 @@ func createSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
 		mkProviderAPIToken: {
-			Type:         schema.TypeString,
-			Optional:     true,
-			Sensitive:    true,
-			Description:  "The API token for the Proxmox VE API.",
-			ValidateFunc: validation.StringIsNotEmpty,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "The API token for the Proxmox VE API.",
+			// note: we allow empty string as a valid value, as it is used to unset the token in tests
 		},
 		mkProviderOTP: {
 			Type:        schema.TypeString,
@@ -91,17 +91,17 @@ func createSchema() map[string]*schema.Schema {
 				"Please use the `api_token` attribute instead.",
 		},
 		mkProviderUsername: {
-			Type:         schema.TypeString,
-			Optional:     true,
-			Description:  "The username for the Proxmox VE API.",
-			ValidateFunc: validation.StringIsNotEmpty,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "The username for the Proxmox VE API.",
+			// note: we allow empty string as a valid value, as it is used to unset the username in tests
 		},
 		mkProviderPassword: {
-			Type:         schema.TypeString,
-			Optional:     true,
-			Sensitive:    true,
-			Description:  "The password for the Proxmox VE API.",
-			ValidateFunc: validation.StringIsNotEmpty,
+			Type:        schema.TypeString,
+			Optional:    true,
+			Sensitive:   true,
+			Description: "The password for the Proxmox VE API.",
+			// note: we allow empty string as a valid value, as it is used to unset the password in tests
 		},
 		mkProviderSSH: {
 			Type:        schema.TypeList,

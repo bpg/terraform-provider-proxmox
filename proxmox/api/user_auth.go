@@ -122,6 +122,12 @@ func (t *userAuthenticator) authenticate(ctx context.Context) (*AuthenticationRe
 }
 
 func (t *userAuthenticator) IsRoot() bool {
+	if t.authData == nil {
+		if _, err := t.authenticate(context.Background()); err != nil {
+			return false
+		}
+	}
+
 	return t.authData != nil && t.authData.Username == rootUsername
 }
 

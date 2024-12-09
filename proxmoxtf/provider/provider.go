@@ -34,7 +34,7 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 	}
 }
 
-func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	var err error
 
 	var diags diag.Diagnostics
@@ -46,6 +46,8 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 	var creds api.Credentials
 
 	var conn *api.Connection
+
+	tflog.Info(ctx, "Configuring the SDK Proxmox provider...")
 
 	// Check environment variables
 	endpoint := utils.GetAnyStringEnv("PROXMOX_VE_ENDPOINT", "PM_VE_ENDPOINT")
@@ -78,7 +80,8 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		csrfPreventionToken = v.(string)
 	}
 
-	if v, ok := d.GetOk(mkProviderAPIToken); ok {
+	//nolint:staticcheck //using GetOkExists to check if the value is set, as it can be an empty string in tests
+	if v, ok := d.GetOkExists(mkProviderAPIToken); ok {
 		apiToken = v.(string)
 	}
 
@@ -86,11 +89,13 @@ func providerConfigure(_ context.Context, d *schema.ResourceData) (interface{}, 
 		otp = v.(string)
 	}
 
-	if v, ok := d.GetOk(mkProviderUsername); ok {
+	///nolint:staticcheck //using GetOkExists to check if the value is set, as it can be an empty string in tests
+	if v, ok := d.GetOkExists(mkProviderUsername); ok {
 		username = v.(string)
 	}
 
-	if v, ok := d.GetOk(mkProviderPassword); ok {
+	//nolint:staticcheck //using GetOkExists to check if the value is set, as it can be an empty string in tests
+	if v, ok := d.GetOkExists(mkProviderPassword); ok {
 		password = v.(string)
 	}
 
