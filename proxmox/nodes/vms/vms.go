@@ -424,7 +424,24 @@ func (c *Client) StartVMAsync(ctx context.Context, timeoutSec int) (*string, err
 	}
 	resBody := &StartResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), reqBody, resBody)
+	// PVE may return a 500 error "got no worker upid - start worker failed", so we retry few times.
+	err := retry.Do(
+		func() error {
+			err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), reqBody, resBody)
+			if err != nil && strings.Contains(err.Error(), "already running") {
+				return nil
+			}
+
+			return err
+		},
+		retry.Context(ctx),
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "got no worker upid")
+		}),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error starting VM: %w", err)
 	}
