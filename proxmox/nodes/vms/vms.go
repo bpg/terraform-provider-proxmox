@@ -94,8 +94,7 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 				"error":   err.Error(),
 			})
 
-			e := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath("?destroy-unreferenced-disks=1&purge=1"), nil, nil)
-			if e != nil {
+			if e := c.DeleteVM(ctx); e != nil {
 				tflog.Warn(ctx, "deleting VM after failed creation", map[string]interface{}{
 					"error": e,
 				})
