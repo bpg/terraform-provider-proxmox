@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package api
 
 import (
@@ -29,11 +35,11 @@ func newTestClient(fn RoundTripFunc) *http.Client {
 
 type dummyAuthenticator struct{}
 
-func (dummyAuthenticator) IsRoot() bool {
+func (dummyAuthenticator) IsRoot(_ context.Context) bool {
 	return false
 }
 
-func (dummyAuthenticator) IsRootTicket() bool {
+func (dummyAuthenticator) IsRootTicket(context.Context) bool {
 	return false
 }
 

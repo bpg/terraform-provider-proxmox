@@ -25,6 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
@@ -1531,6 +1532,10 @@ func VM() *schema.Resource {
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+					if !d.HasChange(mkVMID) {
+						return false
+					}
+
 					newValue := d.Get(mkVMID)
 
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
@@ -1541,6 +1546,10 @@ func VM() *schema.Resource {
 			customdiff.ForceNewIf(
 				mkNodeName,
 				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+					if !d.HasChange(mkNodeName) {
+						return false
+					}
+
 					return !d.Get(mkMigrate).(bool)
 				},
 			),
@@ -1945,9 +1954,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			cpuFlagsConverted[fi] = flag.(string)
 		}
 
-		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if client.API().IsRootTicket() && cpuArchitecture != "" {
-			updateBody.CPUArchitecture = &cpuArchitecture
+		if err := setCPUArchitecture(ctx, cpuArchitecture, client, updateBody); err != nil {
+			return diag.FromErr(err)
 		}
 
 		updateBody.CPUCores = ptr.Ptr(int64(cpuCores))
@@ -2293,6 +2301,25 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	return vmCreateStart(ctx, d, m)
+}
+
+func setCPUArchitecture(
+	ctx context.Context,
+	cpuArchitecture string,
+	client proxmox.Client,
+	updateBody *vms.UpdateRequestBody,
+) error {
+	// Only the root account is allowed to change the CPU architecture.
+	if cpuArchitecture != "" {
+		if client.API().IsRootTicket(ctx) {
+			updateBody.CPUArchitecture = &cpuArchitecture
+		} else {
+			return errors.New("the `cpu.architecture` can only be set by the root account. " +
+				"Please switch to the root account or remove the `cpu.architecture` from the VM configuration")
+		}
+	}
+
+	return nil
 }
 
 func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -2672,9 +2699,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		CustomStorageDevices: diskDeviceObjects,
 	}
 
-	// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-	if client.API().IsRootTicket() && cpuArchitecture != "" {
-		createBody.CPUArchitecture = &cpuArchitecture
+	if err = setCPUArchitecture(ctx, cpuArchitecture, client, createBody); err != nil {
+		return diag.FromErr(err)
 	}
 
 	if cpuHotplugged > 0 {
@@ -3570,12 +3596,7 @@ func vmReadCustom(
 		cpu[mkCPUArchitecture] = *vmConfig.CPUArchitecture
 	} else {
 		// Default value of "arch" is "" according to the API documentation.
-		// However, assume the provider's default value as a workaround when the root account is not being used.
-		if !client.API().IsRootTicket() {
-			cpu[mkCPUArchitecture] = dvCPUArchitecture
-		} else {
-			cpu[mkCPUArchitecture] = ""
-		}
+		cpu[mkCPUArchitecture] = ""
 	}
 
 	if vmConfig.CPUCores != nil {
@@ -4987,9 +5008,8 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cpuUnits := cpuBlock[mkCPUUnits].(int)
 		cpuAffinity := cpuBlock[mkCPUAffinity].(string)
 
-		// Only the root account is allowed to change the CPU architecture, which makes this check necessary.
-		if client.API().IsRootTicket() && cpuArchitecture != "" {
-			updateBody.CPUArchitecture = &cpuArchitecture
+		if err = setCPUArchitecture(ctx, cpuArchitecture, client, updateBody); err != nil {
+			return diag.FromErr(err)
 		}
 
 		updateBody.CPUCores = ptr.Ptr(int64(cpuCores))

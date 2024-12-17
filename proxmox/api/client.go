@@ -48,11 +48,11 @@ type Client interface {
 	ExpandPath(path string) string
 
 	// IsRoot returns true if the client is configured with the root user.
-	IsRoot() bool
+	IsRoot(ctx context.Context) bool
 
 	// IsRootTicket returns true if the authenticator is configured to use the root directly using a login ticket.
 	// (root using token is weaker, cannot change VM arch)
-	IsRootTicket() bool
+	IsRootTicket(ctx context.Context) bool
 
 	// HTTP returns a lower-level HTTP client.
 	HTTP() *http.Client
@@ -313,12 +313,12 @@ func (c *client) ExpandPath(path string) string {
 	return path
 }
 
-func (c *client) IsRoot() bool {
-	return c.auth.IsRoot()
+func (c *client) IsRoot(ctx context.Context) bool {
+	return c.auth.IsRoot(ctx)
 }
 
-func (c *client) IsRootTicket() bool {
-	return c.auth.IsRootTicket()
+func (c *client) IsRootTicket(ctx context.Context) bool {
+	return c.auth.IsRootTicket(ctx)
 }
 
 func (c *client) HTTP() *http.Client {

@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 //go:build acceptance || all
 
 /*
@@ -9,10 +15,13 @@
 package test
 
 import (
+	"math/rand"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 func TestAccResourceVM(t *testing.T) {
@@ -141,6 +150,30 @@ func TestAccResourceVM(t *testing.T) {
 					}),
 				),
 			}},
+		},
+		{
+			"set cpu.architecture as non root is not supported", []resource.TestStep{{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cpu_arch" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						architecture = "x86_64"
+					}
+				}`, WithAPIToken()),
+				ExpectError: regexp.MustCompile(`the CPU architecture can only be set by the root account`),
+			},
+				{
+					Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						architecture = "x86_64"
+					}
+				}`, WithRootUser()),
+					Destroy: false,
+				}},
 		},
 		{
 			"update memory block", []resource.TestStep{{
@@ -504,6 +537,52 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					"network_device.0.disconnected": "true",
 				}),
 			),
+		}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.step,
+			})
+		})
+	}
+}
+
+func TestAccResourceVMClone(t *testing.T) {
+	if utils.GetAnyStringEnv("TF_ACC") == "" {
+		t.Skip("Acceptance tests are disabled")
+	}
+
+	te := InitEnvironment(t)
+	te.AddTemplateVars(map[string]interface{}{
+		"TemplateVMID": 100000 + rand.Intn(99999),
+	})
+
+	tests := []struct {
+		name string
+		step []resource.TestStep
+	}{
+		{"clone cpu.architecture as root", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					vm_id = {{.TemplateVMID}}
+					started   = false
+					cpu {
+						architecture = "x86_64"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`, WithRootUser()),
 		}}},
 	}
 
