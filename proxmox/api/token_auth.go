@@ -26,11 +26,11 @@ func NewTokenAuthenticator(toc TokenCredentials) (Authenticator, error) {
 	}, nil
 }
 
-func (t *tokenAuthenticator) IsRoot() bool {
+func (t *tokenAuthenticator) IsRoot(_ context.Context) bool {
 	return t.username == rootUsername
 }
 
-func (t *tokenAuthenticator) IsRootTicket() bool {
+func (t *tokenAuthenticator) IsRootTicket(_ context.Context) bool {
 	// Logged using a token, therefore not a ticket login
 	return false
 }

@@ -121,12 +121,22 @@ func (t *userAuthenticator) authenticate(ctx context.Context) (*AuthenticationRe
 	return resBody.Data, nil
 }
 
-func (t *userAuthenticator) IsRoot() bool {
+func (t *userAuthenticator) IsRoot(ctx context.Context) bool {
+	if t.authData == nil {
+		if _, err := t.authenticate(ctx); err != nil {
+			tflog.Warn(ctx, "Failed to authenticate while checking root status", map[string]interface{}{
+				"error": err.Error(),
+			})
+
+			return false
+		}
+	}
+
 	return t.authData != nil && t.authData.Username == rootUsername
 }
 
-func (t *userAuthenticator) IsRootTicket() bool {
-	return t.IsRoot()
+func (t *userAuthenticator) IsRootTicket(ctx context.Context) bool {
+	return t.IsRoot(ctx)
 }
 
 // AuthenticateRequest adds authentication data to a new request.

@@ -257,7 +257,7 @@ func (p *proxmoxProvider) Configure(
 	req provider.ConfigureRequest,
 	resp *provider.ConfigureResponse,
 ) {
-	tflog.Info(ctx, "Configuring the Proxmox provider...")
+	tflog.Info(ctx, "Configuring the Framework Proxmox provider...")
 
 	// Retrieve provider data from configuration
 	var cfg proxmoxProviderModel

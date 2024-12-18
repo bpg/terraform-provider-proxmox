@@ -40,12 +40,12 @@ func NewTicketAuthenticator(creds TicketCredentials) (Authenticator, error) {
 	}, nil
 }
 
-func (t *ticketAuthenticator) IsRoot() bool {
+func (t *ticketAuthenticator) IsRoot(_ context.Context) bool {
 	return t.authData != nil && t.authData.Username == rootUsername
 }
 
-func (t *ticketAuthenticator) IsRootTicket() bool {
-	return t.IsRoot()
+func (t *ticketAuthenticator) IsRootTicket(ctx context.Context) bool {
+	return t.IsRoot(ctx)
 }
 
 // AuthenticateRequest adds authentication data to a new request.
