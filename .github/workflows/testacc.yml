@@ -14,9 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         terraform: [ 1.6 ]
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ ubuntu-24.04, windows-latest, macos-latest ]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             node: pve1
             port: 13451
           - os: windows-latest
