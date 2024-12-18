@@ -23,7 +23,7 @@ require (
 	github.com/skeema/knownhosts v1.3.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.31.0
-	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 	golang.org/x/net v0.32.0
 )
 
