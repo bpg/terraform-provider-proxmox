@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.69.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.68.1...v0.69.0) (2024-12-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* **vm:** improve `cpu.architecture` handling ([#1683](https://github.com/bpg/terraform-provider-proxmox/issues/1683))
+
+### Bug Fixes
+
+* **vm:** edge case of deleting incomplete VM if `create` fails and provider retries ([#1684](https://github.com/bpg/terraform-provider-proxmox/issues/1684)) ([bf9e243](https://github.com/bpg/terraform-provider-proxmox/commit/bf9e2436d4e0b3c51fe56be8c839de5a692c2ae1))
+* **vm:** improve `cpu.architecture` handling ([#1683](https://github.com/bpg/terraform-provider-proxmox/issues/1683)) ([be6f220](https://github.com/bpg/terraform-provider-proxmox/commit/be6f2207797dc12bac1a3f964d1628d6ffbdc66c))
+* **vm:** retry `start` if it fails with a transient error ([#1685](https://github.com/bpg/terraform-provider-proxmox/issues/1685)) ([9d2118d](https://github.com/bpg/terraform-provider-proxmox/commit/9d2118d7625f7448c44ecc1d158a608479121ee4))
+
+
+### Miscellaneous
+
+* **ci:** pin image versions in CI workflows ([#1686](https://github.com/bpg/terraform-provider-proxmox/issues/1686)) ([59c9f1e](https://github.com/bpg/terraform-provider-proxmox/commit/59c9f1e6bea7c4c818c1ad706f3f3aca993c8f46))
+* **ci:** update jetbrains/qodana-action action (v2024.2.6 → v2024.3.2) ([#1676](https://github.com/bpg/terraform-provider-proxmox/issues/1676)) ([c6e0d94](https://github.com/bpg/terraform-provider-proxmox/commit/c6e0d94798add00b1ad26725a15bba55b9867365))
+* **ci:** update jetbrains/qodana-action action (v2024.3.2 → v2024.3.3) ([#1687](https://github.com/bpg/terraform-provider-proxmox/issues/1687)) ([943889d](https://github.com/bpg/terraform-provider-proxmox/commit/943889de52d6b706049327662f3806aff470114f))
+* **deps:** update golang.org/x/exp digest (1829a12 → b2144cd) ([#1682](https://github.com/bpg/terraform-provider-proxmox/issues/1682)) ([1069543](https://github.com/bpg/terraform-provider-proxmox/commit/1069543ac5f704e970e50ffa01e4557e0bba0632))
+* **deps:** update golang.org/x/exp digest (43b7b7c → 1829a12) ([#1675](https://github.com/bpg/terraform-provider-proxmox/issues/1675)) ([3ac0c57](https://github.com/bpg/terraform-provider-proxmox/commit/3ac0c57bae98239bd87358308dc742488b4a2ec4))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework-validators (v0.15.0 → v0.16.0) ([#1678](https://github.com/bpg/terraform-provider-proxmox/issues/1678)) ([84fbdce](https://github.com/bpg/terraform-provider-proxmox/commit/84fbdceb248ab63b3eb6e3afe1dcb49640cc2664))
+* **deps:** update module golang.org/x/crypto (v0.30.0 → v0.31.0) [security] ([#1673](https://github.com/bpg/terraform-provider-proxmox/issues/1673)) ([476a6b8](https://github.com/bpg/terraform-provider-proxmox/commit/476a6b8c9baf438838b50878c154b7d9fea7038a))
+
 ## [0.68.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.68.0...v0.68.1) (2024-12-07)
 
 
