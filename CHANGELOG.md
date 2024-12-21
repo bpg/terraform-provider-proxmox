@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.69.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.69.0...v0.69.1) (2024-12-21)
+
+
+### Miscellaneous
+
+* **build:** update devcontainer and CI workflows ([#1691](https://github.com/bpg/terraform-provider-proxmox/issues/1691)) ([5ec64b8](https://github.com/bpg/terraform-provider-proxmox/commit/5ec64b8b1925f5237db8fe0ff9b6f1972ffd67c3))
+* **ci:** update actions/create-github-app-token action (v1.11.0 → v1.11.1) ([#1692](https://github.com/bpg/terraform-provider-proxmox/issues/1692)) ([0f3798b](https://github.com/bpg/terraform-provider-proxmox/commit/0f3798b371944eaa5a75c723128af53fd26cb25f))
+* **ci:** update lycheeverse/lychee-action action (v2.1.0 → v2.2.0) ([#1690](https://github.com/bpg/terraform-provider-proxmox/issues/1690)) ([1afaf6c](https://github.com/bpg/terraform-provider-proxmox/commit/1afaf6cc440586c404ebaff83abe841182024cd3))
+* **deps:** update module golang.org/x/net (v0.32.0 → v0.33.0) [security] ([#1688](https://github.com/bpg/terraform-provider-proxmox/issues/1688)) ([a637884](https://github.com/bpg/terraform-provider-proxmox/commit/a63788450b68cde1be7ff79d52d719f828f3ec85))
+
 ## [0.69.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.68.1...v0.69.0) (2024-12-18)
 
 
