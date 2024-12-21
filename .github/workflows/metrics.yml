@@ -15,7 +15,7 @@ jobs:
       contents: write
     steps:
       - name: Generate Metrics
-        uses: lowlighter/metrics@latest
+        uses: lowlighter/metrics@v3.34
         with:
           template: repository
           filename: metrics.svg
