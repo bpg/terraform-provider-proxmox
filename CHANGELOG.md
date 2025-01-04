@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.69.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.69.0...v0.69.1) (2025-01-04)
+
+
+### Miscellaneous
+
+* **build:** update devcontainer and CI workflows ([#1691](https://github.com/bpg/terraform-provider-proxmox/issues/1691)) ([5ec64b8](https://github.com/bpg/terraform-provider-proxmox/commit/5ec64b8b1925f5237db8fe0ff9b6f1972ffd67c3))
+* **ci:** update actions/create-github-app-token action (v1.11.0 → v1.11.1) ([#1692](https://github.com/bpg/terraform-provider-proxmox/issues/1692)) ([0f3798b](https://github.com/bpg/terraform-provider-proxmox/commit/0f3798b371944eaa5a75c723128af53fd26cb25f))
+* **ci:** update jetbrains/qodana-action action (v2024.3.3 → v2024.3.4) ([#1694](https://github.com/bpg/terraform-provider-proxmox/issues/1694)) ([493cbac](https://github.com/bpg/terraform-provider-proxmox/commit/493cbac0066d5d3884c6c7db9f304e863f41b27d))
+* **ci:** update lycheeverse/lychee-action action (v2.1.0 → v2.2.0) ([#1690](https://github.com/bpg/terraform-provider-proxmox/issues/1690)) ([1afaf6c](https://github.com/bpg/terraform-provider-proxmox/commit/1afaf6cc440586c404ebaff83abe841182024cd3))
+* **deps:** update golang.org/x/exp digest (b2144cd → 7d7fa50) ([#1696](https://github.com/bpg/terraform-provider-proxmox/issues/1696)) ([100e8c7](https://github.com/bpg/terraform-provider-proxmox/commit/100e8c7f8bd9de8bb7c64f71075fade3230db1b2))
+* **deps:** update module github.com/golangci/golangci-lint (v1.62.2 → v1.63.4) in /tools ([#1697](https://github.com/bpg/terraform-provider-proxmox/issues/1697)) ([9257a11](https://github.com/bpg/terraform-provider-proxmox/commit/9257a11336b5cc6d68c837e109ea911e4cdd125d))
+* **deps:** update module golang.org/x/net (v0.32.0 → v0.33.0) [security] ([#1688](https://github.com/bpg/terraform-provider-proxmox/issues/1688)) ([a637884](https://github.com/bpg/terraform-provider-proxmox/commit/a63788450b68cde1be7ff79d52d719f828f3ec85))
+* **docs:** update README.md ([#1698](https://github.com/bpg/terraform-provider-proxmox/issues/1698)) ([b3170c3](https://github.com/bpg/terraform-provider-proxmox/commit/b3170c3751dad52c2466d24da1edeb91564b5454))
+
 ## [0.69.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.68.1...v0.69.0) (2024-12-18)
 
 
