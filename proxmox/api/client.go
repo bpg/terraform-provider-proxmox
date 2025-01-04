@@ -14,8 +14,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"sort"
 	"strings"
 
@@ -23,7 +25,6 @@ import (
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
-	"golang.org/x/exp/maps"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -372,7 +373,7 @@ func GetMinTLSVersion(version string) (uint16, error) {
 		return val, nil
 	}
 
-	valid := maps.Keys(validVersions)
+	valid := slices.Collect(maps.Keys(validVersions))
 	sort.Strings(valid)
 
 	return 0, fmt.Errorf("unsupported minimal TLS version %s, must be one of: %s", version, strings.Join(valid, ", "))
