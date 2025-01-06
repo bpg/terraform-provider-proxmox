@@ -75,6 +75,9 @@ func TestAccResourceContainer(t *testing.T) {
 					size   = "4G"
 					path   = "mnt/local"
 				}
+				device_passthrough {
+					path = "/dev/zero"
+				}
 				description = <<-EOT
 					my
 					description
@@ -198,6 +201,9 @@ func TestAccResourceContainer(t *testing.T) {
 					volume = "local-lvm"
 					size   = "4G"
 					path   = "mnt/local"
+				}
+				device_passthrough {
+					path = "/dev/zero"
 				}
 				initialization {
 					hostname = "test"
