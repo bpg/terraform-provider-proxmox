@@ -2,6 +2,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   name      = "test-ubuntu"
   node_name = "pve"
 
+  # should be true if qemu agent is not installed / enabled on the VM
+  stop_on_destroy = true
+
   initialization {
     user_account {
       # do not use this in production, configure your own ssh key instead!
