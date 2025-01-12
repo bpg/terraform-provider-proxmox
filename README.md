@@ -138,6 +138,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [TJ Zimmerman](https://github.com/zimmertr)
 - [Elias Alvord](https://github.com/elias314)
 - [laktosterror](https://github.com/laktosterror)
+- [Greg Brant](https://github.com/gregbrant2)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
