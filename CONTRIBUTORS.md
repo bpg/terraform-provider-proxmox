@@ -173,6 +173,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Mrton0121"><img src="https://avatars.githubusercontent.com/u/60232434?v=4?s=100" width="100px;" alt="Mrton0121"/><br /><sub><b>Mrton0121</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Mrton0121" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://dagi3d.net"><img src="https://avatars.githubusercontent.com/u/11283?v=4?s=100" width="100px;" alt="dagi3d"/><br /><sub><b>dagi3d</b></sub></a><br /><a href="#financial-dagi3d" title="Financial">💵</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/QlemWasTaken"><img src="https://avatars.githubusercontent.com/u/73081296?v=4?s=100" width="100px;" alt="Qlem"/><br /><sub><b>Qlem</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=QlemWasTaken" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://tarasa24.dev"><img src="https://avatars.githubusercontent.com/u/20138731?v=4?s=100" width="100px;" alt="Petr Gajdosik"/><br /><sub><b>Petr Gajdosik</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Tarasa24" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Tarasa24" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
   <tfoot>
