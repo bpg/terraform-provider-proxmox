@@ -1228,6 +1228,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Tarasa24",
+      "name": "Petr Gajdosik",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20138731?v=4",
+      "profile": "https://tarasa24.dev",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
