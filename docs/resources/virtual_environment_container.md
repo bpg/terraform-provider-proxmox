@@ -170,6 +170,13 @@ output "ubuntu_container_public_key" {
         Can be specified with a unit suffix (e.g. `10G`).
     - `volume` (Required) Volume, device or directory to mount into the
         container.
+- `device_passthrough` - (Optional) Device to pass through to the container (multiple blocks supported).
+    - `deny_write` - (Optional) Deny the container to write to the device (defaults to `false`).
+    - `gid` - (Optional) Group ID to be assigned to the device node.
+    - `mode` - (Optional) Access mode to be set on the device node. Must be a
+        4-digit octal number.
+    - `path` - (Required) Device to pass through to the container (e.g. `/dev/sda`).
+    - `uid` - (Optional) User ID to be assigned to the device node.
 - `network_interface` - (Optional) A network interface (multiple blocks
     supported).
     - `bridge` - (Optional) The name of the network bridge (defaults

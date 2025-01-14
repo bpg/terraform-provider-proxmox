@@ -41,6 +41,7 @@ func TestContainerSchema(t *testing.T) {
 		mkInitialization,
 		mkHookScriptFileID,
 		mkMemory,
+		mkDevicePassthrough,
 		mkMountPoint,
 		mkOperatingSystem,
 		mkPoolID,
@@ -55,23 +56,24 @@ func TestContainerSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, s, map[string]schema.ValueType{
-		mkCPU:              schema.TypeList,
-		mkDescription:      schema.TypeString,
-		mkDisk:             schema.TypeList,
-		mkInitialization:   schema.TypeList,
-		mkHookScriptFileID: schema.TypeString,
-		mkMemory:           schema.TypeList,
-		mkMountPoint:       schema.TypeList,
-		mkOperatingSystem:  schema.TypeList,
-		mkPoolID:           schema.TypeString,
-		mkProtection:       schema.TypeBool,
-		mkStarted:          schema.TypeBool,
-		mkTags:             schema.TypeList,
-		mkTemplate:         schema.TypeBool,
-		mkUnprivileged:     schema.TypeBool,
-		mkStartOnBoot:      schema.TypeBool,
-		mkFeatures:         schema.TypeList,
-		mkVMID:             schema.TypeInt,
+		mkCPU:               schema.TypeList,
+		mkDescription:       schema.TypeString,
+		mkDisk:              schema.TypeList,
+		mkInitialization:    schema.TypeList,
+		mkHookScriptFileID:  schema.TypeString,
+		mkMemory:            schema.TypeList,
+		mkDevicePassthrough: schema.TypeList,
+		mkMountPoint:        schema.TypeList,
+		mkOperatingSystem:   schema.TypeList,
+		mkPoolID:            schema.TypeString,
+		mkProtection:        schema.TypeBool,
+		mkStarted:           schema.TypeBool,
+		mkTags:              schema.TypeList,
+		mkTemplate:          schema.TypeBool,
+		mkUnprivileged:      schema.TypeBool,
+		mkStartOnBoot:       schema.TypeBool,
+		mkFeatures:          schema.TypeList,
+		mkVMID:              schema.TypeInt,
 	})
 
 	cloneSchema := test.AssertNestedSchemaExistence(t, s, mkClone)
@@ -241,6 +243,27 @@ func TestContainerSchema(t *testing.T) {
 	test.AssertValueTypes(t, memorySchema, map[string]schema.ValueType{
 		mkMemoryDedicated: schema.TypeInt,
 		mkMemorySwap:      schema.TypeInt,
+	})
+
+	devicePassthroughSchema := test.AssertNestedSchemaExistence(t, s, mkDevicePassthrough)
+
+	test.AssertRequiredArguments(t, devicePassthroughSchema, []string{
+		mkDevicePassthroughPath,
+	})
+
+	test.AssertOptionalArguments(t, devicePassthroughSchema, []string{
+		mkDevicePassthroughDenyWrite,
+		mkDevicePassthroughGID,
+		mkDevicePassthroughMode,
+		mkDevicePassthroughUID,
+	})
+
+	test.AssertValueTypes(t, devicePassthroughSchema, map[string]schema.ValueType{
+		mkDevicePassthroughDenyWrite: schema.TypeBool,
+		mkDevicePassthroughGID:       schema.TypeInt,
+		mkDevicePassthroughMode:      schema.TypeString,
+		mkDevicePassthroughPath:      schema.TypeString,
+		mkDevicePassthroughUID:       schema.TypeInt,
 	})
 
 	mountPointSchema := test.AssertNestedSchemaExistence(t, s, mkMountPoint)
