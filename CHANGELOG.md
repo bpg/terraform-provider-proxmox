@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.69.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.69.1...v0.69.2) (2025-01-14)
+
+
+### Bug Fixes
+
+* **vm:** do not delete a VM during retry on `create` ([#1711](https://github.com/bpg/terraform-provider-proxmox/issues/1711)) ([c57dc78](https://github.com/bpg/terraform-provider-proxmox/commit/c57dc781192819bbcf942dc0b7c9e9d432d49edc))
+
+
+### Miscellaneous
+
+* **deps:** update module golang.org/x/crypto (v0.31.0 → v0.32.0) ([#1702](https://github.com/bpg/terraform-provider-proxmox/issues/1702)) ([d22f9d3](https://github.com/bpg/terraform-provider-proxmox/commit/d22f9d32f022d42247897803ee8493c4019dc233))
+* **deps:** update module golang.org/x/net (v0.33.0 → v0.34.0) ([#1703](https://github.com/bpg/terraform-provider-proxmox/issues/1703)) ([3808aef](https://github.com/bpg/terraform-provider-proxmox/commit/3808aef33e822b85ae33a97cc87d6020b21abbfe))
+* **docs:** add 'stop_on_destroy' configuration to cloud image examples ([#1705](https://github.com/bpg/terraform-provider-proxmox/issues/1705)) ([ab09b09](https://github.com/bpg/terraform-provider-proxmox/commit/ab09b09fbf36b523e610fcfa0ac36def61a2eaa0))
+* **docs:** update README.md ([#1707](https://github.com/bpg/terraform-provider-proxmox/issues/1707)) ([6f65789](https://github.com/bpg/terraform-provider-proxmox/commit/6f657892c0a29d6677ef6d72690dbfb991a67ad1))
+
 ## [0.69.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.69.0...v0.69.1) (2025-01-04)
 
 
