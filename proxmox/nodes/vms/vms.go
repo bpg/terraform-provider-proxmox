@@ -79,10 +79,19 @@ func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) error {
 // CreateVMAsync creates a virtual machine asynchronously. Returns ID of the started task.
 func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*string, error) {
 	resBody := &CreateResponseBody{}
+	retrying := false
 
+	// retry the request if we get an error that the VM already exists
+	// but only if we're retrying. If this error is returned by the first
+	// request, we'll just return the error (i.e. can't "override" the VM).
 	err := retry.Do(
 		func() error {
-			return c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
+			err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
+			if err != nil && retrying && strings.Contains(err.Error(), "already exists") {
+				return nil
+			}
+
+			return err
 		},
 		retry.Context(ctx),
 		retry.Attempts(3),
@@ -94,11 +103,10 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 				"error":   err.Error(),
 			})
 
-			if e := c.DeleteVM(ctx); e != nil {
-				tflog.Warn(ctx, "deleting VM after failed creation", map[string]interface{}{
-					"error": e,
-				})
-			}
+			retrying = true
+		}),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "got no worker upid")
 		}),
 	)
 	if err != nil {

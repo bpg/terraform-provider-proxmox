@@ -6,12 +6,6 @@
 
 //go:build acceptance || all
 
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
 package test
 
 import (
@@ -161,7 +155,7 @@ func TestAccResourceVM(t *testing.T) {
 						architecture = "x86_64"
 					}
 				}`, WithAPIToken()),
-				ExpectError: regexp.MustCompile(`the CPU architecture can only be set by the root account`),
+				ExpectError: regexp.MustCompile(`can only be set by the root account`),
 			},
 				{
 					Config: te.RenderConfig(`
