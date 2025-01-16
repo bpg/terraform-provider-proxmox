@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -140,6 +141,12 @@ const (
 	mkMountPointShared                  = "shared"
 	mkMountPointSize                    = "size"
 	mkMountPointVolume                  = "volume"
+	mkDevicePassthroughDenyWrite        = "deny_write"
+	mkDevicePassthrough                 = "device_passthrough" // #nosec G101
+	mkDevicePassthroughPath             = "path"
+	mkDevicePassthroughUID              = "uid"
+	mkDevicePassthroughGID              = "gid"
+	mkDevicePassthroughMode             = "mode"
 	mkNetworkInterface                  = "network_interface"
 	mkNetworkInterfaceBridge            = "bridge"
 	mkNetworkInterfaceEnabled           = "enabled"
@@ -680,6 +687,49 @@ func Container() *schema.Resource {
 				MaxItems: 8,
 				MinItems: 0,
 			},
+			mkDevicePassthrough: {
+				Type:        schema.TypeList,
+				Description: "Device to pass through to the container",
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkDevicePassthroughDenyWrite: {
+							Type:        schema.TypeBool,
+							Description: "Deny the container to write to the device",
+							Optional:    true,
+							Default:     false,
+						},
+						mkDevicePassthroughGID: {
+							Type:             schema.TypeInt,
+							Description:      "Group ID to be assigned to the device node",
+							Optional:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+						mkDevicePassthroughMode: {
+							Type:        schema.TypeString,
+							Description: "Access mode to be set on the device node (e.g. 0666)",
+							Optional:    true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
+								regexp.MustCompile(`0[0-7]{3}`), "Octal access mode",
+							)),
+						},
+						mkDevicePassthroughPath: {
+							Type:             schema.TypeString,
+							Description:      "Device to pass through to the container",
+							Required:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
+						},
+						mkDevicePassthroughUID: {
+							Type:             schema.TypeInt,
+							Description:      "Device UID in the container",
+							Optional:         true,
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+					},
+				},
+				MaxItems: 8,
+				MinItems: 0,
+			},
 			mkNetworkInterface: {
 				Type:        schema.TypeList,
 				Description: "The network interfaces",
@@ -1208,6 +1258,36 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.Swap = &memorySwap
 	}
+
+	devicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
+
+	devicePassthroughArray := make(
+		containers.CustomDevicePassthroughArray,
+		len(devicePassthrough),
+	)
+
+	for di, dv := range devicePassthrough {
+		devicePassthroughMap := dv.(map[string]interface{})
+		devicePassthroughObject := containers.CustomDevicePassthrough{}
+
+		denyWrite := types.CustomBool(
+			devicePassthroughMap[mkDevicePassthroughDenyWrite].(bool),
+		)
+		gid := devicePassthroughMap[mkDevicePassthroughGID].(int)
+		mode := devicePassthroughMap[mkDevicePassthroughMode].(string)
+		path := devicePassthroughMap[mkDevicePassthroughPath].(string)
+		uid := devicePassthroughMap[mkDevicePassthroughUID].(int)
+
+		devicePassthroughObject.DenyWrite = &denyWrite
+		devicePassthroughObject.GID = &gid
+		devicePassthroughObject.Mode = &mode
+		devicePassthroughObject.Path = path
+		devicePassthroughObject.UID = &uid
+
+		devicePassthroughArray[di] = devicePassthroughObject
+	}
+
+	updateBody.DevicePassthrough = devicePassthroughArray
 
 	networkInterface := d.Get(mkNetworkInterface).([]interface{})
 
@@ -2232,6 +2312,65 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		initialization[mkInitializationHostname] = ""
 	}
 
+	devicePassthroughArray := []*containers.CustomDevicePassthrough{
+		containerConfig.DevicePassthrough0,
+		containerConfig.DevicePassthrough1,
+		containerConfig.DevicePassthrough2,
+		containerConfig.DevicePassthrough3,
+		containerConfig.DevicePassthrough4,
+		containerConfig.DevicePassthrough5,
+		containerConfig.DevicePassthrough6,
+		containerConfig.DevicePassthrough7,
+	}
+
+	devicePassthroughList := make([]interface{}, 0, len(devicePassthroughArray))
+
+	for _, dp := range devicePassthroughArray {
+		if dp == nil {
+			continue
+		}
+
+		devicePassthrough := map[string]interface{}{}
+
+		if dp.DenyWrite != nil {
+			devicePassthrough[mkDevicePassthroughDenyWrite] = *dp.DenyWrite
+		} else {
+			devicePassthrough[mkDevicePassthroughDenyWrite] = false
+		}
+
+		if dp.GID != nil {
+			devicePassthrough[mkDevicePassthroughGID] = *dp.GID
+		} else {
+			devicePassthrough[mkDevicePassthroughGID] = 0
+		}
+
+		if dp.Mode != nil {
+			devicePassthrough[mkDevicePassthroughMode] = *dp.Mode
+		} else {
+			devicePassthrough[mkDevicePassthroughMode] = ""
+		}
+
+		devicePassthrough[mkDevicePassthroughPath] = dp.Path
+
+		if dp.UID != nil {
+			devicePassthrough[mkDevicePassthroughUID] = *dp.UID
+		} else {
+			devicePassthrough[mkDevicePassthroughUID] = 0
+		}
+
+		devicePassthroughList = append(devicePassthroughList, devicePassthrough)
+	}
+
+	if len(clone) > 0 {
+		if len(devicePassthroughList) > 0 {
+			err := d.Set(mkDevicePassthrough, devicePassthroughList)
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else if len(devicePassthroughList) > 0 {
+		err := d.Set(mkDevicePassthrough, devicePassthroughList)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
 	mountPointArray := []*containers.CustomMountPoint{
 		containerConfig.MountPoint0,
 		containerConfig.MountPoint1,
@@ -2856,6 +2995,40 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 		updateBody.DedicatedMemory = &memoryDedicated
 		updateBody.Swap = &memorySwap
+
+		rebootRequired = true
+	}
+
+	// Prepare the new device passthrough configuration.
+	if d.HasChange(mkDevicePassthrough) {
+		_, newDevicePassthrough := d.GetChange(mkDevicePassthrough)
+
+		devicePassthrough := newDevicePassthrough.([]interface{})
+		devicePassthroughArray := make(
+			containers.CustomDevicePassthroughArray,
+			len(devicePassthrough),
+		)
+
+		for i, dp := range devicePassthrough {
+			devicePassthroughMap := dp.(map[string]interface{})
+			devicePassthroughObject := containers.CustomDevicePassthrough{}
+
+			denyWrite := types.CustomBool(devicePassthroughMap[mkDevicePassthroughDenyWrite].(bool))
+			gid := devicePassthroughMap[mkDevicePassthroughGID].(int)
+			mode := devicePassthroughMap[mkDevicePassthroughMode].(string)
+			path := devicePassthroughMap[mkDevicePassthroughPath].(string)
+			uid := devicePassthroughMap[mkDevicePassthroughUID].(int)
+
+			devicePassthroughObject.DenyWrite = &denyWrite
+			devicePassthroughObject.GID = &gid
+			devicePassthroughObject.Mode = &mode
+			devicePassthroughObject.Path = path
+			devicePassthroughObject.UID = &uid
+
+			devicePassthroughArray[i] = devicePassthroughObject
+		}
+
+		updateBody.DevicePassthrough = devicePassthroughArray
 
 		rebootRequired = true
 	}

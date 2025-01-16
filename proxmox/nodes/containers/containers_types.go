@@ -31,45 +31,46 @@ type CloneRequestBody struct {
 
 // CreateRequestBody contains the data for a user create request.
 type CreateRequestBody struct {
-	BandwidthLimit       *float64                    `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
-	ConsoleEnabled       *types.CustomBool           `json:"console,omitempty"              url:"console,omitempty,int"`
-	ConsoleMode          *string                     `json:"cmode,omitempty"                url:"cmode,omitempty"`
-	CPUArchitecture      *string                     `json:"arch,omitempty"                 url:"arch,omitempty"`
-	CPUCores             *int                        `json:"cores,omitempty"                url:"cores,omitempty"`
-	CPULimit             *int                        `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
-	CPUUnits             *int                        `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
-	DatastoreID          *string                     `json:"storage,omitempty"              url:"storage,omitempty"`
-	DedicatedMemory      *int                        `json:"memory,omitempty"               url:"memory,omitempty"`
-	Delete               []string                    `json:"delete,omitempty"               url:"delete,omitempty"`
-	Description          *string                     `json:"description,omitempty"          url:"description,omitempty"`
-	DNSDomain            *string                     `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
-	DNSServer            *string                     `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
-	Features             *CustomFeatures             `json:"features,omitempty"             url:"features,omitempty"`
-	Force                *types.CustomBool           `json:"force,omitempty"                url:"force,omitempty,int"`
-	HookScript           *string                     `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
-	Hostname             *string                     `json:"hostname,omitempty"             url:"hostname,omitempty"`
-	IgnoreUnpackErrors   *types.CustomBool           `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
-	Lock                 *string                     `json:"lock,omitempty"                 url:"lock,omitempty,int"`
-	MountPoints          CustomMountPointArray       `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
-	NetworkInterfaces    CustomNetworkInterfaceArray `json:"net,omitempty"                  url:"net,omitempty,numbered"`
-	OSTemplateFileVolume *string                     `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
-	OSType               *string                     `json:"ostype,omitempty"               url:"ostype,omitempty"`
-	Password             *string                     `json:"password,omitempty"             url:"password,omitempty"`
-	PoolID               *string                     `json:"pool,omitempty"                 url:"pool,omitempty"`
-	Protection           *types.CustomBool           `json:"protection,omitempty"           url:"protection,omitempty,int"`
-	Restore              *types.CustomBool           `json:"restore,omitempty"              url:"restore,omitempty,int"`
-	RootFS               *CustomRootFS               `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
-	SSHKeys              *CustomSSHKeys              `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
-	Start                *types.CustomBool           `json:"start,omitempty"                url:"start,omitempty,int"`
-	StartOnBoot          *types.CustomBool           `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
-	StartupBehavior      *CustomStartupBehavior      `json:"startup,omitempty"              url:"startup,omitempty"`
-	Swap                 *int                        `json:"swap,omitempty"                 url:"swap,omitempty"`
-	Tags                 *string                     `json:"tags,omitempty"                 url:"tags,omitempty"`
-	Template             *types.CustomBool           `json:"template,omitempty"             url:"template,omitempty,int"`
-	TTY                  *int                        `json:"tty,omitempty"                  url:"tty,omitempty"`
-	Unique               *types.CustomBool           `json:"unique,omitempty"               url:"unique,omitempty,int"`
-	Unprivileged         *types.CustomBool           `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
-	VMID                 *int                        `json:"vmid,omitempty"                 url:"vmid,omitempty"`
+	BandwidthLimit       *float64                     `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
+	ConsoleEnabled       *types.CustomBool            `json:"console,omitempty"              url:"console,omitempty,int"`
+	ConsoleMode          *string                      `json:"cmode,omitempty"                url:"cmode,omitempty"`
+	CPUArchitecture      *string                      `json:"arch,omitempty"                 url:"arch,omitempty"`
+	CPUCores             *int                         `json:"cores,omitempty"                url:"cores,omitempty"`
+	CPULimit             *int                         `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
+	CPUUnits             *int                         `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
+	DatastoreID          *string                      `json:"storage,omitempty"              url:"storage,omitempty"`
+	DedicatedMemory      *int                         `json:"memory,omitempty"               url:"memory,omitempty"`
+	Delete               []string                     `json:"delete,omitempty"               url:"delete,omitempty"`
+	Description          *string                      `json:"description,omitempty"          url:"description,omitempty"`
+	DNSDomain            *string                      `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
+	DNSServer            *string                      `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
+	Features             *CustomFeatures              `json:"features,omitempty"             url:"features,omitempty"`
+	Force                *types.CustomBool            `json:"force,omitempty"                url:"force,omitempty,int"`
+	HookScript           *string                      `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
+	Hostname             *string                      `json:"hostname,omitempty"             url:"hostname,omitempty"`
+	IgnoreUnpackErrors   *types.CustomBool            `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
+	Lock                 *string                      `json:"lock,omitempty"                 url:"lock,omitempty,int"`
+	MountPoints          CustomMountPointArray        `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
+	DevicePassthrough    CustomDevicePassthroughArray `json:"dev,omitempty"                  url:"dev,omitempty,numbered"`
+	NetworkInterfaces    CustomNetworkInterfaceArray  `json:"net,omitempty"                  url:"net,omitempty,numbered"`
+	OSTemplateFileVolume *string                      `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
+	OSType               *string                      `json:"ostype,omitempty"               url:"ostype,omitempty"`
+	Password             *string                      `json:"password,omitempty"             url:"password,omitempty"`
+	PoolID               *string                      `json:"pool,omitempty"                 url:"pool,omitempty"`
+	Protection           *types.CustomBool            `json:"protection,omitempty"           url:"protection,omitempty,int"`
+	Restore              *types.CustomBool            `json:"restore,omitempty"              url:"restore,omitempty,int"`
+	RootFS               *CustomRootFS                `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
+	SSHKeys              *CustomSSHKeys               `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
+	Start                *types.CustomBool            `json:"start,omitempty"                url:"start,omitempty,int"`
+	StartOnBoot          *types.CustomBool            `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
+	StartupBehavior      *CustomStartupBehavior       `json:"startup,omitempty"              url:"startup,omitempty"`
+	Swap                 *int                         `json:"swap,omitempty"                 url:"swap,omitempty"`
+	Tags                 *string                      `json:"tags,omitempty"                 url:"tags,omitempty"`
+	Template             *types.CustomBool            `json:"template,omitempty"             url:"template,omitempty,int"`
+	TTY                  *int                         `json:"tty,omitempty"                  url:"tty,omitempty"`
+	Unique               *types.CustomBool            `json:"unique,omitempty"               url:"unique,omitempty,int"`
+	Unprivileged         *types.CustomBool            `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
+	VMID                 *int                         `json:"vmid,omitempty"                 url:"vmid,omitempty"`
 }
 
 // CustomFeatures contains the values for the "features" property.
@@ -116,6 +117,18 @@ type CustomNetworkInterface struct {
 	Type        *string           `json:"type,omitempty"     url:"type,omitempty"`
 }
 
+// CustomDevicePassthroughArray is an array of CustomDevicePassthrough.
+type CustomDevicePassthroughArray []CustomDevicePassthrough
+
+// CustomDevicePassthrough contains the values for the "dev[n]" properties.
+type CustomDevicePassthrough struct {
+	DenyWrite *types.CustomBool `json:"deny-write,omitempty" url:"deny-write,omitempty,int"`
+	Path      string            `json:"path"                 url:"path"`
+	UID       *int              `json:"uid,omitempty"        url:"uid,omitempty"`
+	GID       *int              `json:"gid,omitempty"        url:"gid,omitempty"`
+	Mode      *string           `json:"mode,omitempty"       url:"mode,omitempty"`
+}
+
 // CustomNetworkInterfaceArray is an array of CustomNetworkInterface.
 type CustomNetworkInterfaceArray []CustomNetworkInterface
 
@@ -153,48 +166,56 @@ type GetResponseBody struct {
 
 // GetResponseData contains the data from a user get response.
 type GetResponseData struct {
-	ConsoleEnabled    *types.CustomBool       `json:"console,omitempty"`
-	ConsoleMode       *string                 `json:"cmode,omitempty"`
-	CPUArchitecture   *string                 `json:"arch,omitempty"`
-	CPUCores          *int                    `json:"cores,omitempty"`
-	CPULimit          *types.CustomInt        `json:"cpulimit,omitempty"`
-	CPUUnits          *int                    `json:"cpuunits,omitempty"`
-	DedicatedMemory   *int                    `json:"memory,omitempty"`
-	Description       *string                 `json:"description,omitempty"`
-	Digest            string                  `json:"digest"`
-	DNSDomain         *string                 `json:"searchdomain,omitempty"`
-	DNSServer         *string                 `json:"nameserver,omitempty"`
-	Features          *CustomFeatures         `json:"features,omitempty"`
-	HookScript        *string                 `json:"hookscript,omitempty"`
-	Hostname          *string                 `json:"hostname,omitempty"`
-	Lock              *types.CustomBool       `json:"lock,omitempty"`
-	LXCConfiguration  *[][2]string            `json:"lxc,omitempty"`
-	MountPoint0       *CustomMountPoint       `json:"mp0,omitempty"`
-	MountPoint1       *CustomMountPoint       `json:"mp1,omitempty"`
-	MountPoint2       *CustomMountPoint       `json:"mp2,omitempty"`
-	MountPoint3       *CustomMountPoint       `json:"mp3,omitempty"`
-	MountPoint4       *CustomMountPoint       `json:"mp4,omitempty"`
-	MountPoint5       *CustomMountPoint       `json:"mp5,omitempty"`
-	MountPoint6       *CustomMountPoint       `json:"mp6,omitempty"`
-	MountPoint7       *CustomMountPoint       `json:"mp7,omitempty"`
-	NetworkInterface0 *CustomNetworkInterface `json:"net0,omitempty"`
-	NetworkInterface1 *CustomNetworkInterface `json:"net1,omitempty"`
-	NetworkInterface2 *CustomNetworkInterface `json:"net2,omitempty"`
-	NetworkInterface3 *CustomNetworkInterface `json:"net3,omitempty"`
-	NetworkInterface4 *CustomNetworkInterface `json:"net4,omitempty"`
-	NetworkInterface5 *CustomNetworkInterface `json:"net5,omitempty"`
-	NetworkInterface6 *CustomNetworkInterface `json:"net6,omitempty"`
-	NetworkInterface7 *CustomNetworkInterface `json:"net7,omitempty"`
-	OSType            *string                 `json:"ostype,omitempty"`
-	Protection        *types.CustomBool       `json:"protection,omitempty"`
-	RootFS            *CustomRootFS           `json:"rootfs,omitempty"`
-	StartOnBoot       *types.CustomBool       `json:"onboot,omitempty"`
-	StartupBehavior   *CustomStartupBehavior  `json:"startup,omitempty"`
-	Swap              *int                    `json:"swap,omitempty"`
-	Tags              *string                 `json:"tags,omitempty"`
-	Template          *types.CustomBool       `json:"template,omitempty"`
-	TTY               *int                    `json:"tty,omitempty"`
-	Unprivileged      *types.CustomBool       `json:"unprivileged,omitempty"`
+	ConsoleEnabled     *types.CustomBool        `json:"console,omitempty"`
+	ConsoleMode        *string                  `json:"cmode,omitempty"`
+	CPUArchitecture    *string                  `json:"arch,omitempty"`
+	CPUCores           *int                     `json:"cores,omitempty"`
+	CPULimit           *types.CustomInt         `json:"cpulimit,omitempty"`
+	CPUUnits           *int                     `json:"cpuunits,omitempty"`
+	DedicatedMemory    *int                     `json:"memory,omitempty"`
+	Description        *string                  `json:"description,omitempty"`
+	Digest             string                   `json:"digest"`
+	DNSDomain          *string                  `json:"searchdomain,omitempty"`
+	DNSServer          *string                  `json:"nameserver,omitempty"`
+	Features           *CustomFeatures          `json:"features,omitempty"`
+	HookScript         *string                  `json:"hookscript,omitempty"`
+	Hostname           *string                  `json:"hostname,omitempty"`
+	Lock               *types.CustomBool        `json:"lock,omitempty"`
+	LXCConfiguration   *[][2]string             `json:"lxc,omitempty"`
+	DevicePassthrough0 *CustomDevicePassthrough `json:"dev0,omitempty"`
+	DevicePassthrough1 *CustomDevicePassthrough `json:"dev1,omitempty"`
+	DevicePassthrough2 *CustomDevicePassthrough `json:"dev2,omitempty"`
+	DevicePassthrough3 *CustomDevicePassthrough `json:"dev3,omitempty"`
+	DevicePassthrough4 *CustomDevicePassthrough `json:"dev4,omitempty"`
+	DevicePassthrough5 *CustomDevicePassthrough `json:"dev5,omitempty"`
+	DevicePassthrough6 *CustomDevicePassthrough `json:"dev6,omitempty"`
+	DevicePassthrough7 *CustomDevicePassthrough `json:"dev7,omitempty"`
+	MountPoint0        *CustomMountPoint        `json:"mp0,omitempty"`
+	MountPoint1        *CustomMountPoint        `json:"mp1,omitempty"`
+	MountPoint2        *CustomMountPoint        `json:"mp2,omitempty"`
+	MountPoint3        *CustomMountPoint        `json:"mp3,omitempty"`
+	MountPoint4        *CustomMountPoint        `json:"mp4,omitempty"`
+	MountPoint5        *CustomMountPoint        `json:"mp5,omitempty"`
+	MountPoint6        *CustomMountPoint        `json:"mp6,omitempty"`
+	MountPoint7        *CustomMountPoint        `json:"mp7,omitempty"`
+	NetworkInterface0  *CustomNetworkInterface  `json:"net0,omitempty"`
+	NetworkInterface1  *CustomNetworkInterface  `json:"net1,omitempty"`
+	NetworkInterface2  *CustomNetworkInterface  `json:"net2,omitempty"`
+	NetworkInterface3  *CustomNetworkInterface  `json:"net3,omitempty"`
+	NetworkInterface4  *CustomNetworkInterface  `json:"net4,omitempty"`
+	NetworkInterface5  *CustomNetworkInterface  `json:"net5,omitempty"`
+	NetworkInterface6  *CustomNetworkInterface  `json:"net6,omitempty"`
+	NetworkInterface7  *CustomNetworkInterface  `json:"net7,omitempty"`
+	OSType             *string                  `json:"ostype,omitempty"`
+	Protection         *types.CustomBool        `json:"protection,omitempty"`
+	RootFS             *CustomRootFS            `json:"rootfs,omitempty"`
+	StartOnBoot        *types.CustomBool        `json:"onboot,omitempty"`
+	StartupBehavior    *CustomStartupBehavior   `json:"startup,omitempty"`
+	Swap               *int                     `json:"swap,omitempty"`
+	Tags               *string                  `json:"tags,omitempty"`
+	Template           *types.CustomBool        `json:"template,omitempty"`
+	TTY                *int                     `json:"tty,omitempty"`
+	Unprivileged       *types.CustomBool        `json:"unprivileged,omitempty"`
 }
 
 // GetStatusResponseBody contains the body from a container get status response.
@@ -271,6 +292,55 @@ func (r *CustomFeatures) EncodeValues(key string, v *url.Values) error {
 
 	if len(values) > 0 {
 		v.Add(key, strings.Join(values, ","))
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomDevicePassthrough struct to a URL value.
+func (r *CustomDevicePassthrough) EncodeValues(key string, v *url.Values) error {
+	var values []string
+
+	if r.DenyWrite != nil {
+		if *r.DenyWrite {
+			values = append(values, "deny-write=1")
+		} else {
+			values = append(values, "deny-write=0")
+		}
+	}
+
+	if r.Path != "" {
+		values = append(values, fmt.Sprintf("path=%s", r.Path))
+	}
+
+	if r.UID != nil {
+		values = append(values, fmt.Sprintf("uid=%d", *r.UID))
+	}
+
+	if r.GID != nil {
+		values = append(values, fmt.Sprintf("gid=%d", *r.GID))
+	}
+
+	if r.Mode != nil && *r.Mode != "" {
+		values = append(values, fmt.Sprintf("mode=%s", *r.Mode))
+	}
+
+	if len(values) > 0 {
+		v.Add(key, strings.Join(values, ","))
+	}
+
+	return nil
+}
+
+// EncodeValues converts a CustomDevicePassthroughArray array to multiple URL values.
+func (r CustomDevicePassthroughArray) EncodeValues(
+	key string,
+	v *url.Values,
+) error {
+	for i, d := range r {
+		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
+			return fmt.Errorf("failed to encode CustomDevicePassthroughArray: %w", err)
+		}
 	}
 
 	return nil
@@ -583,6 +653,56 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+// UnmarshalJSON converts a CustomDevicePassthrough string to an object.
+func (r *CustomDevicePassthrough) UnmarshalJSON(b []byte) error {
+	var s string
+
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal CustomDevicePassthrough: %w", err)
+	}
+
+	pairs := strings.Split(s, ",")
+
+	var path string
+
+	for _, p := range pairs {
+		v := strings.Split(strings.TrimSpace(p), "=")
+
+		if len(v) == 1 {
+			path = v[0]
+		} else if len(v) == 2 {
+			switch v[0] {
+			case "deny-write":
+				bv := types.CustomBool(v[1] == "1")
+				r.DenyWrite = &bv
+			case "path":
+				path = v[1]
+			case "uid":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("unable to unmarshal 'uid': %w", err)
+				}
+
+				r.UID = &iv
+			case "gid":
+				iv, err := strconv.Atoi(v[1])
+				if err != nil {
+					return fmt.Errorf("unable to unmarshal 'gid': %w", err)
+				}
+
+				r.GID = &iv
+			case "mode":
+				r.Mode = &v[1]
+			}
+		}
+	}
+
+	r.Path = path
 
 	return nil
 }
