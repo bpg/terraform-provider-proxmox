@@ -8,6 +8,7 @@ package datasource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"slices"
@@ -20,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	proxmoxapi "github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
@@ -86,7 +88,7 @@ func VMs() *schema.Resource {
 	}
 }
 
-// vmRead reads the data of a VM by ID.
+// vmRead reads the VMs.
 func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -121,6 +123,16 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	for _, nodeName := range nodeNames {
 		listData, e := api.Node(nodeName).VM(0).ListVMs(ctx)
 		if e != nil {
+			var httpError *proxmoxapi.HTTPError
+			if errors.As(e, &httpError) && httpError.Code == 595 {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("node %q is not available - VM list may be incomplete", nodeName),
+				})
+
+				continue
+			}
+
 			diags = append(diags, diag.FromErr(e)...)
 		}
 
