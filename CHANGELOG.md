@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.70.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.69.1...v0.70.0) (2025-01-18)
+
+
+### Features
+
+* **docs:** basic guide how to clone a VM template ([#1716](https://github.com/bpg/terraform-provider-proxmox/issues/1716)) ([ccaae92](https://github.com/bpg/terraform-provider-proxmox/commit/ccaae927e68a74197d0aac8d2d7a05e0ebdf7a7a))
+* **lxc:** add support for `device_passthrough` config option ([#1706](https://github.com/bpg/terraform-provider-proxmox/issues/1706)) ([7cbd1b4](https://github.com/bpg/terraform-provider-proxmox/commit/7cbd1b46fad999fe8a0ae5608d57ad708d9635c5))
+
+
+### Bug Fixes
+
+* **vm:** do not delete a VM during retry on `create` ([#1711](https://github.com/bpg/terraform-provider-proxmox/issues/1711)) ([c57dc78](https://github.com/bpg/terraform-provider-proxmox/commit/c57dc781192819bbcf942dc0b7c9e9d432d49edc))
+* **vm:** handle PVE node availability in VM datasource ([#1715](https://github.com/bpg/terraform-provider-proxmox/issues/1715)) ([3ecd044](https://github.com/bpg/terraform-provider-proxmox/commit/3ecd0443bbbdfce9bc7e8b8f082d662aac247760))
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework-timeouts (v0.4.1 → v0.5.0) ([#1714](https://github.com/bpg/terraform-provider-proxmox/issues/1714)) ([eccd55f](https://github.com/bpg/terraform-provider-proxmox/commit/eccd55f522893708d9e9ebb88c581b4b9e40e714))
+* **deps:** update module golang.org/x/crypto (v0.31.0 → v0.32.0) ([#1702](https://github.com/bpg/terraform-provider-proxmox/issues/1702)) ([d22f9d3](https://github.com/bpg/terraform-provider-proxmox/commit/d22f9d32f022d42247897803ee8493c4019dc233))
+* **deps:** update module golang.org/x/net (v0.33.0 → v0.34.0) ([#1703](https://github.com/bpg/terraform-provider-proxmox/issues/1703)) ([3808aef](https://github.com/bpg/terraform-provider-proxmox/commit/3808aef33e822b85ae33a97cc87d6020b21abbfe))
+* **docs:** add 'stop_on_destroy' configuration to cloud image examples ([#1705](https://github.com/bpg/terraform-provider-proxmox/issues/1705)) ([ab09b09](https://github.com/bpg/terraform-provider-proxmox/commit/ab09b09fbf36b523e610fcfa0ac36def61a2eaa0))
+* **docs:** update README.md ([#1707](https://github.com/bpg/terraform-provider-proxmox/issues/1707)) ([6f65789](https://github.com/bpg/terraform-provider-proxmox/commit/6f657892c0a29d6677ef6d72690dbfb991a67ad1))
+
 ## [0.69.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.69.0...v0.69.1) (2025-01-04)
 
 
