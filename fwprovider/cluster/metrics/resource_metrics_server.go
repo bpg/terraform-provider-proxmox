@@ -88,8 +88,9 @@ func (r *metricsServerResource) Schema(
 			"mtu": schema.Int64Attribute{
 				Description: "MTU (maximum transmission unit) for metrics transmission over UDP. " +
 					"If not set, PVE default is `1500` (allowed `512` - `65536`).",
-				Optional: true,
-				Computed: true,
+				Validators: []validator.Int64{int64validator.Between(512, 65536)},
+				Optional:   true,
+				Computed:   true,
 			},
 			"port": schema.Int64Attribute{
 				Description: "Server network port.",
@@ -133,8 +134,9 @@ func (r *metricsServerResource) Schema(
 			"influx_db_proto": schema.StringAttribute{
 				Description: "Protocol for InfluxDB. Choice is between `udp` | `http` | `https`." +
 					"If not set, PVE default is `udp`.",
-				Optional: true,
-				Computed: true,
+				Validators: []validator.String{stringvalidator.OneOf("udp", "http", "https")},
+				Optional:   true,
+				Computed:   true,
 			},
 			"influx_max_body_size": schema.StringAttribute{
 				Description: "InfluxDB max-body-size in bytes. Requests are batched up to this " +
@@ -169,8 +171,9 @@ func (r *metricsServerResource) Schema(
 			"graphite_proto": schema.StringAttribute{
 				Description: "Protocol to send graphite data. Choice is between `udp` | `tcp`. " +
 					"If not set, PVE default is `udp`.",
-				Optional: true,
-				Computed: true,
+				Validators: []validator.String{stringvalidator.OneOf("udp", "tcp")},
+				Optional:   true,
+				Computed:   true,
 			},
 		},
 	}
