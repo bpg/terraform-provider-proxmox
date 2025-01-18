@@ -10,9 +10,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -69,6 +71,28 @@ func (r *metricsServerDatasource) Schema(
 	req datasource.SchemaRequest,
 	resp *datasource.SchemaResponse,
 ) {
+	resp.Schema = schema.Schema{
+		Description: "Retrieves information about a specific PVE metric server.",
+		Attributes: map[string]schema.Attribute{
+			"id": attribute.ID(),
+			"disable": schema.BoolAttribute{
+				Description: "Indicates if the metric server is disabled.",
+				Computed:    true,
+			},
+			"port": schema.Int64Attribute{
+				Description: "Server network port.",
+				Computed:    true,
+			},
+			"server": schema.StringAttribute{
+				Description: "Server dns name or IP address.",
+				Computed:    true,
+			},
+			"type": schema.StringAttribute{
+				Description: "Plugin type. Either `graphite` or `influxdb`.",
+				Computed:    true,
+			},
+		},
+	}
 }
 
 // Read fetches the metrics server data from Proxmox VE.

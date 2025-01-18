@@ -108,7 +108,7 @@ func (r *metricsServerResource) Schema(
 				},
 			},
 			"timeout": schema.Int64Attribute{
-				Description: "TCP socket timeout in seconds. If not set, PVE default is `1`.)",
+				Description: "TCP socket timeout in seconds. If not set, PVE default is `1`.",
 				Optional:    true,
 				Computed:    true,
 			},
@@ -121,7 +121,7 @@ func (r *metricsServerResource) Schema(
 				},
 			},
 			"influx_api_path_prefix": schema.StringAttribute{
-				Description: "An API path prefix inserted between '<host>:<port>/' and '/api2/'." +
+				Description: "An API path prefix inserted between `<host>:<port>/` and `/api2/`." +
 					" Can be useful if the InfluxDB service runs behind a reverse proxy.",
 				Optional: true,
 				Computed: true,
@@ -132,7 +132,7 @@ func (r *metricsServerResource) Schema(
 				Computed:    true,
 			},
 			"influx_db_proto": schema.StringAttribute{
-				Description: "Protocol for InfluxDB. Choice is between `udp` | `http` | `https`." +
+				Description: "Protocol for InfluxDB. Choice is between `udp` | `http` | `https`. " +
 					"If not set, PVE default is `udp`.",
 				Validators: []validator.String{stringvalidator.OneOf("udp", "http", "https")},
 				Optional:   true,
@@ -152,7 +152,7 @@ func (r *metricsServerResource) Schema(
 			},
 			"influx_token": schema.StringAttribute{
 				Description: "The InfluxDB access token. Only necessary when using the http v2 " +
-					"api. If the v2 compatibility api is used, use 'user:password' instead.",
+					"api. If the v2 compatibility api is used, use `user:password` instead.",
 				Optional:  true,
 				Computed:  true,
 				Sensitive: true,

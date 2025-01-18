@@ -531,6 +531,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
 		vm.NewDataSource,
+		metrics.NewMetricsServerDatasource,
 	}
 }
 
