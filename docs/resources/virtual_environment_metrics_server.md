@@ -44,7 +44,7 @@ resource "proxmox_virtual_environment_metrics_server" "graphite_server" {
 - `influx_api_path_prefix` (String) An API path prefix inserted between `<host>:<port>/` and `/api2/`. Can be useful if the InfluxDB service runs behind a reverse proxy.
 - `influx_bucket` (String) The InfluxDB bucket/db. Only necessary when using the http v2 api.
 - `influx_db_proto` (String) Protocol for InfluxDB. Choice is between `udp` | `http` | `https`. If not set, PVE default is `udp`.
-- `influx_max_body_size` (String) InfluxDB max-body-size in bytes. Requests are batched up to this size. If not set, PVE default is `25000000`.
+- `influx_max_body_size` (Number) InfluxDB max-body-size in bytes. Requests are batched up to this size. If not set, PVE default is `25000000`.
 - `influx_organization` (String) The InfluxDB organization. Only necessary when using the http v2 api. Has no meaning when using v2 compatibility api.
 - `influx_token` (String, Sensitive) The InfluxDB access token. Only necessary when using the http v2 api. If the v2 compatibility api is used, use `user:password` instead.
 - `influx_verify` (Boolean) Set to `false` to disable certificate verification for https endpoints.

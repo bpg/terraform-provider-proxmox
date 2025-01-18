@@ -138,7 +138,7 @@ func (r *metricsServerResource) Schema(
 				Optional:   true,
 				Computed:   true,
 			},
-			"influx_max_body_size": schema.StringAttribute{
+			"influx_max_body_size": schema.Int64Attribute{
 				Description: "InfluxDB max-body-size in bytes. Requests are batched up to this " +
 					"size. If not set, PVE default is `25000000`.",
 				Optional: true,
