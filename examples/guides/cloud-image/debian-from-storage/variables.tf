@@ -6,4 +6,5 @@ variable "virtual_environment_endpoint" {
 variable "virtual_environment_token" {
   type        = string
   description = "The token for the Proxmox Virtual Environment API"
+  sensitive   = true
 }
