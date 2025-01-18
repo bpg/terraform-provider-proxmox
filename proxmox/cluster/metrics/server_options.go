@@ -14,7 +14,7 @@ type ServerData struct {
 	Port    *int64  `json:"port"              url:"port"`
 	Server  *string `json:"server"            url:"server"`
 	Timeout *int64  `json:"timeout,omitempty" url:"timeout,omitempty"`
-	Type    *string `json:"type"              url:"type"`
+	Type    *string `json:"type,omitempty"    url:"type,omitempty"`
 
 	// influxdb only options
 	APIPathPrefix *string `json:"api-path-prefix,omitempty"    url:"api-path-prefix,omitempty"`
@@ -38,4 +38,9 @@ type ServerResponseBody struct {
 // ServersResponseBody contains the body from a metrics server list response.
 type ServersResponseBody struct {
 	Data *[]ServerData `json:"data,omitempty"`
+}
+
+type ServerRequestData struct {
+	ServerData
+	Delete *[]string `url:"delete,omitempty"`
 }

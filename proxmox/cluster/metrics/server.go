@@ -8,7 +8,6 @@ package metrics
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -21,7 +20,7 @@ func (c *Client) GetServer(ctx context.Context, id string) (*ServerData, error) 
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(id), nil, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error reading Cluster options: %w", err)
+		return nil, fmt.Errorf("error reading metrics server: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -37,7 +36,7 @@ func (c *Client) GetServers(ctx context.Context) (*[]ServerData, error) {
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), nil, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error reading Cluster options: %w", err)
+		return nil, fmt.Errorf("error reading list of metrics servers: %w", err)
 	}
 
 	if resBody.Data == nil {
@@ -48,28 +47,25 @@ func (c *Client) GetServers(ctx context.Context) (*[]ServerData, error) {
 }
 
 // UpdateServer updates the metrics server.
-func (c *Client) UpdateServer(ctx context.Context, data *ServerData) error {
-	if data.ID == nil {
-		return errors.New("ID must be provided in data")
-	}
+func (c *Client) UpdateServer(ctx context.Context, data *ServerRequestData) error {
+	// PVE API does not allow to pass "type" in PUT requests, this doesn't makes any sense
+	// since other required params like port, server must still be there
+	// while we could spawn another struct, let's just fix it silently
+	data.Type = nil
 
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(*data.ID), data, nil)
 	if err != nil {
-		return fmt.Errorf("error updating metrics Server resource: %w", err)
+		return fmt.Errorf("error updating metrics server: %w", err)
 	}
 
 	return nil
 }
 
 // CreateServer creates the metrics server.
-func (c *Client) CreateServer(ctx context.Context, data *ServerData) error {
-	if data.ID == nil {
-		return errors.New("ID must be provided in data")
-	}
-
+func (c *Client) CreateServer(ctx context.Context, data *ServerRequestData) error {
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(*data.ID), data, nil)
 	if err != nil {
-		return fmt.Errorf("error creating metrics Server resource: %w", err)
+		return fmt.Errorf("error creating metrics server: %w", err)
 	}
 
 	return nil
@@ -79,7 +75,7 @@ func (c *Client) CreateServer(ctx context.Context, data *ServerData) error {
 func (c *Client) DeleteServer(ctx context.Context, id string) error {
 	err := c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(id), nil, nil)
 	if err != nil {
-		return fmt.Errorf("error updating Cluster resource: %w", err)
+		return fmt.Errorf("error updating metrics server: %w", err)
 	}
 
 	return nil

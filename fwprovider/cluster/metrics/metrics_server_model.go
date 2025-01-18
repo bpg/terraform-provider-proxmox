@@ -11,8 +11,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type metricsServerResourceModel struct {
+type metricsServerModel struct {
 	ID                  types.String `tfsdk:"id"`
+	Name                types.String `tfsdk:"name"`
 	Disable             types.Bool   `tfsdk:"disable"`
 	MTU                 types.Int64  `tfsdk:"mtu"`
 	Port                types.Int64  `tfsdk:"port"`
@@ -31,9 +32,10 @@ type metricsServerResourceModel struct {
 }
 
 // importFromAPI takes data from metrics server PVE api response and set fields based on it
-// api does not contain id so it must be passed directly
-func (m *metricsServerResourceModel) importFromAPI(id string, data *metrics.ServerData) {
-	m.ID = types.StringValue(id)
+// Note: API response does not contain name so it must be passed directly
+func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData) {
+	m.ID = types.StringValue(name)
+	m.Name = types.StringValue(name)
 
 	var disable *bool
 	if data.Disable != nil {
@@ -72,12 +74,12 @@ func (m *metricsServerResourceModel) importFromAPI(id string, data *metrics.Serv
 }
 
 // toAPIRequestBody creates metrics server request data for PUT and POST requests
-func (m *metricsServerResourceModel) toAPIRequestBody() *metrics.ServerData {
-	data := &metrics.ServerData{}
+func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
+	data := &metrics.ServerRequestData{}
 
-	data.ID = m.ID.ValueStringPointer()
+	data.ID = m.Name.ValueStringPointer()
 
-	if !m.Disable.IsUnknown() {
+	if !m.Disable.IsNull() {
 		var disable *int64
 		if m.Disable.ValueBool() {
 			*disable = 1
@@ -88,44 +90,19 @@ func (m *metricsServerResourceModel) toAPIRequestBody() *metrics.ServerData {
 		data.Disable = disable
 	}
 
-	if !m.MTU.IsUnknown() {
-		data.MTU = m.MTU.ValueInt64Pointer()
-	}
-
+	data.MTU = m.MTU.ValueInt64Pointer()
 	data.Port = m.Port.ValueInt64Pointer()
 	data.Server = m.Server.ValueStringPointer()
-
-	if !m.Timeout.IsUnknown() {
-		data.Timeout = m.Timeout.ValueInt64Pointer()
-	}
-
+	data.Timeout = m.Timeout.ValueInt64Pointer()
 	data.Type = m.Type.ValueStringPointer()
+	data.APIPathPrefix = m.InfluxAPIPathPrefix.ValueStringPointer()
+	data.Bucket = m.InfluxBucket.ValueStringPointer()
+	data.InfluxDBProto = m.InfluxDBProto.ValueStringPointer()
+	data.MaxBodySize = m.InfluxMaxBodySize.ValueInt64Pointer()
+	data.Organization = m.InfluxOrganization.ValueStringPointer()
+	data.Token = m.InfluxToken.ValueStringPointer()
 
-	if !m.InfluxAPIPathPrefix.IsUnknown() {
-		data.APIPathPrefix = m.InfluxAPIPathPrefix.ValueStringPointer()
-	}
-
-	if !m.InfluxBucket.IsUnknown() {
-		data.Bucket = m.InfluxBucket.ValueStringPointer()
-	}
-
-	if !m.InfluxDBProto.IsUnknown() {
-		data.InfluxDBProto = m.InfluxDBProto.ValueStringPointer()
-	}
-
-	if !m.InfluxMaxBodySize.IsUnknown() {
-		data.MaxBodySize = m.InfluxMaxBodySize.ValueInt64Pointer()
-	}
-
-	if !m.InfluxMaxBodySize.IsUnknown() {
-		data.Organization = m.InfluxOrganization.ValueStringPointer()
-	}
-
-	if !m.InfluxToken.IsUnknown() {
-		data.Token = m.InfluxToken.ValueStringPointer()
-	}
-
-	if !m.InfluxVerify.IsUnknown() {
+	if !m.InfluxVerify.IsNull() {
 		var influxVerify *int64
 		if m.InfluxVerify.ValueBool() {
 			*influxVerify = 1
@@ -136,13 +113,8 @@ func (m *metricsServerResourceModel) toAPIRequestBody() *metrics.ServerData {
 		data.Verify = influxVerify
 	}
 
-	if !m.GraphitePath.IsUnknown() {
-		data.Path = m.GraphitePath.ValueStringPointer()
-	}
-
-	if !m.GraphiteProto.IsUnknown() {
-		data.Proto = m.GraphiteProto.ValueStringPointer()
-	}
+	data.Path = m.GraphitePath.ValueStringPointer()
+	data.Proto = m.GraphiteProto.ValueStringPointer()
 
 	return data
 }

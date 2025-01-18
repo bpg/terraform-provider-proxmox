@@ -32,7 +32,6 @@ func NewMetricsServerDatasource() datasource.DataSource {
 	return &metricsServerDatasource{}
 }
 
-// Metadata returns the data source type name.
 func (r *metricsServerDatasource) Metadata(
 	_ context.Context,
 	req datasource.MetadataRequest,
@@ -41,7 +40,6 @@ func (r *metricsServerDatasource) Metadata(
 	resp.TypeName = req.ProviderTypeName + "_metrics_server"
 }
 
-// Configure adds the provider-configured client to the data source.
 func (r *metricsServerDatasource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
@@ -65,7 +63,6 @@ func (r *metricsServerDatasource) Configure(
 	r.client = cfg.Client.Cluster().Metrics()
 }
 
-// Schema returns the schema for the data source.
 func (r *metricsServerDatasource) Schema(
 	_ context.Context,
 	req datasource.SchemaRequest,
@@ -95,7 +92,6 @@ func (r *metricsServerDatasource) Schema(
 	}
 }
 
-// Read fetches the metrics server data from Proxmox VE.
 func (r *metricsServerDatasource) Read(
 	_ context.Context,
 	req datasource.ReadRequest,
