@@ -123,6 +123,47 @@ func TestAccResourceMetricsServer(t *testing.T) {
 				),
 			},
 		}},
+		{"create graphite udp metrics server & import it", []resource.TestStep{
+			{
+				ResourceName: "proxmox_virtual_environment_metrics_server.acc_graphite_server",
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_metrics_server" "acc_graphite_server" {
+					name   = "acc_example_graphite_server"
+					server = "192.168.3.2"
+					port   = 18089
+					type   = "graphite"
+				  }`),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_metrics_server.acc_graphite_server",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		}},
+		{"create graphite udp metrics server & test datasource", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_metrics_server" "acc_graphite_server2" {
+					name   = "acc_example_graphite_server2"
+					server = "192.168.3.2"
+					port   = 18089
+					type   = "graphite"
+				  }
+				data "proxmox_virtual_environment_metrics_server" "acc_graphite_server2" {
+					name = proxmox_virtual_environment_metrics_server.acc_graphite_server2.name
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("data.proxmox_virtual_environment_metrics_server.acc_graphite_server2", map[string]string{
+						"id":     "acc_example_graphite_server2",
+						"name":   "acc_example_graphite_server2",
+						"port":   "18089",
+						"server": "192.168.3.2",
+						"type":   "graphite",
+					}),
+				),
+				PreventPostDestroyRefresh: true,
+			},
+		}},
 	}
 
 	for _, tt := range tests {

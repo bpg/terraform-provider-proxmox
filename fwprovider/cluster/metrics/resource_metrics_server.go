@@ -345,8 +345,6 @@ func (r *metricsServerResource) ImportState(
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
 ) {
-	var state metricsServerModel
-
 	data, err := r.client.GetServer(ctx, req.ID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -369,7 +367,7 @@ func (r *metricsServerResource) ImportState(
 	}
 
 	readModel := &metricsServerModel{}
-	readModel.importFromAPI(state.ID.ValueString(), data)
+	readModel.importFromAPI(req.ID, data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
