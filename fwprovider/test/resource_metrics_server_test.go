@@ -24,23 +24,23 @@ func TestAccResourceMetricsServer(t *testing.T) {
 		{"create influxdb udp server & update it & again to default mtu", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "influxdb_server" {
-					name   = "example_influxdb_server"
+				resource "proxmox_virtual_environment_metrics_server" "acc_influxdb_server" {
+					name   = "acc_example_influxdb_server"
 					server = "192.168.3.2"
 					port   = 18089
 					type   = "influxdb"
 					mtu    = 1000
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_metrics_server.influxdb_server", map[string]string{
-						"id":     "example_influxdb_server",
-						"name":   "example_influxdb_server",
+					ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+						"id":     "acc_example_influxdb_server",
+						"name":   "acc_example_influxdb_server",
 						"mtu":    "1000",
 						"port":   "18089",
 						"server": "192.168.3.2",
 						"type":   "influxdb",
 					}),
-					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.influxdb_server", []string{
+					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"influx_api_path_prefix",
@@ -57,8 +57,8 @@ func TestAccResourceMetricsServer(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "influxdb_server" {
-					name   			 = "example_influxdb_server"
+				resource "proxmox_virtual_environment_metrics_server" "acc_influxdb_server" {
+					name   			 = "acc_example_influxdb_server"
 					server 			 = "192.168.3.2"
 					port   			 = 18089
 					type   			 = "influxdb"
@@ -66,16 +66,16 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					influx_bucket    = "xxxxx"
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_metrics_server.influxdb_server", map[string]string{
-						"id":            "example_influxdb_server",
-						"name":          "example_influxdb_server",
+					ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+						"id":            "acc_example_influxdb_server",
+						"name":          "acc_example_influxdb_server",
 						"mtu":           "1000",
 						"port":          "18089",
 						"server":        "192.168.3.2",
 						"type":          "influxdb",
 						"influx_bucket": "xxxxx",
 					}),
-					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.influxdb_server", []string{
+					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"influx_api_path_prefix",
@@ -91,23 +91,23 @@ func TestAccResourceMetricsServer(t *testing.T) {
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_metrics_server" "influxdb_server" {
-					name   			 = "example_influxdb_server"
+				resource "proxmox_virtual_environment_metrics_server" "acc_influxdb_server" {
+					name   			 = "acc_example_influxdb_server"
 					server 			 = "192.168.3.2"
 					port   			 = 18089
 					type   			 = "influxdb"
 					influx_bucket    = "xxxxx"
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_metrics_server.influxdb_server", map[string]string{
-						"id":            "example_influxdb_server",
-						"name":          "example_influxdb_server",
+					ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+						"id":            "acc_example_influxdb_server",
+						"name":          "acc_example_influxdb_server",
 						"port":          "18089",
 						"server":        "192.168.3.2",
 						"type":          "influxdb",
 						"influx_bucket": "xxxxx",
 					}),
-					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.influxdb_server", []string{
+					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"mtu",
