@@ -161,7 +161,6 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"type":   "graphite",
 					}),
 				),
-				PreventPostDestroyRefresh: true,
 			},
 		}},
 	}
