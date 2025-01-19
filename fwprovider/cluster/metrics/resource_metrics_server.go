@@ -73,8 +73,8 @@ func (r *metricsServerResource) Configure(
 }
 
 func (r *metricsServerResource) Schema(
-	ctx context.Context,
-	req resource.SchemaRequest,
+	_ context.Context,
+	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
@@ -201,7 +201,6 @@ func (r *metricsServerResource) Read(
 	}
 
 	data, err := r.client.GetServer(ctx, state.ID.ValueString())
-
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.State.RemoveResource(ctx)
@@ -215,6 +214,7 @@ func (r *metricsServerResource) Read(
 				"Please retry the operation or report this issue to the provider developers.\n\n"+
 				"Error: "+err.Error(),
 		)
+
 		return
 	}
 
@@ -238,14 +238,15 @@ func (r *metricsServerResource) Create(
 	}
 
 	reqData := plan.toAPIRequestBody()
-	err := r.client.CreateServer(ctx, reqData)
 
+	err := r.client.CreateServer(ctx, reqData)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Create Resource",
 			"An unexpected error occurred while creating the resource create request.\n\n"+
 				"Error: "+err.Error(),
 		)
+
 		return
 	}
 
@@ -268,6 +269,7 @@ func (r *metricsServerResource) Update(
 	resp *resource.UpdateResponse,
 ) {
 	var plan metricsServerModel
+
 	var state metricsServerModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -296,13 +298,13 @@ func (r *metricsServerResource) Update(
 	reqData.Delete = &toDelete
 
 	err := r.client.UpdateServer(ctx, reqData)
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Update Resource",
 			"An unexpected error occurred while creating the resource update request.\n\n"+
 				"Error: "+err.Error(),
 		)
+
 		return
 	}
 
@@ -323,7 +325,6 @@ func (r *metricsServerResource) Delete(
 	}
 
 	err := r.client.DeleteServer(ctx, state.ID.ValueString())
-
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			return
@@ -334,6 +335,7 @@ func (r *metricsServerResource) Delete(
 			"An unexpected error occurred while creating the resource delete request.\n\n"+
 				"Error: "+err.Error(),
 		)
+
 		return
 	}
 }
@@ -346,7 +348,6 @@ func (r *metricsServerResource) ImportState(
 	var state metricsServerModel
 
 	data, err := r.client.GetServer(ctx, req.ID)
-
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError(
@@ -363,6 +364,7 @@ func (r *metricsServerResource) ImportState(
 			"An unexpected error occurred while attempting to import resource state.\n\n"+
 				"Error: "+err.Error(),
 		)
+
 		return
 	}
 

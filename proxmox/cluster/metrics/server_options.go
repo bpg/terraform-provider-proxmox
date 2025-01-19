@@ -6,7 +6,7 @@
 
 package metrics
 
-// ServerData contains the data from a metrics server response and for a request.
+// ServerData contains the data from a metrics server response.
 type ServerData struct {
 	Disable *int64  `json:"disable,omitempty" url:"disable,omitempty"`
 	ID      *string `json:"id,omitempty"      url:"id,omitempty"`
@@ -40,6 +40,7 @@ type ServersResponseBody struct {
 	Data *[]ServerData `json:"data,omitempty"`
 }
 
+// ServerRequestData contains the data for a metric server post/put request.
 type ServerRequestData struct {
 	ServerData
 	Delete *[]string `url:"delete,omitempty"`

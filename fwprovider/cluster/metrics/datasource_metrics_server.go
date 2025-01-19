@@ -49,7 +49,7 @@ func (r *metricsServerDatasource) Configure(
 		return
 	}
 
-	cfg, ok := req.ProviderData.(config.Resource)
+	cfg, ok := req.ProviderData.(config.DataSource)
 
 	if !ok {
 		resp.Diagnostics.AddError(
@@ -65,13 +65,17 @@ func (r *metricsServerDatasource) Configure(
 
 func (r *metricsServerDatasource) Schema(
 	_ context.Context,
-	req datasource.SchemaRequest,
+	_ datasource.SchemaRequest,
 	resp *datasource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves information about a specific PVE metric server.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ID(),
+			"name": schema.StringAttribute{
+				Description: "Unique name that will be ID of this metric server in PVE.",
+				Required:    true,
+			},
 			"disable": schema.BoolAttribute{
 				Description: "Indicates if the metric server is disabled.",
 				Computed:    true,
@@ -93,8 +97,34 @@ func (r *metricsServerDatasource) Schema(
 }
 
 func (r *metricsServerDatasource) Read(
-	_ context.Context,
+	ctx context.Context,
 	req datasource.ReadRequest,
 	resp *datasource.ReadResponse,
 ) {
+	var state metricsServerDatasourceModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	state.ID = state.Name
+
+	data, err := r.client.GetServer(ctx, state.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to Refresh Resource",
+			"An unexpected error occurred while attempting to refresh datasource state. "+
+				"Please retry the operation or report this issue to the provider developers.\n\n"+
+				"Error: "+err.Error(),
+		)
+
+		return
+	}
+
+	readModel := &metricsServerDatasourceModel{}
+	readModel.importFromAPI(state.ID.ValueString(), data)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

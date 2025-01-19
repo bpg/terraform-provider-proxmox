@@ -31,13 +31,14 @@ type metricsServerModel struct {
 	GraphiteProto       types.String `tfsdk:"graphite_proto"`
 }
 
-// importFromAPI takes data from metrics server PVE api response and set fields based on it
-// Note: API response does not contain name so it must be passed directly
+// importFromAPI takes data from metrics server PVE API response and set fields based on it.
+// Note: API response does not contain name so it must be passed directly.
 func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData) {
 	m.ID = types.StringValue(name)
 	m.Name = types.StringValue(name)
 
 	var disable *bool
+
 	if data.Disable != nil {
 		if *data.Disable == 1 {
 			*disable = true
@@ -45,6 +46,7 @@ func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData
 			*disable = false
 		}
 	}
+
 	m.Disable = types.BoolPointerValue(disable)
 
 	m.MTU = types.Int64PointerValue(data.MTU)
@@ -60,6 +62,7 @@ func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData
 	m.InfluxToken = types.StringPointerValue(data.Token)
 
 	var influxVerify *bool
+
 	if data.Verify != nil {
 		if *data.Verify == 1 {
 			*influxVerify = true
@@ -67,13 +70,14 @@ func (m *metricsServerModel) importFromAPI(name string, data *metrics.ServerData
 			*influxVerify = false
 		}
 	}
+
 	m.InfluxVerify = types.BoolPointerValue(influxVerify)
 
 	m.GraphitePath = types.StringPointerValue(data.Path)
 	m.GraphiteProto = types.StringPointerValue(data.Proto)
 }
 
-// toAPIRequestBody creates metrics server request data for PUT and POST requests
+// toAPIRequestBody creates metrics server request data for PUT and POST requests.
 func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
 	data := &metrics.ServerRequestData{}
 
@@ -117,4 +121,35 @@ func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
 	data.Proto = m.GraphiteProto.ValueStringPointer()
 
 	return data
+}
+
+type metricsServerDatasourceModel struct {
+	ID      types.String `tfsdk:"id"`
+	Name    types.String `tfsdk:"name"`
+	Disable types.Bool   `tfsdk:"disable"`
+	Port    types.Int64  `tfsdk:"port"`
+	Server  types.String `tfsdk:"server"`
+	Type    types.String `tfsdk:"type"`
+}
+
+// importFromAPI takes data from metrics server PVE API response and set fields based on it.
+// Note: API response does not contain name so it must be passed directly.
+func (m *metricsServerDatasourceModel) importFromAPI(name string, data *metrics.ServerData) {
+	m.ID = types.StringValue(name)
+	m.Name = types.StringValue(name)
+
+	var disable *bool
+
+	if data.Disable != nil {
+		if *data.Disable == 1 {
+			*disable = true
+		} else {
+			*disable = false
+		}
+	}
+
+	m.Disable = types.BoolPointerValue(disable)
+	m.Port = types.Int64PointerValue(data.Port)
+	m.Server = types.StringPointerValue(data.Server)
+	m.Type = types.StringPointerValue(data.Type)
 }
