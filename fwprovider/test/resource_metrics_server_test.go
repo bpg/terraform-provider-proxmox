@@ -1,0 +1,136 @@
+//go:build acceptance || all
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+package test
+
+import (
+	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+)
+
+func TestAccResourceMetricsServer(t *testing.T) {
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"create influxdb udp server & update it & again to default mtu", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_metrics_server" "influxdb_server" {
+					name   = "example_influxdb_server"
+					server = "192.168.3.2"
+					port   = 18089
+					type   = "influxdb"
+					mtu    = 1000
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_metrics_server.influxdb_server", map[string]string{
+						"id":     "example_influxdb_server",
+						"name":   "example_influxdb_server",
+						"mtu":    "1000",
+						"port":   "18089",
+						"server": "192.168.3.2",
+						"type":   "influxdb",
+					}),
+					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.influxdb_server", []string{
+						"disable",
+						"timeout",
+						"influx_api_path_prefix",
+						"influx_bucket",
+						"influx_db_proto",
+						"influx_max_body_size",
+						"influx_organization",
+						"influx_token",
+						"influx_verify",
+						"graphite_path",
+						"graphite_proto",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_metrics_server" "influxdb_server" {
+					name   			 = "example_influxdb_server"
+					server 			 = "192.168.3.2"
+					port   			 = 18089
+					type   			 = "influxdb"
+					mtu    			 = 1000
+					influx_bucket    = "xxxxx"
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_metrics_server.influxdb_server", map[string]string{
+						"id":            "example_influxdb_server",
+						"name":          "example_influxdb_server",
+						"mtu":           "1000",
+						"port":          "18089",
+						"server":        "192.168.3.2",
+						"type":          "influxdb",
+						"influx_bucket": "xxxxx",
+					}),
+					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.influxdb_server", []string{
+						"disable",
+						"timeout",
+						"influx_api_path_prefix",
+						"influx_db_proto",
+						"influx_max_body_size",
+						"influx_organization",
+						"influx_token",
+						"influx_verify",
+						"graphite_path",
+						"graphite_proto",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_metrics_server" "influxdb_server" {
+					name   			 = "example_influxdb_server"
+					server 			 = "192.168.3.2"
+					port   			 = 18089
+					type   			 = "influxdb"
+					influx_bucket    = "xxxxx"
+				  }`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_metrics_server.influxdb_server", map[string]string{
+						"id":            "example_influxdb_server",
+						"name":          "example_influxdb_server",
+						"port":          "18089",
+						"server":        "192.168.3.2",
+						"type":          "influxdb",
+						"influx_bucket": "xxxxx",
+					}),
+					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.influxdb_server", []string{
+						"disable",
+						"timeout",
+						"mtu",
+						"influx_api_path_prefix",
+						"influx_db_proto",
+						"influx_max_body_size",
+						"influx_organization",
+						"influx_token",
+						"influx_verify",
+						"graphite_path",
+						"graphite_proto",
+					}),
+				),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
