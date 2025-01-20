@@ -101,6 +101,7 @@ func TestAccResourceContainer(t *testing.T) {
 			}`, WithRootUser()),
 			Check: resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
+				resource.TestCheckResourceAttr(accTestContainerName, "device_passthrough.#", "1"),
 				func(*terraform.State) error {
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
