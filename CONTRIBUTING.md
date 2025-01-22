@@ -39,6 +39,10 @@ ability to merge PRs and respond to issues.
 
   The binaries will be placed in the `dist` directory.
 
+## IDE support
+
+If you are using VS Code, feel free to copy `settings.json` from `.vscode/settings.example.json`.
+
 ## Testing
 
 The project has a handful of test cases which must pass for a contribution to be
@@ -61,12 +65,15 @@ PROXMOX_VE_API_TOKEN="root@pam!<token name>=<token value>"
 PROXMOX_VE_ENDPOINT="https://<pve instance>:8006/"
 PROXMOX_VE_SSH_AGENT="true"
 PROXMOX_VE_SSH_USERNAME="root"
-# optionally, youcan override the default node name and ssh address
+# optionally, you can override the default node name and ssh address and other things
 #PROXMOX_VE_ACC_NODE_NAME="pve1"
 #PROXMOX_VE_ACC_NODE_SSH_ADDRESS="10.0.0.11"
+#PROXMOX_VE_ACC_NODE_SSH_PORT="22"
+#PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
 ```
 
-Then use `make testacc` to run the acceptance tests.
+Then use `make testacc` to run all the acceptance tests.
+You can also target specific acceptance tests with `make testacc-general`, `make testacc-vm`, `make testacc-ct`.
 
 > [!NOTE]
 > The acceptance tests support is still in development. Only handful of resources and data sources are covered by the tests. Some tests may require extra configuration on the Proxmox instance, and fail if the configuration is not present.

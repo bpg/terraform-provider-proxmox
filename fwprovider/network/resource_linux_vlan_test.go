@@ -10,6 +10,7 @@ package network_test
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 
@@ -26,7 +27,11 @@ const (
 func TestAccResourceLinuxVLAN(t *testing.T) {
 	te := test.InitEnvironment(t)
 
-	iface := "ens18"
+	iface := os.Getenv("PROXMOX_VE_ACC_IFACE_NAME")
+	if iface == "" {
+		iface = "ens18"
+	}
+
 	vlan1 := gofakeit.Number(10, 4094)
 	customName := fmt.Sprintf("iface_%s", gofakeit.Word())
 	vlan2 := gofakeit.Number(10, 4094)
