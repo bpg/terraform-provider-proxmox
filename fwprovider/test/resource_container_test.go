@@ -98,7 +98,7 @@ func TestAccResourceContainer(t *testing.T) {
 					template_file_id = "local:vztmpl/{{.ImageFileName}}"
 					type             = "ubuntu"
 				}
-			}`),
+			}`, WithRootUser()),
 			Check: resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
 				func(*terraform.State) error {
@@ -233,7 +233,7 @@ func TestAccResourceContainer(t *testing.T) {
 				initialization {
 					hostname = "test-clone"
 				}
-			}`),
+			}`, WithRootUser()),
 			Check: resource.ComposeTestCheckFunc(
 				func(*terraform.State) error {
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
