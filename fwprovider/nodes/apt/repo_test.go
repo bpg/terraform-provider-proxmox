@@ -49,57 +49,35 @@ func TestAccDataSourceRepo(t *testing.T) {
 			"read APT repository attributes",
 			[]resource.TestStep{
 				{
-					Config: fmt.Sprintf(
-						`
-					data %q %q {
-						%s = %q # file_path
-						%s = %d # index
-						%s = %q # node
-					}
-					`,
-						strings.Split(testAccResourceRepoSelector, ".")[0],
-						strings.Split(testAccResourceRepoSelector, ".")[1],
-						// To ensure stable acceptance tests we must use one of the Proxmox VE default source lists that always
-						// exists on any (new) Proxmox VE node.
-						apt.SchemaAttrNameFilePath, apitypes.StandardRepoFilePathMain,
-						apt.SchemaAttrNameIndex, testAccResourceRepoIndex,
-						apt.SchemaAttrNameNode, te.NodeName,
-					),
+					Config: te.RenderConfig(`
+					data "proxmox_virtual_environment_apt_repository" "test" {
+						file_path = "/etc/apt/sources.list"
+						index = 0
+						node = "{{.NodeName}}"
+					}`),
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestMatchResourceAttr(
-							fmt.Sprintf("data.%s", testAccResourceRepoSelector),
+							"data.proxmox_virtual_environment_apt_repository.test",
 							apt.SchemaAttrNameComment,
 							// Expect any value or an empty string.
 							regexp.MustCompile(`(.*|^$)`),
 						),
 						resource.TestCheckResourceAttr(
-							fmt.Sprintf("data.%s", testAccResourceRepoSelector),
+							"data.proxmox_virtual_environment_apt_repository.test",
 							apt.SchemaAttrNameTerraformID,
-							fmt.Sprintf(
-								"%s_%s_%s_%d",
-								apt.ResourceRepoIDPrefix,
-								strings.ToLower(te.NodeName),
-								apt.RepoIDCharReplaceRegEx.ReplaceAllString(
-									strings.TrimPrefix(apitypes.StandardRepoFilePathMain, "/"),
-									"_",
-								),
-								testAccResourceRepoIndex,
-							),
+							"apt_repository_"+strings.ToLower(te.NodeName)+"_etc_apt_sources_list_0",
 						),
-						test.ResourceAttributesSet(
-							fmt.Sprintf("data.%s", testAccResourceRepoSelector),
-							[]string{
-								fmt.Sprintf("%s.#", apt.SchemaAttrNameComponents),
-								apt.SchemaAttrNameEnabled,
-								apt.SchemaAttrNameFilePath,
-								apt.SchemaAttrNameIndex,
-								apt.SchemaAttrNameNode,
-								fmt.Sprintf("%s.#", apt.SchemaAttrNamePackageTypes),
-								fmt.Sprintf("%s.#", apt.SchemaAttrNameSuites),
-								fmt.Sprintf("%s.#", apt.SchemaAttrNameURIs),
-							},
-						),
+						test.ResourceAttributesSet("data.proxmox_virtual_environment_apt_repository.test", []string{
+							"components.#",
+							"enabled",
+							"file_path",
+							"index",
+							"node",
+							"package_types.#",
+							"suites.#",
+							"uris.#",
+						}),
 					),
 				},
 			},
@@ -134,35 +112,17 @@ func TestAccDataSourceStandardRepo(t *testing.T) {
 			"read APT standard repository attributes",
 			[]resource.TestStep{
 				{
-					Config: fmt.Sprintf(
-						`
-					data %q %q {
-						%s = %q # handle
-						%s = %q # node
-					}
-					`,
-						strings.Split(testAccResourceStandardRepoSelector, ".")[0],
-						strings.Split(testAccResourceStandardRepoSelector, ".")[1],
-						apt.SchemaAttrNameStandardHandle, apitypes.StandardRepoHandleKindNoSubscription,
-						apt.SchemaAttrNameNode, te.NodeName,
-					),
+					Config: te.RenderConfig(`
+					data "proxmox_virtual_environment_apt_standard_repository" "test" {
+						handle = "no-subscription"
+						node   = "{{.NodeName}}"
+					}`),
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(
-							fmt.Sprintf("data.%s", testAccResourceStandardRepoSelector),
-							apt.SchemaAttrNameTerraformID,
-							fmt.Sprintf(
-								"%s_%s_%s",
-								apt.ResourceStandardRepoIDPrefix,
-								strings.ToLower(te.NodeName),
-								apt.RepoIDCharReplaceRegEx.ReplaceAllString(
-									strings.TrimPrefix(apitypes.StandardRepoHandleKindNoSubscription.String(), "/"),
-									"_",
-								),
-							),
-						),
-						test.ResourceAttributesSet(
-							fmt.Sprintf("data.%s", testAccResourceStandardRepoSelector),
+						test.ResourceAttributes("data.proxmox_virtual_environment_apt_standard_repository.test", map[string]string{
+							"id": fmt.Sprintf("apt_standard_repository_%s_no_subscription", strings.ToLower(te.NodeName)),
+						}),
+						test.ResourceAttributesSet("data.proxmox_virtual_environment_apt_standard_repository.test", []string{
 							// Note that we can not check for the following attributes because they are only available when the
 							// standard repository has been added to a source list:
 							//
@@ -171,13 +131,12 @@ func TestAccDataSourceStandardRepo(t *testing.T) {
 							// - apt.SchemaAttrNameIndex (index) - will be set when finding the repository within a source list file,
 							//   based on the detected file path.
 							// - apt.SchemaAttrNameStandardStatus (status) - is only available when the standard has been configured.
-							[]string{
-								apt.SchemaAttrNameStandardDescription,
-								apt.SchemaAttrNameStandardHandle,
-								apt.SchemaAttrNameStandardName,
-								apt.SchemaAttrNameNode,
-							},
-						),
+
+							apt.SchemaAttrNameStandardDescription,
+							apt.SchemaAttrNameStandardHandle,
+							apt.SchemaAttrNameStandardName,
+							apt.SchemaAttrNameNode,
+						}),
 					),
 				},
 			},
@@ -218,24 +177,13 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 			Steps: []resource.TestStep{
 				// Test the "Create" and "Read" implementations.
 				{
-					Config: fmt.Sprintf(
-						`
-					resource %q %q {
-						%s = %t # enabled
-						%s = %q # file_path
-						%s = %d # index
-						%s = %q # node
-					}
-					`,
-						strings.Split(testAccResourceRepoSelector, ".")[0],
-						strings.Split(testAccResourceRepoSelector, ".")[1],
-						apt.SchemaAttrNameEnabled, apt.ResourceRepoActivationStatus,
-						// To ensure stable acceptance tests we must use one of the Proxmox VE default source lists that always
-						// exists on any (new) Proxmox VE node.
-						apt.SchemaAttrNameFilePath, apitypes.StandardRepoFilePathMain,
-						apt.SchemaAttrNameIndex, testAccResourceRepoIndex,
-						apt.SchemaAttrNameNode, te.NodeName,
-					),
+					Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_apt_repository" "test" {
+						enabled   = true
+						file_path = "/etc/apt/sources.list"
+						index     = 0
+						node      = "{{.NodeName}}"
+					}`),
 					// The computed attributes should be set.
 					ConfigStateChecks: []statecheck.StateCheck{
 						statecheck.ExpectKnownValue(
@@ -285,43 +233,23 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 					},
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestMatchResourceAttr(
-							testAccResourceRepoSelector,
-							apt.SchemaAttrNameComment,
-							// Expect any value or an empty string.
-							regexp.MustCompile(`(.*|^$)`),
-						),
-						resource.TestCheckResourceAttr(
-							testAccResourceRepoSelector,
-							apt.SchemaAttrNameEnabled,
-							strconv.FormatBool(apt.ResourceRepoActivationStatus),
-						),
-						resource.TestCheckResourceAttr(
-							testAccResourceRepoSelector,
-							apt.SchemaAttrNameFilePath,
-							apitypes.StandardRepoFilePathMain,
-						),
-						resource.TestCheckResourceAttrSet(testAccResourceRepoSelector, apt.SchemaAttrNameFileType),
-						resource.TestCheckResourceAttr(
-							testAccResourceRepoSelector,
-							apt.SchemaAttrNameIndex,
-							strconv.FormatInt(testAccResourceRepoIndex, 10),
-						),
-						resource.TestCheckResourceAttr(testAccResourceRepoSelector, apt.SchemaAttrNameNode, te.NodeName),
-						resource.TestCheckResourceAttr(
-							testAccResourceRepoSelector,
-							apt.SchemaAttrNameTerraformID,
-							fmt.Sprintf(
-								"%s_%s_%s_%d",
-								apt.ResourceRepoIDPrefix,
+						test.ResourceAttributes("proxmox_virtual_environment_apt_repository.test", map[string]string{
+							"enabled":   strconv.FormatBool(true),
+							"file_path": "/etc/apt/sources.list",
+							"index":     strconv.FormatInt(0, 10),
+							"node":      te.NodeName,
+							"id": fmt.Sprintf(
+								"apt_repository_%s_%s_%d",
 								strings.ToLower(te.NodeName),
 								apt.RepoIDCharReplaceRegEx.ReplaceAllString(
-									strings.TrimPrefix(apitypes.StandardRepoFilePathMain, "/"),
+									strings.TrimPrefix("/etc/apt/sources.list", "/"),
 									"_",
 								),
-								testAccResourceRepoIndex,
+								0,
 							),
-						),
+						}),
+						resource.TestMatchResourceAttr("proxmox_virtual_environment_apt_repository.test", "comment", regexp.MustCompile(`(.*|^$)`)),
+						resource.TestCheckResourceAttrSet("proxmox_virtual_environment_apt_repository.test", "file_type"),
 					),
 				},
 
@@ -340,32 +268,16 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 
 				// Test the "Update" implementation by toggling the activation status.
 				{
-					Config: fmt.Sprintf(
-						`
-					resource %q %q {
-						%s = %t # enabled
-						%s = %q # file_path
-						%s = %d # index
-						%s = %q # node
-					}
-					`,
-						strings.Split(testAccResourceRepoSelector, ".")[0],
-						strings.Split(testAccResourceRepoSelector, ".")[1],
-						// Disable the repository which is enabled by default for created or imported resources.
-						apt.SchemaAttrNameEnabled, !apt.ResourceRepoActivationStatus,
-						// To ensure stable acceptance tests we must use one of the Proxmox VE default source lists that always
-						// exists on any (new) Proxmox VE node.s
-						apt.SchemaAttrNameFilePath, apitypes.StandardRepoFilePathMain,
-						apt.SchemaAttrNameIndex, testAccResourceRepoIndex,
-						apt.SchemaAttrNameNode, te.NodeName,
-					),
+					Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_apt_repository" "test" {
+						enabled    = false
+						file_path  = "/etc/apt/sources.list"
+						index     = 0
+						node      = "{{.NodeName}}"
+					}`),
 					// The provides attributes and some computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(
-							testAccResourceRepoSelector,
-							apt.SchemaAttrNameEnabled,
-							strconv.FormatBool(!apt.ResourceRepoActivationStatus),
-						),
+						resource.TestCheckResourceAttr("proxmox_virtual_environment_apt_repository.test", "enabled", "false"),
 					),
 				},
 			},
@@ -396,62 +308,42 @@ func TestAccResourceStandardRepoValidInput(t *testing.T) {
 			Steps: []resource.TestStep{
 				// Test the "Create" and "Read" implementations.
 				{
-					Config: fmt.Sprintf(
-						`
-					resource %q %q {
-						%s = %q # handle
-						%s = %q # node
-					}
-					`,
-						strings.Split(testAccResourceStandardRepoSelector, ".")[0],
-						strings.Split(testAccResourceStandardRepoSelector, ".")[1],
-						apt.SchemaAttrNameStandardHandle, testAccResourceStandardRepoHandle,
-						apt.SchemaAttrNameNode, te.NodeName,
-					),
+					// 	PUT /api2/json/nodes/{node}/apt/repositories with handle = "no-subscription" will create a new
+					// entry in /etc/apt/sources.list on each call :/
+					SkipFunc: func() (bool, error) {
+						return true, fmt.Errorf("skipped due to API limitation: PUT request creates new entry on each call")
+					},
+					Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_apt_standard_repository" "test" {
+						handle = "no-subscription"
+						node   = "{{.NodeName}}"
+					}`),
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttrSet(
-							testAccResourceStandardRepoSelector,
-							apt.SchemaAttrNameStandardDescription,
-						),
-						resource.TestCheckResourceAttr(
-							testAccResourceStandardRepoSelector,
-							apt.SchemaAttrNameFilePath,
-							apitypes.StandardRepoFilePathMain,
-						),
-						resource.TestCheckResourceAttr(
-							testAccResourceStandardRepoSelector,
-							apt.SchemaAttrNameStandardHandle,
-							testAccResourceStandardRepoHandle,
-						),
-						resource.TestCheckResourceAttrSet(testAccResourceStandardRepoSelector, apt.SchemaAttrNameIndex),
-						resource.TestCheckResourceAttrSet(testAccResourceStandardRepoSelector, apt.SchemaAttrNameStandardName),
-						resource.TestCheckResourceAttr(testAccResourceStandardRepoSelector, apt.SchemaAttrNameNode, te.NodeName),
-						resource.TestCheckResourceAttr(
-							testAccResourceStandardRepoSelector,
-							apt.SchemaAttrNameStandardStatus,
-							// By default, newly added APT standard repositories are enabled.
-							strconv.Itoa(1),
-						),
-						resource.TestCheckResourceAttr(
-							testAccResourceStandardRepoSelector,
-							apt.SchemaAttrNameTerraformID,
-							fmt.Sprintf(
-								"%s_%s_%s",
-								apt.ResourceStandardRepoIDPrefix,
-								strings.ToLower(te.NodeName),
-								apt.RepoIDCharReplaceRegEx.ReplaceAllString(testAccResourceStandardRepoHandle, "_"),
-							),
-						),
+						test.ResourceAttributes("proxmox_virtual_environment_apt_standard_repository.test", map[string]string{
+							"file_path": "/etc/apt/sources.list",
+							"handle":    "no-subscription",
+							"node":      te.NodeName,
+							"status":    "1",
+							"id":        fmt.Sprintf("apt_standard_repository_%s_no_subscription", strings.ToLower(te.NodeName)),
+						}),
+						test.ResourceAttributesSet("proxmox_virtual_environment_apt_standard_repository.test", []string{
+							"description",
+							"index",
+							"name",
+						}),
 					),
 				},
 
 				// Test the "ImportState" implementation.
 				{
+					SkipFunc: func() (bool, error) {
+						return true, fmt.Errorf("skipped due to API limitation: PUT request creates new entry on each call")
+					},
 					ImportState:       true,
-					ImportStateId:     fmt.Sprintf("%s,%s", strings.ToLower(te.NodeName), testAccResourceStandardRepoHandle),
+					ImportStateId:     fmt.Sprintf("%s,no-subscription", strings.ToLower(te.NodeName)),
 					ImportStateVerify: true,
-					ResourceName:      testAccResourceStandardRepoSelector,
+					ResourceName:      "proxmox_virtual_environment_apt_standard_repository.test",
 				},
 			},
 		},
