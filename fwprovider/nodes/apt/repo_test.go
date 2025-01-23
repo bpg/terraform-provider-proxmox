@@ -311,7 +311,7 @@ func TestAccResourceStandardRepoValidInput(t *testing.T) {
 					// 	PUT /api2/json/nodes/{node}/apt/repositories with handle = "no-subscription" will create a new
 					// entry in /etc/apt/sources.list on each call :/
 					SkipFunc: func() (bool, error) {
-						return true, nil
+						return true, fmt.Errorf("skipped due to API limitation: PUT request creates new entry on each call")
 					},
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_apt_standard_repository" "test" {
@@ -338,7 +338,7 @@ func TestAccResourceStandardRepoValidInput(t *testing.T) {
 				// Test the "ImportState" implementation.
 				{
 					SkipFunc: func() (bool, error) {
-						return true, nil
+						return true, fmt.Errorf("skipped due to API limitation: PUT request creates new entry on each call")
 					},
 					ImportState:       true,
 					ImportStateId:     fmt.Sprintf("%s,no-subscription", strings.ToLower(te.NodeName)),
