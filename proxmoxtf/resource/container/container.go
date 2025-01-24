@@ -2390,8 +2390,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		devicePassthroughList = append(devicePassthroughList, devicePassthrough)
 	}
 
+	currentDevicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
+
 	if len(clone) > 0 {
-		if len(devicePassthroughList) > 0 {
+		if len(currentDevicePassthrough) > 0 {
 			err := d.Set(mkDevicePassthrough, devicePassthroughList)
 			diags = append(diags, diag.FromErr(err)...)
 		}
