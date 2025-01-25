@@ -105,19 +105,7 @@ test:
 .PHONY: testacc
 testacc:
 	@# explicitly add TF_ACC=1 to trigger the acceptance tests, `testacc.env` might be missing or incomplete
-	@TF_ACC=1 env $$(cat testacc.env | xargs) go test --timeout=30m --tags=acceptance,acceptance_vm,acceptance_ct -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/...
-
-.PHONY: testacc-vm
-testacc-vm:
-	@TF_ACC=1 env $$(cat testacc.env | xargs) go test --timeout=30m --tags=acceptance_vm -count=1 github.com/bpg/terraform-provider-proxmox/fwprovider/...
-
-.PHONY: testacc-ct
-testacc-ct:
-	@TF_ACC=1 env $$(cat testacc.env | xargs) go test --timeout=30m --tags=acceptance_ct -count=1 github.com/bpg/terraform-provider-proxmox/fwprovider/...
-
-.PHONY: testacc-general
-testacc-general:
-	@TF_ACC=1 env $$(cat testacc.env | xargs) go test --timeout=30m --tags=acceptance -count=1 github.com/bpg/terraform-provider-proxmox/fwprovider/...
+	@TF_ACC=1 env $$(cat testacc.env | xargs) go test --timeout=30m --tags=acceptance -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/...
 
 .PHONY: lint
 lint:

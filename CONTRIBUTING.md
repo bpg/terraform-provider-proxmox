@@ -72,8 +72,7 @@ PROXMOX_VE_SSH_USERNAME="root"
 #PROXMOX_VE_ACC_IFACE_NAME="enp1s0"
 ```
 
-Then use `make testacc` to run all the acceptance tests.
-You can also target specific acceptance tests with `make testacc-general`, `make testacc-vm`, `make testacc-ct`.
+Then use `make testacc` to run the acceptance tests.
 
 > [!NOTE]
 > The acceptance tests support is still in development. Only handful of resources and data sources are covered by the tests. Some tests may require extra configuration on the Proxmox instance, and fail if the configuration is not present.

@@ -1,4 +1,4 @@
-//go:build acceptance_ct || all
+//go:build acceptance || all
 
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
