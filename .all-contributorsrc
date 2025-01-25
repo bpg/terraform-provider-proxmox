@@ -1238,6 +1238,16 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "gifff",
+      "name": "Gifary Dhimas Fadhillah",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4391866?v=4",
+      "profile": "https://dhimas.net",
+      "contributions": [
+        "code",
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
