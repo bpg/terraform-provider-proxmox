@@ -61,7 +61,7 @@ func TestAccResourceContainer(t *testing.T) {
 		name string
 		step []resource.TestStep
 	}{
-		{"crete and start container", []resource.TestStep{{
+		{"create and start container", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_container" "test_container" {
 				node_name = "{{.NodeName}}"
@@ -101,12 +101,18 @@ func TestAccResourceContainer(t *testing.T) {
 			}`, WithRootUser()),
 			Check: resource.ComposeTestCheckFunc(
 				resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
+				resource.TestCheckResourceAttr(accTestContainerName, "device_passthrough.#", "1"),
 				func(*terraform.State) error {
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
 
-					err := te.NodeClient().Container(accTestContainerID).WaitForContainerStatus(ctx, "running")
+					ct := te.NodeClient().Container(accTestContainerID)
+					err := ct.WaitForContainerStatus(ctx, "running")
 					require.NoError(te.t, err, "container did not start")
+
+					ctInfo, err := ct.GetContainer(ctx)
+					require.NoError(te.t, err, "failed to get container")
+					require.NotNil(te.t, ctInfo.DevicePassthrough0)
 
 					return nil
 				},
@@ -239,8 +245,13 @@ func TestAccResourceContainer(t *testing.T) {
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 					defer cancel()
 
-					err := te.NodeClient().Container(accTestContainerIDClone).WaitForContainerStatus(ctx, "running")
+					ct := te.NodeClient().Container(accTestContainerIDClone)
+					err := ct.WaitForContainerStatus(ctx, "running")
 					require.NoError(te.t, err, "container did not start")
+
+					ctInfo, err := ct.GetContainer(ctx)
+					require.NoError(te.t, err, "failed to get container")
+					require.NotNil(te.t, ctInfo.DevicePassthrough0)
 
 					return nil
 				},

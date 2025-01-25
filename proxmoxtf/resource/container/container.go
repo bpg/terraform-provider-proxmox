@@ -1751,6 +1751,34 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		networkInterfaceArray[ni] = networkInterfaceObject
 	}
 
+	devicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
+
+	devicePassthroughArray := make(
+		containers.CustomDevicePassthroughArray,
+		len(devicePassthrough),
+	)
+
+	for di, dv := range devicePassthrough {
+		devicePassthroughMap := dv.(map[string]interface{})
+		devicePassthroughObject := containers.CustomDevicePassthrough{}
+
+		denyWrite := types.CustomBool(
+			devicePassthroughMap[mkDevicePassthroughDenyWrite].(bool),
+		)
+		gid := devicePassthroughMap[mkDevicePassthroughGID].(int)
+		mode := devicePassthroughMap[mkDevicePassthroughMode].(string)
+		path := devicePassthroughMap[mkDevicePassthroughPath].(string)
+		uid := devicePassthroughMap[mkDevicePassthroughUID].(int)
+
+		devicePassthroughObject.DenyWrite = &denyWrite
+		devicePassthroughObject.GID = &gid
+		devicePassthroughObject.Mode = &mode
+		devicePassthroughObject.Path = path
+		devicePassthroughObject.UID = &uid
+
+		devicePassthroughArray[di] = devicePassthroughObject
+	}
+
 	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
 
 	if len(operatingSystem) == 0 || operatingSystem[0] == nil {
@@ -1798,6 +1826,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		CPUUnits:             &cpuUnits,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
+		DevicePassthrough:    devicePassthroughArray,
 		Features:             features,
 		MountPoints:          mountPointArray,
 		NetworkInterfaces:    networkInterfaceArray,
@@ -2361,8 +2390,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		devicePassthroughList = append(devicePassthroughList, devicePassthrough)
 	}
 
+	currentDevicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
+
 	if len(clone) > 0 {
-		if len(devicePassthroughList) > 0 {
+		if len(currentDevicePassthrough) > 0 {
 			err := d.Set(mkDevicePassthrough, devicePassthroughList)
 			diags = append(diags, diag.FromErr(err)...)
 		}
