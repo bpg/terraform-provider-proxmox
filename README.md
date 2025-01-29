@@ -139,6 +139,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Elias Alvord](https://github.com/elias314)
 - [laktosterror](https://github.com/laktosterror)
 - [Greg Brant](https://github.com/gregbrant2)
+- [Serge](https://github.com/sergelogvinov)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
