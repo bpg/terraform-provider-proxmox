@@ -46,5 +46,6 @@ id_rsa.pub
 # Binary
 terraform-provider-proxmox*
 
-# .vscode
+# VScode / Cursor
 .vscode/settings.json
+.cursorrules

@@ -1398,15 +1398,6 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The VGA configuration",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
-						mkVGAClipboard: dvVGAClipboard,
-						mkVGAMemory:    dvVGAMemory,
-						mkVGAType:      dvVGAType,
-					},
-				}, nil
-			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkVGAClipboard: {
@@ -2128,11 +2119,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	if len(vga) > 0 {
-		vgaDevice, err := vmGetVGADeviceObject(d)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
+		vgaDevice := vmGetVGADeviceObject(d)
 		updateBody.VGADevice = vgaDevice
 	}
 
@@ -2531,10 +2518,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 
-	vgaDevice, err := vmGetVGADeviceObject(d)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	vgaDevice := vmGetVGADeviceObject(d)
 
 	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
 	vmID := vmIDUntyped.(int)
@@ -3320,39 +3304,33 @@ func vmGetTagsString(d *schema.ResourceData) string {
 	return strings.Join(sanitizedTags, ";")
 }
 
-func vmGetVGADeviceObject(d *schema.ResourceData) (*vms.CustomVGADevice, error) {
-	resource := VM()
+func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
+	vga := d.Get(mkVGA).([]interface{})
+	if len(vga) > 0 && vga[0] != nil {
+		vgaBlock := vga[0].(map[string]interface{})
+		vgaClipboard := vgaBlock[mkVGAClipboard].(string)
+		vgaMemory := vgaBlock[mkVGAMemory].(int)
 
-	vgaBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkVGA},
-		0,
-		true,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error getting VGA block: %w", err)
+		vgaType := vgaBlock[mkVGAType].(string)
+
+		vgaDevice := &vms.CustomVGADevice{}
+
+		if vgaClipboard != "" {
+			vgaDevice.Clipboard = &vgaClipboard
+		}
+
+		if vgaMemory > 0 {
+			vgaDevice.Memory = ptr.Ptr(int64(vgaMemory))
+		}
+
+		if vgaType != "" {
+			vgaDevice.Type = &vgaType
+		}
+
+		return vgaDevice
 	}
 
-	vgaClipboard := vgaBlock[mkVGAClipboard].(string)
-	vgaMemory := vgaBlock[mkVGAMemory].(int)
-	vgaType := vgaBlock[mkVGAType].(string)
-
-	vgaDevice := &vms.CustomVGADevice{}
-
-	if vgaClipboard != "" {
-		vgaDevice.Clipboard = &vgaClipboard
-	}
-
-	if vgaMemory > 0 {
-		vgaDevice.Memory = ptr.Ptr(int64(vgaMemory))
-	}
-
-	if vgaType != "" {
-		vgaDevice.Type = &vgaType
-	}
-
-	return vgaDevice, nil
+	return nil
 }
 
 func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -4420,9 +4398,9 @@ func vmReadCustom(
 			vga[mkVGAType] = *vmConfig.VGADevice.Type
 		}
 	} else {
-		vga[mkVGAClipboard] = ""
-		vga[mkVGAMemory] = 0
-		vga[mkVGAType] = ""
+		vga[mkVGAClipboard] = dvVGAClipboard
+		vga[mkVGAMemory] = dvVGAMemory
+		vga[mkVGAType] = dvVGAType
 	}
 
 	currentVGA := d.Get(mkVGA).([]interface{})
@@ -5306,11 +5284,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new VGA configuration.
 	if d.HasChange(mkVGA) {
-		updateBody.VGADevice, e = vmGetVGADeviceObject(d)
-		if e != nil {
-			return diag.FromErr(e)
-		}
-
+		updateBody.VGADevice = vmGetVGADeviceObject(d)
 		rebootRequired = true
 	}
 

@@ -2,11 +2,20 @@
     "version": "0.2.0",
     "configurations": [      
         {
+            "name": "Run Acceptance Tests",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/fwprovider/test",
+            "envFile": "${workspaceFolder}/testacc.env",
+            "args": ["-test.v", "-test.timeout", "120s"]
+        },
+        {
             "name": "Debug Acceptance Tests",
             "type": "go",
             "request": "launch",
             "mode": "test",
-            "program": "${workspaceFolder}/fwprovider/tests",
+            "program": "${workspaceFolder}/fwprovider/test",
             "envFile": "${workspaceFolder}/testacc.env",
             "args": ["-debug", "-test.v", "-test.timeout", "120s"]
             

@@ -9,7 +9,6 @@
 package test
 
 import (
-	"math/rand"
 	"regexp"
 	"testing"
 
@@ -73,18 +72,16 @@ func TestAccResourceVM(t *testing.T) {
 				}),
 			),
 		}}},
-		{
-			"empty node_name", []resource.TestStep{{
-				Config: te.RenderConfig(`
+		{"empty node_name", []resource.TestStep{{
+			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_empty_node_name" {
 					node_name = ""
 					started   = false	
 				}`),
-				ExpectError: regexp.MustCompile(`expected "node_name" to not be an empty string, got `),
-			}},
-		},
-		{
-			"protection", []resource.TestStep{{
+			ExpectError: regexp.MustCompile(`expected "node_name" to not be an empty string, got `),
+		}}},
+		{"protection", []resource.TestStep{
+			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm4" {
 					node_name = "{{.NodeName}}"
@@ -110,10 +107,10 @@ func TestAccResourceVM(t *testing.T) {
 						"protection": "false",
 					}),
 				),
-			}},
-		},
-		{
-			"update cpu block", []resource.TestStep{{
+			},
+		}},
+		{"update cpu block", []resource.TestStep{
+			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm5" {
 					node_name = "{{.NodeName}}"
@@ -143,10 +140,10 @@ func TestAccResourceVM(t *testing.T) {
 						"cpu.0.sockets": "1",
 					}),
 				),
-			}},
-		},
-		{
-			"set cpu.architecture as non root is not supported", []resource.TestStep{{
+			},
+		}},
+		{"set cpu.architecture as non root is not supported", []resource.TestStep{
+			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_cpu_arch" {
 					node_name = "{{.NodeName}}"
@@ -157,8 +154,8 @@ func TestAccResourceVM(t *testing.T) {
 				}`, WithAPIToken()),
 				ExpectError: regexp.MustCompile(`can only be set by the root account`),
 			},
-				{
-					Config: te.RenderConfig(`
+			{
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
 					node_name = "{{.NodeName}}"
 					started   = false
@@ -166,11 +163,11 @@ func TestAccResourceVM(t *testing.T) {
 						architecture = "x86_64"
 					}
 				}`, WithRootUser()),
-					Destroy: false,
-				}},
-		},
-		{
-			"update memory block", []resource.TestStep{{
+				Destroy: false,
+			},
+		}},
+		{"update memory block", []resource.TestStep{
+			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm6" {
 					node_name = "{{.NodeName}}"
@@ -200,10 +197,39 @@ func TestAccResourceVM(t *testing.T) {
 						"memory.0.dedicated": "1024",
 					}),
 				),
-			}},
-		},
-		{
-			"update vga block", []resource.TestStep{{
+			},
+		}},
+		{"create vga block", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"vga.#": "0",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					vga {
+						type = "virtio-gl"
+						clipboard = "vnc"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"vga.#": "1",
+					}),
+				),
+			},
+		}},
+		{"update vga block", []resource.TestStep{
+			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
@@ -253,10 +279,10 @@ func TestAccResourceVM(t *testing.T) {
 						"vga.0.clipboard": "",
 					}),
 				),
-			}},
-		},
-		{
-			"update watchdog block", []resource.TestStep{{
+			},
+		}},
+		{"update watchdog block", []resource.TestStep{
+			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
@@ -309,8 +335,8 @@ func TestAccResourceVM(t *testing.T) {
 						"watchdog.0.action":  "reset",
 					}),
 				),
-			}},
-		},
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -498,8 +524,9 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				}),
 			),
 		}}},
-		{"network device disconnected", []resource.TestStep{{
-			Config: te.RenderConfig(`
+		{"network device disconnected", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm_network2" {
 					node_name = "{{.NodeName}}"
 					started   = false
@@ -508,14 +535,14 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						bridge = "vmbr0"
 					}
 				}`),
-			Check: resource.ComposeTestCheckFunc(
-				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_network2", map[string]string{
-					"network_device.0.bridge":       "vmbr0",
-					"network_device.0.disconnected": "false",
-				}),
-			),
-		}, {
-			Config: te.RenderConfig(`
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_network2", map[string]string{
+						"network_device.0.bridge":       "vmbr0",
+						"network_device.0.disconnected": "false",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm_network2" {
 					node_name = "{{.NodeName}}"
 					started   = false
@@ -525,13 +552,14 @@ func TestAccResourceVMNetwork(t *testing.T) {
 						disconnected = true
 					}
 				}`),
-			Check: resource.ComposeTestCheckFunc(
-				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_network2", map[string]string{
-					"network_device.0.bridge":       "vmbr0",
-					"network_device.0.disconnected": "true",
-				}),
-			),
-		}}},
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm_network2", map[string]string{
+						"network_device.0.bridge":       "vmbr0",
+						"network_device.0.disconnected": "true",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -552,9 +580,6 @@ func TestAccResourceVMClone(t *testing.T) {
 	}
 
 	te := InitEnvironment(t)
-	te.AddTemplateVars(map[string]interface{}{
-		"TemplateVMID": 100000 + rand.Intn(99999),
-	})
 
 	tests := []struct {
 		name string
@@ -564,8 +589,8 @@ func TestAccResourceVMClone(t *testing.T) {
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {
 					node_name = "{{.NodeName}}"
-					vm_id = {{.TemplateVMID}}
 					started   = false
+					template  = true
 					cpu {
 						architecture = "x86_64"
 					}
@@ -577,6 +602,25 @@ func TestAccResourceVMClone(t *testing.T) {
 						vm_id = proxmox_virtual_environment_vm.template.vm_id
 					}
 				}`, WithRootUser()),
+		}}},
+		{"clone no vga block", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+					"vga.#": "0",
+				}),
+			),
 		}}},
 	}
 
