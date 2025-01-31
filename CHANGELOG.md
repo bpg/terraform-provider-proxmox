@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.70.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.70.0...v0.70.1) (2025-01-31)
+
+
+### Bug Fixes
+
+* **lxc:** support `device_passthrough` config on non-clone container ([#1722](https://github.com/bpg/terraform-provider-proxmox/issues/1722)) ([e92b006](https://github.com/bpg/terraform-provider-proxmox/commit/e92b0064bf3a2a9b0c9582928665d93d8dc1993a))
+* **vm:** `vga` block defaults handling during create / clone ([#1732](https://github.com/bpg/terraform-provider-proxmox/issues/1732)) ([c992dfc](https://github.com/bpg/terraform-provider-proxmox/commit/c992dfc1f30437071cb5f4784cbfea3f3d199b0f))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.11.1 → v1.11.2) ([#1733](https://github.com/bpg/terraform-provider-proxmox/issues/1733)) ([4d89d34](https://github.com/bpg/terraform-provider-proxmox/commit/4d89d3484b1145be1eb4ee1f7f7f7068e641a823))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.1.2 → v7.2.1) ([#1735](https://github.com/bpg/terraform-provider-proxmox/issues/1735)) ([d4b1d5f](https://github.com/bpg/terraform-provider-proxmox/commit/d4b1d5f1b694d70581e763be5ff20577916308f0))
+* **deps:** update module github.com/hashicorp/terraform-plugin-go (v0.25.0 → v0.26.0) ([#1726](https://github.com/bpg/terraform-provider-proxmox/issues/1726)) ([198f0ad](https://github.com/bpg/terraform-provider-proxmox/commit/198f0ad337c914a93bc81c543a4b665aaf2255eb))
+* **deps:** update module github.com/hashicorp/terraform-plugin-mux (v0.17.0 → v0.18.0) ([#1727](https://github.com/bpg/terraform-provider-proxmox/issues/1727)) ([e031a38](https://github.com/bpg/terraform-provider-proxmox/commit/e031a38d5026727b99fe6b8de898544710b19090))
+* **deps:** update module github.com/skeema/knownhosts (v1.3.0 → v1.3.1) ([#1734](https://github.com/bpg/terraform-provider-proxmox/issues/1734)) ([4cedbf1](https://github.com/bpg/terraform-provider-proxmox/commit/4cedbf1813aee9d8f4421e5f1cebab7b06722fbb))
+* **docs:** update terraform proxmox (0.69.1 → 0.70.0) ([#1717](https://github.com/bpg/terraform-provider-proxmox/issues/1717)) ([56f81cc](https://github.com/bpg/terraform-provider-proxmox/commit/56f81ccac39242b86cf55aba7724aa6c98a990a5))
+* **testacc:** add missing acceptance build tags, improve vscode settings ([#1723](https://github.com/bpg/terraform-provider-proxmox/issues/1723)) ([974a3c9](https://github.com/bpg/terraform-provider-proxmox/commit/974a3c906925bbaf0978f79f285d0dbd1fd76c68))
+* **testacc:** update apt repository acceptance tests ([#1725](https://github.com/bpg/terraform-provider-proxmox/issues/1725)) ([5e7e799](https://github.com/bpg/terraform-provider-proxmox/commit/5e7e7994d5ca5be7a2cd40bccad4b18425a00cd1))
+
 ## [0.70.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.69.1...v0.70.0) (2025-01-18)
 
 
