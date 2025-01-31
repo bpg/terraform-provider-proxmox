@@ -127,6 +127,14 @@
       ]
     }
   ],
+  "psi-header.lang-config": [
+    {
+      "language": "go",
+      "ignoreLines": [
+        "//go:build"
+      ]
+    }
+  ],
   "makefile.configureOnOpen": false,
   "go.buildFlags": ["-tags=all"],
   "gopls": { "build.buildFlags": ["-tags=all"] }
