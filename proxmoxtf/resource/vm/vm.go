@@ -288,7 +288,7 @@ const (
 	mkWatchdogAction  = "action"
 )
 
-// VM returns a resource that manages VMs.
+// The resource supports creating, reading, updating, and deleting VMs with extensive customization capabilities.
 func VM() *schema.Resource {
 	s := map[string]*schema.Schema{
 		mkRebootAfterCreation: {
@@ -1687,6 +1687,7 @@ func vmStop(ctx context.Context, vmAPI *vms.Client, d *schema.ResourceData) diag
 	return diag.FromErr(vmAPI.WaitForVMStatus(ctx, "stopped"))
 }
 
+// - Starting the newly created VM
 func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	cloneTimeoutSec := d.Get(mkTimeoutClone).(int)
 
@@ -2309,6 +2310,7 @@ func setCPUArchitecture(
 	return nil
 }
 
+//   - Diagnostic information about the VM creation process, including any errors encountered
 func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	createTimeoutSec := d.Get(mkTimeoutCreate).(int)
 
@@ -3288,6 +3290,7 @@ func vmGetStartupOrder(d *schema.ResourceData) *vms.CustomStartupOrder {
 	return nil
 }
 
+// If no valid tags are found, it returns an empty string.
 func vmGetTagsString(d *schema.ResourceData) string {
 	var sanitizedTags []string
 
@@ -3304,6 +3307,7 @@ func vmGetTagsString(d *schema.ResourceData) string {
 	return strings.Join(sanitizedTags, ";")
 }
 
+// If no VGA configuration is found, it returns nil.
 func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
 	vga := d.Get(mkVGA).([]interface{})
 	if len(vga) > 0 && vga[0] != nil {
@@ -3333,6 +3337,7 @@ func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
 	return nil
 }
 
+// Returns diagnostics for any errors encountered during the read operation.
 func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
@@ -3387,6 +3392,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	return vmReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
 }
 
+//   - diag.Diagnostics: A list of diagnostic messages indicating success or errors during state update
 func vmReadCustom(
 	ctx context.Context,
 	d *schema.ResourceData,
@@ -4718,6 +4724,7 @@ func vmUpdatePool(
 	return nil
 }
 
+//   - Any errors encountered during the update
 func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 

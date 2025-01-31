@@ -17,6 +17,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
+// Each test case runs in parallel and uses the Terraform acceptance testing framework.
 func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
@@ -575,6 +576,16 @@ func TestAccResourceVMNetwork(t *testing.T) {
 	}
 }
 
+// TestAccResourceVMClone tests the cloning functionality of a Proxmox virtual machine resource.
+// It verifies different scenarios of VM cloning, including cloning with specific CPU architecture
+// and cloning without a VGA block. The tests are run in parallel and require acceptance test
+// environment to be enabled.
+//
+// The function performs two primary test cases:
+// 1. Cloning a VM template with a specified CPU architecture as a root user
+// 2. Cloning a VM template without a VGA block and verifying the absence of VGA configuration
+//
+// Skips testing if TF_ACC environment variable is not set, which controls acceptance tests.
 func TestAccResourceVMClone(t *testing.T) {
 	if utils.GetAnyStringEnv("TF_ACC") == "" {
 		t.Skip("Acceptance tests are disabled")
