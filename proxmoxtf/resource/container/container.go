@@ -342,7 +342,7 @@ func Container() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							Default:          dvDiskSize,
-							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
+							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
 						},
 					},
 				},
