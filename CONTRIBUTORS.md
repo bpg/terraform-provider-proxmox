@@ -176,6 +176,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://tarasa24.dev"><img src="https://avatars.githubusercontent.com/u/20138731?v=4?s=100" width="100px;" alt="Petr Gajdosik"/><br /><sub><b>Petr Gajdosik</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Tarasa24" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Tarasa24" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://dhimas.net"><img src="https://avatars.githubusercontent.com/u/4391866?v=4?s=100" width="100px;" alt="Gifary Dhimas Fadhillah"/><br /><sub><b>Gifary Dhimas Fadhillah</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=gifff" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3Agifff" title="Bug reports">🐛</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/h3krn"><img src="https://avatars.githubusercontent.com/u/13312478?v=4?s=100" width="100px;" alt="H3Krn"/><br /><sub><b>H3Krn</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=h3krn" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
