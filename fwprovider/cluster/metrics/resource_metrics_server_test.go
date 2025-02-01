@@ -6,16 +6,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package test
+package metrics_test
 
 import (
 	"testing"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccResourceMetricsServer(t *testing.T) {
-	te := InitEnvironment(t)
+	te := test.InitEnvironment(t)
 
 	tests := []struct {
 		name  string
@@ -32,7 +33,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					mtu    = 1000
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
 						"id":     "acc_example_influxdb_server",
 						"name":   "acc_example_influxdb_server",
 						"mtu":    "1000",
@@ -40,7 +41,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"server": "192.168.3.2",
 						"type":   "influxdb",
 					}),
-					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
+					test.NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"influx_api_path_prefix",
@@ -66,7 +67,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					influx_bucket    = "xxxxx"
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
 						"id":            "acc_example_influxdb_server",
 						"name":          "acc_example_influxdb_server",
 						"mtu":           "1000",
@@ -75,7 +76,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"type":          "influxdb",
 						"influx_bucket": "xxxxx",
 					}),
-					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
+					test.NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"influx_api_path_prefix",
@@ -99,7 +100,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					influx_bucket    = "xxxxx"
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_metrics_server.acc_influxdb_server", map[string]string{
 						"id":            "acc_example_influxdb_server",
 						"name":          "acc_example_influxdb_server",
 						"port":          "18089",
@@ -107,7 +108,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 						"type":          "influxdb",
 						"influx_bucket": "xxxxx",
 					}),
-					NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
+					test.NoResourceAttributesSet("proxmox_virtual_environment_metrics_server.acc_influxdb_server", []string{
 						"disable",
 						"timeout",
 						"mtu",
@@ -153,7 +154,7 @@ func TestAccResourceMetricsServer(t *testing.T) {
 					name = proxmox_virtual_environment_metrics_server.acc_graphite_server2.name
 				  }`),
 				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes("data.proxmox_virtual_environment_metrics_server.acc_graphite_server2", map[string]string{
+					test.ResourceAttributes("data.proxmox_virtual_environment_metrics_server.acc_graphite_server2", map[string]string{
 						"id":     "acc_example_graphite_server2",
 						"name":   "acc_example_graphite_server2",
 						"port":   "18089",

@@ -20,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -104,16 +103,10 @@ func (r *metricsServerResource) Schema(
 				Description: "Server network port.",
 				Required:    true,
 				Validators:  []validator.Int64{int64validator.Between(1, 65536)},
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 			},
 			"server": schema.StringAttribute{
 				Description: "Server dns name or IP address.",
 				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"timeout": schema.Int64Attribute{
 				Description: "TCP socket timeout in seconds. If not set, PVE default is `1`.",

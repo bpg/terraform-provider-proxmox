@@ -53,7 +53,7 @@ func (c *Client) UpdateServer(ctx context.Context, data *ServerRequestData) erro
 	// while we could spawn another struct, let's just fix it silently
 	data.Type = nil
 
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(*data.ID), data, nil)
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(data.ID), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating metrics server: %w", err)
 	}
@@ -63,7 +63,7 @@ func (c *Client) UpdateServer(ctx context.Context, data *ServerRequestData) erro
 
 // CreateServer creates the metrics server.
 func (c *Client) CreateServer(ctx context.Context, data *ServerRequestData) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(*data.ID), data, nil)
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(data.ID), data, nil)
 	if err != nil {
 		return fmt.Errorf("error creating metrics server: %w", err)
 	}
