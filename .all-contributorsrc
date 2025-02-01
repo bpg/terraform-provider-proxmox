@@ -1249,6 +1249,15 @@
         "code",
         "bug"
       ]
+    },
+    {
+      "login": "h3krn",
+      "name": "H3Krn",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13312478?v=4",
+      "profile": "https://github.com/h3krn",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
