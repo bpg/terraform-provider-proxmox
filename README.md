@@ -54,6 +54,7 @@ The following assumptions are made about the test environment:
 - It has one node named `pve`
 - The node has local storages named `local` and `local-lvm`
 - The "Snippets" content type is enabled in the `local` storage
+- Default Linux Bridge "vmbr0" is VLAN aware (datacenter -> pve -> network -> edit & apply)
 
 Create `example/terraform.tfvars` with the following variables:
 

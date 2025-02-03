@@ -43,6 +43,7 @@ import (
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_haresources.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_version.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/data-sources/virtual_environment_vm2.md ../docs/data-sources/
+//go:generate cp ../build/docs-gen/data-sources/virtual_environment_metrics_server.md ../docs/data-sources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_acl.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_acme_account.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_acme_dns_plugin.md ../docs/resources/
@@ -58,3 +59,4 @@ import (
 //go:generate cp ../build/docs-gen/resources/virtual_environment_network_linux_vlan.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_user_token.md ../docs/resources/
 //go:generate cp ../build/docs-gen/resources/virtual_environment_vm2.md ../docs/resources/
+//go:generate cp ../build/docs-gen/resources/virtual_environment_metrics_server.md ../docs/resources/

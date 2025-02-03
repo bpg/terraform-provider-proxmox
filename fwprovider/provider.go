@@ -26,6 +26,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/access"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/acme"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/hardwaremapping"
@@ -509,6 +510,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
 		vm.NewResource,
+		metrics.NewMetricsServerResource,
 	}
 }
 
@@ -529,6 +531,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
 		vm.NewDataSource,
+		metrics.NewMetricsServerDatasource,
 	}
 }
 
