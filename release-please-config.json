@@ -16,7 +16,8 @@
                 "examples/guides/cloud-image/debian-from-storage/provider.tf",
                 "examples/guides/cloud-image/ubuntu-img/provider.tf",
                 "examples/guides/cloud-init/custom/provider.tf",
-                "examples/guides/cloud-init/native/provider.tf"
+                "examples/guides/cloud-init/native/provider.tf",
+                "examples/guides/clone-vm/provider.tf"
             ],
             "changelog-sections": [
                 {
