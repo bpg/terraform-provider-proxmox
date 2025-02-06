@@ -419,7 +419,6 @@ func VM() *schema.Resource {
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{
 					map[string]interface{}{
-						mkCDROMEnabled:   dvCDROMEnabled,
 						mkCDROMFileID:    dvCDROMFileID,
 						mkCDROMInterface: dvCDROMInterface,
 					},
@@ -432,6 +431,8 @@ func VM() *schema.Resource {
 						Description: "Whether to enable the CDROM drive",
 						Optional:    true,
 						Default:     dvCDROMEnabled,
+						Deprecated: "Remove this attribute's configuration as it is no longer used and the attribute will " +
+							"be removed in the next version of the provider. Set `file_id` to `none` to leave the CDROM drive empty.",
 					},
 					mkCDROMFileID: {
 						Type:        schema.TypeString,
@@ -1908,7 +1909,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if len(cdrom) > 0 && cdrom[0] != nil {
 		cdromBlock := cdrom[0].(map[string]interface{})
 
-		cdromEnabled := cdromBlock[mkCDROMEnabled].(bool)
 		cdromFileID := cdromBlock[mkCDROMFileID].(string)
 		cdromInterface := cdromBlock[mkCDROMInterface].(string)
 
@@ -1919,7 +1919,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cdromMedia := "cdrom"
 
 		ideDevices[cdromInterface] = &vms.CustomStorageDevice{
-			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
 		}
@@ -1990,12 +1989,9 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		tflog.Trace(ctx, fmt.Sprintf("CloudInit IDE interface is '%s'", initializationInterface))
 
-		const cdromCloudInitEnabled = true
-
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 		cdromCloudInitMedia := "cdrom"
 		ideDevices[initializationInterface] = &vms.CustomStorageDevice{
-			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &cdromCloudInitMedia,
 		}
@@ -2349,28 +2345,22 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	bios := d.Get(mkBIOS).(string)
 
-	cdromBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkCDROM},
-		0,
-		true,
-	)
-	if err != nil {
-		return diag.FromErr(err)
+	cdromFileID := ""
+	cdromInterface := ""
+
+	cdrom := d.Get(mkCDROM).([]interface{})
+	if len(cdrom) > 0 {
+		cdromBlock := cdrom[0].(map[string]interface{})
+		cdromFileID = cdromBlock[mkCDROMFileID].(string)
+		cdromInterface = cdromBlock[mkCDROMInterface].(string)
+
+		if cdromFileID == "" {
+			cdromFileID = "cdrom"
+		}
 	}
 
-	cdromEnabled := cdromBlock[mkCDROMEnabled].(bool)
-	cdromFileID := cdromBlock[mkCDROMFileID].(string)
-	cdromInterface := cdromBlock[mkCDROMInterface].(string)
-
-	cdromCloudInitEnabled := false
 	cdromCloudInitFileID := ""
 	cdromCloudInitInterface := ""
-
-	if cdromFileID == "" {
-		cdromFileID = "cdrom"
-	}
 
 	cpuBlock, err := structure.GetSchemaBlock(
 		resource,
@@ -2447,7 +2437,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
 
-		cdromCloudInitEnabled = true
 		cdromCloudInitFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 
 		cdromCloudInitInterface = initializationBlock[mkInitializationInterface].(string)
@@ -2543,7 +2532,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	var bootOrderConverted []string
-	if cdromEnabled {
+	if cdromInterface != "" {
 		bootOrderConverted = []string{cdromInterface}
 	}
 
@@ -2585,7 +2574,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if cdromCloudInitInterface != "" {
 		diskDeviceObjects[cdromCloudInitInterface] = &vms.CustomStorageDevice{
-			Enabled:    cdromCloudInitEnabled,
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
 		}
@@ -2593,7 +2581,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	if cdromInterface != "" {
 		diskDeviceObjects[cdromInterface] = &vms.CustomStorageDevice{
-			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &ideDevice2Media,
 		}
@@ -3000,7 +2987,6 @@ func vmGetEfiDiskAsStorageDevice(d *schema.ResourceData, disk []interface{}) (*v
 		id := "0"
 
 		storageDevice = &vms.CustomStorageDevice{
-			Enabled:     true,
 			FileVolume:  efiDisk.FileVolume,
 			Format:      efiDisk.Format,
 			DatastoreID: &id,
@@ -3054,7 +3040,6 @@ func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) *v
 	if tpmState != nil {
 		id := "0"
 		storageDevice = &vms.CustomStorageDevice{
-			Enabled:     true,
 			FileVolume:  tpmState.FileVolume,
 			DatastoreID: &id,
 		}
@@ -3541,7 +3526,6 @@ func vmReadCustom(
 		cdromBlock := map[string]interface{}{}
 
 		if len(clone) == 0 || len(currentCDROM) > 0 {
-			cdromBlock[mkCDROMEnabled] = cdromIDEDevice.Enabled
 			cdromBlock[mkCDROMFileID] = cdromIDEDevice.FileVolume
 			cdromBlock[mkCDROMInterface] = currentInterface
 
@@ -3550,10 +3534,6 @@ func vmReadCustom(
 
 				if currentBlock[mkCDROMFileID] == "" {
 					cdromBlock[mkCDROMFileID] = ""
-				}
-
-				if currentBlock[mkCDROMEnabled] == false {
-					cdromBlock[mkCDROMEnabled] = false
 				}
 			}
 
@@ -4923,7 +4903,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			return diag.FromErr(err)
 		}
 
-		cdromEnabled := cdromBlock[mkCDROMEnabled].(bool)
 		cdromFileID := cdromBlock[mkCDROMFileID].(string)
 		cdromInterface := cdromBlock[mkCDROMInterface].(string)
 
@@ -4944,10 +4923,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 		}
 
-		if !cdromEnabled && cdromFileID == "" {
-			del = append(del, cdromInterface)
-		}
-
 		if cdromFileID == "" {
 			cdromFileID = "cdrom"
 		}
@@ -4955,7 +4930,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		cdromMedia := "cdrom"
 
 		updateBody.AddCustomStorageDevice(cdromInterface, vms.CustomStorageDevice{
-			Enabled:    cdromEnabled,
 			FileVolume: cdromFileID,
 			Media:      &cdromMedia,
 		})
@@ -5124,7 +5098,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 
 			updateBody.AddCustomStorageDevice(initializationInterface, vms.CustomStorageDevice{
-				Enabled:    true,
 				FileVolume: fileVolume,
 				Media:      &cdromMedia,
 			})

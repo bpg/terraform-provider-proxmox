@@ -106,8 +106,6 @@ type CreateRequestBody struct {
 
 // AddCustomStorageDevice adds a custom storage device to the create request body.
 func (b *CreateRequestBody) AddCustomStorageDevice(iface string, device CustomStorageDevice) {
-	device.Enabled = true
-
 	if b.CustomStorageDevices == nil {
 		b.CustomStorageDevices = make(CustomStorageDevices, 1)
 	}

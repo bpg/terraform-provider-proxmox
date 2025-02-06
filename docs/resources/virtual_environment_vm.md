@@ -144,7 +144,8 @@ output "ubuntu_vm_public_key" {
     they appear in the list (defaults to `[]`).
 - `cdrom` - (Optional) The CDROM configuration.
     - `enabled` - (Optional) Whether to enable the CDROM drive (defaults
-        to `false`).
+        to `false`). *Deprecated*. The attribute will be removed in the next version of the provider. 
+        Set `file_id` to `none` to leave the CDROM drive empty.
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
         in the physical drive). Use `none` to leave the CDROM drive empty.
     - `interface` - (Optional) A hardware interface to connect CDROM drive to,

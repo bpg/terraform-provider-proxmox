@@ -45,7 +45,6 @@ type CustomStorageDevice struct {
 	Size                    *types.DiskSize   `json:"size,omitempty"        url:"size,omitempty"`
 	SSD                     *types.CustomBool `json:"ssd,omitempty"         url:"ssd,omitempty,int"`
 	DatastoreID             *string           `json:"-"                     url:"-"`
-	Enabled                 bool              `json:"-"                     url:"-"`
 	FileID                  *string           `json:"-"                     url:"-"`
 }
 
@@ -358,8 +357,6 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 		}
 	}
 
-	d.Enabled = true
-
 	return nil
 }
 
@@ -379,7 +376,8 @@ func (d CustomStorageDevices) Filter(fn func(*CustomStorageDevice) bool) CustomS
 // EncodeValues converts a CustomStorageDevices array to multiple URL values.
 func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 	for s, d := range d {
-		if d.Enabled {
+		// Explicitly skip disks which have FileID set, so it won't be encoded in "Create" or "Update" operations.
+		if d.FileID == nil || *d.FileID == "" {
 			if err := d.EncodeValues(s, v); err != nil {
 				return fmt.Errorf("error encoding storage device %s: %w", s, err)
 			}

@@ -23,36 +23,15 @@ func TestAccResourceVMCDROM(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"default no cdrom", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
+		{"default no cdrom", []resource.TestStep{{
+			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_cdrom" {
 					node_name = "{{.NodeName}}"
 					started   = false
 					name 	  = "test-cdrom"
 				}`),
-				Check: NoResourceAttributesSet("proxmox_virtual_environment_vm.test_cdrom", []string{"cdrom.#"}),
-			},
-		}},
-		{"default cdrom", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_cdrom" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					name 	  = "test-cdrom"
-					cdrom {
-						enabled   = true
-					}
-				}`),
-				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
-					"cdrom.0.enabled": "true",
-				}),
-			},
-			{
-				RefreshState: true,
-			},
-		}},
+			Check: NoResourceAttributesSet("proxmox_virtual_environment_vm.test_cdrom", []string{"cdrom.#"}),
+		}}},
 		{"none cdrom", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -61,17 +40,45 @@ func TestAccResourceVMCDROM(t *testing.T) {
 					started   = false
 					name 	  = "test-cdrom"
 					cdrom {
-						enabled   = true
 						file_id   = "none"
 					}
 				}`),
 				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
-					"cdrom.0.enabled": "true",
 					"cdrom.0.file_id": "none",
 				}),
 			},
 			{
 				RefreshState: true,
+			},
+		}},
+		{"enable cdrom", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-cdrom"
+					cdrom {
+						file_id   = "none"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
+					"cdrom.0.file_id": "none",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-cdrom"
+					cdrom {
+						file_id   = "cdrom"
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
+					"cdrom.0.file_id": "cdrom",
+				}),
 			},
 		}},
 	}
