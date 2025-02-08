@@ -32,7 +32,6 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			want: &CustomStorageDevice{
 				Cache:      ptr.Ptr("writeback"),
 				Discard:    ptr.Ptr("on"),
-				Enabled:    true,
 				FileVolume: "local-lvm:vm-2041-disk-0",
 				IOThread:   types.CustomBool(true).Pointer(),
 				Size:       ds8gig,
@@ -44,7 +43,6 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			line: `"nfs:2041/vm-2041-disk-0.raw,discard=ignore,ssd=1,iothread=1,size=8G"`,
 			want: &CustomStorageDevice{
 				Discard:    ptr.Ptr("ignore"),
-				Enabled:    true,
 				FileVolume: "nfs:2041/vm-2041-disk-0.raw",
 				Format:     ptr.Ptr("raw"),
 				IOThread:   types.CustomBool(true).Pointer(),

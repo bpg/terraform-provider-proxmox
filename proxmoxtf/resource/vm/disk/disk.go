@@ -162,9 +162,7 @@ func GetDiskDeviceObjects(
 	diskDeviceObjects := vms.CustomStorageDevices{}
 
 	for _, diskEntry := range diskDevices {
-		diskDevice := &vms.CustomStorageDevice{
-			Enabled: true,
-		}
+		diskDevice := &vms.CustomStorageDevice{}
 
 		block := diskEntry.(map[string]interface{})
 		datastoreID, _ := block[mkDiskDatastoreID].(string)
@@ -200,11 +198,6 @@ func GetDiskDeviceObjects(
 
 		if fileFormat == "" {
 			fileFormat = dvDiskFileFormat
-		}
-
-		// Explicitly disable the disk, so it won't be encoded in "Create" or "Update" operations.
-		if fileID != "" {
-			diskDevice.Enabled = false
 		}
 
 		if pathInDatastore != "" {

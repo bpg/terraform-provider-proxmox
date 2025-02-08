@@ -90,7 +90,6 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   name    = "terraform-provider-proxmox-example-template"
 
   cdrom {
-    enabled = true
     file_id = "none"
   }
 
