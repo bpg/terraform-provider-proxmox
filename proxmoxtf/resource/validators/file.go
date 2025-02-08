@@ -20,7 +20,7 @@ import (
 // ContentType returns a schema validation function for a content type on a storage device.
 func ContentType() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
-		"dump",
+		"backup",
 		"iso",
 		"snippets",
 		"vztmpl",

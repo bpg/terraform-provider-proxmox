@@ -551,6 +551,9 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		File:        file,
 		Mode:        fileMode,
 	}
+	if *contentType == "backup" {
+		request.ContentType = "dump"
+	}
 
 	switch *contentType {
 	case "iso", "vztmpl":
