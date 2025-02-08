@@ -142,13 +142,13 @@ output "ubuntu_vm_public_key" {
     - `seabios` - SeaBIOS.
 - `boot_order` - (Optional) Specify a list of devices to boot from in the order
     they appear in the list (defaults to `[]`).
-- `cdrom` - (Optional) The CDROM configuration.
-    - `enabled` - (Optional) Whether to enable the CDROM drive (defaults
-        to `false`). *Deprecated*. The attribute will be removed in the next version of the provider. 
-        Set `file_id` to `none` to leave the CDROM drive empty.
+- `cdrom` - (Optional) The CD-ROM configuration.
+    - `enabled` - (Optional) Whether to enable the CD-ROM drive (defaults
+        to `false`). *Deprecated*. The attribute will be removed in the next version of the provider.
+        Set `file_id` to `none` to leave the CD-ROM drive empty.
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
-        in the physical drive). Use `none` to leave the CDROM drive empty.
-    - `interface` - (Optional) A hardware interface to connect CDROM drive to,
+        in the physical drive). Use `none` to leave the CD-ROM drive empty.
+    - `interface` - (Optional) A hardware interface to connect CD-ROM drive to,
         must be `ideN` (defaults to `ide3`). Note that `q35` machine type only
         supports `ide0` and `ide2`.
 - `clone` - (Optional) The cloning configuration.
