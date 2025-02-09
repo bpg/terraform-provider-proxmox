@@ -174,6 +174,15 @@ func TestProviderAuth(t *testing.T) {
 					`,
 			ExpectError: regexp.MustCompile(`must provide either username and password, an API token, or a ticket`),
 		}}},
+		{"invalid api token", []resource.TestStep{{
+			Config: `
+					provider "proxmox" {
+						api_token = "invalid-token"
+					}
+					data "proxmox_virtual_environment_version" "test" {}
+					`,
+			ExpectError: regexp.MustCompile(`the API token must be in the format 'USER@REALM!TOKENID=UUID'`),
+		}}},
 		{"invalid username", []resource.TestStep{{
 			Config: `
 					provider "proxmox" {
@@ -183,6 +192,17 @@ func TestProviderAuth(t *testing.T) {
 					data "proxmox_virtual_environment_version" "test" {}
 					`,
 			ExpectError: regexp.MustCompile(`username must end with '@pve' or '@pam'`),
+		}}},
+		{"missing password", []resource.TestStep{{
+			Config: `
+					provider "proxmox" {
+						api_token              = ""
+						username               = "root@pam"
+						password			   = ""
+					}
+					data "proxmox_virtual_environment_version" "test" {}
+					`,
+			ExpectError: regexp.MustCompile(`must provide either username and password, an API token, or a ticket`),
 		}}},
 	}
 
