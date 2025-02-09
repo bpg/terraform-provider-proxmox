@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.71.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.70.1...v0.71.0) (2025-02-09)
+
+
+### Features
+
+* **cluster:** add `proxmox_virtual_environment_metrics_server` resource ([#1719](https://github.com/bpg/terraform-provider-proxmox/issues/1719)) ([d1cc214](https://github.com/bpg/terraform-provider-proxmox/commit/d1cc2144f858f655a1a5752a7af0e9d551995dd5))
+* **vm:** deprecate `enabled` attribute on `cdrom`/`disk` devices ([#1746](https://github.com/bpg/terraform-provider-proxmox/issues/1746)) ([5f00314](https://github.com/bpg/terraform-provider-proxmox/commit/5f003143f882aca0e38637a9456f615d7fc6bbd0))
+
+
+### Bug Fixes
+
+* **file:** fix for datastore does not support content type "dump" ([#1752](https://github.com/bpg/terraform-provider-proxmox/issues/1752)) ([0aa2b50](https://github.com/bpg/terraform-provider-proxmox/commit/0aa2b505e59985d347149b90dd05d21ca041092b))
+* **lxc:** allow container disk size 0 for lxc zfs/brfs subvols ([#1737](https://github.com/bpg/terraform-provider-proxmox/issues/1737)) ([2925ae6](https://github.com/bpg/terraform-provider-proxmox/commit/2925ae63f5b233e007ff4621a9edffd8dcb139f0))
+* **provider:** improve provider credentials error handling ([#1754](https://github.com/bpg/terraform-provider-proxmox/issues/1754)) ([f221a85](https://github.com/bpg/terraform-provider-proxmox/commit/f221a85f8f16be600ed6808ce4b2ba7b26aecfb5))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.11.2 → v1.11.3) ([#1743](https://github.com/bpg/terraform-provider-proxmox/issues/1743)) ([ccc263f](https://github.com/bpg/terraform-provider-proxmox/commit/ccc263f8ad1b4a69135e81406ba7df24029ffd73))
+* **ci:** update lycheeverse/lychee-action action (v2.2.0 → v2.3.0) ([#1744](https://github.com/bpg/terraform-provider-proxmox/issues/1744)) ([0700975](https://github.com/bpg/terraform-provider-proxmox/commit/0700975ec25094bb3e0ce574961e47a56334e883))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.35.0 → v2.36.0) ([#1745](https://github.com/bpg/terraform-provider-proxmox/issues/1745)) ([bf9c496](https://github.com/bpg/terraform-provider-proxmox/commit/bf9c496f2956202618b83cfb982fff5771349572))
+* **deps:** update module golang.org/x/crypto (v0.32.0 → v0.33.0) ([#1751](https://github.com/bpg/terraform-provider-proxmox/issues/1751)) ([96594e4](https://github.com/bpg/terraform-provider-proxmox/commit/96594e42705032fdf8f1457a70f5c7c51ceb8d05))
+* **docs:** update terraform proxmox (0.70.0 → 0.70.1) ([#1741](https://github.com/bpg/terraform-provider-proxmox/issues/1741)) ([9bd0b57](https://github.com/bpg/terraform-provider-proxmox/commit/9bd0b57254768519d70fb6b1589d038e06d93842))
+
 ## [0.70.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.70.0...v0.70.1) (2025-01-31)
 
 
