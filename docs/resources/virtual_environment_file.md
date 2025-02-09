@@ -11,7 +11,7 @@ Use this resource to upload files to a Proxmox VE node. The file can be a backup
 
 ## Example Usage
 
-### Backups (`dump`)
+### Backups (`backup`)
 
 -> The resource with this content type uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
 
@@ -19,12 +19,12 @@ Use this resource to upload files to a Proxmox VE node. The file can be a backup
 
 ```hcl
 resource "proxmox_virtual_environment_file" "backup" {
-  content_type = "dump"
+  content_type = "backup"
   datastore_id = "local"
   node_name    = "pve"
 
   source_file {
-    path = "vzdump-lxc-100-2023_11_08-23_10_05.tar"
+    path = "vzdump-lxc-100-2023_11_08-23_10_05.tar.zst"
   }
 }
 ```
@@ -123,7 +123,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 
 - `content_type` - (Optional) The content type. If not specified, the content
     type will be inferred from the file extension. Valid values are:
-    - `dump` (allowed extensions: `.vzdump`)
+    - `backup` (allowed extensions: `.vzdump`, `.tar.gz`, `.tar.xz`, `tar.zst`)
     - `iso` (allowed extensions: `.iso`, `.img`)
     - `snippets` (allowed extensions: any)
     - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)
