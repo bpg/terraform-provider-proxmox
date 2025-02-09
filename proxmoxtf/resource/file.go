@@ -551,9 +551,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		File:        file,
 		Mode:        fileMode,
 	}
-	if *contentType == "backup" {
-		request.ContentType = "dump"
-	}
 
 	switch *contentType {
 	case "iso", "vztmpl":
@@ -588,6 +585,11 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 					),
 				},
 			}...)
+		}
+
+		// PVE expects backups to be located at the "dump" directory of the datastore.
+		if *contentType == "backup" {
+			request.ContentType = "dump"
 		}
 
 		err = capi.SSH().NodeStreamUpload(ctx, nodeName, *datastore.Path, request)
