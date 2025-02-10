@@ -15,7 +15,11 @@ Use the navigation to the left to read about the available resources.
 - [Environment Variables Summary](#environment-variables-summary)
 - [Example Usage](#example-usage)
 - [Authentication](#authentication)
+    - [Authentication Methods Comparison](#authentication-methods-comparison)
+    - [Static Credentials Examples](#static-credentials-examples)
+    - [Security Best Practices](#security-best-practices)
     - [Environment variables](#environment-variables)
+    - [API Token Authentication](#api-token-authentication)
     - [Pre-Authentication, or Passing an Authentication Ticket into the provider](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider)
 - [SSH Connection](#ssh-connection)
     - [SSH Agent](#ssh-agent)
@@ -23,7 +27,6 @@ Use the navigation to the left to read about the available resources.
     - [SSH User](#ssh-user)
     - [Node IP address used for SSH connection](#node-ip-address-used-for-ssh-connection)
     - [SSH Connection via SOCKS5 Proxy](#ssh-connection-via-socks5-proxy)
-- [API Token Authentication](#api-token-authentication)
 - [VM and Container ID Assignment](#vm-and-container-id-assignment)
 - [Temporary Directory](#temporary-directory)
 - [Argument Reference](#argument-reference)
@@ -75,20 +78,51 @@ provider "proxmox" {
 The Proxmox provider offers a flexible means of providing credentials for authentication.
 Static credentials and pre-authenticated session-ticket can be provided to the `proxmox` block through one the choices of arguments below, ordered by precedence:
 
-- `auth_ticket` and `csrf_prevention_token`
 - `api_token`
+- `auth_ticket` and `csrf_prevention_token`
 - `username` and `password`
 
 !> Hard-coding credentials into any Terraform configuration is not recommended, and risks secret leakage should this file ever be committed to a public version control system.
 
-Static credentials can be provided in-line in the Proxmox provider block, by adding one of the arguments above (example with username and password):
+### Authentication Methods Comparison
+
+| Method            | Use Case             | Pros                                                              | Cons                                                              | Security Level |
+|-------------------|----------------------|-------------------------------------------------------------------|-------------------------------------------------------------------|----------------|
+| API Token         | Production, CI/CD    | - No password needed<br>- Fine-grained permissions<br>- Revocable | - Some operations not supported<br>- Requires SSH username config | High           |
+| Auth Ticket       | Automated scripts    | - Short-lived<br>- No password storage<br>- TOTP support          | - More complex setup<br>- Needs periodic renewal                  | High           |
+| Username/Password | Development, Testing | - Full API support<br>- Simple setup                              | - Password in config/env<br>- Not revocable individually          | Medium         |
+
+### Static Credentials Examples
+
+Credentials can be provided in-line in the Proxmox provider block. Here are examples for each authentication method:
+
+**API Token (Recommended for Production):**
+
+```hcl
+provider "proxmox" {
+  endpoint  = "https://10.0.0.2:8006/"
+  api_token = "terraform@pve!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+}
+```
+
+**Username/Password (Development/Testing):**
 
 ```hcl
 provider "proxmox" {
   endpoint = "https://10.0.0.2:8006/"
-
+  insecure = true
   username = "username@realm"
   password = "a-strong-password"
+}
+```
+
+**Auth Ticket (Automated Scripts):**
+
+```hcl
+provider "proxmox" {
+  endpoint              = "https://10.0.0.2:8006/"
+  auth_ticket          = "PVE:username@realm:12345678::some_base64_payload=="
+  csrf_prevention_token = "12345678:some_blob"
 }
 ```
 
@@ -97,14 +131,46 @@ A better approach is to extract these values into Terraform variables, and refer
 ```hcl
 provider "proxmox" {
   endpoint = var.virtual_environment_endpoint
-
-  username = var.virtual_environment_username
-  password = var.virtual_environment_password
+  
+  # Choose one authentication method:
+  api_token = var.virtual_environment_api_token
+  # OR
+  username  = var.virtual_environment_username
+  password  = var.virtual_environment_password
+  # OR
+  auth_ticket           = var.virtual_environment_auth_ticket
+  csrf_prevention_token = var.virtual_environment_csrf_prevention_token
 }
 ```
 
 The variable values can be provided via a separate `.tfvars` file that should be gitignored.
 See the [Terraform documentation](https://www.terraform.io/docs/configuration/variables.html) for more information.
+
+### Security Best Practices
+
+1. **API Token Usage:**
+   - Use API tokens in production environments
+   - Create tokens with minimal required permissions
+   - Rotate tokens periodically
+   - Store tokens securely (e.g., HashiCorp Vault, AWS Secrets Manager)
+
+2. **Password Authentication:**
+   - Limit to development/testing environments
+   - Never commit passwords to version control
+   - Use strong passwords
+   - Change passwords regularly
+
+3. **Auth Ticket:**
+   - Implement proper token renewal mechanism
+   - Store tickets securely
+   - Use TOTP when available
+
+4. **General:**
+   - Use HTTPS with valid certificates
+   - Only set `insecure = true` in development
+   - Use separate credentials for different environments
+   - Implement proper secret rotation
+   - Use HashiCorp Vault or similar for secrets management
 
 ### Environment variables
 
@@ -124,6 +190,67 @@ terraform plan
 ```
 
 See the [Argument Reference](#argument-reference) section for the supported variable names and use cases.
+
+### API Token Authentication
+
+API Token authentication can be used to authenticate with the Proxmox API without the need to provide a password.
+In combination with the `ssh` block and `ssh-agent` support, this allows for a fully password-less authentication.
+
+You can create an API Token for a user via the Proxmox UI, or via the command line on the Proxmox host or cluster:
+
+- Create a user:
+
+    ```sh
+    sudo pveum user add terraform@pve
+    ```
+
+- Create a role for the user (you can skip this step if you want to use any of the existing roles):
+
+    ```sh
+    sudo pveum role add Terraform -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt User.Modify"
+    ```
+
+  ~> The list of privileges above is only an example, please review it and adjust to your needs.
+  Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
+
+- Assign the role to the previously created user:
+
+    ```sh
+    sudo pveum aclmod / -user terraform@pve -role Terraform
+    ```
+
+- Create an API token for the user:
+
+    ```sh
+    sudo pveum user token add terraform@pve provider --privsep=0
+    ```
+
+Refer to the upstream docs as needed for additional details concerning [PVE User Management](https://pve.proxmox.com/wiki/User_Management).
+
+Generating the token will output a table containing the token's ID and secret which are meant to be concatenated into a single string for use with either the `api_token` field of the `provider` block (fine for testing but should be avoided) or sourced from the `PROXMOX_VE_API_TOKEN` environment variable.
+
+```hcl
+provider "proxmox" {
+  endpoint  = var.virtual_environment_endpoint
+  api_token = "terraform@pve!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  insecure  = true
+  ssh {
+    agent    = true
+    username = "terraform"
+  }
+}
+```
+
+-> The token authentication is taking precedence over the password authentication.
+
+-> Not all Proxmox API operations are supported via API Token.
+You may see errors like
+`error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or
+`error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` or
+`Permission check failed (user != root@pam)` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
+The workaround is to use password authentication for those operations.
+
+-> You can also configure additional Proxmox users and roles using [`virtual_environment_user`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_user) and [`virtual_environment_role`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_role) resources of the provider.
 
 ### Pre-Authentication, or Passing an Authentication Ticket into the provider
 
@@ -364,67 +491,6 @@ provider "proxmox" {
 
 If enabled, this method will be used for all SSH connections to the target nodes in the cluster.
 
-## API Token Authentication
-
-API Token authentication can be used to authenticate with the Proxmox API without the need to provide a password.
-In combination with the `ssh` block and `ssh-agent` support, this allows for a fully password-less authentication.
-
-You can create an API Token for a user via the Proxmox UI, or via the command line on the Proxmox host or cluster:
-
-- Create a user:
-
-    ```sh
-    sudo pveum user add terraform@pve
-    ```
-
-- Create a role for the user (you can skip this step if you want to use any of the existing roles):
-
-    ```sh
-    sudo pveum role add Terraform -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify SDN.Use VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.Monitor VM.PowerMgmt User.Modify"
-    ```
-
-  ~> The list of privileges above is only an example, please review it and adjust to your needs.
-  Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
-
-- Assign the role to the previously created user:
-
-    ```sh
-    sudo pveum aclmod / -user terraform@pve -role Terraform
-    ```
-
-- Create an API token for the user:
-
-    ```sh
-    sudo pveum user token add terraform@pve provider --privsep=0
-    ```
-
-Refer to the upstream docs as needed for additional details concerning [PVE User Management](https://pve.proxmox.com/wiki/User_Management).
-
-Generating the token will output a table containing the token's ID and secret which are meant to be concatenated into a single string for use with either the `api_token` field of the `provider` block (fine for testing but should be avoided) or sourced from the `PROXMOX_VE_API_TOKEN` environment variable.
-
-```hcl
-provider "proxmox" {
-  endpoint  = var.virtual_environment_endpoint
-  api_token = "terraform@pve!provider=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-  insecure  = true
-  ssh {
-    agent    = true
-    username = "terraform"
-  }
-}
-```
-
--> The token authentication is taking precedence over the password authentication.
-
--> Not all Proxmox API operations are supported via API Token.
-You may see errors like
-`error creating container: received an HTTP 403 response - Reason: Permission check failed (changing feature flags for privileged container is only allowed for root@pam)` or
-`error creating VM: received an HTTP 500 response - Reason: only root can set 'arch' config` or
-`Permission check failed (user != root@pam)` when using API Token authentication, even when `Administrator` role or the `root@pam` user is used with the token.
-The workaround is to use password authentication for those operations.
-
--> You can also configure additional Proxmox users and roles using [`virtual_environment_user`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_user) and [`virtual_environment_role`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_role) resources of the provider.
-
 ## VM and Container ID Assignment
 
 When creating VMs and Containers, you can specify the optional `vm_id` attribute to set the ID of the VM or Container. However, the ID is a mandatory attribute in the Proxmox API and must be unique within the cluster. If the `vm_id` attribute is not specified, the provider will generate a unique ID and assign it to the resource.
@@ -439,8 +505,7 @@ Using `proxmox_virtual_environment_file` with `.iso` files or disk images can re
 
 Consider pointing `tmp_dir` to a directory with enough space, especially if the default temporary directory is limited by the system memory (e.g. `tmpfs` mounted on `/tmp`).
 
-A better approach is to use `proxmox_virtual_environment_download_file` resource to 
-download the file directly to the target node, without buffering to the local machine.
+A better approach is to use `proxmox_virtual_environment_download_file` resource to download the file directly to the target node, without buffering to the local machine.
 
 ## Argument Reference
 
