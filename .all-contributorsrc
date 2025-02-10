@@ -1267,6 +1267,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "fulsiram",
+      "name": "fulsiram",
+      "avatar_url": "https://avatars.githubusercontent.com/u/79424365?v=4",
+      "profile": "https://github.com/fulsiram",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
