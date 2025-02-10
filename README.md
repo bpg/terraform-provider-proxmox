@@ -1,11 +1,11 @@
 # Terraform / OpenTofu Provider for Proxmox VE
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/bpg/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/bpg/terraform-provider-proxmox)
-[![GoDoc](https://godoc.org/github.com/bpg/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/bpg/terraform-provider-proxmox)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub Release Date](https://img.shields.io/github/release-date/bpg/terraform-provider-proxmox)](https://github.com/bpg/terraform-provider-proxmox/releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/bpg/terraform-provider-proxmox?style=flat)](https://github.com/bpg/terraform-provider-proxmox/stargazers)
 [![All Contributors](https://img.shields.io/github/all-contributors/bpg/terraform-provider-proxmox)](#contributors)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bpg/terraform-provider-proxmox)](https://goreportcard.com/report/github.com/bpg/terraform-provider-proxmox)
+[![GoDoc](https://godoc.org/github.com/bpg/terraform-provider-proxmox?status.svg)](http://godoc.org/github.com/bpg/terraform-provider-proxmox)
 [![Conventional Commits](https://img.shields.io/badge/conventional%20commits-v1.0.0-ff69b4)](https://www.conventionalcommits.org/en/v1.0.0/)
 [![Wakatime](https://wakatime.com/badge/github/bpg/terraform-provider-proxmox.svg)](https://wakatime.com/@a51a1a51-85c3-497b-b88a-3b310a709909/projects/vdtgmpvjom)
 
@@ -15,17 +15,19 @@ This repository is a fork of <https://github.com/danitso/terraform-provider-prox
 
 ## Compatibility Promise
 
-This provider is compatible with the latest version of Proxmox VE (currently **8.3**).
-While it may work with older 7.x versions, it is not guaranteed to do so.
+This provider is compatible with Proxmox VE 8.x (currently **8.3**).
+
+> [!IMPORTANT]
+> Proxmox VE 7.x is NOT supported. While some features might work with 7.x, we do not test against it, and issues specific to 7.x will not be addressed.
 
 While the provider is on version 0.x, it is not guaranteed to be backward compatible with all previous minor versions.
 However, we will try to maintain backward compatibility between provider versions as much as possible.
 
 ## Requirements
 
-- [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x (not all features are available in 7.x, some features require latest 8.x)
+- [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
-- [Terraform](https://www.terraform.io/downloads.html) 1.5.x+ or [OpenTofu](https://opentofu.org) 1.6.x
+- [Terraform](https://www.terraform.io/downloads.html) 1.5.x+ or [OpenTofu](https://opentofu.org) 1.6.x+
 - [Go](https://golang.org/doc/install) 1.23 (to build the provider plugin)
 
 ## Using the Provider
@@ -71,7 +73,7 @@ If you don't have a free Proxmox cluster to play with, there is a dedicated [how
 ## Future Work
 
 The provider is using the [Terraform SDKv2](https://developer.hashicorp.com/terraform/plugin/sdkv2), which is considered legacy and is in maintenance mode.
-Work has started to migrate the provider to the new [Terraform Plugin Framework](https://www.terraform.io/docs/extend/plugin-sdk.html), with the aim of releasing it as a new major version **1.0**.
+Work has started to migrate the provider to the new [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework), with the aim of releasing it as a new major version **1.0**.
 
 ## Known Issues
 
