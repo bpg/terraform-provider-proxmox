@@ -10,6 +10,42 @@ The provider needs to be configured with the proper endpoints and credentials be
 
 Use the navigation to the left to read about the available resources.
 
+## Table of Contents
+
+- [Environment Variables Summary](#environment-variables-summary)
+- [Example Usage](#example-usage)
+- [Authentication](#authentication)
+    - [Environment variables](#environment-variables)
+    - [Pre-Authentication, or Passing an Authentication Ticket into the provider](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider)
+- [SSH Connection](#ssh-connection)
+    - [SSH Agent](#ssh-agent)
+    - [SSH Private Key](#ssh-private-key)
+    - [SSH User](#ssh-user)
+    - [Node IP address used for SSH connection](#node-ip-address-used-for-ssh-connection)
+    - [SSH Connection via SOCKS5 Proxy](#ssh-connection-via-socks5-proxy)
+- [API Token Authentication](#api-token-authentication)
+- [VM and Container ID Assignment](#vm-and-container-id-assignment)
+- [Temporary Directory](#temporary-directory)
+- [Argument Reference](#argument-reference)
+
+## Environment Variables Summary
+
+| Environment Variable | Description | Required |
+|---------------------|-------------|-----------|
+| `PROXMOX_VE_ENDPOINT` | API endpoint URL | Yes |
+| `PROXMOX_VE_USERNAME` | Username with realm | Yes* |
+| `PROXMOX_VE_PASSWORD` | User password | Yes* |
+| `PROXMOX_VE_API_TOKEN` | API token | Yes* |
+| `PROXMOX_VE_AUTH_TICKET` | Auth ticket | Yes* |
+| `PROXMOX_VE_CSRF_PREVENTION_TOKEN` | CSRF prevention token | Yes* |
+| `PROXMOX_VE_INSECURE` | Skip TLS verification | No |
+| `PROXMOX_VE_SSH_USERNAME` | SSH username | No |
+| `PROXMOX_VE_SSH_PASSWORD` | SSH password | No |
+| `PROXMOX_VE_SSH_PRIVATE_KEY` | SSH private key | No |
+| `PROXMOX_VE_TMPDIR` | Custom temporary directory | No |
+
+*One of these authentication methods is required
+
 ## Example Usage
 
 ```hcl
@@ -89,7 +125,7 @@ terraform plan
 
 See the [Argument Reference](#argument-reference) section for the supported variable names and use cases.
 
-## Pre-Authentication, or Passing an Authentication Ticket into the provider
+### Pre-Authentication, or Passing an Authentication Ticket into the provider
 
 It is possible to generate a session ticket with the API, and to pass the ticket and csrf_prevention_token into the provider using environment variables `PROXMOX_VE_AUTH_TICKET` and `PROXMOX_VE_CSRF_PREVENTION_TOKEN` (or provider's arguments `auth_ticket` and `csrf_prevention_token`).
 
@@ -173,7 +209,7 @@ The SSH agent authentication takes precedence over the `private_key` and `passwo
 In some cases where SSH agent is not available, for example when using a CI/CD pipeline that does not support SSH agent forwarding,
 you can use the `private_key` argument in the `ssh` block (or alternatively `PROXMOX_VE_SSH_PRIVATE_KEY` environment variable) to provide the private key for the SSH connection.
 
-The private key mut not be encrypted, and must be in PEM format.
+The private key must not be encrypted, and must be in PEM format.
 
 You can provide the private key from a file:
 
@@ -393,15 +429,18 @@ The workaround is to use password authentication for those operations.
 
 When creating VMs and Containers, you can specify the optional `vm_id` attribute to set the ID of the VM or Container. However, the ID is a mandatory attribute in the Proxmox API and must be unique within the cluster. If the `vm_id` attribute is not specified, the provider will generate a unique ID and assign it to the resource.
 
-The Proxmox API provides a helper function to retrieve the “next available” unique ID in the cluster, but there is no option to reserve an ID before a resource is created. Instead, the provider uses a file-based locking technique to reserve retrieved sequential IDs and prevent duplicates. However, conflicts cannot be fully avoided, especially when multiple resources are created simultaneously by different provider instances.
+The Proxmox API provides a helper function to retrieve the "next available" unique ID in the cluster, but there is no option to reserve an ID before a resource is created. Instead, the provider uses a file-based locking technique to reserve retrieved sequential IDs and prevent duplicates. However, conflicts cannot be fully avoided, especially when multiple resources are created simultaneously by different provider instances.
 
 To mitigate this issue, you can set the `random_vm_ids` attribute to `true` in the `provider` block. This will generate a random ID for each VM or Container when the `vm_id` attribute is not specified. The generated ID is checked for uniqueness through the Proxmox API before resource creation, significantly reducing the risk of conflicts.
 
 ## Temporary Directory
 
-Using `proxmox_virtual_environment_file` with `.iso` files or disk images can require large amount of space in the temporary directory of the computer running terraform.
+Using `proxmox_virtual_environment_file` with `.iso` files or disk images can require a large amount of space in the temporary directory of the computer running terraform.
 
 Consider pointing `tmp_dir` to a directory with enough space, especially if the default temporary directory is limited by the system memory (e.g. `tmpfs` mounted on `/tmp`).
+
+A better approach is to use `proxmox_virtual_environment_download_file` resource to 
+download the file directly to the target node, without buffering to the local machine.
 
 ## Argument Reference
 
