@@ -163,7 +163,7 @@ output "vm_ipv4_address" {
 If you wish to keep the user data cloud-init config generic, for example, when deploying multiple VMs for a Kubernetes cluster, you can use a separate snippet with the metadata cloud-init config to set the hostname. Note that it uses the `local-hostname` configuration parameter. See more details in the [cloud-init documentation](https://docs.cloud-init.io/en/latest/reference/yaml_examples/update_hostname.html).
 
 ```terraform
-resource "proxmox_virtual_environment_file" "metadata_cloud_config" {
+resource "proxmox_virtual_environment_file" "meta_data_cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = "pve"
@@ -174,7 +174,7 @@ resource "proxmox_virtual_environment_file" "metadata_cloud_config" {
     local-hostname: test-ubuntu
     EOF
 
-    file_name = "metadata-cloud-config.yaml"
+    file_name = "meta-data-cloud-config.yaml"
   }
 }
 ```
@@ -186,7 +186,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   initialization {
     # ...
     user_data_file_id = proxmox_virtual_environment_file.user_data_cloud_config.id
-    metadata_file_id  = proxmox_virtual_environment_file.metadata_cloud_config.id
+    meta_data_file_id = proxmox_virtual_environment_file.meta_data_cloud_config.id
   }
 
   # ...
