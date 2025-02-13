@@ -86,11 +86,11 @@ Static credentials and pre-authenticated session-ticket can be provided to the `
 
 ### Authentication Methods Comparison
 
-| Method            | Use Case             | Pros                                                              | Cons                                                              | Security Level |
-|-------------------|----------------------|-------------------------------------------------------------------|-------------------------------------------------------------------|----------------|
-| API Token         | Production, CI/CD    | - No password needed<br>- Fine-grained permissions<br>- Revocable | - Some operations not supported<br>- Requires SSH username config | High           |
-| Auth Ticket       | Automated scripts    | - Short-lived<br>- No password storage<br>- TOTP support          | - More complex setup<br>- Needs periodic renewal                  | High           |
-| Username/Password | Development, Testing | - Full API support<br>- Simple setup                              | - Password in config/env<br>- Not revocable individually          | Medium         |
+| Method                                                                                   | Use Case             | Pros                                                              | Cons                                                              | Security Level |
+|------------------------------------------------------------------------------------------|----------------------|-------------------------------------------------------------------|-------------------------------------------------------------------|----------------|
+| [API Token](#api-token-authentication)                                                   | Production, CI/CD    | - No password needed<br>- Fine-grained permissions<br>- Revocable | - Some operations not supported<br>- Requires SSH username config | High           |
+| [Auth Ticket](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider) | Automated scripts    | - Short-lived<br>- No password storage<br>- TOTP support          | - More complex setup<br>- Needs periodic renewal                  | High           |
+| Username/Password                                                                        | Development, Testing | - Full API support<br>- Simple setup                              | - Password in config/env<br>- Not revocable individually          | Medium         |
 
 ### Static Credentials Examples
 
@@ -152,7 +152,6 @@ See the [Terraform documentation](https://www.terraform.io/docs/configuration/va
    - Use API tokens in production environments
    - Create tokens with minimal required permissions
    - Rotate tokens periodically
-   - Store tokens securely (e.g., HashiCorp Vault, AWS Secrets Manager)
 
 2. **Password Authentication:**
    - Limit to development/testing environments
@@ -170,7 +169,6 @@ See the [Terraform documentation](https://www.terraform.io/docs/configuration/va
    - Only set `insecure = true` in development
    - Use separate credentials for different environments
    - Implement proper secret rotation
-   - Use HashiCorp Vault or similar for secrets management
 
 ### Environment variables
 
@@ -254,7 +252,7 @@ The workaround is to use password authentication for those operations.
 
 ### Pre-Authentication, or Passing an Authentication Ticket into the provider
 
-It is possible to generate a session ticket with the API, and to pass the ticket and csrf_prevention_token into the provider using environment variables `PROXMOX_VE_AUTH_TICKET` and `PROXMOX_VE_CSRF_PREVENTION_TOKEN` (or provider's arguments `auth_ticket` and `csrf_prevention_token`).
+It is possible to generate a session ticket with the API, and to pass the ticket and csrf_prevention_token into the provider using environment variables `PROXMOX_VE_AUTH_TICKET` and `PROXMOX_VE_CSRF_PREVENTION_TOKEN` (or provider's arguments `auth_ticket` and `csrf_prevention_token`). See more details in the [Proxmox Wiki](https://pve.proxmox.com/wiki/Proxmox_VE_API#Ticket_Cookie).
 
 An example of using `curl` and `jq` to query the Proxmox API to get a Proxmox session ticket; it is also very easy to pass in a TOTP password this way:
 
