@@ -42,6 +42,7 @@ import (
 
 const (
 	dvRebootAfterCreation = false
+	dvRebootAfterUpdate   = true
 	dvOnBoot              = true
 	dvACPI                = true
 	dvAgentEnabled        = false
@@ -144,6 +145,7 @@ const (
 	maxResourceVirtualEnvironmentVMNUMADevices = 8
 
 	mkRebootAfterCreation = "reboot"
+	mkRebootAfterUpdate   = "reboot_after_update"
 	mkOnBoot              = "on_boot"
 	mkBootOrder           = "boot_order"
 	mkACPI                = "acpi"
@@ -299,9 +301,15 @@ func VM() *schema.Resource {
 	s := map[string]*schema.Schema{
 		mkRebootAfterCreation: {
 			Type:        schema.TypeBool,
-			Description: "Whether to reboot vm after creation",
+			Description: "Whether to reboot VM after creation",
 			Optional:    true,
 			Default:     dvRebootAfterCreation,
+		},
+		mkRebootAfterUpdate: {
+			Type:        schema.TypeBool,
+			Description: "Whether to reboot VM after update if needed",
+			Optional:    true,
+			Default:     dvRebootAfterUpdate,
 		},
 		mkOnBoot: {
 			Type:        schema.TypeBool,
@@ -5643,6 +5651,15 @@ func vmUpdateDiskLocationAndSize(
 
 	// Perform a regular reboot in case it's necessary and haven't already been done.
 	if reboot {
+		canReboot := d.Get(mkRebootAfterUpdate).(bool)
+		if !canReboot {
+			return []diag.Diagnostic{{
+				Severity: diag.Warning,
+				Summary: "a reboot is required to apply configuration changes, but automatic " +
+					"reboots are disabled by 'reboot_after_update = false'. Please reboot the VM manually.",
+			}}
+		}
+
 		vmStatus, err := vmAPI.GetVMStatus(ctx)
 		if err != nil {
 			return diag.FromErr(err)
