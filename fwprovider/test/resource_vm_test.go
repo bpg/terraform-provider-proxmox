@@ -337,6 +337,64 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		{"update rng block", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					rng {
+						source = "/dev/urandom"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/urandom",
+						"rng.0.max_bytes": "1024",
+						"rng.0.period":    "1000",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+				
+						rng {
+							source = "/dev/urandom"
+							max_bytes = 2048
+							period = 500
+						}
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/urandom",
+						"rng.0.max_bytes": "2048",
+						"rng.0.period":    "500",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
+				
+						rng {
+							source = "/dev/random"
+							max_bytes = 512
+							period = 200
+						}
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"rng.0.source":    "/dev/random",
+						"rng.0.max_bytes": "512",
+						"rng.0.period":    "200",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

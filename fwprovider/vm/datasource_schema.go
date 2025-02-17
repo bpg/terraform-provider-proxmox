@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package vm
 
 import (
@@ -9,6 +15,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 )
 
@@ -53,6 +60,7 @@ func (d *Datasource) Schema(
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
+			"rng":  rng.DataSourceSchema(),
 			"tags": stringset.ResourceAttribute("The tags assigned to the VM.", ""),
 			"template": schema.BoolAttribute{
 				Description: "Whether the VM is a template.",
