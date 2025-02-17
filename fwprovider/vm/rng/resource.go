@@ -43,6 +43,27 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diag
 	return obj
 }
 
+// createRNGDevice creates a new CustomRNGDevice from the given Model.
+func createRNGDevice(model Model, setSource bool) *vms.CustomRNGDevice {
+	rngDevice := &vms.CustomRNGDevice{}
+
+	if setSource && !model.Source.IsUnknown() {
+		rngDevice.Source = model.Source.ValueString()
+	}
+
+	if !model.MaxBytes.IsUnknown() && model.MaxBytes.ValueInt64() != 0 {
+		maxBytes := int(model.MaxBytes.ValueInt64())
+		rngDevice.MaxBytes = &maxBytes
+	}
+
+	if !model.Period.IsUnknown() && model.Period.ValueInt64() != 0 {
+		period := int(model.Period.ValueInt64())
+		rngDevice.Period = &period
+	}
+
+	return rngDevice
+}
+
 // FillCreateBody fills the CreateRequestBody with the RNG settings from the Value.
 //
 // In the 'create' context, v is the plan.
@@ -60,21 +81,7 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 		return
 	}
 
-	rngDevice := &vms.CustomRNGDevice{}
-
-	if !plan.Source.IsUnknown() {
-		rngDevice.Source = plan.Source.ValueString()
-	}
-
-	if !plan.MaxBytes.IsUnknown() {
-		maxBytes := int(plan.MaxBytes.ValueInt64())
-		rngDevice.MaxBytes = &maxBytes
-	}
-
-	if !plan.Period.IsUnknown() {
-		period := int(plan.Period.ValueInt64())
-		rngDevice.Period = &period
-	}
+	rngDevice := createRNGDevice(plan, true)
 
 	if !reflect.DeepEqual(rngDevice, &vms.CustomRNGDevice{}) {
 		body.RNGDevice = rngDevice
@@ -106,19 +113,7 @@ func FillUpdateBody(
 		return
 	}
 
-	rngDevice := &vms.CustomRNGDevice{
-		Source: state.Source.ValueString(),
-	}
-
-	if state.MaxBytes.ValueInt64() != 0 {
-		maxBytes := int(state.MaxBytes.ValueInt64())
-		rngDevice.MaxBytes = &maxBytes
-	}
-
-	if state.Period.ValueInt64() != 0 {
-		period := int(state.Period.ValueInt64())
-		rngDevice.Period = &period
-	}
+	rngDevice := createRNGDevice(state, true)
 
 	if !plan.Source.Equal(state.Source) {
 		if attribute.ShouldBeRemoved(plan.Source, state.Source, isClone) {

@@ -485,7 +485,7 @@ output "ubuntu_vm_public_key" {
 - `protection` - (Optional) Sets the protection flag of the VM. This will disable the remove VM and remove disk operations (defaults to `false`).
 - `reboot` - (Optional) Reboot the VM after initial creation. (defaults to `false`)
 - `rng` - (Optional) The random number generator configuration. Can only be set by `root@pam.`
-    - `source` - The file on the host to gather entropy from. In most cases `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
+    - `source` - The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
     - `max_bytes` - (Optional) Maximum bytes of entropy allowed to get injected into the guest every `period` milliseconds (defaults to `1024`). Prefer a lower value when using `/dev/random` as source.
     - `period` - (Optional) Every `period` milliseconds the entropy-injection quota is reset, allowing the guest to retrieve another `max_bytes` of entropy (defaults to `1000`).
 - `serial_device` - (Optional) A serial device (multiple blocks supported).

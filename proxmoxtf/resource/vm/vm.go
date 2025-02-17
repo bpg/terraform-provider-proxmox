@@ -1223,7 +1223,7 @@ func VM() *schema.Resource {
 					mkRNGSource: {
 						Type: schema.TypeString,
 						Description: "The file on the host to gather entropy from. " +
-							"In most cases `/dev/urandom` should be preferred over `/dev/random` " +
+							"In most cases, `/dev/urandom` should be preferred over `/dev/random` " +
 							"to avoid entropy-starvation issues on the host.",
 						ValidateFunc: validation.StringIsNotEmpty,
 						Required:     true,
@@ -5129,7 +5129,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		rebootRequired = true
 	}
 
-	// Prepare the new tpm state configuration.
+	// Prepare the new RNG configuration.
 	if d.HasChange(mkRNG) {
 		rngDevice := vmGetRNGDevice(d)
 

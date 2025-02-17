@@ -37,7 +37,7 @@ func ResourceSchema() schema.Attribute {
 			"source": schema.StringAttribute{
 				Description: "The entropy source for the RNG device.",
 				MarkdownDescription: "The file on the host to gather entropy from. " +
-					"In most cases `/dev/urandom` should be preferred over `/dev/random` " +
+					"In most cases, `/dev/urandom` should be preferred over `/dev/random` " +
 					"to avoid entropy-starvation issues on the host.",
 				Optional: true,
 				Computed: true,

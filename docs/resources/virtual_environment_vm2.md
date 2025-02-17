@@ -87,7 +87,7 @@ Optional:
 
 - `max_bytes` (Number) Maximum bytes of entropy allowed to get injected into the guest every period. Use 0 to disable limiting (potentially dangerous).
 - `period` (Number) Period in milliseconds to limit entropy injection to the guest. Use 0 to disable limiting (potentially dangerous).
-- `source` (String) The file on the host to gather entropy from. In most cases `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
+- `source` (String) The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
 
 
 <a id="nestedatt--timeouts"></a>
