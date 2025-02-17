@@ -4,38 +4,37 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package vga
+package rng
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-// DataSourceSchema defines the schema for the VGA datasource.
+// DataSourceSchema defines the schema for the RNG datasource.
 func DataSourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		CustomType: basetypes.ObjectType{
 			AttrTypes: attributeTypes(),
 		},
-		Description: "The VGA configuration.",
+		Description: "The RNG (Random Number Generator) configuration.",
 		Optional:    true,
 		Computed:    true,
 		Attributes: map[string]schema.Attribute{
-			"clipboard": schema.StringAttribute{
-				Description: "Enable a specific clipboard.",
+			"source": schema.StringAttribute{
+				Description: "The entropy source for the RNG device.",
 				Optional:    true,
 				Computed:    true,
 			},
-			"type": schema.StringAttribute{
-				Description: "The VGA type.",
+			"max_bytes": schema.Int64Attribute{
+				Description: "Maximum bytes of entropy allowed to get injected into the guest every period.",
 				Optional:    true,
 				Computed:    true,
 			},
-			"memory": schema.Int64Attribute{
-				Description:         "The VGA memory in megabytes (4-512 MB)",
-				MarkdownDescription: "The VGA memory in megabytes (4-512 MB). Has no effect with serial display. ",
-				Optional:            true,
-				Computed:            true,
+			"period": schema.Int64Attribute{
+				Description: "Period in milliseconds to limit entropy injection to the guest.",
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
