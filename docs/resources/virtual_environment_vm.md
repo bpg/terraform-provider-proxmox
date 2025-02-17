@@ -483,7 +483,8 @@ output "ubuntu_vm_public_key" {
         - `wxp` - Windows XP.
 - `pool_id` - (Optional) The identifier for a pool to assign the virtual machine to.
 - `protection` - (Optional) Sets the protection flag of the VM. This will disable the remove VM and remove disk operations (defaults to `false`).
-- `reboot` - (Optional) Reboot the VM after initial creation. (defaults to `false`)
+- `reboot` - (Optional) Reboot the VM after initial creation (defaults to `false`).
+- `reboot_after_update` - (Optional) Reboot the VM after update if needed (defaults to `true`).
 - `rng` - (Optional) The random number generator configuration. Can only be set by `root@pam.`
     - `source` - The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
     - `max_bytes` - (Optional) Maximum bytes of entropy allowed to get injected into the guest every `period` milliseconds (defaults to `1024`). Prefer a lower value when using `/dev/random` as source.
