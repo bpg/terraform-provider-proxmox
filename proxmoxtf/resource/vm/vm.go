@@ -5655,8 +5655,8 @@ func vmUpdateDiskLocationAndSize(
 		if !canReboot {
 			return []diag.Diagnostic{{
 				Severity: diag.Warning,
-				Summary: "the VM reboot is required due to the configuration changes, but it is " +
-					"disabled by the configuration. Please reboot the VM manually.",
+				Summary: "a reboot is required to apply configuration changes, but automatic " +
+					"reboots are disabled by 'reboot_after_update = false'. Please reboot the VM manually.",
 			}}
 		}
 
