@@ -36,6 +36,7 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 - `description` (String) The description of the VM.
 - `id` (Number) The unique identifier of the VM in the Proxmox cluster.
 - `name` (String) The name of the VM. Doesn't have to be unique.
+- `rng` (Attributes) Configure the RNG (Random Number Generator) device. The RNG device provides entropy to guests to ensure good quality random numbers for guest applications that require them. Can only be set by `root@pam.`See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for more information. (see [below for nested schema](#nestedatt--rng))
 - `stop_on_destroy` (Boolean) Set to true to stop (rather than shutdown) the VM on destroy (defaults to `false`).
 - `tags` (Set of String) The tags assigned to the VM.
 - `template` (Boolean) Set to true to create a VM template.
@@ -77,6 +78,16 @@ Optional:
 - `sockets` (Number) The number of CPU sockets (defaults to `1`).
 - `type` (String) Emulated CPU type, it's recommended to use `x86-64-v2-AES` or higher (defaults to `kvm64`). See https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings for more information.
 - `units` (Number) CPU weight for a VM. Argument is used in the kernel fair scheduler. The larger the number is, the more CPU time this VM gets. Number is relative to weights of all the other running VMs.
+
+
+<a id="nestedatt--rng"></a>
+### Nested Schema for `rng`
+
+Optional:
+
+- `max_bytes` (Number) Maximum bytes of entropy allowed to get injected into the guest every period. Use 0 to disable limiting (potentially dangerous).
+- `period` (Number) Period in milliseconds to limit entropy injection to the guest. Use 0 to disable limiting (potentially dangerous).
+- `source` (String) The file on the host to gather entropy from. In most cases, `/dev/urandom` should be preferred over `/dev/random` to avoid entropy-starvation issues on the host.
 
 
 <a id="nestedatt--timeouts"></a>

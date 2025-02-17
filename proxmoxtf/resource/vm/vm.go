@@ -104,6 +104,8 @@ const (
 	dvOperatingSystemType = "other"
 	dvPoolID              = ""
 	dvProtection          = false
+	dvRNGMaxBytes         = 1024
+	dvRNGPeriod           = 1000
 	dvSerialDeviceDevice  = "socket"
 	dvSMBIOSFamily        = ""
 	dvSMBIOSManufacturer  = ""
@@ -244,6 +246,10 @@ const (
 	mkOperatingSystemType  = "type"
 	mkPoolID               = "pool_id"
 	mkProtection           = "protection"
+	mkRNG                  = "rng"
+	mkRNGSource            = "source"
+	mkRNGMaxBytes          = "max_bytes"
+	mkRNGPeriod            = "period"
 	mkSerialDevice         = "serial_device"
 	mkSerialDeviceDevice   = "device"
 	mkSMBIOS               = "smbios"
@@ -1204,6 +1210,42 @@ func VM() *schema.Resource {
 			Description: "Sets the protection flag of the VM. This will disable the remove VM and remove disk operations",
 			Optional:    true,
 			Default:     dvProtection,
+		},
+		mkRNG: {
+			Type:        schema.TypeList,
+			Description: "The RNG configuration",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkRNGSource: {
+						Type: schema.TypeString,
+						Description: "The file on the host to gather entropy from. " +
+							"In most cases, `/dev/urandom` should be preferred over `/dev/random` " +
+							"to avoid entropy-starvation issues on the host.",
+						ValidateFunc: validation.StringIsNotEmpty,
+						Required:     true,
+					},
+					mkRNGMaxBytes: {
+						Type: schema.TypeInt,
+						Description: "Maximum bytes of entropy allowed to get injected into the guest every `period` " +
+							"milliseconds. Prefer a lower value when using `/dev/random` as source.",
+						Optional:         true,
+						Computed:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
+					},
+					mkRNGPeriod: {
+						Type: schema.TypeInt,
+						Description: "Every `period` milliseconds the entropy-injection quota is reset, " +
+							"allowing the guest to retrieve another `max_bytes` of entropy.",
+						Optional:         true,
+						Computed:         true,
+						ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(1)),
+					},
+				},
+			},
 		},
 		mkSerialDevice: {
 			Type:        schema.TypeList,
@@ -2409,24 +2451,12 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		}
 	}
 
-	var tpmState *vms.CustomTPMState
-
-	tpmStateBlock := d.Get(mkTPMState).([]interface{})
-	if len(tpmStateBlock) > 0 && tpmStateBlock[0] != nil {
-		block := tpmStateBlock[0].(map[string]interface{})
-
-		datastoreID, _ := block[mkTPMStateDatastoreID].(string)
-		version, _ := block[mkTPMStateVersion].(string)
-
-		if version == "" {
-			version = dvTPMStateVersion
-		}
-
-		tpmState = &vms.CustomTPMState{
-			FileVolume: fmt.Sprintf("%s:1", datastoreID),
-			Version:    &version,
-		}
+	tpmState := vmGetTPMState(d, nil)
+	if tpmState != nil && (tpmState.Version == nil || *tpmState.Version == "") {
+		tpmState.Version = ptr.Ptr(dvTPMStateVersion)
 	}
+
+	rng := vmGetRNGDevice(d)
 
 	initializationConfig := vmGetCloudInitConfig(d)
 	initializationAttr := d.Get(mkInitialization)
@@ -2655,6 +2685,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		NUMADevices:          numaDeviceObjects,
 		OSType:               &operatingSystemType,
 		PCIDevices:           pciDeviceObjects,
+		RNGDevice:            rng,
 		SCSIHardware:         &scsiHardware,
 		SerialDevices:        serialDevices,
 		SharedMemory:         memorySharedObject,
@@ -3046,6 +3077,36 @@ func vmGetTPMStateAsStorageDevice(d *schema.ResourceData, disk []interface{}) *v
 	}
 
 	return storageDevice
+}
+
+func vmGetRNGDevice(d *schema.ResourceData) *vms.CustomRNGDevice {
+	rngBlock := d.Get(mkRNG).([]interface{})
+
+	var rng *vms.CustomRNGDevice
+
+	if len(rngBlock) > 0 && rngBlock[0] != nil {
+		block := rngBlock[0].(map[string]interface{})
+
+		source, _ := block[mkRNGSource].(string)
+
+		maxBytes, _ := block[mkRNGMaxBytes].(int)
+		if maxBytes == 0 {
+			maxBytes = dvRNGMaxBytes
+		}
+
+		period, _ := block[mkRNGPeriod].(int)
+		if period == 0 {
+			period = dvRNGPeriod
+		}
+
+		rng = &vms.CustomRNGDevice{
+			Source:   source,
+			MaxBytes: &maxBytes,
+			Period:   &period,
+		}
+	}
+
+	return rng
 }
 
 func vmGetHostPCIDeviceObjects(d *schema.ResourceData) vms.CustomPCIDevices {
@@ -3754,6 +3815,35 @@ func vmReadCustom(
 			tpmState[mkTPMStateDatastoreID] != dvTPMStateDatastoreID ||
 			tpmState[mkTPMStateVersion] != dvTPMStateVersion {
 			err := d.Set(mkTPMState, []interface{}{tpmState})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	if vmConfig.RNGDevice != nil {
+		rng := map[string]interface{}{}
+
+		rng[mkRNGSource] = vmConfig.RNGDevice.Source
+
+		if vmConfig.RNGDevice.MaxBytes != nil {
+			rng[mkRNGMaxBytes] = *vmConfig.RNGDevice.MaxBytes
+		}
+
+		if vmConfig.RNGDevice.Period != nil {
+			rng[mkRNGPeriod] = *vmConfig.RNGDevice.Period
+		}
+
+		currentRNG := d.Get(mkRNG).([]interface{})
+
+		if len(clone) > 0 {
+			if len(currentRNG) > 0 {
+				err := d.Set(mkRNG, []interface{}{rng})
+				diags = append(diags, diag.FromErr(err)...)
+			}
+		} else if len(currentRNG) > 0 ||
+			rng[mkRNGSource] != "" ||
+			rng[mkRNGMaxBytes] != dvRNGMaxBytes || // or != 0?
+			rng[mkRNGPeriod] != dvRNGPeriod {
+			err := d.Set(mkRNG, []interface{}{rng})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -5035,6 +5125,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		tpmState := vmGetTPMState(d, nil)
 
 		updateBody.TPMState = tpmState
+
+		rebootRequired = true
+	}
+
+	// Prepare the new RNG configuration.
+	if d.HasChange(mkRNG) {
+		rngDevice := vmGetRNGDevice(d)
+
+		updateBody.RNGDevice = rngDevice
 
 		rebootRequired = true
 	}

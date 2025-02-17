@@ -28,6 +28,7 @@ This is an experimental implementation of a Proxmox VM datasource using Plugin F
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `description` (String) The description of the VM.
 - `name` (String) The name of the VM.
+- `rng` (Attributes) The RNG (Random Number Generator) configuration. (see [below for nested schema](#nestedatt--rng))
 - `tags` (Set of String) The tags assigned to the VM.
 - `template` (Boolean) Whether the VM is a template.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
@@ -60,6 +61,16 @@ Optional:
 - `sockets` (Number) The number of CPU sockets.
 - `type` (String) Emulated CPU type.
 - `units` (Number) CPU weight for a VM
+
+
+<a id="nestedatt--rng"></a>
+### Nested Schema for `rng`
+
+Optional:
+
+- `max_bytes` (Number) Maximum bytes of entropy allowed to get injected into the guest every period.
+- `period` (Number) Period in milliseconds to limit entropy injection to the guest.
+- `source` (String) The entropy source for the RNG device.
 
 
 <a id="nestedatt--timeouts"></a>

@@ -18,6 +18,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -38,6 +39,7 @@ type Model struct {
 	ID            types.Int64     `tfsdk:"id"`
 	Name          types.String    `tfsdk:"name"`
 	NodeName      types.String    `tfsdk:"node_name"`
+	RNG           rng.Value       `tfsdk:"rng"`
 	StopOnDestroy types.Bool      `tfsdk:"stop_on_destroy"`
 	Tags          stringset.Value `tfsdk:"tags"`
 	Template      types.Bool      `tfsdk:"template"`
@@ -85,6 +87,7 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 
 	// Blocks
 	model.CPU = cpu.NewValue(ctx, config, diags)
+	model.RNG = rng.NewValue(ctx, config, diags)
 	model.VGA = vga.NewValue(ctx, config, diags)
 
 	model.CDROM = cdrom.NewValue(ctx, config, diags)

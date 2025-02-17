@@ -4,24 +4,24 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package vga
+package rng
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Model represents the VGA model.
+// Model represents the RNG model.
 type Model struct {
-	Clipboard types.String `tfsdk:"clipboard"`
-	Type      types.String `tfsdk:"type"`
-	Memory    types.Int64  `tfsdk:"memory"`
+	Source   types.String `tfsdk:"source"`
+	MaxBytes types.Int64  `tfsdk:"max_bytes"`
+	Period   types.Int64  `tfsdk:"period"`
 }
 
 func attributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"clipboard": types.StringType,
-		"type":      types.StringType,
-		"memory":    types.Int64Type,
+		"source":    types.StringType,
+		"max_bytes": types.Int64Type,
+		"period":    types.Int64Type,
 	}
 }

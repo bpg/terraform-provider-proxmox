@@ -25,6 +25,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 )
 
@@ -89,6 +90,7 @@ func (r *Resource) Schema(
 				Description: "The name of the node where the VM is provisioned.",
 				Required:    true,
 			},
+			"rng": rng.ResourceSchema(),
 			"stop_on_destroy": schema.BoolAttribute{
 				Description:         "Set to true to stop (rather than shutdown) the VM on destroy.",
 				MarkdownDescription: "Set to true to stop (rather than shutdown) the VM on destroy (defaults to `false`).",

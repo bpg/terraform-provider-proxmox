@@ -48,4 +48,6 @@ terraform-provider-proxmox*
 
 # VScode / Cursor
 .vscode/settings.json
+.cursor/
 .cursorrules
+coverage.out

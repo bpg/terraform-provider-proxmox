@@ -24,6 +24,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -158,6 +159,7 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	// fill out create body fields with values from other resource blocks
 	cdrom.FillCreateBody(ctx, plan.CDROM, createBody, diags)
 	cpu.FillCreateBody(ctx, plan.CPU, createBody, diags)
+	rng.FillCreateBody(ctx, plan.RNG, createBody, diags)
 	vga.FillCreateBody(ctx, plan.VGA, createBody, diags)
 
 	if diags.HasError() {
@@ -205,6 +207,8 @@ func (r *Resource) clone(ctx context.Context, plan Model, diags *diag.Diagnostic
 		Name:        plan.Name,
 		Description: plan.Description,
 		NodeName:    plan.NodeName,
+		RNG:         plan.RNG,
+		VGA:         plan.VGA,
 	}
 
 	read(ctx, r.client, &clone, diags)
@@ -336,6 +340,7 @@ func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, 
 	// fill out update body fields with values from other resource blocks
 	cdrom.FillUpdateBody(ctx, plan.CDROM, state.CDROM, updateBody, isClone, diags)
 	cpu.FillUpdateBody(ctx, plan.CPU, state.CPU, updateBody, isClone, diags)
+	rng.FillUpdateBody(ctx, plan.RNG, state.RNG, updateBody, isClone, diags)
 	vga.FillUpdateBody(ctx, plan.VGA, state.VGA, updateBody, isClone, diags)
 
 	if !updateBody.IsEmpty() {

@@ -44,13 +44,13 @@ type CreateRequestBody struct {
 	Boot                 *CustomBoot                    `json:"boot,omitempty"               url:"boot,omitempty"`
 	CDROM                *string                        `json:"cdrom,omitempty"              url:"cdrom,omitempty"`
 	CloudInitConfig      *CustomCloudInitConfig         `json:"cloudinit,omitempty"          url:"cloudinit,omitempty"`
+	CPUAffinity          *string                        `json:"affinity,omitempty"           url:"affinity,omitempty"`
 	CPUArchitecture      *string                        `json:"arch,omitempty"               url:"arch,omitempty"`
 	CPUCores             *int64                         `json:"cores,omitempty"              url:"cores,omitempty"`
 	CPUEmulation         *CustomCPUEmulation            `json:"cpu,omitempty"                url:"cpu,omitempty"`
 	CPULimit             *int64                         `json:"cpulimit,omitempty"           url:"cpulimit,omitempty"`
 	CPUSockets           *int64                         `json:"sockets,omitempty"            url:"sockets,omitempty"`
 	CPUUnits             *int64                         `json:"cpuunits,omitempty"           url:"cpuunits,omitempty"`
-	CPUAffinity          *string                        `json:"affinity,omitempty"           url:"affinity,omitempty"`
 	DedicatedMemory      *int                           `json:"memory,omitempty"             url:"memory,omitempty"`
 	Delete               []string                       `json:"delete,omitempty"             url:"delete,omitempty,comma"`
 	DeletionProtection   *types.CustomBool              `json:"protection,omitempty"         url:"protection,omitempty,int"`
@@ -80,6 +80,7 @@ type CreateRequestBody struct {
 	PCIDevices           CustomPCIDevices               `json:"hostpci,omitempty"            url:"hostpci,omitempty"`
 	PoolID               *string                        `json:"pool,omitempty"               url:"pool,omitempty"`
 	Revert               *string                        `json:"revert,omitempty"             url:"revert,omitempty"`
+	RNGDevice            *CustomRNGDevice               `json:"rng0,omitempty"               url:"rng0,omitempty"`
 	SCSIHardware         *string                        `json:"scsihw,omitempty"             url:"scsihw,omitempty"`
 	SerialDevices        CustomSerialDevices            `json:"serial,omitempty"             url:"serial,omitempty"`
 	SharedMemory         *CustomSharedMemory            `json:"ivshmem,omitempty"            url:"ivshmem,omitempty"`
@@ -290,6 +291,7 @@ type GetResponseData struct {
 	Overwrite            *types.CustomBool               `json:"force,omitempty"`
 	PoolID               *string                         `json:"pool,omitempty"`
 	Revert               *string                         `json:"revert,omitempty"`
+	RNGDevice            *CustomRNGDevice                `json:"rng0,omitempty"`
 	SCSIHardware         *string                         `json:"scsihw,omitempty"`
 	SerialDevice0        *string                         `json:"serial0,omitempty"`
 	SerialDevice1        *string                         `json:"serial1,omitempty"`
