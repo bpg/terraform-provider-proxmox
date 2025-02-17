@@ -5651,7 +5651,6 @@ func vmUpdateDiskLocationAndSize(
 
 	// Perform a regular reboot in case it's necessary and haven't already been done.
 	if reboot {
-
 		canReboot := d.Get(mkRebootAfterUpdate).(bool)
 		if !canReboot {
 			return []diag.Diagnostic{{
