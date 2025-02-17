@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.72.0...v0.73.0) (2025-02-17)
+
+
+### Features
+
+* **vm:** add optional `reboot_after_update` configuration flag ([#1777](https://github.com/bpg/terraform-provider-proxmox/issues/1777)) ([5e726c4](https://github.com/bpg/terraform-provider-proxmox/commit/5e726c48d447bee1b6487bad8472c032d00e8931))
+
 ## [0.72.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.71.0...v0.72.0) (2025-02-17)
 
 
