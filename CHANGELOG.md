@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.72.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.71.0...v0.72.0) (2025-02-17)
+
+
+### Features
+
+* **lxc:** add container datasource ([#1750](https://github.com/bpg/terraform-provider-proxmox/issues/1750)) ([3834564](https://github.com/bpg/terraform-provider-proxmox/commit/3834564ea43d1f679e4f281c89ce0a815ddfbd12))
+* **vm:** add RNG device  support ([#1774](https://github.com/bpg/terraform-provider-proxmox/issues/1774)) ([3119194](https://github.com/bpg/terraform-provider-proxmox/commit/31191942928722d18f1ae6ea467c030da1f2fa71))
+
+
+### Bug Fixes
+
+* **docs:** update incorrect reference to meta_data_file_id ([#1759](https://github.com/bpg/terraform-provider-proxmox/issues/1759)) ([28327f9](https://github.com/bpg/terraform-provider-proxmox/commit/28327f90e37840b73704dafd4e6ec983dbff53c0))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.11.3 → v1.11.5) ([#1773](https://github.com/bpg/terraform-provider-proxmox/issues/1773)) ([3d48a97](https://github.com/bpg/terraform-provider-proxmox/commit/3d48a97fb1a5bb35d8cc124b175275931f8c7d3b))
+* **ci:** update goreleaser/goreleaser-action action (v6.1.0 → v6.2.1) ([#1764](https://github.com/bpg/terraform-provider-proxmox/issues/1764)) ([54624fb](https://github.com/bpg/terraform-provider-proxmox/commit/54624fb6531b7447b112bf6098062aa978265148))
+* **code:** update linters config ([#1775](https://github.com/bpg/terraform-provider-proxmox/issues/1775)) ([45806f3](https://github.com/bpg/terraform-provider-proxmox/commit/45806f38f47a75635a777f4043dd7aaa9f461893))
+* **deps:** update module github.com/golangci/golangci-lint (v1.63.4 → v1.64.2) in /tools ([#1765](https://github.com/bpg/terraform-provider-proxmox/issues/1765)) ([6e21bca](https://github.com/bpg/terraform-provider-proxmox/commit/6e21bca2d5c1903f62c20d6b76106382ef342e26))
+* **deps:** update module github.com/golangci/golangci-lint (v1.64.2 → v1.64.4) in /tools ([#1769](https://github.com/bpg/terraform-provider-proxmox/issues/1769)) ([a5251d1](https://github.com/bpg/terraform-provider-proxmox/commit/a5251d119a6f50ac4808baeaa68af6640de1d7b7))
+* **deps:** update module github.com/golangci/golangci-lint (v1.64.4 → v1.64.5) in /tools ([#1772](https://github.com/bpg/terraform-provider-proxmox/issues/1772)) ([417cdff](https://github.com/bpg/terraform-provider-proxmox/commit/417cdff50c71c3517010990c0824b9b2b69f3c47))
+* **deps:** update module golang.org/x/net (v0.34.0 → v0.35.0) ([#1766](https://github.com/bpg/terraform-provider-proxmox/issues/1766)) ([d350c65](https://github.com/bpg/terraform-provider-proxmox/commit/d350c65f4cde83a2b9b4f46b09f15f21687b5a87))
+* **docs:** add security policy ([#1758](https://github.com/bpg/terraform-provider-proxmox/issues/1758)) ([cbff3e4](https://github.com/bpg/terraform-provider-proxmox/commit/cbff3e4fd458b3dabd4c9ff6c28ea277db2db0b4))
+* **docs:** remove broken links from SECURITY.md ([#1776](https://github.com/bpg/terraform-provider-proxmox/issues/1776)) ([4c06d0f](https://github.com/bpg/terraform-provider-proxmox/commit/4c06d0f12e6b89d0fb1085865a1e699808db462c))
+* **docs:** reorganize API token auth section ([#1761](https://github.com/bpg/terraform-provider-proxmox/issues/1761)) ([4057d13](https://github.com/bpg/terraform-provider-proxmox/commit/4057d137151bb7926d0d196e48ceb6a97c42b618))
+* **docs:** update project documentation and contribution guidelines ([#1756](https://github.com/bpg/terraform-provider-proxmox/issues/1756)) ([8c0c79b](https://github.com/bpg/terraform-provider-proxmox/commit/8c0c79be3c78ed85e6790ba1cbbdb1ece3d5290c))
+
 ## [0.71.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.70.1...v0.71.0) (2025-02-09)
 
 
