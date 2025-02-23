@@ -5,7 +5,7 @@ title: "Provider: Proxmox Virtual Environment"
 
 # Proxmox Provider
 
-This provider for [Terraform](https://www.terraform.io/) is used for interacting with resources supported by [Proxmox](https://www.proxmox.com/en/).
+This provider for [Terraform](https://www.terraform.io/) / [OpenTofu](https://opentofu.org/) is used for interacting with resources supported by [Proxmox VE](https://www.proxmox.com/en/products/proxmox-virtual-environment/overview).
 The provider needs to be configured with the proper endpoints and credentials before it can be used.
 
 Use the navigation to the left to read about the available resources.
@@ -238,8 +238,6 @@ provider "proxmox" {
   }
 }
 ```
-
--> The token authentication is taking precedence over the password authentication.
 
 -> Not all Proxmox API operations are supported via API Token.
 You may see errors like

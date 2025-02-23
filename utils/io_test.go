@@ -7,7 +7,6 @@
 package utils
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 func TestCloseOrLogError(t *testing.T) {
 	t.Parallel()
 
-	f := CloseOrLogError(context.Background())
+	f := CloseOrLogError(t.Context())
 
 	c := &testCloser{}
 	b := &badCloser{}

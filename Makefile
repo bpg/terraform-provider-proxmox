@@ -3,6 +3,9 @@ TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
 VERSION=0.72.0# x-release-please-version
 
+# renovate: datasource=github-releases depName=golangci/golangci-lint
+GOLANGCI_LINT_VERSION=v1.64.5
+
 # check if opentofu is installed and use it if it is,
 # otherwise use terraform
 ifeq ($(shell tofu -version 2>/dev/null),)
@@ -109,16 +112,16 @@ testacc:
 
 .PHONY: lint
 lint:
-	go run -modfile=tools/go.mod github.com/golangci/golangci-lint/cmd/golangci-lint run --fix
+	@docker run -t --rm -v $$(pwd):/app -v ~/.cache/golangci-lint/$(GOLANGCI_LINT_VERSION):/root/.cache -w /app golangci/golangci-lint:$(GOLANGCI_LINT_VERSION) golangci-lint run --fix
 
 .PHONY: release-build
 release-build:
-	go run -modfile=tools/go.mod github.com/goreleaser/goreleaser build --clean --skip=validate
+	goreleaser build --clean --skip=validate
 
 .PHONY: docs
 docs:
 	@mkdir -p ./build/docs-gen
-	@cd ./tools && go generate tools.go
+	@go generate main.go
 
 .PHONY: targets
 targets: $(TARGETS)

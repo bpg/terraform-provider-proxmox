@@ -7,7 +7,6 @@
 package hardwaremapping
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
@@ -52,7 +51,7 @@ func TestPathValueFromTerraform(t *testing.T) {
 			name, func(t *testing.T) {
 				t.Parallel()
 
-				ctx := context.TODO()
+				ctx := t.Context()
 				val, err := PathType{}.ValueFromTerraform(ctx, test.val)
 
 				if err == nil && test.expectError {

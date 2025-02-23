@@ -8,7 +8,6 @@ package test
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/url"
 	"sync"
@@ -265,11 +264,11 @@ func muxProviders(t *testing.T) map[string]func() (tfprotov6.ProviderServer, err
 	// Init mux servers
 	return map[string]func() (tfprotov6.ProviderServer, error){
 		"proxmox": func() (tfprotov6.ProviderServer, error) {
-			return tf6muxserver.NewMuxServer(context.Background(),
+			return tf6muxserver.NewMuxServer(t.Context(),
 				providerserver.NewProtocol6(fwprovider.New("test")()),
 				func() tfprotov6.ProviderServer {
 					sdkV2Provider, err := tf5to6server.UpgradeServer(
-						context.Background(),
+						t.Context(),
 						func() tfprotov5.ProviderServer {
 							return schema.NewGRPCProviderServer(
 								sdkV2provider.ProxmoxVirtualEnvironment(),

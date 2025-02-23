@@ -27,7 +27,6 @@ jobs:
           filters: |
             go:
               - '**/*.go'
-              - 'tools/go.mod'
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -36,9 +35,11 @@ jobs:
           go-version-file: "go.mod"
           cache-dependency-path: |
             go.sum
-            tools/go.sum
 
       - name: Lint code
         if: ${{ steps.filter.outputs.go == 'true' }}
-        run: |
-          go run -modfile=tools/go.mod github.com/golangci/golangci-lint/cmd/golangci-lint run -v --timeout 5m
+        uses: golangci/golangci-lint-action@v6
+        with:
+          # renovate: datasource=github-releases depName=golangci/golangci-lint
+          version: v1.64.5
+          args: -v --timeout=10m
