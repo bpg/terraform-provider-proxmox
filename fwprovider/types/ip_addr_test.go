@@ -7,7 +7,6 @@
 package types
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -52,7 +51,7 @@ func Test_IPAddrTypeValueFromTerraform(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := context.TODO()
+			ctx := t.Context()
 			val, err := IPAddrType{}.ValueFromTerraform(ctx, test.val)
 
 			if err == nil && test.expectError {
@@ -105,7 +104,7 @@ func Test_IPAddrTypeValidate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := context.TODO()
+			ctx := t.Context()
 
 			diags := IPAddrType{}.Validate(ctx, test.val, path.Root("test"))
 

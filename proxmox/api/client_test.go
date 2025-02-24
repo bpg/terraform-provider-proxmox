@@ -84,7 +84,7 @@ func TestClientDoRequest(t *testing.T) {
 				auth: dummyAuthenticator{},
 			}
 
-			err := c.DoRequest(context.Background(), "POST", "any", nil, nil)
+			err := c.DoRequest(t.Context(), "POST", "any", nil, nil)
 			fail := false
 
 			switch {

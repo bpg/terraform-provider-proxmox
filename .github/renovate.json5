@@ -28,14 +28,6 @@
     },
     {
       matchFileNames: [
-        'tools/go.mod',
-        'tools/go.sum',
-      ],
-      commitMessageExtra: '({{currentVersion}} → {{newVersion}}) in /tools',
-      groupName: 'tools',
-    },
-    {
-      matchFileNames: [
         'examples/**',
         'example/**',
         'docs/**',

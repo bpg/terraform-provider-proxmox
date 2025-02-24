@@ -23,6 +23,49 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/provider"
 )
 
+// Format Terraform code for use in documentation.
+// If you do not have Terraform installed, you can remove the formatting command, but it is suggested
+// to ensure the documentation is formatted properly.
+//go:generate terraform fmt -recursive ./examples/
+// Generate documentation.
+//go:generate go tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-dir ./ --rendered-website-dir ./build/docs-gen --provider-name "terraform-provider-proxmox" --rendered-provider-name "terraform-provider-proxmox" //nolint:lll
+
+// Temporary: while migrating to the TF framework, we need to copy the generated docs to the right place
+// for the resources / data sources that have been migrated.
+// //go:generate cp -R ./build/docs-gen/guides/. ./docs/guides/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_acme_account.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_acme_accounts.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_acme_plugin.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_acme_plugins.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_apt_repository.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_apt_standard_repository.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_hagroup.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_hagroups.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_hardware_mapping_pci.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_hardware_mapping_usb.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_hardware_mappings.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresource.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresources.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_version.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_vm2.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_metrics_server.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_acl.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_acme_account.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_acme_dns_plugin.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_apt_repository.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_apt_standard_repository.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_cluster_options.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_download_file.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_hagroup.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_hardware_mapping_pci.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_hardware_mapping_usb.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_haresource.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_bridge.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_vlan.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_user_token.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_vm2.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
+
 // these will be set by the goreleaser configuration
 // to appropriate values for the compiled binary.
 var version = "dev"

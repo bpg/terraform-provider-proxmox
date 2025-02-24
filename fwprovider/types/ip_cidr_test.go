@@ -7,7 +7,6 @@
 package types
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -52,7 +51,7 @@ func Test_IPCIDRTypeValueFromTerraform(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := context.TODO()
+			ctx := t.Context()
 			val, err := IPCIDRType{}.ValueFromTerraform(ctx, test.val)
 
 			if err == nil && test.expectError {
@@ -113,7 +112,7 @@ func Test_IPCIDRTypeValidate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := context.TODO()
+			ctx := t.Context()
 
 			diags := IPCIDRType{}.Validate(ctx, test.val, path.Root("test"))
 
