@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.73.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.0...v0.73.1) (2025-02-24)
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/avast/retry-go/v4 (v4.6.0 → v4.6.1) ([#1791](https://github.com/bpg/terraform-provider-proxmox/issues/1791)) ([b3c862b](https://github.com/bpg/terraform-provider-proxmox/commit/b3c862b986f283a4be7d1a4f78562664a21003cd))
+* **deps:** update module github.com/rogpeppe/go-internal (v1.13.1 → v1.14.0) ([#1792](https://github.com/bpg/terraform-provider-proxmox/issues/1792)) ([c5e4d5c](https://github.com/bpg/terraform-provider-proxmox/commit/c5e4d5ca2cff885589cc511c82c4e4e43bfa7d9c))
+* **deps:** update module golang.org/x/crypto (v0.34.0 → v0.35.0) ([#1793](https://github.com/bpg/terraform-provider-proxmox/issues/1793)) ([a04ff63](https://github.com/bpg/terraform-provider-proxmox/commit/a04ff63f094e0fd4e1407a1d48bb52146fde3f89))
+
 ## [0.73.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.72.0...v0.73.0) (2025-02-24)
 
 
