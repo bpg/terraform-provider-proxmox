@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.73.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.72.0...v0.73.0) (2025-02-24)
+
+
+### Features
+
+* **vm:** add optional `reboot_after_update` configuration flag ([#1777](https://github.com/bpg/terraform-provider-proxmox/issues/1777)) ([5e726c4](https://github.com/bpg/terraform-provider-proxmox/commit/5e726c48d447bee1b6487bad8472c032d00e8931))
+
+
+### Miscellaneous
+
+* **build:** update Go version and linter /documentation workflows ([#1789](https://github.com/bpg/terraform-provider-proxmox/issues/1789)) ([8ed271b](https://github.com/bpg/terraform-provider-proxmox/commit/8ed271b55121829b3c58b35a049ffeab43062ae9))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1782](https://github.com/bpg/terraform-provider-proxmox/issues/1782)) ([9c46bf0](https://github.com/bpg/terraform-provider-proxmox/commit/9c46bf0ee01fa07c5a2855a6c2ec151ff182584f))
+* **deps:** update module github.com/google/go-cmp (v0.6.0 → v0.7.0) ([#1783](https://github.com/bpg/terraform-provider-proxmox/issues/1783)) ([f516f80](https://github.com/bpg/terraform-provider-proxmox/commit/f516f804f6bc10600a58d4e3a282c7009342fcf8))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.36.0 → v2.36.1) ([#1781](https://github.com/bpg/terraform-provider-proxmox/issues/1781)) ([74141bf](https://github.com/bpg/terraform-provider-proxmox/commit/74141bf9892d50d2d02eada3161685b4e05ecc88))
+* **deps:** update module golang.org/x/crypto (v0.33.0 → v0.34.0) ([#1784](https://github.com/bpg/terraform-provider-proxmox/issues/1784)) ([e013e54](https://github.com/bpg/terraform-provider-proxmox/commit/e013e54ae934fce1284033f0641b68e10baf0081))
+
 ## [0.72.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.71.0...v0.72.0) (2025-02-17)
 
 
