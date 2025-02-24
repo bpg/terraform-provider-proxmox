@@ -6,7 +6,7 @@ tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
-	github.com/avast/retry-go/v4 v4.6.0
+	github.com/avast/retry-go/v4 v4.6.1
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-querystring v1.1.0
