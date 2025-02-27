@@ -192,7 +192,7 @@ func KeyboardLayoutValidator() schema.SchemaValidateDiagFunc {
 // MachineTypeValidator is a schema validation function for machine types.
 func MachineTypeValidator() schema.SchemaValidateDiagFunc {
 	//nolint:lll
-	r := regexp.MustCompile(`^$|^(pc|pc(-i440fx)?-\d+(\.\d+)+(\+pve\d+)?(\.pxe)?|q35|pc-q35-\d+(\.\d+)+(\+pve\d+)?(\.pxe)?|virt(?:-\d+(\.\d+)+)?(\+pve\d+)?)$`)
+	r := regexp.MustCompile(`^$|^(pc|pc(-i440fx)?-\d+(\.\d+)+(\+pve\d+)?(\.pxe)?|q35(,viommu=(intel|virtio))?|pc-q35-\d+(\.\d+)+(\+pve\d+)?(\.pxe)?|virt(?:-\d+(\.\d+)+)?(\+pve\d+)?)$`)
 
 	return validation.ToDiagFunc(validation.StringMatch(r, "must be a valid machine type"))
 }
