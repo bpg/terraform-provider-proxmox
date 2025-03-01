@@ -180,6 +180,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/h3krn"><img src="https://avatars.githubusercontent.com/u/13312478?v=4?s=100" width="100px;" alt="H3Krn"/><br /><sub><b>H3Krn</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=h3krn" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://cgeopapa.github.io/"><img src="https://avatars.githubusercontent.com/u/12190384?v=4?s=100" width="100px;" alt="cgeopapa"/><br /><sub><b>cgeopapa</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=cgeopapa" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/fulsiram"><img src="https://avatars.githubusercontent.com/u/79424365?v=4?s=100" width="100px;" alt="fulsiram"/><br /><sub><b>fulsiram</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=fulsiram" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/nakamorichi"><img src="https://avatars.githubusercontent.com/u/36138?v=4?s=100" width="100px;" alt="Mikael Nakajima"/><br /><sub><b>Mikael Nakajima</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=nakamorichi" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>

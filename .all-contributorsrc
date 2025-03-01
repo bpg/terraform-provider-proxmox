@@ -1276,6 +1276,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "nakamorichi",
+      "name": "Mikael Nakajima",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36138?v=4",
+      "profile": "https://github.com/nakamorichi",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
