@@ -414,7 +414,7 @@ output "ubuntu_vm_public_key" {
 - `kvm_arguments` - (Optional) Arbitrary arguments passed to kvm.
 - `machine` - (Optional) The VM machine type (defaults to `pc`).
     - `pc` - Standard PC (i440FX + PIIX, 1996).
-    - `q35` - Standard PC (Q35 + ICH9, 2009).
+    - `q35` - Standard PC (Q35 + ICH9, 2009). Optionally, you can enable VIOMMU by adding `viommu=virtio|intel` to the value, for example `q35,viommu=virtio`.
 - `memory` - (Optional) The memory configuration.
     - `dedicated` - (Optional) The dedicated memory in megabytes (defaults to `512`).
     - `floating` - (Optional) The floating memory in megabytes. The default is `0`, which disables "ballooning device" for the VM.

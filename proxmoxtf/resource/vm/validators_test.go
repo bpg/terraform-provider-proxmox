@@ -54,6 +54,8 @@ func TestMachineType(t *testing.T) {
 		{"empty is valid", "", true},
 		{"invalid", "invalid", false},
 		{"valid q35", "q35", true},
+		{"valid q35 with viommu", "q35,viommu=virtio", true},
+		{"invalid q35 with viommu", "q35,viommu=invalid", false},
 		{"valid pc-q35", "pc-q35-2.3", true},
 		{"valid i440fx", "pc-i440fx-3.1+pve0", true},
 		{"valid virt", "virt", true},
