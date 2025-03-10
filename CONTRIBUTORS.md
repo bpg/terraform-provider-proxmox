@@ -182,6 +182,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/fulsiram"><img src="https://avatars.githubusercontent.com/u/79424365?v=4?s=100" width="100px;" alt="fulsiram"/><br /><sub><b>fulsiram</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=fulsiram" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/nakamorichi"><img src="https://avatars.githubusercontent.com/u/36138?v=4?s=100" width="100px;" alt="Mikael Nakajima"/><br /><sub><b>Mikael Nakajima</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=nakamorichi" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Nemesees"><img src="https://avatars.githubusercontent.com/u/75946990?v=4?s=100" width="100px;" alt="Nemesees"/><br /><sub><b>Nemesees</b></sub></a><br /><a href="#financial-Nemesees" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://149segolte.dev"><img src="https://avatars.githubusercontent.com/u/37300847?v=4?s=100" width="100px;" alt="Shreyansh Nayak"/><br /><sub><b>Shreyansh Nayak</b></sub></a><br /><a href="#ideas-149segolte" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
   <tfoot>
