@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.73.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.0...v0.73.1) (2025-03-10)
+
+
+### Bug Fixes
+
+* **vm:** fix vm machine type validation in order to support viommu ([#1798](https://github.com/bpg/terraform-provider-proxmox/issues/1798)) ([57c3970](https://github.com/bpg/terraform-provider-proxmox/commit/57c3970d540bac6fb562a913ed82003ea5553c0c))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.11.5 → v1.11.6) ([#1809](https://github.com/bpg/terraform-provider-proxmox/issues/1809)) ([1145718](https://github.com/bpg/terraform-provider-proxmox/commit/1145718166c9c2375700c83a99d2ce27a4b44c2f))
+* **ci:** update googleapis/release-please-action action (v4.1.3 → v4.1.4) ([#1804](https://github.com/bpg/terraform-provider-proxmox/issues/1804)) ([748fb0d](https://github.com/bpg/terraform-provider-proxmox/commit/748fb0dc7750656c21d89af30fe008ea7b88513a))
+* **ci:** update googleapis/release-please-action action (v4.1.4 → v4.2.0) ([#1812](https://github.com/bpg/terraform-provider-proxmox/issues/1812)) ([b526e75](https://github.com/bpg/terraform-provider-proxmox/commit/b526e756a3c136d5ad021410dda32cff2885da9a))
+* **deps:** update module github.com/avast/retry-go/v4 (v4.6.0 → v4.6.1) ([#1791](https://github.com/bpg/terraform-provider-proxmox/issues/1791)) ([b3c862b](https://github.com/bpg/terraform-provider-proxmox/commit/b3c862b986f283a4be7d1a4f78562664a21003cd))
+* **deps:** update module github.com/hashicorp/go-cty (v1.4.1-0.20241127173709-a0325cb22c13 → v1.4.1) ([#1811](https://github.com/bpg/terraform-provider-proxmox/issues/1811)) ([51b93cf](https://github.com/bpg/terraform-provider-proxmox/commit/51b93cfd19f8e4472f76429ce0d0cd763e70fdf2))
+* **deps:** update module github.com/rogpeppe/go-internal (v1.13.1 → v1.14.0) ([#1792](https://github.com/bpg/terraform-provider-proxmox/issues/1792)) ([c5e4d5c](https://github.com/bpg/terraform-provider-proxmox/commit/c5e4d5ca2cff885589cc511c82c4e4e43bfa7d9c))
+* **deps:** update module github.com/rogpeppe/go-internal (v1.14.0 → v1.14.1) ([#1805](https://github.com/bpg/terraform-provider-proxmox/issues/1805)) ([ed1b25a](https://github.com/bpg/terraform-provider-proxmox/commit/ed1b25a93608114438e49e950c46bc6035e36d29))
+* **deps:** update module golang.org/x/crypto (v0.34.0 → v0.35.0) ([#1793](https://github.com/bpg/terraform-provider-proxmox/issues/1793)) ([a04ff63](https://github.com/bpg/terraform-provider-proxmox/commit/a04ff63f094e0fd4e1407a1d48bb52146fde3f89))
+* **deps:** update module golang.org/x/crypto (v0.35.0 → v0.36.0) ([#1813](https://github.com/bpg/terraform-provider-proxmox/issues/1813)) ([be6ddb4](https://github.com/bpg/terraform-provider-proxmox/commit/be6ddb47129f32c23b514b2b01175b32b40c37e7))
+* **deps:** update module golang.org/x/net (v0.35.0 → v0.37.0) ([#1814](https://github.com/bpg/terraform-provider-proxmox/issues/1814)) ([c126928](https://github.com/bpg/terraform-provider-proxmox/commit/c126928f3b4221753271e3a2400c3d4b2ef7d10b))
+* **docs:** update sponsorship section ([#1803](https://github.com/bpg/terraform-provider-proxmox/issues/1803)) ([654a5fc](https://github.com/bpg/terraform-provider-proxmox/commit/654a5fc73d67ad90447749c646abe4c431d3d92c))
+
 ## [0.73.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.72.0...v0.73.0) (2025-02-24)
 
 
