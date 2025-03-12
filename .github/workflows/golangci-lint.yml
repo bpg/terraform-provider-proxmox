@@ -27,19 +27,20 @@ jobs:
           filters: |
             go:
               - '**/*.go'
+            linter:
+              - .github/workflows/golangci-lint.yml
 
       - name: Setup Go
         uses: actions/setup-go@v5
-        if: ${{ steps.filter.outputs.go == 'true' }}
+        if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
         with:
           go-version-file: "go.mod"
           cache-dependency-path: |
             go.sum
 
       - name: Lint code
-        if: ${{ steps.filter.outputs.go == 'true' }}
+        if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
         uses: golangci/golangci-lint-action@v6
-        with:
-          # renovate: datasource=github-releases depName=golangci/golangci-lint
-          version: v1.64.5
+        with: 
+          version: v1.64.7 # renovate: datasource=github-releases depName=golangci/golangci-lint
           args: -v --timeout=10m
