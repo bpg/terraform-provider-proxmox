@@ -680,6 +680,30 @@ func TestAccResourceVMClone(t *testing.T) {
 				}),
 			),
 		}}},
+		{"clone initialization datastore does not exist", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+					initialization {
+						datastore_id = "doesnotexist"
+						ip_config {
+						  ipv4 {
+							address = "172.16.2.57/32"
+							gateway = "172.16.2.10"
+						  }
+						}
+					}
+				}`),
+			ExpectError: regexp.MustCompile(`storage 'doesnotexist' does not exist`),
+		}}},
 	}
 
 	for _, tt := range tests {
