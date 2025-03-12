@@ -628,6 +628,13 @@ trusts the user to set `agent.enabled` correctly and waits for
 
 ## Important Notes
 
+### `local-lvm` Datastore
+
+The `local-lvm` is the **default datastore** for many configuration blocks, including `initialization` and `tpm_state`, which may not seem to be related to "storage".
+If you do not have `local-lvm` configured in your environment, you may need to explicitly set the `datastore_id` in such blocks to a different value.
+
+### Cloning
+
 When cloning an existing virtual machine, whether it's a template or not, the
 resource will only detect changes to the arguments which are not set to their
 default values.
