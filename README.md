@@ -25,10 +25,16 @@ However, we will try to maintain backward compatibility between provider version
 
 ## Requirements
 
+### Production Requirements
+
 - [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
 - [Terraform](https://www.terraform.io/downloads.html) 1.5.x+ or [OpenTofu](https://opentofu.org) 1.6.x+
+
+### Development Requirements
+
 - [Go](https://golang.org/doc/install) 1.24 (to build the provider plugin)
+- [Docker](https://www.docker.com/products/docker-desktop/) (optional, for running dev tools)
 
 ## Using the Provider
 
@@ -51,6 +57,9 @@ They can be run using `make testacc`. The Proxmox connection can be configured u
 ## Deploying the Example Resources
 
 There are a number of TF examples in the `example` directory, which can be used to deploy a Container, VM, or other Proxmox resources in your test Proxmox environment.
+
+### Prerequisites
+
 The following assumptions are made about the test environment:
 
 - It has one node named `pve`

@@ -329,11 +329,6 @@ func (c *client) HTTP() *http.Client {
 // validateResponseCode ensures that a response is valid.
 func validateResponseCode(res *http.Response) error {
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		if res.StatusCode == http.StatusNotFound ||
-			(res.StatusCode == http.StatusInternalServerError && strings.Contains(res.Status, "does not exist")) {
-			return ErrResourceDoesNotExist
-		}
-
 		msg := strings.TrimPrefix(res.Status, fmt.Sprintf("%d ", res.StatusCode))
 
 		errRes := &ErrorResponseBody{}
@@ -349,10 +344,17 @@ func validateResponseCode(res *http.Response) error {
 			msg = fmt.Sprintf("%s (%s)", msg, strings.Join(errList, " - "))
 		}
 
-		return &HTTPError{
+		httpError := &HTTPError{
 			Code:    res.StatusCode,
 			Message: msg,
 		}
+
+		if res.StatusCode == http.StatusNotFound ||
+			(res.StatusCode == http.StatusInternalServerError && strings.Contains(res.Status, "does not exist")) {
+			return errors.Join(ErrResourceDoesNotExist, httpError)
+		}
+
+		return httpError
 	}
 
 	return nil
