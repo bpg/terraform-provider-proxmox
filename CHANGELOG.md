@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.73.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.1...v0.73.2) (2025-03-12)
+
+
+### Bug Fixes
+
+* **provider:** better error handling for non-existent resources([#1824](https://github.com/bpg/terraform-provider-proxmox/issues/1824)) ([febf239](https://github.com/bpg/terraform-provider-proxmox/commit/febf239b58b725e273397e060563b31846a0acf7))
+
+
+### Miscellaneous
+
+* **ci:** pin dependencies ([#1822](https://github.com/bpg/terraform-provider-proxmox/issues/1822)) ([189e81a](https://github.com/bpg/terraform-provider-proxmox/commit/189e81aba3dda3670c7c1258911b361c0c7a657c))
+* **deps:** update golangci/golangci-lint (1.64.5 → 1.64.7) ([#1810](https://github.com/bpg/terraform-provider-proxmox/issues/1810)) ([0977473](https://github.com/bpg/terraform-provider-proxmox/commit/0977473dd24fc2e393d1a4467856b98e14917cee))
+* **deps:** update golangci/golangci-lint (v1.64.5 → v1.64.7) ([#1821](https://github.com/bpg/terraform-provider-proxmox/issues/1821)) ([57244d2](https://github.com/bpg/terraform-provider-proxmox/commit/57244d2f99e20b3c8c68e99c2077eb2b9102495b))
+* **deps:** update module github.com/pkg/sftp (v1.13.7 → v1.13.8) ([#1819](https://github.com/bpg/terraform-provider-proxmox/issues/1819)) ([b38a29a](https://github.com/bpg/terraform-provider-proxmox/commit/b38a29a1da1fa841b2b9911a81eadd6b228310eb))
+
 ## [0.73.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.0...v0.73.1) (2025-03-10)
 
 
