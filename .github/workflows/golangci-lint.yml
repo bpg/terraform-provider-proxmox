@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           fetch-depth: 0
 
@@ -31,7 +31,7 @@ jobs:
               - .github/workflows/golangci-lint.yml
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5
         if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
         with:
           go-version-file: "go.mod"
@@ -40,7 +40,7 @@ jobs:
 
       - name: Lint code
         if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@4696ba8babb6127d732c3c6dde519db15edab9ea # v6
         with: 
           version: v1.64.7 # renovate: datasource=github-releases depName=golangci/golangci-lint
           args: -v --timeout=10m
