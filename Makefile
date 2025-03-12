@@ -3,8 +3,7 @@ TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
 VERSION=0.73.1# x-release-please-version
 
-# renovate: datasource=github-releases depName=golangci/golangci-lint
-GOLANGCI_LINT_VERSION=v1.64.5
+GOLANGCI_LINT_VERSION=v1.64.5# renovate: datasource=github-releases depName=golangci/golangci-lint
 
 # check if opentofu is installed and use it if it is,
 # otherwise use terraform
@@ -112,6 +111,7 @@ testacc:
 
 .PHONY: lint
 lint:
+	# NOTE: This target runs only locally, not in CI. See .github/workflows/golangci-lint.yml for CI linting.
 	@docker run -t --rm -v $$(pwd):/app -v ~/.cache/golangci-lint/$(GOLANGCI_LINT_VERSION):/root/.cache -w /app golangci/golangci-lint:$(GOLANGCI_LINT_VERSION) golangci-lint run --fix
 
 .PHONY: release-build
