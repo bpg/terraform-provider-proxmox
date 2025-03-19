@@ -35,14 +35,14 @@ resource "proxmox_virtual_environment_file" "vendor_config" {
   node_name    = data.proxmox_virtual_environment_datastores.example.node_name
 
   source_raw {
-    data = <<EOF
-#cloud-config
-runcmd:
-    - apt update
-    - apt install -y qemu-guest-agent
-    - systemctl enable qemu-guest-agent
-    - systemctl start qemu-guest-agent
-    - echo "done" > /tmp/vendor-cloud-init-done
+    data = <<-EOF
+    #cloud-config
+    runcmd:
+      - apt update
+      - apt install -y qemu-guest-agent
+      - systemctl enable qemu-guest-agent
+      - systemctl start qemu-guest-agent
+      - echo "done" > /tmp/vendor-cloud-init-done
     EOF
 
     file_name = "terraform-provider-proxmox-example-vendor-config.yaml"
@@ -56,8 +56,8 @@ resource "proxmox_virtual_environment_file" "meta_config" {
   node_name    = data.proxmox_virtual_environment_datastores.example.node_name
 
   source_raw {
-    data = <<EOF
-local-hostname: myhost.internal
+    data = <<-EOF
+    local-hostname: myhost.internal
     EOF
 
     file_name = "meta-config.yaml"

@@ -3,14 +3,11 @@ resource "proxmox_virtual_environment_vm" "ubuntu_template" {
   node_name = "pve"
 
   template = true
+  started  = false
 
   machine     = "q35"
   bios        = "ovmf"
   description = "Managed by Terraform"
-
-  agent {
-    enabled = true
-  }
 
   cpu {
     cores = 2
