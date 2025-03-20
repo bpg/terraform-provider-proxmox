@@ -3,7 +3,7 @@ TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
 VERSION=0.73.1# x-release-please-version
 
-GOLANGCI_LINT_VERSION=v1.64.7# renovate: datasource=github-releases depName=golangci/golangci-lint
+GOLANGCI_LINT_VERSION=v1.64.8# renovate: datasource=github-releases depName=golangci/golangci-lint
 
 # check if opentofu is installed and use it if it is,
 # otherwise use terraform
