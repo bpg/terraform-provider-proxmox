@@ -363,11 +363,13 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 // MergeWith merges attributes of the given CustomStorageDevice with the current one.
 // It will overwrite the current attributes with the given ones if they are not nil.
 // The attributes that are not merged are:
-// - DatastoreID
-// - FileID
-// - FileVolume
-// - Format
-// - Size
+//   - DatastoreID
+//   - FileID
+//   - FileVolume
+//   - Format
+//   - Size
+//
+// It will return true if any attribute of the current CustomStorageDevice was changed.
 func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
 	updated := false
 
