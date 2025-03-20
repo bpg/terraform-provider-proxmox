@@ -360,6 +360,100 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MergeWith merges attributes of the given CustomStorageDevice with the current one.
+// It will overwrite the current attributes with the given ones if they are not nil.
+// The attributes that are not merged are:
+// - DatastoreID
+// - FileID
+// - FileVolume
+// - Format
+// - Size
+func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
+	updated := false
+
+	if m.AIO != nil && m.AIO != d.AIO {
+		d.AIO = m.AIO
+		updated = true
+	}
+
+	if m.Backup != nil && m.Backup != d.Backup {
+		d.Backup = m.Backup
+		updated = true
+	}
+
+	if m.Cache != nil && m.Cache != d.Cache {
+		d.Cache = m.Cache
+		updated = true
+	}
+
+	if m.Discard != nil && m.Discard != d.Discard {
+		d.Discard = m.Discard
+		updated = true
+	}
+
+	if m.IOThread != nil && m.IOThread != d.IOThread {
+		d.IOThread = m.IOThread
+		updated = true
+	}
+
+	if m.Replicate != nil && m.Replicate != d.Replicate {
+		d.Replicate = m.Replicate
+		updated = true
+	}
+
+	if m.Serial != nil && m.Serial != d.Serial {
+		d.Serial = m.Serial
+		updated = true
+	}
+
+	if m.SSD != nil && m.SSD != d.SSD {
+		d.SSD = m.SSD
+		updated = true
+	}
+
+	if m.IopsRead != nil && m.IopsRead != d.IopsRead {
+		d.IopsRead = m.IopsRead
+		updated = true
+	}
+
+	if m.MaxIopsRead != nil && m.MaxIopsRead != d.MaxIopsRead {
+		d.MaxIopsRead = m.MaxIopsRead
+		updated = true
+	}
+
+	if m.IopsWrite != nil && m.IopsWrite != d.IopsWrite {
+		d.IopsWrite = m.IopsWrite
+		updated = true
+	}
+
+	if m.MaxIopsWrite != nil && m.MaxIopsWrite != d.MaxIopsWrite {
+		d.MaxIopsWrite = m.MaxIopsWrite
+		updated = true
+	}
+
+	if m.MaxReadSpeedMbps != nil && m.MaxReadSpeedMbps != d.MaxReadSpeedMbps {
+		d.MaxReadSpeedMbps = m.MaxReadSpeedMbps
+		updated = true
+	}
+
+	if m.MaxWriteSpeedMbps != nil && m.MaxWriteSpeedMbps != d.MaxWriteSpeedMbps {
+		d.MaxWriteSpeedMbps = m.MaxWriteSpeedMbps
+		updated = true
+	}
+
+	if m.BurstableReadSpeedMbps != nil && m.BurstableReadSpeedMbps != d.BurstableReadSpeedMbps {
+		d.BurstableReadSpeedMbps = m.BurstableReadSpeedMbps
+		updated = true
+	}
+
+	if m.BurstableWriteSpeedMbps != nil && m.BurstableWriteSpeedMbps != d.BurstableWriteSpeedMbps {
+		d.BurstableWriteSpeedMbps = m.BurstableWriteSpeedMbps
+		updated = true
+	}
+
+	return updated
+}
+
 // Filter returns a map of CustomStorageDevices filtered by the given function.
 func (d CustomStorageDevices) Filter(fn func(*CustomStorageDevice) bool) CustomStorageDevices {
 	result := make(CustomStorageDevices)

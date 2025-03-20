@@ -2212,14 +2212,14 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	allDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
+	clonedDiskInfo := disk.GetInfo(vmConfig, d) // from the cloned VM
 
 	planDisks, e := disk.GetDiskDeviceObjects(d, VM(), nil) // from the resource config
 	if e != nil {
 		return diag.FromErr(e)
 	}
 
-	e = disk.CreateClone(ctx, d, planDisks, allDiskInfo, vmAPI)
+	e = disk.UpdateClone(ctx, planDisks, clonedDiskInfo, vmAPI)
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -2268,8 +2268,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if dataStoreID != "" {
 			moveDisk = true
 
-			if allDiskInfo[diskInterface] != nil {
-				fileIDParts := strings.Split(allDiskInfo[diskInterface].FileVolume, ":")
+			if clonedDiskInfo[diskInterface] != nil {
+				fileIDParts := strings.Split(clonedDiskInfo[diskInterface].FileVolume, ":")
 				moveDisk = dataStoreID != fileIDParts[0]
 			}
 		}
@@ -2319,8 +2319,8 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if dataStoreID != "" {
 			moveDisk = true
 
-			if allDiskInfo[diskInterface] != nil {
-				fileIDParts := strings.Split(allDiskInfo[diskInterface].FileVolume, ":")
+			if clonedDiskInfo[diskInterface] != nil {
+				fileIDParts := strings.Split(clonedDiskInfo[diskInterface].FileVolume, ":")
 				moveDisk = dataStoreID != fileIDParts[0]
 			}
 		}
