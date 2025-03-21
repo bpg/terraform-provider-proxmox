@@ -373,82 +373,84 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
 	updated := false
 
-	if m.AIO != nil && m.AIO != d.AIO {
+	if m.AIO != nil && (d.AIO == nil || *m.AIO != *d.AIO) {
 		d.AIO = m.AIO
 		updated = true
 	}
 
-	if m.Backup != nil && m.Backup != d.Backup {
+	if m.Backup != nil && (d.Backup == nil || *m.Backup != *d.Backup) {
 		d.Backup = m.Backup
 		updated = true
 	}
 
-	if m.Cache != nil && m.Cache != d.Cache {
+	if m.Cache != nil && (d.Cache == nil || *m.Cache != *d.Cache) {
 		d.Cache = m.Cache
 		updated = true
 	}
 
-	if m.Discard != nil && m.Discard != d.Discard {
+	if m.Discard != nil && (d.Discard == nil || *m.Discard != *d.Discard) {
 		d.Discard = m.Discard
 		updated = true
 	}
 
-	if m.IOThread != nil && m.IOThread != d.IOThread {
+	if m.IOThread != nil && (d.IOThread == nil || *m.IOThread != *d.IOThread) {
 		d.IOThread = m.IOThread
 		updated = true
 	}
 
-	if m.Replicate != nil && m.Replicate != d.Replicate {
+	if m.Replicate != nil && (d.Replicate == nil || *m.Replicate != *d.Replicate) {
 		d.Replicate = m.Replicate
 		updated = true
 	}
 
-	if m.Serial != nil && m.Serial != d.Serial {
+	if m.Serial != nil && (d.Serial == nil || *m.Serial != *d.Serial) {
 		d.Serial = m.Serial
 		updated = true
 	}
 
-	if m.SSD != nil && m.SSD != d.SSD {
+	if m.SSD != nil && (d.SSD == nil || *m.SSD != *d.SSD) {
 		d.SSD = m.SSD
 		updated = true
 	}
 
-	if m.IopsRead != nil && m.IopsRead != d.IopsRead {
+	if m.IopsRead != nil && (d.IopsRead == nil || *m.IopsRead != *d.IopsRead) {
 		d.IopsRead = m.IopsRead
 		updated = true
 	}
 
-	if m.MaxIopsRead != nil && m.MaxIopsRead != d.MaxIopsRead {
+	if m.MaxIopsRead != nil && (d.MaxIopsRead == nil || *m.MaxIopsRead != *d.MaxIopsRead) {
 		d.MaxIopsRead = m.MaxIopsRead
 		updated = true
 	}
 
-	if m.IopsWrite != nil && m.IopsWrite != d.IopsWrite {
+	if m.IopsWrite != nil && (d.IopsWrite == nil || *m.IopsWrite != *d.IopsWrite) {
 		d.IopsWrite = m.IopsWrite
 		updated = true
 	}
 
-	if m.MaxIopsWrite != nil && m.MaxIopsWrite != d.MaxIopsWrite {
+	if m.MaxIopsWrite != nil && (d.MaxIopsWrite == nil || *m.MaxIopsWrite != *d.MaxIopsWrite) {
 		d.MaxIopsWrite = m.MaxIopsWrite
 		updated = true
 	}
 
-	if m.MaxReadSpeedMbps != nil && m.MaxReadSpeedMbps != d.MaxReadSpeedMbps {
+	if m.MaxReadSpeedMbps != nil && (d.MaxReadSpeedMbps == nil || *m.MaxReadSpeedMbps != *d.MaxReadSpeedMbps) {
 		d.MaxReadSpeedMbps = m.MaxReadSpeedMbps
 		updated = true
 	}
 
-	if m.MaxWriteSpeedMbps != nil && m.MaxWriteSpeedMbps != d.MaxWriteSpeedMbps {
+	if m.MaxWriteSpeedMbps != nil && (d.MaxWriteSpeedMbps == nil || *m.MaxWriteSpeedMbps != *d.MaxWriteSpeedMbps) {
 		d.MaxWriteSpeedMbps = m.MaxWriteSpeedMbps
 		updated = true
 	}
 
-	if m.BurstableReadSpeedMbps != nil && m.BurstableReadSpeedMbps != d.BurstableReadSpeedMbps {
+	if m.BurstableReadSpeedMbps != nil &&
+		(d.BurstableReadSpeedMbps == nil || *m.BurstableReadSpeedMbps != *d.BurstableReadSpeedMbps) {
 		d.BurstableReadSpeedMbps = m.BurstableReadSpeedMbps
 		updated = true
 	}
 
-	if m.BurstableWriteSpeedMbps != nil && m.BurstableWriteSpeedMbps != d.BurstableWriteSpeedMbps {
+	if m.BurstableWriteSpeedMbps != nil &&
+		(d.BurstableWriteSpeedMbps == nil || *m.BurstableWriteSpeedMbps != *d.BurstableWriteSpeedMbps) {
 		d.BurstableWriteSpeedMbps = m.BurstableWriteSpeedMbps
 		updated = true
 	}
