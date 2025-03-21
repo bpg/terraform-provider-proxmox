@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.73.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.1...v0.73.2) (2025-03-21)
+
+
+### Bug Fixes
+
+* **provider:** better error handling for non-existent resources([#1824](https://github.com/bpg/terraform-provider-proxmox/issues/1824)) ([febf239](https://github.com/bpg/terraform-provider-proxmox/commit/febf239b58b725e273397e060563b31846a0acf7))
+* **vm:** fix and improve disk management for cloned VMs ([#1840](https://github.com/bpg/terraform-provider-proxmox/issues/1840)) ([faeada9](https://github.com/bpg/terraform-provider-proxmox/commit/faeada970c2bbddea6d26e30fb3a40ae227cf55f))
+
+
+### Miscellaneous
+
+* **ci:** enable attestation ([#1841](https://github.com/bpg/terraform-provider-proxmox/issues/1841)) ([33e1eb4](https://github.com/bpg/terraform-provider-proxmox/commit/33e1eb4f4da71834a16ecdb606825facb8ad8dd2))
+* **ci:** pin dependencies ([#1822](https://github.com/bpg/terraform-provider-proxmox/issues/1822)) ([189e81a](https://github.com/bpg/terraform-provider-proxmox/commit/189e81aba3dda3670c7c1258911b361c0c7a657c))
+* **ci:** update actions/create-github-app-token action (v1.11.6 → v1.11.7) ([#1839](https://github.com/bpg/terraform-provider-proxmox/issues/1839)) ([267eb3d](https://github.com/bpg/terraform-provider-proxmox/commit/267eb3d07d9cf8a47f3d4fd9bf69d9590f4386b3))
+* **ci:** update actions/setup-go digest (f111f33 → 0aaccfd) ([#1831](https://github.com/bpg/terraform-provider-proxmox/issues/1831)) ([bd5ab91](https://github.com/bpg/terraform-provider-proxmox/commit/bd5ab9103cb0128bde2d8fe60b2873b2ff99219b))
+* **ci:** update actions/upload-artifact digest (4cec3d8 → ea165f8) ([#1832](https://github.com/bpg/terraform-provider-proxmox/issues/1832)) ([3bd2dac](https://github.com/bpg/terraform-provider-proxmox/commit/3bd2dac4d1f93f0b3aa5b795a8bd7101df32bcb7))
+* **ci:** update golangci/golangci-lint-action digest (4696ba8 → 55c2c14) ([#1833](https://github.com/bpg/terraform-provider-proxmox/issues/1833)) ([319eecd](https://github.com/bpg/terraform-provider-proxmox/commit/319eecdedc532b53d62ea7f4dfaf62d0b05b5a24))
+* **deps:** update golangci/golangci-lint ([#1834](https://github.com/bpg/terraform-provider-proxmox/issues/1834)) ([292811b](https://github.com/bpg/terraform-provider-proxmox/commit/292811bddef8f3bc009f228b1483696babadba32))
+* **deps:** update golangci/golangci-lint (1.64.5 → 1.64.7) ([#1810](https://github.com/bpg/terraform-provider-proxmox/issues/1810)) ([0977473](https://github.com/bpg/terraform-provider-proxmox/commit/0977473dd24fc2e393d1a4467856b98e14917cee))
+* **deps:** update golangci/golangci-lint (v1.64.5 → v1.64.7) ([#1821](https://github.com/bpg/terraform-provider-proxmox/issues/1821)) ([57244d2](https://github.com/bpg/terraform-provider-proxmox/commit/57244d2f99e20b3c8c68e99c2077eb2b9102495b))
+* **deps:** update image mcr.microsoft.com/devcontainers/go (1.23 → 1.24) ([#1835](https://github.com/bpg/terraform-provider-proxmox/issues/1835)) ([27fe170](https://github.com/bpg/terraform-provider-proxmox/commit/27fe17008f38adb4585702b3ae0bec42f135a440))
+* **deps:** update module github.com/hashicorp/go-cty (v1.4.1 → v1.5.0) ([#1836](https://github.com/bpg/terraform-provider-proxmox/issues/1836)) ([53d0045](https://github.com/bpg/terraform-provider-proxmox/commit/53d0045cdf8652c814c9c3d4df414c5852e91d7f))
+* **deps:** update module github.com/hashicorp/terraform-plugin-testing (v1.11.0 → v1.12.0) ([#1837](https://github.com/bpg/terraform-provider-proxmox/issues/1837)) ([bb13d05](https://github.com/bpg/terraform-provider-proxmox/commit/bb13d05f019b33cecf6f940dc126424c18bccb79))
+* **deps:** update module github.com/pkg/sftp (v1.13.7 → v1.13.8) ([#1819](https://github.com/bpg/terraform-provider-proxmox/issues/1819)) ([b38a29a](https://github.com/bpg/terraform-provider-proxmox/commit/b38a29a1da1fa841b2b9911a81eadd6b228310eb))
+* **docs:** update cloud-init configuration examples ([#1830](https://github.com/bpg/terraform-provider-proxmox/issues/1830)) ([a681e82](https://github.com/bpg/terraform-provider-proxmox/commit/a681e828bfe3de8e680a4c0c7ea3a363d98e3766))
+* **docs:** update project badges ([#1842](https://github.com/bpg/terraform-provider-proxmox/issues/1842)) ([d3d3910](https://github.com/bpg/terraform-provider-proxmox/commit/d3d39106559bda5fc9e84b29b513150d0c8419c7))
+
 ## [0.73.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.0...v0.73.1) (2025-03-10)
 
 
