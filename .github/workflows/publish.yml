@@ -13,6 +13,11 @@ on:
     tags:
       - "v*"
 
+permissions:
+  id-token: write
+  contents: read
+  attestations: write
+
 jobs:
   goreleaser:
     runs-on: ubuntu-24.04
@@ -41,8 +46,15 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@90a3faa9d0182683851fbfa97ca1a2cb983bfca3 # v6.2.1
         with:
-          version: latest
+          version: '~> v2'
           args: release --clean
         env:
           GPG_FINGERPRINT: "${{ steps.import_gpg.outputs.fingerprint }}"
+          GITHUB_TOKEN: "${{ steps.app-token.outputs.token }}"
+
+      - name: Attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ./dist/*.zip
+        env:
           GITHUB_TOKEN: "${{ steps.app-token.outputs.token }}"
