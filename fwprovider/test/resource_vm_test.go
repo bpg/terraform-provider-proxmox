@@ -9,7 +9,6 @@
 package test
 
 import (
-	"math/rand"
 	"regexp"
 	"testing"
 
@@ -639,9 +638,6 @@ func TestAccResourceVMClone(t *testing.T) {
 	}
 
 	te := InitEnvironment(t)
-	te.AddTemplateVars(map[string]interface{}{
-		"TemplateVMID": 100000 + rand.Intn(99999),
-	})
 
 	tests := []struct {
 		name string
