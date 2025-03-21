@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -373,87 +374,22 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
 	updated := false
 
-	if m.AIO != nil && (d.AIO == nil || *m.AIO != *d.AIO) {
-		d.AIO = m.AIO
-		updated = true
-	}
-
-	if m.Backup != nil && (d.Backup == nil || *m.Backup != *d.Backup) {
-		d.Backup = m.Backup
-		updated = true
-	}
-
-	if m.Cache != nil && (d.Cache == nil || *m.Cache != *d.Cache) {
-		d.Cache = m.Cache
-		updated = true
-	}
-
-	if m.Discard != nil && (d.Discard == nil || *m.Discard != *d.Discard) {
-		d.Discard = m.Discard
-		updated = true
-	}
-
-	if m.IOThread != nil && (d.IOThread == nil || *m.IOThread != *d.IOThread) {
-		d.IOThread = m.IOThread
-		updated = true
-	}
-
-	if m.Replicate != nil && (d.Replicate == nil || *m.Replicate != *d.Replicate) {
-		d.Replicate = m.Replicate
-		updated = true
-	}
-
-	if m.Serial != nil && (d.Serial == nil || *m.Serial != *d.Serial) {
-		d.Serial = m.Serial
-		updated = true
-	}
-
-	if m.SSD != nil && (d.SSD == nil || *m.SSD != *d.SSD) {
-		d.SSD = m.SSD
-		updated = true
-	}
-
-	if m.IopsRead != nil && (d.IopsRead == nil || *m.IopsRead != *d.IopsRead) {
-		d.IopsRead = m.IopsRead
-		updated = true
-	}
-
-	if m.MaxIopsRead != nil && (d.MaxIopsRead == nil || *m.MaxIopsRead != *d.MaxIopsRead) {
-		d.MaxIopsRead = m.MaxIopsRead
-		updated = true
-	}
-
-	if m.IopsWrite != nil && (d.IopsWrite == nil || *m.IopsWrite != *d.IopsWrite) {
-		d.IopsWrite = m.IopsWrite
-		updated = true
-	}
-
-	if m.MaxIopsWrite != nil && (d.MaxIopsWrite == nil || *m.MaxIopsWrite != *d.MaxIopsWrite) {
-		d.MaxIopsWrite = m.MaxIopsWrite
-		updated = true
-	}
-
-	if m.MaxReadSpeedMbps != nil && (d.MaxReadSpeedMbps == nil || *m.MaxReadSpeedMbps != *d.MaxReadSpeedMbps) {
-		d.MaxReadSpeedMbps = m.MaxReadSpeedMbps
-		updated = true
-	}
-
-	if m.MaxWriteSpeedMbps != nil && (d.MaxWriteSpeedMbps == nil || *m.MaxWriteSpeedMbps != *d.MaxWriteSpeedMbps) {
-		d.MaxWriteSpeedMbps = m.MaxWriteSpeedMbps
-		updated = true
-	}
-
-	if m.BurstableReadSpeedMbps != nil &&
-		(d.BurstableReadSpeedMbps == nil || *m.BurstableReadSpeedMbps != *d.BurstableReadSpeedMbps) {
-		d.BurstableReadSpeedMbps = m.BurstableReadSpeedMbps
-		updated = true
-	}
-
-	if m.BurstableWriteSpeedMbps != nil &&
-		(d.BurstableWriteSpeedMbps == nil || *m.BurstableWriteSpeedMbps != *d.BurstableWriteSpeedMbps) {
-		d.BurstableWriteSpeedMbps = m.BurstableWriteSpeedMbps
-		updated = true
-	}
+	updated = ptr.UpdateIfChanged(&d.AIO, m.AIO) || updated
+	updated = ptr.UpdateIfChanged(&d.Backup, m.Backup) || updated
+	updated = ptr.UpdateIfChanged(&d.Cache, m.Cache) || updated
+	updated = ptr.UpdateIfChanged(&d.Discard, m.Discard) || updated
+	updated = ptr.UpdateIfChanged(&d.IOThread, m.IOThread) || updated
+	updated = ptr.UpdateIfChanged(&d.Replicate, m.Replicate) || updated
+	updated = ptr.UpdateIfChanged(&d.Serial, m.Serial) || updated
+	updated = ptr.UpdateIfChanged(&d.SSD, m.SSD) || updated
+	updated = ptr.UpdateIfChanged(&d.IopsRead, m.IopsRead) || updated
+	updated = ptr.UpdateIfChanged(&d.MaxIopsRead, m.MaxIopsRead) || updated
+	updated = ptr.UpdateIfChanged(&d.IopsWrite, m.IopsWrite) || updated
+	updated = ptr.UpdateIfChanged(&d.MaxIopsWrite, m.MaxIopsWrite) || updated
+	updated = ptr.UpdateIfChanged(&d.MaxReadSpeedMbps, m.MaxReadSpeedMbps) || updated
+	updated = ptr.UpdateIfChanged(&d.MaxWriteSpeedMbps, m.MaxWriteSpeedMbps) || updated
+	updated = ptr.UpdateIfChanged(&d.BurstableReadSpeedMbps, m.BurstableReadSpeedMbps) || updated
+	updated = ptr.UpdateIfChanged(&d.BurstableWriteSpeedMbps, m.BurstableWriteSpeedMbps) || updated
 
 	return updated
 }

@@ -32,3 +32,14 @@ func Eq[T comparable](a, b *T) bool {
 
 	return *a == *b
 }
+
+// UpdateIfChanged updates dst with src if src is not nil and different from dst.
+// Returns true if an update was made.
+func UpdateIfChanged[T comparable](dst **T, src *T) bool {
+	if src != nil && !Eq(*dst, src) {
+		*dst = src
+		return true
+	}
+
+	return false
+}
