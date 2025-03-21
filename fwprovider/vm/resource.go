@@ -378,7 +378,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		resp.Diagnostics.AddError("Failed to get VM status", err.Error())
 	}
 
-	if resp.Diagnostics.HasError() {
+	if resp.Diagnostics.HasError() || status == nil {
 		return
 	}
 

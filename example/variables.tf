@@ -28,5 +28,5 @@ variable "release_20240725_ubuntu_24_noble_lxc_img_url" {
 variable "release_20240725_ubuntu_24_noble_lxc_img_checksum" {
   type        = string
   description = "The checksum for the Ubuntu 24.04 LXC image"
-  default     = "10331782a01cd2348b421a261f0e15ba041358bd540f66f2432b162e70b90d28"
+  default     = "d767d38cb25b2c25d84edc31a80dd1c29a8c922b74188b0e14768b2b2fb6df8e"
 }

@@ -54,79 +54,75 @@ func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorag
 	return storageDevices
 }
 
-// CreateClone creates disks for a cloned VM.
-func CreateClone(
+// UpdateClone updates disks in a cloned VM.
+func UpdateClone(
 	ctx context.Context,
-	d *schema.ResourceData,
 	planDisks vms.CustomStorageDevices,
 	allDiskInfo vms.CustomStorageDevices,
 	vmAPI *vms.Client,
 ) error {
-	disk := d.Get(MkDisk).([]interface{})
-	for i := range disk {
-		diskBlock := disk[i].(map[string]interface{})
-		diskInterface := diskBlock[mkDiskInterface].(string)
-		dataStoreID := diskBlock[mkDiskDatastoreID].(string)
-		diskSize := int64(diskBlock[mkDiskSize].(int))
+	for diskInterface, planDisk := range planDisks {
+		currentDisk := allDiskInfo[diskInterface]
 
-		currentDiskInfo := allDiskInfo[diskInterface]
-		configuredDiskInfo := planDisks[diskInterface]
-
-		if currentDiskInfo == nil {
+		if currentDisk == nil {
 			diskUpdateBody := &vms.UpdateRequestBody{}
+			diskUpdateBody.AddCustomStorageDevice(diskInterface, *planDisk)
 
-			diskUpdateBody.AddCustomStorageDevice(diskInterface, *configuredDiskInfo)
-
-			err := vmAPI.UpdateVM(ctx, diskUpdateBody)
-			if err != nil {
+			if err := vmAPI.UpdateVM(ctx, diskUpdateBody); err != nil {
 				return fmt.Errorf("disk update fails: %w", err)
 			}
 
 			continue
 		}
 
-		if diskSize < currentDiskInfo.Size.InGigabytes() {
-			return fmt.Errorf("disk resize fails requests size (%dG) is lower than current size (%d)",
-				diskSize,
-				*currentDiskInfo.Size,
+		if planDisk.Size.InMegabytes() < currentDisk.Size.InMegabytes() {
+			return fmt.Errorf("disk resize failure: requested size (%s) is lower than current size (%s)",
+				planDisk.Size.String(),
+				currentDisk.Size.String(),
 			)
-		}
-
-		deleteOriginalDisk := types.CustomBool(true)
-
-		diskMoveBody := &vms.MoveDiskRequestBody{
-			DeleteOriginalDisk: &deleteOriginalDisk,
-			Disk:               diskInterface,
-			TargetStorage:      dataStoreID,
-		}
-
-		diskResizeBody := &vms.ResizeDiskRequestBody{
-			Disk: diskInterface,
-			Size: *types.DiskSizeFromGigabytes(diskSize),
 		}
 
 		moveDisk := false
 
-		if dataStoreID != "" {
-			moveDisk = true
-
-			if allDiskInfo[diskInterface] != nil {
-				fileIDParts := strings.Split(allDiskInfo[diskInterface].FileVolume, ":")
-				moveDisk = dataStoreID != fileIDParts[0]
-			}
+		if *planDisk.DatastoreID != "" {
+			fileIDParts := strings.Split(currentDisk.FileVolume, ":")
+			moveDisk = *planDisk.DatastoreID != fileIDParts[0]
 		}
 
 		if moveDisk {
+			deleteOriginalDisk := types.CustomBool(true)
+
+			diskMoveBody := &vms.MoveDiskRequestBody{
+				DeleteOriginalDisk: &deleteOriginalDisk,
+				Disk:               diskInterface,
+				TargetStorage:      *planDisk.DatastoreID,
+			}
+
 			err := vmAPI.MoveVMDisk(ctx, diskMoveBody)
 			if err != nil {
 				return fmt.Errorf("disk move fails: %w", err)
 			}
 		}
 
-		if diskSize > currentDiskInfo.Size.InGigabytes() {
+		if planDisk.Size.InMegabytes() > currentDisk.Size.InMegabytes() {
+			diskResizeBody := &vms.ResizeDiskRequestBody{
+				Disk: diskInterface,
+				Size: *planDisk.Size,
+			}
+
 			err := vmAPI.ResizeVMDisk(ctx, diskResizeBody)
 			if err != nil {
 				return fmt.Errorf("disk resize fails: %w", err)
+			}
+		}
+
+		// update other disk parameters
+		if currentDisk.MergeWith(*planDisk) {
+			diskUpdateBody := &vms.UpdateRequestBody{}
+			diskUpdateBody.AddCustomStorageDevice(diskInterface, *currentDisk)
+
+			if err := vmAPI.UpdateVM(ctx, diskUpdateBody); err != nil {
+				return fmt.Errorf("disk update fails: %w", err)
 			}
 		}
 	}

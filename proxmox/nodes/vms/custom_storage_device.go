@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -358,6 +359,40 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	}
 
 	return nil
+}
+
+// MergeWith merges attributes of the given CustomStorageDevice with the current one.
+// It will overwrite the current attributes with the given ones if they are not nil.
+// The attributes that are not merged are:
+//   - DatastoreID
+//   - FileID
+//   - FileVolume
+//   - Format
+//   - Size
+//
+// It will return true if any attribute of the current CustomStorageDevice was changed.
+func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
+	updated := false
+
+	updated = ptr.UpdateIfChanged(&d.AIO, m.AIO) || updated
+	updated = ptr.UpdateIfChanged(&d.Backup, m.Backup) || updated
+	updated = ptr.UpdateIfChanged(&d.BurstableReadSpeedMbps, m.BurstableReadSpeedMbps) || updated
+	updated = ptr.UpdateIfChanged(&d.BurstableWriteSpeedMbps, m.BurstableWriteSpeedMbps) || updated
+	updated = ptr.UpdateIfChanged(&d.Cache, m.Cache) || updated
+	updated = ptr.UpdateIfChanged(&d.Discard, m.Discard) || updated
+	updated = ptr.UpdateIfChanged(&d.IOThread, m.IOThread) || updated
+	updated = ptr.UpdateIfChanged(&d.IopsRead, m.IopsRead) || updated
+	updated = ptr.UpdateIfChanged(&d.IopsWrite, m.IopsWrite) || updated
+	updated = ptr.UpdateIfChanged(&d.Media, m.Media) || updated
+	updated = ptr.UpdateIfChanged(&d.MaxIopsRead, m.MaxIopsRead) || updated
+	updated = ptr.UpdateIfChanged(&d.MaxIopsWrite, m.MaxIopsWrite) || updated
+	updated = ptr.UpdateIfChanged(&d.MaxReadSpeedMbps, m.MaxReadSpeedMbps) || updated
+	updated = ptr.UpdateIfChanged(&d.MaxWriteSpeedMbps, m.MaxWriteSpeedMbps) || updated
+	updated = ptr.UpdateIfChanged(&d.Replicate, m.Replicate) || updated
+	updated = ptr.UpdateIfChanged(&d.SSD, m.SSD) || updated
+	updated = ptr.UpdateIfChanged(&d.Serial, m.Serial) || updated
+
+	return updated
 }
 
 // Filter returns a map of CustomStorageDevices filtered by the given function.
