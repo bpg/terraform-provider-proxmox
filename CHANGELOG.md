@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.3](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.2...v0.73.3) (2025-03-22)
+
+
+### Miscellaneous
+
+* **ci:** pin actions/attest-build-provenance action to ([#1843](https://github.com/bpg/terraform-provider-proxmox/issues/1843)) ([ef66b55](https://github.com/bpg/terraform-provider-proxmox/commit/ef66b55fc26878c23c569f9018b443dc92494d1c))
+
 ## [0.73.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.1...v0.73.2) (2025-03-21)
 
 
