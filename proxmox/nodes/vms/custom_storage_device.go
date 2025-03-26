@@ -372,7 +372,6 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 //   - FileID
 //   - FileVolume
 //   - Format
-//   - Size
 //
 // It will return true if any attribute of the current CustomStorageDevice was changed.
 func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
