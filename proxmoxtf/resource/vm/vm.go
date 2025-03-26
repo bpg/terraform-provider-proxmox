@@ -1923,8 +1923,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	var del []string
 
-	//nolint:gosimple
-	if acpi != dvACPI {
+	if !acpi {
 		updateBody.ACPI = &acpi
 	}
 
@@ -2144,13 +2143,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	updateBody.StartupOrder = vmGetStartupOrder(d)
 
-	//nolint:gosimple
-	if tabletDevice != dvTabletDevice {
+	if !tabletDevice {
 		updateBody.TabletDeviceEnabled = &tabletDevice
 	}
 
-	//nolint:gosimple
-	if protection != dvProtection {
+	if protection {
 		updateBody.DeletionProtection = &protection
 	}
 
@@ -2159,8 +2156,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.Tags = &tagString
 	}
 
-	//nolint:gosimple
-	if template != dvTemplate {
+	if template {
 		updateBody.Template = &template
 	}
 
@@ -4587,8 +4583,7 @@ func vmReadPrimitiveValues(
 	clone := d.Get(mkClone).([]interface{})
 	currentACPI := d.Get(mkACPI).(bool)
 
-	//nolint:gosimple
-	if len(clone) == 0 || currentACPI != dvACPI {
+	if len(clone) == 0 || !currentACPI {
 		if vmConfig.ACPI != nil {
 			err = d.Set(mkACPI, bool(*vmConfig.ACPI))
 		} else {
@@ -4699,8 +4694,7 @@ func vmReadPrimitiveValues(
 
 	currentProtection := d.Get(mkProtection).(bool)
 
-	//nolint:gosimple
-	if len(clone) == 0 || currentProtection != dvProtection {
+	if len(clone) == 0 || currentProtection {
 		if vmConfig.DeletionProtection != nil {
 			err = d.Set(
 				mkProtection,
@@ -4721,8 +4715,7 @@ func vmReadPrimitiveValues(
 
 	currentTabletDevice := d.Get(mkTabletDevice).(bool)
 
-	//nolint:gosimple
-	if len(clone) == 0 || currentTabletDevice != dvTabletDevice {
+	if len(clone) == 0 || !currentTabletDevice {
 		if vmConfig.TabletDeviceEnabled != nil {
 			err = d.Set(
 				mkTabletDevice,
@@ -4738,8 +4731,7 @@ func vmReadPrimitiveValues(
 
 	currentTemplate := d.Get(mkTemplate).(bool)
 
-	//nolint:gosimple
-	if len(clone) == 0 || currentTemplate != dvTemplate {
+	if len(clone) == 0 || currentTemplate {
 		if vmConfig.Template != nil {
 			err = d.Set(mkTemplate, bool(*vmConfig.Template))
 		} else {

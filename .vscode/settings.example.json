@@ -33,7 +33,6 @@
     "FSTRIM",
     "fwprovider",
     "gocritic",
-    "gosimple",
     "hookscript",
     "hostnodes",
     "hostpci",
