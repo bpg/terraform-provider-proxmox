@@ -82,6 +82,17 @@ func UpdateClone(
 			)
 		}
 
+		// update other disk parameters
+		// we have to do it before moving the disk, because the disk volume and location may change
+		if currentDisk.MergeWith(*planDisk) {
+			diskUpdateBody := &vms.UpdateRequestBody{}
+			diskUpdateBody.AddCustomStorageDevice(diskInterface, *currentDisk)
+
+			if err := vmAPI.UpdateVM(ctx, diskUpdateBody); err != nil {
+				return fmt.Errorf("disk update fails: %w", err)
+			}
+		}
+
 		moveDisk := false
 
 		if *planDisk.DatastoreID != "" {
@@ -102,6 +113,8 @@ func UpdateClone(
 			if err != nil {
 				return fmt.Errorf("disk move fails: %w", err)
 			}
+			// Note: after disk move, the actual disk volume ID will be different: both datastore id *and*
+			// path in datastore will change.
 		}
 
 		if planDisk.Size.InMegabytes() > currentDisk.Size.InMegabytes() {
@@ -113,16 +126,6 @@ func UpdateClone(
 			err := vmAPI.ResizeVMDisk(ctx, diskResizeBody)
 			if err != nil {
 				return fmt.Errorf("disk resize fails: %w", err)
-			}
-		}
-
-		// update other disk parameters
-		if currentDisk.MergeWith(*planDisk) {
-			diskUpdateBody := &vms.UpdateRequestBody{}
-			diskUpdateBody.AddCustomStorageDevice(diskInterface, *currentDisk)
-
-			if err := vmAPI.UpdateVM(ctx, diskUpdateBody); err != nil {
-				return fmt.Errorf("disk update fails: %w", err)
 			}
 		}
 	}

@@ -25,13 +25,17 @@ var StorageInterfaces = []string{"ide", "sata", "scsi", "virtio"}
 
 // CustomStorageDevice handles QEMU SATA device parameters.
 type CustomStorageDevice struct {
+	// FileVolume is the path to the storage device in format
+	// "STORAGE_ID:SIZE_IN_GiB" or "STORAGE_ID:PATH_TO_FILE".
+	// This is a required field.
+	FileVolume string `json:"file"                  url:"file"`
+
 	AIO                     *string           `json:"aio,omitempty"         url:"aio,omitempty"`
 	Backup                  *types.CustomBool `json:"backup,omitempty"      url:"backup,omitempty,int"`
 	BurstableReadSpeedMbps  *int              `json:"mbps_rd_max,omitempty" url:"mbps_rd_max,omitempty"`
 	BurstableWriteSpeedMbps *int              `json:"mbps_wr_max,omitempty" url:"mbps_wr_max,omitempty"`
 	Cache                   *string           `json:"cache,omitempty"       url:"cache,omitempty"`
 	Discard                 *string           `json:"discard,omitempty"     url:"discard,omitempty"`
-	FileVolume              string            `json:"file"                  url:"file"`
 	Format                  *string           `json:"format,omitempty"      url:"format,omitempty"`
 	IopsRead                *int              `json:"iops_rd,omitempty"     url:"iops_rd,omitempty"`
 	IopsWrite               *int              `json:"iops_wr,omitempty"     url:"iops_wr,omitempty"`
