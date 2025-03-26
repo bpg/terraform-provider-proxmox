@@ -1,88 +1,97 @@
-issues:
-  new-from-rev: 9101977dc81f64db077b9a1eda2fe401359854c9
-  # Maximum issues count per one linter. Set to 0 to disable.
-  # Default is 50.
-  max-issues-per-linter: 0
-  # Maximum count of issues with the same text. Set to 0 to disable.
-  # Default is 3.
-  max-same-issues: 0
-  include:
-    - EXC0012
-    - EXC0014
-  exclude-rules:
-    # Exclude some checks in tests
-    - path: _(test|gen)\.go
-      linters:
-        - cyclop
-        - dupl
-        - funlen
-        - gocognit
-        - gosec
-        - lll
-    - path: .*/types/.+\.go
-      linters:
-        # types have both pointer and value receivers due to JSON marshalling
-        - recvcheck
-    - path: _types\.go
-      linters:
-        - recvcheck
-        - lll
-    - path: fwprovider/.*_test\.go
-      linters:
-        - paralleltest
-    # Exclude `lll` issues for long lines with URLs.
-    - linters:
-        - lll
-      source: "^.*https?://.*$"
-linters-settings:
-  exhaustive:
-    default-signifies-exhaustive: true
-  cyclop:
-    max-complexity: 25
-  dupl:
-    threshold: 150
-  goconst:
-    min-len: 10
-    min-occurrences: 4
-  gosec:
-    excludes:
-      - G115
-  funlen:
-    lines: 80
-    statements: 60
-  errcheck:
-    check-blank: true
-  wrapcheck:
-    ignorePackageGlobs:
-      # Prevent false-positive matches for errors from packages of the own module.
-      - github.com/bpg/terraform-provider-proxmox/*
+version: "2"
 linters:
-  enable-all: true
+  default: all
   disable:
-    # deprecated
-    - gocyclo
-    - rowserrcheck
-    - tenv
-    - wastedassign
-    # require massive refactoring
+    - canonicalheader
     - cyclop
+    - depguard
+    - err113
+    - exhaustruct
     - forcetypeassert
     - funlen
     - gocognit
-    # others
-    - canonicalheader
-    - depguard
-    - exhaustruct
-    - gci
-    - err113
+    - gocyclo
     - ireturn
     - maintidx
     - mnd
     - nestif
     - nlreturn
     - perfsprint
+    - rowserrcheck
     - tagliatelle
     - testpackage
     - tparallel
     - varnamelen
-  fast: false
+    - wastedassign
+  settings:
+    cyclop:
+      max-complexity: 25
+    dupl:
+      threshold: 150
+    errcheck:
+      check-blank: true
+    exhaustive:
+      default-signifies-exhaustive: true
+    funlen:
+      lines: 80
+      statements: 60
+    goconst:
+      min-len: 10
+      min-occurrences: 4
+    gosec:
+      excludes:
+        - G115
+    revive:
+      rules:
+        - name: "package-comments"
+          disabled: true
+    wrapcheck:
+      ignore-package-globs:
+        - github.com/bpg/terraform-provider-proxmox/*
+  exclusions:
+    generated: lax
+    presets:
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - cyclop
+          - dupl
+          - funlen
+          - gocognit
+          - gosec
+          - lll
+        path: _(test|gen)\.go
+      - linters:
+          - recvcheck
+        path: .*/types/.+\.go
+      - linters:
+          - lll
+          - recvcheck
+        path: _types\.go
+      - linters:
+          - paralleltest
+        path: fwprovider/.*_test\.go
+      - linters:
+          - lll
+        source: ^.*https?://.*$
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new-from-rev: 9101977dc81f64db077b9a1eda2fe401359854c9
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

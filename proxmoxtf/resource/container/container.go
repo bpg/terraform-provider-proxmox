@@ -1395,8 +1395,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 
-	//nolint:gosimple
-	if template != dvTemplate {
+	if template {
 		updateBody.Template = &template
 	}
 
@@ -1605,7 +1604,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	mountPointArray := make(containers.CustomMountPointArray, 0, len(mountPoint))
 
 	// because of default bool values:
-	//nolint:gosimple
+
 	for _, mp := range mountPoint {
 		mountPointMap := mp.(map[string]interface{})
 		mountPointObject := containers.CustomMountPoint{}
@@ -1622,11 +1621,11 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		volume := mountPointMap[mkMountPointVolume].(string)
 
 		// we have to set only the values that are different from the provider's defaults,
-		if acl != dvMountPointACL {
+		if acl {
 			mountPointObject.ACL = &acl
 		}
 
-		if backup != dvMountPointBackup {
+		if backup {
 			mountPointObject.Backup = &backup
 		}
 
@@ -1634,19 +1633,19 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 			mountPointObject.MountPoint = path
 		}
 
-		if quota != dvMountPointQuota {
+		if quota {
 			mountPointObject.Quota = &quota
 		}
 
-		if readOnly != dvMountPointReadOnly {
+		if readOnly {
 			mountPointObject.ReadOnly = &readOnly
 		}
 
-		if replicate != dvMountPointReplicate {
+		if !replicate {
 			mountPointObject.Replicate = &replicate
 		}
 
-		if shared != dvMountPointShared {
+		if shared {
 			mountPointObject.Shared = &shared
 		}
 
@@ -2746,8 +2745,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	currentProtection := types.CustomBool(d.Get(mkProtection).(bool))
 
-	//nolint:gosimple
-	if len(clone) == 0 || currentProtection != dvProtection {
+	if len(clone) == 0 || currentProtection {
 		if containerConfig.Protection != nil {
 			e = d.Set(
 				mkProtection,
@@ -2782,8 +2780,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	currentTemplate := d.Get(mkTemplate).(bool)
 
-	//nolint:gosimple
-	if len(clone) == 0 || currentTemplate != dvTemplate {
+	if len(clone) == 0 || currentTemplate {
 		if containerConfig.Template != nil {
 			e = d.Set(
 				mkTemplate,
