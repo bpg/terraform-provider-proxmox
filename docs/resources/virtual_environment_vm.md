@@ -636,8 +636,12 @@ If you do not have `local-lvm` configured in your environment, you may need to e
 ### Cloning
 
 When cloning an existing virtual machine, whether it's a template or not, the
-resource will only detect changes to the arguments which are not set to their
-default values.
+resource will inherit the disks and other configuration from the source VM.
+
+*If* you modify any attributes of an existing disk in the clone, you also need to  
+explicitly provide values for any other attributes that differ from the schema defaults  
+in the source (e.g., `size`, `discard`, `cache`, `aio`).  
+Otherwise, the schema defaults will take effect and override the source values.
 
 Furthermore, when cloning from one node to a different one, the behavior changes
 depening on the datastores of the source VM. If at least one non-shared
@@ -645,7 +649,7 @@ datastore is used, the VM is first cloned to the source node before being
 migrated to the target node. This circumvents a limitation in the Proxmox clone
 API.
 
-**Note:** Because the migration step after the clone tries to preserve the used
+Because the migration step after the clone tries to preserve the used
 datastores by their name, it may fail if a datastore used in the source VM is
 not available on the target node (e.g. `local-lvm` is used on the source node in
 the VM but no `local-lvm` datastore is available on the target node). In this
