@@ -109,12 +109,12 @@ func UpdateClone(
 				TargetStorage:      *planDisk.DatastoreID,
 			}
 
+			// Note: after disk move, the actual disk volume ID will be different: both datastore id *and*
+			// path in datastore will change.
 			err := vmAPI.MoveVMDisk(ctx, diskMoveBody)
 			if err != nil {
 				return fmt.Errorf("disk move fails: %w", err)
 			}
-			// Note: after disk move, the actual disk volume ID will be different: both datastore id *and*
-			// path in datastore will change.
 		}
 
 		if planDisk.Size.InMegabytes() > currentDisk.Size.InMegabytes() {

@@ -28,7 +28,7 @@ type CustomStorageDevice struct {
 	// FileVolume is the path to the storage device in format
 	// "STORAGE_ID:SIZE_IN_GiB" or "STORAGE_ID:PATH_TO_FILE".
 	// This is a required field.
-	FileVolume string `json:"file"                  url:"file"`
+	FileVolume string `json:"file" url:"file"`
 
 	AIO                     *string           `json:"aio,omitempty"         url:"aio,omitempty"`
 	Backup                  *types.CustomBool `json:"backup,omitempty"      url:"backup,omitempty,int"`
