@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.74.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.2...v0.74.0) (2025-03-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **docs:** clarify disk behaviour in clone operation ([#1850](https://github.com/bpg/terraform-provider-proxmox/issues/1850))
+
+### Bug Fixes
+
+* **vm:** handle update of disks moved during VM clone ([#1849](https://github.com/bpg/terraform-provider-proxmox/issues/1849)) ([09d3e97](https://github.com/bpg/terraform-provider-proxmox/commit/09d3e97d020ced9b7d7ee7e15087f8e5d708a681))
+
+
+### Miscellaneous
+
+* **ci:** pin actions/attest-build-provenance action to ([#1843](https://github.com/bpg/terraform-provider-proxmox/issues/1843)) ([ef66b55](https://github.com/bpg/terraform-provider-proxmox/commit/ef66b55fc26878c23c569f9018b443dc92494d1c))
+* **deps:** Update golangci/golangci-lint (v1.64.8 → v2.0.2) ([#1847](https://github.com/bpg/terraform-provider-proxmox/issues/1847)) ([1eee8cd](https://github.com/bpg/terraform-provider-proxmox/commit/1eee8cdbd0c401d5078b0befc3304e21f3faef17))
+* **deps:** update module github.com/pkg/sftp (v1.13.8 → v1.13.9) ([#1846](https://github.com/bpg/terraform-provider-proxmox/issues/1846)) ([2ae7725](https://github.com/bpg/terraform-provider-proxmox/commit/2ae77257d3c5e9b5672ff6e0e5f7b58ae2d7c06e))
+* **docs:** clarify disk behaviour in clone operation ([#1850](https://github.com/bpg/terraform-provider-proxmox/issues/1850)) ([75281b2](https://github.com/bpg/terraform-provider-proxmox/commit/75281b2652a44f2374951d085830711af5e96df5))
+
 ## [0.73.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.1...v0.73.2) (2025-03-21)
 
 
