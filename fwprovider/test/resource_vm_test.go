@@ -704,50 +704,6 @@ func TestAccResourceVMClone(t *testing.T) {
 				}`),
 			ExpectError: regexp.MustCompile(`storage 'doesnotexist' does not exist`),
 		}}},
-		{"update disk speed and resize in a clone", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "template" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					disk {
-						datastore_id = "local-lvm"
-						interface    = "virtio0"
-						file_format  = "raw"
-						size         = 20
-					}
-				}
-				resource "proxmox_virtual_environment_vm" "clone" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					clone {
-						vm_id = proxmox_virtual_environment_vm.template.vm_id
-					}
-					disk {
-						datastore_id = "local-lvm"
-						interface    = "virtio0"
-						iothread     = true
-						discard      = "on"
-						size         = 30
-						speed {
-						  iops_read = 100
-						  iops_read_burstable = 1000
-						  iops_write = 400
-						  iops_write_burstable = 800
-						}
-					}
-				}`),
-			Check: resource.ComposeTestCheckFunc(
-				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
-					"disk.0.iothread":                     "true",
-					"disk.0.discard":                      "on",
-					"disk.0.size":                         "30",
-					"disk.0.speed.0.iops_read":            "100",
-					"disk.0.speed.0.iops_read_burstable":  "1000",
-					"disk.0.speed.0.iops_write":           "400",
-					"disk.0.speed.0.iops_write_burstable": "800",
-				}),
-			),
-		}}},
 	}
 
 	for _, tt := range tests {

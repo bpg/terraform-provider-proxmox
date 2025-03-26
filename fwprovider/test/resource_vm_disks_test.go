@@ -422,7 +422,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 		
 					disk {
 						interface    = "scsi0"
-						//size = 10
+						size = 10
 					}
 				}`),
 				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
@@ -432,7 +432,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					"disk.0.interface":         "scsi0",
 					"disk.0.iothread":          "true",
 					"disk.0.path_in_datastore": `base-\d+-disk-\d+`,
-					"disk.0.size":              "8",
+					"disk.0.size":              "10",
 					"disk.0.ssd":               "true",
 				}),
 			},
@@ -535,6 +535,85 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"clone with updating disk attributes", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						file_format  = "raw"
+						size         = 20
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						iothread     = true
+						discard      = "on"
+						size         = 30
+						speed {
+						  iops_read = 100
+						  iops_read_burstable = 1000
+						  iops_write = 400
+						  iops_write_burstable = 800
+						}
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+					"disk.0.iothread":                     "true",
+					"disk.0.discard":                      "on",
+					"disk.0.size":                         "30",
+					"disk.0.speed.0.iops_read":            "100",
+					"disk.0.speed.0.iops_read_burstable":  "1000",
+					"disk.0.speed.0.iops_write":           "400",
+					"disk.0.speed.0.iops_write_burstable": "800",
+				}),
+			),
+		}}},
+		{"clone with moving disk", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						file_format  = "raw"
+						size         = 20
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+					disk {
+						datastore_id = "tank"
+						interface    = "virtio0"
+						file_format  = "raw"
+						size         = 20
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+					"disk.0.datastore_id": "tank",
+				}),
+			),
+		}}},
 	}
 
 	for _, tt := range tests {
