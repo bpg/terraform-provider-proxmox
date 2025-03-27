@@ -29,7 +29,7 @@ However, we will try to maintain backward compatibility between provider version
 
 - [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
-- [Terraform](https://www.terraform.io/downloads.html) 1.5.x+ or [OpenTofu](https://opentofu.org) 1.6.x+
+- [Terraform](https://www.terraform.io/downloads.html) 1.5+ or [OpenTofu](https://opentofu.org) 1.6+
 
 ### Development Requirements
 
@@ -38,7 +38,10 @@ However, we will try to maintain backward compatibility between provider version
 
 ## Using the Provider
 
-You can find the latest release and its documentation in the [Terraform Registry](https://registry.terraform.io/providers/bpg/proxmox/latest).
+You can find the latest release and its documentation in the [Terraform Registry](https://registry.terraform.io/providers/bpg/proxmox/latest) or [OpenTofu Registry](https://search.opentofu.org/provider/bpg/proxmox/latest).
+
+For manual provider installation, you can download the binaries from the [Releases](https://github.com/bpg/terraform-provider-proxmox/releases) page.
+You also can use `gh` tool to verify the binaries provenance, see more details [here](https://github.com/bpg/terraform-provider-proxmox/attestations/).
 
 ## Testing the Provider
 
@@ -140,7 +143,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 ## Repository Metrics
 
 <picture>
-  <img src="https://gist.githubusercontent.com/bpg/2cc44ead81225542ed1ef0303d8f9eb9/raw/metrics.svg?p" alt="Metrics">
+  <img src="https://gist.githubusercontent.com/bpg/2cc44ead81225542ed1ef0303d8f9eb9/raw/metrics.svg" alt="Metrics">
 </picture>
 
 ## Sponsorship
