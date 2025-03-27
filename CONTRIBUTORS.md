@@ -185,6 +185,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://149segolte.dev"><img src="https://avatars.githubusercontent.com/u/37300847?v=4?s=100" width="100px;" alt="Shreyansh Nayak"/><br /><sub><b>Shreyansh Nayak</b></sub></a><br /><a href="#ideas-149segolte" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/techuser9182"><img src="https://avatars.githubusercontent.com/u/130158571?v=4?s=100" width="100px;" alt="techuser9182"/><br /><sub><b>techuser9182</b></sub></a><br /><a href="#financial-techuser9182" title="Financial">💵</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/pileus-lines"><img src="https://avatars.githubusercontent.com/u/74184010?v=4?s=100" width="100px;" alt="pileus-lines"/><br /><sub><b>pileus-lines</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=pileus-lines" title="Documentation">📖</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
