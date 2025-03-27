@@ -222,8 +222,8 @@ output "ubuntu_container_public_key" {
 - `start_on_boot` - (Optional) Automatically start container when the host
   system boots (defaults to `true`).
 - `tags` - (Optional) A list of tags the container tags. This is only meta
-  information (defaults to `[]`). Note: Proxmox always sorts the container tags.
-  If the list in template is not sorted, then Proxmox will always report a
+  information (defaults to `[]`). Note: Proxmox always sorts the container tags and set them to lowercase.
+  If tag contains capital letters, then Proxmox will always report a
   difference on the resource. You may use the `ignore_changes` lifecycle
   meta-argument to ignore changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
