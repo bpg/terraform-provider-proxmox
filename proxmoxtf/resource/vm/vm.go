@@ -5169,6 +5169,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 
 			mustChangeDatastore := false
+
 			oldInit, _ := d.GetChange(mkInitialization)
 			if len(oldInit.([]interface{})) > 0 {
 				oldInitBlock := oldInit.([]interface{})[0].(map[string]interface{})
