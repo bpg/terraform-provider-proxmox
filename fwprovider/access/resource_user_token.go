@@ -108,6 +108,11 @@ func (r *userTokenResource) Schema(
 					"and can't be retrieved at import.",
 				Computed:  true,
 				Sensitive: true,
+				PlanModifiers: []planmodifier.String{
+					// the attribute can't be retrieved after token creation, so during update we have to use value
+					// from state (i.e. populated at create) if available.
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -253,8 +258,6 @@ func (r *userTokenResource) Update(ctx context.Context, req resource.UpdateReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	plan.Value = types.StringNull()
 
 	resp.State.Set(ctx, plan)
 }

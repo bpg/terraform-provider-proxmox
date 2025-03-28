@@ -115,7 +115,7 @@ func TestAccResourceUserToken(t *testing.T) {
 				require.NoError(t, err)
 
 				t.Cleanup(func() {
-					err := te.AccessClient().DeleteUser(context.Background(), userID)
+					err = te.AccessClient().DeleteUser(context.Background(), userID)
 					require.NoError(t, err)
 				})
 			},
@@ -148,9 +148,7 @@ func TestAccResourceUserToken(t *testing.T) {
 							"privileges_separation": "false",
 							"token_name":            tokenName,
 							"user_id":               userID,
-						}),
-						test.NoResourceAttributesSet("proxmox_virtual_environment_user_token.user_token", []string{
-							"value",
+							"value":                 fmt.Sprintf("%s!%s=.*", userID, tokenName),
 						}),
 					),
 				},
@@ -167,10 +165,10 @@ func TestAccResourceUserToken(t *testing.T) {
 							"privileges_separation": "false",
 							"token_name":            tokenName,
 							"user_id":               userID,
+							"value":                 fmt.Sprintf("%s!%s=.*", userID, tokenName),
 						}),
 						test.NoResourceAttributesSet("proxmox_virtual_environment_user_token.user_token", []string{
 							"expiration_date",
-							"value",
 						}),
 					),
 				},
@@ -178,6 +176,9 @@ func TestAccResourceUserToken(t *testing.T) {
 					ResourceName:      "proxmox_virtual_environment_user_token.user_token",
 					ImportState:       true,
 					ImportStateVerify: true,
+					ImportStateVerifyIgnore: []string{
+						"value",
+					},
 				},
 			},
 		},
