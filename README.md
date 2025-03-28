@@ -91,7 +91,7 @@ Work has started to migrate the provider to the new [Terraform Plugin Framework]
 
 ### HA VMs / containers
 
-If a VM or container resource is created with the provider, but managed by the HA cluster, the resource might be migrated to a different node without the provider noticing it.
+If a VM or container resource is created with the provider but managed by an HA cluster, it might be migrated to a different node without the provider being aware of the change.
 This causes a "configuration drift" and the provider will report an error when managing the resource.
 You would need to manually reconcile the resource state stored in the backend to match the actual state of the resource, or remove the resource from the provider management.
 
