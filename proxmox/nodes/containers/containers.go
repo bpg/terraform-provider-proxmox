@@ -114,12 +114,33 @@ func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) erro
 
 // ShutdownContainer shuts down a container.
 func (c *Client) ShutdownContainer(ctx context.Context, d *ShutdownRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/shutdown"), d, nil)
+	taskID, err := c.ShutdownContainerAsync(ctx, d)
 	if err != nil {
-		return fmt.Errorf("error shutting down container: %w", err)
+		return err
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *taskID)
+	if err != nil {
+		return fmt.Errorf("error waiting for container shut down: %w", err)
 	}
 
 	return nil
+}
+
+// ShutdownContainerAsync shuts down a container asynchronously.
+func (c *Client) ShutdownContainerAsync(ctx context.Context, d *ShutdownRequestBody) (*string, error) {
+	resBody := &ShutdownResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/shutdown"), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error shutting down container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // StartContainer starts a container if is not already running.

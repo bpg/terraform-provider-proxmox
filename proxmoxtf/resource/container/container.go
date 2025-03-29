@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/containers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
@@ -2997,11 +2998,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 	}
 
-	if d.HasChange(mkInitialization) {
+	if d.HasChange(mkInitialization + "." + mkInitializationDNS) {
 		updateBody.DNSDomain = &initializationDNSDomain
 		updateBody.DNSServer = &initializationDNSServer
-		updateBody.Hostname = &initializationHostname
+		rebootRequired = true
+	}
 
+	if d.HasChange(mkInitialization + "." + mkInitializationHostname) {
+		updateBody.Hostname = &initializationHostname
 		rebootRequired = true
 	}
 
@@ -3279,11 +3283,16 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			}
 		} else {
 			forceStop := types.CustomBool(true)
-			shutdownTimeout := 300
+			// Using delete timeout here as we're in the similar situation
+			// as in the delete function, where we need to wait for the container
+			// to be stopped before we can proceed with the update.
+			// see `containerDelete` function for more details about the logic here
+			// TODO: refactor to a common function
+			shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
 
 			e = containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
-				Timeout:   &shutdownTimeout,
+				Timeout:   &shutdownTimeoutSec,
 			})
 			if e != nil {
 				return diag.FromErr(e)
@@ -3351,7 +3360,9 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{})
 			ctx,
 			&containers.ShutdownRequestBody{
 				ForceStop: &forceStop,
-				Timeout:   &deleteTimeoutSec,
+				// the timeout here must be less that the context timeout set above,
+				// otherwise the context will be cancelled before PVE forcefully stops the container
+				Timeout: ptr.Ptr(max(1, deleteTimeoutSec-5)),
 			},
 		)
 		if err != nil {
