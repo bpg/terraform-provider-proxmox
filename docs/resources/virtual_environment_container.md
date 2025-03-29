@@ -39,6 +39,11 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
     name = "veth0"
   }
 
+  disk {
+    datastore_id = "local-lvm"
+    size         = 4
+  }
+  
   operating_system {
     template_file_id = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_lxc_img.id
     # Or you can use a volume ID, as obtained from a "pvesm list <storage>"

@@ -61,63 +61,119 @@ func TestAccResourceContainer(t *testing.T) {
 		name string
 		step []resource.TestStep
 	}{
-		{"create and start container", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_container" "test_container" {
-				node_name = "{{.NodeName}}"
-				vm_id     = {{.TestContainerID}}
-				disk {
-					datastore_id = "local-lvm"
-					size         = 4
-				}
-				mount_point {
-					volume = "local-lvm"
-					size   = "4G"
-					path   = "mnt/local"
-				}
-				device_passthrough {
-					path = "/dev/zero"
-				}
-				description = <<-EOT
-					my
-					description
-					value
-				EOT
-				initialization {
-					hostname = "test"
-					ip_config {
-						ipv4 {
-						  address = "dhcp"
+		{"create, start and update container", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = 10
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "mnt/local"
+					}
+					device_passthrough {
+						path = "/dev/zero"
+					}
+					description = <<-EOT
+						my
+						description
+						value
+					EOT
+					initialization {
+						hostname = "test"
+						ip_config {
+							ipv4 {
+							  address = "dhcp"
+							}
 						}
 					}
-				}
-				network_interface {
-					name = "vmbr0"
-				}
-				operating_system {
-					template_file_id = "local:vztmpl/{{.ImageFileName}}"
-					type             = "ubuntu"
-				}
-			}`, WithRootUser()),
-			Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr(accTestContainerName, "description", "my\ndescription\nvalue\n"),
-				resource.TestCheckResourceAttr(accTestContainerName, "device_passthrough.#", "1"),
-				func(*terraform.State) error {
-					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					defer cancel()
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"description":            "my\ndescription\nvalue\n",
+						"device_passthrough.#":   "1",
+						"initialization.0.dns.#": "0",
+					}),
+					func(*terraform.State) error {
+						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+						defer cancel()
 
-					ct := te.NodeClient().Container(accTestContainerID)
-					err := ct.WaitForContainerStatus(ctx, "running")
-					require.NoError(te.t, err, "container did not start")
+						ct := te.NodeClient().Container(accTestContainerID)
+						err := ct.WaitForContainerStatus(ctx, "running")
+						require.NoError(te.t, err, "container did not start")
 
-					ctInfo, err := ct.GetContainer(ctx)
-					require.NoError(te.t, err, "failed to get container")
-					require.NotNil(te.t, ctInfo.DevicePassthrough0)
+						ctInfo, err := ct.GetContainer(ctx)
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.DevicePassthrough0)
 
-					return nil
-				},
-			),
-		}}},
+						return nil
+					},
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = 10
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "mnt/local"
+					}
+					device_passthrough {
+						path = "/dev/zero"
+					}
+					description = <<-EOT
+						my
+						description
+						value
+					EOT
+					initialization {
+						hostname = "test"
+						ip_config {
+							ipv4 {
+								address = "172.16.10.10/15"
+								gateway = "172.16.0.1"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"description":            "my\ndescription\nvalue\n",
+						"device_passthrough.#":   "1",
+						"initialization.0.dns.#": "0",
+					}),
+				),
+			},
+		}},
 		{"update mount points", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

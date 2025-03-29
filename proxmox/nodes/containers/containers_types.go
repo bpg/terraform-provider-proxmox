@@ -159,6 +159,8 @@ type CreateResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
+type ShutdownResponseBody = CreateResponseBody
+
 // GetResponseBody contains the body from a user get response.
 type GetResponseBody struct {
 	Data *GetResponseData `json:"data,omitempty"`
