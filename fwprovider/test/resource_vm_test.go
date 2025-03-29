@@ -488,11 +488,9 @@ func TestAccResourceVMInitialization(t *testing.T) {
 						upgrade = false
 					}
 				}`),
-			Check: resource.ComposeTestCheckFunc(
-				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit3", map[string]string{
-					"initialization.0.upgrade": "false",
-				}),
-			),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit3", map[string]string{
+				"initialization.0.upgrade": "false",
+			}),
 		}}},
 		{"native cloud-init: username should not change", []resource.TestStep{{
 			Config: te.RenderConfig(`
@@ -505,12 +503,49 @@ func TestAccResourceVMInitialization(t *testing.T) {
 						}
 					}
 				}`),
-			Check: resource.ComposeTestCheckFunc(
-				NoResourceAttributesSet("proxmox_virtual_environment_vm.test_vm_cloudinit4", []string{
-					"initialization.0.username",
-					"initialization.0.password",
-				}),
-			),
+			Check: NoResourceAttributesSet("proxmox_virtual_environment_vm.test_vm_cloudinit4", []string{
+				"initialization.0.username",
+				"initialization.0.password",
+			}),
+		}}},
+		{"native cloud-init: username should not change after update", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit4" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							username = "ubuntu"
+							password = "password"
+						}
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit4", map[string]string{
+				"initialization.0.user_account.0.username": "ubuntu",
+				// override by PVE, set when reading back from the API
+				// have to escape the asterisks because of regex match
+				"initialization.0.user_account.0.password": `\*\*\*\*\*\*\*\*\*\*`,
+			}),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit4" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							username = "ubuntu"
+							password = "password"
+						}
+						dns {
+							servers = ["172.16.0.15", "172.16.0.16"]
+							domain = "example.com"
+						}
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit4", map[string]string{
+				"initialization.0.user_account.0.username": "ubuntu",
+				"initialization.0.user_account.0.password": `\*\*\*\*\*\*\*\*\*\*`,
+			}),
 		}}},
 	}
 

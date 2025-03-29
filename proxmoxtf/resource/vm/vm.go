@@ -296,6 +296,13 @@ const (
 	mkWatchdogAction  = "action"
 )
 
+// MaskedPassword represents a value that PVE returns instead of the configured ciuser password when we read the
+// VM config back, and we store this value in the state.
+// I don't want to change this "security feature" at the moment to avoid breaking change, but
+// the provider should avoid overriding config / state in general. Instead, the state encryption feature should
+// be used for data protection.
+const MaskedPassword = "**********"
+
 // VM returns a resource that manages VMs.
 func VM() *schema.Resource {
 	s := map[string]*schema.Schema{
@@ -2932,7 +2939,7 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		}
 
 		password := initializationUserAccountBlock[mkInitializationUserAccountPassword].(string)
-		if password != "" {
+		if password != "" && password != MaskedPassword {
 			initializationConfig.Password = &password
 		}
 
