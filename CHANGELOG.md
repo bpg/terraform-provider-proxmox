@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.74.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.74.0...v0.74.1) (2025-03-29)
+
+
+### Bug Fixes
+
+* **auth:** do not reset user token value in TF state during update ([#1857](https://github.com/bpg/terraform-provider-proxmox/issues/1857)) ([2da4e3d](https://github.com/bpg/terraform-provider-proxmox/commit/2da4e3de1c2ab8969afd1d86575a6101a8dc07f5))
+* **docs:** clarify `tags` behaviour for container ([#1851](https://github.com/bpg/terraform-provider-proxmox/issues/1851)) ([b19d28e](https://github.com/bpg/terraform-provider-proxmox/commit/b19d28e841926a1433a1898777b984a3b659edd5))
+* **lxc:** prevent spurious `dns` config change when updating `initialization` block ([#1859](https://github.com/bpg/terraform-provider-proxmox/issues/1859)) ([03f2079](https://github.com/bpg/terraform-provider-proxmox/commit/03f20799029b56ab0d9d0e096e8890f0d61780d8))
+* **vm:** allow to set `machine` type in clone ([#1865](https://github.com/bpg/terraform-provider-proxmox/issues/1865)) ([7090b10](https://github.com/bpg/terraform-provider-proxmox/commit/7090b1036a2c5a8640eef62daf23b56af521e409))
+* **vm:** improve error handling when updating `initialization` block ([#1858](https://github.com/bpg/terraform-provider-proxmox/issues/1858)) ([539b902](https://github.com/bpg/terraform-provider-proxmox/commit/539b902633b07e1f9089274b9ddd7e7d3edd317d))
+* **vm:** prevent cloud-init password reset to `**********` during update ([#1864](https://github.com/bpg/terraform-provider-proxmox/issues/1864)) ([4f522ec](https://github.com/bpg/terraform-provider-proxmox/commit/4f522ec34227a9b6f713e9600c00fcd110bea5d9))
+* **vm:** prevent cloud-init username reset to `" "` during create ([#1863](https://github.com/bpg/terraform-provider-proxmox/issues/1863)) ([c9fcb30](https://github.com/bpg/terraform-provider-proxmox/commit/c9fcb30762a46a3d6a0e48a8bb6201aa8b205dcd))
+* **vm:** remove `qcow2` as the default for `disk.file_format` ([#1862](https://github.com/bpg/terraform-provider-proxmox/issues/1862)) ([af46a9c](https://github.com/bpg/terraform-provider-proxmox/commit/af46a9c71af8d8ffe687c0b5a87de9f0ca4f1a37))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v1.11.7 → v1.12.0) ([#1860](https://github.com/bpg/terraform-provider-proxmox/issues/1860)) ([7ba9417](https://github.com/bpg/terraform-provider-proxmox/commit/7ba94171bfba19b29426429d043b03adb8fbaa1e))
+* **deps:** update module golang.org/x/net (v0.37.0 → v0.38.0) ([#1861](https://github.com/bpg/terraform-provider-proxmox/issues/1861)) ([f030a49](https://github.com/bpg/terraform-provider-proxmox/commit/f030a49e9f6798fcea7bb64defdcf7ddfd009bc0))
+* **docs:** add known issue for HA VMs and containers in README ([#1855](https://github.com/bpg/terraform-provider-proxmox/issues/1855)) ([de65997](https://github.com/bpg/terraform-provider-proxmox/commit/de65997de49fa40cb5874b5f5cace0732babe6ef))
+
 ## [0.74.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.73.2...v0.74.0) (2025-03-26)
 
 
