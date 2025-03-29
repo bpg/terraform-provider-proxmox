@@ -3287,7 +3287,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			// as in the delete function, where we need to wait for the container
 			// to be stopped before we can proceed with the update.
 			// see `containerDelete` function for more details about the logic here
-			// TODO: refactor to a common function
+			// Needs to be refactored to a common function
 			shutdownTimeoutSec := max(1, d.Get(mkTimeoutDelete).(int)-5)
 
 			e = containerAPI.ShutdownContainer(ctx, &containers.ShutdownRequestBody{

@@ -172,7 +172,8 @@ func TestAccResourceContainer(t *testing.T) {
 						"initialization.0.dns.#": "0",
 					}),
 				),
-			}}},
+			},
+		}},
 		{"update mount points", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
