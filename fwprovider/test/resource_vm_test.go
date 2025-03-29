@@ -494,6 +494,24 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				}),
 			),
 		}}},
+		{"native cloud-init: username should not change", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit4" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOQCHPhOV9XsJa3uq4bmKymklNy6ktgBB/+2umizgnnY"]
+						}
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				NoResourceAttributesSet("proxmox_virtual_environment_vm.test_vm_cloudinit4", []string{
+					"initialization.0.username",
+					"initialization.0.password",
+				}),
+			),
+		}}},
 	}
 
 	for _, tt := range tests {
