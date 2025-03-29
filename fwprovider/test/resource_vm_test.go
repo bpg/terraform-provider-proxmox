@@ -714,6 +714,26 @@ func TestAccResourceVMClone(t *testing.T) {
 					}
 				}`, WithRootUser()),
 		}}},
+		{"clone machine type", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+					machine   = "q35"
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+					machine = "pc"
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+				"machine": "pc",
+			}),
+		}}},
 		{"clone no vga block", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template" {

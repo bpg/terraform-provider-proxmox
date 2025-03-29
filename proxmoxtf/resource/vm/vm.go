@@ -1898,26 +1898,27 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
-	acpi := types.CustomBool(d.Get(mkACPI).(bool))
-	agent := d.Get(mkAgent).([]interface{})
 	audioDevices := vmGetAudioDeviceList(d)
 
+	acpi := types.CustomBool(d.Get(mkACPI).(bool))
+	agent := d.Get(mkAgent).([]interface{})
 	bios := d.Get(mkBIOS).(string)
-	kvmArguments := d.Get(mkKVMArguments).(string)
-	scsiHardware := d.Get(mkSCSIHardware).(string)
 	cdrom := d.Get(mkCDROM).([]interface{})
 	cpu := d.Get(mkCPU).([]interface{})
-	initialization := d.Get(mkInitialization).([]interface{})
 	hostPCI := d.Get(mkHostPCI).([]interface{})
 	hostUSB := d.Get(mkHostUSB).([]interface{})
+	initialization := d.Get(mkInitialization).([]interface{})
 	keyboardLayout := d.Get(mkKeyboardLayout).(string)
+	kvmArguments := d.Get(mkKVMArguments).(string)
+	machine := d.Get(mkMachine).(string)
 	memory := d.Get(mkMemory).([]interface{})
 	numa := d.Get(mkNUMA).([]interface{})
-	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
-	serialDevice := d.Get(mkSerialDevice).([]interface{})
 	onBoot := types.CustomBool(d.Get(mkOnBoot).(bool))
-	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
+	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
 	protection := types.CustomBool(d.Get(mkProtection).(bool))
+	scsiHardware := d.Get(mkSCSIHardware).(string)
+	serialDevice := d.Get(mkSerialDevice).([]interface{})
+	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	vga := d.Get(mkVGA).([]interface{})
 	watchdog := d.Get(mkWatchdog).([]interface{})
@@ -1956,6 +1957,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if bios != dvBIOS {
 		updateBody.BIOS = &bios
+	}
+
+	if machine != dvMachineType {
+		updateBody.Machine = &machine
 	}
 
 	if scsiHardware != dvSCSIHardware {
