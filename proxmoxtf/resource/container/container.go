@@ -2744,6 +2744,21 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
+	currentUnprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
+
+	if len(clone) == 0 || currentUnprivileged {
+		if containerConfig.Unprivileged != nil {
+			e = d.Set(
+				mkUnprivileged,
+				bool(*containerConfig.Unprivileged),
+			)
+		} else {
+			e = d.Set(mkUnprivileged, false)
+		}
+
+		diags = append(diags, diag.FromErr(e)...)
+	}
+
 	currentProtection := types.CustomBool(d.Get(mkProtection).(bool))
 
 	if len(clone) == 0 || currentProtection {
