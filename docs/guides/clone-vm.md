@@ -36,7 +36,6 @@ resource "proxmox_virtual_environment_vm" "ubuntu_template" {
 
   efi_disk {
     datastore_id = "local"
-    file_format  = "raw"
     type         = "4m"
   }
 

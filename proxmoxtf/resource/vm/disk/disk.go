@@ -39,8 +39,8 @@ func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorag
 
 	for k, v := range storageDevices {
 		if v != nil && diskMap[k] != nil {
-			if d, ok := diskMap[k].(map[string]interface{}); ok {
-				if fileID, ok := d[mkDiskFileID].(string); ok && fileID != "" {
+			if disk, ok := diskMap[k].(map[string]interface{}); ok {
+				if fileID, ok := disk[mkDiskFileID].(string); ok && fileID != "" {
 					v.FileID = &fileID
 				}
 			}
@@ -195,15 +195,11 @@ func GetDiskDeviceObjects(
 			return diskDeviceObjects, fmt.Errorf("error getting disk speed block: %w", err)
 		}
 
-		if fileFormat == "" {
-			fileFormat = dvDiskFileFormat
-		}
-
 		if pathInDatastore != "" {
 			if datastoreID != "" {
 				diskDevice.FileVolume = fmt.Sprintf("%s:%s", datastoreID, pathInDatastore)
 			} else {
-				// FileVolume is absolute path in the host filesystem
+				// FileVolume is the absolute path in the host filesystem
 				diskDevice.FileVolume = pathInDatastore
 			}
 		} else {
@@ -216,10 +212,13 @@ func GetDiskDeviceObjects(
 		diskDevice.DatastoreID = &datastoreID
 		diskDevice.Discard = &discard
 		diskDevice.FileID = &fileID
-		diskDevice.Format = &fileFormat
 		diskDevice.Replicate = &replicate
 		diskDevice.Serial = &serial
 		diskDevice.Size = types.DiskSizeFromGigabytes(int64(size))
+
+		if fileFormat != "" {
+			diskDevice.Format = &fileFormat
+		}
 
 		if !strings.HasPrefix(diskInterface, "virtio") {
 			diskDevice.SSD = &ssd
@@ -316,7 +315,8 @@ func createCustomDisk(
 	iface string,
 	disk vms.CustomStorageDevice,
 ) error {
-	fileFormat := dvDiskFileFormat
+	// use "old default" specifically here.
+	fileFormat := "qcow2"
 	if disk.Format != nil && *disk.Format != "" {
 		fileFormat = *disk.Format
 	}
@@ -332,7 +332,7 @@ func createCustomDisk(
 		fmt.Sprintf(`disk_options="%s"`, disk.EncodeOptions()),
 		fmt.Sprintf(`disk_interface="%s"`, iface),
 		`source_image=$(try_sudo "pvesm path $file_id")`,
-		`imported_disk="$(try_sudo "qm importdisk $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
+		`imported_disk="$(try_sudo "qm disk import $vm_id $source_image $datastore_id_target -format $file_format" | grep "unused0" | cut -d ":" -f 3 | cut -d "'" -f 1)"`,
 		`disk_id="${datastore_id_target}:$imported_disk,${disk_options}"`,
 		`try_sudo "qm set $vm_id -${disk_interface} $disk_id"`,
 	}
@@ -399,8 +399,6 @@ func Read(
 		disk[mkDiskPathInDatastore] = pathInDatastore
 
 		if dd.Format == nil {
-			disk[mkDiskFileFormat] = dvDiskFileFormat
-
 			if datastoreID != "" {
 				// disk format may not be returned by config API if it is default for the storage, and that may be different
 				// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value

@@ -31,7 +31,6 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   efi_disk {
     datastore_id = local.datastore_id
-    file_format  = "raw"
     type         = "4m"
   }
 
@@ -42,7 +41,6 @@ resource "proxmox_virtual_environment_vm" "example_template" {
 
   disk {
     datastore_id = local.datastore_id
-    file_format  = "raw"
     interface    = "ide0"
     size         = 8
   }
@@ -61,7 +59,6 @@ resource "proxmox_virtual_environment_vm" "example_template" {
   #    datastore_id = "nfs"
   #    interface    = "scsi1"
   #    discard      = "ignore"
-  #    file_format  = "raw"
   #  }
 
   initialization {
@@ -166,7 +163,6 @@ resource "proxmox_virtual_environment_vm" "example" {
 
   efi_disk {
     datastore_id = local.datastore_id
-    file_format  = "raw"
     type         = "4m"
   }
 
@@ -234,13 +230,11 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
 
   disk {
     datastore_id = local.datastore_id
-    file_format  = "raw"
     interface    = "scsi0"
     size         = 1
   }
   disk {
     datastore_id = local.datastore_id
-    file_format  = "raw"
     interface    = "scsi1"
     size         = 4
   }

@@ -34,8 +34,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					name 	  = "test-disk"
 					
 					disk {
-						// note: default qcow2 is not supported by lvm (?)
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
 						size         = 8
@@ -67,8 +65,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					name 	  = "test-disk"
 
 					disk {
-						// note: default qcow2 is not supported by lvm (?)
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
 						serial	     = "-dead_beef-"
@@ -155,7 +151,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					template  = "true"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
 						size         = 8
@@ -190,13 +185,11 @@ func TestAccResourceVMDisks(t *testing.T) {
 					template  = "true"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
 						size         = 8
 					}
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
 						size         = 8
@@ -222,7 +215,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					name 	  = "test-disk"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
 						size         = 8
@@ -241,14 +233,12 @@ func TestAccResourceVMDisks(t *testing.T) {
 					name 	  = "test-disk"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
 						size         = 8
 					}
 
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi1"
 						size         = 8
@@ -279,14 +269,12 @@ func TestAccResourceVMDisks(t *testing.T) {
 					name 	  = "test-disk"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
 						size         = 8
 					}
 
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi1"
 						size         = 8
@@ -307,7 +295,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					name 	  = "test-disk"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
 						size         = 8
@@ -349,7 +336,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					name 	  = "test-disks-ide"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "ide0"
 						size         = 8
@@ -368,13 +354,11 @@ func TestAccResourceVMDisks(t *testing.T) {
 					name 	  = "test-disks-ide"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "ide0"
 						size         = 8
 					}
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "ide1"
 						size         = 8
@@ -402,7 +386,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					template  = "true"
 		
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
 						size         = 8
@@ -451,7 +434,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					template  = "true"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
 						size         = 8
@@ -498,7 +480,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					template  = "true"
 					
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
 						size         = 8
@@ -514,7 +495,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					}
 
 					disk {
-						file_format  = "raw"
 						datastore_id = "local-lvm"
 						interface    = "scsi0"
 						size         = 10
@@ -543,7 +523,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					disk {
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
-						file_format  = "raw"
 						size         = 20
 					}
 				}
@@ -591,7 +570,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					disk {
 						datastore_id = "local-lvm"
 						interface    = "virtio0"
-						file_format  = "raw"
 						size         = 20
 					}
 				}
@@ -604,7 +582,6 @@ func TestAccResourceVMDisks(t *testing.T) {
 					disk {
 						datastore_id = "tank"
 						interface    = "virtio0"
-						file_format  = "raw"
 						size         = 20
 					}
 				}`),

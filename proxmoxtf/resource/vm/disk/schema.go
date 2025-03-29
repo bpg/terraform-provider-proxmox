@@ -17,7 +17,6 @@ import (
 const (
 	dvDiskInterface   = "scsi0"
 	dvDiskDatastoreID = "local-lvm"
-	dvDiskFileFormat  = "qcow2"
 	dvDiskSize        = 8
 	dvDiskAIO         = "io_uring"
 	dvDiskDiscard     = "ignore"
