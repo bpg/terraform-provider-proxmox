@@ -273,11 +273,11 @@ output "ubuntu_vm_public_key" {
     - `discard` - (Optional) Whether to pass discard/trim requests to the
         underlying storage. Supported values are `on`/`ignore` (defaults
         to `ignore`).
-    - `file_format` - (Optional) The file format (defaults to `qcow2`).
+    - `file_format` - (Optional) The file format.
         - `qcow2` - QEMU Disk Image v2.
         - `raw` - Raw Disk Image.
         - `vmdk` - VMware Disk Image.
-    - `file_id` - (Optional) The file ID for a disk image. The ID format is
+    - `file_id` - (Optional) The file ID for a disk image when importing a disk into VM. The ID format is
           `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`. Can be also taken from
           `proxmox_virtual_environment_download_file` resource.
     - `interface` - (Required) The disk interface for Proxmox, currently `scsi`,
@@ -685,14 +685,12 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
 
   disk {
     datastore_id = "local-zfs"
-    file_format  = "raw"
     interface    = "scsi0"
     size         = 1
   }
 
   disk {
     datastore_id = "local-zfs"
-    file_format  = "raw"
     interface    = "scsi1"
     size         = 4
   }
@@ -702,7 +700,6 @@ resource "proxmox_virtual_environment_vm" "data_user_vm" {
   # boot disk
   disk {
     datastore_id = "local-zfs"
-    file_format  = "raw"
     interface    = "scsi0"
     size         = 8
   }
