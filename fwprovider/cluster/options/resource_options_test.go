@@ -6,7 +6,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package fwprovider_test
+package options_test
 
 import (
 	"fmt"

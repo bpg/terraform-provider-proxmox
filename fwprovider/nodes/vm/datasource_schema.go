@@ -13,10 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/cpu"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/rng"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm/vga"
 )
 
 // Schema defines the schema for the resource.

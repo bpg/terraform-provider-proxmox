@@ -25,18 +25,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/access"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/acme"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/acme"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/ha"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/hardwaremapping"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/network"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/vm"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/hardwaremapping"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
+	proxmoxnodes "github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -495,32 +497,32 @@ func (p *proxmoxProvider) Configure(
 
 func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewClusterOptionsResource,
-		NewDownloadFileResource,
+		access.NewACLResource,
+		access.NewUserTokenResource,
 		acme.NewACMEAccountResource,
 		acme.NewACMEPluginResource,
 		apt.NewRepositoryResource,
 		apt.NewStandardRepositoryResource,
-		access.NewACLResource,
-		access.NewUserTokenResource,
 		ha.NewHAGroupResource,
 		ha.NewHAResourceResource,
 		hardwaremapping.NewPCIResource,
 		hardwaremapping.NewUSBResource,
+		metrics.NewMetricsServerResource,
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
+		nodes.NewDownloadFileResource,
+		options.NewClusterOptionsResource,
 		vm.NewResource,
-		metrics.NewMetricsServerResource,
 	}
 }
 
 func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewVersionDataSource,
-		acme.NewACMEAccountsDataSource,
 		acme.NewACMEAccountDataSource,
-		acme.NewACMEPluginsDataSource,
+		acme.NewACMEAccountsDataSource,
 		acme.NewACMEPluginDataSource,
+		acme.NewACMEPluginsDataSource,
 		apt.NewRepositoryDataSource,
 		apt.NewStandardRepositoryDataSource,
 		ha.NewHAGroupDataSource,
@@ -530,8 +532,8 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewDataSource,
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
-		vm.NewDataSource,
 		metrics.NewMetricsServerDatasource,
+		vm.NewDataSource,
 	}
 }
 
@@ -540,7 +542,7 @@ type apiResolver struct {
 }
 
 func (r *apiResolver) Resolve(ctx context.Context, nodeName string) (ssh.ProxmoxNode, error) {
-	nc := &nodes.Client{Client: r.c, NodeName: nodeName}
+	nc := &proxmoxnodes.Client{Client: r.c, NodeName: nodeName}
 
 	networkDevices, err := nc.ListNetworkInterfaces(ctx)
 	if err != nil {
