@@ -2376,7 +2376,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if dp.Mode != nil {
 			devicePassthrough[mkDevicePassthroughMode] = *dp.Mode
 		} else {
-			devicePassthrough[mkDevicePassthroughMode] = ""
+			devicePassthrough[mkDevicePassthroughMode] = "0660"
 		}
 
 		devicePassthrough[mkDevicePassthroughPath] = dp.Path
