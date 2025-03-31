@@ -104,9 +104,11 @@ func TestAccResourceContainer(t *testing.T) {
 				}`, WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
-						"description":            "my\ndescription\nvalue\n",
-						"device_passthrough.#":   "1",
-						"initialization.0.dns.#": "0",
+						"unprivileged":              "true",
+						"description":               "my\ndescription\nvalue\n",
+						"device_passthrough.#":      "1",
+						"device_passthrough.0.mode": "0660",
+						"initialization.0.dns.#":    "0",
 					}),
 					func(*terraform.State) error {
 						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
