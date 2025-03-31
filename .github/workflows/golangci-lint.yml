@@ -40,7 +40,7 @@ jobs:
 
       - name: Lint code
         if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7
         with: 
           version: v2.0.2 # renovate: depName=golangci/golangci-lint datasource=github-releases
           skip-cache: true
