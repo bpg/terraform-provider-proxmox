@@ -50,6 +50,7 @@ const (
 	dvCPUCores                          = 1
 	dvCPUUnits                          = 1024
 	dvDescription                       = ""
+	dvDevicePassthroughMode             = "0660"
 	dvDiskDatastoreID                   = "local"
 	dvDiskSize                          = 4
 	dvFeaturesNesting                   = false
@@ -710,6 +711,7 @@ func Container() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "Access mode to be set on the device node (e.g. 0666)",
 							Optional:    true,
+							Default:     dvDevicePassthroughMode,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.StringMatch(
 								regexp.MustCompile(`0[0-7]{3}`), "Octal access mode",
 							)),
@@ -2376,7 +2378,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if dp.Mode != nil {
 			devicePassthrough[mkDevicePassthroughMode] = *dp.Mode
 		} else {
-			devicePassthrough[mkDevicePassthroughMode] = ""
+			devicePassthrough[mkDevicePassthroughMode] = dvDevicePassthroughMode
 		}
 
 		devicePassthrough[mkDevicePassthroughPath] = dp.Path
@@ -2742,6 +2744,21 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		operatingSystem[mkOperatingSystemType] != dvOperatingSystemType {
 		err := d.Set(mkOperatingSystem, []interface{}{operatingSystem})
 		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	currentUnprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
+
+	if len(clone) == 0 || currentUnprivileged {
+		if containerConfig.Unprivileged != nil {
+			e = d.Set(
+				mkUnprivileged,
+				bool(*containerConfig.Unprivileged),
+			)
+		} else {
+			e = d.Set(mkUnprivileged, false)
+		}
+
+		diags = append(diags, diag.FromErr(e)...)
 	}
 
 	currentProtection := types.CustomBool(d.Get(mkProtection).(bool))
