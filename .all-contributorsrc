@@ -1321,6 +1321,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "CaptaiNiveau",
+      "name": "CaptaiNiveau",
+      "avatar_url": "https://avatars.githubusercontent.com/u/79282544?v=4",
+      "profile": "https://github.com/CaptaiNiveau",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
