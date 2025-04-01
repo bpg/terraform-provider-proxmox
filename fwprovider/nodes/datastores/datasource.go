@@ -95,6 +95,8 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
+	model.Datastores = make([]Datastore, 0, len(dsList))
+
 	for _, ds := range dsList {
 		datastore := Datastore{}
 
@@ -107,7 +109,7 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		datastore.ID = types.StringValue(ds.ID)
 		datastore.NodeName = types.StringValue(model.NodeName.ValueString())
 		datastore.Shared = types.BoolPointerValue(ds.Shared.PointerBool())
-		datastore.SpaceAvailable = types.Int64Value(int64(*ds.SpaceAvailable))
+		datastore.SpaceAvailable = types.Int64PointerValue(ds.SpaceAvailable.PointerInt64())
 		datastore.SpaceTotal = types.Int64PointerValue(ds.SpaceTotal.PointerInt64())
 		datastore.SpaceUsed = types.Int64PointerValue(ds.SpaceUsed.PointerInt64())
 		datastore.SpaceUsedFraction = types.Float64PointerValue(ds.SpaceUsedPercentage.PointerFloat64())

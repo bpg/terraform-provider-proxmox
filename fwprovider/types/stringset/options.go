@@ -27,6 +27,8 @@ func defaultOptions(opts ...Option) options {
 }
 
 // WithSeparator sets the separator for the string set value.
+// For future use, to set the separator to a different value than the default ";".
+// Would allow us to replace types.CustomCommaSeparatedList custom type that can only handle commas.
 func WithSeparator(separator string) Option {
 	return Option{
 		apply: func(o *options) {
