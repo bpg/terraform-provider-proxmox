@@ -155,7 +155,7 @@ func (d *pciDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, re
 				Description: "The name of this PCI hardware mapping.",
 				Required:    true,
 			},
-			schemaAttrNameTerraformID: attribute.ID(
+			schemaAttrNameTerraformID: attribute.ResourceID(
 				"The unique identifier of this PCI hardware mapping data source.",
 			),
 		},

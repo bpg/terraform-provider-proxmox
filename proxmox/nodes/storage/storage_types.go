@@ -31,9 +31,9 @@ type DatastoreListResponseData struct {
 	Enabled             *types.CustomBool               `json:"enabled,omitempty"`
 	ID                  string                          `json:"storage,omitempty"`
 	Shared              *types.CustomBool               `json:"shared,omitempty"`
-	SpaceAvailable      *int                            `json:"avail,omitempty"`
-	SpaceTotal          *int                            `json:"total,omitempty"`
-	SpaceUsed           *int                            `json:"used,omitempty"`
-	SpaceUsedPercentage *float64                        `json:"used_fraction,omitempty"`
+	SpaceAvailable      *types.CustomInt64              `json:"avail,omitempty"`
+	SpaceTotal          *types.CustomInt64              `json:"total,omitempty"`
+	SpaceUsed           *types.CustomInt64              `json:"used,omitempty"`
+	SpaceUsedPercentage *types.CustomFloat64            `json:"used_fraction,omitempty"`
 	Type                string                          `json:"type,omitempty"`
 }

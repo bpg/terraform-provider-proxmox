@@ -50,7 +50,7 @@ func (d *haResourceDatasource) Schema(_ context.Context, _ datasource.SchemaRequ
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability resources.",
 		Attributes: map[string]schema.Attribute{
-			"id": attribute.ID(),
+			"id": attribute.ResourceID(),
 			"resource_id": schema.StringAttribute{
 				Description: "The identifier of the Proxmox HA resource to read.",
 				Required:    true,

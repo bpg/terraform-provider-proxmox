@@ -153,7 +153,7 @@ func (d *repositoryDataSource) Schema(
 				Description: "The list of package distributions.",
 				ElementType: types.StringType,
 			},
-			SchemaAttrNameTerraformID: attribute.ID("The unique identifier of this APT repository data source."),
+			SchemaAttrNameTerraformID: attribute.ResourceID("The unique identifier of this APT repository data source."),
 			SchemaAttrNameURIs: schema.ListAttribute{
 				Computed:    true,
 				Description: "The list of repository URIs.",

@@ -25,6 +25,9 @@ type CustomBool bool
 // CustomCommaSeparatedList allows a JSON string to also be a string array.
 type CustomCommaSeparatedList []string
 
+// CustomFloat64 allows a JSON float64 value to also be a string.
+type CustomFloat64 float64
+
 // CustomInt allows a JSON integer value to also be a string.
 type CustomInt int
 
@@ -109,6 +112,29 @@ func (r *CustomCommaSeparatedList) UnmarshalJSON(b []byte) error {
 	*r = strings.Split(s, ",")
 
 	return nil
+}
+
+// UnmarshalJSON converts a JSON value to a float64 value.
+func (r *CustomFloat64) UnmarshalJSON(b []byte) error {
+	s := string(b)
+
+	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
+		s = s[1 : len(s)-1]
+	}
+
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return fmt.Errorf("cannot parse float64 %q: %w", s, err)
+	}
+
+	*r = CustomFloat64(f)
+
+	return nil
+}
+
+// PointerFloat64 returns a pointer to a float64.
+func (r *CustomFloat64) PointerFloat64() *float64 {
+	return (*float64)(r)
 }
 
 // UnmarshalJSON converts a JSON value to an integer.

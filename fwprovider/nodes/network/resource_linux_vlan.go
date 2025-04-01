@@ -147,7 +147,7 @@ func (r *linuxVLANResource) Schema(
 		Description: "Manages a Linux VLAN network interface in a Proxmox VE node.",
 		Attributes: map[string]schema.Attribute{
 			// Base attributes
-			"id": attribute.ID("A unique identifier with format `<node name>:<iface>`."),
+			"id": attribute.ResourceID("A unique identifier with format `<node name>:<iface>`."),
 			"node_name": schema.StringAttribute{
 				Description: "The name of the node.",
 				Required:    true,

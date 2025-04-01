@@ -457,7 +457,7 @@ func (r *clusterOptionsResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages Proxmox VE Cluster Datacenter options.",
 		Attributes: map[string]schema.Attribute{
-			"id": attribute.ID(),
+			"id": attribute.ResourceID(),
 			"email_from": schema.StringAttribute{
 				Description: "email address to send notification from (default is root@$hostname).",
 				Optional:    true,

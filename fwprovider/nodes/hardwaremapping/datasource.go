@@ -179,7 +179,7 @@ func (d *dataSource) Schema(
 				Computed:    true,
 				Description: "The identifiers of the hardware mappings.",
 			},
-			schemaAttrNameTerraformID: attribute.ID(
+			schemaAttrNameTerraformID: attribute.ResourceID(
 				"The unique identifier of this hardware mappings data source.",
 			),
 			schemaAttrNameType: schema.StringAttribute{
