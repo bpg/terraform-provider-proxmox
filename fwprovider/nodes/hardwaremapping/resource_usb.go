@@ -250,7 +250,7 @@ func (r *usbResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Description: "The name of this hardware mapping.",
 				Required:    true,
 			},
-			schemaAttrNameTerraformID: attribute.ID(
+			schemaAttrNameTerraformID: attribute.ResourceID(
 				"The unique identifier of this USB hardware mapping resource.",
 			),
 		},

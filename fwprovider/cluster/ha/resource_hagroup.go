@@ -64,7 +64,7 @@ func (r *hagroupResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages a High Availability group in a Proxmox VE cluster.",
 		Attributes: map[string]schema.Attribute{
-			"id": attribute.ID(),
+			"id": attribute.ResourceID(),
 			"group": schema.StringAttribute{
 				Description: "The identifier of the High Availability group to manage.",
 				Required:    true,

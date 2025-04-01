@@ -190,7 +190,7 @@ func (r *downloadFileResource) Schema(
 			"It can be fully compatible and faster replacement for image files created using " +
 			"`proxmox_virtual_environment_file`. Supports images for VMs (ISO images) and LXC (CT Templates).",
 		Attributes: map[string]schema.Attribute{
-			"id": attribute.ID(),
+			"id": attribute.ResourceID(),
 			"content_type": schema.StringAttribute{
 				Description: "The file content type. Must be `iso` for VM images or `vztmpl` for LXC images.",
 				Required:    true,

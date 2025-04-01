@@ -275,7 +275,7 @@ func (r *standardRepositoryResource) Schema(
 				Computed:    true,
 				Description: "Indicates the activation status.",
 			},
-			SchemaAttrNameTerraformID: attribute.ID(
+			SchemaAttrNameTerraformID: attribute.ResourceID(
 				"The unique identifier of this APT standard repository resource.",
 			),
 		},

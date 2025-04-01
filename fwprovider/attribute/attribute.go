@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
 
-// ID generates an attribute definition suitable for the always-present `id` attribute.
-func ID(desc ...string) schema.StringAttribute {
+// ResourceID generates an attribute definition suitable for the always-present resource `id` attribute.
+func ResourceID(desc ...string) schema.StringAttribute {
 	a := schema.StringAttribute{
 		Computed:    true,
 		Description: "The unique identifier of this resource.",

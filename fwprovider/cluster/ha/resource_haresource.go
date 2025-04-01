@@ -68,7 +68,7 @@ func (r *haResourceResource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Manages Proxmox HA resources.",
 		Attributes: map[string]schema.Attribute{
-			"id": attribute.ID(),
+			"id": attribute.ResourceID(),
 			"resource_id": schema.StringAttribute{
 				Description: "The Proxmox HA resource identifier",
 				Required:    true,

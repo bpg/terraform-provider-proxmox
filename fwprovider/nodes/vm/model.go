@@ -82,7 +82,7 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 	// Optional fields can be removed from the model, use StringPointerValue to handle removal on nil
 	model.Description = types.StringPointerValue(config.Description)
 	model.Name = types.StringPointerValue(config.Name)
-	model.Tags = stringset.NewValue(config.Tags, diags)
+	model.Tags = stringset.NewValueString(config.Tags, diags)
 	model.Template = types.BoolPointerValue(config.Template.PointerBool())
 
 	// Blocks

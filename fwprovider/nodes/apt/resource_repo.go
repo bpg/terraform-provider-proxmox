@@ -309,7 +309,7 @@ func (r *repositoryResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "The list of package distributions.",
 				ElementType: types.StringType,
 			},
-			SchemaAttrNameTerraformID: attribute.ID("The unique identifier of this APT repository resource."),
+			SchemaAttrNameTerraformID: attribute.ResourceID("The unique identifier of this APT repository resource."),
 			SchemaAttrNameURIs: schema.ListAttribute{
 				Computed:    true,
 				Description: "The list of repository URIs.",

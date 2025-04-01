@@ -57,7 +57,7 @@ func (d *haGroupsDatasource) Schema(_ context.Context, _ datasource.SchemaReques
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability groups.",
 		Attributes: map[string]schema.Attribute{
-			"id": attribute.ID(),
+			"id": attribute.ResourceID(),
 			"group_ids": schema.SetAttribute{
 				Description: "The identifiers of the High Availability groups.",
 				ElementType: types.StringType,

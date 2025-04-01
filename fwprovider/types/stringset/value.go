@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package stringset
 
 import (
@@ -40,8 +46,8 @@ func (v Value) Equal(o attr.Value) bool {
 	return v.SetValue.Equal(other.SetValue)
 }
 
-// ValueStringPointer returns a pointer to the string representation of string set value.
-func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics) *string {
+// ValueList returns a string slice of set value.
+func (v Value) ValueList(ctx context.Context, diags *diag.Diagnostics) []string {
 	if v.IsNull() || v.IsUnknown() || len(v.Elements()) == 0 {
 		return nil
 	}
@@ -67,16 +73,27 @@ func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics) 
 		}
 	}
 
-	return ptr.Ptr(strings.Join(sanitizedItems, ";"))
+	return sanitizedItems
 }
 
-// NewValue converts a string of items to a new string set value.
-func NewValue(str *string, diags *diag.Diagnostics) Value {
-	if str == nil {
+// ValueStringPointer returns a pointer to the string representation of string set value.
+func (v Value) ValueStringPointer(ctx context.Context, diags *diag.Diagnostics, opts ...Option) *string {
+	elems := v.ValueList(ctx, diags)
+	if len(elems) == 0 {
+		return nil
+	}
+
+	o := defaultOptions(opts...)
+
+	return ptr.Ptr(strings.Join(elems, o.separator))
+}
+
+// NewValueList converts a slice of items to a new string set value.
+func NewValueList(items []string, diags *diag.Diagnostics) Value {
+	if len(items) == 0 {
 		return Value{types.SetValueMust(types.StringType, []attr.Value{})}
 	}
 
-	items := strings.Split(*str, ";")
 	elems := make([]attr.Value, len(items))
 
 	for i, item := range items {
@@ -87,4 +104,17 @@ func NewValue(str *string, diags *diag.Diagnostics) Value {
 	diags.Append(d...)
 
 	return Value{setValue}
+}
+
+// NewValueString converts a string of items to a new string set value.
+func NewValueString(str *string, diags *diag.Diagnostics, opts ...Option) Value {
+	if str == nil || *str == "" {
+		return Value{types.SetValueMust(types.StringType, []attr.Value{})}
+	}
+
+	o := defaultOptions(opts...)
+
+	items := strings.Split(*str, o.separator)
+
+	return NewValueList(items, diags)
 }

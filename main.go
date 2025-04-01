@@ -39,6 +39,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_acme_plugins.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_apt_repository.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_apt_standard_repository.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_datastores.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hagroup.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hagroups.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hardware_mapping_pci.md ./docs/data-sources/

@@ -32,6 +32,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
@@ -525,6 +526,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		acme.NewACMEPluginsDataSource,
 		apt.NewRepositoryDataSource,
 		apt.NewStandardRepositoryDataSource,
+		datastores.NewDataSource,
 		ha.NewHAGroupDataSource,
 		ha.NewHAGroupsDataSource,
 		ha.NewHAResourceDataSource,

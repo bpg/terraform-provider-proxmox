@@ -64,7 +64,7 @@ func (d *haResourcesDatasource) Schema(_ context.Context, _ datasource.SchemaReq
 	resp.Schema = schema.Schema{
 		Description: "Retrieves the list of High Availability resources.",
 		Attributes: map[string]schema.Attribute{
-			"id": attribute.ID(),
+			"id": attribute.ResourceID(),
 			"type": schema.StringAttribute{
 				Description: "The type of High Availability resources to fetch (`vm` or `ct`). All resources " +
 					"will be fetched if this option is unset.",

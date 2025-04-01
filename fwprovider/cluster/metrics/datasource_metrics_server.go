@@ -71,7 +71,7 @@ func (r *metricsServerDatasource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "Retrieves information about a specific PVE metric server.",
 		Attributes: map[string]schema.Attribute{
-			"id": attribute.ID(),
+			"id": attribute.ResourceID(),
 			"name": schema.StringAttribute{
 				Description: "Unique name that will be ID of this metric server in PVE.",
 				Required:    true,

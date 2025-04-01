@@ -76,7 +76,7 @@ func (r *userTokenResource) Schema(
 					}, "must be a valid RFC3339 date"),
 				},
 			},
-			"id": attribute.ID("Unique token identifier with format `<user_id>!<token_name>`."),
+			"id": attribute.ResourceID("Unique token identifier with format `<user_id>!<token_name>`."),
 			"privileges_separation": schema.BoolAttribute{
 				Description: "Restrict API token privileges with separate ACLs (default)",
 				MarkdownDescription: "Restrict API token privileges with separate ACLs (default), " +
