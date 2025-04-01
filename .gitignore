@@ -51,3 +51,4 @@ terraform-provider-proxmox*
 .cursor/
 .cursorrules
 coverage.out
+notes/
