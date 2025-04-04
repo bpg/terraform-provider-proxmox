@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.75.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.74.1...v0.75.0) (2025-04-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **datastores:** implement new structured format and filters for `datastores` data source ([#1875](https://github.com/bpg/terraform-provider-proxmox/issues/1875))
+
+### Features
+
+* **datastores:** implement new structured format and filters for `datastores` data source ([#1875](https://github.com/bpg/terraform-provider-proxmox/issues/1875)) ([b5b61b4](https://github.com/bpg/terraform-provider-proxmox/commit/b5b61b48dcb4a7a4943d1c40a07928cff34c8b68))
+
+
+### Miscellaneous
+
+* **ci:** pin golangci/golangci-lint-action action to ([#1872](https://github.com/bpg/terraform-provider-proxmox/issues/1872)) ([f7706c8](https://github.com/bpg/terraform-provider-proxmox/commit/f7706c805879d1773de312ca6a8106821e6b44ee))
+* **ci:** Update actions/create-github-app-token action (v1.12.0 → v2.0.2) ([#1880](https://github.com/bpg/terraform-provider-proxmox/issues/1880)) ([3d0c47a](https://github.com/bpg/terraform-provider-proxmox/commit/3d0c47ae7988bd2434e08985dd707892756bd344))
+* **ci:** update lycheeverse/lychee-action action (v2.3.0 → v2.4.0) ([#1873](https://github.com/bpg/terraform-provider-proxmox/issues/1873)) ([ece13f7](https://github.com/bpg/terraform-provider-proxmox/commit/ece13f7716e2bc5f63cd91c33ec0f791a4ae8247))
+
 ## [0.74.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.74.0...v0.74.1) (2025-03-31)
 
 
