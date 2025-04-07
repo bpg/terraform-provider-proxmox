@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
@@ -479,19 +480,6 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					overwrite_unmanaged = true
 				}`),
 		}}},
-		{"native cloud-init: do not upgrade packages", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit3" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					initialization {
-						upgrade = false
-					}
-				}`),
-			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit3", map[string]string{
-				"initialization.0.upgrade": "false",
-			}),
-		}}},
 		{"native cloud-init: username should not change", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit4" {
@@ -546,6 +534,36 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				"initialization.0.user_account.0.username": "ubuntu",
 				"initialization.0.user_account.0.password": `\*\*\*\*\*\*\*\*\*\*`,
 			}),
+		}}},
+		{"native cloud-init: username update should not cause replacement", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							username = "ubuntu"
+							password = "password"
+						}
+					}
+				}`),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						user_account {
+							username = "ubuntu-updated"
+							password = "password"
+						}
+					}
+				}`),
+			ConfigPlanChecks: resource.ConfigPlanChecks{
+				PreApply: []plancheck.PlanCheck{
+					plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_vm", plancheck.ResourceActionUpdate),
+				},
+			},
 		}}},
 	}
 

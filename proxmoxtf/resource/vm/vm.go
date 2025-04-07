@@ -843,7 +843,6 @@ func VM() *schema.Resource {
 						Type:        schema.TypeList,
 						Description: "The user account configuration",
 						Optional:    true,
-						ForceNew:    true,
 						DefaultFunc: func() (interface{}, error) {
 							return []interface{}{}, nil
 						},
@@ -853,14 +852,12 @@ func VM() *schema.Resource {
 									Type:        schema.TypeList,
 									Description: "The SSH keys",
 									Optional:    true,
-									ForceNew:    true,
 									Elem:        &schema.Schema{Type: schema.TypeString},
 								},
 								mkInitializationUserAccountPassword: {
 									Type:        schema.TypeString,
 									Description: "The SSH password",
 									Optional:    true,
-									ForceNew:    true,
 									Sensitive:   true,
 									Default:     dvInitializationUserAccountPassword,
 									DiffSuppressFunc: func(_, oldVal, _ string, _ *schema.ResourceData) bool {
@@ -872,7 +869,6 @@ func VM() *schema.Resource {
 									Type:        schema.TypeString,
 									Description: "The SSH username",
 									Optional:    true,
-									ForceNew:    true,
 								},
 							},
 						},
@@ -4786,7 +4782,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if d.HasChange(mkNodeName) {
 		migrateTimeoutSec := d.Get(mkTimeoutMigrate).(int)
 
-		ctx, cancel := context.WithTimeout(ctx, time.Duration(migrateTimeoutSec)*time.Second)
+		migrateCtx, cancel := context.WithTimeout(ctx, time.Duration(migrateTimeoutSec)*time.Second)
 		defer cancel()
 
 		oldNodeNameValue, _ := d.GetChange(mkNodeName)
@@ -4800,7 +4796,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			OnlineMigration: &trueValue,
 		}
 
-		err := vmAPI.MigrateVM(ctx, migrateBody)
+		err := vmAPI.MigrateVM(migrateCtx, migrateBody)
 		if err != nil {
 			return diag.FromErr(err)
 		}
@@ -5113,11 +5109,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	// Prepare the new cloud-init configuration.
 	stoppedBeforeUpdate := false
+	cloudInitRebuildRequired := false
 
 	if d.HasChange(mkInitialization) {
-		initializationConfig := vmGetCloudInitConfig(d)
+		cloudInitConfig := vmGetCloudInitConfig(d)
 
-		updateBody.CloudInitConfig = initializationConfig
+		updateBody.CloudInitConfig = cloudInitConfig
 
 		initialization := d.Get(mkInitialization).([]interface{})
 
@@ -5158,12 +5155,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			if mustMove || mustChangeDatastore || existingInterface == "" {
 				// CloudInit must be moved, either from a device to another or from a datastore
 				// to another (or both). This requires the VM to be stopped.
-				if err := vmShutdown(ctx, vmAPI, d); err != nil {
-					return err
+				if er := vmShutdown(ctx, vmAPI, d); er != nil {
+					return er
 				}
 
-				if err := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); err != nil {
-					return err
+				if er := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); er != nil {
+					return er
 				}
 
 				stoppedBeforeUpdate = true
@@ -5179,6 +5176,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			})
 		}
 
+		cloudInitRebuildRequired = true
 		rebootRequired = true
 	}
 
@@ -5402,11 +5400,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				return diags
 			}
 		} else {
-			if e := vmShutdown(ctx, vmAPI, d); e != nil {
-				return e
+			if er := vmShutdown(ctx, vmAPI, d); er != nil {
+				return er
 			}
 
 			rebootRequired = false
+		}
+	}
+
+	if cloudInitRebuildRequired {
+		if er := vmAPI.RebuildCloudInitDisk(ctx); er != nil {
+			return diag.FromErr(err)
 		}
 	}
 
