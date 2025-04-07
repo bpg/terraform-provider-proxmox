@@ -251,13 +251,11 @@ func TestVMSchema(t *testing.T) {
 
 	test.AssertOptionalArguments(t, initializationDNSSchema, []string{
 		mkInitializationDNSDomain,
-		mkInitializationDNSServer,
 		mkInitializationDNSServers,
 	})
 
 	test.AssertValueTypes(t, initializationDNSSchema, map[string]schema.ValueType{
 		mkInitializationDNSDomain:  schema.TypeString,
-		mkInitializationDNSServer:  schema.TypeString,
 		mkInitializationDNSServers: schema.TypeList,
 	})
 

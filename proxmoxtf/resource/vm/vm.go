@@ -80,7 +80,6 @@ const (
 	dvInitializationDatastoreID         = "local-lvm"
 	dvInitializationInterface           = ""
 	dvInitializationDNSDomain           = ""
-	dvInitializationDNSServer           = ""
 	dvInitializationIPConfigIPv4Address = ""
 	dvInitializationIPConfigIPv4Gateway = ""
 	dvInitializationIPConfigIPv6Address = ""
@@ -211,7 +210,6 @@ const (
 	mkInitializationInterface           = "interface"
 	mkInitializationDNS                 = "dns"
 	mkInitializationDNSDomain           = "domain"
-	mkInitializationDNSServer           = "server"
 	mkInitializationDNSServers          = "servers"
 	mkInitializationIPConfig            = "ip_config"
 	mkInitializationIPConfigIPv4        = "ipv4"
@@ -229,7 +227,6 @@ const (
 	mkInitializationVendorDataFileID    = "vendor_data_file_id"
 	mkInitializationNetworkDataFileID   = "network_data_file_id"
 	mkInitializationMetaDataFileID      = "meta_data_file_id"
-	mkInitializationUpgrade             = "upgrade"
 
 	mkKeyboardLayout      = "keyboard_layout"
 	mkKVMArguments        = "kvm_arguments"
@@ -764,14 +761,6 @@ func VM() *schema.Resource {
 									Optional:    true,
 									Default:     dvInitializationDNSDomain,
 								},
-								mkInitializationDNSServer: {
-									Type:        schema.TypeString,
-									Description: "The DNS server",
-									Deprecated: "The `server` attribute is deprecated and will be removed in a future release. " +
-										"Please use the `servers` attribute instead.",
-									Optional: true,
-									Default:  dvInitializationDNSServer,
-								},
 								mkInitializationDNSServers: {
 									Type:        schema.TypeList,
 									Description: "The list of DNS servers",
@@ -929,13 +918,6 @@ func VM() *schema.Resource {
 						ForceNew:         true,
 						Default:          dvInitializationType,
 						ValidateDiagFunc: CloudInitTypeValidator(),
-					},
-					mkInitializationUpgrade: {
-						Type:        schema.TypeBool,
-						Description: "Whether to do an automatic package upgrade after the first boot",
-						Optional:    true,
-						Computed:    true,
-						Deprecated:  "The `upgrade` attribute is deprecated and will be removed in a future release.",
 					},
 				},
 			},
@@ -2874,14 +2856,11 @@ func vmGetCloudInitConfig(d *schema.ResourceData) *vms.CustomCloudInitConfig {
 		}
 
 		servers := initializationDNSBlock[mkInitializationDNSServers].([]interface{})
-		deprecatedServer := initializationDNSBlock[mkInitializationDNSServer].(string)
 
 		if len(servers) > 0 {
 			nameserver := strings.Join(utils.ConvertToStringSlice(servers), " ")
 
 			initializationConfig.Nameserver = &nameserver
-		} else if deprecatedServer != "" {
-			initializationConfig.Nameserver = &deprecatedServer
 		}
 	}
 
@@ -3988,30 +3967,10 @@ func vmReadCustom(
 			initializationDNS[mkInitializationDNSDomain] = ""
 		}
 
-		// check what we have in the plan
-		currentInitializationDNSBlock := map[string]interface{}{}
-		currentInitialization := d.Get(mkInitialization).([]interface{})
-
-		if len(currentInitialization) > 0 && currentInitialization[0] != nil {
-			currentInitializationBlock := currentInitialization[0].(map[string]interface{})
-			currentInitializationDNS := currentInitializationBlock[mkInitializationDNS].([]interface{})
-
-			if len(currentInitializationDNS) > 0 && currentInitializationDNS[0] != nil {
-				currentInitializationDNSBlock = currentInitializationDNS[0].(map[string]interface{})
-			}
-		}
-
-		currentInitializationDNSServer, ok := currentInitializationDNSBlock[mkInitializationDNSServer]
 		if vmConfig.CloudInitDNSServer != nil {
-			if ok && currentInitializationDNSServer != "" {
-				// the template is using deprecated attribute mkInitializationDNSServer
-				initializationDNS[mkInitializationDNSServer] = *vmConfig.CloudInitDNSServer
-			} else {
-				dnsServer := strings.Split(*vmConfig.CloudInitDNSServer, " ")
-				initializationDNS[mkInitializationDNSServers] = dnsServer
-			}
+			dnsServer := strings.Split(*vmConfig.CloudInitDNSServer, " ")
+			initializationDNS[mkInitializationDNSServers] = dnsServer
 		} else {
-			initializationDNS[mkInitializationDNSServer] = ""
 			initializationDNS[mkInitializationDNSServers] = []string{}
 		}
 
