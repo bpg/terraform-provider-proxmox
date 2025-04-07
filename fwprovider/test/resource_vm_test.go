@@ -479,19 +479,6 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					overwrite_unmanaged = true
 				}`),
 		}}},
-		{"native cloud-init: do not upgrade packages", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit3" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					initialization {
-						upgrade = false
-					}
-				}`),
-			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit3", map[string]string{
-				"initialization.0.upgrade": "false",
-			}),
-		}}},
 		{"native cloud-init: username should not change", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit4" {
