@@ -95,6 +95,19 @@ If a VM or container resource is created with the provider but managed by an HA 
 This causes a "configuration drift" and the provider will report an error when managing the resource.
 You would need to manually reconcile the resource state stored in the backend to match the actual state of the resource, or remove the resource from the provider management.
 
+### Serial Device Required for Debian 12 / Ubuntu VMs
+
+Debian 12 and Ubuntu VMs throw kernel panic when resizing a cloud image boot disk, as they require a serial device configured.
+Add the following block to your VM config:
+
+```hcl
+  serial_device {
+    device = "socket"
+  }
+```
+
+For more context, see #1639 and #1770.
+
 ### Disk Images Cannot Be Imported by Non-PAM Accounts
 
 Due to limitations in the Proxmox VE API, certain actions need to be performed using SSH. This requires the use of a PAM account (standard Linux account).
