@@ -4,13 +4,13 @@ resource "proxmox_virtual_environment_container" "example_template" {
   start_on_boot = "true"
 
   disk {
-    datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+    datastore_id = "local-lvm"
     size         = 4
   }
 
   mount_point {
     // volume mount
-    volume = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+    volume = "local-lvm"
     size   = "4G"
     path   = "mnt/local"
   }
@@ -66,7 +66,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
 
 resource "proxmox_virtual_environment_container" "example" {
   disk {
-    datastore_id = element(data.proxmox_virtual_environment_datastores.example.datastore_ids, index(data.proxmox_virtual_environment_datastores.example.datastore_ids, "local-lvm"))
+    datastore_id = "local-lvm"
   }
 
   clone {
