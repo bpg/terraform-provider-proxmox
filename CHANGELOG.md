@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.75.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.74.1...v0.75.0) (2025-04-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **vm:** remove deprecated `initialization.dns.server`, `initialization.upgrade` ([#1884](https://github.com/bpg/terraform-provider-proxmox/issues/1884))
+* **datastores:** implement new structured format and filters for `datastores` data source ([#1875](https://github.com/bpg/terraform-provider-proxmox/issues/1875))
+
+### Features
+
+* **datastores:** implement new structured format and filters for `datastores` data source ([#1875](https://github.com/bpg/terraform-provider-proxmox/issues/1875)) ([b5b61b4](https://github.com/bpg/terraform-provider-proxmox/commit/b5b61b48dcb4a7a4943d1c40a07928cff34c8b68))
+* **vm:** do not force VM re-create on `initialization.user_account` changes ([#1885](https://github.com/bpg/terraform-provider-proxmox/issues/1885)) ([d631ccb](https://github.com/bpg/terraform-provider-proxmox/commit/d631ccbf908c38a91eefce9b7904f2c1dcc5d20b))
+
+
+### Miscellaneous
+
+* **ci:** pin golangci/golangci-lint-action action to ([#1872](https://github.com/bpg/terraform-provider-proxmox/issues/1872)) ([f7706c8](https://github.com/bpg/terraform-provider-proxmox/commit/f7706c805879d1773de312ca6a8106821e6b44ee))
+* **ci:** Update actions/create-github-app-token action (v1.12.0 → v2.0.2) ([#1880](https://github.com/bpg/terraform-provider-proxmox/issues/1880)) ([3d0c47a](https://github.com/bpg/terraform-provider-proxmox/commit/3d0c47ae7988bd2434e08985dd707892756bd344))
+* **ci:** update lycheeverse/lychee-action action (v2.3.0 → v2.4.0) ([#1873](https://github.com/bpg/terraform-provider-proxmox/issues/1873)) ([ece13f7](https://github.com/bpg/terraform-provider-proxmox/commit/ece13f7716e2bc5f63cd91c33ec0f791a4ae8247))
+* **deps:** update module golang.org/x/crypto (v0.36.0 → v0.37.0) ([#1882](https://github.com/bpg/terraform-provider-proxmox/issues/1882)) ([c526208](https://github.com/bpg/terraform-provider-proxmox/commit/c526208f4bfd16985e0d2ec206da8474d5ec7065))
+* **deps:** update module golang.org/x/net (v0.38.0 → v0.39.0) ([#1887](https://github.com/bpg/terraform-provider-proxmox/issues/1887)) ([5035965](https://github.com/bpg/terraform-provider-proxmox/commit/50359656bdaa8cc92e52b2169a5c1d10dd9ae7ab))
+* **docs:** add known issue to the README about Debian 12 VM requiring a serial device ([#1886](https://github.com/bpg/terraform-provider-proxmox/issues/1886)) ([8e231f9](https://github.com/bpg/terraform-provider-proxmox/commit/8e231f9737113eb62e8969da05620959e320f7f5))
+* **vm:** remove deprecated `initialization.dns.server`, `initialization.upgrade` ([#1884](https://github.com/bpg/terraform-provider-proxmox/issues/1884)) ([51e6d7b](https://github.com/bpg/terraform-provider-proxmox/commit/51e6d7b8db05c5200ce6dd0569c590a2fbe0aed2))
+
 ## [0.74.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.74.0...v0.74.1) (2025-03-31)
 
 
