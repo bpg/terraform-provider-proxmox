@@ -1330,6 +1330,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "TomaszDom",
+      "name": "TomaszDom",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9348532?v=4",
+      "profile": "https://github.com/TomaszDom",
+      "contributions": [
+        "bug",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,

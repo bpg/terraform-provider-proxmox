@@ -188,6 +188,7 @@
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/pileus-lines"><img src="https://avatars.githubusercontent.com/u/74184010?v=4?s=100" width="100px;" alt="pileus-lines"/><br /><sub><b>pileus-lines</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=pileus-lines" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/CaptaiNiveau"><img src="https://avatars.githubusercontent.com/u/79282544?v=4?s=100" width="100px;" alt="CaptaiNiveau"/><br /><sub><b>CaptaiNiveau</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=CaptaiNiveau" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/TomaszDom"><img src="https://avatars.githubusercontent.com/u/9348532?v=4?s=100" width="100px;" alt="TomaszDom"/><br /><sub><b>TomaszDom</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/issues?q=author%3ATomaszDom" title="Bug reports">🐛</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=TomaszDom" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
   <tfoot>
