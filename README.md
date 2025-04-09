@@ -175,6 +175,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Greg Brant](https://github.com/gregbrant2)
 - [Serge](https://github.com/sergelogvinov)
 - [Daniel Brennand](https://github.com/dbrennand)
+- [Brian King](https://github.com/inflatador)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
