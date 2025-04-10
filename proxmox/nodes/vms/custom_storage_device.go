@@ -243,10 +243,17 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 		if len(v) == 1 {
 			d.FileVolume = v[0]
 
-			ext := filepath.Ext(v[0])
-			if ext != "" {
-				format := string([]byte(ext)[1:])
-				d.Format = &format
+			// split file volume into datastore ID and path
+			_, pathInDatastore, hasDatastoreID := strings.Cut(v[0], ":")
+			if hasDatastoreID {
+				// we don't set them here,... but probably should
+				//d.DatastoreID = &probablyDatastoreID
+				//d.FileID = &pathInDatastore
+				ext := filepath.Ext(pathInDatastore)
+				if ext != "" {
+					format := string([]byte(ext)[1:])
+					d.Format = &format
+				}
 			}
 		} else if len(v) == 2 {
 			switch v[0] {
