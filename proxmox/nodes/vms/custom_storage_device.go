@@ -247,8 +247,8 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			_, pathInDatastore, hasDatastoreID := strings.Cut(v[0], ":")
 			if hasDatastoreID {
 				// we don't set them here,... but probably should
-				//d.DatastoreID = &probablyDatastoreID
-				//d.FileID = &pathInDatastore
+				// d.DatastoreID = &probablyDatastoreID
+				// d.FileID = &pathInDatastore
 				ext := filepath.Ext(pathInDatastore)
 				if ext != "" {
 					format := string([]byte(ext)[1:])
