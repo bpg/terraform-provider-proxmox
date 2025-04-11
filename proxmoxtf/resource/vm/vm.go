@@ -2235,9 +2235,13 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			continue
 		}
 
-		if efiType != *currentDiskInfo.Type {
+		// the efitype is either "2m" or "4m"
+		// so it's kinda resizing, but with 2 fixed sizes it treated as a "type" by PVE
+		// default is "2m", hence this elaborated check.
+		if (currentDiskInfo.Type != nil && efiType != *currentDiskInfo.Type) ||
+			(currentDiskInfo.Type == nil && efiType != dvEFIDiskType) {
 			return diag.Errorf(
-				"resizing of efidisks is not supported.",
+				"changing the EFI disk type (4m / 2m) is not supported",
 			)
 		}
 
