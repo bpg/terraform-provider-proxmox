@@ -28,13 +28,13 @@ func TestAccDatasourceVersion(t *testing.T) {
 			{
 				Config: `data "proxmox_virtual_environment_version" "test" {}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "release", "8.3"),
+					resource.TestCheckResourceAttr(datasourceName, "release", "8.4"),
 					resource.TestCheckResourceAttrSet(datasourceName, "repository_id"),
 					resource.TestCheckResourceAttrWith(datasourceName, "version", func(value string) error {
-						if strings.HasPrefix(value, "8.3") {
+						if strings.HasPrefix(value, "8.4") {
 							return nil
 						}
-						return fmt.Errorf("version %s does not start with 8.3", value)
+						return fmt.Errorf("version %s does not start with 8.4", value)
 					}),
 					resource.TestCheckResourceAttrSet(datasourceName, "id"),
 				),
