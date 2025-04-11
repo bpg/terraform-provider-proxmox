@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.75.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.75.0...v0.75.1) (2025-04-11)
+
+
+### Bug Fixes
+
+* **vm,lxc:** error parsing disk ID when datastore name contains `.` ([#1894](https://github.com/bpg/terraform-provider-proxmox/issues/1894)) ([1340146](https://github.com/bpg/terraform-provider-proxmox/commit/13401465c9b4136b75d3814f470f0e7f46e05fe6))
+* **vm:** edge case error when cloning a VM with EFI disk ([#1897](https://github.com/bpg/terraform-provider-proxmox/issues/1897)) ([4ca2f32](https://github.com/bpg/terraform-provider-proxmox/commit/4ca2f32ac63b7f1844566023071adcd7eca12868))
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.20.1 → v0.21.0) ([#1898](https://github.com/bpg/terraform-provider-proxmox/issues/1898)) ([504a84c](https://github.com/bpg/terraform-provider-proxmox/commit/504a84cb8354922f429967a7b1bc005774d686b8))
+* **docs:** indicate support of Proxmox VE 8.4 ([#1899](https://github.com/bpg/terraform-provider-proxmox/issues/1899)) ([35a5296](https://github.com/bpg/terraform-provider-proxmox/commit/35a529609d50cdfffbb1506ed6d01d35bb967a70))
+
 ## [0.75.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.74.1...v0.75.0) (2025-04-08)
 
 
