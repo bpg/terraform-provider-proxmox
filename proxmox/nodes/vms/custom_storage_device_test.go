@@ -39,6 +39,18 @@ func TestCustomStorageDevice_UnmarshalJSON(t *testing.T) {
 			},
 		},
 		{
+			name: "volume with dot",
+			line: `"volumes.hdd:base-269-disk-0,cache=writeback,discard=on,iothread=1,size=8G,ssd=1"`,
+			want: &CustomStorageDevice{
+				Cache:      ptr.Ptr("writeback"),
+				Discard:    ptr.Ptr("on"),
+				FileVolume: "volumes.hdd:base-269-disk-0",
+				IOThread:   types.CustomBool(true).Pointer(),
+				Size:       ds8gig,
+				SSD:        types.CustomBool(true).Pointer(),
+			},
+		},
+		{
 			name: "raw volume type",
 			line: `"nfs:2041/vm-2041-disk-0.raw,discard=ignore,ssd=1,iothread=1,size=8G"`,
 			want: &CustomStorageDevice{
