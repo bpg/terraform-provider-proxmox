@@ -13,9 +13,13 @@ A Terraform / OpenTofu Provider that adds support for Proxmox Virtual Environmen
 
 This repository is a fork of <https://github.com/danitso/terraform-provider-proxmox> which is no longer maintained.
 
+## Disclaimer
+
+This project is a personal open-source initiative and is not affiliated with, endorsed by, or associated with any of my past or present employers. All opinions, code, and documentation here are solely my own.
+
 ## Compatibility Promise
 
-This provider is compatible with Proxmox VE 8.x (currently **8.3**).
+This provider is compatible with Proxmox VE 8.x (currently **8.4**).
 
 > [!IMPORTANT]
 > Proxmox VE 7.x is NOT supported. While some features might work with 7.x, we do not test against it, and issues specific to 7.x will not be addressed.
