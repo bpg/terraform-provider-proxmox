@@ -51,7 +51,7 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     interface    = "scsi0"
     discard      = "on"
     cache        = "writeback"
-    serial	     = "dead_beef"
+    serial       = "dead_beef"
     ssd          = true
   }
 
@@ -238,6 +238,15 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
     interface    = "scsi1"
     size         = 4
   }
+}
+
+resource "proxmox_virtual_environment_hardware_mapping_dir" "dir_mapping" {
+  name = "terraform-provider-proxmox-dir-mapping"
+
+  map = [{
+    node = data.proxmox_virtual_environment_nodes.example.names[0]
+    path = "/mnt"
+  }]
 }
 
 output "resource_proxmox_virtual_environment_vm_example_id" {

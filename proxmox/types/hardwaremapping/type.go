@@ -12,11 +12,15 @@ import (
 
 //nolint:gochecknoglobals
 var (
+	// TypeDir is an identifier for a directory mapping type.
+	// Do not modify this package-global variable as it acts as a safer variant compared to "iota" based constants!
+	TypeDir = Type{"dir"}
+
 	// TypePCI is an identifier for a PCI hardware mapping type.
 	// Do not modify this package-global variable as it acts as a safer variant compared to "iota" based constants!
 	TypePCI = Type{"pci"}
 
-	// TypeUSB is an identifier for a PCI hardware mapping type.
+	// TypeUSB is an identifier for a USB hardware mapping type.
 	// Do not modify this package-global variable as it acts as a safer variant compared to "iota" based constants!
 	TypeUSB = Type{"usb"}
 )
@@ -81,6 +85,8 @@ func (t *Type) UnmarshalJSON(b []byte) error {
 // An error is returned if the input string does not match any known type.
 func ParseType(input string) (Type, error) {
 	switch input {
+	case TypeDir.String():
+		return TypeDir, nil
 	case TypePCI.String():
 		return TypePCI, nil
 	case TypeUSB.String():

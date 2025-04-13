@@ -116,11 +116,14 @@ func (hm Map) String() string {
 		return fmt.Sprintf("%s%s%s", k, string(attrValueSeparator), v)
 	}
 	attrs := make([]string, 0, attrCountMax)
-	attrs = append(
-		attrs,
-		joinKV(attrNameDeviceID, hm.ID.String()),
-		joinKV(attrNameNode, hm.Node),
-	)
+
+	// ID is optional for directory mappings
+	if hm.ID != "" {
+		attrs = append(attrs, joinKV(attrNameDeviceID, hm.ID.String()))
+	}
+
+	// Node is common among all mappings
+	attrs = append(attrs, joinKV(attrNameNode, hm.Node))
 
 	if hm.Path != nil {
 		attrs = append(attrs, joinKV(attrNamePath, *hm.Path))

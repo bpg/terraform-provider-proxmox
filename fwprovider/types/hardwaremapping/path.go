@@ -37,6 +37,9 @@ var ErrValueConversion = func(format string, attrs ...any) error {
 }
 
 var (
+	// PathDirValueRegEx is the regular expression for a POSIX path.
+	PathDirValueRegEx = regexp.MustCompile(`^/.+$`)
+
 	// PathPCIValueRegEx is the regular expression for a PCI hardware mapping path.
 	PathPCIValueRegEx = regexp.MustCompile(`^[a-f0-9]{4,}:[a-f0-9]{2}:[a-f0-9]{2}(\.[a-f0-9])?$`)
 
@@ -128,6 +131,8 @@ func (v PathValue) Equal(o attr.Value) bool {
 // IsProxmoxType checks whether the value match the given hardware mapping type.
 func (v PathValue) IsProxmoxType(hmType proxmoxtypes.Type) bool {
 	switch hmType {
+	case proxmoxtypes.TypeDir:
+		return PathDirValueRegEx.MatchString(v.ValueString())
 	case proxmoxtypes.TypePCI:
 		return PathPCIValueRegEx.MatchString(v.ValueString())
 	case proxmoxtypes.TypeUSB:
