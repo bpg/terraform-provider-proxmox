@@ -1340,6 +1340,16 @@
         "bug",
         "test"
       ]
+    },
+    {
+      "login": "Guldoman",
+      "name": "Guldoman",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2798487?v=4",
+      "profile": "https://github.com/Guldoman",
+      "contributions": [
+        "bug",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
