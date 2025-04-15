@@ -268,6 +268,16 @@ func IDEInterfaceValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
+// VirtiofsCacheValidator is a schema validation function for virtiofs cache configs.
+func VirtiofsCacheValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{
+		"auto",
+		"always",
+		"metadata",
+		"never",
+	}, false))
+}
+
 // CloudInitInterfaceValidator is a schema validation function that accepts either an IDE interface identifier or an
 // empty string, which is used as the default and means "detect which interface should be used automatically".
 func CloudInitInterfaceValidator() schema.SchemaValidateDiagFunc {
