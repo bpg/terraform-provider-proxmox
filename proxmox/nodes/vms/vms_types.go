@@ -98,6 +98,7 @@ type CreateRequestBody struct {
 	USBDevices           CustomUSBDevices               `json:"usb,omitempty"                url:"usb,omitempty"`
 	VGADevice            *CustomVGADevice               `json:"vga,omitempty"                url:"vga,omitempty"`
 	VirtualCPUCount      *int64                         `json:"vcpus,omitempty"              url:"vcpus,omitempty"`
+	VirtiofsShares       CustomVirtiofsShares           `json:"virtiofs,omitempty"           url:"virtiofs,omitempty"`
 	VMGenerationID       *string                        `json:"vmgenid,omitempty"            url:"vmgenid,omitempty"`
 	VMID                 int                            `json:"vmid,omitempty"               url:"vmid,omitempty"`
 	VMStateDatastoreID   *string                        `json:"vmstatestorage,omitempty"     url:"vmstatestorage,omitempty"`
@@ -320,6 +321,7 @@ type GetResponseData struct {
 	WatchdogDevice       *CustomWatchdogDevice           `json:"watchdog,omitempty"`
 	StorageDevices       CustomStorageDevices            `json:"-"`
 	PCIDevices           CustomPCIDevices                `json:"-"`
+	VirtiofsShares       CustomVirtiofsShares            `json:"-"`
 }
 
 // GetStatusResponseBody contains the body from a VM get status response.
@@ -469,6 +471,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 
 	data.StorageDevices = make(CustomStorageDevices)
 	data.PCIDevices = make(CustomPCIDevices)
+	data.VirtiofsShares = make(CustomVirtiofsShares)
 
 	for key, value := range byAttr {
 		for _, prefix := range StorageInterfaces {
@@ -492,6 +495,15 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 			}
 
 			data.PCIDevices[key] = &device
+		}
+
+		if r := regexp.MustCompile(`^virtiofs\d+$`); r.MatchString(key) {
+			var share CustomVirtiofsShare
+			if err := json.Unmarshal([]byte(`"`+value.(string)+`"`), &share); err != nil {
+				return fmt.Errorf("failed to unmarshal %s: %w", key, err)
+			}
+
+			data.VirtiofsShares[key] = &share
 		}
 	}
 

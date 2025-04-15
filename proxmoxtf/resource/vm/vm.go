@@ -129,6 +129,10 @@ const (
 	dvVGAClipboard        = ""
 	dvVGAMemory           = 16
 	dvVGAType             = "std"
+	dvVirtiofsCache       = "auto"
+	dvVirtiofsDirectIo    = false
+	dvVirtiofsExposeAcl   = false
+	dvVirtiofsExposeXattr = false
 	dvSCSIHardware        = "virtio-scsi-pci"
 	dvStopOnDestroy       = false
 	dvHookScript          = ""
@@ -141,7 +145,8 @@ const (
 	maxResourceVirtualEnvironmentVMHostPCIDevices = 16
 	maxResourceVirtualEnvironmentVMHostUSBDevices = 4
 	// hardcoded /usr/share/perl5/PVE/QemuServer/Memory.pm: "our $MAX_NUMA = 8".
-	maxResourceVirtualEnvironmentVMNUMADevices = 8
+	maxResourceVirtualEnvironmentVMNUMADevices  = 8
+	maxResourceVirtualEnvironmentVirtiofsShares = 8
 
 	mkRebootAfterCreation = "reboot"
 	mkRebootAfterUpdate   = "reboot_after_update"
@@ -286,6 +291,12 @@ const (
 	mkSCSIHardware         = "scsi_hardware"
 	mkHookScriptFileID     = "hook_script_file_id"
 	mkStopOnDestroy        = "stop_on_destroy"
+	mkVirtiofs             = "virtiofs"
+	mkVirtiofsMapping      = "mapping"
+	mkVirtiofsCache        = "cache"
+	mkVirtiofsDirectIo     = "direct_io"
+	mkVirtiofsExposeAcl    = "expose_acl"
+	mkVirtiofsExposeXattr  = "expose_xattr"
 	mkWatchdog             = "watchdog"
 	// a workaround for the lack of proper support of default and undefined values in SDK.
 	mkWatchdogEnabled = "enabled"
@@ -1465,6 +1476,51 @@ func VM() *schema.Resource {
 			MaxItems: 1,
 			MinItems: 0,
 		},
+		mkVirtiofs: {
+			Type:        schema.TypeList,
+			Description: "Virtiofs share configuration",
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkVirtiofsMapping: {
+						Type:         schema.TypeString,
+						Description:  "Directory mapping identifier",
+						Required:     true,
+						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkVirtiofsCache: {
+						Type:             schema.TypeString,
+						Description:      "The caching mode",
+						Optional:         true,
+						Default:          dvVirtiofsCache,
+						ValidateDiagFunc: VirtiofsCacheValidator(),
+					},
+					mkVirtiofsDirectIo: {
+						Type:        schema.TypeBool,
+						Description: "Whether to allow direct io",
+						Optional:    true,
+						Default:     dvVirtiofsDirectIo,
+					},
+					mkVirtiofsExposeAcl: {
+						Type:        schema.TypeBool,
+						Description: "Enable POSIX ACLs, implies xattr support",
+						Optional:    true,
+						Default:     dvVirtiofsExposeAcl,
+					},
+					mkVirtiofsExposeXattr: {
+						Type:        schema.TypeBool,
+						Description: "Enable support for extended attributes",
+						Optional:    true,
+						Default:     dvVirtiofsExposeXattr,
+					},
+				},
+			},
+			MaxItems: maxResourceVirtualEnvironmentVirtiofsShares,
+			MinItems: 0,
+		},
 		mkVMID: {
 			Type:        schema.TypeInt,
 			Description: "The VM identifier",
@@ -1899,6 +1955,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	vga := d.Get(mkVGA).([]interface{})
+	virtiofs := d.Get(mkVirtiofs).([]interface{})
 	watchdog := d.Get(mkWatchdog).([]interface{})
 
 	updateBody := &vms.UpdateRequestBody{
@@ -2153,6 +2210,11 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if len(vga) > 0 {
 		vgaDevice := vmGetVGADeviceObject(d)
 		updateBody.VGADevice = vgaDevice
+	}
+
+	if len(virtiofs) > 0 {
+		virtiofsShares := vmGetVirtiofsShares(d)
+		updateBody.VirtiofsShares = virtiofsShares
 	}
 
 	hookScript := d.Get(mkHookScriptFileID).(string)
@@ -2535,6 +2597,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 
+	virtiofsShares := vmGetVirtiofsShares(d)
 	vgaDevice := vmGetVGADeviceObject(d)
 
 	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
@@ -2693,6 +2756,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		TabletDeviceEnabled:  &tabletDevice,
 		Template:             &template,
 		USBDevices:           usbDeviceObjects,
+		VirtiofsShares:       virtiofsShares,
 		VGADevice:            vgaDevice,
 		VMID:                 vmID,
 		WatchdogDevice:       watchdogObject,
@@ -3347,6 +3411,41 @@ func vmGetTagsString(d *schema.ResourceData) string {
 	return strings.Join(sanitizedTags, ";")
 }
 
+func vmGetVirtiofsShares(d *schema.ResourceData) vms.CustomVirtiofsShares {
+	virtiofs := d.Get(mkVirtiofs).([]interface{})
+	virtiofsShares := make(vms.CustomVirtiofsShares, len(virtiofs))
+
+	for i, virtiofsShare := range virtiofs {
+		block := virtiofsShare.(map[string]interface{})
+
+		mapping, _ := block[mkVirtiofsMapping].(string)
+		cache, _ := block[mkVirtiofsCache].(string)
+		direct_io := types.CustomBool(block[mkVirtiofsDirectIo].(bool))
+		expose_acl := types.CustomBool(block[mkVirtiofsExposeAcl].(bool))
+		expose_xattr := types.CustomBool(block[mkVirtiofsExposeXattr].(bool))
+
+		share := vms.CustomVirtiofsShare{
+			DirId:       mapping,
+			DirectIo:    &direct_io,
+			ExposeAcl:   &expose_acl,
+			ExposeXattr: &expose_xattr,
+		}
+
+		if cache != "" {
+			share.Cache = &cache
+		}
+
+		if share.ExposeAcl != nil && *share.ExposeAcl && share.ExposeXattr == nil {
+			bv := types.CustomBool(true)
+			share.ExposeXattr = &bv
+		}
+
+		virtiofsShares[fmt.Sprintf("virtiofs%d", i)] = &share
+	}
+
+	return virtiofsShares
+}
+
 func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
 	vga := d.Get(mkVGA).([]interface{})
 	if len(vga) > 0 && vga[0] != nil {
@@ -3943,6 +4042,55 @@ func vmReadCustom(
 		// NOTE: reordering of devices by PVE may cause an issue here
 		orderedUSBList := utils.OrderedListFromMap(usbMap)
 		err := d.Set(mkHostUSB, orderedUSBList)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	currentVirtiofsList := d.Get(mkVirtiofs).([]interface{})
+	virtiofsMap := map[string]interface{}{}
+
+	for pi, pp := range vmConfig.VirtiofsShares {
+		if pp == nil {
+			continue
+		}
+
+		share := map[string]interface{}{}
+
+		share[mkVirtiofsMapping] = pp.DirId
+
+		if pp.Cache != nil {
+			share[mkVirtiofsCache] = *pp.Cache
+		} else {
+			share[mkVirtiofsCache] = dvVirtiofsCache
+		}
+
+		if pp.DirectIo != nil {
+			share[mkVirtiofsDirectIo] = *pp.DirectIo
+		} else {
+			share[mkVirtiofsDirectIo] = dvVirtiofsDirectIo
+		}
+
+		if pp.ExposeAcl != nil {
+			share[mkVirtiofsExposeAcl] = *pp.ExposeAcl
+		} else {
+			share[mkVirtiofsExposeAcl] = dvVirtiofsExposeAcl
+		}
+
+		switch {
+		case pp.ExposeXattr != nil:
+			share[mkVirtiofsExposeXattr] = *pp.ExposeXattr
+		case pp.ExposeAcl != nil && bool(*pp.ExposeAcl):
+			// expose-xattr implies expose-acl
+			share[mkVirtiofsExposeXattr] = true
+		default:
+			share[mkVirtiofsExposeXattr] = dvVirtiofsExposeXattr
+		}
+
+		virtiofsMap[pi] = share
+	}
+
+	if len(clone) == 0 || len(currentVirtiofsList) > 0 {
+		orderedVirtiofsList := utils.OrderedListFromMap(virtiofsMap)
+		err := d.Set(mkVirtiofs, orderedVirtiofsList)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -5336,6 +5484,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Prepare the new VGA configuration.
 	if d.HasChange(mkVGA) {
 		updateBody.VGADevice = vmGetVGADeviceObject(d)
+		rebootRequired = true
+	}
+
+	// Prepare the new Virtiofs shares configuration.
+	if d.HasChange(mkVirtiofs) {
+		updateBody.VirtiofsShares = vmGetVirtiofsShares(d)
+
+		for i := len(updateBody.VirtiofsShares); i < maxResourceVirtualEnvironmentVirtiofsShares; i++ {
+			del = append(del, fmt.Sprintf("virtiofs%d", i))
+		}
+
 		rebootRequired = true
 	}
 

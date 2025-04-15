@@ -28,7 +28,8 @@ func TestUnmarshalGetResponseData(t *testing.T) {
 		"scsi22": "%[1]s",
 		"hostpci0": "0000:81:00.2",
 		"hostpci1": "host=81:00.4,pcie=0,rombar=1,x-vga=0",
-		"hostpci12": "mapping=mappeddevice,pcie=0,rombar=1,x-vga=0"
+		"hostpci12": "mapping=mappeddevice,pcie=0,rombar=1,x-vga=0",
+		"virtiofs0":"test,cache=always,direct-io=1,expose-acl=1"
 	}`, "local-lvm:vm-100-disk-0,aio=io_uring,backup=1,cache=none,discard=ignore,replicate=1,size=8G,ssd=1")
 
 	var data GetResponseData
@@ -57,6 +58,10 @@ func TestUnmarshalGetResponseData(t *testing.T) {
 	assert.NotNil(t, data.PCIDevices["hostpci0"])
 	assert.NotNil(t, data.PCIDevices["hostpci1"])
 	assert.NotNil(t, data.PCIDevices["hostpci12"])
+
+	assert.NotNil(t, data.VirtiofsShares)
+	assert.Len(t, data.VirtiofsShares, 1)
+	assert.Equal(t, "always", *data.VirtiofsShares["virtiofs0"].Cache)
 }
 
 func assertDevice(t *testing.T, dev *CustomStorageDevice) {

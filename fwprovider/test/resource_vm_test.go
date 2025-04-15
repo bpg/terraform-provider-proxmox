@@ -396,6 +396,51 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		// Depends on #1902
+		// {"create virtiofs block", []resource.TestStep{
+		// 	{
+		// 		Config: te.RenderConfig(`
+		// 			resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+		// 				name      = "test"
+
+		// 				map {
+		// 					node = "{{.NodeName}}"
+		// 					path = "/mnt"
+		// 				}
+		// 			}`, WithRootUser()),
+		// 		Check: resource.ComposeTestCheckFunc(
+		// 			ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
+		// 				"name":       "test",
+		// 				"map.0.node": "{{.NodeName}}",
+		// 				"map.0.path": "/mnt",
+		// 			}),
+		// 		),
+		// 	},
+		// 	{
+		// 		Config: te.RenderConfig(`
+		// 			resource "proxmox_virtual_environment_vm" "test_vm" {
+		// 				node_name = "{{.NodeName}}"
+		// 				started   = false
+
+		// 				virtiofs {
+		// 					mapping = "test"
+		// 					cache = "always"
+		// 					direct_io = true
+		// 					expose_acl = false
+		// 					expose_xattr = false
+		// 				}
+		// 			}`, WithRootUser()),
+		// 		Check: resource.ComposeTestCheckFunc(
+		// 			ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+		// 				"virtiofs.0.mapping":       "test",
+		// 				"virtiofs.0.cache":        "always",
+		// 				"virtiofs.0.direct_io":    "true",
+		// 				"virtiofs.0.expose_acl":   "false",
+		// 				"virtiofs.0.expose_xattr": "false",
+		// 			}),
+		// 		),
+		// 	},
+		// }},
 	}
 
 	for _, tt := range tests {

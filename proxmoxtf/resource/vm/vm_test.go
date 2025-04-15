@@ -64,6 +64,7 @@ func TestVMSchema(t *testing.T) {
 		mkStarted,
 		mkTabletDevice,
 		mkTemplate,
+		mkVirtiofs,
 		mkVMID,
 		mkSCSIHardware,
 	})
@@ -93,6 +94,7 @@ func TestVMSchema(t *testing.T) {
 		mkStarted:         schema.TypeBool,
 		mkTabletDevice:    schema.TypeBool,
 		mkTemplate:        schema.TypeBool,
+		mkVirtiofs:        schema.TypeList,
 		mkVMID:            schema.TypeInt,
 		mkSCSIHardware:    schema.TypeString,
 	})
@@ -380,6 +382,23 @@ func TestVMSchema(t *testing.T) {
 
 	test.AssertValueTypes(t, serialDeviceSchema, map[string]schema.ValueType{
 		mkSerialDeviceDevice: schema.TypeString,
+	})
+
+	virtiofsSchema := test.AssertNestedSchemaExistence(t, s, mkVirtiofs)
+
+	test.AssertOptionalArguments(t, virtiofsSchema, []string{
+		mkVirtiofsCache,
+		mkVirtiofsDirectIo,
+		mkVirtiofsExposeAcl,
+		mkVirtiofsExposeXattr,
+	})
+
+	test.AssertValueTypes(t, virtiofsSchema, map[string]schema.ValueType{
+		mkVirtiofsMapping:     schema.TypeString,
+		mkVirtiofsCache:       schema.TypeString,
+		mkVirtiofsDirectIo:    schema.TypeBool,
+		mkVirtiofsExposeAcl:   schema.TypeBool,
+		mkVirtiofsExposeXattr: schema.TypeBool,
 	})
 
 	vgaSchema := test.AssertNestedSchemaExistence(t, s, mkVGA)
