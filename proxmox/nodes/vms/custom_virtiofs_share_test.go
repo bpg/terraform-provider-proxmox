@@ -26,14 +26,14 @@ func TestCustomVirtiofsShare_UnmarshalJSON(t *testing.T) {
 			name: "id only virtiofs share",
 			line: `"test"`,
 			want: &CustomVirtiofsShare{
-				DirId: ptr.Ptr("test"),
+				DirId: "test",
 			},
 		},
 		{
 			name: "virtiofs share with more details",
 			line: `"folder,cache=always"`,
 			want: &CustomVirtiofsShare{
-				DirId: ptr.Ptr("folder"),
+				DirId: "folder",
 				Cache: ptr.Ptr("always"),
 			},
 		},
@@ -41,7 +41,7 @@ func TestCustomVirtiofsShare_UnmarshalJSON(t *testing.T) {
 			name: "virtiofs share with flags",
 			line: `"folder,cache=never,direct-io=1,expose-acl=1"`,
 			want: &CustomVirtiofsShare{
-				DirId:       ptr.Ptr("folder"),
+				DirId:       "folder",
 				Cache:       ptr.Ptr("never"),
 				DirectIo:    types.CustomBool(true).Pointer(),
 				ExposeAcl:   types.CustomBool(true).Pointer(),
@@ -52,7 +52,7 @@ func TestCustomVirtiofsShare_UnmarshalJSON(t *testing.T) {
 			name: "virtiofs share with xattr",
 			line: `"folder,expose-xattr=1"`,
 			want: &CustomVirtiofsShare{
-				DirId:       ptr.Ptr("folder"),
+				DirId:       "folder",
 				Cache:       nil,
 				DirectIo:    types.CustomBool(false).Pointer(),
 				ExposeAcl:   types.CustomBool(false).Pointer(),

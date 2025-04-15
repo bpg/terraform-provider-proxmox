@@ -394,7 +394,7 @@ func TestVMSchema(t *testing.T) {
 	})
 
 	test.AssertValueTypes(t, virtiofsSchema, map[string]schema.ValueType{
-		mkVirtiofsDirId:       schema.TypeString,
+		mkVirtiofsMapping:     schema.TypeString,
 		mkVirtiofsCache:       schema.TypeString,
 		mkVirtiofsDirectIo:    schema.TypeBool,
 		mkVirtiofsExposeAcl:   schema.TypeBool,

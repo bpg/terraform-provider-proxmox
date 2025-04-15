@@ -292,7 +292,7 @@ const (
 	mkHookScriptFileID     = "hook_script_file_id"
 	mkStopOnDestroy        = "stop_on_destroy"
 	mkVirtiofs             = "virtiofs"
-	mkVirtiofsMapping        = "mapping"
+	mkVirtiofsMapping      = "mapping"
 	mkVirtiofsCache        = "cache"
 	mkVirtiofsDirectIo     = "direct_io"
 	mkVirtiofsExposeAcl    = "expose_acl"
@@ -4049,7 +4049,7 @@ func vmReadCustom(
 	virtiofsMap := map[string]interface{}{}
 
 	for pi, pp := range vmConfig.VirtiofsShares {
-		if (pp == nil) {
+		if pp == nil {
 			continue
 		}
 
