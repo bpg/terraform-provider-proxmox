@@ -9,9 +9,11 @@
 package test
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 
@@ -22,6 +24,10 @@ func TestAccResourceVM(t *testing.T) {
 	t.Parallel()
 
 	te := InitEnvironment(t)
+	dirName := fmt.Sprintf("dir_%s", gofakeit.Word())
+	te.AddTemplateVars(map[string]interface{}{
+		"DirName": dirName,
+	})
 
 	tests := []struct {
 		name string
@@ -396,51 +402,50 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
-		// Depends on #1902
-		// {"create virtiofs block", []resource.TestStep{
-		// 	{
-		// 		Config: te.RenderConfig(`
-		// 			resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
-		// 				name      = "test"
+		{"create virtiofs block", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+						name      = "{{.DirName}}"
 
-		// 				map {
-		// 					node = "{{.NodeName}}"
-		// 					path = "/mnt"
-		// 				}
-		// 			}`, WithRootUser()),
-		// 		Check: resource.ComposeTestCheckFunc(
-		// 			ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
-		// 				"name":       "test",
-		// 				"map.0.node": "{{.NodeName}}",
-		// 				"map.0.path": "/mnt",
-		// 			}),
-		// 		),
-		// 	},
-		// 	{
-		// 		Config: te.RenderConfig(`
-		// 			resource "proxmox_virtual_environment_vm" "test_vm" {
-		// 				node_name = "{{.NodeName}}"
-		// 				started   = false
+						map = [{
+							node = "{{.NodeName}}"
+							path = "/mnt"
+						}]
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_hardware_mapping_dir.test", map[string]string{
+						"name":       dirName,
+						"map.0.node": te.NodeName,
+						"map.0.path": "/mnt",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "test_vm" {
+						node_name = "{{.NodeName}}"
+						started   = false
 
-		// 				virtiofs {
-		// 					mapping = "test"
-		// 					cache = "always"
-		// 					direct_io = true
-		// 					expose_acl = false
-		// 					expose_xattr = false
-		// 				}
-		// 			}`, WithRootUser()),
-		// 		Check: resource.ComposeTestCheckFunc(
-		// 			ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-		// 				"virtiofs.0.mapping":       "test",
-		// 				"virtiofs.0.cache":        "always",
-		// 				"virtiofs.0.direct_io":    "true",
-		// 				"virtiofs.0.expose_acl":   "false",
-		// 				"virtiofs.0.expose_xattr": "false",
-		// 			}),
-		// 		),
-		// 	},
-		// }},
+						virtiofs {
+							mapping = "{{.DirName}}"
+							cache = "always"
+							direct_io = true
+							expose_acl = false
+							expose_xattr = false
+						}
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"virtiofs.0.mapping":      dirName,
+						"virtiofs.0.cache":        "always",
+						"virtiofs.0.direct_io":    "true",
+						"virtiofs.0.expose_acl":   "false",
+						"virtiofs.0.expose_xattr": "false",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
