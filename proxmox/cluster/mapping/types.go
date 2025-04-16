@@ -70,11 +70,11 @@ type GetResponseData struct {
 type ListResponseData struct {
 	DataBase
 
-	// ChecksPCI might contain relevant diagnostics about incorrect [typesHWM.TypePCI] configurations.
+	// Checks might contain relevant diagnostics about incorrect [typesHWM.TypePCI] configurations.
 	// The name of the node must be passed to the Proxmox VE API call which maps to the "check-node" URL parameter.
 	// Note that the Proxmox VE API, for whatever reason, only returns one error at a time, even though the field is an
 	// array.
-	ChecksPCI []NodeCheckDiag `json:"checks,omitempty"`
+	Checks []NodeCheckDiag `json:"checks,omitempty"`
 
 	// ChecksUSB might contain relevant diagnostics about incorrect [typesHWM.TypeUSB] configurations.
 	// The name of the node must be passed to the Proxmox VE API call which maps to the "check-node" URL parameter.

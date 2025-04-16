@@ -89,6 +89,15 @@ const (
 	schemaAttrNameHWMIDs = "ids"
 )
 
+// modelDirMap maps the schema data for the map of a directory mapping.
+type modelDirMap struct {
+	// Node is the "node name" for the map.
+	Node types.String `tfsdk:"node"`
+
+	// Path is the "path" for the map.
+	Path customtypes.PathValue `tfsdk:"path"`
+}
+
 // modelPCIMap maps the schema data for the map of a PCI hardware mapping.
 type modelPCIMap struct {
 	// Comment is the "comment" for the map.
@@ -138,6 +147,26 @@ type modelUSBMap struct {
 
 	// Path is the "path" for the map.
 	Path customtypes.PathValue `tfsdk:"path"`
+}
+
+// modelDir maps the schema data for a directory mapping.
+type modelDir struct {
+	// Comment is the comment of the directory mapping.
+	// Note that the Proxmox VE API attribute is named "description", but we map it as a comment since this naming is
+	// generally across the Proxmox VE web UI and API documentations. This still follows the [Terraform "best practices"]
+	// as it improves the user experience by matching the field name to the naming used in the human-facing interfaces.
+	//
+	// [Terraform "best practices"]: https://developer.hashicorp.com/terraform/plugin/best-practices/hashicorp-provider-design-principles#resource-and-attribute-schema-should-closely-match-the-underlying-api
+	Comment types.String `tfsdk:"comment"`
+
+	// ID is the Terraform identifier.
+	ID types.String `tfsdk:"id"`
+
+	// Name is the name of the directory mapping.
+	Name types.String `tfsdk:"name"`
+
+	// Map is the map of the directory mapping.
+	Map []modelDirMap `tfsdk:"map"`
 }
 
 // modelPCI maps the schema data for a PCI hardware mapping.
@@ -221,6 +250,78 @@ type modelNodeCheckDiag struct {
 
 	// Severity is the severity of the node check diagnostic entry.
 	Severity types.String `tfsdk:"severity"`
+}
+
+// importFromAPI imports the contents of a directory mapping model from the Proxmox VE API's response data.
+func (hm *modelDir) importFromAPI(_ context.Context, data *apitypes.GetResponseData) {
+	// Ensure that both the ID and name are in sync.
+	hm.Name = hm.ID
+	// The attribute is named "description" by the Proxmox VE API, but we map it as a comment since this naming is
+	// generally across the Proxmox VE web UI and API documentations.
+	hm.Comment = types.StringPointerValue(data.Description)
+	maps := make([]modelDirMap, len(data.Map))
+
+	for idx, pveMap := range data.Map {
+		tfMap := modelDirMap{
+			Node: types.StringValue(pveMap.Node),
+			Path: customtypes.NewPathPointerValue(pveMap.Path),
+		}
+
+		maps[idx] = tfMap
+	}
+
+	hm.Map = maps
+}
+
+// toCreateRequest builds the request data structure for creating a new directory mapping.
+func (hm *modelDir) toCreateRequest() *apitypes.CreateRequestBody {
+	return &apitypes.CreateRequestBody{
+		DataBase: hm.toRequestBase(),
+		ID:       hm.ID.ValueString(),
+	}
+}
+
+// toRequestBase builds the common request data structure for the directory mapping creation or update API calls.
+func (hm *modelDir) toRequestBase() apitypes.DataBase {
+	dataBase := apitypes.DataBase{
+		// The attribute is named "description" by the Proxmox VE API, but we map it as a comment since this naming is
+		// generally across the Proxmox VE web UI and API documentations.
+		Description: hm.Comment.ValueStringPointer(),
+	}
+	maps := make([]proxmoxtypes.Map, len(hm.Map))
+
+	for idx, tfMap := range hm.Map {
+		pveMap := proxmoxtypes.Map{
+			Node: tfMap.Node.ValueString(),
+			Path: tfMap.Path.ValueStringPointer(),
+		}
+
+		maps[idx] = pveMap
+	}
+
+	dataBase.Map = maps
+
+	return dataBase
+}
+
+// toUpdateRequest builds the request data structure for updating an existing USB hardware mapping.
+func (hm *modelDir) toUpdateRequest(currentState *modelDir) *apitypes.UpdateRequestBody {
+	var del []string
+
+	if hm.Comment.IsNull() && !currentState.Comment.IsNull() {
+		// The Proxmox VE API attribute is named "description" while we name it "comment" internally since this naming is
+		// generally used across the Proxmox VE web UI and API documentations.
+		// This still follows the Terraform "best practices" [1] as it improves the user experience by matching the field
+		// name to the naming used in the human-facing interfaces.
+		// References:
+		//   1. https://developer.hashicorp.com/terraform/plugin/best-practices/hashicorp-provider-design-principles#resource-and-attribute-schema-should-closely-match-the-underlying-api
+		del = append(del, proxmoxtypes.AttrNameDescription)
+	}
+
+	return &apitypes.UpdateRequestBody{
+		DataBase: hm.toRequestBase(),
+		Delete:   del,
+	}
 }
 
 // importFromAPI imports the contents of a PCI hardware mapping model from the Proxmox VE API's response data.

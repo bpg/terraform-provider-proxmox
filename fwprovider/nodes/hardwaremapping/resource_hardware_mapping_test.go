@@ -27,15 +27,18 @@ import (
 )
 
 const (
+	accTestHardwareMappingNameDir = "proxmox_virtual_environment_hardware_mapping_dir.test"
 	accTestHardwareMappingNamePCI = "proxmox_virtual_environment_hardware_mapping_pci.test"
 	accTestHardwareMappingNameUSB = "proxmox_virtual_environment_hardware_mapping_usb.test"
 )
 
 type accTestHardwareMappingFakeData struct {
-	Comments        []string `fake:"{sentence:3}"         fakesize:"2"`
-	MapComments     []string `fake:"{sentence:3}"         fakesize:"2"`
-	MapDeviceIDs    []string `fake:"{linuxdeviceid}"      fakesize:"2"`
-	MapIOMMUGroups  []uint   `fake:"{number:1,20}"        fakesize:"2"`
+	Comments       []string `fake:"{sentence:3}"         fakesize:"2"`
+	MapComments    []string `fake:"{sentence:3}"         fakesize:"2"`
+	MapDeviceIDs   []string `fake:"{linuxdeviceid}"      fakesize:"2"`
+	MapIOMMUGroups []uint   `fake:"{number:1,20}"        fakesize:"2"`
+	// These paths must exist on the host system, use a hardcoded list
+	MapPathsDir     []string `fake:"{randomstring:[/home,/root,/mnt,/tmp]}" fakesize:"2"`
 	MapPathsPCI     []string `fake:"{linuxdevicepathpci}" fakesize:"2"`
 	MapPathsUSB     []string `fake:"{linuxdevicepathusb}" fakesize:"2"`
 	MapSubsystemIDs []string `fake:"{linuxdeviceid}"      fakesize:"2"`
@@ -92,6 +95,226 @@ func testAccResourceHardwareMappingInit(t *testing.T) (*accTestHardwareMappingFa
 	}
 
 	return &data, te
+}
+
+// TestAccResourceHardwareMappingDirValidInput runs tests for directory mapping resource definitions with valid input
+// where all possible attributes are
+// specified.
+// All implementations of the [github.com/hashicorp/terraform-plugin-framework/resource.Resource] interface are tested
+// in sequential steps.
+func TestAccResourceHardwareMappingDirValidInput(t *testing.T) {
+	data, te := testAccResourceHardwareMappingInit(t)
+
+	resource.Test(
+		t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				// Test the "Create" and "Read" implementations where all possible attributes are specified.
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+						comment = "%s"
+						name    = "%s"
+						map     = [
+							{
+								node    = "%s"
+								path    = "%s"
+							},
+						]
+					}
+					`,
+						data.Comments[0],
+						data.Names[0],
+						te.NodeName,
+						data.MapPathsDir[0],
+					),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "comment", data.Comments[0]),
+						resource.TestCheckResourceAttrSet(accTestHardwareMappingNameDir, "id"),
+						resource.TestCheckTypeSetElemNestedAttrs(
+							accTestHardwareMappingNameDir, "map.*", map[string]string{
+								"node": te.NodeName,
+								"path": data.MapPathsDir[0],
+							},
+						),
+						resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "name", data.Names[0]),
+					),
+				},
+
+				// Test the "ImportState" implementation and ensure that PCI-only attributes are not set.
+				{
+					ImportState:       true,
+					ImportStateId:     data.Names[0],
+					ImportStateVerify: true,
+					ResourceName:      accTestHardwareMappingNameDir,
+				},
+
+				// Test the "Update" implementation where all possible attributes are specified.
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+						comment = "%s"
+						name    = "%s"
+						map     = [
+							{
+								node    = "%s"
+								path    = "%s"
+							},
+						]
+					}
+					`,
+						data.Comments[1],
+						data.Names[0],
+						te.NodeName,
+						data.MapPathsDir[1],
+					),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "comment", data.Comments[1]),
+						resource.TestCheckResourceAttrSet(accTestHardwareMappingNameDir, "id"),
+						resource.TestCheckTypeSetElemNestedAttrs(
+							accTestHardwareMappingNameDir, "map.*", map[string]string{
+								"node": te.NodeName,
+								"path": data.MapPathsDir[1],
+							},
+						),
+						resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "name", data.Names[0]),
+					),
+				},
+			},
+		},
+	)
+}
+
+// TestAccResourceHardwareMappingDirValidInputMinimal runs tests for directory mapping resource definitions with
+// valid input that only have the minimum
+// amount of attributes set to test computed and default values within the resulting plan and state. The last step sets
+// the undefined values to test the update
+// logic.
+// All implementations of the [github.com/hashicorp/terraform-plugin-framework/resource.Resource] interface are tested
+// in sequential steps.
+func TestAccResourceHardwareMappingDirValidInputMinimal(t *testing.T) {
+	data, te := testAccResourceHardwareMappingInit(t)
+
+	resource.Test(
+		t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				// Test the "Create" and "Read" implementations with only the minimum amount of attributes being set.
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+						name    = "%s"
+						map     = [
+							{
+								node = "%s"
+								path = "%s"
+							},
+						]
+					}
+					`,
+						data.Names[0],
+						te.NodeName,
+						data.MapPathsDir[0],
+					),
+					ConfigStateChecks: []statecheck.StateCheck{
+						// Optional attributes should all be unset.
+						statecheck.ExpectKnownValue(accTestHardwareMappingNameDir,
+							tfjsonpath.New("comment"),
+							knownvalue.Null()),
+					},
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttrSet(accTestHardwareMappingNameDir, "id"),
+						resource.TestCheckTypeSetElemNestedAttrs(
+							accTestHardwareMappingNameDir, "map.*", map[string]string{
+								"node": te.NodeName,
+								"path": data.MapPathsDir[0],
+							},
+						),
+						resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "name", data.Names[0]),
+					),
+				},
+
+				// Test the "Update" implementation by setting all previously undefined attributes.
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_virtual_environment_hardware_mapping_dir" "test" {
+						comment = "%s"
+						name    = "%s"
+						map     = [
+							{
+								node    = "%s"
+								path    = "%s"
+							},
+						]
+					}
+					`,
+						data.Comments[0],
+						data.Names[0],
+						te.NodeName,
+						data.MapPathsDir[0],
+					),
+					Check: resource.ComposeTestCheckFunc(
+						resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "comment", data.Comments[0]),
+						resource.TestCheckResourceAttrSet(accTestHardwareMappingNameDir, "id"),
+						resource.TestCheckTypeSetElemNestedAttrs(
+							accTestHardwareMappingNameDir, "map.*", map[string]string{
+								"node": te.NodeName,
+								"path": data.MapPathsDir[0],
+							},
+						),
+						resource.TestCheckResourceAttr(accTestHardwareMappingNameDir, "name", data.Names[0]),
+					),
+				},
+			},
+		},
+	)
+}
+
+// TestAccResourceHardwareMappingDirInvalidInput runs tests for directory mapping resource definitions where all
+// possible attributes are specified.
+// Only the "Create" method implementation of the [github.com/hashicorp/terraform-plugin-framework/resource.Resource]
+// interface is tested in sequential steps.
+func TestAccResourceHardwareMappingDirInvalidInput(t *testing.T) {
+	data, te := testAccResourceHardwareMappingInit(t)
+
+	resource.Test(
+		t, resource.TestCase{
+			ProtoV6ProviderFactories: te.AccProviders,
+			Steps: []resource.TestStep{
+				// Test the "Create" method implementation where all possible attributes are specified, but an error is expected
+				// when using an invalid device path.
+				{
+					Config: fmt.Sprintf(
+						`
+					resource "proxmox_virtual_environment_hardware_mapping_usb" "test" {
+						comment = "%s"
+						name    = "%s"
+						map     = [
+							{
+								comment = "%s"
+								id      = "%s"
+								node    = "%s"
+								# Only valid Linux USB device paths should pass the verification.
+								path    = "xyz3:1337foobar"
+							},
+						]
+					}
+					`,
+						data.Comments[0],
+						data.Names[0],
+						data.Comments[1],
+						data.MapDeviceIDs[0],
+						te.NodeName,
+					),
+					ExpectError: regexp.MustCompile(`valid Linux device path for hardware mapping of type "usb"`),
+				},
+			},
+		},
+	)
 }
 
 // TestAccResourceHardwareMappingPCIValidInput runs tests for PCI hardware mapping resource definitions with valid input

@@ -240,6 +240,15 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
   }
 }
 
+resource "proxmox_virtual_environment_hardware_mapping_dir" "dir_mapping" {
+  name = "terraform-provider-proxmox-dir-mapping"
+
+  map = [{
+    node = data.proxmox_virtual_environment_nodes.example.names[0]
+    path = "/mnt"
+  }]
+}
+
 output "resource_proxmox_virtual_environment_vm_example_id" {
   value = proxmox_virtual_environment_vm.example.id
 }

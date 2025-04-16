@@ -1,3 +1,8 @@
+data "proxmox_virtual_environment_hardware_mappings" "example-dir" {
+  check_node = "pve"
+  type       = "dir"
+}
+
 data "proxmox_virtual_environment_hardware_mappings" "example-pci" {
   check_node = "pve"
   type       = "pci"
