@@ -3857,7 +3857,7 @@ func vmReadCustom(
 			// from the default qcow2, so we need to read it from the storage API to make sure we have the correct value
 			volume, err := client.Node(nodeName).Storage(fileIDParts[0]).GetDatastoreFile(ctx, vmConfig.EFIDisk.FileVolume)
 			if err != nil {
-				diags = append(diags, diag.FromErr(e)...)
+				diags = append(diags, diag.FromErr(err)...)
 			} else {
 				efiDisk[mkEFIDiskFileFormat] = volume.FileFormat
 			}

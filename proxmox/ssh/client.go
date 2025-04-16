@@ -336,7 +336,7 @@ func (c *client) NodeStreamUpload(
 	if d.Mode != "" {
 		parsedFileMode, parseErr := strconv.ParseUint(d.Mode, 8, 12)
 		if parseErr != nil {
-			return fmt.Errorf("failed to parse file mode %q: %w", d.Mode, err)
+			return fmt.Errorf("failed to parse file mode %q: %w", d.Mode, parseErr)
 		}
 
 		mode := uint32(parsedFileMode)
