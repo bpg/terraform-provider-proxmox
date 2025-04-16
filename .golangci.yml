@@ -9,6 +9,7 @@ linters:
     - exhaustruct
     - forcetypeassert
     - funlen
+    - funcorder # nice to have, but currently generating too many errors
     - gocognit
     - gocyclo
     - ireturn
