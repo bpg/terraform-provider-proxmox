@@ -71,6 +71,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 						size         = 8
 						replicate    = false
 						aio          = "native"
+						backup       = "false"
 						speed {
 						  iops_read = 100
 						  iops_read_burstable = 1000
@@ -82,7 +83,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
 						"disk.0.aio":                          "native",
-						"disk.0.backup":                       "true",
+						"disk.0.backup":                       "false",
 						"disk.0.cache":                        "none",
 						"disk.0.discard":                      "ignore",
 						"disk.0.file_id":                      "",
