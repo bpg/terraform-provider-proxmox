@@ -17,8 +17,7 @@ This repository is a fork of <https://github.com/danitso/terraform-provider-prox
 
 This project is a personal open-source initiative and is not affiliated with, endorsed by, or associated with any of my current or former employers. All opinions, code, and documentation are solely those of myself and the individual contributors.
 
-The project is not affiliated with [Proxmox Server Solutions GmbH](https://www.proxmox.com/en/about/about-us/company) or any of its subsidiaries. The use of the Proxmox name and / or logo is for informational purposes only and does not imply any endorsement or affiliation with the Proxmox project.
-
+The project is not affiliated with [Proxmox Server Solutions GmbH](https://www.proxmox.com/en/about/about-us/company) or any of its subsidiaries. The use of the Proxmox name and/or logo is for informational purposes only and does not imply any endorsement or affiliation with the Proxmox project.
 ## Compatibility Promise
 
 This provider is compatible with Proxmox VE 8.x (currently **8.4**).
