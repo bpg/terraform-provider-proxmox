@@ -300,6 +300,25 @@ func (c *Client) RebuildCloudInitDisk(ctx context.Context) error {
 	return nil
 }
 
+// RebootVMAndWaitForRunning reboots a virtual machine and waits for it to be running.
+func (c *Client) RebootVMAndWaitForRunning(ctx context.Context, rebootTimeoutSec int) error {
+	// We add 3 seconds padding to the timeout to account for retries and delays down the callstack.
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(rebootTimeoutSec+3)*time.Second)
+	defer cancel()
+
+	err := c.RebootVM(
+		ctx,
+		&RebootRequestBody{
+			Timeout: &rebootTimeoutSec,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	return c.WaitForVMStatus(ctx, "running")
+}
+
 // RebootVM reboots a virtual machine.
 func (c *Client) RebootVM(ctx context.Context, d *RebootRequestBody) error {
 	taskID, err := c.RebootVMAsync(ctx, d)
