@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.76.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.75.0...v0.76.0) (2025-04-17)
+
+
+### Features
+
+* **hardwaremapping:** Introduce support for directory mappings ([#1902](https://github.com/bpg/terraform-provider-proxmox/issues/1902)) ([6dbff43](https://github.com/bpg/terraform-provider-proxmox/commit/6dbff43bd13fbae86cc5b4fa2075164ef9cf9b62))
+* **vm:** add support for `virtiofs` ([#1900](https://github.com/bpg/terraform-provider-proxmox/issues/1900)) ([55b3f73](https://github.com/bpg/terraform-provider-proxmox/commit/55b3f7391ae03fbed60744a55e7966df20577139))
+
+
+### Bug Fixes
+
+* **vm,lxc:** error parsing disk ID when datastore name contains `.` ([#1894](https://github.com/bpg/terraform-provider-proxmox/issues/1894)) ([1340146](https://github.com/bpg/terraform-provider-proxmox/commit/13401465c9b4136b75d3814f470f0e7f46e05fe6))
+* **vm:** edge case error when cloning a VM with EFI disk ([#1897](https://github.com/bpg/terraform-provider-proxmox/issues/1897)) ([4ca2f32](https://github.com/bpg/terraform-provider-proxmox/commit/4ca2f32ac63b7f1844566023071adcd7eca12868))
+* **vm:** race condition on reboot causing inconsistent VM state ([#1911](https://github.com/bpg/terraform-provider-proxmox/issues/1911)) ([7fd190a](https://github.com/bpg/terraform-provider-proxmox/commit/7fd190aaebdc1ce13f3023a41d2191d1e4ad9fd2))
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.0.2 → v2.1.2) ([#1903](https://github.com/bpg/terraform-provider-proxmox/issues/1903)) ([ce5cc74](https://github.com/bpg/terraform-provider-proxmox/commit/ce5cc746f99c2d3a9731cdb4594dd66741e263d9))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.20.1 → v0.21.0) ([#1898](https://github.com/bpg/terraform-provider-proxmox/issues/1898)) ([504a84c](https://github.com/bpg/terraform-provider-proxmox/commit/504a84cb8354922f429967a7b1bc005774d686b8))
+* **docs:** indicate support of Proxmox VE 8.4 ([#1899](https://github.com/bpg/terraform-provider-proxmox/issues/1899)) ([35a5296](https://github.com/bpg/terraform-provider-proxmox/commit/35a529609d50cdfffbb1506ed6d01d35bb967a70))
+* **vm:** add an acc test for `disk.backup` update edge case ([#1906](https://github.com/bpg/terraform-provider-proxmox/issues/1906)) ([ad41476](https://github.com/bpg/terraform-provider-proxmox/commit/ad41476962c3ff3e7e7ac530fe6f5ad85797b994))
+
 ## [0.75.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.74.1...v0.75.0) (2025-04-08)
 
 
