@@ -2865,14 +2865,8 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	if reboot {
 		rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
-		err := vmAPI.RebootVM(
-			ctx,
-			&vms.RebootRequestBody{
-				Timeout: &rebootTimeoutSec,
-			},
-		)
-		if err != nil {
-			return diag.FromErr(err)
+		if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
+			return diag.FromErr(e)
 		}
 	}
 
@@ -3544,7 +3538,16 @@ func vmReadCustom(
 		return diag.FromErr(e)
 	}
 
-	diags := vmReadPrimitiveValues(d, vmConfig, vmStatus)
+	var diags diag.Diagnostics
+
+	if !d.Get(mkTemplate).(bool) {
+		// we shouldn't be updating this attribute at read. Instead, the current status should be captured
+		// in a separate computed attribute. To be addressed in v1.0
+		err := d.Set(mkStarted, vmStatus.Status == "running")
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	diags = append(diags, vmReadPrimitiveValues(d, vmConfig)...)
 	if diags.HasError() {
 		return diags
 	}
@@ -4695,7 +4698,6 @@ func vmReadCustom(
 func vmReadPrimitiveValues(
 	d *schema.ResourceData,
 	vmConfig *vms.GetResponseData,
-	vmStatus *vms.GetStatusResponseData,
 ) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -4826,11 +4828,6 @@ func vmReadPrimitiveValues(
 			err = d.Set(mkProtection, false)
 		}
 
-		diags = append(diags, diag.FromErr(err)...)
-	}
-
-	if !d.Get(mkTemplate).(bool) {
-		err = d.Set(mkStarted, vmStatus.Status == "running")
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -5804,14 +5801,8 @@ func vmUpdateDiskLocationAndSize(
 		if vmStatus.Status != "stopped" {
 			rebootTimeoutSec := d.Get(mkTimeoutReboot).(int)
 
-			err := vmAPI.RebootVM(
-				ctx,
-				&vms.RebootRequestBody{
-					Timeout: &rebootTimeoutSec,
-				},
-			)
-			if err != nil {
-				return diag.FromErr(err)
+			if e := vmAPI.RebootVMAndWaitForRunning(ctx, rebootTimeoutSec); e != nil {
+				return diag.FromErr(e)
 			}
 		}
 	}
