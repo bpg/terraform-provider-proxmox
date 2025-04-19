@@ -85,10 +85,6 @@ const (
 	dvInitializationIPConfigIPv6Address = ""
 	dvInitializationIPConfigIPv6Gateway = ""
 	dvInitializationUserAccountPassword = ""
-	dvInitializationUserDataFileID      = ""
-	dvInitializationVendorDataFileID    = ""
-	dvInitializationNetworkDataFileID   = ""
-	dvInitializationMetaDataFileID      = ""
 	dvInitializationType                = ""
 	dvKeyboardLayout                    = "en-us"
 	dvKVMArguments                      = ""
@@ -890,40 +886,40 @@ func VM() *schema.Resource {
 						Type:             schema.TypeString,
 						Description:      "The ID of a file containing custom user data",
 						Optional:         true,
+						Computed:         true,
 						ForceNew:         true,
-						Default:          dvInitializationUserDataFileID,
 						ValidateDiagFunc: validators.FileID(),
 					},
 					mkInitializationVendorDataFileID: {
 						Type:             schema.TypeString,
 						Description:      "The ID of a file containing vendor data",
 						Optional:         true,
+						Computed:         true,
 						ForceNew:         true,
-						Default:          dvInitializationVendorDataFileID,
 						ValidateDiagFunc: validators.FileID(),
 					},
 					mkInitializationNetworkDataFileID: {
 						Type:             schema.TypeString,
 						Description:      "The ID of a file containing network config",
 						Optional:         true,
+						Computed:         true,
 						ForceNew:         true,
-						Default:          dvInitializationNetworkDataFileID,
 						ValidateDiagFunc: validators.FileID(),
 					},
 					mkInitializationMetaDataFileID: {
 						Type:             schema.TypeString,
 						Description:      "The ID of a file containing meta data config",
 						Optional:         true,
+						Computed:         true,
 						ForceNew:         true,
-						Default:          dvInitializationMetaDataFileID,
 						ValidateDiagFunc: validators.FileID(),
 					},
 					mkInitializationType: {
 						Type:             schema.TypeString,
 						Description:      "The cloud-init configuration format",
 						Optional:         true,
+						Computed:         true,
 						ForceNew:         true,
-						Default:          dvInitializationType,
 						ValidateDiagFunc: CloudInitTypeValidator(),
 					},
 				},
@@ -1445,6 +1441,7 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The VGA configuration",
 			Optional:    true,
+			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkVGAClipboard: {
