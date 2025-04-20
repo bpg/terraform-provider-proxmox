@@ -75,9 +75,7 @@ func Schema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Description: "The network devices",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return make([]interface{}, 1), nil
-			},
+			Computed:    true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkNetworkDeviceBridge: {
