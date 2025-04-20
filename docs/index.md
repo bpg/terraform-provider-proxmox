@@ -144,7 +144,7 @@ provider "proxmox" {
 ```
 
 The variable values can be provided via a separate `.tfvars` file that should be gitignored.
-See the [Terraform documentation](https://www.terraform.io/docs/configuration/variables.html) for more information.
+See the [Terraform documentation](https://developer.hashicorp.com/terraform/language/values/variables#input-variables) for more information.
 
 ### Security Best Practices
 
@@ -505,7 +505,7 @@ A better approach is to use `proxmox_virtual_environment_download_file` resource
 
 ## Argument Reference
 
-In addition to [generic provider arguments](https://www.terraform.io/docs/configuration/providers.html) ( e.g. `alias` and `version`), the following arguments are supported in the Proxmox `provider` block:
+In addition to [generic provider arguments](https://developer.hashicorp.com/terraform/language/providers/configuration#provider-configuration-1) ( e.g. `alias` and `version`), the following arguments are supported in the Proxmox `provider` block:
 
 - `endpoint` - (Required) The endpoint for the Proxmox Virtual Environment API (can also be sourced from `PROXMOX_VE_ENDPOINT`). Usually this is `https://<your-cluster-endpoint>:8006/`. **Do not** include `/api2/json` at the end.
 - `insecure` - (Optional) Whether to skip the TLS verification step (can also be sourced from `PROXMOX_VE_INSECURE`). If omitted, defaults to `false`.
