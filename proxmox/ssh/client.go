@@ -498,7 +498,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 		}
 	}
 
-	kh, err := knownhosts.New(khPath)
+	kh, err := knownhosts.NewDB(khPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read %s: %w", khPath, err)
 	}
@@ -506,7 +506,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 	// Create a custom permissive host key callback which still errors on hosts
 	// with changed keys, but allows unknown hosts and adds them to known_hosts
 	cb := ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-		khErr := kh(hostname, remote, key)
+		khErr := kh.HostKeyCallback()(hostname, remote, key)
 		if knownhosts.IsHostKeyChanged(khErr) {
 			return fmt.Errorf("REMOTE HOST IDENTIFICATION HAS CHANGED for host %s! This may indicate a MitM attack", hostname)
 		}
@@ -574,7 +574,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 func (c *client) createSSHClient(
 	ctx context.Context,
 	cb ssh.HostKeyCallback,
-	kh knownhosts.HostKeyCallback,
+	kh *knownhosts.HostKeyDB,
 	sshHost string,
 ) (*ssh.Client, error) {
 	if c.password == "" {
@@ -595,7 +595,7 @@ func (c *client) createSSHClient(
 func (c *client) createSSHClientAgent(
 	ctx context.Context,
 	cb ssh.HostKeyCallback,
-	kh knownhosts.HostKeyCallback,
+	kh *knownhosts.HostKeyDB,
 	sshHost string,
 ) (*ssh.Client, error) {
 	conn, err := dialSocket(c.agentSocket)
@@ -618,7 +618,7 @@ func (c *client) createSSHClientAgent(
 func (c *client) createSSHClientWithPrivateKey(
 	ctx context.Context,
 	cb ssh.HostKeyCallback,
-	kh knownhosts.HostKeyCallback,
+	kh *knownhosts.HostKeyDB,
 	sshHost string,
 ) (*ssh.Client, error) {
 	privateKey, err := ssh.ParsePrivateKey([]byte(c.privateKey))
