@@ -76,7 +76,7 @@ resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc
 - `content_type` (String) The file content type. Must be `iso` for VM images or `vztmpl` for LXC images.
 - `datastore_id` (String) The identifier for the target datastore.
 - `node_name` (String) The node name.
-- `url` (String) The URL to download the file from. Format `https?://.*`.
+- `url` (String) The URL to download the file from. Must match regex: `https?://.*`.
 
 ### Optional
 

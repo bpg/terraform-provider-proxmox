@@ -23,7 +23,7 @@ func (c *Client) GetQueryURLMetadata(
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("query-url-metadata"), d, resBody)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving URL metadata for %+v: %w", d.URL, err)
+		return nil, fmt.Errorf("error retrieving URL metadata for %q: %w", d.URL, err)
 	}
 
 	if resBody.Data == nil {

@@ -23,5 +23,5 @@ type QueryURLMetadataGetResponseData struct {
 // QueryURLMetadataGetRequestBody contains the body for a QueryURLMetadata get request.
 type QueryURLMetadataGetRequestBody struct {
 	Verify *types.CustomBool `json:"verify-certificates,omitempty" url:"verify-certificates,omitempty,int"`
-	URL    *string           `json:"url,omitempty"                 url:"url,omitempty"`
+	URL    string            `json:"url"                           url:"url"`
 }

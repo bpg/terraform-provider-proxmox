@@ -246,10 +246,10 @@ func (r *downloadFileResource) Schema(
 				Default:     int64default.StaticInt64(600),
 			},
 			"url": schema.StringAttribute{
-				Description: "The URL to download the file from. Format `https?://.*`.",
+				Description: "The URL to download the file from. Must match regex: `" + httpRegex.String() + "`.",
 				Required:    true,
 				Validators: []validator.String{
-					stringvalidator.RegexMatches(httpRegex, "Must match http url regex"),
+					stringvalidator.RegexMatches(httpRegex, "must match HTTP URL regex `"+httpRegex.String()+"`"),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -460,7 +460,7 @@ func (r *downloadFileResource) getURLMetadata(
 	verify := proxmoxtypes.CustomBool(model.Verify.ValueBool())
 
 	queryURLMetadataReq := nodes.QueryURLMetadataGetRequestBody{
-		URL:    model.URL.ValueStringPointer(),
+		URL:    model.URL.ValueString(),
 		Verify: &verify,
 	}
 

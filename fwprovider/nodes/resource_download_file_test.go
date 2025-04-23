@@ -14,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -47,6 +48,17 @@ func TestAccResourceDownloadFile(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
+		{"missing url", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
+					content_type       = "iso"
+					node_name          = "{{.NodeName}}"
+					datastore_id       = "{{.DatastoreID}}"
+					file_name          = "fake_qcow2_file.img"
+					url                =  ""
+				  }`),
+			ExpectError: regexp.MustCompile(`Attribute url must match HTTP URL regex`),
+		}}},
 		{"download qcow2 file", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
