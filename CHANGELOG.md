@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.76.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.76.0...v0.76.1) (2025-04-21)
+
+
+### Bug Fixes
+
+* **provider:** improve `known_hosts` handling in SSH client ([#1918](https://github.com/bpg/terraform-provider-proxmox/issues/1918)) ([49d366e](https://github.com/bpg/terraform-provider-proxmox/commit/49d366e45b0741310130c22c875748ffe0348643))
+* **vm:** cloned VM may be recreated/updated on re-apply ([#1914](https://github.com/bpg/terraform-provider-proxmox/issues/1914)) ([5974d8b](https://github.com/bpg/terraform-provider-proxmox/commit/5974d8b3a37835735c182c901ab873ab3b3c71eb))
+
+
+### Miscellaneous
+
+* **code:** move `hardwaremapping` package from `node` to `cluster` in `fwprovider` ([#1917](https://github.com/bpg/terraform-provider-proxmox/issues/1917)) ([fd24c5a](https://github.com/bpg/terraform-provider-proxmox/commit/fd24c5a740446418927aab67b24675f1df655494))
+* **docs:** fix broken links in documentation ([#1916](https://github.com/bpg/terraform-provider-proxmox/issues/1916)) ([d27b24f](https://github.com/bpg/terraform-provider-proxmox/commit/d27b24f5f61e14bc2506594f8968165f8adbf2eb))
+
 ## [0.76.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.75.0...v0.76.0) (2025-04-17)
 
 
