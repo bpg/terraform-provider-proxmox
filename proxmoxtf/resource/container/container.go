@@ -2413,6 +2413,14 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		containerConfig.MountPoint5,
 		containerConfig.MountPoint6,
 		containerConfig.MountPoint7,
+		containerConfig.MountPoint8,
+		containerConfig.MountPoint9,
+		containerConfig.MountPoint10,
+		containerConfig.MountPoint11,
+		containerConfig.MountPoint12,
+		containerConfig.MountPoint13,
+		containerConfig.MountPoint14,
+		containerConfig.MountPoint15,
 	}
 
 	mountPointList := make([]interface{}, 0, len(mountPointArray))

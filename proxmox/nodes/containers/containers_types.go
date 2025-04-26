@@ -200,6 +200,14 @@ type GetResponseData struct {
 	MountPoint5        *CustomMountPoint        `json:"mp5,omitempty"`
 	MountPoint6        *CustomMountPoint        `json:"mp6,omitempty"`
 	MountPoint7        *CustomMountPoint        `json:"mp7,omitempty"`
+	MountPoint8        *CustomMountPoint        `json:"mp8,omitempty"`
+	MountPoint9        *CustomMountPoint        `json:"mp9,omitempty"`
+	MountPoint10       *CustomMountPoint        `json:"mp10,omitempty"`
+	MountPoint11       *CustomMountPoint        `json:"mp11,omitempty"`
+	MountPoint12       *CustomMountPoint        `json:"mp12,omitempty"`
+	MountPoint13       *CustomMountPoint        `json:"mp13,omitempty"`
+	MountPoint14       *CustomMountPoint        `json:"mp14,omitempty"`
+	MountPoint15       *CustomMountPoint        `json:"mp15,omitempty"`
 	NetworkInterface0  *CustomNetworkInterface  `json:"net0,omitempty"`
 	NetworkInterface1  *CustomNetworkInterface  `json:"net1,omitempty"`
 	NetworkInterface2  *CustomNetworkInterface  `json:"net2,omitempty"`
