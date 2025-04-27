@@ -2912,8 +2912,6 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		updateBody.CPUArchitecture = &cpuArchitecture
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUUnits = &cpuUnits
-
-		rebootRequired = true
 	}
 
 	if d.HasChange(mkFeatures) {
