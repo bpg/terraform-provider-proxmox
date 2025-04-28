@@ -52,6 +52,7 @@ func IPSet() *schema.Resource {
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{}, nil
 			},
+			DiffSuppressFunc: structure.SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(mkIPSetCIDRName),
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkIPSetCIDRName: {

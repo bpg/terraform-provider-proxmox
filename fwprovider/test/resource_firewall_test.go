@@ -47,6 +47,32 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 				}),
 			),
 		}}},
+		{"ipset with ipV4 and ipV6 cidrs", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
+				name = "test"
+				cidr {
+					name    = "192.168.0.0/24"
+					comment = "Local IPv4"
+				}
+				cidr {
+					name    = "2001:db8:ab21:7b00::/64"
+					comment = "LAN IPv6"
+				}
+				cidr {
+					name    = "172.10.0.0/24"
+					comment = "ext IPv4"
+				}
+				cidr {
+					name    = "2001:db8:5a93:1e00::/64"
+					comment = "ext IPv6"
+				}
+				cidr {
+					name    = "2001:0DB8:91AA:7C30::1"
+					comment = "ext 2 IPv6"
+				}
+			}`),
+		}}},
 	}
 
 	for _, tt := range tests {
