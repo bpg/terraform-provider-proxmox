@@ -181,6 +181,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Serge](https://github.com/sergelogvinov)
 - [Daniel Brennand](https://github.com/dbrennand)
 - [Brian King](https://github.com/inflatador)
+- [Radosław Szamszur](https://github.com/rszamszur)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
