@@ -388,17 +388,17 @@ func TestVMSchema(t *testing.T) {
 
 	test.AssertOptionalArguments(t, virtiofsSchema, []string{
 		mkVirtiofsCache,
-		mkVirtiofsDirectIo,
-		mkVirtiofsExposeAcl,
-		mkVirtiofsExposeXattr,
+		mkVirtiofsDirectIO,
+		mkVirtiofsExposeACL,
+		mkVirtiofsExposeXAttr,
 	})
 
 	test.AssertValueTypes(t, virtiofsSchema, map[string]schema.ValueType{
 		mkVirtiofsMapping:     schema.TypeString,
 		mkVirtiofsCache:       schema.TypeString,
-		mkVirtiofsDirectIo:    schema.TypeBool,
-		mkVirtiofsExposeAcl:   schema.TypeBool,
-		mkVirtiofsExposeXattr: schema.TypeBool,
+		mkVirtiofsDirectIO:    schema.TypeBool,
+		mkVirtiofsExposeACL:   schema.TypeBool,
+		mkVirtiofsExposeXAttr: schema.TypeBool,
 	})
 
 	vgaSchema := test.AssertNestedSchemaExistence(t, s, mkVGA)

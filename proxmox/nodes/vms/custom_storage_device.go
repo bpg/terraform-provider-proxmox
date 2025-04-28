@@ -382,9 +382,7 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 //
 // It will return true if any attribute of the current CustomStorageDevice was changed.
 func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
-	updated := false
-
-	updated = ptr.UpdateIfChanged(&d.AIO, m.AIO) || updated
+	updated := ptr.UpdateIfChanged(&d.AIO, m.AIO)
 	updated = ptr.UpdateIfChanged(&d.Backup, m.Backup) || updated
 	updated = ptr.UpdateIfChanged(&d.BurstableReadSpeedMbps, m.BurstableReadSpeedMbps) || updated
 	updated = ptr.UpdateIfChanged(&d.BurstableWriteSpeedMbps, m.BurstableWriteSpeedMbps) || updated
