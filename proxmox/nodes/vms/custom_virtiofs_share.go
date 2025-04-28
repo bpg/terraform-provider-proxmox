@@ -73,7 +73,7 @@ func (r *CustomVirtiofsShare) EncodeValues(key string, v *url.Values) error {
 }
 
 // EncodeValues converts a CustomVirtiofsShares dict to multiple URL values.
-func (r CustomVirtiofsShares) EncodeValues(key string, v *url.Values) error {
+func (r CustomVirtiofsShares) EncodeValues(_ string, v *url.Values) error {
 	for s, d := range r {
 		if err := d.EncodeValues(s, v); err != nil {
 			return fmt.Errorf("failed to encode virtiofs share %s: %w", s, err)

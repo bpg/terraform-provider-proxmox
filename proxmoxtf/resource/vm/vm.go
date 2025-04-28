@@ -85,7 +85,6 @@ const (
 	dvInitializationIPConfigIPv6Address = ""
 	dvInitializationIPConfigIPv6Gateway = ""
 	dvInitializationUserAccountPassword = ""
-	dvInitializationType                = ""
 	dvKeyboardLayout                    = "en-us"
 	dvKVMArguments                      = ""
 	dvMachineType                       = ""
@@ -290,9 +289,9 @@ const (
 	mkVirtiofs             = "virtiofs"
 	mkVirtiofsMapping      = "mapping"
 	mkVirtiofsCache        = "cache"
-	mkVirtiofsDirectIo     = "direct_io"
-	mkVirtiofsExposeAcl    = "expose_acl"
-	mkVirtiofsExposeXattr  = "expose_xattr"
+	mkVirtiofsDirectIO     = "direct_io"
+	mkVirtiofsExposeACL    = "expose_acl"
+	mkVirtiofsExposeXAttr  = "expose_xattr"
 	mkWatchdog             = "watchdog"
 	// a workaround for the lack of proper support of default and undefined values in SDK.
 	mkWatchdogEnabled = "enabled"
@@ -1495,19 +1494,19 @@ func VM() *schema.Resource {
 						Default:          dvVirtiofsCache,
 						ValidateDiagFunc: VirtiofsCacheValidator(),
 					},
-					mkVirtiofsDirectIo: {
+					mkVirtiofsDirectIO: {
 						Type:        schema.TypeBool,
 						Description: "Whether to allow direct io",
 						Optional:    true,
 						Default:     dvVirtiofsDirectIo,
 					},
-					mkVirtiofsExposeAcl: {
+					mkVirtiofsExposeACL: {
 						Type:        schema.TypeBool,
 						Description: "Enable POSIX ACLs, implies xattr support",
 						Optional:    true,
 						Default:     dvVirtiofsExposeAcl,
 					},
-					mkVirtiofsExposeXattr: {
+					mkVirtiofsExposeXAttr: {
 						Type:        schema.TypeBool,
 						Description: "Enable support for extended attributes",
 						Optional:    true,
@@ -3411,15 +3410,15 @@ func vmGetVirtiofsShares(d *schema.ResourceData) vms.CustomVirtiofsShares {
 
 		mapping, _ := block[mkVirtiofsMapping].(string)
 		cache, _ := block[mkVirtiofsCache].(string)
-		direct_io := types.CustomBool(block[mkVirtiofsDirectIo].(bool))
-		expose_acl := types.CustomBool(block[mkVirtiofsExposeAcl].(bool))
-		expose_xattr := types.CustomBool(block[mkVirtiofsExposeXattr].(bool))
+		directIO := types.CustomBool(block[mkVirtiofsDirectIO].(bool))
+		exposeACL := types.CustomBool(block[mkVirtiofsExposeACL].(bool))
+		exposeXAttr := types.CustomBool(block[mkVirtiofsExposeXAttr].(bool))
 
 		share := vms.CustomVirtiofsShare{
 			DirId:       mapping,
-			DirectIo:    &direct_io,
-			ExposeAcl:   &expose_acl,
-			ExposeXattr: &expose_xattr,
+			DirectIo:    &directIO,
+			ExposeAcl:   &exposeACL,
+			ExposeXattr: &exposeXAttr,
 		}
 
 		if cache != "" {
@@ -4064,25 +4063,25 @@ func vmReadCustom(
 		}
 
 		if pp.DirectIo != nil {
-			share[mkVirtiofsDirectIo] = *pp.DirectIo
+			share[mkVirtiofsDirectIO] = *pp.DirectIo
 		} else {
-			share[mkVirtiofsDirectIo] = dvVirtiofsDirectIo
+			share[mkVirtiofsDirectIO] = dvVirtiofsDirectIo
 		}
 
 		if pp.ExposeAcl != nil {
-			share[mkVirtiofsExposeAcl] = *pp.ExposeAcl
+			share[mkVirtiofsExposeACL] = *pp.ExposeAcl
 		} else {
-			share[mkVirtiofsExposeAcl] = dvVirtiofsExposeAcl
+			share[mkVirtiofsExposeACL] = dvVirtiofsExposeAcl
 		}
 
 		switch {
 		case pp.ExposeXattr != nil:
-			share[mkVirtiofsExposeXattr] = *pp.ExposeXattr
+			share[mkVirtiofsExposeXAttr] = *pp.ExposeXattr
 		case pp.ExposeAcl != nil && bool(*pp.ExposeAcl):
 			// expose-xattr implies expose-acl
-			share[mkVirtiofsExposeXattr] = true
+			share[mkVirtiofsExposeXAttr] = true
 		default:
-			share[mkVirtiofsExposeXattr] = dvVirtiofsExposeXattr
+			share[mkVirtiofsExposeXAttr] = dvVirtiofsExposeXattr
 		}
 
 		virtiofsMap[pi] = share
