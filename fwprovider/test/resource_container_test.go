@@ -120,7 +120,10 @@ func TestAccResourceContainer(t *testing.T) {
 
 						ctInfo, err := ct.GetContainer(ctx)
 						require.NoError(te.t, err, "failed to get container")
-						require.NotNil(te.t, ctInfo.DevicePassthrough0)
+						dev0, ok := ctInfo.PassthroughDevices["dev0"]
+						require.True(te.t, ok, `"dev0" passthrough device not found`)
+						require.NotNil(te.t, dev0, `"dev0" passthrough device is <nil>`)
+						require.Equal(te.t, "/dev/zero", dev0.Path)
 
 						return nil
 					},
@@ -309,7 +312,10 @@ func TestAccResourceContainer(t *testing.T) {
 
 					ctInfo, err := ct.GetContainer(ctx)
 					require.NoError(te.t, err, "failed to get container")
-					require.NotNil(te.t, ctInfo.DevicePassthrough0)
+					dev0, ok := ctInfo.PassthroughDevices["dev0"]
+					require.True(te.t, ok, `"dev0" passthrough device not found`)
+					require.NotNil(te.t, dev0, `"dev0" passthrough device is <nil>`)
+					require.Equal(te.t, "/dev/zero", dev0.Path)
 
 					return nil
 				},
