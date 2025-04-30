@@ -343,7 +343,7 @@ func (r *CustomMountPoint) EncodeValues(key string, v *url.Values) error {
 
 	if r.ACL != nil {
 		if *r.ACL {
-			values = append(values, "acl=%d")
+			values = append(values, "acl=1")
 		} else {
 			values = append(values, "acl=0")
 		}
@@ -518,7 +518,7 @@ func (r *CustomRootFS) EncodeValues(key string, v *url.Values) error {
 
 	if r.ACL != nil {
 		if *r.ACL {
-			values = append(values, "acl=%d")
+			values = append(values, "acl=1")
 		} else {
 			values = append(values, "acl=0")
 		}
@@ -972,7 +972,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		case regexDeviceKey.MatchString(key):
 			var device CustomPassthroughDevice
 			if e := json.Unmarshal(jsonValue, &device); e != nil {
-				return fmt.Errorf("failed to unmarshal %s: %w", key, e)
+				return fmt.Errorf("failed to unmarshal %s with value %q: %w", key, valueStr, e)
 			}
 
 			data.PassthroughDevices[key] = &device
@@ -980,7 +980,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		case regexNetworkKey.MatchString(key):
 			var net CustomNetworkInterface
 			if e := json.Unmarshal(jsonValue, &net); e != nil {
-				return fmt.Errorf("failed to unmarshal %s: %w", key, e)
+				return fmt.Errorf("failed to unmarshal %s with value %q: %w", key, valueStr, e)
 			}
 
 			data.NetworkInterfaces[key] = &net
@@ -988,7 +988,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		case regexMountPointKey.MatchString(key):
 			var mp CustomMountPoint
 			if e := json.Unmarshal(jsonValue, &mp); e != nil {
-				return fmt.Errorf("failed to unmarshal %s: %w", key, e)
+				return fmt.Errorf("failed to unmarshal %s with value %q: %w", key, valueStr, e)
 			}
 
 			data.MountPoints[key] = &mp
