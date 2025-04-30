@@ -8,10 +8,14 @@ package utils
 
 import (
 	"reflect"
-	"sort"
+	"slices"
+	"strconv"
+	"strings"
 )
 
 // OrderedListFromMap generates a list from a map's values. The values are sorted based on the map's keys.
+// The sorting is done using a custom comparison function that compares the keys with special rules, assuming they
+// are strings representing device names or similar, i.e. "disk0", "net1", etc.
 func OrderedListFromMap(inputMap map[string]interface{}) []interface{} {
 	itemCount := len(inputMap)
 	keyList := make([]string, itemCount)
@@ -22,9 +26,58 @@ func OrderedListFromMap(inputMap map[string]interface{}) []interface{} {
 		i++
 	}
 
-	sort.Strings(keyList)
+	slices.SortFunc(keyList, compareWithPrefix)
 
 	return OrderedListFromMapByKeyValues(inputMap, keyList)
+}
+
+// CompareWithPrefix compares two string values with special rules:
+// - If both start with the same prefix, trims the prefix and compares the rest as numbers if possible.
+// - If numbers are equal, falls back to string comparison (preserving digit formatting).
+// - If numeric parsing fails, falls back to string comparison.
+// - If prefixes differ, compares the whole values as strings.
+func compareWithPrefix(a, b string) int {
+	prefix := commonPrefix(a, b)
+
+	if prefix != "" {
+		aRest := strings.TrimPrefix(a, prefix)
+		bRest := strings.TrimPrefix(b, prefix)
+
+		aNum, aErr := strconv.Atoi(aRest)
+		bNum, bErr := strconv.Atoi(bRest)
+
+		if aErr == nil && bErr == nil {
+			if aNum != bNum {
+				if aNum < bNum {
+					return -1
+				}
+
+				return 1
+			}
+			// numeric values equal, fallback to string comparison
+			return strings.Compare(aRest, bRest)
+		}
+
+		return strings.Compare(aRest, bRest)
+	}
+
+	return strings.Compare(a, b)
+}
+
+// commonPrefix returns the longest common prefix of two strings.
+func commonPrefix(a, b string) string {
+	minLen := len(a)
+	if len(b) < minLen {
+		minLen = len(b)
+	}
+
+	for i := range minLen {
+		if a[i] != b[i] {
+			return a[:i]
+		}
+	}
+
+	return a[:minLen]
 }
 
 // ListResourcesAttributeValue generates a list of strings from a Terraform resource list (which is list of maps).

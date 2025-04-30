@@ -89,7 +89,9 @@ const (
 	dvTimeoutDelete                     = 60
 	dvUnprivileged                      = false
 
-	maxResourceVirtualEnvironmentContainerNetworkInterfaces = 8
+	maxNetworkInterfaces  = 10
+	maxPassthroughDevices = 8
+	maxMountPoints        = 256
 
 	mkClone                             = "clone"
 	mkCloneDatastoreID                  = "datastore_id"
@@ -686,7 +688,7 @@ func Container() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: 8,
+				MaxItems: maxMountPoints,
 				MinItems: 0,
 			},
 			mkDevicePassthrough: {
@@ -730,7 +732,7 @@ func Container() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: 8,
+				MaxItems: maxPassthroughDevices,
 				MinItems: 0,
 			},
 			mkNetworkInterface: {
@@ -795,7 +797,7 @@ func Container() *schema.Resource {
 						},
 					},
 				},
-				MaxItems: maxResourceVirtualEnvironmentContainerNetworkInterfaces,
+				MaxItems: maxNetworkInterfaces,
 				MinItems: 0,
 			},
 			mkNodeName: {
@@ -1264,14 +1266,14 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	devicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
 
-	devicePassthroughArray := make(
-		containers.CustomDevicePassthroughArray,
+	passthroughDevices := make(
+		containers.CustomPassthroughDevices,
 		len(devicePassthrough),
 	)
 
 	for di, dv := range devicePassthrough {
 		devicePassthroughMap := dv.(map[string]interface{})
-		devicePassthroughObject := containers.CustomDevicePassthrough{}
+		devicePassthroughObject := containers.CustomPassthroughDevice{}
 
 		denyWrite := types.CustomBool(
 			devicePassthroughMap[mkDevicePassthroughDenyWrite].(bool),
@@ -1287,10 +1289,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		devicePassthroughObject.Path = path
 		devicePassthroughObject.UID = &uid
 
-		devicePassthroughArray[di] = devicePassthroughObject
+		passthroughDevices[fmt.Sprintf("dev%d", di)] = &devicePassthroughObject
 	}
 
-	updateBody.DevicePassthrough = devicePassthroughArray
+	updateBody.PassthroughDevices = passthroughDevices
 
 	networkInterface := d.Get(mkNetworkInterface).([]interface{})
 
@@ -1301,8 +1303,8 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
-	networkInterfaceArray := make(
-		containers.CustomNetworkInterfaceArray,
+	networkInterfaces := make(
+		containers.CustomNetworkInterfaces,
 		len(networkInterface),
 	)
 
@@ -1364,18 +1366,18 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 			networkInterfaceObject.MTU = &mtu
 		}
 
-		networkInterfaceArray[ni] = networkInterfaceObject
+		networkInterfaces[fmt.Sprintf("net%d", ni)] = &networkInterfaceObject
 	}
 
-	updateBody.NetworkInterfaces = networkInterfaceArray
+	updateBody.NetworkInterfaces = networkInterfaces
 
-	for i, ni := range updateBody.NetworkInterfaces {
+	for key, ni := range updateBody.NetworkInterfaces {
 		if !ni.Enabled {
-			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
+			updateBody.Delete = append(updateBody.Delete, key)
 		}
 	}
 
-	for i := len(updateBody.NetworkInterfaces); i < maxResourceVirtualEnvironmentContainerNetworkInterfaces; i++ {
+	for i := len(updateBody.NetworkInterfaces); i < maxNetworkInterfaces; i++ {
 		updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 	}
 
@@ -1604,11 +1606,11 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	memorySwap := memoryBlock[mkMemorySwap].(int)
 
 	mountPoint := d.Get(mkMountPoint).([]interface{})
-	mountPointArray := make(containers.CustomMountPointArray, 0, len(mountPoint))
+	mountPoints := make(containers.CustomMountPoints, len(mountPoint))
 
 	// because of default bool values:
 
-	for _, mp := range mountPoint {
+	for mi, mp := range mountPoint {
 		mountPointMap := mp.(map[string]interface{})
 		mountPointObject := containers.CustomMountPoint{}
 
@@ -1675,13 +1677,13 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 			mountPointObject.MountOptions = &mountOptionsArray
 		}
 
-		mountPointArray = append(mountPointArray, mountPointObject)
+		mountPoints[fmt.Sprintf("mp%d", mi)] = &mountPointObject
 	}
 
 	var rootFS *containers.CustomRootFS
 
 	diskSize := diskBlock[mkDiskSize].(int)
-	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPointArray) > 0) {
+	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
@@ -1690,7 +1692,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	networkInterface := d.Get(mkNetworkInterface).([]interface{})
-	networkInterfaceArray := make(containers.CustomNetworkInterfaceArray, len(networkInterface))
+	networkInterfaces := make(containers.CustomNetworkInterfaces, len(networkInterface))
 
 	for ni, nv := range networkInterface {
 		networkInterfaceMap := nv.(map[string]interface{})
@@ -1750,19 +1752,19 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 			networkInterfaceObject.MTU = &mtu
 		}
 
-		networkInterfaceArray[ni] = networkInterfaceObject
+		networkInterfaces[fmt.Sprintf("net%d", ni)] = &networkInterfaceObject
 	}
 
 	devicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
 
-	devicePassthroughArray := make(
-		containers.CustomDevicePassthroughArray,
+	passthroughDevices := make(
+		containers.CustomPassthroughDevices,
 		len(devicePassthrough),
 	)
 
 	for di, dv := range devicePassthrough {
 		devicePassthroughMap := dv.(map[string]interface{})
-		devicePassthroughObject := containers.CustomDevicePassthrough{}
+		devicePassthroughObject := containers.CustomPassthroughDevice{}
 
 		denyWrite := types.CustomBool(
 			devicePassthroughMap[mkDevicePassthroughDenyWrite].(bool),
@@ -1778,7 +1780,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		devicePassthroughObject.Path = path
 		devicePassthroughObject.UID = &uid
 
-		devicePassthroughArray[di] = devicePassthroughObject
+		passthroughDevices[fmt.Sprintf("dev%d", di)] = &devicePassthroughObject
 	}
 
 	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
@@ -1828,10 +1830,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		CPUUnits:             &cpuUnits,
 		DatastoreID:          &diskDatastoreID,
 		DedicatedMemory:      &memoryDedicated,
-		DevicePassthrough:    devicePassthroughArray,
+		PassthroughDevices:   passthroughDevices,
 		Features:             features,
-		MountPoints:          mountPointArray,
-		NetworkInterfaces:    networkInterfaceArray,
+		MountPoints:          mountPoints,
+		NetworkInterfaces:    networkInterfaces,
 		OSTemplateFileVolume: &operatingSystemTemplateFileID,
 		OSType:               &operatingSystemType,
 		Protection:           &protection,
@@ -1941,25 +1943,9 @@ func containerGetExistingNetworkInterface(
 		return []interface{}{}, fmt.Errorf("error getting container information: %w", err)
 	}
 
-	//nolint:prealloc
-	var networkInterfaces []interface{}
+	networkInterfaces := make([]interface{}, 0, len(containerInfo.NetworkInterfaces))
 
-	networkInterfaceArray := []*containers.CustomNetworkInterface{
-		containerInfo.NetworkInterface0,
-		containerInfo.NetworkInterface1,
-		containerInfo.NetworkInterface2,
-		containerInfo.NetworkInterface3,
-		containerInfo.NetworkInterface4,
-		containerInfo.NetworkInterface5,
-		containerInfo.NetworkInterface6,
-		containerInfo.NetworkInterface7,
-	}
-
-	for _, nv := range networkInterfaceArray {
-		if nv == nil {
-			continue
-		}
-
+	for _, nv := range containerInfo.NetworkInterfaces {
 		networkInterface := map[string]interface{}{}
 
 		networkInterface[mkNetworkInterfaceEnabled] = true
@@ -2343,85 +2329,56 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		initialization[mkInitializationHostname] = ""
 	}
 
-	devicePassthroughArray := []*containers.CustomDevicePassthrough{
-		containerConfig.DevicePassthrough0,
-		containerConfig.DevicePassthrough1,
-		containerConfig.DevicePassthrough2,
-		containerConfig.DevicePassthrough3,
-		containerConfig.DevicePassthrough4,
-		containerConfig.DevicePassthrough5,
-		containerConfig.DevicePassthrough6,
-		containerConfig.DevicePassthrough7,
-	}
+	passthroughDevicesMap := make(map[string]interface{}, len(containerConfig.PassthroughDevices))
 
-	devicePassthroughList := make([]interface{}, 0, len(devicePassthroughArray))
-
-	for _, dp := range devicePassthroughArray {
-		if dp == nil {
-			continue
-		}
-
-		devicePassthrough := map[string]interface{}{}
+	for key, dp := range containerConfig.PassthroughDevices {
+		passthroughDevice := map[string]interface{}{}
 
 		if dp.DenyWrite != nil {
-			devicePassthrough[mkDevicePassthroughDenyWrite] = *dp.DenyWrite
+			passthroughDevice[mkDevicePassthroughDenyWrite] = *dp.DenyWrite
 		} else {
-			devicePassthrough[mkDevicePassthroughDenyWrite] = false
+			passthroughDevice[mkDevicePassthroughDenyWrite] = false
 		}
 
 		if dp.GID != nil {
-			devicePassthrough[mkDevicePassthroughGID] = *dp.GID
+			passthroughDevice[mkDevicePassthroughGID] = *dp.GID
 		} else {
-			devicePassthrough[mkDevicePassthroughGID] = 0
+			passthroughDevice[mkDevicePassthroughGID] = 0
 		}
 
 		if dp.Mode != nil {
-			devicePassthrough[mkDevicePassthroughMode] = *dp.Mode
+			passthroughDevice[mkDevicePassthroughMode] = *dp.Mode
 		} else {
-			devicePassthrough[mkDevicePassthroughMode] = dvDevicePassthroughMode
+			passthroughDevice[mkDevicePassthroughMode] = dvDevicePassthroughMode
 		}
 
-		devicePassthrough[mkDevicePassthroughPath] = dp.Path
+		passthroughDevice[mkDevicePassthroughPath] = dp.Path
 
 		if dp.UID != nil {
-			devicePassthrough[mkDevicePassthroughUID] = *dp.UID
+			passthroughDevice[mkDevicePassthroughUID] = *dp.UID
 		} else {
-			devicePassthrough[mkDevicePassthroughUID] = 0
+			passthroughDevice[mkDevicePassthroughUID] = 0
 		}
 
-		devicePassthroughList = append(devicePassthroughList, devicePassthrough)
+		passthroughDevicesMap[key] = passthroughDevice
 	}
 
-	currentDevicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
+	passthroughDevices := utils.OrderedListFromMap(passthroughDevicesMap)
+	currentPassthroughDevices := d.Get(mkDevicePassthrough).([]interface{})
 
 	if len(clone) > 0 {
-		if len(currentDevicePassthrough) > 0 {
-			err := d.Set(mkDevicePassthrough, devicePassthroughList)
+		if len(currentPassthroughDevices) > 0 {
+			err := d.Set(mkDevicePassthrough, passthroughDevices)
 			diags = append(diags, diag.FromErr(err)...)
 		}
-	} else if len(devicePassthroughList) > 0 {
-		err := d.Set(mkDevicePassthrough, devicePassthroughList)
+	} else if len(passthroughDevicesMap) > 0 {
+		err := d.Set(mkDevicePassthrough, passthroughDevices)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	mountPointArray := []*containers.CustomMountPoint{
-		containerConfig.MountPoint0,
-		containerConfig.MountPoint1,
-		containerConfig.MountPoint2,
-		containerConfig.MountPoint3,
-		containerConfig.MountPoint4,
-		containerConfig.MountPoint5,
-		containerConfig.MountPoint6,
-		containerConfig.MountPoint7,
-	}
+	mountPointsMap := make(map[string]interface{}, len(containerConfig.MountPoints))
 
-	mountPointList := make([]interface{}, 0, len(mountPointArray))
-
-	for _, mp := range mountPointArray {
-		if mp == nil {
-			continue
-		}
-
+	for key, mp := range containerConfig.MountPoints {
 		mountPoint := map[string]interface{}{}
 
 		if mp.ACL != nil {
@@ -2476,42 +2433,27 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		mountPoint[mkMountPointVolume] = mp.Volume
 
-		mountPointList = append(mountPointList, mountPoint)
+		mountPointsMap[key] = mountPoint
 	}
 
-	currentMountPoint := d.Get(mkMountPoint).([]interface{})
+	mountPoints := utils.OrderedListFromMap(mountPointsMap)
+	currentMountPoints := d.Get(mkMountPoint).([]interface{})
 
 	if len(clone) > 0 {
-		if len(currentMountPoint) > 0 {
-			err := d.Set(mkMountPoint, mountPointList)
+		if len(currentMountPoints) > 0 {
+			err := d.Set(mkMountPoint, mountPoints)
 			diags = append(diags, diag.FromErr(err)...)
 		}
-	} else if len(mountPointList) > 0 {
-		err := d.Set(mkMountPoint, mountPointList)
+	} else if len(mountPointsMap) > 0 {
+		err := d.Set(mkMountPoint, mountPoints)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	var ipConfigList []interface{}
 
-	networkInterfaceArray := []*containers.CustomNetworkInterface{
-		containerConfig.NetworkInterface0,
-		containerConfig.NetworkInterface1,
-		containerConfig.NetworkInterface2,
-		containerConfig.NetworkInterface3,
-		containerConfig.NetworkInterface4,
-		containerConfig.NetworkInterface5,
-		containerConfig.NetworkInterface6,
-		containerConfig.NetworkInterface7,
-	}
+	networkInterfacesMap := make(map[string]interface{}, len(containerConfig.NetworkInterfaces))
 
-	//nolint:prealloc
-	var networkInterfaceList []interface{}
-
-	for _, nv := range networkInterfaceArray {
-		if nv == nil {
-			continue
-		}
-
+	for key, nv := range containerConfig.NetworkInterfaces {
 		if nv.IPv4Address != nil || nv.IPv4Gateway != nil || nv.IPv6Address != nil ||
 			nv.IPv6Gateway != nil {
 			ipConfig := map[string]interface{}{}
@@ -2604,9 +2546,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			networkInterface[mkNetworkInterfaceMTU] = 0
 		}
 
-		networkInterfaceList = append(networkInterfaceList, networkInterface)
+		networkInterfacesMap[key] = networkInterface
 	}
 
+	networkInterfaces := utils.OrderedListFromMap(networkInterfacesMap)
 	initialization[mkInitializationIPConfig] = ipConfigList
 
 	currentInitialization := d.Get(mkInitialization).([]interface{})
@@ -2655,7 +2598,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if len(currentNetworkInterface) > 0 {
 			err := d.Set(
 				mkNetworkInterface,
-				networkInterfaceList,
+				networkInterfaces,
 			)
 			diags = append(diags, diag.FromErr(err)...)
 		}
@@ -2668,7 +2611,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		diags = append(diags, diag.FromErr(e)...)
 
-		err := d.Set(mkNetworkInterface, networkInterfaceList)
+		err := d.Set(mkNetworkInterface, networkInterfaces)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -3051,14 +2994,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		_, newDevicePassthrough := d.GetChange(mkDevicePassthrough)
 
 		devicePassthrough := newDevicePassthrough.([]interface{})
-		devicePassthroughArray := make(
-			containers.CustomDevicePassthroughArray,
+		passthroughDevices := make(
+			containers.CustomPassthroughDevices,
 			len(devicePassthrough),
 		)
 
 		for i, dp := range devicePassthrough {
 			devicePassthroughMap := dp.(map[string]interface{})
-			devicePassthroughObject := containers.CustomDevicePassthrough{}
+			devicePassthroughObject := containers.CustomPassthroughDevice{}
 
 			denyWrite := types.CustomBool(devicePassthroughMap[mkDevicePassthroughDenyWrite].(bool))
 			gid := devicePassthroughMap[mkDevicePassthroughGID].(int)
@@ -3072,10 +3015,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			devicePassthroughObject.Path = path
 			devicePassthroughObject.UID = &uid
 
-			devicePassthroughArray[i] = devicePassthroughObject
+			passthroughDevices[fmt.Sprintf("dev%d", i)] = &devicePassthroughObject
 		}
 
-		updateBody.DevicePassthrough = devicePassthroughArray
+		updateBody.PassthroughDevices = passthroughDevices
 
 		rebootRequired = true
 	}
@@ -3085,8 +3028,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		_, newMountPoints := d.GetChange(mkMountPoint)
 
 		mountPoints := newMountPoints.([]interface{})
-		mountPointArray := make(
-			containers.CustomMountPointArray,
+		mountPointsMap := make(
+			containers.CustomMountPoints,
 			len(mountPoints),
 		)
 
@@ -3143,10 +3086,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 				mountPointObject.MountOptions = &mountOptionsArray
 			}
 
-			mountPointArray[i] = mountPointObject
+			mountPointsMap[fmt.Sprintf("mp%d", i)] = &mountPointObject
 		}
 
-		updateBody.MountPoints = mountPointArray
+		updateBody.MountPoints = mountPointsMap
 
 		rebootRequired = true
 	}
@@ -3163,8 +3106,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	if d.HasChange(mkInitialization) ||
 		d.HasChange(mkNetworkInterface) {
-		networkInterfaceArray := make(
-			containers.CustomNetworkInterfaceArray,
+		networkInterfaces := make(
+			containers.CustomNetworkInterfaces,
 			len(networkInterface),
 		)
 
@@ -3226,18 +3169,18 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 				networkInterfaceObject.MTU = &mtu
 			}
 
-			networkInterfaceArray[ni] = networkInterfaceObject
+			networkInterfaces[fmt.Sprintf("net%d", ni)] = &networkInterfaceObject
 		}
 
-		updateBody.NetworkInterfaces = networkInterfaceArray
+		updateBody.NetworkInterfaces = networkInterfaces
 
-		for i, ni := range updateBody.NetworkInterfaces {
+		for key, ni := range updateBody.NetworkInterfaces {
 			if !ni.Enabled {
-				updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
+				updateBody.Delete = append(updateBody.Delete, key)
 			}
 		}
 
-		for i := len(updateBody.NetworkInterfaces); i < maxResourceVirtualEnvironmentContainerNetworkInterfaces; i++ {
+		for i := len(updateBody.NetworkInterfaces); i < maxNetworkInterfaces; i++ {
 			updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 		}
 

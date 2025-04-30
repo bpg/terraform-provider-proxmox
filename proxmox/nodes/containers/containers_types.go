@@ -10,10 +10,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+)
+
+var (
+	// regexDeviceKey matches device keys like dev0, dev1, etc.
+	regexDeviceKey = regexp.MustCompile(`^dev\d+$`)
+	// regexNetworkKey matches network interface keys like net0, net1, etc.
+	regexNetworkKey = regexp.MustCompile(`^net\d+$`)
+	// regexMountPointKey matches mount point keys like mp0, mp1, etc.
+	regexMountPointKey = regexp.MustCompile(`^mp\d+$`)
 )
 
 // CloneRequestBody contains the data for an container clone request.
@@ -31,46 +41,46 @@ type CloneRequestBody struct {
 
 // CreateRequestBody contains the data for a user create request.
 type CreateRequestBody struct {
-	BandwidthLimit       *float64                     `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
-	ConsoleEnabled       *types.CustomBool            `json:"console,omitempty"              url:"console,omitempty,int"`
-	ConsoleMode          *string                      `json:"cmode,omitempty"                url:"cmode,omitempty"`
-	CPUArchitecture      *string                      `json:"arch,omitempty"                 url:"arch,omitempty"`
-	CPUCores             *int                         `json:"cores,omitempty"                url:"cores,omitempty"`
-	CPULimit             *int                         `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
-	CPUUnits             *int                         `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
-	DatastoreID          *string                      `json:"storage,omitempty"              url:"storage,omitempty"`
-	DedicatedMemory      *int                         `json:"memory,omitempty"               url:"memory,omitempty"`
-	Delete               []string                     `json:"delete,omitempty"               url:"delete,omitempty"`
-	Description          *string                      `json:"description,omitempty"          url:"description,omitempty"`
-	DNSDomain            *string                      `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
-	DNSServer            *string                      `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
-	Features             *CustomFeatures              `json:"features,omitempty"             url:"features,omitempty"`
-	Force                *types.CustomBool            `json:"force,omitempty"                url:"force,omitempty,int"`
-	HookScript           *string                      `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
-	Hostname             *string                      `json:"hostname,omitempty"             url:"hostname,omitempty"`
-	IgnoreUnpackErrors   *types.CustomBool            `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
-	Lock                 *string                      `json:"lock,omitempty"                 url:"lock,omitempty,int"`
-	MountPoints          CustomMountPointArray        `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
-	DevicePassthrough    CustomDevicePassthroughArray `json:"dev,omitempty"                  url:"dev,omitempty,numbered"`
-	NetworkInterfaces    CustomNetworkInterfaceArray  `json:"net,omitempty"                  url:"net,omitempty,numbered"`
-	OSTemplateFileVolume *string                      `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
-	OSType               *string                      `json:"ostype,omitempty"               url:"ostype,omitempty"`
-	Password             *string                      `json:"password,omitempty"             url:"password,omitempty"`
-	PoolID               *string                      `json:"pool,omitempty"                 url:"pool,omitempty"`
-	Protection           *types.CustomBool            `json:"protection,omitempty"           url:"protection,omitempty,int"`
-	Restore              *types.CustomBool            `json:"restore,omitempty"              url:"restore,omitempty,int"`
-	RootFS               *CustomRootFS                `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
-	SSHKeys              *CustomSSHKeys               `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
-	Start                *types.CustomBool            `json:"start,omitempty"                url:"start,omitempty,int"`
-	StartOnBoot          *types.CustomBool            `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
-	StartupBehavior      *CustomStartupBehavior       `json:"startup,omitempty"              url:"startup,omitempty"`
-	Swap                 *int                         `json:"swap,omitempty"                 url:"swap,omitempty"`
-	Tags                 *string                      `json:"tags,omitempty"                 url:"tags,omitempty"`
-	Template             *types.CustomBool            `json:"template,omitempty"             url:"template,omitempty,int"`
-	TTY                  *int                         `json:"tty,omitempty"                  url:"tty,omitempty"`
-	Unique               *types.CustomBool            `json:"unique,omitempty"               url:"unique,omitempty,int"`
-	Unprivileged         *types.CustomBool            `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
-	VMID                 *int                         `json:"vmid,omitempty"                 url:"vmid,omitempty"`
+	BandwidthLimit       *float64                 `json:"bwlimit,omitempty"              url:"bwlimit,omitempty"`
+	ConsoleEnabled       *types.CustomBool        `json:"console,omitempty"              url:"console,omitempty,int"`
+	ConsoleMode          *string                  `json:"cmode,omitempty"                url:"cmode,omitempty"`
+	CPUArchitecture      *string                  `json:"arch,omitempty"                 url:"arch,omitempty"`
+	CPUCores             *int                     `json:"cores,omitempty"                url:"cores,omitempty"`
+	CPULimit             *int                     `json:"cpulimit,omitempty"             url:"cpulimit,omitempty"`
+	CPUUnits             *int                     `json:"cpuunits,omitempty"             url:"cpuunits,omitempty"`
+	DatastoreID          *string                  `json:"storage,omitempty"              url:"storage,omitempty"`
+	DedicatedMemory      *int                     `json:"memory,omitempty"               url:"memory,omitempty"`
+	Delete               []string                 `json:"delete,omitempty"               url:"delete,omitempty"`
+	Description          *string                  `json:"description,omitempty"          url:"description,omitempty"`
+	DNSDomain            *string                  `json:"searchdomain,omitempty"         url:"searchdomain,omitempty"`
+	DNSServer            *string                  `json:"nameserver,omitempty"           url:"nameserver,omitempty"`
+	Features             *CustomFeatures          `json:"features,omitempty"             url:"features,omitempty"`
+	Force                *types.CustomBool        `json:"force,omitempty"                url:"force,omitempty,int"`
+	HookScript           *string                  `json:"hookscript,omitempty"           url:"hookscript,omitempty"`
+	Hostname             *string                  `json:"hostname,omitempty"             url:"hostname,omitempty"`
+	IgnoreUnpackErrors   *types.CustomBool        `json:"ignore-unpack-errors,omitempty" url:"force,omitempty,int"`
+	Lock                 *string                  `json:"lock,omitempty"                 url:"lock,omitempty,int"`
+	MountPoints          CustomMountPoints        `json:"mp,omitempty"                   url:"mp,omitempty,numbered"`
+	PassthroughDevices   CustomPassthroughDevices `json:"dev,omitempty"                  url:"dev,omitempty,numbered"`
+	NetworkInterfaces    CustomNetworkInterfaces  `json:"net,omitempty"                  url:"net,omitempty,numbered"`
+	OSTemplateFileVolume *string                  `json:"ostemplate,omitempty"           url:"ostemplate,omitempty"`
+	OSType               *string                  `json:"ostype,omitempty"               url:"ostype,omitempty"`
+	Password             *string                  `json:"password,omitempty"             url:"password,omitempty"`
+	PoolID               *string                  `json:"pool,omitempty"                 url:"pool,omitempty"`
+	Protection           *types.CustomBool        `json:"protection,omitempty"           url:"protection,omitempty,int"`
+	Restore              *types.CustomBool        `json:"restore,omitempty"              url:"restore,omitempty,int"`
+	RootFS               *CustomRootFS            `json:"rootfs,omitempty"               url:"rootfs,omitempty"`
+	SSHKeys              *CustomSSHKeys           `json:"ssh-public-keys,omitempty"      url:"ssh-public-keys,omitempty"`
+	Start                *types.CustomBool        `json:"start,omitempty"                url:"start,omitempty,int"`
+	StartOnBoot          *types.CustomBool        `json:"onboot,omitempty"               url:"onboot,omitempty,int"`
+	StartupBehavior      *CustomStartupBehavior   `json:"startup,omitempty"              url:"startup,omitempty"`
+	Swap                 *int                     `json:"swap,omitempty"                 url:"swap,omitempty"`
+	Tags                 *string                  `json:"tags,omitempty"                 url:"tags,omitempty"`
+	Template             *types.CustomBool        `json:"template,omitempty"             url:"template,omitempty,int"`
+	TTY                  *int                     `json:"tty,omitempty"                  url:"tty,omitempty"`
+	Unique               *types.CustomBool        `json:"unique,omitempty"               url:"unique,omitempty,int"`
+	Unprivileged         *types.CustomBool        `json:"unprivileged,omitempty"         url:"unprivileged,omitempty,int"`
+	VMID                 *int                     `json:"vmid,omitempty"                 url:"vmid,omitempty"`
 }
 
 // CustomFeatures contains the values for the "features" property.
@@ -96,8 +106,8 @@ type CustomMountPoint struct {
 	Volume       string            `json:"volume"                 url:"volume"`
 }
 
-// CustomMountPointArray is an array of CustomMountPoint.
-type CustomMountPointArray []CustomMountPoint
+// CustomMountPoints is a map of CustomMountPoint per mount point ID (i.e. `mp1`).
+type CustomMountPoints map[string]*CustomMountPoint
 
 // CustomNetworkInterface contains the values for the "net[n]" properties.
 type CustomNetworkInterface struct {
@@ -117,11 +127,11 @@ type CustomNetworkInterface struct {
 	Type        *string           `json:"type,omitempty"     url:"type,omitempty"`
 }
 
-// CustomDevicePassthroughArray is an array of CustomDevicePassthrough.
-type CustomDevicePassthroughArray []CustomDevicePassthrough
+// CustomPassthroughDevices is a map of CustomPassthroughDevice per passthrough device ID (i.e. `dev0`).
+type CustomPassthroughDevices map[string]*CustomPassthroughDevice
 
-// CustomDevicePassthrough contains the values for the "dev[n]" properties.
-type CustomDevicePassthrough struct {
+// CustomPassthroughDevice contains the values for the "dev[n]" properties.
+type CustomPassthroughDevice struct {
 	DenyWrite *types.CustomBool `json:"deny-write,omitempty" url:"deny-write,omitempty,int"`
 	Path      string            `json:"path"                 url:"path"`
 	UID       *int              `json:"uid,omitempty"        url:"uid,omitempty"`
@@ -129,8 +139,8 @@ type CustomDevicePassthrough struct {
 	Mode      *string           `json:"mode,omitempty"       url:"mode,omitempty"`
 }
 
-// CustomNetworkInterfaceArray is an array of CustomNetworkInterface.
-type CustomNetworkInterfaceArray []CustomNetworkInterface
+// CustomNetworkInterfaces is a map of CustomNetworkInterface per network interface ID (i.e. `net0`).
+type CustomNetworkInterfaces map[string]*CustomNetworkInterface
 
 // CustomRootFS contains the values for the "rootfs" property.
 type CustomRootFS struct {
@@ -184,30 +194,9 @@ type GetResponseData struct {
 	Hostname           *string                  `json:"hostname,omitempty"`
 	Lock               *types.CustomBool        `json:"lock,omitempty"`
 	LXCConfiguration   *[][2]string             `json:"lxc,omitempty"`
-	DevicePassthrough0 *CustomDevicePassthrough `json:"dev0,omitempty"`
-	DevicePassthrough1 *CustomDevicePassthrough `json:"dev1,omitempty"`
-	DevicePassthrough2 *CustomDevicePassthrough `json:"dev2,omitempty"`
-	DevicePassthrough3 *CustomDevicePassthrough `json:"dev3,omitempty"`
-	DevicePassthrough4 *CustomDevicePassthrough `json:"dev4,omitempty"`
-	DevicePassthrough5 *CustomDevicePassthrough `json:"dev5,omitempty"`
-	DevicePassthrough6 *CustomDevicePassthrough `json:"dev6,omitempty"`
-	DevicePassthrough7 *CustomDevicePassthrough `json:"dev7,omitempty"`
-	MountPoint0        *CustomMountPoint        `json:"mp0,omitempty"`
-	MountPoint1        *CustomMountPoint        `json:"mp1,omitempty"`
-	MountPoint2        *CustomMountPoint        `json:"mp2,omitempty"`
-	MountPoint3        *CustomMountPoint        `json:"mp3,omitempty"`
-	MountPoint4        *CustomMountPoint        `json:"mp4,omitempty"`
-	MountPoint5        *CustomMountPoint        `json:"mp5,omitempty"`
-	MountPoint6        *CustomMountPoint        `json:"mp6,omitempty"`
-	MountPoint7        *CustomMountPoint        `json:"mp7,omitempty"`
-	NetworkInterface0  *CustomNetworkInterface  `json:"net0,omitempty"`
-	NetworkInterface1  *CustomNetworkInterface  `json:"net1,omitempty"`
-	NetworkInterface2  *CustomNetworkInterface  `json:"net2,omitempty"`
-	NetworkInterface3  *CustomNetworkInterface  `json:"net3,omitempty"`
-	NetworkInterface4  *CustomNetworkInterface  `json:"net4,omitempty"`
-	NetworkInterface5  *CustomNetworkInterface  `json:"net5,omitempty"`
-	NetworkInterface6  *CustomNetworkInterface  `json:"net6,omitempty"`
-	NetworkInterface7  *CustomNetworkInterface  `json:"net7,omitempty"`
+	MountPoints        CustomMountPoints        `json:"mp,omitempty"`
+	PassthroughDevices CustomPassthroughDevices `json:"dev,omitempty"`
+	NetworkInterfaces  CustomNetworkInterfaces  `json:"net,omitempty"`
 	OSType             *string                  `json:"ostype,omitempty"`
 	Protection         *types.CustomBool        `json:"protection,omitempty"`
 	RootFS             *CustomRootFS            `json:"rootfs,omitempty"`
@@ -299,8 +288,8 @@ func (r *CustomFeatures) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomDevicePassthrough struct to a URL value.
-func (r *CustomDevicePassthrough) EncodeValues(key string, v *url.Values) error {
+// EncodeValues converts a CustomPassthroughDevice struct to a URL value.
+func (r *CustomPassthroughDevice) EncodeValues(key string, v *url.Values) error {
 	var values []string
 
 	if r.DenyWrite != nil {
@@ -334,14 +323,14 @@ func (r *CustomDevicePassthrough) EncodeValues(key string, v *url.Values) error 
 	return nil
 }
 
-// EncodeValues converts a CustomDevicePassthroughArray array to multiple URL values.
-func (r CustomDevicePassthroughArray) EncodeValues(
-	key string,
+// EncodeValues converts a CustomPassthroughDevices array to multiple URL values.
+func (r CustomPassthroughDevices) EncodeValues(
+	_ string,
 	v *url.Values,
 ) error {
-	for i, d := range r {
-		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
-			return fmt.Errorf("failed to encode CustomDevicePassthroughArray: %w", err)
+	for key, d := range r {
+		if err := d.EncodeValues(key, v); err != nil {
+			return fmt.Errorf("failed to encode CustomPassthroughDevices: %w", err)
 		}
 	}
 
@@ -354,7 +343,7 @@ func (r *CustomMountPoint) EncodeValues(key string, v *url.Values) error {
 
 	if r.ACL != nil {
 		if *r.ACL {
-			values = append(values, "acl=%d")
+			values = append(values, "acl=1")
 		} else {
 			values = append(values, "acl=0")
 		}
@@ -421,14 +410,14 @@ func (r *CustomMountPoint) EncodeValues(key string, v *url.Values) error {
 	return nil
 }
 
-// EncodeValues converts a CustomMountPointArray array to multiple URL values.
-func (r CustomMountPointArray) EncodeValues(
-	key string,
+// EncodeValues converts a CustomMountPoints array to multiple URL values.
+func (r CustomMountPoints) EncodeValues(
+	_ string,
 	v *url.Values,
 ) error {
-	for i, d := range r {
-		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
-			return fmt.Errorf("failed to encode CustomMountPointArray: %w", err)
+	for key, d := range r {
+		if err := d.EncodeValues(key, v); err != nil {
+			return fmt.Errorf("failed to encode CustomMountPoints: %w", err)
 		}
 	}
 
@@ -509,14 +498,14 @@ func (r *CustomNetworkInterface) EncodeValues(
 	return nil
 }
 
-// EncodeValues converts a CustomNetworkInterfaceArray array to multiple URL values.
-func (r CustomNetworkInterfaceArray) EncodeValues(
-	key string,
+// EncodeValues converts a CustomNetworkInterfaces array to multiple URL values.
+func (r CustomNetworkInterfaces) EncodeValues(
+	_ string,
 	v *url.Values,
 ) error {
-	for i, d := range r {
-		if err := d.EncodeValues(fmt.Sprintf("%s%d", key, i), v); err != nil {
-			return fmt.Errorf("failed to encode CustomNetworkInterfaceArray: %w", err)
+	for key, d := range r {
+		if err := d.EncodeValues(key, v); err != nil {
+			return fmt.Errorf("failed to encode CustomNetworkInterfaces: %w", err)
 		}
 	}
 
@@ -529,7 +518,7 @@ func (r *CustomRootFS) EncodeValues(key string, v *url.Values) error {
 
 	if r.ACL != nil {
 		if *r.ACL {
-			values = append(values, "acl=%d")
+			values = append(values, "acl=1")
 		} else {
 			values = append(values, "acl=0")
 		}
@@ -562,7 +551,7 @@ func (r *CustomRootFS) EncodeValues(key string, v *url.Values) error {
 	}
 
 	if r.Replicate != nil {
-		if *r.ReadOnly {
+		if *r.Replicate {
 			values = append(values, "replicate=1")
 		} else {
 			values = append(values, "replicate=0")
@@ -659,13 +648,13 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalJSON converts a CustomDevicePassthrough string to an object.
-func (r *CustomDevicePassthrough) UnmarshalJSON(b []byte) error {
+// UnmarshalJSON converts a CustomPassthroughDevice string to an object.
+func (r *CustomPassthroughDevice) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
 	if err != nil {
-		return fmt.Errorf("unable to unmarshal CustomDevicePassthrough: %w", err)
+		return fmt.Errorf("unable to unmarshal CustomPassthroughDevice: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -944,6 +933,69 @@ func (r *CustomStartupBehavior) UnmarshalJSON(b []byte) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+// UnmarshalJSON unmarshals the data from the JSON response, populating the CustomStorageDevices field.
+func (d *GetResponseData) UnmarshalJSON(b []byte) error {
+	type Alias GetResponseData
+
+	var data Alias
+
+	// get original struct
+	if err := json.Unmarshal(b, &data); err != nil {
+		return fmt.Errorf("failed to unmarshal data: %w", err)
+	}
+
+	var byAttr map[string]interface{}
+
+	// now get map by attribute name
+	err := json.Unmarshal(b, &byAttr)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal data: %w", err)
+	}
+
+	data.PassthroughDevices = make(CustomPassthroughDevices)
+	data.NetworkInterfaces = make(CustomNetworkInterfaces)
+	data.MountPoints = make(CustomMountPoints)
+
+	for key, value := range byAttr {
+		valueStr, ok := value.(string)
+		if !ok {
+			continue // Skip non-string values
+		}
+
+		jsonValue := []byte(`"` + valueStr + `"`)
+
+		switch {
+		case regexDeviceKey.MatchString(key):
+			var device CustomPassthroughDevice
+			if e := json.Unmarshal(jsonValue, &device); e != nil {
+				return fmt.Errorf("failed to unmarshal %s with value %q: %w", key, valueStr, e)
+			}
+
+			data.PassthroughDevices[key] = &device
+
+		case regexNetworkKey.MatchString(key):
+			var net CustomNetworkInterface
+			if e := json.Unmarshal(jsonValue, &net); e != nil {
+				return fmt.Errorf("failed to unmarshal %s with value %q: %w", key, valueStr, e)
+			}
+
+			data.NetworkInterfaces[key] = &net
+
+		case regexMountPointKey.MatchString(key):
+			var mp CustomMountPoint
+			if e := json.Unmarshal(jsonValue, &mp); e != nil {
+				return fmt.Errorf("failed to unmarshal %s with value %q: %w", key, valueStr, e)
+			}
+
+			data.MountPoints[key] = &mp
+		}
+	}
+
+	*d = GetResponseData(data)
 
 	return nil
 }

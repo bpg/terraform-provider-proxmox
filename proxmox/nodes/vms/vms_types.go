@@ -17,6 +17,18 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
+var (
+	//nolint:gochecknoglobals
+	// regexStorageInterface is a regex pattern for matching storage interface names.
+	regexStorageInterface = func(prefix string) *regexp.Regexp {
+		return regexp.MustCompile(`^` + prefix + `\d+$`)
+	}
+	// regexPCIDevice is a regex pattern for matching PCI device names.
+	regexPCIDevice = regexp.MustCompile(`^hostpci\d+$`)
+	// regexVirtiofsShare is a regex pattern for matching virtiofs share names.
+	regexVirtiofsShare = regexp.MustCompile(`^virtiofs\d+$`)
+)
+
 // CloneRequestBody contains the data for an virtual machine clone request.
 type CloneRequestBody struct {
 	BandwidthLimit      *int              `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`
@@ -477,8 +489,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		for _, prefix := range StorageInterfaces {
 			// the device names can overlap with other fields, for example`scsi0` and `scsihw`, so just checking
 			// the prefix is not enough
-			r := regexp.MustCompile(`^` + prefix + `\d+$`)
-			if r.MatchString(key) {
+			if regexStorageInterface(prefix).MatchString(key) {
 				var device CustomStorageDevice
 				if err := json.Unmarshal([]byte(`"`+value.(string)+`"`), &device); err != nil {
 					return fmt.Errorf("failed to unmarshal %s: %w", key, err)
@@ -488,7 +499,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 			}
 		}
 
-		if r := regexp.MustCompile(`^hostpci\d+$`); r.MatchString(key) {
+		if regexPCIDevice.MatchString(key) {
 			var device CustomPCIDevice
 			if err := json.Unmarshal([]byte(`"`+value.(string)+`"`), &device); err != nil {
 				return fmt.Errorf("failed to unmarshal %s: %w", key, err)
@@ -497,7 +508,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 			data.PCIDevices[key] = &device
 		}
 
-		if r := regexp.MustCompile(`^virtiofs\d+$`); r.MatchString(key) {
+		if regexVirtiofsShare.MatchString(key) {
 			var share CustomVirtiofsShare
 			if err := json.Unmarshal([]byte(`"`+value.(string)+`"`), &share); err != nil {
 				return fmt.Errorf("failed to unmarshal %s: %w", key, err)
