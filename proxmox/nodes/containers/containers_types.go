@@ -551,7 +551,7 @@ func (r *CustomRootFS) EncodeValues(key string, v *url.Values) error {
 	}
 
 	if r.Replicate != nil {
-		if *r.ReadOnly {
+		if *r.Replicate {
 			values = append(values, "replicate=1")
 		} else {
 			values = append(values, "replicate=0")
