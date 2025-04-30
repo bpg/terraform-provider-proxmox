@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.77.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.76.1...v0.77.0) (2025-04-30)
+
+
+### Features
+
+* **lxc:** increase number of supported mount points to 256 ([#1939](https://github.com/bpg/terraform-provider-proxmox/issues/1939)) ([a99220e](https://github.com/bpg/terraform-provider-proxmox/commit/a99220e9fb170935026edc5449fce8d0a388abc8))
+
+
+### Bug Fixes
+
+* **file:** better error message on download failure ([#1923](https://github.com/bpg/terraform-provider-proxmox/issues/1923)) ([d463990](https://github.com/bpg/terraform-provider-proxmox/commit/d46399024f0390a57d52e4f89dd8027184815e01))
+* **firewall:** prevent reordering of CIDRs in `ipset` resource with mixed IPv4/IPv6 ([#1935](https://github.com/bpg/terraform-provider-proxmox/issues/1935)) ([64147cd](https://github.com/bpg/terraform-provider-proxmox/commit/64147cd24e84c09605633a8cec4aae5f39c4f903))
+* **lxc:** do not reboot for cpu block changes ([#1932](https://github.com/bpg/terraform-provider-proxmox/issues/1932)) ([5e49b98](https://github.com/bpg/terraform-provider-proxmox/commit/5e49b98f8e0b004e285a22bfc4687f114609710c))
+
+
+### Miscellaneous
+
+* **ci:** update actions/attest-build-provenance digest (c074443 → db473fd) ([#1937](https://github.com/bpg/terraform-provider-proxmox/issues/1937)) ([7b5042d](https://github.com/bpg/terraform-provider-proxmox/commit/7b5042d945e9e8d5cfd10d624e68ab22f91caab8))
+* **ci:** Update JetBrains/qodana-action action (v2024.3.4 → v2025.1.0) ([#1927](https://github.com/bpg/terraform-provider-proxmox/issues/1927)) ([d4bfc24](https://github.com/bpg/terraform-provider-proxmox/commit/d4bfc24cb432b694517cadfb78c69aeec5f71e4b))
+* **code:** fix code problems reported by Qodana ([#1934](https://github.com/bpg/terraform-provider-proxmox/issues/1934)) ([ebd5399](https://github.com/bpg/terraform-provider-proxmox/commit/ebd5399e14f13fa92e20effc70114813efb8c331))
+* **deps:** update golangci/golangci-lint (v2.1.2 → v2.1.5) ([#1926](https://github.com/bpg/terraform-provider-proxmox/issues/1926)) ([6b2749f](https://github.com/bpg/terraform-provider-proxmox/commit/6b2749feeace459fc383c4c8b3eb373e236d464f))
+* **docs:** update terraform tls (4.0.6 → 4.1.0) ([#1925](https://github.com/bpg/terraform-provider-proxmox/issues/1925)) ([2de77b6](https://github.com/bpg/terraform-provider-proxmox/commit/2de77b6a8e1193d864a71faa17389d2e0b61740e))
+
 ## [0.76.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.76.0...v0.76.1) (2025-04-21)
 
 
