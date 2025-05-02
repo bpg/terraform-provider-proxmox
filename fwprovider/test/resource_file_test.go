@@ -42,9 +42,9 @@ func TestAccResourceFile(t *testing.T) {
 
 	snippetRaw := fmt.Sprintf("snippet-raw-%s.txt", gofakeit.Word())
 	snippetURL := "https://raw.githubusercontent.com/yaml/yaml-test-suite/main/src/229Q.yaml"
-	snippetFile1 := strings.ReplaceAll(createFile(t, "snippet-file-1-*.yaml", "test snippet 1 - file").Name(), `\`, `/`)
-	snippetFile2 := strings.ReplaceAll(createFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file").Name(), `\`, `/`)
-	fileISO := strings.ReplaceAll(createFile(t, "file-*.iso", "pretend it is an ISO").Name(), `\`, `/`)
+	snippetFile1 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-1-*.yaml", "test snippet 1 - file").Name(), `\`, `/`)
+	snippetFile2 := strings.ReplaceAll(CreateTempFile(t, "snippet-file-2-*.yaml", "test snippet 2 - file").Name(), `\`, `/`)
+	fileISO := strings.ReplaceAll(CreateTempFile(t, "file-*.iso", "pretend this is an ISO").Name(), `\`, `/`)
 
 	te.AddTemplateVars(map[string]interface{}{
 		"SnippetRaw":   snippetRaw,
@@ -262,26 +262,6 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 			File:        f,
 		})
 	require.NoError(t, err)
-}
-
-func createFile(t *testing.T, namePattern string, content string) *os.File {
-	t.Helper()
-
-	f, err := os.CreateTemp("", namePattern)
-	require.NoError(t, err)
-
-	_, err = f.WriteString(content)
-	require.NoError(t, err)
-
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(f)
-
-	t.Cleanup(func() {
-		_ = os.Remove(f.Name())
-	})
-
-	return f
 }
 
 func deleteSnippet(te *Environment, fname string) {

@@ -28,6 +28,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/ssh"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
@@ -163,6 +164,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					Node:     ptr.Ptr(te.NodeName),
 					Storage:  ptr.Ptr(te.DatastoreID),
 					URL:      ptr.Ptr(fakeFileISO),
+					Verify:   ptr.Ptr(types.CustomBool(false)),
 				})
 				require.NoError(t, err)
 

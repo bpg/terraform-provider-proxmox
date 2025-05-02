@@ -8,10 +8,13 @@ package test
 
 import (
 	"fmt"
+	"os"
 	"regexp"
+	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/require"
 )
 
 // ResourceAttributes is a helper function to test resource attributes.
@@ -68,4 +71,24 @@ func ResourceAttributesSet(res string, attrs []string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func CreateTempFile(t *testing.T, namePattern string, content string) *os.File {
+	t.Helper()
+
+	f, err := os.CreateTemp(t.TempDir(), namePattern)
+	require.NoError(t, err)
+
+	_, err = f.WriteString(content)
+	require.NoError(t, err)
+
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
+
+	t.Cleanup(func() {
+		_ = os.Remove(f.Name())
+	})
+
+	return f
 }
