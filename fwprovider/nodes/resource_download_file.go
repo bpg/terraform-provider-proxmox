@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
@@ -119,17 +120,29 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 		}
 
 		if state.Size.ValueInt64() != urlSize {
-			resp.RequiresReplace = true
-			resp.PlanValue = types.Int64Value(urlSize)
+			if urlSize < 0 {
+				resp.Diagnostics.AddWarning(
+					"Could not read the file metadata from URL.",
+					fmt.Sprintf(
+						"The remote file at URL %q most likely doesn’t exist or can’t be accessed.\n"+
+							"To skip the remote file check, set `overwrite` to `false`.",
+						plan.URL.ValueString(),
+					),
+				)
+			} else {
+				resp.RequiresReplace = true
+				resp.PlanValue = types.Int64Value(urlSize)
 
-			resp.Diagnostics.AddWarning(
-				"The file size from url has changed.",
-				fmt.Sprintf(
-					"Size from url %d does not match size from datastore: %d",
-					urlSize,
-					state.Size.ValueInt64(),
-				),
-			)
+				resp.Diagnostics.AddWarning(
+					"The file size from url has changed.",
+					fmt.Sprintf(
+						"Size %d from url %q does not match size from datastore: %d",
+						urlSize,
+						plan.URL.ValueString(),
+						state.Size.ValueInt64(),
+					),
+				)
+			}
 
 			return
 		}
@@ -548,15 +561,13 @@ func (r *downloadFileResource) Read(
 			&state,
 		)
 		if err != nil {
-			resp.Diagnostics.AddError(
-				"Could not get file metadata from url.",
-				err.Error(),
-			)
-
-			return
-		}
-
-		if urlMetadata.Size != nil {
+			tflog.Error(ctx, "Could not get file metadata from url", map[string]interface{}{
+				"error": err,
+				"url":   state.URL.ValueString(),
+			})
+			// force size to -1, which is a special value used in sizeRequiresReplaceModifier
+			resp.Private.SetKey(ctx, "url_size", []byte("-1"))
+		} else if urlMetadata.Size != nil {
 			setValue := []byte(strconv.FormatInt(*urlMetadata.Size, 10))
 			resp.Private.SetKey(ctx, "url_size", setValue)
 		}
