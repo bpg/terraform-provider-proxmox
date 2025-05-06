@@ -47,6 +47,7 @@ type CloneRequestBody struct {
 type CreateRequestBody struct {
 	ACPI                 *types.CustomBool              `json:"acpi,omitempty"               url:"acpi,omitempty,int"`
 	Agent                *CustomAgent                   `json:"agent,omitempty"              url:"agent,omitempty"`
+	AMDSEV               *CustomAMDSEV                  `json:"amd-sev,omitempty"            url:"amd-sev,omitempty"`
 	AllowReboot          *types.CustomBool              `json:"reboot,omitempty"             url:"reboot,omitempty,int"`
 	AudioDevices         CustomAudioDevices             `json:"audio,omitempty"              url:"audio,omitempty"`
 	Autostart            *types.CustomBool              `json:"autostart,omitempty"          url:"autostart,omitempty,int"`
@@ -183,6 +184,7 @@ type GetResponseBody struct {
 type GetResponseData struct {
 	ACPI                 *types.CustomBool               `json:"acpi,omitempty"`
 	Agent                *CustomAgent                    `json:"agent,omitempty"`
+	AMDSEV               *CustomAMDSEV                   `json:"amd-sev,omitempty"`
 	AllowReboot          *types.CustomBool               `json:"reboot,omitempty"`
 	AudioDevice          *CustomAudioDevice              `json:"audio0,omitempty"`
 	Autostart            *types.CustomBool               `json:"autostart,omitempty"`
@@ -342,7 +344,7 @@ type GetStatusResponseBody struct {
 }
 
 // GetStatusResponseData contains the data from a VM get status response.
-type GetStatusResponseData struct {
+type GetStatusResponseData struct { // TODO add AMDSEV status here?
 	AgentEnabled     *types.CustomBool `json:"agent,omitempty"`
 	CPUCount         *int64            `json:"cpus,omitempty"`
 	Lock             *string           `json:"lock,omitempty"`
