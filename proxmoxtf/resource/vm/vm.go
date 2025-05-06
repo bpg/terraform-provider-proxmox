@@ -404,16 +404,18 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "Secure Encrypted Virtualization (SEV) features by AMD CPUs",
 			Optional:    true,
+			ForceNew:    true,
 			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
-						mkAMDSEVType:         dvAMDSEVType,
-						mkAMDSEVAllowSMT:     dvAMDSEVAllowSMT,
-						mkAMDSEVKernelHashes: dvAMDSEVKernelHashes,
-						mkAMDSEVNoDebug:      dvAMDSEVNoDebug,
-						mkAMDSEVNoKeySharing: dvAMDSEVNoKeySharing,
-					},
-				}, nil
+				return []interface{}{}, nil
+				// return []interface{}{
+				// 	map[string]interface{}{
+				// 		mkAMDSEVType:         dvAMDSEVType,
+				// 		mkAMDSEVAllowSMT:     dvAMDSEVAllowSMT,
+				// 		mkAMDSEVKernelHashes: dvAMDSEVKernelHashes,
+				// 		mkAMDSEVNoDebug:      dvAMDSEVNoDebug,
+				// 		mkAMDSEVNoKeySharing: dvAMDSEVNoKeySharing,
+				// 	},
+				// }, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -2528,30 +2530,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	agentTrim := types.CustomBool(agentBlock[mkAgentTrim].(bool))
 	agentType := agentBlock[mkAgentType].(string)
 
-	amdsevBlock, err := structure.GetSchemaBlock(
-		resource,
-		d,
-		[]string{mkAMDSEV},
-		0,
-		true,
-	)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	amdsevType := amdsevBlock[mkAMDSEVType].(string) 
-	amdsevAllowSMT := types.CustomBool(
-		amdsevBlock[mkAMDSEVAllowSMT].(bool),
-	)
-	amdsevKernelHashes := types.CustomBool(
-		amdsevBlock[mkAMDSEVKernelHashes].(bool),
-	)
-	amdsevNoDebug := types.CustomBool(
-		amdsevBlock[mkAMDSEVNoDebug].(bool),
-	)
-	amdsevNoKeySharing := types.CustomBool(
-		amdsevBlock[mkAMDSEVNoKeySharing].(bool),
-	)
+	amdsev := vmGetAMDSEVObject(d)
  
 	kvmArguments := d.Get(mkKVMArguments).(string)
 
@@ -2834,13 +2813,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
-		AMDSEV: &vms.CustomAMDSEV{
-			Type:         &amdsevType,
-			AllowSMT:     &amdsevAllowSMT,
-			KernelHashes: &amdsevKernelHashes,
-			NoDebug:      &amdsevNoDebug,
-			NoKeySharing: &amdsevNoKeySharing,
-		},
+		AMDSEV: amdsev,
 		AudioDevices: audioDevices,
 		BIOS:         &bios,
 		Boot: &vms.CustomBoot{
@@ -2990,6 +2963,39 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	return vmRead(ctx, d, m)
+}
+
+func vmGetAMDSEVObject(d *schema.ResourceData) *vms.CustomAMDSEV {
+	var amdsev *vms.CustomAMDSEV
+
+	amdsevBlock := d.Get(mkAMDSEV).([]interface{})
+	if len(amdsevBlock) > 0 && amdsevBlock[0] != nil {
+		block := amdsevBlock[0].(map[string]interface{})
+
+		amdsevType := block[mkAMDSEVType].(string) 
+		amdsevAllowSMT := types.CustomBool(
+			block[mkAMDSEVAllowSMT].(bool),
+		)
+		amdsevKernelHashes := types.CustomBool(
+			block[mkAMDSEVKernelHashes].(bool),
+		)
+		amdsevNoDebug := types.CustomBool(
+			block[mkAMDSEVNoDebug].(bool),
+		)
+		amdsevNoKeySharing := types.CustomBool(
+			block[mkAMDSEVNoKeySharing].(bool),
+		)
+
+		amdsev = &vms.CustomAMDSEV{
+			Type:         &amdsevType,
+			AllowSMT:     &amdsevAllowSMT,
+			KernelHashes: &amdsevKernelHashes,
+			NoDebug:      &amdsevNoDebug,
+			NoKeySharing: &amdsevNoKeySharing,
+		}
+	}
+
+	return amdsev
 }
 
 func vmGetAudioDeviceList(d *schema.ResourceData) vms.CustomAudioDevices {
@@ -5247,40 +5253,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		rebootRequired = true
 	}
 
-	// Prepare the new amdsev configuration.
+	// Prepare the new amdsev configuration.	
 	if d.HasChange(mkAMDSEV) {
-		amdsevBlock, err := structure.GetSchemaBlock(
-			resource,
-			d,
-			[]string{mkAMDSEV},
-			0,
-			true,
-		)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+		amdsev := vmGetAMDSEVObject(d)
 
-		amdsevType := amdsevBlock[mkAMDSEVType].(string)
-		amdsevAllowSMT := types.CustomBool(
-			amdsevBlock[mkAMDSEVAllowSMT].(bool),
-		)
-		amdsevKernelHashes := types.CustomBool(
-			amdsevBlock[mkAMDSEVKernelHashes].(bool),
-		)
-		amdsevNoDebug := types.CustomBool(
-			amdsevBlock[mkAMDSEVNoDebug].(bool),
-		)
-		amdsevNoKeySharing := types.CustomBool(
-			amdsevBlock[mkAMDSEVNoKeySharing].(bool),
-		)
-
-		updateBody.AMDSEV = &vms.CustomAMDSEV{
-			Type:         &amdsevType,
-			AllowSMT:     &amdsevAllowSMT,
-			KernelHashes: &amdsevKernelHashes,
-			NoDebug:      &amdsevNoDebug,
-			NoKeySharing: &amdsevNoKeySharing,
-		}
+		updateBody.AMDSEV = amdsev
 
 		rebootRequired = true
 	}
