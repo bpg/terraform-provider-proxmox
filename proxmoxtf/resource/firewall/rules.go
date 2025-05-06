@@ -180,7 +180,7 @@ func Rules() *schema.Resource {
 
 // RulesCreate creates new firewall rules.
 func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	rules := d.Get(MkRule).([]interface{})
 
@@ -235,7 +235,7 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 
 // RulesRead reads rules from the API and updates the state.
 func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	readRule := func(pos int, ruleMap map[string]interface{}) error {
 		rule, err := api.GetRule(ctx, pos)
@@ -304,7 +304,7 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 
 // RulesUpdate updates rules.
 func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	rules := d.Get(MkRule).([]interface{})
 	for i := len(rules) - 1; i >= 0; i-- {

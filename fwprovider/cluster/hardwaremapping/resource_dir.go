@@ -43,7 +43,7 @@ type dirResource struct {
 
 // read reads information about a directory mapping from the Proxmox VE API.
 func (r *dirResource) read(ctx context.Context, hm *modelDir) (bool, diag.Diagnostics) {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	hmName := hm.Name.ValueString()
 

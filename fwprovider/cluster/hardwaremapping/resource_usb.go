@@ -44,7 +44,7 @@ type usbResource struct {
 
 // read reads information about a USB hardware mapping from the Proxmox VE API.
 func (r *usbResource) read(ctx context.Context, hm *modelUSB) (bool, diag.Diagnostics) {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	hmName := hm.Name.ValueString()
 

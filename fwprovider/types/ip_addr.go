@@ -84,7 +84,7 @@ func (t IPAddrType) Validate(_ context.Context, value tftypes.Value, valuePath p
 		return nil
 	}
 
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	var valueString string
 

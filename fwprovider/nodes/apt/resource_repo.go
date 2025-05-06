@@ -58,7 +58,7 @@ type repositoryResource struct {
 // read reads information about an APT repository from the Proxmox VE API.
 // Note that the name of the node must be set before this method is called!
 func (r *repositoryResource) read(ctx context.Context, rp *modelRepo) (bool, diag.Diagnostics) {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	data, err := r.client.Node(rp.Node.ValueString()).APT().Repositories().Get(ctx)
 	if err != nil {

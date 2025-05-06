@@ -7,8 +7,9 @@
 package metrics
 
 import (
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
 )
 
 type metricsServerModel struct {
