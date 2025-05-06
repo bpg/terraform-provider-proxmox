@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.77.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.77.0...v0.77.1) (2025-05-06)
+
+
+### Bug Fixes
+
+* **lxc:** spurious ip_config diff when interface has both IPv4 and IPv6 addresses ([15b0ae9](https://github.com/bpg/terraform-provider-proxmox/commit/15b0ae90be23c46d5cc106a7f8b4f867fce7d84e))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v2.0.2 → v2.0.3) ([#1941](https://github.com/bpg/terraform-provider-proxmox/issues/1941)) ([922d1eb](https://github.com/bpg/terraform-provider-proxmox/commit/922d1ebd8af5fd9e1e3091da13e46f9a9a3754f0))
+* **ci:** update actions/create-github-app-token action (v2.0.3 → v2.0.6) ([#1946](https://github.com/bpg/terraform-provider-proxmox/issues/1946)) ([84c9b72](https://github.com/bpg/terraform-provider-proxmox/commit/84c9b72e71cda1de5952030f830150599ca4b226))
+* **ci:** Update golangci/golangci-lint-action action (v7 → v8) ([#1950](https://github.com/bpg/terraform-provider-proxmox/issues/1950)) ([8ded437](https://github.com/bpg/terraform-provider-proxmox/commit/8ded437d45a2a5b290a761c8ef1ef296c790536e))
+* **code:** fix new qodana warnings ([#1951](https://github.com/bpg/terraform-provider-proxmox/issues/1951)) ([d23f7ab](https://github.com/bpg/terraform-provider-proxmox/commit/d23f7ab1c005fea2e28b9d969da5cfbe139c2fd7))
+* **deps:** update golangci/golangci-lint (v2.1.5 → v2.1.6) ([#1947](https://github.com/bpg/terraform-provider-proxmox/issues/1947)) ([462c153](https://github.com/bpg/terraform-provider-proxmox/commit/462c153b32e82b6764c8459e06cc0125c877efd4))
+* **deps:** update module golang.org/x/net (v0.39.0 → v0.40.0) ([#1949](https://github.com/bpg/terraform-provider-proxmox/issues/1949)) ([58cee6d](https://github.com/bpg/terraform-provider-proxmox/commit/58cee6d35f20b8a96ce8d13e7b8df094086b1779))
+
 ## [0.77.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.76.1...v0.77.0) (2025-04-30)
 
 
