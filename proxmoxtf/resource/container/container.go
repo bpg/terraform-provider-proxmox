@@ -1934,7 +1934,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 	return containerRead(ctx, d, m)
 }
 
-// NOTE: this function is NOT used in `read`!s
+// NOTE: this function is NOT used in `read`!
 func containerGetExistingNetworkInterface(
 	ctx context.Context,
 	containerAPI *containers.Client,
