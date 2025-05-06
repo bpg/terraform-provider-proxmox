@@ -216,7 +216,7 @@ func ipSetUpdate(ctx context.Context, api firewall.API, d *schema.ResourceData) 
 }
 
 func ipSetDelete(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	name := d.Id()
 

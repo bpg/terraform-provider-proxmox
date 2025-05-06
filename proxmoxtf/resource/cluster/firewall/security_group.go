@@ -83,7 +83,7 @@ func SecurityGroupCreate(ctx context.Context, api clusterfirewall.API, d *schema
 
 // SecurityGroupRead reads the security group from the API and updates the state.
 func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.ResourceData) diag.Diagnostics {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	name := d.Id()
 

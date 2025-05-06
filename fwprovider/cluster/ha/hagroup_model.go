@@ -40,7 +40,7 @@ func (m *GroupModel) ImportFromAPI(group hagroups.HAGroupGetResponseData) diag.D
 // Parse the list of member nodes. The list is received from the Proxmox API as a string. It must
 // be converted into a map value. Errors will be returned as Terraform diagnostics.
 func (m *GroupModel) parseHAGroupNodes(nodes string) diag.Diagnostics {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	nodesIn := strings.Split(nodes, ",")
 	nodesOut := make(map[string]attr.Value)

@@ -293,7 +293,7 @@ func (r *acmeAccountResource) read(ctx context.Context, data *acmeAccountModel) 
 
 	acc, err := r.client.Get(ctx, name)
 	if err != nil {
-		var diags diag.Diagnostics
+		diags := diag.Diagnostics{}
 
 		if !strings.Contains(err.Error(), "does not exist") {
 			diags.AddError(

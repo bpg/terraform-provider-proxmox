@@ -142,7 +142,7 @@ type modelStandardRepo struct {
 
 // importFromAPI imports the contents of an APT repository model from the Proxmox VE API's response data.
 func (rp *modelRepo) importFromAPI(ctx context.Context, data *api.GetResponseData) diag.Diagnostics {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	// We can only ensure a unique ID by using the name of the Proxmox VE node and the absolute file path because custom
 	// source list files can be loaded by Proxmox VE from every path on a node.

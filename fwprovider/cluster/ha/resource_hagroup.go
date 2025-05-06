@@ -309,7 +309,7 @@ func (r *hagroupResource) read(ctx context.Context, data *GroupModel) (bool, dia
 
 	group, err := r.client.Get(ctx, name)
 	if err != nil {
-		var diags diag.Diagnostics
+		diags := diag.Diagnostics{}
 
 		if !strings.Contains(err.Error(), "no such ha group") {
 			diags.AddError("Could not read HA group", err.Error())

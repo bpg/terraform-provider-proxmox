@@ -45,7 +45,7 @@ type pciResource struct {
 
 // read reads information about a PCI hardware mapping from the Proxmox VE API.
 func (r *pciResource) read(ctx context.Context, hm *modelPCI) (bool, diag.Diagnostics) {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	hmName := hm.Name.ValueString()
 

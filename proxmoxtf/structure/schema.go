@@ -47,7 +47,7 @@ func GetSchemaBlock(
 		if ki == 0 {
 			resourceData = d.Get(kv)
 			resourceSchema = r.Schema[kv]
-		} else {
+		} else if resourceSchema != nil {
 			mapValues := resourceData.([]interface{})
 
 			if len(mapValues) <= i {
@@ -59,6 +59,10 @@ func GetSchemaBlock(
 			resourceData = mapValue[kv]
 			resourceSchema = resourceSchema.Elem.(*schema.Resource).Schema[kv]
 		}
+	}
+
+	if resourceSchema == nil {
+		return nil, fmt.Errorf("schema not found for %s", strings.Join(k, "."))
 	}
 
 	list := resourceData.([]interface{})

@@ -320,7 +320,7 @@ func (r *haResourceResource) ImportState(
 // read reads information about a HA resource from the cluster. The Terraform resource identifier must have been set
 // in the model before this function is called.
 func (r *haResourceResource) read(ctx context.Context, data *ResourceModel) (bool, diag.Diagnostics) {
-	var diags diag.Diagnostics
+	diags := diag.Diagnostics{}
 
 	resID, err := proxmoxtypes.ParseHAResourceID(data.ID.ValueString())
 	if err != nil {

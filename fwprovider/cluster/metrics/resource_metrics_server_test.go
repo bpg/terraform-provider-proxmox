@@ -11,8 +11,9 @@ package metrics_test
 import (
 	"testing"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
 func TestAccResourceMetricsServer(t *testing.T) {
