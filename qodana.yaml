@@ -1,12 +1,13 @@
 version: "1.0"
 linter: jetbrains/qodana-go:2025.1
-include:
-  - name: CheckDependencyLicenses
-  - name: RegExpRedundantEscape
-  - name: RegExpSimplifiable
+profile:
+  name: qodana.recommended
 exclude:
   - name: All
     paths:
       - CONTRIBUTORS.md
       - README.md
   - name: GoMixedReceiverTypes
+  - name: CheckDependencyLicenses
+include:
+  - name: VulnerableLibrariesGlobal
