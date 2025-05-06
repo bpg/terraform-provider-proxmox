@@ -79,16 +79,13 @@ func (r *CustomAMDSEV) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("error unmarshalling CustomAMDSEV: %w", err)
 	}
 
-	// TODO the get schema from proxmox only has `pve-qemu-sev-fmt` described, instead of each field
-	// is it still the same fields or is the format different?
 	pairs := strings.Split(s, ",")
 
 	for _, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
-			// TODO: can args be passed without values? most likely bools in that case
-			continue
+			r.Type = &v[0]
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "type":
