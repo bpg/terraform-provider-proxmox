@@ -1934,6 +1934,7 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 	return containerRead(ctx, d, m)
 }
 
+// NOTE: this function is NOT used in `read`!s
 func containerGetExistingNetworkInterface(
 	ctx context.Context,
 	containerAPI *containers.Client,
@@ -1943,13 +1944,13 @@ func containerGetExistingNetworkInterface(
 		return []interface{}{}, fmt.Errorf("error getting container information: %w", err)
 	}
 
-	networkInterfaces := make([]interface{}, 0, len(containerInfo.NetworkInterfaces))
+	networkInterfacesMap := make(map[string]interface{}, len(containerInfo.NetworkInterfaces))
 
-	for _, nv := range containerInfo.NetworkInterfaces {
+	for key, nv := range containerInfo.NetworkInterfaces {
 		networkInterface := map[string]interface{}{}
 
 		networkInterface[mkNetworkInterfaceEnabled] = true
-		networkInterface[mkNetworkInterfaceName] = nv.Name
+		networkInterface[mkNetworkInterfaceName] = nv.Name // "eth0", "eth1", etc, same as the `key`
 
 		if nv.Bridge != nil {
 			networkInterface[mkNetworkInterfaceBridge] = *nv.Bridge
@@ -1987,10 +1988,10 @@ func containerGetExistingNetworkInterface(
 			networkInterface[mkNetworkInterfaceMTU] = 0
 		}
 
-		networkInterfaces = append(networkInterfaces, networkInterface)
+		networkInterfacesMap[key] = networkInterface
 	}
 
-	return networkInterfaces, nil
+	return utils.OrderedListFromMap(networkInterfacesMap), nil
 }
 
 func containerGetTagsString(d *schema.ResourceData) string {
@@ -2449,8 +2450,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	var ipConfigList []interface{}
-
+	ipConfigMap := make(map[string]interface{}, len(containerConfig.NetworkInterfaces))
 	networkInterfacesMap := make(map[string]interface{}, len(containerConfig.NetworkInterfaces))
 
 	for key, nv := range containerConfig.NetworkInterfaces {
@@ -2473,9 +2473,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 					ip[mkInitializationIPConfigIPv4Gateway] = ""
 				}
 
-				ipConfig[mkInitializationIPConfigIPv4] = []interface{}{
-					ip,
-				}
+				ipConfig[mkInitializationIPConfigIPv4] = []interface{}{ip}
 			} else {
 				ipConfig[mkInitializationIPConfigIPv4] = []interface{}{}
 			}
@@ -2495,14 +2493,13 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 					ip[mkInitializationIPConfigIPv6Gateway] = ""
 				}
 
-				ipConfig[mkInitializationIPConfigIPv6] = []interface{}{
-					ip,
-				}
+				ipConfig[mkInitializationIPConfigIPv6] = []interface{}{ip}
 			} else {
 				ipConfig[mkInitializationIPConfigIPv6] = []interface{}{}
 			}
 
-			ipConfigList = append(ipConfigList, ipConfig)
+			// there is only one set of IP addresses (IPv4 + IPv6)  per network interface
+			ipConfigMap[key] = ipConfig
 		}
 
 		networkInterface := map[string]interface{}{}
@@ -2550,7 +2547,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	networkInterfaces := utils.OrderedListFromMap(networkInterfacesMap)
-	initialization[mkInitializationIPConfig] = ipConfigList
+	initialization[mkInitializationIPConfig] = utils.OrderedListFromMap(ipConfigMap)
 
 	currentInitialization := d.Get(mkInitialization).([]interface{})
 
@@ -2596,10 +2593,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		currentNetworkInterface := d.Get(mkNetworkInterface).([]interface{})
 
 		if len(currentNetworkInterface) > 0 {
-			err := d.Set(
-				mkNetworkInterface,
-				networkInterfaces,
-			)
+			err := d.Set(mkNetworkInterface, networkInterfaces)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else {

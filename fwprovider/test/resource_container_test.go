@@ -255,6 +255,45 @@ func TestAccResourceContainer(t *testing.T) {
 				}),
 			},
 		}},
+		{"ipv4 and ipv6", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				started   = false
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+							address = "10.0.0.100/24"
+							gateway = "10.0.0.1"
+						}
+					}
+					ip_config {
+						ipv6 {
+							address = "2001:db8::100/64"	
+							gateway = "2001:db8::1"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+					bridge = "vmbr0"
+				}
+				network_interface {
+					name = "vmbr1"
+					bridge = "vmbr1"
+				}
+
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "ubuntu"
+				}
+			}`),
+		}}},
 		{"clone container", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_container" "test_container" {
