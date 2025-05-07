@@ -16,9 +16,9 @@ import (
 )
 
 // CustomAMDSEV handles AMDSEV parameters.
-type CustomAMDSEV struct { // TODO verify the json parameters, "omitempty"?
+type CustomAMDSEV struct {
 	Type         *string           `json:"type"           url:"type"`
-	AllowSMT     *types.CustomBool `json:"allow-smt" 			url:"allow-smt,int"`
+	AllowSMT     *types.CustomBool `json:"allow-smt"      url:"allow-smt,int"`
 	KernelHashes *types.CustomBool `json:"kernel-hashes"  url:"kernel-hashes,int"`
 	NoDebug      *types.CustomBool `json:"no-debug"       url:"no-debug,int"`
 	NoKeySharing *types.CustomBool `json:"no-key-sharing" url:"no-key-sharing,int"`

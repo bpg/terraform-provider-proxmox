@@ -344,7 +344,7 @@ type GetStatusResponseBody struct {
 }
 
 // GetStatusResponseData contains the data from a VM get status response.
-type GetStatusResponseData struct { // TODO add AMDSEV status here?
+type GetStatusResponseData struct {
 	AgentEnabled     *types.CustomBool `json:"agent,omitempty"`
 	CPUCount         *int64            `json:"cpus,omitempty"`
 	Lock             *string           `json:"lock,omitempty"`
