@@ -134,6 +134,18 @@ output "ubuntu_vm_public_key" {
     - `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
         - `isa` - ISA Serial Port.
         - `virtio` - VirtIO (paravirtualized).
+- `amd_sev` - (Optional) Secure Encrypted Virtualization (SEV) features by AMD CPUs.
+    - `type` - (Optional) Enable standard SEV with `std` or enable experimental 
+        SEV-ES with the `es` option or enable experimental SEV-SNP with the `snp` option 
+        (defaults to `std`).
+    - `allow_smt` - (Optional) Sets policy bit to allow Simultaneous Multi Threading (SMT)
+        (Ignored unless for SEV-SNP) (defaults to `true`).
+    - `kernel_hashes` - (Optional) Add kernel hashes to guest firmware for measured 
+        linux kernel launch (defaults to `false`).
+    - `no_debug` - (Optional) Sets policy bit to disallow debugging of guest (defaults
+        to `false`).
+    - `no_key_sharing` - (Optional) Sets policy bit to disallow key sharing with 
+        other guests (Ignored for SEV-SNP) (defaults to `false`).
 - `audio_device` - (Optional) An audio device.
     - `device` - (Optional) The device (defaults to `intel-hda`).
         - `AC97` - Intel 82801AA AC97 Audio.
@@ -641,6 +653,25 @@ and when refreshing resources.  The provider has no way to distinguish between
 "qemu-guest-agent not installed" and "very long boot due to a disk check", it
 trusts the user to set `agent.enabled` correctly and waits for
 `qemu-guest-agent` to start.
+
+## AMD SEV
+AMD SEV (-ES, -SNP) are security features for AMD processors. SEV-SNP support
+is included in Proxmox version **8.4**, see [Proxmox Wiki](
+https://pve.proxmox.com/wiki/Qemu/KVM_Virtual_Machines#qm_virtual_machines_settings)
+and [Proxmox Documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_memory_encryption)
+for more information.
+
+SEV-SNP requires `bios = OVMF` and a supported AMD CPU (`EPYC-v4` for instance), 
+`machine = q35` is also advised. No EFI disk is required since SEV-SNP uses 
+consolidated read-only firmware. A configured EFI will be ignored.
+
+All changes made to `amd_sev` will trigger reboots. Removing or adding the 
+`amd_sev` block will force a replacement of the resource. Modifying the `amd_sev` 
+block will not trigger replacements. 
+
+`allow_smt` is by default set to `true` even if `snp` is not the selected type. 
+Proxmox will ignore this value when `snp` is not in use. Likewise `no_key_sharing`
+is `false` by default but ignored by Proxmox when `snp` is in use.
 
 ## Important Notes
 
