@@ -407,21 +407,13 @@ func VM() *schema.Resource {
 			ForceNew:    true,
 			DefaultFunc: func() (interface{}, error) {
 				return []interface{}{}, nil
-				// return []interface{}{
-				// 	map[string]interface{}{
-				// 		mkAMDSEVType:         dvAMDSEVType,
-				// 		mkAMDSEVAllowSMT:     dvAMDSEVAllowSMT,
-				// 		mkAMDSEVKernelHashes: dvAMDSEVKernelHashes,
-				// 		mkAMDSEVNoDebug:      dvAMDSEVNoDebug,
-				// 		mkAMDSEVNoKeySharing: dvAMDSEVNoKeySharing,
-				// 	},
-				// }, nil
 			},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					mkAMDSEVType: {
-						Type:             schema.TypeString,
-						Description:      "Enable standard SEV with type=std or enable experimental SEV-ES with the es option or enable experimental SEV-SNP with the snp option.",
+						Type: schema.TypeString,
+						Description: "Enable standard SEV with type=std or enable experimental SEV-ES with the es option" +
+							"or enable experimental SEV-SNP with the snp option.",
 						Optional:         true,
 						Default:          dvAMDSEVType,
 						ValidateDiagFunc: AMDSEVTypeValidator(),
@@ -2531,7 +2523,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	agentType := agentBlock[mkAgentType].(string)
 
 	amdsev := vmGetAMDSEVObject(d)
- 
+
 	kvmArguments := d.Get(mkKVMArguments).(string)
 
 	audioDevices := vmGetAudioDeviceList(d)
@@ -2813,7 +2805,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
-		AMDSEV: amdsev,
+		AMDSEV:       amdsev,
 		AudioDevices: audioDevices,
 		BIOS:         &bios,
 		Boot: &vms.CustomBoot{
@@ -2972,7 +2964,7 @@ func vmGetAMDSEVObject(d *schema.ResourceData) *vms.CustomAMDSEV {
 	if len(amdsevBlock) > 0 && amdsevBlock[0] != nil {
 		block := amdsevBlock[0].(map[string]interface{})
 
-		amdsevType := block[mkAMDSEVType].(string) 
+		amdsevType := block[mkAMDSEVType].(string)
 		amdsevAllowSMT := types.CustomBool(
 			block[mkAMDSEVAllowSMT].(bool),
 		)
@@ -4864,7 +4856,7 @@ func vmReadCustom(
 	vmAPI := client.Node(nodeName).VM(vmID)
 	started := d.Get(mkStarted).(bool)
 
-	agentTimeout, e := getAgentTimeout(d) // TODO: Investigate this (is something similar needed for amdsev?)
+	agentTimeout, e := getAgentTimeout(d)
 	if e != nil {
 		return diag.FromErr(e)
 	}
@@ -5253,7 +5245,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		rebootRequired = true
 	}
 
-	// Prepare the new amdsev configuration.	
+	// Prepare the new amdsev configuration.
 	if d.HasChange(mkAMDSEV) {
 		amdsev := vmGetAMDSEVObject(d)
 
@@ -6145,7 +6137,7 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	return nodeName, id, nil
 }
 
-func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) { // TODO: Also look at this
+func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) {
 	resource := VM()
 
 	agentBlock, err := structure.GetSchemaBlock(
