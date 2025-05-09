@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.77.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.77.1...v0.77.2) (2025-05-09)
+
+
+### Miscellaneous
+
+* **ci:** update jetbrains/qodana-action action (v2025.1.0 → v2025.1.1) ([#1955](https://github.com/bpg/terraform-provider-proxmox/issues/1955)) ([12f8a40](https://github.com/bpg/terraform-provider-proxmox/commit/12f8a406f36f1e909f8dbdc01c822338dcebaaab))
+* **ci:** update lycheeverse/lychee-action action (v2.4.0 → v2.4.1) ([#1956](https://github.com/bpg/terraform-provider-proxmox/issues/1956)) ([68132bb](https://github.com/bpg/terraform-provider-proxmox/commit/68132bb1fbd312c1a4fffb10ccefd236f176e551))
+
 ## [0.77.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.77.0...v0.77.1) (2025-05-06)
 
 
