@@ -92,4 +92,4 @@ Goal is to have a proxmox node in VM using <https://virt-manager.org/> for a job
 
 10. Now you can run `make example`.
 
-11. If you see error with proxmox_virtual_environment_file: the datastore "local" does not support content type "snippets"; supported content types are: `[backup, iso, vztmpl, import]`, you need to enable them, see <https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file#snippets>.
+11. If you see error with proxmox_virtual_environment_file: the datastore "local" does not support content type "snippets"; supported content types are: `[backup, images, iso, rootdir, vztmpl, import]`, you need to enable them, see <https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_file#snippets>.

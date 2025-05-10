@@ -138,7 +138,9 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
 - `content_type` - (Optional) The content type. If not specified, the content
     type will be inferred from the file extension. Valid values are:
     - `backup` (allowed extensions: `.vzdump`, `.tar.gz`, `.tar.xz`, `tar.zst`)
+    - `images` (allowed extensions: `.qcow2`, `.raw`, `.vmdk`)
     - `iso` (allowed extensions: `.iso`, `.img`)
+    - `rootdir` (allowed extensions: ?)
     - `snippets` (allowed extensions: any)
     - `import` (allowed extensions: `.raw`, `.qcow2`, `.vmdk`)
     - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)

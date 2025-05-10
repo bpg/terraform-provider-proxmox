@@ -21,7 +21,9 @@ import (
 func ContentType() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
 		"backup",
+		"images",
 		"iso",
+		"rootdir",
 		"snippets",
 		"vztmpl",
 		"import",
