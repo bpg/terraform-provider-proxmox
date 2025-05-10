@@ -158,6 +158,11 @@ func QEMUAgentTypeValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{"isa", "virtio"}, false))
 }
 
+// AMDSEVTypeValidator is a schema validation function for AMDSEV types.
+func AMDSEVTypeValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice([]string{"std", "es", "snp"}, false))
+}
+
 // KeyboardLayoutValidator is a schema validation function for keyboard layouts.
 func KeyboardLayoutValidator() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice([]string{
