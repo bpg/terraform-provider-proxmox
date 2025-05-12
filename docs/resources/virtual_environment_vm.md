@@ -146,6 +146,8 @@ output "ubuntu_vm_public_key" {
         to `false`).
     - `no_key_sharing` - (Optional) Sets policy bit to disallow key sharing with 
         other guests (Ignored for SEV-SNP) (defaults to `false`).
+
+    The `amd_sev` setting is only allowed for a `root@pam` authenticated user.
 - `audio_device` - (Optional) An audio device.
     - `device` - (Optional) The device (defaults to `intel-hda`).
         - `AC97` - Intel 82801AA AC97 Audio.
@@ -660,6 +662,8 @@ is included in Proxmox version **8.4**, see [Proxmox Wiki](
 https://pve.proxmox.com/wiki/Qemu/KVM_Virtual_Machines#qm_virtual_machines_settings)
 and [Proxmox Documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_memory_encryption)
 for more information.
+
+`amd-sev` requires root and therefore `root@pam` auth.
 
 SEV-SNP requires `bios = OVMF` and a supported AMD CPU (`EPYC-v4` for instance), 
 `machine = q35` is also advised. No EFI disk is required since SEV-SNP uses 
