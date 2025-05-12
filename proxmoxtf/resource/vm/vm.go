@@ -2059,7 +2059,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		)
 
 		updateBody.AMDSEV = &vms.CustomAMDSEV{
-			Type:         &amdsevType,
+			Type:         amdsevType,
 			AllowSMT:     &amdsevAllowSMT,
 			KernelHashes: &amdsevKernelHashes,
 			NoDebug:      &amdsevNoDebug,
@@ -2979,7 +2979,7 @@ func vmGetAMDSEVObject(d *schema.ResourceData) *vms.CustomAMDSEV {
 		)
 
 		amdsev = &vms.CustomAMDSEV{
-			Type:         &amdsevType,
+			Type:         amdsevType,
 			AllowSMT:     &amdsevAllowSMT,
 			KernelHashes: &amdsevKernelHashes,
 			NoDebug:      &amdsevNoDebug,
@@ -3757,11 +3757,7 @@ func vmReadCustom(
 		if vmConfig.AMDSEV != nil {
 			amdsev := map[string]interface{}{}
 
-			if vmConfig.AMDSEV.Type != nil {
-				amdsev[mkAMDSEVType] = *vmConfig.AMDSEV.Type
-			} else {
-				amdsev[mkAMDSEVType] = ""
-			}
+			amdsev[mkAMDSEVType] = vmConfig.AMDSEV.Type
 
 			if vmConfig.AMDSEV.AllowSMT != nil {
 				amdsev[mkAMDSEVAllowSMT] = bool(*vmConfig.AMDSEV.AllowSMT)

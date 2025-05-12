@@ -17,7 +17,7 @@ import (
 
 // CustomAMDSEV handles AMDSEV parameters.
 type CustomAMDSEV struct {
-	Type         *string           `json:"type"           url:"type"`
+	Type         string            `json:"type"           url:"type"`
 	AllowSMT     *types.CustomBool `json:"allow-smt"      url:"allow-smt,int"`
 	KernelHashes *types.CustomBool `json:"kernel-hashes"  url:"kernel-hashes,int"`
 	NoDebug      *types.CustomBool `json:"no-debug"       url:"no-debug,int"`
@@ -26,10 +26,8 @@ type CustomAMDSEV struct {
 
 // EncodeValues converts a CustomAMDSEV struct to a URL value.
 func (r *CustomAMDSEV) EncodeValues(key string, v *url.Values) error {
-	var values []string
-
-	if r.Type != nil {
-		values = append(values, fmt.Sprintf("type=%s", *r.Type))
+	values := []string{
+		fmt.Sprintf("type=%s", r.Type),
 	}
 
 	if r.AllowSMT != nil {
@@ -81,15 +79,17 @@ func (r *CustomAMDSEV) UnmarshalJSON(b []byte) error {
 
 	pairs := strings.Split(s, ",")
 
-	for _, p := range pairs {
+	for i, p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
-		if len(v) == 1 {
-			r.Type = &v[0]
-		} else if len(v) == 2 {
+		if len(v) == 1 && i == 0 {
+			r.Type = v[0]
+		}
+
+		if len(v) == 2 {
 			switch v[0] {
 			case "type":
-				r.Type = &v[1]
+				r.Type = v[1]
 			case "allow-smt":
 				allow_smt := types.CustomBool(v[1] == "1")
 				r.AllowSMT = &allow_smt
