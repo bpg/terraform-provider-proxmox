@@ -49,6 +49,11 @@ const (
 	dvAgentTimeout        = "15m"
 	dvAgentTrim           = false
 	dvAgentType           = "virtio"
+	dvAMDSEVType          = "std"
+	dvAMDSEVAllowSMT      = true
+	dvAMDSEVKernelHashes  = false
+	dvAMDSEVNoDebug       = false
+	dvAMDSEVNoKeySharing  = false
 	dvAudioDeviceDevice   = "intel-hda"
 	dvAudioDeviceDriver   = "spice"
 	dvAudioDeviceEnabled  = true
@@ -153,6 +158,12 @@ const (
 	mkAgentTimeout        = "timeout"
 	mkAgentTrim           = "trim"
 	mkAgentType           = "type"
+	mkAMDSEV              = "amd_sev"
+	mkAMDSEVType          = "type"
+	mkAMDSEVAllowSMT      = "allow_smt"
+	mkAMDSEVKernelHashes  = "kernel_hashes"
+	mkAMDSEVNoDebug       = "no_debug"
+	mkAMDSEVNoKeySharing  = "no_key_sharing"
 	mkAudioDevice         = "audio_device"
 	mkAudioDeviceDevice   = "device"
 	mkAudioDeviceDriver   = "driver"
@@ -383,6 +394,53 @@ func VM() *schema.Resource {
 						Optional:         true,
 						Default:          dvAgentType,
 						ValidateDiagFunc: QEMUAgentTypeValidator(),
+					},
+				},
+			},
+			MaxItems: 1,
+			MinItems: 0,
+		},
+		mkAMDSEV: {
+			Type:        schema.TypeList,
+			Description: "Secure Encrypted Virtualization (SEV) features by AMD CPUs",
+			Optional:    true,
+			ForceNew:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return []interface{}{}, nil
+			},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					mkAMDSEVType: {
+						Type: schema.TypeString,
+						Description: "Enable standard SEV with type=std or enable experimental SEV-ES with the es option" +
+							"or enable experimental SEV-SNP with the snp option.",
+						Optional:         true,
+						Default:          dvAMDSEVType,
+						ValidateDiagFunc: AMDSEVTypeValidator(),
+					},
+					mkAMDSEVAllowSMT: {
+						Type:        schema.TypeBool,
+						Description: "Sets policy bit to allow Simultaneous Multi Threading (SMT) (Ignored unless for SEV-SNP)",
+						Optional:    true,
+						Default:     dvAMDSEVAllowSMT,
+					},
+					mkAMDSEVKernelHashes: {
+						Type:        schema.TypeBool,
+						Description: "Add kernel hashes to guest firmware for measured linux kernel launch",
+						Optional:    true,
+						Default:     dvAMDSEVKernelHashes,
+					},
+					mkAMDSEVNoDebug: {
+						Type:        schema.TypeBool,
+						Description: "Sets policy bit to disallow debugging of guest",
+						Optional:    true,
+						Default:     dvAMDSEVNoDebug,
+					},
+					mkAMDSEVNoKeySharing: {
+						Type:        schema.TypeBool,
+						Description: "Sets policy bit to disallow key sharing with other guests (Ignored for SEV-SNP)",
+						Optional:    true,
+						Default:     dvAMDSEVNoKeySharing,
 					},
 				},
 			},
@@ -1932,6 +1990,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	acpi := types.CustomBool(d.Get(mkACPI).(bool))
 	agent := d.Get(mkAgent).([]interface{})
+	amdsev := d.Get(mkAMDSEV).([]interface{})
 	bios := d.Get(mkBIOS).(string)
 	cdrom := d.Get(mkCDROM).([]interface{})
 	cpu := d.Get(mkCPU).([]interface{})
@@ -1979,6 +2038,32 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			Enabled:         &agentEnabled,
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
+		}
+	}
+
+	if len(amdsev) > 0 && amdsev[0] != nil {
+		amdsevBlock := amdsev[0].(map[string]interface{})
+
+		amdsevType := amdsevBlock[mkAMDSEVType].(string)
+		amdsevAllowSMT := types.CustomBool(
+			amdsevBlock[mkAMDSEVAllowSMT].(bool),
+		)
+		amdsevKernelHashes := types.CustomBool(
+			amdsevBlock[mkAMDSEVKernelHashes].(bool),
+		)
+		amdsevNoDebug := types.CustomBool(
+			amdsevBlock[mkAMDSEVNoDebug].(bool),
+		)
+		amdsevNoKeySharing := types.CustomBool(
+			amdsevBlock[mkAMDSEVNoKeySharing].(bool),
+		)
+
+		updateBody.AMDSEV = &vms.CustomAMDSEV{
+			Type:         amdsevType,
+			AllowSMT:     &amdsevAllowSMT,
+			KernelHashes: &amdsevKernelHashes,
+			NoDebug:      &amdsevNoDebug,
+			NoKeySharing: &amdsevNoKeySharing,
 		}
 	}
 
@@ -2437,6 +2522,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	agentTrim := types.CustomBool(agentBlock[mkAgentTrim].(bool))
 	agentType := agentBlock[mkAgentType].(string)
 
+	amdsev := vmGetAMDSEVObject(d)
+
 	kvmArguments := d.Get(mkKVMArguments).(string)
 
 	audioDevices := vmGetAudioDeviceList(d)
@@ -2718,6 +2805,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		},
+		AMDSEV:       amdsev,
 		AudioDevices: audioDevices,
 		BIOS:         &bios,
 		Boot: &vms.CustomBoot{
@@ -2867,6 +2955,39 @@ func vmCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	return vmRead(ctx, d, m)
+}
+
+func vmGetAMDSEVObject(d *schema.ResourceData) *vms.CustomAMDSEV {
+	var amdsev *vms.CustomAMDSEV
+
+	amdsevBlock := d.Get(mkAMDSEV).([]interface{})
+	if len(amdsevBlock) > 0 && amdsevBlock[0] != nil {
+		block := amdsevBlock[0].(map[string]interface{})
+
+		amdsevType := block[mkAMDSEVType].(string)
+		amdsevAllowSMT := types.CustomBool(
+			block[mkAMDSEVAllowSMT].(bool),
+		)
+		amdsevKernelHashes := types.CustomBool(
+			block[mkAMDSEVKernelHashes].(bool),
+		)
+		amdsevNoDebug := types.CustomBool(
+			block[mkAMDSEVNoDebug].(bool),
+		)
+		amdsevNoKeySharing := types.CustomBool(
+			block[mkAMDSEVNoKeySharing].(bool),
+		)
+
+		amdsev = &vms.CustomAMDSEV{
+			Type:         amdsevType,
+			AllowSMT:     &amdsevAllowSMT,
+			KernelHashes: &amdsevKernelHashes,
+			NoDebug:      &amdsevNoDebug,
+			NoKeySharing: &amdsevNoKeySharing,
+		}
+	}
+
+	return amdsev
 }
 
 func vmGetAudioDeviceList(d *schema.ResourceData) vms.CustomAudioDevices {
@@ -3624,6 +3745,65 @@ func vmReadCustom(
 			}
 		} else {
 			err := d.Set(mkAgent, []interface{}{})
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	// Compare the amdsev configuration to the one stored in the state.
+	currentAMDSEV := d.Get(mkAMDSEV).([]interface{})
+
+	//nolint:gocritic
+	if len(clone) == 0 || len(currentAMDSEV) > 0 {
+		if vmConfig.AMDSEV != nil {
+			amdsev := map[string]interface{}{}
+
+			amdsev[mkAMDSEVType] = vmConfig.AMDSEV.Type
+
+			if vmConfig.AMDSEV.AllowSMT != nil {
+				amdsev[mkAMDSEVAllowSMT] = bool(*vmConfig.AMDSEV.AllowSMT)
+			} else {
+				amdsev[mkAMDSEVAllowSMT] = false
+			}
+
+			if vmConfig.AMDSEV.KernelHashes != nil {
+				amdsev[mkAMDSEVKernelHashes] = bool(*vmConfig.AMDSEV.KernelHashes)
+			} else {
+				amdsev[mkAMDSEVKernelHashes] = false
+			}
+
+			if vmConfig.AMDSEV.NoDebug != nil {
+				amdsev[mkAMDSEVNoDebug] = bool(*vmConfig.AMDSEV.NoDebug)
+			} else {
+				amdsev[mkAMDSEVNoDebug] = false
+			}
+
+			if vmConfig.AMDSEV.NoKeySharing != nil {
+				amdsev[mkAMDSEVNoKeySharing] = bool(*vmConfig.AMDSEV.NoKeySharing)
+			} else {
+				amdsev[mkAMDSEVNoKeySharing] = false
+			}
+
+			if len(clone) > 0 {
+				if len(currentAMDSEV) > 0 {
+					err := d.Set(mkAMDSEV, []interface{}{amdsev})
+					diags = append(diags, diag.FromErr(err)...)
+				}
+			} else if len(currentAMDSEV) > 0 ||
+				amdsev[mkAMDSEVType] != dvAMDSEVType ||
+				amdsev[mkAMDSEVAllowSMT] != dvAMDSEVAllowSMT ||
+				amdsev[mkAMDSEVKernelHashes] != dvAMDSEVKernelHashes ||
+				amdsev[mkAMDSEVNoDebug] != dvAMDSEVNoDebug ||
+				amdsev[mkAMDSEVNoKeySharing] != dvAMDSEVNoKeySharing {
+				err := d.Set(mkAMDSEV, []interface{}{amdsev})
+				diags = append(diags, diag.FromErr(err)...)
+			}
+		} else if len(clone) > 0 {
+			if len(currentAMDSEV) > 0 {
+				err := d.Set(mkAMDSEV, []interface{}{})
+				diags = append(diags, diag.FromErr(err)...)
+			}
+		} else {
+			err := d.Set(mkAMDSEV, []interface{}{})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	}
@@ -5057,6 +5237,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			TrimClonedDisks: &agentTrim,
 			Type:            &agentType,
 		}
+
+		rebootRequired = true
+	}
+
+	// Prepare the new amdsev configuration.
+	if d.HasChange(mkAMDSEV) {
+		amdsev := vmGetAMDSEVObject(d)
+
+		updateBody.AMDSEV = amdsev
 
 		rebootRequired = true
 	}
