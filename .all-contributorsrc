@@ -1360,6 +1360,15 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "antoniacobaeus",
+      "name": "Anton Iacobaeus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46004494?v=4",
+      "profile": "https://github.com/antoniacobaeus",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
