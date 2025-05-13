@@ -180,13 +180,14 @@ func (r *linuxBridgeResource) Schema(
 				Required:    true,
 			},
 			"name": schema.StringAttribute{
-				Description:         "The interface name.",
-				MarkdownDescription: "The interface name. Must be `vmbrN`, where N is a number between 0 and 9999.",
-				Required:            true,
+				Description: "The interface name.",
+				MarkdownDescription: "The interface name. Commonly vmbr[N], where 0 ≤ N ≤ 4094 (vmbr0 - vmbr4094), but " +
+					"can be any alphanumeric string that starts with a character and is at most 10 characters long.",
+				Required: true,
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^vmbr(\d{1,4})$`),
-						`must be "vmbrN", where N is a number between 0 and 9999`,
+						regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]{0,9}$`),
+						`must be an alphanumeric string that starts with a character and is at most 10 characters long`,
 					),
 				},
 				PlanModifiers: []planmodifier.String{
