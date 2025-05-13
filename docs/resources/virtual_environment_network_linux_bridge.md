@@ -50,7 +50,7 @@ resource "proxmox_virtual_environment_network_linux_vlan" "vlan99" {
 
 ### Required
 
-- `name` (String) The interface name. Must be `vmbrN`, where N is a number between 0 and 9999.
+- `name` (String) The interface name. Commonly vmbr[N], where 0 ≤ N ≤ 4094 (vmbr0 - vmbr4094), but can be any alphanumeric string that starts with a character and is at most 10 characters long.
 - `node_name` (String) The name of the node.
 
 ### Optional
