@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.78.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.77.1...v0.78.0) (2025-05-14)
+
+
+### Features
+
+* **vm:** add support for AMD SEV ([#1952](https://github.com/bpg/terraform-provider-proxmox/issues/1952)) ([28ae95b](https://github.com/bpg/terraform-provider-proxmox/commit/28ae95bd096353522af261b0219e7331beebbad2))
+
+
+### Bug Fixes
+
+* **network:** adjust Linux Bridge name validator ([#1961](https://github.com/bpg/terraform-provider-proxmox/issues/1961)) ([2a7a2ff](https://github.com/bpg/terraform-provider-proxmox/commit/2a7a2ff4938832076f401f912a5cb3286180a584))
+
+
+### Miscellaneous
+
+* **ci:** update actions/setup-go digest (0aaccfd → d35c59a) ([#1958](https://github.com/bpg/terraform-provider-proxmox/issues/1958)) ([a639257](https://github.com/bpg/terraform-provider-proxmox/commit/a6392572899543cea3e97c82e4307393f80a1b61))
+* **ci:** update jetbrains/qodana-action action (v2025.1.0 → v2025.1.1) ([#1955](https://github.com/bpg/terraform-provider-proxmox/issues/1955)) ([12f8a40](https://github.com/bpg/terraform-provider-proxmox/commit/12f8a406f36f1e909f8dbdc01c822338dcebaaab))
+* **ci:** update lycheeverse/lychee-action action (v2.4.0 → v2.4.1) ([#1956](https://github.com/bpg/terraform-provider-proxmox/issues/1956)) ([68132bb](https://github.com/bpg/terraform-provider-proxmox/commit/68132bb1fbd312c1a4fffb10ccefd236f176e551))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework-validators (v0.17.0 → v0.18.0) ([#1965](https://github.com/bpg/terraform-provider-proxmox/issues/1965)) ([9d91cdd](https://github.com/bpg/terraform-provider-proxmox/commit/9d91cddbe894089e2a38cf095d21dde29333ec5a))
+* **docs:** update terraform local (2.5.2 → 2.5.3) ([#1964](https://github.com/bpg/terraform-provider-proxmox/issues/1964)) ([10cda1f](https://github.com/bpg/terraform-provider-proxmox/commit/10cda1f257e5c24a1ceb94826eb856d557018dcf))
+
 ## [0.77.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.77.0...v0.77.1) (2025-05-06)
 
 
