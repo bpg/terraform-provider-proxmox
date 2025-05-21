@@ -51,6 +51,46 @@ func TestAccResourceVMCDROM(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"sata cdrom", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-cdrom"
+					cdrom {
+						file_id   = "none"
+						interface = "sata3"	
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
+					"cdrom.0.interface": "sata3",
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		{"scsi cdrom", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cdrom" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-cdrom"
+					cdrom {
+						file_id   = "none"
+						interface = "scsi5"	
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_cdrom", map[string]string{
+					"cdrom.0.interface": "scsi5",
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"enable cdrom", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

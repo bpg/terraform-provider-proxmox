@@ -263,14 +263,12 @@ func SCSIHardwareValidator() schema.SchemaValidateDiagFunc {
 	}, false))
 }
 
-// IDEInterfaceValidator is a schema validation function for IDE interfaces.
-func IDEInterfaceValidator() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(validation.StringInSlice([]string{
-		"ide0",
-		"ide1",
-		"ide2",
-		"ide3",
-	}, false))
+// CDROMInterfaceValidator is a schema validation function for IDE interfaces.
+func CDROMInterfaceValidator() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringMatch(
+		regexp.MustCompile(`^(ide[0-3]|sata[0-5]|scsi([0-9]|1[0-3]))$`),
+		"must be one of `ide[0-3]`, `sata[0-5]`, `scsi[0-13]`",
+	))
 }
 
 // VirtiofsCacheValidator is a schema validation function for virtiofs cache configs.
