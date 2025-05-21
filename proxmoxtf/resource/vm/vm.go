@@ -531,7 +531,7 @@ func VM() *schema.Resource {
 						Description:      "The CDROM interface",
 						Optional:         true,
 						Default:          dvCDROMInterface,
-						ValidateDiagFunc: IDEInterfaceValidator(),
+						ValidateDiagFunc: CDROMInterfaceValidator(),
 					},
 				},
 			},
@@ -6002,6 +6002,9 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	if shutdownTimeout > timeout {
 		timeout = shutdownTimeout
 	}
+
+	// reset the default timeout for the delete operation
+	ctx = context.WithoutCancel(ctx)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 	defer cancel()

@@ -168,9 +168,9 @@ output "ubuntu_vm_public_key" {
         Set `file_id` to `none` to leave the CD-ROM drive empty.
     - `file_id` - (Optional) A file ID for an ISO file (defaults to `cdrom` as
         in the physical drive). Use `none` to leave the CD-ROM drive empty.
-    - `interface` - (Optional) A hardware interface to connect CD-ROM drive to,
-        must be `ideN` (defaults to `ide3`). Note that `q35` machine type only
-        supports `ide0` and `ide2`.
+    - `interface` - (Optional) A hardware interface to connect CD-ROM drive to (defaults to `ide3`).
+      "Must be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. " +
+      "Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces.
 - `clone` - (Optional) The cloning configuration.
     - `datastore_id` - (Optional) The identifier for the target datastore.
     - `node_name` - (Optional) The name of the source node (leave blank, if
