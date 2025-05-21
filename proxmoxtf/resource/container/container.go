@@ -90,7 +90,7 @@ const (
 	dvUnprivileged                      = false
 
 	maxNetworkInterfaces  = 10
-	maxPassthroughDevices = 8
+	maxPassthroughDevices = 128
 	maxMountPoints        = 256
 
 	mkClone                             = "clone"
