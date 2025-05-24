@@ -3,8 +3,6 @@
 {
 	"name": "Default Linux Universal",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	// "image": "mcr.microsoft.com/devcontainers/go:1.24-bullseye",
-	// "image": "qmcgaw/godevcontainer:latest",
 	"dockerFile": "Dockerfile",
     
 	// Features to add to the dev container. More info: https://containers.dev/features.

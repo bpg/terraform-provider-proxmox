@@ -52,6 +52,12 @@ make docs
 
 If you are using VS Code, feel free to copy `settings.json` from `.vscode/settings.example.json`.
 
+## Devcontainer support
+
+The project uses a devcontainer to provide a consistent development environment.
+If you are using VS Code, you can use the devcontainer by opening the project in a container.
+See [Developing inside a Container](https://code.visualstudio.com/docs/devcontainers/containers) for more details.
+
 ## Testing
 
 ### Unit Tests
