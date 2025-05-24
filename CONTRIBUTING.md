@@ -52,6 +52,20 @@ make docs
 
 If you are using VS Code, feel free to copy `settings.json` from `.vscode/settings.example.json`.
 
+## Devcontainer support
+
+Prerequisites:
+
+- Docker (or Docker Desktop) installed on your machine  
+- [VS Code Remote - Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+To launch the devcontainer:
+
+1. Open the project in VS Code.  
+2. Run **Remote-Containers: Open Folder in Container** from the Command Palette.  
+
+See [Developing inside a Container](https://code.visualstudio.com/docs/devcontainers/containers) for more details.
+
 ## Testing
 
 ### Unit Tests

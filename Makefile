@@ -3,7 +3,7 @@ TARGETS=darwin linux windows
 TERRAFORM_PLUGIN_EXTENSION=
 VERSION=0.78.0# x-release-please-version
 
-GOLANGCI_LINT_VERSION=v2.1.6# renovate: depName=golangci/golangci-lint datasource=github-releases
+GOLANGCI_LINT_VERSION=2.1.6# renovate: depName=golangci/golangci-lint datasource=github-releases
 
 # check if opentofu is installed and use it if it is,
 # otherwise use terraform
@@ -110,10 +110,18 @@ testacc:
 	@TF_ACC=1 env $$(cat testacc.env | xargs) go test --timeout=30m --tags=acceptance -count=1 -v github.com/bpg/terraform-provider-proxmox/fwprovider/...
 
 .PHONY: lint
-lint:
+lint: ensure-golangci-lint
 	# NOTE: This target is for local runs only. For linting in CI see .github/workflows/golangci-lint.yml
-	@docker run -t --rm -v $$(pwd):/app -v ~/.cache/golangci-lint/$(GOLANGCI_LINT_VERSION):/root/.cache -w /app golangci/golangci-lint:$(GOLANGCI_LINT_VERSION) golangci-lint fmt
-	@docker run -t --rm -v $$(pwd):/app -v ~/.cache/golangci-lint/$(GOLANGCI_LINT_VERSION):/root/.cache -w /app golangci/golangci-lint:$(GOLANGCI_LINT_VERSION) golangci-lint run --fix
+	golangci-lint fmt
+	golangci-lint run --fix
+
+.PHONY: ensure-golangci-lint
+ ensure-golangci-lint:
+	@CURRENT_VERSION=$$(golangci-lint version --short 2>/dev/null | sed 's/^v//' || echo "not installed"); \
+ 	if [ "$$CURRENT_VERSION" != "$(GOLANGCI_LINT_VERSION)" ]; then \
+ 		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION) (current: $$CURRENT_VERSION)"; \
+ 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v$(GOLANGCI_LINT_VERSION); \
+ 	fi
 
 .PHONY: release-build
 release-build:
