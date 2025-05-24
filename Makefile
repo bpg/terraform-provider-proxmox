@@ -112,8 +112,8 @@ testacc:
 .PHONY: lint
 lint:
 	# NOTE: This target is for local runs only. For linting in CI see .github/workflows/golangci-lint.yml
-	@docker run -t --rm -v $$(pwd):/app -v ~/.cache/golangci-lint/$(GOLANGCI_LINT_VERSION):/root/.cache -w /app golangci/golangci-lint:$(GOLANGCI_LINT_VERSION) golangci-lint fmt
-	@docker run -t --rm -v $$(pwd):/app -v ~/.cache/golangci-lint/$(GOLANGCI_LINT_VERSION):/root/.cache -w /app golangci/golangci-lint:$(GOLANGCI_LINT_VERSION) golangci-lint run --fix
+	golangci-lint fmt
+	golangci-lint run --fix
 
 .PHONY: release-build
 release-build:

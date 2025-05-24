@@ -3,27 +3,78 @@
 {
 	"name": "Default Linux Universal",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:1.24-bullseye",
-
+	// "image": "mcr.microsoft.com/devcontainers/go:1.24-bullseye",
+	// "image": "qmcgaw/godevcontainer:latest",
+	"dockerFile": "Dockerfile",
+    
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
-		"ghcr.io/devcontainers/features/terraform:1": {
-			"version": "1.10.3"
-		}
+		"ghcr.io/devcontainers/features/terraform:1": {}
 	},
-	
-	"postAttachCommand": ["bash", "./.devcontainer/post-attach.sh"],
+
+	"mounts": [
+        // Zsh commands history persistence
+        {
+            "source": "${localEnv:HOME}/.zsh_history",
+            "target": "/root/.zsh_history",
+            "type": "bind"
+        },
+        // Git configuration file
+        {
+            "source": "${localEnv:HOME}/.gitconfig",
+            "target": "/root/.gitconfig",
+            "type": "bind"
+        },
+        // SSH directory for Linux, OSX and WSL
+        // On Linux and OSX, a symlink /mnt/ssh <-> ~/.ssh is
+        // created in the container. On Windows, files are copied
+        // from /mnt/ssh to ~/.ssh to fix permissions.
+        {
+            "source": "${localEnv:HOME}/.ssh",
+            "target": "/mnt/ssh",
+            "type": "bind"
+        },
+        // Docker socket to access the host Docker server
+        {
+            "source": "/var/run/docker.sock",
+            "target": "/var/run/docker.sock",
+            "type": "bind"
+        }
+    ],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
 	// Configure tool-specific properties.
-	// "customizations": {},
+    "customizations": {
+        // Configure properties specific to VS Code.
+        "vscode": {
+            // Set *default* container specific settings.json values on container create.
+            "settings": {
+                "go.toolsManagement.checkForUpdates": "local",
+                "go.useLanguageServer": true,
+                "go.gopath": "/go"
+            },
+            // Add the IDs of extensions you want installed when the container is created.
+            "extensions": [
+                "britesnow.vscode-toggle-quotes",
+                "davidanson.vscode-markdownlint",
+                "EditorConfig.editorconfig",
+                "golang.go",
+                "hashicorp.terraform",
+                "joshbolduc.commitlint",
+                "ms-azuretools.vscode-docker",
+                "ms-vscode.makefile-tools",
+                "psioniq.psi-header"
+            ]
+        }
+    },
 	
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
-	
-	
+	"remoteUser": "root",
+
+    "postAttachCommand": ["bash", "./.devcontainer/post-attach.sh"],
+		
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "make build"
 }

@@ -7,6 +7,7 @@
         "hashicorp.terraform",
         "joshbolduc.commitlint",
         "PKief.material-icon-theme",
-        "psioniq.psi-header"
+        "psioniq.psi-header",
+        "ms-azuretools.vscode-docker"
     ]
 }
