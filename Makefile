@@ -116,12 +116,12 @@ lint: ensure-golangci-lint
 	golangci-lint run --fix
 
 .PHONY: ensure-golangci-lint
-ensure-golangci-lint:
-	@CURRENT_VERSION=$$(golangci-lint version --short 2>/dev/null || echo "not installed"); \
-	if [ "$$CURRENT_VERSION" != "$(GOLANGCI_LINT_VERSION)" ]; then \
-		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION) (current: $$CURRENT_VERSION)"; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
-	fi
+ ensure-golangci-lint:
+	@CURRENT_VERSION=$$(golangci-lint version --short 2>/dev/null | sed 's/^v//' || echo "not installed"); \
+ 	if [ "$$CURRENT_VERSION" != "$(GOLANGCI_LINT_VERSION)" ]; then \
+ 		echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION) (current: $$CURRENT_VERSION)"; \
+ 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v$(GOLANGCI_LINT_VERSION); \
+ 	fi
 
 .PHONY: release-build
 release-build:

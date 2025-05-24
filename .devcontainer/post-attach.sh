@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 # Display welcome banner
 echo -e "\033[1;36m"

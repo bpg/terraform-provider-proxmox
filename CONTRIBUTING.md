@@ -54,8 +54,16 @@ If you are using VS Code, feel free to copy `settings.json` from `.vscode/settin
 
 ## Devcontainer support
 
-The project uses a devcontainer to provide a consistent development environment.
-If you are using VS Code, you can use the devcontainer by opening the project in a container.
+Prerequisites:
+
+- Docker (or Docker Desktop) installed on your machine  
+- [VS Code Remote - Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+To launch the devcontainer:
+
+1. Open the project in VS Code.  
+2. Run **Remote-Containers: Open Folder in Container** from the Command Palette.  
+
 See [Developing inside a Container](https://code.visualstudio.com/docs/devcontainers/containers) for more details.
 
 ## Testing
