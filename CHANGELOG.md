@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.78.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.0...v0.78.1) (2025-05-24)
+
+
+### Bug Fixes
+
+* **lxc:** increase maximum supported passthrough devices to 128 ([#1968](https://github.com/bpg/terraform-provider-proxmox/issues/1968)) ([3631240](https://github.com/bpg/terraform-provider-proxmox/commit/36312406d3a4ea55f3dfde522d54f9a527ef36a9))
+* **vm:** allow `scsi` and `sata` for CD-ROM interface ([#1971](https://github.com/bpg/terraform-provider-proxmox/issues/1971)) ([b1b8d15](https://github.com/bpg/terraform-provider-proxmox/commit/b1b8d1570f4ff71f7825ac3a0f3a6d25ada4c99e))
+
+
+### Miscellaneous
+
+* **ci:** improve devcontainer UX ([#1973](https://github.com/bpg/terraform-provider-proxmox/issues/1973)) ([d8a7bc0](https://github.com/bpg/terraform-provider-proxmox/commit/d8a7bc093f99d4e46c86d1d1f46c939b2690d741))
+* **deps:** pin image golang to 4c0a181 ([#1975](https://github.com/bpg/terraform-provider-proxmox/issues/1975)) ([f643f2a](https://github.com/bpg/terraform-provider-proxmox/commit/f643f2aecfea97ddf9a681ddc699e721ce947ff3))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1966](https://github.com/bpg/terraform-provider-proxmox/issues/1966)) ([9655bd9](https://github.com/bpg/terraform-provider-proxmox/commit/9655bd9ec7309e72216dd0bbef24b5e0f0d27274))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#1974](https://github.com/bpg/terraform-provider-proxmox/issues/1974)) ([71ade27](https://github.com/bpg/terraform-provider-proxmox/commit/71ade273487b7d3e2c260fa44b7f0e7a3807e5be))
+
 ## [0.78.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.77.1...v0.78.0) (2025-05-14)
 
 
