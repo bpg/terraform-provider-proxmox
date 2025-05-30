@@ -15,7 +15,7 @@ resource "proxmox_virtual_environment_download_file" "latest_debian_12_bookworm_
   content_type        = "iso"
   datastore_id        = "local"
   file_name           = "debian-12-generic-amd64.img"
-  node_name           = "pve"
+  node_name           = var.virtual_environment_node_name
   url                 = var.latest_debian_12_bookworm_qcow2_img_url
   overwrite           = true
   overwrite_unmanaged = true
