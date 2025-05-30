@@ -15,6 +15,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/vnets"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
 
@@ -53,4 +56,19 @@ func (c *Client) ACME() *acme.Client {
 // Metrics returns a client for managing the cluster's metrics features.
 func (c *Client) Metrics() *metrics.Client {
 	return &metrics.Client{Client: c}
+}
+
+// SDNZones returns a client for managing the cluster's SDN zones
+func (c *Client) SDNZones() *zones.Client {
+	return &zones.Client{Client: c}
+}
+
+// SDNVnets returns a client for managing the cluster's SDN Vnets
+func (c *Client) SDNVnets() *vnets.Client {
+	return &vnets.Client{Client: c}
+}
+
+// SDNSubnets returns a client for managing the cluster's SDN Subnets
+func (c *Client) SDNSubnets() *subnets.Client {
+	return &subnets.Client{Client: c}
 }
