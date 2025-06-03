@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.78.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.1...v0.78.2) (2025-06-03)
+
+
+### Miscellaneous
+
+* **deps:** update image golang (4c0a181 → 81bf592) ([#1977](https://github.com/bpg/terraform-provider-proxmox/issues/1977)) ([b6bcfe7](https://github.com/bpg/terraform-provider-proxmox/commit/b6bcfe75aa07069634387551489460aef1feef49))
+
 ## [0.78.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.0...v0.78.1) (2025-05-24)
 
 
