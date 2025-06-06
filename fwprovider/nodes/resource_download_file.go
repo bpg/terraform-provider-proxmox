@@ -205,23 +205,22 @@ func (r *downloadFileResource) Schema(
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"content_type": schema.StringAttribute{
-				Description: "The file content type. Must be `iso` for VM images or `vztmpl` for LXC images.",
+				Description: "The file content type. Must be `iso` or `import` for VM images or `vztmpl` for LXC images.",
 				Required:    true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
 					"iso",
 					"vztmpl",
+					"import",
 				}...)},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"file_name": schema.StringAttribute{
-				Description: "The file name. If not provided, it is calculated " +
-					"using `url`. PVE will raise 'wrong file extension' error for some popular " +
-					"extensions file `.raw` or `.qcow2`. Workaround is to use e.g. `.img` instead.",
-				Computed: true,
-				Required: false,
-				Optional: true,
+				Description: "The file name. If not provided, it is calculated using `url`.",
+				Computed:    true,
+				Required:    false,
+				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
