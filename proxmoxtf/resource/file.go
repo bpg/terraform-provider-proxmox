@@ -793,12 +793,15 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			fileModificationDate, fileSize, fileTag, err := readFileAttrs(ctx, sourceFilePath)
 			diags = append(diags, diag.FromErr(err)...)
 
-			err = d.Set(mkResourceVirtualEnvironmentFileFileModificationDate, fileModificationDate)
-			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkResourceVirtualEnvironmentFileFileSize, fileSize)
-			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
-			diags = append(diags, diag.FromErr(err)...)
+			if fileModificationDate != "" || fileSize != 0 || fileTag != "" {
+				// only when file from state exists
+				err = d.Set(mkResourceVirtualEnvironmentFileFileModificationDate, fileModificationDate)
+				diags = append(diags, diag.FromErr(err)...)
+				err = d.Set(mkResourceVirtualEnvironmentFileFileSize, fileSize)
+				diags = append(diags, diag.FromErr(err)...)
+				err = d.Set(mkResourceVirtualEnvironmentFileFileTag, fileTag)
+				diags = append(diags, diag.FromErr(err)...)
+			}
 
 			lastFileMD := d.Get(mkResourceVirtualEnvironmentFileFileModificationDate).(string)
 			lastFileSize := int64(d.Get(mkResourceVirtualEnvironmentFileFileSize).(int))
@@ -837,6 +840,11 @@ func readFile(
 ) (fileModificationDate string, fileSize int64, fileTag string, err error) {
 	f, err := os.Open(sourceFilePath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			// File does not exist, return zero values and no error
+			return "", 0, "", nil
+
+		}
 		return
 	}
 
