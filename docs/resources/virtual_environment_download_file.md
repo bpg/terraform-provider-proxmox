@@ -84,7 +84,7 @@ resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc
 - `checksum_algorithm` (String) The algorithm to calculate the checksum of the file. Must be `md5` | `sha1` | `sha224` | `sha256` | `sha384` | `sha512`.
 - `decompression_algorithm` (String) Decompress the downloaded file using the specified compression algorithm. Must be one of `gz` | `lzo` | `zst` | `bz2`.
 - `file_name` (String) The file name. If not provided, it is calculated using `url`. PVE will raise 'wrong file extension' error for some popular extensions file `.raw` or `.qcow2`. Workaround is to use e.g. `.img` instead.
-- `overwrite` (Boolean) If `true` and size of uploaded file is different, than size from `url` Content-Length header, file will be downloaded again. If `false`, there will be no checks.
+- `overwrite` (Boolean) By default `true`. If `true` and file size has changed in the datastore, it will be replaced. If `false`, there will be no check.
 - `overwrite_unmanaged` (Boolean) If `true` and a file with the same name already exists in the datastore, it will be deleted and the new file will be downloaded. If `false` and the file already exists, an error will be returned.
 - `upload_timeout` (Number) The file download timeout seconds. Default is 600 (10min).
 - `verify` (Boolean) By default `true`. If `false`, no SSL/TLS certificates will be verified.
@@ -92,4 +92,4 @@ resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc
 ### Read-Only
 
 - `id` (String) The unique identifier of this resource.
-- `size` (Number) The file size.
+- `size` (Number) The file size in PVE.
