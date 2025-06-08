@@ -200,7 +200,27 @@ func TestAccResourceFile(t *testing.T) {
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile2)),
 				}),
 			},
-			// Update testing
+			// Update testing: no original file
+			{
+				PreConfig: func() {
+					_ = os.Remove(snippetFile2)
+					deleteSnippet(te, filepath.Base(snippetFile1))
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test" {
+				  datastore_id = "local"
+				  node_name    = "{{.NodeName}}"
+				  source_file {
+					path = "{{.SnippetFile1}}"
+				  }
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+					"content_type": "snippets",
+					"file_name":    filepath.Base(snippetFile1),
+					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile1)),
+				}),
+			},
+			// Update testing: original file
 			{
 				PreConfig: func() {
 					deleteSnippet(te, filepath.Base(snippetFile1))
