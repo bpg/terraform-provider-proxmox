@@ -843,7 +843,6 @@ func readFile(
 		if os.IsNotExist(err) {
 			// File does not exist, return zero values and no error
 			return "", 0, "", nil
-
 		}
 		return
 	}
