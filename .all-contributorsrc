@@ -1369,6 +1369,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Bartosz-lab",
+      "name": "Bartosz Cieślik",
+      "avatar_url": "https://avatars.githubusercontent.com/u/73119351?v=4",
+      "profile": "https://github.com/Bartosz-lab",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
