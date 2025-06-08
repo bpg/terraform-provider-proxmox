@@ -3,7 +3,7 @@ FROM golang:1.24.4@sha256:db5d0afbfb4ab648af2393b92e87eaae9ad5e01132803d80caef91
 ARG GOLANGCI_LINT_VERSION=2.1.6 # renovate: depName=golangci/golangci-lint datasource=github-releases
 
 RUN apt update && apt upgrade -y && \
-    apt-get install --no-install-recommends -y ca-certificates curl gnupg lsb-release jq zsh neovim && \
+    apt-get install --no-install-recommends -y ca-certificates curl gnupg lsb-release jq zsh neovim gh && \
     chsh -s $(which zsh) && \
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
     rm -rf /var/lib/apt/lists/*
