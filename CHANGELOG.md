@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.78.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.1...v0.78.2) (2025-06-09)
+
+
+### Bug Fixes
+
+* **file:** `proxmox_virtual_environment_file` allow changing local file path ([#1982](https://github.com/bpg/terraform-provider-proxmox/issues/1982)) ([26c61e3](https://github.com/bpg/terraform-provider-proxmox/commit/26c61e32330d452a371232449ae184b47cb0daa6))
+* **file:** properly handle overwrite option behavior in `proxmox_virtual_environment_download_file` ([#1989](https://github.com/bpg/terraform-provider-proxmox/issues/1989)) ([1b86a41](https://github.com/bpg/terraform-provider-proxmox/commit/1b86a41535e5395dcaacc720d6d127287808c257))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (1.24.3 → 1.24.4) ([#1984](https://github.com/bpg/terraform-provider-proxmox/issues/1984)) ([e8948c9](https://github.com/bpg/terraform-provider-proxmox/commit/e8948c9ac34ca778b6e177666f1c729ae74b9e70))
+* **deps:** update image golang (4c0a181 → 81bf592) ([#1977](https://github.com/bpg/terraform-provider-proxmox/issues/1977)) ([b6bcfe7](https://github.com/bpg/terraform-provider-proxmox/commit/b6bcfe75aa07069634387551489460aef1feef49))
+* **deps:** update module golang.org/x/crypto (v0.38.0 → v0.39.0) ([#1985](https://github.com/bpg/terraform-provider-proxmox/issues/1985)) ([4fa9311](https://github.com/bpg/terraform-provider-proxmox/commit/4fa931121106d1c8a032c157b777233215bde5a1))
+* **deps:** update module golang.org/x/net (v0.40.0 → v0.41.0) ([#1986](https://github.com/bpg/terraform-provider-proxmox/issues/1986)) ([60b6f5b](https://github.com/bpg/terraform-provider-proxmox/commit/60b6f5b657c5659ba6f55f7c9a7e3dcac879f584))
+
 ## [0.78.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.0...v0.78.1) (2025-05-24)
 
 
