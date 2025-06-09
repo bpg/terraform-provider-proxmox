@@ -26,7 +26,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
@@ -74,11 +73,10 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 		originalStateSize, err := strconv.ParseInt(string(originalStateSizeBytes), 10, 64)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Unexpected error when reading originalStateSize from Private",
-				fmt.Sprintf(
-					"Unexpected error in ParseInt: %s",
-					err.Error(),
-				),
+				"Unable to convert original state file size to int64",
+				"Unexpected error in parsing string to int64, key original_state_size. "+
+					"Please retry the operation or report this issue to the provider developers.\n\n"+
+					"Error: "+err.Error(),
 			)
 
 			return
@@ -89,60 +87,14 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 			resp.PlanValue = types.Int64Value(originalStateSize)
 
 			resp.Diagnostics.AddWarning(
-				"The file size in datastore has changed.",
+				"The file size in datastore has changed outside of terraform.",
 				fmt.Sprintf(
-					"Previous size %d does not match size from datastore: %d",
+					"Previous size: %d saved in state does not match current size from datastore: %d. "+
+						"You can disable this behaviour by using overwrite=false",
 					originalStateSize,
 					state.Size.ValueInt64(),
 				),
 			)
-
-			return
-		}
-	}
-
-	urlSizeBytes, diags := req.Private.GetKey(ctx, "url_size")
-
-	resp.Diagnostics.Append(diags...)
-
-	if (urlSizeBytes != nil) && (plan.URL.ValueString() == state.URL.ValueString()) {
-		urlSize, err := strconv.ParseInt(string(urlSizeBytes), 10, 64)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Unexpected error when reading urlSize from Private",
-				fmt.Sprintf(
-					"Unexpected error in ParseInt: %s",
-					err.Error(),
-				),
-			)
-
-			return
-		}
-
-		if state.Size.ValueInt64() != urlSize {
-			if urlSize < 0 {
-				resp.Diagnostics.AddWarning(
-					"Could not read the file metadata from URL.",
-					fmt.Sprintf(
-						"The remote file at URL %q most likely doesn’t exist or can’t be accessed.\n"+
-							"To skip the remote file check, set `overwrite` to `false`.",
-						plan.URL.ValueString(),
-					),
-				)
-			} else {
-				resp.RequiresReplace = true
-				resp.PlanValue = types.Int64Value(urlSize)
-
-				resp.Diagnostics.AddWarning(
-					"The file size from url has changed.",
-					fmt.Sprintf(
-						"Size %d from url %q does not match size from datastore: %d",
-						urlSize,
-						plan.URL.ValueString(),
-						state.Size.ValueInt64(),
-					),
-				)
-			}
 
 			return
 		}
@@ -242,13 +194,12 @@ func (r *downloadFileResource) Schema(
 				},
 			},
 			"size": schema.Int64Attribute{
-				Description: "The file size.",
+				Description: "The file size in PVE.",
 				Optional:    false,
 				Required:    false,
 				Computed:    true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
-					int64planmodifier.RequiresReplace(),
 					sizeRequiresReplaceModifier{},
 				},
 			},
@@ -284,6 +235,9 @@ func (r *downloadFileResource) Schema(
 					"specified compression algorithm. Must be one of `gz` | `lzo` | `zst` | `bz2`.",
 				Optional: true,
 				Default:  nil,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 				Validators: []validator.String{
 					stringvalidator.OneOf([]string{
 						"gz",
@@ -320,9 +274,8 @@ func (r *downloadFileResource) Schema(
 				Default:     booldefault.StaticBool(true),
 			},
 			"overwrite": schema.BoolAttribute{
-				Description: "If `true` and size of uploaded file is different, " +
-					"than size from `url` Content-Length header, file will be downloaded again. " +
-					"If `false`, there will be no checks.",
+				Description: "By default `true`. If `true` and file size has changed in the datastore, " +
+					"it will be replaced. If `false`, there will be no check.",
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
@@ -552,25 +505,6 @@ func (r *downloadFileResource) Read(
 		resp.State.RemoveResource(ctx)
 
 		return
-	}
-
-	if state.Overwrite.ValueBool() {
-		// with overwrite, use url to get proper target size
-		urlMetadata, err := r.getURLMetadata(
-			ctx,
-			&state,
-		)
-		if err != nil {
-			tflog.Error(ctx, "Could not get file metadata from url", map[string]interface{}{
-				"error": err,
-				"url":   state.URL.ValueString(),
-			})
-			// force size to -1, which is a special value used in sizeRequiresReplaceModifier
-			resp.Private.SetKey(ctx, "url_size", []byte("-1"))
-		} else if urlMetadata.Size != nil {
-			setValue := []byte(strconv.FormatInt(*urlMetadata.Size, 10))
-			resp.Private.SetKey(ctx, "url_size", setValue)
-		}
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
