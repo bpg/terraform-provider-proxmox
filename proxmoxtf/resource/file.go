@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
@@ -325,9 +327,6 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	var diags diag.Diagnostics
 
-	contentType, dg := fileGetContentType(d)
-	diags = append(diags, dg...)
-
 	fileName, err := fileGetSourceFileName(d)
 	diags = append(diags, diag.FromErr(err)...)
 
@@ -344,6 +343,9 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	contentType, dg := fileGetContentType(ctx, d, capi)
+	diags = append(diags, dg...)
 
 	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
 	if err != nil {
@@ -553,7 +555,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	}
 
 	switch *contentType {
-	case "iso", "vztmpl":
+	case "iso", "vztmpl", "import":
 		_, err = capi.Node(nodeName).Storage(datastoreID).APIUpload(
 			ctx, request, config.TempDir(),
 		)
@@ -600,7 +602,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	}
 
-	volID, di := fileGetVolumeID(d)
+	volID, di := fileGetVolumeID(ctx, d, capi)
 	diags = append(diags, di...)
 	if diags.HasError() {
 		return diags
@@ -617,10 +619,34 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return diags
 }
 
-func fileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
+func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.Client) (*string, diag.Diagnostics) {
 	contentType := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
+
+	releaseMajor := 0
+	releaseMinor := 0
+
+	version, err := c.Version().Version(ctx)
+	if err != nil {
+		tflog.Warn(ctx, "failed to determine Proxmox VE version", map[string]interface{}{
+			"error": err,
+		})
+	} else {
+		release := strings.Split(version.Release, ".")
+		releaseMajor, err = strconv.Atoi(release[0])
+		if err != nil {
+			tflog.Warn(ctx, "failed to parse Proxmox VE version Major", map[string]interface{}{
+				"error": err,
+			})
+		}
+		releaseMinor, err = strconv.Atoi(release[1])
+		if err != nil {
+			tflog.Warn(ctx, "failed to parse Proxmox VE version Minor", map[string]interface{}{
+				"error": err,
+			})
+		}
+	}
 
 	sourceFilePath := ""
 
@@ -638,22 +664,27 @@ func fileGetContentType(d *schema.ResourceData) (*string, diag.Diagnostics) {
 			mkResourceVirtualEnvironmentFileSourceRaw,
 		)
 	}
-
 	if contentType == "" {
 		if strings.HasSuffix(sourceFilePath, ".tar.gz") ||
 			strings.HasSuffix(sourceFilePath, ".tar.xz") {
 			contentType = "vztmpl"
+			// For Proxmox VE 8.4 and later, we can import VM images to  the "import" content type.
+		} else if releaseMajor >= 8 && releaseMinor > 4 && (strings.HasSuffix(sourceFilePath, ".qcow2") ||
+			strings.HasSuffix(sourceFilePath, ".raw") ||
+			strings.HasSuffix(sourceFilePath, ".vmdk")) {
+			contentType = "import"
 		} else {
 			ext := strings.TrimLeft(strings.ToLower(filepath.Ext(sourceFilePath)), ".")
 
 			switch ext {
-			case "img", "iso":
+			case "iso":
 				contentType = "iso"
 			case "yaml", "yml":
 				contentType = "snippets"
 			}
 		}
 
+		// We cannot determine, for example, the content type of an .img file, so we require the user to specify it.
 		if contentType == "" {
 			return nil, diag.Errorf(
 				"cannot determine the content type of source \"%s\" - Please manually define the \"%s\" argument",
@@ -715,14 +746,14 @@ func fileGetSourceFileName(d *schema.ResourceData) (*string, error) {
 	return &sourceFileFileName, nil
 }
 
-func fileGetVolumeID(d *schema.ResourceData) (fileVolumeID, diag.Diagnostics) {
+func fileGetVolumeID(ctx context.Context, d *schema.ResourceData, c proxmox.Client) (fileVolumeID, diag.Diagnostics) {
 	fileName, err := fileGetSourceFileName(d)
 	if err != nil {
 		return fileVolumeID{}, diag.FromErr(err)
 	}
 
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
-	contentType, diags := fileGetContentType(d)
+	contentType, diags := fileGetContentType(ctx, d, c)
 
 	return fileVolumeID{
 		datastoreID: datastoreID,

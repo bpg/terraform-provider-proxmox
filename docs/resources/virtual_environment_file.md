@@ -126,6 +126,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `backup` (allowed extensions: `.vzdump`, `.tar.gz`, `.tar.xz`, `tar.zst`)
     - `iso` (allowed extensions: `.iso`, `.img`)
     - `snippets` (allowed extensions: any)
+    - `import` (allowed extensions: `.raw`, `.qcow2`, `.vmdk`)
     - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)
 - `datastore_id` - (Required) The datastore id.
 - `file_mode` - The file mode in octal format, e.g. `0700` or `600`. Note that the prefixes `0o` and `0x` is not supported! Setting this attribute is also only allowed for `root@pam` authenticated user.
