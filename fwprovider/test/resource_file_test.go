@@ -200,7 +200,27 @@ func TestAccResourceFile(t *testing.T) {
 					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile2)),
 				}),
 			},
-			// Update testing
+			// Update testing: no original file
+			{
+				PreConfig: func() {
+					_ = os.Remove(snippetFile2)
+					deleteSnippet(te, filepath.Base(snippetFile1))
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "test" {
+				  datastore_id = "local"
+				  node_name    = "{{.NodeName}}"
+				  source_file {
+					path = "{{.SnippetFile1}}"
+				  }
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_file.test", map[string]string{
+					"content_type": "snippets",
+					"file_name":    filepath.Base(snippetFile1),
+					"id":           fmt.Sprintf("local:snippets/%s", filepath.Base(snippetFile1)),
+				}),
+			},
+			// Update testing: original file
 			{
 				PreConfig: func() {
 					deleteSnippet(te, filepath.Base(snippetFile1))
@@ -232,11 +252,12 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 
 	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT")
 	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
+	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
 	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
 	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
 	sshClient, err := ssh.NewClient(
-		sshUsername, "", sshAgent, sshAgentSocket, sshPrivateKey,
+		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshPrivateKey,
 		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{
