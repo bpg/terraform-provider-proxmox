@@ -59,7 +59,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
         services'. Port ranges can be specified with '\d+:\d+', for example
         `80:85`, and you can use comma separated list to match several ports or
         ranges.
-    - `enable` - (Optional) Enable this rule. Defaults to `true`.
+    - `enabled` - (Optional) Enable this rule. Defaults to `true`.
     - `iface` - (Optional) Network interface name. You have to use network
         configuration key names for VMs and containers ('net\d+'). Host related
         rules can use arbitrary strings.
