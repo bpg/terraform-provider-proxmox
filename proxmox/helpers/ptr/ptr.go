@@ -6,6 +6,12 @@
 
 package ptr
 
+import (
+	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
 // Ptr creates a ptr from a value to use it inline.
 func Ptr[T any](val T) *T {
 	return &val
@@ -42,4 +48,20 @@ func UpdateIfChanged[T comparable](dst **T, src *T) bool {
 	}
 
 	return false
+}
+
+// PtrOrNil safely gets a value of any type from schema.ResourceData.
+// If the key is missing, returns nil. For strings, also returns nil if empty or whitespace.
+func PtrOrNil[T any](d *schema.ResourceData, key string) *T {
+	if v, ok := d.GetOk(key); ok {
+		val := v.(T)
+
+		// Special case: skip empty/whitespace-only strings
+		if s, ok := any(val).(string); ok && strings.TrimSpace(s) == "" {
+			return nil
+		}
+
+		return &val
+	}
+	return nil
 }

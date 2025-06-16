@@ -13,6 +13,18 @@ variable "virtual_environment_ssh_username" {
   description = "The username for the Proxmox Virtual Environment API"
 }
 
+variable "virtual_environment_node_name" {
+  description = "Name of the Proxmox node"
+  type        = string
+  default = "pve"
+}
+
+variable "virtual_environment_storage" {
+  description = "Name of the Proxmox storage"
+  type        = string
+  default = "local-lvm"
+}
+
 variable "latest_debian_12_bookworm_qcow2_img_url" {
   type        = string
   description = "The URL for the latest Debian 12 Bookworm qcow2 image"
