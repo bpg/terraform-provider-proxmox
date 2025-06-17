@@ -24,6 +24,7 @@ func ContentType() schema.SchemaValidateDiagFunc {
 		"iso",
 		"snippets",
 		"vztmpl",
+		"import",
 	}, false))
 }
 
