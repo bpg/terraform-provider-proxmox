@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/utils"
@@ -408,7 +408,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 				"url": sourceFilePath,
 			})
 
-			version, e := api.GetMinTLSVersion(sourceFileMinTLS)
+			minTLSVersion, e := api.GetMinTLSVersion(sourceFileMinTLS)
 			if e != nil {
 				return diag.FromErr(e)
 			}
@@ -416,7 +416,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			httpClient := http.Client{
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
-						MinVersion:         version,
+						MinVersion:         minTLSVersion,
 						InsecureSkipVerify: sourceFileInsecure,
 					},
 				},
@@ -624,28 +624,13 @@ func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.C
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
 	sourceRaw := d.Get(mkResourceVirtualEnvironmentFileSourceRaw).([]interface{})
 
-	releaseMajor := 0
-	releaseMinor := 0
-
-	version, err := c.Version().Version(ctx)
-	if err != nil {
-		tflog.Warn(ctx, "failed to determine Proxmox VE version", map[string]interface{}{
+	ver := version.MinimumProxmoxVersion
+	if versionResp, err := c.Version().Version(ctx); err == nil {
+		ver = versionResp.Version
+	} else {
+		tflog.Warn(ctx, fmt.Sprintf("failed to determine Proxmox VE version, assume %v", ver), map[string]interface{}{
 			"error": err,
 		})
-	} else {
-		release := strings.Split(version.Release, ".")
-		releaseMajor, err = strconv.Atoi(release[0])
-		if err != nil {
-			tflog.Warn(ctx, "failed to parse Proxmox VE version Major", map[string]interface{}{
-				"error": err,
-			})
-		}
-		releaseMinor, err = strconv.Atoi(release[1])
-		if err != nil {
-			tflog.Warn(ctx, "failed to parse Proxmox VE version Minor", map[string]interface{}{
-				"error": err,
-			})
-		}
 	}
 
 	sourceFilePath := ""
@@ -668,10 +653,10 @@ func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.C
 		if strings.HasSuffix(sourceFilePath, ".tar.gz") ||
 			strings.HasSuffix(sourceFilePath, ".tar.xz") {
 			contentType = "vztmpl"
-			// For Proxmox VE 8.4 and later, we can import VM images to  the "import" content type.
-		} else if releaseMajor >= 8 && releaseMinor > 4 && (strings.HasSuffix(sourceFilePath, ".qcow2") ||
-			strings.HasSuffix(sourceFilePath, ".raw") ||
-			strings.HasSuffix(sourceFilePath, ".vmdk")) {
+		} else if ver.SupportImportContentType() &&
+			(strings.HasSuffix(sourceFilePath, ".qcow2") ||
+				strings.HasSuffix(sourceFilePath, ".raw") ||
+				strings.HasSuffix(sourceFilePath, ".vmdk")) {
 			contentType = "import"
 		} else {
 			ext := strings.TrimLeft(strings.ToLower(filepath.Ext(sourceFilePath)), ".")

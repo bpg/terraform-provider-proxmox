@@ -6,6 +6,12 @@
 
 package version
 
+import (
+	"fmt"
+
+	"github.com/hashicorp/go-version"
+)
+
 // ResponseBody contains the body from a version response.
 type ResponseBody struct {
 	Data *ResponseData `json:"data,omitempty"`
@@ -13,8 +19,24 @@ type ResponseBody struct {
 
 // ResponseData contains the data from a version response.
 type ResponseData struct {
-	Console      string `json:"console"`
-	Release      string `json:"release"`
-	RepositoryID string `json:"repoid"`
-	Version      string `json:"version"`
+	Console      string         `json:"console"`
+	Release      string         `json:"release"`
+	RepositoryID string         `json:"repoid"`
+	Version      ProxmoxVersion `json:"version"`
+}
+
+type ProxmoxVersion struct {
+	version.Version
+}
+
+func (v *ProxmoxVersion) UnmarshalJSON(data []byte) error {
+	// Unmarshal the version string into a go-version Version object
+	ver, err := version.NewVersion(string(data))
+	if err != nil {
+		return fmt.Errorf("failed to parse version %q: %w", string(data), err)
+	}
+
+	v.Version = *ver
+
+	return nil
 }
