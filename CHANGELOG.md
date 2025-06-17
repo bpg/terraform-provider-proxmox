@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.78.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.1...v0.78.2) (2025-06-16)
+
+
+### Bug Fixes
+
+* **docs:** firewall security group typo `enabled` ([#1994](https://github.com/bpg/terraform-provider-proxmox/issues/1994)) ([307bc25](https://github.com/bpg/terraform-provider-proxmox/commit/307bc25f2e105e0e0d7282954d53df66e3d7d86f))
+* **file:** `proxmox_virtual_environment_file` allow changing local file path ([#1982](https://github.com/bpg/terraform-provider-proxmox/issues/1982)) ([26c61e3](https://github.com/bpg/terraform-provider-proxmox/commit/26c61e32330d452a371232449ae184b47cb0daa6))
+* **file:** properly handle overwrite option behavior in `proxmox_virtual_environment_download_file` ([#1989](https://github.com/bpg/terraform-provider-proxmox/issues/1989)) ([1b86a41](https://github.com/bpg/terraform-provider-proxmox/commit/1b86a41535e5395dcaacc720d6d127287808c257))
+
+
+### Miscellaneous
+
+* **ci:** update actions/attest-build-provenance digest (db473fd → e8998f9) ([#1999](https://github.com/bpg/terraform-provider-proxmox/issues/1999)) ([303c7e6](https://github.com/bpg/terraform-provider-proxmox/commit/303c7e6f9074735872c88edae601b15979a13311))
+* **deps:** update image golang (1.24.3 → 1.24.4) ([#1984](https://github.com/bpg/terraform-provider-proxmox/issues/1984)) ([e8948c9](https://github.com/bpg/terraform-provider-proxmox/commit/e8948c9ac34ca778b6e177666f1c729ae74b9e70))
+* **deps:** update image golang (4c0a181 → 81bf592) ([#1977](https://github.com/bpg/terraform-provider-proxmox/issues/1977)) ([b6bcfe7](https://github.com/bpg/terraform-provider-proxmox/commit/b6bcfe75aa07069634387551489460aef1feef49))
+* **deps:** update image golang (db5d0af → 10c1318) ([#1996](https://github.com/bpg/terraform-provider-proxmox/issues/1996)) ([2444fe8](https://github.com/bpg/terraform-provider-proxmox/commit/2444fe8ef56e8464a82cfd15828e3b117a88d62e))
+* **deps:** update module github.com/hashicorp/terraform-plugin-testing (v1.13.1 → v1.13.2) ([#1997](https://github.com/bpg/terraform-provider-proxmox/issues/1997)) ([6260e3f](https://github.com/bpg/terraform-provider-proxmox/commit/6260e3fe27f604e7abbdc431fe1396c7e059b743))
+* **deps:** update module golang.org/x/crypto (v0.38.0 → v0.39.0) ([#1985](https://github.com/bpg/terraform-provider-proxmox/issues/1985)) ([4fa9311](https://github.com/bpg/terraform-provider-proxmox/commit/4fa931121106d1c8a032c157b777233215bde5a1))
+* **deps:** update module golang.org/x/net (v0.40.0 → v0.41.0) ([#1986](https://github.com/bpg/terraform-provider-proxmox/issues/1986)) ([60b6f5b](https://github.com/bpg/terraform-provider-proxmox/commit/60b6f5b657c5659ba6f55f7c9a7e3dcac879f584))
+
 ## [0.78.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.0...v0.78.1) (2025-05-24)
 
 
