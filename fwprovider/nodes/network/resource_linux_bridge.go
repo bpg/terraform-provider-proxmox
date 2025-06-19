@@ -289,9 +289,20 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 
 	plan.ID = types.StringValue(plan.NodeName.ValueString() + ":" + plan.Name.ValueString())
 
-	r.read(ctx, &plan, &resp.Diagnostics)
+	found := r.read(ctx, &plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.Diagnostics.AddError(
+			"Linux Bridge interface not found after creation",
+			fmt.Sprintf(
+				"Interface %q on node %q could not be read after creation",
+				plan.Name.ValueString(), plan.NodeName.ValueString()),
+		)
+
 		return
 	}
 
@@ -308,7 +319,7 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 	}
 }
 
-func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResourceModel, diags *diag.Diagnostics) {
+func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResourceModel, diags *diag.Diagnostics) bool {
 	ifaces, err := r.client.Node(model.NodeName.ValueString()).ListNetworkInterfaces(ctx)
 	if err != nil {
 		diags.AddError(
@@ -316,7 +327,7 @@ func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResour
 			"Could not list network interfaces, unexpected error: "+err.Error(),
 		)
 
-		return
+		return false
 	}
 
 	for _, iface := range ifaces {
@@ -331,11 +342,13 @@ func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResour
 				"Could not import network interface from API response, unexpected error: "+err.Error(),
 			)
 
-			return
+			return false
 		}
 
-		break
+		return true
 	}
+
+	return false
 }
 
 // Read reads a Linux Bridge interface.
@@ -349,9 +362,14 @@ func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	r.read(ctx, &state, &resp.Diagnostics)
+	found := r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -409,9 +427,20 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	r.read(ctx, &plan, &resp.Diagnostics)
+	found := r.read(ctx, &plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.Diagnostics.AddError(
+			"Linux Bridge interface not found after update",
+			fmt.Sprintf(
+				"Interface %q on node %q could not be read after update",
+				plan.Name.ValueString(), plan.NodeName.ValueString()),
+		)
+
 		return
 	}
 
@@ -491,9 +520,18 @@ func (r *linuxBridgeResource) ImportState(
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
 	}
-	r.read(ctx, &state, &resp.Diagnostics)
+	found := r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.Diagnostics.AddError(
+			"Linux Bridge interface not found",
+			fmt.Sprintf("Interface %q on node %q could not be imported", iface, nodeName),
+		)
+
 		return
 	}
 
