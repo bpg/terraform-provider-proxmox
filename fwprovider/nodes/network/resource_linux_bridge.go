@@ -294,14 +294,18 @@ func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateReq
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	if !found {
 		resp.Diagnostics.AddError(
 			"Linux Bridge interface not found after creation",
-			fmt.Sprintf("Interface %q on node %q could not be read after creation", plan.Name.ValueString(), plan.NodeName.ValueString()),
+			fmt.Sprintf(
+				"Interface %q on node %q could not be read after creation",
+				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
 
 		return
 	}
+
 	resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 
@@ -343,6 +347,7 @@ func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResour
 
 		return true
 	}
+
 	return false
 }
 
@@ -362,6 +367,7 @@ func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	if !found {
 		resp.State.RemoveResource(ctx)
 		return
@@ -430,7 +436,9 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 	if !found {
 		resp.Diagnostics.AddError(
 			"Linux Bridge interface not found after update",
-			fmt.Sprintf("Interface %q on node %q could not be read after update", plan.Name.ValueString(), plan.NodeName.ValueString()),
+			fmt.Sprintf(
+				"Interface %q on node %q could not be read after update",
+				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
 
 		return
@@ -526,6 +534,7 @@ func (r *linuxBridgeResource) ImportState(
 
 		return
 	}
+
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 }

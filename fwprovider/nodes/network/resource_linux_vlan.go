@@ -270,7 +270,9 @@ func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateReque
 	if !found {
 		resp.Diagnostics.AddError(
 			"Linux VLAN interface not found after creation",
-			fmt.Sprintf("Interface %q on node %q could not be read after creation", plan.Name.ValueString(), plan.NodeName.ValueString()),
+			fmt.Sprintf(
+				"Interface %q on node %q could not be read after creation",
+				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
 
 		return
@@ -309,6 +311,7 @@ func (r *linuxVLANResource) read(ctx context.Context, model *linuxVLANResourceMo
 
 		return true
 	}
+
 	return false
 }
 
@@ -381,7 +384,9 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 	if !found {
 		resp.Diagnostics.AddError(
 			"Linux VLAN interface not found after update",
-			fmt.Sprintf("Interface %q on node %q could not be read after update", plan.Name.ValueString(), plan.NodeName.ValueString()),
+			fmt.Sprintf(
+				"Interface %q on node %q could not be read after update",
+				plan.Name.ValueString(), plan.NodeName.ValueString()),
 		)
 
 		return
