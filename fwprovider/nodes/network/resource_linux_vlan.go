@@ -261,9 +261,20 @@ func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateReque
 
 	plan.ID = types.StringValue(plan.NodeName.ValueString() + ":" + plan.Name.ValueString())
 
-	r.read(ctx, &plan, &resp.Diagnostics)
+	found := r.read(ctx, &plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.Diagnostics.AddError(
+			"Linux VLAN interface not found after creation",
+			fmt.Sprintf(
+				"Interface %q on node %q could not be read after creation",
+				plan.Name.ValueString(), plan.NodeName.ValueString()),
+		)
+
 		return
 	}
 
@@ -280,7 +291,7 @@ func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateReque
 	}
 }
 
-func (r *linuxVLANResource) read(ctx context.Context, model *linuxVLANResourceModel, diags *diag.Diagnostics) {
+func (r *linuxVLANResource) read(ctx context.Context, model *linuxVLANResourceModel, diags *diag.Diagnostics) bool {
 	ifaces, err := r.client.Node(model.NodeName.ValueString()).ListNetworkInterfaces(ctx)
 	if err != nil {
 		diags.AddError(
@@ -288,7 +299,7 @@ func (r *linuxVLANResource) read(ctx context.Context, model *linuxVLANResourceMo
 			"Could not list network interfaces, unexpected error: "+err.Error(),
 		)
 
-		return
+		return false
 	}
 
 	for _, iface := range ifaces {
@@ -298,8 +309,10 @@ func (r *linuxVLANResource) read(ctx context.Context, model *linuxVLANResourceMo
 
 		model.importFromNetworkInterfaceList(iface)
 
-		break
+		return true
 	}
+
+	return false
 }
 
 // Read reads a Linux VLAN interface.
@@ -313,9 +326,14 @@ func (r *linuxVLANResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	r.read(ctx, &state, &resp.Diagnostics)
+	found := r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -357,9 +375,20 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 
-	r.read(ctx, &plan, &resp.Diagnostics)
+	found := r.read(ctx, &plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.Diagnostics.AddError(
+			"Linux VLAN interface not found after update",
+			fmt.Sprintf(
+				"Interface %q on node %q could not be read after update",
+				plan.Name.ValueString(), plan.NodeName.ValueString()),
+		)
+
 		return
 	}
 
@@ -439,9 +468,18 @@ func (r *linuxVLANResource) ImportState(
 		NodeName: types.StringValue(nodeName),
 		Name:     types.StringValue(iface),
 	}
-	r.read(ctx, &state, &resp.Diagnostics)
+	found := r.read(ctx, &state, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !found {
+		resp.Diagnostics.AddError(
+			"Linux VLAN interface not found",
+			fmt.Sprintf("Interface %q on node %q could not be imported", iface, nodeName),
+		)
+
 		return
 	}
 
