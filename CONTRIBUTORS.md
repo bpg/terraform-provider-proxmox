@@ -194,6 +194,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/antoniacobaeus"><img src="https://avatars.githubusercontent.com/u/46004494?v=4?s=100" width="100px;" alt="Anton Iacobaeus"/><br /><sub><b>Anton Iacobaeus</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=antoniacobaeus" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Bartosz-lab"><img src="https://avatars.githubusercontent.com/u/73119351?v=4?s=100" width="100px;" alt="Bartosz Cieślik"/><br /><sub><b>Bartosz Cieślik</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Bartosz-lab" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/cowgod"><img src="https://avatars.githubusercontent.com/u/523086?v=4?s=100" width="100px;" alt="Dan McCormack"/><br /><sub><b>Dan McCormack</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=cowgod" title="Documentation">📖</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
