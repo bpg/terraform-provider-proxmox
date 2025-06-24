@@ -118,10 +118,15 @@ func Test_fileParseVolumeID(t *testing.T) {
 		{"missing type", "local:/file.ido", fileVolumeID{}, true},
 		{"missing file", "local:iso", fileVolumeID{}, true},
 		{"missing file", "local:iso/", fileVolumeID{}, true},
-		{"valid", "local:iso/file.iso", fileVolumeID{
+		{"valid iso", "local:iso/file.iso", fileVolumeID{
 			datastoreID: "local",
 			contentType: "iso",
 			fileName:    "file.iso",
+		}, false},
+		{"valid import", "local:import/file.qcow2", fileVolumeID{
+			datastoreID: "local",
+			contentType: "import",
+			fileName:    "file.qcow2",
 		}, false},
 	}
 
