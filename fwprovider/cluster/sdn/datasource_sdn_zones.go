@@ -12,6 +12,7 @@ import (
 )
 
 var _ datasource.DataSource = &sdnZoneDataSource{}
+
 var _ datasource.DataSourceWithConfigure = &sdnZoneDataSource{}
 
 type sdnZoneDataSource struct {
@@ -22,11 +23,19 @@ func NewSDNZoneDataSource() datasource.DataSource {
 	return &sdnZoneDataSource{}
 }
 
-func (d *sdnZoneDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *sdnZoneDataSource) Metadata(
+	_ context.Context,
+	req datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
 	resp.TypeName = req.ProviderTypeName + "_sdn_zone"
 }
 
-func (d *sdnZoneDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *sdnZoneDataSource) Configure(
+	_ context.Context,
+	req datasource.ConfigureRequest,
+	resp *datasource.ConfigureResponse,
+) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -37,6 +46,7 @@ func (d *sdnZoneDataSource) Configure(_ context.Context, req datasource.Configur
 			"Unexpected Provider Configuration",
 			fmt.Sprintf("Expected config.DataSource but got: %T", req.ProviderData),
 		)
+
 		return
 	}
 
@@ -82,6 +92,7 @@ func (d *sdnZoneDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	var data sdnZoneModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}

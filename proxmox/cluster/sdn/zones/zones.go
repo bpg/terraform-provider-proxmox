@@ -52,10 +52,11 @@ func (c *Client) CreateZone(ctx context.Context, data *ZoneRequestData) error {
 
 // UpdateZone updates an existing SDN zone.
 func (c *Client) UpdateZone(ctx context.Context, data *ZoneRequestData) error {
-	// PVE API does not allow to pass "type" in PUT requests, this doesn't makes any sense
-	// since other required params like port, server must still be there
-	// while we could spawn another struct, let's just fix it silently
+	/* PVE API does not allow to pass "type" in PUT requests, this doesn't makes any sense
+	since other required params like port, server must still be there
+	while we could spawn another struct, let's just fix it silently */
 	data.Type = nil
+
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(data.ID), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating SDN zone: %w", err)

@@ -40,7 +40,11 @@ func (r *sdnSubnetResource) Metadata(_ context.Context, req resource.MetadataReq
 	resp.TypeName = req.ProviderTypeName + "_sdn_subnet"
 }
 
-func (r *sdnSubnetResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *sdnSubnetResource) Configure(
+	_ context.Context,
+	req resource.ConfigureRequest,
+	resp *resource.ConfigureResponse,
+) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -51,6 +55,7 @@ func (r *sdnSubnetResource) Configure(_ context.Context, req resource.ConfigureR
 			"Unexpected Resource Configure Type",
 			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
+
 		return
 	}
 
@@ -120,18 +125,23 @@ func (r *sdnSubnetResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 
 func (r *sdnSubnetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan sdnSubnetModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	if plan.Vnet.IsNull() || plan.Vnet.IsUnknown() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("vnet"),
 			"missing required field",
 			"Missing the parent vnet's ID attribute, which is required to define a subnet")
+
 		return
 	}
-	err := r.client.CreateSubnet(ctx, plan.Vnet.ValueString(), plan.toAPIRequestBody())
+
+	err := r.client.CreateSubnet(ctx, plan.Vnet.ValueString(), plan.toAPIRequestBody(ctx))
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating subnet", err.Error())
 		return
@@ -140,8 +150,9 @@ func (r *sdnSubnetResource) Create(ctx context.Context, req resource.CreateReque
 	tflog.Debug(ctx, "Created object's ID", map[string]any{"plan name:": plan.Subnet})
 	plan.ID = plan.Subnet
 
-	// Because proxmox API doesn't return the created object's properties and the subnet's name gets modified by proxmox internally
-	// Read it back to get the canonical-ID from proxmox
+	/* Because proxmox API doesn't return the created object's properties and the subnet's name gets modified by
+	proxmox internally.
+	Read it back to get the canonical-ID from proxmox.*/
 	canonicalID, err := resolveCanonicalSubnetID(ctx, r.client, plan.Vnet.ValueString(), plan.Subnet.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error resolving canonical subnet ID", err.Error())
@@ -156,7 +167,9 @@ func (r *sdnSubnetResource) Create(ctx context.Context, req resource.CreateReque
 
 func (r *sdnSubnetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state sdnSubnetModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -169,6 +182,7 @@ func (r *sdnSubnetResource) Read(ctx context.Context, req resource.ReadRequest, 
 		}
 
 		resp.Diagnostics.AddError("Error reading subnet", err.Error())
+
 		return
 	}
 
@@ -181,24 +195,24 @@ func (r *sdnSubnetResource) Read(ctx context.Context, req resource.ReadRequest, 
 
 func (r *sdnSubnetResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan sdnSubnetModel
-	// var state sdnSubnetModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	// resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	reqData := plan.toAPIRequestBody()
-	// reqData.Delete = toDelete
+	reqData := plan.toAPIRequestBody(ctx)
 
 	if plan.Vnet.IsNull() || plan.Vnet.IsUnknown() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("vnet"),
 			"missing required field",
 			"Missing the parent vnet's ID attribute, which is required to define a subnet")
+
 		return
 	}
+
 	err := r.client.UpdateSubnet(ctx, plan.Vnet.ValueString(), reqData)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating subnet", err.Error())
@@ -210,7 +224,9 @@ func (r *sdnSubnetResource) Update(ctx context.Context, req resource.UpdateReque
 
 func (r *sdnSubnetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state sdnSubnetModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -221,18 +237,25 @@ func (r *sdnSubnetResource) Delete(ctx context.Context, req resource.DeleteReque
 	}
 }
 
-func (r *sdnSubnetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Expect ID format: "vnet/subnet"
+func (r *sdnSubnetResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
+	// Expect ID format: "vnet/subnet".
 	parts := strings.Split(req.ID, "/")
 	if len(parts) != 2 {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
 			"Expected import identifier in format 'vnet-id/subnet-id'.",
 		)
+
 		return
 	}
+
 	vnetID := parts[0]
 	subnetID := parts[1]
+
 	subnet, err := r.client.GetSubnet(ctx, vnetID, subnetID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -241,6 +264,7 @@ func (r *sdnSubnetResource) ImportState(ctx context.Context, req resource.Import
 		}
 
 		resp.Diagnostics.AddError("Unable to import subnet", err.Error())
+
 		return
 	}
 
@@ -249,7 +273,12 @@ func (r *sdnSubnetResource) ImportState(ctx context.Context, req resource.Import
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
-func resolveCanonicalSubnetID(ctx context.Context, client *subnets.Client, vnet string, originalID string) (string, error) {
+func resolveCanonicalSubnetID(
+	ctx context.Context,
+	client *subnets.Client,
+	vnet string,
+	originalID string,
+) (string, error) {
 	subnets, err := client.GetSubnets(ctx, vnet)
 	if err != nil {
 		return "", fmt.Errorf("failed to list subnets for canonical name resolution: %w", err)
@@ -257,11 +286,11 @@ func resolveCanonicalSubnetID(ctx context.Context, client *subnets.Client, vnet 
 
 	for _, subnet := range subnets {
 		if subnet.ID == originalID {
-			return subnet.ID, nil // Already canonical
+			return subnet.ID, nil
 		}
 
-		// Proxmox canonical format is usually zone-prefixed:
-		// e.g., zoneM-10-10-0-0-24 instead of 10.10.0.0/24
+		// Proxmox canonical format is usually zone-prefixed.
+		// e.g., zoneM-10-10-0-0-24 instead of 10.10.0.0/24.
 		if strings.HasSuffix(subnet.ID, strings.ReplaceAll(originalID, "/", "-")) {
 			return subnet.ID, nil
 		}
@@ -270,11 +299,19 @@ func resolveCanonicalSubnetID(ctx context.Context, client *subnets.Client, vnet 
 	return "", fmt.Errorf("could not resolve canonical subnet ID for %s", originalID)
 }
 
-// ValidateConfig checks that the subnet's field are correctly set. Particularly that gateway, dhcp and dns are within CIDR
-func (r *sdnSubnetResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+/*
+ValidateConfig checks that the subnet's field are correctly set.
+Particularly that gateway, dhcp and dns are within CIDR.
+*/
+func (r *sdnSubnetResource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
 	var config sdnSubnetModel
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -286,6 +323,7 @@ func (r *sdnSubnetResource) ValidateConfig(ctx context.Context, req resource.Val
 			"Invalid Subnet",
 			fmt.Sprintf("Could not parse subnet: %s", err),
 		)
+
 		return
 	}
 
@@ -298,6 +336,7 @@ func (r *sdnSubnetResource) ValidateConfig(ctx context.Context, req resource.Val
 					"Invalid IP Address",
 					fmt.Sprintf("Could not parse IP address: %s", ipVal.ValueString()),
 				)
+
 				return
 			}
 

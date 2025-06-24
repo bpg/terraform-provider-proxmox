@@ -1,7 +1,6 @@
 package sdn
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -30,16 +29,22 @@ type testClients struct {
 }
 
 func getTestClients(t *testing.T) *testClients {
+	t.Helper()
+
 	apiToken := os.Getenv("PVE_TOKEN")
+
 	url := os.Getenv("PVE_URL")
 	if apiToken == "" || url == "" {
 		t.Skip("PVE_TOKEN and PVE_URL must be set")
 	}
+
 	conn, err := api.NewConnection(url, true, "")
 	if err != nil {
 		t.Fatalf("connection error: %v", err)
 	}
+
 	creds := api.Credentials{TokenCredentials: &api.TokenCredentials{APIToken: apiToken}}
+
 	client, err := api.NewClient(creds, conn)
 	if err != nil {
 		t.Fatalf("client error: %v", err)
@@ -56,7 +61,9 @@ func TestSDNLifecycle(t *testing.T) {
 	clients := getTestClients(t)
 
 	t.Run("Create Zone", func(t *testing.T) {
-		err := clients.zone.CreateZone(context.Background(), &zones.ZoneRequestData{
+		t.Parallel()
+
+		err := clients.zone.CreateZone(t.Context(), &zones.ZoneRequestData{
 			ZoneData: zones.ZoneData{
 				ID:     testZoneID,
 				Type:   ptr.Ptr("vlan"),
@@ -72,19 +79,24 @@ func TestSDNLifecycle(t *testing.T) {
 	})
 
 	t.Run("Get Zone", func(t *testing.T) {
-		zone, err := clients.zone.GetZone(context.Background(), testZoneID)
+		t.Parallel()
+
+		zone, err := clients.zone.GetZone(t.Context(), testZoneID)
 		if err != nil {
 			t.Fatalf("GetZone failed: %v", err)
 		}
+
 		t.Logf("Zone: %+v", zone)
 	})
 
 	t.Run("Update Zone", func(t *testing.T) {
-		err := clients.zone.UpdateZone(context.Background(), &zones.ZoneRequestData{
+		t.Parallel()
+
+		err := clients.zone.UpdateZone(t.Context(), &zones.ZoneRequestData{
 			ZoneData: zones.ZoneData{
 				ID:     testZoneID,
 				Nodes:  ptr.Ptr("updatednode"),
-				Bridge: ptr.Ptr("vmbr1"), // simulate a VLAN-related update
+				Bridge: ptr.Ptr("vmbr1"), // simulate a VLAN-related update.
 			},
 		})
 		if err != nil {
@@ -93,7 +105,9 @@ func TestSDNLifecycle(t *testing.T) {
 	})
 
 	t.Run("Create VNet", func(t *testing.T) {
-		err := clients.vnet.CreateVnet(context.Background(), &vnets.VnetRequestData{
+		t.Parallel()
+
+		err := clients.vnet.CreateVnet(t.Context(), &vnets.VnetRequestData{
 			VnetData: vnets.VnetData{
 				ID:           testVnetID,
 				Zone:         ptr.Ptr(testZoneID),
@@ -110,15 +124,20 @@ func TestSDNLifecycle(t *testing.T) {
 	})
 
 	t.Run("Get VNet", func(t *testing.T) {
-		vnet, err := clients.vnet.GetVnet(context.Background(), testVnetID)
+		t.Parallel()
+
+		vnet, err := clients.vnet.GetVnet(t.Context(), testVnetID)
 		if err != nil {
 			t.Fatalf("GetVnet failed: %v", err)
 		}
+
 		t.Logf("VNet: %+v", vnet)
 	})
 
 	t.Run("Update VNet", func(t *testing.T) {
-		err := clients.vnet.UpdateVnet(context.Background(), &vnets.VnetRequestData{
+		t.Parallel()
+
+		err := clients.vnet.UpdateVnet(t.Context(), &vnets.VnetRequestData{
 			VnetData: vnets.VnetData{
 				ID:    testVnetID,
 				Alias: ptr.Ptr("UpdatedAlias"),
@@ -130,6 +149,8 @@ func TestSDNLifecycle(t *testing.T) {
 	})
 
 	t.Run("Create Subnet", func(t *testing.T) {
+		t.Parallel()
+
 		ptr := &subnets.SubnetData{
 			ID:            testSubnetCIDR,
 			Vnet:          ptr.Ptr(testVnetID),
@@ -144,21 +165,27 @@ func TestSDNLifecycle(t *testing.T) {
 		req := &subnets.SubnetRequestData{
 			EncodedSubnetData: *ptr.ToEncoded(),
 		}
-		err := clients.subnet.CreateSubnet(context.Background(), testVnetID, req)
+
+		err := clients.subnet.CreateSubnet(t.Context(), testVnetID, req)
 		if err != nil {
 			t.Fatalf("CreateSubnet failed: %v", err)
 		}
 	})
 
 	t.Run("Get Subnet", func(t *testing.T) {
-		subnet, err := clients.subnet.GetSubnet(context.Background(), testVnetID, testSubnetCanonical)
+		t.Parallel()
+
+		subnet, err := clients.subnet.GetSubnet(t.Context(), testVnetID, testSubnetCanonical)
 		if err != nil {
 			t.Fatalf("GetSubnet failed: %v", err)
 		}
+
 		t.Logf("Subnet: %+v", subnet)
 	})
 
 	t.Run("Update Subnet", func(t *testing.T) {
+		t.Parallel()
+
 		ptr := &subnets.SubnetData{
 			ID:      testSubnetCanonical,
 			Vnet:    ptr.Ptr(testVnetID),
@@ -167,28 +194,35 @@ func TestSDNLifecycle(t *testing.T) {
 		req := &subnets.SubnetRequestData{
 			EncodedSubnetData: *ptr.ToEncoded(),
 		}
-		err := clients.subnet.UpdateSubnet(context.Background(), testVnetID, req)
+
+		err := clients.subnet.UpdateSubnet(t.Context(), testVnetID, req)
 		if err != nil {
 			t.Fatalf("UpdateSubnet failed: %v", err)
 		}
 	})
 
 	t.Run("Delete Subnet", func(t *testing.T) {
-		err := clients.subnet.DeleteSubnet(context.Background(), testVnetID, testSubnetCanonical)
+		t.Parallel()
+
+		err := clients.subnet.DeleteSubnet(t.Context(), testVnetID, testSubnetCanonical)
 		if err != nil {
 			t.Fatalf("DeleteSubnet failed: %v", err)
 		}
 	})
 
 	t.Run("Delete VNet", func(t *testing.T) {
-		err := clients.vnet.DeleteVnet(context.Background(), testVnetID)
+		t.Parallel()
+
+		err := clients.vnet.DeleteVnet(t.Context(), testVnetID)
 		if err != nil {
 			t.Fatalf("DeleteVnet failed: %v", err)
 		}
 	})
 
 	t.Run("Delete Zone", func(t *testing.T) {
-		err := clients.zone.DeleteZone(context.Background(), testZoneID)
+		t.Parallel()
+
+		err := clients.zone.DeleteZone(t.Context(), testZoneID)
 		if err != nil {
 			t.Fatalf("DeleteZone failed: %v", err)
 		}

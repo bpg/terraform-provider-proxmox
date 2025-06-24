@@ -57,6 +57,7 @@ func (r *sdnVnetResource) Configure(
 			"Unexpected Resource Configure Type",
 			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
+
 		return
 	}
 
@@ -118,7 +119,9 @@ func (r *sdnVnetResource) Create(
 	resp *resource.CreateResponse,
 ) {
 	var plan sdnVnetModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -140,7 +143,9 @@ func (r *sdnVnetResource) Read(
 	resp *resource.ReadResponse,
 ) {
 	var state sdnVnetModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -153,12 +158,13 @@ func (r *sdnVnetResource) Read(
 		}
 
 		resp.Diagnostics.AddError("Error reading vnet", err.Error())
+
 		return
 	}
 
 	readModel := &sdnVnetModel{}
 	readModel.importFromAPI(state.ID.ValueString(), data)
-	// Preserve provider-only field
+	// Preserve provider-only field.
 	readModel.ZoneType = state.ZoneType
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
@@ -169,7 +175,9 @@ func (r *sdnVnetResource) Update(
 	resp *resource.UpdateResponse,
 ) {
 	var plan sdnVnetModel
+
 	var state sdnVnetModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -178,6 +186,7 @@ func (r *sdnVnetResource) Update(
 	}
 
 	var toDelete []string
+
 	checkDelete(plan.Alias, state.Alias, &toDelete, "alias")
 	checkDelete(plan.IsolatePorts, state.IsolatePorts, &toDelete, "isolate-ports")
 	checkDelete(plan.Tag, state.Tag, &toDelete, "tag")
@@ -202,7 +211,9 @@ func (r *sdnVnetResource) Delete(
 	resp *resource.DeleteResponse,
 ) {
 	var state sdnVnetModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -224,7 +235,9 @@ func (r *sdnVnetResource) ImportState(
 			resp.Diagnostics.AddError("Resource does not exist", err.Error())
 			return
 		}
+
 		resp.Diagnostics.AddError("Failed to import resource", err.Error())
+
 		return
 	}
 
@@ -239,8 +252,13 @@ func checkDelete(planField, stateField attr.Value, toDelete *[]string, apiName s
 	}
 }
 
-func (r *sdnVnetResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+func (r *sdnVnetResource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
 	var data sdnVnetModel
+
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
@@ -255,7 +273,8 @@ func (r *sdnVnetResource) ValidateConfig(ctx context.Context, req resource.Valid
 		resp.Diagnostics.AddAttributeError(
 			path.Root("zonetype"),
 			"Missing Required Field",
-			"No Zone linked to this Vnet, please set the 'zonetype' property. \nEither from a created zone or a datasource import.")
+			"No Zone linked, please set the 'zonetype' property. \nEither from a created zone or a datasource import.")
+
 		return
 	}
 
@@ -287,7 +306,7 @@ func (r *sdnVnetResource) ValidateConfig(ctx context.Context, req resource.Valid
 		"type":          data.Type,
 	}
 
-	// Check required fields
+	// Check required fields.
 	for _, field := range required[zoneType] {
 		if val, ok := fieldMap[field]; ok {
 			if val.IsNull() || val.IsUnknown() {
@@ -309,5 +328,4 @@ func (r *sdnVnetResource) ValidateConfig(ctx context.Context, req resource.Valid
 			)
 		}
 	}
-
 }

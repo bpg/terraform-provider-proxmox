@@ -55,6 +55,7 @@ func (r *sdnZoneResource) Configure(
 			"Unexpected Resource Configure Type",
 			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
+
 		return
 	}
 
@@ -163,15 +164,19 @@ func (r *sdnZoneResource) Create(
 	resp *resource.CreateResponse,
 ) {
 	var plan sdnZoneModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	reqData := plan.toAPIRequestBody()
+
 	err := r.client.CreateZone(ctx, reqData)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to Create SDN Zone", err.Error())
+
 		return
 	}
 
@@ -185,7 +190,9 @@ func (r *sdnZoneResource) Read(
 	resp *resource.ReadResponse,
 ) {
 	var state sdnZoneModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -198,6 +205,7 @@ func (r *sdnZoneResource) Read(
 		}
 
 		resp.Diagnostics.AddError("Unable to Read SDN Zone", err.Error())
+
 		return
 	}
 
@@ -212,12 +220,15 @@ func (r *sdnZoneResource) Update(
 	resp *resource.UpdateResponse,
 ) {
 	var plan sdnZoneModel
+
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	reqData := plan.toAPIRequestBody()
+
 	err := r.client.UpdateZone(ctx, reqData)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to Update SDN Zone", err.Error())
@@ -233,7 +244,9 @@ func (r *sdnZoneResource) Delete(
 	resp *resource.DeleteResponse,
 ) {
 	var state sdnZoneModel
+
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -253,10 +266,12 @@ func (r *sdnZoneResource) ImportState(
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError("Zone does not exist", err.Error())
+
 			return
 		}
 
 		resp.Diagnostics.AddError("Unable to Import SDN Zone", err.Error())
+
 		return
 	}
 
@@ -265,15 +280,20 @@ func (r *sdnZoneResource) ImportState(
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
-func (r *sdnZoneResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+func (r *sdnZoneResource) ValidateConfig(
+	ctx context.Context,
+	req resource.ValidateConfigRequest,
+	resp *resource.ValidateConfigResponse,
+) {
 	var data sdnZoneModel
+
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Check the type field
+	// Check the type field.
 	if data.Type.IsNull() || data.Type.IsUnknown() {
 		return
 	}
@@ -287,13 +307,13 @@ func (r *sdnZoneResource) ValidateConfig(ctx context.Context, req resource.Valid
 
 	zoneType := data.Type.ValueString()
 
-	// Extracts required fields and at the same time checks zone type validity
+	// Extracts required fields and at the same time checks zone type validity.
 	fields, ok := required[zoneType]
 	if !ok {
 		return
 	}
 
-	// Map of field names to their values from data
+	// Map of field names to their values from data.
 	fieldMap := map[string]attr.Value{
 		"bridge":       data.Bridge,
 		"service_vlan": data.ServiceVLAN,

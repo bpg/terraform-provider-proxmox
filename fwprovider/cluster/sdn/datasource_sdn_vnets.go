@@ -14,10 +14,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/vnets"
 )
 
-var (
-	_ datasource.DataSource              = &sdnVnetDataSource{}
-	_ datasource.DataSourceWithConfigure = &sdnVnetDataSource{}
-)
+var _ datasource.DataSource = &sdnVnetDataSource{}
+
+var _ datasource.DataSourceWithConfigure = &sdnVnetDataSource{}
 
 type sdnVnetDataSource struct {
 	client *vnets.Client
@@ -27,11 +26,19 @@ func NewSDNVnetDataSource() datasource.DataSource {
 	return &sdnVnetDataSource{}
 }
 
-func (d *sdnVnetDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *sdnVnetDataSource) Metadata(
+	ctx context.Context,
+	req datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
 	resp.TypeName = req.ProviderTypeName + "_sdn_vnet"
 }
 
-func (d *sdnVnetDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *sdnVnetDataSource) Configure(
+	ctx context.Context,
+	req datasource.ConfigureRequest,
+	resp *datasource.ConfigureResponse,
+) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -42,6 +49,7 @@ func (d *sdnVnetDataSource) Configure(ctx context.Context, req datasource.Config
 			"Unexpected Provider Data",
 			fmt.Sprintf("Expected config.DataSource, got: %T", req.ProviderData),
 		)
+
 		return
 	}
 
@@ -96,18 +104,22 @@ func (d *sdnVnetDataSource) Read(ctx context.Context, req datasource.ReadRequest
 	var config sdnVnetModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	vnetID := config.Name.ValueString()
+
 	vnet, err := d.client.GetVnet(ctx, vnetID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError("Vnet not found", fmt.Sprintf("No vnet with ID %q exists", vnetID))
 			return
 		}
+
 		resp.Diagnostics.AddError("Error retrieving vnet", err.Error())
+
 		return
 	}
 
