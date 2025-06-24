@@ -1,5 +1,5 @@
 locals {
-  datastore_id = "local-lvm"
+  datastore_id = var.virtual_environment_storage
 }
 
 resource "proxmox_virtual_environment_vm" "example_template" {

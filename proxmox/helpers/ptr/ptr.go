@@ -63,5 +63,6 @@ func PtrOrNil[T any](d *schema.ResourceData, key string) *T {
 
 		return &val
 	}
+
 	return nil
 }

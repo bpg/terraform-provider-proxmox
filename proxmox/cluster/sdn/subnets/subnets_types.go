@@ -5,7 +5,7 @@ import (
 )
 
 /*
---------------------------------- SUBNETS -----------------------------------------------
+SUBNETS
 
 This part is related to the SDN component : SubNets
 Based on docs :
@@ -18,18 +18,16 @@ Notes:
  2. Currently in the API there are Delete and Digest options which are not available
     in the UI so the choice was made to remove them temporary, waiting for a fix.
  3. It is also not really in the terraform spirit to update elements like this.
-
------------------------------------------------------------------------------------------
 */
 type SubnetData struct {
-	ID            string        `json:"subnet,omitempty"            url:"subnet,omitempty"`
-	Type          *string       `json:"type,omitempty"              url:"type,omitempty"`
-	Vnet          *string       `json:"vnet,omitempty"              url:"vnet,omitempty"`
-	DHCPDNSServer *string       `json:"dhcp-dns-server,omitempty"   url:"dhcp-dns-server,omitempty"`
-	DHCPRange     DHCPRangeList `json:"dhcp-range,omitempty"        url:"dhcp-range,omitempty"`
-	DNSZonePrefix *string       `json:"dnszoneprefix,omitempty"     url:"dnszoneprefix,omitempty"`
-	Gateway       *string       `json:"gateway,omitempty"           url:"gateway,omitempty"`
-	SNAT          *int64        `json:"snat,omitempty"              url:"snat,omitempty"`
+	ID            string        `json:"subnet,omitempty"          url:"subnet,omitempty"`
+	Type          *string       `json:"type,omitempty"            url:"type,omitempty"`
+	Vnet          *string       `json:"vnet,omitempty"            url:"vnet,omitempty"`
+	DHCPDNSServer *string       `json:"dhcp-dns-server,omitempty" url:"dhcp-dns-server,omitempty"`
+	DHCPRange     DHCPRangeList `json:"dhcp-range,omitempty"      url:"dhcp-range,omitempty"`
+	DNSZonePrefix *string       `json:"dnszoneprefix,omitempty"   url:"dnszoneprefix,omitempty"`
+	Gateway       *string       `json:"gateway,omitempty"         url:"gateway,omitempty"`
+	SNAT          *int64        `json:"snat,omitempty"            url:"snat,omitempty"`
 }
 
 type SubnetRequestData struct {
@@ -62,14 +60,14 @@ type EncodedSubnetData struct {
 	Type          *string  `url:"type,omitempty"`
 	Vnet          *string  `url:"vnet,omitempty"`
 	DHCPDNSServer *string  `url:"dhcp-dns-server,omitempty"`
-	DHCPRange     []string `url:"dhcp-range,omitempty"` // manually formatted
+	DHCPRange     []string `url:"dhcp-range,omitempty"`
 	DNSZonePrefix *string  `url:"dnszoneprefix,omitempty"`
 	Gateway       *string  `url:"gateway,omitempty"`
 	SNAT          *int64   `url:"snat,omitempty"`
 }
 
 func (s *SubnetData) ToEncoded() *EncodedSubnetData {
-	var encodedRanges []string
+	encodedRanges := make([]string, 0, len(s.DHCPRange))
 	for _, r := range s.DHCPRange {
 		encodedRanges = append(encodedRanges, fmt.Sprintf("start-address=%s,end-address=%s", r.StartAddress, r.EndAddress))
 	}

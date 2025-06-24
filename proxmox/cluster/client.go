@@ -58,17 +58,17 @@ func (c *Client) Metrics() *metrics.Client {
 	return &metrics.Client{Client: c}
 }
 
-// SDNZones returns a client for managing the cluster's SDN zones
+// SDNZones returns a client for managing the cluster's SDN zones.
 func (c *Client) SDNZones() *zones.Client {
 	return &zones.Client{Client: c}
 }
 
-// SDNVnets returns a client for managing the cluster's SDN Vnets
+// SDNVnets returns a client for managing the cluster's SDN Vnets.
 func (c *Client) SDNVnets() *vnets.Client {
 	return &vnets.Client{Client: c}
 }
 
-// SDNSubnets returns a client for managing the cluster's SDN Subnets
+// SDNSubnets returns a client for managing the cluster's SDN Subnets.
 func (c *Client) SDNSubnets() *subnets.Client {
 	return &subnets.Client{Client: c}
 }

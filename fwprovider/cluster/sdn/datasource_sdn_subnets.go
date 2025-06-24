@@ -13,10 +13,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
 )
 
-var (
-	_ datasource.DataSource              = &sdnSubnetDataSource{}
-	_ datasource.DataSourceWithConfigure = &sdnSubnetDataSource{}
-)
+var _ datasource.DataSource = &sdnSubnetDataSource{}
+
+var _ datasource.DataSourceWithConfigure = &sdnSubnetDataSource{}
 
 type sdnSubnetDataSource struct {
 	client *subnets.Client
@@ -26,11 +25,19 @@ func NewSDNSubnetDataSource() datasource.DataSource {
 	return &sdnSubnetDataSource{}
 }
 
-func (d *sdnSubnetDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *sdnSubnetDataSource) Metadata(
+	ctx context.Context,
+	req datasource.MetadataRequest,
+	resp *datasource.MetadataResponse,
+) {
 	resp.TypeName = req.ProviderTypeName + "_sdn_subnet"
 }
 
-func (d *sdnSubnetDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *sdnSubnetDataSource) Configure(
+	ctx context.Context,
+	req datasource.ConfigureRequest,
+	resp *datasource.ConfigureResponse,
+) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -41,13 +48,18 @@ func (d *sdnSubnetDataSource) Configure(ctx context.Context, req datasource.Conf
 			"Unexpected Provider Configuration",
 			fmt.Sprintf("Expected config.DataSource, got: %T", req.ProviderData),
 		)
+
 		return
 	}
 
 	d.client = cfg.Client.Cluster().SDNSubnets()
 }
 
-func (d *sdnSubnetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *sdnSubnetDataSource) Schema(
+	ctx context.Context,
+	req datasource.SchemaRequest,
+	resp *datasource.SchemaResponse,
+) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieve details about a specific SDN Subnet in Proxmox VE.",
 		Attributes: map[string]schema.Attribute{
@@ -109,6 +121,7 @@ func (d *sdnSubnetDataSource) Read(ctx context.Context, req datasource.ReadReque
 	var config sdnSubnetModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -119,17 +132,19 @@ func (d *sdnSubnetDataSource) Read(ctx context.Context, req datasource.ReadReque
 			resp.Diagnostics.AddError("Subnet not found", err.Error())
 			return
 		}
+
 		resp.Diagnostics.AddError("Failed to retrieve subnet", err.Error())
+
 		return
 	}
 
-	// Set the state
+	// Set the state.
 	state := &sdnSubnetModel{}
 	state.Subnet = config.Subnet
 	state.Vnet = config.Vnet
 	state.importFromAPI(config.Subnet.ValueString(), subnet)
 
-	// Set canonical name and ID (both = user-supplied subnet)
+	// Set canonical name and ID (both = user-supplied subnet).
 	state.ID = config.Subnet
 	state.CanonicalName = config.Subnet
 

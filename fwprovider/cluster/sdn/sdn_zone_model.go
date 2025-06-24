@@ -16,14 +16,14 @@ type sdnZoneModel struct {
 	DNSZone    types.String `tfsdk:"dns_zone"`
 	Nodes      types.String `tfsdk:"nodes"`
 	MTU        types.Int64  `tfsdk:"mtu"`
-	// VLAN
+	// VLAN.
 	Bridge types.String `tfsdk:"bridge"`
-	// QinQ
+	// QinQ.
 	ServiceVLAN         types.Int64  `tfsdk:"tag"`
 	ServiceVLANProtocol types.String `tfsdk:"vlan_protocol"`
-	// VXLAN
+	// VXLAN.
 	Peers types.String `tfsdk:"peers"`
-	// EVPN
+	// EVPN.
 	Controller              types.String `tfsdk:"controller"`
 	ExitNodes               types.String `tfsdk:"exit_nodes"`
 	PrimaryExitNode         types.String `tfsdk:"primary_exit_node"`
@@ -57,7 +57,6 @@ func (m *sdnZoneModel) importFromAPI(name string, data *zones.ZoneData) {
 	m.ExitNodesLocalRouting = types.BoolPointerValue(ptrConversion.Int64ToBoolPtr(data.ExitNodesLocalRouting))
 	m.AdvertiseSubnets = types.BoolPointerValue(ptrConversion.Int64ToBoolPtr(data.AdvertiseSubnets))
 	m.DisableARPNDSuppression = types.BoolPointerValue(ptrConversion.Int64ToBoolPtr(data.DisableARPNDSuppression))
-
 }
 
 func (m *sdnZoneModel) toAPIRequestBody() *zones.ZoneRequestData {

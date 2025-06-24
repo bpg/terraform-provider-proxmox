@@ -1,7 +1,7 @@
 package vnets
 
 /*
---------------------------------- VNETS ---------------------------------
+VNETS
 
 This part is related to the SDN component : VNETS
 Based on docs :
@@ -20,19 +20,15 @@ Notes:
 
  4. Currently in the API there are Delete and Digest options which are not available
     in the UI so the choice was made to remove them temporary, waiting for a fix.
-
--------------------------------------------------------------------------
 */
 type VnetData struct {
-	ID           string  `json:"vnet,omitempty"              url:"vnet,omitempty"`
-	Zone         *string `json:"zone,omitempty"              url:"zone,omitempty"`
-	Alias        *string `json:"alias,omitempty"             url:"alias,omitempty"`
-	IsolatePorts *int64  `json:"isolate-ports,omitempty"     url:"isolate-ports,omitempty"`
-	Tag          *int64  `json:"tag,omitempty"               url:"tag,omitempty"`
-	Type         *string `json:"type,omitempty"              url:"type,omitempty"`
-	VlanAware    *int64  `json:"vlanaware,omitempty"         url:"vlanaware,omitempty"`
-	// DeleteSettings *string `json:"delete,omitempty"            url:"delete,omitempty"`
-	// Digest         *string `json:"digest,omitempty"            url:"digest,omitempty"`
+	ID           string  `json:"vnet,omitempty"          url:"vnet,omitempty"`
+	Zone         *string `json:"zone,omitempty"          url:"zone,omitempty"`
+	Alias        *string `json:"alias,omitempty"         url:"alias,omitempty"`
+	IsolatePorts *int64  `json:"isolate-ports,omitempty" url:"isolate-ports,omitempty"`
+	Tag          *int64  `json:"tag,omitempty"           url:"tag,omitempty"`
+	Type         *string `json:"type,omitempty"          url:"type,omitempty"`
+	VlanAware    *int64  `json:"vlanaware,omitempty"     url:"vlanaware,omitempty"`
 }
 
 type VnetRequestData struct {
