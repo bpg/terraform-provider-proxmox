@@ -169,10 +169,13 @@ func (r *downloadFileResource) Schema(
 				},
 			},
 			"file_name": schema.StringAttribute{
-				Description: "The file name. If not provided, it is calculated using `url`.",
-				Computed:    true,
-				Required:    false,
-				Optional:    true,
+				Description: "The file name. If not provided, it is calculated " +
+					"using `url`. PVE will raise 'wrong file extension' error for some popular " +
+					"extensions file `.raw` or `.qcow2` on PVE versions prior to 8.4. " +
+					"Workaround is to use e.g. `.img` instead.",
+				Computed: true,
+				Required: false,
+				Optional: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
