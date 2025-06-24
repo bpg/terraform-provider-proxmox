@@ -21,7 +21,7 @@ resource "proxmox_virtual_environment_download_file" "latest_debian_12_bookworm_
   overwrite_unmanaged = true
 }
 
-resource "proxmox_virtual_environment_download_file" "latest_debian_12_bookworm_qcow2_img" {
+resource "proxmox_virtual_environment_download_file" "latest_debian_12_bookworm_qcow2" {
   content_type        = "import"
   datastore_id        = "local"
   file_name           = "debian-12-generic-amd64.qcow2"
