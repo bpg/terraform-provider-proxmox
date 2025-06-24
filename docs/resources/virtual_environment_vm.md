@@ -668,6 +668,26 @@ All changes made to `amd_sev` will trigger reboots. Removing or adding the `amd_
 
 `allow_smt` is by default set to `true` even if `snp` is not the selected type. Proxmox will ignore this value when `snp` is not in use. Likewise `no_key_sharing` is `false` by default but ignored by Proxmox when `snp` is in use.
 
+## High Availability
+
+When managing a virtual machine in a multi-node cluster, the VM's HA settings can
+be managed using the `proxmox_virtual_environment_haresource` resource.
+
+```hcl
+resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
+  name  = "terraform-provider-proxmox-ubuntu-vm"
+  vm_id = 4321
+  # ...
+}
+
+resource "proxmox_virtual_environment_haresource" "ubuntu_vm" {
+  resource_id  = "vm:${proxmox_virtual_environment_vm.ubuntu_vm.vm_id}"
+  group        = "node1"
+  state        = "started"
+  comment      = "Managed by Terraform"
+}
+```
+
 ## Important Notes
 
 ### `local-lvm` Datastore
