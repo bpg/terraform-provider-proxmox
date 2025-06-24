@@ -662,14 +662,13 @@ func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.C
 			ext := strings.TrimLeft(strings.ToLower(filepath.Ext(sourceFilePath)), ".")
 
 			switch ext {
-			case "iso":
+			case "img", "iso":
 				contentType = "iso"
 			case "yaml", "yml":
 				contentType = "snippets"
 			}
 		}
 
-		// We cannot determine, for example, the content type of an .img file, so we require the user to specify it.
 		if contentType == "" {
 			return nil, diag.Errorf(
 				"cannot determine the content type of source \"%s\" - Please manually define the \"%s\" argument",
