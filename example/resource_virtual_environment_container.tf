@@ -42,7 +42,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
 
   operating_system {
-    template_file_id = proxmox_virtual_environment_download_file.release_20240725_ubuntu_24_noble_lxc_img.id
+    template_file_id = proxmox_virtual_environment_download_file.release_20250610_ubuntu_24_noble_lxc_img.id
     type             = "ubuntu"
   }
 
