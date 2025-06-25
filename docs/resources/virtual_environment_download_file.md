@@ -27,10 +27,28 @@ resource "proxmox_virtual_environment_download_file" "release_20231228_debian_12
   checksum_algorithm = "sha512"
 }
 
+resource "proxmox_virtual_environment_download_file" "release_20231228_debian_12_bookworm_qcow2" {
+  content_type       = "import"
+  datastore_id       = "local"
+  file_name          = "debian-12-generic-amd64-20231228-1609"
+  node_name          = "pve"
+  url                = "https://cloud.debian.org/images/cloud/bookworm/20231228-1609/debian-12-generic-amd64-20231228-1609.qcow2"
+  checksum           = "d2fbcf11fb28795842e91364d8c7b69f1870db09ff299eb94e4fbbfa510eb78d141e74c1f4bf6dfa0b7e33d0c3b66e6751886feadb4e9916f778bab1776bdf1b"
+  checksum_algorithm = "sha512"
+}
+
 resource "proxmox_virtual_environment_download_file" "latest_debian_12_bookworm_qcow2_img" {
   content_type = "iso"
   datastore_id = "local"
   file_name    = "debian-12-generic-amd64.qcow2.img"
+  node_name    = "pve"
+  url          = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+}
+
+resource "proxmox_virtual_environment_download_file" "latest_debian_12_bookworm_qcow2" {
+  content_type = "import"
+  datastore_id = "local"
+  file_name    = "debian-12-generic-amd64.qcow2"
   node_name    = "pve"
   url          = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
 }
@@ -83,7 +101,7 @@ resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc
 - `checksum` (String) The expected checksum of the file.
 - `checksum_algorithm` (String) The algorithm to calculate the checksum of the file. Must be `md5` | `sha1` | `sha224` | `sha256` | `sha384` | `sha512`.
 - `decompression_algorithm` (String) Decompress the downloaded file using the specified compression algorithm. Must be one of `gz` | `lzo` | `zst` | `bz2`.
-- `file_name` (String) The file name. If not provided, it is calculated using `url`.
+- `file_name` (String) The file name. If not provided, it is calculated using `url`. PVE will raise 'wrong file extension' error for some popular extensions file `.raw` or `.qcow2` on PVE versions prior to 8.4. Workaround is to use e.g. `.img` instead.
 - `overwrite` (Boolean) By default `true`. If `true` and file size has changed in the datastore, it will be replaced. If `false`, there will be no check.
 - `overwrite_unmanaged` (Boolean) If `true` and a file with the same name already exists in the datastore, it will be deleted and the new file will be downloaded. If `false` and the file already exists, an error will be returned.
 - `upload_timeout` (Number) The file download timeout seconds. Default is 600 (10min).
