@@ -42,6 +42,8 @@ resource "proxmox_virtual_environment_vm" "trunks-example" {
     enabled = true
   }
 
+  serial_device {}
+
   boot_order    = ["scsi0"]
   scsi_hardware = "virtio-scsi-pci"
 
