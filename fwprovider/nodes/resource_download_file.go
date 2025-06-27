@@ -153,7 +153,7 @@ func (r *downloadFileResource) Schema(
 		Description: "Manages files upload using PVE download-url API. ",
 		MarkdownDescription: "Manages files upload using PVE download-url API. " +
 			"It can be fully compatible and faster replacement for image files created using " +
-			"`proxmox_virtual_environment_file`. Supports images for VMs (ISO images) and LXC (CT Templates).",
+			"`proxmox_virtual_environment_file`. Supports images for VMs (ISO and disk images) and LXC (CT Templates).",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"content_type": schema.StringAttribute{
