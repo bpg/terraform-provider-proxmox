@@ -7,7 +7,7 @@ subcategory: Virtual Environment
 
 # Resource: proxmox_virtual_environment_file
 
-Use this resource to upload files to a Proxmox VE node. The file can be a backup, an ISO image, a snippet, or a container template depending on the `content_type` attribute.
+Use this resource to upload files to a Proxmox VE node. The file can be a backup, an ISO image, a Disk Image, a snippet, or a container template depending on the `content_type` attribute.
 
 ## Example Usage
 
@@ -33,9 +33,23 @@ resource "proxmox_virtual_environment_file" "backup" {
 
 -> Consider using `proxmox_virtual_environment_download_file` resource instead. Using this resource for images is less efficient (requires to transfer uploaded image to node) though still supported.
 
+-> Importing Disks is not enabled by default in new Proxmox installations. You need to enable them in the 'Datacenter>Storage' section of the proxmox interface before first using this resource with `content_type = "import"`.
+
 ```hcl
 resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
   content_type = "iso"
+  datastore_id = "local"
+  node_name    = "pve"
+
+  source_file {
+    path = "https://cloud-images.ubuntu.com/jammy/20230929/jammy-server-cloudimg-amd64-disk-kvm.img"
+  }
+}
+```
+
+```hcl
+resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
+  content_type = "import"
   datastore_id = "local"
   node_name    = "pve"
 
@@ -126,6 +140,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
     - `backup` (allowed extensions: `.vzdump`, `.tar.gz`, `.tar.xz`, `tar.zst`)
     - `iso` (allowed extensions: `.iso`, `.img`)
     - `snippets` (allowed extensions: any)
+    - `import` (allowed extensions: `.raw`, `.qcow2`, `.vmdk`)
     - `vztmpl` (allowed extensions: `.tar.gz`, `.tar.xz`, `tar.zst`)
 - `datastore_id` - (Required) The datastore id.
 - `file_mode` - The file mode in octal format, e.g. `0700` or `600`. Note that the prefixes `0o` and `0x` is not supported! Setting this attribute is also only allowed for `root@pam` authenticated user.

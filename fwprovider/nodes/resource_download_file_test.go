@@ -60,7 +60,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				  }`),
 			ExpectError: regexp.MustCompile(`Attribute url must match HTTP URL regex`),
 		}}},
-		{"download qcow2 file", []resource.TestStep{{
+		{"download qcow2 file to iso storage", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
 					content_type       = "iso"
@@ -90,6 +90,21 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					"decompression_algorithm",
 				}),
 			),
+		}}},
+		{"download qcow2 file to import storage", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
+					content_type       = "import"
+					node_name          = "{{.NodeName}}"
+					datastore_id       = "{{.DatastoreID}}"
+					file_name          = "fake_qcow2_file.qcow2"
+					url                =  "{{.FakeFileQCOW2}}"
+					checksum           = "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6"
+					checksum_algorithm = "sha256"
+					overwrite_unmanaged = true
+				  }`),
+			// the details sais "Image is not in qcow2 format", but we can't assert that
+			ExpectError: regexp.MustCompile(`Error downloading file from url`),
 		}}},
 		{"download & update iso file", []resource.TestStep{
 			{

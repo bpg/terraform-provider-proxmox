@@ -115,7 +115,7 @@ func (d *versionDatasource) Read(ctx context.Context, _ datasource.ReadRequest, 
 
 	state.Release = types.StringValue(version.Release)
 	state.RepositoryID = types.StringValue(version.RepositoryID)
-	state.Version = types.StringValue(version.Version)
+	state.Version = types.StringValue(version.Version.String())
 
 	state.ID = types.StringValue("version")
 

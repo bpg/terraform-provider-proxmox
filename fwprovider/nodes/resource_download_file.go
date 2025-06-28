@@ -153,15 +153,16 @@ func (r *downloadFileResource) Schema(
 		Description: "Manages files upload using PVE download-url API. ",
 		MarkdownDescription: "Manages files upload using PVE download-url API. " +
 			"It can be fully compatible and faster replacement for image files created using " +
-			"`proxmox_virtual_environment_file`. Supports images for VMs (ISO images) and LXC (CT Templates).",
+			"`proxmox_virtual_environment_file`. Supports images for VMs (ISO and disk images) and LXC (CT Templates).",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
 			"content_type": schema.StringAttribute{
-				Description: "The file content type. Must be `iso` for VM images or `vztmpl` for LXC images.",
+				Description: "The file content type. Must be `iso` or `import` for VM images or `vztmpl` for LXC images.",
 				Required:    true,
 				Validators: []validator.String{stringvalidator.OneOf([]string{
 					"iso",
 					"vztmpl",
+					"import",
 				}...)},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -170,7 +171,8 @@ func (r *downloadFileResource) Schema(
 			"file_name": schema.StringAttribute{
 				Description: "The file name. If not provided, it is calculated " +
 					"using `url`. PVE will raise 'wrong file extension' error for some popular " +
-					"extensions file `.raw` or `.qcow2`. Workaround is to use e.g. `.img` instead.",
+					"extensions file `.raw` or `.qcow2` on PVE versions prior to 8.4. " +
+					"Workaround is to use e.g. `.img` instead.",
 				Computed: true,
 				Required: false,
 				Optional: true,
