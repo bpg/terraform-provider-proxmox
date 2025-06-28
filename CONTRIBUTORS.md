@@ -197,6 +197,7 @@
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/cowgod"><img src="https://avatars.githubusercontent.com/u/523086?v=4?s=100" width="100px;" alt="Dan McCormack"/><br /><sub><b>Dan McCormack</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=cowgod" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/valkiriaaquatica"><img src="https://avatars.githubusercontent.com/u/56233573?v=4?s=100" width="100px;" alt="VALKIRIA ACUATICA  "/><br /><sub><b>VALKIRIA ACUATICA  </b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=valkiriaaquatica" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Vaneixus"><img src="https://avatars.githubusercontent.com/u/54147992?v=4?s=100" width="100px;" alt="Marco Attia"/><br /><sub><b>Marco Attia</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=Vaneixus" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
