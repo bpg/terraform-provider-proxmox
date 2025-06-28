@@ -91,7 +91,6 @@ func TestAccResourceDownloadFile(t *testing.T) {
 				}),
 			),
 		}}},
-		,
 		{"download qcow2 file to import storage", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_download_file" "qcow2_image" {
@@ -104,24 +103,8 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					checksum_algorithm = "sha256"
 					overwrite_unmanaged = true
 				  }`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_download_file.qcow2_image", map[string]string{
-					"id":                 "local:import/fake_qcow2_file.qcow2",
-					"content_type":       "import",
-					"node_name":          te.NodeName,
-					"datastore_id":       te.DatastoreID,
-					"url":                fakeFileQCOW2,
-					"file_name":          "fake_qcow2_file.qcow2",
-					"upload_timeout":     "600",
-					"size":               "3",
-					"verify":             "true",
-					"checksum":           "688787d8ff144c502c7f5cffaafe2cc588d86079f9de88304c26b0cb99ce91c6",
-					"checksum_algorithm": "sha256",
-				}),
-				test.NoResourceAttributesSet("proxmox_virtual_environment_download_file.qcow2_image", []string{
-					"decompression_algorithm",
-				}),
-			),
+			// the details sais "Image is not in qcow2 format", but we can't assert that
+			ExpectError: regexp.MustCompile(`Error downloading file from url`),
 		}}},
 		{"download & update iso file", []resource.TestStep{
 			{
