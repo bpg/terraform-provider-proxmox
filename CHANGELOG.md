@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.79.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.2...v0.79.0) (2025-06-28)
+
+
+### Features
+
+* **file:** add support for `import` content type ([#1983](https://github.com/bpg/terraform-provider-proxmox/issues/1983)) ([2d9e0b5](https://github.com/bpg/terraform-provider-proxmox/commit/2d9e0b585e307196b97a680716db75c9cc010bac))
+
+
+### Bug Fixes
+
+* **network:** improve error handling on `create`/`read`/`update` ([#2001](https://github.com/bpg/terraform-provider-proxmox/issues/2001)) ([5e4582f](https://github.com/bpg/terraform-provider-proxmox/commit/5e4582f820626ffbb6702c2d15cfe6bc0aba680f))
+* **tests:** fix `make example` tests ([#2007](https://github.com/bpg/terraform-provider-proxmox/issues/2007)) ([a76cc62](https://github.com/bpg/terraform-provider-proxmox/commit/a76cc6256da0ad86a2efe514ad03c5718681d477))
+
+
+### Miscellaneous
+
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.2.1 → v7.3.0) ([#2010](https://github.com/bpg/terraform-provider-proxmox/issues/2010)) ([b601ca3](https://github.com/bpg/terraform-provider-proxmox/commit/b601ca3ed25b7b82d16a291cdaac308b36dbb3f9))
+* **docs:** add description of HA settings management to VM documentation ([#2003](https://github.com/bpg/terraform-provider-proxmox/issues/2003)) ([0582e3d](https://github.com/bpg/terraform-provider-proxmox/commit/0582e3d7f1750248933efd395cc04635224b7ea8))
+
 ## [0.78.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.1...v0.78.2) (2025-06-16)
 
 
