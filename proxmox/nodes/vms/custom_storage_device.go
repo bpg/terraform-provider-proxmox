@@ -208,9 +208,11 @@ func (d *CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 
 	if d.FileID != nil && (strings.HasSuffix(*d.FileID, ".raw") || strings.HasSuffix(*d.FileID, ".qcow2")) {
 		var datastore, _, found = strings.Cut(d.FileVolume, ":")
+
 		if found {
 			values = append(values, fmt.Sprintf("%s:0", datastore))
 		}
+
 		values = append(values, fmt.Sprintf("import-from=%s", *d.FileID))
 	} else {
 		values = append(values, fmt.Sprintf("file=%s", d.FileVolume))
@@ -428,8 +430,11 @@ func (d CustomStorageDevices) Filter(fn func(*CustomStorageDevice) bool) CustomS
 // EncodeValues converts a CustomStorageDevices array to multiple URL values.
 func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 	for s, d := range d {
-		// Explicitly skip disks which have FileID ending in "qcow2" or "raw" set, so it won't be encoded in "Create" or "Update" operations.
-		if d.FileID == nil || *d.FileID == "" || strings.HasSuffix(*d.FileID, ".qcow2") || strings.HasSuffix(*d.FileID, ".raw") || strings.HasSuffix(*d.FileID, ".img") || strings.HasSuffix(*d.FileID, ".vmdk") {
+		// Explicitly skip disks which have unsupported FileID set,
+		// so it won't be encoded in "Create" or "Update" operations.
+		if d.FileID == nil || *d.FileID == "" ||
+			strings.HasSuffix(*d.FileID, ".qcow2") || strings.HasSuffix(*d.FileID, ".raw") ||
+			strings.HasSuffix(*d.FileID, ".img") || strings.HasSuffix(*d.FileID, ".vmdk") {
 			if err := d.EncodeValues(s, v); err != nil {
 				return fmt.Errorf("error encoding storage device %s: %w", s, err)
 			}
