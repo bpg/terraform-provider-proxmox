@@ -37,6 +37,7 @@ type CustomStorageDevice struct {
 	Cache                   *string           `json:"cache,omitempty"       url:"cache,omitempty"`
 	Discard                 *string           `json:"discard,omitempty"     url:"discard,omitempty"`
 	Format                  *string           `json:"format,omitempty"      url:"format,omitempty"`
+	ImportFrom              *string           `json:"import-from,omitempty" url:"import-from,omitempty"`
 	IopsRead                *int              `json:"iops_rd,omitempty"     url:"iops_rd,omitempty"`
 	IopsWrite               *int              `json:"iops_wr,omitempty"     url:"iops_wr,omitempty"`
 	IOThread                *types.CustomBool `json:"iothread,omitempty"    url:"iothread,omitempty,int"`
@@ -203,8 +204,16 @@ func (d *CustomStorageDevice) EncodeOptions() string {
 
 // EncodeValues converts a CustomStorageDevice struct to a URL value.
 func (d *CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
-	values := []string{
-		fmt.Sprintf("file=%s", d.FileVolume),
+	var values []string
+
+	if d.FileID != nil && (strings.HasSuffix(*d.FileID, ".raw") || strings.HasSuffix(*d.FileID, ".qcow2")) {
+		var datastore, _, found = strings.Cut(d.FileVolume, ":")
+		if found {
+			values = append(values, fmt.Sprintf("%s:0", datastore))
+		}
+		values = append(values, fmt.Sprintf("import-from=%s", *d.FileID))
+	} else {
+		values = append(values, fmt.Sprintf("file=%s", d.FileVolume))
 	}
 
 	if d.Format != nil {
@@ -419,8 +428,8 @@ func (d CustomStorageDevices) Filter(fn func(*CustomStorageDevice) bool) CustomS
 // EncodeValues converts a CustomStorageDevices array to multiple URL values.
 func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 	for s, d := range d {
-		// Explicitly skip disks which have FileID set, so it won't be encoded in "Create" or "Update" operations.
-		if d.FileID == nil || *d.FileID == "" {
+		// Explicitly skip disks which have FileID ending in "qcow2" or "raw" set, so it won't be encoded in "Create" or "Update" operations.
+		if d.FileID == nil || *d.FileID == "" || strings.HasSuffix(*d.FileID, ".qcow2") || strings.HasSuffix(*d.FileID, ".raw") || strings.HasSuffix(*d.FileID, ".img") || strings.HasSuffix(*d.FileID, ".vmdk") {
 			if err := d.EncodeValues(s, v); err != nil {
 				return fmt.Errorf("error encoding storage device %s: %w", s, err)
 			}

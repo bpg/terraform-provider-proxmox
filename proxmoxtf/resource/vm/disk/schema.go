@@ -129,7 +129,7 @@ func Schema() map[string]*schema.Schema {
 						Type:             schema.TypeString,
 						Description:      "The file id for a disk image",
 						Optional:         true,
-						ForceNew:         true,
+						ForceNew:         false,
 						Default:          "",
 						ValidateDiagFunc: validators.FileID(),
 					},
