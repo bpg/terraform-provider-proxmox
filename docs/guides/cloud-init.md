@@ -21,6 +21,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   name      = "test-ubuntu"
   node_name = "pve"
 
+  # should be true if qemu agent is not installed / enabled on the VM
+  stop_on_destroy = true
+
   initialization {
     ip_config {
       ipv4 {
