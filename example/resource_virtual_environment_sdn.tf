@@ -24,6 +24,7 @@ resource "proxmox_virtual_environment_sdn_vnet" "vnet_simple" {
   isolate_ports = "0"
   vlanaware     = "0"
   zonetype      = proxmox_virtual_environment_sdn_zone.zone_simple.type
+  depends_on = [ proxmox_virtual_environment_sdn_zone.zone_simple ]
 }
 
 resource "proxmox_virtual_environment_sdn_vnet" "vnet_vlan" {
@@ -32,6 +33,7 @@ resource "proxmox_virtual_environment_sdn_vnet" "vnet_vlan" {
   alias    = "vnet in zoneVLAN"
   tag      = 1000
   zonetype = proxmox_virtual_environment_sdn_zone.zone_vlan.type
+  depends_on = [ proxmox_virtual_environment_sdn_zone.zone_vlan ]
 }
 
 # --- SDN Subnets ---
@@ -48,6 +50,7 @@ resource "proxmox_virtual_environment_sdn_subnet" "subnet_simple" {
   ]
   gateway    = "10.10.0.1"
   snat       = true
+  depends_on = [ proxmox_virtual_environment_sdn_vnet.vnet_simple ]
 }
 
 resource "proxmox_virtual_environment_sdn_subnet" "subnet_simple2" {
@@ -62,6 +65,7 @@ resource "proxmox_virtual_environment_sdn_subnet" "subnet_simple2" {
   ]
   gateway    = "10.40.0.1"
   snat       = true
+  depends_on = [ proxmox_virtual_environment_sdn_vnet.vnet_simple ]
 }
 
 resource "proxmox_virtual_environment_sdn_subnet" "subnet_vlan" {
@@ -76,21 +80,25 @@ resource "proxmox_virtual_environment_sdn_subnet" "subnet_vlan" {
   ]
   gateway = "10.20.0.100"
   snat    = false
+  depends_on = [ proxmox_virtual_environment_sdn_vnet.vnet_vlan ]
 }
 
 # --- Data Sources ---
 
 data "proxmox_virtual_environment_sdn_zone" "zone_ex" {
-  name = "ZoneEx"
+  name = "zoneS"
+  depends_on = [ proxmox_virtual_environment_sdn_zone.zone_simple ]
 }
 
 data "proxmox_virtual_environment_sdn_vnet" "vnet_ex" {
-  name = "VnetEx"
+  name = "vnetM"
+  depends_on = [ proxmox_virtual_environment_sdn_vnet.vnet_simple ]
 }
 
 data "proxmox_virtual_environment_sdn_subnet" "subnet_ex" {
-  subnet = "ZoneEx-100.100.0.0-24"
+  subnet = "zoneS-10.10.0.0-24"
   vnet   = data.proxmox_virtual_environment_sdn_vnet.vnet_ex.id
+  depends_on = [ proxmox_virtual_environment_sdn_subnet.subnet_simple ]
 }
 
 # --- Outputs ---

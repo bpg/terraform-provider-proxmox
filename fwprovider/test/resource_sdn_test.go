@@ -26,14 +26,14 @@ func TestAccResourceSDN(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_zone" "zone_simple" {
 				  name  = "zoneS"
 				  type  = "simple"
-				  nodes = "weisshorn-proxmox"
+				  nodes = "pve"
 				  mtu   = 1496
 				}
 
 				resource "proxmox_virtual_environment_sdn_zone" "zone_vlan" {
 				  name   = "zoneVLAN"
 				  type   = "vlan"
-				  nodes  = "weisshorn-proxmox"
+				  nodes  = "pve"
 				  mtu    = 1500
 				  bridge = "vmbr0"
 				}
@@ -108,7 +108,7 @@ func TestAccResourceSDN(t *testing.T) {
 					"name":  "zoneS",
 					"type":  "simple",
 					"mtu":   "1496",
-					"nodes": "weisshorn-proxmox",
+					"nodes": "pve",
 				}),
 				ResourceAttributes("proxmox_virtual_environment_sdn_zone.zone_vlan", map[string]string{
 					"name":   "zoneVLAN",
