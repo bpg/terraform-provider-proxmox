@@ -332,8 +332,8 @@ func validateResponseCode(res *http.Response) error {
 		msg := strings.TrimPrefix(res.Status, fmt.Sprintf("%d ", res.StatusCode))
 
 		errRes := &ErrorResponseBody{}
-		err := json.NewDecoder(res.Body).Decode(errRes)
 
+		err := json.NewDecoder(res.Body).Decode(errRes)
 		if err == nil && errRes.Errors != nil {
 			var errList []string
 

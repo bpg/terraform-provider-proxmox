@@ -515,6 +515,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 			f, fErr := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0o600)
 			if fErr == nil {
 				defer utils.CloseOrLogError(ctx)(f)
+
 				fErr = knownhosts.WriteKnownHost(f, hostname, remote, key)
 			}
 

@@ -127,6 +127,7 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 
 	if !g.config.RandomIDs {
 		var b bytes.Buffer
+
 		_, _ = fmt.Fprintf(&b, "%d", *id)
 
 		if err := lockedfile.Write(g.config.seqFName, &b, 0o666); err != nil {

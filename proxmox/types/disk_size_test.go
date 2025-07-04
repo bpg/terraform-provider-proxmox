@@ -42,7 +42,6 @@ func TestParseDiskSize(t *testing.T) {
 			t.Parallel()
 
 			got, err := ParseDiskSize(tt.size)
-
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseDiskSize() error = %v, wantErr %v", err, tt.wantErr)
 				return

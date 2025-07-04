@@ -43,6 +43,7 @@ type HAResourceDataBase struct {
 // HA resource.
 type HAResourceGetResponseData struct {
 	HAResourceDataBase
+
 	// Identifier of this resource
 	ID types.HAResourceID `json:"sid"`
 	// Type of this resource
@@ -54,6 +55,7 @@ type HAResourceGetResponseData struct {
 // HAResourceCreateRequestBody contains data received from the HA resource API when creating a new HA resource.
 type HAResourceCreateRequestBody struct {
 	HAResourceDataBase
+
 	// Identifier of this resource
 	ID types.HAResourceID `url:"sid"`
 	// Type of this resource
@@ -65,6 +67,7 @@ type HAResourceCreateRequestBody struct {
 // HAResourceUpdateRequestBody contains data received from the HA resource API when updating an existing HA resource.
 type HAResourceUpdateRequestBody struct {
 	HAResourceDataBase
+
 	// Settings that must be deleted from the resource's configuration
 	Delete []string `url:"delete,omitempty,comma"`
 }

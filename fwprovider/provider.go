@@ -265,6 +265,7 @@ func (p *proxmoxProvider) Configure(
 
 	// Retrieve provider data from configuration
 	var cfg proxmoxProviderModel
+
 	diags := req.Config.Get(ctx, &cfg)
 	resp.Diagnostics.Append(diags...)
 

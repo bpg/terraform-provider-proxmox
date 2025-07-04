@@ -190,6 +190,7 @@ func (r *userTokenResource) Create(ctx context.Context, req resource.CreateReque
 
 func (r *userTokenResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state userTokenModel
+
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 

@@ -204,6 +204,7 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			if a == "" || t == "" {
 				diags = append(diags, diag.Errorf("Either '%s' OR both '%s' and '%s' must be defined for the rule #%d",
 					mkSecurityGroup, mkRuleAction, mkRuleType, i)...)
+
 				continue
 			}
 

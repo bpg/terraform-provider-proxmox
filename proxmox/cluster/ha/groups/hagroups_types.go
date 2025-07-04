@@ -44,6 +44,7 @@ type HAGroupDataBase struct {
 type HAGroupGetResponseData struct {
 	// The group's data
 	HAGroupDataBase
+
 	// The group's identifier
 	ID string `json:"group"`
 	// The type. Always set to `group`.
@@ -54,6 +55,7 @@ type HAGroupGetResponseData struct {
 type HAGroupCreateRequestBody struct {
 	// The group's data
 	HAGroupDataBase
+
 	// The group's identifier
 	ID string `url:"group"`
 	// The type. Always set to `group`.
@@ -64,6 +66,7 @@ type HAGroupCreateRequestBody struct {
 type HAGroupUpdateRequestBody struct {
 	// The group's data
 	HAGroupDataBase
+
 	// A list of settings to delete
 	Delete string `url:"delete"`
 }

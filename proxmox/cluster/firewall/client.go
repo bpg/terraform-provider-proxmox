@@ -27,6 +27,7 @@ type Client struct {
 
 type groupClient struct {
 	firewall.Client
+
 	Group string
 }
 

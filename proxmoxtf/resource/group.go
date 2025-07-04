@@ -94,6 +94,7 @@ func Group() *schema.Resource {
 
 func groupCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -144,12 +145,14 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	groupID := d.Id()
+
 	group, err := client.Access().GetGroup(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -203,6 +206,7 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 
 func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -272,6 +276,7 @@ func groupUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 
 func groupDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)

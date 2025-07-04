@@ -57,12 +57,14 @@ func timeRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	nodeName := d.Get(mkDataSourceVirtualEnvironmentTimeNodeName).(string)
+
 	nodeTime, err := api.Node(nodeName).GetTime(ctx)
 	if err != nil {
 		return diag.FromErr(err)

@@ -719,6 +719,7 @@ func (r *clusterOptionsResource) Create(
 	resp *resource.CreateResponse,
 ) {
 	var plan clusterOptionsModel
+
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 
@@ -776,6 +777,7 @@ func (r *clusterOptionsResource) read(ctx context.Context, model *clusterOptions
 func (r *clusterOptionsResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	var state clusterOptionsModel
+
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
@@ -899,6 +901,7 @@ func (r *clusterOptionsResource) Delete(
 	resp *resource.DeleteResponse,
 ) {
 	var state clusterOptionsModel
+
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 

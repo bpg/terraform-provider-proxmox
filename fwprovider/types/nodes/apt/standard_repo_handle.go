@@ -34,6 +34,7 @@ type StandardRepoHandleType struct {
 // StandardRepoHandleValue is a type that represents the value of an APT standard repository handle.
 type StandardRepoHandleValue struct {
 	basetypes.StringValue
+
 	cvn  apitypes.CephVersionName
 	kind apitypes.StandardRepoHandleKind
 }

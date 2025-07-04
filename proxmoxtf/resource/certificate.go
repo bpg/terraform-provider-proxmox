@@ -174,6 +174,7 @@ func certificateRead(ctx context.Context, d *schema.ResourceData, m interface{})
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -303,6 +304,7 @@ func certificateRead(ctx context.Context, d *schema.ResourceData, m interface{})
 
 func certificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -322,6 +324,7 @@ func certificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{
 
 func certificateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
