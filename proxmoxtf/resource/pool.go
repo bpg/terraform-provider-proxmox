@@ -103,6 +103,7 @@ func Pool() *schema.Resource {
 
 func poolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -130,12 +131,14 @@ func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	poolID := d.Id()
+
 	pool, err := client.Pool().GetPool(ctx, poolID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -185,6 +188,7 @@ func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -207,6 +211,7 @@ func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func poolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)

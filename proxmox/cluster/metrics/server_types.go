@@ -43,5 +43,6 @@ type ServersResponseBody struct {
 // ServerRequestData contains the data for a metric server post/put request.
 type ServerRequestData struct {
 	ServerData
+
 	Delete *[]string `url:"delete,omitempty"`
 }

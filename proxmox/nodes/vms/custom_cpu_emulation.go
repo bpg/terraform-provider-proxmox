@@ -80,6 +80,7 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 					r.Flags = &f
 				} else {
 					var f []string
+
 					r.Flags = &f
 				}
 			case "hidden":

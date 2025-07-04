@@ -16,6 +16,7 @@ import (
 // Client is an interface for accessing the Proxmox node storage API.
 type Client struct {
 	api.Client
+
 	StorageName string
 }
 

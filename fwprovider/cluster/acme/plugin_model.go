@@ -32,12 +32,14 @@ type baseACMEPluginModel struct {
 // acmePluginModel maps the schema data for an ACME plugin.
 type acmePluginModel struct {
 	baseACMEPluginModel
+
 	Type types.String `tfsdk:"type"`
 }
 
 // acmePluginCreateModel maps the schema data for an ACME plugin.
 type acmePluginCreateModel struct {
 	baseACMEPluginModel
+
 	// Flag to disable the config
 	Disable types.Bool `tfsdk:"disable"`
 }

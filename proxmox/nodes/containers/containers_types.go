@@ -636,6 +636,7 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 					r.MountTypes = &a
 				} else {
 					var a []string
+
 					r.MountTypes = &a
 				}
 			case "nesting":
@@ -728,6 +729,7 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 					r.MountOptions = &a
 				} else {
 					var a []string
+
 					r.MountOptions = &a
 				}
 			case "mp":
@@ -827,6 +829,7 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 					r.Trunks = &a
 				} else {
 					var a []int
+
 					r.Trunks = &a
 				}
 			case "type":
@@ -865,6 +868,7 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 					r.MountOptions = &a
 				} else {
 					var a []string
+
 					r.MountOptions = &a
 				}
 			case "quota":

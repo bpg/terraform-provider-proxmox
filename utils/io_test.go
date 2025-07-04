@@ -24,6 +24,7 @@ func TestCloseOrLogError(t *testing.T) {
 	func() {
 		defer f(c)
 		defer f(b)
+
 		assert.False(t, c.isClosed)
 	}()
 

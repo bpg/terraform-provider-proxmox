@@ -164,6 +164,7 @@ func User() *schema.Resource {
 
 func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -172,6 +173,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	comment := d.Get(mkResourceVirtualEnvironmentUserComment).(string)
 	email := d.Get(mkResourceVirtualEnvironmentUserEmail).(string)
 	enabled := types.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
+
 	expirationDate, err := time.Parse(
 		time.RFC3339,
 		d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string),
@@ -242,12 +244,14 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	userID := d.Id()
+
 	user, err := client.Access().GetUser(ctx, userID)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -359,6 +363,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -367,6 +372,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	comment := d.Get(mkResourceVirtualEnvironmentUserComment).(string)
 	email := d.Get(mkResourceVirtualEnvironmentUserEmail).(string)
 	enabled := types.CustomBool(d.Get(mkResourceVirtualEnvironmentUserEnabled).(bool))
+
 	expirationDate, err := time.Parse(
 		time.RFC3339,
 		d.Get(mkResourceVirtualEnvironmentUserExpirationDate).(string),
@@ -399,6 +405,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	}
 
 	userID := d.Id()
+
 	err = client.Access().UpdateUser(ctx, userID, body)
 	if err != nil {
 		return diag.FromErr(err)
@@ -406,6 +413,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 	if d.HasChange(mkResourceVirtualEnvironmentUserPassword) {
 		password := d.Get(mkResourceVirtualEnvironmentUserPassword).(string)
+
 		err = client.Access().ChangeUserPassword(ctx, userID, password)
 		if err != nil {
 			return diag.FromErr(err)
@@ -464,6 +472,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 
 func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	client, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)

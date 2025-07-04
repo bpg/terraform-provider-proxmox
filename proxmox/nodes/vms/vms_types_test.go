@@ -33,6 +33,7 @@ func TestUnmarshalGetResponseData(t *testing.T) {
 	}`, "local-lvm:vm-100-disk-0,aio=io_uring,backup=1,cache=none,discard=ignore,replicate=1,size=8G,ssd=1")
 
 	var data GetResponseData
+
 	err := json.Unmarshal([]byte(jsonData), &data)
 	require.NoError(t, err)
 

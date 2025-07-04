@@ -45,6 +45,7 @@ func groupsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)

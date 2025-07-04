@@ -236,7 +236,6 @@ func (c *Client) WaitForContainerStatus(ctx context.Context, status string) erro
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(true),
 	)
-
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for container %d to enter the status %q", c.VMID, status)
 	}
@@ -273,7 +272,6 @@ func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorRe
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(true),
 	)
-
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for container %d configuration to become unlocked", c.VMID)
 	}

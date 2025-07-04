@@ -49,6 +49,7 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 	}
 
 	var plan map[string]Model
+
 	d := planValue.ElementsAs(ctx, &plan, false)
 	diags.Append(d...)
 
@@ -76,6 +77,7 @@ func FillUpdateBody(
 	}
 
 	var plan, state map[string]Model
+
 	d := planValue.ElementsAs(ctx, &plan, false)
 	diags.Append(d...)
 	d = stateValue.ElementsAs(ctx, &state, false)

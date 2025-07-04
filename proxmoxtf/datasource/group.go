@@ -78,12 +78,14 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	groupID := d.Get(mkDataSourceVirtualEnvironmentGroupID).(string)
+
 	group, err := api.Access().GetGroup(ctx, groupID)
 	if err != nil {
 		return diag.FromErr(err)

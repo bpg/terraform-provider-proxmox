@@ -603,6 +603,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	}
 
 	volID, di := fileGetVolumeID(ctx, d, capi)
+
 	diags = append(diags, di...)
 	if diags.HasError() {
 		return diags
@@ -763,6 +764,7 @@ func fileIsURL(d *schema.ResourceData) bool {
 
 func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	capi, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
@@ -912,6 +914,7 @@ func readURL(
 
 		if httpLastModified != "" {
 			var timeParsed time.Time
+
 			timeParsed, err = time.Parse(time.RFC1123, httpLastModified)
 			if err != nil {
 				timeParsed, err = time.Parse(time.RFC1123Z, httpLastModified)
@@ -939,6 +942,7 @@ func readURL(
 
 func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	capi, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)

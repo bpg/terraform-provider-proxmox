@@ -268,6 +268,7 @@ func (r *linuxBridgeResource) Configure(
 //nolint:dupl
 func (r *linuxBridgeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan linuxBridgeResourceModel
+
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 
@@ -355,6 +356,7 @@ func (r *linuxBridgeResource) read(ctx context.Context, model *linuxBridgeResour
 func (r *linuxBridgeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	var state linuxBridgeResourceModel
+
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
@@ -461,6 +463,7 @@ func (r *linuxBridgeResource) Update(ctx context.Context, req resource.UpdateReq
 //nolint:dupl
 func (r *linuxBridgeResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state linuxBridgeResourceModel
+
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 

@@ -115,12 +115,14 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
+
 	api, err := config.GetClient()
 	if err != nil {
 		return diag.FromErr(err)
 	}
 
 	userID := d.Get(mkDataSourceVirtualEnvironmentUserUserID).(string)
+
 	v, err := api.Access().GetUser(ctx, userID)
 	if err != nil {
 		return diag.FromErr(err)

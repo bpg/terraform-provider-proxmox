@@ -78,6 +78,7 @@ func FileMode() schema.SchemaValidateDiagFunc {
 			if !ok {
 				errs = append(errs, fmt.Errorf(
 					`expected string in octal format (e.g. "0o700" or "0700"") for %q, but got %v of type %T`, k, v, i))
+
 				return nil, errs
 			}
 
