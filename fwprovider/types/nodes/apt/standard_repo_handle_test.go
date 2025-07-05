@@ -103,8 +103,8 @@ func TestStandardRepoHandleValueFromTerraform(t *testing.T) {
 				t.Parallel()
 
 				ctx := t.Context()
-				val, err := StandardRepoHandleType{}.ValueFromTerraform(ctx, test.val)
 
+				val, err := StandardRepoHandleType{}.ValueFromTerraform(ctx, test.val)
 				if err == nil && test.expectError {
 					t.Fatal("expected error, got no error")
 				}

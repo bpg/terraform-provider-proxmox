@@ -323,6 +323,7 @@ func (r *downloadFileResource) Create(
 	resp *resource.CreateResponse,
 ) {
 	var plan downloadFileModel
+
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 
@@ -370,7 +371,6 @@ func (r *downloadFileResource) Create(
 	storageClient := nodesClient.Storage(plan.Storage.ValueString())
 
 	err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
-
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
 		fileID := plan.Content.ValueString() + "/" + plan.FileName.ValueString()
 
@@ -481,6 +481,7 @@ func (r *downloadFileResource) Read(
 	resp *resource.ReadResponse,
 ) {
 	var state downloadFileModel
+
 	diags := req.State.Get(ctx, &state)
 
 	resp.Diagnostics.Append(diags...)

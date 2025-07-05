@@ -18,6 +18,7 @@ import (
 // Client is an interface for accessing the Proxmox container API.
 type Client struct {
 	api.Client
+
 	VMID int
 }
 

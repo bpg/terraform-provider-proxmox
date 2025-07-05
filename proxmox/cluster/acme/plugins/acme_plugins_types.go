@@ -35,6 +35,7 @@ type ACMEPluginsListResponseBody struct {
 // ACMEPluginsListResponseData contains the data from an ACME plugins list response.
 type ACMEPluginsListResponseData struct {
 	BaseACMEPluginData
+
 	// ACME Plugin ID name
 	Plugin string `json:"plugin" url:"plugin"`
 	// DNS plugin data.
@@ -49,6 +50,7 @@ type ACMEPluginsGetResponseBody struct {
 // ACMEPluginsGetResponseData contains the data from an ACME plugins get response.
 type ACMEPluginsGetResponseData struct {
 	BaseACMEPluginData
+
 	// ACME Plugin ID name
 	Plugin string `json:"plugin" url:"plugin"`
 	// DNS plugin data.
@@ -58,6 +60,7 @@ type ACMEPluginsGetResponseData struct {
 // ACMEPluginsCreateRequestBody contains the body for creating a new ACME plugin.
 type ACMEPluginsCreateRequestBody struct {
 	BaseACMEPluginData
+
 	// ACME Plugin ID name
 	Plugin string `json:"id" url:"id"`
 	// DNS plugin data. (base64 encoded)
@@ -69,6 +72,7 @@ type ACMEPluginsCreateRequestBody struct {
 // ACMEPluginsUpdateRequestBody contains the body for updating an existing ACME plugin.
 type ACMEPluginsUpdateRequestBody struct {
 	BaseACMEPluginData
+
 	// DNS plugin data. (base64 encoded)
 	Data *DNSPluginData `url:"data,omitempty"`
 	// A list of settings you want to delete.

@@ -2693,8 +2693,8 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		}
 
 		vmID = vmIDNew
-		e = d.Set(mkVMID, vmID)
 
+		e = d.Set(mkVMID, vmID)
 		if e != nil {
 			return diag.FromErr(e)
 		}

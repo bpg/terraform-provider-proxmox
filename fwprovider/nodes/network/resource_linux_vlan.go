@@ -240,6 +240,7 @@ func (r *linuxVLANResource) Configure(
 //nolint:dupl
 func (r *linuxVLANResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan linuxVLANResourceModel
+
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 
@@ -319,6 +320,7 @@ func (r *linuxVLANResource) read(ctx context.Context, model *linuxVLANResourceMo
 func (r *linuxVLANResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	var state linuxVLANResourceModel
+
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 
@@ -409,6 +411,7 @@ func (r *linuxVLANResource) Update(ctx context.Context, req resource.UpdateReque
 //nolint:dupl
 func (r *linuxVLANResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state linuxVLANResourceModel
+
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 

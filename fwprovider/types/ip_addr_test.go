@@ -52,8 +52,8 @@ func Test_IPAddrTypeValueFromTerraform(t *testing.T) {
 			t.Parallel()
 
 			ctx := t.Context()
-			val, err := IPAddrType{}.ValueFromTerraform(ctx, test.val)
 
+			val, err := IPAddrType{}.ValueFromTerraform(ctx, test.val)
 			if err == nil && test.expectError {
 				t.Fatal("expected error, got no error")
 			}

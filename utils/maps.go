@@ -44,8 +44,8 @@ func compareWithPrefix(a, b string) int {
 		bRest := strings.TrimPrefix(b, prefix)
 
 		aNum, aErr := strconv.Atoi(aRest)
-		bNum, bErr := strconv.Atoi(bRest)
 
+		bNum, bErr := strconv.Atoi(bRest)
 		if aErr == nil && bErr == nil {
 			if aNum != bNum {
 				if aNum < bNum {

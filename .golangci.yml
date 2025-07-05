@@ -17,6 +17,7 @@ linters:
     - mnd
     - nestif
     - nlreturn
+    - noinlineerr
     - perfsprint
     - rowserrcheck
     - tagliatelle
@@ -24,6 +25,7 @@ linters:
     - tparallel
     - varnamelen
     - wastedassign
+    - wsl
   settings:
     cyclop:
       max-complexity: 25
@@ -49,6 +51,10 @@ linters:
     wrapcheck:
       ignore-package-globs:
         - github.com/bpg/terraform-provider-proxmox/*
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
   exclusions:
     generated: lax
     presets:

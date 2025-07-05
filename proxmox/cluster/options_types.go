@@ -68,6 +68,7 @@ type OptionsResponseBody struct {
 // OptionsResponseData contains the data from a cluster options response.
 type OptionsResponseData struct {
 	optionsBaseData
+
 	MaxWorkers                *types.CustomInt64 `json:"max_workers,omitempty"`
 	ClusterResourceScheduling *crs               `json:"crs,omitempty"`
 	HASettings                *haSettings        `json:"ha,omitempty"`
@@ -83,6 +84,7 @@ type OptionsResponseData struct {
 // OptionsRequestData contains the body for cluster options request.
 type OptionsRequestData struct {
 	optionsBaseData
+
 	MaxWorkers                *int64  `json:"max_workers,omitempty"     url:"max_workers,omitempty"`
 	Delete                    *string `json:"delete,omitempty"          url:"delete,omitempty"`
 	ClusterResourceScheduling *string `json:"crs,omitempty"             url:"crs,omitempty"`

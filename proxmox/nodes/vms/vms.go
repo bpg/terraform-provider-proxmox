@@ -675,7 +675,6 @@ func (c *Client) WaitForVMConfigUnlock(ctx context.Context, ignoreErrorResponse 
 			return errors.Is(err, stillLocked) || ignoreErrorResponse
 		}),
 	)
-
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for VM %d configuration to become unlocked", c.VMID)
 	}
@@ -714,7 +713,6 @@ func (c *Client) WaitForVMStatus(ctx context.Context, status string) error {
 			return errors.Is(err, unexpectedStatus)
 		}),
 	)
-
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for VM %d to enter the status %q", c.VMID, status)
 	}

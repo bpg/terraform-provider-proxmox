@@ -50,6 +50,7 @@ var (
 // PathType is a type that represents a path of a hardware mapping.
 type PathType struct {
 	basetypes.StringType
+
 	Type proxmoxtypes.Type
 }
 

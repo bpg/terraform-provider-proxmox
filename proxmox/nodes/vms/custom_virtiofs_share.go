@@ -36,6 +36,7 @@ func (r *CustomVirtiofsShare) EncodeValues(key string, v *url.Values) error {
 	}
 
 	var values []string
+
 	values = append(values, fmt.Sprintf("dirid=%s", r.DirId))
 
 	if r.Cache != nil {

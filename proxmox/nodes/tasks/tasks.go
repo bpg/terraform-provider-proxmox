@@ -168,7 +168,6 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(time.Second),
 	)
-
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for task %q to complete", upid)
 	}

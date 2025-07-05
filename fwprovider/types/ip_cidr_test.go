@@ -52,8 +52,8 @@ func Test_IPCIDRTypeValueFromTerraform(t *testing.T) {
 			t.Parallel()
 
 			ctx := t.Context()
-			val, err := IPCIDRType{}.ValueFromTerraform(ctx, test.val)
 
+			val, err := IPCIDRType{}.ValueFromTerraform(ctx, test.val)
 			if err == nil && test.expectError {
 				t.Fatal("expected error, got no error")
 			}

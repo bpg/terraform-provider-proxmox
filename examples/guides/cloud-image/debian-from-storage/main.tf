@@ -15,11 +15,11 @@ resource "proxmox_virtual_environment_vm" "debian_vm" {
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = "local:iso/debian-12-genericcloud-amd64.img"
-    interface    = "virtio0"
-    iothread     = true
-    discard      = "on"
-    size         = 20
+    # qcow2 image downloaded from https://cloud.debian.org/images/cloud/bookworm/latest/ and renamed to *.img
+    file_id   = "local:iso/debian-12-genericcloud-amd64.img"
+    interface = "virtio0"
+    iothread  = true
+    discard   = "on"
+    size      = 20
   }
 }
-

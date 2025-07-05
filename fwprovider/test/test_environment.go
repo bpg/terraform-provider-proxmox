@@ -195,6 +195,7 @@ func (e *Environment) RenderConfig(cfg string, opt ...RenderConfigOption) string
 	require.NoError(e.t, err)
 
 	var buf bytes.Buffer
+
 	err = tmpl.Execute(&buf, e.templateVars)
 	require.NoError(e.t, err)
 
