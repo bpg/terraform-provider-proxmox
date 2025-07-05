@@ -178,6 +178,7 @@ func GetDiskDeviceObjects(
 		diskInterface, _ := block[mkDiskInterface].(string)
 		fileFormat, _ := block[mkDiskFileFormat].(string)
 		fileID, _ := block[mkDiskFileID].(string)
+		importfrom, _ := block[mkDiskImportFrom].(string)
 		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
 		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
 		serial := block[mkDiskSerial].(string)
@@ -212,6 +213,7 @@ func GetDiskDeviceObjects(
 		diskDevice.DatastoreID = &datastoreID
 		diskDevice.Discard = &discard
 		diskDevice.FileID = &fileID
+		diskDevice.ImportFrom = &importfrom
 		diskDevice.Replicate = &replicate
 		diskDevice.Serial = &serial
 		diskDevice.Size = types.DiskSizeFromGigabytes(int64(size))

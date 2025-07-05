@@ -231,11 +231,18 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
   disk {
     datastore_id = local.datastore_id
     interface    = "scsi0"
+    size         = 8
+    import_from  = proxmox_virtual_environment_download_file.latest_debian_12_bookworm_qcow2.id
+  }
+
+  disk {
+    datastore_id = local.datastore_id
+    interface    = "scsi1"
     size         = 1
   }
   disk {
     datastore_id = local.datastore_id
-    interface    = "scsi1"
+    interface    = "scsi2"
     size         = 4
   }
 }
