@@ -2913,6 +2913,25 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		return diags
 	}
 
+	var resizeDisks = diskDeviceObjects.Filter(func(device *vms.CustomStorageDevice) bool {
+		return device.ImportFrom != nil && *device.ImportFrom != ""
+	})
+
+	if len(resizeDisks) > 0 {
+		tflog.Info(ctx, "Resizing disks after VM creation")
+		for idev, device := range resizeDisks {
+			tflog.Info(ctx, fmt.Sprintf("VM %d: Resizing disk %s", vmID, idev))
+
+			err = client.Node(nodeName).VM(vmID).ResizeVMDisk(ctx, &vms.ResizeDiskRequestBody{
+				Size: *device.Size,
+				Disk: idev,
+			})
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
+	}
+
 	return vmCreateStart(ctx, d, m)
 }
 
