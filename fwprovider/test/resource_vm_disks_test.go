@@ -142,6 +142,45 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}),
 			),
 		}}},
+		{"import disk from an image", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "test_disk_image" {
+					content_type = "import"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					file_name    = "test-disk-image.img.raw"
+					overwrite_unmanaged = true
+				}
+				resource "proxmox_virtual_environment_vm" "test_disk" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk"	
+					disk {
+						datastore_id = "local-lvm"
+						import_from  = proxmox_virtual_environment_download_file.test_disk_image.id
+						interface    = "virtio0"
+						iothread     = true
+						discard      = "on"
+						serial       = "dead_beef"
+						size         = 20
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+					"disk.0.cache":             "none",
+					"disk.0.datastore_id":      "local-lvm",
+					"disk.0.discard":           "on",
+					"disk.0.file_format":       "raw",
+					"disk.0.interface":         "virtio0",
+					"disk.0.iothread":          "true",
+					"disk.0.path_in_datastore": `vm-\d+-disk-\d+`,
+					"disk.0.serial":            "dead_beef",
+					"disk.0.size":              "20",
+					"disk.0.ssd":               "false",
+				}),
+			),
+		}}},
 		{"clone default disk without overrides", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

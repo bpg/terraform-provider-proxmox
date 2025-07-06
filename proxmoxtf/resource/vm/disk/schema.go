@@ -31,6 +31,7 @@ const (
 	mkDiskDiscard             = "discard"
 	mkDiskFileFormat          = "file_format"
 	mkDiskFileID              = "file_id"
+	mkDiskImportFrom          = "import_from"
 	mkDiskInterface           = "interface"
 	mkDiskIopsRead            = "iops_read"
 	mkDiskIopsReadBurstable   = "iops_read_burstable"
@@ -64,6 +65,7 @@ func Schema() map[string]*schema.Schema {
 						mkDiskCache:           dvDiskCache,
 						mkDiskDatastoreID:     dvDiskDatastoreID,
 						mkDiskDiscard:         dvDiskDiscard,
+						mkDiskImportFrom:      "",
 						mkDiskFileID:          "",
 						mkDiskInterface:       dvDiskInterface,
 						mkDiskIOThread:        false,
@@ -130,6 +132,14 @@ func Schema() map[string]*schema.Schema {
 						Description:      "The file id for a disk image",
 						Optional:         true,
 						ForceNew:         true,
+						Default:          "",
+						ValidateDiagFunc: validators.FileID(),
+					},
+					mkDiskImportFrom: {
+						Type:             schema.TypeString,
+						Description:      "The file id of a disk image to import from storage.",
+						Optional:         true,
+						ForceNew:         false,
 						Default:          "",
 						ValidateDiagFunc: validators.FileID(),
 					},

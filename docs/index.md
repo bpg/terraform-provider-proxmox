@@ -296,7 +296,9 @@ terraform plan
 
 The Proxmox provider can connect to a Proxmox node via SSH.
 This is used in the `proxmox_virtual_environment_vm` or `proxmox_virtual_environment_file` resource to execute commands on the node to perform actions that are not supported by Proxmox API.
-For example, to import VM disks, or to uploading certain type of resources, such as snippets.
+For example, to import VM disks in certain cases, or to uploading certain type of resources, such as snippets.
+
+~> Note that the SSH connection is not used when VM disk is imported using `import_from` attribute. It also is not used to _manage_ VMs or Containers, and is not required for most operations.
 
 The SSH connection configuration is provided via the optional `ssh` block in the `provider` block:
 

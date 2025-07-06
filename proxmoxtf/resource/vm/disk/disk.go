@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -178,6 +179,7 @@ func GetDiskDeviceObjects(
 		diskInterface, _ := block[mkDiskInterface].(string)
 		fileFormat, _ := block[mkDiskFileFormat].(string)
 		fileID, _ := block[mkDiskFileID].(string)
+		importFrom, _ := block[mkDiskImportFrom].(string)
 		ioThread := types.CustomBool(block[mkDiskIOThread].(bool))
 		replicate := types.CustomBool(block[mkDiskReplicate].(bool))
 		serial := block[mkDiskSerial].(string)
@@ -212,6 +214,7 @@ func GetDiskDeviceObjects(
 		diskDevice.DatastoreID = &datastoreID
 		diskDevice.Discard = &discard
 		diskDevice.FileID = &fileID
+		diskDevice.ImportFrom = &importFrom
 		diskDevice.Replicate = &replicate
 		diskDevice.Serial = &serial
 		diskDevice.Size = types.DiskSizeFromGigabytes(int64(size))
@@ -418,6 +421,12 @@ func Read(
 			disk[mkDiskFileID] = dd.FileID
 		}
 
+		// note that PVE does not return back the 'import-from' attribute for the disks that are imported,
+		// but we'll keep it here for consistency. the actual value is set later down
+		if dd.ImportFrom != nil {
+			disk[mkDiskImportFrom] = dd.ImportFrom
+		}
+
 		disk[mkDiskInterface] = di
 		disk[mkDiskSize] = dd.Size.InGigabytes()
 
@@ -539,8 +548,20 @@ func Read(
 		var diskList []interface{}
 
 		if len(currentDiskList) > 0 {
-			interfaces := utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface)
-			diskList = utils.OrderedListFromMapByKeyValues(diskMap, interfaces)
+			currentDiskMap := utils.MapResourcesByAttribute(currentDiskList, mkDiskInterface)
+			// copy import_from from the current disk if it exists
+			for k, v := range currentDiskMap {
+				if disk, ok := v.(map[string]interface{}); ok {
+					if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
+						if _, exists := diskMap[k]; exists {
+							diskMap[k].(map[string]interface{})[mkDiskImportFrom] = importFrom
+						}
+					}
+				}
+			}
+
+			diskList = utils.OrderedListFromMapByKeyValues(diskMap,
+				slices.AppendSeq(make([]string, 0, len(currentDiskMap)), maps.Keys(currentDiskMap)))
 		} else {
 			diskList = utils.OrderedListFromMap(diskMap)
 		}
@@ -596,6 +617,13 @@ func Update(
 			if !ptr.Eq(tmp.AIO, disk.AIO) {
 				rebootRequired = true
 				tmp.AIO = disk.AIO
+			}
+
+			if disk.ImportFrom != nil && *disk.ImportFrom != "" {
+				rebootRequired = true
+				tmp.DatastoreID = disk.DatastoreID
+				tmp.ImportFrom = disk.ImportFrom
+				tmp.Size = disk.Size
 			}
 
 			tmp.Backup = disk.Backup

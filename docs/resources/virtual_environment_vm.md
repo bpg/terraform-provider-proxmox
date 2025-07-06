@@ -9,8 +9,6 @@ subcategory: Virtual Environment
 
 Manages a virtual machine.
 
-> This resource uses SSH access to the node. You might need to configure the [`ssh` option in the `provider` section](../index.md#node-ip-address-used-for-ssh-connection).
-
 ## Example Usage
 
 ```hcl
@@ -47,7 +45,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_qcow2_img.id
+    import_from  = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_qcow2_img.id
     interface    = "scsi0"
   }
 
@@ -89,10 +87,12 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 }
 
 resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_qcow2_img" {
-  content_type = "iso"
+  content_type = "import"
   datastore_id = "local"
   node_name    = "pve"
-  url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+  url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+  # need to rename the file to *.qcow2 to indicate the actual file format for import
+  file_name = "jammy-server-cloudimg-amd64.qcow2"
 }
 
 resource "random_password" "ubuntu_vm_password" {
@@ -295,7 +295,10 @@ output "ubuntu_vm_public_key" {
         - `vmdk` - VMware Disk Image.
     - `file_id` - (Optional) The file ID for a disk image when importing a disk into VM. The ID format is
           `<datastore_id>:<content_type>/<file_name>`, for example `local:iso/centos8.img`. Can be also taken from
-          `proxmox_virtual_environment_download_file` resource.
+          `proxmox_virtual_environment_download_file` resource. *Deprecated*, use `import_from` instead.
+    - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type.
+       The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`. Can be also taken from
+       `proxmox_virtual_environment_download_file` resource.
     - `interface` - (Required) The disk interface for Proxmox, currently `scsi`,
         `sata` and `virtio` interfaces are supported. Append the disk index at
         the end, for example, `virtio0` for the first virtio disk, `virtio1` for

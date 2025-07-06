@@ -36,6 +36,7 @@ type CustomStorageDevice struct {
 	BurstableWriteSpeedMbps *int              `json:"mbps_wr_max,omitempty" url:"mbps_wr_max,omitempty"`
 	Cache                   *string           `json:"cache,omitempty"       url:"cache,omitempty"`
 	Discard                 *string           `json:"discard,omitempty"     url:"discard,omitempty"`
+	ImportFrom              *string           `json:"import_from,omitempty" url:"import_from,omitempty"`
 	Format                  *string           `json:"format,omitempty"      url:"format,omitempty"`
 	IopsRead                *int              `json:"iops_rd,omitempty"     url:"iops_rd,omitempty"`
 	IopsWrite               *int              `json:"iops_wr,omitempty"     url:"iops_wr,omitempty"`
@@ -203,8 +204,16 @@ func (d *CustomStorageDevice) EncodeOptions() string {
 
 // EncodeValues converts a CustomStorageDevice struct to a URL value.
 func (d *CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
+	if d.ImportFrom != nil && *d.ImportFrom != "" {
+		d.FileVolume = *d.DatastoreID + ":" + "0"
+	}
+
 	values := []string{
 		fmt.Sprintf("file=%s", d.FileVolume),
+	}
+
+	if d.ImportFrom != nil && *d.ImportFrom != "" {
+		values = append(values, fmt.Sprintf("import-from=%s", *d.ImportFrom))
 	}
 
 	if d.Format != nil {
@@ -272,6 +281,9 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 
 			case "file":
 				d.FileVolume = v[1]
+
+			case "import_from":
+				d.ImportFrom = &v[1]
 
 			case "format":
 				d.Format = &v[1]
@@ -399,6 +411,7 @@ func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
 	updated = ptr.UpdateIfChanged(&d.Replicate, m.Replicate) || updated
 	updated = ptr.UpdateIfChanged(&d.SSD, m.SSD) || updated
 	updated = ptr.UpdateIfChanged(&d.Serial, m.Serial) || updated
+	updated = ptr.UpdateIfChanged(&d.ImportFrom, m.ImportFrom) || updated
 
 	return updated
 }

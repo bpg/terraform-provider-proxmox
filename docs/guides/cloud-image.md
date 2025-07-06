@@ -32,7 +32,7 @@ resource "proxmox_virtual_environment_vm" "centos_vm" {
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = proxmox_virtual_environment_download_file.centos_cloud_image.id
+    import_from  = proxmox_virtual_environment_download_file.centos_cloud_image.id
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
@@ -41,11 +41,10 @@ resource "proxmox_virtual_environment_vm" "centos_vm" {
 }
 
 resource "proxmox_virtual_environment_download_file" "centos_cloud_image" {
-  content_type = "iso"
+  content_type = "import"
   datastore_id = "local"
   node_name    = "pve"
   url          = "https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-latest.x86_64.qcow2"
-  file_name    = "centos8.img"
 }
 ```
 
@@ -69,7 +68,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+    import_from  = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
@@ -78,10 +77,12 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 }
 
 resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
-  content_type = "iso"
+  content_type = "import"
   datastore_id = "local"
   node_name    = "pve"
   url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+  # need to rename the file to *.qcow2 to indicate the actual file format for import
+  file_name = "jammy-server-cloudimg-amd64.qcow2"
 }
 ```
 
@@ -110,6 +111,7 @@ resource "proxmox_virtual_environment_vm" "debian_vm" {
   disk {
     datastore_id = "local-lvm"
     # qcow2 image downloaded from https://cloud.debian.org/images/cloud/bookworm/latest/ and renamed to *.img
+    # the image is not of import type, so provider will use SSH client to import it
     file_id   = "local:iso/debian-12-genericcloud-amd64.img"
     interface = "virtio0"
     iothread  = true
