@@ -112,10 +112,6 @@ Add the following block to your VM config:
 
 For more context, see #1639 and #1770.
 
-### Disk Images Cannot Be Imported by Non-PAM Accounts
-
-Due to limitations in the Proxmox VE API, certain actions need to be performed using SSH. This requires the use of a PAM account (standard Linux account).
-
 ### Disk Images from VMware Cannot Be Uploaded or Imported
 
 Proxmox VE does not currently support VMware disk images directly.

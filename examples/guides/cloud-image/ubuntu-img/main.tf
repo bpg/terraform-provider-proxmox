@@ -15,7 +15,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+    import_from  = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
@@ -24,8 +24,10 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
 }
 
 resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
-  content_type = "iso"
+  content_type = "import"
   datastore_id = "local"
   node_name    = "pve"
   url          = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+  # need to rename the file to *.qcow2 to indicate the actual file format for import
+  file_name = "jammy-server-cloudimg-amd64.qcow2"
 }

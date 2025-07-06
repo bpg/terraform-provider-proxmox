@@ -15,7 +15,7 @@ resource "proxmox_virtual_environment_vm" "centos_vm" {
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = proxmox_virtual_environment_download_file.centos_cloud_image.id
+    import_from  = proxmox_virtual_environment_download_file.centos_cloud_image.id
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
@@ -24,9 +24,8 @@ resource "proxmox_virtual_environment_vm" "centos_vm" {
 }
 
 resource "proxmox_virtual_environment_download_file" "centos_cloud_image" {
-  content_type = "iso"
+  content_type = "import"
   datastore_id = "local"
   node_name    = "pve"
   url          = "https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-latest.x86_64.qcow2"
-  file_name    = "centos8.img"
 }
