@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -18,7 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"golang.org/x/exp/maps"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
@@ -560,7 +560,8 @@ func Read(
 				}
 			}
 
-			diskList = utils.OrderedListFromMapByKeyValues(diskMap, maps.Keys(currentDiskMap))
+			diskList = utils.OrderedListFromMapByKeyValues(diskMap,
+				slices.AppendSeq(make([]string, 0, len(currentDiskMap)), maps.Keys(currentDiskMap)))
 		} else {
 			diskList = utils.OrderedListFromMap(diskMap)
 		}
