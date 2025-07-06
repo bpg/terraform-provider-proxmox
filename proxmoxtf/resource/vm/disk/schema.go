@@ -65,6 +65,7 @@ func Schema() map[string]*schema.Schema {
 						mkDiskCache:           dvDiskCache,
 						mkDiskDatastoreID:     dvDiskDatastoreID,
 						mkDiskDiscard:         dvDiskDiscard,
+						mkDiskImportFrom:      "",
 						mkDiskFileID:          "",
 						mkDiskInterface:       dvDiskInterface,
 						mkDiskIOThread:        false,

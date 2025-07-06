@@ -420,6 +420,10 @@ func Read(
 			disk[mkDiskFileID] = dd.FileID
 		}
 
+		if dd.ImportFrom != nil {
+			disk[mkDiskImportFrom] = dd.ImportFrom
+		}
+
 		disk[mkDiskInterface] = di
 		disk[mkDiskSize] = dd.Size.InGigabytes()
 
@@ -598,6 +602,13 @@ func Update(
 			if !ptr.Eq(tmp.AIO, disk.AIO) {
 				rebootRequired = true
 				tmp.AIO = disk.AIO
+			}
+
+			if disk.ImportFrom != nil && *disk.ImportFrom != "" {
+				rebootRequired = true
+				tmp.DatastoreID = disk.DatastoreID
+				tmp.ImportFrom = disk.ImportFrom
+				tmp.Size = disk.Size
 			}
 
 			tmp.Backup = disk.Backup

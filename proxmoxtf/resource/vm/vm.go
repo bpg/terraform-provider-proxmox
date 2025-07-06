@@ -5927,6 +5927,11 @@ func vmUpdateDiskLocationAndSize(
 				}
 			}
 
+			// We need to resize the disk if the import source has changed.
+			if *oldDisk.ImportFrom != *diskNewEntries[oldIface].ImportFrom {
+				*oldDisk.Size = 0
+			}
+
 			if *oldDisk.Size != *diskNewEntries[oldIface].Size {
 				if *oldDisk.Size < *diskNewEntries[oldIface].Size {
 					if oldDisk.IsOwnedBy(vmID) {

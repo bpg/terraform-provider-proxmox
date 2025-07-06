@@ -411,6 +411,7 @@ func (d *CustomStorageDevice) MergeWith(m CustomStorageDevice) bool {
 	updated = ptr.UpdateIfChanged(&d.Replicate, m.Replicate) || updated
 	updated = ptr.UpdateIfChanged(&d.SSD, m.SSD) || updated
 	updated = ptr.UpdateIfChanged(&d.Serial, m.Serial) || updated
+	updated = ptr.UpdateIfChanged(&d.ImportFrom, m.ImportFrom) || updated
 
 	return updated
 }
