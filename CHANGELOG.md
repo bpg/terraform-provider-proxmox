@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.79.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.2...v0.79.0) (2025-07-06)
+
+
+### Features
+
+* **file:** add support for `import` content type ([#1983](https://github.com/bpg/terraform-provider-proxmox/issues/1983)) ([2d9e0b5](https://github.com/bpg/terraform-provider-proxmox/commit/2d9e0b585e307196b97a680716db75c9cc010bac))
+* **vm:** add `disk.import_from` attribute to support importing via API ([#2012](https://github.com/bpg/terraform-provider-proxmox/issues/2012)) ([ddc4118](https://github.com/bpg/terraform-provider-proxmox/commit/ddc4118b08f98cfc1012fe3bf4edc200c894aca8))
+
+
+### Bug Fixes
+
+* **network:** improve error handling on `create`/`read`/`update` ([#2001](https://github.com/bpg/terraform-provider-proxmox/issues/2001)) ([5e4582f](https://github.com/bpg/terraform-provider-proxmox/commit/5e4582f820626ffbb6702c2d15cfe6bc0aba680f))
+* **tests:** fix `make example` tests ([#2007](https://github.com/bpg/terraform-provider-proxmox/issues/2007)) ([a76cc62](https://github.com/bpg/terraform-provider-proxmox/commit/a76cc6256da0ad86a2efe514ad03c5718681d477))
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.1.6 → v2.2.1) ([#2013](https://github.com/bpg/terraform-provider-proxmox/issues/2013)) ([6a8f367](https://github.com/bpg/terraform-provider-proxmox/commit/6a8f367c46937873da638da6bc3a9c1261b7dd46))
+* **deps:** update image golang (10c1318 → 20a022e) ([#2015](https://github.com/bpg/terraform-provider-proxmox/issues/2015)) ([e9a3576](https://github.com/bpg/terraform-provider-proxmox/commit/e9a3576a6448bc6788ea6485381139ae548455f5))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.2.1 → v7.3.0) ([#2010](https://github.com/bpg/terraform-provider-proxmox/issues/2010)) ([b601ca3](https://github.com/bpg/terraform-provider-proxmox/commit/b601ca3ed25b7b82d16a291cdaac308b36dbb3f9))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.21.0 → v0.22.0) ([#2016](https://github.com/bpg/terraform-provider-proxmox/issues/2016)) ([ebb0fc7](https://github.com/bpg/terraform-provider-proxmox/commit/ebb0fc74af1affa46db91526a7a7dab38962b4b0))
+* **docs:** add description of HA settings management to VM documentation ([#2003](https://github.com/bpg/terraform-provider-proxmox/issues/2003)) ([0582e3d](https://github.com/bpg/terraform-provider-proxmox/commit/0582e3d7f1750248933efd395cc04635224b7ea8))
+* **docs:** minor fixes / updates in guides ([#2014](https://github.com/bpg/terraform-provider-proxmox/issues/2014)) ([8c2a071](https://github.com/bpg/terraform-provider-proxmox/commit/8c2a071b40f9be2894da6f88d49457f5202a9712))
+
 ## [0.78.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.1...v0.78.2) (2025-06-16)
 
 
