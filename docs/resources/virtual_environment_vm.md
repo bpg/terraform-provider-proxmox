@@ -158,7 +158,7 @@ output "ubuntu_vm_public_key" {
     - `seabios` - SeaBIOS.
 - `boot_order` - (Optional) Specify a list of devices to boot from in the order
     they appear in the list (defaults to `[]`).
-- `cdrom` - (Optional) The CD-ROM configuration.
+- `cdrom` - (Optional) The CD-ROM configuration. (multiple blocks supported)
     - `enabled` - (Optional) Whether to enable the CD-ROM drive (defaults
         to `false`). *Deprecated*. The attribute will be removed in the next version of the provider.
         Set `file_id` to `none` to leave the CD-ROM drive empty.
@@ -324,21 +324,21 @@ output "ubuntu_vm_public_key" {
         Block drives.
 - `efi_disk` - (Optional) The efi disk device (required if `bios` is set
     to `ovmf`)
-    - `datastore_id` (Optional) The identifier for the datastore to create
+    - `datastore_id` - (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
-    - `file_format` (Optional) The file format (defaults to `raw`).
-    - `type` (Optional) Size and type of the OVMF EFI disk. `4m` is newer and
+    - `file_format` - (Optional) The file format (defaults to `raw`).
+    - `type` - (Optional) Size and type of the OVMF EFI disk. `4m` is newer and
         recommended, and required for Secure Boot. For backwards compatibility
         use `2m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
         to `2m`).
-    - `pre_enrolled_keys` (Optional) Use am EFI vars template with
+    - `pre_enrolled_keys` - (Optional) Use am EFI vars template with
         distribution-specific and Microsoft Standard keys enrolled, if used with
         EFI type=`4m`. Ignored for VMs with cpu.architecture=`aarch64` (defaults
         to `false`).
 - `tpm_state` - (Optional) The TPM state device.
-    - `datastore_id` (Optional) The identifier for the datastore to create
+    - `datastore_id` - (Optional) The identifier for the datastore to create
         the disk in (defaults to `local-lvm`).
-    - `version` (Optional) TPM state device version. Can be `v1.2` or `v2.0`.
+    - `version` - (Optional) TPM state device version. Can be `v1.2` or `v2.0`.
         (defaults to `v2.0`).
 - `hostpci` - (Optional) A host PCI device mapping (multiple blocks supported).
     - `device` - (Required) The PCI device name for Proxmox, in form
@@ -376,8 +376,7 @@ output "ubuntu_vm_public_key" {
             deprecated and will be removed in a future release. Please use the
             `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
-    - `ip_config` - (Optional) The IP configuration (one block per network
-        device).
+    - `ip_config` - (Optional) The IP configuration (multiple blocks supported, one block per network device).
         - `ipv4` - (Optional) The IPv4 configuration.
             - `address` - (Optional) The IPv4 address in CIDR notation
                 (e.g. 192.168.2.2/24). Alternatively, set this to `dhcp` for
@@ -578,7 +577,7 @@ output "ubuntu_vm_public_key" {
         - `virtio-gl` - VirtIO-GPU with 3D acceleration (VirGL). VirGL support needs some extra libraries that aren’t installed by default. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information.
         - `vmware` - VMware Compatible.
     - `clipboard` - (Optional) Enable VNC clipboard by setting to `vnc`. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information.
-- `virtiofs` - (Optional) Virtiofs share
+- `virtiofs` - (Optional) Virtiofs share (multiple blocks supported)
     - `mapping` - Identifier of the directory mapping
     - `cache` - (Optional) The caching mode
         - `auto`
