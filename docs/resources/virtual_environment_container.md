@@ -142,8 +142,7 @@ output "ubuntu_container_public_key" {
             the `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
     - `hostname` - (Optional) The hostname.
-    - `ip_config` - (Optional) The IP configuration (one block per network
-        device).
+    - `ip_config` - (Optional) The IP configuration (multiple blocks supported, one block per network device).
         - `ipv4` - (Optional) The IPv4 configuration.
             - `address` - (Optional) The IPv4 address (use `dhcp` for auto-discovery).
             - `gateway` - (Optional) The IPv4 gateway (must be omitted
@@ -159,22 +158,22 @@ output "ubuntu_container_public_key" {
     - `dedicated` - (Optional) The dedicated memory in megabytes (defaults
         to `512`).
     - `swap` - (Optional) The swap size in megabytes (defaults to `0`).
-- `mount_point`
-    - `acl` (Optional) Explicitly enable or disable ACL support.
-    - `backup` (Optional) Whether to include the mount point in backups (only
+- `mount_point` - (Optional) mount points to container (multiple blocks supported).
+    - `acl` - (Optional) Explicitly enable or disable ACL support.
+    - `backup` - (Optional) Whether to include the mount point in backups (only
         used for volume mount points, defaults to `false`).
-    - `mount_options` (Optional) List of extra mount options.
-    - `path` (Required) Path to the mount point as seen from inside the
+    - `mount_options` - (Optional) List of extra mount options.
+    - `path` - (Required) Path to the mount point as seen from inside the
         container.
-    - `quota` (Optional) Enable user quotas inside the container (not supported
+    - `quota` - (Optional) Enable user quotas inside the container (not supported
         with ZFS subvolumes).
-    - `read_only` (Optional) Read-only mount point.
-    - `replicate` (Optional) Will include this volume to a storage replica job.
-    - `shared` (Optional) Mark this non-volume mount point as available on all
+    - `read_only` - (Optional) Read-only mount point.
+    - `replicate` - (Optional) Will include this volume to a storage replica job.
+    - `shared` - (Optional) Mark this non-volume mount point as available on all
         nodes.
-    - `size` (Optional) Volume size (only for volume mount points).
+    - `size` - (Optional) Volume size (only for volume mount points).
         Can be specified with a unit suffix (e.g. `10G`).
-    - `volume` (Required) Volume, device or directory to mount into the
+    - `volume` - (Required) Volume, device or directory to mount into the
         container.
 - `device_passthrough` - (Optional) Device to pass through to the container (multiple blocks supported).
     - `deny_write` - (Optional) Deny the container to write to the device (defaults to `false`).
@@ -183,8 +182,7 @@ output "ubuntu_container_public_key" {
         4-digit octal number.
     - `path` - (Required) Device to pass through to the container (e.g. `/dev/sda`).
     - `uid` - (Optional) User ID to be assigned to the device node.
-- `network_interface` - (Optional) A network interface (multiple blocks
-    supported).
+- `network_interface` - (Optional) A network interface (multiple blocks supported).
     - `bridge` - (Optional) The name of the network bridge (defaults
         to `vmbr0`).
     - `enabled` - (Optional) Whether to enable the network device (defaults
