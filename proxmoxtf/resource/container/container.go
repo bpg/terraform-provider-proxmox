@@ -766,7 +766,7 @@ func Container() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "The MAC address",
 							Optional:    true,
-							Default:     dvNetworkInterfaceMACAddress,
+							Computed:    true,
 							DiffSuppressFunc: func(_, _, newVal string, _ *schema.ResourceData) bool {
 								return newVal == ""
 							},
