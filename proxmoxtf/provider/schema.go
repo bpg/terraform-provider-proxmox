@@ -32,6 +32,7 @@ const (
 	mkProviderSSHPassword         = "password"
 	mkProviderSSHAgent            = "agent"
 	mkProviderSSHAgentSocket      = "agent_socket"
+	mkProviderSSHAgentForwarding  = "agent_forwarding"
 	mkProviderSSHPrivateKey       = "private_key"
 	mkProviderSSHSocks5Server     = "socks5_server"
 	mkProviderSSHSocks5Username   = "socks5_username"
@@ -163,6 +164,23 @@ func createSchema() map[string]*schema.Schema {
 							nil,
 						),
 						ValidateFunc: validation.StringIsNotEmpty,
+					},
+					mkProviderSSHAgentForwarding: {
+						Type:     schema.TypeBool,
+						Optional: true,
+						Description: "Whether to enable SSH agent forwarding. Defaults to the value of the " +
+							"`PROXMOX_VE_SSH_AGENT_FORWARDING` environment variable, or `false` if not set.",
+						DefaultFunc: func() (interface{}, error) {
+							for _, k := range []string{"PROXMOX_VE_SSH_AGENT_FORWARDING", "PM_VE_SSH_AGENT_FORWARDING"} {
+								v := os.Getenv(k)
+
+								if v == "true" || v == "1" {
+									return true, nil
+								}
+							}
+
+							return false, nil
+						},
 					},
 					mkProviderSSHPrivateKey: {
 						Type:      schema.TypeString,
