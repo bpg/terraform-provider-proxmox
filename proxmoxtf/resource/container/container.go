@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -575,6 +576,11 @@ func Container() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				// this does not work with map datatype in SDK :(
+				// Elem: &schema.Schema{
+				//	Type: schema.TypeList,
+				//	Elem: &schema.Schema{Type: schema.TypeString},
+				// },
 			},
 			mkIPv6: {
 				Type:        schema.TypeMap,
@@ -2113,6 +2119,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
+	template := d.Get(mkTemplate).(bool)
 	nodeName := d.Get(mkNodeName).(string)
 
 	vmID, e := strconv.Atoi(d.Id())
@@ -2568,34 +2575,6 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	networkInterfaces := utils.OrderedListFromMap(networkInterfacesMap)
 	initialization[mkInitializationIPConfig] = utils.OrderedListFromMap(ipConfigMap)
 
-	ifaces, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, 10*time.Second)
-	if err == nil {
-		ipv4Addresses := make(map[string]interface{}, len(ifaces)-1)
-
-		ipv6Addresses := make(map[string]interface{}, len(ifaces)-1)
-		for _, iface := range ifaces {
-			if iface.IPAddresses != nil && iface.Name != "lo" {
-				for _, ip := range *iface.IPAddresses {
-					switch ip.Type {
-					case "inet":
-						ipv4Addresses[iface.Name] = ip.Address
-					case "inet6":
-						ipv6Addresses[iface.Name] = ip.Address
-					default:
-						return diag.FromErr(fmt.Errorf("unexpected IP address type %q for interface %q", ip.Type, iface.Name))
-					}
-				}
-			}
-		}
-
-		e = d.Set(mkIPv4, ipv4Addresses)
-		diags = append(diags, diag.FromErr(e)...)
-		e = d.Set(mkIPv6, ipv6Addresses)
-		diags = append(diags, diag.FromErr(e)...)
-	} else {
-		return diag.FromErr(fmt.Errorf("error getting container network interfaces: %w", err))
-	}
-
 	currentInitialization := d.Get(mkInitialization).([]interface{})
 
 	if len(currentInitialization) > 0 && currentInitialization[0] != nil {
@@ -2780,9 +2759,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(e)...)
 	}
 
-	currentTemplate := d.Get(mkTemplate).(bool)
-
-	if len(clone) == 0 || currentTemplate {
+	if len(clone) == 0 || template {
 		if containerConfig.Template != nil {
 			e = d.Set(
 				mkTemplate,
@@ -2801,7 +2778,47 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	e = d.Set(mkStarted, status.Status == "running")
+	started := status.Status == "running"
+
+	if started && len(networkInterfaces) > 0 {
+		ifaces, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, 10*time.Second)
+		if err == nil {
+			ipv4Map := make(map[string]interface{})
+			ipv6Map := make(map[string]interface{})
+
+			for _, iface := range ifaces {
+				if iface.IPAddresses != nil && iface.Name != "lo" {
+					for _, ip := range *iface.IPAddresses {
+						switch ip.Type {
+						case "inet":
+							// store only the first IPv4 address per interface
+							if _, exists := ipv4Map[iface.Name]; !exists {
+								ipv4Map[iface.Name] = ip.Address
+							}
+						case "inet6":
+							// store only the first IPV6 address per interface
+							if _, exists := ipv6Map[iface.Name]; !exists {
+								ipv6Map[iface.Name] = ip.Address
+							}
+						default:
+							return diag.FromErr(fmt.Errorf("unexpected IP address type %q for interface %q", ip.Type, iface.Name))
+						}
+					}
+				}
+			}
+
+			e = d.Set(mkIPv4, ipv4Map)
+			diags = append(diags, diag.FromErr(e)...)
+			e = d.Set(mkIPv6, ipv6Map)
+			diags = append(diags, diag.FromErr(e)...)
+		} else {
+			tflog.Warn(ctx, "error waiting for container network interfaces", map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	}
+
+	e = d.Set(mkStarted, started)
 	diags = append(diags, diag.FromErr(e)...)
 
 	return diags
