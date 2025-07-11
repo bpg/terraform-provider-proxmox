@@ -71,7 +71,6 @@ const (
 	dvNetworkInterfaceBridge            = "vmbr0"
 	dvNetworkInterfaceEnabled           = true
 	dvNetworkInterfaceFirewall          = false
-	dvNetworkInterfaceMACAddress        = ""
 	dvNetworkInterfaceRateLimit         = 0
 	dvNetworkInterfaceVLANID            = 0
 	dvNetworkInterfaceMTU               = 0
@@ -791,7 +790,7 @@ func Container() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "The MAC address",
 							Optional:    true,
-							Default:     dvNetworkInterfaceMACAddress,
+							Computed:    true,
 							DiffSuppressFunc: func(_, _, newVal string, _ *schema.ResourceData) bool {
 								return newVal == ""
 							},
