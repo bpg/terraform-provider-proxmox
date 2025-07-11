@@ -32,14 +32,8 @@ import (
 
 const (
 	// TrySudo is a shell function that tries to execute a command with sudo if the user has sudo permissions.
-	TrySudo = `try_sudo(){ 
-		if [ "$(sudo whoami 2>/dev/null)" = "root" ] || 
-			 [ $(sudo -n pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ]; then 
-			sudo $1
-		else 
-			$1
-		fi 
-	}`
+	//nolint:lll
+	TrySudo = `try_sudo(){ if [ "$(sudo whoami 2>/dev/null)" = "root" ] || [ $(sudo -n pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ]; then sudo $1; else $1; fi }`
 )
 
 // NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
