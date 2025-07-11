@@ -254,10 +254,11 @@ func uploadSnippetFile(t *testing.T, fileName string) {
 	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
 	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
+	sshAgentForwarding := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING")
 	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
 	sshPort := utils.GetAnyIntEnv("PROXMOX_VE_ACC_NODE_SSH_PORT")
 	sshClient, err := ssh.NewClient(
-		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshPrivateKey,
+		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
 		"", "", "",
 		&nodeResolver{
 			node: ssh.ProxmoxNode{

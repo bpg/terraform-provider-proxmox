@@ -32,7 +32,8 @@ import (
 
 const (
 	// TrySudo is a shell function that tries to execute a command with sudo if the user has sudo permissions.
-	TrySudo = `try_sudo(){ if [ $(sudo -n pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ]; then sudo $1; else $1; fi }`
+	//nolint:lll
+	TrySudo = `try_sudo(){ if [ "$(sudo whoami 2>/dev/null)" = "root" ] || [ $(sudo -n pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ]; then sudo $1; else $1; fi }`
 )
 
 // NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
@@ -60,21 +61,22 @@ type Client interface {
 }
 
 type client struct {
-	username       string
-	password       string
-	agent          bool
-	agentSocket    string
-	privateKey     string
-	socks5Server   string
-	socks5Username string
-	socks5Password string
-	nodeResolver   NodeResolver
+	username        string
+	password        string
+	agent           bool
+	agentSocket     string
+	agentForwarding bool
+	privateKey      string
+	socks5Server    string
+	socks5Username  string
+	socks5Password  string
+	nodeResolver    NodeResolver
 }
 
 // NewClient creates a new SSH client.
 func NewClient(
 	username string, password string,
-	agent bool, agentSocket string,
+	agent bool, agentSocket string, agentForwarding bool,
 	privateKey string,
 	socks5Server string, socks5Username string, socks5Password string,
 	nodeResolver NodeResolver,
@@ -99,15 +101,16 @@ func NewClient(
 	}
 
 	return &client{
-		username:       username,
-		password:       password,
-		agent:          agent,
-		agentSocket:    agentSocket,
-		privateKey:     privateKey,
-		socks5Server:   socks5Server,
-		socks5Username: socks5Username,
-		socks5Password: socks5Password,
-		nodeResolver:   nodeResolver,
+		username:        username,
+		password:        password,
+		agent:           agent,
+		agentSocket:     agentSocket,
+		agentForwarding: agentForwarding,
+		privateKey:      privateKey,
+		socks5Server:    socks5Server,
+		socks5Username:  socks5Username,
+		socks5Password:  socks5Password,
+		nodeResolver:    nodeResolver,
 	}, nil
 }
 
@@ -150,20 +153,44 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 	return output, nil
 }
 
-func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, commands []string) ([]byte, error) {
+func (c *client) openSession(ctx context.Context, sshClient *ssh.Client) (*ssh.Session, func(), error) {
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SSH session: %w", err)
+		return nil, nil, fmt.Errorf("failed to create SSH session: %w", err)
 	}
 
-	defer func(session *ssh.Session) {
-		e := session.Close()
+	closer := func() {
+		e := sshSession.Close()
 		if e != nil && !errors.Is(e, io.EOF) {
 			tflog.Warn(ctx, "failed to close SSH session", map[string]interface{}{
 				"error": e,
 			})
 		}
-	}(sshSession)
+	}
+
+	if c.agentForwarding {
+		tflog.Debug(ctx, "Requesting SSH agent forwarding")
+
+		err = agent.RequestAgentForwarding(sshSession)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to request agent forwarding: %w", err)
+		}
+
+		if err = agent.ForwardToRemote(sshClient, c.agentSocket); err != nil {
+			return nil, nil, fmt.Errorf("failed to forward agent connection to remote: %w", err)
+		}
+	}
+
+	return sshSession, closer, nil
+}
+
+func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, commands []string) ([]byte, error) {
+	sshSession, closer, err := c.openSession(ctx, sshClient)
+	defer closer()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to open SSH session: %w", err)
+	}
 
 	script := strings.Join(commands, "; ")
 
@@ -358,19 +385,12 @@ func (c *client) uploadFile(
 	req *api.FileUploadRequest,
 	remoteFilePath string,
 ) error {
-	sshSession, err := sshClient.NewSession()
-	if err != nil {
-		return fmt.Errorf("failed to create SSH session: %w", err)
-	}
+	sshSession, closer, err := c.openSession(ctx, sshClient)
+	defer closer()
 
-	defer func(session *ssh.Session) {
-		e := session.Close()
-		if e != nil && !errors.Is(e, io.EOF) {
-			tflog.Warn(ctx, "failed to close SSH session", map[string]interface{}{
-				"error": e,
-			})
-		}
-	}(sshSession)
+	if err != nil {
+		return fmt.Errorf("failed to open SSH session: %w", err)
+	}
 
 	sshSession.Stdin = req.File
 

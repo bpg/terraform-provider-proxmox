@@ -436,6 +436,8 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 
   You should be able to connect to the target node and see the output containing `APIVER <number>` on the screen without being prompted for your password.
 
+Alteratively if `pam_ssh_agent_auth` is configured on the target node the SSH Config option `agent_forwarding` may be used to forward the SSH Agent that was used for the connection to the remote server. This can allow `sudo` with out a password which validates public ssh key configured for `pam_ssh_agent_auth`.
+
 ### Node IP address used for SSH connection
 
 In order to make the SSH connection, the provider needs to be able to resolve the target node name to an IP.
@@ -528,6 +530,7 @@ In addition to [generic provider arguments](https://developer.hashicorp.com/terr
     - `password` - (Optional) The password to use for the SSH connection. Defaults to the password used for the Proxmox API connection. Can also be sourced from `PROXMOX_VE_SSH_PASSWORD`.
     - `agent` - (Optional) Whether to use the SSH agent for the SSH authentication. Defaults to `false`. Can also be sourced from `PROXMOX_VE_SSH_AGENT`.
     - `agent_socket` - (Optional) The path to the SSH agent socket. Defaults to the value of the `SSH_AUTH_SOCK` environment variable. Can also be sourced from `PROXMOX_VE_SSH_AUTH_SOCK`.
+    - `agent_forwarding` - (Optional) Whether to enable SSH agent forwarding. Defaults to the value of the `PROXMOX_VE_SSH_AGENT_FORWARDING` environment variable, or `false` if not set.
     - `private_key` - (Optional) The private key to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_PRIVATE_KEY`. The private key must be in PEM format.
     - `socks5_server` - (Optional) The address of the SOCKS5 proxy server to use for the SSH connection. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_SERVER`.
     - `socks5_username` - (Optional) The username to use for the SOCKS5 proxy server. Can also be sourced from `PROXMOX_VE_SSH_SOCKS5_USERNAME`.

@@ -76,14 +76,15 @@ type proxmoxProviderModel struct {
 	Password            types.String `tfsdk:"password"`
 
 	SSH []struct {
-		Agent          types.Bool   `tfsdk:"agent"`
-		AgentSocket    types.String `tfsdk:"agent_socket"`
-		PrivateKey     types.String `tfsdk:"private_key"`
-		Password       types.String `tfsdk:"password"`
-		Username       types.String `tfsdk:"username"`
-		Socks5Server   types.String `tfsdk:"socks5_server"`
-		Socks5Username types.String `tfsdk:"socks5_username"`
-		Socks5Password types.String `tfsdk:"socks5_password"`
+		Agent           types.Bool   `tfsdk:"agent"`
+		AgentSocket     types.String `tfsdk:"agent_socket"`
+		AgentForwarding types.Bool   `tfsdk:"agent_forwarding"`
+		PrivateKey      types.String `tfsdk:"private_key"`
+		Password        types.String `tfsdk:"password"`
+		Username        types.String `tfsdk:"username"`
+		Socks5Server    types.String `tfsdk:"socks5_server"`
+		Socks5Username  types.String `tfsdk:"socks5_username"`
+		Socks5Password  types.String `tfsdk:"socks5_password"`
 
 		Nodes []struct {
 			Name    types.String `tfsdk:"name"`
@@ -190,6 +191,11 @@ func (p *proxmoxProvider) Schema(_ context.Context, _ provider.SchemaRequest, re
 							Description: "The path to the SSH agent socket. " +
 								"Defaults to the value of the `SSH_AUTH_SOCK` " +
 								"environment variable.",
+							Optional: true,
+						},
+						"agent_forwarding": schema.BoolAttribute{
+							Description: "Whether to enable SSH agent forwarding. Defaults to the value of the " +
+								"`PROXMOX_VE_SSH_AGENT_FORWARDING` environment variable, or `false` if not set.",
 							Optional: true,
 						},
 						"password": schema.StringAttribute{
@@ -390,6 +396,7 @@ func (p *proxmoxProvider) Configure(
 	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME")
 	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD")
 	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT")
+	sshAgentForwarding := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING")
 	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK")
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
@@ -413,6 +420,10 @@ func (p *proxmoxProvider) Configure(
 
 		if !cfg.SSH[0].AgentSocket.IsNull() {
 			sshAgentSocket = cfg.SSH[0].AgentSocket.ValueString()
+		}
+
+		if !cfg.SSH[0].AgentForwarding.IsNull() {
+			sshAgentForwarding = cfg.SSH[0].AgentForwarding.ValueBool()
 		}
 
 		if !cfg.SSH[0].PrivateKey.IsNull() {
@@ -453,7 +464,7 @@ func (p *proxmoxProvider) Configure(
 	}
 
 	sshClient, err := ssh.NewClient(
-		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshPrivateKey,
+		sshUsername, sshPassword, sshAgent, sshAgentSocket, sshAgentForwarding, sshPrivateKey,
 		sshSocks5Server, sshSocks5Username, sshSocks5Password,
 		&apiResolverWithOverrides{
 			ar:        apiResolver{c: apiClient},

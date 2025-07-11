@@ -127,6 +127,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	sshPassword := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PASSWORD", "PM_VE_SSH_PASSWORD")
 	sshAgent := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT")
 	sshAgentSocket := utils.GetAnyStringEnv("SSH_AUTH_SOCK", "PROXMOX_VE_SSH_AUTH_SOCK", "PM_VE_SSH_AUTH_SOCK")
+	sshAgentForwarding := utils.GetAnyBoolEnv("PROXMOX_VE_SSH_AGENT_FORWARDING", "PM_VE_SSH_AGENT_FORWARDING")
 	sshPrivateKey := utils.GetAnyStringEnv("PROXMOX_VE_SSH_PRIVATE_KEY")
 	sshSocks5Server := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_SERVER")
 	sshSocks5Username := utils.GetAnyStringEnv("PROXMOX_VE_SSH_SOCKS5_USERNAME")
@@ -160,6 +161,10 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	if v, ok := sshConf[mkProviderSSHAgentSocket]; !ok || v.(string) == "" {
 		sshConf[mkProviderSSHAgentSocket] = sshAgentSocket
+	}
+
+	if _, ok := sshConf[mkProviderSSHAgentForwarding]; !ok {
+		sshConf[mkProviderSSHAgentForwarding] = sshAgentForwarding
 	}
 
 	if v, ok := sshConf[mkProviderSSHPrivateKey]; !ok || v.(string) == "" {
@@ -196,6 +201,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		sshConf[mkProviderSSHPassword].(string),
 		sshConf[mkProviderSSHAgent].(bool),
 		sshConf[mkProviderSSHAgentSocket].(string),
+		sshConf[mkProviderSSHAgentForwarding].(bool),
 		sshConf[mkProviderSSHPrivateKey].(string),
 		sshConf[mkProviderSSHSocks5Server].(string),
 		sshConf[mkProviderSSHSocks5Username].(string),
