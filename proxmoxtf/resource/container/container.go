@@ -1181,8 +1181,11 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
 			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
+
 			initializationDNSDomain := initializationDNSBlock[mkInitializationDNSDomain].(string)
-			updateBody.DNSDomain = &initializationDNSDomain
+			if initializationDNSDomain != "" {
+				updateBody.DNSDomain = &initializationDNSDomain
+			}
 
 			servers := initializationDNSBlock[mkInitializationDNSServers].([]interface{})
 			deprecatedServer := initializationDNSBlock[mkInitializationDNSServer].(string)
@@ -1191,12 +1194,12 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 				nameserver := strings.Join(utils.ConvertToStringSlice(servers), " ")
 
 				updateBody.DNSServer = &nameserver
-			} else {
+			} else if deprecatedServer != "" {
 				updateBody.DNSServer = &deprecatedServer
 			}
 		}
 
-		initializationHostname := initializationBlock[mkInitializationHostname].(string)
+		initializationHostname = initializationBlock[mkInitializationHostname].(string)
 
 		if initializationHostname != dvInitializationHostname {
 			updateBody.Hostname = &initializationHostname
@@ -2779,12 +2782,12 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	started := status.Status == "running"
 
+	ipv4Map := make(map[string]interface{})
+	ipv6Map := make(map[string]interface{})
+
 	if started && len(networkInterfaces) > 0 {
 		ifaces, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, 10*time.Second)
 		if err == nil {
-			ipv4Map := make(map[string]interface{})
-			ipv6Map := make(map[string]interface{})
-
 			for _, iface := range ifaces {
 				if iface.IPAddresses != nil && iface.Name != "lo" {
 					for _, ip := range *iface.IPAddresses {
@@ -2805,17 +2808,17 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 					}
 				}
 			}
-
-			e = d.Set(mkIPv4, ipv4Map)
-			diags = append(diags, diag.FromErr(e)...)
-			e = d.Set(mkIPv6, ipv6Map)
-			diags = append(diags, diag.FromErr(e)...)
 		} else {
 			tflog.Warn(ctx, "error waiting for container network interfaces", map[string]interface{}{
 				"error": err.Error(),
 			})
 		}
 	}
+
+	e = d.Set(mkIPv4, ipv4Map)
+	diags = append(diags, diag.FromErr(e)...)
+	e = d.Set(mkIPv6, ipv6Map)
+	diags = append(diags, diag.FromErr(e)...)
 
 	e = d.Set(mkStarted, started)
 	diags = append(diags, diag.FromErr(e)...)
