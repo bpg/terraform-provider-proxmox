@@ -70,7 +70,6 @@ const (
 	dvNetworkInterfaceBridge            = "vmbr0"
 	dvNetworkInterfaceEnabled           = true
 	dvNetworkInterfaceFirewall          = false
-	dvNetworkInterfaceMACAddress        = ""
 	dvNetworkInterfaceRateLimit         = 0
 	dvNetworkInterfaceVLANID            = 0
 	dvNetworkInterfaceMTU               = 0
