@@ -128,7 +128,7 @@ resource "proxmox_virtual_environment_file" "ubuntu_container_template" {
   node_name    = "first-node"
 
   source_file {
-    path = "https://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+    path = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
   }
 }
 ```

@@ -236,22 +236,19 @@ output "ubuntu_container_public_key" {
 - `timeout_clone` - (Optional) Timeout for cloning a container in seconds (defaults to 1800).
 - `timeout_delete` - (Optional) Timeout for deleting a container in seconds (defaults to 60).
 - `timeout_update` - (Optional) Timeout for updating a container in seconds (defaults to 1800).
-- `unprivileged` - (Optional) Whether the container runs as unprivileged on
-  the host (defaults to `false`).
+- `unprivileged` - (Optional) Whether the container runs as unprivileged on the host (defaults to `false`).
 - `vm_id` - (Optional) The container identifier
 - `features` - (Optional) The container feature flags. Changing flags (except nesting) is only allowed for `root@pam` authenticated user.
-    - `nesting` - (Optional) Whether the container is nested (defaults
-        to `false`)
-    - `fuse` - (Optional) Whether the container supports FUSE mounts (defaults
-        to `false`)
-    - `keyctl` - (Optional) Whether the container supports `keyctl()` system
-      call (defaults to `false`)
+    - `nesting` - (Optional) Whether the container is nested (defaults to `false`)
+    - `fuse` - (Optional) Whether the container supports FUSE mounts (defaults to `false`)
+    - `keyctl` - (Optional) Whether the container supports `keyctl()` system call (defaults to `false`)
     - `mount` - (Optional) List of allowed mount types (`cifs` or `nfs`)
 - `hook_script_file_id` - (Optional) The identifier for a file containing a hook script (needs to be executable, e.g. by using the `proxmox_virtual_environment_file.file_mode` attribute).
 
 ## Attribute Reference
 
-There are no additional attributes available for this resource.
+- `ipv4` - The map of IPv4 addresses per network devices. Returns the first address for each network device, if multiple addresses are assigned.
+- `ipv6` - The map of IPv6 addresses per network device. Returns the first address for each network device, if multiple addresses are assigned.
 
 ## Import
 
