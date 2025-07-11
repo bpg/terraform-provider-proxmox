@@ -251,8 +251,8 @@ output "ubuntu_container_public_key" {
 
 ## Attribute Reference
 
-There are no additional attributes available for this resource.
-
+- `ipv4` - The map of IPv4 addresses per network device 
+- `ipv6` - The map of IPv6 addresses per network device 
 ## Import
 
 Instances can be imported using the `node_name` and the `vm_id`, e.g.,

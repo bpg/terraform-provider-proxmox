@@ -110,6 +110,9 @@ func TestAccResourceContainer(t *testing.T) {
 						"device_passthrough.0.mode": "0660",
 						"initialization.0.dns.#":    "0",
 					}),
+					ResourceAttributesSet(accTestContainerName, []string{
+						"ipv4.vmbr0",
+					}),
 					func(*terraform.State) error {
 						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 						defer cancel()

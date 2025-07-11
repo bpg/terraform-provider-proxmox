@@ -102,6 +102,78 @@ func (c *Client) GetContainerStatus(ctx context.Context) (*GetStatusResponseData
 	return resBody.Data, nil
 }
 
+// GetContainerNetworkInterfaces retrieves details about the container network interfaces.
+func (c *Client) GetContainerNetworkInterfaces(ctx context.Context) ([]GetNetworkInterfacesData, error) {
+	resBody := &GetNetworkInterfaceResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath("interfaces"), nil, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving container network interfaces: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
+}
+
+// WaitForContainerNetworkInterfaces waits for a container to publish its network interfaces.
+func (c *Client) WaitForContainerNetworkInterfaces(
+	ctx context.Context,
+	timeout time.Duration,
+) ([]GetNetworkInterfacesData, error) {
+	errNoIPsYet := errors.New("no ips yet")
+
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	ifaces, err := retry.DoWithData(
+		func() ([]GetNetworkInterfacesData, error) {
+			ifaces, err := c.GetContainerNetworkInterfaces(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, iface := range ifaces {
+				if iface.Name != "lo" && iface.IPAddresses != nil && len(*iface.IPAddresses) > 0 {
+					// we have at least one non-loopback interface with an IP address
+					return ifaces, nil
+				}
+			}
+
+			return nil, errNoIPsYet
+		},
+		retry.Context(ctxWithTimeout),
+		retry.RetryIf(func(err error) bool {
+			var target *api.HTTPError
+			if errors.As(err, &target) {
+				if target.Code == http.StatusBadRequest {
+					// this is a special case to account for eventual consistency
+					// when creating a task -- the task may not be available via status API
+					// immediately after creation
+					return true
+				}
+			}
+
+			return errors.Is(err, api.ErrNoDataObjectInResponse) || errors.Is(err, errNoIPsYet)
+		}),
+		retry.LastErrorOnly(true),
+		retry.UntilSucceeded(),
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(time.Second),
+	)
+	if errors.Is(err, context.DeadlineExceeded) {
+		return nil, errors.New("timeout while waiting for container IP addresses")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("error while waiting for container IP addresses: %w", err)
+	}
+
+	return ifaces, nil
+}
+
 // RebootContainer reboots a container.
 func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/reboot"), d, nil)

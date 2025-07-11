@@ -180,6 +180,9 @@ const (
 	mkTimeoutDelete                     = "timeout_delete"
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
+
+	mkIPv4 = "ipv4"
+	mkIPv6 = "ipv6"
 )
 
 // Container returns a resource that manages a container.
@@ -564,6 +567,22 @@ func Container() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkIPv4: {
+				Type:        schema.TypeMap,
+				Description: "The container's IPv4 addresses per network device",
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			mkIPv6: {
+				Type:        schema.TypeMap,
+				Description: "The container's IPv6 addresses per network device",
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 			mkMemory: {
 				Type:        schema.TypeList,
@@ -2548,6 +2567,34 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	networkInterfaces := utils.OrderedListFromMap(networkInterfacesMap)
 	initialization[mkInitializationIPConfig] = utils.OrderedListFromMap(ipConfigMap)
+
+	ifaces, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, 10*time.Second)
+	if err == nil {
+		ipv4Addresses := make(map[string]interface{}, len(ifaces)-1)
+
+		ipv6Addresses := make(map[string]interface{}, len(ifaces)-1)
+		for _, iface := range ifaces {
+			if iface.IPAddresses != nil && iface.Name != "lo" {
+				for _, ip := range *iface.IPAddresses {
+					switch ip.Type {
+					case "inet":
+						ipv4Addresses[iface.Name] = ip.Address
+					case "inet6":
+						ipv6Addresses[iface.Name] = ip.Address
+					default:
+						return diag.FromErr(fmt.Errorf("unexpected IP address type %q for interface %q", ip.Type, iface.Name))
+					}
+				}
+			}
+		}
+
+		e = d.Set(mkIPv4, ipv4Addresses)
+		diags = append(diags, diag.FromErr(e)...)
+		e = d.Set(mkIPv6, ipv6Addresses)
+		diags = append(diags, diag.FromErr(e)...)
+	} else {
+		return diag.FromErr(fmt.Errorf("error getting container network interfaces: %w", err))
+	}
 
 	currentInitialization := d.Get(mkInitialization).([]interface{})
 
