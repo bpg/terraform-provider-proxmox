@@ -159,32 +159,43 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 	return output, nil
 }
 
-func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, commands []string) ([]byte, error) {
+func (c *client) openSession(ctx context.Context, sshClient *ssh.Client) (*ssh.Session, func(), error) {
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SSH session: %w", err)
+		return nil, nil, fmt.Errorf("failed to create SSH session: %w", err)
 	}
 
-	defer func(session *ssh.Session) {
-		e := session.Close()
+	closer := func() {
+		e := sshSession.Close()
 		if e != nil && !errors.Is(e, io.EOF) {
 			tflog.Warn(ctx, "failed to close SSH session", map[string]interface{}{
 				"error": e,
 			})
 		}
-	}(sshSession)
+	}
 
 	if c.agentForwarding {
 		tflog.Debug(ctx, "Requesting SSH agent forwarding")
 
 		err = agent.RequestAgentForwarding(sshSession)
 		if err != nil {
-			return nil, fmt.Errorf("failed to request agent forwarding: %w", err)
+			return nil, nil, fmt.Errorf("failed to request agent forwarding: %w", err)
 		}
 
-		if err := agent.ForwardToRemote(sshClient, c.agentSocket); err != nil {
-			return nil, fmt.Errorf("failed to forward agent connection to remote: %w", err)
+		if err = agent.ForwardToRemote(sshClient, c.agentSocket); err != nil {
+			return nil, nil, fmt.Errorf("failed to forward agent connection to remote: %w", err)
 		}
+	}
+
+	return sshSession, closer, nil
+
+}
+
+func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, commands []string) ([]byte, error) {
+	sshSession, closer, err := c.openSession(ctx, sshClient)
+	defer closer()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open SSH session: %w", err)
 	}
 
 	script := strings.Join(commands, "; ")
@@ -380,31 +391,10 @@ func (c *client) uploadFile(
 	req *api.FileUploadRequest,
 	remoteFilePath string,
 ) error {
-	sshSession, err := sshClient.NewSession()
+	sshSession, closer, err := c.openSession(ctx, sshClient)
+	defer closer()
 	if err != nil {
-		return fmt.Errorf("failed to create SSH session: %w", err)
-	}
-
-	defer func(session *ssh.Session) {
-		e := session.Close()
-		if e != nil && !errors.Is(e, io.EOF) {
-			tflog.Warn(ctx, "failed to close SSH session", map[string]interface{}{
-				"error": e,
-			})
-		}
-	}(sshSession)
-
-	if c.agentForwarding {
-		tflog.Debug(ctx, "Requesting SSH agent forwarding")
-
-		err = agent.RequestAgentForwarding(sshSession)
-		if err != nil {
-			return fmt.Errorf("failed to request agent forwarding: %w", err)
-		}
-
-		if err := agent.ForwardToRemote(sshClient, c.agentSocket); err != nil {
-			return fmt.Errorf("failed to forward agent connection to remote: %w", err)
-		}
+		return fmt.Errorf("failed to open SSH session: %w", err)
 	}
 
 	sshSession.Stdin = req.File
