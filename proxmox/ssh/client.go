@@ -188,12 +188,12 @@ func (c *client) openSession(ctx context.Context, sshClient *ssh.Client) (*ssh.S
 	}
 
 	return sshSession, closer, nil
-
 }
 
 func (c *client) executeCommands(ctx context.Context, sshClient *ssh.Client, commands []string) ([]byte, error) {
 	sshSession, closer, err := c.openSession(ctx, sshClient)
 	defer closer()
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to open SSH session: %w", err)
 	}
@@ -393,6 +393,7 @@ func (c *client) uploadFile(
 ) error {
 	sshSession, closer, err := c.openSession(ctx, sshClient)
 	defer closer()
+
 	if err != nil {
 		return fmt.Errorf("failed to open SSH session: %w", err)
 	}
