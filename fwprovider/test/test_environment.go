@@ -141,6 +141,16 @@ func InitEnvironment(t *testing.T) *Environment {
 		nodeName = "pve"
 	}
 
+	zoneName := utils.GetAnyStringEnv("PROXMOX_VE_ACC_ZONE_NAME")
+	if zoneName == "" {
+		zoneName = "ZoneEx"
+	}
+
+	vnetName := utils.GetAnyStringEnv("PROXMOX_VE_ACC_VNET_NAME")
+	if vnetName == "" {
+		vnetName = "VnetEx"
+	}
+
 	const datastoreID = "local"
 
 	cloudImagesServer := utils.GetAnyStringEnv("PROXMOX_VE_ACC_CLOUD_IMAGES_SERVER")
@@ -160,6 +170,8 @@ func InitEnvironment(t *testing.T) *Environment {
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
+			"ZoneName":              zoneName,
+			"VnetName":              vnetName,
 		},
 		NodeName:              nodeName,
 		DatastoreID:           datastoreID,
