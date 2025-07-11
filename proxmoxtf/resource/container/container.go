@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -180,6 +181,9 @@ const (
 	mkTimeoutDelete                     = "timeout_delete"
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
+
+	mkIPv4 = "ipv4"
+	mkIPv6 = "ipv6"
 )
 
 // Container returns a resource that manages a container.
@@ -564,6 +568,27 @@ func Container() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkIPv4: {
+				Type:        schema.TypeMap,
+				Description: "The container's IPv4 addresses per network device",
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				// this does not work with map datatype in SDK :(
+				// Elem: &schema.Schema{
+				//	Type: schema.TypeList,
+				//	Elem: &schema.Schema{Type: schema.TypeString},
+				// },
+			},
+			mkIPv6: {
+				Type:        schema.TypeMap,
+				Description: "The container's IPv6 addresses per network device",
+				Computed:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 			mkMemory: {
 				Type:        schema.TypeList,
@@ -2094,6 +2119,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
+	template := d.Get(mkTemplate).(bool)
 	nodeName := d.Get(mkNodeName).(string)
 
 	vmID, e := strconv.Atoi(d.Id())
@@ -2733,9 +2759,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(e)...)
 	}
 
-	currentTemplate := d.Get(mkTemplate).(bool)
-
-	if len(clone) == 0 || currentTemplate {
+	if len(clone) == 0 || template {
 		if containerConfig.Template != nil {
 			e = d.Set(
 				mkTemplate,
@@ -2754,7 +2778,47 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		return diag.FromErr(e)
 	}
 
-	e = d.Set(mkStarted, status.Status == "running")
+	started := status.Status == "running"
+
+	if started && len(networkInterfaces) > 0 {
+		ifaces, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, 10*time.Second)
+		if err == nil {
+			ipv4Map := make(map[string]interface{})
+			ipv6Map := make(map[string]interface{})
+
+			for _, iface := range ifaces {
+				if iface.IPAddresses != nil && iface.Name != "lo" {
+					for _, ip := range *iface.IPAddresses {
+						switch ip.Type {
+						case "inet":
+							// store only the first IPv4 address per interface
+							if _, exists := ipv4Map[iface.Name]; !exists {
+								ipv4Map[iface.Name] = ip.Address
+							}
+						case "inet6":
+							// store only the first IPV6 address per interface
+							if _, exists := ipv6Map[iface.Name]; !exists {
+								ipv6Map[iface.Name] = ip.Address
+							}
+						default:
+							return diag.FromErr(fmt.Errorf("unexpected IP address type %q for interface %q", ip.Type, iface.Name))
+						}
+					}
+				}
+			}
+
+			e = d.Set(mkIPv4, ipv4Map)
+			diags = append(diags, diag.FromErr(e)...)
+			e = d.Set(mkIPv6, ipv6Map)
+			diags = append(diags, diag.FromErr(e)...)
+		} else {
+			tflog.Warn(ctx, "error waiting for container network interfaces", map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+	}
+
+	e = d.Set(mkStarted, started)
 	diags = append(diags, diag.FromErr(e)...)
 
 	return diags

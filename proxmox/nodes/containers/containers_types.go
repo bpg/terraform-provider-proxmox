@@ -228,6 +228,22 @@ type GetStatusResponseData struct {
 	VMID             *types.CustomInt `json:"vmid,omitempty"`
 }
 
+// GetNetworkInterfaceResponseBody contains the body from a container get network interface response.
+type GetNetworkInterfaceResponseBody struct {
+	Data []GetNetworkInterfacesData `json:"data,omitempty"`
+}
+
+// GetNetworkInterfacesData contains the data from a container get network interfaces response.
+type GetNetworkInterfacesData struct {
+	MACAddress  string `json:"hardware-address"`
+	Name        string `json:"name"`
+	IPAddresses *[]struct {
+		Address string          `json:"ip-address"`
+		Prefix  types.CustomInt `json:"prefix"`
+		Type    string          `json:"ip-address-type"`
+	} `json:"ip-addresses,omitempty"`
+}
+
 // StartResponseBody contains the body from a container start response.
 type StartResponseBody struct {
 	Data *string `json:"data,omitempty"`
