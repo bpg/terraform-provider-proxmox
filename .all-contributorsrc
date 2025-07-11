@@ -1406,6 +1406,16 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "IceFlom",
+      "name": "IceFlom",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13588486?v=4",
+      "profile": "https://github.com/IceFlom",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
