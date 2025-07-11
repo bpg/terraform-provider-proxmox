@@ -341,6 +341,9 @@ func TestAccResourceContainer(t *testing.T) {
 				
 				initialization {
 					hostname = "test-clone"
+					dns {
+					  servers = ["1.1.1.1"]
+					}
 				}
 			}`, WithRootUser()),
 			Check: resource.ComposeTestCheckFunc(
