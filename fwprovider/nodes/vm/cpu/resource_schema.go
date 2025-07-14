@@ -136,6 +136,7 @@ func ResourceSchema() schema.Attribute {
 						"Cooperlake",
 						"Cooperlake-v2",
 						"EPYC",
+						"EPYC-Genoa",
 						"EPYC-IBPB",
 						"EPYC-Milan",
 						"EPYC-Rome",
