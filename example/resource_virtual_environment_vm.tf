@@ -1,5 +1,5 @@
 locals {
-  datastore_id = "local-lvm"
+  datastore_id = var.virtual_environment_storage
 }
 
 resource "proxmox_virtual_environment_vm" "example_template" {
@@ -232,7 +232,7 @@ resource "proxmox_virtual_environment_vm" "data_vm" {
     datastore_id = local.datastore_id
     interface    = "scsi0"
     size         = 8
-    import_from  = proxmox_virtual_environment_download_file.latest_debian_12_bookworm_qcow2.id
+    import_from  = proxmox_virtual_environment_download_file.latest_debian_12_bookworm_qcow2_img.id
   }
 
   disk {
