@@ -73,7 +73,10 @@ func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *n
 		body.MTU = m.MTU.ValueInt64Pointer()
 	}
 
-	body.Comments = m.Comment.ValueStringPointer()
+	if !m.Comment.IsNull() && !m.Comment.IsUnknown() {
+		trimmed := strings.TrimSpace(m.Comment.ValueString())
+		body.Comments = &trimmed
+	}
 
 	var sanitizedPorts []string
 
