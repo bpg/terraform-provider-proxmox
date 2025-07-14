@@ -78,6 +78,7 @@ func CPUTypeValidator() schema.SchemaValidateDiagFunc {
 		"Cooperlake",
 		"Cooperlake-v2",
 		"EPYC",
+		"EPYC-Genoa",
 		"EPYC-IBPB",
 		"EPYC-Milan",
 		"EPYC-Rome",
