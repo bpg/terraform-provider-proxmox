@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.80.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.79.0...v0.80.0) (2025-07-15)
+
+
+### Features
+
+* **lxc:** retrieve container IP addresses ([#2030](https://github.com/bpg/terraform-provider-proxmox/issues/2030)) ([20572d9](https://github.com/bpg/terraform-provider-proxmox/commit/20572d95e03757dcbdc1861111eda0140e9a6de8))
+* **provider:** add support for ssh `agent_forwarding` ([#2028](https://github.com/bpg/terraform-provider-proxmox/issues/2028)) ([e27d0c5](https://github.com/bpg/terraform-provider-proxmox/commit/e27d0c555faab4560e41b3ca8eed038155a59de2))
+* **vm:** add support for EPYC-Genoa `cpu` type ([#2040](https://github.com/bpg/terraform-provider-proxmox/issues/2040)) ([74caca5](https://github.com/bpg/terraform-provider-proxmox/commit/74caca5fbed8404f57af0c3e283904462dd8fa49))
+
+
+### Bug Fixes
+
+* **api:** improve API response error handling ([#2043](https://github.com/bpg/terraform-provider-proxmox/issues/2043)) ([2c3f0c5](https://github.com/bpg/terraform-provider-proxmox/commit/2c3f0c5578f84fc27fd0ad530430416a45a3a9cb))
+* **lxc:** avoid setting domain to `" "` when null during clone ([#2033](https://github.com/bpg/terraform-provider-proxmox/issues/2033)) ([623c32c](https://github.com/bpg/terraform-provider-proxmox/commit/623c32cbab1aa839b40c26fc30c1b38e0c14548c))
+* **lxc:** mark `mac_address` as computed ([#2027](https://github.com/bpg/terraform-provider-proxmox/issues/2027)) ([e13e9bb](https://github.com/bpg/terraform-provider-proxmox/commit/e13e9bb8843203efd5242686a39928b0cda3e841))
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.2.1 → v2.2.2) ([#2034](https://github.com/bpg/terraform-provider-proxmox/issues/2034)) ([11bcb7a](https://github.com/bpg/terraform-provider-proxmox/commit/11bcb7a4c17572cd47389b6e043b711453e3a779))
+* **deps:** update image golang (1.24.4 → 1.24.5) ([#2035](https://github.com/bpg/terraform-provider-proxmox/issues/2035)) ([0cdd327](https://github.com/bpg/terraform-provider-proxmox/commit/0cdd32704ac939b9b50fc62b5e6f1f7fd2ec0406))
+* **deps:** update module golang.org/x/net (v0.41.0 → v0.42.0) ([#2037](https://github.com/bpg/terraform-provider-proxmox/issues/2037)) ([bb3168c](https://github.com/bpg/terraform-provider-proxmox/commit/bb3168c6395c3fc5d6ad4bd62a007368f0419964))
+* **docs:** fix indentation in vm resource ([#2020](https://github.com/bpg/terraform-provider-proxmox/issues/2020)) ([a2c40c7](https://github.com/bpg/terraform-provider-proxmox/commit/a2c40c7c79d562972b6da25f53087d95e9050b0b))
+* **tests:** allow different node / storage names in "example tests" ([#2042](https://github.com/bpg/terraform-provider-proxmox/issues/2042)) ([09e3cd6](https://github.com/bpg/terraform-provider-proxmox/commit/09e3cd62b7ee959aa26c59617966cf08c3e02bd8))
+
 ## [0.79.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.78.2...v0.79.0) (2025-07-06)
 
 
