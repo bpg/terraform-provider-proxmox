@@ -334,11 +334,22 @@ func validateResponseCode(res *http.Response) error {
 		errRes := &ErrorResponseBody{}
 
 		err := json.NewDecoder(res.Body).Decode(errRes)
-		if err == nil && errRes.Errors != nil {
+		if err == nil {
 			var errList []string
 
-			for k, v := range *errRes.Errors {
-				errList = append(errList, fmt.Sprintf("%s: %s", k, strings.TrimRight(v, "\n\r")))
+			if errRes.Errors != nil {
+				for k, v := range *errRes.Errors {
+					errList = append(errList, fmt.Sprintf("%s: %s", k, strings.TrimRight(v, "\n\r")))
+				}
+			}
+
+			if errRes.Message != nil && *errRes.Message != "" {
+				split := slices.Compact(strings.Split(*errRes.Message, "\n"))
+				// skip empty lines and the first line, which is a duplicate of the HTTP status message
+				split = slices.DeleteFunc(split, func(s string) bool {
+					return len(s) == 0 || strings.HasPrefix(s, msg)
+				})
+				errList = append(errList, split...)
 			}
 
 			msg = fmt.Sprintf("%s (%s)", msg, strings.Join(errList, " - "))
