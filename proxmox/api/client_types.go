@@ -20,8 +20,9 @@ type MultiPartData struct {
 
 // ErrorResponseBody contains the body of an error response.
 type ErrorResponseBody struct {
-	Data   *string            `json:"data"`
-	Errors *map[string]string `json:"errors"`
+	Data    *string            `json:"data"`
+	Message *string            `json:"message"`
+	Errors  *map[string]string `json:"errors"`
 }
 
 // FileUploadRequest is a request for uploading a file.

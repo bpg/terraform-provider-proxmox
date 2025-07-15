@@ -9,6 +9,7 @@ package api
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -53,6 +54,7 @@ func TestClientDoRequest(t *testing.T) {
 	tests := []struct {
 		name    string
 		status  string
+		body    string
 		wantErr error
 	}{
 		{name: "no error", status: "200 OK", wantErr: nil},
@@ -62,6 +64,15 @@ func TestClientDoRequest(t *testing.T) {
 			Code:    500,
 			Message: "Internal Server Error",
 		}},
+		{
+			name:   "500 status with body",
+			status: "500 create sdn zone object failed: 400 Parameter verification failed.",
+			body:   `{"message":"create sdn zone object failed: 400 Parameter verification failed.\nipam: ipam-simple not existing\n","data":null}`,
+			wantErr: &HTTPError{
+				Code:    500,
+				Message: "create sdn zone object failed: 400 Parameter verification failed. (ipam: ipam-simple not existing)",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -77,7 +88,7 @@ func TestClientDoRequest(t *testing.T) {
 						return &http.Response{
 							Status:     tt.status,
 							StatusCode: sc,
-							Body:       nil,
+							Body:       io.NopCloser(strings.NewReader(tt.body)),
 						}
 					}),
 				},
