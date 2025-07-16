@@ -6,8 +6,16 @@
 
 package zones
 
+const (
+	TypeSimple = "simple"
+	TypeVLAN   = "vlan"
+	TypeQinQ   = "qinq"
+	TypeVXLAN  = "vxlan"
+	TypeEVPN   = "evpn"
+)
+
 type ZoneData struct {
-	ID         string  `json:"zone,omitempty"       url:"zone,omitempty"`
+	ID         string  `json:"zone"                 url:"zone"`
 	Type       *string `json:"type,omitempty"       url:"type,omitempty"`
 	IPAM       *string `json:"ipam,omitempty"       url:"ipam,omitempty"`
 	DNS        *string `json:"dns,omitempty"        url:"dns,omitempty"`
@@ -40,6 +48,7 @@ type ZoneData struct {
 // ZoneRequestData wraps a ZoneData struct with optional delete instructions.
 type ZoneRequestData struct {
 	ZoneData
+
 	Delete []string `url:"delete,omitempty"`
 }
 
