@@ -65,6 +65,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_haresource.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_bridge.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_vlan.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_simple.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_vm2.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
