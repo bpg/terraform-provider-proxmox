@@ -84,11 +84,13 @@ Goal is to have a proxmox node in VM using <https://virt-manager.org/> for a job
 
    ```txt
    # example/terraform.tfvars
-   virtual_environment_username = "root@pam"
-   virtual_environment_endpoint = "https://192.168.122.43:8006/"
-   virtual_environment_password = "your password from step 5"
+   dev_virtual_environment_username = "root@pam"
+   dev_virtual_environment_endpoint = "https://192.168.122.43:8006/"
+   dev_virtual_environment_password = "your password from step 5"
 
    ```
+
+   See example/variables.tf for additional variables that can be optionally set.
 
 10. Now you can run `make example`.
 

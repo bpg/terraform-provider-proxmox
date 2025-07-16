@@ -1,28 +1,48 @@
-variable "virtual_environment_endpoint" {
-  type        = string
+variable "dev_virtual_environment_endpoint" {
   description = "The endpoint for the Proxmox Virtual Environment API (example: https://host:port)"
+  type        = string
 }
 
-variable "virtual_environment_api_token" {
+variable "dev_virtual_environment_user" {
+  description = "Proxmox User for API Access"
   type        = string
+  default     = "root@pam"
+}
+
+variable "dev_virtual_environment_api_token" {
   description = "The API token for the Proxmox Virtual Environment API"
+  type        = string
+  sensitive   = true
 }
 
-variable "virtual_environment_ssh_username" {
-  type        = string
+variable "dev_virtual_environment_ssh_username" {
   description = "The username for the Proxmox Virtual Environment API"
-}
-
-variable "virtual_environment_node_name" {
-  description = "Name of the Proxmox node"
   type        = string
-  default = "pve"
+  default     = "root"
 }
 
-variable "virtual_environment_storage" {
+variable "dev_virtual_environment_username" {
+  description = "Username to access Proxmox API"
+  type        = string
+  default     = "root@pam"
+}
+
+variable "dev_virtual_environment_password" {
+  description = "Password for Proxmox API User"
+  type        = string
+  sensitive   = true
+}
+
+variable "dev_virtual_environment_insecure" {
+  description = "Self Signed Certificates Used"
+  type        = bool
+  default     = true
+}
+
+variable "dev_virtual_environment_storage" {
   description = "Name of the Proxmox storage"
   type        = string
-  default = "local-lvm"
+  default     = "local-lvm"
 }
 
 variable "latest_debian_12_bookworm_qcow2_img_url" {
