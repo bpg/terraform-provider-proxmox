@@ -4,13 +4,13 @@ resource "proxmox_virtual_environment_container" "example_template" {
   start_on_boot = "true"
 
   disk {
-    datastore_id = var.virtual_environment_storage
+    datastore_id = var.dev_virtual_environment_storage
     size         = 4
   }
 
   mount_point {
     // volume mount
-    volume = var.virtual_environment_storage
+    volume = var.dev_virtual_environment_storage
     size   = "4G"
     path   = "mnt/local"
   }
@@ -66,7 +66,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
 
 resource "proxmox_virtual_environment_container" "example" {
   disk {
-    datastore_id = var.virtual_environment_storage
+    datastore_id = var.dev_virtual_environment_storage
   }
 
   clone {
