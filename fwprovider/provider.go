@@ -529,10 +529,13 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		options.NewClusterOptionsResource,
 		vm.NewResource,
 		sdnzone.NewSimpleResource,
+		sdnzone.NewVLANResource,
+		sdnzone.NewQinQResource,
+		sdnzone.NewVXLANResource,
+		sdnzone.NewEVPNResource,
 		//
-		// sdn.NewSDNZoneResource,
 		// sdn.NewSDNVnetResource,
-		//sdn.NewSDNSubnetResource,
+		// sdn.NewSDNSubnetResource,
 	}
 }
 

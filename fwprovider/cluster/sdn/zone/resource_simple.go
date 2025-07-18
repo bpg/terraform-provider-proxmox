@@ -8,15 +8,11 @@ package zone
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 var (
@@ -24,176 +20,58 @@ var (
 	_ resource.ResourceWithImportState = &SimpleResource{}
 )
 
+type simpleModel struct {
+	genericModel
+}
+
 type SimpleResource struct {
-	client *zones.Client
+	generic *genericZoneResource
 }
 
 func NewSimpleResource() resource.Resource {
-	return &SimpleResource{}
-}
-
-func (r *SimpleResource) Metadata(
-	_ context.Context,
-	req resource.MetadataRequest,
-	resp *resource.MetadataResponse,
-) {
-	resp.TypeName = req.ProviderTypeName + "_sdn_zone_simple"
-}
-
-func (r *SimpleResource) Configure(
-	_ context.Context,
-	req resource.ConfigureRequest,
-	resp *resource.ConfigureResponse,
-) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	cfg, ok := req.ProviderData.(config.Resource)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf(
-				"Expected config.Resource, got: %T",
-				req.ProviderData,
-			),
-		)
-
-		return
-	}
-
-	r.client = cfg.Client.Cluster().SDNZones()
-}
-
-func (r *SimpleResource) Create(
-	ctx context.Context,
-	req resource.CreateRequest,
-	resp *resource.CreateResponse,
-) {
-	var plan simpleModel
-
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
-	reqData.Type = ptr.Ptr(zones.TypeSimple)
-
-	if err := r.client.CreateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create SDN SimpleZone",
-			err.Error(),
-		)
-
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *SimpleResource) Read(
-	ctx context.Context,
-	req resource.ReadRequest,
-	resp *resource.ReadResponse,
-) {
-	var state simpleModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	zone, err := r.client.GetZone(ctx, state.ID.ValueString())
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN SimpleZone",
-			err.Error(),
-		)
-
-		return
-	}
-
-	readModel := &baseModel{}
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
-	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
-}
-
-func (r *SimpleResource) Update(
-	ctx context.Context,
-	req resource.UpdateRequest,
-	resp *resource.UpdateResponse,
-) {
-	var plan simpleModel
-
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
-
-	if err := r.client.UpdateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Update SDN Simple Zone",
-			err.Error(),
-		)
-
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *SimpleResource) Delete(
-	ctx context.Context,
-	req resource.DeleteRequest,
-	resp *resource.DeleteResponse,
-) {
-	var state simpleModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if err := r.client.DeleteZone(ctx, state.ID.ValueString()); err != nil &&
-		!errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError(
-			"Unable to Delete SDN Simple Zone",
-			err.Error(),
-		)
+	return &SimpleResource{
+		generic: newGenericZoneResource(zoneResourceConfig{
+			typeNameSuffix: "_sdn_zone_simple",
+			zoneType:       zones.TypeSimple,
+			modelFunc:      func() zoneModel { return &simpleModel{} },
+		}).(*genericZoneResource),
 	}
 }
 
-func (r *SimpleResource) ImportState(
-	ctx context.Context,
-	req resource.ImportStateRequest,
-	resp *resource.ImportStateResponse,
-) {
-	zone, err := r.client.GetZone(ctx, req.ID)
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.Diagnostics.AddError(fmt.Sprintf("Zone %s does not exist", req.ID), err.Error())
-
-			return
-		}
-
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN Simple Zone %s", req.ID), err.Error())
-
-		return
+func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Simple Zone in Proxmox SDN.",
+		MarkdownDescription: "Simple Zone in Proxmox SDN. It will create an isolated VNet bridge. " +
+			"This bridge is not linked to a physical interface, and VM traffic is only local on each the node. " +
+			"It can be used in NAT or routed setups.",
+		Attributes: genericAttributesWith(),
 	}
+}
 
-	readModel := &simpleModel{}
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
-	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
+func (r *SimpleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	r.generic.Metadata(ctx, req, resp)
+}
+
+func (r *SimpleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.generic.Configure(ctx, req, resp)
+}
+
+func (r *SimpleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	r.generic.Create(ctx, req, resp)
+}
+
+func (r *SimpleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	r.generic.Read(ctx, req, resp)
+}
+
+func (r *SimpleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	r.generic.Update(ctx, req, resp)
+}
+
+func (r *SimpleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	r.generic.Delete(ctx, req, resp)
+}
+
+func (r *SimpleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	r.generic.ImportState(ctx, req, resp)
 }

@@ -8,15 +8,13 @@ package zone
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 var (
@@ -24,168 +22,81 @@ var (
 	_ resource.ResourceWithImportState = &VLANResource{}
 )
 
+type vlanModel struct {
+	genericModel
+
+	Bridge types.String `tfsdk:"bridge"`
+}
+
+func (m *vlanModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
+	m.genericModel.importFromAPI(name, data, diags)
+
+	m.Bridge = types.StringPointerValue(data.Bridge)
+}
+
+func (m *vlanModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {
+	data := m.genericModel.toAPIRequestBody(ctx, diags)
+
+	data.Bridge = m.Bridge.ValueStringPointer()
+
+	return data
+}
+
 type VLANResource struct {
-	client *zones.Client
+	generic *genericZoneResource
 }
 
 func NewVLANResource() resource.Resource {
-	return &VLANResource{}
-}
-
-func (r *VLANResource) Metadata(
-	_ context.Context,
-	req resource.MetadataRequest,
-	resp *resource.MetadataResponse,
-) {
-	resp.TypeName = req.ProviderTypeName + "_sdn_zone_vlan"
-}
-
-func (r *VLANResource) Configure(
-	_ context.Context,
-	req resource.ConfigureRequest,
-	resp *resource.ConfigureResponse,
-) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	cfg, ok := req.ProviderData.(config.Resource)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf(
-				"Expected config.Resource, got: %T",
-				req.ProviderData,
-			),
-		)
-		return
-	}
-
-	r.client = cfg.Client.Cluster().SDNZones()
-}
-
-func (r *VLANResource) Create(
-	ctx context.Context,
-	req resource.CreateRequest,
-	resp *resource.CreateResponse,
-) {
-	var plan vlanModel
-
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
-	reqData.Type = ptr.Ptr(zones.TypeVLAN)
-
-	if err := r.client.CreateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create SDN VLAN Zone",
-			err.Error(),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *VLANResource) Read(
-	ctx context.Context,
-	req resource.ReadRequest,
-	resp *resource.ReadResponse,
-) {
-	var state vlanModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	zone, err := r.client.GetZone(ctx, state.ID.ValueString())
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN VLAN Zone",
-			err.Error(),
-		)
-		return
-	}
-
-	readModel := &vlanModel{}
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
-	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
-}
-
-func (r *VLANResource) Update(
-	ctx context.Context,
-	req resource.UpdateRequest,
-	resp *resource.UpdateResponse,
-) {
-	var plan vlanModel
-
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
-
-	if err := r.client.UpdateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Update SDN VLAN Zone",
-			err.Error(),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *VLANResource) Delete(
-	ctx context.Context,
-	req resource.DeleteRequest,
-	resp *resource.DeleteResponse,
-) {
-	var state vlanModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if err := r.client.DeleteZone(ctx, state.ID.ValueString()); err != nil &&
-		!errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError(
-			"Unable to Delete SDN VLAN Zone",
-			err.Error(),
-		)
+	return &VLANResource{
+		generic: newGenericZoneResource(zoneResourceConfig{
+			typeNameSuffix: "_sdn_zone_vlan",
+			zoneType:       zones.TypeVLAN,
+			modelFunc:      func() zoneModel { return &vlanModel{} },
+		}).(*genericZoneResource),
 	}
 }
 
-func (r *VLANResource) ImportState(
-	ctx context.Context,
-	req resource.ImportStateRequest,
-	resp *resource.ImportStateResponse,
-) {
-	zone, err := r.client.GetZone(ctx, req.ID)
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.Diagnostics.AddError(fmt.Sprintf("Zone %s does not exist", req.ID), err.Error())
-			return
-		}
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN VLAN Zone %s", req.ID), err.Error())
-		return
+func (r *VLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "VLAN Zone in Proxmox SDN.",
+		MarkdownDescription: "VLAN Zone in Proxmox SDN. It uses an existing local Linux or OVS bridge to connect to the " +
+			"node's physical interface. It uses VLAN tagging defined in the VNet to isolate the network segments. " +
+			"This allows connectivity of VMs between different nodes.",
+		Attributes: genericAttributesWith(map[string]schema.Attribute{
+			"bridge": schema.StringAttribute{
+				Description: "Bridge interface for VLAN.",
+				MarkdownDescription: "The local bridge or OVS switch, already configured on _each_ node that allows " +
+					"node-to-node connection.",
+				Optional: true,
+			},
+		}),
 	}
-	readModel := &vlanModel{}
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
-	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
+}
+
+func (r *VLANResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	r.generic.Metadata(ctx, req, resp)
+}
+
+func (r *VLANResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.generic.Configure(ctx, req, resp)
+}
+
+func (r *VLANResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	r.generic.Create(ctx, req, resp)
+}
+
+func (r *VLANResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	r.generic.Read(ctx, req, resp)
+}
+
+func (r *VLANResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	r.generic.Update(ctx, req, resp)
+}
+
+func (r *VLANResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	r.generic.Delete(ctx, req, resp)
+}
+
+func (r *VLANResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	r.generic.ImportState(ctx, req, resp)
 }
