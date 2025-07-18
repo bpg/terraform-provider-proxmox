@@ -22,16 +22,16 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 )
 
-func commonAttributes(base ...map[string]schema.Attribute) map[string]schema.Attribute {
-	if len(base) > 1 {
-		panic("commonAttributes expects at most one base map")
+func baseAttributesWith(extraAttributes ...map[string]schema.Attribute) map[string]schema.Attribute {
+	if len(extraAttributes) > 1 {
+		panic("baseAttributesWith expects at most one extraAttributes map")
 	}
 
-	if len(base) == 0 {
-		base = append(base, make(map[string]schema.Attribute))
+	if len(extraAttributes) == 0 {
+		extraAttributes = append(extraAttributes, make(map[string]schema.Attribute))
 	}
 
-	maps.Copy(base[0], map[string]schema.Attribute{
+	maps.Copy(extraAttributes[0], map[string]schema.Attribute{
 		"dns": schema.StringAttribute{
 			Optional:    true,
 			Description: "DNS API server address.",
@@ -72,7 +72,7 @@ func commonAttributes(base ...map[string]schema.Attribute) map[string]schema.Att
 		},
 	})
 
-	return base[0]
+	return extraAttributes[0]
 }
 
 func (r *SimpleResource) Schema(
@@ -85,11 +85,11 @@ func (r *SimpleResource) Schema(
 		MarkdownDescription: "Simple Zone in Proxmox SDN. It will create an isolated VNet bridge. " +
 			"This bridge is not linked to a physical interface, and VM traffic is only local on each the node. " +
 			"It can be used in NAT or routed setups.",
-		Attributes: commonAttributes(),
+		Attributes: baseAttributesWith(),
 	}
 }
 
-func (r *VLAN) Schema(
+func (r *VLANResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
@@ -99,7 +99,7 @@ func (r *VLAN) Schema(
 		MarkdownDescription: "VLAN Zone in Proxmox SDN. It uses an existing local Linux or OVS bridge to connect to the " +
 			"node's physical interface. It uses VLAN tagging defined in the VNet to isolate the network segments. " +
 			"This allows connectivity of VMs between different nodes.",
-		Attributes: commonAttributes(map[string]schema.Attribute{
+		Attributes: baseAttributesWith(map[string]schema.Attribute{
 			"bridge": schema.StringAttribute{
 				Description: "Bridge interface for VLAN.",
 				MarkdownDescription: "The local bridge or OVS switch, already configured on _each_ node that allows " +
@@ -110,7 +110,7 @@ func (r *VLAN) Schema(
 	}
 }
 
-func (r *QinQ) Schema(
+func (r *QinQResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
@@ -122,7 +122,7 @@ func (r *QinQ) Schema(
 			"VLAN tag is defined by the VNet. Your physical network switches must support stacked VLANs for this " +
 			"configuration. Due to the double stacking of tags, you need 4 more bytes for QinQ VLANs. " +
 			"For example, you must reduce the MTU to 1496 if you physical interface MTU is 1500.",
-		Attributes: commonAttributes(map[string]schema.Attribute{
+		Attributes: baseAttributesWith(map[string]schema.Attribute{
 			"bridge": schema.StringAttribute{
 				Description: "A local, VLAN-aware bridge that is already configured on each local node",
 				Optional:    true,
@@ -145,7 +145,7 @@ func (r *QinQ) Schema(
 	}
 }
 
-func (r *VXLAN) Schema(
+func (r *VXLANResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
@@ -157,7 +157,7 @@ func (r *VXLAN) Schema(
 			"destination port 4789. You have to configure the underlay network yourself to enable UDP connectivity " +
 			"between all peers. Because VXLAN encapsulation uses 50 bytes, the MTU needs to be 50 bytes lower than the " +
 			"outgoing physical interface.",
-		Attributes: commonAttributes(map[string]schema.Attribute{
+		Attributes: baseAttributesWith(map[string]schema.Attribute{
 			"peers": stringset.ResourceAttribute(
 				"A list of IP addresses of each node in the VXLAN zone.",
 				"A list of IP addresses of each node in the VXLAN zone. "+
@@ -168,7 +168,7 @@ func (r *VXLAN) Schema(
 	}
 }
 
-func (r *EVPN) Schema(
+func (r *EVPNResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
@@ -177,7 +177,7 @@ func (r *EVPN) Schema(
 		Description: "EVPN Zone in Proxmox SDN.",
 		MarkdownDescription: "EVPN Zone in Proxmox SDN. The EVPN zone creates a routable Layer 3 network, capable of " +
 			"spanning across multiple clusters.",
-		Attributes: commonAttributes(map[string]schema.Attribute{
+		Attributes: baseAttributesWith(map[string]schema.Attribute{
 			"advertise_subnets": schema.BoolAttribute{
 				Optional:    true,
 				Description: "Enable subnet advertisement for EVPN.",
@@ -202,6 +202,12 @@ func (r *EVPN) Schema(
 			"rt_import": schema.StringAttribute{
 				Optional:    true,
 				Description: "Route target import for EVPN.",
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^(\d+):(\d+)$`),
+						"must be in the format '<ASN>:<number>' (e.g., '65000:65000')",
+					),
+				},
 			},
 			"vrf_vxlan": schema.Int64Attribute{
 				Optional: true,

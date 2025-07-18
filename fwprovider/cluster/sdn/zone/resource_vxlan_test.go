@@ -16,7 +16,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-func TestAccResourceSDNZoneSimple(t *testing.T) {
+func TestAccResourceSDNZoneVXLAN(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
@@ -25,24 +25,26 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create and update zones", []resource.TestStep{{
+		{"create and update VXLAN zone", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple" {
-				  id  = "zoneS"
+				resource "proxmox_virtual_environment_sdn_zone_vxlan" "zone_vxlan" {
+				  id    = "zoneX"
 				  nodes = ["pve"]
-				  mtu   = 1496
+				  mtu   = 1450
+				  peers = ["10.0.0.1", "10.0.0.2"]
 				}
 			`),
 		}, {
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple" {
-				  id  = "zoneS"
+				resource "proxmox_virtual_environment_sdn_zone_vxlan" "zone_vxlan" {
+				  id    = "zoneX"
 				  nodes = ["pve"]
-				  mtu   = 1495
+				  mtu   = 1440
+				  peers = ["10.0.0.3", "10.0.0.4"]
 				}
 			`),
-			ResourceName:      "proxmox_virtual_environment_sdn_zone_simple.zone_simple",
-			ImportStateId:     "zoneS",
+			ResourceName:      "proxmox_virtual_environment_sdn_zone_vxlan.zone_vxlan",
+			ImportStateId:     "zoneX",
 			ImportState:       true,
 			ImportStateVerify: true,
 		}}},
