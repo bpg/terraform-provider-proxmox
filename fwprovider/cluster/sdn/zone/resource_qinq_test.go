@@ -16,33 +16,39 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 )
 
-func TestAccResourceSDNZoneSimple(t *testing.T) {
+func TestAccResourceSDNZoneQinQ(t *testing.T) {
 	t.Parallel()
-
+	
 	te := test.InitEnvironment(t)
 
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create and update zones", []resource.TestStep{{
+		{"create and update QinQ zone", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple" {
-				  id  = "zoneS"
+				resource "proxmox_virtual_environment_sdn_zone_qinq" "zone_qinq" {
+				  id    = "zoneQ"
 				  nodes = ["pve"]
 				  mtu   = 1496
+				  bridge = "vmbr0"
+				  service_vlan = 100
+				  service_vlan_protocol = "802.1ad"
 				}
 			`),
 		}, {
 			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple" {
-				  id  = "zoneS"
+				resource "proxmox_virtual_environment_sdn_zone_qinq" "zone_qinq" {
+				  id    = "zoneQ"
 				  nodes = ["pve"]
 				  mtu   = 1495
+				  bridge = "vmbr0"
+				  service_vlan = 200
+				  service_vlan_protocol = "802.1q"
 				}
 			`),
-			ResourceName:      "proxmox_virtual_environment_sdn_zone_simple.zone_simple",
-			ImportStateId:     "zoneS",
+			ResourceName:      "proxmox_virtual_environment_sdn_zone_qinq.zone_qinq",
+			ImportStateId:     "zoneQ",
 			ImportState:       true,
 			ImportStateVerify: true,
 		}}},

@@ -20,27 +20,27 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure   = &SimpleResource{}
-	_ resource.ResourceWithImportState = &SimpleResource{}
+	_ resource.ResourceWithConfigure   = &VXLANResource{}
+	_ resource.ResourceWithImportState = &VXLANResource{}
 )
 
-type SimpleResource struct {
+type VXLANResource struct {
 	client *zones.Client
 }
 
-func NewSimpleResource() resource.Resource {
-	return &SimpleResource{}
+func NewVXLANResource() resource.Resource {
+	return &VXLANResource{}
 }
 
-func (r *SimpleResource) Metadata(
+func (r *VXLANResource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_sdn_zone_simple"
+	resp.TypeName = req.ProviderTypeName + "_sdn_zone_vxlan"
 }
 
-func (r *SimpleResource) Configure(
+func (r *VXLANResource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -58,19 +58,18 @@ func (r *SimpleResource) Configure(
 				req.ProviderData,
 			),
 		)
-
 		return
 	}
 
 	r.client = cfg.Client.Cluster().SDNZones()
 }
 
-func (r *SimpleResource) Create(
+func (r *VXLANResource) Create(
 	ctx context.Context,
 	req resource.CreateRequest,
 	resp *resource.CreateResponse,
 ) {
-	var plan simpleModel
+	var plan vxlanModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -79,26 +78,25 @@ func (r *SimpleResource) Create(
 	}
 
 	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
-	reqData.Type = ptr.Ptr(zones.TypeSimple)
+	reqData.Type = ptr.Ptr(zones.TypeVXLAN)
 
 	if err := r.client.CreateZone(ctx, reqData); err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to Create SDN SimpleZone",
+			"Unable to Create SDN VXLAN Zone",
 			err.Error(),
 		)
-
 		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *SimpleResource) Read(
+func (r *VXLANResource) Read(
 	ctx context.Context,
 	req resource.ReadRequest,
 	resp *resource.ReadResponse,
 ) {
-	var state simpleModel
+	var state vxlanModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -114,24 +112,23 @@ func (r *SimpleResource) Read(
 		}
 
 		resp.Diagnostics.AddError(
-			"Unable to Read SDN SimpleZone",
+			"Unable to Read SDN VXLAN Zone",
 			err.Error(),
 		)
-
 		return
 	}
 
-	readModel := &baseModel{}
+	readModel := &vxlanModel{}
 	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
-func (r *SimpleResource) Update(
+func (r *VXLANResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
 ) {
-	var plan simpleModel
+	var plan vxlanModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -143,22 +140,21 @@ func (r *SimpleResource) Update(
 
 	if err := r.client.UpdateZone(ctx, reqData); err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to Update SDN Simple Zone",
+			"Unable to Update SDN VXLAN Zone",
 			err.Error(),
 		)
-
 		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *SimpleResource) Delete(
+func (r *VXLANResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
-	var state simpleModel
+	var state vxlanModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -169,13 +165,13 @@ func (r *SimpleResource) Delete(
 	if err := r.client.DeleteZone(ctx, state.ID.ValueString()); err != nil &&
 		!errors.Is(err, api.ErrResourceDoesNotExist) {
 		resp.Diagnostics.AddError(
-			"Unable to Delete SDN Simple Zone",
+			"Unable to Delete SDN VXLAN Zone",
 			err.Error(),
 		)
 	}
 }
 
-func (r *SimpleResource) ImportState(
+func (r *VXLANResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -184,16 +180,12 @@ func (r *SimpleResource) ImportState(
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError(fmt.Sprintf("Zone %s does not exist", req.ID), err.Error())
-
 			return
 		}
-
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN Simple Zone %s", req.ID), err.Error())
-
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN VXLAN Zone %s", req.ID), err.Error())
 		return
 	}
-
-	readModel := &simpleModel{}
+	readModel := &vxlanModel{}
 	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

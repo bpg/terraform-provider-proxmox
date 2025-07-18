@@ -20,27 +20,27 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure   = &SimpleResource{}
-	_ resource.ResourceWithImportState = &SimpleResource{}
+	_ resource.ResourceWithConfigure   = &QinQResource{}
+	_ resource.ResourceWithImportState = &QinQResource{}
 )
 
-type SimpleResource struct {
+type QinQResource struct {
 	client *zones.Client
 }
 
-func NewSimpleResource() resource.Resource {
-	return &SimpleResource{}
+func NewQinQResource() resource.Resource {
+	return &QinQResource{}
 }
 
-func (r *SimpleResource) Metadata(
+func (r *QinQResource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_sdn_zone_simple"
+	resp.TypeName = req.ProviderTypeName + "_sdn_zone_qinq"
 }
 
-func (r *SimpleResource) Configure(
+func (r *QinQResource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -58,19 +58,18 @@ func (r *SimpleResource) Configure(
 				req.ProviderData,
 			),
 		)
-
 		return
 	}
 
 	r.client = cfg.Client.Cluster().SDNZones()
 }
 
-func (r *SimpleResource) Create(
+func (r *QinQResource) Create(
 	ctx context.Context,
 	req resource.CreateRequest,
 	resp *resource.CreateResponse,
 ) {
-	var plan simpleModel
+	var plan qinqModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -79,26 +78,25 @@ func (r *SimpleResource) Create(
 	}
 
 	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
-	reqData.Type = ptr.Ptr(zones.TypeSimple)
+	reqData.Type = ptr.Ptr(zones.TypeQinQ)
 
 	if err := r.client.CreateZone(ctx, reqData); err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to Create SDN SimpleZone",
+			"Unable to Create SDN QinQ Zone",
 			err.Error(),
 		)
-
 		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *SimpleResource) Read(
+func (r *QinQResource) Read(
 	ctx context.Context,
 	req resource.ReadRequest,
 	resp *resource.ReadResponse,
 ) {
-	var state simpleModel
+	var state qinqModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -114,24 +112,23 @@ func (r *SimpleResource) Read(
 		}
 
 		resp.Diagnostics.AddError(
-			"Unable to Read SDN SimpleZone",
+			"Unable to Read SDN QinQ Zone",
 			err.Error(),
 		)
-
 		return
 	}
 
-	readModel := &baseModel{}
+	readModel := &qinqModel{}
 	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
-func (r *SimpleResource) Update(
+func (r *QinQResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
 ) {
-	var plan simpleModel
+	var plan qinqModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -143,22 +140,21 @@ func (r *SimpleResource) Update(
 
 	if err := r.client.UpdateZone(ctx, reqData); err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to Update SDN Simple Zone",
+			"Unable to Update SDN QinQ Zone",
 			err.Error(),
 		)
-
 		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *SimpleResource) Delete(
+func (r *QinQResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
-	var state simpleModel
+	var state qinqModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -169,13 +165,13 @@ func (r *SimpleResource) Delete(
 	if err := r.client.DeleteZone(ctx, state.ID.ValueString()); err != nil &&
 		!errors.Is(err, api.ErrResourceDoesNotExist) {
 		resp.Diagnostics.AddError(
-			"Unable to Delete SDN Simple Zone",
+			"Unable to Delete SDN QinQ Zone",
 			err.Error(),
 		)
 	}
 }
 
-func (r *SimpleResource) ImportState(
+func (r *QinQResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,
@@ -184,16 +180,12 @@ func (r *SimpleResource) ImportState(
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError(fmt.Sprintf("Zone %s does not exist", req.ID), err.Error())
-
 			return
 		}
-
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN Simple Zone %s", req.ID), err.Error())
-
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN QinQ Zone %s", req.ID), err.Error())
 		return
 	}
-
-	readModel := &simpleModel{}
+	readModel := &qinqModel{}
 	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

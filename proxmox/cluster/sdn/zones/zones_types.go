@@ -6,6 +6,8 @@
 
 package zones
 
+import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+
 const (
 	TypeSimple = "simple"
 	TypeVLAN   = "vlan"
@@ -35,14 +37,14 @@ type ZoneData struct {
 	Peers *string `json:"peers,omitempty" url:"peers,omitempty"`
 
 	// EVPN.
-	Controller              *string `json:"controller,omitempty"                 url:"controller,omitempty"`
-	VRFVXLANID              *int64  `json:"vrf-vxlan,omitempty"                  url:"vrf-vxlan,omitempty"`
-	ExitNodes               *string `json:"exitnodes,omitempty"                  url:"exitnodes,omitempty"`
-	ExitNodesPrimary        *string `json:"exitnodes-primary,omitempty"          url:"exitnodes-primary,omitempty"`
-	ExitNodesLocalRouting   *int64  `json:"exitnodes-local-routing,omitempty"    url:"exitnodes-local-routing,omitempty"`
-	AdvertiseSubnets        *int64  `json:"advertise-subnets,omitempty"          url:"advertise-subnets,omitempty"`
-	DisableARPNDSuppression *int64  `json:"disable-arp-nd-suppression,omitempty" url:"disable-arp-nd-suppression,omitempty"`
-	RouteTargetImport       *string `json:"rt-import,omitempty"                  url:"rt-import,omitempty"`
+	Controller              *string           `json:"controller,omitempty"                 url:"controller,omitempty"`
+	VRFVXLANID              *int64            `json:"vrf-vxlan,omitempty"                  url:"vrf-vxlan,omitempty"`
+	ExitNodes               *string           `json:"exitnodes,omitempty"                  url:"exitnodes,omitempty"`
+	ExitNodesPrimary        *string           `json:"exitnodes-primary,omitempty"          url:"exitnodes-primary,omitempty"`
+	ExitNodesLocalRouting   *types.CustomBool `json:"exitnodes-local-routing,omitempty"    url:"exitnodes-local-routing,omitempty,int"`
+	AdvertiseSubnets        *types.CustomBool `json:"advertise-subnets,omitempty"          url:"advertise-subnets,omitempty,int"`
+	DisableARPNDSuppression *types.CustomBool `json:"disable-arp-nd-suppression,omitempty" url:"disable-arp-nd-suppression,omitempty,int"`
+	RouteTargetImport       *string           `json:"rt-import,omitempty"                  url:"rt-import,omitempty"`
 }
 
 // ZoneRequestData wraps a ZoneData struct with optional delete instructions.
