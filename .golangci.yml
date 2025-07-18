@@ -44,6 +44,8 @@ linters:
     gosec:
       excludes:
         - G115
+    lll:
+      line-length: 150
     revive:
       rules:
         - name: "package-comments"
