@@ -8,15 +8,19 @@ package zone
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
@@ -24,168 +28,131 @@ var (
 	_ resource.ResourceWithImportState = &EVPNResource{}
 )
 
+type evpnModel struct {
+	genericModel
+
+	AdvertiseSubnets        types.Bool      `tfsdk:"advertise_subnets"`
+	Controller              types.String    `tfsdk:"controller"`
+	DisableARPNDSuppression types.Bool      `tfsdk:"disable_arp_nd_suppression"`
+	ExitNodes               stringset.Value `tfsdk:"exit_nodes"`
+	ExitNodesLocalRouting   types.Bool      `tfsdk:"exit_nodes_local_routing"`
+	PrimaryExitNode         types.String    `tfsdk:"primary_exit_node"`
+	RouteTargetImport       types.String    `tfsdk:"rt_import"`
+	VRFVXLANID              types.Int64     `tfsdk:"vrf_vxlan"`
+}
+
+func (m *evpnModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
+	m.genericModel.importFromAPI(name, data, diags)
+
+	m.AdvertiseSubnets = types.BoolPointerValue(data.AdvertiseSubnets.PointerBool())
+	m.Controller = types.StringPointerValue(data.Controller)
+	m.DisableARPNDSuppression = types.BoolPointerValue(data.DisableARPNDSuppression.PointerBool())
+	m.ExitNodes = stringset.NewValueString(data.ExitNodes, diags, stringset.WithSeparator(","))
+	m.ExitNodesLocalRouting = types.BoolPointerValue(data.ExitNodesLocalRouting.PointerBool())
+	m.PrimaryExitNode = types.StringPointerValue(data.ExitNodesPrimary)
+	m.RouteTargetImport = types.StringPointerValue(data.RouteTargetImport)
+	m.VRFVXLANID = types.Int64PointerValue(data.VRFVXLANID)
+}
+
+func (m *evpnModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {
+	data := m.genericModel.toAPIRequestBody(ctx, diags)
+
+	data.AdvertiseSubnets = proxmoxtypes.CustomBoolPtr(m.AdvertiseSubnets.ValueBoolPointer())
+	data.Controller = m.Controller.ValueStringPointer()
+	data.DisableARPNDSuppression = proxmoxtypes.CustomBoolPtr(m.DisableARPNDSuppression.ValueBoolPointer())
+	data.ExitNodes = m.ExitNodes.ValueStringPointer(ctx, diags, stringset.WithSeparator(","))
+	data.ExitNodesLocalRouting = proxmoxtypes.CustomBoolPtr(m.ExitNodesLocalRouting.ValueBoolPointer())
+	data.ExitNodesPrimary = m.PrimaryExitNode.ValueStringPointer()
+	data.RouteTargetImport = m.RouteTargetImport.ValueStringPointer()
+	data.VRFVXLANID = m.VRFVXLANID.ValueInt64Pointer()
+
+	return data
+}
+
 type EVPNResource struct {
-	client *zones.Client
+	generic *genericZoneResource
 }
 
 func NewEVPNResource() resource.Resource {
-	return &EVPNResource{}
-}
-
-func (r *EVPNResource) Metadata(
-	_ context.Context,
-	req resource.MetadataRequest,
-	resp *resource.MetadataResponse,
-) {
-	resp.TypeName = req.ProviderTypeName + "_sdn_zone_evpn"
-}
-
-func (r *EVPNResource) Configure(
-	_ context.Context,
-	req resource.ConfigureRequest,
-	resp *resource.ConfigureResponse,
-) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	cfg, ok := req.ProviderData.(config.Resource)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf(
-				"Expected config.Resource, got: %T",
-				req.ProviderData,
-			),
-		)
-		return
-	}
-
-	r.client = cfg.Client.Cluster().SDNZones()
-}
-
-func (r *EVPNResource) Create(
-	ctx context.Context,
-	req resource.CreateRequest,
-	resp *resource.CreateResponse,
-) {
-	var plan evpnModel
-
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
-	reqData.Type = ptr.Ptr(zones.TypeEVPN)
-
-	if err := r.client.CreateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create SDN EVPN Zone",
-			err.Error(),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *EVPNResource) Read(
-	ctx context.Context,
-	req resource.ReadRequest,
-	resp *resource.ReadResponse,
-) {
-	var state evpnModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	zone, err := r.client.GetZone(ctx, state.ID.ValueString())
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN EVPN Zone",
-			err.Error(),
-		)
-		return
-	}
-
-	readModel := &evpnModel{}
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
-	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
-}
-
-func (r *EVPNResource) Update(
-	ctx context.Context,
-	req resource.UpdateRequest,
-	resp *resource.UpdateResponse,
-) {
-	var plan evpnModel
-
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
-
-	if err := r.client.UpdateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Update SDN EVPN Zone",
-			err.Error(),
-		)
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (r *EVPNResource) Delete(
-	ctx context.Context,
-	req resource.DeleteRequest,
-	resp *resource.DeleteResponse,
-) {
-	var state evpnModel
-
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if err := r.client.DeleteZone(ctx, state.ID.ValueString()); err != nil &&
-		!errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError(
-			"Unable to Delete SDN EVPN Zone",
-			err.Error(),
-		)
+	return &EVPNResource{
+		generic: newGenericZoneResource(zoneResourceConfig{
+			typeNameSuffix: "_sdn_zone_evpn",
+			zoneType:       zones.TypeEVPN,
+			modelFunc:      func() zoneModel { return &evpnModel{} },
+		}).(*genericZoneResource),
 	}
 }
 
-func (r *EVPNResource) ImportState(
-	ctx context.Context,
-	req resource.ImportStateRequest,
-	resp *resource.ImportStateResponse,
-) {
-	zone, err := r.client.GetZone(ctx, req.ID)
-	if err != nil {
-		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.Diagnostics.AddError(fmt.Sprintf("Zone %s does not exist", req.ID), err.Error())
-			return
-		}
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to Import SDN EVPN Zone %s", req.ID), err.Error())
-		return
+func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "EVPN Zone in Proxmox SDN.",
+		MarkdownDescription: "EVPN Zone in Proxmox SDN. The EVPN zone creates a routable Layer 3 network, capable of " +
+			"spanning across multiple clusters.",
+		Attributes: genericAttributesWith(map[string]schema.Attribute{
+			"advertise_subnets": schema.BoolAttribute{
+				Optional:    true,
+				Description: "Enable subnet advertisement for EVPN.",
+			},
+			"controller": schema.StringAttribute{
+				Optional:    true,
+				Description: "EVPN controller address.",
+			},
+			"disable_arp_nd_suppression": schema.BoolAttribute{
+				Optional:    true,
+				Description: "Disable ARP/ND suppression for EVPN.",
+			},
+			"exit_nodes": stringset.ResourceAttribute("List of exit nodes for EVPN.", ""),
+			"exit_nodes_local_routing": schema.BoolAttribute{
+				Optional:    true,
+				Description: "Enable local routing for EVPN exit nodes.",
+			},
+			"primary_exit_node": schema.StringAttribute{
+				Optional:    true,
+				Description: "Primary exit node for EVPN.",
+			},
+			"rt_import": schema.StringAttribute{
+				Optional:    true,
+				Description: "Route target import for EVPN.",
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^(\d+):(\d+)$`),
+						"must be in the format '<ASN>:<number>' (e.g., '65000:65000')",
+					),
+				},
+			},
+			"vrf_vxlan": schema.Int64Attribute{
+				Optional: true,
+				Description: "VRF VXLAN-ID used for dedicated routing interconnect between VNets. It must be different " +
+					"than the VXLAN-ID of the VNets.",
+			},
+		}),
 	}
-	readModel := &evpnModel{}
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
-	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
+}
+
+func (r *EVPNResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	r.generic.Metadata(ctx, req, resp)
+}
+
+func (r *EVPNResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.generic.Configure(ctx, req, resp)
+}
+
+func (r *EVPNResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	r.generic.Create(ctx, req, resp)
+}
+
+func (r *EVPNResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	r.generic.Read(ctx, req, resp)
+}
+
+func (r *EVPNResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	r.generic.Update(ctx, req, resp)
+}
+
+func (r *EVPNResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	r.generic.Delete(ctx, req, resp)
+}
+
+func (r *EVPNResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	r.generic.ImportState(ctx, req, resp)
 }
