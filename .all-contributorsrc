@@ -1434,6 +1434,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "marshallford",
+      "name": "Marshall Ford",
+      "avatar_url": "https://avatars.githubusercontent.com/u/696447?v=4",
+      "profile": "https://marshallford.me",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
