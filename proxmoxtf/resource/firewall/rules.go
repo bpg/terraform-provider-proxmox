@@ -78,9 +78,9 @@ func Rules() *schema.Resource {
 		},
 		mkRuleType: {
 			Type:             schema.TypeString,
-			Description:      "Rules type ('in', 'out')",
+			Description:      "Rules type ('in', 'out', 'forward')",
 			Optional:         true,
-			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"in", "out"}, true)),
+			ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"in", "out", "forward"}, true)),
 		},
 		mkRuleComment: {
 			Type:        schema.TypeString,
