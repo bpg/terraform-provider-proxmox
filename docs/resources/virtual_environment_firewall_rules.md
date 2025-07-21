@@ -62,7 +62,7 @@ resource "proxmox_virtual_environment_firewall_rules" "inbound" {
     The provider supports two types of the `rule` blocks:
     - A rule definition block, which includes the following arguments:
         - `action` - (Required) Rule action (`ACCEPT`, `DROP`, `REJECT`).
-        - `type` - (Required) Rule type (`in`, `out`).
+        - `type` - (Required) Rule type (`in`, `out`, `forward`).
         - `comment` - (Optional) Rule comment.
         - `dest` - (Optional) Restrict packet destination address. This can
             refer to a single IP address, an IP set ('+ipsetname') or an IP
