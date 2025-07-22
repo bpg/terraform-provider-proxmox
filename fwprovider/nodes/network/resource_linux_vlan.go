@@ -66,7 +66,10 @@ func (m *linuxVLANResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nod
 	body.Gateway = m.Gateway.ValueStringPointer()
 	body.CIDR6 = m.Address6.ValueStringPointer()
 	body.Gateway6 = m.Gateway6.ValueStringPointer()
-	body.Comments = m.Comment.ValueStringPointer()
+	if !m.Comment.IsNull() && !m.Comment.IsUnknown() {
+		trimmed := strings.TrimSpace(m.Comment.ValueString())
+		body.Comments = &trimmed
+	}
 
 	if !m.MTU.IsUnknown() {
 		body.MTU = m.MTU.ValueInt64Pointer()
