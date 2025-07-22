@@ -63,8 +63,8 @@ type ListResponseBody struct {
 type ListResponseData struct {
 	CPUCount        *int     `json:"maxcpu,omitempty"`
 	CPUUtilization  *float64 `json:"cpu,omitempty"`
-	MemoryAvailable *int     `json:"maxmem,omitempty"`
-	MemoryUsed      *int     `json:"mem,omitempty"`
+	MemoryAvailable *int64   `json:"maxmem,omitempty"`
+	MemoryUsed      *int64   `json:"mem,omitempty"`
 	Name            string   `json:"node"`
 	SSLFingerprint  *string  `json:"ssl_fingerprint,omitempty"`
 	Status          *string  `json:"status"`
