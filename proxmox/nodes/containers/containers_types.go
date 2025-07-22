@@ -218,11 +218,11 @@ type GetStatusResponseBody struct {
 type GetStatusResponseData struct {
 	CPUCount         *float64         `json:"cpus,omitempty"`
 	Lock             *string          `json:"lock,omitempty"`
-	MemoryAllocation *int             `json:"maxmem,omitempty"`
+	MemoryAllocation *int64           `json:"maxmem,omitempty"`
 	Name             *string          `json:"name,omitempty"`
 	RootDiskSize     *interface{}     `json:"maxdisk,omitempty"`
 	Status           string           `json:"status,omitempty"`
-	SwapAllocation   *int             `json:"maxswap,omitempty"`
+	SwapAllocation   *int64           `json:"maxswap,omitempty"`
 	Tags             *string          `json:"tags,omitempty"`
 	Uptime           *int             `json:"uptime,omitempty"`
 	VMID             *types.CustomInt `json:"vmid,omitempty"`
