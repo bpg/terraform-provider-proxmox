@@ -176,6 +176,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Daniel Brennand](https://github.com/dbrennand)
 - [Brian King](https://github.com/inflatador)
 - [Radosław Szamszur](https://github.com/rszamszur)
+- [Marshall Ford](https://github.com/marshallford)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
