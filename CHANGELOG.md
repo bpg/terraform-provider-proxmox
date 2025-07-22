@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.81.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.80.0...v0.81.0) (2025-07-22)
+
+
+### Features
+
+* **firewall:** adds forward type to firewall rules ([#2052](https://github.com/bpg/terraform-provider-proxmox/issues/2052)) ([e185201](https://github.com/bpg/terraform-provider-proxmox/commit/e185201840ec3140505f344b2ec5a3cac6f23ba4))
+
+
+### Bug Fixes
+
+* **vm,lxc:** 32bit int overflow in list nodes / containers API calls when running on i386 arch ([#2057](https://github.com/bpg/terraform-provider-proxmox/issues/2057)) ([47ff578](https://github.com/bpg/terraform-provider-proxmox/commit/47ff5787b1e150ab754abfd86e4a43a34b5cde0b))
+
+
+### Miscellaneous
+
+* **project:** switch repo infographic to repobeats ([#2058](https://github.com/bpg/terraform-provider-proxmox/issues/2058)) ([bbd55d2](https://github.com/bpg/terraform-provider-proxmox/commit/bbd55d26184d464248c1e7dd7723ebbd2a028bbc))
+
 ## [0.80.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.79.0...v0.80.0) (2025-07-15)
 
 
