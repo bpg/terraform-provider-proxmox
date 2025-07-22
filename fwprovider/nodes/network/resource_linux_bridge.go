@@ -56,7 +56,6 @@ type linuxBridgeResourceModel struct {
 	VLANAware types.Bool     `tfsdk:"vlan_aware"`
 }
 
-//nolint:lll
 func (m *linuxBridgeResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
 	body := &nodes.NetworkInterfaceCreateUpdateRequestBody{
 		Iface:     m.Name.ValueString(),

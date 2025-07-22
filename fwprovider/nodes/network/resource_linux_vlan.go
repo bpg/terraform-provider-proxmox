@@ -54,7 +54,6 @@ type linuxVLANResourceModel struct {
 	VLAN      types.Int64  `tfsdk:"vlan"`
 }
 
-//nolint:lll
 func (m *linuxVLANResourceModel) exportToNetworkInterfaceCreateUpdateBody() *nodes.NetworkInterfaceCreateUpdateRequestBody {
 	body := &nodes.NetworkInterfaceCreateUpdateRequestBody{
 		Iface:     m.Name.ValueString(),

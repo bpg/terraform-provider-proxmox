@@ -352,7 +352,9 @@ func validateResponseCode(res *http.Response) error {
 				errList = append(errList, split...)
 			}
 
-			msg = fmt.Sprintf("%s (%s)", msg, strings.Join(errList, " - "))
+			if len(errList) > 0 {
+				msg = fmt.Sprintf("%s (%s)", msg, strings.Join(errList, " - "))
+			}
 		}
 
 		httpError := &HTTPError{
