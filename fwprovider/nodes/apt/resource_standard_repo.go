@@ -244,7 +244,8 @@ func (r *standardRepositoryResource) Schema(
 				Description: "The handle of the APT standard repository.",
 				MarkdownDescription: "The handle of the APT standard repository. Must be `ceph-quincy-enterprise` | " +
 					"`ceph-quincy-no-subscription` | `ceph-quincy-test` | `ceph-reef-enterprise` | `ceph-reef-no-subscription` " +
-					"| `ceph-reef-test` | `enterprise` | `no-subscription` | `test`.",
+					"| `ceph-reef-test` | `ceph-squid-enterprise` | `ceph-squid-no-subscription` | `ceph-squid-test` " +
+					"| `enterprise` | `no-subscription` | `test`.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
