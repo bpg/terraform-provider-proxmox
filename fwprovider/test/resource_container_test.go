@@ -71,6 +71,7 @@ func TestAccResourceContainer(t *testing.T) {
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
+						mount_options = ["discard"]
 						size         = 4
 					}
 					mount_point {
