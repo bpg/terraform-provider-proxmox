@@ -358,8 +358,11 @@ func Container() *schema.Resource {
 							Description: "Extra mount options",
 							Optional:    true,
 							Elem: &schema.Schema{
-								Type: schema.TypeString,
+								Type:         schema.TypeString,
+								ValidateFunc: validation.StringIsNotEmpty,
 							},
+							DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
+							DiffSuppressOnRefresh: true,
 						},
 					},
 				},
