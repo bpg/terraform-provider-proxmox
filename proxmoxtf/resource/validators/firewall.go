@@ -31,6 +31,14 @@ func FirewallPolicy() schema.SchemaValidateDiagFunc {
 	))
 }
 
+// FirewallForwardPolicy returns a schema validation function for a firewall forward policy.
+func FirewallForwardPolicy() schema.SchemaValidateDiagFunc {
+	return validation.ToDiagFunc(validation.StringInSlice(
+		[]string{"ACCEPT", "DROP"},
+		false,
+	))
+}
+
 // FirewallLogLevel returns a schema validation function for a firewall log level.
 func FirewallLogLevel() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(validation.StringInSlice(

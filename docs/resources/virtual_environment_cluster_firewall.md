@@ -15,9 +15,10 @@ Manages firewall options on the cluster level.
 resource "proxmox_virtual_environment_cluster_firewall" "example" {
   enabled = false
 
-  ebtables      = false
-  input_policy  = "DROP"
-  output_policy = "ACCEPT"
+  ebtables       = false
+  input_policy   = "DROP"
+  output_policy  = "ACCEPT"
+  forward_policy = "ACCEPT"
   log_ratelimit {
     enabled = false
     burst   = 10
@@ -32,6 +33,7 @@ resource "proxmox_virtual_environment_cluster_firewall" "example" {
 - `ebtables` - (Optional) Enable ebtables rules cluster wide.
 - `input_policy` - (Optional) The default input policy (`ACCEPT`, `DROP`, `REJECT`).
 - `output_policy` - (Optional) The default output policy (`ACCEPT`, `DROP`, `REJECT`).
+- `forward_policy` - (Optional) The default forward policy (`ACCEPT`, `DROP`).
 - `log_ratelimit` - (Optional) The log rate limit.
     - `enabled` - (Optional) Enable or disable the log rate limit.
     - `burst` - (Optional) Initial burst of packages which will always get

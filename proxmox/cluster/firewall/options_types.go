@@ -18,11 +18,12 @@ import (
 
 // OptionsPutRequestBody is the request body for the PUT /cluster/firewall/options API call.
 type OptionsPutRequestBody struct {
-	EBTables     *types.CustomBool   `json:"ebtables,omitempty"      url:"ebtables,omitempty,int"`
-	Enable       *types.CustomBool   `json:"enable,omitempty"        url:"enable,omitempty,int"`
-	LogRateLimit *CustomLogRateLimit `json:"log_ratelimit,omitempty" url:"log_ratelimit,omitempty"`
-	PolicyIn     *string             `json:"policy_in,omitempty"     url:"policy_in,omitempty"`
-	PolicyOut    *string             `json:"policy_out,omitempty"    url:"policy_out,omitempty"`
+	EBTables     *types.CustomBool   `json:"ebtables,omitempty"       url:"ebtables,omitempty,int"`
+	Enable       *types.CustomBool   `json:"enable,omitempty"         url:"enable,omitempty,int"`
+	LogRateLimit *CustomLogRateLimit `json:"log_ratelimit,omitempty"  url:"log_ratelimit,omitempty"`
+	PolicyIn     *string             `json:"policy_in,omitempty"      url:"policy_in,omitempty"`
+	PolicyOut    *string             `json:"policy_out,omitempty"     url:"policy_out,omitempty"`
+	PolicyFwd    *string             `json:"policy_forward,omitempty" url:"policy_forward,omitempty"`
 }
 
 // CustomLogRateLimit is a custom type for the log_ratelimit field of the firewall optionss.
@@ -39,11 +40,12 @@ type OptionsGetResponseBody struct {
 
 // OptionsGetResponseData is the data field of the response body for the GET /cluster/firewall/options API call.
 type OptionsGetResponseData struct {
-	EBTables     *types.CustomBool   `json:"ebtables"      url:"ebtables, int"`
-	Enable       *types.CustomBool   `json:"enable"        url:"enable,int"`
-	LogRateLimit *CustomLogRateLimit `json:"log_ratelimit" url:"log_ratelimit"`
-	PolicyIn     *string             `json:"policy_in"     url:"policy_in"`
-	PolicyOut    *string             `json:"policy_out"    url:"policy_out"`
+	EBTables     *types.CustomBool   `json:"ebtables"       url:"ebtables, int"`
+	Enable       *types.CustomBool   `json:"enable"         url:"enable,int"`
+	LogRateLimit *CustomLogRateLimit `json:"log_ratelimit"  url:"log_ratelimit"`
+	PolicyIn     *string             `json:"policy_in"      url:"policy_in"`
+	PolicyOut    *string             `json:"policy_out"     url:"policy_out"`
+	PolicyFwd    *string             `json:"policy_forward" url:"policy_forward"`
 }
 
 // EncodeValues converts a CustomWatchdogDevice struct to a URL vlaue.
