@@ -1719,12 +1719,14 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	var rootFS *containers.CustomRootFS
 
-	var diskMountOptions []string = []string{}
+	var diskMountOptions = []string{}
+
 	if diskBlock[mkDiskMountOptions] != nil {
 		for _, opt := range diskBlock[mkDiskMountOptions].([]any) {
 			diskMountOptions = append(diskMountOptions, opt.(string))
 		}
 	}
+
 	diskSize := diskBlock[mkDiskSize].(int)
 	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
