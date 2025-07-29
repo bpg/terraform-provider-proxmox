@@ -24,6 +24,7 @@ const (
 	dvLogRatelimitRate   = "1/second"
 	dvPolicyIn           = "DROP"
 	dvPolicyOut          = "ACCEPT"
+	dvPolicyFwd          = "ACCEPT"
 
 	mkEBTables            = "ebtables"
 	mkEnabled             = "enabled"
@@ -33,6 +34,7 @@ const (
 	mkLogRatelimitRate    = "rate"
 	mkPolicyIn            = "input_policy"
 	mkPolicyOut           = "output_policy"
+	mkPolicyFwd           = "forward_policy"
 )
 
 // Firewall returns a resource to manage firewall options.
@@ -102,6 +104,13 @@ func Firewall() *schema.Resource {
 				Default:          dvPolicyOut,
 				ValidateDiagFunc: validators.FirewallPolicy(),
 			},
+			mkPolicyFwd: {
+				Type:             schema.TypeString,
+				Description:      "Default policy for forwarded traffic",
+				Optional:         true,
+				Default:          dvPolicyFwd,
+				ValidateDiagFunc: validators.FirewallForwardPolicy(),
+			},
 		},
 		CreateContext: selectFirewallAPI(firewallCreate),
 		ReadContext:   selectFirewallAPI(firewallRead),
@@ -125,9 +134,11 @@ func firewallCreate(ctx context.Context, api firewall.API, d *schema.ResourceDat
 func setOptions(ctx context.Context, api firewall.API, d *schema.ResourceData) diag.Diagnostics {
 	policyIn := d.Get(mkPolicyIn).(string)
 	policyOut := d.Get(mkPolicyOut).(string)
+	policyFwd := d.Get(mkPolicyFwd).(string)
 	body := &firewall.OptionsPutRequestBody{
 		PolicyIn:  &policyIn,
 		PolicyOut: &policyOut,
+		PolicyFwd: &policyFwd,
 	}
 
 	logRatelimit := d.Get(mkLogRatelimit).([]interface{})
@@ -195,6 +206,11 @@ func firewallRead(ctx context.Context, api firewall.API, d *schema.ResourceData)
 
 	if options.PolicyOut != nil {
 		err = d.Set(mkPolicyOut, *options.PolicyOut)
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if options.PolicyFwd != nil {
+		err = d.Set(mkPolicyFwd, *options.PolicyFwd)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
