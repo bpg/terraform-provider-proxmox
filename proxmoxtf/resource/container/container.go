@@ -52,7 +52,10 @@ const (
 	dvCPUUnits                          = 1024
 	dvDescription                       = ""
 	dvDevicePassthroughMode             = "0660"
+	dvDiskACL							= false
 	dvDiskDatastoreID                   = "local"
+	dvDiskQuota                         = false
+	dvDiskReplicate                     = true
 	dvDiskSize                          = 4
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
@@ -107,8 +110,11 @@ const (
 	mkCPUUnits                          = "units"
 	mkDescription                       = "description"
 	mkDisk                              = "disk"
+	mkDiskACL							= "acl"
 	mkDiskDatastoreID                   = "datastore_id"
 	mkDiskMountOptions                  = "mount_options"
+	mkDiskQuota                         = "quota"
+	mkDiskReplicate                     = "replicate"
 	mkDiskSize                          = "size"
 	mkFeatures                          = "features"
 	mkFeaturesNesting                   = "nesting"
@@ -2942,9 +2948,42 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		updateBody.CPUUnits = &cpuUnits
 	}
 
-	if d.HasChanges(mkDiskMountOptions) {
-		mountOptions := d.Get(mkDiskMountOptions).([]string)
-		updateBody.RootFS.MountOptions = &mountOptions
+	if d.HasChange(mkDisk) {
+		diskBlock, err := structure.GetSchemaBlock(
+			container,
+			d,
+			[]string{mkDisk},
+			0,
+			true,
+		)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		rootFS := &containers.CustomRootFS{}
+		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
+
+		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
+		id := diskBlock[mkDiskDatastoreID].(string)
+		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
+		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
+		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
+		size := diskBlock[mkDiskSize].(string)
+
+		rootFS.ACL = &acl
+		rootFS.Volume = id // TODO: These aren't the same thing (?)
+		rootFS.Quota = &quota
+		rootFS.Replicate = &replicate
+		rootFS.Size = size // TODO: Size is handled differently, can only grow
+
+		if len(mountOptions) > 0 {
+			mountOptionsArray := make([]string, 0, len(mountOptions))
+
+			for _, option := range mountOptions {
+				mountOptionsArray = append(mountOptionsArray, option.(string))
+			}
+			rootFS.MountOptions = &mountOptionsArray
+		}
+		updateBody.RootFS = rootFS
 	}
 
 	if d.HasChange(mkFeatures) {
