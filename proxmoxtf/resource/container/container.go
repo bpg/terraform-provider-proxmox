@@ -2299,7 +2299,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	} else if len(currentDisk) > 0 ||
 		disk[mkDiskDatastoreID] != dvDiskDatastoreID ||
-		disk[mkDiskSize] != dvDiskSize {
+		disk[mkDiskSize] != dvDiskSize ||
+		len(disk[mkDiskMountOptions].([]string)) > 0 {
 		err := d.Set(mkDisk, []interface{}{disk})
 		diags = append(diags, diag.FromErr(err)...)
 	}
