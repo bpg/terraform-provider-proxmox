@@ -2942,6 +2942,11 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		updateBody.CPUUnits = &cpuUnits
 	}
 
+	if d.HasChanges(mkDiskMountOptions) {
+		mountOptions := d.Get(mkDiskMountOptions).([]string)
+		updateBody.RootFS.MountOptions = &mountOptions
+	}
+
 	if d.HasChange(mkFeatures) {
 		features, err := containerGetFeatures(container, d)
 		if err != nil {
