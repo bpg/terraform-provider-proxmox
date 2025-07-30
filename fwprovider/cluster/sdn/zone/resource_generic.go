@@ -68,16 +68,9 @@ func (m *genericModel) getID() string {
 	return m.ID.ValueString()
 }
 
-func genericAttributesWith(extraAttributes ...map[string]schema.Attribute) map[string]schema.Attribute {
-	if len(extraAttributes) > 1 {
-		panic("genericAttributesWith expects at most one extraAttributes map")
-	}
-
-	if len(extraAttributes) == 0 {
-		extraAttributes = append(extraAttributes, make(map[string]schema.Attribute))
-	}
-
-	maps.Copy(extraAttributes[0], map[string]schema.Attribute{
+func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[string]schema.Attribute {
+	// Start with generic attributes as the base
+	result := map[string]schema.Attribute{
 		"dns": schema.StringAttribute{
 			Optional:    true,
 			Description: "DNS API server address.",
@@ -116,9 +109,14 @@ func genericAttributesWith(extraAttributes ...map[string]schema.Attribute) map[s
 			Optional:    true,
 			Description: "Reverse DNS API server address.",
 		},
-	})
+	}
 
-	return extraAttributes[0]
+	// Add extra attributes, allowing them to override generic ones if needed
+	if extraAttributes != nil {
+		maps.Copy(result, extraAttributes)
+	}
+
+	return result
 }
 
 type zoneModel interface {

@@ -44,7 +44,7 @@ func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 		MarkdownDescription: "Simple Zone in Proxmox SDN. It will create an isolated VNet bridge. " +
 			"This bridge is not linked to a physical interface, and VM traffic is only local on each the node. " +
 			"It can be used in NAT or routed setups.",
-		Attributes: genericAttributesWith(),
+		Attributes: genericAttributesWith(nil),
 	}
 }
 
