@@ -203,6 +203,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/smhanes15"><img src="https://avatars.githubusercontent.com/u/11663427?v=4?s=100" width="100px;" alt="Shawn M. Hanes"/><br /><sub><b>Shawn M. Hanes</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=smhanes15" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://marshallford.me"><img src="https://avatars.githubusercontent.com/u/696447?v=4?s=100" width="100px;" alt="Marshall Ford"/><br /><sub><b>Marshall Ford</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=marshallford" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/twentybit"><img src="https://avatars.githubusercontent.com/u/60849886?v=4?s=100" width="100px;" alt="Ryan W"/><br /><sub><b>Ryan W</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=twentybit" title="Documentation">📖</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
