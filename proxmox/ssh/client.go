@@ -619,7 +619,7 @@ func (c *client) createSSHClientAgent(
 	kh *knownhosts.HostKeyDB,
 	sshHost string,
 ) (*ssh.Client, error) {
-	conn, err := dialSocket(c.agentSocket)
+	conn, err := dialSocket(ctx, c.agentSocket)
 	if err != nil {
 		return nil, fmt.Errorf("failed connecting to SSH auth socket '%s': %w", c.agentSocket, err)
 	}
