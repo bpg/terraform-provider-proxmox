@@ -344,12 +344,30 @@ func Container() *schema.Resource {
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						mkDiskACL: {
+							Type:        schema.TypeBool,
+							Description: "Explicitly enable or disable ACL support",
+							Optional:    true,
+							Default:     dvDiskACL,
+						},
 						mkDiskDatastoreID: {
 							Type:        schema.TypeString,
 							Description: "The datastore id",
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvDiskDatastoreID,
+						},
+						mkDiskQuota: {
+							Type:        schema.TypeBool,
+							Description: "Enable user quotas for the container rootfs",
+							Optional:    true,
+							Default:     dvDiskQuota,
+						},
+						mkDiskReplicate: {
+							Type:        schema.TypeBool,
+							Description: "Will include this volume to a storage replica job",
+							Optional:    true,
+							Default:     dvDiskReplicate,
 						},
 						mkDiskSize: {
 							Type:             schema.TypeInt,
@@ -2963,17 +2981,17 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
-		id := diskBlock[mkDiskDatastoreID].(string)
+		_ = diskBlock[mkDiskDatastoreID].(string)
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
 		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
-		size := diskBlock[mkDiskSize].(string)
+		_ = diskBlock[mkDiskSize].(string)
 
 		rootFS.ACL = &acl
-		rootFS.Volume = id // TODO: These aren't the same thing (?)
+		//rootFS.Volume = id // TODO: These aren't the same thing (?)
 		rootFS.Quota = &quota
 		rootFS.Replicate = &replicate
-		rootFS.Size = size // TODO: Size is handled differently, can only grow
+		//rootFS.Size = size // TODO: Size is handled differently, can only grow
 
 		if len(mountOptions) > 0 {
 			mountOptionsArray := make([]string, 0, len(mountOptions))
