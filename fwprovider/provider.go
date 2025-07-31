@@ -533,9 +533,6 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnzone.NewQinQResource,
 		sdnzone.NewVXLANResource,
 		sdnzone.NewEVPNResource,
-		//
-		// sdn.NewSDNVnetResource,
-		// sdn.NewSDNSubnetResource,
 	}
 }
 
@@ -558,10 +555,13 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
 		metrics.NewMetricsServerDatasource,
+		sdnzone.NewSimpleDataSource,
+		sdnzone.NewVLANDataSource,
+		sdnzone.NewQinQDataSource,
+		sdnzone.NewVXLANDataSource,
+		sdnzone.NewEVPNDataSource,
+		sdnzone.NewZonesDataSource,
 		vm.NewDataSource,
-		// sdn.NewSDNZoneDataSource,
-		// sdn.NewSDNVnetDataSource,
-		// sdn.NewSDNSubnetDataSource,
 	}
 }
 
