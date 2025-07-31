@@ -1,11 +1,11 @@
 ## Debian and ubuntu image download
 
-resource "proxmox_virtual_environment_download_file" "release_20250610_ubuntu_24_noble_lxc_img" {
+resource "proxmox_virtual_environment_download_file" "release_20250701_ubuntu_24_10_lxc_img" {
   content_type        = "vztmpl"
   datastore_id        = "local"
   node_name           = var.virtual_environment_node_name
-  url                 = var.release_20250610_ubuntu_24_noble_lxc_img_url
-  checksum            = var.release_20250610_ubuntu_24_noble_lxc_img_checksum
+  url                 = var.release_20250701_ubuntu_24_10_lxc_img_url
+  checksum            = var.release_20250701_ubuntu_24_10_lxc_img_checksum
   checksum_algorithm  = "sha256"
   upload_timeout      = 4444
   overwrite_unmanaged = true
