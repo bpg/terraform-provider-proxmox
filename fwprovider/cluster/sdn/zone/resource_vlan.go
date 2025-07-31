@@ -67,7 +67,7 @@ func (r *VLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Description: "Bridge interface for VLAN.",
 				MarkdownDescription: "The local bridge or OVS switch, already configured on _each_ node that allows " +
 					"node-to-node connection.",
-				Optional: true,
+				Required: true,
 			},
 		}),
 	}

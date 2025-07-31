@@ -90,28 +90,27 @@ func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"spanning across multiple clusters.",
 		Attributes: genericAttributesWith(map[string]schema.Attribute{
 			"advertise_subnets": schema.BoolAttribute{
-				Optional:    true,
 				Description: "Enable subnet advertisement for EVPN.",
+				Optional:    true,
 			},
 			"controller": schema.StringAttribute{
-				Optional:    true,
 				Description: "EVPN controller address.",
+				Required:    true,
 			},
 			"disable_arp_nd_suppression": schema.BoolAttribute{
-				Optional:    true,
 				Description: "Disable ARP/ND suppression for EVPN.",
+				Optional:    true,
 			},
 			"exit_nodes": stringset.ResourceAttribute("List of exit nodes for EVPN.", ""),
 			"exit_nodes_local_routing": schema.BoolAttribute{
-				Optional:    true,
 				Description: "Enable local routing for EVPN exit nodes.",
+				Optional:    true,
 			},
 			"primary_exit_node": schema.StringAttribute{
-				Optional:    true,
 				Description: "Primary exit node for EVPN.",
+				Optional:    true,
 			},
 			"rt_import": schema.StringAttribute{
-				Optional:    true,
 				Description: "Route target import for EVPN.",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
@@ -119,11 +118,12 @@ func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 						"must be in the format '<ASN>:<number>' (e.g., '65000:65000')",
 					),
 				},
+				Optional: true,
 			},
 			"vrf_vxlan": schema.Int64Attribute{
-				Optional: true,
 				Description: "VRF VXLAN-ID used for dedicated routing interconnect between VNets. It must be different " +
 					"than the VXLAN-ID of the VNets.",
+				Required: true,
 			},
 		}),
 	}

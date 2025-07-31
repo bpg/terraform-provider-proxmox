@@ -69,6 +69,7 @@ func (r *VXLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				"A list of IP addresses of each node in the VXLAN zone. "+
 					"This can be external nodes reachable at this IP address. All nodes in the cluster need to be "+
 					"mentioned here",
+				stringset.WithRequired(),
 			),
 		}),
 	}

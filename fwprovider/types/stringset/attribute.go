@@ -16,9 +16,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ResourceAttributeOption func(*schema.SetAttribute)
+
+func WithRequired() ResourceAttributeOption {
+	return func(attribute *schema.SetAttribute) {
+		attribute.Required = true
+		attribute.Optional = false
+		attribute.Computed = false
+	}
+}
+
+func WithOptional() ResourceAttributeOption {
+	return func(attribute *schema.SetAttribute) {
+		attribute.Optional = true
+		attribute.Required = false
+		attribute.Computed = true
+	}
+}
+
 // ResourceAttribute returns a resource schema attribute for string set.
-func ResourceAttribute(desc, markdownDesc string) schema.SetAttribute {
-	return schema.SetAttribute{
+func ResourceAttribute(desc, markdownDesc string, options ...ResourceAttributeOption) schema.SetAttribute {
+	attribute := schema.SetAttribute{
 		CustomType: Type{
 			SetType: types.SetType{
 				ElemType: types.StringType,
@@ -30,7 +48,6 @@ func ResourceAttribute(desc, markdownDesc string) schema.SetAttribute {
 		Computed:            true,
 		ElementType:         types.StringType,
 		Validators: []validator.Set{
-			// NOTE: we allow empty list to remove all previously set values
 			setvalidator.ValueStringsAre(
 				stringvalidator.RegexMatches(
 					regexp.MustCompile(`(.|\s)*\S(.|\s)*`),
@@ -40,6 +57,12 @@ func ResourceAttribute(desc, markdownDesc string) schema.SetAttribute {
 			),
 		},
 	}
+
+	for _, option := range options {
+		option(&attribute)
+	}
+
+	return attribute
 }
 
 // DataSourceAttribute returns a data source schema attribute for string set.

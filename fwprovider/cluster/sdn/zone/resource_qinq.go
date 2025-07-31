@@ -73,21 +73,23 @@ func (r *QinQResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 		Attributes: genericAttributesWith(map[string]schema.Attribute{
 			"bridge": schema.StringAttribute{
 				Description: "A local, VLAN-aware bridge that is already configured on each local node",
-				Optional:    true,
+				Required:    true,
 			},
 			"service_vlan": schema.Int64Attribute{
-				Optional:    true,
-				Description: "Service VLAN tag for QinQ.",
+				Description:         "Service VLAN tag for QinQ.",
+				MarkdownDescription: "Service VLAN tag for QinQ. The tag must be between `1` and `4094`.",
 				Validators: []validator.Int64{
 					int64validator.Between(int64(1), int64(4094)),
 				},
+				Required: true,
 			},
 			"service_vlan_protocol": schema.StringAttribute{
-				Optional:    true,
-				Description: "Service VLAN protocol for QinQ.",
+				Description:         "Service VLAN protocol for QinQ.",
+				MarkdownDescription: "Service VLAN protocol for QinQ. The protocol must be `802.1ad` or `802.1q`.",
 				Validators: []validator.String{
 					stringvalidator.OneOf("802.1ad", "802.1q"),
 				},
+				Optional: true,
 			},
 		}),
 	}

@@ -104,7 +104,7 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 			Optional:    true,
 			Description: "MTU value for the zone.",
 		},
-		"nodes": stringset.ResourceAttribute("Proxmox node names.", ""),
+		"nodes": stringset.ResourceAttribute("The Proxmox nodes which the zone and associated VNets should be deployed on", "", stringset.WithRequired()),
 		"reverse_dns": schema.StringAttribute{
 			Optional:    true,
 			Description: "Reverse DNS API server address.",
