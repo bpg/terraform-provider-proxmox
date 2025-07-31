@@ -154,13 +154,16 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 			"Unable to Read SDN Zones",
 			err.Error(),
 		)
+
 		return
 	}
 
 	filteredZones := zonesList
+
 	if !data.Type.IsNull() && !data.Type.IsUnknown() {
 		filterType := data.Type.ValueString()
 		filteredZones = make([]zones.ZoneData, 0)
+
 		for _, zone := range zonesList {
 			if zone.Type != nil && *zone.Type == filterType {
 				filteredZones = append(filteredZones, zone)

@@ -131,6 +131,7 @@ func (d *genericZoneDataSource) Read(ctx context.Context, req datasource.ReadReq
 				"SDN Zone Not Found",
 				fmt.Sprintf("SDN zone with ID '%s' was not found", state.getID()),
 			)
+
 			return
 		}
 
@@ -153,6 +154,7 @@ func (d *genericZoneDataSource) Read(ctx context.Context, req datasource.ReadReq
 				zone.ID,
 			),
 		)
+
 		return
 	}
 
