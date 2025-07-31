@@ -42,9 +42,9 @@ resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
 
 ## Argument Reference
 
-- `node_name` - (Optional) Node name. Leave empty for cluster level aliases.
-- `vm_id` - (Optional) VM ID. Leave empty for cluster level aliases.
-- `container_id` - (Optional) Container ID. Leave empty for cluster level aliases.
+- `node_name` - (Optional) Node name. Leave empty for cluster level ipsets.
+- `vm_id` - (Optional) VM ID. Leave empty for cluster level ipsets.
+- `container_id` - (Optional) Container ID. Leave empty for cluster level ipsets.
 - `name` - (Required) IPSet name.
 - `comment` - (Optional) IPSet comment.
 - `cidr` - (Optional) IP/CIDR block (multiple blocks supported).

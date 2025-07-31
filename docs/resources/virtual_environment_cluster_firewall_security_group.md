@@ -46,7 +46,7 @@ resource "proxmox_virtual_environment_cluster_firewall_security_group" "webserve
 - `comment` - (Optional) Security group comment.
 - `rule` - (Optional) Firewall rule block (multiple blocks supported).
     - `action` - (Required) Rule action (`ACCEPT`, `DROP`, `REJECT`).
-    - `type` - (Required) Rule type (`in`, `out`).
+    - `type` - (Required) Rule type (`in`, `out`, `forward`).
     - `comment` - (Optional) Rule comment.
     - `dest` - (Optional) Restrict packet destination address. This can refer to
           a single IP address, an IP set ('+ipsetname') or an IP alias

@@ -161,9 +161,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 
 ## Repository Metrics
 
-<picture>
-  <img src="https://gist.githubusercontent.com/bpg/2cc44ead81225542ed1ef0303d8f9eb9/raw/metrics.svg" alt="Metrics">
-</picture>
+![Alt](https://repobeats.axiom.co/api/embed/bd0eca87c8a61f50b5fb6ff49a0d6c34de918963.svg "Repobeats analytics image")
 
 ## Sponsorship
 
@@ -176,6 +174,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Daniel Brennand](https://github.com/dbrennand)
 - [Brian King](https://github.com/inflatador)
 - [Radosław Szamszur](https://github.com/rszamszur)
+- [Marshall Ford](https://github.com/marshallford)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
