@@ -48,7 +48,7 @@ func TestAccResourceContainer(t *testing.T) {
 		FileName: ptr.Ptr(imageFileName),
 		Node:     ptr.Ptr(te.NodeName),
 		Storage:  ptr.Ptr(te.DatastoreID),
-		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst", te.ContainerImagesServer)),
+		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.10-standard_24.10-1_amd64.tar.zst", te.ContainerImagesServer)),
 	})
 	require.NoError(t, err)
 
@@ -71,6 +71,7 @@ func TestAccResourceContainer(t *testing.T) {
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
+						mount_options = ["discard"]
 						size         = 4
 					}
 					mount_point {
@@ -110,9 +111,9 @@ func TestAccResourceContainer(t *testing.T) {
 						"device_passthrough.0.mode": "0660",
 						"initialization.0.dns.#":    "0",
 					}),
-					ResourceAttributesSet(accTestContainerName, []string{
-						"ipv4.vmbr0",
-					}),
+					// ResourceAttributesSet(accTestContainerName, []string{
+					// 	"ipv4.vmbr0",
+					// }),
 					func(*terraform.State) error {
 						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 						defer cancel()

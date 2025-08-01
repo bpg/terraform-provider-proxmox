@@ -52,7 +52,10 @@ const (
 	dvCPUUnits                          = 1024
 	dvDescription                       = ""
 	dvDevicePassthroughMode             = "0660"
+	dvDiskACL							= false
 	dvDiskDatastoreID                   = "local"
+	dvDiskQuota                         = false
+	dvDiskReplicate                     = true
 	dvDiskSize                          = 4
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
@@ -107,7 +110,11 @@ const (
 	mkCPUUnits                          = "units"
 	mkDescription                       = "description"
 	mkDisk                              = "disk"
+	mkDiskACL							= "acl"
 	mkDiskDatastoreID                   = "datastore_id"
+	mkDiskMountOptions                  = "mount_options"
+	mkDiskQuota                         = "quota"
+	mkDiskReplicate                     = "replicate"
 	mkDiskSize                          = "size"
 	mkFeatures                          = "features"
 	mkFeaturesNesting                   = "nesting"
@@ -329,19 +336,38 @@ func Container() *schema.Resource {
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkDiskDatastoreID: dvDiskDatastoreID,
-							mkDiskSize:        dvDiskSize,
+							mkDiskDatastoreID:  dvDiskDatastoreID,
+							mkDiskSize:         dvDiskSize,
+							mkDiskMountOptions: []string{},
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						mkDiskACL: {
+							Type:        schema.TypeBool,
+							Description: "Explicitly enable or disable ACL support",
+							Optional:    true,
+							Default:     dvDiskACL,
+						},
 						mkDiskDatastoreID: {
 							Type:        schema.TypeString,
 							Description: "The datastore id",
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvDiskDatastoreID,
+						},
+						mkDiskQuota: {
+							Type:        schema.TypeBool,
+							Description: "Enable user quotas for the container rootfs",
+							Optional:    true,
+							Default:     dvDiskQuota,
+						},
+						mkDiskReplicate: {
+							Type:        schema.TypeBool,
+							Description: "Will include this volume to a storage replica job",
+							Optional:    true,
+							Default:     dvDiskReplicate,
 						},
 						mkDiskSize: {
 							Type:             schema.TypeInt,
@@ -350,6 +376,17 @@ func Container() *schema.Resource {
 							ForceNew:         true,
 							Default:          dvDiskSize,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+						mkDiskMountOptions: {
+							Type:        schema.TypeList,
+							Description: "Extra mount options",
+							Optional:    true,
+							Elem: &schema.Schema{
+								Type:         schema.TypeString,
+								ValidateFunc: validation.StringIsNotEmpty,
+							},
+							DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
+							DiffSuppressOnRefresh: true,
 						},
 					},
 				},
@@ -1709,12 +1746,21 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	var rootFS *containers.CustomRootFS
 
+	var diskMountOptions = []string{}
+
+	if diskBlock[mkDiskMountOptions] != nil {
+		for _, opt := range diskBlock[mkDiskMountOptions].([]any) {
+			diskMountOptions = append(diskMountOptions, opt.(string))
+		}
+	}
+
 	diskSize := diskBlock[mkDiskSize].(int)
 	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
-			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+			Volume:       fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+			MountOptions: &diskMountOptions,
 		}
 	}
 
@@ -2255,10 +2301,12 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
 		disk[mkDiskDatastoreID] = volumeParts[0]
 		disk[mkDiskSize] = containerConfig.RootFS.Size.InGigabytes()
+		disk[mkDiskMountOptions] = containerConfig.RootFS.MountOptions
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkDiskDatastoreID] = "local"
 		disk[mkDiskSize] = dvDiskSize
+		disk[mkDiskMountOptions] = []string{}
 	}
 
 	currentDisk := d.Get(mkDisk).([]interface{})
@@ -2275,7 +2323,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	} else if len(currentDisk) > 0 ||
 		disk[mkDiskDatastoreID] != dvDiskDatastoreID ||
-		disk[mkDiskSize] != dvDiskSize {
+		disk[mkDiskSize] != dvDiskSize ||
+		len(disk[mkDiskMountOptions].([]string)) > 0 {
 		err := d.Set(mkDisk, []interface{}{disk})
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -2915,6 +2964,44 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		updateBody.CPUArchitecture = &cpuArchitecture
 		updateBody.CPUCores = &cpuCores
 		updateBody.CPUUnits = &cpuUnits
+	}
+
+	if d.HasChange(mkDisk) {
+		diskBlock, err := structure.GetSchemaBlock(
+			container,
+			d,
+			[]string{mkDisk},
+			0,
+			true,
+		)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		rootFS := &containers.CustomRootFS{}
+		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
+
+		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
+		_ = diskBlock[mkDiskDatastoreID].(string)
+		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
+		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
+		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
+		_ = diskBlock[mkDiskSize].(string)
+
+		rootFS.ACL = &acl
+		//rootFS.Volume = id // TODO: These aren't the same thing (?)
+		rootFS.Quota = &quota
+		rootFS.Replicate = &replicate
+		//rootFS.Size = size // TODO: Size is handled differently, can only grow
+
+		if len(mountOptions) > 0 {
+			mountOptionsArray := make([]string, 0, len(mountOptions))
+
+			for _, option := range mountOptions {
+				mountOptionsArray = append(mountOptionsArray, option.(string))
+			}
+			rootFS.MountOptions = &mountOptionsArray
+		}
+		updateBody.RootFS = rootFS
 	}
 
 	if d.HasChange(mkFeatures) {
