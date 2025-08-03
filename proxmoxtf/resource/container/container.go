@@ -2978,6 +2978,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.FromErr(err)
 		}
 		rootFS := &containers.CustomRootFS{}
+		
 		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
@@ -2986,10 +2987,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
 		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
 
+
 		rootFS.ACL = &acl
 		rootFS.Quota = &quota
 		rootFS.Replicate = &replicate
 		rootFS.Size = size 
+		// Disk ID for the rootfs is always 0
+		diskID := 0
+		vmID := d.Get(mkVMID).(int)
+		rootFS.Volume = fmt.Sprintf("%s:vm-%d-disk-%d", rootFS.Volume, vmID, diskID)
 
 		if len(mountOptions) > 0 {
 			mountOptionsArray := make([]string, 0, len(mountOptions))
