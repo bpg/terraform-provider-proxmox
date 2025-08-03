@@ -6,5 +6,21 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-# shellcheck disable=SC2046
-TF_ACC=1 env $(xargs < testacc.env) go test -count 1 --tags=acceptance -timeout 360s -run "$1" github.com/bpg/terraform-provider-proxmox/fwprovider/... $2
+BASE_PKG="github.com/bpg/terraform-provider-proxmox"
+
+find_test_package() {
+    test_name="$1"
+    [ -z "$test_name" ] && echo "${BASE_PKG}/fwprovider/..." && return
+    
+    test_file=$(find . -name "*.go" -type f -exec grep -l "func ${test_name}(" {} \; | head -1)
+    [ -z "$test_file" ] && echo "${BASE_PKG}/fwprovider/..." && return
+    
+    package_dir=$(dirname "$test_file")
+    package_path=$(echo "$package_dir" | sed 's|^\./||')
+    echo "${BASE_PKG}/${package_path}"
+}
+
+PACKAGE_PATH=$(find_test_package "$1")
+
+# shellcheck disable=SC2046,SC2086
+TF_ACC=1 env $(xargs < testacc.env) go test -count 1 --tags=acceptance -timeout 360s -run "$1" "$PACKAGE_PATH" $2

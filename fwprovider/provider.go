@@ -30,6 +30,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
+	sdnzone "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/zone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
@@ -527,6 +528,11 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		nodes.NewDownloadFileResource,
 		options.NewClusterOptionsResource,
 		vm.NewResource,
+		sdnzone.NewSimpleResource,
+		sdnzone.NewVLANResource,
+		sdnzone.NewQinQResource,
+		sdnzone.NewVXLANResource,
+		sdnzone.NewEVPNResource,
 	}
 }
 
@@ -549,6 +555,12 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
 		metrics.NewMetricsServerDatasource,
+		sdnzone.NewSimpleDataSource,
+		sdnzone.NewVLANDataSource,
+		sdnzone.NewQinQDataSource,
+		sdnzone.NewVXLANDataSource,
+		sdnzone.NewEVPNDataSource,
+		sdnzone.NewZonesDataSource,
 		vm.NewDataSource,
 	}
 }

@@ -4,6 +4,24 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package acme
 
 import (
@@ -305,9 +323,15 @@ func (r *acmeAccountResource) read(ctx context.Context, data *acmeAccountModel) 
 		return false, diags
 	}
 
+	// Preserve the original contact value if the API doesn't return it
+	originalContact := data.Contact.ValueString()
+
 	var contact string
 	if len(acc.Account.Contact) > 0 {
 		contact = strings.Replace(acc.Account.Contact[0], "mailto:", "", 1)
+	} else if originalContact != "" {
+		// If API doesn't return contact but we had one, preserve it
+		contact = originalContact
 	}
 
 	data.Directory = types.StringValue(acc.Directory)

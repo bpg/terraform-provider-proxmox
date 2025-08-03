@@ -42,7 +42,7 @@ resource "proxmox_virtual_environment_container" "example_template" {
   node_name = data.proxmox_virtual_environment_nodes.example.names[0]
 
   operating_system {
-    template_file_id = proxmox_virtual_environment_download_file.release_20250610_ubuntu_24_noble_lxc_img.id
+    template_file_id = proxmox_virtual_environment_download_file.release_20250701_ubuntu_24_10_lxc_img.id
     type             = "ubuntu"
   }
 
@@ -87,7 +87,7 @@ resource "proxmox_virtual_environment_container" "example" {
   pool_id   = proxmox_virtual_environment_pool.example.id
   # Set the protection flag to prevent the deletion/update operations for the container and its disks.
   # protection = true
-  vm_id      = 2043
+  vm_id = 2043
 }
 
 output "resource_proxmox_virtual_environment_container_example_id" {

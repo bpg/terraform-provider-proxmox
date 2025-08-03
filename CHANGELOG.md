@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.81.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.80.0...v0.81.0) (2025-08-01)
+
+
+### Features
+
+* **firewall:** adds forward type to firewall rules ([#2052](https://github.com/bpg/terraform-provider-proxmox/issues/2052)) ([e185201](https://github.com/bpg/terraform-provider-proxmox/commit/e185201840ec3140505f344b2ec5a3cac6f23ba4))
+* **firewall:** adds forward_policy to cluster firewall ([#2064](https://github.com/bpg/terraform-provider-proxmox/issues/2064)) ([209d10c](https://github.com/bpg/terraform-provider-proxmox/commit/209d10cc0bb137e9ed52ec1975646a565a613863))
+* **sdn:** add support for zone resources and datasources ([#2046](https://github.com/bpg/terraform-provider-proxmox/issues/2046)) ([6b73d82](https://github.com/bpg/terraform-provider-proxmox/commit/6b73d822a5a6d55b7761647ad963be2b88491bbd))
+
+
+### Bug Fixes
+
+* **acme:** fix ACME account management  & add acceptance tests ([#2072](https://github.com/bpg/terraform-provider-proxmox/issues/2072)) ([3f5b795](https://github.com/bpg/terraform-provider-proxmox/commit/3f5b795a840efeec989ea9aa38d70df3a0098800))
+* **example:** update ubuntu LXC image ref ([#2070](https://github.com/bpg/terraform-provider-proxmox/issues/2070)) ([ce66bfd](https://github.com/bpg/terraform-provider-proxmox/commit/ce66bfdc61bd5faf6f95cfd25cb09dc1447567ec))
+* **vm,lxc:** 32bit int overflow in list nodes / containers API calls when running on i386 arch ([#2057](https://github.com/bpg/terraform-provider-proxmox/issues/2057)) ([47ff578](https://github.com/bpg/terraform-provider-proxmox/commit/47ff5787b1e150ab754abfd86e4a43a34b5cde0b))
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.2.2 → v2.3.0) ([#2056](https://github.com/bpg/terraform-provider-proxmox/issues/2056)) ([092edf2](https://github.com/bpg/terraform-provider-proxmox/commit/092edf2d08901c8e579cc6927b14ec5613547a00))
+* **deps:** update image golang (14fd8a5 → ef5b4be) ([#2061](https://github.com/bpg/terraform-provider-proxmox/issues/2061)) ([4da593d](https://github.com/bpg/terraform-provider-proxmox/commit/4da593d727f1141aeb64bc41925b9a6031a3055f))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework (v1.15.0 → v1.15.1) ([#2073](https://github.com/bpg/terraform-provider-proxmox/issues/2073)) ([4be9e93](https://github.com/bpg/terraform-provider-proxmox/commit/4be9e932fab68363d8dddbe15bac90ac82a663e1))
+* **docs:** add ceph squid to `apt_standard_repository` docs ([#2063](https://github.com/bpg/terraform-provider-proxmox/issues/2063)) ([5c33941](https://github.com/bpg/terraform-provider-proxmox/commit/5c3394121ff68efe3928be2ca957076dc4d4f2c8))
+* **example:** apply consistency in example/*.tf node_name declarations ([#2051](https://github.com/bpg/terraform-provider-proxmox/issues/2051)) ([757b191](https://github.com/bpg/terraform-provider-proxmox/commit/757b191376405b5cea41b229cda165ac70b3a490))
+* **project:** switch repo infographic to repobeats ([#2058](https://github.com/bpg/terraform-provider-proxmox/issues/2058)) ([bbd55d2](https://github.com/bpg/terraform-provider-proxmox/commit/bbd55d26184d464248c1e7dd7723ebbd2a028bbc))
+
 ## [0.80.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.79.0...v0.80.0) (2025-07-15)
 
 
