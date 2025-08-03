@@ -1495,6 +1495,22 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
+	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
+	vmID := vmIDUntyped.(int)
+
+	if !hasVMID {
+		vmIDNew, err := config.GetIDGenerator().NextID(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		vmID = vmIDNew
+
+		err = d.Set(mkVMID, vmID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
 	nodeName := d.Get(mkNodeName).(string)
 	container := Container()
 
@@ -1758,8 +1774,11 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
+
+		// rootfs ID is always 0
+		diskID := 0
 		rootFS = &containers.CustomRootFS{
-			Volume:       fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+			Volume:       fmt.Sprintf("%s:%d", getContainerDiskVolume(diskDatastoreID, vmID, diskID) , diskSize),
 			MountOptions: &diskMountOptions,
 		}
 	}
@@ -1877,22 +1896,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	tags := d.Get(mkTags).([]interface{})
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
-	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
-	vmID := vmIDUntyped.(int)
-
-	if !hasVMID {
-		vmIDNew, err := config.GetIDGenerator().NextID(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		vmID = vmIDNew
-
-		err = d.Set(mkVMID, vmID)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
 
 	// Attempt to create the container using the retrieved values.
 	createBody := containers.CreateRequestBody{
@@ -2986,8 +2989,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.FromErr(err)
 		}
 		rootFS := &containers.CustomRootFS{}
-		
+		// Disk ID for the rootfs is always 0
+		diskID := 0
+		vmID := d.Get(mkVMID).(int)
 		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
+		rootFS.Volume = getContainerDiskVolume(rootFS.Volume, vmID, diskID)
+		
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
@@ -3000,10 +3007,6 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		rootFS.Quota = &quota
 		rootFS.Replicate = &replicate
 		rootFS.Size = size 
-		// Disk ID for the rootfs is always 0
-		diskID := 0
-		vmID := d.Get(mkVMID).(int)
-		rootFS.Volume = fmt.Sprintf("%s:vm-%d-disk-%d", rootFS.Volume, vmID, diskID)
 
 		if len(mountOptions) > 0 {
 			mountOptionsArray := make([]string, 0, len(mountOptions))
@@ -3523,4 +3526,8 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
+}
+
+func getContainerDiskVolume(rawVolume string, vmID int, diskID int) string {
+	return fmt.Sprintf("%s:vm-%d-disk-%d", rawVolume, vmID, diskID)
 }
