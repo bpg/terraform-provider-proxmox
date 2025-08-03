@@ -2981,14 +2981,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
-		_ = diskBlock[mkDiskDatastoreID].(string)
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
 		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
 		size := types.DiskSizeFromGigabytes(diskBlock[mkDiskSize].(int64))
 
 		rootFS.ACL = &acl
-		//rootFS.Volume = id // TODO: These aren't the same thing (?)
 		rootFS.Quota = &quota
 		rootFS.Replicate = &replicate
 		rootFS.Size = size 
