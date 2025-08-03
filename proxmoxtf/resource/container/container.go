@@ -2985,13 +2985,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
 		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
-		_ = diskBlock[mkDiskSize].(string)
+		size := types.DiskSizeFromGigabytes(diskBlock[mkDiskSize].(int64))
 
 		rootFS.ACL = &acl
 		//rootFS.Volume = id // TODO: These aren't the same thing (?)
 		rootFS.Quota = &quota
 		rootFS.Replicate = &replicate
-		//rootFS.Size = size // TODO: Size is handled differently, can only grow
+		rootFS.Size = size 
 
 		if len(mountOptions) > 0 {
 			mountOptionsArray := make([]string, 0, len(mountOptions))
@@ -3001,6 +3001,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			}
 			rootFS.MountOptions = &mountOptionsArray
 		}
+
 		updateBody.RootFS = rootFS
 	}
 
