@@ -2984,7 +2984,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
 		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
-		size := types.DiskSizeFromGigabytes(diskBlock[mkDiskSize].(int64))
+		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
 
 		rootFS.ACL = &acl
 		rootFS.Quota = &quota
