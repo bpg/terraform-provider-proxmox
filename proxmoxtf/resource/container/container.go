@@ -338,7 +338,7 @@ func Container() *schema.Resource {
 						map[string]interface{}{
 							mkDiskDatastoreID:  dvDiskDatastoreID,
 							mkDiskSize:         dvDiskSize,
-							mkDiskMountOptions: []string{},
+							mkDiskMountOptions: nil,
 						},
 					}, nil
 				},
@@ -2309,7 +2309,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkDiskDatastoreID] = "local"
 		disk[mkDiskSize] = dvDiskSize
-		disk[mkDiskMountOptions] = []string{}
+		disk[mkDiskMountOptions] = nil
 		disk[mkDiskACL] = dvDiskACL
 		disk[mkDiskReplicate] = dvDiskReplicate
 		disk[mkDiskQuota] = dvDiskQuota
