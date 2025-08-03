@@ -2299,6 +2299,9 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if containerConfig.RootFS != nil {
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
+		disk[mkDiskACL] = containerConfig.RootFS.ACL
+		disk[mkDiskReplicate] = containerConfig.RootFS.Replicate
+		disk[mkDiskQuota] = containerConfig.RootFS.Quota
 		disk[mkDiskDatastoreID] = volumeParts[0]
 		disk[mkDiskSize] = containerConfig.RootFS.Size.InGigabytes()
 		disk[mkDiskMountOptions] = containerConfig.RootFS.MountOptions
@@ -2307,6 +2310,9 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		disk[mkDiskDatastoreID] = "local"
 		disk[mkDiskSize] = dvDiskSize
 		disk[mkDiskMountOptions] = []string{}
+		disk[mkDiskACL] = dvDiskACL
+		disk[mkDiskReplicate] = dvDiskReplicate
+		disk[mkDiskQuota] = dvDiskQuota
 	}
 
 	currentDisk := d.Get(mkDisk).([]interface{})
@@ -2323,7 +2329,9 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	} else if len(currentDisk) > 0 ||
 		disk[mkDiskDatastoreID] != dvDiskDatastoreID ||
-		disk[mkDiskSize] != dvDiskSize ||
+		disk[mkDiskACL] != dvDiskACL ||
+		disk[mkDiskReplicate] != dvDiskReplicate ||
+		disk[mkDiskQuota] != dvDiskQuota ||
 		len(disk[mkDiskMountOptions].([]string)) > 0 {
 		err := d.Set(mkDisk, []interface{}{disk})
 		diags = append(diags, diag.FromErr(err)...)
