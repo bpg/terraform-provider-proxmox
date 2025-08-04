@@ -52,10 +52,10 @@ const (
 	dvCPUUnits                          = 1024
 	dvDescription                       = ""
 	dvDevicePassthroughMode             = "0660"
-	dvDiskACL							= false
+	dvDiskACL                           = false
 	dvDiskDatastoreID                   = "local"
 	dvDiskQuota                         = false
-	dvDiskReplicate                     = true
+	dvDiskReplicate                     = false
 	dvDiskSize                          = 4
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
@@ -110,7 +110,7 @@ const (
 	mkCPUUnits                          = "units"
 	mkDescription                       = "description"
 	mkDisk                              = "disk"
-	mkDiskACL							= "acl"
+	mkDiskACL                           = "acl"
 	mkDiskDatastoreID                   = "datastore_id"
 	mkDiskMountOptions                  = "mount_options"
 	mkDiskQuota                         = "quota"
@@ -1511,6 +1511,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 			return diag.FromErr(err)
 		}
 	}
+
 	nodeName := d.Get(mkNodeName).(string)
 	container := Container()
 
@@ -1762,7 +1763,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	var rootFS *containers.CustomRootFS
 
-	var diskMountOptions = []string{}
+	diskMountOptions := []string{}
 
 	if diskBlock[mkDiskMountOptions] != nil {
 		for _, opt := range diskBlock[mkDiskMountOptions].([]any) {
@@ -1774,11 +1775,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
-
-		// rootfs ID is always 0
-		diskID := 0
 		rootFS = &containers.CustomRootFS{
-			Volume:       fmt.Sprintf("%s:%d", getContainerDiskVolume(diskDatastoreID, vmID, diskID) , diskSize),
+			Volume:       fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
 			MountOptions: &diskMountOptions,
 		}
 	}
@@ -2988,13 +2986,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		if err != nil {
 			return diag.FromErr(err)
 		}
+
 		rootFS := &containers.CustomRootFS{}
 		// Disk ID for the rootfs is always 0
 		diskID := 0
 		vmID := d.Get(mkVMID).(int)
 		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
 		rootFS.Volume = getContainerDiskVolume(rootFS.Volume, vmID, diskID)
-		
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
@@ -3002,11 +3000,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
 		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
 
-
 		rootFS.ACL = &acl
 		rootFS.Quota = &quota
 		rootFS.Replicate = &replicate
-		rootFS.Size = size 
+		rootFS.Size = size
 
 		if len(mountOptions) > 0 {
 			mountOptionsArray := make([]string, 0, len(mountOptions))
@@ -3014,6 +3011,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			for _, option := range mountOptions {
 				mountOptionsArray = append(mountOptionsArray, option.(string))
 			}
+
 			rootFS.MountOptions = &mountOptionsArray
 		}
 

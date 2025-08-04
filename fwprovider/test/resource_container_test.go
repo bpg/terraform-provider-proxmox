@@ -111,6 +111,7 @@ func TestAccResourceContainer(t *testing.T) {
 						"device_passthrough.0.mode": "0660",
 						"initialization.0.dns.#":    "0",
 					}),
+					// TODO: depends on DHCP, which may not work in some environments
 					// ResourceAttributesSet(accTestContainerName, []string{
 					// 	"ipv4.vmbr0",
 					// }),
