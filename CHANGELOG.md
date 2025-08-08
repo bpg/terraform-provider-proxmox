@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.81.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.81.0...v0.81.1) (2025-08-08)
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.3.0 → v2.3.1) ([#2074](https://github.com/bpg/terraform-provider-proxmox/issues/2074)) ([9947a86](https://github.com/bpg/terraform-provider-proxmox/commit/9947a86106c7215f68183956cf0f2cde209a73fa))
+* **deps:** update image golang (1.24.5 → 1.24.6) ([#2085](https://github.com/bpg/terraform-provider-proxmox/issues/2085)) ([ac91fe8](https://github.com/bpg/terraform-provider-proxmox/commit/ac91fe8de01fd61ca1015350801ffdb5451d7aa7))
+* **deps:** update module golang.org/x/crypto (v0.40.0 → v0.41.0) ([#2086](https://github.com/bpg/terraform-provider-proxmox/issues/2086)) ([5018b31](https://github.com/bpg/terraform-provider-proxmox/commit/5018b31d2aa72c66771242c0d5463f10ad20f7d0))
+* **deps:** update module golang.org/x/net (v0.42.0 → v0.43.0) ([#2087](https://github.com/bpg/terraform-provider-proxmox/issues/2087)) ([5151dcc](https://github.com/bpg/terraform-provider-proxmox/commit/5151dcc7b7832a95312efe5773401e3443d26a1a))
+
 ## [0.81.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.80.0...v0.81.0) (2025-08-01)
 
 
