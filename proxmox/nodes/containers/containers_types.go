@@ -546,7 +546,7 @@ func (r *CustomRootFS) EncodeValues(key string, v *url.Values) error {
 
 	if r.MountOptions != nil {
 		if len(*r.MountOptions) > 0 {
-			values = append(values, fmt.Sprintf("mount=%s", strings.Join(*r.MountOptions, ";")))
+			values = append(values, fmt.Sprintf("mountoptions=%s", strings.Join(*r.MountOptions, ";")))
 		}
 	}
 

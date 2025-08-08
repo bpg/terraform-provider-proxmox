@@ -134,6 +134,7 @@ output "ubuntu_container_public_key" {
     - `size` - (Optional) The size of the root filesystem in gigabytes (defaults
         to `4`). When set to 0 a directory or zfs/btrfs subvolume will be created.
         Requires `datastore_id` to be set.
+    - `mount_options` (Optional) List of extra mount options.
 - `initialization` - (Optional) The initialization configuration.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
