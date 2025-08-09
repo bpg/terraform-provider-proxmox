@@ -228,6 +228,20 @@ type GetStatusResponseData struct {
 	VMID             *types.CustomInt `json:"vmid,omitempty"`
 }
 
+// ListResponseBody contains the body from a container list response.
+type ListResponseBody struct {
+	Data []*ListResponseData `json:"data,omitempty"`
+}
+
+// ListResponseData contains the data from an container list response.
+type ListResponseData struct {
+	Name     *string           `json:"name,omitempty"`
+	Tags     *string           `json:"tags,omitempty"`
+	Template *types.CustomBool `json:"template,omitempty"`
+	Status   *string           `json:"status,omitempty"`
+	VMID     int               `json:"vmid,omitempty"`
+}
+
 // GetNetworkInterfaceResponseBody contains the body from a container get network interface response.
 type GetNetworkInterfaceResponseBody struct {
 	Data []GetNetworkInterfacesData `json:"data,omitempty"`
