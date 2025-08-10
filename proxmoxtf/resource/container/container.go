@@ -2310,10 +2310,6 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkDiskDatastoreID] = "local"
 		disk[mkDiskSize] = dvDiskSize
-		disk[mkDiskMountOptions] = nil
-		disk[mkDiskACL] = dvDiskACL
-		disk[mkDiskReplicate] = dvDiskReplicate
-		disk[mkDiskQuota] = dvDiskQuota
 	}
 
 	currentDisk := d.Get(mkDisk).([]interface{})
@@ -3016,6 +3012,8 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		updateBody.RootFS = rootFS
+
+		rebootRequired = true
 	}
 
 	if d.HasChange(mkFeatures) {
