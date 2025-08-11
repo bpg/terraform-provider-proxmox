@@ -8,3 +8,15 @@ variable "virtual_environment_token" {
   description = "The token for the Proxmox Virtual Environment API"
   sensitive   = true
 }
+
+variable "virtual_environment_node_name" {
+  type        = string
+  description = "The node name for the Proxmox Virtual Environment API"
+  default     = "pve"
+}
+
+variable "datastore_id" {
+  type        = string
+  description = "Datastore for VM disks"
+  default     = "local-lvm"
+}

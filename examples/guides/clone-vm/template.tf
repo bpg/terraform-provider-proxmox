@@ -1,6 +1,6 @@
 resource "proxmox_virtual_environment_vm" "ubuntu_template" {
   name      = "ubuntu-template"
-  node_name = "pve"
+  node_name = var.virtual_environment_node_name
 
   template = true
   started  = false
@@ -18,12 +18,12 @@ resource "proxmox_virtual_environment_vm" "ubuntu_template" {
   }
 
   efi_disk {
-    datastore_id = "local"
+    datastore_id = var.datastore_id
     type         = "4m"
   }
 
   disk {
-    datastore_id = "local-lvm"
+    datastore_id = var.datastore_id
     file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     iothread     = true
@@ -50,7 +50,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_template" {
 resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
   content_type = "iso"
   datastore_id = "local"
-  node_name    = "pve"
+  node_name    = var.virtual_environment_node_name
 
   url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
 }

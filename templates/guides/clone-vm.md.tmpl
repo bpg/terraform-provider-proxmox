@@ -3,19 +3,21 @@ layout: page
 page_title: "Clone a VM"
 subcategory: Guides
 description: |-
-    This guide explains how to create a VM template and then clone it to another VM.
+    This guide explains how to create a VM template and clone it to a new VM.
 ---
 
 # Clone a VM
 
 ## Create a VM template
 
-VM templates in Proxmox provide an efficient way to create multiple identical VMs. Templates act as a base image that can be cloned to create new VMs, ensuring consistency and reducing the time needed to provision new instances. When a VM is created as a template, it is read-only and can't be started, but can be cloned multiple times to create new VMs.
+VM templates in Proxmox provide an efficient way to create multiple identical VMs. Templates act as a base image that can be cloned to create new VMs, ensuring consistency and reducing the time needed to provision new instances. When a VM is created as a template, it is read-only and cannot be started, but can be cloned multiple times to create new VMs.
 
-You can create a template directly in Proxmox by setting the `template` attribute to `true` when creating the VM resource:
+You can create a template with Terraform by setting the `template` attribute to `true` when creating the VM resource:
 
 {{ codefile "terraform" "examples/guides/clone-vm/template.tf" }}
 
-Once you have a template, you can clone it to create new VMs. The cloned VMs will inherit all the configuration from the template but can be customized further as needed.
+Once you have a template, you can clone it to create new VMs. The cloned VMs will inherit all configuration from the template but can be customized further as needed.
 
 {{ codefile "terraform" "examples/guides/clone-vm/clone.tf" }}
+
+Full example is available in the [examples/guides/clone-vm](https://github.com/bpg/terraform-provider-proxmox/tree/main/examples/guides/clone-vm) directory.

@@ -3,21 +3,21 @@ layout: page
 page_title: "Clone a VM"
 subcategory: Guides
 description: |-
-    This guide explains how to create a VM template and then clone it to another VM.
+    This guide explains how to create a VM template and clone it to a new VM.
 ---
 
 # Clone a VM
 
 ## Create a VM template
 
-VM templates in Proxmox provide an efficient way to create multiple identical VMs. Templates act as a base image that can be cloned to create new VMs, ensuring consistency and reducing the time needed to provision new instances. When a VM is created as a template, it is read-only and can't be started, but can be cloned multiple times to create new VMs.
+VM templates in Proxmox provide an efficient way to create multiple identical VMs. Templates act as a base image that can be cloned to create new VMs, ensuring consistency and reducing the time needed to provision new instances. When a VM is created as a template, it is read-only and cannot be started, but can be cloned multiple times to create new VMs.
 
-You can create a template directly in Proxmox by setting the `template` attribute to `true` when creating the VM resource:
+You can create a template with Terraform by setting the `template` attribute to `true` when creating the VM resource:
 
 ```terraform
 resource "proxmox_virtual_environment_vm" "ubuntu_template" {
   name      = "ubuntu-template"
-  node_name = "pve"
+  node_name = var.virtual_environment_node_name
 
   template = true
   started  = false
@@ -35,12 +35,12 @@ resource "proxmox_virtual_environment_vm" "ubuntu_template" {
   }
 
   efi_disk {
-    datastore_id = "local"
+    datastore_id = var.datastore_id
     type         = "4m"
   }
 
   disk {
-    datastore_id = "local-lvm"
+    datastore_id = var.datastore_id
     file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
     interface    = "virtio0"
     iothread     = true
@@ -67,18 +67,18 @@ resource "proxmox_virtual_environment_vm" "ubuntu_template" {
 resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
   content_type = "iso"
   datastore_id = "local"
-  node_name    = "pve"
+  node_name    = var.virtual_environment_node_name
 
   url = "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
 }
 ```
 
-Once you have a template, you can clone it to create new VMs. The cloned VMs will inherit all the configuration from the template but can be customized further as needed.
+Once you have a template, you can clone it to create new VMs. The cloned VMs will inherit all configuration from the template but can be customized further as needed.
 
 ```terraform
 resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
   name      = "ubuntu-clone"
-  node_name = "pve"
+  node_name = var.virtual_environment_node_name
 
   clone {
     vm_id = proxmox_virtual_environment_vm.ubuntu_template.id
@@ -113,3 +113,5 @@ output "vm_ipv4_address" {
   value = proxmox_virtual_environment_vm.ubuntu_clone.ipv4_addresses[1][0]
 }
 ```
+
+Full example is available in the [examples/guides/clone-vm](https://github.com/bpg/terraform-provider-proxmox/tree/main/examples/guides/clone-vm) directory.
