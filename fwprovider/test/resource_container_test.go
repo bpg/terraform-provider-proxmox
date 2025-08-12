@@ -48,7 +48,7 @@ func TestAccResourceContainer(t *testing.T) {
 		FileName: ptr.Ptr(imageFileName),
 		Node:     ptr.Ptr(te.NodeName),
 		Storage:  ptr.Ptr(te.DatastoreID),
-		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-23.04-standard_23.04-1_amd64.tar.zst", te.ContainerImagesServer)),
+		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.10-standard_24.10-1_amd64.tar.zst", te.ContainerImagesServer)),
 	})
 	require.NoError(t, err)
 
@@ -110,9 +110,10 @@ func TestAccResourceContainer(t *testing.T) {
 						"device_passthrough.0.mode": "0660",
 						"initialization.0.dns.#":    "0",
 					}),
-					ResourceAttributesSet(accTestContainerName, []string{
-						"ipv4.vmbr0",
-					}),
+					// TODO: depends on DHCP, which may not work in some environments
+					// ResourceAttributesSet(accTestContainerName, []string{
+					// 	"ipv4.vmbr0",
+					// }),
 					func(*terraform.State) error {
 						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 						defer cancel()
@@ -142,6 +143,7 @@ func TestAccResourceContainer(t *testing.T) {
 					disk {
 						datastore_id = "local-lvm"
 						size         = 4
+						mount_options = ["discard"]
 					}
 					mount_point {
 						volume = "local-lvm"
@@ -178,6 +180,56 @@ func TestAccResourceContainer(t *testing.T) {
 						"description":            "my\ndescription\nvalue\n",
 						"device_passthrough.#":   "1",
 						"initialization.0.dns.#": "0",
+						"disk.0.mount_options.#": "1",
+					}),
+				),
+			},
+			{
+				// remove disk options
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = 10
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+						mount_options = []
+					}
+					mount_point {
+						volume = "local-lvm"
+						size   = "4G"
+						path   = "mnt/local"
+					}
+					device_passthrough {
+						path = "/dev/zero"
+					}
+					description = <<-EOT
+						my
+						description
+						value
+					EOT
+					initialization {
+						hostname = "test"
+						ip_config {
+							ipv4 {
+								address = "172.16.10.10/15"
+								gateway = "172.16.0.1"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.0.mount_options.#": "0",
 					}),
 				),
 			},

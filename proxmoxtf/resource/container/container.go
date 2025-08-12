@@ -52,7 +52,10 @@ const (
 	dvCPUUnits                          = 1024
 	dvDescription                       = ""
 	dvDevicePassthroughMode             = "0660"
+	dvDiskACL                           = false
 	dvDiskDatastoreID                   = "local"
+	dvDiskQuota                         = false
+	dvDiskReplicate                     = false
 	dvDiskSize                          = 4
 	dvFeaturesNesting                   = false
 	dvFeaturesKeyControl                = false
@@ -107,7 +110,11 @@ const (
 	mkCPUUnits                          = "units"
 	mkDescription                       = "description"
 	mkDisk                              = "disk"
+	mkDiskACL                           = "acl"
 	mkDiskDatastoreID                   = "datastore_id"
+	mkDiskMountOptions                  = "mount_options"
+	mkDiskQuota                         = "quota"
+	mkDiskReplicate                     = "replicate"
 	mkDiskSize                          = "size"
 	mkFeatures                          = "features"
 	mkFeaturesNesting                   = "nesting"
@@ -329,19 +336,38 @@ func Container() *schema.Resource {
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
-							mkDiskDatastoreID: dvDiskDatastoreID,
-							mkDiskSize:        dvDiskSize,
+							mkDiskDatastoreID:  dvDiskDatastoreID,
+							mkDiskSize:         dvDiskSize,
+							mkDiskMountOptions: nil,
 						},
 					}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						mkDiskACL: {
+							Type:        schema.TypeBool,
+							Description: "Explicitly enable or disable ACL support",
+							Optional:    true,
+							Default:     dvDiskACL,
+						},
 						mkDiskDatastoreID: {
 							Type:        schema.TypeString,
 							Description: "The datastore id",
 							Optional:    true,
 							ForceNew:    true,
 							Default:     dvDiskDatastoreID,
+						},
+						mkDiskQuota: {
+							Type:        schema.TypeBool,
+							Description: "Enable user quotas for the container rootfs",
+							Optional:    true,
+							Default:     dvDiskQuota,
+						},
+						mkDiskReplicate: {
+							Type:        schema.TypeBool,
+							Description: "Will include this volume to a storage replica job",
+							Optional:    true,
+							Default:     dvDiskReplicate,
 						},
 						mkDiskSize: {
 							Type:             schema.TypeInt,
@@ -350,6 +376,17 @@ func Container() *schema.Resource {
 							ForceNew:         true,
 							Default:          dvDiskSize,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
+						},
+						mkDiskMountOptions: {
+							Type:        schema.TypeList,
+							Description: "Extra mount options",
+							Optional:    true,
+							Elem: &schema.Schema{
+								Type:         schema.TypeString,
+								ValidateFunc: validation.StringIsNotEmpty,
+							},
+							DiffSuppressFunc:      structure.SuppressIfListsAreEqualIgnoringOrder,
+							DiffSuppressOnRefresh: true,
 						},
 					},
 				},
@@ -1458,6 +1495,23 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		return diag.FromErr(err)
 	}
 
+	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
+	vmID := vmIDUntyped.(int)
+
+	if !hasVMID {
+		vmIDNew, err := config.GetIDGenerator().NextID(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		vmID = vmIDNew
+
+		err = d.Set(mkVMID, vmID)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+	}
+
 	nodeName := d.Get(mkNodeName).(string)
 	container := Container()
 
@@ -1709,12 +1763,21 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	var rootFS *containers.CustomRootFS
 
+	diskMountOptions := []string{}
+
+	if diskBlock[mkDiskMountOptions] != nil {
+		for _, opt := range diskBlock[mkDiskMountOptions].([]any) {
+			diskMountOptions = append(diskMountOptions, opt.(string))
+		}
+	}
+
 	diskSize := diskBlock[mkDiskSize].(int)
 	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
-			Volume: fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+			Volume:       fmt.Sprintf("%s:%d", diskDatastoreID, diskSize),
+			MountOptions: &diskMountOptions,
 		}
 	}
 
@@ -1831,22 +1894,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	tags := d.Get(mkTags).([]interface{})
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
-	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
-	vmID := vmIDUntyped.(int)
-
-	if !hasVMID {
-		vmIDNew, err := config.GetIDGenerator().NextID(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		vmID = vmIDNew
-
-		err = d.Set(mkVMID, vmID)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-	}
 
 	// Attempt to create the container using the retrieved values.
 	createBody := containers.CreateRequestBody{
@@ -2253,12 +2300,22 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	if containerConfig.RootFS != nil {
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
+		disk[mkDiskACL] = containerConfig.RootFS.ACL
+		disk[mkDiskReplicate] = containerConfig.RootFS.Replicate
+		disk[mkDiskQuota] = containerConfig.RootFS.Quota
 		disk[mkDiskDatastoreID] = volumeParts[0]
+
 		disk[mkDiskSize] = containerConfig.RootFS.Size.InGigabytes()
+		if containerConfig.RootFS.MountOptions != nil {
+			disk[mkDiskMountOptions] = *containerConfig.RootFS.MountOptions
+		} else {
+			disk[mkDiskMountOptions] = []string{}
+		}
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkDiskDatastoreID] = "local"
 		disk[mkDiskSize] = dvDiskSize
+		disk[mkDiskMountOptions] = []string{}
 	}
 
 	currentDisk := d.Get(mkDisk).([]interface{})
@@ -2275,7 +2332,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	} else if len(currentDisk) > 0 ||
 		disk[mkDiskDatastoreID] != dvDiskDatastoreID ||
-		disk[mkDiskSize] != dvDiskSize {
+		disk[mkDiskACL] != dvDiskACL ||
+		disk[mkDiskReplicate] != dvDiskReplicate ||
+		disk[mkDiskQuota] != dvDiskQuota ||
+		len(disk[mkDiskMountOptions].([]string)) > 0 {
 		err := d.Set(mkDisk, []interface{}{disk})
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -2917,6 +2977,50 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		updateBody.CPUUnits = &cpuUnits
 	}
 
+	if d.HasChange(mkDisk) {
+		diskBlock, err := structure.GetSchemaBlock(
+			container,
+			d,
+			[]string{mkDisk},
+			0,
+			true,
+		)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		rootFS := &containers.CustomRootFS{}
+		// Disk ID for the rootfs is always 0
+		diskID := 0
+		vmID := d.Get(mkVMID).(int)
+		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
+		rootFS.Volume = getContainerDiskVolume(rootFS.Volume, vmID, diskID)
+
+		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
+		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
+		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
+		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
+		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
+
+		rootFS.ACL = &acl
+		rootFS.Quota = &quota
+		rootFS.Replicate = &replicate
+		rootFS.Size = size
+
+		mountOptionsStrings := make([]string, 0, len(mountOptions))
+
+		for _, option := range mountOptions {
+			mountOptionsStrings = append(mountOptionsStrings, option.(string))
+		}
+
+		// Always set, including empty, to allow clearing mount options
+		rootFS.MountOptions = &mountOptionsStrings
+
+		updateBody.RootFS = rootFS
+
+		rebootRequired = true
+	}
+
 	if d.HasChange(mkFeatures) {
 		features, err := containerGetFeatures(container, d)
 		if err != nil {
@@ -3423,4 +3527,8 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
+}
+
+func getContainerDiskVolume(rawVolume string, vmID int, diskID int) string {
+	return fmt.Sprintf("%s:vm-%d-disk-%d", rawVolume, vmID, diskID)
 }
