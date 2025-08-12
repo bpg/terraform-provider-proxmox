@@ -195,6 +195,7 @@ func TestAccResourceContainer(t *testing.T) {
 					disk {
 						datastore_id = "local-lvm"
 						size         = 4
+						mount_options = []
 					}
 					mount_point {
 						volume = "local-lvm"

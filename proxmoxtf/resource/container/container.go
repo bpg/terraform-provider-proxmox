@@ -2305,11 +2305,16 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		disk[mkDiskQuota] = containerConfig.RootFS.Quota
 		disk[mkDiskDatastoreID] = volumeParts[0]
 		disk[mkDiskSize] = containerConfig.RootFS.Size.InGigabytes()
-		disk[mkDiskMountOptions] = containerConfig.RootFS.MountOptions
+		if containerConfig.RootFS.MountOptions != nil {
+			disk[mkDiskMountOptions] = *containerConfig.RootFS.MountOptions
+		} else {
+			disk[mkDiskMountOptions] = []string{}
+		}
 	} else {
 		// Default value of "storage" is "local" according to the API documentation.
 		disk[mkDiskDatastoreID] = "local"
 		disk[mkDiskSize] = dvDiskSize
+		disk[mkDiskMountOptions] = []string{}
 	}
 
 	currentDisk := d.Get(mkDisk).([]interface{})
@@ -3001,15 +3006,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		rootFS.Replicate = &replicate
 		rootFS.Size = size
 
-		if len(mountOptions) > 0 {
-			mountOptionsArray := make([]string, 0, len(mountOptions))
+		mountOptionsStrings := make([]string, 0, len(mountOptions))
 
-			for _, option := range mountOptions {
-				mountOptionsArray = append(mountOptionsArray, option.(string))
-			}
-
-			rootFS.MountOptions = &mountOptionsArray
+		for _, option := range mountOptions {
+			mountOptionsStrings = append(mountOptionsStrings, option.(string))
 		}
+
+		// Always set, including empty, to allow clearing mount options
+		rootFS.MountOptions = &mountOptionsStrings
 
 		updateBody.RootFS = rootFS
 
