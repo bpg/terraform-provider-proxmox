@@ -205,6 +205,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/twentybit"><img src="https://avatars.githubusercontent.com/u/60849886?v=4?s=100" width="100px;" alt="Ryan W"/><br /><sub><b>Ryan W</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=twentybit" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/kam193"><img src="https://avatars.githubusercontent.com/u/8472271?v=4?s=100" width="100px;" alt="Kamil Mańkowski"/><br /><sub><b>Kamil Mańkowski</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=kam193" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>

@@ -560,7 +560,7 @@ func Container() *schema.Resource {
 									},
 								},
 							},
-							MaxItems: 8,
+							MaxItems: maxNetworkInterfaces,
 							MinItems: 0,
 						},
 						mkInitializationUserAccount: {
