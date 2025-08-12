@@ -2304,6 +2304,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		disk[mkDiskReplicate] = containerConfig.RootFS.Replicate
 		disk[mkDiskQuota] = containerConfig.RootFS.Quota
 		disk[mkDiskDatastoreID] = volumeParts[0]
+
 		disk[mkDiskSize] = containerConfig.RootFS.Size.InGigabytes()
 		if containerConfig.RootFS.MountOptions != nil {
 			disk[mkDiskMountOptions] = *containerConfig.RootFS.MountOptions
