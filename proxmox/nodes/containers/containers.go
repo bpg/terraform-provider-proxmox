@@ -118,6 +118,22 @@ func (c *Client) GetContainerNetworkInterfaces(ctx context.Context) ([]GetNetwor
 	return resBody.Data, nil
 }
 
+// ListContainers retrieves a list of containers.
+func (c *Client) ListContainers(ctx context.Context) ([]*ListResponseData, error) {
+	resBody := &ListResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodGet, c.basePath(), nil, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Containers: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
+}
+
 // WaitForContainerNetworkInterfaces waits for a container to publish its network interfaces.
 func (c *Client) WaitForContainerNetworkInterfaces(
 	ctx context.Context,

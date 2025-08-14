@@ -20,34 +20,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	proxmoxapi "github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf"
 )
 
 const (
-	mkDataSourceVirtualEnvironmentVMs = "vms"
-	mkDataSourceFilter                = "filter"
-	mkDataSourceFilterName            = "name"
-	mkDataSourceFilterValues          = "values"
-	mkDataSourceFilterRegex           = "regex"
+	mkDataSourceVirtualEnvironmentContainers = "containers"
 )
 
-// VMs returns a resource for the Proxmox VMs.
+// Containers returns a resource for the Proxmox Containers.
 //
 //nolint:dupl // TODO: refactor to avoid duplication
-func VMs() *schema.Resource {
+func Containers() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			mkDataSourceVirtualEnvironmentVMNodeName: {
+			mkDataSourceVirtualEnvironmentContainerNodeName: {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Description: "The node name. All cluster nodes will be queried in case this is omitted",
 			},
-			mkDataSourceVirtualEnvironmentVMTags: {
+			mkDataSourceVirtualEnvironmentContainerTags: {
 				Type:        schema.TypeList,
-				Description: "Tags of the VM to match",
+				Description: "Tags of the Container to match",
 				Optional:    true,
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
@@ -77,21 +72,21 @@ func VMs() *schema.Resource {
 					},
 				},
 			},
-			mkDataSourceVirtualEnvironmentVMs: {
+			mkDataSourceVirtualEnvironmentContainers: {
 				Type:        schema.TypeList,
-				Description: "VMs",
+				Description: "Containers",
 				Computed:    true,
 				Elem: &schema.Resource{
-					Schema: VM().Schema,
+					Schema: Container().Schema,
 				},
 			},
 		},
-		ReadContext: vmsRead,
+		ReadContext: containersRead,
 	}
 }
 
-// vmRead reads the VMs.
-func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+// containersRead reads the Containers.
+func containersRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -108,7 +103,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 
 	var filterTags []string
 
-	tagsData := d.Get(mkDataSourceVirtualEnvironmentVMTags).([]interface{})
+	tagsData := d.Get(mkDataSourceVirtualEnvironmentContainerTags).([]interface{})
 	for _, tagData := range tagsData {
 		tag := strings.TrimSpace(tagData.(string))
 		if len(tag) > 0 {
@@ -120,16 +115,16 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 
 	filters := d.Get(mkDataSourceFilter).([]interface{})
 
-	var vms []interface{}
+	var containers []interface{}
 
 	for _, nodeName := range nodeNames {
-		listData, e := api.Node(nodeName).VM(0).ListVMs(ctx)
+		listData, e := api.Node(nodeName).Container(0).ListContainers(ctx)
 		if e != nil {
 			var httpError *proxmoxapi.HTTPError
 			if errors.As(e, &httpError) && httpError.Code == 595 {
 				diags = append(diags, diag.Diagnostic{
 					Severity: diag.Warning,
-					Summary:  fmt.Sprintf("node %q is not available - VM list may be incomplete", nodeName),
+					Summary:  fmt.Sprintf("node %q is not available - Container list may be incomplete", nodeName),
 				})
 
 				continue
@@ -143,22 +138,22 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 		})
 
 		for _, data := range listData {
-			vm := map[string]interface{}{
-				mkDataSourceVirtualEnvironmentVMNodeName: nodeName,
-				mkDataSourceVirtualEnvironmentVMVMID:     data.VMID,
+			container := map[string]interface{}{
+				mkDataSourceVirtualEnvironmentContainerNodeName: nodeName,
+				mkDataSourceVirtualEnvironmentContainerVMID:     data.VMID,
 			}
 
 			if data.Name != nil {
-				vm[mkDataSourceVirtualEnvironmentVMName] = *data.Name
+				container[mkDataSourceVirtualEnvironmentContainerName] = *data.Name
 			} else {
-				vm[mkDataSourceVirtualEnvironmentVMName] = ""
+				container[mkDataSourceVirtualEnvironmentContainerName] = ""
 			}
 
 			var tags []string
 			if data.Tags != nil && *data.Tags != "" {
 				tags = strings.Split(*data.Tags, ";")
 				sort.Strings(tags)
-				vm[mkDataSourceVirtualEnvironmentVMTags] = tags
+				container[mkDataSourceVirtualEnvironmentContainerTags] = tags
 			}
 
 			if len(filterTags) > 0 {
@@ -177,15 +172,15 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 			}
 
 			if data.Template != (*types.CustomBool)(nil) && *data.Template {
-				vm[mkDataSourceVirtualEnvironmentVMTemplate] = true
+				container[mkDataSourceVirtualEnvironmentContainerTemplate] = true
 			} else {
-				vm[mkDataSourceVirtualEnvironmentVMTemplate] = false
+				container[mkDataSourceVirtualEnvironmentContainerTemplate] = false
 			}
 
-			vm[mkDataSourceVirtualEnvironmentVMStatus] = *data.Status
+			container[mkDataSourceVirtualEnvironmentContainerStatus] = *data.Status
 
 			if len(filters) > 0 {
-				allFiltersMatched, err := checkVMMatchFilters(vm, filters)
+				allFiltersMatched, err := checkContainerMatchFilters(container, filters)
 				diags = append(diags, diag.FromErr(err)...)
 
 				if !allFiltersMatched {
@@ -193,11 +188,11 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 				}
 			}
 
-			vms = append(vms, vm)
+			containers = append(containers, container)
 		}
 	}
 
-	err = d.Set(mkDataSourceVirtualEnvironmentVMs, vms)
+	err = d.Set(mkDataSourceVirtualEnvironmentContainers, containers)
 	diags = append(diags, diag.FromErr(err)...)
 
 	d.SetId(uuid.New().String())
@@ -205,47 +200,25 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	return diags
 }
 
-func getNodeNames(ctx context.Context, d *schema.ResourceData, api proxmox.Client) ([]string, error) {
-	var nodeNames []string
-
-	nodeName := d.Get(mkDataSourceVirtualEnvironmentVMNodeName).(string)
-	if nodeName != "" {
-		nodeNames = append(nodeNames, nodeName)
-	} else {
-		nodes, err := api.Node(nodeName).ListNodes(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("error listing nodes: %w", err)
-		}
-
-		for _, node := range nodes {
-			nodeNames = append(nodeNames, node.Name)
-		}
-	}
-
-	sort.Strings(nodeNames)
-
-	return nodeNames, nil
-}
-
 //nolint:dupl // TODO: refactor to avoid duplication
-func checkVMMatchFilters(vm map[string]interface{}, filters []interface{}) (bool, error) {
+func checkContainerMatchFilters(container map[string]interface{}, filters []interface{}) (bool, error) {
 	for _, v := range filters {
 		filter := v.(map[string]interface{})
 		filterName := filter["name"]
 		filterValues := filter["values"].([]interface{})
 		filterRegex := filter["regex"].(bool)
 
-		var vmValue string
+		var containerValue string
 
 		switch filterName {
 		case "template":
-			vmValue = strconv.FormatBool(vm[mkDataSourceVirtualEnvironmentVMTemplate].(bool))
+			containerValue = strconv.FormatBool(container[mkDataSourceVirtualEnvironmentContainerTemplate].(bool))
 		case "status":
-			vmValue = vm[mkDataSourceVirtualEnvironmentVMStatus].(string)
+			containerValue = container[mkDataSourceVirtualEnvironmentContainerStatus].(string)
 		case "name":
-			vmValue = vm[mkDataSourceVirtualEnvironmentVMName].(string)
+			containerValue = container[mkDataSourceVirtualEnvironmentContainerName].(string)
 		case "node_name":
-			vmValue = vm[mkDataSourceVirtualEnvironmentVMNodeName].(string)
+			containerValue = container[mkDataSourceVirtualEnvironmentContainerNodeName].(string)
 		default:
 			return false, fmt.Errorf(
 				"unknown filter name '%s', should be one of [name, template, status, node_name]",
@@ -262,11 +235,11 @@ func checkVMMatchFilters(vm map[string]interface{}, filters []interface{}) (bool
 					return false, fmt.Errorf("error interpreting filter '%s' value '%s' as regex: %w", filterName, filterValue, err)
 				}
 
-				if r.MatchString(vmValue) {
+				if r.MatchString(containerValue) {
 					atLeastOneValueMatched = true
 					break
 				}
-			} else if filterValue == vmValue {
+			} else if filterValue == containerValue {
 				atLeastOneValueMatched = true
 				break
 			}
