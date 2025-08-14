@@ -560,7 +560,7 @@ func (r *CustomRootFS) EncodeValues(key string, v *url.Values) error {
 
 	if r.MountOptions != nil {
 		if len(*r.MountOptions) > 0 {
-			values = append(values, fmt.Sprintf("mount=%s", strings.Join(*r.MountOptions, ";")))
+			values = append(values, fmt.Sprintf("mountoptions=%s", strings.Join(*r.MountOptions, ";")))
 		}
 	}
 
@@ -889,6 +889,8 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 			r.Volume = v[0]
 		} else if len(v) == 2 {
 			switch v[0] {
+			case "volume":
+				r.Volume = v[1]
 			case "acl":
 				bv := types.CustomBool(v[1] == "1")
 				r.ACL = &bv
@@ -916,7 +918,7 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 			case "size":
 				r.Size = new(types.DiskSize)
 
-				err := r.Size.UnmarshalJSON([]byte(v[1]))
+				err = r.Size.UnmarshalJSON([]byte(v[1]))
 				if err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)
 				}
