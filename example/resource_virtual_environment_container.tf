@@ -73,6 +73,11 @@ resource "proxmox_virtual_environment_container" "example" {
     vm_id = proxmox_virtual_environment_container.example_template.id
   }
 
+  tags = [
+    "container",
+  ]
+
+
   initialization {
     hostname = "terraform-provider-proxmox-example-lxc"
   }

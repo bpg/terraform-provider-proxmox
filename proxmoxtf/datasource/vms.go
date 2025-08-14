@@ -35,6 +35,8 @@ const (
 )
 
 // VMs returns a resource for the Proxmox VMs.
+//
+//nolint:dupl // TODO: refactor to avoid duplication
 func VMs() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -225,6 +227,7 @@ func getNodeNames(ctx context.Context, d *schema.ResourceData, api proxmox.Clien
 	return nodeNames, nil
 }
 
+//nolint:dupl // TODO: refactor to avoid duplication
 func checkVMMatchFilters(vm map[string]interface{}, filters []interface{}) (bool, error) {
 	for _, v := range filters {
 		filter := v.(map[string]interface{})

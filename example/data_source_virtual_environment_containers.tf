@@ -1,6 +1,6 @@
 data "proxmox_virtual_environment_containers" "example" {
   depends_on = [proxmox_virtual_environment_container.example]
-  tags       = ["ubuntu"]
+  tags       = ["example"]
 
   lifecycle {
     postcondition {
@@ -12,7 +12,7 @@ data "proxmox_virtual_environment_containers" "example" {
 
 data "proxmox_virtual_environment_containers" "template_example" {
   depends_on = [proxmox_virtual_environment_container.example]
-  tags       = ["ubuntu"]
+  tags       = ["example"]
 
   filter {
     name   = "template"
@@ -22,12 +22,6 @@ data "proxmox_virtual_environment_containers" "template_example" {
   filter {
     name   = "status"
     values = ["running"]
-  }
-
-  filter {
-    name   = "name"
-    regex  = true
-    values = [".*ubuntu.*"]
   }
 }
 

@@ -30,6 +30,8 @@ const (
 )
 
 // Containers returns a resource for the Proxmox Containers.
+//
+//nolint:dupl // TODO: refactor to avoid duplication
 func Containers() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -198,6 +200,7 @@ func containersRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	return diags
 }
 
+//nolint:dupl // TODO: refactor to avoid duplication
 func checkContainerMatchFilters(container map[string]interface{}, filters []interface{}) (bool, error) {
 	for _, v := range filters {
 		filter := v.(map[string]interface{})
