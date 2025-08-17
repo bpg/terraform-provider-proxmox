@@ -10,45 +10,92 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
+	"sort"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
-// GetDatastore retrieves information about a datastore.
-/*
-Using undocumented API endpoints is not recommended, but sometimes it's the only way to get things done.
-$ pvesh get /storage/local
-┌─────────┬───────────────────────────────────────────┐
-│ key     │ value                                     │
-╞═════════╪═══════════════════════════════════════════╡
-│ content │ images,vztmpl,iso,backup,snippets,rootdir │
-├─────────┼───────────────────────────────────────────┤
-│ digest  │ 5b65ede80f34631d6039e6922845cfa4abc956be  │
-├─────────┼───────────────────────────────────────────┤
-│ path    │ /var/lib/vz                               │
-├─────────┼───────────────────────────────────────────┤
-│ shared  │ 0                                         │
-├─────────┼───────────────────────────────────────────┤
-│ storage │ local                                     │
-├─────────┼───────────────────────────────────────────┤
-│ type    │ dir                                       │
-└─────────┴───────────────────────────────────────────┘.
-*/
-func (c *Client) GetDatastore(
+// ListDatastores retrieves a list of the cluster.
+func (c *Client) ListDatastores(
 	ctx context.Context,
-	datastoreID string,
-) (*DatastoreGetResponseData, error) {
-	resBody := &DatastoreGetResponseBody{}
+	d *DatastoreListRequestBody,
+) ([]*DatastoreListResponseData, error) {
+	resBody := &DatastoreListResponseBody{}
 
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("storage/%s", url.PathEscape(datastoreID)),
-		nil,
+		c.basePath(),
+		d,
 		resBody,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving datastore %s: %w", datastoreID, err)
+		return nil, fmt.Errorf("error retrieving datastores: %w", err)
 	}
 
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	sort.Slice(resBody.Data, func(i, j int) bool {
+		return resBody.Data[i].ID < resBody.Data[j].ID
+	})
+
 	return resBody.Data, nil
+}
+
+func (c *Client) CreateDatastore(
+	ctx context.Context,
+	d interface{},
+) error {
+	err := c.DoRequest(
+		ctx,
+		http.MethodPost,
+		c.basePath(),
+		d,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error creating datastore: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) UpdateDatastore(
+	ctx context.Context,
+	d interface{},
+) error {
+
+	err := c.DoRequest(
+		ctx,
+		http.MethodPost,
+		c.ExpandPath(d.(DataStoreBase).Storage),
+		d,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error updating datastore: %w", err)
+	}
+
+	return nil
+}
+
+func (c *Client) DeleteDatastore(
+	ctx context.Context,
+	d interface{},
+) error {
+
+	err := c.DoRequest(
+		ctx,
+		http.MethodDelete,
+		c.ExpandPath(d.(DataStoreBase).Storage),
+		nil,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("error deleting datastore: %w", err)
+	}
+
+	return nil
 }
