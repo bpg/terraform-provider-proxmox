@@ -560,8 +560,11 @@ func Read(
 				}
 			}
 
-			diskList = utils.OrderedListFromMapByKeyValues(diskMap,
-				slices.AppendSeq(make([]string, 0, len(currentDiskMap)), maps.Keys(currentDiskMap)))
+			// Sort keys to ensure deterministic ordering
+			currentKeys := slices.Collect(maps.Keys(currentDiskMap))
+			slices.SortFunc(currentKeys, utils.CompareWithPrefix)
+
+			diskList = utils.OrderedListFromMapByKeyValues(diskMap, currentKeys)
 		} else {
 			diskList = utils.OrderedListFromMap(diskMap)
 		}
