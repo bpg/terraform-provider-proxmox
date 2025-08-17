@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -560,8 +559,8 @@ func Read(
 				}
 			}
 
-			diskList = utils.OrderedListFromMapByKeyValues(diskMap,
-				slices.AppendSeq(make([]string, 0, len(currentDiskMap)), maps.Keys(currentDiskMap)))
+			disks := utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface)
+			diskList = utils.OrderedListFromMapByKeyValues(diskMap, disks)
 		} else {
 			diskList = utils.OrderedListFromMap(diskMap)
 		}

@@ -26,7 +26,7 @@ func OrderedListFromMap(inputMap map[string]interface{}) []interface{} {
 		i++
 	}
 
-	slices.SortFunc(keyList, compareWithPrefix)
+	slices.SortFunc(keyList, CompareWithPrefix)
 
 	return OrderedListFromMapByKeyValues(inputMap, keyList)
 }
@@ -36,7 +36,7 @@ func OrderedListFromMap(inputMap map[string]interface{}) []interface{} {
 // - If numbers are equal, falls back to string comparison (preserving digit formatting).
 // - If numeric parsing fails, falls back to string comparison.
 // - If prefixes differ, compares the whole values as strings.
-func compareWithPrefix(a, b string) int {
+func CompareWithPrefix(a, b string) int {
 	prefix := commonPrefix(a, b)
 
 	if prefix != "" {

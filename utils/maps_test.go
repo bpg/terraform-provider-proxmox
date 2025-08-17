@@ -114,7 +114,7 @@ func TestCompareWithPrefix(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			assert.Equalf(t, tt.want, compareWithPrefix(tt.args.a, tt.args.b), "compareWithPrefix(%v, %v)", tt.args.a, tt.args.b)
+			assert.Equalf(t, tt.want, CompareWithPrefix(tt.args.a, tt.args.b), "CompareWithPrefix(%v, %v)", tt.args.a, tt.args.b)
 		})
 	}
 }

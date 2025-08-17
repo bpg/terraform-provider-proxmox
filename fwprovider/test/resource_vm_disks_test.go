@@ -246,6 +246,202 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"disk ordering consistency", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_ordering" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk-ordering"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio2"
+						size         = 8
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 15
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "sata0"
+						size         = 12
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 10
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 20
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi3"
+						size         = 5
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio1"
+						size         = 18
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 25
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_ordering", map[string]string{
+					"disk.0.interface": "virtio2",
+					"disk.0.size":      "8",
+					"disk.1.interface": "scsi1",
+					"disk.1.size":      "15",
+					"disk.2.interface": "sata0",
+					"disk.2.size":      "12",
+					"disk.3.interface": "scsi0",
+					"disk.3.size":      "10",
+					"disk.4.interface": "virtio0",
+					"disk.4.size":      "20",
+					"disk.5.interface": "scsi3",
+					"disk.5.size":      "5",
+					"disk.6.interface": "virtio1",
+					"disk.6.size":      "18",
+					"disk.7.interface": "scsi2",
+					"disk.7.size":      "25",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_ordering" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk-ordering"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio2"
+						size         = 8
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 15
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "sata0"
+						size         = 12
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 10
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 20
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi3"
+						size         = 5
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio1"
+						size         = 18
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 25
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_ordering", map[string]string{
+					"disk.0.interface": "virtio2",
+					"disk.0.size":      "8",
+					"disk.1.interface": "scsi1",
+					"disk.1.size":      "15",
+					"disk.2.interface": "sata0",
+					"disk.2.size":      "12",
+					"disk.3.interface": "scsi0",
+					"disk.3.size":      "10",
+					"disk.4.interface": "virtio0",
+					"disk.4.size":      "20",
+					"disk.5.interface": "scsi3",
+					"disk.5.size":      "5",
+					"disk.6.interface": "virtio1",
+					"disk.6.size":      "18",
+					"disk.7.interface": "scsi2",
+					"disk.7.size":      "25",
+				}),
+			},
+			{
+				// Third apply to ensure consistency across multiple applies
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_ordering" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk-ordering"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio2"
+						size         = 8
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 15
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "sata0"
+						size         = 12
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 10
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 20
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi3"
+						size         = 5
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio1"
+						size         = 18
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 25
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		}},
 		{"adding disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
