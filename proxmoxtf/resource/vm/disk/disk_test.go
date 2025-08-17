@@ -76,12 +76,9 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 		ctx := context.Background()
 		vmID := 100 // Test VM ID
 
-		var client proxmox.Client = nil // We avoid API calls by setting Format
+		var client proxmox.Client = nil
 
-		nodeName := "test-node"
-		isClone := false
-
-		diags := Read(ctx, resourceData, diskDeviceObjects, vmID, client, nodeName, isClone)
+		diags := Read(ctx, resourceData, diskDeviceObjects, vmID, client, "test-node", false)
 		require.Empty(t, diags, "Read should not return any diagnostics")
 
 		// Get the resulting disk list
@@ -167,10 +164,7 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 
 		var client proxmox.Client = nil
 
-		nodeName := "test-node"
-		isClone := false
-
-		diags := Read(ctx, resourceData, diskDeviceObjects, vmID, client, nodeName, isClone)
+		diags := Read(ctx, resourceData, diskDeviceObjects, vmID, client, "test-node", false)
 		require.Empty(t, diags)
 
 		diskList := resourceData.Get(MkDisk).([]interface{})
