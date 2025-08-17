@@ -20,9 +20,9 @@ import (
 )
 
 // TestDiskOrderingDeterministic tests that disk ordering is deterministic
-// when reading VM disk configuration. This test addresses the issue where
-// disk interfaces (scsi0, scsi1, etc.) would randomly reorder on each
-// terraform apply due to Go's non-deterministic map iteration.
+// and preserves the order from currentDiskList. This test addresses the issue where
+// disk interfaces would randomly reorder on each terraform apply due to
+// Go's non-deterministic map iteration.
 func TestDiskOrderingDeterministic(t *testing.T) {
 	t.Parallel()
 
@@ -96,20 +96,21 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 			"Disk ordering should be deterministic across multiple calls. Iteration %d differs from first result", i)
 	}
 
-	// Verify the specific ordering - should be scsi0, then scsi1 (numerical order)
+	// Verify the specific ordering - should preserve currentDiskList order: scsi1, then scsi0
 	require.Len(t, expectedResult, 2, "Should have 2 disks")
 
 	disk0 := expectedResult[0].(map[string]interface{})
 	disk1 := expectedResult[1].(map[string]interface{})
 
-	require.Equal(t, "scsi0", disk0[mkDiskInterface], "First disk should be scsi0")
-	require.Equal(t, 50, disk0[mkDiskSize], "First disk should have size 50")
+	require.Equal(t, "scsi1", disk0[mkDiskInterface], "First disk should be scsi1 (as in currentDiskList)")
+	require.Equal(t, 150, disk0[mkDiskSize], "First disk should have size 150")
 
-	require.Equal(t, "scsi1", disk1[mkDiskInterface], "Second disk should be scsi1")
-	require.Equal(t, 150, disk1[mkDiskSize], "Second disk should have size 150")
+	require.Equal(t, "scsi0", disk1[mkDiskInterface], "Second disk should be scsi0 (as in currentDiskList)")
+	require.Equal(t, 50, disk1[mkDiskSize], "Second disk should have size 50")
 }
 
-// TestDiskOrderingVariousInterfaces tests deterministic ordering with various disk interfaces.
+// TestDiskOrderingVariousInterfaces tests deterministic ordering with various disk interfaces,
+// ensuring the order from currentDiskList is preserved.
 func TestDiskOrderingVariousInterfaces(t *testing.T) {
 	t.Parallel()
 
@@ -183,13 +184,13 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 			"Disk ordering should be deterministic for various interfaces. Iteration %d differs", i)
 	}
 
-	// Verify logical ordering: sata1, scsi0, virtio0, virtio2
+	// Verify ordering preserves currentDiskList order: virtio2, scsi0, sata1, virtio0
 	require.Len(t, expectedResult, 4)
 
-	expectedOrder := []string{"sata1", "scsi0", "virtio0", "virtio2"}
+	expectedOrder := []string{"virtio2", "scsi0", "sata1", "virtio0"}
 	for i, expectedInterface := range expectedOrder {
 		disk := expectedResult[i].(map[string]interface{})
 		require.Equal(t, expectedInterface, disk[mkDiskInterface],
-			"Disk at position %d should be %s", i, expectedInterface)
+			"Disk at position %d should be %s (as in currentDiskList)", i, expectedInterface)
 	}
 }

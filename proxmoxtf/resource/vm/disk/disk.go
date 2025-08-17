@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -560,11 +559,8 @@ func Read(
 				}
 			}
 
-			// Sort keys to ensure deterministic ordering
-			currentKeys := slices.Collect(maps.Keys(currentDiskMap))
-			slices.SortFunc(currentKeys, utils.CompareWithPrefix)
-
-			diskList = utils.OrderedListFromMapByKeyValues(diskMap, currentKeys)
+			disks := utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface)
+			diskList = utils.OrderedListFromMapByKeyValues(diskMap, disks)
 		} else {
 			diskList = utils.OrderedListFromMap(diskMap)
 		}
