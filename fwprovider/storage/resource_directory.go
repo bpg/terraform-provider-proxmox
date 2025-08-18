@@ -7,16 +7,10 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -41,69 +35,22 @@ type directoryStorageResource struct {
 }
 
 func (r *directoryStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Manages a directory-based storage in Proxmox VE.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "The unique identifier of the storage.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"type": schema.StringAttribute{
-				Description: "The type of storage to create.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					stringvalidator.OneOf(allowedStorageTypes...),
-				},
-			},
-			"path": schema.StringAttribute{
-				Description: "The path to the directory on the Proxmox node.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"nodes": schema.SetAttribute{
-				Description: "A list of nodes where this storage is available.",
-				ElementType: types.StringType,
-				Optional:    true,
-				Computed:    true,
-				Default: setdefault.StaticValue(
-					types.SetValueMust(types.StringType, []attr.Value{}),
-				),
-			},
-			"content": schema.SetAttribute{
-				Description: "The content types that can be stored on this storage.",
-				ElementType: types.StringType,
-				Optional:    true,
-				Computed:    true,
-				Default: setdefault.StaticValue(
-					types.SetValueMust(types.StringType, []attr.Value{}),
-				),
-			},
-			"disable": schema.BoolAttribute{
-				Description: "Whether the storage is disabled.",
-				Optional:    true,
-				Default:     booldefault.StaticBool(false),
-				Computed:    true,
-			},
-			"shared": schema.BoolAttribute{
-				Description: "Whether the storage is shared across all nodes.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
-			},
-			"preallocation": schema.StringAttribute{
-				Description: "The preallocation mode for raw and qcow2 images.",
-				Optional:    true,
+	specificAttributes := map[string]schema.Attribute{
+		"path": schema.StringAttribute{
+			Description: "The path to the directory on the Proxmox node.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
 			},
 		},
+		"preallocation": schema.StringAttribute{
+			Description: "The preallocation mode for raw and qcow2 images.",
+			Optional:    true,
+		},
 	}
+
+	resp.Schema = storageSchemaFactory(specificAttributes)
+	resp.Schema.Description = "Manages a directory-based storage in Proxmox VE."
 }
 
 // Create creates the resource and sets the initial state.
