@@ -36,6 +36,7 @@ type DatastoreGetResponseData struct {
 	ID           *string                         `json:"storage" url:"storage"`
 	Type         *string                         `json:"type" url:"type"`
 	ContentTypes *types.CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
+	Path         *string                         `json:"path,omitempty" url:"path,omitempty"`
 	Nodes        *types.CustomCommaSeparatedList `json:"nodes,omitempty" url:"nodes,omitempty,comma"`
 	Disable      *types.CustomBool               `json:"disable,omitempty" url:"disable,omitempty,int"`
 	Shared       *types.CustomBool               `json:"shared,omitempty" url:"shared,omitempty,int"`

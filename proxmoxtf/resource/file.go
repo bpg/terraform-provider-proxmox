@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -566,7 +567,8 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	default:
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
-		datastore, err2 := capi.Storage().GetDatastore(ctx, datastoreID)
+		req := &storage.DatastoreGetRequest{ID: &datastoreID}
+		datastore, err2 := capi.Storage().GetDatastore(ctx, req)
 		if err2 != nil {
 			return diag.Errorf("failed to get datastore: %s", err2)
 		}
@@ -575,15 +577,17 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 			return diag.Errorf("failed to determine the datastore path")
 		}
 
-		sort.Strings(datastore.Content)
+		contentTypes := []string(*datastore.ContentTypes)
 
-		_, found := slices.BinarySearch(datastore.Content, *contentType)
+		sort.Strings(contentTypes)
+
+		_, found := slices.BinarySearch(contentTypes, *contentType)
 		if !found {
 			diags = append(diags, diag.Diagnostics{
 				diag.Diagnostic{
 					Severity: diag.Warning,
 					Summary: fmt.Sprintf("the datastore %q does not support content type %q; supported content types are: %v",
-						*datastore.Storage, *contentType, datastore.Content,
+						*datastore.ID, *contentType, contentTypes,
 					),
 				},
 			}...)
