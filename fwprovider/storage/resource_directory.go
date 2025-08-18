@@ -20,11 +20,6 @@ var (
 	_ resource.ResourceWithConfigure = &directoryStorageResource{}
 )
 
-var allowedStorageTypes = []string{
-	"btrfs", "cephfs", "cifs", "dir", "esxi", "iscsi", "iscsidirect",
-	"lvm", "lvmthin", "nfs", "pbs", "rbd", "zfs", "zfspool",
-}
-
 // NewDirectoryStorageResource is a helper function to simplify the provider implementation.
 func NewDirectoryStorageResource() resource.Resource {
 	return &directoryStorageResource{}
