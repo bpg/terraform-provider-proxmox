@@ -15,12 +15,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
-// ListDatastores retrieves a list of the cluster.
-func (c *Client) ListDatastores(
-	ctx context.Context,
-	d *DatastoreListRequestBody,
-) ([]*DatastoreListResponseData, error) {
-	resBody := &DatastoreListResponseBody{}
+// ListDatastore retrieves a list of the cluster.
+func (c *Client) ListDatastore(ctx context.Context, d *DatastoreListRequest) ([]*DatastoreGetResponseData, error) {
+	resBody := &DatastoreListResponse{}
 
 	err := c.DoRequest(
 		ctx,
@@ -38,16 +35,29 @@ func (c *Client) ListDatastores(
 	}
 
 	sort.Slice(resBody.Data, func(i, j int) bool {
-		return resBody.Data[i].ID < resBody.Data[j].ID
+		return *(resBody.Data[i]).ID < *(resBody.Data[j]).ID
 	})
 
 	return resBody.Data, nil
 }
 
-func (c *Client) CreateDatastore(
-	ctx context.Context,
-	d interface{},
-) error {
+func (c *Client) GetDatastore(ctx context.Context, d *DatastoreGetRequest) (*DatastoreGetResponseData, error) {
+	resBody := &DatastoreGetResponseBody{}
+	err := c.DoRequest(
+		ctx,
+		http.MethodGet,
+		c.ExpandPath(*d.ID),
+		nil,
+		resBody,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error reading datastore: %w", err)
+	}
+
+	return resBody.Data, nil
+}
+
+func (c *Client) CreateDatastore(ctx context.Context, d interface{}) error {
 	err := c.DoRequest(
 		ctx,
 		http.MethodPost,
@@ -62,15 +72,11 @@ func (c *Client) CreateDatastore(
 	return nil
 }
 
-func (c *Client) UpdateDatastore(
-	ctx context.Context,
-	d interface{},
-) error {
-
+func (c *Client) UpdateDatastore(ctx context.Context, storeID string, d interface{}) error {
 	err := c.DoRequest(
 		ctx,
-		http.MethodPost,
-		c.ExpandPath(d.(DataStoreBase).Storage),
+		http.MethodPut,
+		c.ExpandPath(storeID),
 		d,
 		nil,
 	)
@@ -81,15 +87,11 @@ func (c *Client) UpdateDatastore(
 	return nil
 }
 
-func (c *Client) DeleteDatastore(
-	ctx context.Context,
-	d interface{},
-) error {
-
+func (c *Client) DeleteDatastore(ctx context.Context, storeID string) error {
 	err := c.DoRequest(
 		ctx,
 		http.MethodDelete,
-		c.ExpandPath(d.(DataStoreBase).Storage),
+		c.ExpandPath(storeID),
 		nil,
 		nil,
 	)
