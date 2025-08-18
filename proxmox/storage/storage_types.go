@@ -33,16 +33,17 @@ type DatastoreListResponse struct {
 }
 
 type DatastoreGetResponseData struct {
-	ID           *string                         `json:"storage" url:"storage"`
-	Type         *string                         `json:"type" url:"type"`
-	ContentTypes *types.CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
-	Path         *string                         `json:"path,omitempty" url:"path,omitempty"`
-	Nodes        *types.CustomCommaSeparatedList `json:"nodes,omitempty" url:"nodes,omitempty,comma"`
-	Disable      *types.CustomBool               `json:"disable,omitempty" url:"disable,omitempty,int"`
-	Shared       *types.CustomBool               `json:"shared,omitempty" url:"shared,omitempty,int"`
-	Server       *string                         `json:"server,omitempty" url:"server,omitempty"`
-	Export       *string                         `json:"export,omitempty" url:"export,omitempty"`
-	Options      *string                         `json:"options,omitempty" url:"options,omitempty"`
+	ID            *string                         `json:"storage" url:"storage"`
+	Type          *string                         `json:"type" url:"type"`
+	ContentTypes  *types.CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
+	Path          *string                         `json:"path,omitempty" url:"path,omitempty"`
+	Nodes         *types.CustomCommaSeparatedList `json:"nodes,omitempty" url:"nodes,omitempty,comma"`
+	Disable       *types.CustomBool               `json:"disable,omitempty" url:"disable,omitempty,int"`
+	Shared        *types.CustomBool               `json:"shared,omitempty" url:"shared,omitempty,int"`
+	Server        *string                         `json:"server,omitempty" url:"server,omitempty"`
+	Export        *string                         `json:"export,omitempty" url:"export,omitempty"`
+	Options       *string                         `json:"options,omitempty" url:"options,omitempty"`
+	Preallocation *string                         `json:"preallocation,omitempty" url:"preallocation,omitempty"`
 }
 
 type DataStoreCommonImmutableFields struct {

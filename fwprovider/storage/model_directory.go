@@ -2,55 +2,32 @@ package storage
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
-	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // DirectoryStorageModel maps the Terraform schema for directory storage.
 type DirectoryStorageModel struct {
-	ID            types.String `tfsdk:"id" json:"storage"`
-	Path          types.String `tfsdk:"path" json:"path"`
-	Nodes         types.Set    `tfsdk:"nodes" json:"nodes"`
-	ContentTypes  types.Set    `tfsdk:"content" json:"content"`
-	Disable       types.Bool   `tfsdk:"disable" json:"disable"`
-	Shared        types.Bool   `tfsdk:"shared" json:"shared"`
-	Preallocation types.String `tfsdk:"preallocation" json:"preallocation"`
-}
-
-func (m *DirectoryStorageModel) GetID() types.String {
-	return m.ID
+	StorageModelBase
+	Path          types.String `tfsdk:"path"`
+	Preallocation types.String `tfsdk:"preallocation"`
 }
 
 func (m *DirectoryStorageModel) GetStorageType() types.String {
 	return types.StringValue("dir")
 }
 
-// toCreateAPIRequest converts the Terraform model to a Proxmox API request body.
 func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, error) {
 	request := storage.DirectoryStorageCreateRequest{}
-
-	nodes := proxmox_types.CustomCommaSeparatedList{}
-	diags := m.Nodes.ElementsAs(ctx, &nodes, false)
-	if diags.HasError() {
-		return request, fmt.Errorf("cannot convert nodes to directory storage: %s", diags)
-	}
-	contentTypes := proxmox_types.CustomCommaSeparatedList{}
-	diags = m.ContentTypes.ElementsAs(ctx, &contentTypes, false)
-	if diags.HasError() {
-		return request, fmt.Errorf("cannot convert content-types to directory storage: %s", diags)
-	}
-
-	request.ID = m.ID.ValueStringPointer()
 	request.Type = m.GetStorageType().ValueStringPointer()
-	request.Nodes = &nodes
-	request.ContentTypes = &contentTypes
-	request.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
-	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
+
+	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.DataStoreCommonMutableFields); err != nil {
+		return nil, err
+	}
+
 	request.Path = m.Path.ValueStringPointer()
+	request.Preallocation = m.Preallocation.ValueStringPointer()
 
 	return request, nil
 }
@@ -58,52 +35,25 @@ func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (interfa
 func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, error) {
 	request := storage.DirectoryStorageUpdateRequest{}
 
-	nodes := proxmox_types.CustomCommaSeparatedList{}
-	diags := m.Nodes.ElementsAs(ctx, &nodes, false)
-	if diags.HasError() {
-		return request, fmt.Errorf("cannot convert nodes to directory storage: %s", diags)
+	if err := m.populateUpdateFields(ctx, &request.DataStoreCommonMutableFields); err != nil {
+		return nil, err
 	}
 
-	contentTypes := proxmox_types.CustomCommaSeparatedList{}
-	diags = m.ContentTypes.ElementsAs(ctx, &contentTypes, false)
-	if diags.HasError() {
-		return request, fmt.Errorf("cannot convert content-types to directory storage: %s", diags)
-	}
-
-	request.ContentTypes = &contentTypes
-	request.Nodes = &nodes
-	request.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
-	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
+	request.Preallocation = m.Preallocation.ValueStringPointer()
 
 	return request, nil
 }
 
 func (m *DirectoryStorageModel) fromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error {
-	m.ID = types.StringValue(*datastore.ID)
-	if datastore.Nodes != nil {
-		nodes, diags := types.SetValueFrom(ctx, types.StringType, *datastore.Nodes)
-		if diags.HasError() {
-			return fmt.Errorf("cannot parse nodes from datastore: %s", diags)
-		}
-		m.Nodes = nodes
-	} else {
-		m.Nodes = types.SetValueMust(types.StringType, []attr.Value{})
+	if err := m.populateBaseFromAPI(ctx, datastore); err != nil {
+		return err
 	}
-	if datastore.ContentTypes != nil {
-		contentTypes, diags := types.SetValueFrom(ctx, types.StringType, *datastore.ContentTypes)
-		if diags.HasError() {
-			return fmt.Errorf("cannot parse content from datastore: %s", diags)
-		}
-		m.ContentTypes = contentTypes
-	}
-	if datastore.Disable != nil {
-		m.Disable = datastore.Disable.ToValue()
-	}
-	if datastore.Shared != nil {
-		m.Shared = datastore.Shared.ToValue()
-	}
+
 	if datastore.Path != nil {
 		m.Path = types.StringValue(*datastore.Path)
+	}
+	if datastore.Preallocation != nil {
+		m.Preallocation = types.StringValue(*datastore.Preallocation)
 	}
 
 	return nil

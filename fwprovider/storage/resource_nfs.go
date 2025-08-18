@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -31,13 +32,16 @@ type nfsStorageResource struct {
 }
 
 // Metadata returns the resource type name.
-func (r *nfsStorageResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *nfsStorageResource) Metadata(_ context.Context, _ resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = r.resourceName
 }
 
 // Schema defines the schema for the NFS storage resource.
 func (r *nfsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	s := storageSchemaFactory(map[string]schema.Attribute{
+	factoryOptions := &schemaFactoryOptions{
+		IsSharedByDefault: true,
+	}
+	attributes := map[string]schema.Attribute{
 		"server": schema.StringAttribute{
 			Description: "The IP address or DNS name of the NFS server.",
 			Required:    true,
@@ -55,6 +59,9 @@ func (r *nfsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 		"preallocation": schema.StringAttribute{
 			Description: "The preallocation mode for raw and qcow2 images.",
 			Optional:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"options": schema.StringAttribute{
 			Description: "The options to pass to the NFS service.",
@@ -63,8 +70,12 @@ func (r *nfsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 		"snapshot_as_volume_chain": schema.BoolAttribute{
 			Description: "Enable support for creating snapshots through volume backing-chains.",
 			Optional:    true,
+			PlanModifiers: []planmodifier.Bool{
+				boolplanmodifier.RequiresReplace(),
+			},
 		},
-	})
+	}
+	s := storageSchemaFactory(attributes, factoryOptions)
 	s.Description = "Manages an NFS-based storage in Proxmox VE."
 	resp.Schema = s
 }
