@@ -29,7 +29,7 @@ resource "proxmox_virtual_environment_role" "operations_monitoring" {
   role_id = "operations-monitoring"
 
   privileges = [
-    "VM.Monitor",
+    "VM.GuestAgent.Audit",
   ]
 }
 

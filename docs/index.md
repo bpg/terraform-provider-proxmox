@@ -12,24 +12,26 @@ Use the navigation to the left to read about the available resources.
 
 ## Table of Contents
 
-- [Environment Variables Summary](#environment-variables-summary)
-- [Example Usage](#example-usage)
-- [Authentication](#authentication)
+- [Proxmox Provider](#proxmox-provider)
+  - [Table of Contents](#table-of-contents)
+  - [Environment Variables Summary](#environment-variables-summary)
+  - [Example Usage](#example-usage)
+  - [Authentication](#authentication)
     - [Authentication Methods Comparison](#authentication-methods-comparison)
     - [Static Credentials Examples](#static-credentials-examples)
     - [Security Best Practices](#security-best-practices)
     - [Environment variables](#environment-variables)
     - [API Token Authentication](#api-token-authentication)
     - [Pre-Authentication, or Passing an Authentication Ticket into the provider](#pre-authentication-or-passing-an-authentication-ticket-into-the-provider)
-- [SSH Connection](#ssh-connection)
+  - [SSH Connection](#ssh-connection)
     - [SSH Agent](#ssh-agent)
     - [SSH Private Key](#ssh-private-key)
     - [SSH User](#ssh-user)
     - [Node IP address used for SSH connection](#node-ip-address-used-for-ssh-connection)
     - [SSH Connection via SOCKS5 Proxy](#ssh-connection-via-socks5-proxy)
-- [VM and Container ID Assignment](#vm-and-container-id-assignment)
-- [Temporary Directory](#temporary-directory)
-- [Argument Reference](#argument-reference)
+  - [VM and Container ID Assignment](#vm-and-container-id-assignment)
+  - [Temporary Directory](#temporary-directory)
+  - [Argument Reference](#argument-reference)
 
 ## Environment Variables Summary
 
@@ -205,10 +207,10 @@ You can create an API Token for a user via the Proxmox UI, or via the command li
 - Create a role for the user (you can skip this step if you want to use any of the existing roles):
 
     ```sh
-    sudo pveum role add Terraform -privs "Mapping.Audit Mapping.Modify Mapping.Use Permissions.Modify Pool.Allocate Pool.Audit Realm.AllocateUser Realm.Allocate SDN.Allocate SDN.Audit Sys.Audit Sys.Console Sys.Incoming Sys.Modify Sys.AccessNetwork Sys.PowerMgmt Sys.Syslog User.Modify Group.Allocate SDN.Use VM.Allocate VM.Audit VM.Backup VM.Clone VM.Config.CDROM VM.Config.CPU VM.Config.Cloudinit VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Console VM.Migrate VM.Monitor VM.PowerMgmt VM.Snapshot.Rollback VM.Snapshot Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit"
+    sudo pveum role add Terraform -privs "Realm.AllocateUser, VM.PowerMgmt, VM.GuestAgent.Unrestricted, Sys.Console, Sys.Audit, Sys.AccessNetwork, VM.Config.Cloudinit, VM.Replicate, Pool.Allocate, SDN.Audit, Realm.Allocate, SDN.Use, Mapping.Modify, VM.Config.Memory, VM.GuestAgent.FileSystemMgmt, VM.Allocate, SDN.Allocate, VM.Console, VM.Clone, VM.Backup, Datastore.AllocateTemplate, VM.Snapshot, VM.Config.Network, Sys.Incoming, Sys.Modify, VM.Snapshot.Rollback, VM.Config.Disk, Datastore.Allocate, VM.Config.CPU, VM.Config.CDROM, Group.Allocate, Datastore.Audit, VM.Migrate, VM.GuestAgent.FileWrite, Mapping.Use, Datastore.AllocateSpace, Sys.Syslog, VM.Config.Options, Pool.Audit, User.Modify, VM.Config.HWType, VM.Audit, Sys.PowerMgmt, VM.GuestAgent.Audit, Mapping.Audit, VM.GuestAgent.FileRead, Permissions.Modify"
     ```
 
-  ~> The list of privileges above is only an example, please review it and adjust to your needs.
+  ~> The list of available privileges has been changed in PVE 9.0, and the above list is only an example (and most likely too excessive for most use cases), please review it and adjust to your needs.
   Refer to the [privileges documentation](https://pve.proxmox.com/pve-docs/pveum.1.html#_privileges) for more details.
 
 - Assign the role to the previously created user:
