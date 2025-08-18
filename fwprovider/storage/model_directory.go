@@ -22,9 +22,12 @@ type DirectoryStorageModel struct {
 	Preallocation types.String `tfsdk:"preallocation" json:"preallocation"`
 }
 
+func (m *DirectoryStorageModel) GetStorageType() types.String {
+	return types.StringValue("dir")
+}
+
 // toCreateAPIRequest converts the Terraform model to a Proxmox API request body.
 func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (storage.DirectoryStorageCreateRequest, error) {
-	storageType := "dir"
 	request := storage.DirectoryStorageCreateRequest{}
 
 	nodes := proxmox_types.CustomCommaSeparatedList{}
@@ -39,7 +42,7 @@ func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (storage
 	}
 
 	request.ID = m.ID.ValueStringPointer()
-	request.Type = &storageType
+	request.Type = m.GetStorageType().ValueStringPointer()
 	request.Nodes = &nodes
 	request.ContentTypes = &contentTypes
 	request.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
@@ -74,7 +77,7 @@ func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (storage
 
 func (m *DirectoryStorageModel) importFromAPI(ctx context.Context, datastore storage.DatastoreGetResponseData) error {
 	m.ID = types.StringValue(*datastore.ID)
-	m.Type = types.StringValue(*datastore.Type)
+	m.Type = m.GetStorageType()
 	if datastore.Nodes != nil {
 		nodes, diags := types.SetValueFrom(ctx, types.StringType, *datastore.Nodes)
 		if diags.HasError() {
