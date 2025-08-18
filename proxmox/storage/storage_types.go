@@ -50,6 +50,9 @@ type DatastoreGetResponseData struct {
 	Namespace     *string                         `json:"namespace,omitempty" url:"namespace,omitempty"`
 	Fingerprint   *string                         `json:"fingerprint,omitempty" url:"fingerprint,omitempty"`
 	EncryptionKey *string                         `json:"keyring,omitempty" url:"keyring,omitempty"`
+	ZFSPool       *string                         `json:"pool,omitempty" url:"pool,omitempty"`
+	ThinProvision *types.CustomBool               `json:"sparse,omitempty" url:"sparse,omitempty"`
+	Blocksize     *string                         `json:"blocksize,omitempty" url:"blocksize,omitempty"`
 }
 
 type DatastoreCreateResponse struct {
