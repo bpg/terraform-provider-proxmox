@@ -13,7 +13,6 @@ import (
 // DirectoryStorageModel maps the Terraform schema for directory storage.
 type DirectoryStorageModel struct {
 	ID            types.String `tfsdk:"id" json:"storage"`
-	Type          types.String `tfsdk:"type" json:"type"`
 	Path          types.String `tfsdk:"path" json:"path"`
 	Nodes         types.Set    `tfsdk:"nodes" json:"nodes"`
 	ContentTypes  types.Set    `tfsdk:"content" json:"content"`
@@ -22,12 +21,16 @@ type DirectoryStorageModel struct {
 	Preallocation types.String `tfsdk:"preallocation" json:"preallocation"`
 }
 
+func (m *DirectoryStorageModel) GetID() types.String {
+	return m.ID
+}
+
 func (m *DirectoryStorageModel) GetStorageType() types.String {
 	return types.StringValue("dir")
 }
 
 // toCreateAPIRequest converts the Terraform model to a Proxmox API request body.
-func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (storage.DirectoryStorageCreateRequest, error) {
+func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, error) {
 	request := storage.DirectoryStorageCreateRequest{}
 
 	nodes := proxmox_types.CustomCommaSeparatedList{}
@@ -52,7 +55,7 @@ func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (storage
 	return request, nil
 }
 
-func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (storage.DirectoryStorageUpdateRequest, error) {
+func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, error) {
 	request := storage.DirectoryStorageUpdateRequest{}
 
 	nodes := proxmox_types.CustomCommaSeparatedList{}
@@ -75,9 +78,8 @@ func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (storage
 	return request, nil
 }
 
-func (m *DirectoryStorageModel) importFromAPI(ctx context.Context, datastore storage.DatastoreGetResponseData) error {
+func (m *DirectoryStorageModel) fromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error {
 	m.ID = types.StringValue(*datastore.ID)
-	m.Type = m.GetStorageType()
 	if datastore.Nodes != nil {
 		nodes, diags := types.SetValueFrom(ctx, types.StringType, *datastore.Nodes)
 		if diags.HasError() {

@@ -13,7 +13,6 @@ import (
 // NFSStorageModel maps the Terraform schema for NFS storage.
 type NFSStorageModel struct {
 	ID                     types.String `tfsdk:"id" json:"storage"`
-	Type                   types.String `tfsdk:"type" json:"type"`
 	Nodes                  types.Set    `tfsdk:"nodes" json:"nodes"`
 	ContentTypes           types.Set    `tfsdk:"content" json:"content"`
 	Disable                types.Bool   `tfsdk:"disable" json:"disable"`
@@ -82,7 +81,6 @@ func (m *NFSStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, 
 
 func (m *NFSStorageModel) fromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error {
 	m.ID = types.StringValue(*datastore.ID)
-	m.Type = m.GetStorageType()
 	if datastore.ContentTypes != nil {
 		contentTypes, diags := types.SetValueFrom(ctx, types.StringType, *datastore.ContentTypes)
 		if diags.HasError() {
