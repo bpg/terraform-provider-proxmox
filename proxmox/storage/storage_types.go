@@ -51,7 +51,6 @@ type DataStoreCommonMutableFields struct {
 	ContentTypes *types.CustomCommaSeparatedList `json:"content,omitempty" url:"content,omitempty,comma"`
 	Nodes        *types.CustomCommaSeparatedList `json:"nodes,omitempty" url:"nodes,omitempty,comma"`
 	Disable      *types.CustomBool               `json:"disable,omitempty" url:"disable,omitempty,int"`
-	Shared       *types.CustomBool               `json:"shared,omitempty" url:"shared,omitempty,int"`
 }
 
 // DataStoreWithBackups holds optional retention settings for backups.

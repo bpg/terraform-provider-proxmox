@@ -9,6 +9,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -46,6 +47,12 @@ func (r *directoryStorageResource) Schema(_ context.Context, _ resource.SchemaRe
 		"preallocation": schema.StringAttribute{
 			Description: "The preallocation mode for raw and qcow2 images.",
 			Optional:    true,
+		},
+		"shared": schema.BoolAttribute{
+			Description: "Whether the storage is shared across all nodes.",
+			Optional:    true,
+			Default:     booldefault.StaticBool(true),
+			Computed:    true,
 		},
 	}
 

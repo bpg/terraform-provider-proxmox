@@ -100,6 +100,9 @@ func (m *DirectoryStorageModel) importFromAPI(ctx context.Context, datastore sto
 	if datastore.Shared != nil {
 		m.Shared = datastore.Shared.ToValue()
 	}
+	if datastore.Path != nil {
+		m.Path = types.StringValue(*datastore.Path)
+	}
 
 	return nil
 }
