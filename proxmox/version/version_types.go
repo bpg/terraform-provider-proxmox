@@ -8,6 +8,7 @@ package version
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 )
@@ -30,8 +31,8 @@ type ProxmoxVersion struct {
 }
 
 func (v *ProxmoxVersion) UnmarshalJSON(data []byte) error {
-	// Unmarshal the version string into a go-version Version object
-	ver, err := version.NewVersion(string(data))
+	// Unmarshal the version string into a go-version Version object, remove wrapping quotes if any
+	ver, err := version.NewVersion(strings.Trim(string(data), "\""))
 	if err != nil {
 		return fmt.Errorf("failed to parse version %q: %w", string(data), err)
 	}
