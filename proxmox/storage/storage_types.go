@@ -40,6 +40,9 @@ type DatastoreGetResponseData struct {
 	Nodes        *types.CustomCommaSeparatedList `json:"nodes,omitempty" url:"nodes,omitempty,comma"`
 	Disable      *types.CustomBool               `json:"disable,omitempty" url:"disable,omitempty,int"`
 	Shared       *types.CustomBool               `json:"shared,omitempty" url:"shared,omitempty,int"`
+	Server       *string                         `json:"server,omitempty" url:"server,omitempty"`
+	Export       *string                         `json:"export,omitempty" url:"export,omitempty"`
+	Options      *string                         `json:"options,omitempty" url:"options,omitempty"`
 }
 
 type DataStoreCommonImmutableFields struct {
