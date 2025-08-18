@@ -67,7 +67,7 @@ func (r *storageResource[T, M]) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	err = r.client.Storage().CreateDatastore(ctx, requestBody)
+	_, err = r.client.Storage().CreateDatastore(ctx, requestBody)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error creating %s storage", r.storageType), err.Error())
 		return

@@ -42,7 +42,7 @@ func (c *Client) ListDatastore(ctx context.Context, d *DatastoreListRequest) ([]
 }
 
 func (c *Client) GetDatastore(ctx context.Context, d *DatastoreGetRequest) (*DatastoreGetResponseData, error) {
-	resBody := &DatastoreGetResponseBody{}
+	resBody := &DatastoreGetResponse{}
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -57,19 +57,20 @@ func (c *Client) GetDatastore(ctx context.Context, d *DatastoreGetRequest) (*Dat
 	return resBody.Data, nil
 }
 
-func (c *Client) CreateDatastore(ctx context.Context, d interface{}) error {
+func (c *Client) CreateDatastore(ctx context.Context, d interface{}) (*DatastoreCreateResponseData, error) {
+	resBody := &DatastoreCreateResponse{}
 	err := c.DoRequest(
 		ctx,
 		http.MethodPost,
 		c.basePath(),
 		d,
-		nil,
+		resBody,
 	)
 	if err != nil {
-		return fmt.Errorf("error creating datastore: %w", err)
+		return nil, fmt.Errorf("error creating datastore: %w", err)
 	}
 
-	return nil
+	return resBody.Data, nil
 }
 
 func (c *Client) UpdateDatastore(ctx context.Context, storeID string, d interface{}) error {

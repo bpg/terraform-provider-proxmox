@@ -18,7 +18,7 @@ type DatastoreGetRequest struct {
 	ID *string `json:"storage" url:"storage"`
 }
 
-type DatastoreGetResponseBody struct {
+type DatastoreGetResponse struct {
 	Data *DatastoreGetResponseData `json:"data,omitempty"`
 }
 
@@ -44,6 +44,26 @@ type DatastoreGetResponseData struct {
 	Export        *string                         `json:"export,omitempty" url:"export,omitempty"`
 	Options       *string                         `json:"options,omitempty" url:"options,omitempty"`
 	Preallocation *string                         `json:"preallocation,omitempty" url:"preallocation,omitempty"`
+	Datastore     *string                         `json:"datastore,omitempty" url:"datastore,omitempty"`
+	Username      *string                         `json:"username,omitempty" url:"username,omitempty"`
+	Password      *string                         `json:"password,omitempty" url:"password,omitempty"`
+	Namespace     *string                         `json:"namespace,omitempty" url:"namespace,omitempty"`
+	Fingerprint   *string                         `json:"fingerprint,omitempty" url:"fingerprint,omitempty"`
+	EncryptionKey *string                         `json:"keyring,omitempty" url:"keyring,omitempty"`
+}
+
+type DatastoreCreateResponse struct {
+	Data *DatastoreCreateResponseData `json:"data,omitempty" url:"data,omitempty"`
+}
+
+type DatastoreCreateResponseData struct {
+	Type    *string                           `json:"type" url:"type"`
+	Storage *string                           `json:"storage,omitempty" url:"storage,omitempty"`
+	Config  DatastoreCreateResponseConfigData `json:"config,omitempty" url:"config,omitempty"`
+}
+
+type DatastoreCreateResponseConfigData struct {
+	EncryptionKey *string `json:"encryption-key,omitempty" url:"encryption-key,omitempty"`
 }
 
 type DataStoreCommonImmutableFields struct {
