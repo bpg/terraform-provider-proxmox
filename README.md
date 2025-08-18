@@ -182,6 +182,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Brian King](https://github.com/inflatador)
 - [Radosław Szamszur](https://github.com/rszamszur)
 - [Marshall Ford](https://github.com/marshallford)
+- [Simon Caron](https://github.com/simoncaron)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
