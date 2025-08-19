@@ -55,6 +55,7 @@ type DatastoreGetResponseData struct {
 	Blocksize          *string                         `json:"blocksize,omitempty" url:"blocksize,omitempty"`
 	VolumeGroup        *string                         `json:"vgname,omitempty" url:"vgname,omitempty"`
 	WipeRemovedVolumes *types.CustomBool               `json:"saferemove,omitempty" url:"saferemove,omitempty"`
+	ThinPool           *string                         `json:"thinpool,omitempty" url:"thinpool,omitempty"`
 }
 
 type DatastoreCreateResponse struct {
