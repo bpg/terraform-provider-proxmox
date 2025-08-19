@@ -535,6 +535,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnzone.NewVXLANResource,
 		sdnzone.NewEVPNResource,
 		storage.NewDirectoryStorageResource,
+		storage.NewLVMPoolStorageResource,
 		storage.NewNFSStorageResource,
 		storage.NewProxmoxBackupServerStorageResource,
 		storage.NewZFSPoolStorageResource,
