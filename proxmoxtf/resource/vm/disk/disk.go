@@ -602,6 +602,11 @@ func Update(
 					tmp = disk
 				}
 			case currentDisks[iface] != nil:
+				// Check if the disk has actually changed before updating
+				if currentDisks[iface].Equals(disk) {
+					// Disk hasn't changed, skip update
+					continue
+				}
 				// update existing disk
 				tmp = currentDisks[iface]
 			default:
@@ -618,12 +623,8 @@ func Update(
 				tmp.AIO = disk.AIO
 			}
 
-			if disk.ImportFrom != nil && *disk.ImportFrom != "" {
-				rebootRequired = true
-				tmp.DatastoreID = disk.DatastoreID
-				tmp.ImportFrom = disk.ImportFrom
-				tmp.Size = disk.Size
-			}
+			// Never send ImportFrom for existing disks - it triggers re-import which fails for boot disks
+			// ImportFrom is only for initial disk creation, not updates
 
 			tmp.Backup = disk.Backup
 			tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
