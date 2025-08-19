@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.82.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.82.0...v0.82.1) (2025-08-19)
+
+
+### Bug Fixes
+
+* **vm:** prevent re-creation of previously imported disks on update ([#2122](https://github.com/bpg/terraform-provider-proxmox/issues/2122)) ([c6c1c18](https://github.com/bpg/terraform-provider-proxmox/commit/c6c1c18a2b7a2ad80006bf5e22afec7dbf98071b))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (9e56f0d → 91e2cd4) ([#2123](https://github.com/bpg/terraform-provider-proxmox/issues/2123)) ([9d179dd](https://github.com/bpg/terraform-provider-proxmox/commit/9d179dde724604d3b2f297fd805c7c2cb8f723b4))
+* **docs:** fix TOC format, cleanup cloud image guide ([#2121](https://github.com/bpg/terraform-provider-proxmox/issues/2121)) ([b321a01](https://github.com/bpg/terraform-provider-proxmox/commit/b321a01b4f142d55afef53eca20c1b183386bc84))
+
 ## [0.82.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.81.0...v0.82.0) (2025-08-18)
 
 
