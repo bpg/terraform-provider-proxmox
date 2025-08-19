@@ -442,3 +442,32 @@ func (d CustomStorageDevices) EncodeValues(_ string, v *url.Values) error {
 
 	return nil
 }
+
+// Equals compares two CustomStorageDevice instances to determine if they are equal.
+// It compares all fields that could trigger an update.
+func (d *CustomStorageDevice) Equals(other *CustomStorageDevice) bool {
+	if d == nil || other == nil {
+		return false
+	}
+
+	// Compare all fields that could trigger an update
+	return ptr.Eq(d.AIO, other.AIO) &&
+		ptr.Eq(d.Backup, other.Backup) &&
+		ptr.Eq(d.BurstableReadSpeedMbps, other.BurstableReadSpeedMbps) &&
+		ptr.Eq(d.BurstableWriteSpeedMbps, other.BurstableWriteSpeedMbps) &&
+		ptr.Eq(d.Cache, other.Cache) &&
+		ptr.Eq(d.DatastoreID, other.DatastoreID) &&
+		ptr.Eq(d.Discard, other.Discard) &&
+		ptr.Eq(d.ImportFrom, other.ImportFrom) &&
+		ptr.Eq(d.IOThread, other.IOThread) &&
+		ptr.Eq(d.IopsRead, other.IopsRead) &&
+		ptr.Eq(d.IopsWrite, other.IopsWrite) &&
+		ptr.Eq(d.MaxIopsRead, other.MaxIopsRead) &&
+		ptr.Eq(d.MaxIopsWrite, other.MaxIopsWrite) &&
+		ptr.Eq(d.MaxReadSpeedMbps, other.MaxReadSpeedMbps) &&
+		ptr.Eq(d.MaxWriteSpeedMbps, other.MaxWriteSpeedMbps) &&
+		ptr.Eq(d.Replicate, other.Replicate) &&
+		ptr.Eq(d.Serial, other.Serial) &&
+		ptr.Eq(d.Size, other.Size) &&
+		ptr.Eq(d.SSD, other.SSD)
+}

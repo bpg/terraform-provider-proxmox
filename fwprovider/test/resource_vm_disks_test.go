@@ -827,6 +827,138 @@ func TestAccResourceVMDisks(t *testing.T) {
 				}),
 			),
 		}}},
+		{"update single disk without affecting boot disk with import_from", []resource.TestStep{
+			{
+				// Create VM with boot disk that has import_from and a second disk
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "test_boot_image" {
+					content_type = "import"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					file_name    = "test-bootdisk-bug-image.img.raw"
+					overwrite_unmanaged = true
+				}
+				resource "proxmox_virtual_environment_vm" "test_bootdisk_bug" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-bootdisk-bug"
+					
+					disk {
+						datastore_id = "local-lvm"
+						import_from  = proxmox_virtual_environment_download_file.test_boot_image.id
+						interface    = "scsi0"
+						size         = 6
+					}
+					
+					disk {
+						datastore_id = "local-lvm" 
+						interface    = "scsi1"
+						size         = 1
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_bootdisk_bug", "disk.0.interface", "scsi0"),
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_bootdisk_bug", "disk.1.interface", "scsi1"),
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_bootdisk_bug", "disk.1.size", "1"),
+				),
+			},
+			{
+				// Update only scsi1 size from 1 to 2
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "test_boot_image" {
+					content_type = "import"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					file_name    = "test-bootdisk-bug-image.img.raw"
+					overwrite_unmanaged = true
+				}
+				resource "proxmox_virtual_environment_vm" "test_bootdisk_bug" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-bootdisk-bug"
+					
+					disk {
+						datastore_id = "local-lvm"
+						import_from  = proxmox_virtual_environment_download_file.test_boot_image.id
+						interface    = "scsi0"
+						size         = 6  // UNCHANGED - should not be sent to API
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 2  // CHANGED - only this should be sent to API
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_bootdisk_bug", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_bootdisk_bug", "disk.1.size", "2"),
+				),
+			},
+		}},
+		{"resize boot disk with import_from should not trigger re-import", []resource.TestStep{
+			{
+				// Create VM with boot disk using import_from
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "test_boot_resize" {
+					content_type = "import"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					file_name    = "test-boot-resize-image.img.raw"
+					overwrite_unmanaged = true
+				}
+				resource "proxmox_virtual_environment_vm" "test_boot_resize" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-boot-resize"
+					
+					disk {
+						datastore_id = "local-lvm"
+						import_from  = proxmox_virtual_environment_download_file.test_boot_resize.id
+						interface    = "scsi0"
+						size         = 8
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_boot_resize", "disk.0.interface", "scsi0"),
+					resource.TestCheckResourceAttrSet("proxmox_virtual_environment_vm.test_boot_resize", "disk.0.path_in_datastore"),
+				),
+			},
+			{
+				// Resize the boot disk itself
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "test_boot_resize" {
+					content_type = "import"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					file_name    = "test-boot-resize-image.img.raw"
+					overwrite_unmanaged = true
+				}
+				resource "proxmox_virtual_environment_vm" "test_boot_resize" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-boot-resize"
+					
+					disk {
+						datastore_id = "local-lvm"
+						import_from  = proxmox_virtual_environment_download_file.test_boot_resize.id
+						interface    = "scsi0"
+						size         = 12  // Resize from 8 to 12 - should work now
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("proxmox_virtual_environment_vm.test_boot_resize", "disk.0.size", "12"),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
