@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -48,6 +49,12 @@ func (r *lvmThinPoolStorageResource) Schema(_ context.Context, _ resource.Schema
 		"thin_pool": schema.StringAttribute{
 			Description: "The name of the LVM thin pool to use.",
 			Required:    true,
+		},
+		"shared": schema.BoolAttribute{
+			Description: "Whether the storage is shared across all nodes.",
+			Optional:    true,
+			Default:     booldefault.StaticBool(false),
+			Computed:    true,
 		},
 	}
 	s := storageSchemaFactory(attributes)

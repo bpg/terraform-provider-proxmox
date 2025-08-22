@@ -52,6 +52,12 @@ func (r *lvmPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequ
 			Computed:    true,
 			Default:     booldefault.StaticBool(false),
 		},
+		"shared": schema.BoolAttribute{
+			Description: "Whether the storage is shared across all nodes.",
+			Optional:    true,
+			Default:     booldefault.StaticBool(false),
+			Computed:    true,
+		},
 	}
 	s := storageSchemaFactory(attributes)
 	s.Description = "Manages LVM-based storage in Proxmox VE."
