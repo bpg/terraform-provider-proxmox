@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -38,9 +39,6 @@ func (r *nfsStorageResource) Metadata(_ context.Context, _ resource.MetadataRequ
 
 // Schema defines the schema for the NFS storage resource.
 func (r *nfsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	factoryOptions := &schemaFactoryOptions{
-		IsSharedByDefault: true,
-	}
 	attributes := map[string]schema.Attribute{
 		"server": schema.StringAttribute{
 			Description: "The IP address or DNS name of the NFS server.",
@@ -74,8 +72,13 @@ func (r *nfsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 				boolplanmodifier.RequiresReplace(),
 			},
 		},
+		"shared": schema.BoolAttribute{
+			Description: "Whether the storage is shared across all nodes.",
+			Computed:    true,
+			Default:     booldefault.StaticBool(true),
+		},
 	}
-	s := storageSchemaFactory(attributes, factoryOptions)
+	s := storageSchemaFactory(attributes)
 	s.Description = "Manages an NFS-based storage in Proxmox VE."
 	resp.Schema = s
 }

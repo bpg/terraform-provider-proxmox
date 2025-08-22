@@ -35,13 +35,11 @@ func (m *PBSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, 
 	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.PBSStorageMutableFields.DataStoreCommonMutableFields); err != nil {
 		return nil, err
 	}
-
 	request.Username = m.Username.ValueStringPointer()
 	request.Password = m.Password.ValueStringPointer()
 	request.Namespace = m.Namespace.ValueStringPointer()
 	request.Server = m.Server.ValueStringPointer()
 	request.Datastore = m.Datastore.ValueStringPointer()
-
 	request.Fingerprint = m.Fingerprint.ValueStringPointer()
 
 	if !m.GenerateEncryptionKey.IsNull() && m.GenerateEncryptionKey.ValueBool() {
@@ -93,6 +91,9 @@ func (m *PBSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 	}
 	if datastore.Fingerprint != nil {
 		m.Fingerprint = types.StringValue(*datastore.Fingerprint)
+	}
+	if datastore.Shared != nil {
+		m.Shared = types.BoolValue(*datastore.Shared.PointerBool())
 	}
 
 	return nil

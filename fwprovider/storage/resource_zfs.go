@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 )
@@ -37,9 +38,6 @@ func (r *zfsPoolStorageResource) Metadata(_ context.Context, _ resource.Metadata
 
 // Schema defines the schema for the NFS storage resource.
 func (r *zfsPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	factoryOptions := &schemaFactoryOptions{
-		IsSharedByDefault: true,
-	}
 	attributes := map[string]schema.Attribute{
 		"zfs_pool": schema.StringAttribute{
 			Description: "The name of the ZFS storage pool to use (e.g. `tank`, `rpool/data`).",
@@ -56,8 +54,13 @@ func (r *zfsPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequ
 			Description: "Block size for newly created volumes (e.g. `4k`, `8k`, `16k`). Larger values may improve throughput for large I/O, while smaller values optimize space efficiency.",
 			Optional:    true,
 		},
+		"shared": schema.BoolAttribute{
+			Description: "Whether the storage is shared across all nodes.",
+			Computed:    true,
+			Default:     booldefault.StaticBool(false),
+		},
 	}
-	s := storageSchemaFactory(attributes, factoryOptions)
+	s := storageSchemaFactory(attributes)
 	s.Description = "Manages ZFS-based storage in Proxmox VE."
 	resp.Schema = s
 }

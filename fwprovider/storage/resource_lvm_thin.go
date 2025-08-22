@@ -37,9 +37,6 @@ func (r *lvmThinPoolStorageResource) Metadata(_ context.Context, _ resource.Meta
 
 // Schema defines the schema for the NFS storage resource.
 func (r *lvmThinPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	factoryOptions := &schemaFactoryOptions{
-		IsSharedByDefault: true,
-	}
 	attributes := map[string]schema.Attribute{
 		"volume_group": schema.StringAttribute{
 			Description: "The name of the volume group to use.",
@@ -53,7 +50,7 @@ func (r *lvmThinPoolStorageResource) Schema(_ context.Context, _ resource.Schema
 			Required:    true,
 		},
 	}
-	s := storageSchemaFactory(attributes, factoryOptions)
+	s := storageSchemaFactory(attributes)
 	s.Description = "Manages LVM-based storage in Proxmox VE."
 	resp.Schema = s
 }

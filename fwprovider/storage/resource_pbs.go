@@ -65,6 +65,8 @@ func (r *pbsStorageResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
+	plan.Shared = types.BoolValue(false)
+
 	if !plan.GenerateEncryptionKey.IsNull() && plan.GenerateEncryptionKey.ValueBool() {
 		var encryptionKey storage.EncryptionKey
 		err := json.Unmarshal([]byte(*responseData.Config.EncryptionKey), &encryptionKey)
@@ -95,9 +97,6 @@ func (r *pbsStorageResource) Create(ctx context.Context, req resource.CreateRequ
 
 // Schema defines the schema for the Proxmox Backup Server storage resource.
 func (r *pbsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	factoryOptions := &schemaFactoryOptions{
-		IsSharedByDefault: true,
-	}
 	attributes := map[string]schema.Attribute{
 		"server": schema.StringAttribute{
 			Description: "The IP address or DNS name of the Proxmox Backup Server.",
@@ -160,7 +159,11 @@ func (r *pbsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			Computed:    true,
 			Sensitive:   true,
 		},
+		"shared": schema.BoolAttribute{
+			Description: "Whether the storage is shared across all nodes.",
+			Computed:    true,
+		},
 	}
-	resp.Schema = storageSchemaFactory(attributes, factoryOptions)
+	resp.Schema = storageSchemaFactory(attributes)
 	resp.Schema.Description = "Manages a Proxmox Backup Server (PBS) storage in Proxmox VE."
 }

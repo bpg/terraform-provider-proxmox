@@ -38,9 +38,6 @@ func (r *lvmPoolStorageResource) Metadata(_ context.Context, _ resource.Metadata
 
 // Schema defines the schema for the NFS storage resource.
 func (r *lvmPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	factoryOptions := &schemaFactoryOptions{
-		IsSharedByDefault: true,
-	}
 	attributes := map[string]schema.Attribute{
 		"volume_group": schema.StringAttribute{
 			Description: "The name of the volume group to use.",
@@ -56,7 +53,7 @@ func (r *lvmPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequ
 			Default:     booldefault.StaticBool(false),
 		},
 	}
-	s := storageSchemaFactory(attributes, factoryOptions)
+	s := storageSchemaFactory(attributes)
 	s.Description = "Manages LVM-based storage in Proxmox VE."
 	resp.Schema = s
 }
