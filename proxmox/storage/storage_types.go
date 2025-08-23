@@ -7,8 +7,8 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -87,18 +87,23 @@ type DataStoreCommonMutableFields struct {
 // DataStoreWithBackups holds optional retention settings for backups.
 type DataStoreWithBackups struct {
 	MaxProtectedBackups *types.CustomInt64 `json:"max-protected-backups,omitempty" url:"max,omitempty"`
-	KeepDaily           *int               `json:"-"`
-	KeepHourly          *int               `json:"-"`
-	KeepLast            *int               `json:"-"`
-	KeepMonthly         *int               `json:"-"`
-	KeepWeekly          *int               `json:"-"`
-	KeepYearly          *int               `json:"-"`
+	KeepAll             *types.CustomBool  `json:"-" url:"-"`
+	KeepDaily           *int               `json:"-" url:"-"`
+	KeepHourly          *int               `json:"-" url:"-"`
+	KeepLast            *int               `json:"-" url:"-"`
+	KeepMonthly         *int               `json:"-" url:"-"`
+	KeepWeekly          *int               `json:"-" url:"-"`
+	KeepYearly          *int               `json:"-" url:"-"`
 }
 
 // String serializes DataStoreWithBackups into the Proxmox "key=value,key=value" format.
 // Only defined (non-nil) fields will be included.
-func (b DataStoreWithBackups) String() string {
+func (b *DataStoreWithBackups) String() string {
 	var parts []string
+
+	if b.KeepLast != nil {
+		return fmt.Sprintf("keep-all=1", *b.KeepLast)
+	}
 
 	if b.KeepLast != nil {
 		parts = append(parts, fmt.Sprintf("keep-last=%d", *b.KeepLast))
@@ -122,22 +127,15 @@ func (b DataStoreWithBackups) String() string {
 	return strings.Join(parts, ",")
 }
 
-// MarshalJSON ensures DataStoreWithBackups is encoded into a JSON field "prune-backups".
-func (b DataStoreWithBackups) MarshalJSON() ([]byte, error) {
-	str := b.String()
-
-	// Special case; nothing defined so we omit the field
-	if str == "" && b.MaxProtectedBackups == nil {
-		return []byte(`{}`), nil
+func (b *DataStoreWithBackups) EncodeValues(key string, v *url.Values) error {
+	if b.MaxProtectedBackups != nil {
+		v.Set("max-protected-backups", string(*b.MaxProtectedBackups))
 	}
 
-	type Alias DataStoreWithBackups
-	aux := struct {
-		*Alias
-		PruneBackups string `json:"prune-backups,omitempty" url:"prune,omitempty"`
-	}{
-		Alias:        (*Alias)(&b),
-		PruneBackups: str,
+	backupString := b.String()
+	if backupString != "" {
+		v.Set("prune-backups", backupString)
 	}
-	return json.Marshal(aux)
+
+	return nil
 }

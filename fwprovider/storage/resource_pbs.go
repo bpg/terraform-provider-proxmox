@@ -164,6 +164,8 @@ func (r *pbsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			Computed:    true,
 		},
 	}
-	resp.Schema = storageSchemaFactory(attributes)
-	resp.Schema.Description = "Manages a Proxmox Backup Server (PBS) storage in Proxmox VE."
+	factory := NewStorageSchemaFactory()
+	factory.WithAttributes(attributes)
+	factory.WithDescription("Manages a Proxmox Backup Server (PBS) storage in Proxmox VE.")
+	resp.Schema = *factory.Schema
 }

@@ -39,7 +39,7 @@ func (r *directoryStorageResource) Metadata(_ context.Context, req resource.Meta
 }
 
 func (r *directoryStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	specificAttributes := map[string]schema.Attribute{
+	attributes := map[string]schema.Attribute{
 		"path": schema.StringAttribute{
 			Description: "The path to the directory on the Proxmox node.",
 			Required:    true,
@@ -59,8 +59,11 @@ func (r *directoryStorageResource) Schema(_ context.Context, _ resource.SchemaRe
 		},
 	}
 
-	resp.Schema = storageSchemaFactory(specificAttributes)
-	resp.Schema.Description = "Manages a directory-based storage in Proxmox VE."
+	factory := NewStorageSchemaFactory()
+	factory.WithAttributes(attributes)
+	factory.WithDescription("Manages directory-based storage in Proxmox VE.")
+	factory.WithBackupBlock()
+	resp.Schema = *factory.Schema
 }
 
 // Configure adds the provider configured client to the resource.

@@ -5,7 +5,7 @@ import "time"
 // PBSStorageMutableFields defines the mutable attributes for 'pbs' type storage.
 type PBSStorageMutableFields struct {
 	DataStoreCommonMutableFields
-	//DataStoreWithBackups
+	DataStoreWithBackups
 	Fingerprint *string `json:"fingerprint,omitempty" url:"fingerprint,omitempty"`
 	Encryption  *string `json:"encryption-key,omitempty" url:"encryption-key,omitempty"`
 }

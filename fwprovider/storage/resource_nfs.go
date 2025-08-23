@@ -78,7 +78,9 @@ func (r *nfsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			Default:     booldefault.StaticBool(true),
 		},
 	}
-	s := storageSchemaFactory(attributes)
-	s.Description = "Manages an NFS-based storage in Proxmox VE."
-	resp.Schema = s
+
+	factory := NewStorageSchemaFactory()
+	factory.WithAttributes(attributes)
+	factory.WithDescription("Manages an NFS-based storage in Proxmox VE.")
+	resp.Schema = *factory.Schema
 }

@@ -12,6 +12,7 @@ type DirectoryStorageModel struct {
 	StorageModelBase
 	Path          types.String `tfsdk:"path"`
 	Preallocation types.String `tfsdk:"preallocation"`
+	Backups       *BackupModel `tfsdk:"backups"`
 }
 
 func (m *DirectoryStorageModel) GetStorageType() types.String {

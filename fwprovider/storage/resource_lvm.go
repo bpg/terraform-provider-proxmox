@@ -59,7 +59,8 @@ func (r *lvmPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequ
 			Computed:    true,
 		},
 	}
-	s := storageSchemaFactory(attributes)
-	s.Description = "Manages LVM-based storage in Proxmox VE."
-	resp.Schema = s
+	factory := NewStorageSchemaFactory()
+	factory.WithAttributes(attributes)
+	factory.WithDescription("Manages LVM-based storage in Proxmox VE.")
+	resp.Schema = *factory.Schema
 }
