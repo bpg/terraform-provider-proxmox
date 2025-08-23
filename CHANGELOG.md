@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.82.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.82.1...v0.82.2) (2025-08-23)
+
+
+### Miscellaneous
+
+* **deps:** update image golang (91e2cd4 → 4859242) ([#2128](https://github.com/bpg/terraform-provider-proxmox/issues/2128)) ([9ae882e](https://github.com/bpg/terraform-provider-proxmox/commit/9ae882e5d7cdb19b54e9be07ba92ef92cab0054c))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.3.0 → v7.4.0) ([#2129](https://github.com/bpg/terraform-provider-proxmox/issues/2129)) ([11b8167](https://github.com/bpg/terraform-provider-proxmox/commit/11b8167fc6488fbeb7b977f0267dcc862ce05e20))
+
 ## [0.82.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.82.0...v0.82.1) (2025-08-19)
 
 
