@@ -17,8 +17,8 @@ var _ resource.Resource = &zfsPoolStorageResource{}
 func NewZFSPoolStorageResource() resource.Resource {
 	return &zfsPoolStorageResource{
 		storageResource: &storageResource[
-			*ZFSStorageModel, // The pointer to our model
-			ZFSStorageModel,  // The struct type of our model
+			*ZFSStorageModel,
+			ZFSStorageModel,
 		]{
 			storageType:  "zfspool",
 			resourceName: "proxmox_virtual_environment_storage_zfspool",

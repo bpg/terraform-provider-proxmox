@@ -17,8 +17,8 @@ var _ resource.Resource = &lvmPoolStorageResource{}
 func NewLVMPoolStorageResource() resource.Resource {
 	return &lvmPoolStorageResource{
 		storageResource: &storageResource[
-			*LVMStorageModel, // The pointer to our model
-			LVMStorageModel,  // The struct type of our model
+			*LVMStorageModel,
+			LVMStorageModel,
 		]{
 			storageType:  "lvm",
 			resourceName: "proxmox_virtual_environment_storage_lvm",

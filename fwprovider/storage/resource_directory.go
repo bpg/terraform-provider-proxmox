@@ -19,8 +19,8 @@ var _ resource.Resource = &directoryStorageResource{}
 func NewDirectoryStorageResource() resource.Resource {
 	return &directoryStorageResource{
 		storageResource: &storageResource[
-			*DirectoryStorageModel, // The pointer to our model
-			DirectoryStorageModel,  // The struct type of our model
+			*DirectoryStorageModel,
+			DirectoryStorageModel,
 		]{
 			storageType:  "dir",
 			resourceName: "proxmox_virtual_environment_storage_directory",

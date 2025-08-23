@@ -18,8 +18,8 @@ var _ resource.Resource = &nfsStorageResource{}
 func NewNFSStorageResource() resource.Resource {
 	return &nfsStorageResource{
 		storageResource: &storageResource[
-			*NFSStorageModel, // The pointer to our model
-			NFSStorageModel,  // The struct type of our model
+			*NFSStorageModel,
+			NFSStorageModel,
 		]{
 			storageType:  "nfs",
 			resourceName: "proxmox_virtual_environment_storage_nfs",
