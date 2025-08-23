@@ -9,6 +9,7 @@ package storage
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
@@ -104,8 +105,8 @@ type DataStoreWithBackups struct {
 func (b *DataStoreWithBackups) String() string {
 	var parts []string
 
-	if b.KeepLast != nil {
-		return fmt.Sprintf("keep-all=1", *b.KeepLast)
+	if b.KeepAll != nil {
+		return fmt.Sprintf("keep-all=1")
 	}
 
 	if b.KeepLast != nil {
@@ -132,7 +133,7 @@ func (b *DataStoreWithBackups) String() string {
 
 func (b *DataStoreWithBackups) EncodeValues(key string, v *url.Values) error {
 	if b.MaxProtectedBackups != nil {
-		v.Set("max-protected-backups", string(*b.MaxProtectedBackups))
+		v.Set("max-protected-backups", strconv.FormatInt(int64(*b.MaxProtectedBackups), 10))
 	}
 
 	backupString := b.String()

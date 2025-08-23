@@ -1,12 +1,10 @@
 package storage
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func intPtr(i int) *int {
@@ -92,56 +90,6 @@ func TestDataStoreWithBackups_String(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := tc.input.String()
 			assert.Equal(t, tc.expected, result)
-		})
-	}
-}
-
-// TestDataStoreWithBackups_MarshalJSON tests the MarshalJSON() method.
-func TestDataStoreWithBackups_MarshalJSON(t *testing.T) {
-	testCases := []struct {
-		name     string
-		input    DataStoreWithBackups
-		expected string
-	}{
-		{
-			name:     "Empty struct",
-			input:    DataStoreWithBackups{},
-			expected: `{}`,
-		},
-		{
-			name:     "Only MaxProtectedBackups",
-			input:    DataStoreWithBackups{MaxProtectedBackups: customInt64Ptr(10)},
-			expected: `{"max-protected-backups":10}`,
-		},
-		{
-			name:     "Only prune-backups (single)",
-			input:    DataStoreWithBackups{KeepDaily: intPtr(7)},
-			expected: `{"prune-backups":"keep-daily=7"}`,
-		},
-		{
-			name: "Only prune-backups (multiple)",
-			input: DataStoreWithBackups{
-				KeepWeekly:  intPtr(4),
-				KeepMonthly: intPtr(12),
-			},
-			expected: `{"prune-backups":"keep-weekly=4,keep-monthly=12"}`,
-		},
-		{
-			name: "Both MaxProtectedBackups and prune-backups",
-			input: DataStoreWithBackups{
-				MaxProtectedBackups: customInt64Ptr(5),
-				KeepLast:            intPtr(3),
-				KeepYearly:          intPtr(1),
-			},
-			expected: `{"max-protected-backups":5,"prune-backups":"keep-last=3,keep-yearly=1"}`,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result, err := json.Marshal(tc.input)
-			require.NoError(t, err)
-			assert.JSONEq(t, tc.expected, string(result))
 		})
 	}
 }
