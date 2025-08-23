@@ -51,11 +51,14 @@ type DatastoreGetResponseData struct {
 	Fingerprint        *string                         `json:"fingerprint,omitempty" url:"fingerprint,omitempty"`
 	EncryptionKey      *string                         `json:"keyring,omitempty" url:"keyring,omitempty"`
 	ZFSPool            *string                         `json:"pool,omitempty" url:"pool,omitempty"`
-	ThinProvision      *types.CustomBool               `json:"sparse,omitempty" url:"sparse,omitempty"`
+	ThinProvision      *types.CustomBool               `json:"sparse,omitempty" url:"sparse,omitempty,int"`
 	Blocksize          *string                         `json:"blocksize,omitempty" url:"blocksize,omitempty"`
 	VolumeGroup        *string                         `json:"vgname,omitempty" url:"vgname,omitempty"`
-	WipeRemovedVolumes *types.CustomBool               `json:"saferemove,omitempty" url:"saferemove,omitempty"`
+	WipeRemovedVolumes *types.CustomBool               `json:"saferemove,omitempty" url:"saferemove,omitempty,int"`
 	ThinPool           *string                         `json:"thinpool,omitempty" url:"thinpool,omitempty"`
+	Share              *string                         `json:"share,omitempty" url:"share,omitempty"`
+	Domain             *string                         `json:"domain,omitempty" url:"domain,omitempty"`
+	SubDirectory       *string                         `json:"subdir,omitempty" url:"subdir,omitempty"`
 }
 
 type DatastoreCreateResponse struct {

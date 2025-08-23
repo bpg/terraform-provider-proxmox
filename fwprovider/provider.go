@@ -539,6 +539,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		storage.NewLVMThinPoolStorageResource,
 		storage.NewNFSStorageResource,
 		storage.NewProxmoxBackupServerStorageResource,
+		storage.NewCIFSStorageResource,
 		storage.NewZFSPoolStorageResource,
 	}
 }
