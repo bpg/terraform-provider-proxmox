@@ -1,6 +1,6 @@
 module github.com/bpg/terraform-provider-proxmox
 
-go 1.24
+go 1.24.0
 
 tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
