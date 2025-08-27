@@ -19,9 +19,10 @@ The project is not affiliated with [Proxmox Server Solutions GmbH](https://www.p
 
 ## Compatibility Promise
 
-This provider is compatible with Proxmox VE 8.x (currently **8.4**).
+This provider is compatible with Proxmox VE 9.x (currently **9.0**). See [Known Issues](#known-issues) below for compatibility details.
 
 > [!IMPORTANT]
+> Proxmox VE 8.x is supported, but some functionality might be limited or not work as expected. Testing against 8.x is not a priority, and issues specific to 8.x will not be addressed.
 > Proxmox VE 7.x is NOT supported. While some features might work with 7.x, we do not test against it, and issues specific to 7.x will not be addressed.
 
 While the provider is on version 0.x, it is not guaranteed to be backward compatible with all previous minor versions.
@@ -31,7 +32,7 @@ However, we will try to maintain backward compatibility between provider version
 
 ### Production Requirements
 
-- [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 8.x
+- [Proxmox Virtual Environment](https://www.proxmox.com/en/proxmox-virtual-environment/) 9.x
 - TLS 1.3 for the Proxmox API endpoint (legacy TLS 1.2 is optionally supported)
 - [Terraform](https://www.terraform.io/downloads.html) 1.5+ or [OpenTofu](https://opentofu.org) 1.6+
 
@@ -77,7 +78,7 @@ The following assumptions are made about the test environment:
 Create `example/terraform.tfvars` with the following variables:
 
 ```sh
-virtual_environment_endpoint                 = "https://pve.example.doc:8006/"
+virtual_environment_endpoint                 = "https://pve.example.com:8006/"
 virtual_environment_ssh_username             = "terraform"
 virtual_environment_api_token                = "root@pam!terraform=00000000-0000-0000-0000-000000000000"
 ```
@@ -92,6 +93,12 @@ The provider is using the [Terraform SDKv2](https://developer.hashicorp.com/terr
 Work has started to migrate the provider to the new [Terraform Plugin Framework](https://developer.hashicorp.com/terraform/plugin/framework), with the aim of releasing it as a new major version **1.0**.
 
 ## Known Issues
+
+### Proxmox VE 9.0
+
+Proxmox VE 9.0 has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
+
+`apt_*` resources / datasources do not support the new deb822 style format.
 
 ### HA VMs / containers
 
@@ -110,7 +117,7 @@ Add the following block to your VM config:
   }
 ```
 
-For more context, see #1639 and #1770.
+For more context, see issues #1639 and #1770.
 
 ### Disk Images from VMware Cannot Be Uploaded or Imported
 
@@ -175,6 +182,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Brian King](https://github.com/inflatador)
 - [Radosław Szamszur](https://github.com/rszamszur)
 - [Marshall Ford](https://github.com/marshallford)
+- [Simon Caron](https://github.com/simoncaron)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 

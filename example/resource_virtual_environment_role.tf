@@ -1,6 +1,6 @@
 resource "proxmox_virtual_environment_role" "example" {
   privileges = [
-    "VM.Monitor",
+    "VM.GuestAgent.Audit",
   ]
   role_id = "terraform-provider-proxmox-example"
 }
