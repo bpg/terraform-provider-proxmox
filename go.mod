@@ -24,7 +24,7 @@ require (
 	github.com/pkg/sftp v1.13.9
 	github.com/rogpeppe/go-internal v1.14.1
 	github.com/skeema/knownhosts v1.3.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.41.0
 	golang.org/x/net v0.43.0
 )
