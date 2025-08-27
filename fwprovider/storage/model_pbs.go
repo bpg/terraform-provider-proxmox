@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -10,6 +16,7 @@ import (
 // PBSStorageModel maps the Terraform schema for PBS storage.
 type PBSStorageModel struct {
 	StorageModelBase
+
 	Server                   types.String `tfsdk:"server"`
 	Datastore                types.String `tfsdk:"datastore"`
 	Username                 types.String `tfsdk:"username"`
@@ -32,9 +39,10 @@ func (m *PBSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, 
 	request := storage.PBSStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
-	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.PBSStorageMutableFields.DataStoreCommonMutableFields); err != nil {
+	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.DataStoreCommonMutableFields); err != nil {
 		return nil, err
 	}
+
 	request.Username = m.Username.ValueStringPointer()
 	request.Password = m.Password.ValueStringPointer()
 	request.Namespace = m.Namespace.ValueStringPointer()
@@ -80,18 +88,23 @@ func (m *PBSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 	if datastore.Server != nil {
 		m.Server = types.StringValue(*datastore.Server)
 	}
+
 	if datastore.Datastore != nil {
 		m.Datastore = types.StringValue(*datastore.Datastore)
 	}
+
 	if datastore.Username != nil {
 		m.Username = types.StringValue(*datastore.Username)
 	}
+
 	if datastore.Namespace != nil {
 		m.Namespace = types.StringValue(*datastore.Namespace)
 	}
+
 	if datastore.Fingerprint != nil {
 		m.Fingerprint = types.StringValue(*datastore.Fingerprint)
 	}
+
 	if datastore.Shared != nil {
 		m.Shared = types.BoolValue(*datastore.Shared.PointerBool())
 	}

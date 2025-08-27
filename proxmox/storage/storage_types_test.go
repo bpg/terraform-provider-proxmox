@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -18,6 +24,8 @@ func customInt64Ptr(i int64) *types.CustomInt64 {
 
 // TestDataStoreWithBackups_String tests backup settings are encoded correctly into a string.
 func TestDataStoreWithBackups_String(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name     string
 		input    DataStoreWithBackups
@@ -88,6 +96,8 @@ func TestDataStoreWithBackups_String(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			result := tc.input.String()
 			assert.Equal(t, tc.expected, result)
 		})

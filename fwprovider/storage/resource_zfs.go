@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -47,12 +53,14 @@ func (r *zfsPoolStorageResource) Schema(_ context.Context, _ resource.SchemaRequ
 			},
 		},
 		"thin_provision": schema.BoolAttribute{
-			Description: "Whether to enable thin provisioning (`on` or `off`). Thin provisioning allows flexible disk allocation without pre-allocating full space.",
-			Optional:    true,
+			Description: "Whether to enable thin provisioning (`on` or `off`). Thin provisioning allows flexible disk allocation without " +
+				"pre-allocating full space.",
+			Optional: true,
 		},
 		"blocksize": schema.StringAttribute{
-			Description: "Block size for newly created volumes (e.g. `4k`, `8k`, `16k`). Larger values may improve throughput for large I/O, while smaller values optimize space efficiency.",
-			Optional:    true,
+			Description: "Block size for newly created volumes (e.g. `4k`, `8k`, `16k`). Larger values may improve throughput for large I/O, " +
+				"while smaller values optimize space efficiency.",
+			Optional: true,
 		},
 		"shared": schema.BoolAttribute{
 			Description: "Whether the storage is shared across all nodes.",

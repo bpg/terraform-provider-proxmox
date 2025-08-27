@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -14,8 +20,6 @@ import (
 
 type StorageSchemaFactory struct {
 	Schema *schema.Schema
-
-	description string
 }
 
 func NewStorageSchemaFactory() *StorageSchemaFactory {
@@ -55,6 +59,7 @@ func NewStorageSchemaFactory() *StorageSchemaFactory {
 		},
 		Blocks: map[string]schema.Block{},
 	}
+
 	return &StorageSchemaFactory{
 		Schema: s,
 	}
@@ -69,6 +74,7 @@ func (s *StorageSchemaFactory) WithAttributes(attributes map[string]schema.Attri
 	for k, v := range attributes {
 		s.Schema.Attributes[k] = v
 	}
+
 	return s
 }
 
@@ -76,6 +82,7 @@ func (s *StorageSchemaFactory) WithBlocks(blocks map[string]schema.Block) *Stora
 	for k, v := range blocks {
 		s.Schema.Blocks[k] = v
 	}
+
 	return s
 }
 

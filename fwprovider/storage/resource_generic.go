@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -44,19 +50,23 @@ func (r *storageResource[T, M]) Configure(ctx context.Context, req resource.Conf
 	if req.ProviderData == nil {
 		return
 	}
+
 	cfg, ok := req.ProviderData.(config.Resource)
 	if !ok {
 		resp.Diagnostics.AddError("Unexpected Resource Configure Type", fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData))
 		return
 	}
+
 	r.client = cfg.Client
 }
 
 // Create is the generic create function.
 func (r *storageResource[T, M]) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan T = new(M)
+
 	diags := req.Plan.Get(ctx, plan)
 	resp.Diagnostics.Append(diags...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -80,20 +90,28 @@ func (r *storageResource[T, M]) Create(ctx context.Context, req resource.CreateR
 // Read is the generic read function.
 func (r *storageResource[T, M]) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state T = new(M)
+
 	diags := req.State.Get(ctx, state)
 	resp.Diagnostics.Append(diags...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	datastoreID := state.GetID().ValueString()
+
 	datastore, err := r.client.Storage().GetDatastore(ctx, &storage.DatastoreGetRequest{ID: &datastoreID})
 	if err != nil {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	state.fromAPI(ctx, datastore)
+	err = state.fromAPI(ctx, datastore)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage", r.storageType), err.Error())
+		return
+	}
+
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 }
@@ -101,8 +119,10 @@ func (r *storageResource[T, M]) Read(ctx context.Context, req resource.ReadReque
 // Update is the generic update function.
 func (r *storageResource[T, M]) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan T = new(M)
+
 	diags := req.Plan.Get(ctx, plan)
 	resp.Diagnostics.Append(diags...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -126,8 +146,10 @@ func (r *storageResource[T, M]) Update(ctx context.Context, req resource.UpdateR
 // Delete is the generic delete function.
 func (r *storageResource[T, M]) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state T = new(M)
+
 	diags := req.State.Get(ctx, state)
 	resp.Diagnostics.Append(diags...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}

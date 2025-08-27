@@ -568,6 +568,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 		// For all other content types, we need to upload the file to the node's
 		// datastore using SFTP.
 		req := &storage.DatastoreGetRequest{ID: &datastoreID}
+
 		datastore, err2 := capi.Storage().GetDatastore(ctx, req)
 		if err2 != nil {
 			return diag.Errorf("failed to get datastore: %s", err2)

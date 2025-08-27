@@ -6,16 +6,17 @@ import "time"
 type PBSStorageMutableFields struct {
 	DataStoreCommonMutableFields
 	DataStoreWithBackups
-	Fingerprint *string `json:"fingerprint,omitempty" url:"fingerprint,omitempty"`
+
+	Fingerprint *string `json:"fingerprint,omitempty"    url:"fingerprint,omitempty"`
 	Encryption  *string `json:"encryption-key,omitempty" url:"encryption-key,omitempty"`
 }
 
 // PBSStorageImmutableFields defines the immutable attributes for 'pbs' type storage.
 type PBSStorageImmutableFields struct {
-	Username  *string `json:"username,omitempty" url:"username,omitempty"`
-	Password  *string `json:"password,omitempty" url:"password,omitempty"`
+	Username  *string `json:"username,omitempty"  url:"username,omitempty"`
+	Password  *string `json:"password,omitempty"  url:"password,omitempty"`
 	Namespace *string `json:"namespace,omitempty" url:"namespace,omitempty"`
-	Server    *string `json:"server,omitempty" url:"server,omitempty"`
+	Server    *string `json:"server,omitempty"    url:"server,omitempty"`
 	Datastore *string `json:"datastore,omitempty" url:"datastore,omitempty"`
 }
 

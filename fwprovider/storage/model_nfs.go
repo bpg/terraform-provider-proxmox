@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -11,6 +17,7 @@ import (
 // NFSStorageModel maps the Terraform schema for NFS storage.
 type NFSStorageModel struct {
 	StorageModelBase
+
 	Server                 types.String `tfsdk:"server"`
 	Export                 types.String `tfsdk:"export"`
 	Options                types.String `tfsdk:"options"`
@@ -59,12 +66,15 @@ func (m *NFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 	if datastore.Server != nil {
 		m.Server = types.StringValue(*datastore.Server)
 	}
+
 	if datastore.Export != nil {
 		m.Export = types.StringValue(*datastore.Export)
 	}
+
 	if datastore.Options != nil {
 		m.Options = types.StringValue(*datastore.Options)
 	}
+
 	if datastore.Preallocation != nil {
 		m.Preallocation = types.StringValue(*datastore.Preallocation)
 	}

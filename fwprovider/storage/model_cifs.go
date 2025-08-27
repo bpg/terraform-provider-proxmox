@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -11,6 +17,7 @@ import (
 // CIFSStorageModel maps the Terraform schema for CIFS storage.
 type CIFSStorageModel struct {
 	StorageModelBase
+
 	Server                 types.String `tfsdk:"server"`
 	Username               types.String `tfsdk:"username"`
 	Password               types.String `tfsdk:"password"`
@@ -65,18 +72,23 @@ func (m *CIFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datas
 	if datastore.Server != nil {
 		m.Server = types.StringValue(*datastore.Server)
 	}
+
 	if datastore.Username != nil {
 		m.Username = types.StringValue(*datastore.Username)
 	}
+
 	if datastore.Share != nil {
 		m.Share = types.StringValue(*datastore.Share)
 	}
+
 	if datastore.Domain != nil {
 		m.Domain = types.StringValue(*datastore.Domain)
 	}
+
 	if datastore.SubDirectory != nil {
 		m.SubDirectory = types.StringValue(*datastore.SubDirectory)
 	}
+
 	if datastore.Preallocation != nil {
 		m.Preallocation = types.StringValue(*datastore.Preallocation)
 	}

@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -10,6 +16,7 @@ import (
 // LVMThinStorageModel maps the Terraform schema for LVM storage.
 type LVMThinStorageModel struct {
 	StorageModelBase
+
 	VolumeGroup types.String `tfsdk:"volume_group"`
 	ThinPool    types.String `tfsdk:"thin_pool"`
 }
@@ -24,7 +31,7 @@ func (m *LVMThinStorageModel) toCreateAPIRequest(ctx context.Context) (interface
 	request := storage.LVMThinStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
-	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.LVMThinStorageMutableFields.DataStoreCommonMutableFields); err != nil {
+	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.DataStoreCommonMutableFields); err != nil {
 		return nil, err
 	}
 
@@ -54,6 +61,7 @@ func (m *LVMThinStorageModel) fromAPI(ctx context.Context, datastore *storage.Da
 	if datastore.VolumeGroup != nil {
 		m.VolumeGroup = types.StringValue(*datastore.VolumeGroup)
 	}
+
 	if datastore.ThinPool != nil {
 		m.ThinPool = types.StringValue(*datastore.ThinPool)
 	}

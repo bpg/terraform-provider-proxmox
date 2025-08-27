@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -47,8 +53,10 @@ func (r *pbsStorageResource) Metadata(_ context.Context, req resource.MetadataRe
 // Create is the generic create function.
 func (r *pbsStorageResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan PBSStorageModel
+
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -69,11 +77,13 @@ func (r *pbsStorageResource) Create(ctx context.Context, req resource.CreateRequ
 
 	if !plan.GenerateEncryptionKey.IsNull() && plan.GenerateEncryptionKey.ValueBool() {
 		var encryptionKey storage.EncryptionKey
+
 		err := json.Unmarshal([]byte(*responseData.Config.EncryptionKey), &encryptionKey)
 		if err != nil {
 			resp.Diagnostics.AddError(fmt.Sprintf("Error unmarshaling encryption key for %s storage", r.storageType), err.Error())
 			return
 		}
+
 		plan.GeneratedEncryptionKey = types.StringValue(*responseData.Config.EncryptionKey)
 		plan.EncryptionKeyFingerprint = types.StringValue(encryptionKey.Fingerprint)
 	} else {
@@ -82,11 +92,13 @@ func (r *pbsStorageResource) Create(ctx context.Context, req resource.CreateRequ
 
 	if !plan.EncryptionKey.IsNull() {
 		var encryptionKey storage.EncryptionKey
+
 		err := json.Unmarshal([]byte(*responseData.Config.EncryptionKey), &encryptionKey)
 		if err != nil {
 			resp.Diagnostics.AddError(fmt.Sprintf("Error unmarshaling encryption key for %s storage", r.storageType), err.Error())
 			return
 		}
+
 		plan.EncryptionKey = types.StringValue(*responseData.Config.EncryptionKey)
 		plan.EncryptionKeyFingerprint = types.StringValue(encryptionKey.Fingerprint)
 	}
@@ -145,8 +157,9 @@ func (r *pbsStorageResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			Computed:    true,
 		},
 		"generate_encryption_key": schema.BoolAttribute{
-			Description: "If set to true, Proxmox will generate a new encryption key. The key will be stored in the `generated_encryption_key` attribute. Conflicts with `encryption_key`.",
-			Optional:    true,
+			Description: "If set to true, Proxmox will generate a new encryption key. The key will be stored in the `generated_encryption_key` attribute. " +
+				"Conflicts with `encryption_key`.",
+			Optional: true,
 			Validators: []validator.Bool{
 				boolvalidator.ConflictsWith(path.MatchRoot("encryption_key")),
 			},

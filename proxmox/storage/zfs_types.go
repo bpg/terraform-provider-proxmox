@@ -5,12 +5,12 @@ import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 // ZFSStorageMutableFields defines options for 'zfspool' type storage.
 type ZFSStorageMutableFields struct {
 	DataStoreCommonMutableFields
-	ThinProvision types.CustomBool `json:"sparse,omitempty" url:"sparse,omitempty,int"`
+
+	ThinProvision types.CustomBool `json:"sparse,omitempty"    url:"sparse,omitempty,int"`
 	Blocksize     *string          `json:"blocksize,omitempty" url:"blocksize,omitempty"`
 }
 
 type ZFSStorageImmutableFields struct {
-	DataStoreCommonMutableFields
 	ZFSPool *string `json:"pool" url:"pool"`
 }
 

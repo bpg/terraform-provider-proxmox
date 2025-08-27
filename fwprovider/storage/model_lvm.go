@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -11,6 +17,7 @@ import (
 // LVMStorageModel maps the Terraform schema for LVM storage.
 type LVMStorageModel struct {
 	StorageModelBase
+
 	VolumeGroup        types.String `tfsdk:"volume_group"`
 	WipeRemovedVolumes types.Bool   `tfsdk:"wipe_removed_volumes"`
 }
@@ -25,7 +32,7 @@ func (m *LVMStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, 
 	request := storage.LVMStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
-	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.LVMStorageMutableFields.DataStoreCommonMutableFields); err != nil {
+	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.DataStoreCommonMutableFields); err != nil {
 		return nil, err
 	}
 
@@ -57,6 +64,7 @@ func (m *LVMStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 	if datastore.VolumeGroup != nil {
 		m.VolumeGroup = types.StringValue(*datastore.VolumeGroup)
 	}
+
 	if datastore.WipeRemovedVolumes != nil {
 		m.WipeRemovedVolumes = types.BoolValue(*datastore.WipeRemovedVolumes.PointerBool())
 	}

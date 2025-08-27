@@ -7,7 +7,7 @@ type LVMThinStorageMutableFields struct {
 
 // LVMThinStorageImmutableFields defines options for 'lvmthin' type storage.
 type LVMThinStorageImmutableFields struct {
-	VolumeGroup *string `json:"vgname" url:"vgname"`
+	VolumeGroup *string `json:"vgname"             url:"vgname"`
 	ThinPool    *string `json:"thinpool,omitempty" url:"thinpool,omitempty"`
 }
 

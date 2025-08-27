@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -11,6 +17,7 @@ import (
 // ZFSStorageModel maps the Terraform schema for ZFS storage.
 type ZFSStorageModel struct {
 	StorageModelBase
+
 	ZFSPool       types.String `tfsdk:"zfs_pool"`
 	ThinProvision types.Bool   `tfsdk:"thin_provision"`
 	Blocksize     types.String `tfsdk:"blocksize"`
@@ -26,7 +33,10 @@ func (m *ZFSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, 
 	request := storage.ZFSStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
-	if err := m.populateCreateFields(ctx, &request.DataStoreCommonImmutableFields, &request.ZFSStorageMutableFields.DataStoreCommonMutableFields); err != nil {
+	if err := m.populateCreateFields(ctx,
+		&request.DataStoreCommonImmutableFields,
+		&request.DataStoreCommonMutableFields,
+	); err != nil {
 		return nil, err
 	}
 
@@ -60,9 +70,11 @@ func (m *ZFSStorageModel) fromAPI(ctx context.Context, datastore *storage.Datast
 	if datastore.ZFSPool != nil {
 		m.ZFSPool = types.StringValue(*datastore.ZFSPool)
 	}
+
 	if datastore.ThinProvision != nil {
 		m.ThinProvision = types.BoolValue(*datastore.ThinProvision.PointerBool())
 	}
+
 	if datastore.Blocksize != nil {
 		m.Blocksize = types.StringValue(*datastore.Blocksize)
 	}

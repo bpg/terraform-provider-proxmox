@@ -5,6 +5,7 @@ import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 // LVMStorageMutableFields defines options for 'lvm' type storage.
 type LVMStorageMutableFields struct {
 	DataStoreCommonMutableFields
+
 	WipeRemovedVolumes types.CustomBool `json:"saferemove" url:"saferemove,int"`
 }
 

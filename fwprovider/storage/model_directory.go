@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -10,6 +16,7 @@ import (
 // DirectoryStorageModel maps the Terraform schema for directory storage.
 type DirectoryStorageModel struct {
 	StorageModelBase
+
 	Path          types.String `tfsdk:"path"`
 	Preallocation types.String `tfsdk:"preallocation"`
 	Backups       *BackupModel `tfsdk:"backups"`
@@ -53,6 +60,7 @@ func (m *DirectoryStorageModel) fromAPI(ctx context.Context, datastore *storage.
 	if datastore.Path != nil {
 		m.Path = types.StringValue(*datastore.Path)
 	}
+
 	if datastore.Preallocation != nil {
 		m.Preallocation = types.StringValue(*datastore.Preallocation)
 	}

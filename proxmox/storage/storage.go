@@ -43,6 +43,7 @@ func (c *Client) ListDatastore(ctx context.Context, d *DatastoreListRequest) ([]
 
 func (c *Client) GetDatastore(ctx context.Context, d *DatastoreGetRequest) (*DatastoreGetResponseData, error) {
 	resBody := &DatastoreGetResponse{}
+
 	err := c.DoRequest(
 		ctx,
 		http.MethodGet,
@@ -59,6 +60,7 @@ func (c *Client) GetDatastore(ctx context.Context, d *DatastoreGetRequest) (*Dat
 
 func (c *Client) CreateDatastore(ctx context.Context, d interface{}) (*DatastoreCreateResponseData, error) {
 	resBody := &DatastoreCreateResponse{}
+
 	err := c.DoRequest(
 		ctx,
 		http.MethodPost,

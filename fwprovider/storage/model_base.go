@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package storage
 
 import (
@@ -33,6 +39,7 @@ func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *s
 		if diags.HasError() {
 			return fmt.Errorf("cannot parse nodes from datastore: %s", diags)
 		}
+
 		m.Nodes = nodes
 	} else {
 		m.Nodes = types.SetValueMust(types.StringType, []attr.Value{})
@@ -43,12 +50,14 @@ func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *s
 		if diags.HasError() {
 			return fmt.Errorf("cannot parse content from datastore: %s", diags)
 		}
+
 		m.ContentTypes = contentTypes
 	}
 
 	if datastore.Disable != nil {
 		m.Disable = datastore.Disable.ToValue()
 	}
+
 	if datastore.Shared != nil {
 		m.Shared = datastore.Shared.ToValue()
 	}
@@ -57,7 +66,11 @@ func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *s
 }
 
 // populateCreateFields is a helper to populate the common fields for a create request.
-func (m *StorageModelBase) populateCreateFields(ctx context.Context, immutableReq *storage.DataStoreCommonImmutableFields, mutableReq *storage.DataStoreCommonMutableFields) error {
+func (m *StorageModelBase) populateCreateFields(
+	ctx context.Context,
+	immutableReq *storage.DataStoreCommonImmutableFields,
+	mutableReq *storage.DataStoreCommonMutableFields,
+) error {
 	var nodes proxmox_types.CustomCommaSeparatedList
 	if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
 		return fmt.Errorf("cannot convert nodes: %s", diags)
