@@ -13,7 +13,6 @@ import (
 )
 
 // ApplyConfig triggers a cluster-wide SDN apply via PUT /cluster/sdn.
-// If the API returns a task UPID, it will be captured but ignored here.
 func (c *Client) ApplyConfig(ctx context.Context) error {
 	resBody := &ApplyResponseBody{}
 
@@ -23,6 +22,11 @@ func (c *Client) ApplyConfig(ctx context.Context) error {
 
 	if resBody.Data == nil || *resBody.Data == "" {
 		return fmt.Errorf("SDN apply did not return a task UPID")
+	}
+
+	err := c.Tasks().WaitForTask(ctx, *resBody.Data)
+	if err != nil {
+		return fmt.Errorf("error waiting for SDN apply: %w", err)
 	}
 
 	return nil

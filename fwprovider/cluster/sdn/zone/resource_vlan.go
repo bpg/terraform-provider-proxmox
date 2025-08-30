@@ -32,6 +32,12 @@ func (m *vlanModel) importFromAPI(name string, data *zones.ZoneData, diags *diag
 	m.genericModel.importFromAPI(name, data, diags)
 
 	m.Bridge = types.StringPointerValue(data.Bridge)
+
+	if data.Pending != nil {
+		if data.Pending.Bridge != nil && *data.Pending.Bridge != "" {
+			m.Bridge = types.StringValue(*data.Pending.Bridge)
+		}
+	}
 }
 
 func (m *vlanModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {

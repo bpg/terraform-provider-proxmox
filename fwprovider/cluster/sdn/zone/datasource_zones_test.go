@@ -46,6 +46,7 @@ func TestAccDataSourceSDNZoneSimple(t *testing.T) {
 					"nodes.#": "1",
 					"nodes.0": "pve",
 				}),
+				// pending and state attributes are computed by the provider
 			),
 		}}},
 	}
@@ -221,19 +222,24 @@ func TestAccDataSourceSDNZones(t *testing.T) {
 					bridge = "vmbr0"
 					mtu    = 1496
 				}
-				
-				data "proxmox_virtual_environment_sdn_zones" "all" {
+
+				resource "proxmox_virtual_environment_sdn_applier" "test_applier" {
 					depends_on = [
 						proxmox_virtual_environment_sdn_zone_simple.test1,
 						proxmox_virtual_environment_sdn_zone_vlan.test2
 					]
 				}
 				
+				data "proxmox_virtual_environment_sdn_zones" "all" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.test_applier
+					]
+				}
+				
 				data "proxmox_virtual_environment_sdn_zones" "simple_only" {
 					type = "simple"
 					depends_on = [
-						proxmox_virtual_environment_sdn_zone_simple.test1,
-						proxmox_virtual_environment_sdn_zone_vlan.test2
+						proxmox_virtual_environment_sdn_applier.test_applier
 					]
 				}
 			`),
@@ -244,6 +250,10 @@ func TestAccDataSourceSDNZones(t *testing.T) {
 				// Check that filtered datasource works
 				resource.TestCheckResourceAttr("data.proxmox_virtual_environment_sdn_zones.simple_only", "type", "simple"),
 				resource.TestCheckResourceAttrSet("data.proxmox_virtual_environment_sdn_zones.simple_only", "zones.#"),
+
+				// Verify pending and state attributes exist in zones list
+				resource.TestCheckResourceAttr("data.proxmox_virtual_environment_sdn_zones.all", "zones.0.pending", "false"),
+				resource.TestCheckResourceAttr("data.proxmox_virtual_environment_sdn_zones.simple_only", "zones.0.pending", "false"),
 			),
 		}}},
 	}

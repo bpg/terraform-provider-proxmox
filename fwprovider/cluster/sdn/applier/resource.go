@@ -9,6 +9,7 @@ package applier
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
@@ -19,9 +20,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &Resource{}
-	_ resource.ResourceWithConfigure   = &Resource{}
-	_ resource.ResourceWithImportState = &Resource{}
+	_ resource.Resource              = &Resource{}
+	_ resource.ResourceWithConfigure = &Resource{}
 )
 
 type model struct {
@@ -49,7 +49,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Opaque identifier set to the RFC3339 timestamp when the apply was executed.",
+				Description: "Opaque identifier set to the Unix timestamp (milliseconds) when the apply was executed.",
 			},
 		},
 	}
@@ -80,21 +80,13 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	state := &model{
-		ID: types.StringValue(time.Now().UTC().Format(time.RFC3339)),
+		ID: types.StringValue(strconv.FormatInt(time.Now().UTC().UnixMilli(), 10)),
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Nothing to refresh; keep prior state to be stable in plans.
-	var state model
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	// Nothing to refresh
 }
 
 func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -116,16 +108,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *Resource) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
-	// No remote object to delete; nothing to do.
-}
-
-func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	if req.ID == "" {
-		resp.Diagnostics.AddError("Invalid Import ID", "Expected a non-empty ID value.")
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if err := r.client.ApplyConfig(ctx); err != nil {
+		resp.Diagnostics.AddError("Unable to Re-Apply SDN Configuration", err.Error())
 		return
 	}
-
-	state := &model{ID: types.StringValue(req.ID)}
-	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
