@@ -44,7 +44,7 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Applies pending Proxmox SDN configuration (cluster-wide).",
-		MarkdownDescription: "Triggers Proxmox's SDN **Apply** (equivalent to `PUT /cluster/sdn`)." +
+		MarkdownDescription: "**EXPERIMENTAL** Triggers Proxmox's SDN **Apply** (equivalent to `PUT /cluster/sdn`)." +
 			"Intended to be used with `replace_triggered_by` so it runs after SDN objects change.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

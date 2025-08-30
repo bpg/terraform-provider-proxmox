@@ -47,4 +47,6 @@ output "data_proxmox_virtual_environment_sdn_zone_vxlan" {
 - `mtu` (Number) MTU value for the zone.
 - `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets are deployed on
 - `peers` (Set of String) A list of IP addresses of each node in the VXLAN zone. This can be external nodes reachable at this IP address. All nodes in the cluster need to be mentioned here
+- `pending` (Boolean) Indicates if the zone has pending configuration changes that need to be applied.
 - `reverse_dns` (String) Reverse DNS API server address.
+- `state` (String) Indicates the current state of the zone.

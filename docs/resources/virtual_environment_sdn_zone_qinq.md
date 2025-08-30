@@ -49,6 +49,11 @@ resource "proxmox_virtual_environment_sdn_zone_qinq" "example" {
 - `reverse_dns` (String) Reverse DNS API server address.
 - `service_vlan_protocol` (String) Service VLAN protocol for QinQ. The protocol must be `802.1ad` or `802.1q`.
 
+### Read-Only
+
+- `pending` (Boolean) Indicates if the zone has pending configuration changes that need to be applied.
+- `state` (String) Indicates the current state of the zone.
+
 ## Import
 
 Import is supported using the following syntax:
