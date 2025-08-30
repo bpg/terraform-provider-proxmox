@@ -9,7 +9,7 @@ description: |-
 
 # Resource: proxmox_virtual_environment_sdn_applier
 
-**EXPERIMENTAL** Triggers Proxmox's SDN **Apply** (equivalent to `PUT /cluster/sdn`).Intended to be used with `replace_triggered_by` so it runs after SDN objects change.
+**EXPERIMENTAL** Triggers Proxmox's SDN **Apply** (equivalent to `PUT /cluster/sdn`). Intended to be used with `replace_triggered_by` so it runs after SDN objects change.
 
 
 
