@@ -104,7 +104,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-plan.ID = types.StringValue(strconv.FormatInt(time.Now().UTC().UnixMilli(), 10))
+	plan.ID = types.StringValue(strconv.FormatInt(time.Now().UTC().UnixMilli(), 10))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
