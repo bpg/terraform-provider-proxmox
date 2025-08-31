@@ -3,7 +3,7 @@ layout: page
 page_title: "Setup a VM with Proxmox"
 subcategory: Guides
 description: |-
-  This guide will help you setup a proxmox node in VM using virt-manager for a job.
+  This guide will help you set up a proxmox node in VM using virt-manager for a job.
 ---
 
 # Setup VM with Proxmox to run examples and acceptance tests
@@ -14,9 +14,9 @@ Contributors
 
 ## Motivation
 
-To test changes, it's best to try it on real proxmox cluster. There is dedicated `make example` command that will try to apply changes defined in `example` directory. Most resources have its examples declarations there. For example, if you add new resource, you could add new file with example resource there (ideally after adding tests). If nothing breaks, apply works fine, new resource is created and all other resources are fine, then likely change is safe.
+To test changes, it's best to try it on a real proxmox cluster. There is a dedicated `make example` command that will try to apply changes defined in the `example` directory. Most resources have their example declarations there. For example, if you add a new resource, you could add a new file with example resource there (ideally after adding tests). If nothing breaks, the apply works fine, new resource is created and all other resources are fine, then the change is likely safe.
 
-But, proxmox node setup can be tricky task for some contributors.
+But, proxmox node setup can be a tricky task for some contributors.
 
 ## Preconditions
 
@@ -24,19 +24,19 @@ Be sure to install `go` and `terraform` on your system first.
 
 ## Linux (Debian/Ubuntu) with virt-manager
 
-Goal is to have a proxmox node in VM using <https://virt-manager.org/> for a job. This text assumes some linux knowledge. Tested on Debian 12 bookworm and proxmox VE 8.1. For other distros, with any luck steps should be similar.
+The goal is to have a proxmox node in a VM using <https://virt-manager.org/> for the job. This text assumes some linux knowledge. Tested on Debian 12 bookworm and proxmox VE 8.1. For other distros, with any luck the steps should be similar.
 
 1. `sudo apt-get install virt-manager`.
 
-2. Download some proxmox image from <http://download.proxmox.com/iso/>, currently latest is `proxmox-ve_8.1-1.iso`.
+2. Download a proxmox image from <http://download.proxmox.com/iso/>, currently the latest is `proxmox-ve_8.1-1.iso`.
 
-3. Run `virt-manager` and "create a new virtual machine", use a file you just downloaded, choose debian as a operating system, leave default network settings.
+3. Run `virt-manager` and "create a new virtual machine", use the file you just downloaded, choose debian as an operating system, leave default network settings.
 
-4. Give it enough RAM and disk size (required minimum is unknown for make example though I used 4GB on my 8GB laptop and 30GB disk size with success).
+4. Give it enough RAM and disk size (the required minimum is unknown for make example though I used 4GB on my 8GB laptop and 30GB disk size with success).
 
 5. Proceed forward with installation, choose whatever you want for timezone, country, password, domain, email. Don't change other default settings.
 
-6. After installation, log in using password from previous step and `root` username (it's proxmox default). Run: `ip a` to get assigned ip (this also appears during installation). In my case it is `192.168.122.43`.
+6. After installation, log in using the password from the previous step and `root` username (it's the proxmox default). Run: `ip a` to get the assigned ip (this also appears during installation). In my case it is `192.168.122.43`.
 
    It may look like this:
 
@@ -58,7 +58,7 @@ Goal is to have a proxmox node in VM using <https://virt-manager.org/> for a job
        valid_lft forever preferred_lft forever
    ```
 
-7. (Optional) On **your** computer, there should be new interface created mapped to that one you see on proxmox. Again `ip a`:
+7. (Optional) On **your** computer, there should be a new interface created mapped to the one you see on proxmox. Again `ip a`:
 
    ```txt
    ...
@@ -72,15 +72,15 @@ Goal is to have a proxmox node in VM using <https://virt-manager.org/> for a job
 
    ```
 
-8. (Optional) You can SSH into proxmox node:
+8. (Optional) You can SSH into the proxmox node:
 
    ```bash
    ssh root@192.168.122.43
    ```
 
-   You can also use browser and visit console at <https://192.168.122.43:8006>.
+   You can also use a browser and visit the console at <https://192.168.122.43:8006>.
 
-9. Create `terraform.tfvars` file (it will be git ignored file) in `example` folder with credentials for you new proxmox node.
+9. Create a `terraform.tfvars` file (it will be a git ignored file) in the `example` folder with credentials for your new proxmox node.
 
    ```txt
    # example/terraform.tfvars

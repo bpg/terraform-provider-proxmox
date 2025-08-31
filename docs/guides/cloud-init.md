@@ -62,7 +62,7 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
 }
 ```
 
-Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
+Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is the agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
 
 ## Custom Cloud-Init Configuration
 

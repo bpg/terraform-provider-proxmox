@@ -59,5 +59,5 @@ data "proxmox_virtual_environment_containers" "ubuntu_templates" {
     - `node_name` - The node name.
     - `tags` - A list of tags of the container.
     - `vm_id` - The container identifier.
-    - `status` - Status of the container
-    - `template` - Is container a template (true) or a regular container (false)
+    - `status` - The status of the container.
+    - `template` - Whether the container is a template.

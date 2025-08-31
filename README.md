@@ -23,6 +23,7 @@ This provider is compatible with Proxmox VE 9.x (currently **9.0**). See [Known 
 
 > [!IMPORTANT]
 > Proxmox VE 8.x is supported, but some functionality might be limited or not work as expected. Testing against 8.x is not a priority, and issues specific to 8.x will not be addressed.
+>
 > Proxmox VE 7.x is NOT supported. While some features might work with 7.x, we do not test against it, and issues specific to 7.x will not be addressed.
 
 While the provider is on version 0.x, it is not guaranteed to be backward compatible with all previous minor versions.
@@ -159,7 +160,7 @@ This requires the use of a PAM account (standard Linux account).
 
 ### Cluster Hardware Mappings Cannot Be Created by Non-PAM Accounts
 
-Due to limitations in the Proxmox VE API, cluster hardware mappings must be created using the `root` PAM account (standard Linux account) due to [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit#Virtualization) interactions.
+Due to limitations in the Proxmox VE API, cluster hardware mappings must be created using the `root` PAM account (standard Linux account) because of [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit#Virtualization) interactions.
 Hardware mappings allow the use of [PCI "passthrough"](https://pve.proxmox.com/wiki/PCI_Passthrough) and [map physical USB ports](https://pve.proxmox.com/wiki/USB_Physical_Port_Mapping).
 
 ## Contributors

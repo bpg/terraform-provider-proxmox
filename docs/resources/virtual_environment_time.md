@@ -26,12 +26,12 @@ resource "proxmox_virtual_environment_time" "first_node_time" {
 ## Attribute Reference
 
 - `local_time` - The node's local time.
-- `utc_time` - The node's local time formatted as UTC.
+- `utc_time` - The node's time formatted as UTC.
 
 ## Import
 
 Instances can be imported using the `node_name`, e.g.,
 
 ```bash
-terraform import proxmox_virtual_environment_dns.first_node first-node
+terraform import proxmox_virtual_environment_time.first_node first-node
 ```
