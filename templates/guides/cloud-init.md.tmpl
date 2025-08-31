@@ -14,7 +14,7 @@ Proxmox supports cloud-init natively, so you can use the `initialization` block 
 
 {{ codefile "terraform" "examples/guides/cloud-init/native/main.tf" }}
 
-Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
+Note that many cloud images do not have `qemu-guest-agent` installed by default, so you won't be able to retrieve the dynamic IP address of the VM from Proxmox, as this is the agent's responsibility. You can use the `ip_config` block to configure a static IP address instead.
 
 ## Custom Cloud-Init Configuration
 
