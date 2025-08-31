@@ -16,9 +16,14 @@ import (
 
 // GetZone retrieves a single SDN zone by ID.
 func (c *Client) GetZone(ctx context.Context, id string) (*ZoneData, error) {
+	return c.GetZoneWithParams(ctx, id, nil)
+}
+
+// GetZoneWithParams retrieves a single SDN zone by ID with query parameters.
+func (c *Client) GetZoneWithParams(ctx context.Context, id string, params *ZoneQueryParams) (*ZoneData, error) {
 	resBody := &ZoneResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(id), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(id), params, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error reading SDN zone %s: %w", id, err)
 	}
@@ -32,9 +37,14 @@ func (c *Client) GetZone(ctx context.Context, id string) (*ZoneData, error) {
 
 // GetZones lists all SDN zones.
 func (c *Client) GetZones(ctx context.Context) ([]ZoneData, error) {
+	return c.GetZonesWithParams(ctx, nil)
+}
+
+// GetZonesWithParams lists all SDN zones with query parameters.
+func (c *Client) GetZonesWithParams(ctx context.Context, params *ZoneQueryParams) ([]ZoneData, error) {
 	resBody := &ZonesResponseBody{}
 
-	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), nil, resBody)
+	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), params, resBody)
 	if err != nil {
 		return nil, fmt.Errorf("error listing SDN zones: %w", err)
 	}

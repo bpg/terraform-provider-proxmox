@@ -45,6 +45,11 @@ resource "proxmox_virtual_environment_sdn_zone_vlan" "example" {
 - `mtu` (Number) MTU value for the zone.
 - `reverse_dns` (String) Reverse DNS API server address.
 
+### Read-Only
+
+- `pending` (Boolean) Indicates if the zone has pending configuration changes that need to be applied.
+- `state` (String) Indicates the current state of the zone.
+
 ## Import
 
 Import is supported using the following syntax:

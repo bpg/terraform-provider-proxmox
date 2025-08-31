@@ -30,6 +30,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/hardwaremapping"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
+	sdnapplier "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/applier"
 	sdnzone "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/zone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
@@ -534,6 +535,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnzone.NewQinQResource,
 		sdnzone.NewVXLANResource,
 		sdnzone.NewEVPNResource,
+    sdnapplier.NewResource,
 		storage.NewDirectoryStorageResource,
 		storage.NewLVMPoolStorageResource,
 		storage.NewLVMThinPoolStorageResource,

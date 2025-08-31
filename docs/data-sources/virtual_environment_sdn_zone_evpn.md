@@ -58,7 +58,9 @@ output "data_proxmox_virtual_environment_sdn_zone_evpn" {
 - `ipam` (String) IP Address Management system.
 - `mtu` (Number) MTU value for the zone.
 - `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets are deployed on
+- `pending` (Boolean) Indicates if the zone has pending configuration changes that need to be applied.
 - `primary_exit_node` (String) Primary exit node for EVPN.
 - `reverse_dns` (String) Reverse DNS API server address.
 - `rt_import` (String) Route target import for EVPN. Must be in the format '<ASN>:<number>' (e.g., '65000:65000').
+- `state` (String) Indicates the current state of the zone.
 - `vrf_vxlan` (Number) VRF VXLAN-ID used for dedicated routing interconnect between VNets. It must be different than the VXLAN-ID of the VNets.

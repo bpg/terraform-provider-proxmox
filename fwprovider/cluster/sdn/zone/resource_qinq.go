@@ -37,6 +37,11 @@ func (m *qinqModel) importFromAPI(name string, data *zones.ZoneData, diags *diag
 
 	m.ServiceVLAN = types.Int64PointerValue(data.ServiceVLAN)
 	m.ServiceVLANProtocol = types.StringPointerValue(data.ServiceVLANProtocol)
+
+	if data.Pending != nil {
+		m.ServiceVLAN = types.Int64PointerValue(data.Pending.ServiceVLAN)
+		m.ServiceVLANProtocol = types.StringPointerValue(data.Pending.ServiceVLANProtocol)
+	}
 }
 
 func (m *qinqModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {

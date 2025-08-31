@@ -15,6 +15,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/ha"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/mapping"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/metrics"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/applier"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 )
@@ -70,3 +71,8 @@ func (c *Client) SDNZones() *zones.Client {
 // func (c *Client) SDNSubnets() *subnets.Client {
 // 	return &subnets.Client{Client: c}
 // }
+
+// SDNApplier returns a client for applying the SDN's configuration.
+func (c *Client) SDNApplier() *applier.Client {
+	return &applier.Client{Client: c}
+}

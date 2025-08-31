@@ -30,7 +30,12 @@ type vxlanModel struct {
 
 func (m *vxlanModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
 	m.genericModel.importFromAPI(name, data, diags)
+
 	m.Peers = stringset.NewValueString(data.Peers, diags, stringset.WithSeparator(","))
+
+	if data.Pending != nil {
+		m.Peers = stringset.NewValueString(data.Pending.Peers, diags, stringset.WithSeparator(","))
+	}
 }
 
 func (m *vxlanModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {

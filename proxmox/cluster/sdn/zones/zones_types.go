@@ -16,7 +16,7 @@ const (
 	TypeEVPN   = "evpn"
 )
 
-type ZoneData struct {
+type Zone struct {
 	ID         string  `json:"zone"                 url:"zone"`
 	Type       *string `json:"type,omitempty"       url:"type,omitempty"`
 	IPAM       *string `json:"ipam,omitempty"       url:"ipam,omitempty"`
@@ -25,6 +25,7 @@ type ZoneData struct {
 	DNSZone    *string `json:"dnszone,omitempty"    url:"dnszone,omitempty"`
 	Nodes      *string `json:"nodes,omitempty"      url:"nodes,omitempty"`
 	MTU        *int64  `json:"mtu,omitempty"        url:"mtu,omitempty"`
+	State      *string `json:"state,omitempty"      url:"state,omitempty"`
 
 	// VLAN.
 	Bridge *string `json:"bridge,omitempty" url:"bridge,omitempty"`
@@ -47,6 +48,12 @@ type ZoneData struct {
 	RouteTargetImport       *string           `json:"rt-import,omitempty"                  url:"rt-import,omitempty"`
 }
 
+type ZoneData struct {
+	Zone
+
+	Pending *Zone `json:"pending,omitempty" url:"pending,omitempty"`
+}
+
 // ZoneRequestData wraps a ZoneData struct with optional delete instructions.
 type ZoneRequestData struct {
 	ZoneData
@@ -62,4 +69,10 @@ type ZoneResponseBody struct {
 // ZonesResponseBody represents the response for a list of zones.
 type ZonesResponseBody struct {
 	Data *[]ZoneData `json:"data"`
+}
+
+// ZoneQueryParams represents query parameters for zone API calls.
+type ZoneQueryParams struct {
+	Pending *types.CustomBool `url:"pending,omitempty,int"`
+	Running *types.CustomBool `url:"running,omitempty,int"`
 }

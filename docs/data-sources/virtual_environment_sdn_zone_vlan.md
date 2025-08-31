@@ -47,4 +47,6 @@ output "data_proxmox_virtual_environment_sdn_zone_vlan" {
 - `ipam` (String) IP Address Management system.
 - `mtu` (Number) MTU value for the zone.
 - `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets are deployed on
+- `pending` (Boolean) Indicates if the zone has pending configuration changes that need to be applied.
 - `reverse_dns` (String) Reverse DNS API server address.
+- `state` (String) Indicates the current state of the zone.
