@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.83.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.82.1...v0.83.0) (2025-08-31)
+
+
+### Features
+
+* **sdn:** add custom resource to apply `sdn_*` configurations ([#2127](https://github.com/bpg/terraform-provider-proxmox/issues/2127)) ([e13d7ef](https://github.com/bpg/terraform-provider-proxmox/commit/e13d7ef29985ccd0ba8f79dd0ad658ee6779a8a6))
+
+
+### Bug Fixes
+
+* **docs:** correct minor typos / formatting ([#2144](https://github.com/bpg/terraform-provider-proxmox/issues/2144)) ([a2e4ff0](https://github.com/bpg/terraform-provider-proxmox/commit/a2e4ff039450214feb2c32d84e6b18878e1dd804))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/attest-build-provenance action (v2 → v3) ([#2142](https://github.com/bpg/terraform-provider-proxmox/issues/2142)) ([f62e69d](https://github.com/bpg/terraform-provider-proxmox/commit/f62e69d160055dc0cbd5a08f5041533c079bd96e))
+* **ci:** update googleapis/release-please-action action (v4.2.0 → v4.3.0) ([#2136](https://github.com/bpg/terraform-provider-proxmox/issues/2136)) ([f634b2e](https://github.com/bpg/terraform-provider-proxmox/commit/f634b2eafb631b75c04c91b39d393de6b05e36b0))
+* **ci:** update lycheeverse/lychee-action action (v2.5.0 → v2.6.0) ([#2137](https://github.com/bpg/terraform-provider-proxmox/issues/2137)) ([64c1ab3](https://github.com/bpg/terraform-provider-proxmox/commit/64c1ab3148a4d7a5835c5fd957a3009c35f73761))
+* **ci:** update lycheeverse/lychee-action action (v2.6.0 → v2.6.1) ([#2138](https://github.com/bpg/terraform-provider-proxmox/issues/2138)) ([7f56290](https://github.com/bpg/terraform-provider-proxmox/commit/7f56290838c363d025719a15f6e25b6e1ec8d49e))
+* **deps:** update image golang (4859242 → 5502b0e) ([#2134](https://github.com/bpg/terraform-provider-proxmox/issues/2134)) ([20f41e8](https://github.com/bpg/terraform-provider-proxmox/commit/20f41e86e03f183bcbf295ba56c41c692fcee998))
+* **deps:** update image golang (91e2cd4 → 4859242) ([#2128](https://github.com/bpg/terraform-provider-proxmox/issues/2128)) ([9ae882e](https://github.com/bpg/terraform-provider-proxmox/commit/9ae882e5d7cdb19b54e9be07ba92ef92cab0054c))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.3.0 → v7.4.0) ([#2129](https://github.com/bpg/terraform-provider-proxmox/issues/2129)) ([11b8167](https://github.com/bpg/terraform-provider-proxmox/commit/11b8167fc6488fbeb7b977f0267dcc862ce05e20))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.4.0 → v7.5.1) ([#2143](https://github.com/bpg/terraform-provider-proxmox/issues/2143)) ([2eae3ee](https://github.com/bpg/terraform-provider-proxmox/commit/2eae3eeeeb7c12e407aa21a33e930e8219310b6b))
+* **deps:** update module github.com/stretchr/testify (v1.10.0 → v1.11.1) ([#2135](https://github.com/bpg/terraform-provider-proxmox/issues/2135)) ([6b00db6](https://github.com/bpg/terraform-provider-proxmox/commit/6b00db644613520e257c6af90b5f3930cf4a4b8a))
+
 ## [0.82.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.82.0...v0.82.1) (2025-08-19)
 
 
