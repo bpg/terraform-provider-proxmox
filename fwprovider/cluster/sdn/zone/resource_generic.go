@@ -18,6 +18,8 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -36,6 +38,8 @@ type genericModel struct {
 	DNSZone    types.String    `tfsdk:"dns_zone"`
 	Nodes      stringset.Value `tfsdk:"nodes"`
 	MTU        types.Int64     `tfsdk:"mtu"`
+	Pending    types.Bool      `tfsdk:"pending"`
+	State      types.String    `tfsdk:"state"`
 }
 
 func (m *genericModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
@@ -47,6 +51,39 @@ func (m *genericModel) importFromAPI(name string, data *zones.ZoneData, diags *d
 	m.MTU = types.Int64PointerValue(data.MTU)
 	m.Nodes = stringset.NewValueString(data.Nodes, diags, stringset.WithSeparator(","))
 	m.ReverseDNS = types.StringPointerValue(data.ReverseDNS)
+	m.State = types.StringPointerValue(data.State)
+
+	if data.Pending != nil {
+		m.Pending = types.BoolValue(true)
+
+		if data.Pending.DNS != nil && *data.Pending.DNS != "" {
+			m.DNS = types.StringValue(*data.Pending.DNS)
+		}
+
+		if data.Pending.DNSZone != nil && *data.Pending.DNSZone != "" {
+			m.DNSZone = types.StringValue(*data.Pending.DNSZone)
+		}
+
+		if data.Pending.IPAM != nil && *data.Pending.IPAM != "" {
+			m.IPAM = types.StringValue(*data.Pending.IPAM)
+		}
+
+		if data.Pending.MTU != nil && *data.Pending.MTU != 0 {
+			m.MTU = types.Int64Value(*data.Pending.MTU)
+		}
+
+		if data.Pending.Nodes != nil && len(*data.Pending.Nodes) > 0 {
+			m.Nodes = stringset.NewValueString(data.Pending.Nodes, diags, stringset.WithSeparator(","))
+		}
+
+		if data.Pending.ReverseDNS != nil && *data.Pending.ReverseDNS != "" {
+			m.ReverseDNS = types.StringValue(*data.Pending.ReverseDNS)
+		}
+
+		if data.Pending.State != nil && *data.Pending.State != "" {
+			m.State = types.StringValue(*data.Pending.State)
+		}
+	}
 }
 
 func (m *genericModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {
@@ -105,6 +142,14 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 			Description: "MTU value for the zone.",
 		},
 		"nodes": stringset.ResourceAttribute("The Proxmox nodes which the zone and associated VNets should be deployed on", "", stringset.WithRequired()),
+		"pending": schema.BoolAttribute{
+			Computed:    true,
+			Description: "Indicates if the zone has pending configuration changes that need to be applied.",
+		},
+		"state": schema.StringAttribute{
+			Computed:    true,
+			Description: "Indicates the current state of the zone.",
+		},
 		"reverse_dns": schema.StringAttribute{
 			Optional:    true,
 			Description: "Reverse DNS API server address.",
@@ -177,9 +222,10 @@ func (r *genericZoneResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	diags := &diag.Diagnostics{}
-	reqData := plan.toAPIRequestBody(ctx, diags)
-	resp.Diagnostics.Append(*diags...)
+	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	reqData.Type = ptr.Ptr(r.config.zoneType)
 
@@ -192,7 +238,24 @@ func (r *genericZoneResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	zone, err := r.client.GetZoneWithParams(ctx, plan.getID(), &zones.ZoneQueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to Read SDN Zone",
+			err.Error(),
+		)
+
+		return
+	}
+
+	readModel := r.config.modelFunc()
+	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
 func (r *genericZoneResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -203,7 +266,7 @@ func (r *genericZoneResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	zone, err := r.client.GetZone(ctx, state.getID())
+	zone, err := r.client.GetZoneWithParams(ctx, state.getID(), &zones.ZoneQueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.State.RemoveResource(ctx)
@@ -219,9 +282,12 @@ func (r *genericZoneResource) Read(ctx context.Context, req resource.ReadRequest
 	}
 
 	readModel := r.config.modelFunc()
-	diags := &diag.Diagnostics{}
-	readModel.importFromAPI(zone.ID, zone, diags)
-	resp.Diagnostics.Append(*diags...)
+	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
@@ -246,7 +312,24 @@ func (r *genericZoneResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	zone, err := r.client.GetZoneWithParams(ctx, plan.getID(), &zones.ZoneQueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to Read SDN Zone After Update",
+			err.Error(),
+		)
+
+		return
+	}
+
+	state := r.config.modelFunc()
+	state.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
 func (r *genericZoneResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -280,9 +363,12 @@ func (r *genericZoneResource) ImportState(ctx context.Context, req resource.Impo
 	}
 
 	readModel := r.config.modelFunc()
-	diags := &diag.Diagnostics{}
-	readModel.importFromAPI(zone.ID, zone, diags)
-	resp.Diagnostics.Append(*diags...)
+	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 

@@ -52,6 +52,17 @@ func (m *evpnModel) importFromAPI(name string, data *zones.ZoneData, diags *diag
 	m.PrimaryExitNode = types.StringPointerValue(data.ExitNodesPrimary)
 	m.RouteTargetImport = types.StringPointerValue(data.RouteTargetImport)
 	m.VRFVXLANID = types.Int64PointerValue(data.VRFVXLANID)
+
+	if data.Pending != nil {
+		m.AdvertiseSubnets = types.BoolPointerValue(data.Pending.AdvertiseSubnets.PointerBool())
+		m.Controller = types.StringPointerValue(data.Pending.Controller)
+		m.DisableARPNDSuppression = types.BoolPointerValue(data.Pending.DisableARPNDSuppression.PointerBool())
+		m.ExitNodes = stringset.NewValueString(data.Pending.ExitNodes, diags, stringset.WithSeparator(","))
+		m.ExitNodesLocalRouting = types.BoolPointerValue(data.Pending.ExitNodesLocalRouting.PointerBool())
+		m.PrimaryExitNode = types.StringPointerValue(data.Pending.ExitNodesPrimary)
+		m.RouteTargetImport = types.StringPointerValue(data.Pending.RouteTargetImport)
+		m.VRFVXLANID = types.Int64PointerValue(data.Pending.VRFVXLANID)
+	}
 }
 
 func (m *evpnModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {

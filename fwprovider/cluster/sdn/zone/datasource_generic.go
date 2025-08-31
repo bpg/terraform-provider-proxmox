@@ -14,13 +14,13 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
+	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 type zoneDataSourceConfig struct {
@@ -102,6 +102,14 @@ func genericDataSourceAttributesWith(extraAttributes map[string]schema.Attribute
 			ElementType: types.StringType,
 			Computed:    true,
 		},
+		"pending": schema.BoolAttribute{
+			Computed:    true,
+			Description: "Indicates if the zone has pending configuration changes that need to be applied.",
+		},
+		"state": schema.StringAttribute{
+			Computed:    true,
+			Description: "Indicates the current state of the zone.",
+		},
 		"reverse_dns": schema.StringAttribute{
 			Computed:    true,
 			Description: "Reverse DNS API server address.",
@@ -124,7 +132,7 @@ func (d *genericZoneDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	zone, err := d.client.GetZone(ctx, state.getID())
+	zone, err := d.client.GetZoneWithParams(ctx, state.getID(), &zones.ZoneQueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError(
@@ -159,8 +167,7 @@ func (d *genericZoneDataSource) Read(ctx context.Context, req datasource.ReadReq
 	}
 
 	readModel := d.config.modelFunc()
-	diags := &diag.Diagnostics{}
-	readModel.importFromAPI(zone.ID, zone, diags)
-	resp.Diagnostics.Append(*diags...)
+
+	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

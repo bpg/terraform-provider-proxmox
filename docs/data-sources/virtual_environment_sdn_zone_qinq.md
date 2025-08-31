@@ -49,6 +49,8 @@ output "data_proxmox_virtual_environment_sdn_zone_qinq" {
 - `ipam` (String) IP Address Management system.
 - `mtu` (Number) MTU value for the zone.
 - `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets are deployed on
+- `pending` (Boolean) Indicates if the zone has pending configuration changes that need to be applied.
 - `reverse_dns` (String) Reverse DNS API server address.
 - `service_vlan` (Number) Service VLAN tag for QinQ. The tag must be between `1` and `4094`.
 - `service_vlan_protocol` (String) Service VLAN protocol for QinQ. The protocol must be `802.1ad` or `802.1q`.
+- `state` (String) Indicates the current state of the zone.

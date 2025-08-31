@@ -49,6 +49,8 @@ type zoneDataModel struct {
 	DNSZone                 types.String    `tfsdk:"dns_zone"`
 	Nodes                   stringset.Value `tfsdk:"nodes"`
 	MTU                     types.Int64     `tfsdk:"mtu"`
+	Pending                 types.Bool      `tfsdk:"pending"`
+	State                   types.String    `tfsdk:"state"`
 	Bridge                  types.String    `tfsdk:"bridge"`
 	ServiceVLAN             types.Int64     `tfsdk:"service_vlan"`
 	ServiceVLANProtocol     types.String    `tfsdk:"service_vlan_protocol"`
@@ -116,6 +118,8 @@ func (d *zonesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							ElemType: types.StringType,
 						},
 						"mtu":                   types.Int64Type,
+						"pending":               types.BoolType,
+						"state":                 types.StringType,
 						"bridge":                types.StringType,
 						"service_vlan":          types.Int64Type,
 						"service_vlan_protocol": types.StringType,
@@ -148,7 +152,7 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	zonesList, err := d.client.GetZones(ctx)
+	zonesList, err := d.client.GetZonesWithParams(ctx, &zones.ZoneQueryParams{})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read SDN Zones",
@@ -185,6 +189,8 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 			DNSZone:                 types.StringPointerValue(zone.DNSZone),
 			Nodes:                   stringset.NewValueString(zone.Nodes, diags, stringset.WithSeparator(",")),
 			MTU:                     types.Int64PointerValue(zone.MTU),
+			Pending:                 types.BoolValue(zone.Pending != nil),
+			State:                   types.StringPointerValue(zone.State),
 			Bridge:                  types.StringPointerValue(zone.Bridge),
 			ServiceVLAN:             types.Int64PointerValue(zone.ServiceVLAN),
 			ServiceVLANProtocol:     types.StringPointerValue(zone.ServiceVLANProtocol),
@@ -210,6 +216,8 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 				ElemType: types.StringType,
 			},
 			"mtu":                   types.Int64Type,
+			"pending":               types.BoolType,
+			"state":                 types.StringType,
 			"bridge":                types.StringType,
 			"service_vlan":          types.Int64Type,
 			"service_vlan_protocol": types.StringType,
@@ -248,6 +256,8 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 				ElemType: types.StringType,
 			},
 			"mtu":                   types.Int64Type,
+			"pending":               types.BoolType,
+			"state":                 types.StringType,
 			"bridge":                types.StringType,
 			"service_vlan":          types.Int64Type,
 			"service_vlan_protocol": types.StringType,
