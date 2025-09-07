@@ -5769,7 +5769,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	e = vmAPI.UpdateVM(ctx, updateBody)
 	if e != nil {
 		return diag.FromErr(e)
-}
+	}
 
 	if stoppedBeforeUpdate && d.Get(mkStarted).(bool) {
 		if diags := vmStart(ctx, vmAPI, d); diags != nil {
