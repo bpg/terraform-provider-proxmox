@@ -5426,7 +5426,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
+	stoppedBeforeUpdate, rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -5461,7 +5461,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	}
 
 	// Prepare the new cloud-init configuration.
-	stoppedBeforeUpdate := false
 	cloudInitRebuildRequired := false
 
 	if d.HasChange(mkInitialization) {
@@ -5750,16 +5749,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Update the configuration now that everything has been prepared.
 	updateBody.Delete = del
 
-	e = vmAPI.UpdateVM(ctx, updateBody)
-	if e != nil {
-		return diag.FromErr(e)
-	}
-
 	// Determine if the state of the virtual machine state needs to be changed.
 	//nolint: nestif
 	if (d.HasChange(mkStarted) || stoppedBeforeUpdate) && !bool(template) {
 		started := d.Get(mkStarted).(bool)
-		if started {
+		if started && !stoppedBeforeUpdate {
 			if diags := vmStart(ctx, vmAPI, d); diags != nil {
 				return diags
 			}
@@ -5770,6 +5764,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 			rebootRequired = false
 		}
+	}
+
+	e = vmAPI.UpdateVM(ctx, updateBody)
+	if e != nil {
+		return diag.FromErr(e)
 	}
 
 	if cloudInitRebuildRequired {
