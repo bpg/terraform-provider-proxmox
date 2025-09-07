@@ -2,7 +2,9 @@
 # Exclude specific files from link checking
 exclude_path = [
     "CONTRIBUTORS.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "cache",
+    ".terraform"
 ]
 
 # Exclude URL patterns (regex)
@@ -14,7 +16,7 @@ exclude = [
 base = "."
 
 # Enable verbose output
-verbose = true
+verbose = "warn"
 
 # Disable progress bar (better for CI)
 no_progress = true
