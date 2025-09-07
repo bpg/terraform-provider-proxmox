@@ -36,8 +36,9 @@ func TestAccDatasourceACMEPlugin(t *testing.T) {
 						plugin = "{{.PluginName}}"
 						api = "cf"
 						data = {
-							"CF_API_EMAIL" = "le.ge9ro@passmail.net"
-							"CF_API_KEY"   = "test-api-key"
+							"CF_Account_ID" = "Account_ID"
+							"CF_Token" = "Token"
+							"CF_Zone_ID" = "Zone_ID"
 						}
 					}
 

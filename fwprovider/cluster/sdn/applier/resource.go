@@ -73,7 +73,7 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 	r.client = cfg.Client.Cluster().SDNApplier()
 }
 
-func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *Resource) Create(ctx context.Context, _ resource.CreateRequest, resp *resource.CreateResponse) {
 	if err := r.client.ApplyConfig(ctx); err != nil {
 		resp.Diagnostics.AddError("Unable to Apply SDN Configuration", err.Error())
 		return
@@ -85,7 +85,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
-func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *Resource) Read(_ context.Context, _ resource.ReadRequest, _ *resource.ReadResponse) {
 	// Nothing to refresh
 }
 
@@ -108,7 +108,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *Resource) Delete(ctx context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if err := r.client.ApplyConfig(ctx); err != nil {
 		resp.Diagnostics.AddError("Unable to Re-Apply SDN Configuration", err.Error())
 		return
