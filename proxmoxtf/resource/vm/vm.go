@@ -5769,6 +5769,14 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	e = vmAPI.UpdateVM(ctx, updateBody)
 	if e != nil {
 		return diag.FromErr(e)
+}
+
+	if stoppedBeforeUpdate && d.Get(mkStarted).(bool) {
+		if diags := vmStart(ctx, vmAPI, d); diags != nil {
+			return diags
+		}
+		// The VM has been started, so a reboot is no longer required.
+		rebootRequired = false
 	}
 
 	if cloudInitRebuildRequired {
