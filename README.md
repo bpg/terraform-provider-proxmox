@@ -39,7 +39,7 @@ However, we will try to maintain backward compatibility between provider version
 
 ### Development Requirements
 
-- [Go](https://golang.org/doc/install) 1.24 (to build the provider plugin)
+- [Go](https://golang.org/doc/install) 1.25 (to build the provider plugin)
 - [Docker](https://www.docker.com/products/docker-desktop/) (optional, for running dev tools)
 
 ## Using the Provider
