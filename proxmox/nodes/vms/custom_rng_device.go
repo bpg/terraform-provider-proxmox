@@ -10,8 +10,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // CustomRNGDevice represents a random number generator device configuration.
@@ -47,8 +48,9 @@ func (r *CustomRNGDevice) EncodeValues(key string, v *url.Values) error {
 // UnmarshalJSON unmarshals a JSON object into a CustomRNGDevice struct.
 func (r *CustomRNGDevice) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	if err := json.Unmarshal(b, &s); err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("failed to unmarshal CustomRNGDevice: %w", err)
 	}
 
@@ -64,20 +66,14 @@ func (r *CustomRNGDevice) UnmarshalJSON(b []byte) error {
 				r.Source = v[1]
 
 			case "max_bytes":
-				maxBytes, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to parse max_bytes: %w", err)
+				if r.MaxBytes, err = ptr.ParseIntPtr(v[1], "max_bytes"); err != nil {
+					return err
 				}
-
-				r.MaxBytes = &maxBytes
 
 			case "period":
-				period, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to parse period: %w", err)
+				if r.Period, err = ptr.ParseIntPtr(v[1], "period"); err != nil {
+					return err
 				}
-
-				r.Period = &period
 			}
 		}
 	}

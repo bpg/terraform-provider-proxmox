@@ -91,17 +91,13 @@ func (r *CustomAMDSEV) UnmarshalJSON(b []byte) error {
 			case "type":
 				r.Type = v[1]
 			case "allow-smt":
-				allowSMT := types.CustomBool(v[1] == "1")
-				r.AllowSMT = &allowSMT
+				r.AllowSMT = types.CustomBool(v[1] == "1").Pointer()
 			case "kernel-hashes":
-				kernelHashes := types.CustomBool(v[1] == "1")
-				r.KernelHashes = &kernelHashes
+				r.KernelHashes = types.CustomBool(v[1] == "1").Pointer()
 			case "no-debug":
-				noDebug := types.CustomBool(v[1] == "1")
-				r.NoDebug = &noDebug
+				r.NoDebug = types.CustomBool(v[1] == "1").Pointer()
 			case "no-key-sharing":
-				noKeySharing := types.CustomBool(v[1] == "1")
-				r.NoKeySharing = &noKeySharing
+				r.NoKeySharing = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}

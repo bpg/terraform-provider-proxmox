@@ -85,8 +85,7 @@ func (r *CustomUSBDevice) UnmarshalJSON(b []byte) error {
 			case "mapping":
 				r.Mapping = &v[1]
 			case "usb3":
-				bv := types.CustomBool(v[1] == "1")
-				r.USB3 = &bv
+				r.USB3 = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}

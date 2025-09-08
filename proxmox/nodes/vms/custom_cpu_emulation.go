@@ -84,8 +84,7 @@ func (r *CustomCPUEmulation) UnmarshalJSON(b []byte) error {
 					r.Flags = &f
 				}
 			case "hidden":
-				bv := types.CustomBool(v[1] == "1")
-				r.Hidden = &bv
+				r.Hidden = types.CustomBool(v[1] == "1").Pointer()
 			case "hv-vendor-id":
 				r.HVVendorID = &v[1]
 			}

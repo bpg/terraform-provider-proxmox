@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -111,8 +112,9 @@ func (r CustomNetworkDevices) EncodeValues(key string, v *url.Values) error {
 // UnmarshalJSON converts a CustomNetworkDevice string to an object.
 func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	if err := json.Unmarshal(b, &s); err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("failed to unmarshal CustomNetworkDevice: %w", err)
 	}
 
@@ -127,45 +129,29 @@ func (r *CustomNetworkDevice) UnmarshalJSON(b []byte) error {
 			case "bridge":
 				r.Bridge = &v[1]
 			case "firewall":
-				bv := types.CustomBool(v[1] == "1")
-				r.Firewall = &bv
+				r.Firewall = types.CustomBool(v[1] == "1").Pointer()
 			case "link_down":
-				bv := types.CustomBool(v[1] == "1")
-				r.LinkDown = &bv
+				r.LinkDown = types.CustomBool(v[1] == "1").Pointer()
 			case "macaddr":
 				r.MACAddress = &v[1]
 			case "model":
 				r.Model = v[1]
 			case "queues":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to parse queues: %w", err)
+				if r.Queues, err = ptr.ParseIntPtr(v[1], "queues"); err != nil {
+					return err
 				}
-
-				r.Queues = &iv
 			case "rate":
-				fv, err := strconv.ParseFloat(v[1], 64)
-				if err != nil {
-					return fmt.Errorf("failed to parse rate: %w", err)
+				if r.RateLimit, err = ptr.ParseFloat64Ptr(v[1], "rate"); err != nil {
+					return err
 				}
-
-				r.RateLimit = &fv
-
 			case "mtu":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to parse mtu: %w", err)
+				if r.MTU, err = ptr.ParseIntPtr(v[1], "mtu"); err != nil {
+					return err
 				}
-
-				r.MTU = &iv
-
 			case "tag":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to parse tag: %w", err)
+				if r.Tag, err = ptr.ParseIntPtr(v[1], "tag"); err != nil {
+					return err
 				}
-
-				r.Tag = &iv
 			case "trunks":
 				trunks := strings.Split(v[1], ";")
 				r.Trunks = make([]int, len(trunks))
