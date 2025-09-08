@@ -10,9 +10,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -96,12 +96,9 @@ func (r *CustomLogRateLimit) UnmarshalJSON(b []byte) error {
 			case "enable":
 				r.Enable = v[1] == "1"
 			case "burst":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("error converting burst to int: %w", err)
+				if r.Burst, err = ptr.ParseIntPtr(v[1], "burst"); err != nil {
+					return err
 				}
-
-				r.Burst = &iv
 			case "rate":
 				r.Rate = &v[1]
 			}

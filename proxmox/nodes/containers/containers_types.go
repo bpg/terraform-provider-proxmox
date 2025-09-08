@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
@@ -655,11 +656,9 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 		if len(v) == 2 {
 			switch v[0] {
 			case "fuse":
-				bv := types.CustomBool(v[1] == "1")
-				r.FUSE = &bv
+				r.FUSE = types.CustomBool(v[1] == "1").Pointer()
 			case "keyctl":
-				bv := types.CustomBool(v[1] == "1")
-				r.KeyControl = &bv
+				r.KeyControl = types.CustomBool(v[1] == "1").Pointer()
 			case "mount":
 				if v[1] != "" {
 					a := strings.Split(v[1], ";")
@@ -670,8 +669,7 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 					r.MountTypes = &a
 				}
 			case "nesting":
-				bv := types.CustomBool(v[1] == "1")
-				r.Nesting = &bv
+				r.Nesting = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}
@@ -682,9 +680,9 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomPassthroughDevice string to an object.
 func (r *CustomPassthroughDevice) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomPassthroughDevice: %w", err)
 	}
 
@@ -700,24 +698,17 @@ func (r *CustomPassthroughDevice) UnmarshalJSON(b []byte) error {
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "deny-write":
-				bv := types.CustomBool(v[1] == "1")
-				r.DenyWrite = &bv
+				r.DenyWrite = types.CustomBool(v[1] == "1").Pointer()
 			case "path":
 				path = v[1]
 			case "uid":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'uid': %w", err)
+				if r.UID, err = ptr.ParseIntPtr(v[1], "uid"); err != nil {
+					return err
 				}
-
-				r.UID = &iv
 			case "gid":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'gid': %w", err)
+				if r.GID, err = ptr.ParseIntPtr(v[1], "gid"); err != nil {
+					return err
 				}
-
-				r.GID = &iv
 			case "mode":
 				r.Mode = &v[1]
 			}
@@ -732,9 +723,9 @@ func (r *CustomPassthroughDevice) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomMountPoint string to an object.
 func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomMountPoint: %w", err)
 	}
 
@@ -748,11 +739,9 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "acl":
-				bv := types.CustomBool(v[1] == "1")
-				r.ACL = &bv
+				r.ACL = types.CustomBool(v[1] == "1").Pointer()
 			case "backup":
-				bv := types.CustomBool(v[1] == "1")
-				r.Backup = &bv
+				r.Backup = types.CustomBool(v[1] == "1").Pointer()
 			case "mountoptions":
 				if v[1] != "" {
 					a := strings.Split(v[1], ";")
@@ -765,17 +754,13 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 			case "mp":
 				r.MountPoint = v[1]
 			case "quota":
-				bv := types.CustomBool(v[1] == "1")
-				r.Quota = &bv
+				r.Quota = types.CustomBool(v[1] == "1").Pointer()
 			case "ro":
-				bv := types.CustomBool(v[1] == "1")
-				r.ReadOnly = &bv
+				r.ReadOnly = types.CustomBool(v[1] == "1").Pointer()
 			case "replicate":
-				bv := types.CustomBool(v[1] == "1")
-				r.Replicate = &bv
+				r.Replicate = types.CustomBool(v[1] == "1").Pointer()
 			case "shared":
-				bv := types.CustomBool(v[1] == "1")
-				r.Shared = &bv
+				r.Shared = types.CustomBool(v[1] == "1").Pointer()
 			case "size":
 				r.DiskSize = &v[1]
 			}
@@ -788,10 +773,10 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomNetworkInterface string to an object.
 func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	er := json.Unmarshal(b, &s)
-	if er != nil {
-		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", er)
+	if err = json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", err)
 	}
 
 	pairs := strings.Split(s, ",")
@@ -807,8 +792,7 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 			case "bridge":
 				r.Bridge = &v[1]
 			case "firewall":
-				bv := types.CustomBool(v[1] == "1")
-				r.Firewall = &bv
+				r.Firewall = types.CustomBool(v[1] == "1").Pointer()
 			case "gw":
 				r.IPv4Gateway = &v[1]
 			case "gw6":
@@ -820,38 +804,26 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 			case "hwaddr":
 				r.MACAddress = &v[1]
 			case "mtu":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'mtu': %w", err)
+				if r.MTU, err = ptr.ParseIntPtr(v[1], "mtu"); err != nil {
+					return err
 				}
-
-				r.MTU = &iv
 			case "name":
 				r.Name = v[1]
 			case "rate":
-				fv, err := strconv.ParseFloat(v[1], 64)
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'rate': %w", err)
+				if r.RateLimit, err = ptr.ParseFloat64Ptr(v[1], "rate"); err != nil {
+					return err
 				}
-
-				r.RateLimit = &fv
 			case "tag":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'tag': %w", err)
+				if r.Tag, err = ptr.ParseIntPtr(v[1], "tag"); err != nil {
+					return err
 				}
-
-				r.Tag = &iv
 			case "trunks":
-				var err error
-
 				if v[1] != "" {
 					trunks := strings.Split(v[1], ";")
 					a := make([]int, len(trunks))
 
 					for ti, tv := range trunks {
-						a[ti], err = strconv.Atoi(tv)
-						if err != nil {
+						if a[ti], err = strconv.Atoi(tv); err != nil {
 							return fmt.Errorf("unable to unmarshal 'trunks': %w", err)
 						}
 					}
@@ -874,9 +846,9 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomRootFS string to an object.
 func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomRootFS: %w", err)
 	}
 
@@ -892,8 +864,7 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 			case "volume":
 				r.Volume = v[1]
 			case "acl":
-				bv := types.CustomBool(v[1] == "1")
-				r.ACL = &bv
+				r.ACL = types.CustomBool(v[1] == "1").Pointer()
 			case "mountoptions":
 				if v[1] != "" {
 					a := strings.Split(v[1], ";")
@@ -904,22 +875,17 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 					r.MountOptions = &a
 				}
 			case "quota":
-				bv := types.CustomBool(v[1] == "1")
-				r.Quota = &bv
+				r.Quota = types.CustomBool(v[1] == "1").Pointer()
 			case "ro":
-				bv := types.CustomBool(v[1] == "1")
-				r.ReadOnly = &bv
+				r.ReadOnly = types.CustomBool(v[1] == "1").Pointer()
 			case "replicate":
-				bv := types.CustomBool(v[1] == "1")
-				r.Replicate = &bv
+				r.Replicate = types.CustomBool(v[1] == "1").Pointer()
 			case "shared":
-				bv := types.CustomBool(v[1] == "1")
-				r.Shared = &bv
+				r.Shared = types.CustomBool(v[1] == "1").Pointer()
 			case "size":
 				r.Size = new(types.DiskSize)
 
-				err = r.Size.UnmarshalJSON([]byte(v[1]))
-				if err != nil {
+				if err = r.Size.UnmarshalJSON([]byte(v[1])); err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)
 				}
 			}
@@ -932,9 +898,9 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 // UnmarshalJSON converts a CustomStartupBehavior string to an object.
 func (r *CustomStartupBehavior) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomStartupBehavior: %w", err)
 	}
 
@@ -946,26 +912,17 @@ func (r *CustomStartupBehavior) UnmarshalJSON(b []byte) error {
 		if len(v) == 2 {
 			switch v[0] {
 			case "down":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'down': %w", err)
+				if r.Down, err = ptr.ParseIntPtr(v[1], "down"); err != nil {
+					return err
 				}
-
-				r.Down = &iv
 			case "order":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'order': %w", err)
+				if r.Order, err = ptr.ParseIntPtr(v[1], "order"); err != nil {
+					return err
 				}
-
-				r.Order = &iv
 			case "up":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("unable to unmarshal 'up': %w", err)
+				if r.Up, err = ptr.ParseIntPtr(v[1], "up"); err != nil {
+					return err
 				}
-
-				r.Up = &iv
 			}
 		}
 	}

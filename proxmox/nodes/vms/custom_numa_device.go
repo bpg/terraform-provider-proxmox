@@ -10,8 +10,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
 // CustomNUMADevice handles QEMU NUMA device parameters.
@@ -62,8 +63,9 @@ func (r CustomNUMADevices) EncodeValues(key string, v *url.Values) error {
 // UnmarshalJSON converts a CustomNUMADevice string to an object.
 func (r *CustomNUMADevice) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	if err := json.Unmarshal(b, &s); err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("failed to unmarshal CustomNUMADevice: %w", err)
 	}
 
@@ -79,12 +81,9 @@ func (r *CustomNUMADevice) UnmarshalJSON(b []byte) error {
 				hostnodes := strings.Split(v[1], ";")
 				r.HostNodeNames = &hostnodes
 			case "memory":
-				memory, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to parse memory size: %w", err)
+				if r.Memory, err = ptr.ParseIntPtr(v[1], "memory size"); err != nil {
+					return err
 				}
-
-				r.Memory = &memory
 			case "policy":
 				r.Policy = &v[1]
 			}

@@ -106,14 +106,11 @@ func (r *CustomVirtiofsShare) UnmarshalJSON(b []byte) error {
 			case "cache":
 				r.Cache = &v[1]
 			case "direct-io":
-				bv := types.CustomBool(v[1] == "1")
-				r.DirectIo = &bv
+				r.DirectIo = types.CustomBool(v[1] == "1").Pointer()
 			case "expose-acl":
-				bv := types.CustomBool(v[1] == "1")
-				r.ExposeAcl = &bv
+				r.ExposeAcl = types.CustomBool(v[1] == "1").Pointer()
 			case "expose-xattr":
-				bv := types.CustomBool(v[1] == "1")
-				r.ExposeXattr = &bv
+				r.ExposeXattr = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}
@@ -121,8 +118,7 @@ func (r *CustomVirtiofsShare) UnmarshalJSON(b []byte) error {
 	// expose-acl implies expose-xattr
 	if r.ExposeAcl != nil && *r.ExposeAcl {
 		if r.ExposeXattr == nil {
-			bv := types.CustomBool(true)
-			r.ExposeAcl = &bv
+			r.ExposeXattr = types.CustomBool(true).Pointer()
 		} else if !*r.ExposeXattr {
 			return fmt.Errorf("failed to unmarshal CustomVirtiofsShare: expose-xattr contradicts the value of expose-acl")
 		}

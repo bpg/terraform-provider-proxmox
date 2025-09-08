@@ -118,16 +118,13 @@ func (d *CustomPCIDevice) UnmarshalJSON(b []byte) error {
 			case "mdev":
 				d.MDev = &v[1]
 			case "pcie":
-				bv := types.CustomBool(v[1] == "1")
-				d.PCIExpress = &bv
+				d.PCIExpress = types.CustomBool(v[1] == "1").Pointer()
 			case "rombar":
-				bv := types.CustomBool(v[1] == "1")
-				d.ROMBAR = &bv
+				d.ROMBAR = types.CustomBool(v[1] == "1").Pointer()
 			case "romfile":
 				d.ROMFile = &v[1]
 			case "x-vga":
-				bv := types.CustomBool(v[1] == "1")
-				d.XVGA = &bv
+				d.XVGA = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}
