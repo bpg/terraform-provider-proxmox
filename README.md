@@ -163,6 +163,14 @@ This requires the use of a PAM account (standard Linux account).
 Due to limitations in the Proxmox VE API, cluster hardware mappings must be created using the `root` PAM account (standard Linux account) because of [IOMMU](https://en.wikipedia.org/wiki/Input%E2%80%93output_memory_management_unit#Virtualization) interactions.
 Hardware mappings allow the use of [PCI "passthrough"](https://pve.proxmox.com/wiki/PCI_Passthrough) and [map physical USB ports](https://pve.proxmox.com/wiki/USB_Physical_Port_Mapping).
 
+### Container Creation Lock Errors when Creating Multiple Containers
+
+When creating multiple containers simultaneously, it is possible for bottlenecking of the PVE IO to cause lock errors.
+Using sequential creation or setting `parallelism=1` can help mitigate this issue.
+
+Additional information and sampled error messages can be found in [#1929](https://github.com/bpg/terraform-provider-proxmox/issues/1929).
+For tracking of the OpenTofu issue see [#2466](https://github.com/opentofu/opentofu/issues/2466) and consider adding a 👍 as per [OpenTofu Team Comment](https://github.com/opentofu/opentofu/issues/2466#issuecomment-2634533959).
+
 ## Contributors
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this project.
