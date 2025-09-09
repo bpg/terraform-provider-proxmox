@@ -67,16 +67,13 @@ func (r *CustomAgent) UnmarshalJSON(b []byte) error {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
-			enabled := types.CustomBool(v[0] == "1")
-			r.Enabled = &enabled
+			r.Enabled = types.CustomBool(v[0] == "1").Pointer()
 		} else if len(v) == 2 {
 			switch v[0] {
 			case "enabled":
-				enabled := types.CustomBool(v[1] == "1")
-				r.Enabled = &enabled
+				r.Enabled = types.CustomBool(v[1] == "1").Pointer()
 			case "fstrim_cloned_disks":
-				fstrim := types.CustomBool(v[1] == "1")
-				r.TrimClonedDisks = &fstrim
+				r.TrimClonedDisks = types.CustomBool(v[1] == "1").Pointer()
 			case "type":
 				r.Type = &v[1]
 			}

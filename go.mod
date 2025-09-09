@@ -1,13 +1,13 @@
 module github.com/bpg/terraform-provider-proxmox
 
-go 1.24.0
+go 1.25
 
 tool github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/avast/retry-go/v4 v4.6.1
-	github.com/brianvoe/gofakeit/v7 v7.5.1
+	github.com/brianvoe/gofakeit/v7 v7.6.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
@@ -25,7 +25,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1
 	github.com/skeema/knownhosts v1.3.1
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/crypto v0.41.0
+	golang.org/x/crypto v0.42.0
 	golang.org/x/net v0.43.0
 )
 
@@ -89,11 +89,11 @@ require (
 	github.com/zclconf/go-cty v1.16.3 // indirect
 	go.abhg.dev/goldmark/frontmatter v0.2.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
-	golang.org/x/mod v0.26.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
-	golang.org/x/tools v0.35.0 // indirect
+	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/tools v0.36.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/grpc v1.72.1 // indirect

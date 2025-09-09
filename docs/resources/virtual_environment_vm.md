@@ -50,6 +50,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vm" {
   }
 
   initialization {
+    # uncomment and specify the datastore for cloud-init disk if default `local-lvm` is not available
+    # datastore_id = "local-lvm"
+
     ip_config {
       ipv4 {
         address = "dhcp"

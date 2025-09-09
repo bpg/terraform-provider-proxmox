@@ -18,6 +18,12 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   node_name = "first-node"
   vm_id     = 1234
 
+  # newer linux distributions require unprivileged user namespaces
+  unprivileged = true
+  features {
+    nesting = true
+  }
+
   initialization {
     hostname = "terraform-provider-proxmox-ubuntu-container"
 
@@ -45,7 +51,7 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   }
   
   operating_system {
-    template_file_id = proxmox_virtual_environment_download_file.latest_ubuntu_22_jammy_lxc_img.id
+    template_file_id = proxmox_virtual_environment_download_file.ubuntu_2504_lxc_img.id
     # Or you can use a volume ID, as obtained from a "pvesm list <storage>"
     # template_file_id = "local:vztmpl/jammy-server-cloudimg-amd64.tar.gz"
     type             = "ubuntu"
@@ -71,11 +77,11 @@ resource "proxmox_virtual_environment_container" "ubuntu_container" {
   }
 }
 
-resource "proxmox_virtual_environment_download_file" "latest_ubuntu_22_jammy_lxc_img" {
+resource "proxmox_virtual_environment_download_file" "ubuntu_2504_lxc_img" {
   content_type = "vztmpl"
   datastore_id = "local"
   node_name    = "first-node"
-  url          = "http://download.proxmox.com/images/system/ubuntu-20.04-standard_20.04-1_amd64.tar.gz"
+  url          = "https://mirrors.servercentral.com/ubuntu-cloud-images/releases/25.04/release/ubuntu-25.04-server-cloudimg-amd64-root.tar.xz"
 }
 
 resource "random_password" "ubuntu_container_password" {

@@ -1461,6 +1461,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "maxo99",
+      "name": "Max Orr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32850992?v=4",
+      "profile": "https://github.com/maxo99",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
@@ -238,8 +237,9 @@ func (d *CustomStorageDevice) EncodeValues(key string, v *url.Values) error {
 // UnmarshalJSON converts a CustomStorageDevice string to an object.
 func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 	var s string
+	var err error
 
-	if err := json.Unmarshal(b, &s); err != nil {
+	if err = json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("failed to unmarshal CustomStorageDevice: %w", err)
 	}
 
@@ -268,115 +268,66 @@ func (d *CustomStorageDevice) UnmarshalJSON(b []byte) error {
 			switch v[0] {
 			case "aio":
 				d.AIO = &v[1]
-
 			case "backup":
-				bv := types.CustomBool(v[1] == "1")
-				d.Backup = &bv
-
+				d.Backup = types.CustomBool(v[1] == "1").Pointer()
 			case "cache":
 				d.Cache = &v[1]
-
 			case "discard":
 				d.Discard = &v[1]
-
 			case "file":
 				d.FileVolume = v[1]
-
 			case "import_from":
 				d.ImportFrom = &v[1]
-
 			case "format":
 				d.Format = &v[1]
-
 			case "iops_rd":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops_rd to int: %w", err)
+				if d.IopsRead, err = ptr.ParseIntPtr(v[1], "iops_rd"); err != nil {
+					return err
 				}
-
-				d.IopsRead = &iv
-
 			case "iops_rd_max":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops_rd_max to int: %w", err)
+				if d.MaxIopsRead, err = ptr.ParseIntPtr(v[1], "iops_rd_max"); err != nil {
+					return err
 				}
-
-				d.MaxIopsRead = &iv
-
 			case "iops_wr":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops_wr to int: %w", err)
+				if d.IopsWrite, err = ptr.ParseIntPtr(v[1], "iops_wr"); err != nil {
+					return err
 				}
-
-				d.IopsWrite = &iv
-
 			case "iops_wr_max":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert iops_wr_max to int: %w", err)
+				if d.MaxIopsWrite, err = ptr.ParseIntPtr(v[1], "iops_wr_max"); err != nil {
+					return err
 				}
-
-				d.MaxIopsWrite = &iv
-
 			case "iothread":
-				bv := types.CustomBool(v[1] == "1")
-				d.IOThread = &bv
+				d.IOThread = types.CustomBool(v[1] == "1").Pointer()
 
 			case "mbps_rd":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert mbps_rd to int: %w", err)
+				if d.MaxReadSpeedMbps, err = ptr.ParseIntPtr(v[1], "mbps_rd"); err != nil {
+					return err
 				}
-
-				d.MaxReadSpeedMbps = &iv
-
 			case "mbps_rd_max":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert mbps_rd_max to int: %w", err)
+				if d.BurstableReadSpeedMbps, err = ptr.ParseIntPtr(v[1], "mbps_rd_max"); err != nil {
+					return err
 				}
-
-				d.BurstableReadSpeedMbps = &iv
-
 			case "mbps_wr":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert mbps_wr to int: %w", err)
+				if d.MaxWriteSpeedMbps, err = ptr.ParseIntPtr(v[1], "mbps_wr"); err != nil {
+					return err
 				}
-
-				d.MaxWriteSpeedMbps = &iv
-
 			case "mbps_wr_max":
-				iv, err := strconv.Atoi(v[1])
-				if err != nil {
-					return fmt.Errorf("failed to convert mbps_wr_max to int: %w", err)
+				if d.BurstableWriteSpeedMbps, err = ptr.ParseIntPtr(v[1], "mbps_wr_max"); err != nil {
+					return err
 				}
-
-				d.BurstableWriteSpeedMbps = &iv
-
 			case "media":
 				d.Media = &v[1]
-
 			case "replicate":
-				bv := types.CustomBool(v[1] == "1")
-				d.Replicate = &bv
-
+				d.Replicate = types.CustomBool(v[1] == "1").Pointer()
 			case "serial":
 				d.Serial = &v[1]
-
 			case "size":
 				d.Size = new(types.DiskSize)
-
-				err := d.Size.UnmarshalJSON([]byte(v[1]))
-				if err != nil {
+				if err = d.Size.UnmarshalJSON([]byte(v[1])); err != nil {
 					return fmt.Errorf("failed to unmarshal disk size: %w", err)
 				}
-
 			case "ssd":
-				bv := types.CustomBool(v[1] == "1")
-				d.SSD = &bv
+				d.SSD = types.CustomBool(v[1] == "1").Pointer()
 			}
 		}
 	}

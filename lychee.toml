@@ -1,0 +1,22 @@
+# Lychee configuration file
+# Exclude specific files from link checking
+exclude_path = [
+    "CONTRIBUTORS.md",
+    "CHANGELOG.md",
+    "cache",
+    ".terraform"
+]
+
+# Exclude URL patterns (regex)
+exclude = [
+    "https://.*:8006/"  # Exclude Proxmox server URLs
+]
+
+# Base directory for relative paths
+base = "."
+
+# Enable verbose output
+verbose = "warn"
+
+# Disable progress bar (better for CI)
+no_progress = true

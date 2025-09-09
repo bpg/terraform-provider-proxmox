@@ -57,6 +57,9 @@ linters:
       allow-first-in-block: true
       allow-whole-block: false
       branch-max-lines: 2
+      disable:
+        - decl
+        - err
   exclusions:
     generated: lax
     presets:

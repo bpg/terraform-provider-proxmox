@@ -27,7 +27,7 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ steps.app-token.outputs.token }}"
         with:
-          args: --base . --verbose --no-progress './**/*.md' './**/*.html' --exclude-path ./CONTRIBUTORS.md --exclude-path ./CHANGELOG.md
+          args: --config lychee.toml './**/*.md' './**/*.html'
 
       - name: Find Link Checker Issue
         id: link-checker-issue

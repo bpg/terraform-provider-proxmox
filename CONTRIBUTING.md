@@ -37,12 +37,12 @@ ability to merge PRs and respond to issues.
 - To cross-compile the provider for all supported platforms:
 
   ```sh
-  make build-all
+  make release-build
   ```
 
   The compiled binaries will be placed in the `dist` directory.
 
-A portion of the documentation is generated from the source code. To update the documentation, run:
+- A portion of the documentation is generated from the source code. To update the documentation, run:
 
 ```sh
 make docs
