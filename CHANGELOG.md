@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.83.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.0...v0.83.1) (2025-09-10)
+
+
+### Bug Fixes
+
+* **ci:** update link checker config ([#2151](https://github.com/bpg/terraform-provider-proxmox/issues/2151)) ([e017881](https://github.com/bpg/terraform-provider-proxmox/commit/e017881712ad81767590c4c60877167a28f35a42))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/setup-go action (v5 → v6) ([#2154](https://github.com/bpg/terraform-provider-proxmox/issues/2154)) ([16814d4](https://github.com/bpg/terraform-provider-proxmox/commit/16814d469b4601413a9ea3fb9446bb7670884015))
+* **ci:** Update actions/stale action (v9 → v10) ([#2155](https://github.com/bpg/terraform-provider-proxmox/issues/2155)) ([87e6392](https://github.com/bpg/terraform-provider-proxmox/commit/87e639232d0228a58bd3060b543e9fc05108d2c3))
+* **code:** minor code cleanups ([#2156](https://github.com/bpg/terraform-provider-proxmox/issues/2156))ssh  ([9e22c3c](https://github.com/bpg/terraform-provider-proxmox/commit/9e22c3c427086f4780e2ddc226edc3e235c90586))
+* **deps:** update image golang (1.25.0 → 1.25.1) ([#2153](https://github.com/bpg/terraform-provider-proxmox/issues/2153)) ([a58bf4f](https://github.com/bpg/terraform-provider-proxmox/commit/a58bf4f9475c33a16f8fcead640976a5fb149cb0))
+* **deps:** update image golang (a5e935d → d6bdb04) ([#2161](https://github.com/bpg/terraform-provider-proxmox/issues/2161)) ([58d833d](https://github.com/bpg/terraform-provider-proxmox/commit/58d833dfa8996985253bbd75ed50a10f7e9cc0db))
+* **deps:** update image golang (d6bdb04 → b773c94) ([#2169](https://github.com/bpg/terraform-provider-proxmox/issues/2169)) ([a979850](https://github.com/bpg/terraform-provider-proxmox/commit/a9798505c828618892f33d4376295c9f6e1850d0))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.5.1 → v7.6.0) ([#2162](https://github.com/bpg/terraform-provider-proxmox/issues/2162)) ([ffdc3a5](https://github.com/bpg/terraform-provider-proxmox/commit/ffdc3a55da085f45132b686dacf26642126ff0ae))
+* **deps:** update module golang.org/x/crypto (v0.41.0 → v0.42.0) ([#2163](https://github.com/bpg/terraform-provider-proxmox/issues/2163)) ([4e73d56](https://github.com/bpg/terraform-provider-proxmox/commit/4e73d5610c854cd64e6f4d4cf81b7f534183d9be))
+* **deps:** update module golang.org/x/net (v0.43.0 → v0.44.0) ([#2170](https://github.com/bpg/terraform-provider-proxmox/issues/2170)) ([ed366b5](https://github.com/bpg/terraform-provider-proxmox/commit/ed366b55dc8b32b2203ec87213bf76aba6d1860d))
+* **docs:** improve `container` documentation ([#2160](https://github.com/bpg/terraform-provider-proxmox/issues/2160)) ([380fd7f](https://github.com/bpg/terraform-provider-proxmox/commit/380fd7fed1d5cfbb9a2c562294a9f2ac127a0a31))
+* **docs:** improve `vm.initialization` documentation ([#2158](https://github.com/bpg/terraform-provider-proxmox/issues/2158)) ([29ef9d2](https://github.com/bpg/terraform-provider-proxmox/commit/29ef9d2527132b4e726e222edb958f022260a306))
+* **docs:** include vm/lxc lock error details in the README known issues section ([#2166](https://github.com/bpg/terraform-provider-proxmox/issues/2166)) ([1810273](https://github.com/bpg/terraform-provider-proxmox/commit/1810273cebc8de6092b6347c4be0393ad2f9f29b))
+* **docs:** update reference to `release-build` in contributing doc ([#2167](https://github.com/bpg/terraform-provider-proxmox/issues/2167)) ([739471a](https://github.com/bpg/terraform-provider-proxmox/commit/739471a9888b264587c42da1d370848b3d95639e))
+* **docs:** update sdn_applier example ([c275e03](https://github.com/bpg/terraform-provider-proxmox/commit/c275e031ffdd9b8fdd46c09d1563be12c713541b))
+
 ## [0.83.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.82.1...v0.83.0) (2025-08-31)
 
 
