@@ -337,7 +337,7 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	require.NoError(t, err)
 
 	// Call the Update function
-	_, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	_, _, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
 	require.NoError(t, err)
 
 	// Check that only the changed disk (scsi1) is in the update body
