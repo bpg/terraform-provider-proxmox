@@ -529,6 +529,7 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 	// Simulate the deletion detection logic that should happen in vmUpdate
 	// This is what should identify the disk for deletion
 	deletedInterfaces := []string{}
+
 	for oldIface := range oldDiskDevices {
 		if _, present := newDiskDevices[oldIface]; !present {
 			deletedInterfaces = append(deletedInterfaces, oldIface)
@@ -575,6 +576,7 @@ func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
 
 	// Check for deleted disks and boot protection
 	bootDiskDeletionAttempted := false
+
 	for currentInterface := range currentDisks {
 		if _, present := planDisksWithBootDiskRemoved[currentInterface]; !present {
 			// Check if this is a boot disk
@@ -696,6 +698,7 @@ func TestOriginalBugScenario(t *testing.T) {
 
 	// Simulate the disk deletion detection logic
 	var deletesToAdd []string
+
 	for oldIface := range originalDisks {
 		if _, present := newDisks[oldIface]; !present {
 			deletesToAdd = append(deletesToAdd, oldIface)
@@ -719,5 +722,4 @@ func TestOriginalBugScenario(t *testing.T) {
 		require.Equal(t, originalDisk.Size, newDisk.Size, "Disk %s size should remain unchanged", iface)
 		require.Equal(t, originalDisk.DatastoreID, newDisk.DatastoreID, "Disk %s datastore should remain unchanged", iface)
 	}
-
 }
