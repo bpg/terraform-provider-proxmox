@@ -5426,6 +5426,29 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
+	// Handle disk deletion before applying other changes
+	if d.HasChange(disk.MkDisk) {
+		bootOrder := d.Get(mkBootOrder).([]interface{})
+
+		bootDeviceSet := make(map[string]struct{}, len(bootOrder))
+		for _, device := range bootOrder {
+			bootDeviceSet[device.(string)] = struct{}{}
+		}
+
+		for currentInterface := range allDiskInfo {
+			if _, present := planDisks[currentInterface]; !present {
+				if _, isBootDevice := bootDeviceSet[currentInterface]; isBootDevice {
+					return diag.Errorf(
+						"cannot delete boot disk %q. Please remove it from boot order first or change boot order before deleting",
+						currentInterface,
+					)
+				}
+
+				updateBody.Delete = append(updateBody.Delete, currentInterface)
+			}
+		}
+	}
+
 	rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
@@ -5894,11 +5917,9 @@ func vmUpdateDiskLocationAndSize(
 		shutdownForDisksRequired := false
 
 		for oldIface, oldDisk := range diskOldEntries {
+			// Skip deleted disks - they are handled earlier in vmUpdate
 			if _, present := diskNewEntries[oldIface]; !present {
-				return diag.Errorf(
-					"deletion of disks not supported. Please delete disk by hand. Old interface was %q",
-					oldIface,
-				)
+				continue
 			}
 
 			if *oldDisk.DatastoreID != *diskNewEntries[oldIface].DatastoreID {

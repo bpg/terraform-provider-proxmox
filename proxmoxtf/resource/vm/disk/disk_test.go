@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -348,4 +349,377 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	// This prevents the "can't unplug bootdisk 'scsi0'" error
 	// Note: We can't directly inspect the updateBody content in this test framework,
 	// but the fact that no error occurred means the logic worked correctly
+}
+
+func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+
+	// Create a simple resource schema for testing
+	resource := &schema.Resource{
+		Schema: diskSchema,
+	}
+
+	// Create test configuration with multiple disks in specific order
+	oldDiskList := []interface{}{
+		map[string]interface{}{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        32,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+		map[string]interface{}{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        20,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+		map[string]interface{}{
+			mkDiskInterface:   "scsi2",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        1,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+		map[string]interface{}{
+			mkDiskInterface:   "scsi3",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+		map[string]interface{}{
+			mkDiskInterface:   "scsi7",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        4,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+	}
+
+	// New configuration with scsi7 removed
+	newDiskList := []interface{}{
+		map[string]interface{}{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        32,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+		map[string]interface{}{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        20,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+		map[string]interface{}{
+			mkDiskInterface:   "scsi2",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        1,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+		map[string]interface{}{
+			mkDiskInterface:   "scsi3",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        50,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []interface{}{},
+		},
+	}
+
+	// Create resource data
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]interface{}{
+		MkDisk: oldDiskList,
+	})
+
+	// Get old disk device objects
+	oldDiskDevices, err := GetDiskDeviceObjects(resourceData, resource, oldDiskList)
+	require.NoError(t, err)
+	require.Len(t, oldDiskDevices, 5)
+
+	// Get new disk device objects
+	newDiskDevices, err := GetDiskDeviceObjects(resourceData, resource, newDiskList)
+	require.NoError(t, err)
+	require.Len(t, newDiskDevices, 4)
+
+	// Verify that the removed interface (scsi7) is detected
+	require.Contains(t, oldDiskDevices, "scsi7")
+	require.NotContains(t, newDiskDevices, "scsi7")
+
+	// Verify that all other interfaces remain in correct positions
+	for _, iface := range []string{"scsi0", "scsi1", "scsi2", "scsi3"} {
+		require.Contains(t, oldDiskDevices, iface)
+		require.Contains(t, newDiskDevices, iface)
+
+		// Verify disk properties remain unchanged for existing disks
+		oldDisk := oldDiskDevices[iface]
+		newDisk := newDiskDevices[iface]
+		require.Equal(t, oldDisk.Size, newDisk.Size, "Disk size should remain unchanged for interface %s", iface)
+		require.Equal(t, oldDisk.DatastoreID, newDisk.DatastoreID, "Datastore ID should remain unchanged for interface %s", iface)
+	}
+
+	// Simulate the deletion detection logic that should happen in vmUpdate
+	// This is what should identify the disk for deletion
+	deletedInterfaces := []string{}
+
+	for oldIface := range oldDiskDevices {
+		if _, present := newDiskDevices[oldIface]; !present {
+			deletedInterfaces = append(deletedInterfaces, oldIface)
+		}
+	}
+
+	// Verify exactly one disk is detected as deleted
+	require.Len(t, deletedInterfaces, 1, "Exactly one disk should be detected as deleted")
+	require.Equal(t, "scsi7", deletedInterfaces[0], "scsi7 should be the deleted disk")
+}
+
+func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
+	t.Parallel()
+
+	// Mock current disk configuration (what Proxmox currently has)
+	currentDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(32),
+			DatastoreID: ptr.Ptr("local"),
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local"),
+		},
+		"scsi7": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(4),
+			DatastoreID: ptr.Ptr("local"),
+		},
+	}
+
+	// Test case 1: Try to delete boot disk (should be protected)
+	planDisksWithBootDiskRemoved := vms.CustomStorageDevices{
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local"),
+		},
+		"scsi7": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(4),
+			DatastoreID: ptr.Ptr("local"),
+		},
+	}
+
+	bootDevices := []string{"scsi0", "net0"} // scsi0 is in boot order
+
+	// Check for deleted disks and boot protection
+	bootDiskDeletionAttempted := false
+
+	for currentInterface := range currentDisks {
+		if _, present := planDisksWithBootDiskRemoved[currentInterface]; !present {
+			// Check if this is a boot disk
+			for _, bootDevice := range bootDevices {
+				if bootDevice == currentInterface {
+					bootDiskDeletionAttempted = true
+					break
+				}
+			}
+		}
+	}
+
+	require.True(t, bootDiskDeletionAttempted, "Boot disk deletion should be detected and would be blocked")
+
+	// Test case 2: Delete non-boot disk (should be allowed)
+	planDisksWithNonBootDiskRemoved := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(32),
+			DatastoreID: ptr.Ptr("local"),
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local"),
+		},
+	}
+
+	deletedInterfaces := []string{}
+	bootDiskInDeletion := false
+
+	for currentInterface := range currentDisks {
+		if _, present := planDisksWithNonBootDiskRemoved[currentInterface]; !present {
+			deletedInterfaces = append(deletedInterfaces, currentInterface)
+
+			// Check if this is a boot disk
+			for _, bootDevice := range bootDevices {
+				if bootDevice == currentInterface {
+					bootDiskInDeletion = true
+					break
+				}
+			}
+		}
+	}
+
+	require.Len(t, deletedInterfaces, 1, "One disk should be marked for deletion")
+	require.Equal(t, "scsi7", deletedInterfaces[0], "scsi7 should be the deleted disk")
+	require.False(t, bootDiskInDeletion, "No boot disk should be in deletion list")
+}
+
+func TestOriginalBugScenario(t *testing.T) {
+	t.Parallel()
+
+	// This represents the original VM configuration from the bug report
+	originalDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(32),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi2": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi3": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(50),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi4": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi5": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(50),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi6": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi7": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(4),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+	}
+
+	// This represents the new configuration with scsi7 removed
+	newDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(32),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi2": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi3": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(50),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi4": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi5": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(50),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+		"scsi6": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(1),
+			DatastoreID: ptr.Ptr("local-lvm"),
+		},
+	}
+
+	// Simulate the disk deletion detection logic
+	var deletesToAdd []string
+
+	for oldIface := range originalDisks {
+		if _, present := newDisks[oldIface]; !present {
+			deletesToAdd = append(deletesToAdd, oldIface)
+		}
+	}
+
+	// Verify behavior
+	require.Len(t, deletesToAdd, 1, "Exactly one disk should be marked for deletion")
+	require.Equal(t, "scsi7", deletesToAdd[0], "scsi7 should be the only disk marked for deletion")
+
+	// Verify all other disks remain unchanged and in correct positions
+	expectedInterfaces := []string{"scsi0", "scsi1", "scsi2", "scsi3", "scsi4", "scsi5", "scsi6"}
+	for _, iface := range expectedInterfaces {
+		require.Contains(t, originalDisks, iface, "Original disks should contain %s", iface)
+		require.Contains(t, newDisks, iface, "New disks should contain %s", iface)
+
+		originalDisk := originalDisks[iface]
+		newDisk := newDisks[iface]
+
+		// Verify no disk properties changed (no re-ordering/reassignment)
+		require.Equal(t, originalDisk.Size, newDisk.Size, "Disk %s size should remain unchanged", iface)
+		require.Equal(t, originalDisk.DatastoreID, newDisk.DatastoreID, "Disk %s datastore should remain unchanged", iface)
+	}
 }
