@@ -536,7 +536,285 @@ func TestAccResourceVMDisks(t *testing.T) {
 						size         = 8
 					}
 				}`),
-				ExpectError: regexp.MustCompile(`deletion of disks not supported`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_disk", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk", map[string]string{
+					"disk.0.interface":         "scsi0",
+					"disk.0.path_in_datastore": `vm-\d+-disk-0`,
+					"disk.#":                   "1", // Verify only one disk remains
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		{"boot disk deletion protection", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_boot_protection" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-boot-protection"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_boot_protection", map[string]string{
+					"disk.0.interface": "scsi0",
+					"disk.1.interface": "scsi1",
+					"boot_order.0":     "scsi0",
+					"boot_order.1":     "net0",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_boot_protection" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-boot-protection"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				ExpectError: regexp.MustCompile(`cannot delete boot disk "scsi0"`),
+			},
+		}},
+		{"non-boot disk deletion works", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_non_boot_deletion" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-non-boot-deletion"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 8
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_non_boot_deletion", map[string]string{
+					"disk.0.interface": "scsi0",
+					"disk.1.interface": "scsi1",
+					"boot_order.0":     "scsi0",
+					"boot_order.1":     "net0",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_non_boot_deletion" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-non-boot-deletion"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_non_boot_deletion", plancheck.ResourceActionUpdate),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_non_boot_deletion", map[string]string{
+					"disk.0.interface": "scsi0",
+					"disk.#":           "1", // Verify only boot disk remains
+				}),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		{"issue #2172 exact bug scenario", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "debian_git01" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "git01"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 32
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 20
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi3"
+						size         = 50
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi4"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi5"
+						size         = 50
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi6"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi7"
+						size         = 4
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.debian_git01", map[string]string{
+					"disk.#":           "8", // All 8 disks present
+					"disk.0.interface": "scsi0",
+					"disk.0.size":      "32",
+					"disk.1.interface": "scsi1",
+					"disk.1.size":      "20",
+					"disk.2.interface": "scsi2",
+					"disk.2.size":      "1",
+					"disk.3.interface": "scsi3",
+					"disk.3.size":      "50",
+					"disk.4.interface": "scsi4",
+					"disk.4.size":      "1",
+					"disk.5.interface": "scsi5",
+					"disk.5.size":      "50",
+					"disk.6.interface": "scsi6",
+					"disk.6.size":      "1",
+					"disk.7.interface": "scsi7",
+					"disk.7.size":      "4",
+					"boot_order.0":     "scsi0",
+					"boot_order.1":     "net0",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "debian_git01" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "git01"
+					
+					boot_order = ["scsi0", "net0"]
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 32
+					}
+
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 20
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi2"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi3"
+						size         = 50
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi4"
+						size         = 1
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi5"
+						size         = 50
+					}
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi6"
+						size         = 1
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.debian_git01", plancheck.ResourceActionUpdate),
+						plancheck.ExpectNonEmptyPlan(),
+					},
+				},
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.debian_git01", map[string]string{
+					"disk.#":           "7",
+					"disk.0.interface": "scsi0",
+					"disk.0.size":      "32",
+					"disk.1.interface": "scsi1",
+					"disk.1.size":      "20",
+					"disk.2.interface": "scsi2",
+					"disk.2.size":      "1",
+					"disk.3.interface": "scsi3",
+					"disk.3.size":      "50",
+					"disk.4.interface": "scsi4",
+					"disk.4.size":      "1",
+					"disk.5.interface": "scsi5",
+					"disk.5.size":      "50",
+					"disk.6.interface": "scsi6",
+					"disk.6.size":      "1",
+					"boot_order.0":     "scsi0",
+					"boot_order.1":     "net0",
+				}),
+			},
+			{
+				RefreshState: true,
 			},
 		}},
 		{"efi disk", []resource.TestStep{
