@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.83.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.1...v0.83.2) (2025-09-13)
+
+
+### Bug Fixes
+
+* **vm:** disk deletion may reorder disks ([#2174](https://github.com/bpg/terraform-provider-proxmox/issues/2174)) ([e339fef](https://github.com/bpg/terraform-provider-proxmox/commit/e339fef2d042728eaa7594607a89929892513e96))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (b773c94 → bb979b2) ([#2173](https://github.com/bpg/terraform-provider-proxmox/issues/2173)) ([7944277](https://github.com/bpg/terraform-provider-proxmox/commit/79442773910b4309570aea8e838ea7d3b154e5be))
+
 ## [0.83.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.0...v0.83.1) (2025-09-10)
 
 
