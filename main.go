@@ -54,6 +54,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_qinq.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_vxlan.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_evpn.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_version.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_vm2.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_metrics_server.md ./docs/data-sources/

@@ -557,6 +557,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
 		metrics.NewMetricsServerDatasource,
+		nodes.NewFileDataSource,
 		sdnzone.NewSimpleDataSource,
 		sdnzone.NewVLANDataSource,
 		sdnzone.NewQinQDataSource,
