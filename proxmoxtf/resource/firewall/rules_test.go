@@ -9,6 +9,7 @@ package firewall
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -172,8 +173,15 @@ func (m *mockFirewallRuleAPI) GetRule(ctx context.Context, pos int) (*firewall.R
 }
 
 func (m *mockFirewallRuleAPI) ListRules(ctx context.Context) ([]*firewall.RuleListResponseData, error) {
+	keys := make([]int, 0, len(m.rules))
+	for k := range m.rules {
+		keys = append(keys, k)
+	}
+
+	sort.Ints(keys)
+
 	result := make([]*firewall.RuleListResponseData, 0, len(m.rules))
-	for pos := range m.rules {
+	for _, pos := range keys {
 		result = append(result, &firewall.RuleListResponseData{Pos: pos})
 	}
 
