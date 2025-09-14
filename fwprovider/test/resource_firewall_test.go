@@ -9,9 +9,12 @@
 package test
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 func TestAccResourceClusterFirewall(t *testing.T) {
@@ -326,6 +329,97 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 				),
 			},
 		}},
+		{"drift detection", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "drift_detection" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9994
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP"
+						dest    = "192.168.1.5"
+						dport   = "80"
+						proto   = "tcp"
+						log     = "info"
+					}
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTPS"
+						dest    = "192.168.1.5"
+						dport   = "443"
+						proto   = "tcp"
+						log     = "info"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.drift_detection", map[string]string{
+						"rule.#":         "2",
+						"rule.0.type":    "in",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "Allow HTTP",
+						"rule.0.dest":    "192.168.1.5",
+						"rule.0.dport":   "80",
+						"rule.0.proto":   "tcp",
+						"rule.0.log":     "info",
+						"rule.1.type":    "in",
+						"rule.1.action":  "ACCEPT",
+						"rule.1.comment": "Allow HTTPS",
+						"rule.1.dest":    "192.168.1.5",
+						"rule.1.dport":   "443",
+						"rule.1.proto":   "tcp",
+						"rule.1.log":     "info",
+					}),
+				),
+			},
+			{
+				PreConfig: func() {
+					err := deleteFirewallRuleManually(te, te.NodeName, 9994, 1)
+					if err != nil {
+						t.Errorf("Failed to manually delete rule: %v", err)
+					}
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "drift_detection" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9994
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP"
+						dest    = "192.168.1.5"
+						dport   = "80"
+						proto   = "tcp"
+						log     = "info"
+					}
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTPS"
+						dest    = "192.168.1.5"
+						dport   = "443"
+						proto   = "tcp"
+						log     = "info"
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_firewall_rules.drift_detection",
+							plancheck.ResourceActionDestroyBeforeCreate),
+						plancheck.ExpectNonEmptyPlan(),
+					},
+				},
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.drift_detection", map[string]string{
+						"rule.#":         "2",
+						"rule.0.comment": "Allow HTTP",
+						"rule.1.comment": "Allow HTTPS",
+					}),
+				),
+			},
+		}},
 		{"ipset with ipV4 and ipV6 cidrs", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_firewall_ipset" "ipset" {
@@ -362,4 +456,17 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 			})
 		})
 	}
+}
+
+// deleteFirewallRuleManually simulates manual deletion of a firewall rule.
+func deleteFirewallRuleManually(te *Environment, nodeName string, vmID int, rulePosition int) error {
+	ctx := context.Background()
+	firewallClient := te.NodeClient().VM(vmID).Firewall()
+
+	err := firewallClient.DeleteRule(ctx, rulePosition)
+	if err != nil {
+		return fmt.Errorf("failed to manually delete firewall rule at position %d for VM %d on node %s: %w", rulePosition, vmID, nodeName, err)
+	}
+
+	return nil
 }

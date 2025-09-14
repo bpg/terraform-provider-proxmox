@@ -7,11 +7,15 @@
 package firewall
 
 import (
+	"context"
+	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/firewall"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
 )
 
@@ -69,6 +73,131 @@ func TestRuleSchema(t *testing.T) {
 		mkRuleSource:  schema.TypeString,
 		mkRuleSPort:   schema.TypeString,
 	})
+}
+
+// TestRulesReadDriftDetection tests drift detection when rules are manually deleted.
+func TestRulesReadDriftDetection(t *testing.T) {
+	t.Parallel()
+
+	mockAPI := &mockFirewallRuleAPI{
+		rules: map[int]*firewall.RuleGetResponseData{
+			0: {
+				Action: "ACCEPT",
+				Type:   "in",
+				BaseRule: firewall.BaseRule{
+					Comment: stringPtr("Allow HTTP"),
+					DPort:   stringPtr("80"),
+					Proto:   stringPtr("tcp"),
+				},
+			},
+			2: {
+				Action: "ACCEPT",
+				Type:   "in",
+				BaseRule: firewall.BaseRule{
+					Comment: stringPtr("Allow HTTPS"),
+					DPort:   stringPtr("443"),
+					Proto:   stringPtr("tcp"),
+				},
+			},
+		},
+		rulesID: "test-rules-id",
+	}
+
+	// Create ResourceData with the rules schema
+	rulesResource := Rules()
+	d := rulesResource.TestResourceData()
+	err := d.Set(MkRule, []interface{}{
+		map[string]interface{}{
+			mkRulePos:     0,
+			mkRuleAction:  "ACCEPT",
+			mkRuleType:    "in",
+			mkRuleComment: "Allow HTTP",
+			mkRuleDPort:   "80",
+			mkRuleProto:   "tcp",
+		},
+		map[string]interface{}{
+			mkRulePos:     1,
+			mkRuleAction:  "ACCEPT",
+			mkRuleType:    "in",
+			mkRuleComment: "Allow SSH",
+			mkRuleDPort:   "22",
+			mkRuleProto:   "tcp",
+		},
+		map[string]interface{}{
+			mkRulePos:     2,
+			mkRuleAction:  "ACCEPT",
+			mkRuleType:    "in",
+			mkRuleComment: "Allow HTTPS",
+			mkRuleDPort:   "443",
+			mkRuleProto:   "tcp",
+		},
+	})
+	require.NoError(t, err)
+
+	diags := RulesRead(context.Background(), mockAPI, d)
+	require.False(t, diags.HasError(), "RulesRead should not return errors")
+
+	rules := d.Get(MkRule).([]interface{})
+	require.Len(t, rules, 2, "Should have 2 rules after drift detection")
+
+	rule0 := rules[0].(map[string]interface{})
+	require.Equal(t, "Allow HTTP", rule0[mkRuleComment])
+	require.Equal(t, "80", rule0[mkRuleDPort])
+
+	rule1 := rules[1].(map[string]interface{})
+	require.Equal(t, "Allow HTTPS", rule1[mkRuleComment])
+	require.Equal(t, "443", rule1[mkRuleDPort])
+}
+
+// mockFirewallRuleAPI is a mock implementation for testing.
+type mockFirewallRuleAPI struct {
+	rules   map[int]*firewall.RuleGetResponseData
+	rulesID string
+}
+
+func (m *mockFirewallRuleAPI) GetRulesID() string {
+	return m.rulesID
+}
+
+func (m *mockFirewallRuleAPI) CreateRule(_ context.Context, _ *firewall.RuleCreateRequestBody) error {
+	return nil
+}
+
+func (m *mockFirewallRuleAPI) GetRule(_ context.Context, pos int) (*firewall.RuleGetResponseData, error) {
+	rule, exists := m.rules[pos]
+	if !exists {
+		return nil, fmt.Errorf("500 no rule at position %d", pos)
+	}
+
+	return rule, nil
+}
+
+func (m *mockFirewallRuleAPI) ListRules(_ context.Context) ([]*firewall.RuleListResponseData, error) {
+	keys := make([]int, 0, len(m.rules))
+	for k := range m.rules {
+		keys = append(keys, k)
+	}
+
+	sort.Ints(keys)
+
+	result := make([]*firewall.RuleListResponseData, 0, len(m.rules))
+	for _, pos := range keys {
+		result = append(result, &firewall.RuleListResponseData{Pos: pos})
+	}
+
+	return result, nil
+}
+
+func (m *mockFirewallRuleAPI) UpdateRule(_ context.Context, _ int, _ *firewall.RuleUpdateRequestBody) error {
+	return nil
+}
+
+func (m *mockFirewallRuleAPI) DeleteRule(_ context.Context, _ int) error {
+	return nil
+}
+
+func stringPtr(s string) *string {
+	return &s
 }
 
 // TestMapToBaseRuleWithEmptyValues tests empty value handling for issue #1504.
