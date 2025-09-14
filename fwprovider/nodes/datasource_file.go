@@ -137,6 +137,7 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	}
 
 	storageClient := d.client.Node(data.NodeName.ValueString()).Storage(data.DatastoreID.ValueString())
+
 	files, err := storageClient.ListDatastoreFiles(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -144,6 +145,7 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 			fmt.Sprintf("Unable to list files from datastore %s on node %s: %s",
 				data.DatastoreID.ValueString(), data.NodeName.ValueString(), err.Error()),
 		)
+
 		return
 	}
 
@@ -167,6 +169,7 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		}
 
 		contentAndFile := volumeParts[1]
+
 		fileParts := strings.SplitN(contentAndFile, "/", 2)
 		if len(fileParts) < 2 {
 			continue
@@ -185,6 +188,7 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 			fmt.Sprintf("File '%s' with content type '%s' not found in datastore '%s' on node '%s'",
 				targetFileName, targetContentType, data.DatastoreID.ValueString(), data.NodeName.ValueString()),
 		)
+
 		return
 	}
 
