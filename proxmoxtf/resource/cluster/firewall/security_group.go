@@ -8,6 +8,7 @@ package firewall
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -24,6 +25,22 @@ const (
 	mkSecurityGroupName    = "name"
 	mkSecurityGroupComment = "comment"
 )
+
+// findActualGroupName finds the actual group name as stored by Proxmox (case-insensitive lookup).
+func findActualGroupName(ctx context.Context, api clusterfirewall.API, targetName string) (string, error) {
+	allGroups, err := api.ListGroups(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error retrieving security groups: %w", err)
+	}
+
+	for _, group := range allGroups {
+		if strings.EqualFold(group.Group, targetName) {
+			return group.Group, nil
+		}
+	}
+
+	return "", fmt.Errorf("security group '%s' not found after creation", targetName)
+}
 
 // SecurityGroup returns a resource to manage security groups.
 func SecurityGroup() *schema.Resource {
@@ -71,12 +88,17 @@ func SecurityGroupCreate(ctx context.Context, api clusterfirewall.API, d *schema
 		return diag.FromErr(err)
 	}
 
-	diags := firewall.RulesCreate(ctx, api.SecurityGroup(name), d)
+	actualName, err := findActualGroupName(ctx, api, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	diags := firewall.RulesCreate(ctx, api.SecurityGroup(actualName), d)
 	if diags.HasError() {
 		return diags
 	}
 
-	d.SetId(name)
+	d.SetId(actualName)
 
 	return SecurityGroupRead(ctx, api, d)
 }
@@ -92,22 +114,30 @@ func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.R
 		return diag.FromErr(err)
 	}
 
-	for _, v := range allGroups {
-		if v.Group == name {
-			err = d.Set(mkSecurityGroupName, v.Group)
-			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkSecurityGroupComment, v.Comment)
-			diags = append(diags, diag.FromErr(err)...)
+	var foundGroup *clusterfirewall.GroupListResponseData
 
+	for _, v := range allGroups {
+		if strings.EqualFold(v.Group, name) {
+			foundGroup = v
 			break
 		}
 	}
+
+	if foundGroup == nil {
+		d.SetId("")
+		return nil
+	}
+
+	err = d.Set(mkSecurityGroupName, foundGroup.Group)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkSecurityGroupComment, foundGroup.Comment)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if diags.HasError() {
 		return diags
 	}
 
-	return firewall.RulesRead(ctx, api.SecurityGroup(name), d)
+	return firewall.RulesRead(ctx, api.SecurityGroup(foundGroup.Group), d)
 }
 
 // SecurityGroupUpdate updates a security group.
@@ -132,7 +162,12 @@ func SecurityGroupUpdate(ctx context.Context, api clusterfirewall.API, d *schema
 		return diags
 	}
 
-	d.SetId(newName)
+	actualName, err := findActualGroupName(ctx, api, newName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(actualName)
 
 	return SecurityGroupRead(ctx, api, d)
 }
