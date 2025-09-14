@@ -48,7 +48,6 @@ type RuleUpdateRequestBody struct {
 	Pos    *int    `json:"pos,omitempty"    url:"pos,omitempty"`
 	Action *string `json:"action,omitempty" url:"action,omitempty"`
 	Type   *string `json:"type,omitempty"   url:"type,omitempty"`
-
- 	Group  *string `json:"group,omitempty" url:"group,omitempty"`
+	Group  *string `json:"group,omitempty"  url:"group,omitempty"`
 	Delete *string `json:"delete,omitempty" url:"delete,omitempty"`
 }
