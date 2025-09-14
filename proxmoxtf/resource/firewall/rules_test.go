@@ -70,3 +70,75 @@ func TestRuleSchema(t *testing.T) {
 		mkRuleSPort:   schema.TypeString,
 	})
 }
+
+// TestMapToBaseRuleWithEmptyValues tests empty value handling for issue #1504.
+func TestMapToBaseRuleWithEmptyValues(t *testing.T) {
+	t.Parallel()
+
+	rule := map[string]interface{}{
+		mkRuleComment: "",
+		mkRuleDest:    "",
+		mkRuleDPort:   "",
+		mkRuleEnabled: true,
+		mkRuleIFace:   "",
+		mkRuleLog:     "",
+		mkRuleMacro:   "",
+		mkRuleProto:   "",
+		mkRuleSource:  "",
+		mkRuleSPort:   "",
+	}
+
+	baseRule := mapToBaseRule(rule)
+
+	require.NotNil(t, baseRule.Comment)
+	require.NotNil(t, baseRule.Dest)
+	require.NotNil(t, baseRule.DPort)
+	require.NotNil(t, baseRule.Enable)
+	require.NotNil(t, baseRule.Macro)
+	require.NotNil(t, baseRule.Proto)
+	require.NotNil(t, baseRule.Source)
+	require.NotNil(t, baseRule.SPort)
+
+	require.Empty(t, *baseRule.Comment)
+	require.Empty(t, *baseRule.Dest)
+	require.Empty(t, *baseRule.DPort)
+	require.True(t, bool(*baseRule.Enable))
+	require.Empty(t, *baseRule.Macro)
+	require.Empty(t, *baseRule.Proto)
+	require.Empty(t, *baseRule.Source)
+	require.Empty(t, *baseRule.SPort)
+
+	require.Nil(t, baseRule.IFace)
+	require.Nil(t, baseRule.Log)
+}
+
+// TestMapToBaseRuleWithNonEmptyValues tests non-empty value handling.
+func TestMapToBaseRuleWithNonEmptyValues(t *testing.T) {
+	t.Parallel()
+
+	rule := map[string]interface{}{
+		mkRuleComment: "Test comment",
+		mkRuleDest:    "192.168.1.5",
+		mkRuleDPort:   "80",
+		mkRuleEnabled: false,
+		mkRuleIFace:   "net0",
+		mkRuleLog:     "info",
+		mkRuleMacro:   "HTTP",
+		mkRuleProto:   "tcp",
+		mkRuleSource:  "192.168.1.0/24",
+		mkRuleSPort:   "8080",
+	}
+
+	baseRule := mapToBaseRule(rule)
+
+	require.Equal(t, "Test comment", *baseRule.Comment)
+	require.Equal(t, "192.168.1.5", *baseRule.Dest)
+	require.Equal(t, "80", *baseRule.DPort)
+	require.False(t, bool(*baseRule.Enable))
+	require.Equal(t, "net0", *baseRule.IFace)
+	require.Equal(t, "info", *baseRule.Log)
+	require.Equal(t, "HTTP", *baseRule.Macro)
+	require.Equal(t, "tcp", *baseRule.Proto)
+	require.Equal(t, "192.168.1.0/24", *baseRule.Source)
+	require.Equal(t, "8080", *baseRule.SPort)
+}
