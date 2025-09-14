@@ -8,6 +8,7 @@ package firewall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -21,6 +22,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
+
+// ErrRuleMissing is a sentinel error to indicate a rule doesn't exist at the expected position.
+var ErrRuleMissing = errors.New("rule missing")
 
 const (
 	dvSecurityGroup = ""
@@ -242,18 +246,15 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 		rule, err := api.GetRule(ctx, pos)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rule at position") {
-				// this is not an error, the rule does not exist
-				return nil
+				return ErrRuleMissing
 			}
 
 			return fmt.Errorf("error reading rule %d : %w", pos, err)
 		}
 
-		// pos in the map should be int!
 		ruleMap[mkRulePos] = pos
 
 		if rule.Type == "group" {
-			// this is a special case of security group insertion
 			ruleMap[mkSecurityGroup] = rule.Action
 			securityGroupBaseRuleToMap(&rule.BaseRule, ruleMap)
 		} else {
@@ -267,14 +268,25 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 
 	rules := d.Get(MkRule).([]interface{})
 	if len(rules) > 0 {
-		// We have rules in the state, so we need to read them from the API
+		var existingRules []interface{}
+
 		for _, v := range rules {
 			ruleMap := v.(map[string]interface{})
 			pos := ruleMap[mkRulePos].(int)
 
 			err := readRule(pos, ruleMap)
-			diags = append(diags, diag.FromErr(err)...)
+			if err != nil {
+				if errors.Is(err, ErrRuleMissing) {
+					continue
+				}
+
+				diags = append(diags, diag.FromErr(err)...)
+			} else {
+				existingRules = append(existingRules, ruleMap)
+			}
 		}
+
+		rules = existingRules
 	} else {
 		ruleIDs, err := api.ListRules(ctx)
 		if err != nil {
@@ -286,7 +298,9 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 
 			err = readRule(id.Pos, ruleMap)
 			if err != nil {
-				diags = append(diags, diag.FromErr(err)...)
+				if !errors.Is(err, ErrRuleMissing) {
+					diags = append(diags, diag.FromErr(err)...)
+				}
 			} else if len(ruleMap) > 0 {
 				rules = append(rules, ruleMap)
 			}
