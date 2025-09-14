@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.83.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.1...v0.83.2) (2025-09-14)
+
+
+### Bug Fixes
+
+* **firewall:** detect drift when rules are manually deleted ([#2178](https://github.com/bpg/terraform-provider-proxmox/issues/2178)) ([6b84d5a](https://github.com/bpg/terraform-provider-proxmox/commit/6b84d5aa5ecd3ffb71e10050c20f79bc5ce1ff89))
+* **firewall:** prevent perpetual plan drift on rule attribute removal ([#2177](https://github.com/bpg/terraform-provider-proxmox/issues/2177)) ([0e72580](https://github.com/bpg/terraform-provider-proxmox/commit/0e725801ee26642dcb872de5b1be58d0a224408e))
+* **vm:** disk deletion may reorder disks ([#2174](https://github.com/bpg/terraform-provider-proxmox/issues/2174)) ([e339fef](https://github.com/bpg/terraform-provider-proxmox/commit/e339fef2d042728eaa7594607a89929892513e96))
+
+
+### Miscellaneous
+
+* **ci:** update actions/create-github-app-token action (v2.1.1 → v2.1.4) ([#2179](https://github.com/bpg/terraform-provider-proxmox/issues/2179)) ([70cfb58](https://github.com/bpg/terraform-provider-proxmox/commit/70cfb582922e2e31662e580b2f42b124e0d481e2))
+* **deps:** update image golang (b773c94 → bb979b2) ([#2173](https://github.com/bpg/terraform-provider-proxmox/issues/2173)) ([7944277](https://github.com/bpg/terraform-provider-proxmox/commit/79442773910b4309570aea8e838ea7d3b154e5be))
+
 ## [0.83.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.0...v0.83.1) (2025-09-10)
 
 
