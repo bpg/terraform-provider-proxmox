@@ -159,11 +159,11 @@ func (m *mockFirewallRuleAPI) GetRulesID() string {
 	return m.rulesID
 }
 
-func (m *mockFirewallRuleAPI) CreateRule(ctx context.Context, d *firewall.RuleCreateRequestBody) error {
+func (m *mockFirewallRuleAPI) CreateRule(_ context.Context, _ *firewall.RuleCreateRequestBody) error {
 	return nil
 }
 
-func (m *mockFirewallRuleAPI) GetRule(ctx context.Context, pos int) (*firewall.RuleGetResponseData, error) {
+func (m *mockFirewallRuleAPI) GetRule(_ context.Context, pos int) (*firewall.RuleGetResponseData, error) {
 	rule, exists := m.rules[pos]
 	if !exists {
 		return nil, fmt.Errorf("500 no rule at position %d", pos)
@@ -172,7 +172,7 @@ func (m *mockFirewallRuleAPI) GetRule(ctx context.Context, pos int) (*firewall.R
 	return rule, nil
 }
 
-func (m *mockFirewallRuleAPI) ListRules(ctx context.Context) ([]*firewall.RuleListResponseData, error) {
+func (m *mockFirewallRuleAPI) ListRules(_ context.Context) ([]*firewall.RuleListResponseData, error) {
 	keys := make([]int, 0, len(m.rules))
 	for k := range m.rules {
 		keys = append(keys, k)
@@ -188,11 +188,11 @@ func (m *mockFirewallRuleAPI) ListRules(ctx context.Context) ([]*firewall.RuleLi
 	return result, nil
 }
 
-func (m *mockFirewallRuleAPI) UpdateRule(ctx context.Context, pos int, d *firewall.RuleUpdateRequestBody) error {
+func (m *mockFirewallRuleAPI) UpdateRule(_ context.Context, _ int, _ *firewall.RuleUpdateRequestBody) error {
 	return nil
 }
 
-func (m *mockFirewallRuleAPI) DeleteRule(ctx context.Context, pos int) error {
+func (m *mockFirewallRuleAPI) DeleteRule(_ context.Context, _ int) error {
 	return nil
 }
 
