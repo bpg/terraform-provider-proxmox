@@ -26,22 +26,6 @@ const (
 	mkSecurityGroupComment = "comment"
 )
 
-// findActualGroupName finds the actual group name as stored by Proxmox (case-insensitive lookup).
-func findActualGroupName(ctx context.Context, api clusterfirewall.API, targetName string) (string, error) {
-	allGroups, err := api.ListGroups(ctx)
-	if err != nil {
-		return "", fmt.Errorf("error retrieving security groups: %w", err)
-	}
-
-	for _, group := range allGroups {
-		if strings.EqualFold(group.Group, targetName) {
-			return group.Group, nil
-		}
-	}
-
-	return "", fmt.Errorf("security group '%s' not found after creation", targetName)
-}
-
 // SecurityGroup returns a resource to manage security groups.
 func SecurityGroup() *schema.Resource {
 	s := map[string]*schema.Schema{
@@ -114,15 +98,7 @@ func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.R
 		return diag.FromErr(err)
 	}
 
-	var foundGroup *clusterfirewall.GroupListResponseData
-
-	for _, v := range allGroups {
-		if strings.EqualFold(v.Group, name) {
-			foundGroup = v
-			break
-		}
-	}
-
+	foundGroup := findGroupCaseInsensitive(allGroups, name)
 	if foundGroup == nil {
 		d.SetId("")
 		return nil
@@ -192,6 +168,32 @@ func SecurityGroupDelete(ctx context.Context, api clusterfirewall.API, d *schema
 	}
 
 	d.SetId("")
+
+	return nil
+}
+
+// findActualGroupName finds the actual group name as stored by Proxmox (case-insensitive lookup).
+func findActualGroupName(ctx context.Context, api clusterfirewall.API, targetName string) (string, error) {
+	allGroups, err := api.ListGroups(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error retrieving security groups: %w", err)
+	}
+
+	foundGroup := findGroupCaseInsensitive(allGroups, targetName)
+	if foundGroup == nil {
+		return "", fmt.Errorf("security group '%s' not found", targetName)
+	}
+
+	return foundGroup.Group, nil
+}
+
+// findGroupCaseInsensitive finds a group by name using case-insensitive matching.
+func findGroupCaseInsensitive(groups []*clusterfirewall.GroupListResponseData, targetName string) *clusterfirewall.GroupListResponseData {
+	for _, group := range groups {
+		if strings.EqualFold(group.Group, targetName) {
+			return group
+		}
+	}
 
 	return nil
 }

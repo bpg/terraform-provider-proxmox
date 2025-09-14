@@ -446,45 +446,71 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 				}
 			}`),
 		}}},
-		{"security group with capital letters", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_cluster_firewall_security_group" "TestGroup769" {
-				name    = "MyTestFilter"
-				comment = "Managed by Terraform - Issue #769"
-				rule {
-					type    = "out"
-					action  = "ACCEPT"
-					comment = "ALLOW DNS"
-					dest    = "10.1.5.1"
-					macro   = "DNS"
-					log     = "nolog"
-				}
-				rule {
-					type    = "out"
-					action  = "DROP"
-					comment = "Drop traffic"
-					dest    = "8.8.8.8"
-					log     = "info"
-				}
-			}`),
-			Check: resource.ComposeTestCheckFunc(
-				ResourceAttributes("proxmox_virtual_environment_cluster_firewall_security_group.TestGroup769", map[string]string{
-					"comment":        "Managed by Terraform - Issue #769",
-					"rule.#":         "2",
-					"rule.0.type":    "out",
-					"rule.0.action":  "ACCEPT",
-					"rule.0.comment": "ALLOW DNS",
-					"rule.0.dest":    "10.1.5.1",
-					"rule.0.macro":   "DNS",
-					"rule.0.log":     "nolog",
-					"rule.1.type":    "out",
-					"rule.1.action":  "DROP",
-					"rule.1.comment": "Drop traffic",
-					"rule.1.dest":    "8.8.8.8",
-					"rule.1.log":     "info",
-				}),
-			),
-		}}},
+		{"security group with capital letters", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "TestGroup769" {
+					name    = "MyTestFilter"
+					comment = "Managed by Terraform - Issue #769"
+					rule {
+						type    = "out"
+						action  = "ACCEPT"
+						comment = "ALLOW DNS"
+						dest    = "10.1.5.1"
+						macro   = "DNS"
+						log     = "nolog"
+					}
+					rule {
+						type    = "out"
+						action  = "DROP"
+						comment = "Drop traffic"
+						dest    = "8.8.8.8"
+						log     = "info"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_cluster_firewall_security_group.TestGroup769", map[string]string{
+						"name":           "MyTestFilter",
+						"comment":        "Managed by Terraform - Issue #769",
+						"rule.#":         "2",
+						"rule.0.type":    "out",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "ALLOW DNS",
+						"rule.0.dest":    "10.1.5.1",
+						"rule.0.macro":   "DNS",
+						"rule.0.log":     "nolog",
+						"rule.1.type":    "out",
+						"rule.1.action":  "DROP",
+						"rule.1.comment": "Drop traffic",
+						"rule.1.dest":    "8.8.8.8",
+						"rule.1.log":     "info",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_cluster_firewall_security_group" "TestGroup769" {
+					name    = "MyTestFilter"
+					comment = "Managed by Terraform - Issue #769"
+					rule {
+						type    = "out"
+						action  = "ACCEPT"
+						comment = "ALLOW DNS"
+						dest    = "10.1.5.1"
+						macro   = "DNS"
+						log     = "nolog"
+					}
+					rule {
+						type    = "out"
+						action  = "DROP"
+						comment = "Drop traffic"
+						dest    = "8.8.8.8"
+						log     = "info"
+					}
+				}`),
+				PlanOnly: true,
+			},
+		}},
 	}
 
 	for _, tt := range tests {
