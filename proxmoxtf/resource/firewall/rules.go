@@ -314,8 +314,13 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		var fieldsToDelete []string
 		pos := rule[mkRulePos].(int)
 
-		currentRule, err := api.GetRule(ctx, pos)
-		if err == nil {
+ 		currentRule, err := api.GetRule(ctx, pos)
+		if err != nil {
+			if !strings.Contains(err.Error(), "no rule at position") {
+				diags = append(diags, diag.FromErr(fmt.Errorf("failed to read rule at position %d for update: %w", pos, err))...)
+				continue
+			}
+		} else {
 			if rule[mkRuleIFace].(string) == "" && currentRule.IFace != nil && *currentRule.IFace != "" {
 				fieldsToDelete = append(fieldsToDelete, "iface")
 			}
