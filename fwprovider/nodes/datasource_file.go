@@ -161,7 +161,7 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 		}
 
 		// Extract filename from volume ID format: datastore:content/filename
-		volumeParts := strings.Split(file.VolumeID, ":")
+		volumeParts := strings.SplitN(file.VolumeID, ":", 2)
 		if len(volumeParts) < 2 {
 			continue
 		}
