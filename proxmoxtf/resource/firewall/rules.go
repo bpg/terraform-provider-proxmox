@@ -8,6 +8,7 @@ package firewall
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -21,6 +22,9 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
 )
+
+// ErrRuleMissing is a sentinel error to indicate a rule doesn't exist at the expected position.
+var ErrRuleMissing = errors.New("rule missing")
 
 const (
 	dvSecurityGroup = ""
@@ -242,18 +246,15 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 		rule, err := api.GetRule(ctx, pos)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rule at position") {
-				// this is not an error, the rule does not exist
-				return nil
+				return ErrRuleMissing
 			}
 
 			return fmt.Errorf("error reading rule %d : %w", pos, err)
 		}
 
-		// pos in the map should be int!
 		ruleMap[mkRulePos] = pos
 
 		if rule.Type == "group" {
-			// this is a special case of security group insertion
 			ruleMap[mkSecurityGroup] = rule.Action
 			securityGroupBaseRuleToMap(&rule.BaseRule, ruleMap)
 		} else {
@@ -267,14 +268,25 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 
 	rules := d.Get(MkRule).([]interface{})
 	if len(rules) > 0 {
-		// We have rules in the state, so we need to read them from the API
+		var existingRules []interface{}
+
 		for _, v := range rules {
 			ruleMap := v.(map[string]interface{})
 			pos := ruleMap[mkRulePos].(int)
 
 			err := readRule(pos, ruleMap)
-			diags = append(diags, diag.FromErr(err)...)
+			if err != nil {
+				if errors.Is(err, ErrRuleMissing) {
+					continue
+				}
+
+				diags = append(diags, diag.FromErr(err)...)
+			} else {
+				existingRules = append(existingRules, ruleMap)
+			}
 		}
+
+		rules = existingRules
 	} else {
 		ruleIDs, err := api.ListRules(ctx)
 		if err != nil {
@@ -286,7 +298,9 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 
 			err = readRule(id.Pos, ruleMap)
 			if err != nil {
-				diags = append(diags, diag.FromErr(err)...)
+				if !errors.Is(err, ErrRuleMissing) {
+					diags = append(diags, diag.FromErr(err)...)
+				}
 			} else if len(ruleMap) > 0 {
 				rules = append(rules, ruleMap)
 			}
@@ -311,26 +325,47 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	for i := len(rules) - 1; i >= 0; i-- {
 		rule := rules[i].(map[string]interface{})
 
+		var fieldsToDelete []string
+		pos := rule[mkRulePos].(int)
+
+		currentRule, err := api.GetRule(ctx, pos)
+		if err != nil {
+			if !strings.Contains(err.Error(), "no rule at position") {
+				diags = append(diags, diag.FromErr(fmt.Errorf("failed to read rule at position %d for update: %w", pos, err))...)
+				continue
+			}
+		} else {
+			if rule[mkRuleIFace].(string) == "" && currentRule.IFace != nil && *currentRule.IFace != "" {
+				fieldsToDelete = append(fieldsToDelete, "iface")
+			}
+
+			if rule[mkRuleLog].(string) == "" && currentRule.Log != nil && *currentRule.Log != "" {
+				fieldsToDelete = append(fieldsToDelete, "log")
+			}
+		}
+
 		ruleBody := firewall.RuleUpdateRequestBody{
 			BaseRule: *mapToBaseRule(rule),
 		}
 
-		pos := rule[mkRulePos].(int)
 		if pos >= 0 {
 			ruleBody.Pos = &pos
 		}
 
-		action := rule[mkRuleAction].(string)
-		if action != "" {
+		if action := rule[mkRuleAction].(string); action != "" {
 			ruleBody.Action = &action
 		}
 
-		rType := rule[mkRuleType].(string)
-		if rType != "" {
+		if rType := rule[mkRuleType].(string); rType != "" {
 			ruleBody.Type = &rType
 		}
 
-		err := api.UpdateRule(ctx, pos, &ruleBody)
+		if len(fieldsToDelete) > 0 {
+			deleteStr := strings.Join(fieldsToDelete, ",")
+			ruleBody.Delete = &deleteStr
+		}
+
+		err = api.UpdateRule(ctx, pos, &ruleBody)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 		}
@@ -376,22 +411,28 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	baseRule := &firewall.BaseRule{}
 
 	comment := rule[mkRuleComment].(string)
-	if comment != "" {
-		baseRule.Comment = &comment
-	}
+	baseRule.Comment = &comment
 
 	dest := rule[mkRuleDest].(string)
-	if dest != "" {
-		baseRule.Dest = &dest
-	}
+	baseRule.Dest = &dest
 
 	dport := rule[mkRuleDPort].(string)
-	if dport != "" {
-		baseRule.DPort = &dport
-	}
+	baseRule.DPort = &dport
 
 	enableBool := types.CustomBool(rule[mkRuleEnabled].(bool))
 	baseRule.Enable = &enableBool
+
+	macro := rule[mkRuleMacro].(string)
+	baseRule.Macro = &macro
+
+	proto := rule[mkRuleProto].(string)
+	baseRule.Proto = &proto
+
+	source := rule[mkRuleSource].(string)
+	baseRule.Source = &source
+
+	sport := rule[mkRuleSPort].(string)
+	baseRule.SPort = &sport
 
 	iface := rule[mkRuleIFace].(string)
 	if iface != "" {
@@ -403,26 +444,6 @@ func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 		baseRule.Log = &log
 	}
 
-	macro := rule[mkRuleMacro].(string)
-	if macro != "" {
-		baseRule.Macro = &macro
-	}
-
-	proto := rule[mkRuleProto].(string)
-	if proto != "" {
-		baseRule.Proto = &proto
-	}
-
-	source := rule[mkRuleSource].(string)
-	if source != "" {
-		baseRule.Source = &source
-	}
-
-	sport := rule[mkRuleSPort].(string)
-	if sport != "" {
-		baseRule.SPort = &sport
-	}
-
 	return baseRule
 }
 
@@ -430,9 +451,7 @@ func mapToSecurityGroupBaseRule(rule map[string]interface{}) *firewall.BaseRule 
 	baseRule := &firewall.BaseRule{}
 
 	comment := rule[mkRuleComment].(string)
-	if comment != "" {
-		baseRule.Comment = &comment
-	}
+	baseRule.Comment = &comment
 
 	enableBool := types.CustomBool(rule[mkRuleEnabled].(bool))
 	baseRule.Enable = &enableBool
