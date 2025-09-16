@@ -38,6 +38,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/storage"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
@@ -534,7 +535,14 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnzone.NewQinQResource,
 		sdnzone.NewVXLANResource,
 		sdnzone.NewEVPNResource,
-		sdnapplier.NewResource,
+    sdnapplier.NewResource,
+		storage.NewDirectoryStorageResource,
+		storage.NewLVMPoolStorageResource,
+		storage.NewLVMThinPoolStorageResource,
+		storage.NewNFSStorageResource,
+		storage.NewProxmoxBackupServerStorageResource,
+		storage.NewCIFSStorageResource,
+		storage.NewZFSPoolStorageResource,
 	}
 }
 
