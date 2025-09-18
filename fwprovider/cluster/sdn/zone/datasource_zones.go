@@ -19,6 +19,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 )
 
@@ -152,7 +153,7 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	zonesList, err := d.client.GetZonesWithParams(ctx, &zones.ZoneQueryParams{})
+	zonesList, err := d.client.GetZonesWithParams(ctx, &sdn.QueryParams{})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read SDN Zones",

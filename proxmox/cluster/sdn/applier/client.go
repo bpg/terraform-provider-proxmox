@@ -16,10 +16,13 @@ type Client struct {
 	api.Client
 }
 
+func (c *Client) basePath() string {
+	return c.Client.ExpandPath("sdn")
+}
+
 // ExpandPath returns the API path for cluster-wide SDN apply.
-func (c *Client) ExpandPath(path string) string {
-	_ = path
-	return "cluster/sdn"
+func (c *Client) ExpandPath(_ string) string {
+	return c.basePath()
 }
 
 // Tasks returns a client for managing SDN tasks.

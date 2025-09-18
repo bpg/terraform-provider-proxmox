@@ -12,6 +12,7 @@ import (
 	"net/http"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 )
 
 // GetZone retrieves a single SDN zone by ID.
@@ -20,8 +21,8 @@ func (c *Client) GetZone(ctx context.Context, id string) (*ZoneData, error) {
 }
 
 // GetZoneWithParams retrieves a single SDN zone by ID with query parameters.
-func (c *Client) GetZoneWithParams(ctx context.Context, id string, params *ZoneQueryParams) (*ZoneData, error) {
-	resBody := &ZoneResponseBody{}
+func (c *Client) GetZoneWithParams(ctx context.Context, id string, params *sdn.QueryParams) (*ZoneData, error) {
+	resBody := &zoneResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(id), params, resBody)
 	if err != nil {
@@ -41,8 +42,8 @@ func (c *Client) GetZones(ctx context.Context) ([]ZoneData, error) {
 }
 
 // GetZonesWithParams lists all SDN zones with query parameters.
-func (c *Client) GetZonesWithParams(ctx context.Context, params *ZoneQueryParams) ([]ZoneData, error) {
-	resBody := &ZonesResponseBody{}
+func (c *Client) GetZonesWithParams(ctx context.Context, params *sdn.QueryParams) ([]ZoneData, error) {
+	resBody := &zonesResponseBody{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), params, resBody)
 	if err != nil {
@@ -57,8 +58,8 @@ func (c *Client) GetZonesWithParams(ctx context.Context, params *ZoneQueryParams
 }
 
 // CreateZone creates a new SDN zone.
-func (c *Client) CreateZone(ctx context.Context, data *ZoneRequestData) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(""), data, nil)
+func (c *Client) CreateZone(ctx context.Context, zone *Zone) error {
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath(""), zone, nil)
 	if err != nil {
 		return fmt.Errorf("error creating SDN zone: %w", err)
 	}
@@ -67,13 +68,13 @@ func (c *Client) CreateZone(ctx context.Context, data *ZoneRequestData) error {
 }
 
 // UpdateZone updates an existing SDN zone.
-func (c *Client) UpdateZone(ctx context.Context, data *ZoneRequestData) error {
+func (c *Client) UpdateZone(ctx context.Context, update *ZoneUpdate) error {
 	/* PVE API does not allow to pass "type" in PUT requests, this doesn't makes any sense
 	since other required params like port, server must still be there
 	while we could spawn another struct, let's just fix it silently */
-	data.Type = nil
+	update.Type = nil
 
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(data.ID), data, nil)
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(update.ID), update, nil)
 	if err != nil {
 		return fmt.Errorf("error updating SDN zone: %w", err)
 	}

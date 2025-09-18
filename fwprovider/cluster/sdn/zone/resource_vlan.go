@@ -28,8 +28,8 @@ type vlanModel struct {
 	Bridge types.String `tfsdk:"bridge"`
 }
 
-func (m *vlanModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
-	m.genericModel.importFromAPI(name, data, diags)
+func (m *vlanModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
+	m.genericModel.fromAPI(name, data, diags)
 
 	m.Bridge = types.StringPointerValue(data.Bridge)
 
@@ -40,8 +40,8 @@ func (m *vlanModel) importFromAPI(name string, data *zones.ZoneData, diags *diag
 	}
 }
 
-func (m *vlanModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {
-	data := m.genericModel.toAPIRequestBody(ctx, diags)
+func (m *vlanModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone {
+	data := m.genericModel.toAPI(ctx, diags)
 
 	data.Bridge = m.Bridge.ValueStringPointer()
 
