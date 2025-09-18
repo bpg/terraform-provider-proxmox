@@ -82,10 +82,10 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Computed:    true,
 				Description: "Isolate ports within this VNet.",
 			},
-			"tag": schema.Int64Attribute{
-				Computed:    true,
-				Description: "VLAN/VXLAN tag.",
-			},
+      "tag": schema.Int64Attribute{
+        Computed:    true,
+        Description: "Tag value for VLAN/VXLAN (can't be used with other zone types).",
+      },
 			"vlan_aware": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Allow VM VLANs to pass through this VNet.",
