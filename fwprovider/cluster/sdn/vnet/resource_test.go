@@ -183,6 +183,57 @@ func TestAccResourceSDNVNet(t *testing.T) {
 			ImportState:       true,
 			ImportStateVerify: true,
 		}}},
+		{"test vnet with pending changes scenario", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone_pending" {
+				id    = "testzp"
+				nodes = ["{{.NodeName}}"]
+			}
+
+			resource "proxmox_virtual_environment_sdn_vnet" "test_vnet_pending" {
+				id            = "testvp"
+				zone          = proxmox_virtual_environment_sdn_zone_simple.test_zone_pending.id
+				alias         = "Pending Test VNet"
+				isolate_ports = false
+				vlan_aware    = false
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.test_vnet_pending", map[string]string{
+					"id":            "testvp",
+					"zone":          "testzp",
+					"alias":         "Pending Test VNet",
+					"isolate_ports": "false",
+					"vlan_aware":    "false",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone_pending" {
+				id    = "testzp"
+				nodes = ["{{.NodeName}}"]
+			}
+
+			resource "proxmox_virtual_environment_sdn_vnet" "test_vnet_pending" {
+				id            = "testvp"
+				zone          = proxmox_virtual_environment_sdn_zone_simple.test_zone_pending.id
+				alias         = "Updated Pending Test VNet"
+				isolate_ports = true
+				vlan_aware    = true
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.test_vnet_pending", map[string]string{
+					"id":            "testvp",
+					"zone":          "testzp",
+					"alias":         "Updated Pending Test VNet",
+					"isolate_ports": "true",
+					"vlan_aware":    "true",
+				}),
+			),
+			ResourceName:      "proxmox_virtual_environment_sdn_vnet.test_vnet_pending",
+			ImportStateId:     "testvp",
+			ImportState:       true,
+			ImportStateVerify: true,
+		}}},
 	}
 
 	for _, tt := range tests {

@@ -68,7 +68,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The unique identifier of the SDN VNet.",
-				Computed:    true,
+				Required:    true,
 			},
 			"zone": schema.StringAttribute{
 				Computed:    true,
@@ -116,7 +116,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	state := model{}
-	state.fromAPI(config.ID.ValueString(), &vnet.VNet)
+	state.fromAPI(config.ID.ValueString(), vnet)
 	state.ID = types.StringValue(config.ID.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

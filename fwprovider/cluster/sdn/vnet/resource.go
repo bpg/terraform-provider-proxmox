@@ -169,7 +169,7 @@ func (r *Resource) Read(
 	}
 
 	readModel := &model{}
-	readModel.fromAPI(state.ID.ValueString(), &data.VNet)
+	readModel.fromAPI(state.ID.ValueString(), data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
@@ -249,7 +249,7 @@ func (r *Resource) ImportState(
 	}
 
 	readModel := &model{}
-	readModel.fromAPI(req.ID, &data.VNet)
+	readModel.fromAPI(req.ID, data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

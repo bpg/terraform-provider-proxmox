@@ -22,7 +22,7 @@ type model struct {
 	VlanAware    types.Bool   `tfsdk:"vlan_aware"`
 }
 
-func (m *model) fromAPI(id string, data *vnets.VNet) {
+func (m *model) fromAPI(id string, data *vnets.VNetData) {
 	m.ID = types.StringValue(id)
 
 	m.Zone = types.StringPointerValue(data.Zone)
@@ -31,6 +31,28 @@ func (m *model) fromAPI(id string, data *vnets.VNet) {
 	m.IsolatePorts = types.BoolPointerValue(data.IsolatePorts.PointerBool())
 	m.Tag = types.Int64PointerValue(data.Tag)
 	m.VlanAware = types.BoolPointerValue(data.VlanAware.PointerBool())
+
+	if data.Pending != nil {
+		if data.Pending.Zone != nil {
+			m.Zone = types.StringValue(*data.Pending.Zone)
+		}
+
+		if data.Pending.Alias != nil {
+			m.Alias = types.StringValue(*data.Pending.Alias)
+		}
+
+		if data.Pending.IsolatePorts != nil {
+			m.IsolatePorts = types.BoolPointerValue(data.Pending.IsolatePorts.PointerBool())
+		}
+
+		if data.Pending.Tag != nil {
+			m.Tag = types.Int64Value(*data.Pending.Tag)
+		}
+
+		if data.Pending.VlanAware != nil {
+			m.VlanAware = types.BoolPointerValue(data.Pending.VlanAware.PointerBool())
+		}
+	}
 }
 
 func (m *model) toAPI() *vnets.VNet {
