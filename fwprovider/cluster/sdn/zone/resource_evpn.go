@@ -41,8 +41,8 @@ type evpnModel struct {
 	VRFVXLANID              types.Int64     `tfsdk:"vrf_vxlan"`
 }
 
-func (m *evpnModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
-	m.genericModel.importFromAPI(name, data, diags)
+func (m *evpnModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
+	m.genericModel.fromAPI(name, data, diags)
 
 	m.AdvertiseSubnets = types.BoolPointerValue(data.AdvertiseSubnets.PointerBool())
 	m.Controller = types.StringPointerValue(data.Controller)
@@ -65,8 +65,8 @@ func (m *evpnModel) importFromAPI(name string, data *zones.ZoneData, diags *diag
 	}
 }
 
-func (m *evpnModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {
-	data := m.genericModel.toAPIRequestBody(ctx, diags)
+func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone {
+	data := m.genericModel.toAPI(ctx, diags)
 
 	data.AdvertiseSubnets = proxmoxtypes.CustomBoolPtr(m.AdvertiseSubnets.ValueBoolPointer())
 	data.Controller = m.Controller.ValueStringPointer()

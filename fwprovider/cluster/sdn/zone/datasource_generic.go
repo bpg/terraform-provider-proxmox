@@ -19,6 +19,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
@@ -132,7 +133,7 @@ func (d *genericZoneDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	zone, err := d.client.GetZoneWithParams(ctx, state.getID(), &zones.ZoneQueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
+	zone, err := d.client.GetZoneWithParams(ctx, state.getID(), &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.Diagnostics.AddError(
@@ -168,6 +169,6 @@ func (d *genericZoneDataSource) Read(ctx context.Context, req datasource.ReadReq
 
 	readModel := d.config.modelFunc()
 
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+	readModel.fromAPI(zone.ID, zone, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

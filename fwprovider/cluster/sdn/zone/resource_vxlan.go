@@ -28,8 +28,8 @@ type vxlanModel struct {
 	Peers stringset.Value `tfsdk:"peers"`
 }
 
-func (m *vxlanModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
-	m.genericModel.importFromAPI(name, data, diags)
+func (m *vxlanModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
+	m.genericModel.fromAPI(name, data, diags)
 
 	m.Peers = stringset.NewValueString(data.Peers, diags, stringset.WithSeparator(","))
 
@@ -38,8 +38,8 @@ func (m *vxlanModel) importFromAPI(name string, data *zones.ZoneData, diags *dia
 	}
 }
 
-func (m *vxlanModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {
-	data := m.genericModel.toAPIRequestBody(ctx, diags)
+func (m *vxlanModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone {
+	data := m.genericModel.toAPI(ctx, diags)
 
 	data.Peers = m.Peers.ValueStringPointer(ctx, diags, stringset.WithSeparator(","))
 

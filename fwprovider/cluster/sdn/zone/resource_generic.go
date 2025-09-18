@@ -11,22 +11,21 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"regexp"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -42,7 +41,7 @@ type genericModel struct {
 	State      types.String    `tfsdk:"state"`
 }
 
-func (m *genericModel) importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
+func (m *genericModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
 	m.ID = types.StringValue(name)
 
 	m.DNS = types.StringPointerValue(data.DNS)
@@ -86,8 +85,8 @@ func (m *genericModel) importFromAPI(name string, data *zones.ZoneData, diags *d
 	}
 }
 
-func (m *genericModel) toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData {
-	data := &zones.ZoneRequestData{}
+func (m *genericModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone {
+	data := &zones.Zone{}
 
 	data.ID = m.ID.ValueString()
 
@@ -124,14 +123,7 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
 			},
-			Validators: []validator.String{
-				// https://github.com/proxmox/pve-network/blob/faaf96a8378a3e41065018562c09c3de0aa434f5/src/PVE/Network/SDN/Zones/Plugin.pm#L34
-				stringvalidator.RegexMatches(
-					regexp.MustCompile(`^[A-Za-z][A-Za-z0-9]*[A-Za-z0-9]$`),
-					"must be a valid zone identifier",
-				),
-				stringvalidator.LengthAtMost(8),
-			},
+			Validators: validators.SDNID(),
 		},
 		"ipam": schema.StringAttribute{
 			Optional:    true,
@@ -165,8 +157,8 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 }
 
 type zoneModel interface {
-	importFromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics)
-	toAPIRequestBody(ctx context.Context, diags *diag.Diagnostics) *zones.ZoneRequestData
+	fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics)
+	toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone
 	getID() string
 }
 
@@ -189,11 +181,7 @@ func (r *genericZoneResource) Metadata(_ context.Context, req resource.MetadataR
 	resp.TypeName = req.ProviderTypeName + r.config.typeNameSuffix
 }
 
-func (r *genericZoneResource) Configure(
-	_ context.Context,
-	req resource.ConfigureRequest,
-	resp *resource.ConfigureResponse,
-) {
+func (r *genericZoneResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -202,10 +190,7 @@ func (r *genericZoneResource) Configure(
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf(
-				"Expected config.Resource, got: %T",
-				req.ProviderData,
-			),
+			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
 
 		return
@@ -222,34 +207,26 @@ func (r *genericZoneResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	reqData := plan.toAPIRequestBody(ctx, &resp.Diagnostics)
+	newZone := plan.toAPI(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	reqData.Type = ptr.Ptr(r.config.zoneType)
+	newZone.Type = ptr.Ptr(r.config.zoneType)
 
-	if err := r.client.CreateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create SDN Zone",
-			err.Error(),
-		)
-
+	if err := r.client.CreateZone(ctx, newZone); err != nil {
+		resp.Diagnostics.AddError("Unable to Create SDN Zone", err.Error())
 		return
 	}
 
-	zone, err := r.client.GetZoneWithParams(ctx, plan.getID(), &zones.ZoneQueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
+	zone, err := r.client.GetZoneWithParams(ctx, plan.getID(), &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN Zone",
-			err.Error(),
-		)
-
+		resp.Diagnostics.AddError("Unable to Read SDN Zone", err.Error())
 		return
 	}
 
 	readModel := r.config.modelFunc()
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+	readModel.fromAPI(zone.ID, zone, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -266,23 +243,20 @@ func (r *genericZoneResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	zone, err := r.client.GetZoneWithParams(ctx, state.getID(), &zones.ZoneQueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
+	zone, err := r.client.GetZoneWithParams(ctx, state.getID(), &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
 
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN Zone",
-			err.Error(),
-		)
+		resp.Diagnostics.AddError("Unable to Read SDN Zone", err.Error())
 
 		return
 	}
 
 	readModel := r.config.modelFunc()
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+	readModel.fromAPI(zone.ID, zone, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -299,31 +273,29 @@ func (r *genericZoneResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	diags := &diag.Diagnostics{}
-	reqData := plan.toAPIRequestBody(ctx, diags)
-	resp.Diagnostics.Append(*diags...)
+	updateZone := plan.toAPI(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	if err := r.client.UpdateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Update SDN Zone",
-			err.Error(),
-		)
+	update := &zones.ZoneUpdate{
+		Zone: *updateZone,
+	}
+
+	if err := r.client.UpdateZone(ctx, update); err != nil {
+		resp.Diagnostics.AddError("Unable to Update SDN Zone", err.Error())
 
 		return
 	}
 
-	zone, err := r.client.GetZoneWithParams(ctx, plan.getID(), &zones.ZoneQueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
+	zone, err := r.client.GetZoneWithParams(ctx, plan.getID(), &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN Zone After Update",
-			err.Error(),
-		)
-
+		resp.Diagnostics.AddError("Unable to Read SDN Zone After Update", err.Error())
 		return
 	}
 
 	state := r.config.modelFunc()
-	state.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+	state.fromAPI(zone.ID, zone, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -342,10 +314,7 @@ func (r *genericZoneResource) Delete(ctx context.Context, req resource.DeleteReq
 
 	if err := r.client.DeleteZone(ctx, state.getID()); err != nil &&
 		!errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError(
-			"Unable to Delete SDN Zone",
-			err.Error(),
-		)
+		resp.Diagnostics.AddError("Unable to Delete SDN Zone", err.Error())
 	}
 }
 
@@ -363,7 +332,7 @@ func (r *genericZoneResource) ImportState(ctx context.Context, req resource.Impo
 	}
 
 	readModel := r.config.modelFunc()
-	readModel.importFromAPI(zone.ID, zone, &resp.Diagnostics)
+	readModel.fromAPI(zone.ID, zone, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return

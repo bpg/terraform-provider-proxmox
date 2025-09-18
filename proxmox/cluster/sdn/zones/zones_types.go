@@ -48,31 +48,24 @@ type Zone struct {
 	RouteTargetImport       *string           `json:"rt-import,omitempty"                  url:"rt-import,omitempty"`
 }
 
+// ZoneData represents a zone with optional pending attribute.
 type ZoneData struct {
 	Zone
 
 	Pending *Zone `json:"pending,omitempty" url:"pending,omitempty"`
 }
 
-// ZoneRequestData wraps a ZoneData struct with optional delete instructions.
-type ZoneRequestData struct {
-	ZoneData
+// ZoneUpdate wraps a ZoneData struct with optional delete instructions.
+type ZoneUpdate struct {
+	Zone
 
 	Delete []string `url:"delete,omitempty"`
 }
 
-// ZoneResponseBody represents the response for a single zone.
-type ZoneResponseBody struct {
+type zoneResponseBody struct {
 	Data *ZoneData `json:"data"`
 }
 
-// ZonesResponseBody represents the response for a list of zones.
-type ZonesResponseBody struct {
+type zonesResponseBody struct {
 	Data *[]ZoneData `json:"data"`
-}
-
-// ZoneQueryParams represents query parameters for zone API calls.
-type ZoneQueryParams struct {
-	Pending *types.CustomBool `url:"pending,omitempty,int"`
-	Running *types.CustomBool `url:"running,omitempty,int"`
 }
