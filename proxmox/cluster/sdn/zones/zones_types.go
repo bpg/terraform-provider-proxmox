@@ -55,7 +55,7 @@ type ZoneData struct {
 	Pending *Zone `json:"pending,omitempty" url:"pending,omitempty"`
 }
 
-// ZoneRequestData wraps a ZoneData struct with optional delete instructions.
+// ZoneUpdate wraps a ZoneData struct with optional delete instructions.
 type ZoneUpdate struct {
 	Zone
 

@@ -49,11 +49,7 @@ func (r *Resource) Metadata(
 	resp.TypeName = req.ProviderTypeName + "_sdn_vnet"
 }
 
-func (r *Resource) Configure(
-	_ context.Context,
-	req resource.ConfigureRequest,
-	resp *resource.ConfigureResponse,
-) {
+func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -71,11 +67,7 @@ func (r *Resource) Configure(
 	r.client = cfg.Client.Cluster()
 }
 
-func (r *Resource) Schema(
-	_ context.Context,
-	_ resource.SchemaRequest,
-	resp *resource.SchemaResponse,
-) {
+func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages Proxmox VE SDN VNet.",
 		Attributes: map[string]schema.Attribute{
@@ -119,11 +111,7 @@ func (r *Resource) Schema(
 	}
 }
 
-func (r *Resource) Create(
-	ctx context.Context,
-	req resource.CreateRequest,
-	resp *resource.CreateResponse,
-) {
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan model
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -143,11 +131,7 @@ func (r *Resource) Create(
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *Resource) Read(
-	ctx context.Context,
-	req resource.ReadRequest,
-	resp *resource.ReadResponse,
-) {
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state model
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -174,11 +158,7 @@ func (r *Resource) Read(
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
-func (r *Resource) Update(
-	ctx context.Context,
-	req resource.UpdateRequest,
-	resp *resource.UpdateResponse,
-) {
+func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan model
 
 	var state model
@@ -212,11 +192,7 @@ func (r *Resource) Update(
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *Resource) Delete(
-	ctx context.Context,
-	req resource.DeleteRequest,
-	resp *resource.DeleteResponse,
-) {
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state model
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -231,11 +207,7 @@ func (r *Resource) Delete(
 	}
 }
 
-func (r *Resource) ImportState(
-	ctx context.Context,
-	req resource.ImportStateRequest,
-	resp *resource.ImportStateResponse,
-) {
+func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	data, err := r.client.SDNVnets(req.ID).GetVnet(ctx)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {

@@ -181,11 +181,7 @@ func (r *genericZoneResource) Metadata(_ context.Context, req resource.MetadataR
 	resp.TypeName = req.ProviderTypeName + r.config.typeNameSuffix
 }
 
-func (r *genericZoneResource) Configure(
-	_ context.Context,
-	req resource.ConfigureRequest,
-	resp *resource.ConfigureResponse,
-) {
+func (r *genericZoneResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -194,10 +190,7 @@ func (r *genericZoneResource) Configure(
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf(
-				"Expected config.Resource, got: %T",
-				req.ProviderData,
-			),
+			fmt.Sprintf("Expected config.Resource, got: %T", req.ProviderData),
 		)
 
 		return
@@ -214,29 +207,21 @@ func (r *genericZoneResource) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	reqData := plan.toAPI(ctx, &resp.Diagnostics)
+	newZone := plan.toAPI(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	reqData.Type = ptr.Ptr(r.config.zoneType)
+	newZone.Type = ptr.Ptr(r.config.zoneType)
 
-	if err := r.client.CreateZone(ctx, reqData); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Create SDN Zone",
-			err.Error(),
-		)
-
+	if err := r.client.CreateZone(ctx, newZone); err != nil {
+		resp.Diagnostics.AddError("Unable to Create SDN Zone", err.Error())
 		return
 	}
 
 	zone, err := r.client.GetZoneWithParams(ctx, plan.getID(), &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN Zone",
-			err.Error(),
-		)
-
+		resp.Diagnostics.AddError("Unable to Read SDN Zone", err.Error())
 		return
 	}
 
@@ -265,10 +250,7 @@ func (r *genericZoneResource) Read(ctx context.Context, req resource.ReadRequest
 			return
 		}
 
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN Zone",
-			err.Error(),
-		)
+		resp.Diagnostics.AddError("Unable to Read SDN Zone", err.Error())
 
 		return
 	}
@@ -291,30 +273,24 @@ func (r *genericZoneResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	diags := &diag.Diagnostics{}
-	reqData := plan.toAPI(ctx, diags)
-	resp.Diagnostics.Append(*diags...)
+	updateZone := plan.toAPI(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	update := &zones.ZoneUpdate{
-		Zone: *reqData,
+		Zone: *updateZone,
 	}
 
 	if err := r.client.UpdateZone(ctx, update); err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Update SDN Zone",
-			err.Error(),
-		)
+		resp.Diagnostics.AddError("Unable to Update SDN Zone", err.Error())
 
 		return
 	}
 
 	zone, err := r.client.GetZoneWithParams(ctx, plan.getID(), &sdn.QueryParams{Pending: proxmoxtypes.CustomBool(true).Pointer()})
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to Read SDN Zone After Update",
-			err.Error(),
-		)
-
+		resp.Diagnostics.AddError("Unable to Read SDN Zone After Update", err.Error())
 		return
 	}
 
@@ -338,10 +314,7 @@ func (r *genericZoneResource) Delete(ctx context.Context, req resource.DeleteReq
 
 	if err := r.client.DeleteZone(ctx, state.getID()); err != nil &&
 		!errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError(
-			"Unable to Delete SDN Zone",
-			err.Error(),
-		)
+		resp.Diagnostics.AddError("Unable to Delete SDN Zone", err.Error())
 	}
 }
 

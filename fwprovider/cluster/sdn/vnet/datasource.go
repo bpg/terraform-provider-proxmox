@@ -94,18 +94,18 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 }
 
 func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config model
+	var readModel model
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &readModel)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	vnet, err := d.client.SDNVnets(config.ID.ValueString()).GetVnet(ctx)
+	vnet, err := d.client.SDNVnets(readModel.ID.ValueString()).GetVnet(ctx)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.Diagnostics.AddError("SDN VNet Not Found", fmt.Sprintf("SDN VNet with ID '%s' was not found", config.ID.ValueString()))
+			resp.Diagnostics.AddError("SDN VNet Not Found", fmt.Sprintf("SDN VNet with ID '%s' was not found", readModel.ID.ValueString()))
 			return
 		}
 
@@ -115,7 +115,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	state := model{}
-	state.fromAPI(config.ID.ValueString(), vnet)
+	state.fromAPI(readModel.ID.ValueString(), vnet)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
