@@ -169,7 +169,7 @@ func (r *Resource) Read(
 	}
 
 	readModel := &model{}
-	readModel.fromAPI(state.ID.ValueString(), &data.Vnet)
+	readModel.fromAPI(state.ID.ValueString(), &data.VNet)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
@@ -198,8 +198,8 @@ func (r *Resource) Update(
 	checkDelete(plan.VlanAware, state.VlanAware, &toDelete, "vlanaware")
 
 	vnet := plan.toAPI()
-	reqData := &vnets.VnetUpdate{
-		Vnet:   *vnet,
+	reqData := &vnets.VNetUpdate{
+		VNet:   *vnet,
 		Delete: toDelete,
 	}
 
@@ -249,7 +249,7 @@ func (r *Resource) ImportState(
 	}
 
 	readModel := &model{}
-	readModel.fromAPI(req.ID, &data.Vnet)
+	readModel.fromAPI(req.ID, &data.VNet)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }

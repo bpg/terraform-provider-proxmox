@@ -9,14 +9,14 @@ package vnets
 import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
 /*
-VNETS
+VNet used to represent a VNet in the API.
 
 This part is related to the SDN component : VNETS
 Based on docs :
 https://pve.proxmox.com/pve-docs/chapter-pvesdn.html#pvesdn_config_vnet
 https://pve.proxmox.com/pve-docs/api-viewer/index.html#/cluster/sdn/vnets
 */
-type Vnet struct {
+type VNet struct {
 	Alias        *string           `json:"alias,omitempty"         url:"alias,omitempty"`
 	IsolatePorts *types.CustomBool `json:"isolate-ports,omitempty" url:"isolate-ports,omitempty,int"`
 	Tag          *int64            `json:"tag,omitempty"           url:"tag,omitempty"`
@@ -25,28 +25,28 @@ type Vnet struct {
 	Zone         *string           `json:"zone,omitempty"          url:"zone,omitempty"`
 }
 
-type VnetData struct {
-	Vnet
+type VNetData struct {
+	VNet
 
-	Pending *Vnet `json:"pending,omitempty" url:"pending,omitempty"`
+	Pending *VNet `json:"pending,omitempty" url:"pending,omitempty"`
 }
 
-type VnetCreate struct {
-	Vnet
+type VNetCreate struct {
+	VNet
 
 	ID string `json:"vnet" url:"vnet"`
 }
 
-type VnetUpdate struct {
-	Vnet
+type VNetUpdate struct {
+	VNet
 
 	Delete []string `url:"delete,omitempty"`
 }
 
 type vnetResponse struct {
-	Data *VnetData `json:"data"`
+	Data *VNetData `json:"data"`
 }
 
 type vnetsResponse struct {
-	Data *[]VnetData `json:"data"`
+	Data *[]VNetData `json:"data"`
 }

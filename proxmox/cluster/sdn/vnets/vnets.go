@@ -16,12 +16,12 @@ import (
 )
 
 // GetVnet retrieves a single SDN Vnet by ID.
-func (c *Client) GetVnet(ctx context.Context) (*VnetData, error) {
+func (c *Client) GetVnet(ctx context.Context) (*VNetData, error) {
 	return c.GetVnetWithParams(ctx, nil)
 }
 
-// GetVnet retrieves a single SDN Vnet by ID.
-func (c *Client) GetVnetWithParams(ctx context.Context, params *sdn.QueryParams) (*VnetData, error) {
+// GetVnetWithParams retrieves a single SDN Vnet by ID with query parameters.
+func (c *Client) GetVnetWithParams(ctx context.Context, params *sdn.QueryParams) (*VNetData, error) {
 	resBody := &vnetResponse{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), params, resBody)
@@ -37,12 +37,12 @@ func (c *Client) GetVnetWithParams(ctx context.Context, params *sdn.QueryParams)
 }
 
 // GetVnets lists all SDN VNETs.
-func (c *Client) GetVnets(ctx context.Context) ([]VnetData, error) {
+func (c *Client) GetVnets(ctx context.Context) ([]VNetData, error) {
 	return c.GetVnetsWithParams(ctx, nil)
 }
 
-// GetVnets lists all SDN Vnets.
-func (c *Client) GetVnetsWithParams(ctx context.Context, params *sdn.QueryParams) ([]VnetData, error) {
+// GetVnetsWithParams lists all SDN Vnets with query parameters.
+func (c *Client) GetVnetsWithParams(ctx context.Context, params *sdn.QueryParams) ([]VNetData, error) {
 	resBody := &vnetsResponse{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.basePath(), params, resBody)
@@ -58,9 +58,9 @@ func (c *Client) GetVnetsWithParams(ctx context.Context, params *sdn.QueryParams
 }
 
 // CreateVnet creates a new SDN VNET.
-func (c *Client) CreateVnet(ctx context.Context, data *Vnet) error {
-	createRequest := VnetCreate{
-		Vnet: *data,
+func (c *Client) CreateVnet(ctx context.Context, data *VNet) error {
+	createRequest := VNetCreate{
+		VNet: *data,
 		ID:   c.ID,
 	}
 
@@ -73,7 +73,7 @@ func (c *Client) CreateVnet(ctx context.Context, data *Vnet) error {
 }
 
 // UpdateVnet Updates an existing VNet.
-func (c *Client) UpdateVnet(ctx context.Context, data *VnetUpdate) error {
+func (c *Client) UpdateVnet(ctx context.Context, data *VNetUpdate) error {
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath(""), data, nil)
 	if err != nil {
 		return fmt.Errorf("error updating SDN VNET: %w", err)

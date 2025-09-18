@@ -33,7 +33,7 @@ func NewDataSource() datasource.DataSource {
 }
 
 func (d *DataSource) Metadata(
-	ctx context.Context,
+	_ context.Context,
 	req datasource.MetadataRequest,
 	resp *datasource.MetadataResponse,
 ) {
@@ -41,7 +41,7 @@ func (d *DataSource) Metadata(
 }
 
 func (d *DataSource) Configure(
-	ctx context.Context,
+	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
 ) {
@@ -62,7 +62,7 @@ func (d *DataSource) Configure(
 	d.client = cfg.Client.Cluster()
 }
 
-func (d *DataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves information about an existing SDN VNet.",
 		Attributes: map[string]schema.Attribute{
@@ -116,7 +116,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	state := model{}
-	state.fromAPI(config.ID.ValueString(), &vnet.Vnet)
+	state.fromAPI(config.ID.ValueString(), &vnet.VNet)
 	state.ID = types.StringValue(config.ID.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

@@ -22,7 +22,7 @@ type model struct {
 	VlanAware    types.Bool   `tfsdk:"vlan_aware"`
 }
 
-func (m *model) fromAPI(id string, data *vnets.Vnet) {
+func (m *model) fromAPI(id string, data *vnets.VNet) {
 	m.ID = types.StringValue(id)
 
 	m.Zone = types.StringPointerValue(data.Zone)
@@ -33,8 +33,8 @@ func (m *model) fromAPI(id string, data *vnets.Vnet) {
 	m.VlanAware = types.BoolPointerValue(data.VlanAware.PointerBool())
 }
 
-func (m *model) toAPI() *vnets.Vnet {
-	data := &vnets.Vnet{}
+func (m *model) toAPI() *vnets.VNet {
+	data := &vnets.VNet{}
 
 	data.Zone = m.Zone.ValueStringPointer()
 	data.Alias = m.Alias.ValueStringPointer()
