@@ -66,10 +66,10 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 	resp.Schema = schema.Schema{
 		Description: "Retrieves information about an existing SDN VNet.",
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "The unique identifier of the SDN VNet.",
-				Computed:    true,
-			},
+      "id": schema.StringAttribute{
+        Description: "The unique identifier of the SDN VNet.",
+        Required:    true,
+      },
 			"zone": schema.StringAttribute{
 				Computed:    true,
 				Description: "The zone to which this VNet belongs.",
