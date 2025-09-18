@@ -116,8 +116,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	state := model{}
-	state.fromAPI(config.ID.ValueString(), &vnet.VNet)
-	state.ID = types.StringValue(config.ID.ValueString())
+  state.fromAPI(config.ID.ValueString(), &vnet.VNet)
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+  resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
