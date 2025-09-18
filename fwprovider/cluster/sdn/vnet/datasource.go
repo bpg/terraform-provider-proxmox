@@ -13,7 +13,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -84,7 +83,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 			},
 			"tag": schema.Int64Attribute{
 				Computed:    true,
-				Description: "VLAN/VXLAN tag.",
+				Description: "Tag value for VLAN/VXLAN (can't be used with other zone types).",
 			},
 			"vlan_aware": schema.BoolAttribute{
 				Computed:    true,
@@ -117,7 +116,6 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 
 	state := model{}
 	state.fromAPI(config.ID.ValueString(), vnet)
-	state.ID = types.StringValue(config.ID.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
