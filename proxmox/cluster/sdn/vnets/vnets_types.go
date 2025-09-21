@@ -11,10 +11,10 @@ import "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 /*
 VNet used to represent a VNet in the API.
 
-This part is related to the SDN component : VNETS
-Based on docs :
-https://pve.proxmox.com/pve-docs/chapter-pvesdn.html#pvesdn_config_vnet
-https://pve.proxmox.com/pve-docs/api-viewer/index.html#/cluster/sdn/vnets
+This part is related to the SDN component: VNet
+Based on docs:
+  - https://pve.proxmox.com/pve-docs/chapter-pvesdn.html#pvesdn_config_vnet
+  - https://pve.proxmox.com/pve-docs/api-viewer/index.html#/cluster/sdn/vnets
 */
 type VNet struct {
 	Alias        *string           `json:"alias,omitempty"         url:"alias,omitempty"`

@@ -4,39 +4,29 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package vnets
+package subnets
 
 import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
 )
 
 // Client is a client for accessing the Proxmox SDN VNETs API.
 type Client struct {
 	api.Client
-
-	ID string
 }
 
 func (c *Client) basePath() string {
-	return c.Client.ExpandPath("sdn/vnets")
+	return c.Client.ExpandPath("subnets")
 }
 
 // ExpandPath expands a relative path to a full VM API path.
-func (c *Client) ExpandPath(path string) string {
-	p := fmt.Sprintf("%s/%s", c.basePath(), c.ID)
-	if path != "" {
-		p = fmt.Sprintf("%s/%s", p, path)
+func (c *Client) ExpandPath(subnetID string) string {
+	p := c.basePath()
+	if subnetID != "" {
+		p = fmt.Sprintf("%s/%s", p, subnetID)
 	}
 
 	return p
-}
-
-// Subnets returns a client for managing the SDN Vnet's subnets.
-func (c *Client) Subnets() *subnets.Client {
-	return &subnets.Client{
-		Client: c,
-	}
 }
