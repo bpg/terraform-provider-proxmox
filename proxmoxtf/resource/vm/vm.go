@@ -5431,6 +5431,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
+	if stoppedBeforeUpdate {
+		if er := vmShutdown(ctx, vmAPI, d); er != nil {
+			return er
+		}
+	}
+
 	rebootRequired = rebootRequired || rr
 
 	// Prepare the new efi disk configuration.
@@ -5507,8 +5513,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			if mustMove || mustChangeDatastore || existingInterface == "" {
 				// CloudInit must be moved, either from a device to another or from a datastore
 				// to another (or both). This requires the VM to be stopped.
-				if er := vmShutdown(ctx, vmAPI, d); er != nil {
-					return er
+				if !stoppedBeforeUpdate {
+					if er := vmShutdown(ctx, vmAPI, d); er != nil {
+						return er
+					}
 				}
 
 				if er := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); er != nil {
@@ -5749,6 +5757,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	// Update the configuration now that everything has been prepared.
 	updateBody.Delete = del
 
+	e = vmAPI.UpdateVM(ctx, updateBody)
+	if e != nil {
+		return diag.FromErr(e)
+	}
+
 	// Determine if the state of the virtual machine state needs to be changed.
 	//nolint: nestif
 	if (d.HasChange(mkStarted) || stoppedBeforeUpdate) && !bool(template) {
@@ -5764,11 +5777,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 			rebootRequired = false
 		}
-	}
-
-	e = vmAPI.UpdateVM(ctx, updateBody)
-	if e != nil {
-		return diag.FromErr(e)
 	}
 
 	if stoppedBeforeUpdate && d.Get(mkStarted).(bool) {
