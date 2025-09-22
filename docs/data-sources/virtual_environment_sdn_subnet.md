@@ -18,7 +18,7 @@ Retrieve details about a specific SDN Subnet in Proxmox VE.
 
 ### Required
 
-- `subnet` (String)
+- `cidr` (String) A CIDR network address, for example 10.0.0.0/8
 - `vnet` (String) The VNet this subnet belongs to.
 
 ### Optional
@@ -27,13 +27,11 @@ Retrieve details about a specific SDN Subnet in Proxmox VE.
 
 ### Read-Only
 
-- `canonical_name` (String)
 - `dhcp_dns_server` (String) The DNS server used for DHCP.
 - `dns_zone_prefix` (String) Prefix used for DNS zone delegation.
 - `gateway` (String) The gateway address for the subnet.
 - `id` (String) The full ID in the format 'vnet-id/subnet-id'.
 - `snat` (Boolean) Whether SNAT is enabled for the subnet.
-- `type` (String)
 
 <a id="nestedatt--dhcp_range"></a>
 ### Nested Schema for `dhcp_range`
