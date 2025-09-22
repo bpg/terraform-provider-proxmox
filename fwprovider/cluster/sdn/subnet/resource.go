@@ -279,10 +279,6 @@ func resolveCanonicalSubnetID(ctx context.Context, client *subnets.Client, cidr 
 	}
 
 	for _, subnet := range subnetList {
-		if subnet.ID == cidr {
-			return subnet.ID, nil
-		}
-
 		// Proxmox canonical format is zone-prefixed.
 		// e.g., zoneM-10.10.0.0-24 instead of 10.10.0.0/24.
 		canonicalCIDR := strings.ReplaceAll(cidr, "/", "-")
