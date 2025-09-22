@@ -62,31 +62,26 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 		Description: "Retrieve details about a specific SDN Subnet in Proxmox VE.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
 				Description: "The full ID in the format 'vnet-id/subnet-id'.",
+				Computed:    true,
 			},
-			"subnet": schema.StringAttribute{
-				Required:   true,
-				CustomType: customtypes.IPCIDRType{},
-			},
-			"canonical_name": schema.StringAttribute{
-				Computed: true,
-			},
-			"type": schema.StringAttribute{
-				Computed: true,
+			"cidr": schema.StringAttribute{
+				Description: "A CIDR network address, for example 10.0.0.0/8",
+				Required:    true,
+				CustomType:  customtypes.IPCIDRType{},
 			},
 			"vnet": schema.StringAttribute{
-				Required:    true,
 				Description: "The VNet this subnet belongs to.",
+				Required:    true,
 			},
 			"dhcp_dns_server": schema.StringAttribute{
-				Computed:    true,
 				Description: "The DNS server used for DHCP.",
+				Computed:    true,
 			},
 			"dhcp_range": schema.SingleNestedAttribute{
+				Description: "DHCP range (start and end IPs).",
 				Optional:    true,
 				Computed:    true,
-				Description: "DHCP range (start and end IPs).",
 				Attributes: map[string]schema.Attribute{
 					"start_address": schema.StringAttribute{
 						Computed:    true,
@@ -99,28 +94,26 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				},
 			},
 			"dns_zone_prefix": schema.StringAttribute{
-				Computed:    true,
 				Description: "Prefix used for DNS zone delegation.",
+				Computed:    true,
 			},
 			"gateway": schema.StringAttribute{
-				Computed:    true,
 				Description: "The gateway address for the subnet.",
+				Computed:    true,
 			},
 			"snat": schema.BoolAttribute{
-				Computed:    true,
 				Description: "Whether SNAT is enabled for the subnet.",
+				Computed:    true,
 			},
 		},
 	}
 }
 
 type datasourceModel struct {
-	ID     types.String            `tfsdk:"id"`
-	VNet   types.String            `tfsdk:"vnet"`
-	Subnet customtypes.IPCIDRValue `tfsdk:"subnet"`
+	ID   types.String            `tfsdk:"id"`
+	VNet types.String            `tfsdk:"vnet"`
+	CIDR customtypes.IPCIDRValue `tfsdk:"cidr"`
 
-	CanonicalName types.String    `tfsdk:"canonical_name"`
-	Type          types.String    `tfsdk:"type"`
 	DhcpDnsServer types.String    `tfsdk:"dhcp_dns_server"`
 	DhcpRange     *dhcpRangeModel `tfsdk:"dhcp_range"`
 	DnsZonePrefix types.String    `tfsdk:"dns_zone_prefix"`
@@ -139,7 +132,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 
 	client := d.client.SDNVnets(data.VNet.ValueString()).Subnets()
 
-	canonicalID, err := resolveCanonicalSubnetID(ctx, client, data.Subnet.ValueString())
+	canonicalID, err := resolveCanonicalSubnetID(ctx, client, data.CIDR.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to Resolve SDN Subnet ID", err.Error())
 		return
@@ -151,7 +144,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			resp.Diagnostics.AddError(
 				"SDN Subnet Not Found",
 				fmt.Sprintf("SDN Subnet with ID '%s' in VNet '%s' was not found",
-					data.Subnet.ValueString(), data.VNet.ValueString()),
+					data.CIDR.ValueString(), data.VNet.ValueString()),
 			)
 
 			return
@@ -163,21 +156,29 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	state := &datasourceModel{}
-	state.Subnet = data.Subnet
+	state.CIDR = data.CIDR
 	state.VNet = data.VNet
-	state.fromAPI(&subnet.Subnet)
 
-	state.ID = types.StringValue(fmt.Sprintf("%s/%s", data.VNet.ValueString(), data.Subnet.ValueString()))
-	state.CanonicalName = types.StringValue(subnet.ID)
-	state.Type = types.StringValue("subnet")
+	if err := state.fromAPI(&subnet.Subnet); err != nil {
+		resp.Diagnostics.AddError("Invalid Subnet Data", err.Error())
+		return
+	}
+
+	state.ID = types.StringValue(fmt.Sprintf("%s/%s", data.VNet.ValueString(), data.CIDR.ValueString()))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
-func (m *datasourceModel) fromAPI(subnet *subnets.Subnet) {
+func (m *datasourceModel) fromAPI(subnet *subnets.Subnet) error {
 	m.VNet = types.StringPointerValue(subnet.VNet)
-	cidr := strings.SplitN(subnet.ID, "-", 2)[1]
-	m.Subnet = customtypes.NewIPCIDRValue(strings.ReplaceAll(cidr, "-", "/"))
+
+	parts := strings.SplitN(subnet.ID, "-", 2)
+	if len(parts) < 2 {
+		return fmt.Errorf("invalid subnet ID format: expected canonical format with '-', got: %s", subnet.ID)
+	}
+
+	cidr := parts[1]
+	m.CIDR = customtypes.NewIPCIDRValue(strings.ReplaceAll(cidr, "-", "/"))
 
 	m.DhcpDnsServer = types.StringPointerValue(subnet.DHCPDNSServer)
 
@@ -194,4 +195,6 @@ func (m *datasourceModel) fromAPI(subnet *subnets.Subnet) {
 	m.DnsZonePrefix = types.StringPointerValue(subnet.DNSZonePrefix)
 	m.Gateway = types.StringPointerValue(subnet.Gateway)
 	m.SNAT = types.BoolPointerValue(subnet.SNAT.PointerBool())
+
+	return nil
 }

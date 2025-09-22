@@ -7,6 +7,7 @@
 package subnet
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
@@ -33,10 +34,16 @@ type dhcpRangeModel struct {
 	EndAddress   customtypes.IPAddrValue `tfsdk:"end_address"`
 }
 
-func (m *model) fromAPI(subnet *subnets.Subnet) {
+func (m *model) fromAPI(subnet *subnets.Subnet) error {
 	m.ID = types.StringValue(subnet.ID)
 	m.VNet = types.StringPointerValue(subnet.VNet)
-	cidr := strings.SplitN(subnet.ID, "-", 2)[1]
+
+	parts := strings.SplitN(subnet.ID, "-", 2)
+	if len(parts) < 2 {
+		return fmt.Errorf("invalid subnet ID format: expected canonical format with '-', got: %s", subnet.ID)
+	}
+
+	cidr := parts[1]
 	m.CIDR = customtypes.NewIPCIDRValue(strings.ReplaceAll(cidr, "-", "/"))
 
 	m.DhcpDnsServer = types.StringPointerValue(subnet.DHCPDNSServer)
@@ -54,6 +61,8 @@ func (m *model) fromAPI(subnet *subnets.Subnet) {
 	m.DnsZonePrefix = types.StringPointerValue(subnet.DNSZonePrefix)
 	m.Gateway = types.StringPointerValue(subnet.Gateway)
 	m.SNAT = types.BoolPointerValue(subnet.SNAT.PointerBool())
+
+	return nil
 }
 
 func (m *model) toAPI() *subnets.Subnet {

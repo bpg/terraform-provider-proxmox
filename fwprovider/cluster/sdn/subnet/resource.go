@@ -185,7 +185,10 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	}
 
 	readModel := &model{}
-	readModel.fromAPI(&subnet.Subnet)
+	if err := readModel.fromAPI(&subnet.Subnet); err != nil {
+		resp.Diagnostics.AddError("Invalid Subnet Data", err.Error())
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
@@ -261,7 +264,11 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	}
 
 	readModel := &model{}
-	readModel.fromAPI(&subnet.Subnet)
+	if err := readModel.fromAPI(&subnet.Subnet); err != nil {
+		resp.Diagnostics.AddError("Invalid Subnet Data", err.Error())
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
