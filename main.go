@@ -48,12 +48,14 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_hardware_mappings.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresource.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresources.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnet.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zones.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_simple.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_vlan.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_qinq.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_vxlan.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_evpn.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_file.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_version.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_vm2.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_metrics_server.md ./docs/data-sources/
@@ -72,6 +74,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_bridge.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_network_linux_vlan.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_applier.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_vnet.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_simple.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_vlan.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_qinq.md ./docs/resources/

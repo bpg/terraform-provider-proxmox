@@ -31,6 +31,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
 	sdnapplier "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/applier"
+	sdnvnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/vnet"
 	sdnzone "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/zone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
@@ -534,6 +535,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnzone.NewQinQResource,
 		sdnzone.NewVXLANResource,
 		sdnzone.NewEVPNResource,
+		sdnvnet.NewResource,
 		sdnapplier.NewResource,
 	}
 }
@@ -557,12 +559,14 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		hardwaremapping.NewPCIDataSource,
 		hardwaremapping.NewUSBDataSource,
 		metrics.NewMetricsServerDatasource,
+		nodes.NewFileDataSource,
 		sdnzone.NewSimpleDataSource,
 		sdnzone.NewVLANDataSource,
 		sdnzone.NewQinQDataSource,
 		sdnzone.NewVXLANDataSource,
 		sdnzone.NewEVPNDataSource,
 		sdnzone.NewZonesDataSource,
+		sdnvnet.NewDataSource,
 		vm.NewDataSource,
 	}
 }
