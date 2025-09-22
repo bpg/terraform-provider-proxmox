@@ -314,7 +314,7 @@ func (r *Resource) ValidateConfig(
 	_, ipnet, err := net.ParseCIDR(config.CIDR.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddAttributeError(
-			path.Root("subnet"),
+			path.Root("cidr"),
 			"Invalid Subnet",
 			fmt.Sprintf("Could not parse subnet: %s", err),
 		)
