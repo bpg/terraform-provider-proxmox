@@ -21,12 +21,15 @@ Retrieve details about a specific SDN Subnet in Proxmox VE.
 - `subnet` (String)
 - `vnet` (String) The VNet this subnet belongs to.
 
+### Optional
+
+- `dhcp_range` (Attributes) DHCP range (start and end IPs). (see [below for nested schema](#nestedatt--dhcp_range))
+
 ### Read-Only
 
 - `canonical_name` (String)
 - `dhcp_dns_server` (String) The DNS server used for DHCP.
-- `dhcp_range` (Attributes List) List of DHCP ranges (start and end IPs). (see [below for nested schema](#nestedatt--dhcp_range))
-- `dnszoneprefix` (String) Prefix used for DNS zone delegation.
+- `dns_zone_prefix` (String) Prefix used for DNS zone delegation.
 - `gateway` (String) The gateway address for the subnet.
 - `id` (String) The full ID in the format 'vnet-id/subnet-id'.
 - `snat` (Boolean) Whether SNAT is enabled for the subnet.
