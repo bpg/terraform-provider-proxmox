@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -20,7 +19,6 @@ import (
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
 )
 
 var _ datasource.DataSource = &DataSource{}
@@ -109,20 +107,8 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 	}
 }
 
-type datasourceModel struct {
-	ID   types.String            `tfsdk:"id"`
-	VNet types.String            `tfsdk:"vnet"`
-	CIDR customtypes.IPCIDRValue `tfsdk:"cidr"`
-
-	DhcpDnsServer types.String    `tfsdk:"dhcp_dns_server"`
-	DhcpRange     *dhcpRangeModel `tfsdk:"dhcp_range"`
-	DnsZonePrefix types.String    `tfsdk:"dns_zone_prefix"`
-	Gateway       types.String    `tfsdk:"gateway"`
-	SNAT          types.Bool      `tfsdk:"snat"`
-}
-
 func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data datasourceModel
+	var data model
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
@@ -155,7 +141,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
-	state := &datasourceModel{}
+	state := &model{}
 	state.CIDR = data.CIDR
 	state.VNet = data.VNet
 
@@ -167,34 +153,4 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	state.ID = types.StringValue(fmt.Sprintf("%s/%s", data.VNet.ValueString(), data.CIDR.ValueString()))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
-}
-
-func (m *datasourceModel) fromAPI(subnet *subnets.Subnet) error {
-	m.VNet = types.StringPointerValue(subnet.VNet)
-
-	parts := strings.SplitN(subnet.ID, "-", 2)
-	if len(parts) < 2 {
-		return fmt.Errorf("invalid subnet ID format: expected canonical format with '-', got: %s", subnet.ID)
-	}
-
-	cidr := parts[1]
-	m.CIDR = customtypes.NewIPCIDRValue(strings.ReplaceAll(cidr, "-", "/"))
-
-	m.DhcpDnsServer = types.StringPointerValue(subnet.DHCPDNSServer)
-
-	if len(subnet.DHCPRange) == 0 {
-		m.DhcpRange = nil
-	} else {
-		r := subnet.DHCPRange[0]
-		m.DhcpRange = &dhcpRangeModel{
-			StartAddress: customtypes.NewIPAddrPointerValue(&r.StartAddress),
-			EndAddress:   customtypes.NewIPAddrPointerValue(&r.EndAddress),
-		}
-	}
-
-	m.DnsZonePrefix = types.StringPointerValue(subnet.DNSZonePrefix)
-	m.Gateway = types.StringPointerValue(subnet.Gateway)
-	m.SNAT = types.BoolPointerValue(subnet.SNAT.PointerBool())
-
-	return nil
 }
