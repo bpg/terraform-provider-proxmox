@@ -5426,7 +5426,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-
 	// Handle disk deletion before applying other changes
 	if d.HasChange(disk.MkDisk) {
 		bootOrder := d.Get(mkBootOrder).([]interface{})
