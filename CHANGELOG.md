@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.84.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.2...v0.84.0) (2025-09-22)
+
+
+### Features
+
+* **file:** add file datasource ([#2176](https://github.com/bpg/terraform-provider-proxmox/issues/2176)) ([8244813](https://github.com/bpg/terraform-provider-proxmox/commit/8244813b7eae6bb6442fa69f786ab9422ffdadee))
+* **sdn:** add support for Subnet resource and datasource ([#2191](https://github.com/bpg/terraform-provider-proxmox/issues/2191)) ([1df305d](https://github.com/bpg/terraform-provider-proxmox/commit/1df305dfb3867f0e0bc207f928745de96db3f7f1))
+* **sdn:** add support for VNet resource and datasource ([#2185](https://github.com/bpg/terraform-provider-proxmox/issues/2185)) ([8938d86](https://github.com/bpg/terraform-provider-proxmox/commit/8938d8657157085934adb15680209a374b3bc7b2))
+
+
+### Miscellaneous
+
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#2187](https://github.com/bpg/terraform-provider-proxmox/issues/2187)) ([09b704a](https://github.com/bpg/terraform-provider-proxmox/commit/09b704ad8e082dde47247f2a9fb64f5af7791a15))
+* **deps:** update image golang (bb979b2 → 8305f5f) ([#2186](https://github.com/bpg/terraform-provider-proxmox/issues/2186)) ([b70fa62](https://github.com/bpg/terraform-provider-proxmox/commit/b70fa6267037811b650a48baec7bc07ed3b2665d))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.6.0 → v7.7.0) ([#2189](https://github.com/bpg/terraform-provider-proxmox/issues/2189)) ([46dbc68](https://github.com/bpg/terraform-provider-proxmox/commit/46dbc68da70bd4e7600c3d124b39abd07dbbc07e))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.7.0 → v7.7.1) ([#2192](https://github.com/bpg/terraform-provider-proxmox/issues/2192)) ([11f4002](https://github.com/bpg/terraform-provider-proxmox/commit/11f400288b896f8a4570f169651e20dd2cef3e10))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.37.0 → v2.38.0) ([#2188](https://github.com/bpg/terraform-provider-proxmox/issues/2188)) ([2b2d619](https://github.com/bpg/terraform-provider-proxmox/commit/2b2d619356fa7a099807c54b0a6a45e78683b15e))
+
 ## [0.83.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.1...v0.83.2) (2025-09-14)
 
 
