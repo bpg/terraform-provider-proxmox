@@ -95,24 +95,22 @@ func (d *DataSource) Schema(
 				Computed:    true,
 				Description: "The DNS server used for DHCP.",
 			},
-			"dhcp_range": schema.ListNestedAttribute{
-				Optional:    false,
+			"dhcp_range": schema.SingleNestedAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "List of DHCP ranges (start and end IPs).",
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"start_address": schema.StringAttribute{
-							Computed:    true,
-							Description: "Start of the DHCP range.",
-						},
-						"end_address": schema.StringAttribute{
-							Computed:    true,
-							Description: "End of the DHCP range.",
-						},
+				Description: "DHCP range (start and end IPs).",
+				Attributes: map[string]schema.Attribute{
+					"start_address": schema.StringAttribute{
+						Computed:    true,
+						Description: "Start of the DHCP range.",
+					},
+					"end_address": schema.StringAttribute{
+						Computed:    true,
+						Description: "End of the DHCP range.",
 					},
 				},
 			},
-			"dnszoneprefix": schema.StringAttribute{
+			"dns_zone_prefix": schema.StringAttribute{
 				Computed:    true,
 				Description: "Prefix used for DNS zone delegation.",
 			},
@@ -136,8 +134,8 @@ type datasourceModel struct {
 	CanonicalName types.String    `tfsdk:"canonical_name"`
 	Type          types.String    `tfsdk:"type"`
 	DhcpDnsServer types.String    `tfsdk:"dhcp_dns_server"`
-	DhcpRange     dhcpRangeModels `tfsdk:"dhcp_range"`
-	DnsZonePrefix types.String    `tfsdk:"dnszoneprefix"`
+	DhcpRange     *dhcpRangeModel `tfsdk:"dhcp_range"`
+	DnsZonePrefix types.String    `tfsdk:"dns_zone_prefix"`
 	Gateway       types.String    `tfsdk:"gateway"`
 	SNAT          types.Bool      `tfsdk:"snat"`
 }
@@ -153,8 +151,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 
 	client := d.client.SDNVnets(config.VNet.ValueString()).Subnets()
 
-	// Resolve canonical ID from CIDR
-	canonicalID, err := ResolveCanonicalSubnetID(ctx, client, config.Subnet.ValueString())
+	canonicalID, err := resolveCanonicalSubnetID(ctx, client, config.Subnet.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to Resolve SDN Subnet ID", err.Error())
 		return
@@ -177,13 +174,11 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
-	// Set the state.
 	state := &datasourceModel{}
 	state.Subnet = config.Subnet
 	state.VNet = config.VNet
 	state.fromAPI(&subnet.Subnet)
 
-	// Set canonical name and ID
 	state.ID = types.StringValue(fmt.Sprintf("%s/%s", config.VNet.ValueString(), config.Subnet.ValueString()))
 	state.CanonicalName = types.StringValue(subnet.ID)
 	state.Type = types.StringValue("subnet")
@@ -193,7 +188,6 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 
 func (m *datasourceModel) fromAPI(subnet *subnets.Subnet) {
 	m.VNet = types.StringPointerValue(subnet.VNet)
-	// Extract CIDR from canonical ID (remove zone prefix)
 	cidr := strings.SplitN(subnet.ID, "-", 2)[1]
 	m.Subnet = customtypes.NewIPCIDRValue(strings.ReplaceAll(cidr, "-", "/"))
 
@@ -202,15 +196,11 @@ func (m *datasourceModel) fromAPI(subnet *subnets.Subnet) {
 	if len(subnet.DHCPRange) == 0 {
 		m.DhcpRange = nil
 	} else {
-		ranges := make(dhcpRangeModels, 0, len(subnet.DHCPRange))
-		for _, r := range subnet.DHCPRange {
-			ranges = append(ranges, dhcpRangeModel{
-				StartAddress: customtypes.NewIPAddrPointerValue(&r.StartAddress),
-				EndAddress:   customtypes.NewIPAddrPointerValue(&r.EndAddress),
-			})
+		r := subnet.DHCPRange[0]
+		m.DhcpRange = &dhcpRangeModel{
+			StartAddress: customtypes.NewIPAddrPointerValue(&r.StartAddress),
+			EndAddress:   customtypes.NewIPAddrPointerValue(&r.EndAddress),
 		}
-
-		m.DhcpRange = ranges
 	}
 
 	m.DnsZonePrefix = types.StringPointerValue(subnet.DNSZonePrefix)

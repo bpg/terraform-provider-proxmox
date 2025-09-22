@@ -22,7 +22,7 @@ type model struct {
 	CIDR customtypes.IPCIDRValue `tfsdk:"cidr"`
 
 	DhcpDnsServer types.String    `tfsdk:"dhcp_dns_server"`
-	DhcpRange     dhcpRangeModels `tfsdk:"dhcp_range"`
+	DhcpRange     *dhcpRangeModel `tfsdk:"dhcp_range"`
 	DnsZonePrefix types.String    `tfsdk:"dns_zone_prefix"`
 	Gateway       types.String    `tfsdk:"gateway"`
 	SNAT          types.Bool      `tfsdk:"snat"`
@@ -32,8 +32,6 @@ type dhcpRangeModel struct {
 	StartAddress customtypes.IPAddrValue `tfsdk:"start_address"`
 	EndAddress   customtypes.IPAddrValue `tfsdk:"end_address"`
 }
-
-type dhcpRangeModels []dhcpRangeModel
 
 func (m *model) fromAPI(subnet *subnets.Subnet) {
 	m.ID = types.StringValue(subnet.ID)
@@ -46,15 +44,11 @@ func (m *model) fromAPI(subnet *subnets.Subnet) {
 	if len(subnet.DHCPRange) == 0 {
 		m.DhcpRange = nil
 	} else {
-		ranges := make(dhcpRangeModels, 0, len(subnet.DHCPRange))
-		for _, r := range subnet.DHCPRange {
-			ranges = append(ranges, dhcpRangeModel{
-				StartAddress: customtypes.NewIPAddrPointerValue(&r.StartAddress),
-				EndAddress:   customtypes.NewIPAddrPointerValue(&r.EndAddress),
-			})
+		r := subnet.DHCPRange[0]
+		m.DhcpRange = &dhcpRangeModel{
+			StartAddress: customtypes.NewIPAddrPointerValue(&r.StartAddress),
+			EndAddress:   customtypes.NewIPAddrPointerValue(&r.EndAddress),
 		}
-
-		m.DhcpRange = ranges
 	}
 
 	m.DnsZonePrefix = types.StringPointerValue(subnet.DNSZonePrefix)
@@ -69,18 +63,13 @@ func (m *model) toAPI() *subnets.Subnet {
 
 	subnet.DHCPDNSServer = m.DhcpDnsServer.ValueStringPointer()
 
-	if len(m.DhcpRange) > 0 {
-		var dhcpRanges subnets.DHCPRange
-		for _, r := range m.DhcpRange {
-			dhcpRanges = append(
-				dhcpRanges,
-				subnets.DHCPRangeEntry{
-					StartAddress: r.StartAddress.ValueString(),
-					EndAddress:   r.EndAddress.ValueString(),
-				})
+	if m.DhcpRange != nil {
+		subnet.DHCPRange = subnets.DHCPRange{
+			{
+				StartAddress: m.DhcpRange.StartAddress.ValueString(),
+				EndAddress:   m.DhcpRange.EndAddress.ValueString(),
+			},
 		}
-
-		subnet.DHCPRange = dhcpRanges
 	}
 
 	subnet.DNSZonePrefix = m.DnsZonePrefix.ValueStringPointer()

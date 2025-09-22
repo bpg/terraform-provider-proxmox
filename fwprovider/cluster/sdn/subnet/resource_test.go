@@ -72,64 +72,54 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				gateway           = "192.168.1.1"
 				dhcp_dns_server   = "192.168.1.53"
 				snat              = true
-				dhcp_range = [
-					{
-						start_address = "192.168.1.10"
-						end_address   = "192.168.1.100"
-					}
-				]
+				dhcp_range = {
+					start_address = "192.168.1.10"
+					end_address   = "192.168.1.100"
+				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.dhcp_subnet", map[string]string{
-					"cidr":                       "192.168.1.0/24",
-					"vnet":                       "dhcpv",
-					"gateway":                    "192.168.1.1",
-					"dhcp_dns_server":            "192.168.1.53",
-					"snat":                       "true",
-					"dhcp_range.0.start_address": "192.168.1.10",
-					"dhcp_range.0.end_address":   "192.168.1.100",
+					"cidr":                     "192.168.1.0/24",
+					"vnet":                     "dhcpv",
+					"gateway":                  "192.168.1.1",
+					"dhcp_dns_server":          "192.168.1.53",
+					"snat":                     "true",
+					"dhcp_range.start_address": "192.168.1.10",
+					"dhcp_range.end_address":   "192.168.1.100",
 				}),
 			),
 		}}},
-		// {"subnet with multiple dhcp ranges", []resource.TestStep{{
-		// 	Config: te.RenderConfig(`
-		// 	resource "proxmox_virtual_environment_sdn_zone_simple" "multi_dhcp_zone" {
-		// 		id    = "multidh2"
-		// 		nodes = ["{{.NodeName}}"]
-		// 	}
+		{"subnet with dhcp range", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_sdn_zone_simple" "multi_dhcp_zone" {
+				id    = "multidh2"
+				nodes = ["{{.NodeName}}"]
+			}
 
-		// 	resource "proxmox_virtual_environment_sdn_vnet" "multi_dhcp_vnet" {
-		// 		id     = "multidhv"
-		// 		zone   = proxmox_virtual_environment_sdn_zone_simple.multi_dhcp_zone.id
-		// 	}
+			resource "proxmox_virtual_environment_sdn_vnet" "multi_dhcp_vnet" {
+				id     = "multidhv"
+				zone   = proxmox_virtual_environment_sdn_zone_simple.multi_dhcp_zone.id
+			}
 
-		// 	resource "proxmox_virtual_environment_sdn_subnet" "multi_dhcp_subnet" {
-		// 		cidr    = "172.16.0.0/24"
-		// 		vnet    = proxmox_virtual_environment_sdn_vnet.multi_dhcp_vnet.id
-		// 		gateway = "172.16.0.1"
-		// 		dhcp_range = [
-		// 			{
-		// 				start_address = "172.16.0.10"
-		// 				end_address   = "172.16.0.50"
-		// 			},
-		// 			{
-		// 				start_address = "172.16.0.100"
-		// 				end_address   = "172.16.0.150"
-		// 			}
-		// 		]
-		// 	}`),
-		// 	Check: resource.ComposeTestCheckFunc(
-		// 		test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.multi_dhcp_subnet", map[string]string{
-		// 			"cidr":                       "172.16.0.0/24",
-		// 			"vnet":                       "multidhv",
-		// 			"gateway":                    "172.16.0.1",
-		// 			"dhcp_range.0.start_address": "172.16.0.10",
-		// 			"dhcp_range.0.end_address":   "172.16.0.50",
-		// 			"dhcp_range.1.start_address": "172.16.0.100",
-		// 			"dhcp_range.1.end_address":   "172.16.0.150",
-		// 		}),
-		// 	),
-		// }}},
+			resource "proxmox_virtual_environment_sdn_subnet" "multi_dhcp_subnet" {
+				cidr    = "172.16.0.0/24"
+				vnet    = proxmox_virtual_environment_sdn_vnet.multi_dhcp_vnet.id
+				gateway = "172.16.0.1"
+				dhcp_range = {
+					start_address = "172.16.0.10"
+					end_address   = "172.16.0.50"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.multi_dhcp_subnet", map[string]string{
+					"cidr":                     "172.16.0.0/24",
+					"vnet":                     "multidhv",
+					"gateway":                  "172.16.0.1",
+					"dhcp_range.start_address": "172.16.0.10",
+					"dhcp_range.end_address":   "172.16.0.50",
+				}),
+			),
+		}}},
 		{"subnet update", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
@@ -233,23 +223,21 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				dhcp_dns_server   = "172.30.0.53"
 				dns_zone_prefix   = "example.com"
 				snat              = true
-				dhcp_range = [
-					{
-						start_address = "172.30.0.10"
-						end_address   = "172.30.0.50"
-					}
-				]
+				dhcp_range = {
+					start_address = "172.30.0.10"
+					end_address   = "172.30.0.50"
+				}
 			}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.all_subnet", map[string]string{
-					"cidr":                       "172.30.0.0/24",
-					"vnet":                       "allvnet",
-					"gateway":                    "172.30.0.1",
-					"dhcp_dns_server":            "172.30.0.53",
-					"dns_zone_prefix":            "example.com",
-					"snat":                       "true",
-					"dhcp_range.0.start_address": "172.30.0.10",
-					"dhcp_range.0.end_address":   "172.30.0.50",
+					"cidr":                     "172.30.0.0/24",
+					"vnet":                     "allvnet",
+					"gateway":                  "172.30.0.1",
+					"dhcp_dns_server":          "172.30.0.53",
+					"dns_zone_prefix":          "example.com",
+					"snat":                     "true",
+					"dhcp_range.start_address": "172.30.0.10",
+					"dhcp_range.end_address":   "172.30.0.50",
 				}),
 			),
 		}}},
@@ -295,20 +283,18 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 					cidr    = "172.40.0.0/24"
 					vnet    = proxmox_virtual_environment_sdn_vnet.dhcp_update_vnet.id
 					gateway = "172.40.0.1"
-					dhcp_range = [
-						{
-							start_address = "172.40.0.10"
-							end_address   = "172.40.0.50"
-						}
-					]
+					dhcp_range = {
+						start_address = "172.40.0.10"
+						end_address   = "172.40.0.50"
+					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.dhcp_update_subnet", map[string]string{
-						"cidr":                       "172.40.0.0/24",
-						"vnet":                       "dhcpupv",
-						"gateway":                    "172.40.0.1",
-						"dhcp_range.0.start_address": "172.40.0.10",
-						"dhcp_range.0.end_address":   "172.40.0.50",
+						"cidr":                     "172.40.0.0/24",
+						"vnet":                     "dhcpupv",
+						"gateway":                  "172.40.0.1",
+						"dhcp_range.start_address": "172.40.0.10",
+						"dhcp_range.end_address":   "172.40.0.50",
 					}),
 				),
 			},
@@ -441,12 +427,10 @@ func TestAccResourceSDNSubnetValidation(t *testing.T) {
 			resource "proxmox_virtual_environment_sdn_subnet" "dhcp_range_subnet" {
 				cidr = "10.50.0.0/24"
 				vnet = proxmox_virtual_environment_sdn_vnet.dhcp_range_vnet.id
-				dhcp_range = [
-					{
-						start_address = "192.168.1.10"
-						end_address   = "192.168.1.20"
-					}
-				]
+				dhcp_range = {
+					start_address = "192.168.1.10"
+					end_address   = "192.168.1.20"
+				}
 			}`,
 			"must be within the subnet",
 		},
@@ -486,12 +470,10 @@ func TestAccResourceSDNSubnetValidation(t *testing.T) {
 			resource "proxmox_virtual_environment_sdn_subnet" "dhcp_order_subnet" {
 				cidr = "10.70.0.0/24"
 				vnet = proxmox_virtual_environment_sdn_vnet.dhcp_order_vnet.id
-				dhcp_range = [
-					{
-						start_address = "10.70.0.50"
-						end_address   = "10.70.0.10"
-					}
-				]
+				dhcp_range = {
+					start_address = "10.70.0.50"
+					end_address   = "10.70.0.10"
+				}
 			}`,
 			"Start address.*must be less than or equal to end address",
 		},

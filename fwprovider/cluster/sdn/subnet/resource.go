@@ -4,12 +4,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
 package subnet
 
 import (
@@ -103,21 +97,19 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Description: "The DNS server used for DHCP.",
 				Optional:    true,
 			},
-			"dhcp_range": schema.ListNestedAttribute{
-				Description: "List of DHCP ranges (start and end IPs).",
+			"dhcp_range": schema.SingleNestedAttribute{
+				Description: "DHCP range (start and end IPs).",
 				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"start_address": schema.StringAttribute{
-							Description: "Start of the DHCP range.",
-							CustomType:  customtypes.IPAddrType{},
-							Required:    true,
-						},
-						"end_address": schema.StringAttribute{
-							Description: "End of the DHCP range.",
-							CustomType:  customtypes.IPAddrType{},
-							Required:    true,
-						},
+				Attributes: map[string]schema.Attribute{
+					"start_address": schema.StringAttribute{
+						Description: "Start of the DHCP range.",
+						CustomType:  customtypes.IPAddrType{},
+						Required:    true,
+					},
+					"end_address": schema.StringAttribute{
+						Description: "End of the DHCP range.",
+						CustomType:  customtypes.IPAddrType{},
+						Required:    true,
 					},
 				},
 			},
@@ -158,10 +150,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	/* Because proxmox API doesn't return the created object's properties and the subnet's name gets modified by
-	proxmox internally.
-	Read it back to get the canonical-ID from proxmox.*/
-	canonicalID, err := ResolveCanonicalSubnetID(ctx, client, plan.CIDR.ValueString())
+	canonicalID, err := resolveCanonicalSubnetID(ctx, client, plan.CIDR.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to Resolve SDN Subnet ID", err.Error())
 		return
@@ -242,13 +231,8 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 }
 
-func (r *Resource) ImportState(
-	ctx context.Context,
-	req resource.ImportStateRequest,
-	resp *resource.ImportStateResponse,
+func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse,
 ) {
-	// Expect ID format: "vnet/subnet" (where subnet may contain / for CIDR).
-	// Split on first "/" only to separate vnet from subnet
 	parts := strings.SplitN(req.ID, "/", 2)
 	if len(parts) != 2 {
 		resp.Diagnostics.AddError(
@@ -281,7 +265,7 @@ func (r *Resource) ImportState(
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
-func ResolveCanonicalSubnetID(ctx context.Context, client *subnets.Client, cidr string) (string, error) {
+func resolveCanonicalSubnetID(ctx context.Context, client *subnets.Client, cidr string) (string, error) {
 	subnets, err := client.GetSubnets(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to list subnets for canonical name resolution: %w", err)
@@ -357,12 +341,13 @@ func (r *Resource) ValidateConfig(
 	checkIPInCIDR("gateway", config.Gateway)
 	checkIPInCIDR("dhcp_dns_server", config.DhcpDnsServer)
 
-	for i, r := range config.DhcpRange {
+	if config.DhcpRange != nil {
+		r := config.DhcpRange
 		if !r.StartAddress.IsNull() {
 			ip := net.ParseIP(r.StartAddress.ValueString())
 			if !ipnet.Contains(ip) {
 				resp.Diagnostics.AddAttributeError(
-					path.Root("dhcp_range").AtListIndex(i).AtMapKey("start_address"),
+					path.Root("dhcp_range").AtName("start_address"),
 					"Invalid DHCP Range Start Address",
 					fmt.Sprintf("Start address %s must be within the subnet %s", ip, config.CIDR.ValueString()),
 				)
@@ -373,7 +358,7 @@ func (r *Resource) ValidateConfig(
 			ip := net.ParseIP(r.EndAddress.ValueString())
 			if !ipnet.Contains(ip) {
 				resp.Diagnostics.AddAttributeError(
-					path.Root("dhcp_range").AtListIndex(i).AtMapKey("end_address"),
+					path.Root("dhcp_range").AtName("end_address"),
 					"Invalid DHCP Range End Address",
 					fmt.Sprintf("End address %s must be within the subnet %s", ip, config.CIDR.ValueString()),
 				)
@@ -386,10 +371,9 @@ func (r *Resource) ValidateConfig(
 
 			endIP := net.ParseIP(r.EndAddress.ValueString())
 			if startIP != nil && endIP != nil {
-				// Compare IP addresses byte by byte
 				if bytes.Compare(startIP, endIP) > 0 {
 					resp.Diagnostics.AddAttributeError(
-						path.Root("dhcp_range").AtListIndex(i),
+						path.Root("dhcp_range"),
 						"Invalid DHCP Range",
 						fmt.Sprintf("Start address %s must be less than or equal to end address %s", r.StartAddress.ValueString(), r.EndAddress.ValueString()),
 					)
