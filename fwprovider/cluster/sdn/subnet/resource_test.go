@@ -36,13 +36,29 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 			resource "proxmox_virtual_environment_sdn_vnet" "subnet_vnet" {
 				id     = "subnetv"
 				zone     = proxmox_virtual_environment_sdn_zone_simple.subnet_zone.id
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
 			}
 
 			resource "proxmox_virtual_environment_sdn_subnet" "test_subnet" {
 				cidr  = "10.10.0.0/24"
 				vnet    = proxmox_virtual_environment_sdn_vnet.subnet_vnet.id
 				gateway = "10.10.0.1"
-			}`),
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "test_applier" {
+				depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.subnet_zone,
+					proxmox_virtual_environment_sdn_vnet.subnet_vnet,
+					proxmox_virtual_environment_sdn_subnet.test_subnet
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.test_subnet", map[string]string{
 					"cidr":    "10.10.0.0/24",
@@ -64,6 +80,9 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 			resource "proxmox_virtual_environment_sdn_vnet" "dhcp_vnet" {
 				id     = "dhcpv"
 				zone     = proxmox_virtual_environment_sdn_zone_simple.dhcp_zone.id
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
 			}
 
 			resource "proxmox_virtual_environment_sdn_subnet" "dhcp_subnet" {
@@ -76,7 +95,20 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 					start_address = "192.168.1.10"
 					end_address   = "192.168.1.100"
 				}
-			}`),
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "dhcp_applier" {
+				depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.dhcp_zone,
+					proxmox_virtual_environment_sdn_vnet.dhcp_vnet,
+					proxmox_virtual_environment_sdn_subnet.dhcp_subnet
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.dhcp_subnet", map[string]string{
 					"cidr":                     "192.168.1.0/24",
@@ -99,6 +131,9 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 			resource "proxmox_virtual_environment_sdn_vnet" "multi_dhcp_vnet" {
 				id     = "multidhv"
 				zone   = proxmox_virtual_environment_sdn_zone_simple.multi_dhcp_zone.id
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
 			}
 
 			resource "proxmox_virtual_environment_sdn_subnet" "multi_dhcp_subnet" {
@@ -109,7 +144,20 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 					start_address = "172.16.0.10"
 					end_address   = "172.16.0.50"
 				}
-			}`),
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "multi_dhcp_applier" {
+				depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.multi_dhcp_zone,
+					proxmox_virtual_environment_sdn_vnet.multi_dhcp_vnet,
+					proxmox_virtual_environment_sdn_subnet.multi_dhcp_subnet
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.multi_dhcp_subnet", map[string]string{
 					"cidr":                     "172.16.0.0/24",
@@ -131,6 +179,9 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_vnet" "update_subnet_vnet" {
 					id     = "updatev"
 					zone   = proxmox_virtual_environment_sdn_zone_simple.update_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
 				}
 
 				resource "proxmox_virtual_environment_sdn_subnet" "update_subnet" {
@@ -138,7 +189,20 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 					vnet    = proxmox_virtual_environment_sdn_vnet.update_subnet_vnet.id
 					gateway = "10.20.0.1"
 					snat    = false
-				}`),
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "update_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.update_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.update_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.update_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.update_subnet", map[string]string{
 						"cidr":    "10.20.0.0/24",
@@ -158,6 +222,9 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_vnet" "update_subnet_vnet" {
 					id     = "updatev"
 					zone   = proxmox_virtual_environment_sdn_zone_simple.update_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
 				}
 
 				resource "proxmox_virtual_environment_sdn_subnet" "update_subnet" {
@@ -166,7 +233,20 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 					gateway         = "10.20.0.1"
 					snat            = true
 					dhcp_dns_server = "10.20.0.53"
-				}`),
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "update_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.update_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.update_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.update_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.update_subnet", map[string]string{
 						"cidr":            "10.20.0.0/24",
@@ -188,12 +268,28 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 			resource "proxmox_virtual_environment_sdn_vnet" "minimal_vnet" {
 				id     = "minimalv"
 				zone   = proxmox_virtual_environment_sdn_zone_simple.minimal_zone.id
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
 			}
 
 			resource "proxmox_virtual_environment_sdn_subnet" "minimal_subnet" {
 				cidr = "172.20.0.0/24"
 				vnet = proxmox_virtual_environment_sdn_vnet.minimal_vnet.id
-			}`),
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "minimal_applier" {
+				depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.minimal_zone,
+					proxmox_virtual_environment_sdn_vnet.minimal_vnet,
+					proxmox_virtual_environment_sdn_subnet.minimal_subnet
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.minimal_subnet", map[string]string{
 					"cidr": "172.20.0.0/24",
@@ -214,6 +310,9 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 			resource "proxmox_virtual_environment_sdn_vnet" "all_vnet" {
 				id     = "allvnet"
 				zone   = proxmox_virtual_environment_sdn_zone_simple.all_zone.id
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
 			}
 
 			resource "proxmox_virtual_environment_sdn_subnet" "all_subnet" {
@@ -227,7 +326,20 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 					start_address = "172.30.0.10"
 					end_address   = "172.30.0.50"
 				}
-			}`),
+				depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "all_applier" {
+				depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.all_zone,
+					proxmox_virtual_environment_sdn_vnet.all_vnet,
+					proxmox_virtual_environment_sdn_subnet.all_subnet
+				]
+			}
+
+			resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.all_subnet", map[string]string{
 					"cidr":                     "172.30.0.0/24",
@@ -252,13 +364,29 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_vnet" "dhcp_update_vnet" {
 					id     = "dhcpupv"
 					zone   = proxmox_virtual_environment_sdn_zone_simple.dhcp_update_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
 				}
 
 				resource "proxmox_virtual_environment_sdn_subnet" "dhcp_update_subnet" {
 					cidr    = "172.40.0.0/24"
 					vnet    = proxmox_virtual_environment_sdn_vnet.dhcp_update_vnet.id
 					gateway = "172.40.0.1"
-				}`),
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "dhcp_update_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.dhcp_update_zone,
+						proxmox_virtual_environment_sdn_vnet.dhcp_update_vnet,
+						proxmox_virtual_environment_sdn_subnet.dhcp_update_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.dhcp_update_subnet", map[string]string{
 						"cidr":    "172.40.0.0/24",
@@ -277,6 +405,9 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_vnet" "dhcp_update_vnet" {
 					id     = "dhcpupv"
 					zone   = proxmox_virtual_environment_sdn_zone_simple.dhcp_update_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
 				}
 
 				resource "proxmox_virtual_environment_sdn_subnet" "dhcp_update_subnet" {
@@ -287,7 +418,20 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 						start_address = "172.40.0.10"
 						end_address   = "172.40.0.50"
 					}
-				}`),
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "dhcp_update_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.dhcp_update_zone,
+						proxmox_virtual_environment_sdn_vnet.dhcp_update_vnet,
+						proxmox_virtual_environment_sdn_subnet.dhcp_update_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.dhcp_update_subnet", map[string]string{
 						"cidr":                     "172.40.0.0/24",
@@ -308,13 +452,29 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_vnet" "dhcp_update_vnet" {
 					id     = "dhcpupv"
 					zone   = proxmox_virtual_environment_sdn_zone_simple.dhcp_update_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
 				}
 
 				resource "proxmox_virtual_environment_sdn_subnet" "dhcp_update_subnet" {
 					cidr    = "172.40.0.0/24"
 					vnet    = proxmox_virtual_environment_sdn_vnet.dhcp_update_vnet.id
 					gateway = "172.40.0.1"
-				}`),
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "dhcp_update_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.dhcp_update_zone,
+						proxmox_virtual_environment_sdn_vnet.dhcp_update_vnet,
+						proxmox_virtual_environment_sdn_subnet.dhcp_update_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.dhcp_update_subnet", map[string]string{
 						"cidr":    "172.40.0.0/24",
@@ -335,13 +495,29 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_vnet" "import_subnet_vnet" {
 					id     = "importv"
 					zone   = proxmox_virtual_environment_sdn_zone_simple.import_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
 				}
 
 				resource "proxmox_virtual_environment_sdn_subnet" "import_subnet" {
 					cidr    = "10.30.0.0/24"
 					vnet    = proxmox_virtual_environment_sdn_vnet.import_subnet_vnet.id
 					gateway = "10.30.0.1"
-				}`),
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "import_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.import_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.import_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.import_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
 			},
 			{
 				ResourceName:      "proxmox_virtual_environment_sdn_subnet.import_subnet",
