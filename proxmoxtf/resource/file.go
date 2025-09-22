@@ -861,7 +861,8 @@ func readFile(
 			// File does not exist, return zero values and no error
 			return "", 0, "", nil
 		}
-		return
+
+		return fileModificationDate, fileSize, fileTag, fmt.Errorf("failed to open the file: %w", err)
 	}
 
 	defer func(f *os.File) {
@@ -875,7 +876,7 @@ func readFile(
 
 	fileInfo, err := f.Stat()
 	if err != nil {
-		return
+		return fileModificationDate, fileSize, fileTag, fmt.Errorf("failed to stat the file: %w", err)
 	}
 
 	fileModificationDate = fileInfo.ModTime().UTC().Format(time.RFC3339)

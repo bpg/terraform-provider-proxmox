@@ -325,6 +325,7 @@ func Container() *schema.Resource {
 					if i.(string) != "" {
 						return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n") + "\n"
 					}
+
 					return ""
 				},
 			},
@@ -1042,6 +1043,7 @@ func Container() *schema.Resource {
 				}
 
 				d.SetId(id)
+
 				err = d.Set(mkNodeName, node)
 				if err != nil {
 					return nil, fmt.Errorf("failed setting state during import: %w", err)
