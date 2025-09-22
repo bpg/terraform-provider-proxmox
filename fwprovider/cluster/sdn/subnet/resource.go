@@ -266,12 +266,12 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 }
 
 func resolveCanonicalSubnetID(ctx context.Context, client *subnets.Client, cidr string) (string, error) {
-	subnets, err := client.GetSubnets(ctx)
+	subnetList, err := client.GetSubnets(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to list subnets for canonical name resolution: %w", err)
 	}
 
-	for _, subnet := range subnets {
+	for _, subnet := range subnetList {
 		if subnet.ID == cidr {
 			return subnet.ID, nil
 		}

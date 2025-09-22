@@ -35,19 +35,11 @@ func NewDataSource() datasource.DataSource {
 	return &DataSource{}
 }
 
-func (d *DataSource) Metadata(
-	ctx context.Context,
-	req datasource.MetadataRequest,
-	resp *datasource.MetadataResponse,
-) {
+func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_sdn_subnet"
 }
 
-func (d *DataSource) Configure(
-	ctx context.Context,
-	req datasource.ConfigureRequest,
-	resp *datasource.ConfigureResponse,
-) {
+func (d *DataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -65,11 +57,7 @@ func (d *DataSource) Configure(
 	d.client = cfg.Client.Cluster()
 }
 
-func (d *DataSource) Schema(
-	ctx context.Context,
-	req datasource.SchemaRequest,
-	resp *datasource.SchemaResponse,
-) {
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieve details about a specific SDN Subnet in Proxmox VE.",
 		Attributes: map[string]schema.Attribute{
@@ -141,17 +129,17 @@ type datasourceModel struct {
 }
 
 func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config datasourceModel
+	var data datasourceModel
 
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	client := d.client.SDNVnets(config.VNet.ValueString()).Subnets()
+	client := d.client.SDNVnets(data.VNet.ValueString()).Subnets()
 
-	canonicalID, err := resolveCanonicalSubnetID(ctx, client, config.Subnet.ValueString())
+	canonicalID, err := resolveCanonicalSubnetID(ctx, client, data.Subnet.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to Resolve SDN Subnet ID", err.Error())
 		return
@@ -163,7 +151,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			resp.Diagnostics.AddError(
 				"SDN Subnet Not Found",
 				fmt.Sprintf("SDN Subnet with ID '%s' in VNet '%s' was not found",
-					config.Subnet.ValueString(), config.VNet.ValueString()),
+					data.Subnet.ValueString(), data.VNet.ValueString()),
 			)
 
 			return
@@ -175,11 +163,11 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	state := &datasourceModel{}
-	state.Subnet = config.Subnet
-	state.VNet = config.VNet
+	state.Subnet = data.Subnet
+	state.VNet = data.VNet
 	state.fromAPI(&subnet.Subnet)
 
-	state.ID = types.StringValue(fmt.Sprintf("%s/%s", config.VNet.ValueString(), config.Subnet.ValueString()))
+	state.ID = types.StringValue(fmt.Sprintf("%s/%s", data.VNet.ValueString(), data.Subnet.ValueString()))
 	state.CanonicalName = types.StringValue(subnet.ID)
 	state.Type = types.StringValue("subnet")
 
