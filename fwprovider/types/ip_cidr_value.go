@@ -44,3 +44,10 @@ func NewIPCIDRPointerValue(value *string) IPCIDRValue {
 		StringValue: types.StringPointerValue(value),
 	}
 }
+
+// NewIPCIDRValue returns a new IPCIDRValue from a string.
+func NewIPCIDRValue(value string) IPCIDRValue {
+	return IPCIDRValue{
+		StringValue: types.StringValue(value),
+	}
+}
