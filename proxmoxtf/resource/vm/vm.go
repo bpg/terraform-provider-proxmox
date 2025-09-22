@@ -1699,6 +1699,7 @@ func VM() *schema.Resource {
 				}
 
 				d.SetId(id)
+
 				err = d.Set(mkNodeName, node)
 				if err != nil {
 					return nil, fmt.Errorf("failed setting state during import: %w", err)
