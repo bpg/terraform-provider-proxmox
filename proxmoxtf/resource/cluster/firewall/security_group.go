@@ -8,6 +8,7 @@ package firewall
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -71,12 +72,17 @@ func SecurityGroupCreate(ctx context.Context, api clusterfirewall.API, d *schema
 		return diag.FromErr(err)
 	}
 
-	diags := firewall.RulesCreate(ctx, api.SecurityGroup(name), d)
+	actualName, err := findActualGroupName(ctx, api, name)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	diags := firewall.RulesCreate(ctx, api.SecurityGroup(actualName), d)
 	if diags.HasError() {
 		return diags
 	}
 
-	d.SetId(name)
+	d.SetId(actualName)
 
 	return SecurityGroupRead(ctx, api, d)
 }
@@ -92,22 +98,22 @@ func SecurityGroupRead(ctx context.Context, api clusterfirewall.API, d *schema.R
 		return diag.FromErr(err)
 	}
 
-	for _, v := range allGroups {
-		if v.Group == name {
-			err = d.Set(mkSecurityGroupName, v.Group)
-			diags = append(diags, diag.FromErr(err)...)
-			err = d.Set(mkSecurityGroupComment, v.Comment)
-			diags = append(diags, diag.FromErr(err)...)
-
-			break
-		}
+	foundGroup := findGroupCaseInsensitive(allGroups, name)
+	if foundGroup == nil {
+		d.SetId("")
+		return nil
 	}
+
+	err = d.Set(mkSecurityGroupName, foundGroup.Group)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkSecurityGroupComment, foundGroup.Comment)
+	diags = append(diags, diag.FromErr(err)...)
 
 	if diags.HasError() {
 		return diags
 	}
 
-	return firewall.RulesRead(ctx, api.SecurityGroup(name), d)
+	return firewall.RulesRead(ctx, api.SecurityGroup(foundGroup.Group), d)
 }
 
 // SecurityGroupUpdate updates a security group.
@@ -132,7 +138,12 @@ func SecurityGroupUpdate(ctx context.Context, api clusterfirewall.API, d *schema
 		return diags
 	}
 
-	d.SetId(newName)
+	actualName, err := findActualGroupName(ctx, api, newName)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	d.SetId(actualName)
 
 	return SecurityGroupRead(ctx, api, d)
 }
@@ -157,6 +168,32 @@ func SecurityGroupDelete(ctx context.Context, api clusterfirewall.API, d *schema
 	}
 
 	d.SetId("")
+
+	return nil
+}
+
+// findActualGroupName finds the actual group name as stored by Proxmox (case-insensitive lookup).
+func findActualGroupName(ctx context.Context, api clusterfirewall.API, targetName string) (string, error) {
+	allGroups, err := api.ListGroups(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error retrieving security groups: %w", err)
+	}
+
+	foundGroup := findGroupCaseInsensitive(allGroups, targetName)
+	if foundGroup == nil {
+		return "", fmt.Errorf("security group '%s' not found", targetName)
+	}
+
+	return foundGroup.Group, nil
+}
+
+// findGroupCaseInsensitive finds a group by name using case-insensitive matching.
+func findGroupCaseInsensitive(groups []*clusterfirewall.GroupListResponseData, targetName string) *clusterfirewall.GroupListResponseData {
+	for _, group := range groups {
+		if strings.EqualFold(group.Group, targetName) {
+			return group
+		}
+	}
 
 	return nil
 }
