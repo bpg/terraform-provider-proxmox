@@ -61,11 +61,3 @@ type ZoneUpdate struct {
 
 	Delete []string `url:"delete,omitempty"`
 }
-
-type zoneResponseBody struct {
-	Data *ZoneData `json:"data"`
-}
-
-type zonesResponseBody struct {
-	Data *[]ZoneData `json:"data"`
-}

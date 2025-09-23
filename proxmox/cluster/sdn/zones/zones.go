@@ -22,7 +22,9 @@ func (c *Client) GetZone(ctx context.Context, id string) (*ZoneData, error) {
 
 // GetZoneWithParams retrieves a single SDN zone by ID with query parameters.
 func (c *Client) GetZoneWithParams(ctx context.Context, id string, params *sdn.QueryParams) (*ZoneData, error) {
-	resBody := &zoneResponseBody{}
+	resBody := &struct {
+		Data *ZoneData `json:"data"`
+	}{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(id), params, resBody)
 	if err != nil {
@@ -43,7 +45,9 @@ func (c *Client) GetZones(ctx context.Context) ([]ZoneData, error) {
 
 // GetZonesWithParams lists all SDN zones with query parameters.
 func (c *Client) GetZonesWithParams(ctx context.Context, params *sdn.QueryParams) ([]ZoneData, error) {
-	resBody := &zonesResponseBody{}
+	resBody := &struct {
+		Data *[]ZoneData `json:"data"`
+	}{}
 
 	err := c.DoRequest(ctx, http.MethodGet, c.ExpandPath(""), params, resBody)
 	if err != nil {

@@ -613,11 +613,6 @@ func Container() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				// this does not work with map datatype in SDK :(
-				// Elem: &schema.Schema{
-				//	Type: schema.TypeList,
-				//	Elem: &schema.Schema{Type: schema.TypeString},
-				// },
 			},
 			mkIPv6: {
 				Type:        schema.TypeMap,
@@ -694,10 +689,6 @@ func Container() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "Path to the mount point as seen from inside the container",
 							Required:    true,
-							// StateFunc: func(i interface{}) string {
-							// 	// PVE strips leading slashes from the path, so we have to do the same
-							// 	return strings.TrimPrefix(i.(string), "/")
-							// },
 							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
 								return "/"+oldVal == newVal
 							},
