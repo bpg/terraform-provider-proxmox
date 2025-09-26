@@ -41,10 +41,22 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				]
 			}
 
+			// use variables to test resource validation with interpolated values
+			// they are unknown until the plan is applied, so the resource validation should be skipped.
+			variable "cidr" {
+				type = string
+				default = "10.10.0.0/24"
+			}
+
+			variable "gateway" {
+				type = string
+				default = "10.10.0.1"
+			}
+
 			resource "proxmox_virtual_environment_sdn_subnet" "test_subnet" {
-				cidr  = "10.10.0.0/24"
+				cidr  = var.cidr
 				vnet    = proxmox_virtual_environment_sdn_vnet.subnet_vnet.id
-				gateway = "10.10.0.1"
+				gateway = var.gateway
 				depends_on = [
 					proxmox_virtual_environment_sdn_applier.finalizer
 				]
@@ -585,7 +597,7 @@ func TestAccResourceSDNSubnetValidation(t *testing.T) {
 				vnet    = proxmox_virtual_environment_sdn_vnet.gateway_vnet.id
 				gateway = "192.168.1.1"
 			}`,
-			"must be within the subnet",
+			"192.168.1.1 must be within the subnet 10.40.0.0/24",
 		},
 		{
 			"dhcp range outside subnet",
@@ -608,7 +620,7 @@ func TestAccResourceSDNSubnetValidation(t *testing.T) {
 					end_address   = "192.168.1.20"
 				}
 			}`,
-			"must be within the subnet",
+			"End address 192.168.1.20 must be within the subnet 10.50.0.0/24",
 		},
 		{
 			"dhcp dns server outside subnet",
@@ -628,7 +640,7 @@ func TestAccResourceSDNSubnetValidation(t *testing.T) {
 				vnet            = proxmox_virtual_environment_sdn_vnet.dhcp_dns_vnet.id
 				dhcp_dns_server = "192.168.1.53"
 			}`,
-			"must be within the subnet",
+			"192.168.1.53 must be within the subnet 10.60.0.0/24",
 		},
 		{
 			"dhcp range start after end",
@@ -651,7 +663,7 @@ func TestAccResourceSDNSubnetValidation(t *testing.T) {
 					end_address   = "10.70.0.10"
 				}
 			}`,
-			"Start address.*must be less than or equal to end address",
+			"10.70.0.50 must be less than or equal to end address 10.70.0.10",
 		},
 	}
 
