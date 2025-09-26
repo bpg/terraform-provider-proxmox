@@ -22,11 +22,11 @@ type model struct {
 	VNet types.String            `tfsdk:"vnet"`
 	CIDR customtypes.IPCIDRValue `tfsdk:"cidr"`
 
-	DhcpDnsServer types.String    `tfsdk:"dhcp_dns_server"`
-	DhcpRange     *dhcpRangeModel `tfsdk:"dhcp_range"`
-	DnsZonePrefix types.String    `tfsdk:"dns_zone_prefix"`
-	Gateway       types.String    `tfsdk:"gateway"`
-	SNAT          types.Bool      `tfsdk:"snat"`
+	DhcpDnsServer customtypes.IPAddrValue `tfsdk:"dhcp_dns_server"`
+	DhcpRange     *dhcpRangeModel         `tfsdk:"dhcp_range"`
+	DnsZonePrefix types.String            `tfsdk:"dns_zone_prefix"`
+	Gateway       customtypes.IPAddrValue `tfsdk:"gateway"`
+	SNAT          types.Bool              `tfsdk:"snat"`
 }
 
 type dhcpRangeModel struct {
@@ -46,7 +46,7 @@ func (m *model) fromAPI(subnet *subnets.Subnet) error {
 	cidr := parts[1]
 	m.CIDR = customtypes.NewIPCIDRValue(strings.ReplaceAll(cidr, "-", "/"))
 
-	m.DhcpDnsServer = types.StringPointerValue(subnet.DHCPDNSServer)
+	m.DhcpDnsServer = customtypes.NewIPAddrPointerValue(subnet.DHCPDNSServer)
 
 	if len(subnet.DHCPRange) == 0 {
 		m.DhcpRange = nil
@@ -59,7 +59,7 @@ func (m *model) fromAPI(subnet *subnets.Subnet) error {
 	}
 
 	m.DnsZonePrefix = types.StringPointerValue(subnet.DNSZonePrefix)
-	m.Gateway = types.StringPointerValue(subnet.Gateway)
+	m.Gateway = customtypes.NewIPAddrPointerValue(subnet.Gateway)
 	m.SNAT = types.BoolPointerValue(subnet.SNAT.PointerBool())
 
 	return nil

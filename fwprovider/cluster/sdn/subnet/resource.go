@@ -30,9 +30,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &Resource{}
-	_ resource.ResourceWithConfigure   = &Resource{}
-	_ resource.ResourceWithImportState = &Resource{}
+	_ resource.Resource                   = &Resource{}
+	_ resource.ResourceWithConfigure      = &Resource{}
+	_ resource.ResourceWithImportState    = &Resource{}
+	_ resource.ResourceWithValidateConfig = &Resource{}
 )
 
 type Resource struct {
@@ -95,6 +96,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 			},
 			"dhcp_dns_server": schema.StringAttribute{
 				Description: "The DNS server used for DHCP.",
+				CustomType:  customtypes.IPAddrType{},
 				Optional:    true,
 			},
 			"dhcp_range": schema.SingleNestedAttribute{
@@ -114,16 +116,17 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				},
 			},
 			"dns_zone_prefix": schema.StringAttribute{
-				Optional:    true,
 				Description: "Prefix used for DNS zone delegation.",
+				Optional:    true,
 			},
 			"gateway": schema.StringAttribute{
-				Optional:    true,
 				Description: "The gateway address for the subnet.",
+				CustomType:  customtypes.IPAddrType{},
+				Optional:    true,
 			},
 			"snat": schema.BoolAttribute{
-				Optional:    true,
 				Description: "Whether SNAT is enabled for the subnet.",
+				Optional:    true,
 			},
 		},
 	}
@@ -294,11 +297,7 @@ func resolveCanonicalSubnetID(ctx context.Context, client *subnets.Client, cidr 
 ValidateConfig checks that the subnet's field are correctly set.
 Particularly that gateway, dhcp and dns are within CIDR.
 */
-func (r *Resource) ValidateConfig(
-	ctx context.Context,
-	req resource.ValidateConfigRequest,
-	resp *resource.ValidateConfigResponse,
-) {
+func (r *Resource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var config model
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -307,19 +306,26 @@ func (r *Resource) ValidateConfig(
 		return
 	}
 
+	// skip validation if values are nill or not known yet. This method will be called again when all required attributes are known.
+	// specific attributes validation (required, not empty, etc.) will be handled by the corresponding attr rules in the schema.
+	if config.CIDR.IsNull() || config.CIDR.IsUnknown() {
+		return
+	}
+
 	_, ipnet, err := net.ParseCIDR(config.CIDR.ValueString())
 	if err != nil {
+		// the CIDR is already validated by the IPCIDRType, so this should never happen
 		resp.Diagnostics.AddAttributeError(
 			path.Root("cidr"),
 			"Invalid Subnet",
-			fmt.Sprintf("Could not parse subnet: %s", err),
+			fmt.Sprintf("Could not parse subnet %q: %s", config.CIDR.ValueString(), err),
 		)
 
 		return
 	}
 
 	checkIPInCIDR := func(attrName string, ipVal types.String) {
-		if !ipVal.IsNull() {
+		if !ipVal.IsNull() && !ipVal.IsUnknown() {
 			ip := net.ParseIP(ipVal.ValueString())
 			if ip == nil {
 				resp.Diagnostics.AddAttributeError(
@@ -341,12 +347,12 @@ func (r *Resource) ValidateConfig(
 		}
 	}
 
-	checkIPInCIDR("gateway", config.Gateway)
-	checkIPInCIDR("dhcp_dns_server", config.DhcpDnsServer)
+	checkIPInCIDR("gateway", config.Gateway.StringValue)
+	checkIPInCIDR("dhcp_dns_server", config.DhcpDnsServer.StringValue)
 
 	if config.DhcpRange != nil {
 		r := config.DhcpRange
-		if !r.StartAddress.IsNull() {
+		if !r.StartAddress.IsNull() && !r.StartAddress.IsUnknown() {
 			ip := net.ParseIP(r.StartAddress.ValueString())
 			if !ipnet.Contains(ip) {
 				resp.Diagnostics.AddAttributeError(
@@ -357,7 +363,7 @@ func (r *Resource) ValidateConfig(
 			}
 		}
 
-		if !r.EndAddress.IsNull() {
+		if !r.EndAddress.IsNull() && !r.EndAddress.IsUnknown() {
 			ip := net.ParseIP(r.EndAddress.ValueString())
 			if !ipnet.Contains(ip) {
 				resp.Diagnostics.AddAttributeError(
@@ -369,7 +375,7 @@ func (r *Resource) ValidateConfig(
 		}
 
 		// Validate that start address is not after end address
-		if !r.StartAddress.IsNull() && !r.EndAddress.IsNull() {
+		if !r.StartAddress.IsNull() && !r.EndAddress.IsNull() && !r.StartAddress.IsUnknown() && !r.EndAddress.IsUnknown() {
 			startIP := net.ParseIP(r.StartAddress.ValueString())
 
 			endIP := net.ParseIP(r.EndAddress.ValueString())
