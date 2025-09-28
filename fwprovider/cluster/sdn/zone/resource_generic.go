@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"reflect"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
@@ -21,6 +22,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -104,18 +106,38 @@ func (m *genericModel) getID() string {
 	return m.ID.ValueString()
 }
 
+func (m *genericModel) checkDeleted(plan zoneModel, diags *diag.Diagnostics) []string {
+	var toDelete []string
+
+	planModel, ok := plan.(*genericModel)
+	if !ok {
+		diags.AddError("Invalid plan model", "Expected *genericModel, got "+reflect.TypeOf(plan).String())
+		return toDelete
+	}
+
+	checkDelete(planModel.IPAM, m.IPAM, &toDelete, "ipam")
+	checkDelete(planModel.DNS, m.DNS, &toDelete, "dns")
+	checkDelete(planModel.ReverseDNS, m.ReverseDNS, &toDelete, "reverse-dns")
+	checkDelete(planModel.DNSZone, m.DNSZone, &toDelete, "dns-zone")
+	checkDelete(planModel.MTU, m.MTU, &toDelete, "mtu")
+	checkDelete(planModel.Nodes, m.Nodes, &toDelete, "nodes")
+	checkDelete(planModel.State, m.State, &toDelete, "state")
+
+	return toDelete
+}
+
 func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[string]schema.Attribute {
 	// Start with generic attributes as the base
 	result := map[string]schema.Attribute{
 		"dns": schema.StringAttribute{
-			Optional:    true,
 			Description: "DNS API server address.",
+			Optional:    true,
 		},
 		"dns_zone": schema.StringAttribute{
-			Optional:    true,
 			Description: "DNS domain name. The DNS zone must already exist on the DNS server.",
 			MarkdownDescription: "DNS domain name. Used to register hostnames, such as `<hostname>.<domain>`. " +
 				"The DNS zone must already exist on the DNS server.",
+			Optional: true,
 		},
 		"id": schema.StringAttribute{
 			Description: "The unique identifier of the SDN zone.",
@@ -126,25 +148,25 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 			Validators: validators.SDNID(),
 		},
 		"ipam": schema.StringAttribute{
-			Optional:    true,
 			Description: "IP Address Management system.",
+			Optional:    true,
 		},
 		"mtu": schema.Int64Attribute{
-			Optional:    true,
 			Description: "MTU value for the zone.",
+			Optional:    true,
 		},
 		"nodes": stringset.ResourceAttribute("The Proxmox nodes which the zone and associated VNets should be deployed on", "", stringset.WithRequired()),
 		"pending": schema.BoolAttribute{
-			Computed:    true,
 			Description: "Indicates if the zone has pending configuration changes that need to be applied.",
+			Computed:    true,
 		},
 		"state": schema.StringAttribute{
-			Computed:    true,
 			Description: "Indicates the current state of the zone.",
+			Computed:    true,
 		},
 		"reverse_dns": schema.StringAttribute{
-			Optional:    true,
 			Description: "Reverse DNS API server address.",
+			Optional:    true,
 		},
 	}
 
@@ -160,6 +182,7 @@ type zoneModel interface {
 	fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics)
 	toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone
 	getID() string
+	checkDeleted(plan zoneModel, diags *diag.Diagnostics) []string
 }
 
 type zoneResourceConfig struct {
@@ -269,6 +292,9 @@ func (r *genericZoneResource) Update(ctx context.Context, req resource.UpdateReq
 	plan := r.config.modelFunc()
 	resp.Diagnostics.Append(req.Plan.Get(ctx, plan)...)
 
+	var state zoneModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -278,8 +304,10 @@ func (r *genericZoneResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
+	toDelete := state.checkDeleted(plan, &resp.Diagnostics)
 	update := &zones.ZoneUpdate{
-		Zone: *updateZone,
+		Zone:   *updateZone,
+		Delete: toDelete,
 	}
 
 	if err := r.client.UpdateZone(ctx, update); err != nil {
@@ -344,4 +372,10 @@ func (r *genericZoneResource) ImportState(ctx context.Context, req resource.Impo
 // Schema is required to satisfy the resource.Resource interface. It should be implemented by the specific resource.
 func (r *genericZoneResource) Schema(_ context.Context, _ resource.SchemaRequest, _ *resource.SchemaResponse) {
 	// Intentionally left blank. Should be set by the specific resource.
+}
+
+func checkDelete(planField, stateField attr.Value, toDelete *[]string, apiName string) {
+	if planField.IsNull() && !stateField.IsNull() {
+		*toDelete = append(*toDelete, apiName)
+	}
 }
