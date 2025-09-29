@@ -32,6 +32,11 @@ func (c *Client) DeleteDatastoreFile(
 		},
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
+			var httpError *api.HTTPError
+			if errors.As(err, &httpError) && httpError.Code == http.StatusForbidden {
+				return false
+			}
+
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
 		retry.LastErrorOnly(true),
@@ -55,6 +60,11 @@ func (c *Client) ListDatastoreFiles(
 		},
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
+			var httpError *api.HTTPError
+			if errors.As(err, &httpError) && httpError.Code == http.StatusForbidden {
+				return false
+			}
+
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
 		retry.LastErrorOnly(true),
