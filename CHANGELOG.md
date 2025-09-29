@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.84.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.84.0...v0.84.1) (2025-09-29)
+
+
+### Bug Fixes
+
+* **api:** handle PVE API's 403 response status ([#2207](https://github.com/bpg/terraform-provider-proxmox/issues/2207)) ([46e8c24](https://github.com/bpg/terraform-provider-proxmox/commit/46e8c24d5bce906e5673e41b7c0151d46180fbe3))
+* **sdn:** subnet validation errors when using value interpolation ([#2204](https://github.com/bpg/terraform-provider-proxmox/issues/2204)) ([5f876c0](https://github.com/bpg/terraform-provider-proxmox/commit/5f876c0fbfc06f25cbe18f396a983cd948df60ba))
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.4.0 → v2.5.0) ([#2193](https://github.com/bpg/terraform-provider-proxmox/issues/2193)) ([2ab3d94](https://github.com/bpg/terraform-provider-proxmox/commit/2ab3d943d69c0648d749cbc85a279498c3a900ce))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.7.1 → v7.7.3) ([#2203](https://github.com/bpg/terraform-provider-proxmox/issues/2203)) ([3692434](https://github.com/bpg/terraform-provider-proxmox/commit/36924349437a7a0fd19b0c73185fdf5176d4186e))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.38.0 → v2.38.1) ([#2197](https://github.com/bpg/terraform-provider-proxmox/issues/2197)) ([0387296](https://github.com/bpg/terraform-provider-proxmox/commit/0387296c0bc5aa90cb6fd332ed0890ef75d67db0))
+
 ## [0.84.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.2...v0.84.0) (2025-09-22)
 
 
