@@ -64,6 +64,7 @@ type zoneDataModel struct {
 	PrimaryExitNode         types.String    `tfsdk:"primary_exit_node"`
 	RouteTargetImport       types.String    `tfsdk:"rt_import"`
 	VRFVXLANID              types.Int64     `tfsdk:"vrf_vxlan"`
+	AutomaticDHCP           types.String    `tfsdk:"automatic_dhcp"`
 }
 
 // Configure adds the provider-configured client to the data source.
@@ -137,6 +138,7 @@ func (d *zonesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 						"primary_exit_node":        types.StringType,
 						"rt_import":                types.StringType,
 						"vrf_vxlan":                types.Int64Type,
+						"automatic_dhcp":           types.StringType,
 					},
 				},
 			},
@@ -204,6 +206,7 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 			PrimaryExitNode:         types.StringPointerValue(zone.ExitNodesPrimary),
 			RouteTargetImport:       types.StringPointerValue(zone.RouteTargetImport),
 			VRFVXLANID:              types.Int64PointerValue(zone.VRFVXLANID),
+			AutomaticDHCP:           types.StringPointerValue(zone.AutomaticDHCP),
 		}
 
 		objValue, objDiag := types.ObjectValueFrom(ctx, map[string]attr.Type{
@@ -235,6 +238,7 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 			"primary_exit_node":        types.StringType,
 			"rt_import":                types.StringType,
 			"vrf_vxlan":                types.Int64Type,
+			"automatic_dhcp":           types.StringType,
 		}, zoneData)
 		resp.Diagnostics.Append(objDiag...)
 
@@ -275,6 +279,7 @@ func (d *zonesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 			"primary_exit_node":        types.StringType,
 			"rt_import":                types.StringType,
 			"vrf_vxlan":                types.Int64Type,
+			"automatic_dhcp":           types.StringType,
 		},
 	}, zoneElements)
 	resp.Diagnostics.Append(listDiag...)

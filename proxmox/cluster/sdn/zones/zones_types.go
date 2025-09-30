@@ -46,6 +46,9 @@ type Zone struct {
 	AdvertiseSubnets        *types.CustomBool `json:"advertise-subnets,omitempty"          url:"advertise-subnets,omitempty,int"`
 	DisableARPNDSuppression *types.CustomBool `json:"disable-arp-nd-suppression,omitempty" url:"disable-arp-nd-suppression,omitempty,int"`
 	RouteTargetImport       *string           `json:"rt-import,omitempty"                  url:"rt-import,omitempty"`
+
+	// Simple.
+	AutomaticDHCP *string `json:"dhcp,omitempty" url:"dhcp,omitempty"`
 }
 
 // ZoneData represents a zone with optional pending attribute.

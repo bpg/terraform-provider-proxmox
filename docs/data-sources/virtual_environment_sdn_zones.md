@@ -58,6 +58,7 @@ output "data_proxmox_virtual_environment_sdn_zones_filtered" {
 Read-Only:
 
 - `advertise_subnets` (Boolean)
+- `automatic_dhcp` (String)
 - `bridge` (String)
 - `controller` (String)
 - `disable_arp_nd_suppression` (Boolean)
