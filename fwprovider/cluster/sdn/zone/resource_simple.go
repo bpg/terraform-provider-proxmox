@@ -72,7 +72,7 @@ func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"dhcp": schema.StringAttribute{
 				Optional: true,
 				Description: "The type of the DHCP backend for this zone. " +
-					"Currently supported values are `none` (default) and `dnsmasq`.",
+					"Currently the only supported value is `dnsmasq`.",
 			},
 		}),
 	}
