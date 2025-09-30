@@ -48,7 +48,7 @@ type Zone struct {
 	RouteTargetImport       *string           `json:"rt-import,omitempty"                  url:"rt-import,omitempty"`
 
 	// Simple.
-	AutomaticDHCP *string `json:"dhcp,omitempty" url:"dhcp,omitempty"`
+	DHCP *string `json:"dhcp,omitempty" url:"dhcp,omitempty"`
 }
 
 // ZoneData represents a zone with optional pending attribute.

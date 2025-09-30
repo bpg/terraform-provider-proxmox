@@ -25,17 +25,17 @@ var (
 type simpleModel struct {
 	genericModel
 
-	AutomaticDHCP types.String `tfsdk:"automatic_dhcp"`
+	DHCP types.String `tfsdk:"dhcp"`
 }
 
 func (m *simpleModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Diagnostics) {
 	m.genericModel.fromAPI(name, data, diags)
 
-	m.AutomaticDHCP = types.StringPointerValue(data.AutomaticDHCP)
+	m.DHCP = types.StringPointerValue(data.DHCP)
 
 	if data.Pending != nil {
-		if data.Pending.AutomaticDHCP != nil && *data.Pending.AutomaticDHCP != "" {
-			m.AutomaticDHCP = types.StringValue(*data.Pending.AutomaticDHCP)
+		if data.Pending.DHCP != nil && *data.Pending.DHCP != "" {
+			m.DHCP = types.StringValue(*data.Pending.DHCP)
 		}
 	}
 }
@@ -43,7 +43,7 @@ func (m *simpleModel) fromAPI(name string, data *zones.ZoneData, diags *diag.Dia
 func (m *simpleModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Zone {
 	data := m.genericModel.toAPI(ctx, diags)
 
-	data.AutomaticDHCP = m.AutomaticDHCP.ValueStringPointer()
+	data.DHCP = m.DHCP.ValueStringPointer()
 
 	return data
 }
@@ -69,7 +69,7 @@ func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"This bridge is not linked to a physical interface, and VM traffic is only local on each the node. " +
 			"It can be used in NAT or routed setups.",
 		Attributes: genericAttributesWith(map[string]schema.Attribute{
-			"automatic_dhcp": schema.StringAttribute{
+			"dhcp": schema.StringAttribute{
 				Optional: true,
 				Description: "The type of the DHCP backend for this zone. " +
 					"Currently supported values are `none` (default) and `dnsmasq`.",
