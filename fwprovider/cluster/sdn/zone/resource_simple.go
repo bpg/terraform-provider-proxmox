@@ -9,9 +9,11 @@ package zone
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/zones"
@@ -73,6 +75,9 @@ func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Optional: true,
 				Description: "The type of the DHCP backend for this zone. " +
 					"Currently the only supported value is `dnsmasq`.",
+				Validators: []validator.String{
+					stringvalidator.OneOf("dnsmasq"),
+				},
 			},
 		}),
 	}
