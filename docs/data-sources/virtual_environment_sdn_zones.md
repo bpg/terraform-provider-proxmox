@@ -60,6 +60,7 @@ Read-Only:
 - `advertise_subnets` (Boolean)
 - `bridge` (String)
 - `controller` (String)
+- `dhcp` (String)
 - `disable_arp_nd_suppression` (Boolean)
 - `dns` (String)
 - `dns_zone` (String)
