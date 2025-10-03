@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.85.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.84.1...v0.85.0) (2025-10-03)
+
+
+### Features
+
+* **sdn:** Add DHCP Config for SDN Simple Zone Resource ([#2210](https://github.com/bpg/terraform-provider-proxmox/issues/2210)) ([f5d3d92](https://github.com/bpg/terraform-provider-proxmox/commit/f5d3d92cced4b1861c82c82ceb6b2bfc10264bd0))
+
+
+### Bug Fixes
+
+* **file:** add `import` content type to file datasource ([#2221](https://github.com/bpg/terraform-provider-proxmox/issues/2221)) ([f918bed](https://github.com/bpg/terraform-provider-proxmox/commit/f918bede079db0da790865f6fea4f2c1e9c87a14))
+
+
+### Miscellaneous
+
+* **ci:** update actions/stale digest (3a9db7e → 5f858e3) ([#2222](https://github.com/bpg/terraform-provider-proxmox/issues/2222)) ([b38066b](https://github.com/bpg/terraform-provider-proxmox/commit/b38066b42d71cd6d549833912b21ecbda27dbacc))
+* **ci:** Update peter-evans/create-issue-from-file action (v5.0.1 → v6.0.0) ([#2217](https://github.com/bpg/terraform-provider-proxmox/issues/2217)) ([29748a5](https://github.com/bpg/terraform-provider-proxmox/commit/29748a5afe49938349a8efd819a7e1ca5f178024))
+* **deps:** update image golang (8305f5f → ab1f5c4) ([#2215](https://github.com/bpg/terraform-provider-proxmox/issues/2215)) ([6a1f972](https://github.com/bpg/terraform-provider-proxmox/commit/6a1f9728f2cbd8736ae5f52292edd50a43ce94b3))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework (v1.16.0 → v1.16.1) ([#2216](https://github.com/bpg/terraform-provider-proxmox/issues/2216)) ([515c6bb](https://github.com/bpg/terraform-provider-proxmox/commit/515c6bb398d4c749bb3c3b300be7b0a1a894ea7a))
+
 ## [0.84.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.84.0...v0.84.1) (2025-09-29)
 
 
