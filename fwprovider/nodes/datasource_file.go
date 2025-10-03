@@ -78,11 +78,12 @@ func (d *fileDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, r
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"backup",
-						"iso",
-						"vztmpl",
-						"rootdir",
 						"images",
+						"import",
+						"iso",
+						"rootdir",
 						"snippets",
+						"vztmpl",
 					),
 				},
 			},
