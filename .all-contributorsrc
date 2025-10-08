@@ -1470,6 +1470,16 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "MacherelR",
+      "name": "Rémy Macherel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/64424331?v=4",
+      "profile": "https://github.com/MacherelR",
+      "contributions": [
+        "code",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,
