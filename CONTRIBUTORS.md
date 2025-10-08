@@ -207,6 +207,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/twentybit"><img src="https://avatars.githubusercontent.com/u/60849886?v=4?s=100" width="100px;" alt="Ryan W"/><br /><sub><b>Ryan W</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=twentybit" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/kam193"><img src="https://avatars.githubusercontent.com/u/8472271?v=4?s=100" width="100px;" alt="Kamil Mańkowski"/><br /><sub><b>Kamil Mańkowski</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=kam193" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/maxo99"><img src="https://avatars.githubusercontent.com/u/32850992?v=4?s=100" width="100px;" alt="Max Orr"/><br /><sub><b>Max Orr</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=maxo99" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MacherelR"><img src="https://avatars.githubusercontent.com/u/64424331?v=4?s=100" width="100px;" alt="Rémy Macherel"/><br /><sub><b>Rémy Macherel</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=MacherelR" title="Code">💻</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=MacherelR" title="Tests">⚠️</a></td>
     </tr>
   </tbody>
   <tfoot>
