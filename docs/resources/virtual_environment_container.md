@@ -152,11 +152,15 @@ output "ubuntu_container_public_key" {
     - `ip_config` - (Optional) The IP configuration (one block per network
         device).
         - `ipv4` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv4 address (use `dhcp` for auto-discovery).
+            - `address` - (Optional) The IPv4 address in CIDR notation
+              (e.g. 192.168.2.2/24). Alternatively, set this to `dhcp` for
+              autodiscovery.
             - `gateway` - (Optional) The IPv4 gateway (must be omitted
                 when `dhcp` is used as the address).
-        - `ipv6` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv6 address (use `dhcp` for auto-discovery).
+        - `ipv6` - (Optional) The IPv6 configuration.
+            - `address` - (Optional) The IPv6 address in CIDR notation
+              (e.g. fd1c:000:0000::0000:000:7334/64). Alternatively, set this
+              to `dhcp` for autodiscovery.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
                 when `dhcp` is used as the address).
     - `user_account` - (Optional) The user account configuration.
