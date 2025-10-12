@@ -72,7 +72,7 @@ const (
 	dvCPUNUMA             = false
 	dvCPUSockets          = 1
 	dvCPUType             = "qemu64"
-	dvCPUUnits            = 1024
+	dvCPUUnits            = 100
 	dvCPUAffinity         = ""
 	dvDescription         = ""
 
