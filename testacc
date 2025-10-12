@@ -23,4 +23,4 @@ find_test_package() {
 PACKAGE_PATH=$(find_test_package "$1")
 
 # shellcheck disable=SC2046,SC2086
-TF_ACC=1 env $(xargs < testacc.env) go test -count 1 --tags=acceptance -timeout 360s -run "$1" "$PACKAGE_PATH" $2
+TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) go test -count 1 --tags=acceptance -timeout 360s -run "$1" "$PACKAGE_PATH" $2

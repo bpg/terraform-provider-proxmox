@@ -674,7 +674,7 @@ func VM() *schema.Resource {
 						Optional:    true,
 						Default:     dvCPUUnits,
 						ValidateDiagFunc: validation.ToDiagFunc(
-							validation.IntBetween(2, 262144),
+							validation.IntBetween(1, 262144),
 						),
 					},
 					mkCPUAffinity: {
