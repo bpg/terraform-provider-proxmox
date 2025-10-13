@@ -145,42 +145,49 @@ func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
-		{"create VLAN zone without nodes", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan_no_nodes" {
-				  id     = "zoneVNo"
-				  bridge = "vmbr0"
-				  mtu    = 1496
-				}
-			`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan_no_nodes", map[string]string{
-					"id":      "zoneVNo",
-					"bridge":  "vmbr0",
-					"mtu":     "1496",
-					"pending": "true",
-					"state":   "new",
-				}),
-			),
-		}, {
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan_empty_nodes" {
-				  id     = "zoneVEm"
-				  nodes  = []
-				  bridge = "vmbr0"
-				  mtu    = 1496
-				}
-			`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan_empty_nodes", map[string]string{
-					"id":      "zoneVEm",
-					"bridge":  "vmbr0",
-					"mtu":     "1496",
-					"pending": "true",
-					"state":   "new",
-				}),
-			),
-		}}},
+		{
+			name: "create VLAN zone without nodes",
+			steps: []resource.TestStep{{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan_no_nodes" {
+					  id     = "zoneVNo"
+					  bridge = "vmbr0"
+					  mtu    = 1496
+					}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan_no_nodes", map[string]string{
+						"id":      "zoneVNo",
+						"bridge":  "vmbr0",
+						"mtu":     "1496",
+						"pending": "true",
+						"state":   "new",
+					}),
+				),
+			}},
+		},
+		{
+			name: "create VLAN zone with empty nodes list",
+			steps: []resource.TestStep{{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan_empty_nodes" {
+					  id     = "zoneVEm"
+					  nodes  = []
+					  bridge = "vmbr0"
+					  mtu    = 1496
+					}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan_empty_nodes", map[string]string{
+						"id":      "zoneVEm",
+						"bridge":  "vmbr0",
+						"mtu":     "1496",
+						"pending": "true",
+						"state":   "new",
+					}),
+				),
+			}},
+		},
 	}
 
 	for _, tt := range tests {
