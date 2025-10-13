@@ -1,6 +1,6 @@
 resource "proxmox_virtual_environment_sdn_zone_vlan" "example" {
-  id     = "vlan1"
-  nodes  = ["pve"]
+  id = "vlan1"
+  # nodes = ["pve"]  # Optional: omit to apply to all nodes in cluster
   bridge = "vmbr0"
   mtu    = 1500
 

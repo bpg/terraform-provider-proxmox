@@ -133,7 +133,7 @@ func genericAttributesWith(extraAttributes map[string]schema.Attribute) map[stri
 			Optional:    true,
 			Description: "MTU value for the zone.",
 		},
-		"nodes": stringset.ResourceAttribute("The Proxmox nodes which the zone and associated VNets should be deployed on", "", stringset.WithRequired()),
+		"nodes": stringset.ResourceAttribute("The Proxmox nodes which the zone and associated VNets should be deployed on", "", stringset.WithOptional()),
 		"pending": schema.BoolAttribute{
 			Computed:    true,
 			Description: "Indicates if the zone has pending configuration changes that need to be applied.",
