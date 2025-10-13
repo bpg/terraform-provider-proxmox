@@ -136,6 +136,63 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 	}
 }
 
+func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"create VLAN zone without nodes", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan_no_nodes" {
+				  id     = "zoneVNo"
+				  bridge = "vmbr0"
+				  mtu    = 1496
+				}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan_no_nodes", map[string]string{
+					"id":      "zoneVNo",
+					"bridge":  "vmbr0",
+					"mtu":     "1496",
+					"pending": "true",
+					"state":   "new",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_vlan" "zone_vlan_empty_nodes" {
+				  id     = "zoneVEm"
+				  nodes  = []
+				  bridge = "vmbr0"
+				  mtu    = 1496
+				}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_vlan.zone_vlan_empty_nodes", map[string]string{
+					"id":      "zoneVEm",
+					"bridge":  "vmbr0",
+					"mtu":     "1496",
+					"pending": "true",
+					"state":   "new",
+				}),
+			),
+		}}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
 func TestAccResourceSDNZoneQinQ(t *testing.T) {
 	t.Parallel()
 

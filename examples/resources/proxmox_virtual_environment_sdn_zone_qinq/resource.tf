@@ -1,6 +1,6 @@
 resource "proxmox_virtual_environment_sdn_zone_qinq" "example" {
-  id                    = "qinq1"
-  nodes                 = ["pve"]
+  id = "qinq1"
+  # nodes = ["pve"]  # Optional: omit to apply to all nodes in cluster
   bridge                = "vmbr0"
   service_vlan          = 100
   service_vlan_protocol = "802.1ad"

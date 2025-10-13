@@ -33,7 +33,6 @@ resource "proxmox_virtual_environment_sdn_zone_simple" "example" {
 ### Required
 
 - `id` (String) The unique identifier of the SDN zone.
-- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 
 ### Optional
 
@@ -42,6 +41,7 @@ resource "proxmox_virtual_environment_sdn_zone_simple" "example" {
 - `dns_zone` (String) DNS domain name. Used to register hostnames, such as `<hostname>.<domain>`. The DNS zone must already exist on the DNS server.
 - `ipam` (String) IP Address Management system.
 - `mtu` (Number) MTU value for the zone.
+- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `reverse_dns` (String) Reverse DNS API server address.
 
 ### Read-Only

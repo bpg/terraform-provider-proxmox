@@ -15,8 +15,8 @@ VLAN Zone in Proxmox SDN. It uses an existing local Linux or OVS bridge to conne
 
 ```terraform
 resource "proxmox_virtual_environment_sdn_zone_vlan" "example" {
-  id     = "vlan1"
-  nodes  = ["pve"]
+  id = "vlan1"
+  # nodes = ["pve"]  # Optional: omit to apply to all nodes in cluster
   bridge = "vmbr0"
   mtu    = 1500
 
@@ -35,7 +35,6 @@ resource "proxmox_virtual_environment_sdn_zone_vlan" "example" {
 
 - `bridge` (String) The local bridge or OVS switch, already configured on _each_ node that allows node-to-node connection.
 - `id` (String) The unique identifier of the SDN zone.
-- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 
 ### Optional
 
@@ -43,6 +42,7 @@ resource "proxmox_virtual_environment_sdn_zone_vlan" "example" {
 - `dns_zone` (String) DNS domain name. Used to register hostnames, such as `<hostname>.<domain>`. The DNS zone must already exist on the DNS server.
 - `ipam` (String) IP Address Management system.
 - `mtu` (Number) MTU value for the zone.
+- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `reverse_dns` (String) Reverse DNS API server address.
 
 ### Read-Only

@@ -1,6 +1,5 @@
 resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone_1" {
   id = "tZone1"
-  nodes= data.proxmox_virtual_environment_nodes.example.names
   mtu = 1496
 
   depends_on = [
@@ -10,7 +9,6 @@ resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone_1" {
 
 resource "proxmox_virtual_environment_sdn_zone_simple" "test_zone_2" {
   id = "tZone2"
-  nodes= data.proxmox_virtual_environment_nodes.example.names
   mtu = 1496
   
   depends_on = [

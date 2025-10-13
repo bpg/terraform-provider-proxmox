@@ -44,7 +44,6 @@ resource "proxmox_virtual_environment_sdn_zone_evpn" "example" {
 
 - `controller` (String) EVPN controller address.
 - `id` (String) The unique identifier of the SDN zone.
-- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `vrf_vxlan` (Number) VRF VXLAN-ID used for dedicated routing interconnect between VNets. It must be different than the VXLAN-ID of the VNets.
 
 ### Optional
@@ -57,6 +56,7 @@ resource "proxmox_virtual_environment_sdn_zone_evpn" "example" {
 - `exit_nodes_local_routing` (Boolean) Enable local routing for EVPN exit nodes.
 - `ipam` (String) IP Address Management system.
 - `mtu` (Number) MTU value for the zone.
+- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `primary_exit_node` (String) Primary exit node for EVPN.
 - `reverse_dns` (String) Reverse DNS API server address.
 - `rt_import` (String) Route target import for EVPN.

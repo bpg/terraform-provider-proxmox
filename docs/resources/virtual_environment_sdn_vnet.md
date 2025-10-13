@@ -16,9 +16,9 @@ Manages Proxmox VE SDN VNet.
 ```terraform
 # SDN Zone (Simple) - Basic zone for simple vnets
 resource "proxmox_virtual_environment_sdn_zone_simple" "example_zone_1" {
-  id    = "zone1"
-  nodes = ["pve"]
-  mtu   = 1500
+  id = "zone1"
+  # nodes = ["pve"]  # Optional: omit to apply to all nodes in cluster
+  mtu = 1500
 
   # Optional attributes
   dns         = "1.1.1.1"
@@ -33,9 +33,9 @@ resource "proxmox_virtual_environment_sdn_zone_simple" "example_zone_1" {
 
 # SDN Zone (Simple) - Second zone for demonstration
 resource "proxmox_virtual_environment_sdn_zone_simple" "example_zone_2" {
-  id    = "zone2"
-  nodes = ["pve"]
-  mtu   = 1500
+  id = "zone2"
+  # nodes = ["pve"]  # Optional: omit to apply to all nodes in cluster
+  mtu = 1500
 
   depends_on = [
     proxmox_virtual_environment_sdn_applier.finalizer

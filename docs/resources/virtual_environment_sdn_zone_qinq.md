@@ -15,8 +15,8 @@ QinQ Zone in Proxmox SDN. QinQ also known as VLAN stacking, that uses multiple l
 
 ```terraform
 resource "proxmox_virtual_environment_sdn_zone_qinq" "example" {
-  id                    = "qinq1"
-  nodes                 = ["pve"]
+  id = "qinq1"
+  # nodes = ["pve"]  # Optional: omit to apply to all nodes in cluster
   bridge                = "vmbr0"
   service_vlan          = 100
   service_vlan_protocol = "802.1ad"
@@ -37,7 +37,6 @@ resource "proxmox_virtual_environment_sdn_zone_qinq" "example" {
 
 - `bridge` (String) A local, VLAN-aware bridge that is already configured on each local node
 - `id` (String) The unique identifier of the SDN zone.
-- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `service_vlan` (Number) Service VLAN tag for QinQ. The tag must be between `1` and `4094`.
 
 ### Optional
@@ -46,6 +45,7 @@ resource "proxmox_virtual_environment_sdn_zone_qinq" "example" {
 - `dns_zone` (String) DNS domain name. Used to register hostnames, such as `<hostname>.<domain>`. The DNS zone must already exist on the DNS server.
 - `ipam` (String) IP Address Management system.
 - `mtu` (Number) MTU value for the zone.
+- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `reverse_dns` (String) Reverse DNS API server address.
 - `service_vlan_protocol` (String) Service VLAN protocol for QinQ. The protocol must be `802.1ad` or `802.1q`.
 
