@@ -40,7 +40,12 @@ func (d *SimpleDataSource) Schema(_ context.Context, _ datasource.SchemaRequest,
 		MarkdownDescription: "Retrieves information about a Simple Zone in Proxmox SDN. It will create an isolated VNet bridge. " +
 			"This bridge is not linked to a physical interface, and VM traffic is only local on each the node. " +
 			"It can be used in NAT or routed setups.",
-		Attributes: genericDataSourceAttributesWith(nil),
+		Attributes: genericDataSourceAttributesWith(map[string]schema.Attribute{
+			"dhcp": schema.StringAttribute{
+				Computed:    true,
+				Description: "The type of the DHCP backend for this zone.",
+			},
+		}),
 	}
 }
 
