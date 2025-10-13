@@ -64,11 +64,9 @@ func TestAccDataSourceSDNZoneSimple(t *testing.T) {
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_simple.dhcp_test", map[string]string{
-					"id":   "dhcpdst1",
-					"mtu":  "1500",
-					"dhcp": "dnsmasq",
-				}),
-				test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_simple.dhcp_test", map[string]string{
+					"id":      "dhcpdst1",
+					"mtu":     "1500",
+					"dhcp":    "dnsmasq",
 					"nodes.#": "1",
 					"nodes.0": "pve",
 				}),
