@@ -33,7 +33,7 @@ func TestAccResourceContainer(t *testing.T) {
 
 	te := InitEnvironment(t)
 
-	imageFileName := gofakeit.Word() + "-ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
+	imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
 	accTestContainerID := 100000 + rand.Intn(99999)
 	accTestContainerIDClone := 100000 + rand.Intn(99999)
 
@@ -48,7 +48,7 @@ func TestAccResourceContainer(t *testing.T) {
 		FileName: ptr.Ptr(imageFileName),
 		Node:     ptr.Ptr(te.NodeName),
 		Storage:  ptr.Ptr(te.DatastoreID),
-		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.10-standard_24.10-1_amd64.tar.zst", te.ContainerImagesServer)),
+		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.04-standard_24.04-2_amd64.tar.zst", te.ContainerImagesServer)),
 	})
 	require.NoError(t, err)
 
@@ -418,6 +418,100 @@ func TestAccResourceContainer(t *testing.T) {
 				},
 			),
 		}}},
+		{"hostname update", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = 10
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-hostname-1"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-hostname-1",
+					}),
+					func(*terraform.State) error {
+						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+						defer cancel()
+
+						ct := te.NodeClient().Container(accTestContainerID)
+						err := ct.WaitForContainerStatus(ctx, "running")
+						require.NoError(te.t, err, "container did not start")
+
+						return nil
+					},
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = 10
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-hostname-2"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-hostname-2",
+					}),
+					func(*terraform.State) error {
+						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+						defer cancel()
+
+						ct := te.NodeClient().Container(accTestContainerID)
+						err := ct.WaitForContainerStatus(ctx, "running")
+						require.NoError(te.t, err, "container did not start after hostname change")
+
+						// Verify the hostname was actually updated in the container config
+						ctInfo, err := ct.GetContainer(ctx)
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.Hostname, "hostname should not be nil")
+						require.Equal(te.t, "test-hostname-2", *ctInfo.Hostname, "hostname should be updated")
+
+						return nil
+					},
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
