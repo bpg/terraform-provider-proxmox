@@ -538,6 +538,405 @@ func TestAccResourceSDNSubnet(t *testing.T) {
 				ImportStateId:     "importv/importz2-10.30.0.0-24",
 			},
 		}},
+		{"test subnet field deletion", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_subnet_zone" {
+					id    = "deletesz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_subnet_vnet" {
+					id     = "deletesv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_subnet" {
+					cidr            = "10.50.0.0/24"
+					vnet            = proxmox_virtual_environment_sdn_vnet.delete_subnet_vnet.id
+					gateway         = "10.50.0.1"
+					dhcp_dns_server = "10.50.0.53"
+					dns_zone_prefix = "test.com"
+					snat            = true
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_subnet", map[string]string{
+						"cidr":            "10.50.0.0/24",
+						"vnet":            "deletesv",
+						"gateway":         "10.50.0.1",
+						"dhcp_dns_server": "10.50.0.53",
+						"dns_zone_prefix": "test.com",
+						"snat":            "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_subnet_zone" {
+					id    = "deletesz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_subnet_vnet" {
+					id     = "deletesv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_subnet" {
+					cidr = "10.50.0.0/24"
+					vnet = proxmox_virtual_environment_sdn_vnet.delete_subnet_vnet.id
+					# gateway, dhcp_dns_server, dns_zone_prefix, and snat are removed
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_subnet", map[string]string{
+						"cidr": "10.50.0.0/24",
+						"vnet": "deletesv",
+					}),
+				),
+			},
+		}},
+		{"test subnet individual field deletion", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_individual_subnet_zone" {
+					id    = "delisz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_individual_subnet_vnet" {
+					id     = "delisv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_individual_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_individual_subnet" {
+					cidr            = "10.60.0.0/24"
+					vnet            = proxmox_virtual_environment_sdn_vnet.delete_individual_subnet_vnet.id
+					gateway         = "10.60.0.1"
+					dhcp_dns_server = "10.60.0.53"
+					dns_zone_prefix = "test.com"
+					snat            = true
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_individual_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_individual_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_individual_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_individual_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_individual_subnet", map[string]string{
+						"cidr":            "10.60.0.0/24",
+						"vnet":            "delisv",
+						"gateway":         "10.60.0.1",
+						"dhcp_dns_server": "10.60.0.53",
+						"dns_zone_prefix": "test.com",
+						"snat":            "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_individual_subnet_zone" {
+					id    = "delisz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_individual_subnet_vnet" {
+					id     = "delisv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_individual_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_individual_subnet" {
+					cidr = "10.60.0.0/24"
+					vnet = proxmox_virtual_environment_sdn_vnet.delete_individual_subnet_vnet.id
+					# Remove gateway only
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_individual_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_individual_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_individual_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_individual_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_individual_subnet", map[string]string{
+						"cidr": "10.60.0.0/24",
+						"vnet": "delisv",
+					}),
+				),
+			},
+		}},
+		{"test subnet multiple field deletion", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_multiple_subnet_zone" {
+					id    = "delmsz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_multiple_subnet_vnet" {
+					id     = "delmsv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_multiple_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_multiple_subnet" {
+					cidr            = "10.70.0.0/24"
+					vnet            = proxmox_virtual_environment_sdn_vnet.delete_multiple_subnet_vnet.id
+					gateway         = "10.70.0.1"
+					dhcp_dns_server = "10.70.0.53"
+					dns_zone_prefix = "example.com"
+					snat            = true
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_multiple_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_multiple_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_multiple_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_multiple_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_multiple_subnet", map[string]string{
+						"cidr":            "10.70.0.0/24",
+						"vnet":            "delmsv",
+						"gateway":         "10.70.0.1",
+						"dhcp_dns_server": "10.70.0.53",
+						"dns_zone_prefix": "example.com",
+						"snat":            "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_multiple_subnet_zone" {
+					id    = "delmsz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_multiple_subnet_vnet" {
+					id     = "delmsv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_multiple_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_multiple_subnet" {
+					cidr = "10.70.0.0/24"
+					vnet = proxmox_virtual_environment_sdn_vnet.delete_multiple_subnet_vnet.id
+					# Remove gateway, dhcp_dns_server, dns_zone_prefix, and snat
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_multiple_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_multiple_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_multiple_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_multiple_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_multiple_subnet", map[string]string{
+						"cidr": "10.70.0.0/24",
+						"vnet": "delmsv",
+					}),
+				),
+			},
+		}},
+		{"test subnet field deletion and re-addition", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_readd_subnet_zone" {
+					id    = "delrz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_readd_subnet_vnet" {
+					id     = "delrv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_readd_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_readd_subnet" {
+					cidr            = "10.80.0.0/24"
+					vnet            = proxmox_virtual_environment_sdn_vnet.delete_readd_subnet_vnet.id
+					gateway         = "10.80.0.1"
+					dhcp_dns_server = "10.80.0.53"
+					snat            = true
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_readd_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_readd_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_readd_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_readd_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_readd_subnet", map[string]string{
+						"cidr":            "10.80.0.0/24",
+						"vnet":            "delrv",
+						"gateway":         "10.80.0.1",
+						"dhcp_dns_server": "10.80.0.53",
+						"snat":            "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_readd_subnet_zone" {
+					id    = "delrz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_readd_subnet_vnet" {
+					id     = "delrv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_readd_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_readd_subnet" {
+					cidr = "10.80.0.0/24"
+					vnet = proxmox_virtual_environment_sdn_vnet.delete_readd_subnet_vnet.id
+					# Remove all optional fields
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_readd_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_readd_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_readd_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_readd_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_readd_subnet", map[string]string{
+						"cidr": "10.80.0.0/24",
+						"vnet": "delrv",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_readd_subnet_zone" {
+					id    = "delrz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_readd_subnet_vnet" {
+					id     = "delrv"
+					zone   = proxmox_virtual_environment_sdn_zone_simple.delete_readd_subnet_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_subnet" "delete_readd_subnet" {
+					cidr            = "10.80.0.0/24"
+					vnet            = proxmox_virtual_environment_sdn_vnet.delete_readd_subnet_vnet.id
+					gateway         = "10.80.0.2"
+					dhcp_dns_server = "10.80.0.54"
+					snat            = false
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.finalizer
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "delete_readd_subnet_applier" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.delete_readd_subnet_zone,
+						proxmox_virtual_environment_sdn_vnet.delete_readd_subnet_vnet,
+						proxmox_virtual_environment_sdn_subnet.delete_readd_subnet
+					]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_subnet.delete_readd_subnet", map[string]string{
+						"cidr":            "10.80.0.0/24",
+						"vnet":            "delrv",
+						"gateway":         "10.80.0.2",
+						"dhcp_dns_server": "10.80.0.54",
+						"snat":            "false",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

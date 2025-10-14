@@ -39,3 +39,11 @@ func ShouldBeRemoved(plan attr.Value, state attr.Value, isClone bool) bool {
 func IsDefined(v attr.Value) bool {
 	return !v.IsNull() && !v.IsUnknown()
 }
+
+// CheckDelete adds an API field name to the delete list if the plan field is null but the state field is not null.
+// This is used to handle attribute deletion in API calls.
+func CheckDelete(planField, stateField attr.Value, toDelete *[]string, apiName string) {
+	if planField.IsNull() && !stateField.IsNull() {
+		*toDelete = append(*toDelete, apiName)
+	}
+}

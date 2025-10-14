@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -128,7 +128,17 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// Read the created VNet to get the actual state including pending
+	data, err := r.client.SDNVnets(plan.ID.ValueString()).GetVnet(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to Read SDN VNet After Creation", err.Error())
+		return
+	}
+
+	readModel := &model{}
+	readModel.fromAPI(plan.ID.ValueString(), data)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -172,10 +182,10 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	var toDelete []string
 
-	checkDelete(plan.Alias, state.Alias, &toDelete, "alias")
-	checkDelete(plan.IsolatePorts, state.IsolatePorts, &toDelete, "isolate-ports")
-	checkDelete(plan.Tag, state.Tag, &toDelete, "tag")
-	checkDelete(plan.VlanAware, state.VlanAware, &toDelete, "vlanaware")
+	attribute.CheckDelete(plan.Alias, state.Alias, &toDelete, "alias")
+	attribute.CheckDelete(plan.IsolatePorts, state.IsolatePorts, &toDelete, "isolate-ports")
+	attribute.CheckDelete(plan.Tag, state.Tag, &toDelete, "tag")
+	attribute.CheckDelete(plan.VlanAware, state.VlanAware, &toDelete, "vlanaware")
 
 	vnet := plan.toAPI()
 	reqData := &vnets.VNetUpdate{
@@ -189,7 +199,17 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// Read the updated VNet to get the actual state including pending
+	data, err := r.client.SDNVnets(plan.ID.ValueString()).GetVnet(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to Read SDN VNet After Update", err.Error())
+		return
+	}
+
+	readModel := &model{}
+	readModel.fromAPI(plan.ID.ValueString(), data)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -224,10 +244,4 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	readModel.fromAPI(req.ID, data)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
-}
-
-func checkDelete(planField, stateField attr.Value, toDelete *[]string, apiName string) {
-	if planField.IsNull() && !stateField.IsNull() {
-		*toDelete = append(*toDelete, apiName)
-	}
 }

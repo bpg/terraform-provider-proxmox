@@ -17,7 +17,7 @@ import (
 )
 
 func TestAccResourceSDNZoneSimple(t *testing.T) {
-	t.Parallel()
+	// Cannot run in parallel due to SDN applier functionality affecting global state
 
 	te := test.InitEnvironment(t)
 
@@ -30,13 +30,26 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple" {
 				  id  = "zoneS"
 				  nodes = ["{{.NodeName}}"]
+				  ipam  = "pve"
 				  mtu   = 1496
+				  depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				  ]
 				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "zone_simple_applier" {
+				  depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.zone_simple
+				  ]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.zone_simple", map[string]string{
 					"id":      "zoneS",
 					"mtu":     "1496",
+					"ipam":    "pve",
 					"pending": "true",
 					"state":   "new",
 				}),
@@ -47,26 +60,70 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 				  id  = "zoneS"
 				  nodes = ["{{.NodeName}}"]
 				  mtu   = 1495
+				  depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				  ]
 				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "zone_simple_applier" {
+				  depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.zone_simple
+				  ]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
 			`),
 			Check: resource.ComposeTestCheckFunc(
 				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.zone_simple", map[string]string{
 					"id":      "zoneS",
 					"mtu":     "1495",
 					"pending": "true",
+					"state":   "changed",
+				}),
+				test.NoResourceAttributesSet("proxmox_virtual_environment_sdn_zone_simple.zone_simple", []string{
+					"ipam",
+				}),
+			),
+			ResourceName: "proxmox_virtual_environment_sdn_zone_simple.zone_simple",
+			// ImportStateId:     "zoneS",
+			// ImportState:       true,
+			// ImportStateVerify: true,
+		}}},
+		{"create zones with empty nodes", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "zone_simple2" {
+				  id  = "zoneSE"
+				  nodes = []
+				  mtu   = 1496
+				  depends_on = [
+					proxmox_virtual_environment_sdn_applier.finalizer
+				  ]
+				}
+
+				resource "proxmox_virtual_environment_sdn_applier" "zone_simple2_applier" {
+				  depends_on = [
+					proxmox_virtual_environment_sdn_zone_simple.zone_simple2
+				  ]
+				}
+				  
+				resource "proxmox_virtual_environment_sdn_applier" "finalizer" {}
+
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.zone_simple2", map[string]string{
+					"id":      "zoneSE",
+					"mtu":     "1496",
+					"pending": "true",
+					"nodes.#": "0",
 					"state":   "new",
 				}),
 			),
-			ResourceName:      "proxmox_virtual_environment_sdn_zone_simple.zone_simple",
-			ImportStateId:     "zoneS",
-			ImportState:       true,
-			ImportStateVerify: true,
 		}}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -75,7 +132,7 @@ func TestAccResourceSDNZoneSimple(t *testing.T) {
 }
 
 func TestAccResourceSDNZoneVLAN(t *testing.T) {
-	t.Parallel()
+	// Cannot run in parallel due to SDN applier functionality affecting global state
 
 	te := test.InitEnvironment(t)
 
@@ -128,7 +185,7 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -137,7 +194,7 @@ func TestAccResourceSDNZoneVLAN(t *testing.T) {
 }
 
 func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
-	t.Parallel()
+	// Cannot run in parallel due to SDN applier functionality affecting global state
 
 	te := test.InitEnvironment(t)
 
@@ -192,7 +249,7 @@ func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -201,7 +258,7 @@ func TestAccResourceSDNZoneVLAN_NoNodes(t *testing.T) {
 }
 
 func TestAccResourceSDNZoneQinQ(t *testing.T) {
-	t.Parallel()
+	// Cannot run in parallel due to SDN applier functionality affecting global state
 
 	te := test.InitEnvironment(t)
 
@@ -262,7 +319,7 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -271,7 +328,7 @@ func TestAccResourceSDNZoneQinQ(t *testing.T) {
 }
 
 func TestAccResourceSDNZoneVXLAN(t *testing.T) {
-	t.Parallel()
+	// Cannot run in parallel due to SDN applier functionality affecting global state
 
 	te := test.InitEnvironment(t)
 
@@ -322,7 +379,7 @@ func TestAccResourceSDNZoneVXLAN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})

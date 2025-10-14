@@ -34,7 +34,7 @@ type dhcpRangeModel struct {
 	EndAddress   customtypes.IPAddrValue `tfsdk:"end_address"`
 }
 
-func (m *model) fromAPI(subnet *subnets.Subnet) error {
+func (m *model) fromAPI(subnet *subnets.SubnetData) error {
 	m.ID = types.StringValue(subnet.ID)
 	m.VNet = types.StringPointerValue(subnet.VNet)
 
@@ -58,11 +58,23 @@ func (m *model) fromAPI(subnet *subnets.Subnet) error {
 		}
 	}
 
-	m.DnsZonePrefix = types.StringPointerValue(subnet.DNSZonePrefix)
+	m.DnsZonePrefix = m.handleDeletedValue(subnet.DNSZonePrefix)
 	m.Gateway = customtypes.NewIPAddrPointerValue(subnet.Gateway)
 	m.SNAT = types.BoolPointerValue(subnet.SNAT.PointerBool())
 
 	return nil
+}
+
+func (m *model) handleDeletedValue(value *string) types.String {
+	if value == nil {
+		return types.StringNull()
+	}
+
+	if *value == "deleted" {
+		return types.StringNull()
+	}
+
+	return types.StringValue(*value)
 }
 
 func (m *model) toAPI() *subnets.Subnet {

@@ -51,12 +51,12 @@ func (m *simpleModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones
 }
 
 type SimpleResource struct {
-	generic *genericZoneResource
+	*genericZoneResource
 }
 
 func NewSimpleResource() resource.Resource {
 	return &SimpleResource{
-		generic: newGenericZoneResource(zoneResourceConfig{
+		genericZoneResource: newGenericZoneResource(zoneResourceConfig{
 			typeNameSuffix: "_sdn_zone_simple",
 			zoneType:       zones.TypeSimple,
 			modelFunc:      func() zoneModel { return &simpleModel{} },
@@ -83,30 +83,6 @@ func (r *SimpleResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 	}
 }
 
-func (r *SimpleResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	r.generic.Metadata(ctx, req, resp)
-}
-
-func (r *SimpleResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.generic.Configure(ctx, req, resp)
-}
-
-func (r *SimpleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	r.generic.Create(ctx, req, resp)
-}
-
-func (r *SimpleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	r.generic.Read(ctx, req, resp)
-}
-
-func (r *SimpleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	r.generic.Update(ctx, req, resp)
-}
-
-func (r *SimpleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	r.generic.Delete(ctx, req, resp)
-}
-
-func (r *SimpleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	r.generic.ImportState(ctx, req, resp)
+func (m *simpleModel) getGenericModel() *genericModel {
+	return &m.genericModel
 }
