@@ -2913,8 +2913,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	clone := d.Get(mkClone).([]interface{})
 
 	// Prepare the new primitive values.
-	description := d.Get(mkDescription).(string)
-	updateBody.Description = &description
+	if d.HasChange(mkDescription) {
+		description := d.Get(mkDescription).(string)
+		updateBody.Description = &description
+	}
 
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 
@@ -3113,13 +3115,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 	}
 
-	if d.HasChange(mkInitialization + "." + mkInitializationDNS) {
+	if d.HasChange(mkInitialization + ".0." + mkInitializationDNS) {
 		updateBody.DNSDomain = &initializationDNSDomain
 		updateBody.DNSServer = &initializationDNSServer
 		rebootRequired = true
 	}
 
-	if d.HasChange(mkInitialization + "." + mkInitializationHostname) {
+	if d.HasChange(mkInitialization + ".0." + mkInitializationHostname) {
 		updateBody.Hostname = &initializationHostname
 		rebootRequired = true
 	}
@@ -3261,7 +3263,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 	}
 
-	if d.HasChange(mkInitialization) ||
+	if d.HasChange(mkInitialization+".0."+mkInitializationIPConfig) ||
 		d.HasChange(mkNetworkInterface) {
 		networkInterfaces := make(
 			containers.CustomNetworkInterfaces,
