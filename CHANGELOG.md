@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.85.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.85.0...v0.85.1) (2025-10-15)
+
+
+### Bug Fixes
+
+* **docs:** clarify that ip in ct ip_config must be in CIDR notation ([#2238](https://github.com/bpg/terraform-provider-proxmox/issues/2238)) ([f3b835f](https://github.com/bpg/terraform-provider-proxmox/commit/f3b835ffa1ac7c5700b6b055d9cda3780afa7b3d))
+* **lxc:** DNS / hostname update is not applied ([#2245](https://github.com/bpg/terraform-provider-proxmox/issues/2245)) ([9aa1eaf](https://github.com/bpg/terraform-provider-proxmox/commit/9aa1eafaa6d50c3d1398a23562087032f0eeee0f))
+* **sdn:** add missing `dhcp` field to `simple` zone datasource ([#2243](https://github.com/bpg/terraform-provider-proxmox/issues/2243)) ([b4b8d09](https://github.com/bpg/terraform-provider-proxmox/commit/b4b8d091a6c29361825d3df98e565813f59f9ad1))
+* **sdn:** handle attribute delete in all SDN resources ([#2248](https://github.com/bpg/terraform-provider-proxmox/issues/2248)) ([50accca](https://github.com/bpg/terraform-provider-proxmox/commit/50accca1161100de60db4505783be21dbff1435e))
+* **sdn:** zone: make `nodes` attribute optional ([#2242](https://github.com/bpg/terraform-provider-proxmox/issues/2242)) ([798623b](https://github.com/bpg/terraform-provider-proxmox/commit/798623b63b85245df7be8d6f1bd01a6aa7a7b63a))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (1.25.2 → 1.25.3) ([#2246](https://github.com/bpg/terraform-provider-proxmox/issues/2246)) ([3d2092f](https://github.com/bpg/terraform-provider-proxmox/commit/3d2092fe8ec3d078cb0973c672ca87ba582364ed))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.7.3 → v7.8.0) ([#2241](https://github.com/bpg/terraform-provider-proxmox/issues/2241)) ([ecf7920](https://github.com/bpg/terraform-provider-proxmox/commit/ecf79205ac1011e68b193de686ac6eae040fbd91))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.23.0 → v0.24.0) ([#2247](https://github.com/bpg/terraform-provider-proxmox/issues/2247)) ([6e23c90](https://github.com/bpg/terraform-provider-proxmox/commit/6e23c9056f66f62167410d29040173b90bc6d755))
+
 ## [0.85.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.84.1...v0.85.0) (2025-10-12)
 
 
