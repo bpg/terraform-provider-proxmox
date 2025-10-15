@@ -145,7 +145,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	state.CIDR = data.CIDR
 	state.VNet = data.VNet
 
-	if err := state.fromAPI(&subnet.Subnet); err != nil {
+	if err := state.fromAPI(subnet); err != nil {
 		resp.Diagnostics.AddError("Invalid Subnet Data", err.Error())
 		return
 	}

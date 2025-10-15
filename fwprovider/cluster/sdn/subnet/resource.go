@@ -14,6 +14,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -161,7 +162,20 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	plan.ID = types.StringValue(canonicalID)
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// Read the created subnet to get the actual state including pending
+	subnetData, err := client.GetSubnet(ctx, canonicalID)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to Read SDN Subnet After Creation", err.Error())
+		return
+	}
+
+	readModel := &model{}
+	if err := readModel.fromAPI(subnetData); err != nil {
+		resp.Diagnostics.AddError("Invalid Subnet Data", err.Error())
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -188,7 +202,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	}
 
 	readModel := &model{}
-	if err := readModel.fromAPI(&subnet.Subnet); err != nil {
+	if err := readModel.fromAPI(subnet); err != nil {
 		resp.Diagnostics.AddError("Invalid Subnet Data", err.Error())
 		return
 	}
@@ -198,12 +212,21 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 
 func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan model
+	var state model
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	var toDelete []string
+
+	attribute.CheckDelete(plan.DhcpDnsServer, state.DhcpDnsServer, &toDelete, "dhcp-dns-server")
+	attribute.CheckDelete(plan.DnsZonePrefix, state.DnsZonePrefix, &toDelete, "dnszoneprefix")
+	attribute.CheckDelete(plan.Gateway, state.Gateway, &toDelete, "gateway")
+	attribute.CheckDelete(plan.SNAT, state.SNAT, &toDelete, "snat")
 
 	reqData := plan.toAPI()
 
@@ -211,13 +234,27 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	err := client.UpdateSubnet(ctx, &subnets.SubnetUpdate{
 		Subnet: *reqData,
+		Delete: toDelete,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to Update SDN Subnet", err.Error())
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// Read the updated subnet to get the actual state including pending
+	subnetData, err := client.GetSubnet(ctx, plan.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to Read SDN Subnet After Update", err.Error())
+		return
+	}
+
+	readModel := &model{}
+	if err := readModel.fromAPI(subnetData); err != nil {
+		resp.Diagnostics.AddError("Invalid Subnet Data", err.Error())
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, readModel)...)
 }
 
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -267,7 +304,7 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	}
 
 	readModel := &model{}
-	if err := readModel.fromAPI(&subnet.Subnet); err != nil {
+	if err := readModel.fromAPI(subnet); err != nil {
 		resp.Diagnostics.AddError("Invalid Subnet Data", err.Error())
 		return
 	}
