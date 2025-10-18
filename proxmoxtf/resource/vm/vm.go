@@ -83,6 +83,7 @@ const (
 	dvTPMStateDatastoreID               = "local-lvm"
 	dvTPMStateVersion                   = "v2.0"
 	dvInitializationDatastoreID         = "local-lvm"
+	dvInitializationFileFormat          = "raw"
 	dvInitializationInterface           = ""
 	dvInitializationDNSDomain           = ""
 	dvInitializationIPConfigIPv4Address = ""
@@ -218,6 +219,7 @@ const (
 	mkHostPCIDeviceXVGA                 = "xvga"
 	mkInitialization                    = "initialization"
 	mkInitializationDatastoreID         = "datastore_id"
+	mkInitializationFileFormat          = "file_format"
 	mkInitializationInterface           = "interface"
 	mkInitializationDNS                 = "dns"
 	mkInitializationDNSDomain           = "domain"
@@ -799,6 +801,13 @@ func VM() *schema.Resource {
 						Description: "The datastore id",
 						Optional:    true,
 						Default:     dvInitializationDatastoreID,
+					},
+					mkInitializationFileFormat: {
+						Type:             schema.TypeString,
+						Description:      "The file format of the cloud-init disk",
+						Optional:         true,
+						Default:          dvInitializationFileFormat,
+						ValidateDiagFunc: validators.FileFormat(),
 					},
 					mkInitializationInterface: {
 						Type:             schema.TypeString,
@@ -2158,6 +2167,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
+		initializationFileFormat := initializationBlock[mkInitializationFileFormat].(string)
 		initializationInterface := initializationBlock[mkInitializationInterface].(string)
 
 		existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "ide2")
@@ -2172,6 +2182,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		ideDevices[initializationInterface] = &vms.CustomStorageDevice{
 			FileVolume: cdromCloudInitFileID,
 			Media:      &cdromCloudInitMedia,
+			Format:     &initializationFileFormat,
 		}
 
 		if err := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); err != nil {
@@ -2605,11 +2616,14 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	initializationConfig := vmGetCloudInitConfig(d)
 	initializationAttr := d.Get(mkInitialization)
 
+	var cdromCloudInitFileFormat string
+
 	if initializationConfig != nil && initializationAttr != nil {
 		initialization := initializationAttr.([]interface{})
 
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
+		cdromCloudInitFileFormat = initializationBlock[mkInitializationFileFormat].(string)
 
 		cdromCloudInitFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
 
@@ -2751,6 +2765,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 		diskDeviceObjects[cdromCloudInitInterface] = &vms.CustomStorageDevice{
 			FileVolume: cdromCloudInitFileID,
 			Media:      &ideDevice2Media,
+			Format:     &cdromCloudInitFileFormat,
 		}
 	}
 
@@ -4303,6 +4318,12 @@ func vmReadCustom(
 
 		initialization[mkInitializationInterface] = initializationInterface
 		initialization[mkInitializationDatastoreID] = fileVolumeParts[0]
+
+		if initializationDevice.Format != nil {
+			initialization[mkInitializationFileFormat] = *initializationDevice.Format
+		} else {
+			initialization[mkInitializationFileFormat] = dvInitializationFileFormat
+		}
 	}
 
 	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
