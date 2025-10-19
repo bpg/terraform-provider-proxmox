@@ -218,6 +218,7 @@ const (
 	mkHostPCIDeviceXVGA                 = "xvga"
 	mkInitialization                    = "initialization"
 	mkInitializationDatastoreID         = "datastore_id"
+	mkInitializationFileFormat          = "file_format"
 	mkInitializationInterface           = "interface"
 	mkInitializationDNS                 = "dns"
 	mkInitializationDNSDomain           = "domain"
@@ -799,6 +800,13 @@ func VM() *schema.Resource {
 						Description: "The datastore id",
 						Optional:    true,
 						Default:     dvInitializationDatastoreID,
+					},
+					mkInitializationFileFormat: {
+						Type:             schema.TypeString,
+						Description:      "The file format",
+						Optional:         true,
+						Computed:         true,
+						ValidateDiagFunc: validators.FileFormat(),
 					},
 					mkInitializationInterface: {
 						Type:             schema.TypeString,
@@ -2159,6 +2167,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
 		initializationInterface := initializationBlock[mkInitializationInterface].(string)
+		initializationFileFormat, _ := initializationBlock[mkInitializationFileFormat].(string)
 
 		existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "ide2")
 		if initializationInterface == "" {
@@ -2168,10 +2177,15 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		tflog.Trace(ctx, fmt.Sprintf("CloudInit IDE interface is '%s'", initializationInterface))
 
 		cdromCloudInitFileID := fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
-		cdromCloudInitMedia := "cdrom"
+		var cdromCloudInitFileFormat *string
+		if initializationFileFormat != "" {
+			cdromCloudInitFileFormat = &initializationFileFormat
+		}
+		cdromMedia := "cdrom"
 		ideDevices[initializationInterface] = &vms.CustomStorageDevice{
 			FileVolume: cdromCloudInitFileID,
-			Media:      &cdromCloudInitMedia,
+			Format:     cdromCloudInitFileFormat,
+			Media:      &cdromMedia,
 		}
 
 		if err := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); err != nil {
@@ -2547,6 +2561,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	cdromCloudInitFileID := ""
 	cdromCloudInitInterface := ""
+	var cdromCloudInitFileFormat *string
 
 	cpuBlock, err := structure.GetSchemaBlock(
 		resource,
@@ -2610,8 +2625,12 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
+		initializationFileFormat, _ := initializationBlock[mkInitializationFileFormat].(string)
 
 		cdromCloudInitFileID = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+		if initializationFileFormat != "" {
+			cdromCloudInitFileFormat = &initializationFileFormat
+		}
 
 		cdromCloudInitInterface = initializationBlock[mkInitializationInterface].(string)
 		if cdromCloudInitInterface == "" {
@@ -2750,7 +2769,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	if cdromCloudInitInterface != "" {
 		diskDeviceObjects[cdromCloudInitInterface] = &vms.CustomStorageDevice{
 			FileVolume: cdromCloudInitFileID,
-			Media:      &ideDevice2Media,
+			Format:     cdromCloudInitFileFormat,
 		}
 	}
 
@@ -4303,6 +4322,7 @@ func vmReadCustom(
 
 		initialization[mkInitializationInterface] = initializationInterface
 		initialization[mkInitializationDatastoreID] = fileVolumeParts[0]
+		initialization[mkInitializationFileFormat] = initializationDevice.Format
 	}
 
 	if vmConfig.CloudInitDNSDomain != nil || vmConfig.CloudInitDNSServer != nil {
@@ -5497,10 +5517,13 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		if updateBody.CloudInitConfig != nil && len(initialization) > 0 && initialization[0] != nil {
 			var fileVolume string
+			var fileFormat *string
 
 			initializationBlock := initialization[0].(map[string]interface{})
 			initializationDatastoreID := initializationBlock[mkInitializationDatastoreID].(string)
+			initializationFileFormat, _ := initializationBlock[mkInitializationFileFormat].(string)
 			initializationInterface := initializationBlock[mkInitializationInterface].(string)
+
 			cdromMedia := "cdrom"
 
 			existingInterface := findExistingCloudInitDrive(vmConfig, vmID, "")
@@ -5516,6 +5539,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 			}
 
 			mustChangeDatastore := false
+			mustChangeFileFormat := false
 
 			oldInit, _ := d.GetChange(mkInitialization)
 			if len(oldInit.([]interface{})) > 0 {
@@ -5527,9 +5551,16 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 					tflog.Debug(ctx, fmt.Sprintf("CloudInit must be moved from datastore %s to datastore %s",
 						prevDatastoreID, initializationDatastoreID))
 				}
+
+				prevFileFormat := oldInitBlock[mkInitializationFileFormat].(string)
+				mustChangeFileFormat = prevFileFormat != initializationFileFormat
+				if mustChangeFileFormat {
+					tflog.Debug(ctx, fmt.Sprintf("CloudInit file format must be changed from %s to %s",
+						prevFileFormat, initializationFileFormat))
+				}
 			}
 
-			if mustMove || mustChangeDatastore || existingInterface == "" {
+			if mustMove || mustChangeDatastore || mustChangeFileFormat || existingInterface == "" {
 				// CloudInit must be moved, either from a device to another or from a datastore
 				// to another (or both). This requires the VM to be stopped.
 				if er := vmShutdown(ctx, vmAPI, d); er != nil {
@@ -5542,13 +5573,16 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 				stoppedBeforeUpdate = true
 				fileVolume = fmt.Sprintf("%s:cloudinit", initializationDatastoreID)
+				fileFormat = &initializationFileFormat
 			} else {
 				ideDevice := getStorageDevice(vmConfig, existingInterface)
 				fileVolume = ideDevice.FileVolume
+				fileFormat = ideDevice.Format
 			}
 
 			updateBody.AddCustomStorageDevice(initializationInterface, vms.CustomStorageDevice{
 				FileVolume: fileVolume,
+				Format:     fileFormat,
 				Media:      &cdromMedia,
 			})
 		}

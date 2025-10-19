@@ -202,6 +202,7 @@ func TestVMSchema(t *testing.T) {
 	test.AssertOptionalArguments(t, initializationSchema, []string{
 		mkInitializationDatastoreID,
 		mkInitializationInterface,
+		mkInitializationFileFormat,
 		mkInitializationDNS,
 		mkInitializationIPConfig,
 		mkInitializationUserAccount,
@@ -210,6 +211,7 @@ func TestVMSchema(t *testing.T) {
 	test.AssertValueTypes(t, initializationSchema, map[string]schema.ValueType{
 		mkInitializationDatastoreID: schema.TypeString,
 		mkInitializationInterface:   schema.TypeString,
+		mkInitializationFileFormat:  schema.TypeString,
 		mkInitializationDNS:         schema.TypeList,
 		mkInitializationIPConfig:    schema.TypeList,
 		mkInitializationUserAccount: schema.TypeList,

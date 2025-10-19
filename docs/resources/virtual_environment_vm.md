@@ -369,6 +369,7 @@ output "ubuntu_vm_public_key" {
 - `initialization` - (Optional) The cloud-init configuration.
     - `datastore_id` - (Optional) The identifier for the datastore to create the
         cloud-init disk in (defaults to `local-lvm`).
+    - `file_format` - (Optional) The file format of the cloud-init disk (defaults to `raw`).
     - `interface` - (Optional) The hardware interface to connect the cloud-init
         image to. Must be one of `ide0..3`, `sata0..5`, `scsi0..30`. Will be
         detected if the setting is missing but a cloud-init image is present,

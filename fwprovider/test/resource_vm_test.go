@@ -615,6 +615,25 @@ func TestAccResourceVMInitialization(t *testing.T) {
 				},
 			},
 		}}},
+		{"native cloud-init: custom file format", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					initialization {
+						datastore_id = "local"
+						file_format  = "raw"
+
+						user_account {
+							username = "ubuntu"
+							password = "password"
+						}
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+				"initialization.0.file_format": "raw",
+			}),
+		}}},
 	}
 
 	for _, tt := range tests {
