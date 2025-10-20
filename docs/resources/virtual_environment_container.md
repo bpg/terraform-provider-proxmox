@@ -143,11 +143,11 @@ output "ubuntu_container_public_key" {
     - `mount_options` (Optional) List of extra mount options.
 - `initialization` - (Optional) The initialization configuration.
     - `dns` - (Optional) The DNS configuration.
-        - `domain` - (Optional) The DNS search domain.
-        - `server` - (Optional) The DNS server. The `server` attribute is
-            deprecated and will be removed in a future release. Please use
+        - `domain` - (Optional) The DNS search domain. Set this to `null` to use host settings.
+        - `server` - (Optional) The DNS server. Set this to `null` to use host settings. 
+            The `server` attribute is deprecated and will be removed in a future release. Please use
             the `servers` attribute instead.
-        - `servers` - (Optional) The list of DNS servers.
+        - `servers` - (Optional) The list of DNS servers. Set this to `null` to use host settings.
     - `hostname` - (Optional) The hostname.
     - `ip_config` - (Optional) The IP configuration (one block per network
         device).
