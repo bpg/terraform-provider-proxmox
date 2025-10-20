@@ -7,9 +7,10 @@
 package resource
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -344,6 +345,8 @@ func TestContainerSchema(t *testing.T) {
 }
 
 func TestInitializationDnsBlockDiffIgnore(t *testing.T) {
+	t.Parallel()
+
 	container := Container()
 
 	tests := []struct {
@@ -373,6 +376,7 @@ func TestInitializationDnsBlockDiffIgnore(t *testing.T) {
 		}
 		err := d.Set(mkInitialization, []any{m})
 		require.NoError(t, err)
+
 		actual := skipDnsDiffIfEmpty(dnsBlockKey+".#", "0", "1", d)
 		assert.Equal(t, tt.expected, actual)
 	}

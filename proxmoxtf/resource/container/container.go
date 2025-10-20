@@ -3127,6 +3127,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		} else {
 			updateBody.DNSServer = &initializationDNSServer
 		}
+
 		rebootRequired = true
 	}
 
@@ -3545,8 +3546,10 @@ func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bo
 			domain := d.Get(dnsDataKey + ".0." + mkInitializationDNSDomain).(string)
 			server := d.Get(dnsDataKey + ".0." + mkInitializationDNSServer).(string)
 			servers := d.Get(dnsDataKey + ".0." + mkInitializationDNSServers).([]interface{})
+
 			return domain == "" && server == "" && len(servers) == 0
 		}
 	}
+
 	return false
 }
