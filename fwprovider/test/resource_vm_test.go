@@ -739,31 +739,6 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 		}},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			resource.Test(t, resource.TestCase{
-				ProtoV6ProviderFactories: te.AccProviders,
-				Steps:                    tt.step,
-			})
-		})
-	}
-}
-
-func TestAccResourceVMRemoveNetworkDevice(t *testing.T) {
-	if utils.GetAnyStringEnv("TF_ACC") == "" {
-		t.Skip("Acceptance tests are disabled")
-	}
-
-	te := InitEnvironment(t)
-
-	tests := []struct {
-		name string
-		step []resource.TestStep
-	}{
 		{"remove network device", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
