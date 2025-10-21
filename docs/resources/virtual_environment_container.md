@@ -144,7 +144,7 @@ output "ubuntu_container_public_key" {
 - `initialization` - (Optional) The initialization configuration.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain. Set this to `null` to use host settings.
-        - `server` - (Optional) The DNS server. Set this to `null` to use host settings. 
+        - `server` - (Optional) The DNS server. Set this to `null` to use host settings.
             The `server` attribute is deprecated and will be removed in a future release. Please use
             the `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers. Set this to `null` to use host settings.
