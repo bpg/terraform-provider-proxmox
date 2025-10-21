@@ -97,16 +97,20 @@ func GetNetworkDeviceObjects(d *schema.ResourceData) (vms.CustomNetworkDevices, 
 	return networkDeviceObjects, nil
 }
 
-// ReadNetworkDeviceObjects reads the network device objects from the resource data.
+func valueOrDefault[T any](v *T, def T) T {
+	if v == nil {
+		return def
+	}
+	return *v
+}
+
+// ReadNetworkDeviceObjects reads the network device objects from the response data.
 func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	// Compare the network devices to those stored in the state.
-	currentNetworkDeviceList := d.Get(MkNetworkDevice).([]interface{})
+	macAddresses := make([]interface{}, 0)
+	networkDevices := make([]interface{}, 0)
 
-	macAddresses := make([]interface{}, MaxNetworkDevices)
-	networkDeviceLast := -1
-	networkDeviceList := make([]interface{}, MaxNetworkDevices)
 	networkDeviceObjects := []*vms.CustomNetworkDevice{
 		vmConfig.NetworkDevice0,
 		vmConfig.NetworkDevice1,
@@ -142,85 +146,41 @@ func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseD
 		vmConfig.NetworkDevice31,
 	}
 
-	for ni, nd := range networkDeviceObjects {
-		networkDevice := map[string]interface{}{}
+	for len(networkDeviceObjects) > 0 && networkDeviceObjects[len(networkDeviceObjects)-1] == nil {
+		// drop
+		networkDeviceObjects = networkDeviceObjects[:len(networkDeviceObjects)-1]
+	}
 
-		if nd != nil {
-			networkDeviceLast = ni
-
-			if nd.Bridge != nil {
-				networkDevice[mkNetworkDeviceBridge] = *nd.Bridge
-			} else {
-				networkDevice[mkNetworkDeviceBridge] = ""
-			}
-
-			networkDevice[mkNetworkDeviceEnabled] = nd.Enabled
-
-			if nd.LinkDown != nil {
-				networkDevice[mkNetworkDeviceDisconnected] = *nd.LinkDown
-			} else {
-				networkDevice[mkNetworkDeviceDisconnected] = false
-			}
-
-			if nd.Firewall != nil {
-				networkDevice[mkNetworkDeviceFirewall] = *nd.Firewall
-			} else {
-				networkDevice[mkNetworkDeviceFirewall] = false
-			}
-
-			if nd.MACAddress != nil {
-				macAddresses[ni] = *nd.MACAddress
-			} else {
-				macAddresses[ni] = ""
-			}
-
-			networkDevice[mkNetworkDeviceMACAddress] = macAddresses[ni]
-			networkDevice[mkNetworkDeviceModel] = nd.Model
-
-			if nd.Queues != nil {
-				networkDevice[mkNetworkDeviceQueues] = *nd.Queues
-			} else {
-				networkDevice[mkNetworkDeviceQueues] = 0
-			}
-
-			if nd.RateLimit != nil {
-				networkDevice[mkNetworkDeviceRateLimit] = *nd.RateLimit
-			} else {
-				networkDevice[mkNetworkDeviceRateLimit] = 0
-			}
-
-			if nd.Tag != nil {
-				networkDevice[mkNetworkDeviceVLANID] = nd.Tag
-			} else {
-				networkDevice[mkNetworkDeviceVLANID] = 0
-			}
-
-			if nd.Trunks != nil {
-				networkDevice[mkNetworkDeviceTrunks] = strings.Trim(
-					strings.Join(strings.Fields(fmt.Sprint(nd.Trunks)), ";"), "[]")
-			} else {
-				networkDevice[mkNetworkDeviceTrunks] = ""
-			}
-
-			if nd.MTU != nil {
-				networkDevice[mkNetworkDeviceMTU] = nd.MTU
-			} else {
-				networkDevice[mkNetworkDeviceMTU] = 0
-			}
+	for _, netDevice := range networkDeviceObjects {
+		if netDevice == nil {
+			networkDevices = append(networkDevices, nil)
+			macAddresses = append(macAddresses, "")
 		} else {
-			macAddresses[ni] = ""
-			networkDevice[mkNetworkDeviceEnabled] = false
+			networkDevices = append(networkDevices, map[string]interface{}{
+				mkNetworkDeviceBridge:       valueOrDefault(netDevice.Bridge, ""),
+				mkNetworkDeviceEnabled:      netDevice.Enabled,
+				mkNetworkDeviceDisconnected: valueOrDefault(netDevice.LinkDown, false),
+				mkNetworkDeviceFirewall:     valueOrDefault(netDevice.Firewall, false),
+				mkNetworkDeviceMACAddress:   valueOrDefault(netDevice.MACAddress, ""),
+				mkNetworkDeviceModel:        netDevice.Model,
+				mkNetworkDeviceQueues:       valueOrDefault(netDevice.Queues, 0),
+				mkNetworkDeviceRateLimit:    valueOrDefault(netDevice.RateLimit, 0),
+				mkNetworkDeviceVLANID:       valueOrDefault(netDevice.Tag, 0),
+				mkNetworkDeviceMTU:          valueOrDefault(netDevice.MTU, 0),
+				mkNetworkDeviceTrunks: func(trunks []int) string {
+					if trunks == nil {
+						return ""
+					}
+					return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(trunks)), ";"), "[]")
+				}(netDevice.Trunks),
+			})
+			macAddresses = append(macAddresses, valueOrDefault(netDevice.MACAddress, ""))
 		}
-
-		networkDeviceList[ni] = networkDevice
 	}
 
-	if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-		err := d.Set(MkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
-		diags = append(diags, diag.FromErr(err)...)
-	}
-
-	err := d.Set(mkMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
+	err := d.Set(MkNetworkDevice, networkDevices)
+	diags = append(diags, diag.FromErr(err)...)
+	err = d.Set(mkMACAddresses, macAddresses)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
