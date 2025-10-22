@@ -485,12 +485,12 @@ func Container() *schema.Resource {
 										Description: "The list of DNS servers",
 										Optional:    true,
 										Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPAddress},
-										MinItems:    0,
+										MinItems:    1,
 									},
 								},
 							},
-							MaxItems: 1,
-							MinItems: 0,
+							MaxItems:         1,
+							DiffSuppressFunc: skipDnsDiffIfEmpty,
 						},
 						mkInitializationHostname: {
 							Type:        schema.TypeString,
@@ -3052,7 +3052,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
 
-		if len(initializationDNS) > 0 {
+		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
 			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
 			initializationDNSDomain = initializationDNSBlock[mkInitializationDNSDomain].(string)
 
@@ -3116,8 +3116,18 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	if d.HasChange(mkInitialization + ".0." + mkInitializationDNS) {
-		updateBody.DNSDomain = &initializationDNSDomain
-		updateBody.DNSServer = &initializationDNSServer
+		if initializationDNSDomain != "" {
+			updateBody.DNSDomain = &initializationDNSDomain
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "searchdomain")
+		}
+
+		if initializationDNSServer != "" {
+			updateBody.DNSServer = &initializationDNSServer
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "nameserver")
+		}
+
 		rebootRequired = true
 	}
 
@@ -3526,4 +3536,20 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 
 func getContainerDiskVolume(rawVolume string, vmID int, diskID int) string {
 	return fmt.Sprintf("%s:vm-%d-disk-%d", rawVolume, vmID, diskID)
+}
+
+func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	dnsDataKey := mkInitialization + ".0." + mkInitializationDNS
+	if k == dnsDataKey+".#" {
+		if oldValue == "0" && newValue == "1" {
+			// if dns block's attributes are empty, do not report change
+			domain := d.Get(dnsDataKey + ".0." + mkInitializationDNSDomain).(string)
+			server := d.Get(dnsDataKey + ".0." + mkInitializationDNSServer).(string)
+			servers := d.Get(dnsDataKey + ".0." + mkInitializationDNSServers).([]interface{})
+
+			return domain == "" && server == "" && len(servers) == 0
+		}
+	}
+
+	return false
 }
