@@ -3052,7 +3052,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
 
-		if len(initializationDNS) > 0 {
+		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
 			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
 			initializationDNSDomain = initializationDNSBlock[mkInitializationDNSDomain].(string)
 
