@@ -614,7 +614,7 @@ func TestAccResourceContainer(t *testing.T) {
 				),
 			},
 		}},
-		{"dns block with null values", []resource.TestStep{
+		{"dns block with null values on create", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
@@ -648,6 +648,84 @@ func TestAccResourceContainer(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
 						"initialization.0.hostname": "test-dns-create",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+		}},
+		{"dns block with null values on update", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					unprivileged = true
+					disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test-dns-update"
+					dns {
+						domain = "example.com"
+						servers = ["8.8.8.8", "8.8.4.4"]
+					}
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "ubuntu"
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-update",
+						"initialization.0.dns.#":    "1",
+						"initialization.0.dns.0.domain": "example.com",
+						"initialization.0.dns.0.servers.#": "2",
+						"initialization.0.dns.0.servers.0": "8.8.8.8",
+						"initialization.0.dns.0.servers.1": "8.8.4.4",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-update"
+						dns {
+							domain = ""
+							servers = null
+						}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-update",
 						"initialization.0.dns.#":    "0",
 					}),
 				),

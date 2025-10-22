@@ -3116,16 +3116,16 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	if d.HasChange(mkInitialization + ".0." + mkInitializationDNS) {
-		if initializationDNSDomain == "" {
-			updateBody.Delete = append(updateBody.Delete, "searchdomain")
-		} else {
+		if initializationDNSDomain != "" {
 			updateBody.DNSDomain = &initializationDNSDomain
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "searchdomain")
 		}
 
-		if initializationDNSServer == "" {
-			updateBody.Delete = append(updateBody.Delete, "nameserver")
-		} else {
+		if initializationDNSServer != "" {
 			updateBody.DNSServer = &initializationDNSServer
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "nameserver")
 		}
 
 		rebootRequired = true
