@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -179,7 +180,75 @@ func Rules() *schema.Resource {
 		ReadContext:   invokeRuleAPI(RulesRead),
 		UpdateContext: invokeRuleAPI(RulesUpdate),
 		DeleteContext: invokeRuleAPI(RulesDelete),
+		Importer: &schema.ResourceImporter{
+			StateContext: RulesImport,
+		},
 	}
+}
+
+// RulesImport imports firewall rules.
+func RulesImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	id := d.Id()
+
+	switch {
+	case id == "cluster":
+	case strings.HasPrefix(id, "vm/"):
+		parts := strings.SplitN(id, "/", 3)
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid import ID: %s", id)
+		}
+
+		nodeName := parts[1]
+
+		vmID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid import ID: %s", id)
+		}
+
+		err = d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting state during import: %w", err)
+		}
+
+		err = d.Set(mkSelectorVMID, vmID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting state during import: %w", err)
+		}
+	case strings.HasPrefix(id, "container/"):
+		parts := strings.SplitN(id, "/", 3)
+
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid import ID: %s", id)
+		}
+
+		nodeName := parts[1]
+
+		containerID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid import ID: %s", id)
+		}
+
+		err = d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting state during import: %w", err)
+		}
+
+		err = d.Set(mkSelectorContainerID, containerID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting state during import: %w", err)
+		}
+	default:
+		return nil, fmt.Errorf("invalid import ID: %s", id)
+	}
+
+	api, err := firewallApiFor(d, m)
+	if err != nil {
+		return nil, err
+	}
+
+	d.SetId(api.GetRulesID())
+
+	return []*schema.ResourceData{d}, nil
 }
 
 // RulesCreate creates new firewall rules.

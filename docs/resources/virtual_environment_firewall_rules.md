@@ -7,10 +7,7 @@ subcategory: Virtual Environment
 
 # Resource: proxmox_virtual_environment_firewall_rules
 
-A security group is a collection of rules, defined at cluster level, which can
-be used in all VMs' rules. For example, you can define a group named “webserver”
-with rules to open the http and https ports. Rules can be created on the cluster
-level, on VM / Container level.
+Manages cluster-level and VM/container-level firewall rules.
 
 ## Example Usage
 
@@ -108,3 +105,31 @@ resource "proxmox_virtual_environment_firewall_rules" "inbound" {
 
 - `rule`
     - `pos` - Position of the rule in the list.
+
+## Import
+
+### Cluster Rules
+Use the import ID: `cluster`
+
+**Example:**
+```bash
+terraform import proxmox_virtual_environment_firewall_rules.cluster_rules cluster
+```
+
+### VM Rules
+Use the import ID format: `vm/<node_name>/<vm_id>`
+Example uses node name `pve` and VM ID `100`.
+
+**Example:**
+```bash
+terraform import proxmox_virtual_environment_firewall_rules.vm_rules vm/pve/100
+```
+
+### Container Rules
+Use the import ID format: `container/<node_name>/<container_id>`
+Example uses node name `pve` and container ID `100`.
+
+**Example:**
+```bash
+terraform import proxmox_virtual_environment_firewall_rules.container_rules container/pve/100
+```
