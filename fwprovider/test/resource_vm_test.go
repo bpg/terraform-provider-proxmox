@@ -770,6 +770,117 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 		}},
+		{"multiple network devices removal", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+
+					network_device {
+						bridge = "vmbr1"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "2",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.1.bridge": "vmbr1",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					# Only keep the first network device
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#": "0",
+					}),
+				),
+			},
+		}},
+		{"network device state consistency", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.0.model":  "virtio",
+					}),
+				),
+			},
+			{
+				// This step tests that the state is read correctly after network device removal
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#": "0",
+					}),
+				),
+			},
+			{
+				// This step tests that we can add network devices back after removal
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.0.model":  "virtio",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
