@@ -7,6 +7,7 @@
 package provider
 
 import (
+	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/pool"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource"
@@ -30,7 +31,7 @@ func createResourceMap() map[string]*schema.Resource {
 		"proxmox_virtual_environment_firewall_rules":                  firewall.Rules(),
 		"proxmox_virtual_environment_group":                           resource.Group(),
 		"proxmox_virtual_environment_hosts":                           resource.Hosts(),
-		"proxmox_virtual_environment_pool":                            resource.Pool(),
+		"proxmox_virtual_environment_pool":                            pool.Pool(),
 		"proxmox_virtual_environment_role":                            resource.Role(),
 		"proxmox_virtual_environment_time":                            resource.Time(),
 		"proxmox_virtual_environment_user":                            resource.User(),
