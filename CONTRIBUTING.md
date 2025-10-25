@@ -231,7 +231,7 @@ Signed-off-by: Random Developer <random@developer.example.org>
 > [!NOTE]
 >
 > - **Name**: Use your real name (preferred) or GitHub username if you prefer privacy
-> - **Email**: Use a valid email address (GitHub's `noreply` email is acceptable for privacy)
+> - **Email**: Use a valid email address (GitHub's 'noreply' email is acceptable for privacy, see [GitHub docs](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address#setting-your-commit-email-address-on-github))
 > - **Auto-sign**: If your Git config has `user.name` and `user.email` set, use `git commit -s` to automatically add the sign-off
 
 For more details about the DCO checker, see the [DCO app repo](https://github.com/dcoapp/app).
