@@ -11,6 +11,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -469,4 +470,235 @@ func deleteFirewallRuleManually(te *Environment, nodeName string, vmID int, rule
 	}
 
 	return nil
+}
+
+func TestAccResourceFirewallRulesImport(t *testing.T) {
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"cluster rules import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "cluster_rules" {
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.cluster_rules", map[string]string{
+						"rule.0.type":    "in",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "Allow SSH",
+						"rule.0.dport":   "22",
+						"rule.0.proto":   "tcp",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_rules.cluster_rules",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     "cluster",
+			},
+		}},
+		{"vm rules import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "vm_rules" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9997
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "VM SSH Access"
+						dport   = "22"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.vm_rules", map[string]string{
+						"node_name":      te.NodeName,
+						"vm_id":          "9997",
+						"rule.#":         "1",
+						"rule.0.type":    "in",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "VM SSH Access",
+						"rule.0.dport":   "22",
+						"rule.0.proto":   "tcp",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_rules.vm_rules",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("vm/%s/9997", te.NodeName),
+			},
+		}},
+		{"container rules import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "container_rules" {
+					node_name     = "{{.NodeName}}"
+					container_id  = 9998
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Container HTTP Access"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.container_rules", map[string]string{
+						"node_name":     te.NodeName,
+						"container_id":  "9998",
+						"rule.#":        "1",
+						"rule.0.type":   "in",
+						"rule.0.action": "ACCEPT",
+						"rule.0.comment": "Container HTTP Access",
+						"rule.0.dport":  "80",
+						"rule.0.proto":  "tcp",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_rules.container_rules",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("container/%s/9998", te.NodeName),
+			},
+		}},
+		{"invalid import ID", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "test" {
+					rule {
+						type   = "in"
+						action = "ACCEPT"
+					}
+				}`),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_rules.test",
+				ImportState:       true,
+				ImportStateVerify: false,
+				ImportStateId:     "invalid-import-id",
+				ExpectError:       regexp.MustCompile("expected: 'cluster', 'vm/<node_name>/<vm_id>', or 'container/<node_name>/<container_id>'"),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+func TestAccResourceFirewallOptionsImport(t *testing.T) {
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"vm options import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_options" "vm_options" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 9999
+					enabled   = true
+					input_policy = "DROP"
+					output_policy = "ACCEPT"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_options.vm_options", map[string]string{
+						"node_name":     te.NodeName,
+						"vm_id":         "9999",
+						"enabled":       "true",
+						"input_policy":  "DROP",
+						"output_policy": "ACCEPT",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_options.vm_options",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("vm/%s/9999", te.NodeName),
+			},
+		}},
+		{"container options import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_options" "container_options" {
+					node_name     = "{{.NodeName}}"
+					container_id  = 10000
+					enabled      = false
+					input_policy = "ACCEPT"
+					output_policy = "ACCEPT"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_options.container_options", map[string]string{
+						"node_name":     te.NodeName,
+						"container_id":  "10000",
+						"enabled":       "false",
+						"input_policy":  "ACCEPT",
+						"output_policy": "ACCEPT",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_options.container_options",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("container/%s/10000", te.NodeName),
+			},
+		}},
+		{"invalid options import ID", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_options" "test" {
+					node_name = "{{.NodeName}}"
+					vm_id     = 10001
+					enabled   = true
+				}`),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_options.test",
+				ImportState:       true,
+				ImportStateVerify: false,
+				ImportStateId:     "invalid-options-import-id",
+				ExpectError:       regexp.MustCompile("expected: 'vm/<node_name>/<vm_id>' or 'container/<node_name>/<container_id>'"),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
 }

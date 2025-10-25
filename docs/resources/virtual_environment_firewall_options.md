@@ -60,3 +60,23 @@ resource "proxmox_virtual_environment_firewall_options" "example" {
 ## Attribute Reference
 
 There are no additional attributes available for this resource.
+
+## Import
+
+### VM Firewall Options
+Use the import ID format: `vm/<node_name>/<vm_id>`
+Example uses node name `pve` and VM ID `100`.
+
+**Example:**
+```bash
+terraform import proxmox_virtual_environment_firewall_options.vm_firewall_options vm/pve/100
+```
+
+### Container Firewall Options
+Use the import ID format: `container/<node_name>/<container_id>`
+Example uses node name `pve` and container ID `100`.
+
+**Example:**
+```bash
+terraform import proxmox_virtual_environment_firewall_options.container_firewall_options container/pve/100
+```

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -179,7 +180,81 @@ func Rules() *schema.Resource {
 		ReadContext:   invokeRuleAPI(RulesRead),
 		UpdateContext: invokeRuleAPI(RulesUpdate),
 		DeleteContext: invokeRuleAPI(RulesDelete),
+		Importer: &schema.ResourceImporter{
+			StateContext: RulesImport,
+		},
 	}
+}
+
+// RulesImport imports firewall rules.
+func RulesImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+	id := d.Id()
+
+	switch {
+	case id == "cluster":
+	case strings.HasPrefix(id, "vm/"):
+		parts := strings.SplitN(id, "/", 3)
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid VM import ID format: %s (expected: vm/<node_name>/<vm_id>)", id)
+		}
+
+		nodeName := parts[1]
+		if nodeName == "" {
+			return nil, fmt.Errorf("invalid VM import ID: node name cannot be empty in %s", id)
+		}
+
+		vmID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid VM import ID: VM ID must be a number in %s: %w", id, err)
+		}
+
+		err = d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
+
+		err = d.Set(mkSelectorVMID, vmID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting VM ID during import: %w", err)
+		}
+	case strings.HasPrefix(id, "container/"):
+		parts := strings.SplitN(id, "/", 3)
+
+		if len(parts) != 3 {
+			return nil, fmt.Errorf("invalid container import ID format: %s (expected: container/<node_name>/<container_id>)", id)
+		}
+
+		nodeName := parts[1]
+		if nodeName == "" {
+			return nil, fmt.Errorf("invalid container import ID: node name cannot be empty in %s", id)
+		}
+
+		containerID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid container import ID: container ID must be a number in %s: %w", id, err)
+		}
+
+		err = d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
+
+		err = d.Set(mkSelectorContainerID, containerID)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting container ID during import: %w", err)
+		}
+	default:
+		return nil, fmt.Errorf("invalid import ID: %s (expected: 'cluster', 'vm/<node_name>/<vm_id>', or 'container/<node_name>/<container_id>')", id)
+	}
+
+	api, err := firewallApiFor(d, m)
+	if err != nil {
+		return nil, err
+	}
+
+	d.SetId(api.GetRulesID())
+
+	return []*schema.ResourceData{d}, nil
 }
 
 // RulesCreate creates new firewall rules.
