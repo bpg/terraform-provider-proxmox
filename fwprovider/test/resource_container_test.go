@@ -38,9 +38,9 @@ func TestAccResourceContainer(t *testing.T) {
 	accTestContainerIDClone := 100000 + rand.Intn(99999)
 
 	te.AddTemplateVars(map[string]interface{}{
-		"ImageFileName":            imageFileName,
-		"TestContainerID":          accTestContainerID,
-		"TestContainerIDClone":     accTestContainerIDClone,
+		"ImageFileName":        imageFileName,
+		"TestContainerID":      accTestContainerID,
+		"TestContainerIDClone": accTestContainerIDClone,
 	})
 
 	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
@@ -685,9 +685,9 @@ func TestAccResourceContainer(t *testing.T) {
 			}`, WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname": "test-dns-update",
-						"initialization.0.dns.#":    "1",
-						"initialization.0.dns.0.domain": "example.com",
+						"initialization.0.hostname":        "test-dns-update",
+						"initialization.0.dns.#":           "1",
+						"initialization.0.dns.0.domain":    "example.com",
 						"initialization.0.dns.0.servers.#": "2",
 						"initialization.0.dns.0.servers.0": "8.8.8.8",
 						"initialization.0.dns.0.servers.1": "8.8.4.4",

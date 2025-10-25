@@ -101,6 +101,7 @@ func valueOrDefault[T any](v *T, def T) T {
 	if v == nil {
 		return def
 	}
+
 	return *v
 }
 
@@ -171,6 +172,7 @@ func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseD
 					if trunks == nil {
 						return ""
 					}
+
 					return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(trunks)), ";"), "[]")
 				}(netDevice.Trunks),
 			})
