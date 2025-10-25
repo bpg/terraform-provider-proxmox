@@ -80,6 +80,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		csrfPreventionToken = v.(string)
 	}
 
+	//nolint:staticcheck
 	if v, ok := d.GetOkExists(mkProviderAPIToken); ok {
 		apiToken = v.(string)
 	}
@@ -88,11 +89,12 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		otp = v.(string)
 	}
 
-	///nolint:staticcheck
+	//nolint:staticcheck
 	if v, ok := d.GetOkExists(mkProviderUsername); ok {
 		username = v.(string)
 	}
 
+	//nolint:staticcheck
 	if v, ok := d.GetOkExists(mkProviderPassword); ok {
 		password = v.(string)
 	}
