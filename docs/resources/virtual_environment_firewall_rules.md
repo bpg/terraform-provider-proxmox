@@ -7,7 +7,7 @@ subcategory: Virtual Environment
 
 # Resource: proxmox_virtual_environment_firewall_rules
 
-Manages cluster-level and VM/container-level firewall rules.
+Manages cluster-level, node-level or VM/container-level firewall rules.
 
 ## Example Usage
 
@@ -52,9 +52,8 @@ resource "proxmox_virtual_environment_firewall_rules" "inbound" {
 ## Argument Reference
 
 - `node_name` - (Optional) Node name. Leave empty for cluster level rules.
-- `vm_id` - (Optional) VM ID. Leave empty for cluster level rules.
-- `container_id` - (Optional) Container ID. Leave empty for cluster level
-    rules.
+- `vm_id` - (Optional) VM ID. Leave empty for node/cluster level rules.
+- `container_id` - (Optional) Container ID. Leave empty for node/cluster level rules.
 - `rule` - (Optional) Firewall rule block (multiple blocks supported).
     The provider supports two types of the `rule` blocks:
     - A rule definition block, which includes the following arguments:
@@ -114,6 +113,15 @@ Use the import ID: `cluster`
 **Example:**
 ```bash
 terraform import proxmox_virtual_environment_firewall_rules.cluster_rules cluster
+```
+
+### Node Rules
+Use the import ID format: `node/<node_name>`
+Example uses node name `pve`.
+
+**Example:**
+```bash
+terraform import proxmox_virtual_environment_firewall_rules.node_rules node/pve
 ```
 
 ### VM Rules

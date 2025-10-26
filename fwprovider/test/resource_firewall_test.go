@@ -460,6 +460,152 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 	}
 }
 
+func TestAccResourceNodeFirewallRules(t *testing.T) {
+	te := InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"create rules", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "node_rules" {
+				node_name = "{{.NodeName}}"
+
+				rule {
+					type   = "in"
+					action = "ACCEPT"
+					iface  = "vmbr0"
+					dport = "8006"
+					proto = "tcp"
+					comment = "PVE Admin Interface"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.node_rules", map[string]string{
+					"node_name":      te.NodeName,
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.iface":   "vmbr0",
+					"rule.0.dport":   "8006",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "PVE Admin Interface",
+				}),
+			),
+		}}},
+		{"update rules", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "node_rules" {
+					node_name = "{{.NodeName}}"
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Rule 0"
+						dest    = "192.168.3.5"
+						dport   = "443"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.node_rules", map[string]string{
+						"node_name":      te.NodeName,
+						"rule.#":         "1",
+						"rule.0.type":    "in",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "Rule 0",
+						"rule.0.dest":    "192.168.3.5",
+						"rule.0.dport":   "443",
+						"rule.0.proto":   "tcp",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "node_rules" {
+					node_name = "{{.NodeName}}"
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Rule 0"
+						dest    = "192.168.3.5"
+						dport   = "443"
+						proto   = "tcp"
+					}
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Rule 1"
+						dest    = "192.168.3.6"
+						dport   = "443"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.node_rules", map[string]string{
+						"node_name":      te.NodeName,
+						"rule.#":         "2",
+						"rule.0.type":    "in",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "Rule 0",
+						"rule.0.dest":    "192.168.3.5",
+						"rule.0.dport":   "443",
+						"rule.0.proto":   "tcp",
+						"rule.0.pos":     "0",
+						"rule.1.type":    "in",
+						"rule.1.action":  "ACCEPT",
+						"rule.1.comment": "Rule 1",
+						"rule.1.dest":    "192.168.3.6",
+						"rule.1.dport":   "443",
+						"rule.1.proto":   "tcp",
+						"rule.1.pos":     "1",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "node_rules" {
+					node_name = "{{.NodeName}}"
+
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Rule 1"
+						dest    = "192.168.3.6"
+						dport   = "443"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.node_rules", map[string]string{
+						"node_name":      te.NodeName,
+						"rule.#":         "1",
+						"rule.0.type":    "in",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "Rule 1",
+						"rule.0.dest":    "192.168.3.6",
+						"rule.0.dport":   "443",
+						"rule.0.proto":   "tcp",
+						"rule.0.pos":     "0",
+					}),
+				),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
 func TestAccResourceFirewallIPSetImport(t *testing.T) {
 	te := InitEnvironment(t)
 
@@ -501,6 +647,44 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateId:     "cluster/test",
+			},
+		}},
+		{"node rules import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_rules" "node_rules" {
+					node_name = "{{.NodeName}}"
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow SSH"
+						dport   = "22"
+						proto   = "tcp"
+					}
+					rule {
+						type    = "in"
+						action  = "ACCEPT"
+						comment = "Allow HTTP"
+						dport   = "80"
+						proto   = "tcp"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_rules.node_rules", map[string]string{
+						"node_name":      te.NodeName,
+						"rule.0.type":    "in",
+						"rule.0.action":  "ACCEPT",
+						"rule.0.comment": "Allow SSH",
+						"rule.0.dport":   "22",
+						"rule.0.proto":   "tcp",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_rules.node_rules",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("node/%s", te.NodeName),
 			},
 		}},
 		{"vm ipset import", []resource.TestStep{
