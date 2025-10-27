@@ -57,4 +57,7 @@ type PoolUpdateRequestBody struct {
 	VMs *types.CustomCommaSeparatedList `json:"vms,omitempty" url:"vms,omitempty,comma"`
 	// The list of datastores to add or delete.
 	Storage *types.CustomCommaSeparatedList `json:"storage,omitempty" url:"storage,omitempty,comma"`
+	// If this is set to 1, it allows adding guests to the pool even if they are already in another pool (from which
+	// they will be removed afterward).
+	AllowMove *types.CustomBool `json:"allow-move,omitempty" url:"allow-move,omitempty,int"`
 }
