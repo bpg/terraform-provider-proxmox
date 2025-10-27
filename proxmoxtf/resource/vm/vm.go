@@ -4601,14 +4601,22 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	// Compare the pool ID to the value stored in the state.
-	currentPoolID := d.Get(mkPoolID).(string)
-
-	if len(clone) == 0 || currentPoolID != dvPoolID {
-		if vmConfig.PoolID != nil {
-			err := d.Set(mkPoolID, *vmConfig.PoolID)
-			diags = append(diags, diag.FromErr(err)...)
+	observedPool := ""
+	if vmConfig.PoolID != nil && *vmConfig.PoolID != "" {
+		observedPool = *vmConfig.PoolID
+	} else {
+		// fallback: derive from /pools
+		p, err := findPoolForVM(ctx, client.Pool(), vmID)
+		if err != nil {
+			diags = append(diags, diag.FromErr(fmt.Errorf("failed to determine pool for VM %d: %w", vmID, err))...)
+		} else {
+			observedPool = p
 		}
+	}
+
+	// always write the observed remote value into state
+	if err := d.Set(mkPoolID, observedPool); err != nil {
+		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the serial devices to those stored in the state.
@@ -6204,4 +6212,39 @@ func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) {
 	}
 
 	return agentTimeout, nil
+}
+
+func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (string, error) {
+	poolsList, err := poolsAPI.ListPools(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	needle := fmt.Sprintf("qemu/%d", vmID)
+
+	for _, p := range poolsList {
+		full, err := poolsAPI.GetPool(ctx, p.ID)
+		if err != nil {
+			// If a pool is not found, it might have been deleted between API calls.
+			// It's safe to skip it. For other errors, we should fail.
+			if errors.Is(err, api.ErrResourceDoesNotExist) {
+				tflog.Debug(ctx, fmt.Sprintf("Pool %s not found, skipping.", p.ID))
+				continue
+			}
+
+			return "", fmt.Errorf("failed to get details for pool %q: %w", p.ID, err)
+		}
+
+		if full == nil {
+			continue
+		}
+
+		for _, m := range full.Members {
+			if m.ID == needle {
+				return p.ID, nil
+			}
+		}
+	}
+
+	return "", nil
 }

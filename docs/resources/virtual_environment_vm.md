@@ -820,6 +820,20 @@ resource "proxmox_virtual_environment_vm" "test_vm" {
 }
 ```
 
+## Pool Management
+
+The provider automatically detects VM pool membership using a two-step process:
+
+1. **Primary Detection**: Checks the VM's direct configuration for pool assignment
+2. **Fallback Detection**: If no pool is found, queries all available pools to determine membership
+
+This ensures accurate state management and drift detection when VMs are moved between pools outside of Terraform.
+
+### Best Practices
+
+- Always specify `pool_id` explicitly in your Terraform configuration when managing VM pool membership
+- Use `terraform plan` regularly to detect any manual changes to VM pool assignments
+
 ## Import
 
 Instances can be imported using the `node_name` and the `vm_id`, e.g.,
