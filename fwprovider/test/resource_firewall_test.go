@@ -11,6 +11,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"testing"
 
@@ -462,6 +463,15 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 func TestAccResourceFirewallIPSetImport(t *testing.T) {
 	te := InitEnvironment(t)
 
+	// Generate dynamic VM and container IDs to avoid conflicts
+	testVMID := 100000 + rand.Intn(99999)
+	testContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"TestVMID":        testVMID,
+		"TestContainerID": testContainerID,
+	})
+
 	tests := []struct {
 		name  string
 		steps []resource.TestStep
@@ -500,7 +510,7 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 					name = "test"
 
 					node_name = "{{.NodeName}}"
-					vm_id     = 1000
+					vm_id     = {{.TestVMID}}
 
 					cidr {
 						name    = "192.168.0.0/24"
@@ -510,7 +520,7 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_firewall_ipset.vm_ipset", map[string]string{
 						"node_name":      te.NodeName,
-						"vm_id":          "1000",
+						"vm_id":          fmt.Sprintf("%d", testVMID),
 						"cidr.#":         "1",
 						"cidr.0.name":    "192.168.0.0/24",
 						"cidr.0.comment": "Local IPv4",
@@ -521,7 +531,7 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 				ResourceName:      "proxmox_virtual_environment_firewall_ipset.vm_ipset",
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateId:     fmt.Sprintf("vm/%s/1000/test", te.NodeName),
+				ImportStateId:     fmt.Sprintf("vm/%s/%d/test", te.NodeName, testVMID),
 			},
 		}},
 		{"container ipset import", []resource.TestStep{
@@ -531,7 +541,7 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 					name = "test"
 
 					node_name     = "{{.NodeName}}"
-					container_id  = 1001
+					container_id  = {{.TestContainerID}}
 
 					cidr {
 						name    = "192.168.0.0/24"
@@ -541,7 +551,7 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_firewall_ipset.container_ipset", map[string]string{
 						"node_name":      te.NodeName,
-						"container_id":   "1001",
+						"container_id":   fmt.Sprintf("%d", testContainerID),
 						"cidr.#":         "1",
 						"cidr.0.name":    "192.168.0.0/24",
 						"cidr.0.comment": "Local IPv4",
@@ -552,7 +562,7 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 				ResourceName:      "proxmox_virtual_environment_firewall_ipset.container_ipset",
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateId:     fmt.Sprintf("container/%s/1001/test", te.NodeName),
+				ImportStateId:     fmt.Sprintf("container/%s/%d/test", te.NodeName, testContainerID),
 			},
 		}},
 		{"invalid import ID", []resource.TestStep{
@@ -572,7 +582,7 @@ func TestAccResourceFirewallIPSetImport(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: false,
 				ImportStateId:     "invalid-import-id",
-				ExpectError:       regexp.MustCompile("expected: 'cluster/<ipset_name>', 'vm/<node_name>/<vm_id>/<ipset_name>', or 'container/<node_name>/<container_id>/<ipset_name>'"),
+				ExpectError:       regexp.MustCompile(`invalid import ID: .* \(expected: 'cluster/<ipset_name>', 'vm/<node_name>/<vm_id>/<ipset_name>', or 'container/<node_name>/<container_id>/<ipset_name>'\)`),
 			},
 		}},
 	}

@@ -170,8 +170,8 @@ func ipSetImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]
 			return nil, fmt.Errorf("failed setting IPSet name during import: %w", err)
 		}
 	default:
-		//nolint:lll
-		return nil, fmt.Errorf("invalid import ID: %s (expected: 'cluster/<ipset_name>', 'vm/<node_name>/<vm_id>/<ipset_name>', or 'container/<node_name>/<container_id>/<ipset_name>')", id)
+		return nil, fmt.Errorf("invalid import ID: %s "+
+			"(expected: 'cluster/<ipset_name>', 'vm/<node_name>/<vm_id>/<ipset_name>', or 'container/<node_name>/<container_id>/<ipset_name>')", id)
 	}
 
 	return []*schema.ResourceData{d}, nil
