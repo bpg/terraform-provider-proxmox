@@ -11,6 +11,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"testing"
 
@@ -459,6 +460,143 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 	}
 }
 
+func TestAccResourceFirewallIPSetImport(t *testing.T) {
+	te := InitEnvironment(t)
+
+	// Generate dynamic VM and container IDs to avoid conflicts
+	testVMID := 100000 + rand.Intn(99999)
+	testContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"TestVMID":        testVMID,
+		"TestContainerID": testContainerID,
+	})
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"cluster rules import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_ipset" "cluster_ipset" {
+					name = "test"
+
+					cidr {
+						name    = "192.168.0.0/24"
+						comment = "Local IPv4"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_ipset.cluster_ipset", map[string]string{
+						"name":           "test",
+						"cidr.#":         "1",
+						"cidr.0.name":    "192.168.0.0/24",
+						"cidr.0.comment": "Local IPv4",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_ipset.cluster_ipset",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     "cluster/test",
+			},
+		}},
+		{"vm ipset import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_ipset" "vm_ipset" {
+					name = "test"
+
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestVMID}}
+
+					cidr {
+						name    = "192.168.0.0/24"
+						comment = "Local IPv4"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_ipset.vm_ipset", map[string]string{
+						"node_name":      te.NodeName,
+						"vm_id":          fmt.Sprintf("%d", testVMID),
+						"cidr.#":         "1",
+						"cidr.0.name":    "192.168.0.0/24",
+						"cidr.0.comment": "Local IPv4",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_ipset.vm_ipset",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("vm/%s/%d/test", te.NodeName, testVMID),
+			},
+		}},
+		{"container ipset import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_ipset" "container_ipset" {
+					name = "test"
+
+					node_name     = "{{.NodeName}}"
+					container_id  = {{.TestContainerID}}
+
+					cidr {
+						name    = "192.168.0.0/24"
+						comment = "Local IPv4"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_firewall_ipset.container_ipset", map[string]string{
+						"node_name":      te.NodeName,
+						"container_id":   fmt.Sprintf("%d", testContainerID),
+						"cidr.#":         "1",
+						"cidr.0.name":    "192.168.0.0/24",
+						"cidr.0.comment": "Local IPv4",
+					}),
+				),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_ipset.container_ipset",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("container/%s/%d/test", te.NodeName, testContainerID),
+			},
+		}},
+		{"invalid import ID", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_firewall_ipset" "test" {
+					name = "invalid-import-id-test"
+
+					cidr {
+						name    = "192.168.0.0/24"
+						comment = "Local IPv4"
+					}
+				}`),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_firewall_ipset.test",
+				ImportState:       true,
+				ImportStateVerify: false,
+				ImportStateId:     "invalid-import-id",
+				ExpectError:       regexp.MustCompile(`invalid import ID: .* \(expected: 'cluster/<ipset_name>', 'vm/<node_name>/<vm_id>/<ipset_name>', or 'container/<node_name>/<container_id>/<ipset_name>'\)`),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
 // deleteFirewallRuleManually simulates manual deletion of a firewall rule.
 func deleteFirewallRuleManually(te *Environment, nodeName string, vmID int, rulePosition int) error {
 	ctx := context.Background()
@@ -565,14 +703,14 @@ func TestAccResourceFirewallRulesImport(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					ResourceAttributes("proxmox_virtual_environment_firewall_rules.container_rules", map[string]string{
-						"node_name":     te.NodeName,
-						"container_id":  "9998",
-						"rule.#":        "1",
-						"rule.0.type":   "in",
-						"rule.0.action": "ACCEPT",
+						"node_name":      te.NodeName,
+						"container_id":   "9998",
+						"rule.#":         "1",
+						"rule.0.type":    "in",
+						"rule.0.action":  "ACCEPT",
 						"rule.0.comment": "Container HTTP Access",
-						"rule.0.dport":  "80",
-						"rule.0.proto":  "tcp",
+						"rule.0.dport":   "80",
+						"rule.0.proto":   "tcp",
 					}),
 				),
 			},
