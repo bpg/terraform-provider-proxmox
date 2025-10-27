@@ -9,6 +9,7 @@ package fwprovider
 import (
 	"context"
 	"fmt"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
 	"net"
 	"strings"
 
@@ -539,6 +540,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnvnet.NewResource,
 		sdnsubnet.NewResource,
 		sdnapplier.NewResource,
+		pools.NewPoolMembershipResource,
 	}
 }
 
