@@ -9,9 +9,10 @@ package fwprovider
 import (
 	"context"
 	"fmt"
-	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
 	"net"
 	"strings"
+
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"

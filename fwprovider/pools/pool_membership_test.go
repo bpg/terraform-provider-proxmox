@@ -3,6 +3,11 @@ package pools_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
@@ -12,10 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
-	"math/rand"
-	"strconv"
-	"testing"
-	"time"
 )
 
 func TestAccPoolMembershipContainer(t *testing.T) {
@@ -90,6 +91,7 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 					func(state *terraform.State) error {
 						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 						defer cancel()
+
 						exists, poolCheckErr := testAccCheckPoolContainsMember(
 							ctx,
 							te.PoolsClient(),
@@ -99,6 +101,7 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 						)
 						require.NoError(t, poolCheckErr, "couldn't get the pool")
 						require.True(t, exists)
+
 						return nil
 					},
 				),
@@ -228,6 +231,7 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 					func(state *terraform.State) error {
 						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 						defer cancel()
+
 						exists, poolCheckErr := testAccCheckPoolContainsMember(
 							ctx,
 							te.PoolsClient(),
@@ -237,6 +241,7 @@ func TestAccPoolMembershipContainer(t *testing.T) {
 						)
 						require.NoError(t, poolCheckErr, "couldn't get the pool")
 						require.False(t, exists)
+
 						return nil
 					},
 				),
@@ -250,7 +255,9 @@ func testAccCheckPoolContainsMember(ctx context.Context, client *pools.Client, p
 	if err != nil {
 		return false, err
 	}
+
 	exists := false
+
 	for _, member := range pool.Members {
 		switch memberType {
 		case "lxc", "qemu":
@@ -265,5 +272,6 @@ func testAccCheckPoolContainsMember(ctx context.Context, client *pools.Client, p
 			}
 		}
 	}
+
 	return exists, err
 }

@@ -9,11 +9,12 @@ package test
 import (
 	"bytes"
 	"fmt"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"net/url"
 	"sync"
 	"testing"
 	"text/template"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
