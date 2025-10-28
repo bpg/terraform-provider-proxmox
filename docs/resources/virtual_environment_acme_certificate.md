@@ -68,7 +68,7 @@ resource "proxmox_virtual_environment_acme_certificate" "test" {
   ]
 
   depends_on = [
-    proxmox_virtual_environment_acme_account.test,
+    proxmox_virtual_environment_acme_account.example,
     proxmox_virtual_environment_acme_dns_plugin.desec
   ]
 }
