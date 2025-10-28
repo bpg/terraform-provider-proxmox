@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.86.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.85.1...v0.86.0) (2025-10-28)
+
+
+### Features
+
+* **firewall:** ability to import firewall rules & options ([#2269](https://github.com/bpg/terraform-provider-proxmox/issues/2269)) ([dd1afe6](https://github.com/bpg/terraform-provider-proxmox/commit/dd1afe63446bae0487cab6c9344bce74d00bd4bb))
+* **firewall:** add ability to import ipsets ([#2280](https://github.com/bpg/terraform-provider-proxmox/issues/2280)) ([33c751d](https://github.com/bpg/terraform-provider-proxmox/commit/33c751d58344b29255dde02256baffbdd88f9149))
+* **firewall:** support node-level firewall rules ([#2281](https://github.com/bpg/terraform-provider-proxmox/issues/2281)) ([18c675b](https://github.com/bpg/terraform-provider-proxmox/commit/18c675bf9ada5eae2bf94a00f24800fdb8a5425b))
+
+
+### Bug Fixes
+
+* **lxc:** delete dns attributes when set to null ([#2263](https://github.com/bpg/terraform-provider-proxmox/issues/2263)) ([a32988a](https://github.com/bpg/terraform-provider-proxmox/commit/a32988a12897dbffef8bb2d5e5270baa70eaa64f))
+* **vm:** correctly detect pool membership for VM ([#2264](https://github.com/bpg/terraform-provider-proxmox/issues/2264)) ([5a5c9c6](https://github.com/bpg/terraform-provider-proxmox/commit/5a5c9c6fceaa25ac6296b87e9651996cc1286982))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/upload-artifact action (v4 → v5) ([#2275](https://github.com/bpg/terraform-provider-proxmox/issues/2275)) ([ad4bbd7](https://github.com/bpg/terraform-provider-proxmox/commit/ad4bbd7bb51137c9af6dbaff9fe5d898ffa56c27))
+* **ci:** update googleapis/release-please-action action (v4.3.0 → v4.4.0) ([#2273](https://github.com/bpg/terraform-provider-proxmox/issues/2273)) ([0bcba7b](https://github.com/bpg/terraform-provider-proxmox/commit/0bcba7ba09b30a7fb707ac5a4963d27f3dcde1c8))
+* **deps:** update image golang (7d73c4c → 8c945d3) ([#2253](https://github.com/bpg/terraform-provider-proxmox/issues/2253)) ([a2bb9b6](https://github.com/bpg/terraform-provider-proxmox/commit/a2bb9b6eaca00a38f43dd44f09bf76f3a74f5a24))
+* **deps:** update image golang (8c945d3 → dd08f76) ([#2270](https://github.com/bpg/terraform-provider-proxmox/issues/2270)) ([4c1514f](https://github.com/bpg/terraform-provider-proxmox/commit/4c1514fb9eb5da7e69be5fc62acf96176402ed22))
+* **deps:** update image golang (dd08f76 → 6bac879) ([#2283](https://github.com/bpg/terraform-provider-proxmox/issues/2283)) ([0c9879a](https://github.com/bpg/terraform-provider-proxmox/commit/0c9879ab0267223b30ae52b738edcbf79e949814))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.8.0 → v7.8.1) ([#2271](https://github.com/bpg/terraform-provider-proxmox/issues/2271)) ([11d4c71](https://github.com/bpg/terraform-provider-proxmox/commit/11d4c7122ba12954ee108de81a037bccaf305e76))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework-timeouts (v0.6.0 → v0.7.0) ([#2274](https://github.com/bpg/terraform-provider-proxmox/issues/2274)) ([b9ccb0d](https://github.com/bpg/terraform-provider-proxmox/commit/b9ccb0dd4f1124f3d358644fbe540ac4270e9b97))
+* **deps:** update module github.com/pkg/sftp (v1.13.9 → v1.13.10) ([#2272](https://github.com/bpg/terraform-provider-proxmox/issues/2272)) ([fdbe313](https://github.com/bpg/terraform-provider-proxmox/commit/fdbe313e32896f9bd72df6b9ccf0d1fb811694f6))
+* **docs:** update CONTRIBUTING.md ([#2278](https://github.com/bpg/terraform-provider-proxmox/issues/2278)) ([110093b](https://github.com/bpg/terraform-provider-proxmox/commit/110093b4e4407aaa2cd0729a9846fa2c4a9b6c04))
+
 ## [0.85.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.85.0...v0.85.1) (2025-10-15)
 
 
