@@ -166,7 +166,7 @@ func Rules() *schema.Resource {
 		MkRule: {
 			Type:        schema.TypeList,
 			Description: "List of rules",
-			Required:    true,
+			Optional:    true,
 			ForceNew:    true,
 			Elem:        &schema.Resource{Schema: rule},
 		},

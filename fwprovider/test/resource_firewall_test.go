@@ -26,6 +26,54 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 		name  string
 		steps []resource.TestStep
 	}{
+		{"empty rules", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "empty_rules" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.empty_rules", map[string]string{
+					"rule.#": "0",
+				}),
+			),
+		}}},
+		{"remove all rules", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "remove_all_rules" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					comment = "Allow HTTP"
+					dest    = "192.168.1.5"
+					dport   = "80"
+					proto   = "tcp"
+					log     = "info"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					comment = "Allow HTTPS"
+					dest    = "192.168.1.5"
+					dport   = "443"
+					proto   = "tcp"
+					log     = "info"
+				}
+			}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.remove_all_rules", map[string]string{
+					"rule.#": "2",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "remove_all_rules" {}
+			`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.remove_all_rules", map[string]string{
+					"rule.#": "0",
+				}),
+			),
+		}}},
 		{"rules1", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_firewall_rules" "rules1" {
@@ -452,7 +500,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
