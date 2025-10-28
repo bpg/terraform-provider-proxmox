@@ -47,26 +47,26 @@ type ConfigGetResponseData struct {
 // ConfigUpdateRequestBody contains the body for a config update request.
 type ConfigUpdateRequestBody struct {
 	// Node specific ACME settings.
-	ACME *ACMEConfig `json:"acme,omitempty"`
+	ACME *ACMEConfig `json:"acme,omitempty" url:"acme,omitempty"`
 	// ACME domain and validation plugin
-	ACMEDomain0 *ACMEDomainConfig `json:"acmedomain0,omitempty"`
+	ACMEDomain0 *ACMEDomainConfig `json:"acmedomain0,omitempty" url:"acmedomain0,omitempty"`
 	// ACME domain and validation plugin
-	ACMEDomain1 *ACMEDomainConfig `json:"acmedomain1,omitempty"`
+	ACMEDomain1 *ACMEDomainConfig `json:"acmedomain1,omitempty" url:"acmedomain1,omitempty"`
 	// ACME domain and validation plugin
-	ACMEDomain2 *ACMEDomainConfig `json:"acmedomain2,omitempty"`
+	ACMEDomain2 *ACMEDomainConfig `json:"acmedomain2,omitempty" url:"acmedomain2,omitempty"`
 	// ACME domain and validation plugin
-	ACMEDomain3 *ACMEDomainConfig `json:"acmedomain3,omitempty"`
+	ACMEDomain3 *ACMEDomainConfig `json:"acmedomain3,omitempty" url:"acmedomain3,omitempty"`
 	// ACME domain and validation plugin
-	ACMEDomain4 *ACMEDomainConfig `json:"acmedomain4,omitempty"`
-	Delete      *string           `json:"delete,omitempty"`
+	ACMEDomain4 *ACMEDomainConfig `json:"acmedomain4,omitempty" url:"acmedomain4,omitempty"`
+	Delete      *string           `json:"delete,omitempty" url:"delete,omitempty"`
 	// Description for the Node. Shown in the web-interface node notes panel. This is saved as comment inside the configuration file.
-	Description *string `json:"description,omitempty"`
+	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.
-	Digest *string `json:"digest,omitempty"`
+	Digest *string `json:"digest,omitempty" url:"digest,omitempty"`
 	// Initial delay in seconds, before starting all the Virtual Guests with on-boot enabled.
-	StartAllOnbootDelay *int `json:"startall-onboot-delay,omitempty"`
+	StartAllOnbootDelay *int `json:"startall-onboot-delay,omitempty" url:"startall-onboot-delay,omitempty"`
 	// Node specific wake on LAN settings.
-	WakeOnLan *WakeOnLandConfig `json:"wakeonlan,omitempty"`
+	WakeOnLan *WakeOnLandConfig `json:"wakeonlan,omitempty" url:"wakeonlan,omitempty"`
 }
 
 // ACMEConfig contains the ACME account / domains configuration that use the "standalone" plugin (http challenge).
@@ -110,12 +110,26 @@ func (a *ACMEConfig) UnmarshalJSON(b []byte) error {
 
 // EncodeValues encodes a ACMEConfig struct into a string.
 func (a *ACMEConfig) EncodeValues(key string, v *url.Values) error {
+	// Skip encoding if the config is nil
+	if a == nil {
+		return nil
+	}
+
 	value := ""
 	if a.Account != nil {
 		value = fmt.Sprintf("account=%s", *a.Account)
 	}
 
-	value = fmt.Sprintf("%s,%s", value, strings.Join(a.Domains, ";"))
+	// Only add domains if there are any
+	if len(a.Domains) > 0 {
+		domainsStr := strings.Join(a.Domains, ";")
+		if value != "" {
+			value = fmt.Sprintf("%s,domains=%s", value, domainsStr)
+		} else {
+			value = fmt.Sprintf("domains=%s", domainsStr)
+		}
+	}
+
 	v.Add(key, value)
 
 	return nil
@@ -166,6 +180,11 @@ func (a *ACMEDomainConfig) UnmarshalJSON(b []byte) error {
 
 // EncodeValues encodes a ACMEDomainConfig struct into a string.
 func (a *ACMEDomainConfig) EncodeValues(key string, v *url.Values) error {
+	// Skip encoding if the config is nil (unused domain slot)
+	if a == nil {
+		return nil
+	}
+
 	value := a.Domain
 	if a.Alias != nil {
 		value = fmt.Sprintf("%s,alias=%s", value, *a.Alias)
@@ -225,6 +244,11 @@ func (a *WakeOnLandConfig) UnmarshalJSON(b []byte) error {
 
 // EncodeValues encodes a WakeOnLandConfig struct into a string.
 func (a *WakeOnLandConfig) EncodeValues(key string, v *url.Values) error {
+	// Skip encoding if the config is nil
+	if a == nil {
+		return nil
+	}
+
 	value := a.MACAddress
 	if a.BindInterface != nil {
 		value = fmt.Sprintf("%s,bind-interface=%s", value, *a.BindInterface)
