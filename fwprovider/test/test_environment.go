@@ -9,6 +9,7 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/pools"
 	"net/url"
 	"sync"
 	"testing"
@@ -256,6 +257,11 @@ func (e *Environment) NodeStorageClient() *storage.Client {
 // ClusterClient returns a new cluster client for the test environment.
 func (e *Environment) ClusterClient() *cluster.Client {
 	return &cluster.Client{Client: e.Client()}
+}
+
+// PoolsClient returns a new pools client for the test environment.
+func (e *Environment) PoolsClient() *pools.Client {
+	return &pools.Client{Client: e.Client()}
 }
 
 // muxProviders returns a map of mux servers for the acceptance tests.
