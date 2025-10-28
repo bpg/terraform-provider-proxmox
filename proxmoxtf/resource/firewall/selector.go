@@ -71,6 +71,7 @@ func firewallApiFor(d *schema.ResourceData, m interface{}) (firewall.API, error)
 	if nn, ok := d.GetOk(mkSelectorNodeName); ok {
 		nodeName := nn.(string)
 		nodeAPI := api.Node(nodeName)
+		fwAPI = nodeAPI.Firewall()
 
 		if v, ok := d.GetOk(mkSelectorVMID); ok {
 			fwAPI = nodeAPI.VM(v.(int)).Firewall()

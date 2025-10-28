@@ -192,6 +192,21 @@ func RulesImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]
 
 	switch {
 	case id == "cluster":
+	case strings.HasPrefix(id, "node/"):
+		parts := strings.SplitN(id, "/", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid node import ID format: %s (expected: node/<node_name>)", id)
+		}
+
+		nodeName := parts[1]
+		if nodeName == "" {
+			return nil, fmt.Errorf("invalid node import ID: node name cannot be empty in %s", id)
+		}
+
+		err := d.Set(mkSelectorNodeName, nodeName)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting node name during import: %w", err)
+		}
 	case strings.HasPrefix(id, "vm/"):
 		parts := strings.SplitN(id, "/", 3)
 		if len(parts) != 3 {
