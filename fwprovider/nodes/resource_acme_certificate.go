@@ -307,7 +307,7 @@ func (r *acmeCertificateResource) Create(
 	}
 
 	// Update the state with certificate information
-	if err := r.updateModelFromCertificates(&plan, certificates); err != nil {
+	if err := r.updateModelFromCertificates(ctx, &plan, certificates); err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to process certificate information",
 			fmt.Sprintf("An error occurred while processing certificate information: %s", err.Error()),
@@ -350,7 +350,7 @@ func (r *acmeCertificateResource) Read(
 	}
 
 	// Update the state with certificate information
-	if err := r.updateModelFromCertificates(&state, certificates); err != nil {
+	if err := r.updateModelFromCertificates(ctx, &state, certificates); err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to process certificate information",
 			fmt.Sprintf("An error occurred while processing certificate information: %s", err.Error()),
@@ -407,7 +407,6 @@ func (r *acmeCertificateResource) Update(
 
 		return
 	}
-	}
 
 	// Wait for the task to complete
 	if taskID != nil && *taskID != "" {
@@ -434,7 +433,7 @@ func (r *acmeCertificateResource) Update(
 	}
 
 	// Update the state with certificate information
-	if err := r.updateModelFromCertificates(&plan, certificates); err != nil {
+	if err := r.updateModelFromCertificates(ctx, &plan, certificates); err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to process certificate information",
 			fmt.Sprintf("An error occurred while processing certificate information: %s", err.Error()),
@@ -670,6 +669,7 @@ func isProxmoxGeneratedCertificate(cert *nodes.CertificateListResponseData) bool
 // over Proxmox-generated certificates. When multiple certificates match the configured domains,
 // it returns the one with the most matching domains.
 func (r *acmeCertificateResource) findMatchingCertificate(
+	ctx context.Context,
 	model *acmeCertificateModel,
 	certificates *[]nodes.CertificateListResponseData,
 ) (*nodes.CertificateListResponseData, error) {
@@ -679,7 +679,7 @@ func (r *acmeCertificateResource) findMatchingCertificate(
 
 	// Extract domains from the model
 	var configDomains []string
-	diag := model.Domains.ElementsAs(context.Background(), &configDomains, false)
+	diag := model.Domains.ElementsAs(ctx, &configDomains, false)
 	if diag.HasError() {
 		// If we can't parse domains, try to find an ACME certificate (not Proxmox-generated)
 		for i := range *certificates {
@@ -769,6 +769,7 @@ func (r *acmeCertificateResource) findMatchingCertificate(
 
 // updateModelFromCertificates updates the model with certificate information.
 func (r *acmeCertificateResource) updateModelFromCertificates(
+	ctx context.Context,
 	model *acmeCertificateModel,
 	certificates *[]nodes.CertificateListResponseData,
 ) error {
@@ -777,7 +778,7 @@ func (r *acmeCertificateResource) updateModelFromCertificates(
 	}
 
 	// Find the certificate that matches the configured domains
-	cert, err := r.findMatchingCertificate(model, certificates)
+	cert, err := r.findMatchingCertificate(ctx, model, certificates)
 	if err != nil {
 		return err
 	}
