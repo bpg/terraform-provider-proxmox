@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -204,6 +205,39 @@ func (r *acmeCertificateResource) Configure(
 	r.client = cfg.Client
 }
 
+// waitForCertificateAvailable polls ListCertificates until a certificate is available.
+// This replaces the fixed time.Sleep with a more robust retry mechanism.
+func (r *acmeCertificateResource) waitForCertificateAvailable(
+	ctx context.Context,
+	nodeClient *nodes.Client,
+) (*[]nodes.CertificateListResponseData, error) {
+	var certificates *[]nodes.CertificateListResponseData
+
+	err := retry.Do(
+		func() error {
+			certs, err := nodeClient.ListCertificates(ctx)
+			if err != nil {
+				return err
+			}
+
+			// Check if any certificates are found
+			if certs == nil || len(*certs) == 0 {
+				return fmt.Errorf("no certificates found yet")
+			}
+
+			certificates = certs
+			return nil
+		},
+		retry.Attempts(30),                    // Maximum 30 attempts
+		retry.Delay(1 * time.Second),          // Start with 1 second delay
+		retry.DelayType(retry.BackOffDelay),   // Use exponential backoff
+		retry.MaxJitter(500 * time.Millisecond), // Add jitter to prevent thundering herd
+		retry.Context(ctx),                    // Respect context cancellation
+	)
+
+	return certificates, err
+}
+
 // Create orders a new ACME certificate for the node.
 func (r *acmeCertificateResource) Create(
 	ctx context.Context,
@@ -260,15 +294,12 @@ func (r *acmeCertificateResource) Create(
 		}
 	}
 
-	// Wait a bit for the certificate to be written
-	time.Sleep(2 * time.Second)
-
-	// Read the certificate information
-	certificates, err := nodeClient.ListCertificates(ctx)
+	// Poll for the certificate to be available using retry mechanism
+	certificates, err := r.waitForCertificateAvailable(ctx, nodeClient)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read certificate information",
-			fmt.Sprintf("An error occurred while reading certificate information for node %s: %s", nodeName, err.Error()),
+			fmt.Sprintf("Failed to retrieve the ordered certificate for node %s after multiple attempts: %s", nodeName, err.Error()),
 		)
 
 		return
@@ -389,15 +420,12 @@ func (r *acmeCertificateResource) Update(
 		}
 	}
 
-	// Wait a bit for the certificate to be written
-	time.Sleep(2 * time.Second)
-
-	// Read the updated certificate information
-	certificates, err := nodeClient.ListCertificates(ctx)
+	// Poll for the certificate to be available using retry mechanism
+	certificates, err := r.waitForCertificateAvailable(ctx, nodeClient)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to read certificate information",
-			fmt.Sprintf("An error occurred while reading certificate information for node %s: %s", nodeName, err.Error()),
+			fmt.Sprintf("Failed to retrieve the renewed certificate for node %s after multiple attempts: %s", nodeName, err.Error()),
 		)
 
 		return
