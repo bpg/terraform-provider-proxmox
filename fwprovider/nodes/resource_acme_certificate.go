@@ -445,9 +445,8 @@ func (r *acmeCertificateResource) Update(
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// Delete removes the certificate resource from Terraform state.
-// Note: This doesn't actually delete the certificate from the node,
-// as ACME certificates should remain on the node for the services to use.
+// Delete removes the certificate resource from Terraform state and cleans up ACME configuration from the node.
+// The certificate files are preserved on the Proxmox node, but the ACME configuration is removed.
 func (r *acmeCertificateResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
@@ -461,10 +460,22 @@ func (r *acmeCertificateResource) Delete(
 		return
 	}
 
-	// Note: We don't actually delete the certificate from the node
-	// as it's needed for the node's services. We just remove it from Terraform state.
-	// If users want to remove the certificate from the node, they should use
-	// the Proxmox UI or manually delete it via the API.
+	nodeName := state.NodeName.ValueString()
+	nodeClient := r.client.Node(nodeName)
+
+	// Clean up the ACME configuration from the node. The certificate files will remain.
+	toDelete := "acme,acmedomain0,acmedomain1,acmedomain2,acmedomain3,acmedomain4"
+	configUpdate := &nodes.ConfigUpdateRequestBody{
+		Delete: &toDelete,
+	}
+
+	if err := nodeClient.UpdateConfig(ctx, configUpdate); err != nil {
+		// Log a warning as the resource is being deleted anyway, but the user should be notified.
+		resp.Diagnostics.AddWarning(
+			"Failed to clean up node ACME configuration",
+			fmt.Sprintf("An error occurred while cleaning up ACME settings for node %s on delete: %s. Manual cleanup of /etc/pve/nodes/%s/config may be required.", nodeName, err.Error(), nodeName),
+		)
+	}
 }
 
 // ImportState imports an existing certificate by node name.
@@ -612,40 +623,48 @@ func (r *acmeCertificateResource) configureNodeACME(
 	}
 
 	// Configure DNS challenge domains (up to 5 domains with DNS plugins)
-	if len(dnsDomains) > 0 {
-		if len(dnsDomains) > 5 {
-			return fmt.Errorf("Proxmox supports a maximum of 5 DNS challenge domains, got %d", len(dnsDomains))
+	if len(dnsDomains) > 5 {
+		return fmt.Errorf("Proxmox supports a maximum of 5 DNS challenge domains, got %d", len(dnsDomains))
+	}
+
+	for i, domain := range dnsDomains {
+		domainConfig := &nodes.ACMEDomainConfig{
+			Domain: domain.Domain.ValueString(),
 		}
 
-		for i, domain := range dnsDomains {
-			domainConfig := &nodes.ACMEDomainConfig{
-				Domain: domain.Domain.ValueString(),
-			}
-
-			if !domain.Plugin.IsNull() {
-				plugin := domain.Plugin.ValueString()
-				domainConfig.Plugin = &plugin
-			}
-
-			if !domain.Alias.IsNull() {
-				alias := domain.Alias.ValueString()
-				domainConfig.Alias = &alias
-			}
-
-			// Map to the appropriate acmedomain field
-			switch i {
-			case 0:
-				configUpdate.ACMEDomain0 = domainConfig
-			case 1:
-				configUpdate.ACMEDomain1 = domainConfig
-			case 2:
-				configUpdate.ACMEDomain2 = domainConfig
-			case 3:
-				configUpdate.ACMEDomain3 = domainConfig
-			case 4:
-				configUpdate.ACMEDomain4 = domainConfig
-			}
+		if !domain.Plugin.IsNull() {
+			plugin := domain.Plugin.ValueString()
+			domainConfig.Plugin = &plugin
 		}
+
+		if !domain.Alias.IsNull() {
+			alias := domain.Alias.ValueString()
+			domainConfig.Alias = &alias
+		}
+
+		// Map to the appropriate acmedomain field
+		switch i {
+		case 0:
+			configUpdate.ACMEDomain0 = domainConfig
+		case 1:
+			configUpdate.ACMEDomain1 = domainConfig
+		case 2:
+			configUpdate.ACMEDomain2 = domainConfig
+		case 3:
+			configUpdate.ACMEDomain3 = domainConfig
+		case 4:
+			configUpdate.ACMEDomain4 = domainConfig
+		}
+	}
+
+	// Clean up unused acmedomain slots
+	var toDelete []string
+	for i := len(dnsDomains); i < 5; i++ {
+		toDelete = append(toDelete, fmt.Sprintf("acmedomain%d", i))
+	}
+	if len(toDelete) > 0 {
+		deleteValue := strings.Join(toDelete, ",")
+		configUpdate.Delete = &deleteValue
 	}
 
 	// Update the node configuration
