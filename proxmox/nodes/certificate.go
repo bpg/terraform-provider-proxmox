@@ -66,18 +66,3 @@ func (c *Client) OrderCertificate(ctx context.Context, d *CertificateOrderReques
 	return resBody.Data, nil
 }
 
-// RenewCertificate renews an existing ACME certificate for a node.
-func (c *Client) RenewCertificate(ctx context.Context, d *CertificateRenewRequestBody) (*string, error) {
-	resBody := &CertificateOrderResponseBody{}
-
-	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("certificates/acme/certificate"), d, resBody)
-	if err != nil {
-		return nil, fmt.Errorf("error renewing ACME certificate: %w", err)
-	}
-
-	if resBody.Data == nil {
-		return nil, api.ErrNoDataObjectInResponse
-	}
-
-	return resBody.Data, nil
-}

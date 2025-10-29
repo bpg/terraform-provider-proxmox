@@ -51,8 +51,3 @@ type CertificateOrderRequestBody struct {
 type CertificateOrderResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
-
-// CertificateRenewRequestBody contains the body for an ACME certificate renewal request.
-type CertificateRenewRequestBody struct {
-	Force *types.CustomBool `json:"force,omitempty" url:"force,omitempty,int"`
-}
