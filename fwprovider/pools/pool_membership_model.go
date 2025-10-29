@@ -36,7 +36,7 @@ type poolMembershipModel struct {
 	Type      types.String `tfsdk:"type"`
 }
 
-const poolMembershipIDFormat = "{pool_id}/{type}/{vm_id}"
+const poolMembershipIDFormat = "{pool_id}/{type}/{member_id}"
 
 // Proxmox API for managing resource pools does not differentiate lxc containers and vms. All of them are considered VMs.
 func (p poolMembershipModel) deduceMembershipType() (MembershipType, error) {

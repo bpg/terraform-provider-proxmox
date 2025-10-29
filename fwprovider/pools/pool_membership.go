@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
+
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
@@ -40,7 +42,7 @@ type poolMembershipResource struct {
 	client proxmox.Client
 }
 
-func (r *poolMembershipResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+func (r *poolMembershipResource) ConfigValidators(context.Context) []resource.ConfigValidator {
 	return []resource.ConfigValidator{
 		resourcevalidator.Conflicting(
 			path.MatchRoot(mkPoolMembershipVmId),
@@ -57,7 +59,7 @@ func NewPoolMembershipResource() resource.Resource {
 	return &poolMembershipResource{}
 }
 
-func (r *poolMembershipResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *poolMembershipResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -76,29 +78,33 @@ func (r *poolMembershipResource) Configure(ctx context.Context, req resource.Con
 	r.client = cfg.Client
 }
 
-func (r *poolMembershipResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *poolMembershipResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages resource pool memberships for containers, virtual machines and storages",
 		Attributes: map[string]schema.Attribute{
-			mkPoolMembershipId: schema.StringAttribute{
-				Computed: true,
-			},
+			mkPoolMembershipId: attribute.ResourceID(),
 			mkPoolMembershipType: schema.StringAttribute{
-				Computed: true,
+				Description:         "Resource pool membership type",
+				MarkdownDescription: "Resource pool membership type (can be `vm` for VMs and CTs or `storage` for storages)",
+				Computed:            true,
 			},
 			mkPoolMembershipPoolId: schema.StringAttribute{
-				Required: true,
+				Description: "Resource pool id",
+				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			mkPoolMembershipVmId: schema.Int64Attribute{
-				Optional: true,
+				Description: "VM or CT id",
+				Optional:    true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
 				},
 			},
 			mkPoolMembershipStorageId: schema.StringAttribute{
-				Optional: true,
+				Description: "Storage id",
+				Optional:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
