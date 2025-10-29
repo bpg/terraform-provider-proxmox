@@ -82,7 +82,14 @@ resource "proxmox_virtual_environment_acme_certificate" "test" {
 ```terraform
 resource "proxmox_virtual_environment_acme_certificate" "example_force" {
   node_name = "pve"
+  account   = proxmox_virtual_environment_acme_account.example.name
   force     = true  # This will trigger renewal on every apply
+
+  domains = [
+    {
+      domain = "pve.example.com"
+    }
+  ]
 }
 ```
 
