@@ -808,7 +808,7 @@ func (r *acmeCertificateResource) updateModelFromCertificates(
 			sanList = append(sanList, types.StringValue(san))
 		}
 
-		list, _ := types.ListValueFrom(context.Background(), types.StringType, sanList)
+		list, _ := types.ListValueFrom(ctx, types.StringType, sanList)
 		model.SubjectAlternativeNames = list
 	} else {
 		model.SubjectAlternativeNames = types.ListNull(types.StringType)
