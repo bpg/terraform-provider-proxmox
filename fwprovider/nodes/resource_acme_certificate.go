@@ -392,20 +392,21 @@ func (r *acmeCertificateResource) Update(
 		}
 	}
 
-	// Renew the certificate if force is true or other changes are made
+	// Order a new certificate if force is true or other changes are made
 	force := proxmoxtypes.CustomBool(plan.Force.ValueBool())
-	renewReq := &nodes.CertificateRenewRequestBody{
+	orderReq := &nodes.CertificateOrderRequestBody{
 		Force: &force,
 	}
 
-	taskID, err := nodeClient.RenewCertificate(ctx, renewReq)
+	taskID, err := nodeClient.OrderCertificate(ctx, orderReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to renew ACME certificate",
-			fmt.Sprintf("An error occurred while renewing the ACME certificate for node %s: %s", nodeName, err.Error()),
+			"Unable to re-order ACME certificate",
+			fmt.Sprintf("An error occurred while re-ordering the ACME certificate for node %s: %s", nodeName, err.Error()),
 		)
 
 		return
+	}
 	}
 
 	// Wait for the task to complete
