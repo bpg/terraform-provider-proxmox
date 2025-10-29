@@ -809,7 +809,10 @@ func (r *acmeCertificateResource) updateModelFromCertificates(
 			sanList = append(sanList, types.StringValue(san))
 		}
 
-		list, _ := types.ListValueFrom(ctx, types.StringType, sanList)
+		list, diag := types.ListValueFrom(ctx, types.StringType, sanList)
+		if diag.HasError() {
+			return fmt.Errorf("error creating subject_alternative_names list: %v", diag.Errors())
+		}
 		model.SubjectAlternativeNames = list
 	} else {
 		model.SubjectAlternativeNames = types.ListNull(types.StringType)
