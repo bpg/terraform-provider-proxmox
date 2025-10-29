@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package pools
 
 import (
@@ -8,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParsePoolMembershipId(t *testing.T) {
+func TestParsePoolMembershipID(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -36,7 +42,7 @@ func TestParsePoolMembershipId(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNil(t, model)
 				assert.Equal(t, tt.id, model.ID.ValueString())
-				assert.Equal(t, tt.expectedPoolId, model.PoolId.ValueString())
+				assert.Equal(t, tt.expectedPoolId, model.PoolID.ValueString())
 				assert.Equal(t, tt.expectedType, model.Type.ValueString())
 
 				var value any
@@ -52,7 +58,7 @@ func TestParsePoolMembershipId(t *testing.T) {
 	}
 }
 
-func TestGeneratePoolMembershipId(t *testing.T) {
+func TestGeneratePoolMembershipID(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -63,19 +69,19 @@ func TestGeneratePoolMembershipId(t *testing.T) {
 	}{
 		{
 			"vm pool membership",
-			poolMembershipModel{VmID: types.Int64Value(102), PoolId: types.StringValue("test-pool")},
+			poolMembershipModel{VmID: types.Int64Value(102), PoolID: types.StringValue("test-pool")},
 			"test-pool/vm/102",
 			false,
 		},
 		{
 			"storage pool membership",
-			poolMembershipModel{StorageID: types.StringValue("local-lvm"), PoolId: types.StringValue("test-pool")},
+			poolMembershipModel{StorageID: types.StringValue("local-lvm"), PoolID: types.StringValue("test-pool")},
 			"test-pool/storage/local-lvm",
 			false,
 		},
 		{
 			"missing any resource id",
-			poolMembershipModel{PoolId: types.StringValue("test-pool")},
+			poolMembershipModel{PoolID: types.StringValue("test-pool")},
 			"",
 			true,
 		},

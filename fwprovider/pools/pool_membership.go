@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package pools
 
 import (
@@ -124,7 +130,7 @@ func (r *poolMembershipResource) Create(ctx context.Context, req resource.Create
 
 	poolApi := r.client.Pool()
 
-	poolId := plan.PoolId.ValueString()
+	poolId := plan.PoolID.ValueString()
 
 	body := &pools.PoolUpdateRequestBody{
 		AllowMove: ptr.Ptr(proxmoxtypes.CustomBool(true)),
@@ -180,7 +186,7 @@ func (r *poolMembershipResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	poolId := state.PoolId.ValueString()
+	poolId := state.PoolID.ValueString()
 	membershipType, membershipTypeErr := NewMembershipType(state.Type.ValueString())
 
 	if membershipTypeErr != nil {
@@ -239,7 +245,7 @@ func (r *poolMembershipResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	poolId := state.PoolId.ValueString()
+	poolId := state.PoolID.ValueString()
 	membershipType, membershipTypeErr := NewMembershipType(state.Type.ValueString())
 
 	if membershipTypeErr != nil {
@@ -264,7 +270,7 @@ func (r *poolMembershipResource) Delete(ctx context.Context, req resource.Delete
 	}
 
 	if err := r.client.Pool().UpdatePool(ctx, poolId, body); err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to update pool '%s", poolId), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to update pool '%s'", poolId), err.Error())
 	}
 }
 

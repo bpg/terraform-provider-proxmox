@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package pools
 
 import (
@@ -32,7 +38,7 @@ type poolMembershipModel struct {
 	ID        types.String `tfsdk:"id"`
 	VmID      types.Int64  `tfsdk:"vm_id"`
 	StorageID types.String `tfsdk:"storage_id"`
-	PoolId    types.String `tfsdk:"pool_id"`
+	PoolID    types.String `tfsdk:"pool_id"`
 	Type      types.String `tfsdk:"type"`
 }
 
@@ -66,7 +72,7 @@ func (p poolMembershipModel) generateID() (types.String, error) {
 		return types.String{}, ErrInvalidMembershipType
 	}
 
-	return types.StringValue(fmt.Sprintf("%s/%s/%s", p.PoolId.ValueString(), p.Type.ValueString(), memberId)), nil
+	return types.StringValue(fmt.Sprintf("%s/%s/%s", p.PoolID.ValueString(), p.Type.ValueString(), memberId)), nil
 }
 
 func createMembershipModelFromID(id string) (*poolMembershipModel, error) {
@@ -83,7 +89,7 @@ func createMembershipModelFromID(id string) (*poolMembershipModel, error) {
 
 	model := poolMembershipModel{
 		ID:     types.StringValue(id),
-		PoolId: types.StringValue(poolId),
+		PoolID: types.StringValue(poolId),
 		Type:   types.StringValue(membershipType),
 	}
 
