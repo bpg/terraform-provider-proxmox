@@ -25,10 +25,13 @@ resource "proxmox_virtual_environment_acme_account" "example" {
 # Order a certificate for the node
 resource "proxmox_virtual_environment_acme_certificate" "example" {
   node_name = "pve"
+  account   = proxmox_virtual_environment_acme_account.example.name
 
-  # Depends on the ACME account being created first
-  depends_on = [
-    proxmox_virtual_environment_acme_account.example
+  domains = [
+    {
+      domain = "pve.example.com"
+      # No plugin specified implies HTTP-01 challenge
+    }
   ]
 }
 ```
