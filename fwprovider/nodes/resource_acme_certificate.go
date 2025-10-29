@@ -445,8 +445,7 @@ func (r *acmeCertificateResource) Update(
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// Delete removes the certificate resource from Terraform state and cleans up ACME configuration from the node.
-// The certificate files are preserved on the Proxmox node, but the ACME configuration is removed.
+// Delete removes the certificate resource from Terraform state and cleans up ACME configuration and certificate from the node.
 func (r *acmeCertificateResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
@@ -463,14 +462,26 @@ func (r *acmeCertificateResource) Delete(
 	nodeName := state.NodeName.ValueString()
 	nodeClient := r.client.Node(nodeName)
 
-	// Clean up the ACME configuration from the node. The certificate files will remain.
+	// Delete the custom certificate
+	restart := proxmoxtypes.CustomBool(true)
+	deleteReq := &nodes.CertificateDeleteRequestBody{
+		Restart: &restart,
+	}
+
+	if err := nodeClient.DeleteCertificate(ctx, deleteReq); err != nil {
+		resp.Diagnostics.AddWarning(
+			"Failed to delete certificate",
+			fmt.Sprintf("An error occurred while deleting the certificate for node %s: %s", nodeName, err.Error()),
+		)
+	}
+
+	// Clean up the ACME configuration from the node
 	toDelete := "acme,acmedomain0,acmedomain1,acmedomain2,acmedomain3,acmedomain4"
 	configUpdate := &nodes.ConfigUpdateRequestBody{
 		Delete: &toDelete,
 	}
 
 	if err := nodeClient.UpdateConfig(ctx, configUpdate); err != nil {
-		// Log a warning as the resource is being deleted anyway, but the user should be notified.
 		resp.Diagnostics.AddWarning(
 			"Failed to clean up node ACME configuration",
 			fmt.Sprintf("An error occurred while cleaning up ACME settings for node %s on delete: %s. Manual cleanup of /etc/pve/nodes/%s/config may be required.", nodeName, err.Error(), nodeName),
