@@ -678,8 +678,8 @@ func (r *acmeCertificateResource) findMatchingCertificate(
 	}
 
 	// Extract domains from the model
-	var configDomains []string
-	diag := model.Domains.ElementsAs(ctx, &configDomains, false)
+	var domainModels []acmeDomainModel
+	diag := model.Domains.ElementsAs(ctx, &domainModels, false)
 	if diag.HasError() {
 		// If we can't parse domains, try to find an ACME certificate (not Proxmox-generated)
 		for i := range *certificates {
@@ -689,6 +689,12 @@ func (r *acmeCertificateResource) findMatchingCertificate(
 		}
 		// Fall back to first certificate if all are Proxmox-generated
 		return &(*certificates)[0], nil
+	}
+
+	// Extract domain strings for matching
+	configDomains := make([]string, len(domainModels))
+	for i, dm := range domainModels {
+		configDomains[i] = dm.Domain.ValueString()
 	}
 
 	// Convert to a map for faster lookup
