@@ -126,6 +126,7 @@ const (
 	dvTimeoutShutdownVM   = 1800
 	dvTimeoutStartVM      = 1800
 	dvTimeoutStopVM       = 300
+	dvTimeoutMoveDisk     = 1800
 	dvVGAClipboard        = ""
 	dvVGAMemory           = 16
 	dvVGAType             = "std"
@@ -285,6 +286,7 @@ const (
 	mkTimeoutShutdownVM    = "timeout_shutdown_vm"
 	mkTimeoutStartVM       = "timeout_start_vm"
 	mkTimeoutStopVM        = "timeout_stop_vm"
+	mkTimeoutMoveDisk      = "timeout_move_disk"
 	mkHostUSB              = "usb"
 	mkHostUSBDevice        = "host"
 	mkHostUSBDeviceMapping = "mapping"
@@ -342,10 +344,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The guest will attempt to boot from devices in the order they appear here",
 			Optional:    true,
+			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
-			},
 		},
 		mkACPI: {
 			Type:        schema.TypeBool,
@@ -1456,11 +1456,11 @@ func VM() *schema.Resource {
 			Optional:    true,
 			Default:     dvTimeoutCreate,
 		},
-		"timeout_move_disk": {
+		mkTimeoutMoveDisk: {
 			Type:        schema.TypeInt,
-			Description: "MoveDisk timeout",
+			Description: "Disk move timeout",
 			Optional:    true,
-			Default:     1800,
+			Default:     dvTimeoutMoveDisk,
 			Deprecated: "This field is deprecated and will be removed in a future release. " +
 				"An overall operation timeout (timeout_create / timeout_clone / timeout_migrate) is used instead.",
 		},
@@ -2707,13 +2707,13 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	var bootOrderConverted []string
-	if cdromInterface != "" {
-		bootOrderConverted = []string{cdromInterface}
-	}
-
 	bootOrder := d.Get(mkBootOrder).([]interface{})
 
 	if len(bootOrder) == 0 {
+		if cdromInterface != "" {
+			bootOrderConverted = []string{cdromInterface}
+		}
+
 		if _, ok := diskDeviceObjects["ide0"]; ok {
 			bootOrderConverted = append(bootOrderConverted, "ide0")
 		}
@@ -4896,6 +4896,90 @@ func vmReadCustom(
 	e = d.Set(mkNodeName, nodeName)
 	diags = append(diags, diag.FromErr(e)...)
 
+	if _, ok := d.GetOk(mkMigrate); !ok {
+		err := d.Set(mkMigrate, dvMigrate)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkTimeoutClone); !ok {
+		err := d.Set(mkTimeoutClone, dvTimeoutClone)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkTimeoutCreate); !ok {
+		err := d.Set(mkTimeoutCreate, dvTimeoutCreate)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkTimeoutMigrate); !ok {
+		err := d.Set(mkTimeoutMigrate, dvTimeoutMigrate)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkTimeoutReboot); !ok {
+		err := d.Set(mkTimeoutReboot, dvTimeoutReboot)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkTimeoutShutdownVM); !ok {
+		err := d.Set(mkTimeoutShutdownVM, dvTimeoutShutdownVM)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkTimeoutStartVM); !ok {
+		err := d.Set(mkTimeoutStartVM, dvTimeoutStartVM)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkTimeoutStopVM); !ok {
+		err := d.Set(mkTimeoutStopVM, dvTimeoutStopVM)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkTimeoutMoveDisk); !ok {
+		err := d.Set(mkTimeoutMoveDisk, dvTimeoutMoveDisk)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkStopOnDestroy); !ok {
+		err := d.Set(mkStopOnDestroy, dvStopOnDestroy)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkRebootAfterUpdate); !ok {
+		err := d.Set(mkRebootAfterUpdate, dvRebootAfterUpdate)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkRebootAfterCreation); !ok {
+		err := d.Set(mkRebootAfterCreation, dvRebootAfterCreation)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
 	return diags
 }
 
@@ -4962,6 +5046,23 @@ func vmReadPrimitiveValues(
 	}
 
 	currentTags := d.Get(mkTags).([]interface{})
+
+	err = d.Set(mkOnBoot, vmConfig.StartOnBoot)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if vmConfig.BootOrder == nil {
+		err = d.Set(mkBootOrder, nil)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else {
+		err = d.Set(mkBootOrder, vmConfig.BootOrder.Order)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
 
 	if len(clone) == 0 || len(currentTags) > 0 {
 		var tags []string

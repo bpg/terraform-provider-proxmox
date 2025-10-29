@@ -101,9 +101,6 @@ func GetNetworkDeviceObjects(d *schema.ResourceData) (vms.CustomNetworkDevices, 
 func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	// Compare the network devices to those stored in the state.
-	currentNetworkDeviceList := d.Get(MkNetworkDevice).([]interface{})
-
 	macAddresses := make([]interface{}, MaxNetworkDevices)
 	networkDeviceLast := -1
 	networkDeviceList := make([]interface{}, MaxNetworkDevices)
@@ -215,12 +212,10 @@ func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseD
 		networkDeviceList[ni] = networkDevice
 	}
 
-	if len(currentNetworkDeviceList) > 0 || networkDeviceLast > -1 {
-		err := d.Set(MkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
-		diags = append(diags, diag.FromErr(err)...)
-	}
+	err := d.Set(MkNetworkDevice, networkDeviceList[:networkDeviceLast+1])
+	diags = append(diags, diag.FromErr(err)...)
 
-	err := d.Set(mkMACAddresses, macAddresses[0:len(currentNetworkDeviceList)])
+	err = d.Set(mkMACAddresses, macAddresses[:networkDeviceLast+1])
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
