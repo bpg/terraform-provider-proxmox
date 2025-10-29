@@ -10,6 +10,7 @@ package test
 
 import (
 	"fmt"
+	"math/rand"
 	"regexp"
 	"testing"
 
@@ -452,6 +453,80 @@ func TestAccResourceVM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.step,
+			})
+		})
+	}
+}
+
+func TestAccResourceVMImport(t *testing.T) {
+	te := InitEnvironment(t)
+
+	// Generate dynamic VM ID to avoid conflicts
+	testVMID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"TestVMID": testVMID,
+	})
+
+	tests := []struct {
+		name string
+		step []resource.TestStep
+	}{
+		{"vm import", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_vm" "vm_import" {
+						node_name = "{{.NodeName}}"
+
+						vm_id = {{.TestVMID}}
+
+						started   = false
+						agent {
+							enabled = true
+						}
+						cpu {
+							cores = 2
+						}
+						memory {
+							dedicated = 2048
+						}
+
+						disk {
+							datastore_id = "local-lvm"
+							interface    = "virtio0"
+							iothread     = true
+							discard      = "on"
+							size         = 20
+						}
+
+						initialization {
+							interface = "scsi1"
+
+							ip_config {
+								ipv4 {
+									address = "dhcp"
+								}
+							}
+						}
+						network_device {
+							bridge = "vmbr0"
+						}
+					}`),
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_vm.vm_import",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateId:     fmt.Sprintf("%s/%d", te.NodeName, testVMID),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.step,
