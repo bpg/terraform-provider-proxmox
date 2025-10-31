@@ -271,7 +271,7 @@ func Schema() map[string]*schema.Schema {
 					},
 				},
 			},
-			MaxItems: 14,
+			MaxItems: 31,
 			MinItems: 0,
 		},
 	}
