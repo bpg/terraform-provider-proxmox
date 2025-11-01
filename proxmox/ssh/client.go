@@ -133,6 +133,8 @@ func (c *client) Username() string {
 }
 
 // getSudoAvailability gets the cached sudo availability or checks and caches it.
+// Uses double-checked locking to prevent race conditions when multiple goroutines
+// check the same uncached node simultaneously.
 func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool, error) {
 	c.sudoCacheMu.RLock()
 	cached, found := c.sudoCache[nodeName]
@@ -142,11 +144,16 @@ func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool
 		return cached, nil
 	}
 
-	return c.checkAndCacheSudoAvailability(ctx, nodeName)
-}
+	c.sudoCacheMu.Lock()
+	defer c.sudoCacheMu.Unlock()
 
-// checkAndCacheSudoAvailability performs the actual sudo check and caches the result.
-func (c *client) checkAndCacheSudoAvailability(ctx context.Context, nodeName string) (bool, error) {
+	// Re-check the cache after acquiring the write lock in case another goroutine
+	// populated it while we were waiting.
+	cached, found = c.sudoCache[nodeName]
+	if found {
+		return cached, nil
+	}
+
 	checkCmd := `if [ "$(id -u)" = "0" ]; then echo "0"; ` +
 		`elif [ $(sudo -n /sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] ` +
 		`|| sudo -n /sbin/qm --help >/dev/null 2>&1; then echo "1"; else echo "0"; fi`
@@ -173,10 +180,7 @@ func (c *client) checkAndCacheSudoAvailability(ctx context.Context, nodeName str
 	}
 
 	shouldUseSudo := strings.TrimSpace(string(output)) == "1"
-
-	c.sudoCacheMu.Lock()
 	c.sudoCache[nodeName] = shouldUseSudo
-	c.sudoCacheMu.Unlock()
 
 	return shouldUseSudo, nil
 }
@@ -226,10 +230,9 @@ func (c *client) getSudoValue(ctx context.Context, nodeName string, needsCheck b
 
 	shouldUseSudo, err := c.getSudoAvailability(ctx, nodeName)
 	if err != nil {
-		tflog.Warn(ctx, "failed to check sudo availability, will check inline", map[string]interface{}{
+		tflog.Warn(ctx, "failed to check sudo availability, proceeding without sudo", map[string]interface{}{
 			"error": err,
 		})
-
 		return ""
 	}
 
