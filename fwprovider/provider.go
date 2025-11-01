@@ -573,6 +573,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnzone.NewZonesDataSource,
 		sdnsubnet.NewDataSource,
 		sdnvnet.NewDataSource,
+		sdnvnet.NewVNetsDataSource,
 		vm.NewDataSource,
 	}
 }

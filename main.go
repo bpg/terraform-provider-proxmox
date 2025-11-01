@@ -49,6 +49,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresource.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_haresources.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnet.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnets.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zones.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_simple.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_subnet.md ./docs/data-sources/
