@@ -34,8 +34,16 @@ import (
 const (
 	// TrySudo is a shell function that tries to execute a command with sudo if the user has sudo permissions.
 	// The result is cached both in the provider (across shell invocations) and in _try_sudo_use_sudo (within a script).
-	//nolint:lll
-	TrySudo = `_try_sudo_check(){ if [ -z "${_try_sudo_cached:-}" ]; then _try_sudo_use_sudo="${TRY_SUDO_USE_SUDO:-0}"; _try_sudo_cached=1; fi; }; try_sudo(){ _try_sudo_check; if [ "$_try_sudo_use_sudo" = "1" ]; then sudo $1; else $1; fi }`
+	TrySudo = `_try_sudo_check(){ ` +
+		`if [ -z "${_try_sudo_cached:-}" ]; then ` +
+		`_try_sudo_use_sudo="${TRY_SUDO_USE_SUDO:-0}"; ` +
+		`_try_sudo_cached=1; ` +
+		`fi; ` +
+		`}; ` +
+		`try_sudo(){ ` +
+		`_try_sudo_check; ` +
+		`if [ "$_try_sudo_use_sudo" = "1" ]; then sudo $1; else $1; fi ` +
+		`}`
 )
 
 // NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
@@ -124,8 +132,8 @@ func (c *client) Username() string {
 	return c.username
 }
 
-// checkSudoAvailability checks if sudo is available for the given node and caches the result.
-func (c *client) checkSudoAvailability(ctx context.Context, nodeName string) (bool, error) {
+// getSudoAvailability gets the cached sudo availability or checks and caches it.
+func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool, error) {
 	c.sudoCacheMu.RLock()
 	cached, found := c.sudoCache[nodeName]
 	c.sudoCacheMu.RUnlock()
@@ -134,6 +142,11 @@ func (c *client) checkSudoAvailability(ctx context.Context, nodeName string) (bo
 		return cached, nil
 	}
 
+	return c.checkAndCacheSudoAvailability(ctx, nodeName)
+}
+
+// checkAndCacheSudoAvailability performs the actual sudo check and caches the result.
+func (c *client) checkAndCacheSudoAvailability(ctx context.Context, nodeName string) (bool, error) {
 	checkCmd := `if [ "$(id -u)" = "0" ]; then echo "0"; ` +
 		`elif [ $(sudo -n /sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] ` +
 		`|| sudo -n /sbin/qm --help >/dev/null 2>&1; then echo "1"; else echo "0"; fi`
@@ -148,22 +161,18 @@ func (c *client) checkSudoAvailability(ctx context.Context, nodeName string) (bo
 		return false, err
 	}
 
-	defer func(sshClient *ssh.Client) {
-		e := sshClient.Close()
-		if e != nil {
-			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{
-				"error": e,
-			})
+	defer func() {
+		if e := sshClient.Close(); e != nil {
+			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{"error": e})
 		}
-	}(sshClient)
+	}()
 
 	output, err := c.executeCommands(ctx, sshClient, []string{checkCmd})
 	if err != nil {
 		return false, fmt.Errorf("failed to check sudo availability: %w", err)
 	}
 
-	result := strings.TrimSpace(string(output))
-	shouldUseSudo := result == "1"
+	shouldUseSudo := strings.TrimSpace(string(output)) == "1"
 
 	c.sudoCacheMu.Lock()
 	c.sudoCache[nodeName] = shouldUseSudo
@@ -177,23 +186,7 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 	commandsStr := strings.Join(commands, "; ")
 	needsSudoCheck := strings.Contains(commandsStr, "try_sudo")
 
-	var sudoValue string
-
-	if needsSudoCheck {
-		shouldUseSudo, err := c.checkSudoAvailability(ctx, nodeName)
-		switch {
-		case err != nil:
-			tflog.Warn(ctx, "failed to check sudo availability, will check inline", map[string]interface{}{
-				"error": err,
-			})
-
-			sudoValue = ""
-		case shouldUseSudo:
-			sudoValue = "1"
-		default:
-			sudoValue = "0"
-		}
-	}
+	sudoValue := c.getSudoValue(ctx, nodeName, needsSudoCheck)
 
 	node, err := c.nodeResolver.Resolve(ctx, nodeName)
 	if err != nil {
@@ -211,26 +204,40 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 		return nil, err
 	}
 
-	defer func(sshClient *ssh.Client) {
-		e := sshClient.Close()
-		if e != nil {
-			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{
-				"error": e,
-			})
+	defer func() {
+		if e := sshClient.Close(); e != nil {
+			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{"error": e})
 		}
-	}(sshClient)
+	}()
 
 	execCommands := commands
 	if sudoValue != "" {
 		execCommands = append([]string{fmt.Sprintf("export TRY_SUDO_USE_SUDO=%s", sudoValue)}, commands...)
 	}
 
-	output, err := c.executeCommands(ctx, sshClient, execCommands)
-	if err != nil {
-		return nil, err
+	return c.executeCommands(ctx, sshClient, execCommands)
+}
+
+// getSudoValue returns the sudo value to use, or empty string if check failed.
+func (c *client) getSudoValue(ctx context.Context, nodeName string, needsCheck bool) string {
+	if !needsCheck {
+		return ""
 	}
 
-	return output, nil
+	shouldUseSudo, err := c.getSudoAvailability(ctx, nodeName)
+	if err != nil {
+		tflog.Warn(ctx, "failed to check sudo availability, will check inline", map[string]interface{}{
+			"error": err,
+		})
+
+		return ""
+	}
+
+	if shouldUseSudo {
+		return "1"
+	}
+
+	return "0"
 }
 
 func (c *client) openSession(ctx context.Context, sshClient *ssh.Client) (*ssh.Session, func(), error) {
@@ -473,17 +480,11 @@ func (c *client) uploadFile(
 		return fmt.Errorf("failed to open SSH session: %w", err)
 	}
 
-	var sudoEnv string
+	sudoValue := c.getSudoValue(ctx, nodeName, nodeName != "")
 
-	if nodeName != "" {
-		shouldUseSudo, checkErr := c.checkSudoAvailability(ctx, nodeName)
-		if checkErr == nil {
-			if shouldUseSudo {
-				sudoEnv = "export TRY_SUDO_USE_SUDO=1; "
-			} else {
-				sudoEnv = "export TRY_SUDO_USE_SUDO=0; "
-			}
-		}
+	sudoEnv := ""
+	if sudoValue != "" {
+		sudoEnv = fmt.Sprintf("export TRY_SUDO_USE_SUDO=%s; ", sudoValue)
 	}
 
 	sshSession.Stdin = req.File
