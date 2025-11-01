@@ -122,7 +122,7 @@ func (r *poolMembershipResource) Create(ctx context.Context, req resource.Create
 
 	poolApi := r.client.Pool()
 
-	poolId := plan.PoolID.ValueString()
+	poolID := plan.PoolID.ValueString()
 
 	body := &pools.PoolUpdateRequestBody{
 		AllowMove: ptr.Ptr(proxmoxtypes.CustomBool(true)),
@@ -150,8 +150,8 @@ func (r *poolMembershipResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	if err := poolApi.UpdatePool(ctx, poolId, body); err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to update resource pool '%s'", poolId),
+	if err := poolApi.UpdatePool(ctx, poolID, body); err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to update resource pool '%s'", poolID),
 			err.Error())
 
 		return
@@ -178,7 +178,7 @@ func (r *poolMembershipResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	poolId := state.PoolID.ValueString()
+	poolID := state.PoolID.ValueString()
 	membershipType, membershipTypeErr := NewMembershipType(state.Type.ValueString())
 
 	if membershipTypeErr != nil {
@@ -186,9 +186,9 @@ func (r *poolMembershipResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	pool, err := r.client.Pool().GetPool(ctx, poolId)
+	pool, err := r.client.Pool().GetPool(ctx, poolID)
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to get pool '%s'", poolId), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to get pool '%s'", poolID), err.Error())
 		return
 	}
 
@@ -209,9 +209,9 @@ func (r *poolMembershipResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 }
 
-func checkStorageExists(pool pools.PoolGetResponseData, storageId string) bool {
+func checkStorageExists(pool pools.PoolGetResponseData, storageID string) bool {
 	for _, member := range pool.Members {
-		if member.DatastoreID != nil && *member.DatastoreID == storageId {
+		if member.DatastoreID != nil && *member.DatastoreID == storageID {
 			return true
 		}
 	}
@@ -219,9 +219,9 @@ func checkStorageExists(pool pools.PoolGetResponseData, storageId string) bool {
 	return false
 }
 
-func checkVmExists(pool pools.PoolGetResponseData, vmId int64) bool {
+func checkVmExists(pool pools.PoolGetResponseData, vmID int64) bool {
 	for _, member := range pool.Members {
-		if member.VMID != nil && int64(*member.VMID) == vmId {
+		if member.VMID != nil && int64(*member.VMID) == vmID {
 			return true
 		}
 	}
@@ -237,7 +237,7 @@ func (r *poolMembershipResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	poolId := state.PoolID.ValueString()
+	poolID := state.PoolID.ValueString()
 	membershipType, membershipTypeErr := NewMembershipType(state.Type.ValueString())
 
 	if membershipTypeErr != nil {
@@ -261,8 +261,8 @@ func (r *poolMembershipResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	if err := r.client.Pool().UpdatePool(ctx, poolId, body); err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("Unable to update pool '%s'", poolId), err.Error())
+	if err := r.client.Pool().UpdatePool(ctx, poolID, body); err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Unable to update pool '%s'", poolID), err.Error())
 	}
 }
 

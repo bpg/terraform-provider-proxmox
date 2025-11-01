@@ -257,8 +257,8 @@ func TestAccPoolMembershipVm(t *testing.T) {
 	t.Parallel()
 
 	te := test.InitEnvironment(t)
-	accTestVmId := 100000 + rand.Intn(99999)
-	accTestVmId2 := 100000 + rand.Intn(99999)
+	accTestVmID := 100000 + rand.Intn(99999)
+	accTestVmID2 := 100000 + rand.Intn(99999)
 	accTestPoolName := gofakeit.Word()
 
 	accTestPoolName2 := gofakeit.Word()
@@ -267,8 +267,8 @@ func TestAccPoolMembershipVm(t *testing.T) {
 	}
 
 	te.AddTemplateVars(map[string]interface{}{
-		"TestVMID":      accTestVmId,
-		"TestVMID2":     accTestVmId2,
+		"TestVMID":      accTestVmID,
+		"TestVMID2":     accTestVmID2,
 		"TestPoolName":  accTestPoolName,
 		"TestPoolName2": accTestPoolName2,
 	})
@@ -296,13 +296,13 @@ func TestAccPoolMembershipVm(t *testing.T) {
 					test.ResourceAttributes(
 						"proxmox_virtual_environment_pool_membership.pool_membership",
 						map[string]string{
-							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName, accTestVmId),
+							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName, accTestVmID),
 							"pool_id": accTestPoolName,
-							"vm_id":   strconv.Itoa(accTestVmId),
+							"vm_id":   strconv.Itoa(accTestVmID),
 							"type":    "vm",
 						},
 					),
-					testAccCheckPoolContainMember(t, te, accTestPoolName, strconv.Itoa(accTestVmId), "qemu", true),
+					testAccCheckPoolContainMember(t, te, accTestPoolName, strconv.Itoa(accTestVmID), "qemu", true),
 				),
 			},
 			{
@@ -334,14 +334,14 @@ func TestAccPoolMembershipVm(t *testing.T) {
 					test.ResourceAttributes(
 						"proxmox_virtual_environment_pool_membership.pool_membership",
 						map[string]string{
-							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName2, accTestVmId),
+							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName2, accTestVmID),
 							"pool_id": accTestPoolName2,
-							"vm_id":   strconv.Itoa(accTestVmId),
+							"vm_id":   strconv.Itoa(accTestVmID),
 							"type":    "vm",
 						},
 					),
-					testAccCheckPoolContainMember(t, te, accTestPoolName, strconv.Itoa(accTestVmId), "qemu", false),
-					testAccCheckPoolContainMember(t, te, accTestPoolName2, strconv.Itoa(accTestVmId), "qemu", true),
+					testAccCheckPoolContainMember(t, te, accTestPoolName, strconv.Itoa(accTestVmID), "qemu", false),
+					testAccCheckPoolContainMember(t, te, accTestPoolName2, strconv.Itoa(accTestVmID), "qemu", true),
 				),
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
@@ -372,9 +372,9 @@ func TestAccPoolMembershipVm(t *testing.T) {
 					test.ResourceAttributes(
 						"proxmox_virtual_environment_pool_membership.pool_membership",
 						map[string]string{
-							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName2, accTestVmId2),
+							"id":      fmt.Sprintf("%s/vm/%d", accTestPoolName2, accTestVmID2),
 							"pool_id": accTestPoolName2,
-							"vm_id":   strconv.Itoa(accTestVmId2),
+							"vm_id":   strconv.Itoa(accTestVmID2),
 							"type":    "vm",
 						},
 					),
@@ -399,7 +399,7 @@ func TestAccPoolMembershipVm(t *testing.T) {
 					node_name = "{{.NodeName}}"
 					started   = false
 				}`),
-				Check: testAccCheckPoolContainMember(t, te, accTestPoolName2, strconv.Itoa(accTestVmId2), "qemu", false),
+				Check: testAccCheckPoolContainMember(t, te, accTestPoolName2, strconv.Itoa(accTestVmID2), "qemu", false),
 			},
 		},
 	})
@@ -543,8 +543,8 @@ func TestAccPoolMembership_Validators(t *testing.T) {
 	})
 }
 
-func checkPoolContainsMember(ctx context.Context, client *pools.Client, poolId, memberId, memberType string) (bool, error) {
-	pool, err := client.GetPool(ctx, poolId)
+func checkPoolContainsMember(ctx context.Context, client *pools.Client, poolID, memberID, memberType string) (bool, error) {
+	pool, err := client.GetPool(ctx, poolID)
 	if err != nil {
 		return false, err
 	}
@@ -554,12 +554,12 @@ func checkPoolContainsMember(ctx context.Context, client *pools.Client, poolId, 
 	for _, member := range pool.Members {
 		switch memberType {
 		case "lxc", "qemu":
-			if member.VMID != nil && member.Type == memberType && strconv.Itoa(*member.VMID) == memberId {
+			if member.VMID != nil && member.Type == memberType && strconv.Itoa(*member.VMID) == memberID {
 				exists = true
 				break
 			}
 		case "storage":
-			if member.DatastoreID != nil && member.Type == memberType && *member.DatastoreID == memberId {
+			if member.DatastoreID != nil && member.Type == memberType && *member.DatastoreID == memberID {
 				exists = true
 				break
 			}
@@ -569,7 +569,7 @@ func checkPoolContainsMember(ctx context.Context, client *pools.Client, poolId, 
 	return exists, err
 }
 
-func testAccCheckPoolContainMember(t *testing.T, te *test.Environment, poolName, memberId, memberType string, shouldExist bool) resource.TestCheckFunc {
+func testAccCheckPoolContainMember(t *testing.T, te *test.Environment, poolName, memberID, memberType string, shouldExist bool) resource.TestCheckFunc {
 	t.Helper()
 
 	return func(state *terraform.State) error {
@@ -580,7 +580,7 @@ func testAccCheckPoolContainMember(t *testing.T, te *test.Environment, poolName,
 			ctx,
 			te.PoolsClient(),
 			poolName,
-			memberId,
+			memberID,
 			memberType,
 		)
 		require.NoError(t, poolCheckErr, "couldn't get the pool")

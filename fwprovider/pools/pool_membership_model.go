@@ -61,22 +61,22 @@ func (p poolMembershipModel) deduceMembershipType() (MembershipType, error) {
 }
 
 func (p poolMembershipModel) generateID() (types.String, error) {
-	var memberId string
+	var memberID string
 
 	switch p.Type.ValueString() {
 	case MembershipTypeVm:
-		memberId = strconv.FormatInt(p.VmID.ValueInt64(), 10)
+		memberID = strconv.FormatInt(p.VmID.ValueInt64(), 10)
 	case MembershipTypeStorage:
-		memberId = p.StorageID.ValueString()
+		memberID = p.StorageID.ValueString()
 	default:
 		return types.String{}, ErrInvalidMembershipType
 	}
 
-	return types.StringValue(fmt.Sprintf("%s/%s/%s", p.PoolID.ValueString(), p.Type.ValueString(), memberId)), nil
+	return types.StringValue(fmt.Sprintf("%s/%s/%s", p.PoolID.ValueString(), p.Type.ValueString(), memberID)), nil
 }
 
 func createMembershipModelFromID(id string) (*poolMembershipModel, error) {
-	poolId, membershipRawType, memberRawId, idParseErr := parseMembershipResourceID(id)
+	poolID, membershipRawType, memberRawID, idParseErr := parseMembershipResourceID(id)
 
 	if idParseErr != nil {
 		return nil, idParseErr
@@ -89,22 +89,22 @@ func createMembershipModelFromID(id string) (*poolMembershipModel, error) {
 
 	model := poolMembershipModel{
 		ID:     types.StringValue(id),
-		PoolID: types.StringValue(poolId),
+		PoolID: types.StringValue(poolID),
 		Type:   types.StringValue(membershipType),
 	}
 
 	switch membershipType {
 	case MembershipTypeVm:
-		vmId, err := strconv.ParseInt(memberRawId, 10, 64)
+		vmID, err := strconv.ParseInt(memberRawID, 10, 64)
 		if err != nil {
-			vmIdErr := fmt.Errorf("wrong vm_id format: %s", memberRawId)
-			return nil, errors.Join(vmIdErr, err)
+			vmIDErr := fmt.Errorf("wrong vm_id format: %s", memberRawID)
+			return nil, errors.Join(vmIDErr, err)
 		}
 
-		model.VmID = types.Int64Value(vmId)
+		model.VmID = types.Int64Value(vmID)
 
 	case MembershipTypeStorage:
-		model.StorageID = types.StringValue(memberRawId)
+		model.StorageID = types.StringValue(memberRawID)
 	}
 
 	return &model, nil

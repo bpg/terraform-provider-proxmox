@@ -20,9 +20,9 @@ func TestParsePoolMembershipID(t *testing.T) {
 	tests := []struct {
 		testName           string
 		id                 string
-		expectedPoolId     string
+		expectedPoolID     string
 		expectedType       string
-		expectedResourceId any
+		expectedResourceID any
 		expectError        bool
 	}{
 		{"correct vm id", "test-pool/vm/102", "test-pool", "vm", 102, false},
@@ -42,7 +42,7 @@ func TestParsePoolMembershipID(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNil(t, model)
 				assert.Equal(t, tt.id, model.ID.ValueString())
-				assert.Equal(t, tt.expectedPoolId, model.PoolID.ValueString())
+				assert.Equal(t, tt.expectedPoolID, model.PoolID.ValueString())
 				assert.Equal(t, tt.expectedType, model.Type.ValueString())
 
 				var value any
@@ -52,7 +52,7 @@ func TestParsePoolMembershipID(t *testing.T) {
 					value = model.VmID.ValueInt64()
 				}
 
-				assert.EqualValues(t, tt.expectedResourceId, value)
+				assert.EqualValues(t, tt.expectedResourceID, value)
 			}
 		})
 	}
@@ -64,7 +64,7 @@ func TestGeneratePoolMembershipID(t *testing.T) {
 	tests := []struct {
 		name        string
 		model       poolMembershipModel
-		expectedId  string
+		expectedID  string
 		expectError bool
 	}{
 		{
@@ -104,7 +104,7 @@ func TestGeneratePoolMembershipID(t *testing.T) {
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
-				assert.Equal(t, tt.expectedId, id.ValueString())
+				assert.Equal(t, tt.expectedID, id.ValueString())
 			}
 		})
 	}
