@@ -212,6 +212,9 @@
       <td align="center" valign="top" width="14.28%"><a href="http://hsnprsd.github.io"><img src="https://avatars.githubusercontent.com/u/28530057?v=4?s=100" width="100px;" alt="Ehsan Poursaeed"/><br /><sub><b>Ehsan Poursaeed</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=hsnprsd" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/TobiPeterG"><img src="https://avatars.githubusercontent.com/u/19935382?v=4?s=100" width="100px;" alt="Tobias Görgens"/><br /><sub><b>Tobias Görgens</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=TobiPeterG" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://mlit.pro"><img src="https://avatars.githubusercontent.com/u/693906?v=4?s=100" width="100px;" alt="Maciej Lech"/><br /><sub><b>Maciej Lech</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=maciej-lech" title="Tests">⚠️</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=maciej-lech" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
