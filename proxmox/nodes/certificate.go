@@ -49,3 +49,19 @@ func (c *Client) UpdateCertificate(ctx context.Context, d *CertificateUpdateRequ
 
 	return nil
 }
+
+// OrderCertificate orders a new certificate from ACME CA for a node.
+func (c *Client) OrderCertificate(ctx context.Context, d *CertificateOrderRequestBody) (*string, error) {
+	resBody := &CertificateOrderResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("certificates/acme/certificate"), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error ordering ACME certificate: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
+}
