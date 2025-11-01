@@ -1507,6 +1507,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "maciej-lech",
+      "name": "Maciej Lech",
+      "avatar_url": "https://avatars.githubusercontent.com/u/693906?v=4",
+      "profile": "https://mlit.pro",
+      "contributions": [
+        "test",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
