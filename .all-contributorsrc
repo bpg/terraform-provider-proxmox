@@ -1487,7 +1487,9 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/13655535?v=4",
       "profile": "https://github.com/shamilovstas",
       "contributions": [
-        "doc"
+        "doc",
+        "code",
+        "test"
       ]
     },
     {
