@@ -18,6 +18,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/pkg/sftp"
@@ -32,8 +33,9 @@ import (
 
 const (
 	// TrySudo is a shell function that tries to execute a command with sudo if the user has sudo permissions.
+	// The result is cached both in the provider (across shell invocations) and in _try_sudo_use_sudo (within a script).
 	//nolint:lll
-	TrySudo = `try_sudo(){ if [ "$(id -u)" = "0" ]; then $1; elif [ $(sudo -n /sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] || sudo -n /sbin/qm --help >/dev/null 2>&1; then sudo $1; else $1; fi }`
+	TrySudo = `_try_sudo_check(){ if [ -z "${_try_sudo_cached:-}" ]; then _try_sudo_use_sudo="${TRY_SUDO_USE_SUDO:-0}"; _try_sudo_cached=1; fi; }; try_sudo(){ _try_sudo_check; if [ "$_try_sudo_use_sudo" = "1" ]; then sudo $1; else $1; fi }`
 )
 
 // NewErrUserHasNoPermission creates a new error indicating that the SSH user does not have required permissions.
@@ -71,6 +73,8 @@ type client struct {
 	socks5Username  string
 	socks5Password  string
 	nodeResolver    NodeResolver
+	sudoCache       map[string]bool
+	sudoCacheMu     sync.RWMutex
 }
 
 // NewClient creates a new SSH client.
@@ -111,6 +115,8 @@ func NewClient(
 		socks5Username:  socks5Username,
 		socks5Password:  socks5Password,
 		nodeResolver:    nodeResolver,
+		sudoCache:       make(map[string]bool),
+		sudoCacheMu:     sync.RWMutex{},
 	}, nil
 }
 
@@ -118,8 +124,77 @@ func (c *client) Username() string {
 	return c.username
 }
 
+// checkSudoAvailability checks if sudo is available for the given node and caches the result.
+func (c *client) checkSudoAvailability(ctx context.Context, nodeName string) (bool, error) {
+	c.sudoCacheMu.RLock()
+	cached, found := c.sudoCache[nodeName]
+	c.sudoCacheMu.RUnlock()
+
+	if found {
+		return cached, nil
+	}
+
+	checkCmd := `if [ "$(id -u)" = "0" ]; then echo "0"; ` +
+		`elif [ $(sudo -n /sbin/pvesm apiinfo 2>&1 | grep "APIVER" | wc -l) -gt 0 ] ` +
+		`|| sudo -n /sbin/qm --help >/dev/null 2>&1; then echo "1"; else echo "0"; fi`
+
+	node, err := c.nodeResolver.Resolve(ctx, nodeName)
+	if err != nil {
+		return false, fmt.Errorf("failed to find node endpoint: %w", err)
+	}
+
+	sshClient, err := c.openNodeShell(ctx, node)
+	if err != nil {
+		return false, err
+	}
+
+	defer func(sshClient *ssh.Client) {
+		e := sshClient.Close()
+		if e != nil {
+			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{
+				"error": e,
+			})
+		}
+	}(sshClient)
+
+	output, err := c.executeCommands(ctx, sshClient, []string{checkCmd})
+	if err != nil {
+		return false, fmt.Errorf("failed to check sudo availability: %w", err)
+	}
+
+	result := strings.TrimSpace(string(output))
+	shouldUseSudo := result == "1"
+
+	c.sudoCacheMu.Lock()
+	c.sudoCache[nodeName] = shouldUseSudo
+	c.sudoCacheMu.Unlock()
+
+	return shouldUseSudo, nil
+}
+
 // ExecuteNodeCommands executes commands on a given node.
 func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, commands []string) ([]byte, error) {
+	commandsStr := strings.Join(commands, "; ")
+	needsSudoCheck := strings.Contains(commandsStr, "try_sudo")
+
+	var sudoValue string
+
+	if needsSudoCheck {
+		shouldUseSudo, err := c.checkSudoAvailability(ctx, nodeName)
+		switch {
+		case err != nil:
+			tflog.Warn(ctx, "failed to check sudo availability, will check inline", map[string]interface{}{
+				"error": err,
+			})
+
+			sudoValue = ""
+		case shouldUseSudo:
+			sudoValue = "1"
+		default:
+			sudoValue = "0"
+		}
+	}
+
 	node, err := c.nodeResolver.Resolve(ctx, nodeName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find node endpoint: %w", err)
@@ -145,7 +220,12 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 		}
 	}(sshClient)
 
-	output, err := c.executeCommands(ctx, sshClient, commands)
+	execCommands := commands
+	if sudoValue != "" {
+		execCommands = append([]string{fmt.Sprintf("export TRY_SUDO_USE_SUDO=%s", sudoValue)}, commands...)
+	}
+
+	output, err := c.executeCommands(ctx, sshClient, execCommands)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +430,7 @@ func (c *client) NodeStreamUpload(
 
 	remoteFilePath := strings.ReplaceAll(filepath.Join(remoteFileDir, d.FileName), `\`, "/")
 
-	err = c.uploadFile(ctx, sshClient, d, remoteFilePath)
+	err = c.uploadFile(ctx, sshClient, d, remoteFilePath, nodeName)
 	if err != nil {
 		return err
 	}
@@ -384,6 +464,7 @@ func (c *client) uploadFile(
 	sshClient *ssh.Client,
 	req *api.FileUploadRequest,
 	remoteFilePath string,
+	nodeName string,
 ) error {
 	sshSession, closer, err := c.openSession(ctx, sshClient)
 	defer closer()
@@ -392,11 +473,24 @@ func (c *client) uploadFile(
 		return fmt.Errorf("failed to open SSH session: %w", err)
 	}
 
+	var sudoEnv string
+
+	if nodeName != "" {
+		shouldUseSudo, checkErr := c.checkSudoAvailability(ctx, nodeName)
+		if checkErr == nil {
+			if shouldUseSudo {
+				sudoEnv = "export TRY_SUDO_USE_SUDO=1; "
+			} else {
+				sudoEnv = "export TRY_SUDO_USE_SUDO=0; "
+			}
+		}
+	}
+
 	sshSession.Stdin = req.File
 
-	output, err := sshSession.CombinedOutput(
-		fmt.Sprintf(`%s; try_sudo "/usr/bin/tee %s"`, TrySudo, remoteFilePath),
-	)
+	cmd := fmt.Sprintf(`%s%s; try_sudo "/usr/bin/tee %s"`, sudoEnv, TrySudo, remoteFilePath)
+
+	output, err := sshSession.CombinedOutput(cmd)
 	if err != nil {
 		return fmt.Errorf("error transferring file: %s", string(output))
 	}
