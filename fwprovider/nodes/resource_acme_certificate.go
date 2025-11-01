@@ -227,16 +227,20 @@ func (r *acmeCertificateResource) waitForCertificateAvailable(
 			}
 
 			certificates = certs
+
 			return nil
 		},
 		retry.Attempts(30),                    // Maximum 30 attempts
-		retry.Delay(1 * time.Second),          // Start with 1 second delay
+		retry.Delay(1*time.Second),            // Start with 1 second delay
 		retry.DelayType(retry.BackOffDelay),   // Use exponential backoff
-		retry.MaxJitter(500 * time.Millisecond), // Add jitter to prevent thundering herd
+		retry.MaxJitter(500*time.Millisecond), // Add jitter to prevent thundering herd
 		retry.Context(ctx),                    // Respect context cancellation
 	)
+	if err != nil {
+		return nil, fmt.Errorf("waiting for certificate availability: %w", err)
+	}
 
-	return certificates, err
+	return certificates, nil
 }
 
 // Create orders a new ACME certificate for the node.
@@ -484,7 +488,11 @@ func (r *acmeCertificateResource) Delete(
 	if err := nodeClient.UpdateConfig(ctx, configUpdate); err != nil {
 		resp.Diagnostics.AddWarning(
 			"Failed to clean up node ACME configuration",
-			fmt.Sprintf("An error occurred while cleaning up ACME settings for node %s on delete: %s. Manual cleanup of /etc/pve/nodes/%s/config may be required.", nodeName, err.Error(), nodeName),
+			fmt.Sprintf(
+				"An error occurred while cleaning up ACME settings for node %s on delete: %s. "+
+					"Manual cleanup of /etc/pve/nodes/%s/config may be required.",
+				nodeName, err.Error(), nodeName,
+			),
 		)
 	}
 }
@@ -601,6 +609,7 @@ func (r *acmeCertificateResource) configureNodeACME(
 ) error {
 	// Parse domains from the model
 	var domains []acmeDomainModel
+
 	diag := model.Domains.ElementsAs(ctx, &domains, false)
 	if diag.HasError() {
 		return fmt.Errorf("error parsing domains: %v", diag.Errors())
@@ -635,7 +644,7 @@ func (r *acmeCertificateResource) configureNodeACME(
 
 	// Configure DNS challenge domains (up to 5 domains with DNS plugins)
 	if len(dnsDomains) > 5 {
-		return fmt.Errorf("Proxmox supports a maximum of 5 DNS challenge domains, got %d", len(dnsDomains))
+		return fmt.Errorf("proxmox supports a maximum of 5 DNS challenge domains, got %d", len(dnsDomains))
 	}
 
 	for i, domain := range dnsDomains {
@@ -673,6 +682,7 @@ func (r *acmeCertificateResource) configureNodeACME(
 	for i := len(dnsDomains); i < 5; i++ {
 		toDelete = append(toDelete, fmt.Sprintf("acmedomain%d", i))
 	}
+
 	if len(toDelete) > 0 {
 		deleteValue := strings.Join(toDelete, ",")
 		configUpdate.Delete = &deleteValue
@@ -691,6 +701,7 @@ func isProxmoxGeneratedCertificate(cert *nodes.CertificateListResponseData) bool
 	}
 	// Check if issuer contains "Proxmox" or "PVE" (Proxmox VE)
 	issuer := *cert.Issuer
+
 	return strings.Contains(issuer, "Proxmox") || strings.Contains(issuer, "PVE")
 }
 
@@ -709,6 +720,7 @@ func (r *acmeCertificateResource) findMatchingCertificate(
 
 	// Extract domains from the model
 	var domainModels []acmeDomainModel
+
 	diag := model.Domains.ElementsAs(ctx, &domainModels, false)
 	if diag.HasError() {
 		// If we can't parse domains, try to find an ACME certificate (not Proxmox-generated)
@@ -759,12 +771,14 @@ func (r *acmeCertificateResource) findMatchingCertificate(
 			subject := *cert.Subject
 			if cnIdx := strings.Index(subject, "CN="); cnIdx != -1 {
 				cnStart := cnIdx + 3
+
 				cnEnd := strings.Index(subject[cnStart:], ",")
 				if cnEnd == -1 {
 					cnEnd = len(subject[cnStart:])
 				} else {
 					cnEnd += cnStart
 				}
+
 				cn := subject[cnStart:cnEnd]
 				if domainMap[cn] {
 					matchCount++
@@ -849,6 +863,7 @@ func (r *acmeCertificateResource) updateModelFromCertificates(
 		if diag.HasError() {
 			return fmt.Errorf("error creating subject_alternative_names list: %v", diag.Errors())
 		}
+
 		model.SubjectAlternativeNames = list
 	} else {
 		model.SubjectAlternativeNames = types.ListNull(types.StringType)

@@ -65,4 +65,3 @@ func (c *Client) OrderCertificate(ctx context.Context, d *CertificateOrderReques
 
 	return resBody.Data, nil
 }
-

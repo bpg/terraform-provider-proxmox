@@ -58,7 +58,7 @@ type ConfigUpdateRequestBody struct {
 	ACMEDomain3 *ACMEDomainConfig `json:"acmedomain3,omitempty" url:"acmedomain3,omitempty"`
 	// ACME domain and validation plugin
 	ACMEDomain4 *ACMEDomainConfig `json:"acmedomain4,omitempty" url:"acmedomain4,omitempty"`
-	Delete      *string           `json:"delete,omitempty" url:"delete,omitempty"`
+	Delete      *string           `json:"delete,omitempty"      url:"delete,omitempty"`
 	// Description for the Node. Shown in the web-interface node notes panel. This is saved as comment inside the configuration file.
 	Description *string `json:"description,omitempty" url:"description,omitempty"`
 	// Prevent changes if current configuration file has different SHA1 digest. This can be used to prevent concurrent modifications.
