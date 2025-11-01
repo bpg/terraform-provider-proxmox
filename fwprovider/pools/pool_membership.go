@@ -36,14 +36,6 @@ var (
 	_ resource.ResourceWithConfigValidators = (*poolMembershipResource)(nil)
 )
 
-const (
-	mkPoolMembershipId        = "id"
-	mkPoolMembershipType      = "type"
-	mkPoolMembershipPoolId    = "pool_id"
-	mkPoolMembershipVmId      = "vm_id"
-	mkPoolMembershipStorageId = "storage_id"
-)
-
 type poolMembershipResource struct {
 	client proxmox.Client
 }
@@ -51,12 +43,12 @@ type poolMembershipResource struct {
 func (r *poolMembershipResource) ConfigValidators(context.Context) []resource.ConfigValidator {
 	return []resource.ConfigValidator{
 		resourcevalidator.Conflicting(
-			path.MatchRoot(mkPoolMembershipVmId),
-			path.MatchRoot(mkPoolMembershipStorageId),
+			path.MatchRoot("vm_id"),
+			path.MatchRoot("storage_id"),
 		),
 		resourcevalidator.AtLeastOneOf(
-			path.MatchRoot(mkPoolMembershipVmId),
-			path.MatchRoot(mkPoolMembershipStorageId),
+			path.MatchRoot("vm_id"),
+			path.MatchRoot("storage_id"),
 		),
 	}
 }
@@ -88,27 +80,27 @@ func (r *poolMembershipResource) Schema(_ context.Context, _ resource.SchemaRequ
 	resp.Schema = schema.Schema{
 		Description: "Manages resource pool memberships for containers, virtual machines and storages",
 		Attributes: map[string]schema.Attribute{
-			mkPoolMembershipId: attribute.ResourceID(),
-			mkPoolMembershipType: schema.StringAttribute{
+			"id": attribute.ResourceID(),
+			"type": schema.StringAttribute{
 				Description:         "Resource pool membership type",
 				MarkdownDescription: "Resource pool membership type (can be `vm` for VMs and CTs or `storage` for storages)",
 				Computed:            true,
 			},
-			mkPoolMembershipPoolId: schema.StringAttribute{
+			"pool_id": schema.StringAttribute{
 				Description: "Resource pool id",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			mkPoolMembershipVmId: schema.Int64Attribute{
+			"vm_id": schema.Int64Attribute{
 				Description: "VM or CT id",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
 				},
 			},
-			mkPoolMembershipStorageId: schema.StringAttribute{
+			"storage_id": schema.StringAttribute{
 				Description: "Storage id",
 				Optional:    true,
 				PlanModifiers: []planmodifier.String{
@@ -288,13 +280,9 @@ func (r *poolMembershipResource) Metadata(_ context.Context, req resource.Metada
 	resp.TypeName = req.ProviderTypeName + "_pool_membership"
 }
 
-func (r *poolMembershipResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan poolMembershipModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+func (r *poolMembershipResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+	resp.Diagnostics.AddError(
+		"Update Not Supported",
+		"All attributes require replacement. This resource cannot be updated in-place",
+	)
 }
