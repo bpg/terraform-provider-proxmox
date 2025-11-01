@@ -12,6 +12,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -539,6 +541,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnvnet.NewResource,
 		sdnsubnet.NewResource,
 		sdnapplier.NewResource,
+		pools.NewPoolMembershipResource,
 	}
 }
 
