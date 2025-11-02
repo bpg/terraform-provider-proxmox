@@ -133,7 +133,7 @@ func TestAccResourceSDNApplier(t *testing.T) {
 						depends_on = [
 							proxmox_virtual_environment_sdn_applier.finalizer
 						]
-					}	
+					}
 
 					resource "proxmox_virtual_environment_sdn_applier" "update_applier" {
 						lifecycle {
@@ -452,6 +452,172 @@ func TestAccResourceSDNApplier(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resource.ParallelTest(t, resource.TestCase{
+				ProtoV6ProviderFactories: te.AccProviders,
+				Steps:                    tt.steps,
+			})
+		})
+	}
+}
+
+func TestAccResourceSDNApplierOnParameters(t *testing.T) {
+	te := test.InitEnvironment(t)
+
+	tests := []struct {
+		name  string
+		steps []resource.TestStep
+	}{
+		{"applier with on_create=false", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "no_create_zone" {
+					id    = "nocZ"
+					nodes = ["{{.NodeName}}"]
+					mtu   = 1500
+				}
+				resource "proxmox_virtual_environment_sdn_applier" "no_create_applier" {
+					on_create = false
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.no_create_zone,
+					]
+				}
+				data "proxmox_virtual_environment_sdn_zone_simple" "zone" {
+					id = proxmox_virtual_environment_sdn_zone_simple.no_create_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.no_create_applier,
+					]
+				}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributesSet("proxmox_virtual_environment_sdn_applier.no_create_applier", []string{
+						"id",
+					}),
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_applier.no_create_applier", map[string]string{
+						"on_create": "false",
+					}),
+					test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_simple.zone", map[string]string{
+						"pending": "true",
+					}),
+				),
+			},
+		}},
+		{"applier with on_destroy=false", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "no_destroy_zone" {
+					id    = "nodZ"
+					nodes = ["{{.NodeName}}"]
+					mtu   = 1500
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.no_destroy_applier,
+					]
+				}
+				resource "proxmox_virtual_environment_sdn_applier" "no_destroy_applier" {
+					on_destroy = false
+				}
+				data "proxmox_virtual_environment_sdn_zone_simple" "zone" {
+					id = proxmox_virtual_environment_sdn_zone_simple.no_destroy_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.no_destroy_applier,
+					]
+				}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributesSet("proxmox_virtual_environment_sdn_applier.no_destroy_applier", []string{
+						"id",
+					}),
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_applier.no_destroy_applier", map[string]string{
+						"on_destroy": "false",
+					}),
+					test.ResourceAttributes("data.proxmox_virtual_environment_sdn_zone_simple.zone", map[string]string{
+						"pending": "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "no_destroy_zone" {
+					id    = "nodZ"
+					nodes = ["{{.NodeName}}"]
+					mtu   = 1500
+				}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_zone_simple.no_destroy_zone", map[string]string{
+						"pending": "true",
+					}),
+				),
+			},
+		}},
+		{"applier with default values (all true)", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "default_zone" {
+					id    = "defZ"
+					nodes = ["{{.NodeName}}"]
+					mtu   = 1500
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.default_applier_2,
+					]
+				}
+				resource "proxmox_virtual_environment_sdn_applier" "default_applier_1" {
+					depends_on = [
+						proxmox_virtual_environment_sdn_zone_simple.default_zone,
+					]
+				}
+				resource "proxmox_virtual_environment_sdn_applier" "default_applier_2" {
+				}
+				data "proxmox_virtual_environment_sdn_zone_simple" "zone" {
+					id = proxmox_virtual_environment_sdn_zone_simple.default_zone.id
+					depends_on = [
+						proxmox_virtual_environment_sdn_applier.default_applier_1,
+						proxmox_virtual_environment_sdn_applier.default_applier_2,
+					]
+				}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributesSet("proxmox_virtual_environment_sdn_applier.default_applier_1", []string{
+						"id",
+					}),
+					test.ResourceAttributesSet("proxmox_virtual_environment_sdn_applier.default_applier_2", []string{
+						"id",
+					}),
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_applier.default_applier_1", map[string]string{
+						"on_create":  "true",
+						"on_destroy": "true",
+					}),
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_applier.default_applier_2", map[string]string{
+						"on_create":  "true",
+						"on_destroy": "true",
+					}),
+					test.NoResourceAttributesSet("data.proxmox_virtual_environment_sdn_zone_simple.zone", []string{
+						"pending",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_sdn_zone_simple" "default_zone" {
+						id    = "defZ"
+						nodes = ["{{.NodeName}}"]
+						mtu   = 1500
+					}
+
+					data "proxmox_virtual_environment_sdn_zone_simple" "zone" {
+						id = proxmox_virtual_environment_sdn_zone_simple.default_zone.id
+					}
+				`),
+				Check: resource.ComposeTestCheckFunc(
+					test.NoResourceAttributesSet("data.proxmox_virtual_environment_sdn_zone_simple.zone", []string{
+						"pending",
+					}),
+				),
+			},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
