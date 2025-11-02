@@ -233,6 +233,7 @@ func (c *client) getSudoValue(ctx context.Context, nodeName string, needsCheck b
 		tflog.Warn(ctx, "failed to check sudo availability, proceeding without sudo", map[string]interface{}{
 			"error": err,
 		})
+
 		return ""
 	}
 
