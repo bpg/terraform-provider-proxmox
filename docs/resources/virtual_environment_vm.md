@@ -503,7 +503,8 @@ output "ubuntu_vm_public_key" {
         - `win11` - Windows 11
         - `wvista` - Windows Vista.
         - `wxp` - Windows XP.
-- `pool_id` - (Optional) The identifier for a pool to assign the virtual machine to.
+- `pool_id` - (Optional, **Deprecated**) The identifier for a pool to assign the virtual machine to.
+  This field is deprecated and will be removed in a future release. To assign the VM to a pool, use `proxmox_virtual_environment_pool_membership` resource instead.
 - `protection` - (Optional) Sets the protection flag of the VM. This will disable the remove VM and remove disk operations (defaults to `false`).
 - `reboot` - (Optional) Reboot the VM after initial creation (defaults to `false`).
 - `reboot_after_update` - (Optional) Reboot the VM after update if needed (defaults to `true`).
