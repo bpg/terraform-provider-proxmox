@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.87.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.86.0...v0.87.0) (2025-11-02)
+
+
+### Features
+
+* **pool:** add `pool_membership` resource ([#2297](https://github.com/bpg/terraform-provider-proxmox/issues/2297)) ([95f180b](https://github.com/bpg/terraform-provider-proxmox/commit/95f180b497f7c82fef4fed565fd79fe5c244292a))
+
+
+### Bug Fixes
+
+* **sdn:** fix subnet datasource IP address datatype ([#2300](https://github.com/bpg/terraform-provider-proxmox/issues/2300)) ([7ffb314](https://github.com/bpg/terraform-provider-proxmox/commit/7ffb31447599630b698101f0aacb58ead54768ed))
+* **ssh:** update sudo check logic and cache check results ([#2309](https://github.com/bpg/terraform-provider-proxmox/issues/2309)) ([702500c](https://github.com/bpg/terraform-provider-proxmox/commit/702500cb3be6c0fa53f5c4f8bf105866fc52a1b3))
+
+
+### Miscellaneous
+
+* **ci:** update lycheeverse/lychee-action action (v2.6.1 → v2.7.0) ([#2305](https://github.com/bpg/terraform-provider-proxmox/issues/2305)) ([9a788da](https://github.com/bpg/terraform-provider-proxmox/commit/9a788da00679215aeb74e61e8ca60d48b2892933))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.8.1 → v7.8.2) ([#2303](https://github.com/bpg/terraform-provider-proxmox/issues/2303)) ([cd9b5fb](https://github.com/bpg/terraform-provider-proxmox/commit/cd9b5fbbb3c98b5e9fb19bfc94db0c13bff222b0))
+
 ## [0.86.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.85.1...v0.86.0) (2025-10-28)
 
 
