@@ -526,7 +526,7 @@ func TestAccResourceVMInitialization(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name = "{{.NodeName}}"
-					url = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}`),
 		}}},
@@ -691,7 +691,7 @@ func TestAccResourceVMNetwork(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}`),
 			Check: resource.ComposeTestCheckFunc(
