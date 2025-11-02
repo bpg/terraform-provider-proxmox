@@ -409,7 +409,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction("proxmox_virtual_environment_firewall_rules.drift_detection",
-							plancheck.ResourceActionDestroyBeforeCreate),
+							plancheck.ResourceActionUpdate),
 						plancheck.ExpectNonEmptyPlan(),
 					},
 				},
@@ -452,7 +452,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
