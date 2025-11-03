@@ -1519,6 +1519,15 @@
         "test",
         "code"
       ]
+    },
+    {
+      "login": "JustasUmbrasas",
+      "name": "Justas Umbrasas",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70886320?v=4",
+      "profile": "https://github.com/JustasUmbrasas",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
