@@ -214,6 +214,7 @@
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://mlit.pro"><img src="https://avatars.githubusercontent.com/u/693906?v=4?s=100" width="100px;" alt="Maciej Lech"/><br /><sub><b>Maciej Lech</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=maciej-lech" title="Tests">⚠️</a> <a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=maciej-lech" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/JustasUmbrasas"><img src="https://avatars.githubusercontent.com/u/70886320?v=4?s=100" width="100px;" alt="Justas Umbrasas"/><br /><sub><b>Justas Umbrasas</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=JustasUmbrasas" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
