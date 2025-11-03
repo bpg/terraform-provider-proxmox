@@ -47,12 +47,12 @@ func (m *vxlanModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.
 }
 
 type VXLANResource struct {
-	generic *genericZoneResource
+	*genericZoneResource
 }
 
 func NewVXLANResource() resource.Resource {
 	return &VXLANResource{
-		generic: newGenericZoneResource(zoneResourceConfig{
+		genericZoneResource: newGenericZoneResource(zoneResourceConfig{
 			typeNameSuffix: "_sdn_zone_vxlan",
 			zoneType:       zones.TypeVXLAN,
 			modelFunc:      func() zoneModel { return &vxlanModel{} },
@@ -80,30 +80,6 @@ func (r *VXLANResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 	}
 }
 
-func (r *VXLANResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	r.generic.Metadata(ctx, req, resp)
-}
-
-func (r *VXLANResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.generic.Configure(ctx, req, resp)
-}
-
-func (r *VXLANResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	r.generic.Create(ctx, req, resp)
-}
-
-func (r *VXLANResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	r.generic.Read(ctx, req, resp)
-}
-
-func (r *VXLANResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	r.generic.Update(ctx, req, resp)
-}
-
-func (r *VXLANResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	r.generic.Delete(ctx, req, resp)
-}
-
-func (r *VXLANResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	r.generic.ImportState(ctx, req, resp)
+func (m *vxlanModel) getGenericModel() *genericModel {
+	return &m.genericModel
 }

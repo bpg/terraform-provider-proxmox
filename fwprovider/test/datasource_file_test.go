@@ -75,6 +75,29 @@ func TestAccDatasourceFile(t *testing.T) {
 	})
 }
 
+func TestAccDatasourceFileImport(t *testing.T) {
+	te := InitEnvironment(t)
+
+	// Test that the import content type is accepted in the schema
+	// Since import content type doesn't support API uploads, we test schema validation
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					data "proxmox_virtual_environment_file" "test_import" {
+						node_name    = "pve"
+						datastore_id = "local"
+						content_type = "import"
+						file_name    = "non-existent-file.yaml"
+					}
+				`,
+				ExpectError: regexp.MustCompile("File Not Found"),
+			},
+		},
+	})
+}
+
 func TestAccDatasourceFileNotFound(t *testing.T) {
 	t.Parallel()
 

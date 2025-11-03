@@ -1,6 +1,6 @@
 resource "proxmox_virtual_environment_sdn_zone_vxlan" "example" {
-  id    = "vxlan1"
-  nodes = ["pve"]
+  id = "vxlan1"
+  # nodes = ["pve"]  # Optional: omit to apply to all nodes in cluster
   peers = ["10.0.0.1", "10.0.0.2", "10.0.0.3"]
   mtu   = 1450
 

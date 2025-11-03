@@ -33,7 +33,7 @@ func TestAccResourceContainer(t *testing.T) {
 
 	te := InitEnvironment(t)
 
-	imageFileName := gofakeit.Word() + "-ubuntu-23.04-standard_23.04-1_amd64.tar.zst"
+	imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
 	accTestContainerID := 100000 + rand.Intn(99999)
 	accTestContainerIDClone := 100000 + rand.Intn(99999)
 
@@ -48,7 +48,7 @@ func TestAccResourceContainer(t *testing.T) {
 		FileName: ptr.Ptr(imageFileName),
 		Node:     ptr.Ptr(te.NodeName),
 		Storage:  ptr.Ptr(te.DatastoreID),
-		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.10-standard_24.10-1_amd64.tar.zst", te.ContainerImagesServer)),
+		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.04-standard_24.04-2_amd64.tar.zst", te.ContainerImagesServer)),
 	})
 	require.NoError(t, err)
 
@@ -418,6 +418,319 @@ func TestAccResourceContainer(t *testing.T) {
 				},
 			),
 		}}},
+		{"hostname update", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = 10
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-hostname-1"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-hostname-1",
+					}),
+					func(*terraform.State) error {
+						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+						defer cancel()
+
+						ct := te.NodeClient().Container(accTestContainerID)
+						err := ct.WaitForContainerStatus(ctx, "running")
+						require.NoError(te.t, err, "container did not start")
+
+						return nil
+					},
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = 10
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-hostname-2"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-hostname-2",
+					}),
+					func(*terraform.State) error {
+						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+						defer cancel()
+
+						ct := te.NodeClient().Container(accTestContainerID)
+						err := ct.WaitForContainerStatus(ctx, "running")
+						require.NoError(te.t, err, "container did not start after hostname change")
+
+						// Verify the hostname was actually updated in the container config
+						ctInfo, err := ct.GetContainer(ctx)
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.Hostname, "hostname should not be nil")
+						require.Equal(te.t, "test-hostname-2", *ctInfo.Hostname, "hostname should be updated")
+
+						return nil
+					},
+				),
+			},
+		}},
+		{"empty dns block on update", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-issue"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-issue",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-issue"
+						dns {}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-issue",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+		}},
+		{"empty dns block on create", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-create"
+						dns {}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-create",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+		}},
+		{"dns block with null values on create", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-create"
+						dns {
+							domain = null
+							server = ""
+							servers = null
+						}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-create",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+		}},
+		{"dns block with null values on update", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					unprivileged = true
+					disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test-dns-update"
+					dns {
+						domain = "example.com"
+						servers = ["8.8.8.8", "8.8.4.4"]
+					}
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "ubuntu"
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname":        "test-dns-update",
+						"initialization.0.dns.#":           "1",
+						"initialization.0.dns.0.domain":    "example.com",
+						"initialization.0.dns.0.servers.#": "2",
+						"initialization.0.dns.0.servers.0": "8.8.8.8",
+						"initialization.0.dns.0.servers.1": "8.8.4.4",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-update"
+						dns {
+							domain = ""
+							servers = null
+						}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-update",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

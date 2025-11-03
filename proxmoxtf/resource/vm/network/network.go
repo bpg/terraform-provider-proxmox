@@ -1,3 +1,9 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package network
 
 import (
@@ -269,6 +275,14 @@ func ReadNetworkValues(
 					macAddresses[ri] = strings.ToUpper(rv.MACAddress)
 					networkInterfaceNames[ri] = rv.Name
 				}
+			}
+
+			if err != nil {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  "error waiting for network interfaces from QEMU agent",
+					Detail:   err.Error(),
+				})
 			}
 
 			err = d.Set(mkMACAddresses, macAddresses)

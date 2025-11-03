@@ -25,20 +25,19 @@ type model struct {
 func (m *model) fromAPI(id string, data *vnets.VNetData) {
 	m.ID = types.StringValue(id)
 
-	m.Zone = types.StringPointerValue(data.Zone)
-	m.Alias = types.StringPointerValue(data.Alias)
-
+	m.Zone = m.handleDeletedValue(data.Zone)
+	m.Alias = m.handleDeletedValue(data.Alias)
 	m.IsolatePorts = types.BoolPointerValue(data.IsolatePorts.PointerBool())
 	m.Tag = types.Int64PointerValue(data.Tag)
 	m.VlanAware = types.BoolPointerValue(data.VlanAware.PointerBool())
 
 	if data.Pending != nil {
 		if data.Pending.Zone != nil {
-			m.Zone = types.StringValue(*data.Pending.Zone)
+			m.Zone = m.handleDeletedValue(data.Pending.Zone)
 		}
 
 		if data.Pending.Alias != nil {
-			m.Alias = types.StringValue(*data.Pending.Alias)
+			m.Alias = m.handleDeletedValue(data.Pending.Alias)
 		}
 
 		if data.Pending.IsolatePorts != nil {
@@ -53,6 +52,18 @@ func (m *model) fromAPI(id string, data *vnets.VNetData) {
 			m.VlanAware = types.BoolPointerValue(data.Pending.VlanAware.PointerBool())
 		}
 	}
+}
+
+func (m *model) handleDeletedValue(value *string) types.String {
+	if value == nil {
+		return types.StringNull()
+	}
+
+	if *value == "deleted" {
+		return types.StringNull()
+	}
+
+	return types.StringValue(*value)
 }
 
 func (m *model) toAPI() *vnets.VNet {

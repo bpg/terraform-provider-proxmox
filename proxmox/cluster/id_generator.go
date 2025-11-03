@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -21,6 +22,7 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/rogpeppe/go-internal/lockedfile"
 
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 )
 
@@ -116,6 +118,10 @@ func (g IDGenerator) NextID(ctx context.Context) (int, error) {
 			errs = append(errs, err)
 		}),
 		retry.Context(ctx),
+		retry.RetryIf(func(err error) bool {
+			var httpError *api.HTTPError
+			return !errors.As(err, &httpError) || httpError.Code != http.StatusForbidden
+		}),
 		retry.UntilSucceeded(),
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(200*time.Millisecond),

@@ -144,19 +144,23 @@ output "ubuntu_container_public_key" {
 - `initialization` - (Optional) The initialization configuration.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
-        - `server` - (Optional) The DNS server. The `server` attribute is
-            deprecated and will be removed in a future release. Please use
+        - `server` - (Optional) The DNS server.
+            The `server` attribute is deprecated and will be removed in a future release. Please use
             the `servers` attribute instead.
         - `servers` - (Optional) The list of DNS servers.
     - `hostname` - (Optional) The hostname.
     - `ip_config` - (Optional) The IP configuration (one block per network
         device).
         - `ipv4` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv4 address (use `dhcp` for auto-discovery).
+            - `address` - (Optional) The IPv4 address in CIDR notation
+              (e.g. 192.168.2.2/24). Alternatively, set this to `dhcp` for
+              autodiscovery.
             - `gateway` - (Optional) The IPv4 gateway (must be omitted
                 when `dhcp` is used as the address).
-        - `ipv6` - (Optional) The IPv4 configuration.
-            - `address` - (Optional) The IPv6 address (use `dhcp` for auto-discovery).
+        - `ipv6` - (Optional) The IPv6 configuration.
+            - `address` - (Optional) The IPv6 address in CIDR notation
+              (e.g. fd1c::7334/64). Alternatively, set this
+              to `dhcp` for autodiscovery.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
                 when `dhcp` is used as the address).
     - `user_account` - (Optional) The user account configuration.

@@ -602,6 +602,11 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		// request the network interfaces from the agent
 		data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
 
+		var httpError *api.HTTPError
+		if errors.As(err, &httpError) && httpError.Code == http.StatusForbidden {
+			return nil, err
+		}
+
 		// tick ahead and continue if we got an error from the api
 		if err != nil || data == nil || data.Result == nil {
 			time.Sleep(1 * time.Second)

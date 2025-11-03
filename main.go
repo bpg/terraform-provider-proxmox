@@ -51,6 +51,7 @@ import (
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_vnet.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zones.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_simple.md ./docs/data-sources/
+//go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_subnet.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_vlan.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_qinq.md ./docs/data-sources/
 //go:generate cp ./build/docs-gen/data-sources/virtual_environment_sdn_zone_vxlan.md ./docs/data-sources/
@@ -76,6 +77,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_applier.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_vnet.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_simple.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_subnet.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_vlan.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_qinq.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_vxlan.md ./docs/resources/
@@ -83,6 +85,7 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_vm2.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_pool_membership.md ./docs/resources/
 
 // these will be set by the goreleaser configuration
 // to appropriate values for the compiled binary.

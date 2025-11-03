@@ -81,6 +81,37 @@ resource "proxmox_virtual_environment_firewall_rules" "container_rules" {
   }
 }
 
+resource "proxmox_virtual_environment_firewall_rules" "node_rules" {
+  node_name = "pve"
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow SSH access"
+    dport   = "22"
+    proto   = "tcp"
+    source  = "192.168.1.0/24"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow Proxmox web interface"
+    dport   = "8006"
+    proto   = "tcp"
+    source  = "192.168.1.0/24"
+  }
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    comment = "Allow ICMP ping"
+    proto   = "icmp"
+    source  = "192.168.1.0/24"
+    log     = "info"
+  }
+}
+
 output "resource_proxmox_virtual_environment_firewall_rules_cluster" {
   value = proxmox_virtual_environment_firewall_rules.cluster_rules
 }
@@ -91,4 +122,8 @@ output "resource_proxmox_virtual_environment_firewall_rules_vm" {
 
 output "resource_proxmox_virtual_environment_firewall_rules_container" {
   value = proxmox_virtual_environment_firewall_rules.container_rules
+}
+
+output "resource_proxmox_virtual_environment_firewall_rules_node" {
+  value = proxmox_virtual_environment_firewall_rules.node_rules
 }

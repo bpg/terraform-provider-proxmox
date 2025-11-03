@@ -1470,6 +1470,55 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "MacherelR",
+      "name": "Rémy Macherel",
+      "avatar_url": "https://avatars.githubusercontent.com/u/64424331?v=4",
+      "profile": "https://github.com/MacherelR",
+      "contributions": [
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "shamilovstas",
+      "name": "Stanislav Shamilov",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13655535?v=4",
+      "profile": "https://github.com/shamilovstas",
+      "contributions": [
+        "doc",
+        "code",
+        "test"
+      ]
+    },
+    {
+      "login": "hsnprsd",
+      "name": "Ehsan Poursaeed",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28530057?v=4",
+      "profile": "http://hsnprsd.github.io",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "TobiPeterG",
+      "name": "Tobias Görgens",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19935382?v=4",
+      "profile": "https://github.com/TobiPeterG",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "maciej-lech",
+      "name": "Maciej Lech",
+      "avatar_url": "https://avatars.githubusercontent.com/u/693906?v=4",
+      "profile": "https://mlit.pro",
+      "contributions": [
+        "test",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

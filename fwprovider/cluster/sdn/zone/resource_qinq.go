@@ -54,12 +54,12 @@ func (m *qinqModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Z
 }
 
 type QinQResource struct {
-	generic *genericZoneResource
+	*genericZoneResource
 }
 
 func NewQinQResource() resource.Resource {
 	return &QinQResource{
-		generic: newGenericZoneResource(zoneResourceConfig{
+		genericZoneResource: newGenericZoneResource(zoneResourceConfig{
 			typeNameSuffix: "_sdn_zone_qinq",
 			zoneType:       zones.TypeQinQ,
 			modelFunc:      func() zoneModel { return &qinqModel{} },
@@ -100,30 +100,6 @@ func (r *QinQResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 	}
 }
 
-func (r *QinQResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	r.generic.Metadata(ctx, req, resp)
-}
-
-func (r *QinQResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.generic.Configure(ctx, req, resp)
-}
-
-func (r *QinQResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	r.generic.Create(ctx, req, resp)
-}
-
-func (r *QinQResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	r.generic.Read(ctx, req, resp)
-}
-
-func (r *QinQResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	r.generic.Update(ctx, req, resp)
-}
-
-func (r *QinQResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	r.generic.Delete(ctx, req, resp)
-}
-
-func (r *QinQResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	r.generic.ImportState(ctx, req, resp)
+func (m *qinqModel) getGenericModel() *genericModel {
+	return &m.genericModel
 }

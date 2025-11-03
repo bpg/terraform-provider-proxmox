@@ -85,6 +85,7 @@ func TestClientDoRequest(t *testing.T) {
 					httpClient: newTestClient(func(_ *http.Request) *http.Response {
 						sc, err := strconv.Atoi(strings.Fields(tt.status)[0])
 						require.NoError(t, err)
+
 						return &http.Response{
 							Status:     tt.status,
 							StatusCode: sc,

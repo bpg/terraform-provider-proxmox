@@ -12,6 +12,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/pools"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -31,6 +33,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/metrics"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/options"
 	sdnapplier "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/applier"
+	sdnsubnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/subnet"
 	sdnvnet "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/vnet"
 	sdnzone "github.com/bpg/terraform-provider-proxmox/fwprovider/cluster/sdn/zone"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
@@ -536,7 +539,9 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		sdnzone.NewVXLANResource,
 		sdnzone.NewEVPNResource,
 		sdnvnet.NewResource,
+		sdnsubnet.NewResource,
 		sdnapplier.NewResource,
+		pools.NewPoolMembershipResource,
 	}
 }
 
@@ -566,6 +571,7 @@ func (p *proxmoxProvider) DataSources(_ context.Context) []func() datasource.Dat
 		sdnzone.NewVXLANDataSource,
 		sdnzone.NewEVPNDataSource,
 		sdnzone.NewZonesDataSource,
+		sdnsubnet.NewDataSource,
 		sdnvnet.NewDataSource,
 		vm.NewDataSource,
 	}

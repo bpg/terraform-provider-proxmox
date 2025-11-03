@@ -325,6 +325,7 @@ func Container() *schema.Resource {
 					if i.(string) != "" {
 						return strings.ReplaceAll(strings.TrimSpace(i.(string)), "\r\n", "\n") + "\n"
 					}
+
 					return ""
 				},
 			},
@@ -484,12 +485,12 @@ func Container() *schema.Resource {
 										Description: "The list of DNS servers",
 										Optional:    true,
 										Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.IsIPAddress},
-										MinItems:    0,
+										MinItems:    1,
 									},
 								},
 							},
-							MaxItems: 1,
-							MinItems: 0,
+							MaxItems:         1,
+							DiffSuppressFunc: skipDnsDiffIfEmpty,
 						},
 						mkInitializationHostname: {
 							Type:        schema.TypeString,
@@ -612,11 +613,6 @@ func Container() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				// this does not work with map datatype in SDK :(
-				// Elem: &schema.Schema{
-				//	Type: schema.TypeList,
-				//	Elem: &schema.Schema{Type: schema.TypeString},
-				// },
 			},
 			mkIPv6: {
 				Type:        schema.TypeMap,
@@ -693,10 +689,6 @@ func Container() *schema.Resource {
 							Type:        schema.TypeString,
 							Description: "Path to the mount point as seen from inside the container",
 							Required:    true,
-							// StateFunc: func(i interface{}) string {
-							// 	// PVE strips leading slashes from the path, so we have to do the same
-							// 	return strings.TrimPrefix(i.(string), "/")
-							// },
 							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
 								return "/"+oldVal == newVal
 							},
@@ -1042,6 +1034,7 @@ func Container() *schema.Resource {
 				}
 
 				d.SetId(id)
+
 				err = d.Set(mkNodeName, node)
 				if err != nil {
 					return nil, fmt.Errorf("failed setting state during import: %w", err)
@@ -2920,8 +2913,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	clone := d.Get(mkClone).([]interface{})
 
 	// Prepare the new primitive values.
-	description := d.Get(mkDescription).(string)
-	updateBody.Description = &description
+	if d.HasChange(mkDescription) {
+		description := d.Get(mkDescription).(string)
+		updateBody.Description = &description
+	}
 
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 
@@ -3057,7 +3052,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		initializationBlock := initialization[0].(map[string]interface{})
 		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
 
-		if len(initializationDNS) > 0 {
+		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
 			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
 			initializationDNSDomain = initializationDNSBlock[mkInitializationDNSDomain].(string)
 
@@ -3120,13 +3115,23 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 	}
 
-	if d.HasChange(mkInitialization + "." + mkInitializationDNS) {
-		updateBody.DNSDomain = &initializationDNSDomain
-		updateBody.DNSServer = &initializationDNSServer
+	if d.HasChange(mkInitialization + ".0." + mkInitializationDNS) {
+		if initializationDNSDomain != "" {
+			updateBody.DNSDomain = &initializationDNSDomain
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "searchdomain")
+		}
+
+		if initializationDNSServer != "" {
+			updateBody.DNSServer = &initializationDNSServer
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "nameserver")
+		}
+
 		rebootRequired = true
 	}
 
-	if d.HasChange(mkInitialization + "." + mkInitializationHostname) {
+	if d.HasChange(mkInitialization + ".0." + mkInitializationHostname) {
 		updateBody.Hostname = &initializationHostname
 		rebootRequired = true
 	}
@@ -3268,7 +3273,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 	}
 
-	if d.HasChange(mkInitialization) ||
+	if d.HasChange(mkInitialization+".0."+mkInitializationIPConfig) ||
 		d.HasChange(mkNetworkInterface) {
 		networkInterfaces := make(
 			containers.CustomNetworkInterfaces,
@@ -3531,4 +3536,20 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 
 func getContainerDiskVolume(rawVolume string, vmID int, diskID int) string {
 	return fmt.Sprintf("%s:vm-%d-disk-%d", rawVolume, vmID, diskID)
+}
+
+func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	dnsDataKey := mkInitialization + ".0." + mkInitializationDNS
+	if k == dnsDataKey+".#" {
+		if oldValue == "0" && newValue == "1" {
+			// if dns block's attributes are empty, do not report change
+			domain := d.Get(dnsDataKey + ".0." + mkInitializationDNSDomain).(string)
+			server := d.Get(dnsDataKey + ".0." + mkInitializationDNSServer).(string)
+			servers := d.Get(dnsDataKey + ".0." + mkInitializationDNSServers).([]interface{})
+
+			return domain == "" && server == "" && len(servers) == 0
+		}
+	}
+
+	return false
 }

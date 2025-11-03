@@ -32,6 +32,13 @@ data "proxmox_virtual_environment_file" "cloud_init_snippet" {
   file_name    = "cloud-init-config.yaml"
 }
 
+data "proxmox_virtual_environment_file" "imported_file" {
+  node_name    = "pve"
+  datastore_id = "local"
+  content_type = "import"
+  file_name    = "imported-config.yaml"
+}
+
 output "ubuntu_iso_id" {
   value = data.proxmox_virtual_environment_file.ubuntu_iso.id
 }

@@ -81,12 +81,12 @@ func (m *evpnModel) toAPI(ctx context.Context, diags *diag.Diagnostics) *zones.Z
 }
 
 type EVPNResource struct {
-	generic *genericZoneResource
+	*genericZoneResource
 }
 
 func NewEVPNResource() resource.Resource {
 	return &EVPNResource{
-		generic: newGenericZoneResource(zoneResourceConfig{
+		genericZoneResource: newGenericZoneResource(zoneResourceConfig{
 			typeNameSuffix: "_sdn_zone_evpn",
 			zoneType:       zones.TypeEVPN,
 			modelFunc:      func() zoneModel { return &evpnModel{} },
@@ -140,30 +140,6 @@ func (r *EVPNResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 	}
 }
 
-func (r *EVPNResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	r.generic.Metadata(ctx, req, resp)
-}
-
-func (r *EVPNResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	r.generic.Configure(ctx, req, resp)
-}
-
-func (r *EVPNResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	r.generic.Create(ctx, req, resp)
-}
-
-func (r *EVPNResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	r.generic.Read(ctx, req, resp)
-}
-
-func (r *EVPNResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	r.generic.Update(ctx, req, resp)
-}
-
-func (r *EVPNResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	r.generic.Delete(ctx, req, resp)
-}
-
-func (r *EVPNResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	r.generic.ImportState(ctx, req, resp)
+func (m *evpnModel) getGenericModel() *genericModel {
+	return &m.genericModel
 }

@@ -1,5 +1,110 @@
 # Changelog
 
+## [0.86.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.85.1...v0.86.0) (2025-10-28)
+
+
+### Features
+
+* **firewall:** ability to import firewall rules & options ([#2269](https://github.com/bpg/terraform-provider-proxmox/issues/2269)) ([dd1afe6](https://github.com/bpg/terraform-provider-proxmox/commit/dd1afe63446bae0487cab6c9344bce74d00bd4bb))
+* **firewall:** add ability to import ipsets ([#2280](https://github.com/bpg/terraform-provider-proxmox/issues/2280)) ([33c751d](https://github.com/bpg/terraform-provider-proxmox/commit/33c751d58344b29255dde02256baffbdd88f9149))
+* **firewall:** support node-level firewall rules ([#2281](https://github.com/bpg/terraform-provider-proxmox/issues/2281)) ([18c675b](https://github.com/bpg/terraform-provider-proxmox/commit/18c675bf9ada5eae2bf94a00f24800fdb8a5425b))
+
+
+### Bug Fixes
+
+* **lxc:** delete dns attributes when set to null ([#2263](https://github.com/bpg/terraform-provider-proxmox/issues/2263)) ([a32988a](https://github.com/bpg/terraform-provider-proxmox/commit/a32988a12897dbffef8bb2d5e5270baa70eaa64f))
+* **vm:** correctly detect pool membership for VM ([#2264](https://github.com/bpg/terraform-provider-proxmox/issues/2264)) ([5a5c9c6](https://github.com/bpg/terraform-provider-proxmox/commit/5a5c9c6fceaa25ac6296b87e9651996cc1286982))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/upload-artifact action (v4 → v5) ([#2275](https://github.com/bpg/terraform-provider-proxmox/issues/2275)) ([ad4bbd7](https://github.com/bpg/terraform-provider-proxmox/commit/ad4bbd7bb51137c9af6dbaff9fe5d898ffa56c27))
+* **ci:** update googleapis/release-please-action action (v4.3.0 → v4.4.0) ([#2273](https://github.com/bpg/terraform-provider-proxmox/issues/2273)) ([0bcba7b](https://github.com/bpg/terraform-provider-proxmox/commit/0bcba7ba09b30a7fb707ac5a4963d27f3dcde1c8))
+* **deps:** update image golang (7d73c4c → 8c945d3) ([#2253](https://github.com/bpg/terraform-provider-proxmox/issues/2253)) ([a2bb9b6](https://github.com/bpg/terraform-provider-proxmox/commit/a2bb9b6eaca00a38f43dd44f09bf76f3a74f5a24))
+* **deps:** update image golang (8c945d3 → dd08f76) ([#2270](https://github.com/bpg/terraform-provider-proxmox/issues/2270)) ([4c1514f](https://github.com/bpg/terraform-provider-proxmox/commit/4c1514fb9eb5da7e69be5fc62acf96176402ed22))
+* **deps:** update image golang (dd08f76 → 6bac879) ([#2283](https://github.com/bpg/terraform-provider-proxmox/issues/2283)) ([0c9879a](https://github.com/bpg/terraform-provider-proxmox/commit/0c9879ab0267223b30ae52b738edcbf79e949814))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.8.0 → v7.8.1) ([#2271](https://github.com/bpg/terraform-provider-proxmox/issues/2271)) ([11d4c71](https://github.com/bpg/terraform-provider-proxmox/commit/11d4c7122ba12954ee108de81a037bccaf305e76))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework-timeouts (v0.6.0 → v0.7.0) ([#2274](https://github.com/bpg/terraform-provider-proxmox/issues/2274)) ([b9ccb0d](https://github.com/bpg/terraform-provider-proxmox/commit/b9ccb0dd4f1124f3d358644fbe540ac4270e9b97))
+* **deps:** update module github.com/pkg/sftp (v1.13.9 → v1.13.10) ([#2272](https://github.com/bpg/terraform-provider-proxmox/issues/2272)) ([fdbe313](https://github.com/bpg/terraform-provider-proxmox/commit/fdbe313e32896f9bd72df6b9ccf0d1fb811694f6))
+* **docs:** update CONTRIBUTING.md ([#2278](https://github.com/bpg/terraform-provider-proxmox/issues/2278)) ([110093b](https://github.com/bpg/terraform-provider-proxmox/commit/110093b4e4407aaa2cd0729a9846fa2c4a9b6c04))
+
+## [0.85.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.85.0...v0.85.1) (2025-10-15)
+
+
+### Bug Fixes
+
+* **docs:** clarify that ip in ct ip_config must be in CIDR notation ([#2238](https://github.com/bpg/terraform-provider-proxmox/issues/2238)) ([f3b835f](https://github.com/bpg/terraform-provider-proxmox/commit/f3b835ffa1ac7c5700b6b055d9cda3780afa7b3d))
+* **lxc:** DNS / hostname update is not applied ([#2245](https://github.com/bpg/terraform-provider-proxmox/issues/2245)) ([9aa1eaf](https://github.com/bpg/terraform-provider-proxmox/commit/9aa1eafaa6d50c3d1398a23562087032f0eeee0f))
+* **sdn:** add missing `dhcp` field to `simple` zone datasource ([#2243](https://github.com/bpg/terraform-provider-proxmox/issues/2243)) ([b4b8d09](https://github.com/bpg/terraform-provider-proxmox/commit/b4b8d091a6c29361825d3df98e565813f59f9ad1))
+* **sdn:** handle attribute delete in all SDN resources ([#2248](https://github.com/bpg/terraform-provider-proxmox/issues/2248)) ([50accca](https://github.com/bpg/terraform-provider-proxmox/commit/50accca1161100de60db4505783be21dbff1435e))
+* **sdn:** zone: make `nodes` attribute optional ([#2242](https://github.com/bpg/terraform-provider-proxmox/issues/2242)) ([798623b](https://github.com/bpg/terraform-provider-proxmox/commit/798623b63b85245df7be8d6f1bd01a6aa7a7b63a))
+
+
+### Miscellaneous
+
+* **deps:** update image golang (1.25.2 → 1.25.3) ([#2246](https://github.com/bpg/terraform-provider-proxmox/issues/2246)) ([3d2092f](https://github.com/bpg/terraform-provider-proxmox/commit/3d2092fe8ec3d078cb0973c672ca87ba582364ed))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.7.3 → v7.8.0) ([#2241](https://github.com/bpg/terraform-provider-proxmox/issues/2241)) ([ecf7920](https://github.com/bpg/terraform-provider-proxmox/commit/ecf79205ac1011e68b193de686ac6eae040fbd91))
+* **deps:** update module github.com/hashicorp/terraform-plugin-docs (v0.23.0 → v0.24.0) ([#2247](https://github.com/bpg/terraform-provider-proxmox/issues/2247)) ([6e23c90](https://github.com/bpg/terraform-provider-proxmox/commit/6e23c9056f66f62167410d29040173b90bc6d755))
+
+## [0.85.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.84.1...v0.85.0) (2025-10-12)
+
+
+### Features
+
+* **sdn:** Add DHCP Config for SDN Simple Zone Resource ([#2210](https://github.com/bpg/terraform-provider-proxmox/issues/2210)) ([f5d3d92](https://github.com/bpg/terraform-provider-proxmox/commit/f5d3d92cced4b1861c82c82ceb6b2bfc10264bd0))
+
+
+### Bug Fixes
+
+* **file:** add `import` content type to file datasource ([#2221](https://github.com/bpg/terraform-provider-proxmox/issues/2221)) ([f918bed](https://github.com/bpg/terraform-provider-proxmox/commit/f918bede079db0da790865f6fea4f2c1e9c87a14))
+* **vm:** allow cpu units = 1 for cgroups v2 compatibility ([#2237](https://github.com/bpg/terraform-provider-proxmox/issues/2237)) ([3fc688b](https://github.com/bpg/terraform-provider-proxmox/commit/3fc688b7f6f36df62909352eaffe572aa6968e1c))
+
+
+### Miscellaneous
+
+* **ci:** update actions/stale digest (3a9db7e → 5f858e3) ([#2222](https://github.com/bpg/terraform-provider-proxmox/issues/2222)) ([b38066b](https://github.com/bpg/terraform-provider-proxmox/commit/b38066b42d71cd6d549833912b21ecbda27dbacc))
+* **ci:** Update peter-evans/create-issue-from-file action (v5.0.1 → v6.0.0) ([#2217](https://github.com/bpg/terraform-provider-proxmox/issues/2217)) ([29748a5](https://github.com/bpg/terraform-provider-proxmox/commit/29748a5afe49938349a8efd819a7e1ca5f178024))
+* **deps:** update image golang (1.25.1 → 1.25.2) ([#2228](https://github.com/bpg/terraform-provider-proxmox/issues/2228)) ([9e77057](https://github.com/bpg/terraform-provider-proxmox/commit/9e7705705a8013f5d11016ff1dd2b078518e29da))
+* **deps:** update image golang (8305f5f → ab1f5c4) ([#2215](https://github.com/bpg/terraform-provider-proxmox/issues/2215)) ([6a1f972](https://github.com/bpg/terraform-provider-proxmox/commit/6a1f9728f2cbd8736ae5f52292edd50a43ce94b3))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework (v1.16.0 → v1.16.1) ([#2216](https://github.com/bpg/terraform-provider-proxmox/issues/2216)) ([515c6bb](https://github.com/bpg/terraform-provider-proxmox/commit/515c6bb398d4c749bb3c3b300be7b0a1a894ea7a))
+* **deps:** update module github.com/hashicorp/terraform-plugin-framework-validators (v0.18.0 → v0.19.0) ([#2230](https://github.com/bpg/terraform-provider-proxmox/issues/2230)) ([761fb70](https://github.com/bpg/terraform-provider-proxmox/commit/761fb709e35a5ca0ae0a928335d6b558bc507a64))
+* **deps:** update module github.com/skeema/knownhosts (v1.3.1 → v1.3.2) ([#2229](https://github.com/bpg/terraform-provider-proxmox/issues/2229)) ([b6022d4](https://github.com/bpg/terraform-provider-proxmox/commit/b6022d4d0ab540de628b0078952257586c2ea0fa))
+* **deps:** update module golang.org/x/net (v0.44.0 → v0.45.0) ([#2231](https://github.com/bpg/terraform-provider-proxmox/issues/2231)) ([60fdfd6](https://github.com/bpg/terraform-provider-proxmox/commit/60fdfd67d4d4010bfd46ba0ba311777def8231c3))
+* **deps:** update module golang.org/x/net (v0.45.0 → v0.46.0) ([#2236](https://github.com/bpg/terraform-provider-proxmox/issues/2236)) ([68bd667](https://github.com/bpg/terraform-provider-proxmox/commit/68bd667b0fa9394569167b4626b3091993d96c38))
+
+## [0.84.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.84.0...v0.84.1) (2025-09-29)
+
+
+### Bug Fixes
+
+* **api:** handle PVE API's 403 response status ([#2207](https://github.com/bpg/terraform-provider-proxmox/issues/2207)) ([46e8c24](https://github.com/bpg/terraform-provider-proxmox/commit/46e8c24d5bce906e5673e41b7c0151d46180fbe3))
+* **sdn:** subnet validation errors when using value interpolation ([#2204](https://github.com/bpg/terraform-provider-proxmox/issues/2204)) ([5f876c0](https://github.com/bpg/terraform-provider-proxmox/commit/5f876c0fbfc06f25cbe18f396a983cd948df60ba))
+
+
+### Miscellaneous
+
+* **deps:** update golangci/golangci-lint (v2.4.0 → v2.5.0) ([#2193](https://github.com/bpg/terraform-provider-proxmox/issues/2193)) ([2ab3d94](https://github.com/bpg/terraform-provider-proxmox/commit/2ab3d943d69c0648d749cbc85a279498c3a900ce))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.7.1 → v7.7.3) ([#2203](https://github.com/bpg/terraform-provider-proxmox/issues/2203)) ([3692434](https://github.com/bpg/terraform-provider-proxmox/commit/36924349437a7a0fd19b0c73185fdf5176d4186e))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.38.0 → v2.38.1) ([#2197](https://github.com/bpg/terraform-provider-proxmox/issues/2197)) ([0387296](https://github.com/bpg/terraform-provider-proxmox/commit/0387296c0bc5aa90cb6fd332ed0890ef75d67db0))
+
+## [0.84.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.2...v0.84.0) (2025-09-22)
+
+
+### Features
+
+* **file:** add file datasource ([#2176](https://github.com/bpg/terraform-provider-proxmox/issues/2176)) ([8244813](https://github.com/bpg/terraform-provider-proxmox/commit/8244813b7eae6bb6442fa69f786ab9422ffdadee))
+* **sdn:** add support for Subnet resource and datasource ([#2191](https://github.com/bpg/terraform-provider-proxmox/issues/2191)) ([1df305d](https://github.com/bpg/terraform-provider-proxmox/commit/1df305dfb3867f0e0bc207f928745de96db3f7f1))
+* **sdn:** add support for VNet resource and datasource ([#2185](https://github.com/bpg/terraform-provider-proxmox/issues/2185)) ([8938d86](https://github.com/bpg/terraform-provider-proxmox/commit/8938d8657157085934adb15680209a374b3bc7b2))
+
+
+### Miscellaneous
+
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#2187](https://github.com/bpg/terraform-provider-proxmox/issues/2187)) ([09b704a](https://github.com/bpg/terraform-provider-proxmox/commit/09b704ad8e082dde47247f2a9fb64f5af7791a15))
+* **deps:** update image golang (bb979b2 → 8305f5f) ([#2186](https://github.com/bpg/terraform-provider-proxmox/issues/2186)) ([b70fa62](https://github.com/bpg/terraform-provider-proxmox/commit/b70fa6267037811b650a48baec7bc07ed3b2665d))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.6.0 → v7.7.0) ([#2189](https://github.com/bpg/terraform-provider-proxmox/issues/2189)) ([46dbc68](https://github.com/bpg/terraform-provider-proxmox/commit/46dbc68da70bd4e7600c3d124b39abd07dbbc07e))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.7.0 → v7.7.1) ([#2192](https://github.com/bpg/terraform-provider-proxmox/issues/2192)) ([11f4002](https://github.com/bpg/terraform-provider-proxmox/commit/11f400288b896f8a4570f169651e20dd2cef3e10))
+* **deps:** update module github.com/hashicorp/terraform-plugin-sdk/v2 (v2.37.0 → v2.38.0) ([#2188](https://github.com/bpg/terraform-provider-proxmox/issues/2188)) ([2b2d619](https://github.com/bpg/terraform-provider-proxmox/commit/2b2d619356fa7a099807c54b0a6a45e78683b15e))
+
 ## [0.83.2](https://github.com/bpg/terraform-provider-proxmox/compare/v0.83.1...v0.83.2) (2025-09-14)
 
 

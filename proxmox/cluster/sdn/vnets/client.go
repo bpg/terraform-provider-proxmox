@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/cluster/sdn/subnets"
 )
 
 // Client is a client for accessing the Proxmox SDN VNETs API.
@@ -34,9 +34,9 @@ func (c *Client) ExpandPath(path string) string {
 	return p
 }
 
-// Tasks returns a client for managing VNET tasks.
-func (c *Client) Tasks() *tasks.Client {
-	return &tasks.Client{
-		Client: c.Client,
+// Subnets returns a client for managing the SDN Vnet's subnets.
+func (c *Client) Subnets() *subnets.Client {
+	return &subnets.Client{
+		Client: c,
 	}
 }

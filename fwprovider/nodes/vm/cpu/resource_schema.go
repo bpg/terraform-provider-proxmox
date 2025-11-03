@@ -208,7 +208,7 @@ func ResourceSchema() schema.Attribute {
 				Optional: true,
 				Computed: true,
 				Validators: []validator.Int64{
-					int64validator.Between(2, 262144),
+					int64validator.Between(1, 262144),
 				},
 			},
 		},

@@ -234,6 +234,216 @@ func TestAccResourceSDNVNet(t *testing.T) {
 			ImportState:       true,
 			ImportStateVerify: true,
 		}}},
+		{"test vnet field deletion", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_vlan" "delete_zone" {
+					id     = "deletez"
+					nodes  = ["{{.NodeName}}"]
+					bridge = "vmbr0"
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_vnet" {
+					id            = "deletev"
+					zone          = proxmox_virtual_environment_sdn_zone_vlan.delete_zone.id
+					alias         = "VNet with Alias"
+					isolate_ports = true
+					vlan_aware    = true
+					tag           = 100
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_vnet", map[string]string{
+						"id":            "deletev",
+						"zone":          "deletez",
+						"alias":         "VNet with Alias",
+						"isolate_ports": "true",
+						"vlan_aware":    "true",
+						"tag":           "100",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_vlan" "delete_zone" {
+					id     = "deletez"
+					nodes  = ["{{.NodeName}}"]
+					bridge = "vmbr0"
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_vnet" {
+					id   = "deletev"
+					zone = proxmox_virtual_environment_sdn_zone_vlan.delete_zone.id
+					tag  = 100  # Keep tag as it's required for VLAN zones
+					# alias, isolate_ports, and vlan_aware are removed
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_vnet", map[string]string{
+						"id":   "deletev",
+						"zone": "deletez",
+						"tag":  "100",
+					}),
+				),
+			},
+		}},
+		{"test vnet individual field deletion", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_individual_zone" {
+					id    = "deleteiz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_individual_vnet" {
+					id            = "deleteiv"
+					zone          = proxmox_virtual_environment_sdn_zone_simple.delete_individual_zone.id
+					alias         = "VNet with All Fields"
+					isolate_ports = true
+					vlan_aware    = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_individual_vnet", map[string]string{
+						"id":            "deleteiv",
+						"zone":          "deleteiz",
+						"alias":         "VNet with All Fields",
+						"isolate_ports": "true",
+						"vlan_aware":    "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_individual_zone" {
+					id    = "deleteiz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_individual_vnet" {
+					id   = "deleteiv"
+					zone = proxmox_virtual_environment_sdn_zone_simple.delete_individual_zone.id
+					# Remove alias only
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_individual_vnet", map[string]string{
+						"id":   "deleteiv",
+						"zone": "deleteiz",
+					}),
+				),
+			},
+		}},
+		{"test vnet multiple field deletion", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_multiple_zone" {
+					id    = "deletemz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_multiple_vnet" {
+					id            = "deletemv"
+					zone          = proxmox_virtual_environment_sdn_zone_simple.delete_multiple_zone.id
+					alias         = "VNet with Multiple Fields"
+					isolate_ports = true
+					vlan_aware    = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_multiple_vnet", map[string]string{
+						"id":            "deletemv",
+						"zone":          "deletemz",
+						"alias":         "VNet with Multiple Fields",
+						"isolate_ports": "true",
+						"vlan_aware":    "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_multiple_zone" {
+					id    = "deletemz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_multiple_vnet" {
+					id   = "deletemv"
+					zone = proxmox_virtual_environment_sdn_zone_simple.delete_multiple_zone.id
+					# Remove alias, isolate_ports, and vlan_aware
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_multiple_vnet", map[string]string{
+						"id":   "deletemv",
+						"zone": "deletemz",
+					}),
+				),
+			},
+		}},
+		{"test vnet field deletion and re-addition", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_readd_zone" {
+					id    = "deleterz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_readd_vnet" {
+					id            = "deleterv"
+					zone          = proxmox_virtual_environment_sdn_zone_simple.delete_readd_zone.id
+					alias         = "Original Alias"
+					isolate_ports = true
+					vlan_aware    = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_readd_vnet", map[string]string{
+						"id":            "deleterv",
+						"zone":          "deleterz",
+						"alias":         "Original Alias",
+						"isolate_ports": "true",
+						"vlan_aware":    "true",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_readd_zone" {
+					id    = "deleterz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_readd_vnet" {
+					id   = "deleterv"
+					zone = proxmox_virtual_environment_sdn_zone_simple.delete_readd_zone.id
+					# Remove all optional fields
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_readd_vnet", map[string]string{
+						"id":   "deleterv",
+						"zone": "deleterz",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_sdn_zone_simple" "delete_readd_zone" {
+					id    = "deleterz"
+					nodes = ["{{.NodeName}}"]
+				}
+
+				resource "proxmox_virtual_environment_sdn_vnet" "delete_readd_vnet" {
+					id            = "deleterv"
+					zone          = proxmox_virtual_environment_sdn_zone_simple.delete_readd_zone.id
+					alias         = "New Alias"
+					isolate_ports = false
+					vlan_aware    = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_sdn_vnet.delete_readd_vnet", map[string]string{
+						"id":            "deleterv",
+						"zone":          "deleterz",
+						"alias":         "New Alias",
+						"isolate_ports": "false",
+						"vlan_aware":    "false",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

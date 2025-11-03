@@ -9,6 +9,9 @@ package resource
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/test"
@@ -339,4 +342,42 @@ func TestContainerSchema(t *testing.T) {
 		mkOperatingSystemTemplateFileID: schema.TypeString,
 		mkOperatingSystemType:           schema.TypeString,
 	})
+}
+
+func TestInitializationDnsBlockDiffIgnore(t *testing.T) {
+	t.Parallel()
+
+	container := Container()
+
+	tests := []struct {
+		domain   string
+		server   string
+		servers  []string
+		expected bool
+	}{
+		{"somedomain", "", []string{}, false},
+		{"somedomain", "127.0.0.1", []string{}, false},
+		{"somedomain", "", []string{"127.0.0.1"}, false},
+		{"", "127.0.0.1", []string{}, false},
+		{"", "", []string{"127.0.0.1"}, false},
+		{"", "", []string{}, true},
+	}
+
+	for _, tt := range tests {
+		d := container.TestResourceData()
+		dnsBlockKey := mkInitialization + ".0." + mkInitializationDNS
+		m := make(map[string]any)
+		m[mkInitializationDNS] = []any{
+			map[string]any{
+				mkInitializationDNSDomain:  tt.domain,
+				mkInitializationDNSServer:  tt.server,
+				mkInitializationDNSServers: tt.servers,
+			},
+		}
+		err := d.Set(mkInitialization, []any{m})
+		require.NoError(t, err)
+
+		actual := skipDnsDiffIfEmpty(dnsBlockKey+".#", "0", "1", d)
+		assert.Equal(t, tt.expected, actual)
+	}
 }

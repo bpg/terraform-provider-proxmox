@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-package resource
+package pool
 
 import (
 	"context"
@@ -90,6 +90,7 @@ func Pool() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
 				d.SetId(d.Id())
+
 				err := d.Set(mkResourceVirtualEnvironmentPoolPoolID, d.Id())
 				if err != nil {
 					return nil, fmt.Errorf("failed setting state during import: %w", err)

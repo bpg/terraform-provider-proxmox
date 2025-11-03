@@ -15,8 +15,8 @@ VXLAN Zone in Proxmox SDN. It establishes a tunnel (overlay) on top of an existi
 
 ```terraform
 resource "proxmox_virtual_environment_sdn_zone_vxlan" "example" {
-  id    = "vxlan1"
-  nodes = ["pve"]
+  id = "vxlan1"
+  # nodes = ["pve"]  # Optional: omit to apply to all nodes in cluster
   peers = ["10.0.0.1", "10.0.0.2", "10.0.0.3"]
   mtu   = 1450
 
@@ -34,7 +34,6 @@ resource "proxmox_virtual_environment_sdn_zone_vxlan" "example" {
 ### Required
 
 - `id` (String) The unique identifier of the SDN zone.
-- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `peers` (Set of String) A list of IP addresses of each node in the VXLAN zone. This can be external nodes reachable at this IP address. All nodes in the cluster need to be mentioned here
 
 ### Optional
@@ -43,6 +42,7 @@ resource "proxmox_virtual_environment_sdn_zone_vxlan" "example" {
 - `dns_zone` (String) DNS domain name. Used to register hostnames, such as `<hostname>.<domain>`. The DNS zone must already exist on the DNS server.
 - `ipam` (String) IP Address Management system.
 - `mtu` (Number) MTU value for the zone.
+- `nodes` (Set of String) The Proxmox nodes which the zone and associated VNets should be deployed on
 - `reverse_dns` (String) Reverse DNS API server address.
 
 ### Read-Only

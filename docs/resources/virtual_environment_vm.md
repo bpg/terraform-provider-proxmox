@@ -389,7 +389,7 @@ output "ubuntu_vm_public_key" {
                 when `dhcp` is used as the address).
         - `ipv6` - (Optional) The IPv6 configuration.
             - `address` - (Optional) The IPv6 address in CIDR notation
-                (e.g. fd1c:000:0000::0000:000:7334/64). Alternatively, set this
+                (e.g. fd1c::7334/64). Alternatively, set this
                 to `dhcp` for autodiscovery.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
                 when `dhcp` is used as the address).
@@ -819,6 +819,20 @@ resource "proxmox_virtual_environment_vm" "test_vm" {
   ...
 }
 ```
+
+## Pool Management
+
+The provider automatically detects VM pool membership using a two-step process:
+
+1. **Primary Detection**: Checks the VM's direct configuration for pool assignment
+2. **Fallback Detection**: If no pool is found, queries all available pools to determine membership
+
+This ensures accurate state management and drift detection when VMs are moved between pools outside of Terraform.
+
+### Best Practices
+
+- Always specify `pool_id` explicitly in your Terraform configuration when managing VM pool membership
+- Use `terraform plan` regularly to detect any manual changes to VM pool assignments
 
 ## Import
 

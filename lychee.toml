@@ -20,3 +20,5 @@ verbose = "warn"
 
 # Disable progress bar (better for CI)
 no_progress = true
+
+accept = [429, 200]

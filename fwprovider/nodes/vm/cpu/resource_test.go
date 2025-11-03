@@ -185,6 +185,27 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}),
 			),
 		}}},
+		{"create VM with cpu units = 1", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_vm2" "test_vm" {
+				node_name = "{{.NodeName}}"
+				name = "test-cpu-units-1"
+				cpu = {
+					cores = 1
+					sockets = 1
+					type = "kvm64"
+					units = 1
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+					"cpu.cores":   "1",
+					"cpu.sockets": "1",
+					"cpu.type":    "kvm64",
+					"cpu.units":   "1",
+				}),
+			),
+		}}},
 	}
 
 	for _, tt := range tests {
