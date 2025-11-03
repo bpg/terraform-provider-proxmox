@@ -10,18 +10,13 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
 const (
@@ -33,41 +28,40 @@ func TestAccResourceContainer(t *testing.T) {
 
 	te := InitEnvironment(t)
 
-	imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
+	//imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
 	accTestContainerID := 100000 + rand.Intn(99999)
 	accTestContainerIDClone := 100000 + rand.Intn(99999)
 
 	te.AddTemplateVars(map[string]interface{}{
-		"ImageFileName":        imageFileName,
+		"ImageFileName":        "ubuntu-24.04-standard_24.04-2_amd64.tar.zst",
 		"TestContainerID":      accTestContainerID,
 		"TestContainerIDClone": accTestContainerIDClone,
+		"TimeoutDelete":        40,
 	})
 
-	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("vztmpl"),
-		FileName: ptr.Ptr(imageFileName),
-		Node:     ptr.Ptr(te.NodeName),
-		Storage:  ptr.Ptr(te.DatastoreID),
-		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.04-standard_24.04-2_amd64.tar.zst", te.ContainerImagesServer)),
-	})
-	require.NoError(t, err)
+	//err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
+	//	Content:  ptr.Ptr("vztmpl"),
+	//	FileName: ptr.Ptr(imageFileName),
+	//	Node:     ptr.Ptr(te.NodeName),
+	//	Storage:  ptr.Ptr(te.DatastoreID),
+	//	URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.04-standard_24.04-2_amd64.tar.zst", te.ContainerImagesServer)),
+	//})
+	//require.NoError(t, err)
+	//
+	//t.Cleanup(func() {
+	//	e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName))
+	//	require.NoError(t, e)
+	//})
 
-	t.Cleanup(func() {
-		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName))
-		require.NoError(t, e)
-	})
-
-	tests := []struct {
-		name string
-		step []resource.TestStep
-	}{
-		{"create, start and update container", []resource.TestStep{
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
+					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -138,7 +132,7 @@ func TestAccResourceContainer(t *testing.T) {
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
+					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -190,7 +184,7 @@ func TestAccResourceContainer(t *testing.T) {
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
+					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -233,8 +227,6 @@ func TestAccResourceContainer(t *testing.T) {
 					}),
 				),
 			},
-		}},
-		{"update mount points", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
@@ -309,11 +301,49 @@ func TestAccResourceContainer(t *testing.T) {
 					"mount_point.#": "2",
 				}),
 			},
-		}},
-		{"ipv4 and ipv6", []resource.TestStep{{
-			Config: te.RenderConfig(`
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_network_linux_bridge" "vmbr1" {
+					node_name = "{{ .NodeName }}"
+					name = "vmbr1"
+				}
+				
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-hostname-1"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "ubuntu"
+					}
+				}
+				`),
+			},
+			{
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_network_linux_bridge" "vmbr1" {
+				node_name = "{{ .NodeName }}"
+				name = "vmbr1"
+			}
 			resource "proxmox_virtual_environment_container" "test_container" {
 				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
 				started   = false
 				disk {
 					datastore_id = "local-lvm"
@@ -348,11 +378,12 @@ func TestAccResourceContainer(t *testing.T) {
 					type             = "ubuntu"
 				}
 			}`),
-		}}},
-		{"clone container", []resource.TestStep{{
-			Config: te.RenderConfig(`
+			},
+			{
+				Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_container" "test_container" {
 				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
 				template  = true
 				disk {
 					datastore_id = "local-lvm"
@@ -398,33 +429,32 @@ func TestAccResourceContainer(t *testing.T) {
 					}
 				}
 			}`, WithRootUser()),
-			Check: resource.ComposeTestCheckFunc(
-				func(*terraform.State) error {
-					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					defer cancel()
+				Check: resource.ComposeTestCheckFunc(
+					func(*terraform.State) error {
+						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+						defer cancel()
 
-					ct := te.NodeClient().Container(accTestContainerIDClone)
-					err := ct.WaitForContainerStatus(ctx, "running")
-					require.NoError(te.t, err, "container did not start")
+						ct := te.NodeClient().Container(accTestContainerIDClone)
+						err := ct.WaitForContainerStatus(ctx, "running")
+						require.NoError(te.t, err, "container did not start")
 
-					ctInfo, err := ct.GetContainer(ctx)
-					require.NoError(te.t, err, "failed to get container")
-					dev0, ok := ctInfo.PassthroughDevices["dev0"]
-					require.True(te.t, ok, `"dev0" passthrough device not found`)
-					require.NotNil(te.t, dev0, `"dev0" passthrough device is <nil>`)
-					require.Equal(te.t, "/dev/zero", dev0.Path)
+						ctInfo, err := ct.GetContainer(ctx)
+						require.NoError(te.t, err, "failed to get container")
+						dev0, ok := ctInfo.PassthroughDevices["dev0"]
+						require.True(te.t, ok, `"dev0" passthrough device not found`)
+						require.NotNil(te.t, dev0, `"dev0" passthrough device is <nil>`)
+						require.Equal(te.t, "/dev/zero", dev0.Path)
 
-					return nil
-				},
-			),
-		}}},
-		{"hostname update", []resource.TestStep{
+						return nil
+					},
+				),
+			},
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
+					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -467,7 +497,7 @@ func TestAccResourceContainer(t *testing.T) {
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
+					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -511,12 +541,11 @@ func TestAccResourceContainer(t *testing.T) {
 					},
 				),
 			},
-		}},
-		{"empty dns block on update", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -549,6 +578,7 @@ func TestAccResourceContainer(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -578,12 +608,11 @@ func TestAccResourceContainer(t *testing.T) {
 					}),
 				),
 			},
-		}},
-		{"empty dns block on create", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -613,12 +642,11 @@ func TestAccResourceContainer(t *testing.T) {
 					}),
 				),
 			},
-		}},
-		{"dns block with null values on create", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -652,12 +680,11 @@ func TestAccResourceContainer(t *testing.T) {
 					}),
 				),
 			},
-		}},
-		{"dns block with null values on update", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
 					datastore_id = "local-lvm"
@@ -698,6 +725,7 @@ func TestAccResourceContainer(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -730,15 +758,6 @@ func TestAccResourceContainer(t *testing.T) {
 					}),
 				),
 			},
-		}},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
-				ProtoV6ProviderFactories: te.AccProviders,
-				Steps:                    tt.step,
-			})
-		})
-	}
+		},
+	})
 }

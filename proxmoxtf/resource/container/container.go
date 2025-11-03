@@ -3447,6 +3447,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		if e != nil {
 			return diag.FromErr(e)
 		}
+
+		// fixes the situation when a plan caused the container to reboot and while rebooting, the resource was destroyed
+		// waiting for the container to be running after update prevents the situation when a rebooting container
+		// is requested to be destroyed
+		if e := containerAPI.WaitForContainerStatus(ctx, "running"); e != nil {
+			return diag.FromErr(e)
+		}
 	}
 
 	return containerRead(ctx, d, m)
