@@ -22,6 +22,10 @@ const (
 	dvDiskDiscard     = "ignore"
 	dvDiskCache       = "none"
 
+	// see /usr/share/perl5/PVE/QemuServer/Drive.pm
+	// Using SCSI limit (31) as the highest value (IDE: 4, SCSI: 31, VirtIO: 16, SATA: 6).
+	maxResourceVirtualEnvironmentVMDiskDevices = 31
+
 	// MkDisk is the name of the disk resource.
 	MkDisk                    = "disk"
 	mkDiskAIO                 = "aio"
@@ -271,7 +275,7 @@ func Schema() map[string]*schema.Schema {
 					},
 				},
 			},
-			MaxItems: 14,
+			MaxItems: maxResourceVirtualEnvironmentVMDiskDevices,
 			MinItems: 0,
 		},
 	}
