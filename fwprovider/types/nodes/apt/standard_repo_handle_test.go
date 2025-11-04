@@ -44,7 +44,7 @@ func TestStandardRepoHandleValueFromTerraform(t *testing.T) {
 					val.ValueString() == "ceph-foo-enterprise"
 			},
 		},
-		"valid Ceph APT standard repository handle": {
+		`valid Ceph "enterprise" APT standard repository handle`: {
 			val: tftypes.NewValue(tftypes.String, "ceph-quincy-enterprise"),
 			expected: func(val StandardRepoHandleValue) bool {
 				return val.kind == apitypes.StandardRepoHandleKindEnterprise &&
@@ -55,15 +55,26 @@ func TestStandardRepoHandleValueFromTerraform(t *testing.T) {
 					val.ValueString() == "ceph-quincy-enterprise"
 			},
 		},
-		`valid Ceph "test" APT standard repository handle`: {
-			val: tftypes.NewValue(tftypes.String, "ceph-reef-test"),
+		`valid Ceph "no subscription" APT standard repository handle`: {
+			val: tftypes.NewValue(tftypes.String, "ceph-reef-no-subscription"),
 			expected: func(val StandardRepoHandleValue) bool {
-				return val.kind == apitypes.StandardRepoHandleKindTest &&
+				return val.kind == apitypes.StandardRepoHandleKindNoSubscription &&
 					val.CephVersionName() == apitypes.CephVersionNameReef &&
 					val.IsCephHandle() &&
 					val.IsSupportedFilePath(apitypes.StandardRepoFilePathCeph) &&
+					val.ComponentName() == "no-subscription" &&
+					val.ValueString() == "ceph-reef-no-subscription"
+			},
+		},
+		`valid Ceph "test" APT standard repository handle`: {
+			val: tftypes.NewValue(tftypes.String, "ceph-squid-test"),
+			expected: func(val StandardRepoHandleValue) bool {
+				return val.kind == apitypes.StandardRepoHandleKindTest &&
+					val.CephVersionName() == apitypes.CephVersionNameSquid &&
+					val.IsCephHandle() &&
+					val.IsSupportedFilePath(apitypes.StandardRepoFilePathCeph) &&
 					val.ComponentName() == "test" &&
-					val.ValueString() == "ceph-reef-test"
+					val.ValueString() == "ceph-squid-test"
 			},
 		},
 		"invalid APT repository handle": {
