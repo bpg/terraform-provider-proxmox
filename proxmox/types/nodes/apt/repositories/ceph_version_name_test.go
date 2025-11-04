@@ -9,6 +9,8 @@ package repositories
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseCephVersionName(t *testing.T) {
@@ -52,17 +54,10 @@ func TestParseCephVersionName(t *testing.T) {
 			result, err := ParseCephVersionName(test.input)
 
 			if test.expectError {
-				if err == nil {
-					t.Errorf("expected error for input %q, got nil", test.input)
-				}
+				require.Error(t, err)
 			} else {
-				if err != nil {
-					t.Errorf("unexpected error for input %q: %v", test.input, err)
-				}
-
-				if result != test.expected {
-					t.Errorf("expected %v, got %v", test.expected, result)
-				}
+				require.NoError(t, err)
+				require.Equal(t, test.expected, result)
 			}
 		})
 	}
@@ -98,9 +93,7 @@ func TestCephVersionNameString(t *testing.T) {
 			t.Parallel()
 
 			result := test.version.String()
-			if result != test.expected {
-				t.Errorf("expected %q, got %q", test.expected, result)
-			}
+			require.Equal(t, test.expected, result)
 		})
 	}
 }
@@ -135,13 +128,8 @@ func TestCephVersionNameMarshalJSON(t *testing.T) {
 			t.Parallel()
 
 			result, err := json.Marshal(test.version)
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
-
-			if string(result) != test.expected {
-				t.Errorf("expected %q, got %q", test.expected, string(result))
-			}
+			require.NoError(t, err)
+			require.Equal(t, test.expected, string(result))
 		})
 	}
 }
@@ -184,17 +172,10 @@ func TestCephVersionNameUnmarshalJSON(t *testing.T) {
 			err := json.Unmarshal([]byte(test.input), &result)
 
 			if test.expectError {
-				if err == nil {
-					t.Errorf("expected error for input %q, got nil", test.input)
-				}
+				require.Error(t, err)
 			} else {
-				if err != nil {
-					t.Errorf("unexpected error for input %q: %v", test.input, err)
-				}
-
-				if result != test.expected {
-					t.Errorf("expected %v, got %v", test.expected, result)
-				}
+				require.NoError(t, err)
+				require.Equal(t, test.expected, result)
 			}
 		})
 	}
