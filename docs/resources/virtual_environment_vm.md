@@ -390,9 +390,9 @@ output "ubuntu_vm_public_key" {
         - `ipv6` - (Optional) The IPv6 configuration.
             - `address` - (Optional) The IPv6 address in CIDR notation
                 (e.g. fd1c::7334/64). Alternatively, set this
-                to `dhcp` for autodiscovery.
+                to `dhcp` for DHCPv6, or `auto` for SLAAC.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
-                when `dhcp` is used as the address).
+                when `dhcp` or `auto` are used as the address).
     - `user_account` - (Optional) The user account configuration (conflicts
         with `user_data_file_id`).
         - `keys` - (Optional) The SSH keys.
