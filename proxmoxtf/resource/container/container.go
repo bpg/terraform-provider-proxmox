@@ -2985,11 +2985,15 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		rootFS := &containers.CustomRootFS{}
-		// Disk ID for the rootfs is always 0
-		diskID := 0
-		vmID := d.Get(mkVMID).(int)
-		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
-		rootFS.Volume = getContainerDiskVolume(rootFS.Volume, vmID, diskID)
+		containerConfig, e := containerAPI.GetContainer(ctx)
+		if e != nil {
+			if errors.Is(e, api.ErrResourceDoesNotExist) {
+				d.SetId("")
+				return nil
+			}
+			return diag.FromErr(e)
+		}
+		rootFS.Volume = containerConfig.RootFS.Volume
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
@@ -3532,10 +3536,6 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
-}
-
-func getContainerDiskVolume(rawVolume string, vmID int, diskID int) string {
-	return fmt.Sprintf("%s:vm-%d-disk-%d", rawVolume, vmID, diskID)
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {
