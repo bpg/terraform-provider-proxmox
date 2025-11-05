@@ -276,8 +276,8 @@ type ShutdownRequestBody struct {
 }
 
 type ResizeRequestBody struct {
-	Disk *string `json:"disk" url:"disk"`
-	Size *string `json:"size" url:"size"`
+	Disk string `json:"disk" url:"disk"`
+	Size string `json:"size" url:"size"`
 }
 
 // UpdateRequestBody contains the data for an user update request.

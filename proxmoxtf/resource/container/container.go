@@ -2994,6 +2994,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			}
 			return diag.FromErr(e)
 		}
+
+		if containerConfig.RootFS == nil {
+			return diag.Errorf("RootFS information of container malformed.")
+		}
 		rootFS.Volume = containerConfig.RootFS.Volume
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
@@ -3004,50 +3008,43 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		oldSize := containerConfig.RootFS.Size
 		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
 		if *oldSize > *size {
+			// TODO: we should never reach this point. The `plan` should recreate the container, not update it.
 			d.SetId("")
 			return diag.Errorf("New disk size (%s) has to be greater the current disk (%s)!", oldSize, size)
 		}
 
 		if oldSize != size {
-			containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
-				Disk: ptr.Ptr("rootfs"),
-				Size: ptr.Ptr(size.String()),
+			e = containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+				Disk: "rootfs",
+				Size: size.String(),
 			})
+			if e != nil {
+				return diag.FromErr(err)
+			}
 		}
 
 		rootFS.ACL = &acl
-		if acl != *containerConfig.RootFS.ACL {
-			rebootRequired = true
-		}
 		rootFS.Quota = &quota
-		if (quota && (containerConfig.RootFS.Quota == nil || *containerConfig.RootFS.Quota != quota)) || (!quota && (containerConfig.RootFS.Quota != nil && containerConfig.RootFS.Quota != &quota)) {
-			rebootRequired = true
-		}
 		rootFS.Replicate = &replicate
-		if replicate != *containerConfig.RootFS.Replicate {
-			rebootRequired = true
-		}
 		rootFS.Size = size
 
 		mountOptionsStrings := make([]string, 0, len(mountOptions))
 
-		currenMountOptions := containerConfig.RootFS.MountOptions
 		for _, option := range mountOptions {
 			optionString := option.(string)
 			mountOptionsStrings = append(mountOptionsStrings, optionString)
-			if !slices.Contains(*currenMountOptions, optionString) {
-				rebootRequired = true
-			}
 		}
-		// handle two cases:
-		// 1. mountOptions is empty, but the current container has mountOptions
-		// 2. the current container has mountOptions set
-		if len(mountOptions) != len(*currenMountOptions) {
-			rebootRequired = true
-		}
-
 		// Always set, including empty, to allow clearing mount options
 		rootFS.MountOptions = &mountOptionsStrings
+
+		// To compare contents regardless of order, we can sort them.
+		// The schema already uses a suppress func for order, so we should be consistent.
+		sort.Strings(mountOptionsStrings)
+		currentMountOptions := containerConfig.RootFS.MountOptions
+		sort.Strings(*currentMountOptions)
+		if !slices.Equal(mountOptionsStrings, *currentMountOptions) {
+			rebootRequired = true
+		}
 
 		updateBody.RootFS = rootFS
 	}
