@@ -275,6 +275,11 @@ type ShutdownRequestBody struct {
 	Timeout   *int              `json:"timeout,omitempty"   url:"timeout,omitempty"`
 }
 
+type ResizeRequestBody struct {
+	Disk *string `json:"disk" url:"disk"`
+	Size *string `json:"size" url:"size"`
+}
+
 // UpdateRequestBody contains the data for an user update request.
 type UpdateRequestBody CreateRequestBody
 
