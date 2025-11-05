@@ -1765,7 +1765,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	diskSize := diskBlock[mkDiskSize].(int)
-	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
+	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0 || len(diskMountOptions) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
