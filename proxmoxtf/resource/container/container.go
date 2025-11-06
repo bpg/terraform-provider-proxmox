@@ -334,7 +334,6 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The disks",
 				Optional:    true,
-				ForceNew:    false,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
@@ -375,7 +374,6 @@ func Container() *schema.Resource {
 							Type:             schema.TypeInt,
 							Description:      "The rootfs size in gigabytes",
 							Optional:         true,
-							ForceNew:         false,
 							Default:          dvDiskSize,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
 						},
@@ -1024,6 +1022,55 @@ func Container() *schema.Resource {
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
 					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+			customdiff.ForceNewIf(
+				mkDisk,
+				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+					oldRaw, newRaw := d.GetChange(mkDisk)
+					oldList, _ := oldRaw.([]interface{})
+					newList, _ := newRaw.([]interface{})
+
+					if oldList == nil {
+						oldList = []interface{}{}
+					}
+					if newList == nil {
+						newList = []interface{}{}
+					}
+
+					// fmt.Printf("ALEX: ALL DISK: old: %v ---- new: %v\n", old, new)
+
+					minDrives := min(len(oldList), len(newList))
+
+					for i := range minDrives {
+						oldSize := dvDiskSize
+						newSize := dvDiskSize
+						if i < len(oldList) && oldList[i] != nil {
+							if om, ok := oldList[i].(map[string]interface{}); ok {
+								if v, ok := om[mkDiskSize].(int); ok {
+									oldSize = v
+								}
+							}
+						}
+
+						if i < len(newList) && newList[i] != nil {
+							if nm, ok := newList[i].(map[string]interface{}); ok {
+								if v, ok := nm[mkDiskSize].(int); ok {
+									newSize = v
+								}
+							}
+						}
+
+						// fmt.Printf("ALEX: check DISK %v: %v vs  %v\n", i, oldSize, newSize)
+						if oldSize > newSize {
+
+							// fmt.Print("ALEX: check DISK: new is smaller\n")
+							_ = d.ForceNew(fmt.Sprintf("%s.%d.%s", mkDisk, i, mkDiskSize))
+							return true // <-- this is not working
+						}
+					}
+
+					return false
 				},
 			),
 		),
@@ -3014,11 +3061,11 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		if oldSize != size {
-			e = containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+			err = containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
 				Disk: "rootfs",
 				Size: size.String(),
 			})
-			if e != nil {
+			if err != nil {
 				return diag.FromErr(err)
 			}
 		}
@@ -3041,8 +3088,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		// The schema already uses a suppress func for order, so we should be consistent.
 		sort.Strings(mountOptionsStrings)
 		currentMountOptions := containerConfig.RootFS.MountOptions
-		sort.Strings(*currentMountOptions)
-		if !slices.Equal(mountOptionsStrings, *currentMountOptions) {
+		currentMountOptionsSorted := []string{}
+		if currentMountOptions != nil {
+			currentMountOptionsSorted = append(currentMountOptionsSorted, *currentMountOptions...)
+		}
+		sort.Strings(currentMountOptionsSorted)
+		if !slices.Equal(mountOptionsStrings, currentMountOptionsSorted) {
 			rebootRequired = true
 		}
 
