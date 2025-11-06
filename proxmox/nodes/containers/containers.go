@@ -371,11 +371,11 @@ func (c *Client) WaitForContainerConfigUnlock(ctx context.Context, ignoreErrorRe
 	return nil
 }
 
-// Resize Disk
+// ResizeContainerDisk resizes a container disk.
 func (c *Client) ResizeContainerDisk(ctx context.Context, d *ResizeRequestBody) error {
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("resize"), d, nil)
 	if err != nil {
-		return fmt.Errorf("error resize disk: %w", err)
+		return fmt.Errorf("error resizing container disk: %w", err)
 	}
 
 	return nil
