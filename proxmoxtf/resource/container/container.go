@@ -662,6 +662,7 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "A mount point",
 				Optional:    true,
+				ForceNew:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkMountPointACL: {
@@ -721,12 +722,14 @@ func Container() *schema.Resource {
 							Description:      "Volume size (only used for volume mount points)",
 							Optional:         true,
 							Default:          dvMountPointSize,
+							ForceNew:         true,
 							ValidateDiagFunc: validators.FileSize(),
 						},
 						mkMountPointVolume: {
 							Type:        schema.TypeString,
 							Description: "Volume, device or directory to mount into the container",
 							Required:    true,
+							ForceNew:    true,
 							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
 								// For *new* volume mounts PVE returns an actual volume ID which is saved in the stare,
 								// so on reapply the provider will try override it:"
@@ -1038,8 +1041,6 @@ func Container() *schema.Resource {
 						newList = []interface{}{}
 					}
 
-					// fmt.Printf("ALEX: ALL DISK: old: %v ---- new: %v\n", old, new)
-
 					minDrives := min(len(oldList), len(newList))
 
 					for i := range minDrives {
@@ -1061,12 +1062,9 @@ func Container() *schema.Resource {
 							}
 						}
 
-						// fmt.Printf("ALEX: check DISK %v: %v vs  %v\n", i, oldSize, newSize)
 						if oldSize > newSize {
-
-							// fmt.Print("ALEX: check DISK: new is smaller\n")
 							_ = d.ForceNew(fmt.Sprintf("%s.%d.%s", mkDisk, i, mkDiskSize))
-							return true // <-- this is not working
+							return true
 						}
 					}
 
@@ -3060,7 +3058,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 			return diag.Errorf("New disk size (%s) has to be greater the current disk (%s)!", oldSize, size)
 		}
 
-		if oldSize != size {
+		if !ptr.Eq(oldSize, size) {
 			err = containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
 				Disk: "rootfs",
 				Size: size.String(),
