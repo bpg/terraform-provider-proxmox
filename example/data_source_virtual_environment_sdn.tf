@@ -23,6 +23,13 @@ data "proxmox_virtual_environment_sdn_vnet" "test_vnet_1" {
   id = proxmox_virtual_environment_sdn_vnet.test_vnet_1.id
 }
 
+data "proxmox_virtual_environment_sdn_vnets" "all" {
+  depends_on = [
+    proxmox_virtual_environment_sdn_vnet.test_vnet_1,
+    proxmox_virtual_environment_sdn_vnet.test_vnet_2,
+  ]
+}
+
 data "proxmox_virtual_environment_sdn_subnet" "test_subnet_dhcp" {
   depends_on = [proxmox_virtual_environment_sdn_subnet.test_subnet_dhcp]
   cidr = proxmox_virtual_environment_sdn_subnet.test_subnet_dhcp.cidr
@@ -43,6 +50,10 @@ output "proxmox_virtual_environment_sdn_zones_all" {
 
 output "proxmox_virtual_environment_sdn_vnet" {
   value = data.proxmox_virtual_environment_sdn_vnet.test_vnet_1
+}
+
+output "proxmox_virtual_environment_sdn_vnets" {
+  value = data.proxmox_virtual_environment_sdn_vnets.all
 }
 
 output "proxmox_virtual_environment_sdn_subnet" {

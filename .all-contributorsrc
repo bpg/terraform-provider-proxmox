@@ -1519,6 +1519,24 @@
         "test",
         "code"
       ]
+    },
+    {
+      "login": "JustasUmbrasas",
+      "name": "Justas Umbrasas",
+      "avatar_url": "https://avatars.githubusercontent.com/u/70886320?v=4",
+      "profile": "https://github.com/JustasUmbrasas",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "alexhaydock",
+      "name": "Alex Haydock",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13152214?v=4",
+      "profile": "https://github.com/alexhaydock",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
