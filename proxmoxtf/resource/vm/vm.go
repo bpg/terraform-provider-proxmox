@@ -5800,25 +5800,17 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	//nolint: nestif
 	if (d.HasChange(mkStarted) || stoppedBeforeUpdate) && !bool(template) {
 		started := d.Get(mkStarted).(bool)
-		if started && !stoppedBeforeUpdate {
+		if started {
 			if diags := vmStart(ctx, vmAPI, d); diags != nil {
 				return diags
 			}
-		} else {
+		} else if !stoppedBeforeUpdate {
 			if er := vmShutdown(ctx, vmAPI, d); er != nil {
 				return er
 			}
 
 			rebootRequired = false
 		}
-	}
-
-	if stoppedBeforeUpdate && d.Get(mkStarted).(bool) {
-		if diags := vmStart(ctx, vmAPI, d); diags != nil {
-			return diags
-		}
-		// The VM has been started, so a reboot is no longer required.
-		rebootRequired = false
 	}
 
 	if cloudInitRebuildRequired {

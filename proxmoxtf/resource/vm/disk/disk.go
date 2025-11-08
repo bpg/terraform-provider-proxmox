@@ -625,7 +625,6 @@ func Update(
 			}
 
 			if disk.ImportFrom != nil && *disk.ImportFrom != "" {
-				rebootRequired = true
 				shutdownBeforeUpdate = true
 				tmp.DatastoreID = disk.DatastoreID
 				tmp.ImportFrom = disk.ImportFrom
