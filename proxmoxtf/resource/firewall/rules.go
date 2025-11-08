@@ -166,8 +166,8 @@ func Rules() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "List of rules",
 			Optional:    true,
-			DefaultFunc: func() (any, error) {
-				return make([]any, 0), nil
+			DefaultFunc: func() (interface{}, error) {
+				return make([]interface{}, 0), nil
 			},
 			Elem: &schema.Resource{Schema: rule},
 		},
@@ -188,7 +188,7 @@ func Rules() *schema.Resource {
 }
 
 // RulesImport imports firewall rules.
-func RulesImport(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
+func RulesImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
 	id := d.Id()
 
 	switch {
@@ -288,10 +288,10 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		return diags
 	}
 
-	rules := d.Get(MkRule).([]any)
+	rules := d.Get(MkRule).([]interface{})
 
 	for i := len(rules) - 1; i >= 0; i-- {
-		rule := rules[i].(map[string]any)
+		rule := rules[i].(map[string]interface{})
 
 		ruleBody, err := mapToRuleCreateRequestBody(rule)
 		if err != nil {
@@ -322,7 +322,7 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
-	readRule := func(pos int, ruleMap map[string]any) error {
+	readRule := func(pos int, ruleMap map[string]interface{}) error {
 		rule, err := api.GetRule(ctx, pos)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rule at position") {
@@ -352,10 +352,10 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 		return diags
 	}
 
-	rules := make([]map[string]any, 0)
+	rules := make([]map[string]interface{}, 0)
 
 	for _, id := range ruleIDs {
-		ruleMap := map[string]any{}
+		ruleMap := map[string]interface{}{}
 
 		err = readRule(id.Pos, ruleMap)
 		if err != nil {
@@ -383,8 +383,8 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 
 	oldRules, newRules := d.GetChange(MkRule)
 
-	oldRulesList := oldRules.([]any)
-	newRulesList := newRules.([]any)
+	oldRulesList := oldRules.([]interface{})
+	newRulesList := newRules.([]interface{})
 
 	if len(oldRulesList) < len(newRulesList) {
 		// create new rules
@@ -393,12 +393,12 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		maxPos := -1
 
 		for _, rule := range oldRulesList {
-			ruleMap := rule.(map[string]any)
+			ruleMap := rule.(map[string]interface{})
 			maxPos = max(maxPos, ruleMap[mkRulePos].(int))
 		}
 
 		for _, rule := range rulesToCreate {
-			ruleMap := rule.(map[string]any)
+			ruleMap := rule.(map[string]interface{})
 
 			ruleBody, err := mapToRuleCreateRequestBody(ruleMap)
 			if err != nil {
@@ -430,14 +430,14 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 		rulesToDelete := oldRulesList[len(newRulesList):]
 
 		sort.Slice(rulesToDelete, func(i, j int) bool {
-			ruleI := rulesToDelete[i].(map[string]any)
-			ruleJ := rulesToDelete[j].(map[string]any)
+			ruleI := rulesToDelete[i].(map[string]interface{})
+			ruleJ := rulesToDelete[j].(map[string]interface{})
 
 			return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
 		})
 
 		for _, rule := range rulesToDelete {
-			ruleMap := rule.(map[string]any)
+			ruleMap := rule.(map[string]interface{})
 			pos := ruleMap[mkRulePos].(int)
 
 			err := api.DeleteRule(ctx, pos)
@@ -449,8 +449,8 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	}
 
 	for i := min(len(oldRulesList), len(newRulesList)) - 1; i >= 0; i-- {
-		newRule := newRulesList[i].(map[string]any)
-		oldRule := oldRulesList[i].(map[string]any)
+		newRule := newRulesList[i].(map[string]interface{})
+		oldRule := oldRulesList[i].(map[string]interface{})
 
 		pos := oldRule[mkRulePos].(int)
 
@@ -509,16 +509,16 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	rules := d.Get(MkRule).([]any)
+	rules := d.Get(MkRule).([]interface{})
 	sort.Slice(rules, func(i, j int) bool {
-		ruleI := rules[i].(map[string]any)
-		ruleJ := rules[j].(map[string]any)
+		ruleI := rules[i].(map[string]interface{})
+		ruleJ := rules[j].(map[string]interface{})
 
 		return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
 	})
 
 	for _, v := range rules {
-		rule := v.(map[string]any)
+		rule := v.(map[string]interface{})
 		pos := rule[mkRulePos].(int)
 
 		_, err := api.GetRule(ctx, pos)
@@ -534,7 +534,7 @@ func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	return diags
 }
 
-func mapToRuleCreateRequestBody(rule map[string]any) (*firewall.RuleCreateRequestBody, error) {
+func mapToRuleCreateRequestBody(rule map[string]interface{}) (*firewall.RuleCreateRequestBody, error) {
 	var body firewall.RuleCreateRequestBody
 
 	sg := rule[mkSecurityGroup].(string)
@@ -563,7 +563,7 @@ func mapToRuleCreateRequestBody(rule map[string]any) (*firewall.RuleCreateReques
 	return &body, nil
 }
 
-func mapToBaseRule(rule map[string]any) *firewall.BaseRule {
+func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	baseRule := &firewall.BaseRule{}
 
 	comment := rule[mkRuleComment].(string)
@@ -603,7 +603,7 @@ func mapToBaseRule(rule map[string]any) *firewall.BaseRule {
 	return baseRule
 }
 
-func mapToSecurityGroupBaseRule(rule map[string]any) *firewall.BaseRule {
+func mapToSecurityGroupBaseRule(rule map[string]interface{}) *firewall.BaseRule {
 	baseRule := &firewall.BaseRule{}
 
 	comment := rule[mkRuleComment].(string)
@@ -620,7 +620,7 @@ func mapToSecurityGroupBaseRule(rule map[string]any) *firewall.BaseRule {
 	return baseRule
 }
 
-func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any) {
+func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment
 	}
@@ -662,7 +662,7 @@ func baseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any) {
 	}
 }
 
-func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any) {
+func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]interface{}) {
 	if baseRule.Comment != nil {
 		rule[mkRuleComment] = *baseRule.Comment
 	}
@@ -678,8 +678,8 @@ func securityGroupBaseRuleToMap(baseRule *firewall.BaseRule, rule map[string]any
 
 func invokeRuleAPI(
 	f func(context.Context, firewall.Rule, *schema.ResourceData) diag.Diagnostics,
-) func(context.Context, *schema.ResourceData, any) diag.Diagnostics {
-	return func(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 		return selectFirewallAPI(func(ctx context.Context, api firewall.API, data *schema.ResourceData) diag.Diagnostics {
 			return f(ctx, api, data)
 		})(ctx, d, m)
