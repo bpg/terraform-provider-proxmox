@@ -301,7 +301,8 @@ output "ubuntu_vm_public_key" {
           `proxmox_virtual_environment_download_file` resource. *Deprecated*, use `import_from` instead.
     - `import_from` - (Optional) The file ID for a disk image to import into VM. The image must be of `import` content type.
        The ID format is `<datastore_id>:import/<file_name>`, for example `local:import/centos8.qcow2`. Can be also taken from
-       `proxmox_virtual_environment_download_file` resource.
+       `proxmox_virtual_environment_download_file` resource. **Note:** Any changes to the value of this  field will trigger 
+       a disk replacement operation, which will require a VM reboot. Your original disks will remain as deattached disks.
     - `interface` - (Required) The disk interface for Proxmox, currently `scsi`,
         `sata` and `virtio` interfaces are supported. Append the disk index at
         the end, for example, `virtio0` for the first virtio disk, `virtio1` for
