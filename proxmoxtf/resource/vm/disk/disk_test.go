@@ -372,10 +372,10 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 		"scsi0": &vms.CustomStorageDevice{
 			Size:        types.DiskSizeFromGigabytes(10), // Same as current
 			DatastoreID: &datastoreID,
-			ImportFrom:  &importFrom2,
+			ImportFrom:  &importFrom2, // Different Import file.
 		},
 		"scsi1": &vms.CustomStorageDevice{
-			Size:        types.DiskSizeFromGigabytes(5), // Different from current (5 -> 20)
+			Size:        types.DiskSizeFromGigabytes(5), // Same as current
 			DatastoreID: &datastoreID,
 		},
 	}
@@ -411,7 +411,10 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 
 	// Check that only the changed disk (scsi1) is in the update body
 	// scsi0 should NOT be in the update body since it hasn't changed
-	require.NotNil(t, updateBody)
+	require.NotNil(t, updateBody2)
+	require.Contains(t, updateBody2.CustomStorageDevices, "scsi0", "Update body should contain the changed disk scsi0")
+	require.NotContains(t, updateBody2.CustomStorageDevices, "scsi1", "Update body should not contain the unchanged disk scsi1")
+	require.Equal(t, importFrom2, *updateBody2.CustomStorageDevices["scsi0"].ImportFrom)
 
 	// The update body should only contain scsi0, not scsi1
 	// Note: We can't directly inspect the updateBody content in this test framework,
