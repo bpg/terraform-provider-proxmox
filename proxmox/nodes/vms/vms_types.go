@@ -191,8 +191,7 @@ type GetResponseData struct {
 	BackupFile           *string                         `json:"archive,omitempty"`
 	BandwidthLimit       *int                            `json:"bwlimit,omitempty"`
 	BIOS                 *string                         `json:"bios,omitempty"`
-	BootDisk             *string                         `json:"bootdisk,omitempty"`
-	BootOrder            *string                         `json:"boot,omitempty"`
+	BootOrder            *CustomBoot                     `json:"boot,omitempty"`
 	CDROM                *string                         `json:"cdrom,omitempty"`
 	CloudInitDNSDomain   *string                         `json:"searchdomain,omitempty"`
 	CloudInitDNSServer   *string                         `json:"nameserver,omitempty"`

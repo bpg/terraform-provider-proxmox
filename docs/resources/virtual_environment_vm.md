@@ -159,8 +159,7 @@ output "ubuntu_vm_public_key" {
 - `bios` - (Optional) The BIOS implementation (defaults to `seabios`).
     - `ovmf` - OVMF (UEFI).
     - `seabios` - SeaBIOS.
-- `boot_order` - (Optional) Specify a list of devices to boot from in the order
-    they appear in the list (defaults to `[]`).
+- `boot_order` - (Optional) Specify a list of devices to boot from in the order they appear in the list.
 - `cdrom` - (Optional) The CD-ROM configuration.
     - `enabled` - (Optional) Whether to enable the CD-ROM drive (defaults
         to `false`). *Deprecated*. The attribute will be removed in the next version of the provider.
