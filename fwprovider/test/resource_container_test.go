@@ -15,59 +15,46 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
+
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/require"
-
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
 const (
-	accTestContainerName = "proxmox_virtual_environment_container.test_container"
+	accTestContainerName      = "proxmox_virtual_environment_container.test_container"
+	alpineTemplateRelativeURL = "images/system/alpine-3.22-default_20250617_amd64.tar.xz"
 )
 
+func getTemplateURL(t *testing.T, templateServerURL string) string {
+	t.Helper()
+	return fmt.Sprintf("%s/%s", templateServerURL, alpineTemplateRelativeURL)
+}
+
 func TestAccResourceContainer(t *testing.T) {
-	t.Parallel()
-
 	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
 
-	imageFileName := gofakeit.Word() + "-ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
 	accTestContainerID := 100000 + rand.Intn(99999)
-	accTestContainerIDClone := 100000 + rand.Intn(99999)
 
 	te.AddTemplateVars(map[string]interface{}{
-		"ImageFileName":        imageFileName,
-		"TestContainerID":      accTestContainerID,
-		"TestContainerIDClone": accTestContainerIDClone,
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
 	})
 
-	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
-		Content:  ptr.Ptr("vztmpl"),
-		FileName: ptr.Ptr(imageFileName),
-		Node:     ptr.Ptr(te.NodeName),
-		Storage:  ptr.Ptr(te.DatastoreID),
-		URL:      ptr.Ptr(fmt.Sprintf("%s/images/system/ubuntu-24.04-standard_24.04-2_amd64.tar.zst", te.ContainerImagesServer)),
-	})
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName))
-		require.NoError(t, e)
-	})
-
-	tests := []struct {
-		name string
-		step []resource.TestStep
-	}{
-		{"create, start and update container", []resource.TestStep{
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
+					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -99,7 +86,7 @@ func TestAccResourceContainer(t *testing.T) {
 					}
 					operating_system {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
+						type             = "alpine"
 					}
 				}`, WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
@@ -110,20 +97,17 @@ func TestAccResourceContainer(t *testing.T) {
 						"device_passthrough.0.mode": "0660",
 						"initialization.0.dns.#":    "0",
 					}),
+					//nolint:godox
 					// TODO: depends on DHCP, which may not work in some environments
 					// ResourceAttributesSet(accTestContainerName, []string{
 					// 	"ipv4.vmbr0",
 					// }),
 					func(*terraform.State) error {
-						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-						defer cancel()
-
 						ct := te.NodeClient().Container(accTestContainerID)
-						err := ct.WaitForContainerStatus(ctx, "running")
-						require.NoError(te.t, err, "container did not start")
 
-						ctInfo, err := ct.GetContainer(ctx)
+						ctInfo, err := ct.GetContainer(t.Context())
 						require.NoError(te.t, err, "failed to get container")
+
 						dev0, ok := ctInfo.PassthroughDevices["dev0"]
 						require.True(te.t, ok, `"dev0" passthrough device not found`)
 						require.NotNil(te.t, dev0, `"dev0" passthrough device is <nil>`)
@@ -138,7 +122,7 @@ func TestAccResourceContainer(t *testing.T) {
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
+					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -172,7 +156,7 @@ func TestAccResourceContainer(t *testing.T) {
 					}
 					operating_system {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
+						type             = "alpine"
 					}
 				}`, WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
@@ -190,7 +174,7 @@ func TestAccResourceContainer(t *testing.T) {
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
+					timeout_delete = {{ .TimeoutDelete }}
 					unprivileged = true
 					disk {
 						datastore_id = "local-lvm"
@@ -224,7 +208,7 @@ func TestAccResourceContainer(t *testing.T) {
 					}
 					operating_system {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
+						type             = "alpine"
 					}
 				}`, WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
@@ -233,12 +217,446 @@ func TestAccResourceContainer(t *testing.T) {
 					}),
 				),
 			},
-		}},
-		{"update mount points", []resource.TestStep{
+		},
+	})
+}
+
+func TestAccResourceContainerClone(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	accTestContainerIDClone := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":        imageFileName,
+		"TestContainerID":      accTestContainerID,
+		"TestContainerIDClone": accTestContainerIDClone,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				template  = true
+				disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				mount_point {
+					volume = "local-lvm"
+					size   = "4G"
+					path   = "mnt/local"
+				}
+				device_passthrough {
+					path = "/dev/zero"
+				}
+				initialization {
+					hostname = "test"
+					ip_config {
+						ipv4 {
+						  address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}
+			resource "proxmox_virtual_environment_container" "test_container_clone" {
+				depends_on = [proxmox_virtual_environment_container.test_container]
+				node_name  = "{{.NodeName}}"
+				vm_id      = {{.TestContainerIDClone}}
+				
+				clone {
+					vm_id = proxmox_virtual_environment_container.test_container.id
+				}
+				
+				initialization {
+					hostname = "test-clone"
+					dns {
+					  servers = ["1.1.1.1"]
+					}
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerIDClone)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						dev0, ok := ctInfo.PassthroughDevices["dev0"]
+						require.True(te.t, ok, `"dev0" passthrough device not found`)
+						require.NotNil(te.t, dev0, `"dev0" passthrough device is <nil>`)
+						require.Equal(te.t, "/dev/zero", dev0.Path)
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerDnsBlock(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-issue"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-issue",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-issue"
+						dns {}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-issue",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-create"
+						dns {}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-create",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-create"
+						dns {
+							domain = null
+							server = ""
+							servers = null
+						}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-create",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+					datastore_id = "local-lvm"
+					size         = 4
+				}
+				initialization {
+					hostname = "test-dns-update"
+					dns {
+						domain = "example.com"
+						servers = ["8.8.8.8", "8.8.4.4"]
+					}
+					ip_config {
+						ipv4 {
+							address = "dhcp"
+						}
+					}
+				}
+				network_interface {
+					name = "vmbr0"
+				}
+				operating_system {
+					template_file_id = "local:vztmpl/{{.ImageFileName}}"
+					type             = "alpine"
+				}
+			}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname":        "test-dns-update",
+						"initialization.0.dns.#":           "1",
+						"initialization.0.dns.0.domain":    "example.com",
+						"initialization.0.dns.0.servers.#": "2",
+						"initialization.0.dns.0.servers.0": "8.8.8.8",
+						"initialization.0.dns.0.servers.1": "8.8.4.4",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-dns-update"
+						dns {
+							domain = ""
+							servers = null
+						}
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-dns-update",
+						"initialization.0.dns.#":    "0",
+					}),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerHostname(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-hostname-1"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-hostname-1",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+					}
+					initialization {
+						hostname = "test-hostname-2"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"initialization.0.hostname": "test-hostname-2",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+						// Verify the hostname was actually updated in the container config
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+						require.NotNil(te.t, ctInfo.Hostname, "hostname should not be nil")
+						require.Equal(te.t, "test-hostname-2", *ctInfo.Hostname, "hostname should be updated")
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceContainerMountPoint(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 				    node_name = "{{.NodeName}}"
+					vm_id = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
 						datastore_id = "local-lvm"
@@ -262,7 +680,7 @@ func TestAccResourceContainer(t *testing.T) {
 				    }
 				    operating_system {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
+						type             = "alpine"
 				    }
 				}`),
 				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
@@ -273,6 +691,7 @@ func TestAccResourceContainer(t *testing.T) {
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_container" "test_container" {
 				    node_name = "{{.NodeName}}"
+					vm_id = {{ .TestContainerID }}
 				  	started   = false
 				    disk {
 						datastore_id = "local-lvm"
@@ -302,130 +721,44 @@ func TestAccResourceContainer(t *testing.T) {
 				    }
 				    operating_system {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
+						type             = "alpine"
 				    }
 				}`),
 				Check: ResourceAttributes("proxmox_virtual_environment_container.test_container", map[string]string{
 					"mount_point.#": "2",
 				}),
 			},
-		}},
-		{"ipv4 and ipv6", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_container" "test_container" {
-				node_name = "{{.NodeName}}"
-				started   = false
-				disk {
-					datastore_id = "local-lvm"
-					size         = 4
-				}
-				initialization {
-					hostname = "test"
-					ip_config {
-						ipv4 {
-							address = "10.0.0.100/24"
-							gateway = "10.0.0.1"
-						}
-					}
-					ip_config {
-						ipv6 {
-							address = "2001:db8::100/64"	
-							gateway = "2001:db8::1"
-						}
-					}
-				}
-				network_interface {
-					name = "vmbr0"
-					bridge = "vmbr0"
-				}
-				network_interface {
-					name = "vmbr1"
-					bridge = "vmbr1"
-				}
+		},
+	})
+}
 
-				operating_system {
-					template_file_id = "local:vztmpl/{{.ImageFileName}}"
-					type             = "ubuntu"
-				}
-			}`),
-		}}},
-		{"clone container", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_container" "test_container" {
-				node_name = "{{.NodeName}}"
-				template  = true
-				disk {
-					datastore_id = "local-lvm"
-					size         = 4
-				}
-				mount_point {
-					volume = "local-lvm"
-					size   = "4G"
-					path   = "mnt/local"
-				}
-				device_passthrough {
-					path = "/dev/zero"
-				}
-				initialization {
-					hostname = "test"
-					ip_config {
-						ipv4 {
-						  address = "dhcp"
-						}
-					}
-				}
-				network_interface {
-					name = "vmbr0"
-				}
-				operating_system {
-					template_file_id = "local:vztmpl/{{.ImageFileName}}"
-					type             = "ubuntu"
-				}
-			}
-			resource "proxmox_virtual_environment_container" "test_container_clone" {
-				depends_on = [proxmox_virtual_environment_container.test_container]
-				node_name  = "{{.NodeName}}"
-				vm_id      = {{.TestContainerIDClone}}
-				
-				clone {
-					vm_id = proxmox_virtual_environment_container.test_container.id
-				}
-				
-				initialization {
-					hostname = "test-clone"
-					dns {
-					  servers = ["1.1.1.1"]
-					}
-				}
-			}`, WithRootUser()),
-			Check: resource.ComposeTestCheckFunc(
-				func(*terraform.State) error {
-					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					defer cancel()
+func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
+	te := InitEnvironment(t)
+	accTestContainerID := 100000 + rand.Intn(99999)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 
-					ct := te.NodeClient().Container(accTestContainerIDClone)
-					err := ct.WaitForContainerStatus(ctx, "running")
-					require.NoError(te.t, err, "container did not start")
+	testAccDownloadContainerTemplate(t, te, imageFileName)
 
-					ctInfo, err := ct.GetContainer(ctx)
-					require.NoError(te.t, err, "failed to get container")
-					dev0, ok := ctInfo.PassthroughDevices["dev0"]
-					require.True(te.t, ok, `"dev0" passthrough device not found`)
-					require.NotNil(te.t, dev0, `"dev0" passthrough device is <nil>`)
-					require.Equal(te.t, "/dev/zero", dev0.Path)
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+	})
 
-					return nil
-				},
-			),
-		}}},
-		{"hostname update", []resource.TestStep{
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_network_linux_bridge" "vmbr1" {
+					node_name = "{{ .NodeName }}"
+					name = "vmbr1"
+				}
+				
 				resource "proxmox_virtual_environment_container" "test_container" {
 					node_name = "{{.NodeName}}"
 					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
 					unprivileged = true
+					started   = false
 					disk {
 						datastore_id = "local-lvm"
 						size         = 4
@@ -443,232 +776,28 @@ func TestAccResourceContainer(t *testing.T) {
 					}
 					operating_system {
 						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
+						type             = "alpine"
 					}
-				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname": "test-hostname-1",
-					}),
-					func(*terraform.State) error {
-						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-						defer cancel()
-
-						ct := te.NodeClient().Container(accTestContainerID)
-						err := ct.WaitForContainerStatus(ctx, "running")
-						require.NoError(te.t, err, "container did not start")
-
-						return nil
-					},
-				),
+				}
+				`),
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_container" "test_container" {
-					node_name = "{{.NodeName}}"
-					vm_id     = {{.TestContainerID}}
-					timeout_delete = 10
-					unprivileged = true
-					disk {
-						datastore_id = "local-lvm"
-						size         = 4
-					}
-					initialization {
-						hostname = "test-hostname-2"
-						ip_config {
-							ipv4 {
-								address = "dhcp"
-							}
-						}
-					}
-					network_interface {
-						name = "vmbr0"
-					}
-					operating_system {
-						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
-					}
-				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname": "test-hostname-2",
-					}),
-					func(*terraform.State) error {
-						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-						defer cancel()
-
-						ct := te.NodeClient().Container(accTestContainerID)
-						err := ct.WaitForContainerStatus(ctx, "running")
-						require.NoError(te.t, err, "container did not start after hostname change")
-
-						// Verify the hostname was actually updated in the container config
-						ctInfo, err := ct.GetContainer(ctx)
-						require.NoError(te.t, err, "failed to get container")
-						require.NotNil(te.t, ctInfo.Hostname, "hostname should not be nil")
-						require.Equal(te.t, "test-hostname-2", *ctInfo.Hostname, "hostname should be updated")
-
-						return nil
-					},
-				),
-			},
-		}},
-		{"empty dns block on update", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_container" "test_container" {
-					node_name = "{{.NodeName}}"
-					unprivileged = true
-					disk {
-						datastore_id = "local-lvm"
-						size         = 4
-					}
-					initialization {
-						hostname = "test-dns-issue"
-						ip_config {
-							ipv4 {
-								address = "dhcp"
-							}
-						}
-					}
-					network_interface {
-						name = "vmbr0"
-					}
-					operating_system {
-						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
-					}
-				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname": "test-dns-issue",
-						"initialization.0.dns.#":    "0",
-					}),
-				),
-			},
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_container" "test_container" {
-					node_name = "{{.NodeName}}"
-					unprivileged = true
-					disk {
-						datastore_id = "local-lvm"
-						size         = 4
-					}
-					initialization {
-						hostname = "test-dns-issue"
-						dns {}
-						ip_config {
-							ipv4 {
-								address = "dhcp"
-							}
-						}
-					}
-					network_interface {
-						name = "vmbr0"
-					}
-					operating_system {
-						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
-					}
-				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname": "test-dns-issue",
-						"initialization.0.dns.#":    "0",
-					}),
-				),
-			},
-		}},
-		{"empty dns block on create", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_container" "test_container" {
-					node_name = "{{.NodeName}}"
-					unprivileged = true
-					disk {
-						datastore_id = "local-lvm"
-						size         = 4
-					}
-					initialization {
-						hostname = "test-dns-create"
-						dns {}
-						ip_config {
-							ipv4 {
-								address = "dhcp"
-							}
-						}
-					}
-					network_interface {
-						name = "vmbr0"
-					}
-					operating_system {
-						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
-					}
-				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname": "test-dns-create",
-						"initialization.0.dns.#":    "0",
-					}),
-				),
-			},
-		}},
-		{"dns block with null values on create", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_container" "test_container" {
-					node_name = "{{.NodeName}}"
-					unprivileged = true
-					disk {
-						datastore_id = "local-lvm"
-						size         = 4
-					}
-					initialization {
-						hostname = "test-dns-create"
-						dns {
-							domain = null
-							server = ""
-							servers = null
-						}
-						ip_config {
-							ipv4 {
-								address = "dhcp"
-							}
-						}
-					}
-					network_interface {
-						name = "vmbr0"
-					}
-					operating_system {
-						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
-					}
-				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname": "test-dns-create",
-						"initialization.0.dns.#":    "0",
-					}),
-				),
-			},
-		}},
-		{"dns block with null values on update", []resource.TestStep{
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_container" "test_container" {
-					node_name = "{{.NodeName}}"
-					unprivileged = true
-					disk {
+			resource "proxmox_virtual_environment_network_linux_bridge" "vmbr1" {
+				node_name = "{{ .NodeName }}"
+				name = "vmbr1"
+			}
+			resource "proxmox_virtual_environment_container" "test_container" {
+				node_name = "{{.NodeName}}"
+				vm_id     = {{.TestContainerID}}
+				unprivileged = true
+				started   = false
+				disk {
 					datastore_id = "local-lvm"
 					size         = 4
 				}
 				initialization {
-					hostname = "test-dns-update"
-					dns {
-						domain = "example.com"
-						servers = ["8.8.8.8", "8.8.4.4"]
-					}
+					hostname = "test-hostname-1"
 					ip_config {
 						ipv4 {
 							address = "dhcp"
@@ -677,68 +806,36 @@ func TestAccResourceContainer(t *testing.T) {
 				}
 				network_interface {
 					name = "vmbr0"
+					bridge = "vmbr0"
 				}
+				network_interface {
+					name = "vmbr1"
+					bridge = "vmbr1"
+				}
+
 				operating_system {
 					template_file_id = "local:vztmpl/{{.ImageFileName}}"
-					type             = "ubuntu"
+					type             = "alpine"
 				}
-			}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname":        "test-dns-update",
-						"initialization.0.dns.#":           "1",
-						"initialization.0.dns.0.domain":    "example.com",
-						"initialization.0.dns.0.servers.#": "2",
-						"initialization.0.dns.0.servers.0": "8.8.8.8",
-						"initialization.0.dns.0.servers.1": "8.8.4.4",
-					}),
-				),
+			}`),
 			},
-			{
-				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_container" "test_container" {
-					node_name = "{{.NodeName}}"
-					unprivileged = true
-					disk {
-						datastore_id = "local-lvm"
-						size         = 4
-					}
-					initialization {
-						hostname = "test-dns-update"
-						dns {
-							domain = ""
-							servers = null
-						}
-						ip_config {
-							ipv4 {
-								address = "dhcp"
-							}
-						}
-					}
-					network_interface {
-						name = "vmbr0"
-					}
-					operating_system {
-						template_file_id = "local:vztmpl/{{.ImageFileName}}"
-						type             = "ubuntu"
-					}
-				}`, WithRootUser()),
-				Check: resource.ComposeTestCheckFunc(
-					ResourceAttributes(accTestContainerName, map[string]string{
-						"initialization.0.hostname": "test-dns-update",
-						"initialization.0.dns.#":    "0",
-					}),
-				),
-			},
-		}},
-	}
+		},
+	})
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
-				ProtoV6ProviderFactories: te.AccProviders,
-				Steps:                    tt.step,
-			})
-		})
-	}
+func testAccDownloadContainerTemplate(t *testing.T, te *Environment, imageFileName string) {
+	t.Helper()
+	err := te.NodeStorageClient().DownloadFileByURL(context.Background(), &storage.DownloadURLPostRequestBody{
+		Content:  ptr.Ptr("vztmpl"),
+		FileName: ptr.Ptr(imageFileName),
+		Node:     ptr.Ptr(te.NodeName),
+		Storage:  ptr.Ptr(te.DatastoreID),
+		URL:      ptr.Ptr(getTemplateURL(t, te.ContainerImagesServer)),
+	})
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fmt.Sprintf("vztmpl/%s", imageFileName))
+		require.NoError(t, e)
+	})
 }

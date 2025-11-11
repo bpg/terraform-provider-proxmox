@@ -1146,12 +1146,6 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := client.Node(nodeName).Container(vmID)
 
-	// Wait for the container to be created and its configuration lock to be released.
-	err = containerAPI.WaitForContainerConfigUnlock(ctx, true)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
 	updateBody := &containers.UpdateRequestBody{}
 
@@ -1960,12 +1954,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	d.SetId(strconv.Itoa(vmID))
-
-	// Wait for the container's lock to be released.
-	err = client.Node(nodeName).Container(vmID).WaitForContainerConfigUnlock(ctx, true)
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	return containerCreateStart(ctx, d, m)
 }
@@ -3397,6 +3385,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	// Update the configuration now that everything has been prepared.
 	e = containerAPI.UpdateContainer(ctx, &updateBody)
+	if e != nil {
+		return diag.FromErr(e)
+	}
+
+	// Wait for the container's lock to be released.
+	e = containerAPI.WaitForContainerConfigUnlock(ctx, true)
 	if e != nil {
 		return diag.FromErr(e)
 	}

@@ -165,12 +165,16 @@ type CustomStartupBehavior struct {
 	Up    *int `json:"up,omitempty"    url:"up,omitempty"`
 }
 
-// CreateResponseBody contains the body from a container create response.
-type CreateResponseBody struct {
+type TaskSubmittedResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-type ShutdownResponseBody = CreateResponseBody
+type (
+	CreateResponseBody   = TaskSubmittedResponseBody
+	CloneResponseBody    = TaskSubmittedResponseBody
+	RebootResponseBody   = TaskSubmittedResponseBody
+	ShutdownResponseBody = TaskSubmittedResponseBody
+)
 
 // GetResponseBody contains the body from a user get response.
 type GetResponseBody struct {
