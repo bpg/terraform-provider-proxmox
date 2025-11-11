@@ -33,7 +33,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 					type   = "in"
 					action = "ACCEPT"
 					iface  = "vmbr0"
-					dport = "8006"
+					dport = "18006"
 					proto = "tcp"
 					comment = "PVE Admin Interface"
 				}
@@ -43,7 +43,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 					"rule.0.type":    "in",
 					"rule.0.action":  "ACCEPT",
 					"rule.0.iface":   "vmbr0",
-					"rule.0.dport":   "8006",
+					"rule.0.dport":   "18006",
 					"rule.0.proto":   "tcp",
 					"rule.0.comment": "PVE Admin Interface",
 				}),
@@ -921,7 +921,7 @@ func TestAccResourceNodeFirewallRules(t *testing.T) {
 					type   = "in"
 					action = "ACCEPT"
 					iface  = "vmbr0"
-					dport = "8006"
+					dport = "18006"
 					proto = "tcp"
 					comment = "PVE Admin Interface"
 				}
@@ -932,7 +932,7 @@ func TestAccResourceNodeFirewallRules(t *testing.T) {
 					"rule.0.type":    "in",
 					"rule.0.action":  "ACCEPT",
 					"rule.0.iface":   "vmbr0",
-					"rule.0.dport":   "8006",
+					"rule.0.dport":   "18006",
 					"rule.0.proto":   "tcp",
 					"rule.0.comment": "PVE Admin Interface",
 				}),
