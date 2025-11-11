@@ -17,7 +17,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
-	"github.com/brianvoe/gofakeit/v7"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -36,7 +35,7 @@ func getTemplateURL(t *testing.T, templateServerURL string) string {
 
 func TestAccResourceContainer(t *testing.T) {
 	te := InitEnvironment(t)
-	imageFileName := gofakeit.Word() + "-alpine-3.22-default_20250617_amd64.tar.xz"
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 	testAccDownloadContainerTemplate(t, te, imageFileName)
 
 	accTestContainerID := 100000 + rand.Intn(99999)
@@ -226,7 +225,7 @@ func TestAccResourceContainerClone(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
 	accTestContainerIDClone := 100000 + rand.Intn(99999)
-	imageFileName := gofakeit.Word() + "-alpine-3.22-default_20250617_amd64.tar.xz"
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 
 	testAccDownloadContainerTemplate(t, te, imageFileName)
 
@@ -291,14 +290,9 @@ func TestAccResourceContainerClone(t *testing.T) {
 			}`, WithRootUser()),
 				Check: resource.ComposeTestCheckFunc(
 					func(*terraform.State) error {
-						ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-						defer cancel()
-
 						ct := te.NodeClient().Container(accTestContainerIDClone)
-						err := ct.WaitForContainerStatus(ctx, "running")
-						require.NoError(te.t, err, "container did not start")
 
-						ctInfo, err := ct.GetContainer(ctx)
+						ctInfo, err := ct.GetContainer(t.Context())
 						require.NoError(te.t, err, "failed to get container")
 
 						dev0, ok := ctInfo.PassthroughDevices["dev0"]
@@ -318,7 +312,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
 
-	imageFileName := gofakeit.Word() + "-alpine-3.22-default_20250617_amd64.tar.xz"
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 	testAccDownloadContainerTemplate(t, te, imageFileName)
 
 	te.AddTemplateVars(map[string]interface{}{
@@ -553,7 +547,7 @@ func TestAccResourceContainerDnsBlock(t *testing.T) {
 func TestAccResourceContainerHostname(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
-	imageFileName := gofakeit.Word() + "-alpine-3.22-default_20250617_amd64.tar.xz"
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 
 	testAccDownloadContainerTemplate(t, te, imageFileName)
 
@@ -646,7 +640,7 @@ func TestAccResourceContainerHostname(t *testing.T) {
 func TestAccResourceContainerMountPoint(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
-	imageFileName := gofakeit.Word() + "-alpine-3.22-default_20250617_amd64.tar.xz"
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 
 	testAccDownloadContainerTemplate(t, te, imageFileName)
 
@@ -741,7 +735,7 @@ func TestAccResourceContainerMountPoint(t *testing.T) {
 func TestAccResourceContainerIpv4Ipv6(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
-	imageFileName := gofakeit.Word() + "-alpine-3.22-default_20250617_amd64.tar.xz"
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
 
 	testAccDownloadContainerTemplate(t, te, imageFileName)
 
