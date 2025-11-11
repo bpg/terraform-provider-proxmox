@@ -169,10 +169,12 @@ type TaskSubmittedResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-type CreateResponseBody = TaskSubmittedResponseBody
-type CloneResponseBody = TaskSubmittedResponseBody
-type RebootResponseBody = TaskSubmittedResponseBody
-type ShutdownResponseBody = TaskSubmittedResponseBody
+type (
+	CreateResponseBody   = TaskSubmittedResponseBody
+	CloneResponseBody    = TaskSubmittedResponseBody
+	RebootResponseBody   = TaskSubmittedResponseBody
+	ShutdownResponseBody = TaskSubmittedResponseBody
+)
 
 // GetResponseBody contains the body from a user get response.
 type GetResponseBody struct {
