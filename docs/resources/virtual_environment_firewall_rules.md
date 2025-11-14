@@ -9,6 +9,9 @@ subcategory: Virtual Environment
 
 Manages cluster-level, node-level or VM/container-level firewall rules.
 
+> **Note:** Before creating a new `proxmox_virtual_environment_firewall_rules` resource, verify that no rules already exist for the target (cluster, node, VM, or container).
+> If rules are already configured, import them first using the appropriate import command.
+
 ## Example Usage
 
 ```hcl

@@ -33,7 +33,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 					type   = "in"
 					action = "ACCEPT"
 					iface  = "vmbr0"
-					dport = "8006"
+					dport = "18006"
 					proto = "tcp"
 					comment = "PVE Admin Interface"
 				}
@@ -43,12 +43,455 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 					"rule.0.type":    "in",
 					"rule.0.action":  "ACCEPT",
 					"rule.0.iface":   "vmbr0",
-					"rule.0.dport":   "8006",
+					"rule.0.dport":   "18006",
 					"rule.0.proto":   "tcp",
 					"rule.0.comment": "PVE Admin Interface",
 				}),
 				NoResourceAttributesSet("proxmox_virtual_environment_firewall_rules.rules1", []string{
 					"node_name",
+				}),
+			),
+		}}},
+		{"appending new rules", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "appending_new_rules" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.appending_new_rules", map[string]string{
+					"rule.#":         "1",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "80",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTP",
+					"rule.0.pos":     "0",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "appending_new_rules" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.appending_new_rules", map[string]string{
+					"rule.#":         "2",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "80",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTP",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "443",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow HTTPS",
+					"rule.1.pos":     "1",
+				}),
+			),
+		}}},
+		{"prepending new rules", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "prepending_new_rules" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.prepending_new_rules", map[string]string{
+					"rule.#":         "1",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "80",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTP",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "prepending_new_rules" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.prepending_new_rules", map[string]string{
+					"rule.#":         "2",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "80",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow HTTP",
+					"rule.1.pos":     "1",
+				}),
+			),
+		}}},
+		{"deleting all rules", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "deleting_all_rules" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.deleting_all_rules", map[string]string{
+					"rule.#":         "2",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "80",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow HTTP",
+					"rule.1.pos":     "1",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "deleting_all_rules" {
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.deleting_all_rules", map[string]string{
+					"rule.#": "0",
+				}),
+			),
+		}}},
+		{"remove rules from the end", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "remove_rules_from_end" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.remove_rules_from_end", map[string]string{
+					"rule.#":         "2",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "80",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow HTTP",
+					"rule.1.pos":     "1",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "remove_rules_from_end" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.remove_rules_from_end", map[string]string{
+					"rule.#":         "1",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+				}),
+			),
+		}}},
+		{"remove rules from the beginning", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "remove_rules_from_beginning" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.remove_rules_from_beginning", map[string]string{
+					"rule.#":         "2",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "80",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow HTTP",
+					"rule.1.pos":     "1",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "remove_rules_from_beginning" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.remove_rules_from_beginning", map[string]string{
+					"rule.#":         "1",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "80",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTP",
+					"rule.0.pos":     "0",
+				}),
+			),
+		}}},
+		{"remove rule from the middle", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "remove_rule_from_middle" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "22"
+					proto   = "tcp"
+					comment = "Allow SSH"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.remove_rule_from_middle", map[string]string{
+					"rule.#":         "3",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "22",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow SSH",
+					"rule.1.pos":     "1",
+					"rule.2.type":    "in",
+					"rule.2.action":  "ACCEPT",
+					"rule.2.dport":   "80",
+					"rule.2.proto":   "tcp",
+					"rule.2.comment": "Allow HTTP",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "remove_rule_from_middle" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.remove_rule_from_middle", map[string]string{
+					"rule.#":         "2",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "80",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow HTTP",
+					"rule.1.pos":     "1",
+				}),
+			),
+		}}},
+		{"insert rule in the middle", []resource.TestStep{{
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "insert_rule_in_middle" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.insert_rule_in_middle", map[string]string{
+					"rule.#":         "2",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "80",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow HTTP",
+					"rule.1.pos":     "1",
+				}),
+			),
+		}, {
+			Config: te.RenderConfig(`
+			resource "proxmox_virtual_environment_firewall_rules" "insert_rule_in_middle" {
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "443"
+					proto   = "tcp"
+					comment = "Allow HTTPS"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "22"
+					proto   = "tcp"
+					comment = "Allow SSH"
+				}
+				rule {
+					type    = "in"
+					action  = "ACCEPT"
+					dport   = "80"
+					proto   = "tcp"
+					comment = "Allow HTTP"
+				}
+			}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_firewall_rules.insert_rule_in_middle", map[string]string{
+					"rule.#":         "3",
+					"rule.0.type":    "in",
+					"rule.0.action":  "ACCEPT",
+					"rule.0.dport":   "443",
+					"rule.0.proto":   "tcp",
+					"rule.0.comment": "Allow HTTPS",
+					"rule.0.pos":     "0",
+					"rule.1.type":    "in",
+					"rule.1.action":  "ACCEPT",
+					"rule.1.dport":   "22",
+					"rule.1.proto":   "tcp",
+					"rule.1.comment": "Allow SSH",
+					"rule.1.pos":     "1",
+					"rule.2.type":    "in",
+					"rule.2.action":  "ACCEPT",
+					"rule.2.dport":   "80",
+					"rule.2.proto":   "tcp",
+					"rule.2.comment": "Allow HTTP",
+					"rule.2.pos":     "2",
 				}),
 			),
 		}}},
@@ -409,7 +852,7 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 				ConfigPlanChecks: resource.ConfigPlanChecks{
 					PreApply: []plancheck.PlanCheck{
 						plancheck.ExpectResourceAction("proxmox_virtual_environment_firewall_rules.drift_detection",
-							plancheck.ResourceActionDestroyBeforeCreate),
+							plancheck.ResourceActionUpdate),
 						plancheck.ExpectNonEmptyPlan(),
 					},
 				},
@@ -450,9 +893,11 @@ func TestAccResourceClusterFirewall(t *testing.T) {
 		}}},
 	}
 
+	// NOTE: These tests are not run in parallel because they modify the same
+	// shared cluster-level firewall resource.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resource.ParallelTest(t, resource.TestCase{
+			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: te.AccProviders,
 				Steps:                    tt.steps,
 			})
@@ -476,7 +921,7 @@ func TestAccResourceNodeFirewallRules(t *testing.T) {
 					type   = "in"
 					action = "ACCEPT"
 					iface  = "vmbr0"
-					dport = "8006"
+					dport = "18006"
 					proto = "tcp"
 					comment = "PVE Admin Interface"
 				}
@@ -487,7 +932,7 @@ func TestAccResourceNodeFirewallRules(t *testing.T) {
 					"rule.0.type":    "in",
 					"rule.0.action":  "ACCEPT",
 					"rule.0.iface":   "vmbr0",
-					"rule.0.dport":   "8006",
+					"rule.0.dport":   "18006",
 					"rule.0.proto":   "tcp",
 					"rule.0.comment": "PVE Admin Interface",
 				}),
