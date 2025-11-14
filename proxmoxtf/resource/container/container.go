@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"slices"
 	"sort"
@@ -1025,6 +1026,43 @@ func Container() *schema.Resource {
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
 					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+			// create a customdiff that checks each mount point
+			customdiff.ForceNewIf(
+				mkMountPoint,
+				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+					oldRaw, newRaw := d.GetChange(mkMountPoint)
+					// compare all oldRaw and newRaw entries
+					oldList, _ := oldRaw.([]interface{})
+					newList, _ := newRaw.([]interface{})
+
+					if oldList == nil {
+						oldList = []interface{}{}
+					}
+					if newList == nil {
+						newList = []interface{}{}
+					}
+
+					for i := 0; i < len(oldList); i++ {
+						if len(newList)-1 < i {
+							return true
+						}
+						// compare old and new list entries and call ForceNew on the correspondig string
+						// make a deep comparison
+						oldMap, _ := oldList[i].(map[string]interface{})
+						newMap, _ := newList[i].(map[string]interface{})
+						// deep compare
+						if !reflect.DeepEqual(oldMap, newMap) {
+							// get key that is different and call ForceNew
+							for _, v := range oldMap {
+								d.ForceNew(fmt.Sprintf("%s.%d.%s", mkMountPoint, i, v))
+							}
+							return true
+						}
+					}
+					return false
+
 				},
 			),
 			customdiff.ForceNewIf(
