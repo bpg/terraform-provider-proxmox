@@ -2287,10 +2287,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		updateBody.Tags = &tagString
 	}
 
-	if template {
-		updateBody.Template = &template
-	}
-
 	if len(vga) > 0 {
 		vgaDevice := vmGetVGADeviceObject(d)
 		updateBody.VGADevice = vgaDevice
@@ -2466,6 +2462,15 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			if e != nil {
 				return diag.FromErr(e)
 			}
+		}
+	}
+
+	if template {
+		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", vmID))
+
+		e = vmAPI.ConvertToTemplate(ctx)
+		if e != nil {
+			return diag.FromErr(e)
 		}
 	}
 
@@ -2681,7 +2686,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	onBoot := types.CustomBool(d.Get(mkOnBoot).(bool))
 	tabletDevice := types.CustomBool(d.Get(mkTabletDevice).(bool))
-	template := types.CustomBool(d.Get(mkTemplate).(bool))
+	template := types.CustomBool(false)
 
 	virtiofsShares := vmGetVirtiofsShares(d)
 	vgaDevice := vmGetVGADeviceObject(d)
@@ -2932,6 +2937,17 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 			if err != nil {
 				return diag.FromErr(err)
 			}
+		}
+	}
+
+	// Convert to template if requested
+	template = types.CustomBool(d.Get(mkTemplate).(bool))
+	if template {
+		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
+
+		err = client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx)
+		if err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
@@ -5238,11 +5254,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 
-	if d.HasChange(mkTemplate) {
-		updateBody.Template = &template
-		rebootRequired = true
-	}
-
 	// Prepare the new agent configuration.
 	if d.HasChange(mkAgent) {
 		agentBlock, err := structure.GetSchemaBlock(
@@ -5787,6 +5798,26 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	e = vmAPI.UpdateVM(ctx, updateBody)
 	if e != nil {
 		return diag.FromErr(e)
+	}
+
+	// Handle template conversion if the template flag changed to true
+	if d.HasChange(mkTemplate) {
+		oldValue, newValue := d.GetChange(mkTemplate)
+		oldTemplate := oldValue.(bool)
+		newTemplate := newValue.(bool)
+
+		if !oldTemplate && newTemplate {
+			tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
+
+			e = vmAPI.ConvertToTemplate(ctx)
+			if e != nil {
+				return diag.FromErr(e)
+			}
+
+			rebootRequired = false
+		} else if oldTemplate && !newTemplate {
+			return diag.Errorf("Cannot convert a template back to a regular VM")
+		}
 	}
 
 	// Determine if the state of the virtual machine state needs to be changed.

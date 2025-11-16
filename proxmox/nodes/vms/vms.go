@@ -61,6 +61,25 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 	return nil
 }
 
+// ConvertToTemplate converts a virtual machine to a template using proper endpoint.
+func (c *Client) ConvertToTemplate(ctx context.Context) error {
+	resBody := &UpdateAsyncResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("template"), nil, resBody)
+	if err != nil {
+		return fmt.Errorf("error converting VM %d to template: %w", c.VMID, err)
+	}
+
+	if resBody.Data != nil {
+		err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+		if err != nil {
+			return fmt.Errorf("error waiting for VM %d template conversion: %w", c.VMID, err)
+		}
+	}
+
+	return nil
+}
+
 // CreateVM creates a virtual machine.
 func (c *Client) CreateVM(ctx context.Context, d *CreateRequestBody) error {
 	taskID, err := c.CreateVMAsync(ctx, d)
