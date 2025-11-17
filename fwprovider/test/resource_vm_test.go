@@ -741,6 +741,11 @@ func TestAccResourceVMNetwork(t *testing.T) {
 		}},
 		{"remove network device", []resource.TestStep{
 			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
@@ -758,6 +763,11 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
@@ -772,6 +782,11 @@ func TestAccResourceVMNetwork(t *testing.T) {
 		}},
 		{"multiple network devices removal", []resource.TestStep{
 			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
@@ -796,6 +811,11 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
@@ -815,6 +835,11 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
@@ -829,6 +854,11 @@ func TestAccResourceVMNetwork(t *testing.T) {
 		}},
 		{"network device state consistency", []resource.TestStep{
 			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
 					node_name = "{{.NodeName}}"
@@ -848,6 +878,11 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
 				// This step tests that the state is read correctly after network device removal
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
@@ -861,6 +896,11 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
 				// This step tests that we can add network devices back after removal
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "test_vm" {
