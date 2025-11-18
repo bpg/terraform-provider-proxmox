@@ -1051,6 +1051,15 @@ func Container() *schema.Resource {
 						// compare old and new list entries and call ForceNew on the correspondig string
 						// make a deep comparison
 						oldMap, _ := oldList[i].(map[string]interface{})
+						// the volume entry of oldMap does containe the storage volume PLUS the identifier, which we have to strip
+						volumeEntry, ok := oldMap["volume"]
+						if ok {
+							volumeParts := strings.Split(volumeEntry.(string), ":")
+							if len(volumeParts) >= 1 {
+								oldMap["volume"] = volumeParts[0]
+							}
+						}
+
 						newMap, _ := newList[i].(map[string]interface{})
 						// deep compare
 						if !reflect.DeepEqual(oldMap, newMap) {
