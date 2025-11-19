@@ -400,8 +400,9 @@ func (r *downloadFileResource) Create(
 			if versionResp, err := r.client.Version().Version(ctx); err == nil {
 				ver = versionResp.Version
 			} else {
-				tflog.Warn(ctx, fmt.Sprintf("failed to determine Proxmox VE version, assume %v", ver), map[string]interface{}{
-					"error": err,
+				tflog.Warn(ctx, "Failed to determine Proxmox VE version, assuming minimum supported version.", map[string]interface{}{
+					"error":           err,
+					"assumed_version": ver.String(),
 				})
 			}
 
