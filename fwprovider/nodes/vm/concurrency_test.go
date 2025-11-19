@@ -49,7 +49,7 @@ func TestBatchCreate(t *testing.T) {
 	ids := make([]int, numVMs)
 
 	t.Cleanup(func() {
-		_ = te.NodeClient().VM(sourceID).DeleteVM(ctx) //nolint:errcheck
+		_ = te.NodeClient().VM(sourceID).DeleteVM(ctx, true, true) //nolint:errcheck
 
 		var wg sync.WaitGroup
 		for _, id := range ids {
@@ -59,7 +59,7 @@ func TestBatchCreate(t *testing.T) {
 				defer wg.Done()
 
 				if id > 0 {
-					_ = te.NodeClient().VM(id).DeleteVM(ctx) //nolint:errcheck
+					_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
 				}
 			}()
 		}

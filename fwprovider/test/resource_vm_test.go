@@ -446,6 +446,72 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		{"purge_on_destroy and delete_unreferenced_disks_on_destroy defaults", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_destroy_params" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_destroy_params", map[string]string{
+						"purge_on_destroy":                     "true",
+						"delete_unreferenced_disks_on_destroy": "true",
+					}),
+				),
+			},
+		}},
+		{"purge_on_destroy and delete_unreferenced_disks_on_destroy set to false", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_destroy_params_false" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					purge_on_destroy                      = false
+					delete_unreferenced_disks_on_destroy = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_destroy_params_false", map[string]string{
+						"purge_on_destroy":                     "false",
+						"delete_unreferenced_disks_on_destroy": "false",
+					}),
+				),
+			},
+		}},
+		{"purge_on_destroy and delete_unreferenced_disks_on_destroy update", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_destroy_params_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					purge_on_destroy                      = true
+					delete_unreferenced_disks_on_destroy = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_destroy_params_update", map[string]string{
+						"purge_on_destroy":                     "true",
+						"delete_unreferenced_disks_on_destroy": "true",
+					}),
+				),
+			}, {
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_destroy_params_update" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					
+					purge_on_destroy                      = false
+					delete_unreferenced_disks_on_destroy = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_destroy_params_update", map[string]string{
+						"purge_on_destroy":                     "false",
+						"delete_unreferenced_disks_on_destroy": "false",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

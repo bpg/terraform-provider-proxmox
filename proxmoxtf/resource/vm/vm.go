@@ -101,43 +101,45 @@ const (
 	dvMigrate                           = false
 	dvName                              = ""
 
-	dvOperatingSystemType = "other"
-	dvPoolID              = ""
-	dvProtection          = false
-	dvRNGMaxBytes         = 1024
-	dvRNGPeriod           = 1000
-	dvSerialDeviceDevice  = "socket"
-	dvSMBIOSFamily        = ""
-	dvSMBIOSManufacturer  = ""
-	dvSMBIOSProduct       = ""
-	dvSMBIOSSKU           = ""
-	dvSMBIOSSerial        = ""
-	dvSMBIOSVersion       = ""
-	dvStarted             = true
-	dvStartupOrder        = -1
-	dvStartupUpDelay      = -1
-	dvStartupDownDelay    = -1
-	dvTabletDevice        = true
-	dvTemplate            = false
-	dvTimeoutClone        = 1800
-	dvTimeoutCreate       = 1800
-	dvTimeoutMigrate      = 1800
-	dvTimeoutReboot       = 1800
-	dvTimeoutShutdownVM   = 1800
-	dvTimeoutStartVM      = 1800
-	dvTimeoutStopVM       = 300
-	dvVGAClipboard        = ""
-	dvVGAMemory           = 16
-	dvVGAType             = "std"
-	dvVirtiofsCache       = "auto"
-	dvVirtiofsDirectIo    = false
-	dvVirtiofsExposeAcl   = false
-	dvVirtiofsExposeXattr = false
-	dvSCSIHardware        = "virtio-scsi-pci"
-	dvStopOnDestroy       = false
-	dvHookScript          = ""
-	dvWatchdogModel       = "i6300esb"
-	dvWatchdogAction      = "none"
+	dvOperatingSystemType              = "other"
+	dvPoolID                           = ""
+	dvProtection                       = false
+	dvRNGMaxBytes                      = 1024
+	dvRNGPeriod                        = 1000
+	dvSerialDeviceDevice               = "socket"
+	dvSMBIOSFamily                     = ""
+	dvSMBIOSManufacturer               = ""
+	dvSMBIOSProduct                    = ""
+	dvSMBIOSSKU                        = ""
+	dvSMBIOSSerial                     = ""
+	dvSMBIOSVersion                    = ""
+	dvStarted                          = true
+	dvStartupOrder                     = -1
+	dvStartupUpDelay                   = -1
+	dvStartupDownDelay                 = -1
+	dvTabletDevice                     = true
+	dvTemplate                         = false
+	dvTimeoutClone                     = 1800
+	dvTimeoutCreate                    = 1800
+	dvTimeoutMigrate                   = 1800
+	dvTimeoutReboot                    = 1800
+	dvTimeoutShutdownVM                = 1800
+	dvTimeoutStartVM                   = 1800
+	dvTimeoutStopVM                    = 300
+	dvVGAClipboard                     = ""
+	dvVGAMemory                        = 16
+	dvVGAType                          = "std"
+	dvVirtiofsCache                    = "auto"
+	dvVirtiofsDirectIo                 = false
+	dvVirtiofsExposeAcl                = false
+	dvVirtiofsExposeXattr              = false
+	dvSCSIHardware                     = "virtio-scsi-pci"
+	dvStopOnDestroy                    = false
+	dvPurgeOnDestroy                   = true
+	dvDeleteUnreferencedDisksOnDestroy = true
+	dvHookScript                       = ""
+	dvWatchdogModel                    = "i6300esb"
+	dvWatchdogAction                   = "none"
 
 	maxResourceVirtualEnvironmentVMAudioDevices  = 1
 	maxResourceVirtualEnvironmentVMSerialDevices = 4
@@ -251,59 +253,61 @@ const (
 	mkMigrate             = "migrate"
 	mkName                = "name"
 
-	mkNodeName             = "node_name"
-	mkOperatingSystem      = "operating_system"
-	mkOperatingSystemType  = "type"
-	mkPoolID               = "pool_id"
-	mkProtection           = "protection"
-	mkRNG                  = "rng"
-	mkRNGSource            = "source"
-	mkRNGMaxBytes          = "max_bytes"
-	mkRNGPeriod            = "period"
-	mkSerialDevice         = "serial_device"
-	mkSerialDeviceDevice   = "device"
-	mkSMBIOS               = "smbios"
-	mkSMBIOSFamily         = "family"
-	mkSMBIOSManufacturer   = "manufacturer"
-	mkSMBIOSProduct        = "product"
-	mkSMBIOSSKU            = "sku"
-	mkSMBIOSSerial         = "serial"
-	mkSMBIOSUUID           = "uuid"
-	mkSMBIOSVersion        = "version"
-	mkStarted              = "started"
-	mkStartup              = "startup"
-	mkStartupOrder         = "order"
-	mkStartupUpDelay       = "up_delay"
-	mkStartupDownDelay     = "down_delay"
-	mkTabletDevice         = "tablet_device"
-	mkTags                 = "tags"
-	mkTemplate             = "template"
-	mkTimeoutClone         = "timeout_clone"
-	mkTimeoutCreate        = "timeout_create"
-	mkTimeoutMigrate       = "timeout_migrate" // this is essentially a "timeout_update", needs to be refactored
-	mkTimeoutReboot        = "timeout_reboot"
-	mkTimeoutShutdownVM    = "timeout_shutdown_vm"
-	mkTimeoutStartVM       = "timeout_start_vm"
-	mkTimeoutStopVM        = "timeout_stop_vm"
-	mkHostUSB              = "usb"
-	mkHostUSBDevice        = "host"
-	mkHostUSBDeviceMapping = "mapping"
-	mkHostUSBDeviceUSB3    = "usb3"
-	mkVGA                  = "vga"
-	mkVGAClipboard         = "clipboard"
-	mkVGAMemory            = "memory"
-	mkVGAType              = "type"
-	mkVMID                 = "vm_id"
-	mkSCSIHardware         = "scsi_hardware"
-	mkHookScriptFileID     = "hook_script_file_id"
-	mkStopOnDestroy        = "stop_on_destroy"
-	mkVirtiofs             = "virtiofs"
-	mkVirtiofsMapping      = "mapping"
-	mkVirtiofsCache        = "cache"
-	mkVirtiofsDirectIO     = "direct_io"
-	mkVirtiofsExposeACL    = "expose_acl"
-	mkVirtiofsExposeXAttr  = "expose_xattr"
-	mkWatchdog             = "watchdog"
+	mkNodeName                         = "node_name"
+	mkOperatingSystem                  = "operating_system"
+	mkOperatingSystemType              = "type"
+	mkPoolID                           = "pool_id"
+	mkProtection                       = "protection"
+	mkRNG                              = "rng"
+	mkRNGSource                        = "source"
+	mkRNGMaxBytes                      = "max_bytes"
+	mkRNGPeriod                        = "period"
+	mkSerialDevice                     = "serial_device"
+	mkSerialDeviceDevice               = "device"
+	mkSMBIOS                           = "smbios"
+	mkSMBIOSFamily                     = "family"
+	mkSMBIOSManufacturer               = "manufacturer"
+	mkSMBIOSProduct                    = "product"
+	mkSMBIOSSKU                        = "sku"
+	mkSMBIOSSerial                     = "serial"
+	mkSMBIOSUUID                       = "uuid"
+	mkSMBIOSVersion                    = "version"
+	mkStarted                          = "started"
+	mkStartup                          = "startup"
+	mkStartupOrder                     = "order"
+	mkStartupUpDelay                   = "up_delay"
+	mkStartupDownDelay                 = "down_delay"
+	mkTabletDevice                     = "tablet_device"
+	mkTags                             = "tags"
+	mkTemplate                         = "template"
+	mkTimeoutClone                     = "timeout_clone"
+	mkTimeoutCreate                    = "timeout_create"
+	mkTimeoutMigrate                   = "timeout_migrate" // this is essentially a "timeout_update", needs to be refactored
+	mkTimeoutReboot                    = "timeout_reboot"
+	mkTimeoutShutdownVM                = "timeout_shutdown_vm"
+	mkTimeoutStartVM                   = "timeout_start_vm"
+	mkTimeoutStopVM                    = "timeout_stop_vm"
+	mkHostUSB                          = "usb"
+	mkHostUSBDevice                    = "host"
+	mkHostUSBDeviceMapping             = "mapping"
+	mkHostUSBDeviceUSB3                = "usb3"
+	mkVGA                              = "vga"
+	mkVGAClipboard                     = "clipboard"
+	mkVGAMemory                        = "memory"
+	mkVGAType                          = "type"
+	mkVMID                             = "vm_id"
+	mkSCSIHardware                     = "scsi_hardware"
+	mkHookScriptFileID                 = "hook_script_file_id"
+	mkStopOnDestroy                    = "stop_on_destroy"
+	mkPurgeOnDestroy                   = "purge_on_destroy"
+	mkDeleteUnreferencedDisksOnDestroy = "delete_unreferenced_disks_on_destroy"
+	mkVirtiofs                         = "virtiofs"
+	mkVirtiofsMapping                  = "mapping"
+	mkVirtiofsCache                    = "cache"
+	mkVirtiofsDirectIO                 = "direct_io"
+	mkVirtiofsExposeACL                = "expose_acl"
+	mkVirtiofsExposeXAttr              = "expose_xattr"
+	mkWatchdog                         = "watchdog"
 	// a workaround for the lack of proper support of default and undefined values in SDK.
 	mkWatchdogEnabled = "enabled"
 	mkWatchdogModel   = "model"
@@ -1604,6 +1608,18 @@ func VM() *schema.Resource {
 			Description: "Whether to stop rather than shutdown on VM destroy",
 			Optional:    true,
 			Default:     dvStopOnDestroy,
+		},
+		mkPurgeOnDestroy: {
+			Type:        schema.TypeBool,
+			Description: "Whether to purge the VM from backup configurations on destroy",
+			Optional:    true,
+			Default:     dvPurgeOnDestroy,
+		},
+		mkDeleteUnreferencedDisksOnDestroy: {
+			Type:        schema.TypeBool,
+			Description: "Whether to delete unreferenced disks on destroy",
+			Optional:    true,
+			Default:     dvDeleteUnreferencedDisksOnDestroy,
 		},
 		mkWatchdog: {
 			Type:        schema.TypeList,
@@ -6102,7 +6118,10 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 	}
 
-	err = vmAPI.DeleteVM(ctx)
+	purge := d.Get(mkPurgeOnDestroy).(bool)
+	deleteUnreferencedDisks := d.Get(mkDeleteUnreferencedDisksOnDestroy).(bool)
+
+	err = vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")
