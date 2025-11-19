@@ -66,7 +66,7 @@ func TestIDGenerator_Sequence(t *testing.T) {
 				defer wg.Done()
 
 				busyID := firstBusyID + i
-				err = te.NodeClient().VM(busyID).DeleteVM(ctx)
+				err = te.NodeClient().VM(busyID).DeleteVM(ctx, true, true)
 				assert.NoError(t, err, "failed to delete VM %d", busyID)
 			}()
 		}
@@ -85,7 +85,7 @@ func TestIDGenerator_Sequence(t *testing.T) {
 				defer wg.Done()
 
 				if id > 100 {
-					_ = te.NodeClient().VM(id).DeleteVM(ctx) //nolint:errcheck
+					_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
 				}
 			}()
 		}
@@ -138,7 +138,7 @@ func TestIDGenerator_Random(t *testing.T) {
 	t.Cleanup(func() {
 		for _, id := range ids {
 			if id > 100 {
-				_ = te.NodeClient().VM(id).DeleteVM(ctx) //nolint:errcheck
+_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
 			}
 		}
 	})

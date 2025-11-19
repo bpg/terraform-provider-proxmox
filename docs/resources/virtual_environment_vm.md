@@ -550,6 +550,8 @@ output "ubuntu_vm_public_key" {
     changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `stop_on_destroy` - (Optional) Whether to stop rather than shutdown on VM destroy (defaults to `false`)
+- `purge_on_destroy` - (Optional) Whether to purge the VM from backup configurations on destroy (defaults to `true`)
+- `delete_unreferenced_disks_on_destroy` - (Optional) Whether to delete unreferenced disks on destroy (defaults to `true`)
 - `timeout_clone` - (Optional) Timeout for cloning a VM in seconds (defaults to
     1800).
 - `timeout_create` - (Optional) Timeout for creating a VM in seconds (defaults to
