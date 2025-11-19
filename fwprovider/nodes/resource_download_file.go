@@ -404,6 +404,7 @@ func (r *downloadFileResource) Create(
 					"error": err,
 				})
 			}
+
 			message := fmt.Sprintf("Could not download file '%s', unexpected error: %s",
 				plan.FileName.ValueString(), err.Error(),
 			)
