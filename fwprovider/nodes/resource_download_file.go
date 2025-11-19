@@ -26,10 +26,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
@@ -111,7 +113,7 @@ func (r sizeRequiresReplaceModifier) MarkdownDescription(_ context.Context) stri
 
 type downloadFileModel struct {
 	ID                     types.String `tfsdk:"id"`
-	Content                types.String `tfsdk:"content_type"`
+	ContentType            types.String `tfsdk:"content_type"`
 	FileName               types.String `tfsdk:"file_name"`
 	Storage                types.String `tfsdk:"datastore_id"`
 	Node                   types.String `tfsdk:"node_name"`
@@ -359,7 +361,7 @@ func (r *downloadFileResource) Create(
 	downloadFileReq := storage.DownloadURLPostRequestBody{
 		Node:              plan.Node.ValueStringPointer(),
 		Storage:           plan.Storage.ValueStringPointer(),
-		Content:           plan.Content.ValueStringPointer(),
+		Content:           plan.ContentType.ValueStringPointer(),
 		Checksum:          plan.Checksum.ValueStringPointer(),
 		ChecksumAlgorithm: plan.ChecksumAlgorithm.ValueStringPointer(),
 		Compression:       plan.DecompressionAlgorithm.ValueStringPointer(),
@@ -372,7 +374,7 @@ func (r *downloadFileResource) Create(
 
 	err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
-		fileID := plan.Content.ValueString() + "/" + plan.FileName.ValueString()
+		fileID := plan.ContentType.ValueString() + "/" + plan.FileName.ValueString()
 
 		err = storageClient.DeleteDatastoreFile(ctx, fileID)
 		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -394,20 +396,31 @@ func (r *downloadFileResource) Create(
 				),
 			)
 		} else {
-			resp.Diagnostics.AddError(
-				"Error downloading file from url",
-				fmt.Sprintf("Could not download file '%s', unexpected error: %s",
-					plan.FileName.ValueString(),
-					err.Error(),
-				),
+			ver := version.MinimumProxmoxVersion
+			if versionResp, err := r.client.Version().Version(ctx); err == nil {
+				ver = versionResp.Version
+			} else {
+				tflog.Warn(ctx, "Failed to determine Proxmox VE version, assuming minimum supported version.", map[string]interface{}{
+					"error":           err,
+					"assumed_version": ver.String(),
+				})
+			}
+
+			message := fmt.Sprintf("Could not download file '%s', unexpected error: %s",
+				plan.FileName.ValueString(), err.Error(),
 			)
+			if plan.ContentType.ValueString() == "import" && !ver.SupportImportContentType() {
+				message += ", and the content type 'import' is not supported by the Proxmox VE version " + ver.String()
+			}
+
+			resp.Diagnostics.AddError("Error downloading file from url", message)
 		}
 
 		return
 	}
 
 	plan.ID = types.StringValue(plan.Storage.ValueString() + ":" +
-		plan.Content.ValueString() + "/" + plan.FileName.ValueString())
+		plan.ContentType.ValueString() + "/" + plan.FileName.ValueString())
 
 	err = r.read(ctx, &plan)
 	if err != nil {
