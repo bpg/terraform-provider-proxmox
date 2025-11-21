@@ -25,7 +25,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1
 	github.com/skeema/knownhosts v1.3.2
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/crypto v0.44.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/net v0.47.0
 )
 
