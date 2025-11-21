@@ -1765,7 +1765,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	diskSize := diskBlock[mkDiskSize].(int)
-	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
+	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0 || len(diskMountOptions) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
@@ -2979,11 +2979,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		rootFS := &containers.CustomRootFS{}
-		// Disk ID for the rootfs is always 0
-		diskID := 0
-		vmID := d.Get(mkVMID).(int)
-		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
-		rootFS.Volume = getContainerDiskVolume(rootFS.Volume, vmID, diskID)
+
+		containerConfig, e := containerAPI.GetContainer(ctx)
+		if e != nil {
+			return diag.FromErr(e)
+		}
+
+		rootFS.Volume = containerConfig.RootFS.Volume
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
@@ -3532,10 +3534,6 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
-}
-
-func getContainerDiskVolume(rawVolume string, vmID int, diskID int) string {
-	return fmt.Sprintf("%s:vm-%d-disk-%d", rawVolume, vmID, diskID)
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {

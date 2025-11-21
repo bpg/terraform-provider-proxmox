@@ -221,6 +221,124 @@ func TestAccResourceContainer(t *testing.T) {
 	})
 }
 
+func TestAccResourceContainerMountOptions(t *testing.T) {
+	te := InitEnvironment(t)
+	imageFileName := fmt.Sprintf("%d-alpine-3.22-default_20250617_amd64.tar.xz", time.Now().UnixMicro())
+	testAccDownloadContainerTemplate(t, te, imageFileName)
+
+	accTestContainerID := 100000 + rand.Intn(99999)
+
+	te.AddTemplateVars(map[string]interface{}{
+		"ImageFileName":   imageFileName,
+		"TestContainerID": accTestContainerID,
+		"TimeoutDelete":   300,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+						mount_options = ["lazytime"]
+					}
+					initialization {
+						hostname = "test-mount-options"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.0.mount_options.#": "1",
+						"disk.0.mount_options.0": "lazytime",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						require.NotNil(te.t, ctInfo.RootFS, "rootfs should not be nil")
+						require.NotNil(te.t, ctInfo.RootFS.MountOptions, "mount_options should not be nil on initial creation")
+						require.Len(te.t, *ctInfo.RootFS.MountOptions, 1, "mount_options should have 1 element on initial creation")
+						require.Equal(te.t, "lazytime", (*ctInfo.RootFS.MountOptions)[0], "mount_options should contain 'lazytime'")
+
+						te.t.Logf("Container created with rootFS volume: %s", ctInfo.RootFS.Volume)
+
+						return nil
+					},
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_container" "test_container" {
+					node_name = "{{.NodeName}}"
+					vm_id     = {{.TestContainerID}}
+					timeout_delete = {{ .TimeoutDelete }}
+					unprivileged = true
+					disk {
+						datastore_id = "local-lvm"
+						size         = 4
+						mount_options = ["lazytime", "noatime"]
+					}
+					initialization {
+						hostname = "test-mount-options"
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+					}
+					network_interface {
+						name = "vmbr0"
+					}
+					operating_system {
+						template_file_id = "local:vztmpl/{{.ImageFileName}}"
+						type             = "alpine"
+					}
+				}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes(accTestContainerName, map[string]string{
+						"disk.0.mount_options.#": "2",
+					}),
+					func(*terraform.State) error {
+						ct := te.NodeClient().Container(accTestContainerID)
+
+						ctInfo, err := ct.GetContainer(t.Context())
+						require.NoError(te.t, err, "failed to get container")
+
+						require.NotNil(te.t, ctInfo.RootFS, "rootfs should not be nil")
+						require.NotNil(te.t, ctInfo.RootFS.MountOptions, "mount_options should not be nil after update")
+						require.Len(te.t, *ctInfo.RootFS.MountOptions, 2, "mount_options should have 2 elements after update")
+
+						te.t.Logf("After update, rootFS volume: %s", ctInfo.RootFS.Volume)
+
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceContainerClone(t *testing.T) {
 	te := InitEnvironment(t)
 	accTestContainerID := 100000 + rand.Intn(99999)
