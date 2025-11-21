@@ -805,6 +805,188 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				),
 			},
 		}},
+		{"remove network device", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#": "0",
+					}),
+				),
+			},
+		}},
+		{"multiple network devices removal", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+
+					network_device {
+						bridge = "vmbr1"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "2",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.1.bridge": "vmbr1",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					# Only keep the first network device
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#": "0",
+					}),
+				),
+			},
+		}},
+		{"network device state consistency", []resource.TestStep{
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.0.model":  "virtio",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				// This step tests that the state is read correctly after network device removal
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#": "0",
+					}),
+				),
+			},
+			{
+				SkipFunc: func() (bool, error) {
+					// backward incompatibility with the current implementation of clone
+					// see https://github.com/bpg/terraform-provider-proxmox/pull/2260
+					return true, nil
+				},
+				// This step tests that we can add network devices back after removal
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					network_device {
+						bridge = "vmbr0"
+						model  = "virtio"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
+						"network_device.#":        "1",
+						"network_device.0.bridge": "vmbr0",
+						"network_device.0.model":  "virtio",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -884,6 +1066,29 @@ func TestAccResourceVMClone(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
 					"vga.#": "0",
+				}),
+			),
+		}}},
+		{"clone with network devices", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template.vm_id
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.clone", map[string]string{
+					"network_device.#":        "1",
+					"network_device.0.bridge": "vmbr0",
 				}),
 			),
 		}}},
