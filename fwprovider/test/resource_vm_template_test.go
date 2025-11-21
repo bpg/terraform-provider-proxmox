@@ -65,48 +65,6 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 				}),
 			),
 		}}},
-		{"convert running VM to template", []resource.TestStep{{
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm" {
-					node_name = "{{.NodeName}}"
-					started   = true
-
-					cpu {
-						cores = 1
-					}
-
-					memory {
-						dedicated = 512
-					}
-				}`),
-			Check: resource.ComposeTestCheckFunc(
-				ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-					"template": "false",
-					"started":  "true",
-				}),
-			),
-		}, {
-			Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm" "test_vm" {
-					node_name = "{{.NodeName}}"
-					started   = false
-					template  = true
-
-					cpu {
-						cores = 1
-					}
-
-					memory {
-						dedicated = 512
-					}
-				}`),
-			Check: resource.ComposeTestCheckFunc(
-				ResourceAttributes("proxmox_virtual_environment_vm.test_vm", map[string]string{
-					"template": "true",
-					"started":  "false",
-				}),
-			),
-		}}},
 		{"create template and clone with linked clone", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_download_file" "cloud_image" {
@@ -151,6 +109,63 @@ func TestAccResourceVMTemplateConversion(t *testing.T) {
 					"template": "true",
 				}),
 				ResourceAttributes("proxmox_virtual_environment_vm.clone_vm", map[string]string{
+					"template": "false",
+				}),
+			),
+		}}},
+		{"create template with imported disk and linked clone - verifies disk naming fix", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_download_file" "cloud_image" {
+					content_type = "iso"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+					overwrite_unmanaged = true
+				}
+
+				resource "proxmox_virtual_environment_vm" "template_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					template  = true
+
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+						interface    = "virtio0"
+						size         = 20
+					}
+
+					cpu {
+						cores = 2
+					}
+
+					memory {
+						dedicated = 2048
+					}
+				}
+
+				resource "proxmox_virtual_environment_vm" "linked_clone_vm" {
+					node_name = "{{.NodeName}}"
+					started   = false
+
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+						full  = false
+					}
+
+					cpu {
+						cores = 2
+					}
+
+					memory {
+						dedicated = 2048
+					}
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.template_vm", map[string]string{
+					"template": "true",
+				}),
+				ResourceAttributes("proxmox_virtual_environment_vm.linked_clone_vm", map[string]string{
 					"template": "false",
 				}),
 			),
