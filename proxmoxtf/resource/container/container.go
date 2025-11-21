@@ -891,6 +891,8 @@ func Container() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Default:     dvPoolID,
+				Deprecated: "This field is deprecated and will be removed in a future release. " +
+					"To assign the container to a pool, use `proxmox_virtual_environment_pool_membership` resource instead",
 			},
 			mkProtection: {
 				Type: schema.TypeBool,
@@ -1144,12 +1146,6 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	containerAPI := client.Node(nodeName).Container(vmID)
 
-	// Wait for the container to be created and its configuration lock to be released.
-	err = containerAPI.WaitForContainerConfigUnlock(ctx, true)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
 	// Now that the virtual machine has been cloned, we need to perform some modifications.
 	updateBody := &containers.UpdateRequestBody{}
 
@@ -1238,6 +1234,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]interface{})
 
 		for _, c := range initializationIPConfig {
+			if c == nil {
+				continue
+			}
+
 			configBlock := c.(map[string]interface{})
 			ipv4 := configBlock[mkInitializationIPConfigIPv4].([]interface{})
 
@@ -1958,12 +1958,6 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	d.SetId(strconv.Itoa(vmID))
-
-	// Wait for the container's lock to be released.
-	err = client.Node(nodeName).Container(vmID).WaitForContainerConfigUnlock(ctx, true)
-	if err != nil {
-		return diag.FromErr(err)
-	}
 
 	return containerCreateStart(ctx, d, m)
 }
@@ -3395,6 +3389,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 
 	// Update the configuration now that everything has been prepared.
 	e = containerAPI.UpdateContainer(ctx, &updateBody)
+	if e != nil {
+		return diag.FromErr(e)
+	}
+
+	// Wait for the container's lock to be released.
+	e = containerAPI.WaitForContainerConfigUnlock(ctx, true)
 	if e != nil {
 		return diag.FromErr(e)
 	}

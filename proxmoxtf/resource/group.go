@@ -201,6 +201,9 @@ func groupRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	err = d.Set(mkResourceVirtualEnvironmentGroupMembers, group.Members)
 	diags = append(diags, diag.FromErr(err)...)
 
+	err = d.Set(mkResourceVirtualEnvironmentGroupID, groupID)
+	diags = append(diags, diag.FromErr(err)...)
+
 	return diags
 }
 

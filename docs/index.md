@@ -45,6 +45,14 @@ Use the navigation to the left to read about the available resources.
 | `PROXMOX_VE_SSH_USERNAME` | SSH username | No |
 | `PROXMOX_VE_SSH_PASSWORD` | SSH password | No |
 | `PROXMOX_VE_SSH_PRIVATE_KEY` | SSH private key | No |
+| `PROXMOX_VE_SSH_AGENT` | Use SSH agent for authentication | No |
+| `PROXMOX_VE_SSH_AUTH_SOCK` | SSH agent socket path | No |
+| `PROXMOX_VE_SSH_AGENT_FORWARDING` | Enable SSH agent forwarding | No |
+| `PROXMOX_VE_SSH_SOCKS5_SERVER` | SOCKS5 proxy server address | No |
+| `PROXMOX_VE_SSH_SOCKS5_USERNAME` | SOCKS5 proxy username | No |
+| `PROXMOX_VE_SSH_SOCKS5_PASSWORD` | SOCKS5 proxy password | No |
+| `PROXMOX_VE_MIN_TLS` | Minimum TLS version | No |
+| `PROXMOX_VE_OTP` | One-time password (deprecated) | No |
 | `PROXMOX_VE_TMPDIR` | Custom temporary directory | No |
 
 *One of these authentication methods is required
@@ -76,7 +84,7 @@ provider "proxmox" {
 ## Authentication
 
 The Proxmox provider offers a flexible means of providing credentials for authentication.
-Static credentials and pre-authenticated session-ticket can be provided to the `proxmox` block through one of the choices of arguments below, ordered by precedence:
+Static credentials and pre-authenticated session ticket can be provided to the `proxmox` block through one of the choices of arguments below, ordered by precedence:
 
 - `api_token`
 - `auth_ticket` and `csrf_prevention_token`
@@ -192,20 +200,20 @@ See the [Argument Reference](#argument-reference) section for the supported vari
 ### API Token Authentication
 
 API Token authentication can be used to authenticate with the Proxmox API without the need to provide a password.
-In combination with the `ssh` block and `ssh-agent` support, this allows for a fully password-less authentication.
+In combination with the `ssh` block and SSH agent support, this allows for a fully password-less authentication.
 
 You can create an API Token for a user via the Proxmox UI, or via the command line on the Proxmox host or cluster:
 
 - Create a user:
 
     ```sh
-    sudo pveum user add terraform@pve
+    pveum user add terraform@pve
     ```
 
 - Create a role for the user (you can skip this step if you want to use any of the existing roles):
 
     ```sh
-    sudo pveum role add Terraform -privs "Realm.AllocateUser, VM.PowerMgmt, VM.GuestAgent.Unrestricted, Sys.Console, Sys.Audit, Sys.AccessNetwork, VM.Config.Cloudinit, VM.Replicate, Pool.Allocate, SDN.Audit, Realm.Allocate, SDN.Use, Mapping.Modify, VM.Config.Memory, VM.GuestAgent.FileSystemMgmt, VM.Allocate, SDN.Allocate, VM.Console, VM.Clone, VM.Backup, Datastore.AllocateTemplate, VM.Snapshot, VM.Config.Network, Sys.Incoming, Sys.Modify, VM.Snapshot.Rollback, VM.Config.Disk, Datastore.Allocate, VM.Config.CPU, VM.Config.CDROM, Group.Allocate, Datastore.Audit, VM.Migrate, VM.GuestAgent.FileWrite, Mapping.Use, Datastore.AllocateSpace, Sys.Syslog, VM.Config.Options, Pool.Audit, User.Modify, VM.Config.HWType, VM.Audit, Sys.PowerMgmt, VM.GuestAgent.Audit, Mapping.Audit, VM.GuestAgent.FileRead, Permissions.Modify"
+    pveum role add Terraform -privs "Realm.AllocateUser, VM.PowerMgmt, VM.GuestAgent.Unrestricted, Sys.Console, Sys.Audit, Sys.AccessNetwork, VM.Config.Cloudinit, VM.Replicate, Pool.Allocate, SDN.Audit, Realm.Allocate, SDN.Use, Mapping.Modify, VM.Config.Memory, VM.GuestAgent.FileSystemMgmt, VM.Allocate, SDN.Allocate, VM.Console, VM.Clone, VM.Backup, Datastore.AllocateTemplate, VM.Snapshot, VM.Config.Network, Sys.Incoming, Sys.Modify, VM.Snapshot.Rollback, VM.Config.Disk, Datastore.Allocate, VM.Config.CPU, VM.Config.CDROM, Group.Allocate, Datastore.Audit, VM.Migrate, VM.GuestAgent.FileWrite, Mapping.Use, Datastore.AllocateSpace, Sys.Syslog, VM.Config.Options, Pool.Audit, User.Modify, VM.Config.HWType, VM.Audit, Sys.PowerMgmt, VM.GuestAgent.Audit, Mapping.Audit, VM.GuestAgent.FileRead, Permissions.Modify"
     ```
 
   ~> The list of available privileges has been changed in PVE 9.0, and the above list is only an example (and most likely too excessive for most use cases), please review it and adjust to your needs.
@@ -214,14 +222,16 @@ You can create an API Token for a user via the Proxmox UI, or via the command li
 - Assign the role to the previously created user:
 
     ```sh
-    sudo pveum aclmod / -user terraform@pve -role Terraform
+    pveum aclmod / -user terraform@pve -role Terraform
     ```
 
 - Create an API token for the user:
 
     ```sh
-    sudo pveum user token add terraform@pve provider --privsep=0
+    pveum user token add terraform@pve provider --privsep=0
     ```
+
+    -> Make sure you copy the token value, as it will not be displayed again.
 
 Refer to the upstream docs as needed for additional details concerning [PVE User Management](https://pve.proxmox.com/wiki/User_Management).
 
@@ -322,7 +332,7 @@ Please refer to the [Argument Reference](#argument-reference) section to view th
 ### SSH Agent
 
 The provider does not use OS-specific SSH configuration files, such as `~/.ssh/config`.
-Instead, it uses the SSH protocol directly, and supports the `SSH_AUTH_SOCK` environment variable (or `agent_socket` argument) to connect to the `ssh-agent`.
+Instead, it uses the SSH protocol directly, and supports the `SSH_AUTH_SOCK` environment variable (or `agent_socket` argument) to connect to the SSH agent.
 This allows the provider to use the SSH agent configured by the user, and to support multiple SSH agents running on the same machine.
 You can find more details on the SSH Agent [here](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#adding-your-ssh-keys-to-an-ssh-agent-to-avoid-typing-the-passphrase).
 The SSH agent authentication takes precedence over the `private_key` and `password` authentication.
@@ -436,7 +446,7 @@ In the example below, we create a user `terraform` and assign the `sudo` privile
 
   You should be able to connect to the target node and see the output containing `APIVER <number>` on the screen without being prompted for your password.
 
-Alternatively if `pam_ssh_agent_auth` is configured on the target node the SSH Config option `agent_forwarding` may be used to forward the SSH Agent that was used for the connection to the remote server. This can allow `sudo` without a password which validates public ssh key configured for `pam_ssh_agent_auth`.
+Alternatively if `pam_ssh_agent_auth` is configured on the target node the SSH Config option `agent_forwarding` may be used to forward the SSH agent that was used for the connection to the remote server. This can allow `sudo` without a password which validates public SSH key configured for `pam_ssh_agent_auth`.
 
 ### Node IP address used for SSH connection
 

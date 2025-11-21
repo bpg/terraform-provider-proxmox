@@ -160,9 +160,9 @@ output "ubuntu_container_public_key" {
         - `ipv6` - (Optional) The IPv6 configuration.
             - `address` - (Optional) The IPv6 address in CIDR notation
               (e.g. fd1c::7334/64). Alternatively, set this
-              to `dhcp` for autodiscovery.
+              to `dhcp` for DHCPv6, or `auto` for SLAAC.
             - `gateway` - (Optional) The IPv6 gateway (must be omitted
-                when `dhcp` is used as the address).
+                when `dhcp` or `auto` are used as the address).
     - `user_account` - (Optional) The user account configuration.
         - `keys` - (Optional) The SSH keys for the root account.
         - `password` - (Optional) The password for the root account.
@@ -225,7 +225,8 @@ output "ubuntu_container_public_key" {
         - `opensuse` - openSUSE.
         - `ubuntu` - Ubuntu.
         - `unmanaged` - Unmanaged.
-- `pool_id` - (Optional) The identifier for a pool to assign the container to.
+- `pool_id` - (Optional, **Deprecated**) The identifier for a pool to assign the container to.
+  This field is deprecated and will be removed in a future release. To assign the container to a pool, use the `proxmox_virtual_environment_pool_membership` resource instead. 
 - `protection` - (Optional) Whether to set the protection flag of the container (defaults to `false`). This will prevent the container itself and its disk for remove/update operations.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
 - `startup` - (Optional) Defines startup and shutdown behavior of the container.
