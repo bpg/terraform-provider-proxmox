@@ -217,6 +217,7 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/JustasUmbrasas"><img src="https://avatars.githubusercontent.com/u/70886320?v=4?s=100" width="100px;" alt="Justas Umbrasas"/><br /><sub><b>Justas Umbrasas</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=JustasUmbrasas" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/alexhaydock"><img src="https://avatars.githubusercontent.com/u/13152214?v=4?s=100" width="100px;" alt="Alex Haydock"/><br /><sub><b>Alex Haydock</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=alexhaydock" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://extrahourdevs.com"><img src="https://avatars.githubusercontent.com/u/5159138?v=4?s=100" width="100px;" alt="Alexander Petermann"/><br /><sub><b>Alexander Petermann</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=lexxxel" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/leleargo"><img src="https://avatars.githubusercontent.com/u/87581383?v=4?s=100" width="100px;" alt="Emanuele Argonni"/><br /><sub><b>Emanuele Argonni</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=leleargo" title="Code">💻</a></td>
     </tr>
   </tbody>
   <tfoot>
