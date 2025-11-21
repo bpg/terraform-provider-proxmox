@@ -2979,14 +2979,12 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		rootFS := &containers.CustomRootFS{}
+
 		containerConfig, e := containerAPI.GetContainer(ctx)
 		if e != nil {
-			if errors.Is(e, api.ErrResourceDoesNotExist) {
-				d.SetId("")
-				return nil
-			}
 			return diag.FromErr(e)
 		}
+
 		rootFS.Volume = containerConfig.RootFS.Volume
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
