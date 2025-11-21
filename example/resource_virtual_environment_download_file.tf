@@ -5,8 +5,6 @@ resource "proxmox_virtual_environment_download_file" "ubuntu_24_04_lxc_img" {
   datastore_id        = "local"
   node_name           = data.proxmox_virtual_environment_nodes.example.names[0]
   url                 = var.ubuntu_24_04_lxc_img_url
-  checksum            = var.ubuntu_24_04_lxc_img_checksum
-  checksum_algorithm  = "sha256"
   upload_timeout      = 4444
   overwrite_unmanaged = true
 }
