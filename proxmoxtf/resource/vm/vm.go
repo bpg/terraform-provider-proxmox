@@ -4914,7 +4914,8 @@ func vmReadCustom(
 	e = d.Set(mkNodeName, nodeName)
 	diags = append(diags, diag.FromErr(e)...)
 
-	if _, ok := d.GetOk(mkMigrate); !ok {
+	//nolint:staticcheck
+	if _, ok := d.GetOkExists(mkMigrate); !ok {
 		err := d.Set(mkMigrate, dvMigrate)
 		if err != nil {
 			diags = append(diags, diag.FromErr(e)...)
@@ -4977,35 +4978,40 @@ func vmReadCustom(
 		}
 	}
 
-	if _, ok := d.GetOk(mkStopOnDestroy); !ok {
+	//nolint:staticcheck
+	if _, ok := d.GetOkExists(mkStopOnDestroy); !ok {
 		err := d.Set(mkStopOnDestroy, dvStopOnDestroy)
 		if err != nil {
 			diags = append(diags, diag.FromErr(e)...)
 		}
 	}
 
-	if _, ok := d.GetOk(mkPurgeOnDestroy); !ok {
+	//nolint:staticcheck
+	if _, ok := d.GetOkExists(mkPurgeOnDestroy); !ok {
 		err := d.Set(mkPurgeOnDestroy, dvPurgeOnDestroy)
 		if err != nil {
 			diags = append(diags, diag.FromErr(e)...)
 		}
 	}
 
-	if _, ok := d.GetOk(mkDeleteUnreferencedDisksOnDestroy); !ok {
+	//nolint:staticcheck
+	if _, ok := d.GetOkExists(mkDeleteUnreferencedDisksOnDestroy); !ok {
 		err := d.Set(mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
 		if err != nil {
 			diags = append(diags, diag.FromErr(e)...)
 		}
 	}
 
-	if _, ok := d.GetOk(mkRebootAfterUpdate); !ok {
+	//nolint:staticcheck
+	if _, ok := d.GetOkExists(mkRebootAfterUpdate); !ok {
 		err := d.Set(mkRebootAfterUpdate, dvRebootAfterUpdate)
 		if err != nil {
 			diags = append(diags, diag.FromErr(e)...)
 		}
 	}
 
-	if _, ok := d.GetOk(mkRebootAfterCreation); !ok {
+	//nolint:staticcheck
+	if _, ok := d.GetOkExists(mkRebootAfterCreation); !ok {
 		err := d.Set(mkRebootAfterCreation, dvRebootAfterCreation)
 		if err != nil {
 			diags = append(diags, diag.FromErr(e)...)

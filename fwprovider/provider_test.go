@@ -138,7 +138,7 @@ func TestIDGenerator_Random(t *testing.T) {
 	t.Cleanup(func() {
 		for _, id := range ids {
 			if id > 100 {
-_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
+				_ = te.NodeClient().VM(id).DeleteVM(ctx, true, true) //nolint:errcheck
 			}
 		}
 	})
