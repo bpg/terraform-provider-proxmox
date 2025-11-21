@@ -2957,8 +2957,7 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	// Convert to template if requested
-	template = types.CustomBool(d.Get(mkTemplate).(bool))
-	if template {
+	if d.Get(mkTemplate).(bool) {
 		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
 
 		err = client.Node(nodeName).VM(vmID).ConvertToTemplate(ctx)
@@ -5877,6 +5876,19 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 
 		if !oldTemplate && newTemplate {
 			tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", vmID))
+
+			status, err := vmAPI.GetVMStatus(ctx)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			if status != nil && status.Status != "stopped" {
+				tflog.Info(ctx, fmt.Sprintf("Stopping VM %d before converting to template", vmID))
+
+				if diags := vmStop(ctx, vmAPI, d); diags != nil {
+					return diags
+				}
+			}
 
 			e = vmAPI.ConvertToTemplate(ctx)
 			if e != nil {
