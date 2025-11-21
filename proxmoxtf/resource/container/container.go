@@ -10,7 +10,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -333,7 +335,6 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The disks",
 				Optional:    true,
-				ForceNew:    true,
 				DefaultFunc: func() (interface{}, error) {
 					return []interface{}{
 						map[string]interface{}{
@@ -374,7 +375,6 @@ func Container() *schema.Resource {
 							Type:             schema.TypeInt,
 							Description:      "The rootfs size in gigabytes",
 							Optional:         true,
-							ForceNew:         true,
 							Default:          dvDiskSize,
 							ValidateDiagFunc: validation.ToDiagFunc(validation.IntAtLeast(0)),
 						},
@@ -663,6 +663,7 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "A mount point",
 				Optional:    true,
+				ForceNew:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						mkMountPointACL: {
@@ -722,12 +723,14 @@ func Container() *schema.Resource {
 							Description:      "Volume size (only used for volume mount points)",
 							Optional:         true,
 							Default:          dvMountPointSize,
+							ForceNew:         true,
 							ValidateDiagFunc: validators.FileSize(),
 						},
 						mkMountPointVolume: {
 							Type:        schema.TypeString,
 							Description: "Volume, device or directory to mount into the container",
 							Required:    true,
+							ForceNew:    true,
 							DiffSuppressFunc: func(_, oldVal, newVal string, _ *schema.ResourceData) bool {
 								// For *new* volume mounts PVE returns an actual volume ID which is saved in the stare,
 								// so on reapply the provider will try override it:"
@@ -1025,6 +1028,87 @@ func Container() *schema.Resource {
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
 					// (automatic fix from -1 to actual vm_id must not re-create VM)
 					return strconv.Itoa(newValue.(int)) != d.Id()
+				},
+			),
+			// create a customdiff that checks each mount point
+			customdiff.ForceNewIf(
+				mkMountPoint,
+				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
+					oldRaw, newRaw := d.GetChange(mkMountPoint)
+					// compare all oldRaw and newRaw entries
+					oldList, _ := oldRaw.([]interface{})
+					newList, _ := newRaw.([]interface{})
+
+					if oldList == nil {
+						oldList = []interface{}{}
+					}
+					if newList == nil {
+						newList = []interface{}{}
+					}
+
+					for i := 0; i < len(oldList); i++ {
+						if len(newList)-1 < i {
+							return true
+						}
+						// compare old and new list entries and call ForceNew on the correspondig string
+						// make a deep comparison
+						oldMap, _ := oldList[i].(map[string]interface{})
+						newMap, _ := newList[i].(map[string]interface{})
+						// deep compare
+						if !reflect.DeepEqual(oldMap, newMap) {
+							// get key that is different and call ForceNew
+							for _, v := range oldMap {
+								d.ForceNew(fmt.Sprintf("%s.%d.%s", mkMountPoint, i, v))
+							}
+							return true
+						}
+					}
+					return false
+
+				},
+			),
+			customdiff.ForceNewIf(
+				mkDisk,
+				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+					oldRaw, newRaw := d.GetChange(mkDisk)
+					oldList, _ := oldRaw.([]interface{})
+					newList, _ := newRaw.([]interface{})
+
+					if oldList == nil {
+						oldList = []interface{}{}
+					}
+					if newList == nil {
+						newList = []interface{}{}
+					}
+
+					minDrives := min(len(oldList), len(newList))
+
+					for i := range minDrives {
+						oldSize := dvDiskSize
+						newSize := dvDiskSize
+						if i < len(oldList) && oldList[i] != nil {
+							if om, ok := oldList[i].(map[string]interface{}); ok {
+								if v, ok := om[mkDiskSize].(int); ok {
+									oldSize = v
+								}
+							}
+						}
+
+						if i < len(newList) && newList[i] != nil {
+							if nm, ok := newList[i].(map[string]interface{}); ok {
+								if v, ok := nm[mkDiskSize].(int); ok {
+									newSize = v
+								}
+							}
+						}
+
+						if oldSize > newSize {
+							_ = d.ForceNew(fmt.Sprintf("%s.%d.%s", mkDisk, i, mkDiskSize))
+							return true
+						}
+					}
+
+					return false
 				},
 			),
 		),
@@ -1765,7 +1849,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	}
 
 	diskSize := diskBlock[mkDiskSize].(int)
-	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0) {
+	if diskDatastoreID != "" && (diskSize != dvDiskSize || len(mountPoints) > 0 || len(diskMountOptions) > 0) {
 		// This is a special case where the rootfs size is set to a non-default value at creation time.
 		// see https://pve.proxmox.com/pve-docs/chapter-pct.html#_storage_backed_mount_points
 		rootFS = &containers.CustomRootFS{
@@ -2979,17 +3063,42 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		rootFS := &containers.CustomRootFS{}
-		// Disk ID for the rootfs is always 0
-		diskID := 0
-		vmID := d.Get(mkVMID).(int)
-		rootFS.Volume = diskBlock[mkDiskDatastoreID].(string)
-		rootFS.Volume = getContainerDiskVolume(rootFS.Volume, vmID, diskID)
+		containerConfig, e := containerAPI.GetContainer(ctx)
+		if e != nil {
+			if errors.Is(e, api.ErrResourceDoesNotExist) {
+				d.SetId("")
+				return nil
+			}
+			return diag.FromErr(e)
+		}
+
+		if containerConfig.RootFS == nil {
+			return diag.Errorf("RootFS information of container malformed.")
+		}
+		rootFS.Volume = containerConfig.RootFS.Volume
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
 		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
 		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
+
+		oldSize := containerConfig.RootFS.Size
 		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
+		if *oldSize > *size {
+			// TODO: we should never reach this point. The `plan` should recreate the container, not update it.
+			d.SetId("")
+			return diag.Errorf("New disk size (%s) has to be greater the current disk (%s)!", oldSize, size)
+		}
+
+		if !ptr.Eq(oldSize, size) {
+			err = containerAPI.ResizeContainerDisk(ctx, &containers.ResizeRequestBody{
+				Disk: "rootfs",
+				Size: size.String(),
+			})
+			if err != nil {
+				return diag.FromErr(err)
+			}
+		}
 
 		rootFS.ACL = &acl
 		rootFS.Quota = &quota
@@ -2999,15 +3108,26 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		mountOptionsStrings := make([]string, 0, len(mountOptions))
 
 		for _, option := range mountOptions {
-			mountOptionsStrings = append(mountOptionsStrings, option.(string))
+			optionString := option.(string)
+			mountOptionsStrings = append(mountOptionsStrings, optionString)
 		}
-
 		// Always set, including empty, to allow clearing mount options
 		rootFS.MountOptions = &mountOptionsStrings
 
-		updateBody.RootFS = rootFS
+		// To compare contents regardless of order, we can sort them.
+		// The schema already uses a suppress func for order, so we should be consistent.
+		sort.Strings(mountOptionsStrings)
+		currentMountOptions := containerConfig.RootFS.MountOptions
+		currentMountOptionsSorted := []string{}
+		if currentMountOptions != nil {
+			currentMountOptionsSorted = append(currentMountOptionsSorted, *currentMountOptions...)
+		}
+		sort.Strings(currentMountOptionsSorted)
+		if !slices.Equal(mountOptionsStrings, currentMountOptionsSorted) {
+			rebootRequired = true
+		}
 
-		rebootRequired = true
+		updateBody.RootFS = rootFS
 	}
 
 	if d.HasChange(mkFeatures) {
@@ -3532,10 +3652,6 @@ func parseImportIDWithNodeName(id string) (string, string, error) {
 	}
 
 	return nodeName, id, nil
-}
-
-func getContainerDiskVolume(rawVolume string, vmID int, diskID int) string {
-	return fmt.Sprintf("%s:vm-%d-disk-%d", rawVolume, vmID, diskID)
 }
 
 func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bool {
