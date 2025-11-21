@@ -4918,7 +4918,7 @@ func vmReadCustom(
 	if _, ok := d.GetOkExists(mkMigrate); !ok {
 		err := d.Set(mkMigrate, dvMigrate)
 		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
+diags = append(diags, diag.FromErr(err)...)
 		}
 	}
 
