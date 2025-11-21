@@ -159,8 +159,7 @@ output "ubuntu_vm_public_key" {
 - `bios` - (Optional) The BIOS implementation (defaults to `seabios`).
     - `ovmf` - OVMF (UEFI).
     - `seabios` - SeaBIOS.
-- `boot_order` - (Optional) Specify a list of devices to boot from in the order
-    they appear in the list (defaults to `[]`).
+- `boot_order` - (Optional) Specify a list of devices to boot from in the order they appear in the list.
 - `cdrom` - (Optional) The CD-ROM configuration.
     - `enabled` - (Optional) Whether to enable the CD-ROM drive (defaults
         to `false`). *Deprecated*. The attribute will be removed in the next version of the provider.
@@ -550,6 +549,8 @@ output "ubuntu_vm_public_key" {
     changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `stop_on_destroy` - (Optional) Whether to stop rather than shutdown on VM destroy (defaults to `false`)
+- `purge_on_destroy` - (Optional) Whether to purge the VM from backup configurations on destroy (defaults to `true`)
+- `delete_unreferenced_disks_on_destroy` - (Optional) Whether to delete unreferenced disks on destroy (defaults to `true`)
 - `timeout_clone` - (Optional) Timeout for cloning a VM in seconds (defaults to
     1800).
 - `timeout_create` - (Optional) Timeout for creating a VM in seconds (defaults to

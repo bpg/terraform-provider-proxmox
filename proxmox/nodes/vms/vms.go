@@ -139,9 +139,9 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 	return resBody.TaskID, nil
 }
 
-// DeleteVM creates a virtual machine.
-func (c *Client) DeleteVM(ctx context.Context) error {
-	taskID, err := c.DeleteVMAsync(ctx)
+// DeleteVM deletes a virtual machine.
+func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDisks bool) error {
+	taskID, err := c.DeleteVMAsync(ctx, purge, destroyUnreferencedDisks)
 	if err != nil {
 		return err
 	}
@@ -155,13 +155,24 @@ func (c *Client) DeleteVM(ctx context.Context) error {
 }
 
 // DeleteVMAsync deletes a virtual machine asynchronously. Returns ID of the started task.
-func (c *Client) DeleteVMAsync(ctx context.Context) (*string, error) {
+func (c *Client) DeleteVMAsync(ctx context.Context, purge bool, destroyUnreferencedDisks bool) (*string, error) {
 	// PVE may return a 500 error "got no worker upid - start worker failed", so we retry few times.
 	resBody := &DeleteResponseBody{}
 
+	purgeValue := 0
+	if purge {
+		purgeValue = 1
+	}
+
+	destroyUnreferencedDisksValue := 0
+	if destroyUnreferencedDisks {
+		destroyUnreferencedDisksValue = 1
+	}
+
 	err := retry.Do(
 		func() error {
-			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath("?destroy-unreferenced-disks=1&purge=1"), nil, resBody)
+			path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
+			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(path), nil, resBody)
 		},
 		retry.Context(ctx),
 		retry.Attempts(3),
