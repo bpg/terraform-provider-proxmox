@@ -103,7 +103,7 @@ func TestAccResourceDownloadFile(t *testing.T) {
 					checksum_algorithm = "sha256"
 					overwrite_unmanaged = true
 				  }`),
-			// the details sais "Image is not in qcow2 format", but we can't assert that
+			// the details says "Image is not in qcow2 format", but we can't assert that
 			ExpectError: regexp.MustCompile(`Error downloading file from url`),
 		}}},
 		{"download & update iso file", []resource.TestStep{

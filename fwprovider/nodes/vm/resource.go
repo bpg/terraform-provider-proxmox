@@ -394,7 +394,10 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		}
 	}
 
-	err = vmAPI.DeleteVM(ctx)
+	purge := state.PurgeOnDestroy.ValueBool()
+	deleteUnreferencedDisks := state.DeleteUnreferencedDisksOnDestroy.ValueBool()
+
+	err = vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		resp.Diagnostics.AddError("Failed to delete VM", err.Error())
 	}
@@ -452,6 +455,8 @@ func (r *Resource) ImportState(
 
 	// not clear why this is needed, but ImportStateVerify fails without it
 	state.StopOnDestroy = types.BoolValue(false)
+	state.PurgeOnDestroy = types.BoolValue(true)
+	state.DeleteUnreferencedDisksOnDestroy = types.BoolValue(true)
 
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)

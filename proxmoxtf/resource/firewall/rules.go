@@ -72,7 +72,6 @@ func Rules() *schema.Resource {
 			Type:        schema.TypeString,
 			Description: "Security group name",
 			Optional:    true,
-			ForceNew:    true,
 			Default:     dvSecurityGroup,
 		},
 		mkRuleAction: {
@@ -166,9 +165,11 @@ func Rules() *schema.Resource {
 		MkRule: {
 			Type:        schema.TypeList,
 			Description: "List of rules",
-			Required:    true,
-			ForceNew:    true,
-			Elem:        &schema.Resource{Schema: rule},
+			Optional:    true,
+			DefaultFunc: func() (interface{}, error) {
+				return make([]interface{}, 0), nil
+			},
+			Elem: &schema.Resource{Schema: rule},
 		},
 	}
 
@@ -276,40 +277,29 @@ func RulesImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]
 func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
+	existingRules, err := api.ListRules(ctx)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
+	}
+
+	if len(existingRules) > 0 {
+		diags = append(diags, diag.Errorf("Existing rules detected. Aborting...")...)
+		return diags
+	}
+
 	rules := d.Get(MkRule).([]interface{})
 
 	for i := len(rules) - 1; i >= 0; i-- {
-		var ruleBody firewall.RuleCreateRequestBody
-
 		rule := rules[i].(map[string]interface{})
 
-		sg := rule[mkSecurityGroup].(string)
-		if sg != "" {
-			// this is a special case of security group insertion
-			ruleBody = firewall.RuleCreateRequestBody{
-				Action:   sg,
-				Type:     "group",
-				BaseRule: *mapToSecurityGroupBaseRule(rule),
-			}
-		} else {
-			a := rule[mkRuleAction].(string)
-			t := rule[mkRuleType].(string)
-
-			if a == "" || t == "" {
-				diags = append(diags, diag.Errorf("Either '%s' OR both '%s' and '%s' must be defined for the rule #%d",
-					mkSecurityGroup, mkRuleAction, mkRuleType, i)...)
-
-				continue
-			}
-
-			ruleBody = firewall.RuleCreateRequestBody{
-				Action:   a,
-				Type:     t,
-				BaseRule: *mapToBaseRule(rule),
-			}
+		ruleBody, err := mapToRuleCreateRequestBody(rule)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+			continue
 		}
 
-		err := api.CreateRule(ctx, &ruleBody)
+		err = api.CreateRule(ctx, ruleBody)
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -318,7 +308,7 @@ func RulesCreate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	}
 
 	// reset rules, we re-read them (with proper positions) from the API
-	err := d.Set(MkRule, nil)
+	err = d.Set(MkRule, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -356,44 +346,24 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 		return nil
 	}
 
-	rules := d.Get(MkRule).([]interface{})
-	if len(rules) > 0 {
-		var existingRules []interface{}
+	ruleIDs, err := api.ListRules(ctx)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+		return diags
+	}
 
-		for _, v := range rules {
-			ruleMap := v.(map[string]interface{})
-			pos := ruleMap[mkRulePos].(int)
+	rules := make([]map[string]interface{}, 0)
 
-			err := readRule(pos, ruleMap)
-			if err != nil {
-				if errors.Is(err, ErrRuleMissing) {
-					continue
-				}
+	for _, id := range ruleIDs {
+		ruleMap := map[string]interface{}{}
 
-				diags = append(diags, diag.FromErr(err)...)
-			} else {
-				existingRules = append(existingRules, ruleMap)
-			}
-		}
-
-		rules = existingRules
-	} else {
-		ruleIDs, err := api.ListRules(ctx)
+		err = readRule(id.Pos, ruleMap)
 		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		for _, id := range ruleIDs {
-			ruleMap := map[string]interface{}{}
-
-			err = readRule(id.Pos, ruleMap)
-			if err != nil {
-				if !errors.Is(err, ErrRuleMissing) {
-					diags = append(diags, diag.FromErr(err)...)
-				}
-			} else if len(ruleMap) > 0 {
-				rules = append(rules, ruleMap)
+			if !errors.Is(err, ErrRuleMissing) {
+				diags = append(diags, diag.FromErr(err)...)
 			}
+		} else if len(ruleMap) > 0 {
+			rules = append(rules, ruleMap)
 		}
 	}
 
@@ -401,7 +371,7 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 		return diags
 	}
 
-	err := d.Set(MkRule, rules)
+	err = d.Set(MkRule, rules)
 	diags = append(diags, diag.FromErr(err)...)
 
 	return diags
@@ -411,43 +381,110 @@ func RulesRead(ctx context.Context, api firewall.Rule, d *schema.ResourceData) d
 func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData) diag.Diagnostics {
 	diags := diag.Diagnostics{}
 
-	rules := d.Get(MkRule).([]interface{})
-	for i := len(rules) - 1; i >= 0; i-- {
-		rule := rules[i].(map[string]interface{})
+	oldRules, newRules := d.GetChange(MkRule)
 
-		var fieldsToDelete []string
-		pos := rule[mkRulePos].(int)
+	oldRulesList := oldRules.([]interface{})
+	newRulesList := newRules.([]interface{})
 
-		currentRule, err := api.GetRule(ctx, pos)
-		if err != nil {
-			if !strings.Contains(err.Error(), "no rule at position") {
-				diags = append(diags, diag.FromErr(fmt.Errorf("failed to read rule at position %d for update: %w", pos, err))...)
-				continue
+	if len(oldRulesList) < len(newRulesList) {
+		// create new rules
+		rulesToCreate := newRulesList[len(oldRulesList):]
+
+		maxPos := -1
+
+		for _, rule := range oldRulesList {
+			ruleMap := rule.(map[string]interface{})
+			maxPos = max(maxPos, ruleMap[mkRulePos].(int))
+		}
+
+		for _, rule := range rulesToCreate {
+			ruleMap := rule.(map[string]interface{})
+
+			ruleBody, err := mapToRuleCreateRequestBody(ruleMap)
+			if err != nil {
+				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
+				return diags
 			}
-		} else {
-			if rule[mkRuleIFace].(string) == "" && currentRule.IFace != nil && *currentRule.IFace != "" {
-				fieldsToDelete = append(fieldsToDelete, "iface")
+
+			err = api.CreateRule(ctx, ruleBody)
+			if err != nil {
+				diags = append(diags, diag.Errorf("Could not create rule: %v", err)...)
+				return diags
 			}
 
-			if rule[mkRuleLog].(string) == "" && currentRule.Log != nil && *currentRule.Log != "" {
-				fieldsToDelete = append(fieldsToDelete, "log")
+			maxPos++
+			moveTo := maxPos + 1
+
+			err = api.UpdateRule(ctx, 0, &firewall.RuleUpdateRequestBody{
+				MoveTo: &moveTo,
+			})
+			if err != nil {
+				diags = append(diags, diag.Errorf("Could not move the created rule to the end of the rule list: %v", err)...)
+				return diags
 			}
 		}
+	}
+
+	if len(oldRulesList) > len(newRulesList) {
+		// delete old rules
+		rulesToDelete := oldRulesList[len(newRulesList):]
+
+		sort.Slice(rulesToDelete, func(i, j int) bool {
+			ruleI := rulesToDelete[i].(map[string]interface{})
+			ruleJ := rulesToDelete[j].(map[string]interface{})
+
+			return ruleI[mkRulePos].(int) > ruleJ[mkRulePos].(int)
+		})
+
+		for _, rule := range rulesToDelete {
+			ruleMap := rule.(map[string]interface{})
+			pos := ruleMap[mkRulePos].(int)
+
+			err := api.DeleteRule(ctx, pos)
+			if err != nil {
+				diags = append(diags, diag.Errorf("Could not delete rule at pos %d: %v", pos, err)...)
+				return diags
+			}
+		}
+	}
+
+	for i := min(len(oldRulesList), len(newRulesList)) - 1; i >= 0; i-- {
+		newRule := newRulesList[i].(map[string]interface{})
+		oldRule := oldRulesList[i].(map[string]interface{})
+
+		pos := oldRule[mkRulePos].(int)
 
 		ruleBody := firewall.RuleUpdateRequestBody{
-			BaseRule: *mapToBaseRule(rule),
+			BaseRule: *mapToBaseRule(newRule),
+			Pos:      &pos,
 		}
 
-		if pos >= 0 {
-			ruleBody.Pos = &pos
-		}
-
-		if action := rule[mkRuleAction].(string); action != "" {
+		if action := newRule[mkRuleAction].(string); action != "" {
 			ruleBody.Action = &action
 		}
 
-		if rType := rule[mkRuleType].(string); rType != "" {
+		if rType := newRule[mkRuleType].(string); rType != "" {
 			ruleBody.Type = &rType
+		}
+
+		var fieldsToDelete []string
+
+		fields := []string{
+			mkRuleComment,
+			mkRuleDPort,
+			mkRuleDest,
+			mkRuleIFace,
+			mkRuleLog,
+			mkRuleMacro,
+			mkRuleProto,
+			mkRuleSource,
+			mkRuleSPort,
+		}
+
+		for _, field := range fields {
+			if newRule[field].(string) == "" && oldRule[field].(string) != "" {
+				fieldsToDelete = append(fieldsToDelete, field)
+			}
 		}
 
 		if len(fieldsToDelete) > 0 {
@@ -455,7 +492,7 @@ func RulesUpdate(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 			ruleBody.Delete = &deleteStr
 		}
 
-		err = api.UpdateRule(ctx, pos, &ruleBody)
+		err := api.UpdateRule(ctx, pos, &ruleBody)
 		if err != nil {
 			diags = append(diags, diag.FromErr(err)...)
 		}
@@ -495,6 +532,35 @@ func RulesDelete(ctx context.Context, api firewall.Rule, d *schema.ResourceData)
 	}
 
 	return diags
+}
+
+func mapToRuleCreateRequestBody(rule map[string]interface{}) (*firewall.RuleCreateRequestBody, error) {
+	var body firewall.RuleCreateRequestBody
+
+	sg := rule[mkSecurityGroup].(string)
+	if sg != "" {
+		// this is a special case of security group insertion
+		body = firewall.RuleCreateRequestBody{
+			Action:   sg,
+			Type:     "group",
+			BaseRule: *mapToSecurityGroupBaseRule(rule),
+		}
+	} else {
+		a := rule[mkRuleAction].(string)
+		t := rule[mkRuleType].(string)
+
+		if a == "" || t == "" {
+			return nil, fmt.Errorf("either '%s' OR both '%s' and '%s' must be defined", mkSecurityGroup, mkRuleAction, mkRuleType)
+		}
+
+		body = firewall.RuleCreateRequestBody{
+			Action:   a,
+			Type:     t,
+			BaseRule: *mapToBaseRule(rule),
+		}
+	}
+
+	return &body, nil
 }
 
 func mapToBaseRule(rule map[string]interface{}) *firewall.BaseRule {

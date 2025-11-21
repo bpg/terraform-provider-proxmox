@@ -89,7 +89,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		otp = v.(string)
 	}
 
-	///nolint:staticcheck
+	//nolint:staticcheck
 	if v, ok := d.GetOkExists(mkProviderUsername); ok {
 		username = v.(string)
 	}

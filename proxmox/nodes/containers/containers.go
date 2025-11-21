@@ -19,14 +19,37 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
 
+var errContainerAlreadyRunning = errors.New("container is already running")
+
 // CloneContainer clones a container.
 func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("/clone"), d, nil)
+	taskID, err := c.CloneContainerAsync(ctx, d)
 	if err != nil {
-		return fmt.Errorf("error cloning container: %w", err)
+		return err
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *taskID)
+	if err != nil {
+		return fmt.Errorf("error waiting for container cloned: %w", err)
 	}
 
 	return nil
+}
+
+// CloneContainerAsync clones a container asynchronously.
+func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (*string, error) {
+	resBody := &CloneResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("/clone"), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error cloning container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // CreateContainer creates a container.
@@ -192,12 +215,33 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 
 // RebootContainer reboots a container.
 func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/reboot"), d, nil)
+	taskID, err := c.RebootContainerAsync(ctx, d)
 	if err != nil {
-		return fmt.Errorf("error rebooting container: %w", err)
+		return err
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *taskID)
+	if err != nil {
+		return fmt.Errorf("error waiting for container reboot: %w", err)
 	}
 
 	return nil
+}
+
+// RebootContainerAsync reboots a container asynchronously.
+func (c *Client) RebootContainerAsync(ctx context.Context, d *RebootRequestBody) (*string, error) {
+	resBody := &RebootResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/reboot"), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error rebooting container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // ShutdownContainer shuts down a container.
@@ -244,6 +288,10 @@ func (c *Client) StartContainer(ctx context.Context) error {
 
 	taskID, err := c.StartContainerAsync(ctx)
 	if err != nil {
+		if errors.Is(err, errContainerAlreadyRunning) {
+			return nil
+		}
+
 		return fmt.Errorf("error starting container: %w", err)
 	}
 
@@ -267,6 +315,10 @@ func (c *Client) StartContainerAsync(ctx context.Context) (*string, error) {
 
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), nil, resBody)
 	if err != nil {
+		if strings.Contains(err.Error(), "already running") {
+			return nil, errContainerAlreadyRunning
+		}
+
 		return nil, fmt.Errorf("error starting container: %w", err)
 	}
 
@@ -289,6 +341,7 @@ func (c *Client) StopContainer(ctx context.Context) error {
 
 // UpdateContainer updates a container.
 func (c *Client) UpdateContainer(ctx context.Context, d *UpdateRequestBody) error {
+	// note: put config does not return a task ID, so we cannot wait for it to complete
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating container: %w", err)

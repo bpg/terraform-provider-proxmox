@@ -31,11 +31,8 @@ func TestRuleSchema(t *testing.T) {
 
 	rules := Rules().Schema
 
-	test.AssertRequiredArguments(t, rules, []string{
-		MkRule,
-	})
-
 	test.AssertOptionalArguments(t, rules, []string{
+		MkRule,
 		mkSelectorVMID,
 		mkSelectorNodeName,
 	})

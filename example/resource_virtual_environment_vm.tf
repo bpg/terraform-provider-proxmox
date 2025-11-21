@@ -17,6 +17,10 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     # affinity = "0-1"
   }
 
+  memory {
+    dedicated = 2048
+  }
+
   smbios {
     manufacturer = "Terraform"
     product      = "Terraform Provider Proxmox"
@@ -133,7 +137,7 @@ resource "proxmox_virtual_environment_vm" "example" {
   machine = "q35"
 
   memory {
-    dedicated = 768
+    dedicated = 2048
     # hugepages = "2"
   }
 

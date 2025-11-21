@@ -50,4 +50,5 @@ type RuleUpdateRequestBody struct {
 	Type   *string `json:"type,omitempty"   url:"type,omitempty"`
 	Group  *string `json:"group,omitempty"  url:"group,omitempty"`
 	Delete *string `json:"delete,omitempty" url:"delete,omitempty"`
+	MoveTo *int    `json:"moveto,omitempty" url:"moveto,omitempty"`
 }

@@ -101,43 +101,46 @@ const (
 	dvMigrate                           = false
 	dvName                              = ""
 
-	dvOperatingSystemType = "other"
-	dvPoolID              = ""
-	dvProtection          = false
-	dvRNGMaxBytes         = 1024
-	dvRNGPeriod           = 1000
-	dvSerialDeviceDevice  = "socket"
-	dvSMBIOSFamily        = ""
-	dvSMBIOSManufacturer  = ""
-	dvSMBIOSProduct       = ""
-	dvSMBIOSSKU           = ""
-	dvSMBIOSSerial        = ""
-	dvSMBIOSVersion       = ""
-	dvStarted             = true
-	dvStartupOrder        = -1
-	dvStartupUpDelay      = -1
-	dvStartupDownDelay    = -1
-	dvTabletDevice        = true
-	dvTemplate            = false
-	dvTimeoutClone        = 1800
-	dvTimeoutCreate       = 1800
-	dvTimeoutMigrate      = 1800
-	dvTimeoutReboot       = 1800
-	dvTimeoutShutdownVM   = 1800
-	dvTimeoutStartVM      = 1800
-	dvTimeoutStopVM       = 300
-	dvVGAClipboard        = ""
-	dvVGAMemory           = 16
-	dvVGAType             = "std"
-	dvVirtiofsCache       = "auto"
-	dvVirtiofsDirectIo    = false
-	dvVirtiofsExposeAcl   = false
-	dvVirtiofsExposeXattr = false
-	dvSCSIHardware        = "virtio-scsi-pci"
-	dvStopOnDestroy       = false
-	dvHookScript          = ""
-	dvWatchdogModel       = "i6300esb"
-	dvWatchdogAction      = "none"
+	dvOperatingSystemType              = "other"
+	dvPoolID                           = ""
+	dvProtection                       = false
+	dvRNGMaxBytes                      = 1024
+	dvRNGPeriod                        = 1000
+	dvSerialDeviceDevice               = "socket"
+	dvSMBIOSFamily                     = ""
+	dvSMBIOSManufacturer               = ""
+	dvSMBIOSProduct                    = ""
+	dvSMBIOSSKU                        = ""
+	dvSMBIOSSerial                     = ""
+	dvSMBIOSVersion                    = ""
+	dvStarted                          = true
+	dvStartupOrder                     = -1
+	dvStartupUpDelay                   = -1
+	dvStartupDownDelay                 = -1
+	dvTabletDevice                     = true
+	dvTemplate                         = false
+	dvTimeoutClone                     = 1800
+	dvTimeoutCreate                    = 1800
+	dvTimeoutMigrate                   = 1800
+	dvTimeoutReboot                    = 1800
+	dvTimeoutShutdownVM                = 1800
+	dvTimeoutStartVM                   = 1800
+	dvTimeoutStopVM                    = 300
+	dvTimeoutMoveDisk                  = 1800
+	dvVGAClipboard                     = ""
+	dvVGAMemory                        = 16
+	dvVGAType                          = "std"
+	dvVirtiofsCache                    = "auto"
+	dvVirtiofsDirectIo                 = false
+	dvVirtiofsExposeAcl                = false
+	dvVirtiofsExposeXattr              = false
+	dvSCSIHardware                     = "virtio-scsi-pci"
+	dvStopOnDestroy                    = false
+	dvPurgeOnDestroy                   = true
+	dvDeleteUnreferencedDisksOnDestroy = true
+	dvHookScript                       = ""
+	dvWatchdogModel                    = "i6300esb"
+	dvWatchdogAction                   = "none"
 
 	maxResourceVirtualEnvironmentVMAudioDevices  = 1
 	maxResourceVirtualEnvironmentVMSerialDevices = 4
@@ -251,59 +254,62 @@ const (
 	mkMigrate             = "migrate"
 	mkName                = "name"
 
-	mkNodeName             = "node_name"
-	mkOperatingSystem      = "operating_system"
-	mkOperatingSystemType  = "type"
-	mkPoolID               = "pool_id"
-	mkProtection           = "protection"
-	mkRNG                  = "rng"
-	mkRNGSource            = "source"
-	mkRNGMaxBytes          = "max_bytes"
-	mkRNGPeriod            = "period"
-	mkSerialDevice         = "serial_device"
-	mkSerialDeviceDevice   = "device"
-	mkSMBIOS               = "smbios"
-	mkSMBIOSFamily         = "family"
-	mkSMBIOSManufacturer   = "manufacturer"
-	mkSMBIOSProduct        = "product"
-	mkSMBIOSSKU            = "sku"
-	mkSMBIOSSerial         = "serial"
-	mkSMBIOSUUID           = "uuid"
-	mkSMBIOSVersion        = "version"
-	mkStarted              = "started"
-	mkStartup              = "startup"
-	mkStartupOrder         = "order"
-	mkStartupUpDelay       = "up_delay"
-	mkStartupDownDelay     = "down_delay"
-	mkTabletDevice         = "tablet_device"
-	mkTags                 = "tags"
-	mkTemplate             = "template"
-	mkTimeoutClone         = "timeout_clone"
-	mkTimeoutCreate        = "timeout_create"
-	mkTimeoutMigrate       = "timeout_migrate" // this is essentially a "timeout_update", needs to be refactored
-	mkTimeoutReboot        = "timeout_reboot"
-	mkTimeoutShutdownVM    = "timeout_shutdown_vm"
-	mkTimeoutStartVM       = "timeout_start_vm"
-	mkTimeoutStopVM        = "timeout_stop_vm"
-	mkHostUSB              = "usb"
-	mkHostUSBDevice        = "host"
-	mkHostUSBDeviceMapping = "mapping"
-	mkHostUSBDeviceUSB3    = "usb3"
-	mkVGA                  = "vga"
-	mkVGAClipboard         = "clipboard"
-	mkVGAMemory            = "memory"
-	mkVGAType              = "type"
-	mkVMID                 = "vm_id"
-	mkSCSIHardware         = "scsi_hardware"
-	mkHookScriptFileID     = "hook_script_file_id"
-	mkStopOnDestroy        = "stop_on_destroy"
-	mkVirtiofs             = "virtiofs"
-	mkVirtiofsMapping      = "mapping"
-	mkVirtiofsCache        = "cache"
-	mkVirtiofsDirectIO     = "direct_io"
-	mkVirtiofsExposeACL    = "expose_acl"
-	mkVirtiofsExposeXAttr  = "expose_xattr"
-	mkWatchdog             = "watchdog"
+	mkNodeName                         = "node_name"
+	mkOperatingSystem                  = "operating_system"
+	mkOperatingSystemType              = "type"
+	mkPoolID                           = "pool_id"
+	mkProtection                       = "protection"
+	mkRNG                              = "rng"
+	mkRNGSource                        = "source"
+	mkRNGMaxBytes                      = "max_bytes"
+	mkRNGPeriod                        = "period"
+	mkSerialDevice                     = "serial_device"
+	mkSerialDeviceDevice               = "device"
+	mkSMBIOS                           = "smbios"
+	mkSMBIOSFamily                     = "family"
+	mkSMBIOSManufacturer               = "manufacturer"
+	mkSMBIOSProduct                    = "product"
+	mkSMBIOSSKU                        = "sku"
+	mkSMBIOSSerial                     = "serial"
+	mkSMBIOSUUID                       = "uuid"
+	mkSMBIOSVersion                    = "version"
+	mkStarted                          = "started"
+	mkStartup                          = "startup"
+	mkStartupOrder                     = "order"
+	mkStartupUpDelay                   = "up_delay"
+	mkStartupDownDelay                 = "down_delay"
+	mkTabletDevice                     = "tablet_device"
+	mkTags                             = "tags"
+	mkTemplate                         = "template"
+	mkTimeoutClone                     = "timeout_clone"
+	mkTimeoutCreate                    = "timeout_create"
+	mkTimeoutMigrate                   = "timeout_migrate" // this is essentially a "timeout_update", needs to be refactored
+	mkTimeoutReboot                    = "timeout_reboot"
+	mkTimeoutShutdownVM                = "timeout_shutdown_vm"
+	mkTimeoutStartVM                   = "timeout_start_vm"
+	mkTimeoutStopVM                    = "timeout_stop_vm"
+	mkTimeoutMoveDisk                  = "timeout_move_disk"
+	mkHostUSB                          = "usb"
+	mkHostUSBDevice                    = "host"
+	mkHostUSBDeviceMapping             = "mapping"
+	mkHostUSBDeviceUSB3                = "usb3"
+	mkVGA                              = "vga"
+	mkVGAClipboard                     = "clipboard"
+	mkVGAMemory                        = "memory"
+	mkVGAType                          = "type"
+	mkVMID                             = "vm_id"
+	mkSCSIHardware                     = "scsi_hardware"
+	mkHookScriptFileID                 = "hook_script_file_id"
+	mkStopOnDestroy                    = "stop_on_destroy"
+	mkPurgeOnDestroy                   = "purge_on_destroy"
+	mkDeleteUnreferencedDisksOnDestroy = "delete_unreferenced_disks_on_destroy"
+	mkVirtiofs                         = "virtiofs"
+	mkVirtiofsMapping                  = "mapping"
+	mkVirtiofsCache                    = "cache"
+	mkVirtiofsDirectIO                 = "direct_io"
+	mkVirtiofsExposeACL                = "expose_acl"
+	mkVirtiofsExposeXAttr              = "expose_xattr"
+	mkWatchdog                         = "watchdog"
 	// a workaround for the lack of proper support of default and undefined values in SDK.
 	mkWatchdogEnabled = "enabled"
 	mkWatchdogModel   = "model"
@@ -342,10 +348,8 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The guest will attempt to boot from devices in the order they appear here",
 			Optional:    true,
+			Computed:    true,
 			Elem:        &schema.Schema{Type: schema.TypeString},
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
-			},
 		},
 		mkACPI: {
 			Type:        schema.TypeBool,
@@ -1261,6 +1265,8 @@ func VM() *schema.Resource {
 			Description: "The ID of the pool to assign the virtual machine to",
 			Optional:    true,
 			Default:     dvPoolID,
+			Deprecated: "This field is deprecated and will be removed in a future release. " +
+				"To assign the VM to a pool, use `proxmox_virtual_environment_pool_membership` resource instead.",
 		},
 		mkProtection: {
 			Type:        schema.TypeBool,
@@ -1456,11 +1462,11 @@ func VM() *schema.Resource {
 			Optional:    true,
 			Default:     dvTimeoutCreate,
 		},
-		"timeout_move_disk": {
+		mkTimeoutMoveDisk: {
 			Type:        schema.TypeInt,
-			Description: "MoveDisk timeout",
+			Description: "Disk move timeout",
 			Optional:    true,
-			Default:     1800,
+			Default:     dvTimeoutMoveDisk,
 			Deprecated: "This field is deprecated and will be removed in a future release. " +
 				"An overall operation timeout (timeout_create / timeout_clone / timeout_migrate) is used instead.",
 		},
@@ -1602,6 +1608,18 @@ func VM() *schema.Resource {
 			Description: "Whether to stop rather than shutdown on VM destroy",
 			Optional:    true,
 			Default:     dvStopOnDestroy,
+		},
+		mkPurgeOnDestroy: {
+			Type:        schema.TypeBool,
+			Description: "Whether to purge the VM from backup configurations on destroy",
+			Optional:    true,
+			Default:     dvPurgeOnDestroy,
+		},
+		mkDeleteUnreferencedDisksOnDestroy: {
+			Type:        schema.TypeBool,
+			Description: "Whether to delete unreferenced disks on destroy",
+			Optional:    true,
+			Default:     dvDeleteUnreferencedDisksOnDestroy,
 		},
 		mkWatchdog: {
 			Type:        schema.TypeList,
@@ -2707,13 +2725,13 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	var bootOrderConverted []string
-	if cdromInterface != "" {
-		bootOrderConverted = []string{cdromInterface}
-	}
-
 	bootOrder := d.Get(mkBootOrder).([]interface{})
 
 	if len(bootOrder) == 0 {
+		if cdromInterface != "" {
+			bootOrderConverted = []string{cdromInterface}
+		}
+
 		if _, ok := diskDeviceObjects["ide0"]; ok {
 			bootOrderConverted = append(bootOrderConverted, "ide0")
 		}
@@ -3658,6 +3676,27 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	}
 
 	return vmReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
+}
+
+func setDefaultIfNotSet(d *schema.ResourceData, diags diag.Diagnostics, key string, value interface{}) diag.Diagnostics {
+	if _, ok := d.GetOk(key); !ok {
+		if err := d.Set(key, value); err != nil {
+			return append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
+}
+
+//nolint:staticcheck
+func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key string, value interface{}) diag.Diagnostics {
+	if _, ok := d.GetOkExists(key); !ok {
+		if err := d.Set(key, value); err != nil {
+			return append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
 }
 
 func vmReadCustom(
@@ -4896,6 +4935,21 @@ func vmReadCustom(
 	e = d.Set(mkNodeName, nodeName)
 	diags = append(diags, diag.FromErr(e)...)
 
+	diags = setDefaultIfNotExists(d, diags, mkMigrate, dvMigrate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutClone, dvTimeoutClone)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutCreate, dvTimeoutCreate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutMigrate, dvTimeoutMigrate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutReboot, dvTimeoutReboot)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutShutdownVM, dvTimeoutShutdownVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutStartVM, dvTimeoutStartVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutStopVM, dvTimeoutStopVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutMoveDisk, dvTimeoutMoveDisk)
+	diags = setDefaultIfNotExists(d, diags, mkStopOnDestroy, dvStopOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkPurgeOnDestroy, dvPurgeOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkRebootAfterUpdate, dvRebootAfterUpdate)
+	diags = setDefaultIfNotExists(d, diags, mkRebootAfterCreation, dvRebootAfterCreation)
+
 	return diags
 }
 
@@ -4962,6 +5016,23 @@ func vmReadPrimitiveValues(
 	}
 
 	currentTags := d.Get(mkTags).([]interface{})
+
+	err = d.Set(mkOnBoot, vmConfig.StartOnBoot)
+	if err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	if vmConfig.BootOrder == nil {
+		err = d.Set(mkBootOrder, nil)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	} else {
+		err = d.Set(mkBootOrder, vmConfig.BootOrder.Order)
+		if err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
 
 	if len(clone) == 0 || len(currentTags) > 0 {
 		var tags []string
@@ -6100,7 +6171,10 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		}
 	}
 
-	err = vmAPI.DeleteVM(ctx)
+	purge := d.Get(mkPurgeOnDestroy).(bool)
+	deleteUnreferencedDisks := d.Get(mkDeleteUnreferencedDisksOnDestroy).(bool)
+
+	err = vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
 			d.SetId("")

@@ -110,7 +110,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "iso"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					overwrite_unmanaged = true
 				}
 				resource "proxmox_virtual_environment_vm" "test_disk" {
@@ -148,7 +148,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-disk-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -1113,7 +1113,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-bootdisk-bug-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -1148,7 +1148,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-bootdisk-bug-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -1188,7 +1188,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-boot-resize-image.img.raw"
 					overwrite_unmanaged = true
 				}
@@ -1216,7 +1216,7 @@ func TestAccResourceVMDisks(t *testing.T) {
 					content_type = "import"
 					datastore_id = "local"
 					node_name    = "{{.NodeName}}"
-					url          = "{{.CloudImagesServer}}/jammy/current/jammy-server-cloudimg-amd64.img"
+					url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 					file_name    = "test-boot-resize-image.img.raw"
 					overwrite_unmanaged = true
 				}
