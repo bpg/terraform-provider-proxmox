@@ -553,6 +553,7 @@ func TestAccResourceVMImport(t *testing.T) {
 						agent {
 							enabled = true
 						}
+						boot_order = ["virtio0", "net0"]
 						cpu {
 							cores = 2
 						}
