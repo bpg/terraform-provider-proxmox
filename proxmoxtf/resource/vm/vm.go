@@ -3678,6 +3678,27 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	return vmReadCustom(ctx, d, m, vmID, vmConfig, vmStatus)
 }
 
+func setDefaultIfNotSet(d *schema.ResourceData, diags diag.Diagnostics, key string, value interface{}) diag.Diagnostics {
+	if _, ok := d.GetOk(key); !ok {
+		if err := d.Set(key, value); err != nil {
+			return append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
+}
+
+//nolint:staticcheck
+func setDefaultIfNotExists(d *schema.ResourceData, diags diag.Diagnostics, key string, value interface{}) diag.Diagnostics {
+	if _, ok := d.GetOkExists(key); !ok {
+		if err := d.Set(key, value); err != nil {
+			return append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	return diags
+}
+
 func vmReadCustom(
 	ctx context.Context,
 	d *schema.ResourceData,
@@ -4914,109 +4935,20 @@ func vmReadCustom(
 	e = d.Set(mkNodeName, nodeName)
 	diags = append(diags, diag.FromErr(e)...)
 
-	//nolint:staticcheck
-	if _, ok := d.GetOkExists(mkMigrate); !ok {
-		err := d.Set(mkMigrate, dvMigrate)
-		if err != nil {
-diags = append(diags, diag.FromErr(err)...)
-		}
-	}
-
-	if _, ok := d.GetOk(mkTimeoutClone); !ok {
-		err := d.Set(mkTimeoutClone, dvTimeoutClone)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	if _, ok := d.GetOk(mkTimeoutCreate); !ok {
-		err := d.Set(mkTimeoutCreate, dvTimeoutCreate)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	if _, ok := d.GetOk(mkTimeoutMigrate); !ok {
-		err := d.Set(mkTimeoutMigrate, dvTimeoutMigrate)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	if _, ok := d.GetOk(mkTimeoutReboot); !ok {
-		err := d.Set(mkTimeoutReboot, dvTimeoutReboot)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	if _, ok := d.GetOk(mkTimeoutShutdownVM); !ok {
-		err := d.Set(mkTimeoutShutdownVM, dvTimeoutShutdownVM)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	if _, ok := d.GetOk(mkTimeoutStartVM); !ok {
-		err := d.Set(mkTimeoutStartVM, dvTimeoutStartVM)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	if _, ok := d.GetOk(mkTimeoutStopVM); !ok {
-		err := d.Set(mkTimeoutStopVM, dvTimeoutStopVM)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	if _, ok := d.GetOk(mkTimeoutMoveDisk); !ok {
-		err := d.Set(mkTimeoutMoveDisk, dvTimeoutMoveDisk)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	//nolint:staticcheck
-	if _, ok := d.GetOkExists(mkStopOnDestroy); !ok {
-		err := d.Set(mkStopOnDestroy, dvStopOnDestroy)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	//nolint:staticcheck
-	if _, ok := d.GetOkExists(mkPurgeOnDestroy); !ok {
-		err := d.Set(mkPurgeOnDestroy, dvPurgeOnDestroy)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	//nolint:staticcheck
-	if _, ok := d.GetOkExists(mkDeleteUnreferencedDisksOnDestroy); !ok {
-		err := d.Set(mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	//nolint:staticcheck
-	if _, ok := d.GetOkExists(mkRebootAfterUpdate); !ok {
-		err := d.Set(mkRebootAfterUpdate, dvRebootAfterUpdate)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
-
-	//nolint:staticcheck
-	if _, ok := d.GetOkExists(mkRebootAfterCreation); !ok {
-		err := d.Set(mkRebootAfterCreation, dvRebootAfterCreation)
-		if err != nil {
-			diags = append(diags, diag.FromErr(e)...)
-		}
-	}
+	diags = setDefaultIfNotExists(d, diags, mkMigrate, dvMigrate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutClone, dvTimeoutClone)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutCreate, dvTimeoutCreate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutMigrate, dvTimeoutMigrate)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutReboot, dvTimeoutReboot)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutShutdownVM, dvTimeoutShutdownVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutStartVM, dvTimeoutStartVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutStopVM, dvTimeoutStopVM)
+	diags = setDefaultIfNotSet(d, diags, mkTimeoutMoveDisk, dvTimeoutMoveDisk)
+	diags = setDefaultIfNotExists(d, diags, mkStopOnDestroy, dvStopOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkPurgeOnDestroy, dvPurgeOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
+	diags = setDefaultIfNotExists(d, diags, mkRebootAfterUpdate, dvRebootAfterUpdate)
+	diags = setDefaultIfNotExists(d, diags, mkRebootAfterCreation, dvRebootAfterCreation)
 
 	return diags
 }
