@@ -152,7 +152,6 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
 		Tags:        plan.Tags.ValueStringPointer(ctx, diags),
-		Template:    proxmoxtypes.CustomBoolPtr(plan.Template.ValueBoolPointer()),
 		VMID:        int(plan.ID.ValueInt64()),
 	}
 
@@ -172,6 +171,19 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	err := vmAPI.CreateVM(ctx, createBody)
 	if err != nil {
 		diags.AddError("Failed to create VM", err.Error())
+		return
+	}
+
+	// Convert to template if requested
+	if !plan.Template.IsNull() && plan.Template.ValueBool() {
+		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", plan.ID.ValueInt64()))
+
+		vmAPI = r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
+
+		err = vmAPI.ConvertToTemplate(ctx)
+		if err != nil {
+			diags.AddError("Failed to convert VM to template", err.Error())
+		}
 	}
 }
 
@@ -218,6 +230,18 @@ func (r *Resource) clone(ctx context.Context, plan Model, diags *diag.Diagnostic
 	}
 
 	r.update(ctx, plan, clone, true, diags)
+
+	// Convert to template if requested (after update completes)
+	if !plan.Template.IsNull() && plan.Template.ValueBool() {
+		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", plan.ID.ValueInt64()))
+
+		vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
+
+		err := vmAPI.ConvertToTemplate(ctx)
+		if err != nil {
+			diags.AddError("Failed to convert cloned VM to template", err.Error())
+		}
+	}
 }
 
 //nolint:dupl
@@ -349,6 +373,40 @@ func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, 
 		err := vmAPI.UpdateVM(ctx, updateBody)
 		if err != nil {
 			diags.AddError("Failed to update VM", err.Error())
+			return
+		}
+	}
+
+	// Handle template conversion if the template flag changed to true
+	if !plan.Template.IsNull() && !state.Template.IsNull() {
+		oldTemplate := state.Template.ValueBool()
+		newTemplate := plan.Template.ValueBool()
+
+		if !oldTemplate && newTemplate {
+			tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", plan.ID.ValueInt64()))
+
+			status, err := vmAPI.GetVMStatus(ctx)
+			if err != nil {
+				diags.AddError("Failed to get VM status", err.Error())
+				return
+			}
+
+			if status != nil && status.Status != "stopped" {
+				tflog.Info(ctx, fmt.Sprintf("Stopping VM %d before converting to template", plan.ID.ValueInt64()))
+
+				if e := vmStop(ctx, vmAPI); e != nil {
+					diags.AddError("Failed to stop VM before template conversion", e.Error())
+					return
+				}
+			}
+
+			err = vmAPI.ConvertToTemplate(ctx)
+			if err != nil {
+				diags.AddError("Failed to convert VM to template", err.Error())
+				return
+			}
+		} else if oldTemplate && !newTemplate {
+			diags.AddError("Cannot convert template back to VM", "Templates cannot be converted back to regular VMs")
 			return
 		}
 	}
