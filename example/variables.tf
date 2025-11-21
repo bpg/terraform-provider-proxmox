@@ -57,9 +57,3 @@ variable "ubuntu_24_04_lxc_img_url" {
   type        = string
   default     = "https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64-root.tar.xz"
 }
-
-variable "ubuntu_24_04_lxc_img_checksum" {
-  description = "The checksum for the Ubuntu 24.10 LXC image"
-  type        = string
-  default     = "bdc90f9c0908e45dc602208da8fbd9e38db6483a1483fc7042332f5cd4e9aa22"
-}
