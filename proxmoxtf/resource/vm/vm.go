@@ -126,7 +126,7 @@ const (
 	dvTimeoutShutdownVM                = 1800
 	dvTimeoutStartVM                   = 1800
 	dvTimeoutStopVM                    = 300
-	dvTimeoutMoveDisk     = 1800
+	dvTimeoutMoveDisk                  = 1800
 	dvVGAClipboard                     = ""
 	dvVGAMemory                        = 16
 	dvVGAType                          = "std"
@@ -288,7 +288,7 @@ const (
 	mkTimeoutShutdownVM                = "timeout_shutdown_vm"
 	mkTimeoutStartVM                   = "timeout_start_vm"
 	mkTimeoutStopVM                    = "timeout_stop_vm"
-	mkTimeoutMoveDisk      = "timeout_move_disk"
+	mkTimeoutMoveDisk                  = "timeout_move_disk"
 	mkHostUSB                          = "usb"
 	mkHostUSBDevice                    = "host"
 	mkHostUSBDeviceMapping             = "mapping"
@@ -4979,6 +4979,20 @@ func vmReadCustom(
 
 	if _, ok := d.GetOk(mkStopOnDestroy); !ok {
 		err := d.Set(mkStopOnDestroy, dvStopOnDestroy)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkPurgeOnDestroy); !ok {
+		err := d.Set(mkPurgeOnDestroy, dvPurgeOnDestroy)
+		if err != nil {
+			diags = append(diags, diag.FromErr(e)...)
+		}
+	}
+
+	if _, ok := d.GetOk(mkDeleteUnreferencedDisksOnDestroy); !ok {
+		err := d.Set(mkDeleteUnreferencedDisksOnDestroy, dvDeleteUnreferencedDisksOnDestroy)
 		if err != nil {
 			diags = append(diags, diag.FromErr(e)...)
 		}
