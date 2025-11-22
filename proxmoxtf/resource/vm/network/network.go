@@ -196,6 +196,7 @@ func ReadNetworkValues(
 	started bool,
 	vmConfig *vms.GetResponseData,
 	agentTimeout time.Duration,
+	waitForIPConfig *vms.WaitForIPConfig,
 ) diag.Diagnostics {
 	var diags diag.Diagnostics
 
@@ -209,7 +210,8 @@ func ReadNetworkValues(
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
 			var macAddresses []any
 
-			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, int(agentTimeout.Seconds()), 5, true)
+			// pass nil for backward compatibility (wait for any IP)
+			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, agentTimeout, waitForIPConfig)
 			if err == nil && networkInterfaces.Result != nil {
 				ipv4Addresses = make([]any, len(*networkInterfaces.Result))
 				ipv6Addresses = make([]any, len(*networkInterfaces.Result))

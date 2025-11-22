@@ -249,6 +249,11 @@ output "ubuntu_container_public_key" {
 - `timeout_delete` - (Optional) Timeout for deleting a container in seconds (defaults to 60).
 - `timeout_update` - (Optional) Timeout for updating a container in seconds (defaults to 1800).
 - `unprivileged` - (Optional) Whether the container runs as unprivileged on the host (defaults to `false`).
+- `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the container starts.
+    - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
+    - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
+
+    When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false`, the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
 - `vm_id` - (Optional) The container identifier
 - `features` - (Optional) The container feature flags. Changing flags (except nesting) is only allowed for `root@pam` authenticated user.
     - `nesting` - (Optional) Whether the container is nested (defaults to `false`)

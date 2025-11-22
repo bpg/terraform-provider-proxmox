@@ -35,3 +35,23 @@ func IsValidGlobalUnicast(ipStr string) bool {
 
 	return ip.IsGlobalUnicast()
 }
+
+// IsIPv4 checks if an IP address is IPv4.
+func IsIPv4(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+
+	return ip.To4() != nil
+}
+
+// IsIPv6 checks if an IP address is IPv6.
+func IsIPv6(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+
+	return ip.To4() == nil && ip.To16() != nil
+}

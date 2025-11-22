@@ -27,6 +27,12 @@ var (
 	regexMountPointKey = regexp.MustCompile(`^mp\d+$`)
 )
 
+// WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
+type WaitForIPConfig struct {
+	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
+	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+}
+
 // CloneRequestBody contains the data for an container clone request.
 type CloneRequestBody struct {
 	BandwidthLimit *int              `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`

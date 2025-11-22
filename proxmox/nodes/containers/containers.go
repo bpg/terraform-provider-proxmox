@@ -162,6 +162,7 @@ func (c *Client) ListContainers(ctx context.Context) ([]*ListResponseData, error
 func (c *Client) WaitForContainerNetworkInterfaces(
 	ctx context.Context,
 	timeout time.Duration,
+	waitForIPConfig *WaitForIPConfig, // configuration for which IP types to wait for (nil = wait for any global unicast)
 ) ([]GetNetworkInterfacesData, error) {
 	errNoIPsYet := errors.New("no ips yet")
 
@@ -175,17 +176,36 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 				return nil, err
 			}
 
-			for _, iface := range ifaces {
-				if iface.Name != "lo" && iface.IPAddresses != nil && len(*iface.IPAddresses) > 0 {
-					for _, ipAddr := range *iface.IPAddresses {
-						if ip.IsValidGlobalUnicast(ipAddr.Address) {
-							return ifaces, nil
-						}
-					}
+			hasIPv4, hasIPv6 := c.checkIPAddresses(ifaces)
+
+			if waitForIPConfig == nil {
+				// backward compatibility: wait for any valid global unicast address
+				if !hasIPv4 && !hasIPv6 {
+					return nil, errNoIPsYet
 				}
+
+				return ifaces, nil
 			}
 
-			return nil, errNoIPsYet
+			requiredIPv4 := waitForIPConfig.IPv4
+			requiredIPv6 := waitForIPConfig.IPv6
+
+			// if no specific requirements, wait for any IP (backward compatibility)
+			if !requiredIPv4 && !requiredIPv6 {
+				if !hasIPv4 && !hasIPv6 {
+					return nil, errNoIPsYet
+				}
+
+				return ifaces, nil
+			}
+
+			// check if all required IP types are available
+			if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+				return nil, errNoIPsYet
+			}
+
+			// all required IP types are available
+			return ifaces, nil
 		},
 		retry.Context(ctxWithTimeout),
 		retry.RetryIf(func(err error) bool {
@@ -215,6 +235,34 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	}
 
 	return ifaces, nil
+}
+
+// checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
+func (c *Client) checkIPAddresses(
+	ifaces []GetNetworkInterfacesData,
+) (bool, bool) {
+	hasIPv4 := false
+	hasIPv6 := false
+
+	for _, iface := range ifaces {
+		if iface.Name == "lo" || iface.IPAddresses == nil || len(*iface.IPAddresses) == 0 {
+			continue
+		}
+
+		for _, ipAddr := range *iface.IPAddresses {
+			if !ip.IsValidGlobalUnicast(ipAddr.Address) {
+				continue
+			}
+
+			if ip.IsIPv4(ipAddr.Address) {
+				hasIPv4 = true
+			} else if ip.IsIPv6(ipAddr.Address) {
+				hasIPv6 = true
+			}
+		}
+	}
+
+	return hasIPv4, hasIPv6
 }
 
 // RebootContainer reboots a container.

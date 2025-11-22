@@ -161,6 +161,9 @@ const (
 	mkAgentTimeout        = "timeout"
 	mkAgentTrim           = "trim"
 	mkAgentType           = "type"
+	mkAgentWaitForIP      = "wait_for_ip"
+	mkAgentWaitForIPIPv4  = "ipv4"
+	mkAgentWaitForIPIPv6  = "ipv6"
 	mkAMDSEV              = "amd_sev"
 	mkAMDSEVType          = "type"
 	mkAMDSEVAllowSMT      = "allow_smt"
@@ -398,6 +401,29 @@ func VM() *schema.Resource {
 						Optional:         true,
 						Default:          dvAgentType,
 						ValidateDiagFunc: QEMUAgentTypeValidator(),
+					},
+					mkAgentWaitForIP: {
+						Type:        schema.TypeList,
+						Description: "Configuration for waiting for specific IP address types",
+						Optional:    true,
+						MaxItems:    1,
+						MinItems:    0,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								mkAgentWaitForIPIPv4: {
+									Type:        schema.TypeBool,
+									Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
+									Optional:    true,
+									Default:     false,
+								},
+								mkAgentWaitForIPIPv6: {
+									Type:        schema.TypeBool,
+									Description: "Wait for at least one IPv6 address (non-loopback, non-link-local)",
+									Optional:    true,
+									Default:     false,
+								},
+							},
+						},
 					},
 				},
 			},
@@ -3799,6 +3825,14 @@ func vmReadCustom(
 				agent[mkAgentType] = ""
 			}
 
+			// preserve wait_for_ip from current state if present
+			if len(currentAgent) > 0 && currentAgent[0] != nil {
+				currentAgentBlock := currentAgent[0].(map[string]any)
+				if waitForIP, ok := currentAgentBlock[mkAgentWaitForIP].([]any); ok && len(waitForIP) > 0 {
+					agent[mkAgentWaitForIP] = waitForIP
+				}
+			}
+
 			if len(clone) > 0 {
 				if len(currentAgent) > 0 {
 					err := d.Set(mkAgent, []any{agent})
@@ -4939,9 +4973,11 @@ func vmReadCustom(
 		return diag.FromErr(e)
 	}
 
+	waitForIPConfig := getAgentWaitForIPConfig(d)
+
 	diags = append(
 		diags,
-		network.ReadNetworkValues(ctx, d, vmAPI, started, vmConfig, agentTimeout)...)
+		network.ReadNetworkValues(ctx, d, vmAPI, started, vmConfig, agentTimeout, waitForIPConfig)...)
 
 	// during import these core attributes might not be set, so set them explicitly here
 	d.SetId(strconv.Itoa(vmID))
@@ -6329,6 +6365,45 @@ func getAgentTimeout(d *schema.ResourceData) (time.Duration, error) {
 	}
 
 	return agentTimeout, nil
+}
+
+func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
+	resource := VM()
+
+	agentBlock, err := structure.GetSchemaBlock(
+		resource,
+		d,
+		[]string{mkAgent},
+		0,
+		true,
+	)
+	if err != nil {
+		return nil
+	}
+
+	waitForIPList, ok := agentBlock[mkAgentWaitForIP].([]any)
+	if !ok || len(waitForIPList) == 0 || waitForIPList[0] == nil {
+		return nil
+	}
+
+	waitForIPBlock := waitForIPList[0].(map[string]any)
+
+	config := &vms.WaitForIPConfig{}
+
+	if ipv4, ok := waitForIPBlock[mkAgentWaitForIPIPv4].(bool); ok {
+		config.IPv4 = ipv4
+	}
+
+	if ipv6, ok := waitForIPBlock[mkAgentWaitForIPIPv6].(bool); ok {
+		config.IPv6 = ipv6
+	}
+
+	// if both are false, return nil for backward compatibility
+	if !config.IPv4 && !config.IPv6 {
+		return nil
+	}
+
+	return config
 }
 
 func findPoolForVM(ctx context.Context, poolsAPI *pools.Client, vmID int) (string, error) {
