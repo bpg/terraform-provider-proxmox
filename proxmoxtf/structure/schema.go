@@ -36,10 +36,10 @@ func GetSchemaBlock(
 	k []string,
 	i int,
 	allowDefault bool,
-) (map[string]interface{}, error) {
-	var resourceBlock map[string]interface{}
+) (map[string]any, error) {
+	var resourceBlock map[string]any
 
-	var resourceData interface{}
+	var resourceData any
 
 	var resourceSchema *schema.Schema
 
@@ -48,13 +48,13 @@ func GetSchemaBlock(
 			resourceData = d.Get(kv)
 			resourceSchema = r.Schema[kv]
 		} else if resourceSchema != nil {
-			mapValues := resourceData.([]interface{})
+			mapValues := resourceData.([]any)
 
 			if len(mapValues) <= i {
 				return resourceBlock, fmt.Errorf("index out of bounds %d", i)
 			}
 
-			mapValue := mapValues[i].(map[string]interface{})
+			mapValue := mapValues[i].(map[string]any)
 
 			resourceData = mapValue[kv]
 			resourceSchema = resourceSchema.Elem.(*schema.Resource).Schema[kv]
@@ -65,7 +65,7 @@ func GetSchemaBlock(
 		return nil, fmt.Errorf("schema not found for %s", strings.Join(k, "."))
 	}
 
-	list := resourceData.([]interface{})
+	list := resourceData.([]any)
 
 	if len(list) == 0 {
 		if allowDefault {
@@ -74,12 +74,12 @@ func GetSchemaBlock(
 				return nil, fmt.Errorf("failed to get default value for %s: %w", strings.Join(k, "."), err)
 			}
 
-			list = listDefault.([]interface{})
+			list = listDefault.([]any)
 		}
 	}
 
 	if len(list) > i {
-		resourceBlock = list[i].(map[string]interface{})
+		resourceBlock = list[i].(map[string]any)
 	}
 
 	return resourceBlock, nil
@@ -103,8 +103,8 @@ func SuppressIfListsAreEqualIgnoringOrder(key, _, _ string, d *schema.ResourceDa
 		return false
 	}
 
-	oldArray := oldData.([]interface{})
-	newArray := newData.([]interface{})
+	oldArray := oldData.([]any)
+	newArray := newData.([]any)
 
 	if len(oldArray) != len(newArray) {
 		return false
@@ -158,12 +158,12 @@ func SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(
 			return false
 		}
 
-		oldArray, ok := oldData.([]interface{})
+		oldArray, ok := oldData.([]any)
 		if !ok {
 			return false
 		}
 
-		newArray, ok := newData.([]interface{})
+		newArray, ok := newData.([]any)
 		if !ok {
 			return false
 		}
@@ -181,8 +181,8 @@ func SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(
 			}
 
 			for _, ignoreKey := range ignoreKeys {
-				delete(v.(map[string]interface{}), ignoreKey)
-				delete(newMap[k].(map[string]interface{}), ignoreKey)
+				delete(v.(map[string]any), ignoreKey)
+				delete(newMap[k].(map[string]any), ignoreKey)
 			}
 
 			if !reflect.DeepEqual(v, newMap[k]) {

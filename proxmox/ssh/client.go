@@ -170,7 +170,7 @@ func (c *client) getSudoAvailability(ctx context.Context, nodeName string) (bool
 
 	defer func() {
 		if e := sshClient.Close(); e != nil {
-			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{"error": e})
+			tflog.Warn(ctx, "failed to close SSH client", map[string]any{"error": e})
 		}
 	}()
 
@@ -197,7 +197,7 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 		return nil, fmt.Errorf("failed to find node endpoint: %w", err)
 	}
 
-	tflog.Debug(ctx, "executing commands on the node using SSH", map[string]interface{}{
+	tflog.Debug(ctx, "executing commands on the node using SSH", map[string]any{
 		"node_address": node.Address,
 		"node_port":    node.Port,
 		"commands":     commands,
@@ -210,7 +210,7 @@ func (c *client) ExecuteNodeCommands(ctx context.Context, nodeName string, comma
 
 	defer func() {
 		if e := sshClient.Close(); e != nil {
-			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{"error": e})
+			tflog.Warn(ctx, "failed to close SSH client", map[string]any{"error": e})
 		}
 	}()
 
@@ -230,7 +230,7 @@ func (c *client) getSudoValue(ctx context.Context, nodeName string, needsCheck b
 
 	shouldUseSudo, err := c.getSudoAvailability(ctx, nodeName)
 	if err != nil {
-		tflog.Warn(ctx, "failed to check sudo availability, proceeding without sudo", map[string]interface{}{
+		tflog.Warn(ctx, "failed to check sudo availability, proceeding without sudo", map[string]any{
 			"error": err,
 		})
 
@@ -253,7 +253,7 @@ func (c *client) openSession(ctx context.Context, sshClient *ssh.Client) (*ssh.S
 	closer := func() {
 		e := sshSession.Close()
 		if e != nil && !errors.Is(e, io.EOF) {
-			tflog.Warn(ctx, "failed to close SSH session", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SSH session", map[string]any{
 				"error": e,
 			})
 		}
@@ -311,7 +311,7 @@ func (c *client) NodeUpload(
 		return fmt.Errorf("failed to find node endpoint: %w", err)
 	}
 
-	tflog.Debug(ctx, "uploading file to the node datastore using SFTP", map[string]interface{}{
+	tflog.Debug(ctx, "uploading file to the node datastore using SFTP", map[string]any{
 		"node_address": ip,
 		"remote_dir":   remoteFileDir,
 		"file_name":    d.FileName,
@@ -333,7 +333,7 @@ func (c *client) NodeUpload(
 	defer func(sshClient *ssh.Client) {
 		e := sshClient.Close()
 		if e != nil {
-			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SSH client", map[string]any{
 				"error": e,
 			})
 		}
@@ -353,7 +353,7 @@ func (c *client) NodeUpload(
 	defer func(sftpClient *sftp.Client) {
 		e := sftpClient.Close()
 		if e != nil {
-			tflog.Warn(ctx, "failed to close SFTP client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SFTP client", map[string]any{
 				"error": e,
 			})
 		}
@@ -372,7 +372,7 @@ func (c *client) NodeUpload(
 	defer func(remoteFile *sftp.File) {
 		e := remoteFile.Close()
 		if e != nil {
-			tflog.Warn(ctx, "failed to close remote file", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close remote file", map[string]any{
 				"error": e,
 			})
 		}
@@ -388,7 +388,7 @@ func (c *client) NodeUpload(
 			remoteFilePath, bytesUploaded, fileSize)
 	}
 
-	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
+	tflog.Debug(ctx, "uploaded file to datastore", map[string]any{
 		"remote_file_path": remoteFilePath,
 		"size":             bytesUploaded,
 	})
@@ -407,7 +407,7 @@ func (c *client) NodeStreamUpload(
 		return fmt.Errorf("failed to find node endpoint: %w", err)
 	}
 
-	tflog.Debug(ctx, "uploading file to the node datastore via SSH input stream ", map[string]interface{}{
+	tflog.Debug(ctx, "uploading file to the node datastore via SSH input stream ", map[string]any{
 		"node_address": ip,
 		"remote_dir":   remoteFileDir,
 		"file_name":    d.FileName,
@@ -429,7 +429,7 @@ func (c *client) NodeStreamUpload(
 	defer func(sshClient *ssh.Client) {
 		e := sshClient.Close()
 		if e != nil {
-			tflog.Warn(ctx, "failed to close SSH client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SSH client", map[string]any{
 				"error": e,
 			})
 		}
@@ -463,7 +463,7 @@ func (c *client) NodeStreamUpload(
 		}
 	}
 
-	tflog.Debug(ctx, "uploaded file to datastore", map[string]interface{}{
+	tflog.Debug(ctx, "uploaded file to datastore", map[string]any{
 		"remote_file_path": remoteFilePath,
 	})
 
@@ -517,7 +517,7 @@ func (c *client) checkUploadedFile(
 	defer func(sftpClient *sftp.Client) {
 		e := sftpClient.Close()
 		if e != nil {
-			tflog.Warn(ctx, "failed to close SFTP client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SFTP client", map[string]any{
 				"error": e,
 			})
 		}
@@ -556,7 +556,7 @@ func (c *client) changeModeUploadedFile(
 	defer func(sftpClient *sftp.Client) {
 		e := sftpClient.Close()
 		if e != nil {
-			tflog.Warn(ctx, "failed to close SFTP client", map[string]interface{}{
+			tflog.Warn(ctx, "failed to close SFTP client", map[string]any{
 				"error": e,
 			})
 		}
@@ -577,7 +577,7 @@ func (c *client) changeModeUploadedFile(
 			remoteStat.Mode().Perm(), remoteStat.Mode(), fileMode.Perm(), fileMode, err)
 	}
 
-	tflog.Debug(ctx, "changed mode of uploaded file", map[string]interface{}{
+	tflog.Debug(ctx, "changed mode of uploaded file", map[string]any{
 		"before": fmt.Sprintf("%#o (%s)", remoteStat.Mode().Perm(), remoteStat.Mode()),
 		"after":  fmt.Sprintf("%#o (%s)", fileMode.Perm(), fileMode),
 	})
@@ -641,7 +641,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 			if fErr == nil {
 				tflog.Info(ctx, fmt.Sprintf("Added host %s to known_hosts", hostname))
 			} else {
-				tflog.Error(ctx, fmt.Sprintf("Failed to add host %s to known_hosts", hostname), map[string]interface{}{
+				tflog.Error(ctx, fmt.Sprintf("Failed to add host %s to known_hosts", hostname), map[string]any{
 					"error": khErr,
 				})
 			}
@@ -662,7 +662,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 		}
 
 		tflog.Error(ctx, "Failed SSH connection through agent",
-			map[string]interface{}{
+			map[string]any{
 				"error": err,
 			})
 	}
@@ -674,7 +674,7 @@ func (c *client) openNodeShell(ctx context.Context, node ProxmoxNode) (*ssh.Clie
 		}
 
 		tflog.Error(ctx, "Failed SSH connection with private key",
-			map[string]interface{}{
+			map[string]any{
 				"error": err,
 			})
 	}
@@ -763,7 +763,7 @@ func (c *client) connect(ctx context.Context, sshHost string, sshConfig *ssh.Cli
 			return nil, fmt.Errorf("failed to dial %s via SOCKS5 proxy %s: %w", sshHost, c.socks5Server, err)
 		}
 
-		tflog.Debug(ctx, "SSH connection via SOCKS5 established", map[string]interface{}{
+		tflog.Debug(ctx, "SSH connection via SOCKS5 established", map[string]any{
 			"host":          sshHost,
 			"socks5_server": c.socks5Server,
 			"user":          c.username,
@@ -777,7 +777,7 @@ func (c *client) connect(ctx context.Context, sshHost string, sshConfig *ssh.Cli
 		return nil, fmt.Errorf("failed to dial %s: %w", sshHost, err)
 	}
 
-	tflog.Debug(ctx, "SSH connection established", map[string]interface{}{
+	tflog.Debug(ctx, "SSH connection established", map[string]any{
 		"host": sshHost,
 		"user": c.username,
 	})

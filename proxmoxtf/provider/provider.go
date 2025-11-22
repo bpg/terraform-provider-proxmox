@@ -34,7 +34,7 @@ func ProxmoxVirtualEnvironment() *schema.Provider {
 	}
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	var err error
 
 	var diags diag.Diagnostics
@@ -116,11 +116,11 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
 
-	sshConf := map[string]interface{}{}
+	sshConf := map[string]any{}
 
-	sshBlock := d.Get(mkProviderSSH).([]interface{})
+	sshBlock := d.Get(mkProviderSSH).([]any)
 	if len(sshBlock) > 0 {
-		sshConf = sshBlock[0].(map[string]interface{})
+		sshConf = sshBlock[0].(map[string]any)
 	}
 
 	sshUsername := utils.GetAnyStringEnv("PROXMOX_VE_SSH_USERNAME", "PM_VE_SSH_USERNAME")
@@ -186,8 +186,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	nodeOverrides := map[string]ssh.ProxmoxNode{}
 
 	if ns, ok := sshConf[mkProviderSSHNode]; ok {
-		for _, n := range ns.([]interface{}) {
-			node := n.(map[string]interface{})
+		for _, n := range ns.([]any) {
+			node := n.(map[string]any)
 			nodeOverrides[node[mkProviderSSHNodeName].(string)] = ssh.ProxmoxNode{
 				Address: node[mkProviderSSHNodeAddress].(string),
 

@@ -225,7 +225,7 @@ type GetStatusResponseData struct {
 	Lock             *string          `json:"lock,omitempty"`
 	MemoryAllocation *int64           `json:"maxmem,omitempty"`
 	Name             *string          `json:"name,omitempty"`
-	RootDiskSize     *interface{}     `json:"maxdisk,omitempty"`
+	RootDiskSize     *any             `json:"maxdisk,omitempty"`
 	Status           string           `json:"status,omitempty"`
 	SwapAllocation   *int64           `json:"maxswap,omitempty"`
 	Tags             *string          `json:"tags,omitempty"`
@@ -652,9 +652,9 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal ContainerCustomFeatures: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 2 {
@@ -733,9 +733,9 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal CustomMountPoint: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
@@ -783,9 +783,9 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		//nolint:nestif
@@ -856,9 +856,9 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal CustomRootFS: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
@@ -908,9 +908,9 @@ func (r *CustomStartupBehavior) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal CustomStartupBehavior: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 2 {
@@ -945,7 +945,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 
-	var byAttr map[string]interface{}
+	var byAttr map[string]any
 
 	// now get map by attribute name
 	err := json.Unmarshal(b, &byAttr)

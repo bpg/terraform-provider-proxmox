@@ -88,7 +88,7 @@ func (d *Datasource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	if !exists {
-		tflog.Info(ctx, "VM does not exist, removing from the state", map[string]interface{}{
+		tflog.Info(ctx, "VM does not exist, removing from the state", map[string]any{
 			"id": model.ID.ValueInt64(),
 		})
 		resp.State.RemoveResource(ctx)

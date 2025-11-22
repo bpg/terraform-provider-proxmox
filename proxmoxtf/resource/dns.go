@@ -55,7 +55,7 @@ func DNS() *schema.Resource {
 		UpdateContext: dnsUpdate,
 		DeleteContext: dnsDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				nodeName := d.Id()
 
 				err := d.Set(mkResourceVirtualEnvironmentDNSNodeName, nodeName)
@@ -71,7 +71,7 @@ func DNS() *schema.Resource {
 	}
 }
 
-func dnsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dnsCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	diags := dnsUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
@@ -108,7 +108,7 @@ func dnsGetUpdateBody(d *schema.ResourceData) *nodes.DNSUpdateRequestBody {
 	return body
 }
 
-func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dnsRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -152,7 +152,7 @@ func dnsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 	return diags
 }
 
-func dnsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func dnsUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()
@@ -172,7 +172,7 @@ func dnsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	return dnsRead(ctx, d, m)
 }
 
-func dnsDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func dnsDelete(_ context.Context, d *schema.ResourceData, _ any) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

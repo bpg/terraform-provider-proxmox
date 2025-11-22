@@ -17,7 +17,7 @@ import (
 func CloseOrLogError(ctx context.Context) func(io.Closer) {
 	return func(c io.Closer) {
 		if err := c.Close(); err != nil {
-			tflog.Error(ctx, "Failed to close", map[string]interface{}{
+			tflog.Error(ctx, "Failed to close", map[string]any{
 				"error": err,
 			})
 		}

@@ -148,7 +148,7 @@ func User() *schema.Resource {
 		UpdateContext: userUpdate,
 		DeleteContext: userDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				roleID := d.Id()
 
 				err := d.Set(mkResourceVirtualEnvironmentUserUserID, roleID)
@@ -162,7 +162,7 @@ func User() *schema.Resource {
 	}
 }
 
-func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func userCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -242,7 +242,7 @@ func userCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return userRead(ctx, d, m)
 }
 
-func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func userRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -361,7 +361,7 @@ func userRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return diags
 }
 
-func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func userUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -470,7 +470,7 @@ func userUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return userRead(ctx, d, m)
 }
 
-func userDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func userDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()

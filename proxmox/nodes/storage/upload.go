@@ -20,7 +20,7 @@ func (c *Client) APIUpload(
 	d *api.FileUploadRequest,
 	tempDir string,
 ) (*DatastoreUploadResponseBody, error) {
-	tflog.Debug(ctx, "uploading file to datastore using PVE API", map[string]interface{}{
+	tflog.Debug(ctx, "uploading file to datastore using PVE API", map[string]any{
 		"file_name":    d.FileName,
 		"content_type": d.ContentType,
 	})
@@ -30,7 +30,7 @@ func (c *Client) APIUpload(
 	defer func(r *io.PipeReader) {
 		err := r.Close()
 		if err != nil {
-			tflog.Error(ctx, "failed to close pipe reader", map[string]interface{}{
+			tflog.Error(ctx, "failed to close pipe reader", map[string]any{
 				"error": err,
 			})
 		}
@@ -42,7 +42,7 @@ func (c *Client) APIUpload(
 		defer func(w *io.PipeWriter) {
 			err := w.Close()
 			if err != nil {
-				tflog.Error(ctx, "failed to close pipe writer", map[string]interface{}{
+				tflog.Error(ctx, "failed to close pipe writer", map[string]any{
 					"error": err,
 				})
 			}
@@ -50,7 +50,7 @@ func (c *Client) APIUpload(
 		defer func(m *multipart.Writer) {
 			err := m.Close()
 			if err != nil {
-				tflog.Error(ctx, "failed to close multipart writer", map[string]interface{}{
+				tflog.Error(ctx, "failed to close multipart writer", map[string]any{
 					"error": err,
 				})
 			}
@@ -58,7 +58,7 @@ func (c *Client) APIUpload(
 
 		err := m.WriteField("content", d.ContentType)
 		if err != nil {
-			tflog.Error(ctx, "failed to write 'content' field", map[string]interface{}{
+			tflog.Error(ctx, "failed to write 'content' field", map[string]any{
 				"error": err,
 			})
 
@@ -98,7 +98,7 @@ func (c *Client) APIUpload(
 	defer func(name string) {
 		e := os.Remove(name)
 		if e != nil {
-			tflog.Error(ctx, "failed to remove temporary file", map[string]interface{}{
+			tflog.Error(ctx, "failed to remove temporary file", map[string]any{
 				"error": e,
 			})
 		}
@@ -118,7 +118,7 @@ func (c *Client) APIUpload(
 				return
 			}
 
-			tflog.Error(ctx, "failed to close file reader", map[string]interface{}{
+			tflog.Error(ctx, "failed to close file reader", map[string]any{
 				"error": e,
 			})
 		}
