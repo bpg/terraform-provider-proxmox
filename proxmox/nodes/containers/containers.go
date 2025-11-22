@@ -17,6 +17,7 @@ import (
 	"github.com/avast/retry-go/v4"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers"
 )
 
 var errContainerAlreadyRunning = errors.New("container is already running")
@@ -176,8 +177,11 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 
 			for _, iface := range ifaces {
 				if iface.Name != "lo" && iface.IPAddresses != nil && len(*iface.IPAddresses) > 0 {
-					// we have at least one non-loopback interface with an IP address
-					return ifaces, nil
+					for _, ipAddr := range *iface.IPAddresses {
+						if helpers.IsValidGlobalUnicast(ipAddr.Address) {
+							return ifaces, nil
+						}
+					}
 				}
 			}
 
