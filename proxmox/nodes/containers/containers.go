@@ -226,11 +226,7 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 			}
 
 			// check if all required IP types are available
-			if requiredIPv4 && !hasIPv4 {
-				return nil, errNoIPsYet
-			}
-
-			if requiredIPv6 && !hasIPv6 {
+			if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
 				return nil, errNoIPsYet
 			}
 

@@ -646,72 +646,63 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		// If we're waiting for an IP, check if we have one yet; if not then keep looping
 		// nil config means backward compatibility: wait for any valid global unicast address
 		// We always check for IPs when this function is called (old waitForIP was always true when called)
-		{
-			hasIPv4 := false
-			hasIPv6 := false
+		hasIPv4 := false
+		hasIPv6 := false
 
-			for _, nic := range *data.Result {
-				// skip the loopback interface
-				if nic.Name == "lo" {
-					continue
-				}
-
-				// skip the interface if it has no IP addresses
-				if nic.IPAddresses == nil ||
-					(nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
-					continue
-				}
-
-				// check for valid global unicast addresses
-				for _, addr := range *nic.IPAddresses {
-					if !ip.IsValidGlobalUnicast(addr.Address) {
-						continue
-					}
-
-					if ip.IsIPv4(addr.Address) {
-						hasIPv4 = true
-					} else if ip.IsIPv6(addr.Address) {
-						hasIPv6 = true
-					}
-				}
-			}
-
-			// if config is nil, wait for any IP (backward compatibility)
-			if waitForIPConfig == nil {
-				if hasIPv4 || hasIPv6 {
-					return data, err
-				}
-
-				time.Sleep(1 * time.Second)
-
+		for _, nic := range *data.Result {
+			// skip the loopback interface
+			if nic.Name == "lo" {
 				continue
 			}
 
-			// check if all required IP types are available
+			// skip the interface if it has no IP addresses
+			if nic.IPAddresses == nil || len(*nic.IPAddresses) == 0 {
+				continue
+			}
+
+			// check for valid global unicast addresses
+			for _, addr := range *nic.IPAddresses {
+				if !ip.IsValidGlobalUnicast(addr.Address) {
+					continue
+				}
+
+				if ip.IsIPv4(addr.Address) {
+					hasIPv4 = true
+				} else if ip.IsIPv6(addr.Address) {
+					hasIPv6 = true
+				}
+			}
+		}
+
+		// check if we have the required IP types
+		if waitForIPConfig == nil {
+			// backward compatibility: wait for any IP
+			if hasIPv4 || hasIPv6 {
+				return data, err
+			}
+		} else {
 			requiredIPv4 := waitForIPConfig.IPv4
 			requiredIPv6 := waitForIPConfig.IPv6
 
-			if requiredIPv4 && !hasIPv4 {
-				time.Sleep(1 * time.Second)
-				continue
-			}
-
-			if requiredIPv6 && !hasIPv6 {
-				time.Sleep(1 * time.Second)
-				continue
-			}
-
 			// if no specific requirements, wait for any IP (backward compatibility)
 			if !requiredIPv4 && !requiredIPv6 {
-				if !hasIPv4 && !hasIPv6 {
+				if hasIPv4 || hasIPv6 {
+					return data, err
+				}
+			} else {
+				// check if all required IP types are available
+				if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
 					time.Sleep(1 * time.Second)
 					continue
 				}
-			}
 
-			// all required IP types are available
-			return data, err
+				// all required IP types are available
+				return data, err
+			}
 		}
+
+		// we didn't get the required IPs, wait and continue
+		time.Sleep(1 * time.Second)
 
 		// we didn't get any interfaces or required IPs so tick ahead to keep looping
 	}
