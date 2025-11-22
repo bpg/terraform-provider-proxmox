@@ -676,6 +676,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 
 		// determine if we should continue waiting for an IP address
 		shouldWait := false
+
 		if waitForIPConfig == nil {
 			// backward compatibility: wait for any IP address if none are present
 			if !hasIPv4 && !hasIPv6 {
@@ -706,8 +707,6 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 
 		// if we reach here, either no waiting was required, or all required IPs are available
 		return data, err
-
-		// we didn't get any interfaces or required IPs so tick ahead to keep looping
 	}
 
 	return nil, fmt.Errorf(

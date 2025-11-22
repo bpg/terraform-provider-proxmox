@@ -40,6 +40,9 @@ resource "proxmox_virtual_environment_vm" "trunks-example" {
 
   agent {
     enabled = true
+    wait_for_ip {
+      ipv4 = true
+    }
   }
 
   serial_device {}
