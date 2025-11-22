@@ -211,7 +211,7 @@ func ReadNetworkValues(
 			var macAddresses []any
 
 			// pass nil for backward compatibility (wait for any IP)
-			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, int(agentTimeout.Seconds()), 5, waitForIPConfig)
+			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, agentTimeout, waitForIPConfig)
 			if err == nil && networkInterfaces.Result != nil {
 				ipv4Addresses = make([]any, len(*networkInterfaces.Result))
 				ipv6Addresses = make([]any, len(*networkInterfaces.Result))
