@@ -474,7 +474,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 
-	var byAttr map[string]interface{}
+	var byAttr map[string]any
 
 	// now get map by attribute name
 	err := json.Unmarshal(b, &byAttr)
@@ -530,12 +530,12 @@ func (b *UpdateRequestBody) ToDelete(fieldName string) error {
 		return errors.New("update request body is nil")
 	}
 
-	if field, ok := reflect.TypeOf(*b).FieldByName(fieldName); ok {
+	if field, ok := reflect.TypeFor[UpdateRequestBody]().FieldByName(fieldName); ok {
 		fieldTag := field.Tag.Get("url")
 		name := strings.Split(fieldTag, ",")[0]
 		b.Delete = append(b.Delete, name)
 	} else {
-		return fmt.Errorf("field %s not found in struct %s", fieldName, reflect.TypeOf(b).Name())
+		return fmt.Errorf("field %s not found in struct %s", fieldName, reflect.TypeFor[*UpdateRequestBody]().Name())
 	}
 
 	return nil

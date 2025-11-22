@@ -58,7 +58,7 @@ func read(ctx context.Context, client proxmox.Client, model *Model, diags *diag.
 	config, err := vmAPI.GetVM(ctx)
 	if err != nil {
 		if errors.Is(err, api.ErrResourceDoesNotExist) {
-			tflog.Info(ctx, "VM does not exist, removing from the state", map[string]interface{}{
+			tflog.Info(ctx, "VM does not exist, removing from the state", map[string]any{
 				"vm_id": vmAPI.VMID,
 			})
 		} else {

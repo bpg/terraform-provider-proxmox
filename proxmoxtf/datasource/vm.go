@@ -71,7 +71,7 @@ func VM() *schema.Resource {
 }
 
 // vmRead reads the data of a VM by ID.
-func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func vmRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -111,7 +111,7 @@ func vmRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Dia
 	var tags []string
 
 	if vmStatus.Tags != nil {
-		for _, tag := range strings.Split(*vmStatus.Tags, ";") {
+		for tag := range strings.SplitSeq(*vmStatus.Tags, ";") {
 			t := strings.TrimSpace(tag)
 			if len(t) > 0 {
 				tags = append(tags, t)

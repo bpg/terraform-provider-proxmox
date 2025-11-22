@@ -22,11 +22,11 @@ import (
 
 // GetNetworkDeviceObjects returns a list of network devices from the resource data.
 func GetNetworkDeviceObjects(d *schema.ResourceData) (vms.CustomNetworkDevices, error) {
-	networkDevice := d.Get(MkNetworkDevice).([]interface{})
+	networkDevice := d.Get(MkNetworkDevice).([]any)
 	networkDeviceObjects := make(vms.CustomNetworkDevices, len(networkDevice))
 
 	for i, networkDeviceEntry := range networkDevice {
-		block := networkDeviceEntry.(map[string]interface{})
+		block := networkDeviceEntry.(map[string]any)
 
 		bridge := block[mkNetworkDeviceBridge].(string)
 		disconnected := types.CustomBool(block[mkNetworkDeviceDisconnected].(bool))
@@ -109,8 +109,8 @@ func valueOrDefault[T any](v *T, def T) T {
 func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseData) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	macAddresses := make([]interface{}, 0)
-	networkDevices := make([]interface{}, 0)
+	macAddresses := make([]any, 0)
+	networkDevices := make([]any, 0)
 
 	networkDeviceObjects := []*vms.CustomNetworkDevice{
 		vmConfig.NetworkDevice0,
@@ -157,7 +157,7 @@ func ReadNetworkDeviceObjects(d *schema.ResourceData, vmConfig *vms.GetResponseD
 			networkDevices = append(networkDevices, nil)
 			macAddresses = append(macAddresses, "")
 		} else {
-			networkDevices = append(networkDevices, map[string]interface{}{
+			networkDevices = append(networkDevices, map[string]any{
 				mkNetworkDeviceBridge:       valueOrDefault(netDevice.Bridge, ""),
 				mkNetworkDeviceEnabled:      netDevice.Enabled,
 				mkNetworkDeviceDisconnected: valueOrDefault(netDevice.LinkDown, false),
@@ -199,27 +199,27 @@ func ReadNetworkValues(
 ) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	var ipv4Addresses []interface{}
+	var ipv4Addresses []any
 
-	var ipv6Addresses []interface{}
+	var ipv6Addresses []any
 
-	var networkInterfaceNames []interface{}
+	var networkInterfaceNames []any
 
 	if started {
 		if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil && *vmConfig.Agent.Enabled {
-			var macAddresses []interface{}
+			var macAddresses []any
 
 			networkInterfaces, err := vmAPI.WaitForNetworkInterfacesFromVMAgent(ctx, int(agentTimeout.Seconds()), 5, true)
 			if err == nil && networkInterfaces.Result != nil {
-				ipv4Addresses = make([]interface{}, len(*networkInterfaces.Result))
-				ipv6Addresses = make([]interface{}, len(*networkInterfaces.Result))
-				macAddresses = make([]interface{}, len(*networkInterfaces.Result))
-				networkInterfaceNames = make([]interface{}, len(*networkInterfaces.Result))
+				ipv4Addresses = make([]any, len(*networkInterfaces.Result))
+				ipv6Addresses = make([]any, len(*networkInterfaces.Result))
+				macAddresses = make([]any, len(*networkInterfaces.Result))
+				networkInterfaceNames = make([]any, len(*networkInterfaces.Result))
 
 				for ri, rv := range *networkInterfaces.Result {
-					var rvIPv4Addresses []interface{}
+					var rvIPv4Addresses []any
 
-					var rvIPv6Addresses []interface{}
+					var rvIPv6Addresses []any
 
 					if rv.IPAddresses != nil {
 						for _, ip := range *rv.IPAddresses {

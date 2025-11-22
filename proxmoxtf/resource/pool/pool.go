@@ -88,7 +88,7 @@ func Pool() *schema.Resource {
 		UpdateContext: poolUpdate,
 		DeleteContext: poolDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				d.SetId(d.Id())
 
 				err := d.Set(mkResourceVirtualEnvironmentPoolPoolID, d.Id())
@@ -102,7 +102,7 @@ func Pool() *schema.Resource {
 	}
 }
 
-func poolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func poolCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -128,7 +128,7 @@ func poolCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return poolRead(ctx, d, m)
 }
 
-func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func poolRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -187,7 +187,7 @@ func poolRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return diags
 }
 
-func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func poolUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -210,7 +210,7 @@ func poolUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return poolRead(ctx, d, m)
 }
 
-func poolDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func poolDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()

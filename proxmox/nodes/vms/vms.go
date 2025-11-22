@@ -117,7 +117,7 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(false),
 		retry.OnRetry(func(n uint, err error) {
-			tflog.Warn(ctx, "retrying VM creation", map[string]interface{}{
+			tflog.Warn(ctx, "retrying VM creation", map[string]any{
 				"attempt": n,
 				"error":   err.Error(),
 			})
@@ -465,7 +465,7 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) 
 	if err != nil {
 		log, e := c.Tasks().GetTaskLog(ctx, *taskID)
 		if e != nil {
-			tflog.Error(ctx, "error retrieving task log", map[string]interface{}{
+			tflog.Error(ctx, "error retrieving task log", map[string]any{
 				"task_id": *taskID,
 				"error":   e.Error(),
 			})

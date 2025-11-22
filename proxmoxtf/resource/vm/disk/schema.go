@@ -61,9 +61,9 @@ func Schema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Description: "The disk devices",
 			Optional:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{
-					map[string]interface{}{
+			DefaultFunc: func() (any, error) {
+				return []any{
+					map[string]any{
 						mkDiskAIO:             dvDiskAIO,
 						mkDiskBackup:          true,
 						mkDiskCache:           dvDiskCache,
@@ -204,9 +204,9 @@ func Schema() map[string]*schema.Schema {
 						Type:        schema.TypeList,
 						Description: "The speed limits",
 						Optional:    true,
-						DefaultFunc: func() (interface{}, error) {
-							return []interface{}{
-								map[string]interface{}{
+						DefaultFunc: func() (any, error) {
+							return []any{
+								map[string]any{
 									mkDiskIopsRead:            0,
 									mkDiskIopsWrite:           0,
 									mkDiskIopsReadBurstable:   0,

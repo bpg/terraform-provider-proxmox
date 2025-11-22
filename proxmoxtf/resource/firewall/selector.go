@@ -58,7 +58,7 @@ func selectorSchemaMandatory() map[string]*schema.Schema {
 	return s
 }
 
-func firewallApiFor(d *schema.ResourceData, m interface{}) (firewall.API, error) {
+func firewallApiFor(d *schema.ResourceData, m any) (firewall.API, error) {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()
@@ -85,8 +85,8 @@ func firewallApiFor(d *schema.ResourceData, m interface{}) (firewall.API, error)
 
 func selectFirewallAPI(
 	f func(context.Context, firewall.API, *schema.ResourceData) diag.Diagnostics,
-) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
-	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+) func(context.Context, *schema.ResourceData, any) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 		fwAPI, err := firewallApiFor(d, m)
 		if err != nil {
 			return diag.FromErr(err)

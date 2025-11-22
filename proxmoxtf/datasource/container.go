@@ -71,7 +71,7 @@ func Container() *schema.Resource {
 }
 
 // containerRead reads the data of a Container by ID.
-func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -111,7 +111,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	var tags []string
 
 	if containerStatus.Tags != nil {
-		for _, tag := range strings.Split(*containerStatus.Tags, ";") {
+		for tag := range strings.SplitSeq(*containerStatus.Tags, ";") {
 			t := strings.TrimSpace(tag)
 			if len(t) > 0 {
 				tags = append(tags, t)

@@ -39,7 +39,7 @@ type Client interface {
 	DoRequest(
 		ctx context.Context,
 		method, path string,
-		requestBody, responseBody interface{},
+		requestBody, responseBody any,
 	) error
 
 	// ExpandPath expands a path relative to the client's base path.
@@ -150,7 +150,7 @@ func NewClient(creds Credentials, conn *Connection) (Client, error) {
 func (c *client) DoRequest(
 	ctx context.Context,
 	method, path string,
-	requestBody, responseBody interface{},
+	requestBody, responseBody any,
 ) error {
 	var reqBodyReader io.Reader
 
@@ -296,7 +296,7 @@ func (c *client) DoRequest(
 				}
 			}
 
-			tflog.Warn(ctx, "unhandled HTTP response body", map[string]interface{}{
+			tflog.Warn(ctx, "unhandled HTTP response body", map[string]any{
 				"data": dr.Data,
 			})
 		}
@@ -306,7 +306,7 @@ func (c *client) DoRequest(
 }
 
 type dataResponse struct {
-	Data interface{} `json:"data"`
+	Data any `json:"data"`
 }
 
 // ExpandPath expands the given path to an absolute path.

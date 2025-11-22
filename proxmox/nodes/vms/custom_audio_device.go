@@ -44,9 +44,9 @@ func (r *CustomAudioDevice) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("error unmarshalling CustomAudioDevice: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 2 {

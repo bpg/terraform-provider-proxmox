@@ -200,8 +200,8 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The cloning configuration",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
+				DefaultFunc: func() (any, error) {
+					return []any{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -235,9 +235,9 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The console configuration",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
+				DefaultFunc: func() (any, error) {
+					return []any{
+						map[string]any{
 							mkConsoleEnabled:  dvConsoleEnabled,
 							mkConsoleMode:     dvConsoleMode,
 							mkConsoleTTYCount: dvConsoleTTYCount,
@@ -275,9 +275,9 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The CPU allocation",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
+				DefaultFunc: func() (any, error) {
+					return []any{
+						map[string]any{
 							mkCPUArchitecture: dvCPUArchitecture,
 							mkCPUCores:        dvCPUCores,
 							mkCPUUnits:        dvCPUUnits,
@@ -319,7 +319,7 @@ func Container() *schema.Resource {
 				Description: "The description",
 				Optional:    true,
 				Default:     dvDescription,
-				StateFunc: func(i interface{}) string {
+				StateFunc: func(i any) string {
 					// PVE always adds a newline to the description, so we have to do the same,
 					// also taking in account the CLRF case (Windows)
 					if i.(string) != "" {
@@ -334,9 +334,9 @@ func Container() *schema.Resource {
 				Description: "The disks",
 				Optional:    true,
 				ForceNew:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
+				DefaultFunc: func() (any, error) {
+					return []any{
+						map[string]any{
 							mkDiskDatastoreID:  dvDiskDatastoreID,
 							mkDiskSize:         dvDiskSize,
 							mkDiskMountOptions: nil,
@@ -398,13 +398,13 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "Features",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
+				DefaultFunc: func() (any, error) {
+					return []any{
+						map[string]any{
 							mkFeaturesNesting:    dvFeaturesNesting,
 							mkFeaturesKeyControl: dvFeaturesKeyControl,
 							mkFeaturesFUSE:       dvFeaturesFUSE,
-							mkFeaturesMountTypes: []interface{}{},
+							mkFeaturesMountTypes: []any{},
 						},
 					}, nil
 				},
@@ -452,8 +452,8 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The initialization configuration",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{}, nil
+				DefaultFunc: func() (any, error) {
+					return []any{}, nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -461,8 +461,8 @@ func Container() *schema.Resource {
 							Type:        schema.TypeList,
 							Description: "The DNS configuration",
 							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
+							DefaultFunc: func() (any, error) {
+								return []any{}, nil
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -502,8 +502,8 @@ func Container() *schema.Resource {
 							Type:        schema.TypeList,
 							Description: "The IP configuration",
 							Optional:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
+							DefaultFunc: func() (any, error) {
+								return []any{}, nil
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -511,8 +511,8 @@ func Container() *schema.Resource {
 										Type:        schema.TypeList,
 										Description: "The IPv4 configuration",
 										Optional:    true,
-										DefaultFunc: func() (interface{}, error) {
-											return []interface{}{}, nil
+										DefaultFunc: func() (any, error) {
+											return []any{}, nil
 										},
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
@@ -537,8 +537,8 @@ func Container() *schema.Resource {
 										Type:        schema.TypeList,
 										Description: "The IPv6 configuration",
 										Optional:    true,
-										DefaultFunc: func() (interface{}, error) {
-											return []interface{}{}, nil
+										DefaultFunc: func() (any, error) {
+											return []any{}, nil
 										},
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
@@ -569,8 +569,8 @@ func Container() *schema.Resource {
 							Description: "The user account configuration",
 							Optional:    true,
 							ForceNew:    true,
-							DefaultFunc: func() (interface{}, error) {
-								return []interface{}{}, nil
+							DefaultFunc: func() (any, error) {
+								return []any{}, nil
 							},
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -579,8 +579,8 @@ func Container() *schema.Resource {
 										Description: "The SSH keys",
 										Optional:    true,
 										ForceNew:    true,
-										DefaultFunc: func() (interface{}, error) {
-											return []interface{}{}, nil
+										DefaultFunc: func() (any, error) {
+											return []any{}, nil
 										},
 										Elem: &schema.Schema{Type: schema.TypeString},
 									},
@@ -626,9 +626,9 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The memory allocation",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
+				DefaultFunc: func() (any, error) {
+					return []any{
+						map[string]any{
 							mkMemoryDedicated: dvMemoryDedicated,
 							mkMemorySwap:      dvMemorySwap,
 						},
@@ -792,8 +792,8 @@ func Container() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "The network interfaces",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return make([]interface{}, 1), nil
+				DefaultFunc: func() (any, error) {
+					return make([]any, 1), nil
 				},
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -1019,7 +1019,7 @@ func Container() *schema.Resource {
 		CustomizeDiff: customdiff.All(
 			customdiff.ForceNewIf(
 				mkVMID,
-				func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
 					newValue := d.Get(mkVMID)
 
 					// 'vm_id' is ForceNew, except when changing 'vm_id' to existing correct id
@@ -1029,7 +1029,7 @@ func Container() *schema.Resource {
 			),
 		),
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				node, id, err := parseImportIDWithNodeName(d.Id())
 				if err != nil {
 					return nil, err
@@ -1048,8 +1048,8 @@ func Container() *schema.Resource {
 	}
 }
 
-func containerCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
-	clone := d.Get(mkClone).([]interface{})
+func containerCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+	clone := d.Get(mkClone).([]any)
 
 	if len(clone) > 0 {
 		return containerCreateClone(ctx, d, m)
@@ -1058,7 +1058,7 @@ func containerCreate(ctx context.Context, d *schema.ResourceData, m interface{})
 	return containerCreateCustom(ctx, d, m)
 }
 
-func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func containerCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	cloneTimeoutSec := d.Get(mkTimeoutClone).(int)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(cloneTimeoutSec)*time.Second)
@@ -1071,25 +1071,25 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		return diag.FromErr(err)
 	}
 
-	clone := d.Get(mkClone).([]interface{})
-	cloneBlock := clone[0].(map[string]interface{})
+	clone := d.Get(mkClone).([]any)
+	cloneBlock := clone[0].(map[string]any)
 	cloneDatastoreID := cloneBlock[mkCloneDatastoreID].(string)
 	cloneNodeName := cloneBlock[mkCloneNodeName].(string)
 	cloneVMID := cloneBlock[mkCloneVMID].(int)
 
 	description := d.Get(mkDescription).(string)
 
-	initialization := d.Get(mkInitialization).([]interface{})
+	initialization := d.Get(mkInitialization).([]any)
 	initializationHostname := ""
 
 	if len(initialization) > 0 && initialization[0] != nil {
-		initializationBlock := initialization[0].(map[string]interface{})
+		initializationBlock := initialization[0].(map[string]any)
 		initializationHostname = initializationBlock[mkInitializationHostname].(string)
 	}
 
 	nodeName := d.Get(mkNodeName).(string)
 	poolID := d.Get(mkPoolID).(string)
-	tags := d.Get(mkTags).([]interface{})
+	tags := d.Get(mkTags).([]any)
 	vmIDUntyped, hasVMID := d.GetOk(mkVMID)
 	vmID := vmIDUntyped.(int)
 
@@ -1157,10 +1157,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	updateBody.StartupBehavior = containerGetStartupBehavior(d)
 
-	console := d.Get(mkConsole).([]interface{})
+	console := d.Get(mkConsole).([]any)
 
 	if len(console) > 0 && console[0] != nil {
-		consoleBlock := console[0].(map[string]interface{})
+		consoleBlock := console[0].(map[string]any)
 
 		consoleEnabled := types.CustomBool(
 			consoleBlock[mkConsoleEnabled].(bool),
@@ -1173,10 +1173,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.TTY = &consoleTTYCount
 	}
 
-	cpu := d.Get(mkCPU).([]interface{})
+	cpu := d.Get(mkCPU).([]any)
 
 	if len(cpu) > 0 && cpu[0] != nil {
-		cpuBlock := cpu[0].(map[string]interface{})
+		cpuBlock := cpu[0].(map[string]any)
 
 		cpuArchitecture := cpuBlock[mkCPUArchitecture].(string)
 		cpuCores := cpuBlock[mkCPUCores].(int)
@@ -1202,18 +1202,18 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	var initializationIPConfigIPv6Gateway []string
 
 	if len(initialization) > 0 && initialization[0] != nil {
-		initializationBlock := initialization[0].(map[string]interface{})
-		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
+		initializationBlock := initialization[0].(map[string]any)
+		initializationDNS := initializationBlock[mkInitializationDNS].([]any)
 
 		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
-			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
+			initializationDNSBlock := initializationDNS[0].(map[string]any)
 
 			initializationDNSDomain := initializationDNSBlock[mkInitializationDNSDomain].(string)
 			if initializationDNSDomain != "" {
 				updateBody.DNSDomain = &initializationDNSDomain
 			}
 
-			servers := initializationDNSBlock[mkInitializationDNSServers].([]interface{})
+			servers := initializationDNSBlock[mkInitializationDNSServers].([]any)
 			deprecatedServer := initializationDNSBlock[mkInitializationDNSServer].(string)
 
 			if len(servers) > 0 {
@@ -1231,18 +1231,18 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 			updateBody.Hostname = &initializationHostname
 		}
 
-		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]interface{})
+		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]any)
 
 		for _, c := range initializationIPConfig {
 			if c == nil {
 				continue
 			}
 
-			configBlock := c.(map[string]interface{})
-			ipv4 := configBlock[mkInitializationIPConfigIPv4].([]interface{})
+			configBlock := c.(map[string]any)
+			ipv4 := configBlock[mkInitializationIPConfigIPv4].([]any)
 
 			if len(ipv4) > 0 && ipv4[0] != nil {
-				ipv4Block := ipv4[0].(map[string]interface{})
+				ipv4Block := ipv4[0].(map[string]any)
 
 				initializationIPConfigIPv4Address = append(
 					initializationIPConfigIPv4Address,
@@ -1258,10 +1258,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
 			}
 
-			ipv6 := configBlock[mkInitializationIPConfigIPv6].([]interface{})
+			ipv6 := configBlock[mkInitializationIPConfigIPv6].([]any)
 
 			if len(ipv6) > 0 && ipv6[0] != nil {
-				ipv6Block := ipv6[0].(map[string]interface{})
+				ipv6Block := ipv6[0].(map[string]any)
 
 				initializationIPConfigIPv6Address = append(
 					initializationIPConfigIPv6Address,
@@ -1278,11 +1278,11 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 			}
 		}
 
-		initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]interface{})
+		initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]any)
 
 		if len(initializationUserAccount) > 0 && initializationUserAccount[0] != nil {
-			initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
-			keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]interface{})
+			initializationUserAccountBlock := initializationUserAccount[0].(map[string]any)
+			keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]any)
 
 			if len(keys) > 0 {
 				initializationUserAccountKeys := make(
@@ -1309,10 +1309,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		}
 	}
 
-	memory := d.Get(mkMemory).([]interface{})
+	memory := d.Get(mkMemory).([]any)
 
 	if len(memory) > 0 && memory[0] != nil {
-		memoryBlock := memory[0].(map[string]interface{})
+		memoryBlock := memory[0].(map[string]any)
 
 		memoryDedicated := memoryBlock[mkMemoryDedicated].(int)
 		memorySwap := memoryBlock[mkMemorySwap].(int)
@@ -1321,7 +1321,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.Swap = &memorySwap
 	}
 
-	devicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
+	devicePassthrough := d.Get(mkDevicePassthrough).([]any)
 
 	passthroughDevices := make(
 		containers.CustomPassthroughDevices,
@@ -1329,7 +1329,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	)
 
 	for di, dv := range devicePassthrough {
-		devicePassthroughMap := dv.(map[string]interface{})
+		devicePassthroughMap := dv.(map[string]any)
 		devicePassthroughObject := containers.CustomPassthroughDevice{}
 
 		denyWrite := types.CustomBool(
@@ -1351,7 +1351,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 
 	updateBody.PassthroughDevices = passthroughDevices
 
-	networkInterface := d.Get(mkNetworkInterface).([]interface{})
+	networkInterface := d.Get(mkNetworkInterface).([]any)
 
 	if len(networkInterface) == 0 {
 		networkInterface, err = containerGetExistingNetworkInterface(ctx, containerAPI)
@@ -1366,7 +1366,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	)
 
 	for ni, nv := range networkInterface {
-		networkInterfaceMap := nv.(map[string]interface{})
+		networkInterfaceMap := nv.(map[string]any)
 		networkInterfaceObject := containers.CustomNetworkInterface{}
 
 		bridge := networkInterfaceMap[mkNetworkInterfaceBridge].(string)
@@ -1438,10 +1438,10 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 		updateBody.Delete = append(updateBody.Delete, fmt.Sprintf("net%d", i))
 	}
 
-	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
+	operatingSystem := d.Get(mkOperatingSystem).([]any)
 
 	if len(operatingSystem) > 0 && operatingSystem[0] != nil {
-		operatingSystemBlock := operatingSystem[0].(map[string]interface{})
+		operatingSystemBlock := operatingSystem[0].(map[string]any)
 
 		operatingSystemTemplateFileID := operatingSystemBlock[mkOperatingSystemTemplateFileID].(string)
 		operatingSystemType := operatingSystemBlock[mkOperatingSystemType].(string)
@@ -1475,7 +1475,7 @@ func containerCreateClone(ctx context.Context, d *schema.ResourceData, m interfa
 	return containerCreateStart(ctx, d, m)
 }
 
-func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	createTimeoutSec := d.Get(mkTimeoutCreate).(int)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(createTimeoutSec)*time.Second)
@@ -1562,7 +1562,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 
 	hookScript := d.Get(mkHookScriptFileID).(string)
 
-	initialization := d.Get(mkInitialization).([]interface{})
+	initialization := d.Get(mkInitialization).([]any)
 	initializationDNSDomain := dvInitializationDNSDomain
 	initializationDNSServer := dvInitializationDNSServer
 	initializationHostname := dvInitializationHostname
@@ -1579,14 +1579,14 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	initializationUserAccountPassword := dvInitializationUserAccountPassword
 
 	if len(initialization) > 0 && initialization[0] != nil {
-		initializationBlock := initialization[0].(map[string]interface{})
-		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
+		initializationBlock := initialization[0].(map[string]any)
+		initializationDNS := initializationBlock[mkInitializationDNS].([]any)
 
 		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
-			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
+			initializationDNSBlock := initializationDNS[0].(map[string]any)
 			initializationDNSDomain = initializationDNSBlock[mkInitializationDNSDomain].(string)
 
-			servers := initializationDNSBlock[mkInitializationDNSServers].([]interface{})
+			servers := initializationDNSBlock[mkInitializationDNSServers].([]any)
 			deprecatedServer := initializationDNSBlock[mkInitializationDNSServer].(string)
 
 			if len(servers) > 0 {
@@ -1599,18 +1599,18 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 
 		initializationHostname = initializationBlock[mkInitializationHostname].(string)
-		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]interface{})
+		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]any)
 
 		for _, c := range initializationIPConfig {
 			if c == nil {
 				continue
 			}
 
-			configBlock := c.(map[string]interface{})
-			ipv4 := configBlock[mkInitializationIPConfigIPv4].([]interface{})
+			configBlock := c.(map[string]any)
+			ipv4 := configBlock[mkInitializationIPConfigIPv4].([]any)
 
 			if len(ipv4) > 0 && ipv4[0] != nil {
-				ipv4Block := ipv4[0].(map[string]interface{})
+				ipv4Block := ipv4[0].(map[string]any)
 
 				initializationIPConfigIPv4Address = append(
 					initializationIPConfigIPv4Address,
@@ -1626,10 +1626,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
 			}
 
-			ipv6 := configBlock[mkInitializationIPConfigIPv6].([]interface{})
+			ipv6 := configBlock[mkInitializationIPConfigIPv6].([]any)
 
 			if len(ipv6) > 0 && ipv6[0] != nil {
-				ipv6Block := ipv6[0].(map[string]interface{})
+				ipv6Block := ipv6[0].(map[string]any)
 
 				initializationIPConfigIPv6Address = append(
 					initializationIPConfigIPv6Address,
@@ -1646,12 +1646,12 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 			}
 		}
 
-		initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]interface{})
+		initializationUserAccount := initializationBlock[mkInitializationUserAccount].([]any)
 
 		if len(initializationUserAccount) > 0 && initializationUserAccount[0] != nil {
-			initializationUserAccountBlock := initializationUserAccount[0].(map[string]interface{})
+			initializationUserAccountBlock := initializationUserAccount[0].(map[string]any)
 
-			keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]interface{})
+			keys := initializationUserAccountBlock[mkInitializationUserAccountKeys].([]any)
 			initializationUserAccountKeys = make(
 				containers.CustomSSHKeys,
 				len(keys),
@@ -1679,18 +1679,18 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	memoryDedicated := memoryBlock[mkMemoryDedicated].(int)
 	memorySwap := memoryBlock[mkMemorySwap].(int)
 
-	mountPoint := d.Get(mkMountPoint).([]interface{})
+	mountPoint := d.Get(mkMountPoint).([]any)
 	mountPoints := make(containers.CustomMountPoints, len(mountPoint))
 
 	// because of default bool values:
 
 	for mi, mp := range mountPoint {
-		mountPointMap := mp.(map[string]interface{})
+		mountPointMap := mp.(map[string]any)
 		mountPointObject := containers.CustomMountPoint{}
 
 		acl := types.CustomBool(mountPointMap[mkMountPointACL].(bool))
 		backup := types.CustomBool(mountPointMap[mkMountPointBackup].(bool))
-		mountOptions := mountPointMap[mkMountPointMountOptions].([]interface{})
+		mountOptions := mountPointMap[mkMountPointMountOptions].([]any)
 		path := mountPointMap[mkMountPointPath].(string)
 		quota := types.CustomBool(mountPointMap[mkMountPointQuota].(bool))
 		readOnly := types.CustomBool(mountPointMap[mkMountPointReadOnly].(bool))
@@ -1774,11 +1774,11 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		}
 	}
 
-	networkInterface := d.Get(mkNetworkInterface).([]interface{})
+	networkInterface := d.Get(mkNetworkInterface).([]any)
 	networkInterfaces := make(containers.CustomNetworkInterfaces, len(networkInterface))
 
 	for ni, nv := range networkInterface {
-		networkInterfaceMap := nv.(map[string]interface{})
+		networkInterfaceMap := nv.(map[string]any)
 		networkInterfaceObject := containers.CustomNetworkInterface{}
 
 		bridge := networkInterfaceMap[mkNetworkInterfaceBridge].(string)
@@ -1838,7 +1838,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		networkInterfaces[fmt.Sprintf("net%d", ni)] = &networkInterfaceObject
 	}
 
-	devicePassthrough := d.Get(mkDevicePassthrough).([]interface{})
+	devicePassthrough := d.Get(mkDevicePassthrough).([]any)
 
 	passthroughDevices := make(
 		containers.CustomPassthroughDevices,
@@ -1846,7 +1846,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	)
 
 	for di, dv := range devicePassthrough {
-		devicePassthroughMap := dv.(map[string]interface{})
+		devicePassthroughMap := dv.(map[string]any)
 		devicePassthroughObject := containers.CustomPassthroughDevice{}
 
 		denyWrite := types.CustomBool(
@@ -1866,7 +1866,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		passthroughDevices[fmt.Sprintf("dev%d", di)] = &devicePassthroughObject
 	}
 
-	operatingSystem := d.Get(mkOperatingSystem).([]interface{})
+	operatingSystem := d.Get(mkOperatingSystem).([]any)
 
 	if len(operatingSystem) == 0 || operatingSystem[0] == nil {
 		return diag.Errorf(
@@ -1875,7 +1875,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 		)
 	}
 
-	operatingSystemBlock := operatingSystem[0].(map[string]interface{})
+	operatingSystemBlock := operatingSystem[0].(map[string]any)
 	operatingSystemTemplateFileID := operatingSystemBlock[mkOperatingSystemTemplateFileID].(string)
 	operatingSystemType := operatingSystemBlock[mkOperatingSystemType].(string)
 
@@ -1884,7 +1884,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	started := types.CustomBool(d.Get(mkStarted).(bool))
 	startOnBoot := types.CustomBool(d.Get(mkStartOnBoot).(bool))
 	startupBehavior := containerGetStartupBehavior(d)
-	tags := d.Get(mkTags).([]interface{})
+	tags := d.Get(mkTags).([]any)
 	template := types.CustomBool(d.Get(mkTemplate).(bool))
 	unprivileged := types.CustomBool(d.Get(mkUnprivileged).(bool))
 
@@ -1962,7 +1962,7 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m interf
 	return containerCreateStart(ctx, d, m)
 }
 
-func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	started := d.Get(mkStarted).(bool)
 	template := d.Get(mkTemplate).(bool)
 
@@ -1999,16 +1999,16 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m interfa
 func containerGetExistingNetworkInterface(
 	ctx context.Context,
 	containerAPI *containers.Client,
-) ([]interface{}, error) {
+) ([]any, error) {
 	containerInfo, err := containerAPI.GetContainer(ctx)
 	if err != nil {
-		return []interface{}{}, fmt.Errorf("error getting container information: %w", err)
+		return []any{}, fmt.Errorf("error getting container information: %w", err)
 	}
 
-	networkInterfacesMap := make(map[string]interface{}, len(containerInfo.NetworkInterfaces))
+	networkInterfacesMap := make(map[string]any, len(containerInfo.NetworkInterfaces))
 
 	for key, nv := range containerInfo.NetworkInterfaces {
-		networkInterface := map[string]interface{}{}
+		networkInterface := map[string]any{}
 
 		networkInterface[mkNetworkInterfaceEnabled] = true
 		networkInterface[mkNetworkInterfaceName] = nv.Name // "eth0", "eth1", etc, same as the `key`
@@ -2058,7 +2058,7 @@ func containerGetExistingNetworkInterface(
 func containerGetTagsString(d *schema.ResourceData) string {
 	var sanitizedTags []string
 
-	tags := d.Get(mkTags).([]interface{})
+	tags := d.Get(mkTags).([]any)
 	for _, tag := range tags {
 		sanitizedTag := strings.TrimSpace(tag.(string))
 		if len(sanitizedTag) > 0 {
@@ -2072,9 +2072,9 @@ func containerGetTagsString(d *schema.ResourceData) string {
 }
 
 func containerGetStartupBehavior(d *schema.ResourceData) *containers.CustomStartupBehavior {
-	startup := d.Get(mkStartup).([]interface{})
+	startup := d.Get(mkStartup).([]any)
 	if len(startup) > 0 && startup[0] != nil {
-		startupBlock := startup[0].(map[string]interface{})
+		startupBlock := startup[0].(map[string]any)
 		startupOrder := startupBlock[mkStartupOrder].(int)
 		startupUpDelay := startupBlock[mkStartupUpDelay].(int)
 		startupDownDelay := startupBlock[mkStartupDownDelay].(int)
@@ -2114,7 +2114,7 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 	nesting := types.CustomBool(featuresBlock[mkFeaturesNesting].(bool))
 	keyctl := types.CustomBool(featuresBlock[mkFeaturesKeyControl].(bool))
 	fuse := types.CustomBool(featuresBlock[mkFeaturesFUSE].(bool))
-	mountTypes := featuresBlock[mkFeaturesMountTypes].([]interface{})
+	mountTypes := featuresBlock[mkFeaturesMountTypes].([]any)
 
 	var mountTypesConverted []string
 	if mountTypes != nil {
@@ -2145,7 +2145,7 @@ func containerGetFeatures(resource *schema.Resource, d *schema.ResourceData) (*c
 	return &features, nil
 }
 
-func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -2189,7 +2189,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	clone := d.Get(mkClone).([]interface{})
+	clone := d.Get(mkClone).([]any)
 
 	// Compare the primitive values to those stored in the state.
 	currentDescription := d.Get(mkDescription).(string)
@@ -2205,7 +2205,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	// Compare the console configuration to the one stored in the state.
-	console := map[string]interface{}{}
+	console := map[string]any{}
 
 	if containerConfig.ConsoleEnabled != nil {
 		console[mkConsoleEnabled] = *containerConfig.ConsoleEnabled
@@ -2228,23 +2228,23 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		console[mkConsoleTTYCount] = 2
 	}
 
-	currentConsole := d.Get(mkConsole).([]interface{})
+	currentConsole := d.Get(mkConsole).([]any)
 
 	if len(clone) > 0 {
 		if len(currentConsole) > 0 {
-			err := d.Set(mkConsole, []interface{}{console})
+			err := d.Set(mkConsole, []any{console})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentConsole) > 0 ||
 		console[mkConsoleEnabled] != types.CustomBool(dvConsoleEnabled) ||
 		console[mkConsoleMode] != dvConsoleMode ||
 		console[mkConsoleTTYCount] != dvConsoleTTYCount {
-		err := d.Set(mkConsole, []interface{}{console})
+		err := d.Set(mkConsole, []any{console})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the CPU configuration to the one stored in the state.
-	cpu := map[string]interface{}{}
+	cpu := map[string]any{}
 
 	if containerConfig.CPUArchitecture != nil {
 		cpu[mkCPUArchitecture] = *containerConfig.CPUArchitecture
@@ -2267,23 +2267,23 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		cpu[mkCPUUnits] = 1024
 	}
 
-	currentCPU := d.Get(mkCPU).([]interface{})
+	currentCPU := d.Get(mkCPU).([]any)
 
 	if len(clone) > 0 {
 		if len(currentCPU) > 0 {
-			err := d.Set(mkCPU, []interface{}{cpu})
+			err := d.Set(mkCPU, []any{cpu})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentCPU) > 0 ||
 		cpu[mkCPUArchitecture] != dvCPUArchitecture ||
 		cpu[mkCPUCores] != dvCPUCores ||
 		cpu[mkCPUUnits] != dvCPUUnits {
-		err := d.Set(mkCPU, []interface{}{cpu})
+		err := d.Set(mkCPU, []any{cpu})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the disk configuration to the one stored in the state.
-	disk := map[string]interface{}{}
+	disk := map[string]any{}
 
 	if containerConfig.RootFS != nil {
 		volumeParts := strings.Split(containerConfig.RootFS.Volume, ":")
@@ -2305,16 +2305,16 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		disk[mkDiskMountOptions] = []string{}
 	}
 
-	currentDisk := d.Get(mkDisk).([]interface{})
+	currentDisk := d.Get(mkDisk).([]any)
 
 	if len(clone) > 0 {
 		if len(currentDisk) > 0 && currentDisk[0] != nil {
 			// do not override the rootfs size if it was not changed during the clone operation
-			if currentDisk[0].(map[string]interface{})[mkDiskSize] == dvDiskSize {
+			if currentDisk[0].(map[string]any)[mkDiskSize] == dvDiskSize {
 				disk[mkDiskSize] = dvDiskSize
 			}
 
-			err := d.Set(mkDisk, []interface{}{disk})
+			err := d.Set(mkDisk, []any{disk})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentDisk) > 0 ||
@@ -2323,12 +2323,12 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		disk[mkDiskReplicate] != dvDiskReplicate ||
 		disk[mkDiskQuota] != dvDiskQuota ||
 		len(disk[mkDiskMountOptions].([]string)) > 0 {
-		err := d.Set(mkDisk, []interface{}{disk})
+		err := d.Set(mkDisk, []any{disk})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the memory configuration to the one stored in the state.
-	memory := map[string]interface{}{}
+	memory := map[string]any{}
 
 	if containerConfig.DedicatedMemory != nil {
 		memory[mkMemoryDedicated] = *containerConfig.DedicatedMemory
@@ -2342,25 +2342,25 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		memory[mkMemorySwap] = 0
 	}
 
-	currentMemory := d.Get(mkMemory).([]interface{})
+	currentMemory := d.Get(mkMemory).([]any)
 
 	if len(clone) > 0 {
 		if len(currentMemory) > 0 {
-			err := d.Set(mkMemory, []interface{}{memory})
+			err := d.Set(mkMemory, []any{memory})
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentMemory) > 0 ||
 		memory[mkMemoryDedicated] != dvMemoryDedicated ||
 		memory[mkMemorySwap] != dvMemorySwap {
-		err := d.Set(mkMemory, []interface{}{memory})
+		err := d.Set(mkMemory, []any{memory})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the initialization and network interface configuration to the one stored in the state.
-	initialization := map[string]interface{}{}
+	initialization := map[string]any{}
 
 	if containerConfig.DNSDomain != nil || containerConfig.DNSServer != nil {
-		initializationDNS := map[string]interface{}{}
+		initializationDNS := map[string]any{}
 
 		if containerConfig.DNSDomain != nil {
 			initializationDNS[mkInitializationDNSDomain] = *containerConfig.DNSDomain
@@ -2369,15 +2369,15 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 
 		// check what we have in the plan
-		currentInitializationDNSBlock := map[string]interface{}{}
-		currentInitialization := d.Get(mkInitialization).([]interface{})
+		currentInitializationDNSBlock := map[string]any{}
+		currentInitialization := d.Get(mkInitialization).([]any)
 
 		if len(currentInitialization) > 0 && currentInitialization[0] != nil {
-			currentInitializationBlock := currentInitialization[0].(map[string]interface{})
-			currentInitializationDNS := currentInitializationBlock[mkInitializationDNS].([]interface{})
+			currentInitializationBlock := currentInitialization[0].(map[string]any)
+			currentInitializationDNS := currentInitializationBlock[mkInitializationDNS].([]any)
 
 			if len(currentInitializationDNS) > 0 && currentInitializationDNS[0] != nil {
-				currentInitializationDNSBlock = currentInitializationDNS[0].(map[string]interface{})
+				currentInitializationDNSBlock = currentInitializationDNS[0].(map[string]any)
 			}
 		}
 
@@ -2394,7 +2394,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 			initializationDNS[mkInitializationDNSServers] = []string{}
 		}
 
-		initialization[mkInitializationDNS] = []interface{}{
+		initialization[mkInitializationDNS] = []any{
 			initializationDNS,
 		}
 	}
@@ -2405,10 +2405,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		initialization[mkInitializationHostname] = ""
 	}
 
-	passthroughDevicesMap := make(map[string]interface{}, len(containerConfig.PassthroughDevices))
+	passthroughDevicesMap := make(map[string]any, len(containerConfig.PassthroughDevices))
 
 	for key, dp := range containerConfig.PassthroughDevices {
-		passthroughDevice := map[string]interface{}{}
+		passthroughDevice := map[string]any{}
 
 		if dp.DenyWrite != nil {
 			passthroughDevice[mkDevicePassthroughDenyWrite] = *dp.DenyWrite
@@ -2440,7 +2440,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	passthroughDevices := utils.OrderedListFromMap(passthroughDevicesMap)
-	currentPassthroughDevices := d.Get(mkDevicePassthrough).([]interface{})
+	currentPassthroughDevices := d.Get(mkDevicePassthrough).([]any)
 
 	if len(clone) > 0 {
 		if len(currentPassthroughDevices) > 0 {
@@ -2452,10 +2452,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	mountPointsMap := make(map[string]interface{}, len(containerConfig.MountPoints))
+	mountPointsMap := make(map[string]any, len(containerConfig.MountPoints))
 
 	for key, mp := range containerConfig.MountPoints {
-		mountPoint := map[string]interface{}{}
+		mountPoint := map[string]any{}
 
 		if mp.ACL != nil {
 			mountPoint[mkMountPointACL] = *mp.ACL
@@ -2513,7 +2513,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	mountPoints := utils.OrderedListFromMap(mountPointsMap)
-	currentMountPoints := d.Get(mkMountPoint).([]interface{})
+	currentMountPoints := d.Get(mkMountPoint).([]any)
 
 	if len(clone) > 0 {
 		if len(currentMountPoints) > 0 {
@@ -2525,16 +2525,16 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	ipConfigMap := make(map[string]interface{}, len(containerConfig.NetworkInterfaces))
-	networkInterfacesMap := make(map[string]interface{}, len(containerConfig.NetworkInterfaces))
+	ipConfigMap := make(map[string]any, len(containerConfig.NetworkInterfaces))
+	networkInterfacesMap := make(map[string]any, len(containerConfig.NetworkInterfaces))
 
 	for key, nv := range containerConfig.NetworkInterfaces {
 		if nv.IPv4Address != nil || nv.IPv4Gateway != nil || nv.IPv6Address != nil ||
 			nv.IPv6Gateway != nil {
-			ipConfig := map[string]interface{}{}
+			ipConfig := map[string]any{}
 
 			if nv.IPv4Address != nil || nv.IPv4Gateway != nil {
-				ip := map[string]interface{}{}
+				ip := map[string]any{}
 
 				if nv.IPv4Address != nil {
 					ip[mkInitializationIPConfigIPv4Address] = *nv.IPv4Address
@@ -2548,13 +2548,13 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 					ip[mkInitializationIPConfigIPv4Gateway] = ""
 				}
 
-				ipConfig[mkInitializationIPConfigIPv4] = []interface{}{ip}
+				ipConfig[mkInitializationIPConfigIPv4] = []any{ip}
 			} else {
-				ipConfig[mkInitializationIPConfigIPv4] = []interface{}{}
+				ipConfig[mkInitializationIPConfigIPv4] = []any{}
 			}
 
 			if nv.IPv6Address != nil || nv.IPv6Gateway != nil {
-				ip := map[string]interface{}{}
+				ip := map[string]any{}
 
 				if nv.IPv6Address != nil {
 					ip[mkInitializationIPConfigIPv6Address] = *nv.IPv6Address
@@ -2568,16 +2568,16 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 					ip[mkInitializationIPConfigIPv6Gateway] = ""
 				}
 
-				ipConfig[mkInitializationIPConfigIPv6] = []interface{}{ip}
+				ipConfig[mkInitializationIPConfigIPv6] = []any{ip}
 			} else {
-				ipConfig[mkInitializationIPConfigIPv6] = []interface{}{}
+				ipConfig[mkInitializationIPConfigIPv6] = []any{}
 			}
 
 			// there is only one set of IP addresses (IPv4 + IPv6)  per network interface
 			ipConfigMap[key] = ipConfig
 		}
 
-		networkInterface := map[string]interface{}{}
+		networkInterface := map[string]any{}
 
 		networkInterface[mkNetworkInterfaceEnabled] = true
 		networkInterface[mkNetworkInterfaceName] = nv.Name
@@ -2624,48 +2624,48 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	networkInterfaces := utils.OrderedListFromMap(networkInterfacesMap)
 	initialization[mkInitializationIPConfig] = utils.OrderedListFromMap(ipConfigMap)
 
-	currentInitialization := d.Get(mkInitialization).([]interface{})
+	currentInitialization := d.Get(mkInitialization).([]any)
 
 	if len(currentInitialization) > 0 && currentInitialization[0] != nil {
-		currentInitializationMap := currentInitialization[0].(map[string]interface{})
+		currentInitializationMap := currentInitialization[0].(map[string]any)
 
-		initialization[mkInitializationUserAccount] = currentInitializationMap[mkInitializationUserAccount].([]interface{})
+		initialization[mkInitializationUserAccount] = currentInitializationMap[mkInitializationUserAccount].([]any)
 	}
 
 	if len(clone) > 0 {
 		if len(currentInitialization) > 0 && currentInitialization[0] != nil {
-			currentInitializationBlock := currentInitialization[0].(map[string]interface{})
-			currentInitializationDNS := currentInitializationBlock[mkInitializationDNS].([]interface{})
+			currentInitializationBlock := currentInitialization[0].(map[string]any)
+			currentInitializationDNS := currentInitializationBlock[mkInitializationDNS].([]any)
 
 			if len(currentInitializationDNS) == 0 {
-				initialization[mkInitializationDNS] = []interface{}{}
+				initialization[mkInitializationDNS] = []any{}
 			}
 
-			currentInitializationIPConfig := currentInitializationBlock[mkInitializationIPConfig].([]interface{})
+			currentInitializationIPConfig := currentInitializationBlock[mkInitializationIPConfig].([]any)
 
 			if len(currentInitializationIPConfig) == 0 {
-				initialization[mkInitializationIPConfig] = []interface{}{}
+				initialization[mkInitializationIPConfig] = []any{}
 			}
 
-			currentInitializationUserAccount := currentInitializationBlock[mkInitializationUserAccount].([]interface{})
+			currentInitializationUserAccount := currentInitializationBlock[mkInitializationUserAccount].([]any)
 
 			if len(currentInitializationUserAccount) == 0 {
-				initialization[mkInitializationUserAccount] = []interface{}{}
+				initialization[mkInitializationUserAccount] = []any{}
 			}
 
 			if len(initialization) > 0 {
 				e = d.Set(
 					mkInitialization,
-					[]interface{}{initialization},
+					[]any{initialization},
 				)
 			} else {
-				e = d.Set(mkInitialization, []interface{}{})
+				e = d.Set(mkInitialization, []any{})
 			}
 
 			diags = append(diags, diag.FromErr(e)...)
 		}
 
-		currentNetworkInterface := d.Get(mkNetworkInterface).([]interface{})
+		currentNetworkInterface := d.Get(mkNetworkInterface).([]any)
 
 		if len(currentNetworkInterface) > 0 {
 			err := d.Set(mkNetworkInterface, networkInterfaces)
@@ -2673,9 +2673,9 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	} else {
 		if len(initialization) > 0 {
-			e = d.Set(mkInitialization, []interface{}{initialization})
+			e = d.Set(mkInitialization, []any{initialization})
 		} else {
-			e = d.Set(mkInitialization, []interface{}{})
+			e = d.Set(mkInitialization, []any{})
 		}
 
 		diags = append(diags, diag.FromErr(e)...)
@@ -2685,10 +2685,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	}
 
 	// Compare the startup behavior to the one stored in the state.
-	var startup map[string]interface{}
+	var startup map[string]any
 
 	if containerConfig.StartupBehavior != nil {
-		startup = map[string]interface{}{}
+		startup = map[string]any{}
 
 		if containerConfig.StartupBehavior.Order != nil {
 			startup[mkStartupOrder] = *containerConfig.StartupBehavior.Order
@@ -2709,25 +2709,25 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		}
 	}
 
-	currentStartup := d.Get(mkStartup).([]interface{})
+	currentStartup := d.Get(mkStartup).([]any)
 
 	switch {
 	case len(clone) > 0 && len(currentStartup) > 0:
-		err := d.Set(mkStartup, []interface{}{startup})
+		err := d.Set(mkStartup, []any{startup})
 		diags = append(diags, diag.FromErr(err)...)
 	case len(startup) == 0:
-		err := d.Set(mkStartup, []interface{}{})
+		err := d.Set(mkStartup, []any{})
 		diags = append(diags, diag.FromErr(err)...)
 	case len(currentStartup) > 0 ||
 		startup[mkStartupOrder] != mkStartupOrder ||
 		startup[mkStartupUpDelay] != dvStartupUpDelay ||
 		startup[mkStartupDownDelay] != dvStartupDownDelay:
-		err := d.Set(mkStartup, []interface{}{startup})
+		err := d.Set(mkStartup, []any{startup})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
 	// Compare the operating system configuration to the one stored in the state.
-	operatingSystem := map[string]interface{}{}
+	operatingSystem := map[string]any{}
 
 	if containerConfig.OSType != nil {
 		operatingSystem[mkOperatingSystemType] = *containerConfig.OSType
@@ -2736,10 +2736,10 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		operatingSystem[mkOperatingSystemType] = ""
 	}
 
-	currentOperatingSystem := d.Get(mkOperatingSystem).([]interface{})
+	currentOperatingSystem := d.Get(mkOperatingSystem).([]any)
 
 	if len(currentOperatingSystem) > 0 && currentOperatingSystem[0] != nil {
-		currentOperatingSystemMap := currentOperatingSystem[0].(map[string]interface{})
+		currentOperatingSystemMap := currentOperatingSystem[0].(map[string]any)
 
 		operatingSystem[mkOperatingSystemTemplateFileID] = currentOperatingSystemMap[mkOperatingSystemTemplateFileID]
 	}
@@ -2748,13 +2748,13 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		if len(currentOperatingSystem) > 0 {
 			err := d.Set(
 				mkOperatingSystem,
-				[]interface{}{operatingSystem},
+				[]any{operatingSystem},
 			)
 			diags = append(diags, diag.FromErr(err)...)
 		}
 	} else if len(currentOperatingSystem) > 0 ||
 		operatingSystem[mkOperatingSystemType] != dvOperatingSystemType {
-		err := d.Set(mkOperatingSystem, []interface{}{operatingSystem})
+		err := d.Set(mkOperatingSystem, []any{operatingSystem})
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
@@ -2788,13 +2788,13 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 		diags = append(diags, diag.FromErr(e)...)
 	}
 
-	currentTags := d.Get(mkTags).([]interface{})
+	currentTags := d.Get(mkTags).([]any)
 
 	if len(clone) == 0 || len(currentTags) > 0 {
 		var tags []string
 
 		if containerConfig.Tags != nil {
-			for _, tag := range strings.Split(*containerConfig.Tags, ";") {
+			for tag := range strings.SplitSeq(*containerConfig.Tags, ";") {
 				t := strings.TrimSpace(tag)
 				if len(t) > 0 {
 					tags = append(tags, t)
@@ -2829,8 +2829,8 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 
 	started := status.Status == "running"
 
-	ipv4Map := make(map[string]interface{})
-	ipv6Map := make(map[string]interface{})
+	ipv4Map := make(map[string]any)
+	ipv6Map := make(map[string]any)
 
 	if started && len(networkInterfaces) > 0 {
 		ifaces, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, 10*time.Second)
@@ -2856,7 +2856,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 				}
 			}
 		} else {
-			tflog.Warn(ctx, "error waiting for container network interfaces", map[string]interface{}{
+			tflog.Warn(ctx, "error waiting for container network interfaces", map[string]any{
 				"error": err.Error(),
 			})
 		}
@@ -2873,7 +2873,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m interface{}) d
 	return diags
 }
 
-func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	updateTimeoutSec := d.Get(mkTimeoutUpdate).(int)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(updateTimeoutSec)*time.Second)
@@ -2904,7 +2904,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	container := Container()
 
 	// Retrieve the clone argument as the update logic varies for clones.
-	clone := d.Get(mkClone).([]interface{})
+	clone := d.Get(mkClone).([]any)
 
 	// Prepare the new primitive values.
 	if d.HasChange(mkDescription) {
@@ -2988,7 +2988,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		rootFS.Volume = containerConfig.RootFS.Volume
 
 		acl := types.CustomBool(diskBlock[mkDiskACL].(bool))
-		mountOptions := diskBlock[mkDiskMountOptions].([]interface{})
+		mountOptions := diskBlock[mkDiskMountOptions].([]any)
 		quota := types.CustomBool(diskBlock[mkDiskQuota].(bool))
 		replicate := types.CustomBool(diskBlock[mkDiskReplicate].(bool))
 		size := types.DiskSizeFromGigabytes(int64(diskBlock[mkDiskSize].(int)))
@@ -3031,7 +3031,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Prepare the new initialization configuration.
-	initialization := d.Get(mkInitialization).([]interface{})
+	initialization := d.Get(mkInitialization).([]any)
 	initializationDNSDomain := dvInitializationDNSDomain
 	initializationDNSServer := dvInitializationDNSServer
 	initializationHostname := dvInitializationHostname
@@ -3045,14 +3045,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	var initializationIPConfigIPv6Gateway []string
 
 	if len(initialization) > 0 && initialization[0] != nil {
-		initializationBlock := initialization[0].(map[string]interface{})
-		initializationDNS := initializationBlock[mkInitializationDNS].([]interface{})
+		initializationBlock := initialization[0].(map[string]any)
+		initializationDNS := initializationBlock[mkInitializationDNS].([]any)
 
 		if len(initializationDNS) > 0 && initializationDNS[0] != nil {
-			initializationDNSBlock := initializationDNS[0].(map[string]interface{})
+			initializationDNSBlock := initializationDNS[0].(map[string]any)
 			initializationDNSDomain = initializationDNSBlock[mkInitializationDNSDomain].(string)
 
-			servers := initializationDNSBlock[mkInitializationDNSServers].([]interface{})
+			servers := initializationDNSBlock[mkInitializationDNSServers].([]any)
 			deprecatedServer := initializationDNSBlock[mkInitializationDNSServer].(string)
 
 			if len(servers) > 0 {
@@ -3063,18 +3063,18 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		}
 
 		initializationHostname = initializationBlock[mkInitializationHostname].(string)
-		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]interface{})
+		initializationIPConfig := initializationBlock[mkInitializationIPConfig].([]any)
 
 		for _, c := range initializationIPConfig {
 			if c == nil {
 				continue
 			}
 
-			configBlock := c.(map[string]interface{})
-			ipv4 := configBlock[mkInitializationIPConfigIPv4].([]interface{})
+			configBlock := c.(map[string]any)
+			ipv4 := configBlock[mkInitializationIPConfigIPv4].([]any)
 
 			if len(ipv4) > 0 && ipv4[0] != nil {
-				ipv4Block := ipv4[0].(map[string]interface{})
+				ipv4Block := ipv4[0].(map[string]any)
 
 				initializationIPConfigIPv4Address = append(
 					initializationIPConfigIPv4Address,
@@ -3090,10 +3090,10 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 				initializationIPConfigIPv4Gateway = append(initializationIPConfigIPv4Gateway, "")
 			}
 
-			ipv6 := configBlock[mkInitializationIPConfigIPv6].([]interface{})
+			ipv6 := configBlock[mkInitializationIPConfigIPv6].([]any)
 
 			if len(ipv6) > 0 && ipv6[0] != nil {
-				ipv6Block := ipv6[0].(map[string]interface{})
+				ipv6Block := ipv6[0].(map[string]any)
 
 				initializationIPConfigIPv6Address = append(
 					initializationIPConfigIPv6Address,
@@ -3158,14 +3158,14 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	if d.HasChange(mkDevicePassthrough) {
 		_, newDevicePassthrough := d.GetChange(mkDevicePassthrough)
 
-		devicePassthrough := newDevicePassthrough.([]interface{})
+		devicePassthrough := newDevicePassthrough.([]any)
 		passthroughDevices := make(
 			containers.CustomPassthroughDevices,
 			len(devicePassthrough),
 		)
 
 		for i, dp := range devicePassthrough {
-			devicePassthroughMap := dp.(map[string]interface{})
+			devicePassthroughMap := dp.(map[string]any)
 			devicePassthroughObject := containers.CustomPassthroughDevice{}
 
 			denyWrite := types.CustomBool(devicePassthroughMap[mkDevicePassthroughDenyWrite].(bool))
@@ -3192,19 +3192,19 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	if d.HasChange(mkMountPoint) {
 		_, newMountPoints := d.GetChange(mkMountPoint)
 
-		mountPoints := newMountPoints.([]interface{})
+		mountPoints := newMountPoints.([]any)
 		mountPointsMap := make(
 			containers.CustomMountPoints,
 			len(mountPoints),
 		)
 
 		for i, mp := range mountPoints {
-			mountPointMap := mp.(map[string]interface{})
+			mountPointMap := mp.(map[string]any)
 			mountPointObject := containers.CustomMountPoint{}
 
 			acl := types.CustomBool(mountPointMap[mkMountPointACL].(bool))
 			backup := types.CustomBool(mountPointMap[mkMountPointBackup].(bool))
-			mountOptions := mountPointMap[mkMountPointMountOptions].([]interface{})
+			mountOptions := mountPointMap[mkMountPointMountOptions].([]any)
 			path := mountPointMap[mkMountPointPath].(string)
 			quota := types.CustomBool(mountPointMap[mkMountPointQuota].(bool))
 			readOnly := types.CustomBool(mountPointMap[mkMountPointReadOnly].(bool))
@@ -3260,7 +3260,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	}
 
 	// Prepare the new network interface configuration.
-	networkInterface := d.Get(mkNetworkInterface).([]interface{})
+	networkInterface := d.Get(mkNetworkInterface).([]any)
 
 	if len(networkInterface) == 0 && len(clone) > 0 {
 		networkInterface, e = containerGetExistingNetworkInterface(ctx, containerAPI)
@@ -3277,7 +3277,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 		)
 
 		for ni, nv := range networkInterface {
-			networkInterfaceMap := nv.(map[string]interface{})
+			networkInterfaceMap := nv.(map[string]any)
 			networkInterfaceObject := containers.CustomNetworkInterface{}
 
 			bridge := networkInterfaceMap[mkNetworkInterfaceBridge].(string)
@@ -3454,7 +3454,7 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m interface{})
 	return containerRead(ctx, d, m)
 }
 
-func containerDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	deleteTimeoutSec := d.Get(mkTimeoutDelete).(int)
 
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(deleteTimeoutSec)*time.Second)
@@ -3543,7 +3543,7 @@ func skipDnsDiffIfEmpty(k, oldValue, newValue string, d *schema.ResourceData) bo
 			// if dns block's attributes are empty, do not report change
 			domain := d.Get(dnsDataKey + ".0." + mkInitializationDNSDomain).(string)
 			server := d.Get(dnsDataKey + ".0." + mkInitializationDNSServer).(string)
-			servers := d.Get(dnsDataKey + ".0." + mkInitializationDNSServers).([]interface{})
+			servers := d.Get(dnsDataKey + ".0." + mkInitializationDNSServers).([]any)
 
 			return domain == "" && server == "" && len(servers) == 0
 		}

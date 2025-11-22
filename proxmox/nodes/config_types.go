@@ -86,8 +86,8 @@ func (a *ACMEConfig) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("error unmarshaling json: %w", err)
 	}
 
-	parts := strings.Split(s, ",")
-	for _, part := range parts {
+	parts := strings.SplitSeq(s, ",")
+	for part := range parts {
 		kv := strings.Split(part, "=")
 		if len(kv) != 2 {
 			return fmt.Errorf("invalid key-value pair: %s", part)
@@ -140,8 +140,8 @@ func (a *ACMEDomainConfig) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("error unmarshaling json: %w", err)
 	}
 
-	parts := strings.Split(s, ",")
-	for _, part := range parts {
+	parts := strings.SplitSeq(s, ",")
+	for part := range parts {
 		kv := strings.Split(part, "=")
 		if len(kv) == 1 {
 			config.Domain = kv[0]
@@ -199,8 +199,8 @@ func (a *WakeOnLandConfig) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("error unmarshaling json: %w", err)
 	}
 
-	parts := strings.Split(s, ",")
-	for _, part := range parts {
+	parts := strings.SplitSeq(s, ",")
+	for part := range parts {
 		kv := strings.Split(part, "=")
 		if len(kv) == 1 {
 			config.MACAddress = kv[0]

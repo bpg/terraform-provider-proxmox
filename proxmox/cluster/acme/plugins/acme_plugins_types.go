@@ -106,7 +106,7 @@ func (d *DNSPluginData) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("error unmarshaling json: %w", err)
 	}
 
-	for _, line := range strings.Split(s, "\n") {
+	for line := range strings.SplitSeq(s, "\n") {
 		if line == "" {
 			continue
 		}
