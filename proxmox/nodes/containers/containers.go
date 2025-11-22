@@ -17,7 +17,7 @@ import (
 	"github.com/avast/retry-go/v4"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 var errContainerAlreadyRunning = errors.New("container is already running")
@@ -178,7 +178,7 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 			for _, iface := range ifaces {
 				if iface.Name != "lo" && iface.IPAddresses != nil && len(*iface.IPAddresses) > 0 {
 					for _, ipAddr := range *iface.IPAddresses {
-						if helpers.IsValidGlobalUnicast(ipAddr.Address) {
+						if ip.IsValidGlobalUnicast(ipAddr.Address) {
 							return ifaces, nil
 						}
 					}

@@ -20,8 +20,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 // CloneVM clones a virtual machine.
@@ -660,7 +660,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 				// return if the interface has any valid global unicast addresses
 				// (excludes loopback, link-local, and multicast addresses)
 				for _, addr := range *nic.IPAddresses {
-					if helpers.IsValidGlobalUnicast(addr.Address) {
+					if ip.IsValidGlobalUnicast(addr.Address) {
 						return data, err
 					}
 				}
