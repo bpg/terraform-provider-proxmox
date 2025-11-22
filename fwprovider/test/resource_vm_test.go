@@ -845,6 +845,75 @@ func TestAccResourceVMNetwork(t *testing.T) {
 				}),
 			),
 		}}},
+		{"wait for IPv4 address", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_file" "cloud_config" {
+					content_type = "snippets"
+					datastore_id = "local"
+					node_name = "{{.NodeName}}"
+					source_raw {
+						data = <<-EOF
+						#cloud-config
+						runcmd:
+						  - apt update
+						  - apt install -y qemu-guest-agent
+						  - systemctl enable qemu-guest-agent
+						  - systemctl start qemu-guest-agent
+						EOF
+						file_name = "cloud-config.yaml"
+					}
+				}
+				
+				resource "proxmox_virtual_environment_vm" "test_vm_wait_ipv4" {
+					node_name = "{{.NodeName}}"
+					started   = true
+					agent {
+						enabled = true
+						wait_for_ip {
+							ipv4 = true
+						}
+					}
+					cpu {
+						cores = 2
+					}
+					memory {
+						dedicated = 2048
+					}
+					disk {
+						datastore_id = "local-lvm"
+						file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+						interface    = "virtio0"
+						iothread     = true
+						discard      = "on"
+						size         = 20
+					}
+					initialization {
+						ip_config {
+							ipv4 {
+								address = "dhcp"
+							}
+						}
+						user_data_file_id = proxmox_virtual_environment_file.cloud_config.id
+					}
+					network_device {
+						bridge = "vmbr0"
+					}
+				}
+
+				resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+					content_type = "iso"
+					datastore_id = "local"
+					node_name    = "{{.NodeName}}"
+					url = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+					overwrite_unmanaged = true
+				}`),
+			Check: resource.ComposeTestCheckFunc(
+				ResourceAttributes("proxmox_virtual_environment_vm.test_vm_wait_ipv4", map[string]string{
+					"ipv4_addresses.#":           "2",
+					"agent.0.wait_for_ip.0.ipv4": "true",
+				}),
+			),
+		}}},
 		{"network device disconnected", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

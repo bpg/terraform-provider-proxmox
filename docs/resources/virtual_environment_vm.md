@@ -137,6 +137,11 @@ output "ubuntu_vm_public_key" {
     - `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
         - `isa` - ISA Serial Port.
         - `virtio` - VirtIO (paravirtualized).
+    - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the VM starts.
+        - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
+        - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
+        
+        When `wait_for_ip` is not specified, the provider waits for any valid global unicast address (IPv4 or IPv6). This is useful in networks where DHCPv6 responds faster than DHCPv4, allowing you to reliably wait for IPv4 addresses even when IPv6 is available first.
 - `amd_sev` - (Optional) Secure Encrypted Virtualization (SEV) features by AMD CPUs.
     - `type` - (Optional) Enable standard SEV with `std` or enable experimental SEV-ES with the `es` option or enable experimental SEV-SNP with the `snp` option (defaults to `std`).
     - `allow_smt` - (Optional) Sets policy bit to allow Simultaneous Multi Threading (SMT)

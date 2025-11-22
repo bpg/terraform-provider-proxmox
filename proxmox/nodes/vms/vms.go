@@ -592,7 +592,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	ctx context.Context,
 	timeout int, // time in seconds to wait until giving up
 	delay int, // the delay in seconds between requests to the agent
-	waitForIP bool, // whether to block until an IP is found, or just block until the interfaces are published
+	waitForIPConfig *WaitForIPConfig, // configuration for which IP types to wait for (nil = wait for any global unicast)
 ) (*GetQEMUNetworkInterfacesResponseData, error) {
 	delaySeconds := int64(delay)
 	timeMaxSeconds := float64(timeout)
@@ -644,7 +644,12 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		}
 
 		// If we're waiting for an IP, check if we have one yet; if not then keep looping
-		if waitForIP {
+		// nil config means backward compatibility: wait for any valid global unicast address
+		// We always check for IPs when this function is called (old waitForIP was always true when called)
+		{
+			hasIPv4 := false
+			hasIPv6 := false
+
 			for _, nic := range *data.Result {
 				// skip the loopback interface
 				if nic.Name == "lo" {
@@ -657,27 +662,58 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 					continue
 				}
 
-				// return if the interface has any valid global unicast addresses
-				// (excludes loopback, link-local, and multicast addresses)
+				// check for valid global unicast addresses
 				for _, addr := range *nic.IPAddresses {
-					if ip.IsValidGlobalUnicast(addr.Address) {
-						return data, err
+					if !ip.IsValidGlobalUnicast(addr.Address) {
+						continue
+					}
+
+					if ip.IsIPv4(addr.Address) {
+						hasIPv4 = true
+					} else if ip.IsIPv6(addr.Address) {
+						hasIPv6 = true
 					}
 				}
 			}
 
-			// no IP address has come through the agent yet
-			time.Sleep(1 * time.Second)
-			continue //nolint
-		}
+			// if config is nil, wait for any IP (backward compatibility)
+			if waitForIPConfig == nil {
+				if hasIPv4 || hasIPv6 {
+					return data, err
+				}
 
-		// if not waiting for an IP, and the agent sent us an interface, return
-		if data.Result != nil && len(*data.Result) > 0 {
+				time.Sleep(1 * time.Second)
+
+				continue
+			}
+
+			// check if all required IP types are available
+			requiredIPv4 := waitForIPConfig.IPv4
+			requiredIPv6 := waitForIPConfig.IPv6
+
+			if requiredIPv4 && !hasIPv4 {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+
+			if requiredIPv6 && !hasIPv6 {
+				time.Sleep(1 * time.Second)
+				continue
+			}
+
+			// if no specific requirements, wait for any IP (backward compatibility)
+			if !requiredIPv4 && !requiredIPv6 {
+				if !hasIPv4 && !hasIPv6 {
+					time.Sleep(1 * time.Second)
+					continue
+				}
+			}
+
+			// all required IP types are available
 			return data, err
 		}
 
-		// we didn't get any interfaces so tick ahead to keep looping
-		time.Sleep(1 * time.Second)
+		// we didn't get any interfaces or required IPs so tick ahead to keep looping
 	}
 
 	return nil, fmt.Errorf(

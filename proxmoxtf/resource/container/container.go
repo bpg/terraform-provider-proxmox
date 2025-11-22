@@ -188,8 +188,11 @@ const (
 	mkUnprivileged                      = "unprivileged"
 	mkVMID                              = "vm_id"
 
-	mkIPv4 = "ipv4"
-	mkIPv6 = "ipv6"
+	mkIPv4          = "ipv4"
+	mkIPv6          = "ipv6"
+	mkWaitForIP     = "wait_for_ip"
+	mkWaitForIPIPv4 = "ipv4"
+	mkWaitForIPIPv6 = "ipv6"
 )
 
 // Container returns a resource that manages a container.
@@ -996,6 +999,29 @@ func Container() *schema.Resource {
 				Default:     300,
 				Deprecated: "This field is deprecated and will be removed in a future release. " +
 					"An overall operation timeout (`timeout_create` / `timeout_clone`) is used instead.",
+			},
+			mkWaitForIP: {
+				Type:        schema.TypeList,
+				Description: "Configuration for waiting for specific IP address types",
+				Optional:    true,
+				MaxItems:    1,
+				MinItems:    0,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						mkWaitForIPIPv4: {
+							Type:        schema.TypeBool,
+							Description: "Wait for at least one IPv4 address (non-loopback, non-link-local)",
+							Optional:    true,
+							Default:     false,
+						},
+						mkWaitForIPIPv6: {
+							Type:        schema.TypeBool,
+							Description: "Wait for at least one IPv6 address (non-loopback, non-link-local)",
+							Optional:    true,
+							Default:     false,
+						},
+					},
+				},
 			},
 			mkUnprivileged: {
 				Type:        schema.TypeBool,
@@ -2833,7 +2859,9 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 	ipv6Map := make(map[string]any)
 
 	if started && len(networkInterfaces) > 0 {
-		ifaces, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, 10*time.Second)
+		waitForIPConfig := getContainerWaitForIPConfig(d)
+
+		ifaces, err := containerAPI.WaitForContainerNetworkInterfaces(ctx, 10*time.Second, waitForIPConfig)
 		if err == nil {
 			for _, iface := range ifaces {
 				if iface.IPAddresses != nil && iface.Name != "lo" {
@@ -3524,6 +3552,32 @@ func containerDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 	d.SetId("")
 
 	return nil
+}
+
+func getContainerWaitForIPConfig(d *schema.ResourceData) *containers.WaitForIPConfig {
+	waitForIPList, ok := d.Get(mkWaitForIP).([]any)
+	if !ok || len(waitForIPList) == 0 || waitForIPList[0] == nil {
+		return nil
+	}
+
+	waitForIPBlock := waitForIPList[0].(map[string]any)
+
+	config := &containers.WaitForIPConfig{}
+
+	if ipv4, ok := waitForIPBlock[mkWaitForIPIPv4].(bool); ok {
+		config.IPv4 = ipv4
+	}
+
+	if ipv6, ok := waitForIPBlock[mkWaitForIPIPv6].(bool); ok {
+		config.IPv6 = ipv6
+	}
+
+	// if both are false, return nil for backward compatibility
+	if !config.IPv4 && !config.IPv6 {
+		return nil
+	}
+
+	return config
 }
 
 func parseImportIDWithNodeName(id string) (string, string, error) {
