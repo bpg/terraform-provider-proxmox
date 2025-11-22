@@ -700,7 +700,10 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 // checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
 func (c *Client) checkIPAddresses(
 	nics []GetQEMUNetworkInterfacesResponseResult,
-) (hasIPv4, hasIPv6 bool) {
+) (bool, bool) {
+	hasIPv4 := false
+	hasIPv6 := false
+
 	for _, nic := range nics {
 		if nic.Name == "lo" {
 			continue

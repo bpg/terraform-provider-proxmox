@@ -240,7 +240,10 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 // checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
 func (c *Client) checkIPAddresses(
 	ifaces []GetNetworkInterfacesData,
-) (hasIPv4, hasIPv6 bool) {
+) (bool, bool) {
+	hasIPv4 := false
+	hasIPv6 := false
+
 	for _, iface := range ifaces {
 		if iface.Name == "lo" || iface.IPAddresses == nil || len(*iface.IPAddresses) == 0 {
 			continue
