@@ -31,7 +31,7 @@ jobs:
               - .github/workflows/golangci-lint.yml
 
       - name: Setup Go
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
         with:
           go-version-file: "go.mod"
@@ -40,7 +40,7 @@ jobs:
 
       - name: Lint code
         if: ${{ steps.filter.outputs.go == 'true' || steps.filter.outputs.linter == 'true'}}
-        uses: golangci/golangci-lint-action@0a35821d5c230e903fcfe077583637dea1b27b47 # v9
+        uses: golangci/golangci-lint-action@e7fa5ac41e1cf5b7d48e45e42232ce7ada589601 # v9
         with: 
           version: v2.6.2 # renovate: depName=golangci/golangci-lint datasource=github-releases
           skip-cache: true
