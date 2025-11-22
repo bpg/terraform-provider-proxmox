@@ -674,35 +674,38 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 			}
 		}
 
-		// check if we have the required IP types
+		// determine if we should continue waiting for an IP address
+		shouldWait := false
 		if waitForIPConfig == nil {
-			// backward compatibility: wait for any IP
-			if hasIPv4 || hasIPv6 {
-				return data, err
+			// backward compatibility: wait for any IP address if none are present
+			if !hasIPv4 && !hasIPv6 {
+				shouldWait = true
 			}
 		} else {
+			// new logic: check for specific IP types
 			requiredIPv4 := waitForIPConfig.IPv4
 			requiredIPv6 := waitForIPConfig.IPv6
 
-			// if no specific requirements, wait for any IP (backward compatibility)
 			if !requiredIPv4 && !requiredIPv6 {
-				if hasIPv4 || hasIPv6 {
-					return data, err
+				// if no specific IP type is required, wait for any IP address if none are present
+				if !hasIPv4 && !hasIPv6 {
+					shouldWait = true
 				}
 			} else {
-				// check if all required IP types are available
+				// wait until all explicitly required IP types are available
 				if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
-					time.Sleep(1 * time.Second)
-					continue
+					shouldWait = true
 				}
-
-				// all required IP types are available
-				return data, err
 			}
 		}
 
-		// we didn't get the required IPs, wait and continue
-		time.Sleep(1 * time.Second)
+		if shouldWait {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		// if we reach here, either no waiting was required, or all required IPs are available
+		return data, err
 
 		// we didn't get any interfaces or required IPs so tick ahead to keep looping
 	}
