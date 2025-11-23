@@ -113,9 +113,9 @@ func (r *metricsServerResource) Schema(
 				Default:     nil,
 			},
 			"type": schema.StringAttribute{
-				Description: "Plugin type. Choice is between `graphite` | `influxdb`.",
+				Description: "Plugin type. Choice is between `graphite` | `influxdb` | `opentelemetry`.",
 				Required:    true,
-				Validators:  []validator.String{stringvalidator.OneOf("graphite", "influxdb")},
+				Validators:  []validator.String{stringvalidator.OneOf("graphite", "influxdb", "opentelemetry")},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -174,6 +174,18 @@ func (r *metricsServerResource) Schema(
 				Validators: []validator.String{stringvalidator.OneOf("udp", "tcp")},
 				Optional:   true,
 				Default:    nil,
+			},
+			"opentelemetry_proto": schema.StringAttribute{
+				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https` | `grpc`. " +
+					"If not set, PVE default is `http`.",
+				Validators: []validator.String{stringvalidator.OneOf("http", "https", "grpc")},
+				Optional:   true,
+				Default:    nil,
+			},
+			"opentelemetry_path": schema.StringAttribute{
+				Description: "OpenTelemetry endpoint path (e.g., `/v1/metrics`).",
+				Optional:    true,
+				Default:     nil,
 			},
 		},
 	}
@@ -277,6 +289,8 @@ func (r *metricsServerResource) Update(
 	attribute.CheckDelete(plan.InfluxVerify, state.InfluxVerify, &toDelete, "verify-certificate")
 	attribute.CheckDelete(plan.GraphitePath, state.GraphitePath, &toDelete, "path")
 	attribute.CheckDelete(plan.GraphiteProto, state.GraphiteProto, &toDelete, "proto")
+	attribute.CheckDelete(plan.OTelProto, state.OTelProto, &toDelete, "otel-protocol")
+	attribute.CheckDelete(plan.OTelPath, state.OTelPath, &toDelete, "otel-path")
 
 	reqData := plan.toAPIRequestBody()
 	reqData.Delete = &toDelete
