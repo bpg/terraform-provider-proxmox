@@ -71,7 +71,7 @@ func (r ociSizeRequiresReplaceModifier) PlanModifyInt64(
 		originalStateSize, err := strconv.ParseInt(string(originalStateSizeBytes), 10, 64)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Unable to convert original state oci image size to int64",
+				"Unable to convert original state OCI image size to int64",
 				"Unexpected error in parsing string to int64, key original_state_size. "+
 					"Please retry the operation or report this issue to the provider developers.\n\n"+
 					"Error: "+err.Error(),
@@ -85,7 +85,7 @@ func (r ociSizeRequiresReplaceModifier) PlanModifyInt64(
 			resp.PlanValue = types.Int64Value(originalStateSize)
 
 			resp.Diagnostics.AddWarning(
-				"The oci image size in datastore has changed outside of terraform.",
+				"The OCI image size in datastore has changed outside of terraform.",
 				fmt.Sprintf(
 					"Previous size: %d saved in state does not match current size from datastore: %d. "+
 						"You can disable this behaviour by using overwrite=false",
@@ -203,14 +203,14 @@ func (r *pullOCIResouce) Schema(
 				},
 			},
 			"overwrite": schema.BoolAttribute{
-				Description: "By default `true`. If `true` and image size has changed in the datastore, " +
+				Description: "By default `true`. If `true` and the OCI image size has changed in the datastore, " +
 					"it will be replaced. If `false`, there will be no check.",
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
 			},
 			"overwrite_unmanaged": schema.BoolAttribute{
-				Description: "If `true` and a image with the same name already exists in the datastore, " +
+				Description: "If `true` and an OCI image with the same name already exists in the datastore, " +
 					"it will be deleted and the new image will be pulled. If `false` and the image already exists, " +
 					"an error will be returned.",
 				Optional: true,
@@ -265,10 +265,12 @@ func (r *pullOCIResouce) Create(
 
 	// If filename is not provided, generate one from reference
 	if plan.FileName.IsUnknown() || plan.FileName.IsNull() {
+
 		// Generate filename from reference (e.g., "docker.io/library/ubuntu:latest" -> "ubuntu_latest.tar")
 		refParts := strings.Split(plan.Reference.ValueString(), "/")
 		lastPart := refParts[len(refParts)-1]
 		filename := strings.ReplaceAll(lastPart, ":", "_")
+
 		plan.FileName = types.StringValue(filename + ".tar")
 	}
 
@@ -368,7 +370,7 @@ func (r *pullOCIResouce) read(
 		}
 	}
 
-	return fmt.Errorf("file does not exists in datastore")
+	return fmt.Errorf("OCI image does not exist in datastore")
 }
 
 // Read reads file from datastore.
@@ -399,7 +401,7 @@ func (r *pullOCIResouce) Read(
 		}
 
 		resp.Diagnostics.AddWarning(
-			"The file does not exist in datastore and resource must be recreated.",
+			"The OCI image does not exist in datastore and resource must be recreated.",
 			err.Error(),
 		)
 		resp.State.RemoveResource(ctx)
@@ -424,7 +426,7 @@ func (r *pullOCIResouce) Update(
 	err := r.read(ctx, &plan)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error when reading file from datastore", err.Error(),
+			"Error when reading OCI Image from datastore", err.Error(),
 		)
 
 		return
@@ -457,16 +459,16 @@ func (r *pullOCIResouce) Delete(
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		if strings.Contains(err.Error(), "unable to parse") {
 			resp.Diagnostics.AddWarning(
-				"Datastore file does not exists",
+				"Datastore OCI image does not exists",
 				fmt.Sprintf(
-					"Could not delete datastore file '%s', it does not exist or has been deleted outside of Terraform.",
+					"Could not delete datastore OCI image '%s', it does not exist or has been deleted outside of Terraform.",
 					state.ID.ValueString(),
 				),
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error deleting datastore file",
-				fmt.Sprintf("Could not delete datastore file '%s', unexpected error: %s",
+				"Error deleting datastore OCI image",
+				fmt.Sprintf("Could not delete datastore OCI image '%s', unexpected error: %s",
 					state.ID.ValueString(), err.Error()),
 			)
 		}

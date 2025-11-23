@@ -20,20 +20,18 @@ resource "proxmox_virtual_environment_oci_image" "ubuntu_latest" {
   reference    = "docker.io/library/ubuntu:latest"
 }
 
-# Pull an OCI image with a custom filename
 resource "proxmox_virtual_environment_oci_image" "nginx" {
   node_name    = "pve"
   datastore_id = "local"
   reference    = "docker.io/library/nginx:alpine"
-  file_name    = "nginx_alpine.tar"
+  file_name    = "custom_image_name.tar"
 }
 
-# Pull an OCI image with custom timeout and overwrite settings
 resource "proxmox_virtual_environment_oci_image" "debian" {
   node_name           = "pve"
   datastore_id        = "local"
   reference           = "docker.io/library/debian:bookworm"
-  upload_timeout      = 900 # 15 minutes
+  upload_timeout      = 900
   overwrite           = false
   overwrite_unmanaged = true
 }
@@ -51,8 +49,8 @@ resource "proxmox_virtual_environment_oci_image" "debian" {
 ### Optional
 
 - `file_name` (String) The file name for the pulled OCI image. If not provided, it will be generated automatically. The file will be stored as a .tar file.
-- `overwrite` (Boolean) By default `true`. If `true` and image size has changed in the datastore, it will be replaced. If `false`, there will be no check.
-- `overwrite_unmanaged` (Boolean) If `true` and a image with the same name already exists in the datastore, it will be deleted and the new image will be pulled. If `false` and the image already exists, an error will be returned.
+- `overwrite` (Boolean) By default `true`. If `true` and the OCI image size has changed in the datastore, it will be replaced. If `false`, there will be no check.
+- `overwrite_unmanaged` (Boolean) If `true` and an OCI image with the same name already exists in the datastore, it will be deleted and the new image will be pulled. If `false` and the image already exists, an error will be returned.
 - `upload_timeout` (Number) The OCI image pull timeout in seconds. Default is 600 (10min).
 
 ### Read-Only
