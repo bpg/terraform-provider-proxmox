@@ -205,11 +205,13 @@ func TestAccResourceMetricsServer(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("data.proxmox_virtual_environment_metrics_server.acc_otel_server2", map[string]string{
-						"id":     "acc_example_otel_server2",
-						"name":   "acc_example_otel_server2",
-						"port":   "4318",
-						"server": "192.168.3.2",
-						"type":   "opentelemetry",
+						"id":                 "acc_example_otel_server2",
+						"name":               "acc_example_otel_server2",
+						"port":               "4318",
+						"server":             "192.168.3.2",
+						"type":               "opentelemetry",
+						"opentelemetry_proto": "https",
+						"opentelemetry_path":  "/v1/metrics",
 					}),
 				),
 			},

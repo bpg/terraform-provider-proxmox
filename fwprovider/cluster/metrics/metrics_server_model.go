@@ -119,12 +119,14 @@ func (m *metricsServerModel) toAPIRequestBody() *metrics.ServerRequestData {
 }
 
 type metricsServerDatasourceModel struct {
-	ID      types.String `tfsdk:"id"`
-	Name    types.String `tfsdk:"name"`
-	Disable types.Bool   `tfsdk:"disable"`
-	Port    types.Int64  `tfsdk:"port"`
-	Server  types.String `tfsdk:"server"`
-	Type    types.String `tfsdk:"type"`
+	ID        types.String `tfsdk:"id"`
+	Name      types.String `tfsdk:"name"`
+	Disable   types.Bool   `tfsdk:"disable"`
+	Port      types.Int64  `tfsdk:"port"`
+	Server    types.String `tfsdk:"server"`
+	Type      types.String `tfsdk:"type"`
+	OTelProto types.String `tfsdk:"opentelemetry_proto"`
+	OTelPath  types.String `tfsdk:"opentelemetry_path"`
 }
 
 // importFromAPI takes data from metrics server PVE API response and set fields based on it.
@@ -137,4 +139,6 @@ func (m *metricsServerDatasourceModel) importFromAPI(name string, data *metrics.
 	m.Port = types.Int64Value(data.Port)
 	m.Server = types.StringValue(data.Server)
 	m.Type = types.StringPointerValue(data.Type)
+	m.OTelProto = types.StringPointerValue(data.OTelProto)
+	m.OTelPath = types.StringPointerValue(data.OTelPath)
 }

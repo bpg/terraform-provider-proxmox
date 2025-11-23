@@ -176,9 +176,9 @@ func (r *metricsServerResource) Schema(
 				Default:    nil,
 			},
 			"opentelemetry_proto": schema.StringAttribute{
-				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https` | `grpc`. " +
+				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https`. " +
 					"If not set, PVE default is `http`.",
-				Validators: []validator.String{stringvalidator.OneOf("http", "https", "grpc")},
+				Validators: []validator.String{stringvalidator.OneOf("http", "https")},
 				Optional:   true,
 				Default:    nil,
 			},
