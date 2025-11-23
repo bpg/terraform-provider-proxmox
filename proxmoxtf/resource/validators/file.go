@@ -39,7 +39,7 @@ func FileFormat() schema.SchemaValidateDiagFunc {
 
 // FileID returns a schema validation function for a file identifier.
 func FileID() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
+	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
 		v, ok := i.(string)
 
 		var ws []string
@@ -71,7 +71,7 @@ func FileID() schema.SchemaValidateDiagFunc {
 // FileMode is a schema validation function for file mode.
 func FileMode() schema.SchemaValidateDiagFunc {
 	return validation.ToDiagFunc(
-		func(i interface{}, k string) ([]string, []error) {
+		func(i any, k string) ([]string, []error) {
 			var errs []error
 
 			v, ok := i.(string)
@@ -100,7 +100,7 @@ func FileMode() schema.SchemaValidateDiagFunc {
 
 // FileSize is a schema validation function for file size.
 func FileSize() schema.SchemaValidateDiagFunc {
-	return validation.ToDiagFunc(func(i interface{}, k string) ([]string, []error) {
+	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
 		v, ok := i.(string)
 
 		var es []error

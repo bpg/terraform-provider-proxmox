@@ -234,7 +234,7 @@ func File() *schema.Resource {
 		DeleteContext: fileDelete,
 		UpdateContext: fileUpdate,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				node, volID, err := fileParseImportID(d.Id())
 				if err != nil {
 					return nil, err
@@ -318,7 +318,7 @@ func fileParseImportID(id string) (string, fileVolumeID, error) {
 	return node, volID, nil
 }
 
-func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	uploadTimeout := d.Get(mkResourceVirtualEnvironmentFileTimeoutUpload).(int)
 	fileMode := d.Get(mkResourceVirtualEnvironmentFileFileMode).(string)
 
@@ -355,7 +355,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	for _, file := range list {
 		volumeID, e := fileParseVolumeID(file.VolumeID)
 		if e != nil {
-			tflog.Warn(ctx, "failed to parse volume ID", map[string]interface{}{
+			tflog.Warn(ctx, "failed to parse volume ID", map[string]any{
 				"error": err,
 			})
 
@@ -629,7 +629,7 @@ func fileGetContentType(ctx context.Context, d *schema.ResourceData, c proxmox.C
 	if versionResp, err := c.Version().Version(ctx); err == nil {
 		ver = versionResp.Version
 	} else {
-		tflog.Warn(ctx, fmt.Sprintf("failed to determine Proxmox VE version, assume %v", ver), map[string]interface{}{
+		tflog.Warn(ctx, fmt.Sprintf("failed to determine Proxmox VE version, assume %v", ver), map[string]any{
 			"error": err,
 		})
 	}
@@ -762,7 +762,7 @@ func fileIsURL(d *schema.ResourceData) bool {
 		strings.HasPrefix(sourceFilePath, "https://")
 }
 
-func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	capi, err := config.GetClient()
@@ -804,7 +804,7 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 				continue
 			}
 
-			sourceFileBlock := sourceFile[0].(map[string]interface{})
+			sourceFileBlock := sourceFile[0].(map[string]any)
 			sourceFilePath := sourceFileBlock[mkResourceVirtualEnvironmentFileSourceFilePath].(string)
 
 			fileModificationDate, fileSize, fileTag, err := readFileAttrs(ctx, sourceFilePath)
@@ -941,7 +941,7 @@ func readURL(
 	}
 }
 
-func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func fileDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	capi, err := config.GetClient()
@@ -962,7 +962,7 @@ func fileDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return nil
 }
 
-func fileUpdate(_ context.Context, _ *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func fileUpdate(_ context.Context, _ *schema.ResourceData, _ any) diag.Diagnostics {
 	// a pass-through update function -- no actual resource update is needed / allowed
 	// only the TF state is updated, for example, a timeout_upload attribute value
 	return nil

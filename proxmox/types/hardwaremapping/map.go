@@ -173,7 +173,7 @@ func ParseMap(input string) (Map, error) {
 	regExNotMatchErr := func(attr, attrName string, err error) error {
 		return errors.Join(
 			ErrMapParsingFormat(
-				fmt.Sprintf(
+				"%s", fmt.Sprintf(
 					"invalid format %q for hardware mapping %q attribute",
 					attr,
 					attrName,
@@ -183,13 +183,13 @@ func ParseMap(input string) (Map, error) {
 	}
 
 	// Split the full PCI map string into its attributes…
-	attrs := strings.Split(input, string(attrSeparator))
+	attrs := strings.SplitSeq(input, string(attrSeparator))
 	// …and iterate over each attribute to parse it into the struct fields.
-	for _, attr := range attrs {
+	for attr := range attrs {
 		attrSplit := strings.Split(attr, string(attrValueSeparator))
 		if len(attrSplit) != 2 {
 			return hm, ErrMapParsingFormat(
-				fmt.Sprintf(
+				"%s", fmt.Sprintf(
 					`invalid "key=value" format for hardware mapping attribute %q`,
 					attr,
 				),

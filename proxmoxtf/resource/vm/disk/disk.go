@@ -29,17 +29,18 @@ import (
 )
 
 // GetInfo returns the disk information for a VM.
+//
 // Deprecated: use vms.MapCustomStorageDevices from proxmox/nodes/vms instead.
 func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
 	storageDevices := resp.StorageDevices
 
 	currentDisk := d.Get(MkDisk)
 
-	diskMap := utils.MapResourcesByAttribute(currentDisk.([]interface{}), mkDiskInterface)
+	diskMap := utils.MapResourcesByAttribute(currentDisk.([]any), mkDiskInterface)
 
 	for k, v := range storageDevices {
 		if v != nil && diskMap[k] != nil {
-			if disk, ok := diskMap[k].(map[string]interface{}); ok {
+			if disk, ok := diskMap[k].(map[string]any); ok {
 				if fileID, ok := disk[mkDiskFileID].(string); ok && fileID != "" {
 					v.FileID = &fileID
 				}
@@ -148,14 +149,14 @@ func DigitPrefix(s string) string {
 func GetDiskDeviceObjects(
 	d *schema.ResourceData,
 	resource *schema.Resource,
-	disks []interface{},
+	disks []any,
 ) (vms.CustomStorageDevices, error) {
-	var diskDevices []interface{}
+	var diskDevices []any
 
 	if disks != nil {
 		diskDevices = disks
 	} else {
-		diskDevices = d.Get(MkDisk).([]interface{})
+		diskDevices = d.Get(MkDisk).([]any)
 	}
 
 	diskDeviceObjects := vms.CustomStorageDevices{}
@@ -163,7 +164,7 @@ func GetDiskDeviceObjects(
 	for _, diskEntry := range diskDevices {
 		diskDevice := &vms.CustomStorageDevice{}
 
-		block := diskEntry.(map[string]interface{})
+		block := diskEntry.(map[string]any)
 		datastoreID, _ := block[mkDiskDatastoreID].(string)
 		pathInDatastore := ""
 
@@ -348,7 +349,7 @@ func createCustomDisk(
 		return fmt.Errorf("creating custom disk: %w", err)
 	}
 
-	tflog.Debug(ctx, "vmCreateCustomDisks: commands", map[string]interface{}{
+	tflog.Debug(ctx, "vmCreateCustomDisks: commands", map[string]any{
 		"output": string(out),
 	})
 
@@ -373,8 +374,8 @@ func Read(
 	nodeName string,
 	isClone bool,
 ) diag.Diagnostics {
-	currentDiskList := d.Get(MkDisk).([]interface{})
-	diskMap := map[string]interface{}{}
+	currentDiskList := d.Get(MkDisk).([]any)
+	diskMap := map[string]any{}
 
 	var diags diag.Diagnostics
 
@@ -387,7 +388,7 @@ func Read(
 			continue
 		}
 
-		disk := map[string]interface{}{}
+		disk := map[string]any{}
 
 		datastoreID, pathInDatastore, hasDatastoreID := strings.Cut(dd.FileVolume, ":")
 		if !hasDatastoreID {
@@ -485,7 +486,7 @@ func Read(
 			dd.BurstableWriteSpeedMbps != nil ||
 			dd.MaxReadSpeedMbps != nil ||
 			dd.MaxWriteSpeedMbps != nil {
-			speed := map[string]interface{}{}
+			speed := map[string]any{}
 
 			if dd.IopsRead != nil {
 				speed[mkDiskIopsRead] = *dd.IopsRead
@@ -535,25 +536,25 @@ func Read(
 				speed[mkDiskSpeedWriteBurstable] = 0
 			}
 
-			disk[mkDiskSpeed] = []interface{}{speed}
+			disk[mkDiskSpeed] = []any{speed}
 		} else {
-			disk[mkDiskSpeed] = []interface{}{}
+			disk[mkDiskSpeed] = []any{}
 		}
 
 		diskMap[di] = disk
 	}
 
 	if !isClone || len(currentDiskList) > 0 {
-		var diskList []interface{}
+		var diskList []any
 
 		if len(currentDiskList) > 0 {
 			currentDiskMap := utils.MapResourcesByAttribute(currentDiskList, mkDiskInterface)
 			// copy import_from from the current disk if it exists
 			for k, v := range currentDiskMap {
-				if disk, ok := v.(map[string]interface{}); ok {
+				if disk, ok := v.(map[string]any); ok {
 					if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
 						if _, exists := diskMap[k]; exists {
-							diskMap[k].(map[string]interface{})[mkDiskImportFrom] = importFrom
+							diskMap[k].(map[string]any)[mkDiskImportFrom] = importFrom
 						}
 					}
 				}

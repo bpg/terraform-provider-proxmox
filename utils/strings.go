@@ -7,7 +7,7 @@
 package utils
 
 // ConvertToStringSlice helps convert interface slice to string slice.
-func ConvertToStringSlice(interfaceSlice []interface{}) []string {
+func ConvertToStringSlice(interfaceSlice []any) []string {
 	resultSlice := make([]string, len(interfaceSlice))
 
 	for i, val := range interfaceSlice {

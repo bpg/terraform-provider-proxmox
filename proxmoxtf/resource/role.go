@@ -47,7 +47,7 @@ func Role() *schema.Resource {
 		UpdateContext: roleUpdate,
 		DeleteContext: roleDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				roleID := d.Id()
 
 				err := d.Set(mkResourceVirtualEnvironmentRoleRoleID, roleID)
@@ -61,7 +61,7 @@ func Role() *schema.Resource {
 	}
 }
 
-func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func roleCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -92,7 +92,7 @@ func roleCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return roleRead(ctx, d, m)
 }
 
-func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func roleRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -113,7 +113,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 		return diag.FromErr(err)
 	}
 
-	privileges := schema.NewSet(schema.HashString, []interface{}{})
+	privileges := schema.NewSet(schema.HashString, []any{})
 
 	if *role != nil {
 		for _, v := range *role {
@@ -126,7 +126,7 @@ func roleRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.D
 	return diag.FromErr(err)
 }
 
-func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func roleUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()
@@ -154,7 +154,7 @@ func roleUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag
 	return roleRead(ctx, d, m)
 }
 
-func roleDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func roleDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	client, err := config.GetClient()

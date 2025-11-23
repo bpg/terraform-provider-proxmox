@@ -599,7 +599,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/43356?v=4",
       "profile": "http://ruilopes.com",
       "contributions": [
-        "code"
+        "code",
+        "ideas"
       ]
     },
     {
@@ -1536,6 +1537,24 @@
       "profile": "https://github.com/alexhaydock",
       "contributions": [
         "doc"
+      ]
+    },
+    {
+      "login": "lexxxel",
+      "name": "Alexander Petermann",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5159138?v=4",
+      "profile": "http://extrahourdevs.com",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "leleargo",
+      "name": "Emanuele Argonni",
+      "avatar_url": "https://avatars.githubusercontent.com/u/87581383?v=4",
+      "profile": "https://github.com/leleargo",
+      "contributions": [
+        "code"
       ]
     }
   ],

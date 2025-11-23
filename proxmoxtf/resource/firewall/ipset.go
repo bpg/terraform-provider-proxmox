@@ -51,8 +51,8 @@ func IPSet() *schema.Resource {
 			Description: "List of IP or Networks",
 			Optional:    true,
 			ForceNew:    true,
-			DefaultFunc: func() (interface{}, error) {
-				return []interface{}{}, nil
+			DefaultFunc: func() (any, error) {
+				return []any{}, nil
 			},
 			DiffSuppressFunc: structure.SuppressIfListsOfMapsAreEqualIgnoringOrderByKey(mkIPSetCIDRName),
 			Elem: &schema.Resource{
@@ -97,7 +97,7 @@ func IPSet() *schema.Resource {
 }
 
 // ipSetImport imports IP sets.
-func ipSetImport(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func ipSetImport(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	id := d.Id()
 
 	switch {
@@ -181,11 +181,11 @@ func ipSetCreate(ctx context.Context, api firewall.API, d *schema.ResourceData) 
 	comment := d.Get(mkIPSetCIDRComment).(string)
 	name := d.Get(mkIPSetName).(string)
 
-	ipSets := d.Get(mkIPSetCIDR).([]interface{})
+	ipSets := d.Get(mkIPSetCIDR).([]any)
 	ipSetsArray := make(firewall.IPSetContent, len(ipSets))
 
 	for i, v := range ipSets {
-		ipSetMap := v.(map[string]interface{})
+		ipSetMap := v.(map[string]any)
 		ipSetObject := firewall.IPSetGetResponseData{}
 
 		cidr := ipSetMap[mkIPSetCIDRName].(string)
@@ -262,10 +262,10 @@ func ipSetRead(ctx context.Context, api firewall.API, d *schema.ResourceData) di
 	}
 
 	//nolint:prealloc
-	var entries []interface{}
+	var entries []any
 
 	for key := range ipSet {
-		entry := map[string]interface{}{}
+		entry := map[string]any{}
 
 		entry[mkIPSetCIDRName] = ipSet[key].CIDR
 		entry[mkIPSetCIDRNoMatch] = ipSet[key].NoMatch

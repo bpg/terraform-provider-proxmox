@@ -3,6 +3,10 @@ resource "proxmox_virtual_environment_container" "example_template" {
 
   start_on_boot = "true"
 
+  wait_for_ip {
+    ipv4 = true
+  }
+
   disk {
     datastore_id = var.virtual_environment_storage
     size         = 4
@@ -71,6 +75,10 @@ resource "proxmox_virtual_environment_container" "example" {
 
   clone {
     vm_id = proxmox_virtual_environment_container.example_template.id
+  }
+
+  wait_for_ip {
+    ipv4 = true
   }
 
   tags = [

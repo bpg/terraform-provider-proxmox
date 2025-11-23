@@ -170,21 +170,21 @@ func CustomizeDiff() []schema.CustomizeDiffFunc {
 	return []schema.CustomizeDiffFunc{
 		customdiff.ComputedIf(
 			mkIPv4Addresses,
-			func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+			func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
 				return d.HasChange("started") ||
 					d.HasChange(MkNetworkDevice)
 			},
 		),
 		customdiff.ComputedIf(
 			mkIPv6Addresses,
-			func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+			func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
 				return d.HasChange("started") ||
 					d.HasChange(MkNetworkDevice)
 			},
 		),
 		customdiff.ComputedIf(
 			mkNetworkInterfaceNames,
-			func(_ context.Context, d *schema.ResourceDiff, _ interface{}) bool {
+			func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
 				return d.HasChange("started") ||
 					d.HasChange(MkNetworkDevice)
 			},

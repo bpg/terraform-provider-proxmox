@@ -137,6 +137,11 @@ output "ubuntu_vm_public_key" {
     - `type` - (Optional) The QEMU agent interface type (defaults to `virtio`).
         - `isa` - ISA Serial Port.
         - `virtio` - VirtIO (paravirtualized).
+    - `wait_for_ip` - (Optional) Configuration for waiting for specific IP address types when the VM starts.
+        - `ipv4` - (Optional) Wait for at least one IPv4 address (non-loopback, non-link-local) (defaults to `false`).
+        - `ipv6` - (Optional) Wait for at least one IPv6 address (non-loopback, non-link-local) (defaults to `false`).
+
+        When `wait_for_ip` is not specified or both `ipv4` and `ipv6` are `false`, the provider waits for any valid global unicast address (IPv4 or IPv6). In dual-stack networks where DHCPv6 responds faster, this may result in only IPv6 addresses being available. Set `ipv4 = true` to ensure IPv4 address availability.
 - `amd_sev` - (Optional) Secure Encrypted Virtualization (SEV) features by AMD CPUs.
     - `type` - (Optional) Enable standard SEV with `std` or enable experimental SEV-ES with the `es` option or enable experimental SEV-SNP with the `snp` option (defaults to `std`).
     - `allow_smt` - (Optional) Sets policy bit to allow Simultaneous Multi Threading (SMT)
@@ -159,8 +164,7 @@ output "ubuntu_vm_public_key" {
 - `bios` - (Optional) The BIOS implementation (defaults to `seabios`).
     - `ovmf` - OVMF (UEFI).
     - `seabios` - SeaBIOS.
-- `boot_order` - (Optional) Specify a list of devices to boot from in the order
-    they appear in the list (defaults to `[]`).
+- `boot_order` - (Optional) Specify a list of devices to boot from in the order they appear in the list.
 - `cdrom` - (Optional) The CD-ROM configuration.
     - `enabled` - (Optional) Whether to enable the CD-ROM drive (defaults
         to `false`). *Deprecated*. The attribute will be removed in the next version of the provider.
@@ -550,6 +554,8 @@ output "ubuntu_vm_public_key" {
     changes to this attribute.
 - `template` - (Optional) Whether to create a template (defaults to `false`).
 - `stop_on_destroy` - (Optional) Whether to stop rather than shutdown on VM destroy (defaults to `false`)
+- `purge_on_destroy` - (Optional) Whether to purge the VM from backup configurations on destroy (defaults to `true`)
+- `delete_unreferenced_disks_on_destroy` - (Optional) Whether to delete unreferenced disks on destroy (defaults to `true`)
 - `timeout_clone` - (Optional) Timeout for cloning a VM in seconds (defaults to
     1800).
 - `timeout_create` - (Optional) Timeout for creating a VM in seconds (defaults to

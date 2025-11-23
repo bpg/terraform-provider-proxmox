@@ -142,7 +142,7 @@ func createSchema() map[string]*schema.Schema {
 						Description: "Whether to use the SSH agent for authentication. Takes precedence over " +
 							"the `private_key` and `password` fields. Defaults to the value of the " +
 							"`PROXMOX_VE_SSH_AGENT` environment variable, or `false` if not set.",
-						DefaultFunc: func() (interface{}, error) {
+						DefaultFunc: func() (any, error) {
 							for _, k := range []string{"PROXMOX_VE_SSH_AGENT", "PM_VE_SSH_AGENT"} {
 								v := os.Getenv(k)
 
@@ -170,7 +170,7 @@ func createSchema() map[string]*schema.Schema {
 						Optional: true,
 						Description: "Whether to enable SSH agent forwarding. Defaults to the value of the " +
 							"`PROXMOX_VE_SSH_AGENT_FORWARDING` environment variable, or `false` if not set.",
-						DefaultFunc: func() (interface{}, error) {
+						DefaultFunc: func() (any, error) {
 							for _, k := range []string{"PROXMOX_VE_SSH_AGENT_FORWARDING", "PM_VE_SSH_AGENT_FORWARDING"} {
 								v := os.Getenv(k)
 

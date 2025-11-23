@@ -9,6 +9,7 @@ package disk
 import (
 	"context"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,18 +32,18 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 	diskSchema := Schema()
 
 	// Create resource data with multiple disks in a specific order that could be affected by map iteration
-	currentDiskList := []interface{}{
-		map[string]interface{}{
+	currentDiskList := []any{
+		map[string]any{
 			mkDiskInterface:   "scsi1", // Intentionally put scsi1 first
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        150,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi0", // Then scsi0 second
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        50,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	}
 
@@ -65,11 +66,11 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 	// Run the ordering logic multiple times to ensure deterministic results
 	const iterations = 10
 
-	results := make([][]interface{}, 0, iterations)
+	results := make([][]any, 0, iterations)
 
 	for range iterations {
 		// Create a new resource data for each iteration
-		resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]interface{}{
+		resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
 			MkDisk: currentDiskList,
 		})
 
@@ -83,7 +84,7 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 		require.Empty(t, diags, "Read should not return any diagnostics")
 
 		// Get the resulting disk list
-		diskList := resourceData.Get(MkDisk).([]interface{})
+		diskList := resourceData.Get(MkDisk).([]any)
 		results = append(results, diskList)
 	}
 
@@ -97,8 +98,8 @@ func TestDiskOrderingDeterministic(t *testing.T) {
 	// Verify the specific ordering - should preserve currentDiskList order: scsi1, then scsi0
 	require.Len(t, expectedResult, 2, "Should have 2 disks")
 
-	disk0 := expectedResult[0].(map[string]interface{})
-	disk1 := expectedResult[1].(map[string]interface{})
+	disk0 := expectedResult[0].(map[string]any)
+	disk1 := expectedResult[1].(map[string]any)
 
 	require.Equal(t, "scsi1", disk0[mkDiskInterface], "First disk should be scsi1 (as in currentDiskList)")
 	require.Equal(t, 150, disk0[mkDiskSize], "First disk should have size 150")
@@ -115,30 +116,30 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 	diskSchema := Schema()
 
 	// Test with various interface types in random order
-	currentDiskList := []interface{}{
-		map[string]interface{}{
+	currentDiskList := []any{
+		map[string]any{
 			mkDiskInterface:   "virtio2",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        30,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi0",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        10,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "sata1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        20,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "virtio0",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        40,
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	}
 
@@ -153,10 +154,10 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 	// Test multiple iterations
 	const iterations = 5
 
-	results := make([][]interface{}, 0, iterations)
+	results := make([][]any, 0, iterations)
 
 	for range iterations {
-		resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]interface{}{
+		resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
 			MkDisk: currentDiskList,
 		})
 
@@ -168,7 +169,7 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 		diags := Read(ctx, resourceData, diskDeviceObjects, vmID, client, "test-node", false)
 		require.Empty(t, diags)
 
-		diskList := resourceData.Get(MkDisk).([]interface{})
+		diskList := resourceData.Get(MkDisk).([]any)
 		results = append(results, diskList)
 	}
 
@@ -184,7 +185,7 @@ func TestDiskOrderingVariousInterfaces(t *testing.T) {
 
 	expectedOrder := []string{"virtio2", "scsi0", "sata1", "virtio0"}
 	for i, expectedInterface := range expectedOrder {
-		disk := expectedResult[i].(map[string]interface{})
+		disk := expectedResult[i].(map[string]any)
 		require.Equal(t, expectedInterface, disk[mkDiskInterface],
 			"Disk at position %d should be %s (as in currentDiskList)", i, expectedInterface)
 	}
@@ -272,20 +273,20 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 
 	var err error
 
-	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]interface{}{
-		MkDisk: []interface{}{
-			map[string]interface{}{
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: []any{
+			map[string]any{
 				mkDiskInterface:   "scsi0",
 				mkDiskDatastoreID: "local",
 				mkDiskSize:        10,
 				mkDiskImportFrom:  "local:iso/disk.qcow2",
-				mkDiskSpeed:       []interface{}{},
+				mkDiskSpeed:       []any{},
 			},
-			map[string]interface{}{
+			map[string]any{
 				mkDiskInterface:   "scsi1",
 				mkDiskDatastoreID: "local",
 				mkDiskSize:        20,
-				mkDiskSpeed:       []interface{}{},
+				mkDiskSpeed:       []any{},
 			},
 		},
 	})
@@ -332,22 +333,22 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	nodeName := "test-node"
 
 	// Force HasChange to return true by setting old and new values
-	err = resourceData.Set(MkDisk, []interface{}{
-		map[string]interface{}{
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
 			mkDiskInterface:   "scsi1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        5, // Old size
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	})
 	require.NoError(t, err)
 
-	err = resourceData.Set(MkDisk, []interface{}{
-		map[string]interface{}{
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
 			mkDiskInterface:   "scsi1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        20, // New size
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	})
 	require.NoError(t, err)
@@ -431,8 +432,8 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 	}
 
 	// Create test configuration with multiple disks in specific order
-	oldDiskList := []interface{}{
-		map[string]interface{}{
+	oldDiskList := []any{
+		map[string]any{
 			mkDiskInterface:   "scsi0",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        32,
@@ -444,9 +445,9 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        20,
@@ -458,9 +459,9 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi2",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        1,
@@ -472,9 +473,9 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi3",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        50,
@@ -486,9 +487,9 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi7",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        4,
@@ -500,13 +501,13 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	}
 
 	// New configuration with scsi7 removed
-	newDiskList := []interface{}{
-		map[string]interface{}{
+	newDiskList := []any{
+		map[string]any{
 			mkDiskInterface:   "scsi0",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        32,
@@ -518,9 +519,9 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        20,
@@ -532,9 +533,9 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi2",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        1,
@@ -546,9 +547,9 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkDiskInterface:   "scsi3",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        50,
@@ -560,12 +561,12 @@ func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {
 			mkDiskReplicate:   true,
 			mkDiskSSD:         false,
 			mkDiskSerial:      "",
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	}
 
 	// Create resource data
-	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]interface{}{
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
 		MkDisk: oldDiskList,
 	})
 
@@ -649,11 +650,8 @@ func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
 	for currentInterface := range currentDisks {
 		if _, present := planDisksWithBootDiskRemoved[currentInterface]; !present {
 			// Check if this is a boot disk
-			for _, bootDevice := range bootDevices {
-				if bootDevice == currentInterface {
-					bootDiskDeletionAttempted = true
-					break
-				}
+			if slices.Contains(bootDevices, currentInterface) {
+				bootDiskDeletionAttempted = true
 			}
 		}
 	}
@@ -680,11 +678,8 @@ func TestDiskDeletionWithBootDiskProtection(t *testing.T) {
 			deletedInterfaces = append(deletedInterfaces, currentInterface)
 
 			// Check if this is a boot disk
-			for _, bootDevice := range bootDevices {
-				if bootDevice == currentInterface {
-					bootDiskInDeletion = true
-					break
-				}
+			if slices.Contains(bootDevices, currentInterface) {
+				bootDiskInDeletion = true
 			}
 		}
 	}

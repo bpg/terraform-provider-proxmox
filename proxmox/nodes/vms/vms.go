@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,6 +21,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/tasks"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
 
 // CloneVM clones a virtual machine.
@@ -56,6 +56,25 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 	)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM clone: %w", err)
+	}
+
+	return nil
+}
+
+// ConvertToTemplate converts a virtual machine to a template using proper endpoint.
+func (c *Client) ConvertToTemplate(ctx context.Context) error {
+	resBody := &UpdateAsyncResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("template"), nil, resBody)
+	if err != nil {
+		return fmt.Errorf("error converting VM %d to template: %w", c.VMID, err)
+	}
+
+	if resBody.Data != nil {
+		err = c.Tasks().WaitForTask(ctx, *resBody.Data)
+		if err != nil {
+			return fmt.Errorf("error waiting for VM %d template conversion: %w", c.VMID, err)
+		}
 	}
 
 	return nil
@@ -98,7 +117,7 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 		retry.Delay(1*time.Second),
 		retry.LastErrorOnly(false),
 		retry.OnRetry(func(n uint, err error) {
-			tflog.Warn(ctx, "retrying VM creation", map[string]interface{}{
+			tflog.Warn(ctx, "retrying VM creation", map[string]any{
 				"attempt": n,
 				"error":   err.Error(),
 			})
@@ -120,9 +139,9 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 	return resBody.TaskID, nil
 }
 
-// DeleteVM creates a virtual machine.
-func (c *Client) DeleteVM(ctx context.Context) error {
-	taskID, err := c.DeleteVMAsync(ctx)
+// DeleteVM deletes a virtual machine.
+func (c *Client) DeleteVM(ctx context.Context, purge bool, destroyUnreferencedDisks bool) error {
+	taskID, err := c.DeleteVMAsync(ctx, purge, destroyUnreferencedDisks)
 	if err != nil {
 		return err
 	}
@@ -136,13 +155,24 @@ func (c *Client) DeleteVM(ctx context.Context) error {
 }
 
 // DeleteVMAsync deletes a virtual machine asynchronously. Returns ID of the started task.
-func (c *Client) DeleteVMAsync(ctx context.Context) (*string, error) {
+func (c *Client) DeleteVMAsync(ctx context.Context, purge bool, destroyUnreferencedDisks bool) (*string, error) {
 	// PVE may return a 500 error "got no worker upid - start worker failed", so we retry few times.
 	resBody := &DeleteResponseBody{}
 
+	purgeValue := 0
+	if purge {
+		purgeValue = 1
+	}
+
+	destroyUnreferencedDisksValue := 0
+	if destroyUnreferencedDisks {
+		destroyUnreferencedDisksValue = 1
+	}
+
 	err := retry.Do(
 		func() error {
-			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath("?destroy-unreferenced-disks=1&purge=1"), nil, resBody)
+			path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
+			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(path), nil, resBody)
 		},
 		retry.Context(ctx),
 		retry.Attempts(3),
@@ -435,7 +465,7 @@ func (c *Client) StartVM(ctx context.Context, timeoutSec int) ([]string, error) 
 	if err != nil {
 		log, e := c.Tasks().GetTaskLog(ctx, *taskID)
 		if e != nil {
-			tflog.Error(ctx, "error retrieving task log", map[string]interface{}{
+			tflog.Error(ctx, "error retrieving task log", map[string]any{
 				"task_id": *taskID,
 				"error":   e.Error(),
 			})
@@ -560,99 +590,143 @@ func (c *Client) UpdateVMAsync(ctx context.Context, d *UpdateRequestBody) (*stri
 // WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
 func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	ctx context.Context,
-	timeout int, // time in seconds to wait until giving up
-	delay int, // the delay in seconds between requests to the agent
-	waitForIP bool, // whether to block until an IP is found, or just block until the interfaces are published
+	timeout time.Duration,
+	waitForIPConfig *WaitForIPConfig, // configuration for which IP types to wait for (nil = wait for any global unicast)
 ) (*GetQEMUNetworkInterfacesResponseData, error) {
-	delaySeconds := int64(delay)
-	timeMaxSeconds := float64(timeout)
-	timeStart := time.Now()
-	timeElapsed := timeStart.Sub(timeStart)
+	errNoIPsYet := errors.New("no ips yet")
+
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	ch := make(chan os.Signal, 1)
+
 	signal.Notify(ch, os.Interrupt)
+	defer signal.Stop(ch)
 
-	for timeElapsed.Seconds() < timeMaxSeconds {
-		timeElapsed = time.Since(timeStart)
-
-		// check if terraform wants to shut us down (we try to poll the ctx every 200ms)
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("error waiting for VM network interfaces: %w", ctx.Err())
-		}
-
+	go func() {
 		select {
 		case <-ch:
-			{
-				// the returned error will be eaten by the terraform runtime, so we log it here as well
-				const msg = "interrupted by signal"
-
-				tflog.Warn(ctx, msg)
-
-				return nil, errors.New(msg)
-			}
-		default:
+			const msg = "interrupted by signal"
+			tflog.Warn(ctx, msg)
+			cancel()
+		case <-ctxWithTimeout.Done():
 		}
+	}()
 
-		// sleep another 200 milliseconds if we haven't delayed enough since our last call
-		if int64(timeElapsed.Seconds())%delaySeconds != 0 {
-			time.Sleep(200 * time.Millisecond)
-			continue
-		}
+	data, err := retry.DoWithData(
+		func() (*GetQEMUNetworkInterfacesResponseData, error) {
+			data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
+			if err != nil {
+				var httpError *api.HTTPError
+				if errors.As(err, &httpError) {
+					if httpError.Code == http.StatusForbidden {
+						return nil, err
+					}
 
-		// request the network interfaces from the agent
-		data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
-
-		var httpError *api.HTTPError
-		if errors.As(err, &httpError) && httpError.Code == http.StatusForbidden {
-			return nil, err
-		}
-
-		// tick ahead and continue if we got an error from the api
-		if err != nil || data == nil || data.Result == nil {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		// If we're waiting for an IP, check if we have one yet; if not then keep looping
-		if waitForIP {
-			for _, nic := range *data.Result {
-				// skip the loopback interface
-				if nic.Name == "lo" {
-					continue
-				}
-
-				// skip the interface if it has no IP addresses
-				if nic.IPAddresses == nil ||
-					(nic.IPAddresses != nil && len(*nic.IPAddresses) == 0) {
-					continue
-				}
-
-				// return if the interface has any global unicast addresses
-				for _, addr := range *nic.IPAddresses {
-					if ip := net.ParseIP(addr.Address); ip != nil && ip.IsGlobalUnicast() {
-						return data, err
+					if httpError.Code == http.StatusBadRequest {
+						return nil, errNoIPsYet
 					}
 				}
+
+				return nil, errNoIPsYet
 			}
 
-			// no IP address has come through the agent yet
-			time.Sleep(1 * time.Second)
-			continue //nolint
-		}
+			if data == nil || data.Result == nil {
+				return nil, errNoIPsYet
+			}
 
-		// if not waiting for an IP, and the agent sent us an interface, return
-		if data.Result != nil && len(*data.Result) > 0 {
-			return data, err
-		}
+			hasIPv4, hasIPv6 := c.checkIPAddresses(*data.Result)
 
-		// we didn't get any interfaces so tick ahead to keep looping
-		time.Sleep(1 * time.Second)
+			if waitForIPConfig == nil {
+				// backward compatibility: wait for any valid global unicast address
+				if !hasIPv4 && !hasIPv6 {
+					return nil, errNoIPsYet
+				}
+
+				return data, nil
+			}
+
+			requiredIPv4 := waitForIPConfig.IPv4
+			requiredIPv6 := waitForIPConfig.IPv6
+
+			// if no specific requirements, wait for any IP (backward compatibility)
+			if !requiredIPv4 && !requiredIPv6 {
+				if !hasIPv4 && !hasIPv6 {
+					return nil, errNoIPsYet
+				}
+
+				return data, nil
+			}
+
+			// check if all required IP types are available
+			if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+				return nil, errNoIPsYet
+			}
+
+			// all required IP types are available
+			return data, nil
+		},
+		retry.Context(ctxWithTimeout),
+		retry.RetryIf(func(err error) bool {
+			var target *api.HTTPError
+			if errors.As(err, &target) {
+				if target.Code == http.StatusBadRequest {
+					return true
+				}
+			}
+
+			return errors.Is(err, errNoIPsYet)
+		}),
+		retry.LastErrorOnly(true),
+		retry.UntilSucceeded(),
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(time.Second),
+	)
+
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return nil, fmt.Errorf(
+			"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces",
+			c.VMID,
+		)
 	}
 
-	return nil, fmt.Errorf(
-		"timeout while waiting for the QEMU agent on VM \"%d\" to publish the network interfaces",
-		c.VMID,
-	)
+	if err != nil {
+		return nil, fmt.Errorf("error waiting for VM network interfaces: %w", err)
+	}
+
+	return data, nil
+}
+
+// checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
+func (c *Client) checkIPAddresses(
+	nics []GetQEMUNetworkInterfacesResponseResult,
+) (bool, bool) {
+	hasIPv4 := false
+	hasIPv6 := false
+
+	for _, nic := range nics {
+		if nic.Name == "lo" {
+			continue
+		}
+
+		if nic.IPAddresses == nil || len(*nic.IPAddresses) == 0 {
+			continue
+		}
+
+		for _, addr := range *nic.IPAddresses {
+			if !ip.IsValidGlobalUnicast(addr.Address) {
+				continue
+			}
+
+			if ip.IsIPv4(addr.Address) {
+				hasIPv4 = true
+			} else if ip.IsIPv6(addr.Address) {
+				hasIPv6 = true
+			}
+		}
+	}
+
+	return hasIPv4, hasIPv6
 }
 
 // WaitForVMConfigUnlock waits for a virtual machine configuration to become unlocked.

@@ -9,6 +9,7 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"net/url"
 	"sync"
 	"testing"
@@ -176,9 +177,7 @@ func InitEnvironment(t *testing.T) *Environment {
 // Please note that NodeName and ProviderConfig are reserved keys, they are set by the test environment
 // and cannot be overridden.
 func (e *Environment) AddTemplateVars(vars map[string]any) {
-	for k, v := range vars {
-		e.templateVars[k] = v
-	}
+	maps.Copy(e.templateVars, vars)
 }
 
 // RenderConfig renders the given configuration with for the current test environment using template engine.
