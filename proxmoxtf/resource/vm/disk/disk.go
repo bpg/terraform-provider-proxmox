@@ -583,8 +583,9 @@ func Update(
 	planDisks vms.CustomStorageDevices,
 	currentDisks vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
-) (bool, error) {
+) (bool, bool, error) {
 	rebootRequired := false
+	shutdownBeforeUpdate := false
 
 	if d.HasChange(MkDisk) {
 		for iface, disk := range planDisks {
@@ -596,7 +597,7 @@ func Update(
 					// only disks with defined file ID are custom image disks that need to be created via import.
 					err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
 					if err != nil {
-						return false, fmt.Errorf("creating custom disk: %w", err)
+						return false, false, fmt.Errorf("creating custom disk: %w", err)
 					}
 				} else {
 					// otherwise this is a blank disk that can be added directly via update API
@@ -612,7 +613,7 @@ func Update(
 				tmp = currentDisks[iface]
 			default:
 				// something went wrong
-				return false, fmt.Errorf("missing device %s", iface)
+				return false, false, fmt.Errorf("missing device %s", iface)
 			}
 
 			if tmp == nil || disk == nil {
@@ -624,8 +625,12 @@ func Update(
 				tmp.AIO = disk.AIO
 			}
 
-			// Never send ImportFrom for existing disks - it triggers re-import which fails for boot disks
-			// ImportFrom is only for initial disk creation, not updates
+			if disk.ImportFrom != nil && *disk.ImportFrom != "" {
+				shutdownBeforeUpdate = true
+				tmp.DatastoreID = disk.DatastoreID
+				tmp.ImportFrom = disk.ImportFrom
+				tmp.Size = disk.Size
+			}
 
 			tmp.Backup = disk.Backup
 			tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
@@ -647,5 +652,5 @@ func Update(
 		}
 	}
 
-	return rebootRequired, nil
+	return shutdownBeforeUpdate, rebootRequired, nil
 }
