@@ -45,8 +45,11 @@ var (
 	httpRegex                                = regexp.MustCompile(`https?://.*`)
 )
 
+const sizeRequiresReplaceDescription = "Triggers resource force replacement if `size` in state does not match remote value."
+
 type sizeRequiresReplaceModifier struct{}
 
+//nolint:dupl
 func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 	ctx context.Context,
 	req planmodifier.Int64Request,
@@ -104,11 +107,11 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 }
 
 func (r sizeRequiresReplaceModifier) Description(_ context.Context) string {
-	return "Triggers resource force replacement if `size` in state does not match remote value."
+	return sizeRequiresReplaceDescription
 }
 
 func (r sizeRequiresReplaceModifier) MarkdownDescription(_ context.Context) string {
-	return "Triggers resource force replacement if `size` in state does not match remote value."
+	return sizeRequiresReplaceDescription
 }
 
 type downloadFileModel struct {
@@ -550,6 +553,8 @@ func (r *downloadFileResource) Update(
 }
 
 // Delete removes file resource.
+//
+//nolint:dupl
 func (r *downloadFileResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,

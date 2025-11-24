@@ -43,6 +43,7 @@ var (
 
 type ociSizeRequiresReplaceModifier struct{}
 
+//nolint:dupl
 func (r ociSizeRequiresReplaceModifier) PlanModifyInt64(
 	ctx context.Context,
 	req planmodifier.Int64Request,
@@ -265,7 +266,6 @@ func (r *pullOCIResouce) Create(
 
 	// If filename is not provided, generate one from reference
 	if plan.FileName.IsUnknown() || plan.FileName.IsNull() {
-
 		// Generate filename from reference (e.g., "docker.io/library/ubuntu:latest" -> "ubuntu_latest.tar")
 		refParts := strings.Split(plan.Reference.ValueString(), "/")
 		lastPart := refParts[len(refParts)-1]
@@ -435,7 +435,7 @@ func (r *pullOCIResouce) Update(
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-// Delete removes file resource.
+//nolint:dupl
 func (r *pullOCIResouce) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,

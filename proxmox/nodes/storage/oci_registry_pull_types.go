@@ -13,7 +13,7 @@ type OCIRegistryPullResponseBody struct {
 
 // OCIRegistryPullRequestBody contains the data for an OCI registry pull request.
 type OCIRegistryPullRequestBody struct {
-	FileName  *string `json:"filename,omitempty"            url:"filename,omitempty"`
-	Reference *string `json:"reference,omitempty"           url:"reference,omitempty"`
-	Storage   *string `json:"storage,omitempty"            url:"storage,omitempty"`
+	FileName  *string `json:"filename,omitempty"  url:"filename,omitempty"`
+	Reference *string `json:"reference,omitempty" url:"reference,omitempty"`
+	Storage   *string `json:"storage,omitempty"   url:"storage,omitempty"`
 }
