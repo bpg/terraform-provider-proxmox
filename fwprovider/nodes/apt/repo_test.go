@@ -22,7 +22,6 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
-	apitypes "github.com/bpg/terraform-provider-proxmox/proxmox/types/nodes/apt/repositories"
 )
 
 // Note that some "hard-coded" values must be used because of the way how the Proxmox VE API for APT repositories works.
@@ -51,7 +50,7 @@ func TestAccDataSourceRepo(t *testing.T) {
 				{
 					Config: te.RenderConfig(`
 					data "proxmox_virtual_environment_apt_repository" "test" {
-						file_path = "/etc/apt/sources.list"
+						file_path = "/etc/apt/sources.list.d/proxmox.sources"
 						index = 0
 						node = "{{.NodeName}}"
 					}`),
@@ -66,7 +65,7 @@ func TestAccDataSourceRepo(t *testing.T) {
 						resource.TestCheckResourceAttr(
 							"data.proxmox_virtual_environment_apt_repository.test",
 							apt.SchemaAttrNameTerraformID,
-							"apt_repository_"+strings.ToLower(te.NodeName)+"_etc_apt_sources_list_0",
+							"apt_repository_"+strings.ToLower(te.NodeName)+"_etc_apt_sources_list_d_proxmox_sources_0",
 						),
 						test.ResourceAttributesSet("data.proxmox_virtual_environment_apt_repository.test", []string{
 							"components.#",
@@ -180,7 +179,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_apt_repository" "test" {
 						enabled   = true
-						file_path = "/etc/apt/sources.list"
+						file_path = "/etc/apt/sources.list.d/debian.sources"
 						index     = 0
 						node      = "{{.NodeName}}"
 					}`),
@@ -213,11 +212,11 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 								map[int]knownvalue.Check{
 									// The possible Debian version is based on the official table of the Proxmox VE FAQ page:
 									// - https://pve.proxmox.com/wiki/FAQ#faq-support-table
-									// - https://www.thomas-krenn.com/en/wiki/Proxmox_VE#Proxmox_VE_8.x
+									// - https://www.thomas-krenn.com/en/wiki/Proxmox_VE#Proxmox_VE_9.x
 									//
 									// The required Proxmox VE version for this provider is of course also taken into account:
 									// - https://github.com/bpg/terraform-provider-proxmox?tab=readme-ov-file#requirements
-									0: knownvalue.StringRegexp(regexp.MustCompile(`(bookworm)`)),
+									0: knownvalue.StringRegexp(regexp.MustCompile(`(trixie)`)),
 								},
 							),
 						),
@@ -226,7 +225,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 							tfjsonpath.New(apt.SchemaAttrNameURIs),
 							knownvalue.ListPartial(
 								map[int]knownvalue.Check{
-									0: knownvalue.StringRegexp(regexp.MustCompile(`https?://ftp\.([a-z]+\.)?debian\.org/debian`)),
+									0: knownvalue.StringRegexp(regexp.MustCompile(`http?://([a-z]+\.)?debian\.org/debian/`)),
 								},
 							),
 						),
@@ -235,14 +234,14 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 					Check: resource.ComposeTestCheckFunc(
 						test.ResourceAttributes("proxmox_virtual_environment_apt_repository.test", map[string]string{
 							"enabled":   strconv.FormatBool(true),
-							"file_path": "/etc/apt/sources.list",
+							"file_path": "/etc/apt/sources.list.d/debian.sources",
 							"index":     strconv.FormatInt(0, 10),
 							"node":      te.NodeName,
 							"id": fmt.Sprintf(
 								"apt_repository_%s_%s_%d",
 								strings.ToLower(te.NodeName),
 								apt.RepoIDCharReplaceRegEx.ReplaceAllString(
-									strings.TrimPrefix("/etc/apt/sources.list", "/"),
+									strings.TrimPrefix("/etc/apt/sources.list.d/debian.sources", "/"),
 									"_",
 								),
 								0,
@@ -259,7 +258,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 					ImportStateId: fmt.Sprintf(
 						"%s,%s,%d",
 						strings.ToLower(te.NodeName),
-						apitypes.StandardRepoFilePathMain,
+						"/etc/apt/sources.list.d/debian.sources",
 						testAccResourceRepoIndex,
 					),
 					ImportStateVerify: true,
@@ -271,7 +270,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 					Config: te.RenderConfig(`
 					resource "proxmox_virtual_environment_apt_repository" "test" {
 						enabled    = false
-						file_path  = "/etc/apt/sources.list"
+						file_path  = "/etc/apt/sources.list.d/debian.sources"
 						index     = 0
 						node      = "{{.NodeName}}"
 					}`),
@@ -309,7 +308,7 @@ func TestAccResourceStandardRepoValidInput(t *testing.T) {
 				// Test the "Create" and "Read" implementations.
 				{
 					// 	PUT /api2/json/nodes/{node}/apt/repositories with handle = "no-subscription" will create a new
-					// entry in /etc/apt/sources.list on each call :/
+					// entry in /etc/apt/sources.list.d/proxmox.sources on each call :/
 					SkipFunc: func() (bool, error) {
 						return true, nil
 					},
@@ -321,7 +320,7 @@ func TestAccResourceStandardRepoValidInput(t *testing.T) {
 					// The provided attributes and computed attributes should be set.
 					Check: resource.ComposeTestCheckFunc(
 						test.ResourceAttributes("proxmox_virtual_environment_apt_standard_repository.test", map[string]string{
-							"file_path": "/etc/apt/sources.list",
+							"file_path": "/etc/apt/sources.list.d/proxmox.sources",
 							"handle":    "no-subscription",
 							"node":      te.NodeName,
 							"status":    "1",
