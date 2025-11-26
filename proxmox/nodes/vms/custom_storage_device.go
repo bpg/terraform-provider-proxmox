@@ -110,8 +110,7 @@ func (d *CustomStorageDevice) IsOwnedBy(vmID int) bool {
 
 // IsCloudInitDrive returns true, if CustomStorageDevice is a cloud-init drive.
 func (d *CustomStorageDevice) IsCloudInitDrive(vmID int) bool {
-	return d.Media != nil && *d.Media == "cdrom" &&
-		strings.Contains(d.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID))
+	return strings.Contains(d.FileVolume, fmt.Sprintf("vm-%d-cloudinit", vmID))
 }
 
 // EncodeOptions converts a CustomStorageDevice's common options a URL value.
