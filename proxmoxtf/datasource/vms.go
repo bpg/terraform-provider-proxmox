@@ -91,7 +91,7 @@ func VMs() *schema.Resource {
 }
 
 // vmRead reads the VMs.
-func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func vmsRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -108,7 +108,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 
 	var filterTags []string
 
-	tagsData := d.Get(mkDataSourceVirtualEnvironmentVMTags).([]interface{})
+	tagsData := d.Get(mkDataSourceVirtualEnvironmentVMTags).([]any)
 	for _, tagData := range tagsData {
 		tag := strings.TrimSpace(tagData.(string))
 		if len(tag) > 0 {
@@ -118,9 +118,9 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 
 	sort.Strings(filterTags)
 
-	filters := d.Get(mkDataSourceFilter).([]interface{})
+	filters := d.Get(mkDataSourceFilter).([]any)
 
-	var vms []interface{}
+	var vms []any
 
 	for _, nodeName := range nodeNames {
 		listData, e := api.Node(nodeName).VM(0).ListVMs(ctx)
@@ -143,7 +143,7 @@ func vmsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Di
 		})
 
 		for _, data := range listData {
-			vm := map[string]interface{}{
+			vm := map[string]any{
 				mkDataSourceVirtualEnvironmentVMNodeName: nodeName,
 				mkDataSourceVirtualEnvironmentVMVMID:     data.VMID,
 			}
@@ -228,11 +228,11 @@ func getNodeNames(ctx context.Context, d *schema.ResourceData, api proxmox.Clien
 }
 
 //nolint:dupl // TODO: refactor to avoid duplication
-func checkVMMatchFilters(vm map[string]interface{}, filters []interface{}) (bool, error) {
+func checkVMMatchFilters(vm map[string]any, filters []any) (bool, error) {
 	for _, v := range filters {
-		filter := v.(map[string]interface{})
+		filter := v.(map[string]any)
 		filterName := filter["name"]
-		filterValues := filter["values"].([]interface{})
+		filterValues := filter["values"].([]any)
 		filterRegex := filter["regex"].(bool)
 
 		var vmValue string

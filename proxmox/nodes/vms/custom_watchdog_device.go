@@ -46,9 +46,9 @@ func (r *CustomWatchdogDevice) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {

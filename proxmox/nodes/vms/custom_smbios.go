@@ -82,9 +82,9 @@ func (r *CustomSMBIOS) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal CustomSMBIOS: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.SplitN(strings.TrimSpace(p), "=", 2)
 
 		if len(v) == 2 {

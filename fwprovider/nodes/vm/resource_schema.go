@@ -98,6 +98,20 @@ func (r *Resource) Schema(
 				Computed:            true,
 				Default:             booldefault.StaticBool(false),
 			},
+			"purge_on_destroy": schema.BoolAttribute{
+				Description:         "Set to true to purge the VM from backup configurations on destroy.",
+				MarkdownDescription: "Set to true to purge the VM from backup configurations on destroy (defaults to `true`).",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
+			},
+			"delete_unreferenced_disks_on_destroy": schema.BoolAttribute{
+				Description:         "Set to true to delete unreferenced disks on destroy.",
+				MarkdownDescription: "Set to true to delete unreferenced disks on destroy (defaults to `true`).",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(true),
+			},
 			"tags": stringset.ResourceAttribute("The tags assigned to the VM.", ""),
 			"template": schema.BoolAttribute{
 				Description: "Set to true to create a VM template.",

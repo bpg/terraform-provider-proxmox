@@ -17,16 +17,40 @@ import (
 	"github.com/avast/retry-go/v4"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
+	"github.com/bpg/terraform-provider-proxmox/utils/ip"
 )
+
+var errContainerAlreadyRunning = errors.New("container is already running")
 
 // CloneContainer clones a container.
 func (c *Client) CloneContainer(ctx context.Context, d *CloneRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("/clone"), d, nil)
+	taskID, err := c.CloneContainerAsync(ctx, d)
 	if err != nil {
-		return fmt.Errorf("error cloning container: %w", err)
+		return err
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *taskID)
+	if err != nil {
+		return fmt.Errorf("error waiting for container cloned: %w", err)
 	}
 
 	return nil
+}
+
+// CloneContainerAsync clones a container asynchronously.
+func (c *Client) CloneContainerAsync(ctx context.Context, d *CloneRequestBody) (*string, error) {
+	resBody := &CloneResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("/clone"), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error cloning container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // CreateContainer creates a container.
@@ -138,6 +162,7 @@ func (c *Client) ListContainers(ctx context.Context) ([]*ListResponseData, error
 func (c *Client) WaitForContainerNetworkInterfaces(
 	ctx context.Context,
 	timeout time.Duration,
+	waitForIPConfig *WaitForIPConfig, // configuration for which IP types to wait for (nil = wait for any global unicast)
 ) ([]GetNetworkInterfacesData, error) {
 	errNoIPsYet := errors.New("no ips yet")
 
@@ -151,14 +176,36 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 				return nil, err
 			}
 
-			for _, iface := range ifaces {
-				if iface.Name != "lo" && iface.IPAddresses != nil && len(*iface.IPAddresses) > 0 {
-					// we have at least one non-loopback interface with an IP address
-					return ifaces, nil
+			hasIPv4, hasIPv6 := c.checkIPAddresses(ifaces)
+
+			if waitForIPConfig == nil {
+				// backward compatibility: wait for any valid global unicast address
+				if !hasIPv4 && !hasIPv6 {
+					return nil, errNoIPsYet
 				}
+
+				return ifaces, nil
 			}
 
-			return nil, errNoIPsYet
+			requiredIPv4 := waitForIPConfig.IPv4
+			requiredIPv6 := waitForIPConfig.IPv6
+
+			// if no specific requirements, wait for any IP (backward compatibility)
+			if !requiredIPv4 && !requiredIPv6 {
+				if !hasIPv4 && !hasIPv6 {
+					return nil, errNoIPsYet
+				}
+
+				return ifaces, nil
+			}
+
+			// check if all required IP types are available
+			if (requiredIPv4 && !hasIPv4) || (requiredIPv6 && !hasIPv6) {
+				return nil, errNoIPsYet
+			}
+
+			// all required IP types are available
+			return ifaces, nil
 		},
 		retry.Context(ctxWithTimeout),
 		retry.RetryIf(func(err error) bool {
@@ -190,14 +237,63 @@ func (c *Client) WaitForContainerNetworkInterfaces(
 	return ifaces, nil
 }
 
+// checkIPAddresses checks network interfaces for valid IP addresses and returns whether IPv4 and IPv6 are present.
+func (c *Client) checkIPAddresses(
+	ifaces []GetNetworkInterfacesData,
+) (bool, bool) {
+	hasIPv4 := false
+	hasIPv6 := false
+
+	for _, iface := range ifaces {
+		if iface.Name == "lo" || iface.IPAddresses == nil || len(*iface.IPAddresses) == 0 {
+			continue
+		}
+
+		for _, ipAddr := range *iface.IPAddresses {
+			if !ip.IsValidGlobalUnicast(ipAddr.Address) {
+				continue
+			}
+
+			if ip.IsIPv4(ipAddr.Address) {
+				hasIPv4 = true
+			} else if ip.IsIPv6(ipAddr.Address) {
+				hasIPv6 = true
+			}
+		}
+	}
+
+	return hasIPv4, hasIPv6
+}
+
 // RebootContainer reboots a container.
 func (c *Client) RebootContainer(ctx context.Context, d *RebootRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/reboot"), d, nil)
+	taskID, err := c.RebootContainerAsync(ctx, d)
 	if err != nil {
-		return fmt.Errorf("error rebooting container: %w", err)
+		return err
+	}
+
+	err = c.Tasks().WaitForTask(ctx, *taskID)
+	if err != nil {
+		return fmt.Errorf("error waiting for container reboot: %w", err)
 	}
 
 	return nil
+}
+
+// RebootContainerAsync reboots a container asynchronously.
+func (c *Client) RebootContainerAsync(ctx context.Context, d *RebootRequestBody) (*string, error) {
+	resBody := &RebootResponseBody{}
+
+	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/reboot"), d, resBody)
+	if err != nil {
+		return nil, fmt.Errorf("error rebooting container: %w", err)
+	}
+
+	if resBody.Data == nil {
+		return nil, api.ErrNoDataObjectInResponse
+	}
+
+	return resBody.Data, nil
 }
 
 // ShutdownContainer shuts down a container.
@@ -244,6 +340,10 @@ func (c *Client) StartContainer(ctx context.Context) error {
 
 	taskID, err := c.StartContainerAsync(ctx)
 	if err != nil {
+		if errors.Is(err, errContainerAlreadyRunning) {
+			return nil
+		}
+
 		return fmt.Errorf("error starting container: %w", err)
 	}
 
@@ -267,6 +367,10 @@ func (c *Client) StartContainerAsync(ctx context.Context) (*string, error) {
 
 	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), nil, resBody)
 	if err != nil {
+		if strings.Contains(err.Error(), "already running") {
+			return nil, errContainerAlreadyRunning
+		}
+
 		return nil, fmt.Errorf("error starting container: %w", err)
 	}
 
@@ -289,6 +393,7 @@ func (c *Client) StopContainer(ctx context.Context) error {
 
 // UpdateContainer updates a container.
 func (c *Client) UpdateContainer(ctx context.Context, d *UpdateRequestBody) error {
+	// note: put config does not return a task ID, so we cannot wait for it to complete
 	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating container: %w", err)

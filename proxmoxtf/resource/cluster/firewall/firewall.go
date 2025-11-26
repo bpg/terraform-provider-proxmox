@@ -55,9 +55,9 @@ func Firewall() *schema.Resource {
 				Type:        schema.TypeList,
 				Description: "Log ratelimiting settings",
 				Optional:    true,
-				DefaultFunc: func() (interface{}, error) {
-					return []interface{}{
-						map[string]interface{}{
+				DefaultFunc: func() (any, error) {
+					return []any{
+						map[string]any{
 							mkLogRatelimitEnabled: dvLogRatelimiEnabled,
 							mkLogRatelimitBurst:   dvLogRatelimitBurst,
 							mkLogRatelimitRate:    dvLogRatelimitRate,
@@ -141,9 +141,9 @@ func setOptions(ctx context.Context, api firewall.API, d *schema.ResourceData) d
 		PolicyFwd: &policyFwd,
 	}
 
-	logRatelimit := d.Get(mkLogRatelimit).([]interface{})
+	logRatelimit := d.Get(mkLogRatelimit).([]any)
 	if len(logRatelimit) > 0 {
-		m := logRatelimit[0].(map[string]interface{})
+		m := logRatelimit[0].(map[string]any)
 		burst := m[mkLogRatelimitBurst].(int)
 		rate := m[mkLogRatelimitRate].(string)
 		rl := firewall.CustomLogRateLimit{
@@ -189,8 +189,8 @@ func firewallRead(ctx context.Context, api firewall.API, d *schema.ResourceData)
 	}
 
 	if options.LogRateLimit != nil {
-		err = d.Set(mkLogRatelimit, []interface{}{
-			map[string]interface{}{
+		err = d.Set(mkLogRatelimit, []any{
+			map[string]any{
 				mkLogRatelimitEnabled: options.LogRateLimit.Enable,
 				mkLogRatelimitBurst:   *options.LogRateLimit.Burst,
 				mkLogRatelimitRate:    *options.LogRateLimit.Rate,
@@ -234,8 +234,8 @@ func firewallDelete(_ context.Context, _ firewall.API, d *schema.ResourceData) d
 
 func selectFirewallAPI(
 	f func(context.Context, firewall.API, *schema.ResourceData) diag.Diagnostics,
-) func(context.Context, *schema.ResourceData, interface{}) diag.Diagnostics {
-	return func(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+) func(context.Context, *schema.ResourceData, any) diag.Diagnostics {
+	return func(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 		config := m.(proxmoxtf.ProviderConfiguration)
 
 		api, err := config.GetClient()

@@ -108,7 +108,7 @@ func Hosts() *schema.Resource {
 		UpdateContext: hostsUpdate,
 		DeleteContext: hostsDelete,
 		Importer: &schema.ResourceImporter{
-			StateContext: func(_ context.Context, d *schema.ResourceData, _ interface{}) ([]*schema.ResourceData, error) {
+			StateContext: func(_ context.Context, d *schema.ResourceData, _ any) ([]*schema.ResourceData, error) {
 				nodeName := d.Id()
 
 				err := d.Set(mkResourceVirtualEnvironmentHostsNodeName, nodeName)
@@ -124,7 +124,7 @@ func Hosts() *schema.Resource {
 	}
 }
 
-func hostsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func hostsCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	diags := hostsUpdate(ctx, d, m)
 	if diags.HasError() {
 		return diags
@@ -137,7 +137,7 @@ func hostsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	return diags
 }
 
-func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func hostsRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	config := m.(proxmoxtf.ProviderConfiguration)
@@ -209,7 +209,7 @@ func hostsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.
 	return diags
 }
 
-func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func hostsUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	config := m.(proxmoxtf.ProviderConfiguration)
 
 	api, err := config.GetClient()
@@ -249,7 +249,7 @@ func hostsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) dia
 	return hostsRead(ctx, d, m)
 }
 
-func hostsDelete(_ context.Context, d *schema.ResourceData, _ interface{}) diag.Diagnostics {
+func hostsDelete(_ context.Context, d *schema.ResourceData, _ any) diag.Diagnostics {
 	d.SetId("")
 
 	return nil

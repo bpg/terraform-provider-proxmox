@@ -5,6 +5,9 @@ locals {
 resource "proxmox_virtual_environment_vm" "example_template" {
   agent {
     enabled = true
+    wait_for_ip {
+      ipv4 = true
+    }
   }
 
   bios        = "ovmf"
@@ -15,6 +18,10 @@ resource "proxmox_virtual_environment_vm" "example_template" {
     numa  = true
     limit = 64
     # affinity = "0-1"
+  }
+
+  memory {
+    dedicated = 2048
   }
 
   smbios {
@@ -133,7 +140,7 @@ resource "proxmox_virtual_environment_vm" "example" {
   machine = "q35"
 
   memory {
-    dedicated = 768
+    dedicated = 2048
     # hugepages = "2"
   }
 
@@ -142,6 +149,13 @@ resource "proxmox_virtual_environment_vm" "example" {
   #   cpus   = "0-1"
   #   memory = 768
   # }
+
+  agent {
+    enabled = true
+    wait_for_ip {
+      ipv4 = true
+    }
+  }
 
   connection {
     type        = "ssh"

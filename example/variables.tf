@@ -52,14 +52,8 @@ variable "latest_debian_12_bookworm_qcow2_img_url" {
   default     = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
 }
 
-variable "release_20250701_ubuntu_24_10_lxc_img_url" {
+variable "ubuntu_24_04_lxc_img_url" {
   description = "The URL for the Ubuntu 24.10 LXC image"
   type        = string
-  default     = "https://mirrors.servercentral.com/ubuntu-cloud-images/releases/24.10/release-20250701/ubuntu-24.10-server-cloudimg-amd64-root.tar.xz"
-}
-
-variable "release_20250701_ubuntu_24_10_lxc_img_checksum" {
-  description = "The checksum for the Ubuntu 24.10 LXC image"
-  type        = string
-  default     = "6caa4e90e4c2ae33d3fff0526c75cfc3d221e0c1ccd49d01229a44776af126d1"
+  default     = "https://cloud-images.ubuntu.com/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64-root.tar.xz"
 }

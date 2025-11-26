@@ -29,6 +29,12 @@ var (
 	regexVirtiofsShare = regexp.MustCompile(`^virtiofs\d+$`)
 )
 
+// WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
+type WaitForIPConfig struct {
+	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
+	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+}
+
 // CloneRequestBody contains the data for an virtual machine clone request.
 type CloneRequestBody struct {
 	BandwidthLimit      *int              `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`
@@ -191,8 +197,7 @@ type GetResponseData struct {
 	BackupFile           *string                         `json:"archive,omitempty"`
 	BandwidthLimit       *int                            `json:"bwlimit,omitempty"`
 	BIOS                 *string                         `json:"bios,omitempty"`
-	BootDisk             *string                         `json:"bootdisk,omitempty"`
-	BootOrder            *string                         `json:"boot,omitempty"`
+	BootOrder            *CustomBoot                     `json:"boot,omitempty"`
 	CDROM                *string                         `json:"cdrom,omitempty"`
 	CloudInitDNSDomain   *string                         `json:"searchdomain,omitempty"`
 	CloudInitDNSServer   *string                         `json:"nameserver,omitempty"`
@@ -475,7 +480,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 
-	var byAttr map[string]interface{}
+	var byAttr map[string]any
 
 	// now get map by attribute name
 	err := json.Unmarshal(b, &byAttr)
@@ -531,12 +536,12 @@ func (b *UpdateRequestBody) ToDelete(fieldName string) error {
 		return errors.New("update request body is nil")
 	}
 
-	if field, ok := reflect.TypeOf(*b).FieldByName(fieldName); ok {
+	if field, ok := reflect.TypeFor[UpdateRequestBody]().FieldByName(fieldName); ok {
 		fieldTag := field.Tag.Get("url")
 		name := strings.Split(fieldTag, ",")[0]
 		b.Delete = append(b.Delete, name)
 	} else {
-		return fmt.Errorf("field %s not found in struct %s", fieldName, reflect.TypeOf(b).Name())
+		return fmt.Errorf("field %s not found in struct %s", fieldName, reflect.TypeFor[*UpdateRequestBody]().Name())
 	}
 
 	return nil

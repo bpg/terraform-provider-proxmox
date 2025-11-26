@@ -152,7 +152,6 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
 		Tags:        plan.Tags.ValueStringPointer(ctx, diags),
-		Template:    proxmoxtypes.CustomBoolPtr(plan.Template.ValueBoolPointer()),
 		VMID:        int(plan.ID.ValueInt64()),
 	}
 
@@ -172,6 +171,19 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	err := vmAPI.CreateVM(ctx, createBody)
 	if err != nil {
 		diags.AddError("Failed to create VM", err.Error())
+		return
+	}
+
+	// Convert to template if requested
+	if !plan.Template.IsNull() && plan.Template.ValueBool() {
+		tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", plan.ID.ValueInt64()))
+
+		vmAPI = r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
+
+		err = vmAPI.ConvertToTemplate(ctx)
+		if err != nil {
+			diags.AddError("Failed to convert VM to template", err.Error())
+		}
 	}
 }
 
@@ -218,6 +230,18 @@ func (r *Resource) clone(ctx context.Context, plan Model, diags *diag.Diagnostic
 	}
 
 	r.update(ctx, plan, clone, true, diags)
+
+	// Convert to template if requested (after update completes)
+	if !plan.Template.IsNull() && plan.Template.ValueBool() {
+		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", plan.ID.ValueInt64()))
+
+		vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
+
+		err := vmAPI.ConvertToTemplate(ctx)
+		if err != nil {
+			diags.AddError("Failed to convert cloned VM to template", err.Error())
+		}
+	}
 }
 
 //nolint:dupl
@@ -243,7 +267,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	}
 
 	if !exists {
-		tflog.Info(ctx, "VM does not exist, removing from the state", map[string]interface{}{
+		tflog.Info(ctx, "VM does not exist, removing from the state", map[string]any{
 			"id": state.ID.ValueInt64(),
 		})
 		resp.State.RemoveResource(ctx)
@@ -352,6 +376,40 @@ func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, 
 			return
 		}
 	}
+
+	// Handle template conversion if the template flag changed to true
+	if !plan.Template.IsNull() && !state.Template.IsNull() {
+		oldTemplate := state.Template.ValueBool()
+		newTemplate := plan.Template.ValueBool()
+
+		if !oldTemplate && newTemplate {
+			tflog.Info(ctx, fmt.Sprintf("Converting VM %d to template", plan.ID.ValueInt64()))
+
+			status, err := vmAPI.GetVMStatus(ctx)
+			if err != nil {
+				diags.AddError("Failed to get VM status", err.Error())
+				return
+			}
+
+			if status != nil && status.Status != "stopped" {
+				tflog.Info(ctx, fmt.Sprintf("Stopping VM %d before converting to template", plan.ID.ValueInt64()))
+
+				if e := vmStop(ctx, vmAPI); e != nil {
+					diags.AddError("Failed to stop VM before template conversion", e.Error())
+					return
+				}
+			}
+
+			err = vmAPI.ConvertToTemplate(ctx)
+			if err != nil {
+				diags.AddError("Failed to convert VM to template", err.Error())
+				return
+			}
+		} else if oldTemplate && !newTemplate {
+			diags.AddError("Cannot convert template back to VM", "Templates cannot be converted back to regular VMs")
+			return
+		}
+	}
 }
 
 // Delete deletes the VM.
@@ -394,7 +452,10 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 		}
 	}
 
-	err = vmAPI.DeleteVM(ctx)
+	purge := state.PurgeOnDestroy.ValueBool()
+	deleteUnreferencedDisks := state.DeleteUnreferencedDisksOnDestroy.ValueBool()
+
+	err = vmAPI.DeleteVM(ctx, purge, deleteUnreferencedDisks)
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		resp.Diagnostics.AddError("Failed to delete VM", err.Error())
 	}
@@ -452,6 +513,8 @@ func (r *Resource) ImportState(
 
 	// not clear why this is needed, but ImportStateVerify fails without it
 	state.StopOnDestroy = types.BoolValue(false)
+	state.PurgeOnDestroy = types.BoolValue(true)
+	state.DeleteUnreferencedDisksOnDestroy = types.BoolValue(true)
 
 	diags := resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)

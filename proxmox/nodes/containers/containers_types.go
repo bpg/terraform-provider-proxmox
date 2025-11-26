@@ -27,6 +27,12 @@ var (
 	regexMountPointKey = regexp.MustCompile(`^mp\d+$`)
 )
 
+// WaitForIPConfig specifies which IP address types to wait for when waiting for network interfaces.
+type WaitForIPConfig struct {
+	IPv4 bool // Wait for at least one IPv4 address (non-loopback, non-link-local)
+	IPv6 bool // Wait for at least one IPv6 address (non-loopback, non-link-local)
+}
+
 // CloneRequestBody contains the data for an container clone request.
 type CloneRequestBody struct {
 	BandwidthLimit *int              `json:"bwlimit,omitempty"     url:"bwlimit,omitempty"`
@@ -165,12 +171,16 @@ type CustomStartupBehavior struct {
 	Up    *int `json:"up,omitempty"    url:"up,omitempty"`
 }
 
-// CreateResponseBody contains the body from a container create response.
-type CreateResponseBody struct {
+type TaskSubmittedResponseBody struct {
 	Data *string `json:"data,omitempty"`
 }
 
-type ShutdownResponseBody = CreateResponseBody
+type (
+	CreateResponseBody   = TaskSubmittedResponseBody
+	CloneResponseBody    = TaskSubmittedResponseBody
+	RebootResponseBody   = TaskSubmittedResponseBody
+	ShutdownResponseBody = TaskSubmittedResponseBody
+)
 
 // GetResponseBody contains the body from a user get response.
 type GetResponseBody struct {
@@ -221,7 +231,7 @@ type GetStatusResponseData struct {
 	Lock             *string          `json:"lock,omitempty"`
 	MemoryAllocation *int64           `json:"maxmem,omitempty"`
 	Name             *string          `json:"name,omitempty"`
-	RootDiskSize     *interface{}     `json:"maxdisk,omitempty"`
+	RootDiskSize     *any             `json:"maxdisk,omitempty"`
 	Status           string           `json:"status,omitempty"`
 	SwapAllocation   *int64           `json:"maxswap,omitempty"`
 	Tags             *string          `json:"tags,omitempty"`
@@ -653,9 +663,9 @@ func (r *CustomFeatures) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal ContainerCustomFeatures: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 2 {
@@ -734,9 +744,9 @@ func (r *CustomMountPoint) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal CustomMountPoint: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
@@ -784,9 +794,9 @@ func (r *CustomNetworkInterface) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal CustomNetworkInterface: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		//nolint:nestif
@@ -857,9 +867,9 @@ func (r *CustomRootFS) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal CustomRootFS: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 1 {
@@ -909,9 +919,9 @@ func (r *CustomStartupBehavior) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("unable to unmarshal CustomStartupBehavior: %w", err)
 	}
 
-	pairs := strings.Split(s, ",")
+	pairs := strings.SplitSeq(s, ",")
 
-	for _, p := range pairs {
+	for p := range pairs {
 		v := strings.Split(strings.TrimSpace(p), "=")
 
 		if len(v) == 2 {
@@ -946,7 +956,7 @@ func (d *GetResponseData) UnmarshalJSON(b []byte) error {
 		return fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 
-	var byAttr map[string]interface{}
+	var byAttr map[string]any
 
 	// now get map by attribute name
 	err := json.Unmarshal(b, &byAttr)

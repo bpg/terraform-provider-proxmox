@@ -28,7 +28,8 @@ type VNet struct {
 type VNetData struct {
 	VNet
 
-	Pending *VNet `json:"pending,omitempty" url:"pending,omitempty"`
+	ID      string `json:"vnet"              url:"vnet"`
+	Pending *VNet  `json:"pending,omitempty" url:"pending,omitempty"`
 }
 
 type VNetCreate struct {

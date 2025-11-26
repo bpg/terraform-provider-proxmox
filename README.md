@@ -19,7 +19,7 @@ The project is not affiliated with [Proxmox Server Solutions GmbH](https://www.p
 
 ## Compatibility Promise
 
-This provider is compatible with Proxmox VE 9.x (currently **9.0**). See [Known Issues](#known-issues) below for compatibility details.
+This provider is compatible with Proxmox VE 9.x (currently **9.1**). See [Known Issues](#known-issues) below for compatibility details.
 
 > [!IMPORTANT]
 > Proxmox VE 8.x is supported, but some functionality might be limited or not work as expected. Testing against 8.x is not a priority, and issues specific to 8.x will not be addressed.
@@ -95,9 +95,9 @@ Work has started to migrate the provider to the new [Terraform Plugin Framework]
 
 ## Known Issues
 
-### Proxmox VE 9.0
+### Proxmox VE 9.x
 
-Proxmox VE 9.0 has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
+Proxmox VE 9.x has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
 
 `apt_*` resources / datasources do not support the new deb822 style format.
 

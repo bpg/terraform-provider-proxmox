@@ -31,11 +31,8 @@ func TestRuleSchema(t *testing.T) {
 
 	rules := Rules().Schema
 
-	test.AssertRequiredArguments(t, rules, []string{
-		MkRule,
-	})
-
 	test.AssertOptionalArguments(t, rules, []string{
+		MkRule,
 		mkSelectorVMID,
 		mkSelectorNodeName,
 	})
@@ -106,8 +103,8 @@ func TestRulesReadDriftDetection(t *testing.T) {
 	// Create ResourceData with the rules schema
 	rulesResource := Rules()
 	d := rulesResource.TestResourceData()
-	err := d.Set(MkRule, []interface{}{
-		map[string]interface{}{
+	err := d.Set(MkRule, []any{
+		map[string]any{
 			mkRulePos:     0,
 			mkRuleAction:  "ACCEPT",
 			mkRuleType:    "in",
@@ -115,7 +112,7 @@ func TestRulesReadDriftDetection(t *testing.T) {
 			mkRuleDPort:   "80",
 			mkRuleProto:   "tcp",
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkRulePos:     1,
 			mkRuleAction:  "ACCEPT",
 			mkRuleType:    "in",
@@ -123,7 +120,7 @@ func TestRulesReadDriftDetection(t *testing.T) {
 			mkRuleDPort:   "22",
 			mkRuleProto:   "tcp",
 		},
-		map[string]interface{}{
+		map[string]any{
 			mkRulePos:     2,
 			mkRuleAction:  "ACCEPT",
 			mkRuleType:    "in",
@@ -137,14 +134,14 @@ func TestRulesReadDriftDetection(t *testing.T) {
 	diags := RulesRead(context.Background(), mockAPI, d)
 	require.False(t, diags.HasError(), "RulesRead should not return errors")
 
-	rules := d.Get(MkRule).([]interface{})
+	rules := d.Get(MkRule).([]any)
 	require.Len(t, rules, 2, "Should have 2 rules after drift detection")
 
-	rule0 := rules[0].(map[string]interface{})
+	rule0 := rules[0].(map[string]any)
 	require.Equal(t, "Allow HTTP", rule0[mkRuleComment])
 	require.Equal(t, "80", rule0[mkRuleDPort])
 
-	rule1 := rules[1].(map[string]interface{})
+	rule1 := rules[1].(map[string]any)
 	require.Equal(t, "Allow HTTPS", rule1[mkRuleComment])
 	require.Equal(t, "443", rule1[mkRuleDPort])
 }
@@ -204,7 +201,7 @@ func stringPtr(s string) *string {
 func TestMapToBaseRuleWithEmptyValues(t *testing.T) {
 	t.Parallel()
 
-	rule := map[string]interface{}{
+	rule := map[string]any{
 		mkRuleComment: "",
 		mkRuleDest:    "",
 		mkRuleDPort:   "",
@@ -245,7 +242,7 @@ func TestMapToBaseRuleWithEmptyValues(t *testing.T) {
 func TestMapToBaseRuleWithNonEmptyValues(t *testing.T) {
 	t.Parallel()
 
-	rule := map[string]interface{}{
+	rule := map[string]any{
 		mkRuleComment: "Test comment",
 		mkRuleDest:    "192.168.1.5",
 		mkRuleDPort:   "80",
