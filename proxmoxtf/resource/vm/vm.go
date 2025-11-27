@@ -5575,9 +5575,15 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 		}
 	}
 
-	rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
+	stoppedBeforeUpdate, rr, err := disk.Update(ctx, client, nodeName, vmID, d, planDisks, allDiskInfo, updateBody)
 	if err != nil {
 		return diag.FromErr(err)
+	}
+
+	if stoppedBeforeUpdate {
+		if er := vmShutdown(ctx, vmAPI, d); er != nil {
+			return er
+		}
 	}
 
 	rebootRequired = rebootRequired || rr
@@ -5610,7 +5616,6 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	}
 
 	// Prepare the new cloud-init configuration.
-	stoppedBeforeUpdate := false
 	cloudInitRebuildRequired := false
 
 	if d.HasChange(mkInitialization) {
@@ -5657,8 +5662,10 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			if mustMove || mustChangeDatastore || existingInterface == "" {
 				// CloudInit must be moved, either from a device to another or from a datastore
 				// to another (or both). This requires the VM to be stopped.
-				if er := vmShutdown(ctx, vmAPI, d); er != nil {
-					return er
+				if !stoppedBeforeUpdate {
+					if er := vmShutdown(ctx, vmAPI, d); er != nil {
+						return er
+					}
 				}
 
 				if er := deleteIdeDrives(ctx, vmAPI, initializationInterface, existingInterface); er != nil {
@@ -5945,7 +5952,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			if diags := vmStart(ctx, vmAPI, d); diags != nil {
 				return diags
 			}
-		} else {
+		} else if !stoppedBeforeUpdate {
 			if er := vmShutdown(ctx, vmAPI, d); er != nil {
 				return er
 			}

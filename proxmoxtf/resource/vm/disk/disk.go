@@ -549,12 +549,18 @@ func Read(
 
 		if len(currentDiskList) > 0 {
 			currentDiskMap := utils.MapResourcesByAttribute(currentDiskList, mkDiskInterface)
-			// copy import_from from the current disk if it exists
+			// copy import_from and size from the current disk if it exists
 			for k, v := range currentDiskMap {
 				if disk, ok := v.(map[string]any); ok {
-					if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
-						if _, exists := diskMap[k]; exists {
+					if _, exists := diskMap[k]; exists {
+						if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
 							diskMap[k].(map[string]any)[mkDiskImportFrom] = importFrom
+						}
+						// preserve size from state when API returns zero size (for disks with import_from or file_id)
+						if currentSize, ok := disk[mkDiskSize].(int); ok && currentSize > 0 {
+							if apiSize, ok := diskMap[k].(map[string]any)[mkDiskSize].(int64); ok && apiSize == 0 {
+								diskMap[k].(map[string]any)[mkDiskSize] = currentSize
+							}
 						}
 					}
 				}
@@ -583,8 +589,9 @@ func Update(
 	planDisks vms.CustomStorageDevices,
 	currentDisks vms.CustomStorageDevices,
 	updateBody *vms.UpdateRequestBody,
-) (bool, error) {
+) (bool, bool, error) {
 	rebootRequired := false
+	shutdownBeforeUpdate := false
 
 	if d.HasChange(MkDisk) {
 		for iface, disk := range planDisks {
@@ -596,7 +603,7 @@ func Update(
 					// only disks with defined file ID are custom image disks that need to be created via import.
 					err := createCustomDisk(ctx, client, nodeName, vmID, iface, *disk)
 					if err != nil {
-						return false, fmt.Errorf("creating custom disk: %w", err)
+						return false, false, fmt.Errorf("creating custom disk: %w", err)
 					}
 				} else {
 					// otherwise this is a blank disk that can be added directly via update API
@@ -612,7 +619,7 @@ func Update(
 				tmp = currentDisks[iface]
 			default:
 				// something went wrong
-				return false, fmt.Errorf("missing device %s", iface)
+				return false, false, fmt.Errorf("missing device %s", iface)
 			}
 
 			if tmp == nil || disk == nil {
@@ -624,8 +631,12 @@ func Update(
 				tmp.AIO = disk.AIO
 			}
 
-			// Never send ImportFrom for existing disks - it triggers re-import which fails for boot disks
-			// ImportFrom is only for initial disk creation, not updates
+			if disk.ImportFrom != nil && *disk.ImportFrom != "" {
+				shutdownBeforeUpdate = true
+				tmp.DatastoreID = disk.DatastoreID
+				tmp.ImportFrom = disk.ImportFrom
+				tmp.Size = disk.Size
+			}
 
 			tmp.Backup = disk.Backup
 			tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
@@ -647,5 +658,5 @@ func Update(
 		}
 	}
 
-	return rebootRequired, nil
+	return shutdownBeforeUpdate, rebootRequired, nil
 }
