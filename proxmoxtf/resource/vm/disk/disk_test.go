@@ -385,22 +385,22 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	updateBody2 := &vms.UpdateRequestBody{}
 
 	// Force HasChange to return true by setting old and new values
-	err = resourceData.Set(MkDisk, []interface{}{
-		map[string]interface{}{
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
 			mkDiskInterface:   "scsi1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        5, // Old size
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	})
 	require.NoError(t, err)
 
-	err = resourceData.Set(MkDisk, []interface{}{
-		map[string]interface{}{
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
 			mkDiskInterface:   "scsi1",
 			mkDiskDatastoreID: "local",
 			mkDiskSize:        20, // New size
-			mkDiskSpeed:       []interface{}{},
+			mkDiskSpeed:       []any{},
 		},
 	})
 	require.NoError(t, err)
