@@ -94,7 +94,7 @@ func (r *metricsServerDatasource) Schema(
 				Computed:    true,
 			},
 			"opentelemetry_proto": schema.StringAttribute{
-				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https` | `grpc`.",
+				Description: "Protocol for OpenTelemetry. Choice is between `http` | `https`.",
 				Computed:    true,
 			},
 			"opentelemetry_path": schema.StringAttribute{

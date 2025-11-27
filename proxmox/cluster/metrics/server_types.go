@@ -31,7 +31,7 @@ type ServerData struct {
 
 	// opentelemetry only options
 	OTelProto *string `json:"otel-protocol,omitempty" url:"otel-protocol,omitempty"`
-	OTelPath  *string `json:"otel-path,omitempty" url:"otel-path,omitempty"`
+	OTelPath  *string `json:"otel-path,omitempty"     url:"otel-path,omitempty"`
 }
 
 // ServerResponseBody contains the body from a metrics server response.
