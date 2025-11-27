@@ -549,12 +549,18 @@ func Read(
 
 		if len(currentDiskList) > 0 {
 			currentDiskMap := utils.MapResourcesByAttribute(currentDiskList, mkDiskInterface)
-			// copy import_from from the current disk if it exists
+			// copy import_from and size from the current disk if it exists
 			for k, v := range currentDiskMap {
 				if disk, ok := v.(map[string]any); ok {
-					if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
-						if _, exists := diskMap[k]; exists {
+					if _, exists := diskMap[k]; exists {
+						if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
 							diskMap[k].(map[string]any)[mkDiskImportFrom] = importFrom
+						}
+						// preserve size from state when API returns zero size (for disks with import_from or file_id)
+						if currentSize, ok := disk[mkDiskSize].(int); ok && currentSize > 0 {
+							if apiSize, ok := diskMap[k].(map[string]any)[mkDiskSize].(int64); ok && apiSize == 0 {
+								diskMap[k].(map[string]any)[mkDiskSize] = currentSize
+							}
 						}
 					}
 				}
