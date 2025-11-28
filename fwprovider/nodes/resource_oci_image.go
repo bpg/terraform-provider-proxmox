@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -34,21 +33,20 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
-	proxmoxtypes "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 )
 
 var (
-	_         resource.Resource              = &downloadFileResource{}
-	_         resource.ResourceWithConfigure = &downloadFileResource{}
-	httpRegex                                = regexp.MustCompile(`https?://.*`)
+	_ resource.Resource              = &ociImageResource{}
+	_ resource.ResourceWithConfigure = &ociImageResource{}
 )
 
-type sizeRequiresReplaceModifier struct{}
+const ociSizeRequiresReplaceDescription = "Triggers resource force replacement if `size` in state does not match remote value."
+
+type ociSizeRequiresReplaceModifier struct{}
 
 //nolint:dupl
-func (r sizeRequiresReplaceModifier) PlanModifyInt64(
+func (r ociSizeRequiresReplaceModifier) PlanModifyInt64(
 	ctx context.Context,
 	req planmodifier.Int64Request,
 	resp *planmodifier.Int64Response,
@@ -63,7 +61,7 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 		return
 	}
 
-	var plan, state downloadFileModel
+	var plan, state ociImageModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -76,7 +74,7 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 		originalStateSize, err := strconv.ParseInt(string(originalStateSizeBytes), 10, 64)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Unable to convert original state file size to int64",
+				"Unable to convert original state OCI image size to int64",
 				"Unexpected error in parsing string to int64, key original_state_size. "+
 					"Please retry the operation or report this issue to the provider developers.\n\n"+
 					"Error: "+err.Error(),
@@ -90,7 +88,7 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 			resp.PlanValue = types.Int64Value(originalStateSize)
 
 			resp.Diagnostics.AddWarning(
-				"The file size in datastore has changed outside of terraform.",
+				"The OCI image size in datastore has changed outside of terraform.",
 				fmt.Sprintf(
 					"Previous size: %d saved in state does not match current size from datastore: %d. "+
 						"You can disable this behaviour by using overwrite=false",
@@ -104,84 +102,70 @@ func (r sizeRequiresReplaceModifier) PlanModifyInt64(
 	}
 }
 
-func (r sizeRequiresReplaceModifier) Description(_ context.Context) string {
-	return "Triggers resource force replacement if `size` in state does not match remote value."
+func (r ociSizeRequiresReplaceModifier) Description(_ context.Context) string {
+	return ociSizeRequiresReplaceDescription
 }
 
-func (r sizeRequiresReplaceModifier) MarkdownDescription(_ context.Context) string {
-	return "Triggers resource force replacement if `size` in state does not match remote value."
+func (r ociSizeRequiresReplaceModifier) MarkdownDescription(_ context.Context) string {
+	return ociSizeRequiresReplaceDescription
 }
 
-type downloadFileModel struct {
-	ID                     types.String `tfsdk:"id"`
-	ContentType            types.String `tfsdk:"content_type"`
-	FileName               types.String `tfsdk:"file_name"`
-	Storage                types.String `tfsdk:"datastore_id"`
-	Node                   types.String `tfsdk:"node_name"`
-	Size                   types.Int64  `tfsdk:"size"`
-	URL                    types.String `tfsdk:"url"`
-	Checksum               types.String `tfsdk:"checksum"`
-	DecompressionAlgorithm types.String `tfsdk:"decompression_algorithm"`
-	UploadTimeout          types.Int64  `tfsdk:"upload_timeout"`
-	ChecksumAlgorithm      types.String `tfsdk:"checksum_algorithm"`
-	Verify                 types.Bool   `tfsdk:"verify"`
-	Overwrite              types.Bool   `tfsdk:"overwrite"`
-	OverwriteUnmanaged     types.Bool   `tfsdk:"overwrite_unmanaged"`
+type ociImageModel struct {
+	ID                 types.String `tfsdk:"id"`
+	FileName           types.String `tfsdk:"file_name"`
+	Storage            types.String `tfsdk:"datastore_id"`
+	Node               types.String `tfsdk:"node_name"`
+	Size               types.Int64  `tfsdk:"size"`
+	Reference          types.String `tfsdk:"reference"`
+	UploadTimeout      types.Int64  `tfsdk:"upload_timeout"`
+	Overwrite          types.Bool   `tfsdk:"overwrite"`
+	OverwriteUnmanaged types.Bool   `tfsdk:"overwrite_unmanaged"`
 }
 
-// NewDownloadFileResource manages files downloaded using Proxmox API.
-func NewDownloadFileResource() resource.Resource {
-	return &downloadFileResource{}
+// NewociImageResource manages oci images downloaded using Proxmox API.
+func NewociImageResource() resource.Resource {
+	return &ociImageResource{}
 }
 
-type downloadFileResource struct {
+type ociImageResource struct {
 	client proxmox.Client
 }
 
-func (r *downloadFileResource) Metadata(
+func (r *ociImageResource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
 ) {
-	resp.TypeName = req.ProviderTypeName + "_download_file"
+	resp.TypeName = req.ProviderTypeName + "_oci_image"
 }
 
 // Schema defines the schema for the resource.
-func (r *downloadFileResource) Schema(
+func (r *ociImageResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Manages files upload using PVE download-url API. ",
-		MarkdownDescription: "Manages files upload using PVE download-url API. " +
-			"It can be fully compatible and faster replacement for image files created using " +
-			"`proxmox_virtual_environment_file`. Supports images for VMs (ISO and disk images) and LXC (CT Templates).",
+		Description: "Manages OCI images pulled from OCI registries using PVE oci-registry-pull API. ",
+		MarkdownDescription: "Manages OCI images pulled from OCI registries using PVE oci-registry-pull API. " +
+			"Pulls OCI container images and stores them as tar files in Proxmox VE datastores.",
 		Attributes: map[string]schema.Attribute{
 			"id": attribute.ResourceID(),
-			"content_type": schema.StringAttribute{
-				Description: "The file content type. Must be `iso` or `import` for VM images or `vztmpl` for LXC images.",
-				Required:    true,
-				Validators: []validator.String{stringvalidator.OneOf([]string{
-					"iso",
-					"vztmpl",
-					"import",
-				}...)},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
 			"file_name": schema.StringAttribute{
-				Description: "The file name. If not provided, it is calculated " +
-					"using `url`. PVE will raise 'wrong file extension' error for some popular " +
-					"extensions file `.raw` or `.qcow2` on PVE versions prior to 8.4. " +
-					"Workaround is to use e.g. `.img` instead.",
+				Description: "The file name for the pulled OCI image. If not provided, " +
+					"it will be generated automatically. The file will be stored as a .tar file.",
 				Computed: true,
 				Required: false,
 				Optional: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`\.tar$`),
+						"file name must end with .tar",
+					),
 				},
 			},
 			"datastore_id": schema.StringAttribute{
@@ -199,95 +183,38 @@ func (r *downloadFileResource) Schema(
 				},
 			},
 			"size": schema.Int64Attribute{
-				Description: "The file size in PVE.",
+				Description: "The image size in PVE.",
 				Optional:    false,
 				Required:    false,
 				Computed:    true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
-					sizeRequiresReplaceModifier{},
+					ociSizeRequiresReplaceModifier{},
 				},
 			},
 			"upload_timeout": schema.Int64Attribute{
-				Description: "The file download timeout seconds. Default is 600 (10min).",
+				Description: "The OCI image pull timeout in seconds. Default is 600 (10min).",
 				Optional:    true,
 				Computed:    true,
 				Default:     int64default.StaticInt64(600),
 			},
-			"url": schema.StringAttribute{
-				Description: "The URL to download the file from. Must match regex: `" + httpRegex.String() + "`.",
+			"reference": schema.StringAttribute{
+				Description: "The reference to the OCI image.",
 				Required:    true,
-				Validators: []validator.String{
-					stringvalidator.RegexMatches(httpRegex, "must match HTTP URL regex `"+httpRegex.String()+"`"),
-				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-			},
-			"checksum": schema.StringAttribute{
-				Description: "The expected checksum of the file.",
-				Optional:    true,
-				Default:     nil,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					stringvalidator.AlsoRequires(path.MatchRoot("checksum_algorithm")),
-				},
-			},
-			"decompression_algorithm": schema.StringAttribute{
-				Description: "Decompress the downloaded file using the " +
-					"specified compression algorithm. Must be one of `gz` | `lzo` | `zst` | `bz2`.",
-				Optional: true,
-				Default:  nil,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					stringvalidator.OneOf([]string{
-						"gz",
-						"lzo",
-						"zst",
-						"bz2",
-					}...),
-				},
-			},
-			"checksum_algorithm": schema.StringAttribute{
-				Description: "The algorithm to calculate the checksum of the file. " +
-					"Must be `md5` | `sha1` | `sha224` | `sha256` | `sha384` | `sha512`.",
-				Optional: true,
-				Validators: []validator.String{
-					stringvalidator.OneOf([]string{
-						"md5",
-						"sha1",
-						"sha224",
-						"sha256",
-						"sha384",
-						"sha512",
-					}...),
-					stringvalidator.AlsoRequires(path.MatchRoot("checksum")),
-				},
-				Default: nil,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"verify": schema.BoolAttribute{
-				Description: "By default `true`. If `false`, no SSL/TLS certificates will be verified.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(true),
 			},
 			"overwrite": schema.BoolAttribute{
-				Description: "By default `true`. If `true` and file size has changed in the datastore, " +
+				Description: "By default `true`. If `true` and the OCI image size has changed in the datastore, " +
 					"it will be replaced. If `false`, there will be no check.",
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
 			},
 			"overwrite_unmanaged": schema.BoolAttribute{
-				Description: "If `true` and a file with the same name already exists in the datastore, " +
-					"it will be deleted and the new file will be downloaded. If `false` and the file already exists, " +
+				Description: "If `true` and an OCI image with the same name already exists in the datastore, " +
+					"it will be deleted and the new image will be pulled. If `false` and the image already exists, " +
 					"an error will be returned.",
 				Optional: true,
 				Computed: true,
@@ -297,7 +224,7 @@ func (r *downloadFileResource) Schema(
 	}
 }
 
-func (r *downloadFileResource) Configure(
+func (r *ociImageResource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -320,12 +247,12 @@ func (r *downloadFileResource) Configure(
 	r.client = cfg.Client
 }
 
-func (r *downloadFileResource) Create(
+func (r *ociImageResource) Create(
 	ctx context.Context,
 	req resource.CreateRequest,
 	resp *resource.CreateResponse,
 ) {
-	var plan downloadFileModel
+	var plan ociImageModel
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -339,52 +266,42 @@ func (r *downloadFileResource) Create(
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	fileMetadata, err := r.getURLMetadata(
-		ctx,
-		&plan,
-	)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error initiating file download",
-			"Could not get file metadata, unexpected error: "+err.Error(),
-		)
+	// If filename is not provided, generate one from reference
+	if plan.FileName.IsUnknown() || plan.FileName.IsNull() {
+		// Generate filename from reference (e.g., "docker.io/library/ubuntu:latest" -> "ubuntu_latest.tar")
+		refParts := strings.Split(plan.Reference.ValueString(), "/")
+		lastPart := refParts[len(refParts)-1]
+		filename := strings.ReplaceAll(lastPart, ":", "_")
 
-		return
-	}
-
-	if plan.FileName.IsUnknown() {
-		plan.FileName = types.StringValue(*fileMetadata.Filename)
+		plan.FileName = types.StringValue(filename + ".tar")
 	}
 
 	nodesClient := r.client.Node(plan.Node.ValueString())
-	verify := proxmoxtypes.CustomBool(plan.Verify.ValueBool())
 
-	downloadFileReq := storage.DownloadURLPostRequestBody{
-		Node:              plan.Node.ValueStringPointer(),
-		Storage:           plan.Storage.ValueStringPointer(),
-		Content:           plan.ContentType.ValueStringPointer(),
-		Checksum:          plan.Checksum.ValueStringPointer(),
-		ChecksumAlgorithm: plan.ChecksumAlgorithm.ValueStringPointer(),
-		Compression:       plan.DecompressionAlgorithm.ValueStringPointer(),
-		FileName:          plan.FileName.ValueStringPointer(),
-		URL:               plan.URL.ValueStringPointer(),
-		Verify:            &verify,
+	// Proxmox API expects filename without .tar extension
+	filenameWithoutTar := strings.TrimSuffix(plan.FileName.ValueString(), ".tar")
+
+	ociPullReq := storage.OCIRegistryPullRequestBody{
+		Storage:   plan.Storage.ValueStringPointer(),
+		FileName:  &filenameWithoutTar,
+		Reference: plan.Reference.ValueStringPointer(),
 	}
 
 	storageClient := nodesClient.Storage(plan.Storage.ValueString())
 
-	err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
+	err := storageClient.DownloadOCIImageByReference(ctx, &ociPullReq)
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
-		fileID := plan.ContentType.ValueString() + "/" + plan.FileName.ValueString()
+		// OCI images are stored as vztmpl content type in Proxmox
+		fileID := "vztmpl/" + plan.FileName.ValueString()
 
 		err = storageClient.DeleteDatastoreFile(ctx, fileID)
 		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
-			resp.Diagnostics.AddError("Error deleting file from datastore",
-				fmt.Sprintf("Could not delete file '%s', unexpected error: %s", fileID, err.Error()),
+			resp.Diagnostics.AddError("Error deleting OCI image from datastore",
+				fmt.Sprintf("Could not delete OCI image '%s', unexpected error: %s", fileID, err.Error()),
 			)
 		}
 
-		err = storageClient.DownloadFileByURL(ctx, &downloadFileReq)
+		err = storageClient.DownloadOCIImageByReference(ctx, &ociPullReq)
 	}
 
 	if err != nil {
@@ -410,9 +327,6 @@ func (r *downloadFileResource) Create(
 			message := fmt.Sprintf("Could not download file '%s', unexpected error: %s",
 				plan.FileName.ValueString(), err.Error(),
 			)
-			if plan.ContentType.ValueString() == "import" && !ver.SupportImportContentType() {
-				message += ", and the content type 'import' is not supported by the Proxmox VE version " + ver.String()
-			}
 
 			resp.Diagnostics.AddError("Error downloading file from url", message)
 		}
@@ -420,8 +334,8 @@ func (r *downloadFileResource) Create(
 		return
 	}
 
-	plan.ID = types.StringValue(plan.Storage.ValueString() + ":" +
-		plan.ContentType.ValueString() + "/" + plan.FileName.ValueString())
+	// OCI images are stored as vztmpl content type in Proxmox
+	plan.ID = types.StringValue(plan.Storage.ValueString() + ":vztmpl/" + plan.FileName.ValueString())
 
 	err = r.read(ctx, &plan)
 	if err != nil {
@@ -434,36 +348,9 @@ func (r *downloadFileResource) Create(
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *downloadFileResource) getURLMetadata(
+func (r *ociImageResource) read(
 	ctx context.Context,
-	model *downloadFileModel,
-) (*nodes.QueryURLMetadataGetResponseData, error) {
-	nodesClient := r.client.Node(model.Node.ValueString())
-	verify := proxmoxtypes.CustomBool(model.Verify.ValueBool())
-
-	queryURLMetadataReq := nodes.QueryURLMetadataGetRequestBody{
-		URL:    model.URL.ValueString(),
-		Verify: &verify,
-	}
-
-	fileMetadata, err := nodesClient.GetQueryURLMetadata(
-		ctx,
-		&queryURLMetadataReq,
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"error fetching metadata from download url, "+
-				"unexpected error in GetQueryURLMetadata: %w",
-			err,
-		)
-	}
-
-	return fileMetadata, nil
-}
-
-func (r *downloadFileResource) read(
-	ctx context.Context,
-	model *downloadFileModel,
+	model *ociImageModel,
 ) error {
 	nodesClient := r.client.Node(model.Node.ValueString())
 	storageClient := nodesClient.Storage(model.Storage.ValueString())
@@ -485,16 +372,16 @@ func (r *downloadFileResource) read(
 		}
 	}
 
-	return fmt.Errorf("file does not exists in datastore")
+	return fmt.Errorf("OCI image does not exist in datastore")
 }
 
 // Read reads file from datastore.
-func (r *downloadFileResource) Read(
+func (r *ociImageResource) Read(
 	ctx context.Context,
 	req resource.ReadRequest,
 	resp *resource.ReadResponse,
 ) {
-	var state downloadFileModel
+	var state ociImageModel
 
 	diags := req.State.Get(ctx, &state)
 
@@ -516,7 +403,7 @@ func (r *downloadFileResource) Read(
 		}
 
 		resp.Diagnostics.AddWarning(
-			"The file does not exist in datastore and resource must be recreated.",
+			"The OCI image does not exist in datastore and resource must be recreated.",
 			err.Error(),
 		)
 		resp.State.RemoveResource(ctx)
@@ -528,12 +415,12 @@ func (r *downloadFileResource) Read(
 }
 
 // Update file resource.
-func (r *downloadFileResource) Update(
+func (r *ociImageResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
 ) {
-	var plan, state downloadFileModel
+	var plan, state ociImageModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -541,7 +428,7 @@ func (r *downloadFileResource) Update(
 	err := r.read(ctx, &plan)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error when reading file from datastore", err.Error(),
+			"Error when reading OCI Image from datastore", err.Error(),
 		)
 
 		return
@@ -550,15 +437,13 @@ func (r *downloadFileResource) Update(
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-// Delete removes file resource.
-//
 //nolint:dupl
-func (r *downloadFileResource) Delete(
+func (r *ociImageResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,
 ) {
-	var state downloadFileModel
+	var state ociImageModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -576,26 +461,18 @@ func (r *downloadFileResource) Delete(
 	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		if strings.Contains(err.Error(), "unable to parse") {
 			resp.Diagnostics.AddWarning(
-				"Datastore file does not exists",
+				"Datastore OCI image does not exists",
 				fmt.Sprintf(
-					"Could not delete datastore file '%s', it does not exist or has been deleted outside of Terraform.",
+					"Could not delete datastore OCI image '%s', it does not exist or has been deleted outside of Terraform.",
 					state.ID.ValueString(),
 				),
 			)
 		} else {
 			resp.Diagnostics.AddError(
-				"Error deleting datastore file",
-				fmt.Sprintf("Could not delete datastore file '%s', unexpected error: %s",
+				"Error deleting datastore OCI image",
+				fmt.Sprintf("Could not delete datastore OCI image '%s', unexpected error: %s",
 					state.ID.ValueString(), err.Error()),
 			)
 		}
 	}
-}
-
-func isErrFileAlreadyExists(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	return strings.Contains(err.Error(), "refusing to override existing file")
 }
