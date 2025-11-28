@@ -210,12 +210,15 @@ func TestDiskDevicesEqual(t *testing.T) {
 	size2 := types.DiskSizeFromGigabytes(10)
 	datastore1 := "local"
 	datastore2 := "local"
+	importFrom1 := "local:import/test.qcow2"
+	importFrom2 := "local:import/test.qcow2"
 
 	disk1 := &vms.CustomStorageDevice{
 		AIO:         &aio1,
 		Cache:       &cache1,
 		Size:        size1,
 		DatastoreID: &datastore1,
+		ImportFrom:  &importFrom1,
 	}
 
 	disk2 := &vms.CustomStorageDevice{
@@ -223,6 +226,7 @@ func TestDiskDevicesEqual(t *testing.T) {
 		Cache:       &cache2,
 		Size:        size2,
 		DatastoreID: &datastore2,
+		ImportFrom:  &importFrom2,
 	}
 
 	// Test identical disks
@@ -247,6 +251,17 @@ func TestDiskDevicesEqual(t *testing.T) {
 		DatastoreID: &datastore2,
 	}
 	require.False(t, disk1.Equals(disk2SizeChanged))
+
+	// Test different ImportFrom values
+	importFrom2Changed := "local:import/test2.qcow2"
+	disk2ImportFromChanged := &vms.CustomStorageDevice{
+		AIO:         &aio2,
+		Cache:       &cache2,
+		Size:        size2,
+		ImportFrom:  &importFrom2Changed,
+		DatastoreID: &datastore2,
+	}
+	require.False(t, disk1.Equals(disk2ImportFromChanged))
 }
 
 // TestDiskUpdateSkipsUnchangedDisks tests that the Update function only updates changed disks.
@@ -339,8 +354,9 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	require.NoError(t, err)
 
 	// Call the Update function
-	_, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
+	shutdownBeforeUpdate, _, err := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
 	require.NoError(t, err)
+	require.False(t, shutdownBeforeUpdate)
 
 	// Check that only the changed disk (scsi1) is in the update body
 	// scsi0 should NOT be in the update body since it hasn't changed
@@ -350,6 +366,59 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	// This prevents the "can't unplug bootdisk 'scsi0'" error
 	// Note: We can't directly inspect the updateBody content in this test framework,
 	// but the fact that no error occurred means the logic worked correctly
+
+	// Create plan disks (what terraform wants)
+	importFrom2 := "local:import/test2.qcow2"
+	planDisks2 := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(10), // Same as current
+			DatastoreID: &datastoreID,
+			ImportFrom:  &importFrom2, // Different Import file.
+		},
+		"scsi1": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(5), // Same as current
+			DatastoreID: &datastoreID,
+		},
+	}
+
+	// Mock update body to capture what gets sent to the API
+	updateBody2 := &vms.UpdateRequestBody{}
+
+	// Force HasChange to return true by setting old and new values
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        5, // Old size
+			mkDiskSpeed:       []any{},
+		},
+	})
+	require.NoError(t, err)
+
+	err = resourceData.Set(MkDisk, []any{
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local",
+			mkDiskSize:        20, // New size
+			mkDiskSpeed:       []any{},
+		},
+	})
+	require.NoError(t, err)
+
+	// Call the Update function
+	shutdownBeforeUpdate, _, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks2, currentDisks, updateBody2)
+	require.NoError(t, err)
+	require.True(t, shutdownBeforeUpdate)
+
+	// Check that only the changed disk (scsi1) is in the update body
+	// scsi0 should NOT be in the update body since it hasn't changed
+	require.NotNil(t, updateBody2)
+	require.Contains(t, updateBody2.CustomStorageDevices, "scsi0", "Update body should contain the changed disk scsi0")
+	require.NotContains(t, updateBody2.CustomStorageDevices, "scsi1", "Update body should not contain the unchanged disk scsi1")
+	require.Equal(t, importFrom2, *updateBody2.CustomStorageDevices["scsi0"].ImportFrom)
+
+	// The update body should only contain scsi0, not scsi1
+	// Note: We can't directly inspect the updateBody content in this test framework,
 }
 
 func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {

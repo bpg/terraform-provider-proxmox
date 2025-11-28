@@ -37,6 +37,8 @@ output "data_proxmox_virtual_environment_metrics_server" {
 
 - `disable` (Boolean) Indicates if the metric server is disabled.
 - `id` (String) The unique identifier of this resource.
+- `opentelemetry_path` (String) OpenTelemetry endpoint path (e.g., `/v1/metrics`).
+- `opentelemetry_proto` (String) Protocol for OpenTelemetry. Choice is between `http` | `https`.
 - `port` (Number) Server network port.
 - `server` (String) Server dns name or IP address.
-- `type` (String) Plugin type. Either `graphite` or `influxdb`.
+- `type` (String) Plugin type. Either `graphite`, `influxdb`, or `opentelemetry`.
