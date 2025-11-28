@@ -11,3 +11,12 @@ resource "proxmox_virtual_environment_metrics_server" "graphite_server" {
   port   = 2003
   type   = "graphite"
 }
+
+resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server" {
+  name                = "example_opentelemetry_server"
+  server              = "192.168.5.2"
+  port                = 4318
+  type                = "opentelemetry"
+  opentelemetry_proto = "http"
+  opentelemetry_path  = "/v1/metrics"
+}
