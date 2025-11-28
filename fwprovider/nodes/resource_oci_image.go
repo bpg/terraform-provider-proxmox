@@ -37,9 +37,11 @@ import (
 )
 
 var (
-	_ resource.Resource              = &pullOCIResouce{}
-	_ resource.ResourceWithConfigure = &pullOCIResouce{}
+	_ resource.Resource              = &ociImageResource{}
+	_ resource.ResourceWithConfigure = &ociImageResource{}
 )
+
+const ociSizeRequiresReplaceDescription = "Triggers resource force replacement if `size` in state does not match remote value."
 
 type ociSizeRequiresReplaceModifier struct{}
 
@@ -101,11 +103,11 @@ func (r ociSizeRequiresReplaceModifier) PlanModifyInt64(
 }
 
 func (r ociSizeRequiresReplaceModifier) Description(_ context.Context) string {
-	return "Triggers resource force replacement if `size` in state does not match remote value."
+	return ociSizeRequiresReplaceDescription
 }
 
 func (r ociSizeRequiresReplaceModifier) MarkdownDescription(_ context.Context) string {
-	return "Triggers resource force replacement if `size` in state does not match remote value."
+	return ociSizeRequiresReplaceDescription
 }
 
 type ociImageModel struct {
@@ -120,16 +122,16 @@ type ociImageModel struct {
 	OverwriteUnmanaged types.Bool   `tfsdk:"overwrite_unmanaged"`
 }
 
-// NewpullOCIResouce manages oci images downloaded using Proxmox API.
-func NewpullOCIResouce() resource.Resource {
-	return &pullOCIResouce{}
+// NewociImageResource manages oci images downloaded using Proxmox API.
+func NewociImageResource() resource.Resource {
+	return &ociImageResource{}
 }
 
-type pullOCIResouce struct {
+type ociImageResource struct {
 	client proxmox.Client
 }
 
-func (r *pullOCIResouce) Metadata(
+func (r *ociImageResource) Metadata(
 	_ context.Context,
 	req resource.MetadataRequest,
 	resp *resource.MetadataResponse,
@@ -138,7 +140,7 @@ func (r *pullOCIResouce) Metadata(
 }
 
 // Schema defines the schema for the resource.
-func (r *pullOCIResouce) Schema(
+func (r *ociImageResource) Schema(
 	_ context.Context,
 	_ resource.SchemaRequest,
 	resp *resource.SchemaResponse,
@@ -222,7 +224,7 @@ func (r *pullOCIResouce) Schema(
 	}
 }
 
-func (r *pullOCIResouce) Configure(
+func (r *ociImageResource) Configure(
 	_ context.Context,
 	req resource.ConfigureRequest,
 	resp *resource.ConfigureResponse,
@@ -245,7 +247,7 @@ func (r *pullOCIResouce) Configure(
 	r.client = cfg.Client
 }
 
-func (r *pullOCIResouce) Create(
+func (r *ociImageResource) Create(
 	ctx context.Context,
 	req resource.CreateRequest,
 	resp *resource.CreateResponse,
@@ -346,7 +348,7 @@ func (r *pullOCIResouce) Create(
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r *pullOCIResouce) read(
+func (r *ociImageResource) read(
 	ctx context.Context,
 	model *ociImageModel,
 ) error {
@@ -374,7 +376,7 @@ func (r *pullOCIResouce) read(
 }
 
 // Read reads file from datastore.
-func (r *pullOCIResouce) Read(
+func (r *ociImageResource) Read(
 	ctx context.Context,
 	req resource.ReadRequest,
 	resp *resource.ReadResponse,
@@ -413,7 +415,7 @@ func (r *pullOCIResouce) Read(
 }
 
 // Update file resource.
-func (r *pullOCIResouce) Update(
+func (r *ociImageResource) Update(
 	ctx context.Context,
 	req resource.UpdateRequest,
 	resp *resource.UpdateResponse,
@@ -436,7 +438,7 @@ func (r *pullOCIResouce) Update(
 }
 
 //nolint:dupl
-func (r *pullOCIResouce) Delete(
+func (r *ociImageResource) Delete(
 	ctx context.Context,
 	req resource.DeleteRequest,
 	resp *resource.DeleteResponse,

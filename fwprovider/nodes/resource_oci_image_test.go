@@ -28,7 +28,7 @@ const (
 	testOCIImage = "docker.io/library/hello-world:latest"
 )
 
-func TestAccResourcePullOCI(t *testing.T) {
+func TestAccResourceOCIImage(t *testing.T) {
 	te := test.InitEnvironment(t)
 
 	te.AddTemplateVars(map[string]interface{}{
