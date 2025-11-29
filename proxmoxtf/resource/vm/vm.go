@@ -4415,13 +4415,18 @@ func vmReadCustom(
 
 		datastoreId := fileVolumeParts[0]
 		pathInDatastore := fileVolumeParts[1]
-		fileFormat := filepath.Ext(pathInDatastore)
 
 		initialization[mkInitializationInterface] = initializationInterface
-
 		initialization[mkInitializationDatastoreID] = datastoreId
-		if fileFormat != "" {
-			initialization[mkInitializationFileFormat] = fileFormat[1:]
+
+		if initializationDevice.Format != nil && *initializationDevice.Format != "" {
+			initialization[mkInitializationFileFormat] = initializationDevice.Format
+		} else {
+			fileFormat := filepath.Ext(pathInDatastore)
+
+			if fileFormat != "" {
+				initialization[mkInitializationFileFormat] = fileFormat[1:]
+			}
 		}
 	}
 
@@ -5679,7 +5684,7 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			if len(oldInit.([]any)) > 0 {
 				oldInitBlock := oldInit.([]any)[0].(map[string]any)
 				prevDatastoreID := oldInitBlock[mkInitializationDatastoreID].(string)
-				prevFileFormat := oldInitBlock[mkEFIDiskFileFormat].(string)
+				prevFileFormat := oldInitBlock[mkInitializationFileFormat].(string)
 
 				mustChangeDatastore = prevDatastoreID != initializationDatastoreID
 				if mustChangeDatastore {
