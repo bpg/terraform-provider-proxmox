@@ -2863,18 +2863,15 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		diags = append(diags, diag.FromErr(e)...)
 	}
 
+	envVarsMap := make(map[string]any)
+
 	if containerConfig.EnvironmentVariables != nil {
-		envVarsMap := make(map[string]any)
 		for k, v := range *containerConfig.EnvironmentVariables {
 			envVarsMap[k] = v
 		}
-
-		e = d.Set(mkEnvironmentVariables, envVarsMap)
-		diags = append(diags, diag.FromErr(e)...)
-	} else {
-		e = d.Set(mkEnvironmentVariables, map[string]any{})
-		diags = append(diags, diag.FromErr(e)...)
 	}
+	e = d.Set(mkEnvironmentVariables, envVarsMap)
+	diags = append(diags, diag.FromErr(e)...)
 
 	if len(clone) == 0 || template {
 		if containerConfig.Template != nil {
