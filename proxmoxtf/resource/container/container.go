@@ -405,6 +405,7 @@ func Container() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				ValidateDiagFunc: EnvironmentVariablesValidator(),
 			},
 			mkFeatures: {
 				Type:        schema.TypeList,
@@ -2870,6 +2871,7 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			envVarsMap[k] = v
 		}
 	}
+
 	e = d.Set(mkEnvironmentVariables, envVarsMap)
 	diags = append(diags, diag.FromErr(e)...)
 
