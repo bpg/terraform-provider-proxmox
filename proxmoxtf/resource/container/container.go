@@ -3084,7 +3084,13 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 
 	if d.HasChange(mkEnvironmentVariables) {
 		environmentVariables := containerGetEnvironmentVariables(d)
-		updateBody.EnvironmentVariables = environmentVariables
+		if environmentVariables != nil {
+			updateBody.EnvironmentVariables = environmentVariables
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "env")
+		}
+
+		rebootRequired = true
 	}
 
 	if d.HasChange(mkFeatures) {
