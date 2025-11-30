@@ -4420,7 +4420,7 @@ func vmReadCustom(
 		initialization[mkInitializationDatastoreID] = datastoreId
 
 		if initializationDevice.Format != nil && *initializationDevice.Format != "" {
-			initialization[mkInitializationFileFormat] = initializationDevice.Format
+			initialization[mkInitializationFileFormat] = *initializationDevice.Format
 		} else {
 			fileFormat := filepath.Ext(pathInDatastore)
 
