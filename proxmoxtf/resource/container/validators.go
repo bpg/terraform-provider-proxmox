@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
@@ -62,38 +60,31 @@ func OperatingSystemTypeValidator() schema.SchemaValidateDiagFunc {
 
 // EnvironmentVariablesValidator validates environment variable map based on Proxmox API requirements.
 func EnvironmentVariablesValidator() schema.SchemaValidateDiagFunc {
-	return func(v any, path cty.Path) diag.Diagnostics {
-		var diags diag.Diagnostics
+	// Proxmox regex for keys: \w+ (one or more word characters)
+	keyRegex := regexp.MustCompile(`^\w+$`)
 
-		envVars, ok := v.(map[string]any)
+	// Proxmox rejects these control characters in values: \x00-\x08, \x10-\x1F, \x7F
+	invalidValueCharsRegex := regexp.MustCompile(`[\x00-\x08\x10-\x1F\x7F]`)
+
+	return validation.ToDiagFunc(func(i any, k string) ([]string, []error) {
+		var es []error
+
+		envVars, ok := i.(map[string]any)
 		if !ok {
-			return diags
+			es = append(es, fmt.Errorf("expected type of %s to be map[string]any", k))
+			return nil, es
 		}
-
-		// Proxmox regex for keys: \w+ (one or more word characters)
-		keyRegex := regexp.MustCompile(`^\w+$`)
-
-		// Proxmox rejects these control characters in values: \x00-\x08, \x10-\x1F, \x7F
-		invalidValueCharsRegex := regexp.MustCompile(`[\x00-\x08\x10-\x1F\x7F]`)
 
 		for key, val := range envVars {
 			if !keyRegex.MatchString(key) {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Invalid environment variable key",
-					Detail:   fmt.Sprintf("Environment variable key '%s' is invalid. Keys must contain only letters, digits, and underscores (matching \\w+)", key),
-				})
+				es = append(es, fmt.Errorf("environment variable key '%s' is invalid. Keys must contain only letters, digits, and underscores", key))
 			}
 
 			if valStr, ok := val.(string); ok && invalidValueCharsRegex.MatchString(valStr) {
-				diags = append(diags, diag.Diagnostic{
-					Severity: diag.Error,
-					Summary:  "Invalid environment variable value",
-					Detail:   fmt.Sprintf("Environment variable '%s' has an invalid value. Values cannot contain control characters", key),
-				})
+				es = append(es, fmt.Errorf("environment variable '%s' has an invalid value. Values cannot contain control characters", key))
 			}
 		}
 
-		return diags
-	}
+		return nil, es
+	})
 }
