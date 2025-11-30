@@ -14,7 +14,7 @@ import (
 	"net/url"
 	"sort"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
