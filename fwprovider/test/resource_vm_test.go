@@ -609,6 +609,49 @@ func TestAccResourceVMInitialization(t *testing.T) {
 		name string
 		step []resource.TestStep
 	}{
+		{"custom cloud-init drive file format", []resource.TestStep{{
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit" {
+					node_name = "{{.NodeName}}"
+					started = false
+					cpu {
+						cores = 1
+					}
+					memory {
+						dedicated = 1024
+					}
+
+					initialization {
+						datastore_id = "local"
+						file_format = "raw"
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
+				"initialization.0.datastore_id": "local",
+				"initialization.0.file_format":  "raw",
+			}),
+		}, {
+			Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_vm_cloudinit" {
+					node_name = "{{.NodeName}}"
+					started = false
+					cpu {
+						cores = 1
+					}
+					memory {
+						dedicated = 1024
+					}
+
+					initialization {
+						datastore_id = "local"
+						file_format  = "qcow2"
+					}
+				}`),
+			Check: ResourceAttributes("proxmox_virtual_environment_vm.test_vm_cloudinit", map[string]string{
+				"initialization.0.datastore_id": "local",
+				"initialization.0.file_format":  "qcow2",
+			}),
+		}}},
 		{"custom cloud-init: use SCSI interface", []resource.TestStep{{
 			Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_file" "cloud_config" {
