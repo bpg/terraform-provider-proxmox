@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
@@ -27,6 +28,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	api "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt/repositories"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 )
 
 const (
@@ -68,7 +70,17 @@ func (r *standardRepositoryResource) read(ctx context.Context, srp *modelStandar
 		}
 	}
 
-	srp.importFromAPI(ctx, data)
+	ver := version.MinimumProxmoxVersion
+	if versionResp, err := r.client.Version().Version(ctx); err == nil {
+		ver = versionResp.Version
+	} else {
+		tflog.Warn(ctx, "Failed to determine Proxmox VE version, assuming minimum supported version.", map[string]any{
+			"error":           err,
+			"assumed_version": ver.String(),
+		})
+	}
+
+	srp.importFromAPI(ctx, data, &ver)
 
 	return true, nil
 }

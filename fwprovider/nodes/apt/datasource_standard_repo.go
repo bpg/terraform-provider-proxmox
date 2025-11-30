@@ -13,12 +13,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/nodes/apt"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 )
 
 // Ensure the implementation satisfies the required interfaces.
@@ -86,7 +88,17 @@ func (d *standardRepositoryDataSource) Read(
 		return
 	}
 
-	srp.importFromAPI(ctx, data)
+	ver := version.MinimumProxmoxVersion
+	if versionResp, err := d.client.Version().Version(ctx); err == nil {
+		ver = versionResp.Version
+	} else {
+		tflog.Warn(ctx, "Failed to determine Proxmox VE version, assuming minimum supported version.", map[string]any{
+			"error":           err,
+			"assumed_version": ver.String(),
+		})
+	}
+
+	srp.importFromAPI(ctx, data, &ver)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &srp)...)
 }
