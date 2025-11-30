@@ -116,6 +116,7 @@ const (
 	mkDiskQuota                         = "quota"
 	mkDiskReplicate                     = "replicate"
 	mkDiskSize                          = "size"
+	mkEnvironmentVariables              = "environment_variables"
 	mkFeatures                          = "features"
 	mkFeaturesNesting                   = "nesting"
 	mkFeaturesKeyControl                = "keyctl"
@@ -396,6 +397,15 @@ func Container() *schema.Resource {
 				},
 				MaxItems: 1,
 				MinItems: 0,
+			},
+			mkEnvironmentVariables: {
+				Type:        schema.TypeMap,
+				Description: "The runtime environment variables for the container init process.",
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				ValidateDiagFunc: EnvironmentVariablesValidator(),
 			},
 			mkFeatures: {
 				Type:        schema.TypeList,
@@ -1581,6 +1591,8 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 
 	diskDatastoreID := diskBlock[mkDiskDatastoreID].(string)
 
+	environmentVariables := containerGetEnvironmentVariables(d)
+
 	features, err := containerGetFeatures(container, d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -1978,6 +1990,10 @@ func containerCreateCustom(ctx context.Context, d *schema.ResourceData, m any) d
 		createBody.Tags = &tagsString
 	}
 
+	if environmentVariables != nil {
+		createBody.EnvironmentVariables = environmentVariables
+	}
+
 	err = client.Node(nodeName).Container(0).CreateContainer(ctx, &createBody)
 	if err != nil {
 		return diag.FromErr(err)
@@ -2019,6 +2035,20 @@ func containerCreateStart(ctx context.Context, d *schema.ResourceData, m any) di
 	}
 
 	return containerRead(ctx, d, m)
+}
+
+func containerGetEnvironmentVariables(d *schema.ResourceData) *containers.CustomEnvironmentVariables {
+	envVarsRaw := d.Get(mkEnvironmentVariables).(map[string]any)
+	if len(envVarsRaw) == 0 {
+		return nil
+	}
+
+	envVars := make(containers.CustomEnvironmentVariables)
+	for k, v := range envVarsRaw {
+		envVars[k] = v.(string)
+	}
+
+	return &envVars
 }
 
 // NOTE: this function is NOT used in `read`!
@@ -2834,6 +2864,17 @@ func containerRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		diags = append(diags, diag.FromErr(e)...)
 	}
 
+	envVarsMap := make(map[string]any)
+
+	if containerConfig.EnvironmentVariables != nil {
+		for k, v := range *containerConfig.EnvironmentVariables {
+			envVarsMap[k] = v
+		}
+	}
+
+	e = d.Set(mkEnvironmentVariables, envVarsMap)
+	diags = append(diags, diag.FromErr(e)...)
+
 	if len(clone) == 0 || template {
 		if containerConfig.Template != nil {
 			e = d.Set(
@@ -3036,6 +3077,17 @@ func containerUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		rootFS.MountOptions = &mountOptionsStrings
 
 		updateBody.RootFS = rootFS
+
+		rebootRequired = true
+	}
+
+	if d.HasChange(mkEnvironmentVariables) {
+		environmentVariables := containerGetEnvironmentVariables(d)
+		if environmentVariables != nil {
+			updateBody.EnvironmentVariables = environmentVariables
+		} else {
+			updateBody.Delete = append(updateBody.Delete, "env")
+		}
 
 		rebootRequired = true
 	}
