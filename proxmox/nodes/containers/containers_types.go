@@ -967,14 +967,8 @@ func (r *CustomStartupBehavior) UnmarshalJSON(b []byte) error {
 func (r *CustomEnvironmentVariables) UnmarshalJSON(b []byte) error {
 	var s string
 
-	err := json.Unmarshal(b, &s)
-	if err != nil {
+	if err := json.Unmarshal(b, &s); err != nil {
 		return fmt.Errorf("unable to unmarshal CustomEnvironmentVariables: %w", err)
-	}
-
-	if s == "" {
-		*r = make(CustomEnvironmentVariables)
-		return nil
 	}
 
 	*r = make(CustomEnvironmentVariables)
@@ -982,15 +976,11 @@ func (r *CustomEnvironmentVariables) UnmarshalJSON(b []byte) error {
 	// Split by NUL character (ASCII 0)
 	pairs := strings.SplitSeq(s, "\x00")
 
-	for pair := range pairs {
-		if pair == "" {
-			continue
-		}
+	for p := range pairs {
+		v := strings.SplitN(p, "=", 2)
 
-		// Split by first '=' to allow '=' in values
-		parts := strings.SplitN(pair, "=", 2)
-		if len(parts) == 2 {
-			(*r)[parts[0]] = parts[1]
+		if len(v) == 2 {
+			(*r)[v[0]] = v[1]
 		}
 	}
 
