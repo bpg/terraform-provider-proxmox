@@ -74,7 +74,14 @@ func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
 
 	resBody := &ReloadNetworkResponseBody{}
 
-	err := retry.Do(
+	err := retry.New(
+		retry.Context(ctx),
+		retry.Delay(1*time.Second),
+		retry.Attempts(3),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "exit code 89")
+		}),
+	).Do(
 		func() error {
 			err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("network"), nil, resBody)
 			if err != nil {
@@ -87,12 +94,6 @@ func (c *Client) ReloadNetworkConfiguration(ctx context.Context) error {
 
 			return c.Tasks().WaitForTask(ctx, *resBody.Data)
 		},
-		retry.Context(ctx),
-		retry.Delay(1*time.Second),
-		retry.Attempts(3),
-		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "exit code 89")
-		}),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to reload network configuration for node \"%s\": %w", c.NodeName, err)

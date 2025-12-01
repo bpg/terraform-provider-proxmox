@@ -26,10 +26,7 @@ func (c *Client) DeleteDatastoreFile(
 ) error {
 	path := c.ExpandPath(fmt.Sprintf("content/%s", url.PathEscape(volumeID)))
 
-	err := retry.Do(
-		func() error {
-			return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
-		},
+	err := retry.New(
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
 			var httpError *api.HTTPError
@@ -40,6 +37,10 @@ func (c *Client) DeleteDatastoreFile(
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
 		retry.LastErrorOnly(true),
+	).Do(
+		func() error {
+			return c.DoRequest(ctx, http.MethodDelete, path, nil, nil)
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("error deleting file %s from datastore %s: %w", volumeID, c.StorageName, err)
@@ -54,10 +55,7 @@ func (c *Client) ListDatastoreFiles(
 ) ([]*DatastoreFileListResponseData, error) {
 	resBody := &DatastoreFileListResponseBody{}
 
-	err := retry.Do(
-		func() error {
-			return c.DoRequest(ctx, http.MethodGet, c.ExpandPath("content"), nil, resBody)
-		},
+	err := retry.New(
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
 			var httpError *api.HTTPError
@@ -68,6 +66,10 @@ func (c *Client) ListDatastoreFiles(
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
 		retry.LastErrorOnly(true),
+	).Do(
+		func() error {
+			return c.DoRequest(ctx, http.MethodGet, c.ExpandPath("content"), nil, resBody)
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error listing files from datastore %s: %w", c.StorageName, err)

@@ -234,10 +234,7 @@ func (c *client) DoRequest(
 	}
 
 	//nolint:bodyclose
-	res, err := retry.DoWithData(
-		func() (*http.Response, error) {
-			return c.conn.httpClient.Do(req)
-		},
+	res, err := retry.NewWithData[*http.Response](
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
 			var urlErr *url.Error
@@ -249,6 +246,10 @@ func (c *client) DoRequest(
 		}),
 		retry.LastErrorOnly(true),
 		retry.Attempts(3),
+	).Do(
+		func() (*http.Response, error) {
+			return c.conn.httpClient.Do(req)
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to perform HTTP %s request (path: %s) - Reason: %w",
