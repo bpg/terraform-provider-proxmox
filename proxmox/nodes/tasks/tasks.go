@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 )
@@ -132,19 +132,7 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 		opt.apply(options)
 	}
 
-	status, err := retry.DoWithData(
-		func() (*GetTaskStatusResponseData, error) {
-			status, err := c.GetTaskStatus(ctx, upid)
-			if err != nil {
-				return nil, err
-			}
-
-			if status.Status == "running" {
-				return nil, errStillRunning
-			}
-
-			return status, err
-		},
+	status, err := retry.NewWithData[*GetTaskStatusResponseData](
 		retry.Context(ctx),
 		retry.RetryIf(func(err error) bool {
 			var target *api.HTTPError
@@ -167,6 +155,19 @@ func (c *Client) WaitForTask(ctx context.Context, upid string, opts ...TaskWaitO
 		retry.UntilSucceeded(),
 		retry.DelayType(retry.FixedDelay),
 		retry.Delay(time.Second),
+	).Do(
+		func() (*GetTaskStatusResponseData, error) {
+			status, err := c.GetTaskStatus(ctx, upid)
+			if err != nil {
+				return nil, err
+			}
+
+			if status.Status == "running" {
+				return nil, errStillRunning
+			}
+
+			return status, err
+		},
 	)
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for task %q to complete", upid)

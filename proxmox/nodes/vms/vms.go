@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
@@ -35,7 +35,12 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 		retries = 1
 	}
 
-	err = retry.Do(
+	err = retry.New(
+		retry.Context(ctx),
+		retry.Attempts(uint(retries)),
+		retry.Delay(10*time.Second),
+		retry.LastErrorOnly(false),
+	).Do(
 		func() error {
 			err = c.DoRequest(ctx, http.MethodPost, c.ExpandPath("clone"), d, resBody)
 			if err != nil {
@@ -49,10 +54,6 @@ func (c *Client) CloneVM(ctx context.Context, retries int, d *CloneRequestBody) 
 			// ignoring warnings as per https://www.mail-archive.com/pve-devel@lists.proxmox.com/msg17724.html
 			return c.Tasks().WaitForTask(ctx, *resBody.Data, tasks.WithIgnoreWarnings())
 		},
-		retry.Context(ctx),
-		retry.Attempts(uint(retries)),
-		retry.Delay(10*time.Second),
-		retry.LastErrorOnly(false),
 	)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM clone: %w", err)
@@ -103,15 +104,7 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 	// retry the request if we get an error that the VM already exists
 	// but only if we're retrying. If this error is returned by the first
 	// request, we'll just return the error (i.e. can't "override" the VM).
-	err := retry.Do(
-		func() error {
-			err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
-			if err != nil && retrying && strings.Contains(err.Error(), "already exists") {
-				return nil
-			}
-
-			return err
-		},
+	err := retry.New(
 		retry.Context(ctx),
 		retry.Attempts(3),
 		retry.Delay(1*time.Second),
@@ -127,6 +120,15 @@ func (c *Client) CreateVMAsync(ctx context.Context, d *CreateRequestBody) (*stri
 		retry.RetryIf(func(err error) bool {
 			return strings.Contains(err.Error(), "got no worker upid")
 		}),
+	).Do(
+		func() error {
+			err := c.DoRequest(ctx, http.MethodPost, c.basePath(), d, resBody)
+			if err != nil && retrying && strings.Contains(err.Error(), "already exists") {
+				return nil
+			}
+
+			return err
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating VM: %w", err)
@@ -169,11 +171,7 @@ func (c *Client) DeleteVMAsync(ctx context.Context, purge bool, destroyUnreferen
 		destroyUnreferencedDisksValue = 1
 	}
 
-	err := retry.Do(
-		func() error {
-			path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
-			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(path), nil, resBody)
-		},
+	err := retry.New(
 		retry.Context(ctx),
 		retry.Attempts(3),
 		retry.Delay(1*time.Second),
@@ -181,6 +179,11 @@ func (c *Client) DeleteVMAsync(ctx context.Context, purge bool, destroyUnreferen
 		retry.RetryIf(func(err error) bool {
 			return !errors.Is(err, api.ErrResourceDoesNotExist)
 		}),
+	).Do(
+		func() error {
+			path := fmt.Sprintf("?destroy-unreferenced-disks=%d&purge=%d", destroyUnreferencedDisksValue, purgeValue)
+			return c.DoRequest(ctx, http.MethodDelete, c.ExpandPath(path), nil, resBody)
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error deleting VM: %w", err)
@@ -382,7 +385,15 @@ func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*stri
 
 // ResizeVMDisk resizes a virtual machine disk.
 func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) error {
-	err := retry.Do(
+	err := retry.New(
+		retry.Context(ctx),
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(false),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "got timeout")
+		}),
+	).Do(
 		func() error {
 			taskID, err := c.ResizeVMDiskAsync(ctx, d)
 			if err != nil {
@@ -391,13 +402,6 @@ func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) err
 
 			return c.Tasks().WaitForTask(ctx, *taskID)
 		},
-		retry.Context(ctx),
-		retry.Attempts(3),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(false),
-		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "got timeout")
-		}),
 	)
 	if err != nil {
 		return fmt.Errorf("error waiting for VM disk resize: %w", err)
@@ -491,7 +495,15 @@ func (c *Client) StartVMAsync(ctx context.Context, timeoutSec int) (*string, err
 	resBody := &StartResponseBody{}
 
 	// PVE may return a 500 error "got no worker upid - start worker failed", so we retry few times.
-	err := retry.Do(
+	err := retry.New(
+		retry.Context(ctx),
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return strings.Contains(err.Error(), "got no worker upid")
+		}),
+	).Do(
 		func() error {
 			err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("status/start"), reqBody, resBody)
 			if err != nil && strings.Contains(err.Error(), "already running") {
@@ -500,13 +512,6 @@ func (c *Client) StartVMAsync(ctx context.Context, timeoutSec int) (*string, err
 
 			return err
 		},
-		retry.Context(ctx),
-		retry.Attempts(3),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "got no worker upid")
-		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error starting VM: %w", err)
@@ -552,10 +557,7 @@ func (c *Client) StopVMAsync(ctx context.Context) (*string, error) {
 
 // UpdateVM updates a virtual machine.
 func (c *Client) UpdateVM(ctx context.Context, d *UpdateRequestBody) error {
-	err := retry.Do(
-		func() error {
-			return c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
-		},
+	err := retry.New(
 		retry.Context(ctx),
 		retry.Attempts(3),
 		retry.Delay(1*time.Second),
@@ -563,6 +565,10 @@ func (c *Client) UpdateVM(ctx context.Context, d *UpdateRequestBody) error {
 		retry.RetryIf(func(err error) bool {
 			return strings.Contains(err.Error(), "got timeout")
 		}),
+	).Do(
+		func() error {
+			return c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("error updating VM: %w", err)
@@ -613,7 +619,23 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 		}
 	}()
 
-	data, err := retry.DoWithData(
+	data, err := retry.NewWithData[*GetQEMUNetworkInterfacesResponseData](
+		retry.Context(ctxWithTimeout),
+		retry.RetryIf(func(err error) bool {
+			var target *api.HTTPError
+			if errors.As(err, &target) {
+				if target.Code == http.StatusBadRequest {
+					return true
+				}
+			}
+
+			return errors.Is(err, errNoIPsYet)
+		}),
+		retry.LastErrorOnly(true),
+		retry.UntilSucceeded(),
+		retry.DelayType(retry.FixedDelay),
+		retry.Delay(time.Second),
+	).Do(
 		func() (*GetQEMUNetworkInterfacesResponseData, error) {
 			data, err := c.GetVMNetworkInterfacesFromAgent(ctx)
 			if err != nil {
@@ -666,21 +688,6 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 			// all required IP types are available
 			return data, nil
 		},
-		retry.Context(ctxWithTimeout),
-		retry.RetryIf(func(err error) bool {
-			var target *api.HTTPError
-			if errors.As(err, &target) {
-				if target.Code == http.StatusBadRequest {
-					return true
-				}
-			}
-
-			return errors.Is(err, errNoIPsYet)
-		}),
-		retry.LastErrorOnly(true),
-		retry.UntilSucceeded(),
-		retry.DelayType(retry.FixedDelay),
-		retry.Delay(time.Second),
 	)
 
 	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
@@ -733,7 +740,15 @@ func (c *Client) checkIPAddresses(
 func (c *Client) WaitForVMConfigUnlock(ctx context.Context, ignoreErrorResponse bool) error {
 	stillLocked := errors.New("still locked")
 
-	err := retry.Do(
+	err := retry.New(
+		retry.Context(ctx),
+		retry.UntilSucceeded(),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, stillLocked) || ignoreErrorResponse
+		}),
+	).Do(
 		func() error {
 			data, err := c.GetVMStatus(ctx)
 			if err != nil {
@@ -746,13 +761,6 @@ func (c *Client) WaitForVMConfigUnlock(ctx context.Context, ignoreErrorResponse 
 
 			return nil
 		},
-		retry.Context(ctx),
-		retry.UntilSucceeded(),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
-			return errors.Is(err, stillLocked) || ignoreErrorResponse
-		}),
 	)
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for VM %d configuration to become unlocked", c.VMID)
@@ -771,7 +779,15 @@ func (c *Client) WaitForVMStatus(ctx context.Context, status string) error {
 
 	unexpectedStatus := fmt.Errorf("unexpected status %q", status)
 
-	err := retry.Do(
+	err := retry.New(
+		retry.Context(ctx),
+		retry.UntilSucceeded(),
+		retry.Delay(1*time.Second),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return errors.Is(err, unexpectedStatus)
+		}),
+	).Do(
 		func() error {
 			data, err := c.GetVMStatus(ctx)
 			if err != nil {
@@ -784,13 +800,6 @@ func (c *Client) WaitForVMStatus(ctx context.Context, status string) error {
 
 			return nil
 		},
-		retry.Context(ctx),
-		retry.UntilSucceeded(),
-		retry.Delay(1*time.Second),
-		retry.LastErrorOnly(true),
-		retry.RetryIf(func(err error) bool {
-			return errors.Is(err, unexpectedStatus)
-		}),
 	)
 	if errors.Is(err, context.DeadlineExceeded) {
 		return fmt.Errorf("timeout while waiting for VM %d to enter the status %q", c.VMID, status)
