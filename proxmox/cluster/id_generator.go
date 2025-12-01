@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go/v5"
 	"github.com/rogpeppe/go-internal/lockedfile"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
