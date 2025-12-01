@@ -17,6 +17,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	customtypes "github.com/bpg/terraform-provider-proxmox/fwprovider/types/nodes/apt"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+
+	"github.com/bpg/terraform-provider-proxmox/proxmox"
 	api "github.com/bpg/terraform-provider-proxmox/proxmox/nodes/apt/repositories"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
 )
@@ -279,4 +282,20 @@ func (srp *modelStandardRepo) setIndex(data *api.GetResponseData, proxmoxVersion
 	}
 
 	srp.Index = types.Int64Null()
+}
+
+// getProxmoxVersion retrieves the Proxmox VE version from the API client, falling back to the minimum supported version
+// if the API call fails.
+func getProxmoxVersion(ctx context.Context, client proxmox.Client) *version.ProxmoxVersion {
+	ver := version.MinimumProxmoxVersion
+	if versionResp, err := client.Version().Version(ctx); err == nil {
+		ver = versionResp.Version
+	} else {
+		tflog.Warn(ctx, "Failed to determine Proxmox VE version, assuming minimum supported version.", map[string]any{
+			"error":           err,
+			"assumed_version": ver.String(),
+		})
+	}
+
+	return &ver
 }

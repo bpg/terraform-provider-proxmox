@@ -225,7 +225,7 @@ func TestAccResourceRepoValidInput(t *testing.T) {
 							tfjsonpath.New(apt.SchemaAttrNameURIs),
 							knownvalue.ListPartial(
 								map[int]knownvalue.Check{
-									0: knownvalue.StringRegexp(regexp.MustCompile(`http?://([a-z]+\.)?debian\.org/debian/`)),
+									0: knownvalue.StringRegexp(regexp.MustCompile(`https?://([a-z]+\.)?debian\.org/debian/`)),
 								},
 							),
 						),

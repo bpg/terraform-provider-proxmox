@@ -143,7 +143,7 @@ func (v StandardRepoHandleValue) CephVersionName() apitypes.CephVersionName {
 func (v StandardRepoHandleValue) ComponentName(proxmoxVersion *version.ProxmoxVersion) string {
 	if v.cvn == apitypes.CephVersionNameUnknown && v.kind != apitypes.StandardRepoHandleKindUnknown {
 		// On PVE8, for whatever reason the non-Ceph handle "test" kind does not use a dash in between the "pve" prefix.
-		if !proxmoxVersion.SupportModernAptSources() && v.kind == apitypes.StandardRepoHandleKindTest {
+		if proxmoxVersion != nil && !proxmoxVersion.SupportModernAptSources() && v.kind == apitypes.StandardRepoHandleKindTest {
 			return fmt.Sprintf("pve%s", v.kind)
 		}
 
