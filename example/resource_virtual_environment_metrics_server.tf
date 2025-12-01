@@ -23,20 +23,22 @@ resource "proxmox_virtual_environment_metrics_server" "graphite_server2" {
   graphite_proto = "udp"
 }
 
-resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server" {
-  name                = "example_opentelemetry_server"
-  server              = "192.168.5.2"
-  port                = 4318
-  type                = "opentelemetry"
-  opentelemetry_proto = "http"
-  opentelemetry_path  = "/v1/metrics"
-}
+# OpenTelemetry server need to be up and running to test this.
 
-resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server_https" {
-  name                = "example_opentelemetry_server_https"
-  server              = "192.168.5.3"
-  port                = 4319
-  type                = "opentelemetry"
-  opentelemetry_proto = "https"
-  opentelemetry_path  = "/v1/metrics"
-}
+# resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server" {
+#   name                = "example_opentelemetry_server"
+#   server              = "192.168.5.2"
+#   port                = 4318
+#   type                = "opentelemetry"
+#   opentelemetry_proto = "http"
+#   opentelemetry_path  = "/v1/metrics"
+# }
+
+# resource "proxmox_virtual_environment_metrics_server" "opentelemetry_server_https" {
+#   name                = "example_opentelemetry_server_https"
+#   server              = "192.168.5.3"
+#   port                = 4319
+#   type                = "opentelemetry"
+#   opentelemetry_proto = "https"
+#   opentelemetry_path  = "/v1/metrics"
+# }

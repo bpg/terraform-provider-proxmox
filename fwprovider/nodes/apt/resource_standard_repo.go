@@ -68,7 +68,8 @@ func (r *standardRepositoryResource) read(ctx context.Context, srp *modelStandar
 		}
 	}
 
-	srp.importFromAPI(ctx, data)
+	ver := getProxmoxVersion(ctx, r.client)
+	srp.importFromAPI(ctx, data, ver)
 
 	return true, nil
 }

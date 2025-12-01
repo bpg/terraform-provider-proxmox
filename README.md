@@ -99,8 +99,6 @@ Work has started to migrate the provider to the new [Terraform Plugin Framework]
 
 Proxmox VE 9.x has a new API for managing HA resources, which is not yet supported by the provider, see [#2097](https://github.com/bpg/terraform-provider-proxmox/issues/2097) for more details.
 
-`apt_*` resources / datasources do not support the new deb822 style format.
-
 ### HA VMs / containers
 
 If a VM or container resource is created with the provider but managed by an HA cluster, it might be migrated to a different node without the provider being aware of the change.
