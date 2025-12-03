@@ -150,7 +150,7 @@ jobs:
             *) echo "column=" >> $GITHUB_OUTPUT ;;
           esac
 
-      - name: Move item to column
+      - name: Add to project and move to column
         if: steps.column.outputs.column != ''
         uses: actions/github-script@v7
         with:
@@ -159,6 +159,7 @@ jobs:
             const targetColumn = '${{ steps.column.outputs.column }}';
             const issueNodeId = context.payload.issue.node_id;
             
+            // Get project info
             const projectQuery = `
               query($owner: String!, $number: Int!) {
                 user(login: $owner) {
@@ -189,34 +190,33 @@ jobs:
               return;
             }
             
-            // Get project item ID
-            const itemQuery = `
-              query($projectId: ID!) {
-                node(id: $projectId) {
-                  ... on ProjectV2 {
-                    items(first: 100) {
-                      nodes {
-                        id
-                        content { ... on Issue { id } }
-                      }
-                    }
-                  }
+            // First, try to add the issue to the project (will return existing item if already added)
+            const addMutation = `
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: {
+                  projectId: $projectId
+                  contentId: $contentId
+                }) {
+                  item { id }
                 }
               }
             `;
             
-            const itemResult = await github.graphql(itemQuery, { projectId: project.id });
-            const item = itemResult.node.items.nodes.find(
-              i => i.content && i.content.id === issueNodeId
-            );
-            
-            if (!item) {
-              console.log('Issue not found in project');
+            let itemId;
+            try {
+              const addResult = await github.graphql(addMutation, {
+                projectId: project.id,
+                contentId: issueNodeId
+              });
+              itemId = addResult.addProjectV2ItemById.item.id;
+              console.log(`Added/found issue in project, item ID: ${itemId}`);
+            } catch (e) {
+              console.log(`Error adding to project: ${e.message}`);
               return;
             }
             
             // Update Status field
-            const mutation = `
+            const updateMutation = `
               mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
                 updateProjectV2ItemFieldValue(input: {
                   projectId: $projectId
@@ -229,9 +229,9 @@ jobs:
               }
             `;
             
-            await github.graphql(mutation, {
+            await github.graphql(updateMutation, {
               projectId: project.id,
-              itemId: item.id,
+              itemId: itemId,
               fieldId: statusField.id,
               optionId: option.id
             });
