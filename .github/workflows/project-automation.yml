@@ -79,33 +79,28 @@ jobs:
               return;
             }
             
-            // Get project item ID for this issue
-            const itemQuery = `
-              query($projectId: ID!, $issueId: ID!) {
-                node(id: $projectId) {
-                  ... on ProjectV2 {
-                    items(first: 100) {
-                      nodes {
-                        id
-                        content { ... on Issue { id } }
-                      }
-                    }
-                  }
+            // Add issue to project (or get existing item ID)
+            const addMutation = `
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: {
+                  projectId: $projectId
+                  contentId: $contentId
+                }) {
+                  item { id }
                 }
               }
             `;
             
-            const itemResult = await github.graphql(itemQuery, {
-              projectId: project.id,
-              issueId: issueNodeId
-            });
-            
-            const item = itemResult.node.items.nodes.find(
-              i => i.content && i.content.id === issueNodeId
-            );
-            
-            if (!item) {
-              console.log('Issue not found in project');
+            let itemId;
+            try {
+              const addResult = await github.graphql(addMutation, {
+                projectId: project.id,
+                contentId: issueNodeId
+              });
+              itemId = addResult.addProjectV2ItemById.item.id;
+              console.log(`Added/found issue in project, item ID: ${itemId}`);
+            } catch (e) {
+              console.log(`Error adding to project: ${e.message}`);
               return;
             }
             
@@ -125,7 +120,7 @@ jobs:
             
             await github.graphql(mutation, {
               projectId: project.id,
-              itemId: item.id,
+              itemId: itemId,
               fieldId: priorityField.id,
               optionId: option.id
             });
