@@ -35,6 +35,31 @@ jobs:
           echo "value=$PRIORITY" >> $GITHUB_OUTPUT
           echo "Priority: $PRIORITY"
 
+      - name: Remove other priority labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const newLabel = '${{ github.event.label.name }}';
+            const issueNumber = context.payload.issue.number;
+            const allPriorityLabels = ['priority:P0', 'priority:P1', 'priority:P2', 'priority:P3'];
+            
+            for (const label of allPriorityLabels) {
+              if (label !== newLabel) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    name: label
+                  });
+                  console.log(`Removed ${label}`);
+                } catch (e) {
+                  // Label might not exist on issue, that's ok
+                }
+              }
+            }
+
       - name: Update Priority field in project
         uses: actions/github-script@v7
         with:
