@@ -223,6 +223,7 @@ const (
 	mkHostPCIDeviceROMBAR               = "rombar"
 	mkHostPCIDeviceROMFile              = "rom_file"
 	mkHostPCIDeviceXVGA                 = "xvga"
+	mkHotplug                           = "hotplug"
 	mkInitialization                    = "initialization"
 	mkInitializationDatastoreID         = "datastore_id"
 	mkInitializationInterface           = "interface"
@@ -1107,6 +1108,12 @@ func VM() *schema.Resource {
 					},
 				},
 			},
+		},
+		mkHotplug: {
+			Type:        schema.TypeString,
+			Description: "Selectively enable hotplug features",
+			Optional:    true,
+			Default:     "network,disk,usb",
 		},
 		mkKeyboardLayout: {
 			Type:             schema.TypeString,
