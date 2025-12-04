@@ -164,6 +164,8 @@ jobs:
           case "$LABEL" in
             "priority:P0") echo "column=P0" >> $GITHUB_OUTPUT ;;
             "priority:P1") echo "column=P1" >> $GITHUB_OUTPUT ;;
+            "priority:P2") echo "column=Triage" >> $GITHUB_OUTPUT ;;
+            "priority:P3") echo "column=Backlog" >> $GITHUB_OUTPUT ;;
             "lifecycle:needs-info") echo "column=Needs Info" >> $GITHUB_OUTPUT ;;
             "status:in-progress") echo "column=In Progress" >> $GITHUB_OUTPUT ;;
             "status:blocked") echo "column=Blocked" >> $GITHUB_OUTPUT ;;
