@@ -377,6 +377,10 @@ output "ubuntu_vm_public_key" {
         image to. Must be one of `ide0..3`, `sata0..5`, `scsi0..30`. Will be
         detected if the setting is missing but a cloud-init image is present,
         otherwise defaults to `ide2`.
+    - `file_format` - (Optional) The file format.
+        - `qcow2` - QEMU Disk Image v2.
+        - `raw` - Raw Disk Image.
+        - `vmdk` - VMware Disk Image.
     - `dns` - (Optional) The DNS configuration.
         - `domain` - (Optional) The DNS search domain.
         - `server` - (Optional) The DNS server. The `server` attribute is

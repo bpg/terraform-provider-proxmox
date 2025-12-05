@@ -18,3 +18,9 @@ var MinimumProxmoxVersion = ProxmoxVersion{*version.Must(version.NewVersion("8.0
 func (v *ProxmoxVersion) SupportImportContentType() bool {
 	return v.GreaterThanOrEqual(version.Must(version.NewVersion("8.4.0")))
 }
+
+// SupportModernAptSources checks if the Proxmox version uses the modern DEB822 format (.sources) for APT repositories.
+// PVE 9.0 and above use the new .sources format instead of the legacy .list format.
+func (v *ProxmoxVersion) SupportModernAptSources() bool {
+	return v.GreaterThanOrEqual(version.Must(version.NewVersion("9.0.0")))
+}
