@@ -37,8 +37,9 @@ import (
 )
 
 var (
-	_ resource.Resource              = &ociImageResource{}
-	_ resource.ResourceWithConfigure = &ociImageResource{}
+	_              resource.Resource              = &ociImageResource{}
+	_              resource.ResourceWithConfigure = &ociImageResource{}
+	referenceRegex                                = regexp.MustCompile(`^(?:(?:[a-zA-Z\d]|[a-zA-Z\d][a-zA-Z\d-]*[a-zA-Z\d])(?:\.(?:[a-zA-Z\d]|[a-zA-Z\d][a-zA-Z\d-]*[a-zA-Z\d]))*(?::\d+)?/)?[a-z\d]+(?:(?:[._]|__|[-]*)[a-z\d]+)*(?:/[a-z\d]+(?:(?:[._]|__|[-]*)[a-z\d]+)*)*:\w[\w.-]{0,127}$`)
 )
 
 const ociSizeRequiresReplaceDescription = "Triggers resource force replacement if `size` in state does not match remote value."
@@ -201,6 +202,9 @@ func (r *ociImageResource) Schema(
 			"reference": schema.StringAttribute{
 				Description: "The reference to the OCI image.",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(referenceRegex, "must match OCI image reference regex `"+referenceRegex.String()+"`"),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -324,11 +328,11 @@ func (r *ociImageResource) Create(
 				})
 			}
 
-			message := fmt.Sprintf("Could not download file '%s', unexpected error: %s",
+			message := fmt.Sprintf("Could not pull OCI image '%s', unexpected error: %s",
 				plan.FileName.ValueString(), err.Error(),
 			)
 
-			resp.Diagnostics.AddError("Error downloading file from url", message)
+			resp.Diagnostics.AddError("Error pull OCI image from reference", message)
 		}
 
 		return

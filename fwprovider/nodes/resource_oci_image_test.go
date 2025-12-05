@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/test"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
@@ -41,23 +40,23 @@ func TestAccResourceOCIImage(t *testing.T) {
 	}{
 		{"missing reference", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_image" {
+				resource "proxmox_virtual_environment_oci_image" "test_image" {
 					node_name    = "{{.NodeName}}"
 					datastore_id = "{{.DatastoreID}}"
 					reference    = ""
 				}`),
-			ExpectError: regexp.MustCompile(`Attribute reference string length must be at least 1`),
+			ExpectError: regexp.MustCompile(`Attribute reference must match OCI image reference regex`),
 		}}},
 		{"pull OCI image without file_name", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_image" {
+				resource "proxmox_virtual_environment_oci_image" "test_image" {
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
 					reference          = "{{.OCIImage}}"
 					overwrite_unmanaged = true
 				}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_oci_image.test_image", map[string]string{
+				test.ResourceAttributes("proxmox_virtual_environment_oci_image.test_image", map[string]string{
 					"id":                  "local:vztmpl/hello-world_latest.tar",
 					"node_name":           te.NodeName,
 					"datastore_id":        te.DatastoreID,
@@ -67,14 +66,14 @@ func TestAccResourceOCIImage(t *testing.T) {
 					"overwrite":           "true",
 					"overwrite_unmanaged": "true",
 				}),
-				test.ResourceAttributesSet("proxmox_oci_image.test_image", []string{
+				test.ResourceAttributesSet("proxmox_virtual_environment_oci_image.test_image", []string{
 					"size",
 				}),
 			),
 		}}},
 		{"pull OCI image with custom file_name", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_custom_name" {
+				resource "proxmox_virtual_environment_oci_image" "test_custom_name" {
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
 					reference          = "{{.OCIImage}}"
@@ -82,7 +81,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 					overwrite_unmanaged = true
 				}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_oci_image.test_custom_name", map[string]string{
+				test.ResourceAttributes("proxmox_virtual_environment_oci_image.test_custom_name", map[string]string{
 					"id":                  "local:vztmpl/custom_hello_world.tar",
 					"node_name":           te.NodeName,
 					"datastore_id":        te.DatastoreID,
@@ -92,14 +91,14 @@ func TestAccResourceOCIImage(t *testing.T) {
 					"overwrite":           "true",
 					"overwrite_unmanaged": "true",
 				}),
-				test.ResourceAttributesSet("proxmox_oci_image.test_custom_name", []string{
+				test.ResourceAttributesSet("proxmox_virtual_environment_oci_image.test_custom_name", []string{
 					"size",
 				}),
 			),
 		}}},
 		{"invalid file_name without .tar extension", []resource.TestStep{{
 			Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_invalid_name" {
+				resource "proxmox_virtual_environment_oci_image" "test_invalid_name" {
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
 					reference          = "{{.OCIImage}}"
@@ -110,7 +109,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 		{"pull & update OCI image", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_update" {
+				resource "proxmox_virtual_environment_oci_image" "test_update" {
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
 					reference          = "{{.OCIImage}}"
@@ -118,7 +117,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 					overwrite_unmanaged = true
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_oci_image.test_update", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_oci_image.test_update", map[string]string{
 						"id":             "local:vztmpl/test_update_image.tar",
 						"node_name":      te.NodeName,
 						"datastore_id":   te.DatastoreID,
@@ -126,14 +125,14 @@ func TestAccResourceOCIImage(t *testing.T) {
 						"file_name":      "test_update_image.tar",
 						"upload_timeout": "600",
 					}),
-					test.ResourceAttributesSet("proxmox_oci_image.test_update", []string{
+					test.ResourceAttributesSet("proxmox_virtual_environment_oci_image.test_update", []string{
 						"size",
 					}),
 				),
 			},
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_update" {
+				resource "proxmox_virtual_environment_oci_image" "test_update" {
 					node_name          = "{{.NodeName}}"
 					datastore_id       = "{{.DatastoreID}}"
 					reference          = "{{.OCIImage}}"
@@ -142,7 +141,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 					overwrite_unmanaged = true
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					test.ResourceAttributes("proxmox_oci_image.test_update", map[string]string{
+					test.ResourceAttributes("proxmox_virtual_environment_oci_image.test_update", map[string]string{
 						"id":             "local:vztmpl/test_update_image.tar",
 						"node_name":      te.NodeName,
 						"datastore_id":   te.DatastoreID,
@@ -150,7 +149,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 						"file_name":      "test_update_image.tar",
 						"upload_timeout": "1200",
 					}),
-					test.ResourceAttributesSet("proxmox_oci_image.test_update", []string{
+					test.ResourceAttributesSet("proxmox_virtual_environment_oci_image.test_update", []string{
 						"size",
 					}),
 				),
@@ -176,13 +175,11 @@ func TestAccResourceOCIImage(t *testing.T) {
 
 				t.Cleanup(func() {
 					e := te.NodeStorageClient().DeleteDatastoreFile(context.Background(), fileID)
-					if e != nil && !api.IsResourceDoesNotExist(e) {
-						require.NoError(t, e)
-					}
+					require.NoError(t, e)
 				})
 			},
 			Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_override" {
+				resource "proxmox_virtual_environment_oci_image" "test_override" {
 					node_name           = "{{.NodeName}}"
 					datastore_id        = "{{.DatastoreID}}"
 					reference           = "{{.OCIImage}}"
@@ -191,7 +188,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 					overwrite           = false
 				}`),
 			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_oci_image.test_override", map[string]string{
+				test.ResourceAttributes("proxmox_virtual_environment_oci_image.test_override", map[string]string{
 					"id":                  "local:vztmpl/test_override_another.tar",
 					"node_name":           te.NodeName,
 					"datastore_id":        te.DatastoreID,
@@ -200,7 +197,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 					"overwrite":           "false",
 					"overwrite_unmanaged": "true",
 				}),
-				test.ResourceAttributesSet("proxmox_oci_image.test_override", []string{
+				test.ResourceAttributesSet("proxmox_virtual_environment_oci_image.test_override", []string{
 					"size",
 				}),
 			),
@@ -224,7 +221,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 				require.NoError(t, err)
 			},
 			Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_override" {
+				resource "proxmox_virtual_environment_oci_image" "test_override" {
 					node_name           = "{{.NodeName}}"
 					datastore_id        = "{{.DatastoreID}}"
 					reference           = "{{.OCIImage}}"
@@ -256,7 +253,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 				require.NoError(t, err)
 			},
 			Config: te.RenderConfig(`
-				resource "proxmox_oci_image" "test_override" {
+				resource "proxmox_virtual_environment_oci_image" "test_override" {
 					node_name           = "{{.NodeName}}"
 					datastore_id        = "{{.DatastoreID}}"
 					reference           = "{{.OCIImage}}"
@@ -266,7 +263,7 @@ func TestAccResourceOCIImage(t *testing.T) {
 				}`),
 			ConfigPlanChecks: resource.ConfigPlanChecks{
 				PreApply: []plancheck.PlanCheck{
-					plancheck.ExpectResourceAction("proxmox_oci_image.test_override", plancheck.ResourceActionDestroyBeforeCreate),
+					plancheck.ExpectResourceAction("proxmox_virtual_environment_oci_image.test_override", plancheck.ResourceActionDestroyBeforeCreate),
 				},
 			},
 		}}},
