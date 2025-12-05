@@ -39,7 +39,10 @@ import (
 var (
 	_              resource.Resource              = &ociImageResource{}
 	_              resource.ResourceWithConfigure = &ociImageResource{}
-	referenceRegex                                = regexp.MustCompile(`^(?:(?:[a-zA-Z\d]|[a-zA-Z\d][a-zA-Z\d-]*[a-zA-Z\d])(?:\.(?:[a-zA-Z\d]|[a-zA-Z\d][a-zA-Z\d-]*[a-zA-Z\d]))*(?::\d+)?/)?[a-z\d]+(?:(?:[._]|__|[-]*)[a-z\d]+)*(?:/[a-z\d]+(?:(?:[._]|__|[-]*)[a-z\d]+)*)*:\w[\w.-]{0,127}$`)
+	referenceRegex                                = regexp.MustCompile(
+		`^(?:(?:[a-zA-Z\d]|[a-zA-Z\d][a-zA-Z\d-]*[a-zA-Z\d])(?:\.(?:[a-zA-Z\d]|[a-zA-Z\d][a-zA-Z\d-]*[a-zA-Z\d]))*` +
+			`(?::\d+)?/)?[a-z\d]+(?:(?:[._]|__|[-]*)[a-z\d]+)*(?:/[a-z\d]+(?:(?:[._]|__|[-]*)[a-z\d]+)*)*:\w[\w.-]{0,127}$`,
+	)
 )
 
 const ociSizeRequiresReplaceDescription = "Triggers resource force replacement if `size` in state does not match remote value."

@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	testOCIImage = "docker.io/library/hello-world:latest"
+	testOCIImage       = "docker.io/library/hello-world:latest"
+	testOCIImageAlpine = "docker.io/library/alpine:latest"
 )
 
 func TestAccResourceOCIImage(t *testing.T) {
@@ -241,14 +242,14 @@ func TestAccResourceOCIImage(t *testing.T) {
 
 				fileID := "vztmpl/test_override_another.tar"
 
-				// Manually pull again to simulate external change
+				// Manually pull a different image to simulate external change with different size
 				filenameWithoutTar := "test_override_another"
 				_ = te.NodeStorageClient().DeleteDatastoreFile(ctx, fileID) //nolint: errcheck
 
 				err := te.NodeStorageClient().DownloadOCIImageByReference(ctx, &storage.OCIRegistryPullRequestBody{
 					Storage:   ptr.Ptr(te.DatastoreID),
 					FileName:  &filenameWithoutTar,
-					Reference: ptr.Ptr(testOCIImage),
+					Reference: ptr.Ptr(testOCIImageAlpine),
 				})
 				require.NoError(t, err)
 			},
