@@ -531,7 +531,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		network.NewLinuxBridgeResource,
 		network.NewLinuxVLANResource,
 		nodes.NewDownloadFileResource,
-		nodes.NewociImageResource,
+		nodes.NewOCIImageResource,
 		options.NewClusterOptionsResource,
 		vm.NewResource,
 		sdnzone.NewSimpleResource,

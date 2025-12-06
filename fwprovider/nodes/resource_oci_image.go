@@ -25,14 +25,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/attribute"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
-	"github.com/bpg/terraform-provider-proxmox/proxmox/version"
-
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/storage"
 )
 
@@ -126,8 +123,8 @@ type ociImageModel struct {
 	OverwriteUnmanaged types.Bool   `tfsdk:"overwrite_unmanaged"`
 }
 
-// NewociImageResource manages oci images downloaded using Proxmox API.
-func NewociImageResource() resource.Resource {
+// NewOCIImageResource manages OCI images downloaded using Proxmox API.
+func NewOCIImageResource() resource.Resource {
 	return &ociImageResource{}
 }
 
@@ -321,21 +318,11 @@ func (r *ociImageResource) Create(
 				),
 			)
 		} else {
-			ver := version.MinimumProxmoxVersion
-			if versionResp, err := r.client.Version().Version(ctx); err == nil {
-				ver = versionResp.Version
-			} else {
-				tflog.Warn(ctx, "Failed to determine Proxmox VE version, assuming minimum supported version.", map[string]any{
-					"error":           err,
-					"assumed_version": ver.String(),
-				})
-			}
-
-			message := fmt.Sprintf("Could not pull OCI image '%s', unexpected error: %s",
-				plan.FileName.ValueString(), err.Error(),
+			resp.Diagnostics.AddError(
+				"Error pulling OCI image from reference",
+				fmt.Sprintf("Could not pull OCI image '%s', unexpected error: %s",
+					plan.FileName.ValueString(), err.Error()),
 			)
-
-			resp.Diagnostics.AddError("Error pull OCI image from reference", message)
 		}
 
 		return
