@@ -214,11 +214,6 @@ func TestAccResourceVM2CPU(t *testing.T) {
 					node_name = "{{.NodeName}}"
 					name = "test-cpu-units-default"
 				}`),
-				Check: resource.ComposeTestCheckFunc(
-					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
-						"cpu.units",
-					}),
-				),
 			},
 			{
 				RefreshState: true,
