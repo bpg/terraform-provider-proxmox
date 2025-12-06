@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.89.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.88.0...v0.89.0) (2025-12-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **vm:** revert cpu.units default to use PVE server default ([#2402](https://github.com/bpg/terraform-provider-proxmox/issues/2402))
+
+### Features
+
+* **lxc:** add `env` parameter support ([#2383](https://github.com/bpg/terraform-provider-proxmox/issues/2383)) ([ef134fc](https://github.com/bpg/terraform-provider-proxmox/commit/ef134fc7c589cdbf3fa449a13a23355894e4e4a5))
+* **oci:** add proxmox_virtual_environment_oci_image resource for OCI Images Management ([#2373](https://github.com/bpg/terraform-provider-proxmox/issues/2373)) ([86a5bf1](https://github.com/bpg/terraform-provider-proxmox/commit/86a5bf1f35c8b1ca20c285d91421daf815cfe430))
+* **sdn:** add possibility to apply SDN changes on a particular actions ([#2386](https://github.com/bpg/terraform-provider-proxmox/issues/2386)) ([01e6433](https://github.com/bpg/terraform-provider-proxmox/commit/01e64339b63f2b33281b98e67072a325afe0ade8))
+
+
+### Bug Fixes
+
+* **vm:** do not re-import existing disks during update ([#2401](https://github.com/bpg/terraform-provider-proxmox/issues/2401)) ([0c7fad9](https://github.com/bpg/terraform-provider-proxmox/commit/0c7fad95a2b77c343a245d714f297fd6f0cab24c))
+* **vm:** revert cpu.units default to use PVE server default ([#2402](https://github.com/bpg/terraform-provider-proxmox/issues/2402)) ([c9b8a3f](https://github.com/bpg/terraform-provider-proxmox/commit/c9b8a3f3b73aac6dfaa797baf0f5c66fb529e8dc))
+
+
+### Miscellaneous
+
+* **ci:** pin dependencies ([#2388](https://github.com/bpg/terraform-provider-proxmox/issues/2388)) ([84bf77d](https://github.com/bpg/terraform-provider-proxmox/commit/84bf77dd350cbd5ca69a954454587fd63e1c8b8d))
+* **ci:** update actions/checkout action (v6.0.0 → v6.0.1) ([#2398](https://github.com/bpg/terraform-provider-proxmox/issues/2398)) ([5eb8020](https://github.com/bpg/terraform-provider-proxmox/commit/5eb8020b9e789fc695c18705b9a9e408b87c37f7))
+* **ci:** update actions/checkout digest (1af3b93 → 8e8c483) ([#2396](https://github.com/bpg/terraform-provider-proxmox/issues/2396)) ([a9926ca](https://github.com/bpg/terraform-provider-proxmox/commit/a9926ca8a6f33b59fc066eca395dee39ca2fb165))
+* **ci:** update actions/create-github-app-token action (v2.2.0 → v2.2.1) ([#2399](https://github.com/bpg/terraform-provider-proxmox/issues/2399)) ([2f6c1b4](https://github.com/bpg/terraform-provider-proxmox/commit/2f6c1b4d1179dfc4dd7da71592f2e6b42d80d475))
+* **ci:** Update actions/github-script action (v7 → v8) ([#2394](https://github.com/bpg/terraform-provider-proxmox/issues/2394)) ([aaef00e](https://github.com/bpg/terraform-provider-proxmox/commit/aaef00efd2301013b42928412ddda149832c9237))
+* **ci:** update actions/stale digest (5f858e3 → 9971854) ([#2397](https://github.com/bpg/terraform-provider-proxmox/issues/2397)) ([cd63393](https://github.com/bpg/terraform-provider-proxmox/commit/cd63393fabebc056ad5c6ff095ac13211b42b85f))
+* **ci:** update golangci/golangci-lint-action digest (e7fa5ac → 1e7e51e) ([#2389](https://github.com/bpg/terraform-provider-proxmox/issues/2389)) ([6593102](https://github.com/bpg/terraform-provider-proxmox/commit/6593102295b5c98c85e7eedaf1946ebbfeeb1ab8))
+* **deps:** update github.com/hashicorp/terraform-plugin-* ([#2392](https://github.com/bpg/terraform-provider-proxmox/issues/2392)) ([459cdfc](https://github.com/bpg/terraform-provider-proxmox/commit/459cdfc60641d84f5ec99f00e22be11395ee548b))
+* **deps:** update golangci/golangci-lint (v2.6.2 → v2.7.1) ([#2393](https://github.com/bpg/terraform-provider-proxmox/issues/2393)) ([4b5652f](https://github.com/bpg/terraform-provider-proxmox/commit/4b5652fbf957a37fa42bfdda683da0532c90d395))
+* **deps:** update image golang (1.25.4 → 1.25.5) ([#2390](https://github.com/bpg/terraform-provider-proxmox/issues/2390)) ([54e6aa5](https://github.com/bpg/terraform-provider-proxmox/commit/54e6aa514d0aa2729b96f5ea1d2b853816e384bb))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.12.0 → v7.12.1) ([#2391](https://github.com/bpg/terraform-provider-proxmox/issues/2391)) ([5952ae7](https://github.com/bpg/terraform-provider-proxmox/commit/5952ae7d9e79a4260eb3833c5dbe08464e6a53ea))
+
 ## [0.88.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.87.0...v0.88.0) (2025-12-01)
 
 
