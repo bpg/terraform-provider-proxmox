@@ -206,6 +206,24 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				}),
 			),
 		}}},
+		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2353
+		{"create VM without cpu.units and verify no drift", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-units-default"
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.NoResourceAttributesSet("proxmox_virtual_environment_vm2.test_vm", []string{
+						"cpu.units",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 	}
 
 	for _, tt := range tests {
