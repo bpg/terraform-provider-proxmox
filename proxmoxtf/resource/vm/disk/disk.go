@@ -631,12 +631,8 @@ func Update(
 				tmp.AIO = disk.AIO
 			}
 
-			if disk.ImportFrom != nil && *disk.ImportFrom != "" {
-				shutdownBeforeUpdate = true
-				tmp.DatastoreID = disk.DatastoreID
-				tmp.ImportFrom = disk.ImportFrom
-				tmp.Size = disk.Size
-			}
+			// Never re-import existing disks - import_from is only for initial disk creation.
+			// See https://github.com/bpg/terraform-provider-proxmox/issues/2385
 
 			tmp.Backup = disk.Backup
 			tmp.BurstableReadSpeedMbps = disk.BurstableReadSpeedMbps
@@ -658,5 +654,7 @@ func Update(
 		}
 	}
 
+	// shutdownBeforeUpdate is always false now, as we're not updating a boot disk that was imported.
+	// but let's keep this api / flag in place for future use.
 	return shutdownBeforeUpdate, rebootRequired, nil
 }
