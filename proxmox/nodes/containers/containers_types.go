@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -660,13 +661,20 @@ func (r CustomEnvironmentVariables) EncodeValues(key string, v *url.Values) erro
 		return nil
 	}
 
-	envVars := make([]string, 0, len(r))
-
-	for k, val := range r {
-		envVars = append(envVars, fmt.Sprintf("%s=%s", k, val))
+	keys := make([]string, 0, len(r))
+	for k := range r {
+		keys = append(keys, k)
 	}
 
-	// Join with NUL character (ASCII 0)
+	sort.Strings(keys)
+
+	envVars := make([]string, 0, len(r))
+
+	for _, k := range keys {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", k, r[k]))
+	}
+
+	// join with NUL character (ASCII 0)
 	v.Add(key, strings.Join(envVars, "\x00"))
 
 	return nil
