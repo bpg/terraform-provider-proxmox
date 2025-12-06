@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.88.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.87.0...v0.88.0) (2025-12-01)
+
+
+### Features
+
+* **provider:** add OTel implementation for `metrics` resource ([#2372](https://github.com/bpg/terraform-provider-proxmox/issues/2372)) ([d37a8bb](https://github.com/bpg/terraform-provider-proxmox/commit/d37a8bbb5699c2947506300d594621c4fb699701))
+* **vm,lxc:** add `wait_for_ip` configuration for agent/network interfaces ([#2362](https://github.com/bpg/terraform-provider-proxmox/issues/2362)) ([f24add3](https://github.com/bpg/terraform-provider-proxmox/commit/f24add360a7d6ac37d9b23cc9229d533100b6d2c))
+* **vm:** support custom cloud init drive file format ([#2375](https://github.com/bpg/terraform-provider-proxmox/issues/2375)) ([ddccd0a](https://github.com/bpg/terraform-provider-proxmox/commit/ddccd0af6fdc086e1d65f7be28bed85b4df2ef57))
+
+
+### Bug Fixes
+
+* **apt:** add support for modern APT sources (PVE9+) ([#2376](https://github.com/bpg/terraform-provider-proxmox/issues/2376)) ([6f6edec](https://github.com/bpg/terraform-provider-proxmox/commit/6f6edec253ac73e3a8c132debd3315e25079fd93))
+* **disk:** restore updating boot disk. ([#2150](https://github.com/bpg/terraform-provider-proxmox/issues/2150)) ([0da0bcb](https://github.com/bpg/terraform-provider-proxmox/commit/0da0bcb0dc62cc74c944f082c731167ee74ae8b8))
+* **example:** comment out otel metrics server resource ([fc94e2a](https://github.com/bpg/terraform-provider-proxmox/commit/fc94e2a601a1570c6de582e22e5b96cb05a4f34f))
+* **lxc:** allow container creation/update with correct mountoptions ([#2319](https://github.com/bpg/terraform-provider-proxmox/issues/2319)) ([c2dc3a7](https://github.com/bpg/terraform-provider-proxmox/commit/c2dc3a75385d11eaf9740d4d871c4c6eabcaaab8))
+* **lxc:** ignore link-local addresses when waiting for network IPs ([#2357](https://github.com/bpg/terraform-provider-proxmox/issues/2357)) ([8c081f5](https://github.com/bpg/terraform-provider-proxmox/commit/8c081f542f2ecdf1bf3874e2e8696138d705ece4))
+* **vm:** convert to template using proper endpoint ([#2340](https://github.com/bpg/terraform-provider-proxmox/issues/2340)) ([5615298](https://github.com/bpg/terraform-provider-proxmox/commit/561529885f2f3651df29122f694fcb983b1a8adf))
+* **vm:** prevent state changes after VM import ([#2294](https://github.com/bpg/terraform-provider-proxmox/issues/2294)) ([f0bb501](https://github.com/bpg/terraform-provider-proxmox/commit/f0bb5016dd50036be53d9b67ee2e93c76bdadfba))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/checkout action ([#2361](https://github.com/bpg/terraform-provider-proxmox/issues/2361)) ([f5d4676](https://github.com/bpg/terraform-provider-proxmox/commit/f5d467660cdecd04e171fd6242b6049f622e6837))
+* **ci:** update actions/create-github-app-token action (v2.1.4 → v2.2.0) ([#2366](https://github.com/bpg/terraform-provider-proxmox/issues/2366)) ([3055dc2](https://github.com/bpg/terraform-provider-proxmox/commit/3055dc28479983f2ce17fa9dca35b26d361f4b3d))
+* **ci:** update actions/setup-go digest (4469467 → 4dc6199) ([#2365](https://github.com/bpg/terraform-provider-proxmox/issues/2365)) ([bcce7da](https://github.com/bpg/terraform-provider-proxmox/commit/bcce7da9973843c21b0c56e3a698440cd83c0977))
+* **ci:** update golangci/golangci-lint-action digest (0a35821 → e7fa5ac) ([#2358](https://github.com/bpg/terraform-provider-proxmox/issues/2358)) ([dd416a1](https://github.com/bpg/terraform-provider-proxmox/commit/dd416a1a9739b53e1d7a5b3f1660a4af87704ded))
+* **ci:** update jetbrains/qodana-action action (v2025.2.1 → v2025.2.2) ([#2360](https://github.com/bpg/terraform-provider-proxmox/issues/2360)) ([092df22](https://github.com/bpg/terraform-provider-proxmox/commit/092df2280132a7d5acfb636107efe4edb68a3d77))
+* **deps:** update golangci/golangci-lint (v2.5.0 → v2.6.2) ([#2304](https://github.com/bpg/terraform-provider-proxmox/issues/2304)) ([0937f2b](https://github.com/bpg/terraform-provider-proxmox/commit/0937f2b5d421d8830b07dfb03285b6e11c5d51e4))
+* **deps:** update image golang (e68f6a0 → f60eaa8) ([#2359](https://github.com/bpg/terraform-provider-proxmox/issues/2359)) ([b80a193](https://github.com/bpg/terraform-provider-proxmox/commit/b80a1937a70461c6c78de199650b20a2245ce58e))
+* **deps:** update image golang (f60eaa8 → 6981837) ([#2370](https://github.com/bpg/terraform-provider-proxmox/issues/2370)) ([faf56bc](https://github.com/bpg/terraform-provider-proxmox/commit/faf56bce9a5dd09b9ad85351844542e026695816))
+* **deps:** Update module github.com/avast/retry-go/v4 (v4.7.0 → v5.0.0) ([#2380](https://github.com/bpg/terraform-provider-proxmox/issues/2380)) ([630240d](https://github.com/bpg/terraform-provider-proxmox/commit/630240d31115bed69e002c61ee4993504663d4b3))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.10.0 → v7.11.0) ([#2379](https://github.com/bpg/terraform-provider-proxmox/issues/2379)) ([5e55d92](https://github.com/bpg/terraform-provider-proxmox/commit/5e55d9272f7bc2f545efd1a4c0f26ad522db8699))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.11.0 → v7.12.0) ([#2384](https://github.com/bpg/terraform-provider-proxmox/issues/2384)) ([2f7bbb1](https://github.com/bpg/terraform-provider-proxmox/commit/2f7bbb11befca972a858ff562d190c1a73d4c75c))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 (v7.9.0 → v7.10.0) ([#2371](https://github.com/bpg/terraform-provider-proxmox/issues/2371)) ([d3b4847](https://github.com/bpg/terraform-provider-proxmox/commit/d3b48474b4a2684f0f8678eaa5afb8ba1d2d358e))
+* **deps:** update module github.com/hashicorp/go-version (v1.7.0 → v1.8.0) ([#2381](https://github.com/bpg/terraform-provider-proxmox/issues/2381)) ([ad38c5b](https://github.com/bpg/terraform-provider-proxmox/commit/ad38c5befc279c8312c689a8d7c80336a875573f))
+* **deps:** update module golang.org/x/crypto (v0.44.0 → v0.45.0) [security] ([#2348](https://github.com/bpg/terraform-provider-proxmox/issues/2348)) ([78ce72e](https://github.com/bpg/terraform-provider-proxmox/commit/78ce72edc85320c33ed06d719dbc9b27c0ba931d))
+* **docs:** update terraform local (2.5.3 → 2.6.1) ([#2367](https://github.com/bpg/terraform-provider-proxmox/issues/2367)) ([d5b3c64](https://github.com/bpg/terraform-provider-proxmox/commit/d5b3c64693dd13d72294c356d3d663852fbe79c9))
+* update docs to pve 9.1, fix example tests ([#2350](https://github.com/bpg/terraform-provider-proxmox/issues/2350)) ([6e2a5aa](https://github.com/bpg/terraform-provider-proxmox/commit/6e2a5aa5c806e1f46373f8ff73e59ec221ae8bdd))
+* **vm:** refactor network devices update logic ([#2260](https://github.com/bpg/terraform-provider-proxmox/issues/2260)) ([db3d7ec](https://github.com/bpg/terraform-provider-proxmox/commit/db3d7ec9d9a57f72ada7ed88604b609d223b0e98))
+
 ## [0.87.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.86.0...v0.87.0) (2025-11-20)
 
 
