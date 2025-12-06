@@ -21,7 +21,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
           fetch-depth: 0  # a full history is required for pull request analysis
       - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@e5d20b1260e99a93210d46ec8882c83978a09036 # v2025.2.2
+        uses: JetBrains/qodana-action@8d427a3995aede61f5d65005f6ab24cab989d81e # v2025.2.3
         with:
           post-pr-comment: false
         env:
