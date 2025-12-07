@@ -28,10 +28,10 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
-// GetInfo returns the disk information for a VM.
+// GetDiskInfoWithFileID returns the disk information for a VM.
 //
-// Deprecated: use vms.MapCustomStorageDevices from proxmox/nodes/vms instead.
-func GetInfo(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
+// Use only when you need to get the disk information with the file ID. Otherwise, use vmConfig.StorageDevices instead.
+func GetDiskInfoWithFileID(resp *vms.GetResponseData, d *schema.ResourceData) vms.CustomStorageDevices {
 	storageDevices := resp.StorageDevices
 
 	currentDisk := d.Get(MkDisk)
