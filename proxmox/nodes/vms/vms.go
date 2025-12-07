@@ -598,6 +598,31 @@ func (c *Client) UpdateVMAsync(ctx context.Context, d *UpdateRequestBody) (*stri
 	return resBody.Data, nil
 }
 
+// isAgentNotReadyError checks if an HTTP error indicates the agent is not ready yet.
+// This includes HTTP 500 errors with messages like "QEMU guest agent is not running"
+// which can occur with certain SCSI controller types (e.g., virtio-scsi-single).
+func isAgentNotReadyError(err error) bool {
+	var httpError *api.HTTPError
+	if !errors.As(err, &httpError) {
+		return false
+	}
+
+	if httpError.Code == http.StatusBadRequest {
+		return true
+	}
+
+	if httpError.Code == http.StatusInternalServerError {
+		msg := strings.ToLower(httpError.Message)
+
+		return strings.Contains(msg, "qemu guest agent") &&
+			(strings.Contains(msg, "not running") ||
+				strings.Contains(msg, "not available") ||
+				strings.Contains(msg, "not ready"))
+	}
+
+	return false
+}
+
 // WaitForNetworkInterfacesFromVMAgent waits for a virtual machine's QEMU agent to publish the network interfaces.
 func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	ctx context.Context,
@@ -627,11 +652,8 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 	data, err := retry.NewWithData[*GetQEMUNetworkInterfacesResponseData](
 		retry.Context(ctxWithTimeout),
 		retry.RetryIf(func(err error) bool {
-			var target *api.HTTPError
-			if errors.As(err, &target) {
-				if target.Code == http.StatusBadRequest {
-					return true
-				}
+			if isAgentNotReadyError(err) {
+				return true
 			}
 
 			return errors.Is(err, errNoIPsYet)
@@ -650,7 +672,7 @@ func (c *Client) WaitForNetworkInterfacesFromVMAgent(
 						return nil, err
 					}
 
-					if httpError.Code == http.StatusBadRequest {
+					if isAgentNotReadyError(err) {
 						return nil, errNoIPsYet
 					}
 				}
