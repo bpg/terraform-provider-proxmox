@@ -226,8 +226,7 @@ output "ubuntu_container_public_key" {
         - `opensuse` - openSUSE.
         - `ubuntu` - Ubuntu.
         - `unmanaged` - Unmanaged.
-- `pool_id` - (Optional, **Deprecated**) The identifier for a pool to assign the container to.
-  This field is deprecated and will be removed in a future release. To assign the container to a pool, use the `proxmox_virtual_environment_pool_membership` resource instead. 
+- `pool_id` - (Optional) The identifier for a pool to assign the container to.
 - `protection` - (Optional) Whether to set the protection flag of the container (defaults to `false`). This will prevent the container itself and its disk for remove/update operations.
 - `started` - (Optional) Whether to start the container (defaults to `true`).
 - `startup` - (Optional) Defines startup and shutdown behavior of the container.

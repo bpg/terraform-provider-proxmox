@@ -904,8 +904,6 @@ func Container() *schema.Resource {
 				Optional:    true,
 				ForceNew:    true,
 				Default:     dvPoolID,
-				Deprecated: "This field is deprecated and will be removed in a future release. " +
-					"To assign the container to a pool, use `proxmox_virtual_environment_pool_membership` resource instead",
 			},
 			mkProtection: {
 				Type: schema.TypeBool,
