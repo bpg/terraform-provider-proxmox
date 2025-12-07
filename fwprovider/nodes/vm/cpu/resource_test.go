@@ -219,6 +219,75 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2301
+		{"create VM with x86-64-v4 CPU type and verify no format drift", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-x86-64-v4"
+					cpu = {
+						cores = 1
+						sockets = 1
+						type = "x86-64-v4"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+						"cpu.cores":   "1",
+						"cpu.sockets": "1",
+						"cpu.type":    "x86-64-v4",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
+		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2301
+		{"clone VM with x86-64-v4 CPU type, hotplugged CPUs, and ignore_changes", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "template_vm" {
+					node_name = "{{.NodeName}}"
+					name = "template-cpu-x86-64-v4"
+					cpu = {
+						cores = 1
+						sockets = 1
+						type = "x86-64-v4"
+					}
+				}
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-x86-64-v4-clone"
+					clone = {
+						id = proxmox_virtual_environment_vm2.template_vm.id
+					}
+					cpu = {
+						cores = 1
+						sockets = 1
+						type = "x86-64-v4"
+						hotplugged = 1
+					}
+					lifecycle {
+						ignore_changes = [
+							cpu[0].hotplugged,
+						]
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+						"cpu.cores":      "1",
+						"cpu.sockets":    "1",
+						"cpu.type":       "x86-64-v4",
+						"cpu.hotplugged": "1",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 	}
 
 	for _, tt := range tests {
