@@ -4153,7 +4153,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	allDiskInfo := disk.GetDiskInfoWithFileID(vmConfig, d) //nolint:staticcheck
+	allDiskInfo := disk.GetDiskInfoWithFileID(vmConfig, d)
 
 	diags = append(diags, disk.Read(ctx, d, allDiskInfo, vmID, client, nodeName, len(clone) > 0)...)
 
