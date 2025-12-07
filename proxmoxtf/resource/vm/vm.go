@@ -73,7 +73,6 @@ const (
 	dvCPUNUMA             = false
 	dvCPUSockets          = 1
 	dvCPUType             = "qemu64"
-	dvCPUUnits            = 100
 	dvCPUAffinity         = ""
 	dvDescription         = ""
 
@@ -634,7 +633,7 @@ func VM() *schema.Resource {
 						mkCPUNUMA:         dvCPUNUMA,
 						mkCPUSockets:      dvCPUSockets,
 						mkCPUType:         dvCPUType,
-						mkCPUUnits:        dvCPUUnits,
+						mkCPUUnits:        0,
 						mkCPUAffinity:     dvCPUAffinity,
 					},
 				}, nil
@@ -704,7 +703,7 @@ func VM() *schema.Resource {
 						Type:        schema.TypeInt,
 						Description: "The CPU units",
 						Optional:    true,
-						Default:     dvCPUUnits,
+						Computed:    true,
 						ValidateDiagFunc: validation.ToDiagFunc(
 							validation.IntBetween(1, 262144),
 						),
@@ -2186,7 +2185,6 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 		updateBody.NUMAEnabled = &cpuNUMA
 		updateBody.CPUSockets = ptr.Ptr(int64(cpuSockets))
-		updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 
 		if cpuAffinity != "" {
 			updateBody.CPUAffinity = &cpuAffinity
@@ -2198,6 +2196,10 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 
 		if cpuLimit > 0 {
 			updateBody.CPULimit = ptr.Ptr(int64(cpuLimit))
+		}
+
+		if cpuUnits > 0 {
+			updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 		}
 	}
 
@@ -2890,7 +2892,6 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 			Type:  cpuType,
 		},
 		CPUSockets:           ptr.Ptr(int64(cpuSockets)),
-		CPUUnits:             ptr.Ptr(int64(cpuUnits)),
 		DedicatedMemory:      &memoryDedicated,
 		DeletionProtection:   &protection,
 		EFIDisk:              efiDisk,
@@ -2929,6 +2930,10 @@ func vmCreateCustom(ctx context.Context, d *schema.ResourceData, m any) diag.Dia
 
 	if cpuLimit > 0 {
 		createBody.CPULimit = ptr.Ptr(int64(cpuLimit))
+	}
+
+	if cpuUnits > 0 {
+		createBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 	}
 
 	if cpuAffinity != "" {
@@ -4118,8 +4123,7 @@ func vmReadCustom(
 	if vmConfig.CPUUnits != nil {
 		cpu[mkCPUUnits] = int(*vmConfig.CPUUnits)
 	} else {
-		// Default value of "cpuunits" is "1024" according to the API documentation.
-		cpu[mkCPUUnits] = 1024
+		cpu[mkCPUUnits] = 0
 	}
 
 	if vmConfig.CPUAffinity != nil {
@@ -4143,7 +4147,7 @@ func vmReadCustom(
 		cpu[mkCPULimit] != dvCPULimit ||
 		cpu[mkCPUSockets] != dvCPUSockets ||
 		cpu[mkCPUType] != dvCPUType ||
-		cpu[mkCPUUnits] != dvCPUUnits {
+		cpu[mkCPUUnits] != 0 {
 		err := d.Set(mkCPU, []any{cpu})
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -5541,8 +5545,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 
 		updateBody.CPUCores = ptr.Ptr(int64(cpuCores))
 		updateBody.CPUSockets = ptr.Ptr(int64(cpuSockets))
-		updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
 		updateBody.NUMAEnabled = &cpuNUMA
+
+		if cpuUnits > 0 {
+			updateBody.CPUUnits = ptr.Ptr(int64(cpuUnits))
+		}
 
 		// CPU affinity is a special case, only root can change it.
 		// we can't even have it in the delete list, as PVE will return an error for non-root.

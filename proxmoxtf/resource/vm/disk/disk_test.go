@@ -358,38 +358,69 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, shutdownBeforeUpdate)
 
-	// Check that only the changed disk (scsi1) is in the update body
-	// scsi0 should NOT be in the update body since it hasn't changed
-	require.NotNil(t, updateBody)
-
 	// The update body should only contain scsi1, not scsi0
 	// This prevents the "can't unplug bootdisk 'scsi0'" error
-	// Note: We can't directly inspect the updateBody content in this test framework,
-	// but the fact that no error occurred means the logic worked correctly
+	require.Contains(t, updateBody.CustomStorageDevices, "scsi1", "Update body should contain the changed disk scsi1")
+	require.NotContains(t, updateBody.CustomStorageDevices, "scsi0", "Update body should not contain the unchanged disk scsi0")
+}
 
-	// Create plan disks (what terraform wants)
-	importFrom2 := "local:import/test2.qcow2"
-	planDisks2 := vms.CustomStorageDevices{
-		"scsi0": &vms.CustomStorageDevice{
-			Size:        types.DiskSizeFromGigabytes(10), // Same as current
-			DatastoreID: &datastoreID,
-			ImportFrom:  &importFrom2, // Different Import file.
+// TestImportFromDiskNotReimportedOnSizeChange tests issue #2385:
+// when a disk with import_from is resized in Proxmox GUI, terraform should NOT
+// attempt to re-import the disk (which would fail with "cannot shrink" error).
+func TestImportFromDiskNotReimportedOnSizeChange(t *testing.T) {
+	t.Parallel()
+
+	diskSchema := Schema()
+
+	// Terraform config has a disk with import_from and size=20GB
+	resourceData := schema.TestResourceDataRaw(t, diskSchema, map[string]any{
+		MkDisk: []any{
+			map[string]any{
+				mkDiskInterface:   "scsi0",
+				mkDiskDatastoreID: "nfs-v3-tmp-01",
+				mkDiskSize:        20,
+				mkDiskImportFrom:  "nfs-v3-tmp-01:iso/ubuntu-22.04-cloud.qcow2",
+				mkDiskSpeed:       []any{},
+			},
 		},
-		"scsi1": &vms.CustomStorageDevice{
-			Size:        types.DiskSizeFromGigabytes(5), // Same as current
+	})
+
+	resourceData.MarkNewResource()
+
+	// Proxmox currently has the disk at 30GB (resized via GUI)
+	// Note: PVE does NOT return import_from for existing disks
+	datastoreID := "nfs-v3-tmp-01"
+	currentDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(30), // larger than plan (resized in GUI)
 			DatastoreID: &datastoreID,
+			// ImportFrom is nil - PVE doesn't return this for existing disks
 		},
 	}
 
-	// Mock update body to capture what gets sent to the API
-	updateBody2 := &vms.UpdateRequestBody{}
+	// Plan has the original size from terraform config
+	importFrom := "nfs-v3-tmp-01:iso/ubuntu-22.04-cloud.qcow2"
+	planDisks := vms.CustomStorageDevices{
+		"scsi0": &vms.CustomStorageDevice{
+			Size:        types.DiskSizeFromGigabytes(20), // smaller than current
+			DatastoreID: &datastoreID,
+			ImportFrom:  &importFrom, // preserved from terraform config
+		},
+	}
 
-	// Force HasChange to return true by setting old and new values
-	err = resourceData.Set(MkDisk, []any{
+	updateBody := &vms.UpdateRequestBody{}
+	var client proxmox.Client
+
+	ctx := context.Background()
+	vmID := 1002
+	nodeName := "test-node"
+
+	// Force HasChange to return true
+	err := resourceData.Set(MkDisk, []any{
 		map[string]any{
-			mkDiskInterface:   "scsi1",
-			mkDiskDatastoreID: "local",
-			mkDiskSize:        5, // Old size
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "nfs-v3-tmp-01",
+			mkDiskSize:        30, // current size
 			mkDiskSpeed:       []any{},
 		},
 	})
@@ -397,28 +428,26 @@ func TestDiskUpdateSkipsUnchangedDisks(t *testing.T) {
 
 	err = resourceData.Set(MkDisk, []any{
 		map[string]any{
-			mkDiskInterface:   "scsi1",
-			mkDiskDatastoreID: "local",
-			mkDiskSize:        20, // New size
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "nfs-v3-tmp-01",
+			mkDiskSize:        20, // plan size
 			mkDiskSpeed:       []any{},
 		},
 	})
 	require.NoError(t, err)
 
-	// Call the Update function
-	shutdownBeforeUpdate, _, err = Update(ctx, client, nodeName, vmID, resourceData, planDisks2, currentDisks, updateBody2)
+	shutdownBeforeUpdate, _, err := Update(ctx, client, nodeName, vmID, resourceData, planDisks, currentDisks, updateBody)
 	require.NoError(t, err)
-	require.True(t, shutdownBeforeUpdate)
 
-	// Check that only the changed disk (scsi1) is in the update body
-	// scsi0 should NOT be in the update body since it hasn't changed
-	require.NotNil(t, updateBody2)
-	require.Contains(t, updateBody2.CustomStorageDevices, "scsi0", "Update body should contain the changed disk scsi0")
-	require.NotContains(t, updateBody2.CustomStorageDevices, "scsi1", "Update body should not contain the unchanged disk scsi1")
-	require.Equal(t, importFrom2, *updateBody2.CustomStorageDevices["scsi0"].ImportFrom)
+	// shutdownBeforeUpdate should be false - we should NOT shutdown VM to re-import
+	require.False(t, shutdownBeforeUpdate,
+		"should not shutdown VM for disk with import_from when size differs")
 
-	// The update body should only contain scsi0, not scsi1
-	// Note: We can't directly inspect the updateBody content in this test framework,
+	// the update body should NOT contain ImportFrom - we're updating existing disk, not re-importing
+	if updateBody.CustomStorageDevices != nil && updateBody.CustomStorageDevices["scsi0"] != nil {
+		require.Nil(t, updateBody.CustomStorageDevices["scsi0"].ImportFrom,
+			"should not set ImportFrom when updating existing disk")
+	}
 }
 
 func TestDiskDeletionDetectionInGetDiskDeviceObjects(t *testing.T) {

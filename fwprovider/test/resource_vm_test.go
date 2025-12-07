@@ -150,6 +150,22 @@ func TestAccResourceVM(t *testing.T) {
 				),
 			},
 		}},
+		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2353
+		{"create VM without cpu.units and verify no drift", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_cpu_units" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					cpu {
+						cores = 2
+					}
+				}`),
+			},
+			{
+				RefreshState: true,
+			},
+		}},
 		{"set cpu.architecture as non root is not supported", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
