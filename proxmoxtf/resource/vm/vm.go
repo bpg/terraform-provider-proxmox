@@ -6145,13 +6145,6 @@ func vmUpdateDiskLocationAndSize(
 
 		shutdownForDisksRequired := false
 
-		vmConfig, err := vmAPI.GetVM(ctx)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		currentDiskInfo := disk.GetInfo(vmConfig, d) //nolint:staticcheck
-
 		for oldIface, oldDisk := range diskOldEntries {
 			// Skip deleted disks - they are handled earlier in vmUpdate
 			if _, present := diskNewEntries[oldIface]; !present {
@@ -6218,9 +6211,14 @@ func vmUpdateDiskLocationAndSize(
 			}
 		}
 
+		vmConfig, err := vmAPI.GetVM(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
 		for newIface, newDisk := range diskNewEntries {
 			if _, present := diskOldEntries[newIface]; !present {
-				currentDisk := currentDiskInfo[newIface]
+				currentDisk := vmConfig.StorageDevices[newIface]
 				if currentDisk != nil && currentDisk.Size != nil && newDisk.Size != nil {
 					if currentDisk.Size.InMegabytes() < newDisk.Size.InMegabytes() {
 						if currentDisk.IsOwnedBy(vmID) {
