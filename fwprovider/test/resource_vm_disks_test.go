@@ -842,6 +842,53 @@ func TestAccResourceVMDisks(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		{"efi disk parameter change issue 1515", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_change" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-efi-disk-change-1515"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+						pre_enrolled_keys = false
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_change", map[string]string{
+						"efi_disk.0.datastore_id":      "local-lvm",
+						"efi_disk.0.type":              "4m",
+						"efi_disk.0.pre_enrolled_keys": "false",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_efi_disk_change" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-efi-disk-change-1515"
+
+					efi_disk {
+						datastore_id = "local-lvm"
+						type = "4m"
+						pre_enrolled_keys = true
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_efi_disk_change", map[string]string{
+						"efi_disk.0.pre_enrolled_keys": "true",
+					}),
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("proxmox_virtual_environment_vm.test_efi_disk_change", plancheck.ResourceActionUpdate),
+					},
+				},
+			},
+		}},
 		{"ide disks", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`

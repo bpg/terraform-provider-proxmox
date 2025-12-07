@@ -740,7 +740,6 @@ func VM() *schema.Resource {
 			Type:        schema.TypeList,
 			Description: "The efidisk device",
 			Optional:    true,
-			ForceNew:    true,
 			DefaultFunc: func() (any, error) {
 				return []any{}, nil
 			},
@@ -756,7 +755,6 @@ func VM() *schema.Resource {
 						Type:             schema.TypeString,
 						Description:      "The file format",
 						Optional:         true,
-						ForceNew:         true,
 						Computed:         true,
 						ValidateDiagFunc: validators.FileFormat(),
 					},
@@ -776,7 +774,6 @@ func VM() *schema.Resource {
 						Description: "Use an EFI vars template with distribution-specific and Microsoft Standard " +
 							"keys enrolled, if used with efi type=`4m`.",
 						Optional: true,
-						ForceNew: true,
 						Default:  dvEFIDiskPreEnrolledKeys,
 					},
 				},
