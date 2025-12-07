@@ -1299,8 +1299,8 @@ func VM() *schema.Resource {
 			Description: "The ID of the pool to assign the virtual machine to",
 			Optional:    true,
 			Default:     dvPoolID,
-			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-				return new == "" && old != ""
+			DiffSuppressFunc: func(k, oldVal, newVal string, d *schema.ResourceData) bool {
+				return newVal == "" && oldVal != ""
 			},
 		},
 		mkProtection: {
