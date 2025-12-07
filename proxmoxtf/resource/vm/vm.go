@@ -1299,6 +1299,9 @@ func VM() *schema.Resource {
 			Description: "The ID of the pool to assign the virtual machine to",
 			Optional:    true,
 			Default:     dvPoolID,
+			DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+				return new == "" && old != ""
+			},
 		},
 		mkProtection: {
 			Type:        schema.TypeBool,
@@ -4732,7 +4735,6 @@ func vmReadCustom(
 	if vmConfig.PoolID != nil && *vmConfig.PoolID != "" {
 		observedPool = *vmConfig.PoolID
 	} else {
-		// fallback: derive from /pools
 		p, err := findPoolForVM(ctx, client.Pool(), vmID)
 		if err != nil {
 			diags = append(diags, diag.FromErr(fmt.Errorf("failed to determine pool for VM %d: %w", vmID, err))...)
@@ -4741,7 +4743,6 @@ func vmReadCustom(
 		}
 	}
 
-	// always write the observed remote value into state
 	if err := d.Set(mkPoolID, observedPool); err != nil {
 		diags = append(diags, diag.FromErr(err)...)
 	}
@@ -5229,19 +5230,29 @@ func vmReadPrimitiveValues(
 }
 
 // vmUpdatePool moves the VM to the pool it is supposed to be in if the pool ID changed.
+// Only updates pool_id if it is explicitly set to a non-empty value to avoid conflicts with pool_membership resource.
 func vmUpdatePool(
 	ctx context.Context,
 	d *schema.ResourceData,
 	api *pools.Client,
 	vmID int,
 ) error {
-	oldPoolValue, newPoolValue := d.GetChange(mkPoolID)
-	if cmp.Equal(newPoolValue, oldPoolValue) {
+	if !d.HasChange(mkPoolID) {
 		return nil
 	}
 
+	oldPoolValue, newPoolValue := d.GetChange(mkPoolID)
 	oldPool := oldPoolValue.(string)
 	newPool := newPoolValue.(string)
+
+	if cmp.Equal(newPool, oldPool) {
+		return nil
+	}
+
+	if newPool == "" && oldPool != "" {
+		return nil
+	}
+
 	vmList := (types.CustomCommaSeparatedList)([]string{strconv.Itoa(vmID)})
 
 	tflog.Debug(ctx, fmt.Sprintf("Moving VM %d from pool '%s' to pool '%s'", vmID, oldPool, newPool))
@@ -5259,13 +5270,11 @@ func vmUpdatePool(
 		}
 	}
 
-	if newPool != "" {
-		poolUpdate := &pools.PoolUpdateRequestBody{VMs: &vmList}
+	poolUpdate := &pools.PoolUpdateRequestBody{VMs: &vmList}
 
-		err := api.UpdatePool(ctx, newPool, poolUpdate)
-		if err != nil {
-			return fmt.Errorf("while adding VM %d to pool %s: %w", vmID, newPool, err)
-		}
+	err := api.UpdatePool(ctx, newPool, poolUpdate)
+	if err != nil {
+		return fmt.Errorf("while adding VM %d to pool %s: %w", vmID, newPool, err)
 	}
 
 	return nil
