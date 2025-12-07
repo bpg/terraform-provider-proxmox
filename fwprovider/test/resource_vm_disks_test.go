@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/bpg/terraform-provider-proxmox/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
@@ -1256,9 +1257,12 @@ func TestAccResourceVMDisks(t *testing.T) {
 // where disk resize fails on NFS storage with "volume does not exist" error due to
 // NFS storage sync timing issues after disk move.
 func TestAccResourceVMDiskCloneNFSResize(t *testing.T) {
-	te := InitEnvironment(t)
+	nfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID")
+	if nfsDatastoreID == "" {
+		t.Skip("NFS storage is not available")
+	}
 
-	nfsDatastoreID := "nfs"
+	te := InitEnvironment(t)
 	te.AddTemplateVars(map[string]any{
 		"NFSDatastoreID": nfsDatastoreID,
 	})
@@ -1267,10 +1271,6 @@ func TestAccResourceVMDiskCloneNFSResize(t *testing.T) {
 		ProtoV6ProviderFactories: te.AccProviders,
 		Steps: []resource.TestStep{
 			{
-				SkipFunc: func() (bool, error) {
-					// skip the test as NFS storage may not be available everywhere
-					return true, nil
-				},
 				Config: te.RenderConfig(`
 				resource "proxmox_virtual_environment_vm" "template_nfs_resize" {
 					node_name = "{{.NodeName}}"
