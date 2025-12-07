@@ -1299,8 +1299,6 @@ func VM() *schema.Resource {
 			Description: "The ID of the pool to assign the virtual machine to",
 			Optional:    true,
 			Default:     dvPoolID,
-			Deprecated: "This field is deprecated and will be removed in a future release. " +
-				"To assign the VM to a pool, use `proxmox_virtual_environment_pool_membership` resource instead.",
 		},
 		mkProtection: {
 			Type:        schema.TypeBool,
