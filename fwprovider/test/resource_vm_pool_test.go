@@ -20,10 +20,6 @@ import (
 )
 
 func TestAccResourceVMPoolDetection(t *testing.T) {
-	if utils.GetAnyStringEnv("TF_ACC") == "" {
-		t.Skip("Acceptance tests are disabled")
-	}
-
 	te := InitEnvironment(t)
 
 	tests := []struct {
@@ -275,10 +271,6 @@ func TestAccResourceVMPoolDetectionLegacy(t *testing.T) {
 
 // TestAccResourceVMPoolDetectionManual tests manual pool changes outside Terraform
 func TestAccResourceVMPoolDetectionManual(t *testing.T) {
-	if utils.GetAnyStringEnv("TF_ACC") == "" {
-		t.Skip("Acceptance tests are disabled")
-	}
-
 	te := InitEnvironment(t)
 	poolName1 := fmt.Sprintf("test-pool-manual-%s-%d", gofakeit.Word(), time.Now().Unix())
 	poolName2 := fmt.Sprintf("test-pool-manual-%s-%d", gofakeit.Word(), time.Now().Unix())
@@ -353,4 +345,214 @@ func TestAccResourceVMPoolDetectionManual(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccResourceVMPoolMembership tests the fix for issue #2377:
+// Using proxmox_virtual_environment_pool_membership should not cause perpetual diffs
+// when pool_id is not set in the VM resource configuration.
+func TestAccResourceVMPoolMembership(t *testing.T) {
+	te := InitEnvironment(t)
+	poolName := fmt.Sprintf("test-pool-2377-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+
+	te.AddTemplateVars(map[string]interface{}{
+		"PoolName": poolName,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_pool" "test" {
+						pool_id = "{{.PoolName}}"
+					}
+
+					resource "proxmox_virtual_environment_vm" "test" {
+						node_name = "{{.NodeName}}"
+						name      = "issue-2377-vm"
+						started   = false
+					}
+
+					resource "proxmox_virtual_environment_pool_membership" "test" {
+						vm_id   = proxmox_virtual_environment_vm.test.id
+						pool_id = proxmox_virtual_environment_pool.test.pool_id
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_pool_membership.test", map[string]string{
+						"pool_id": poolName,
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_pool" "test" {
+						pool_id = "{{.PoolName}}"
+					}
+
+					resource "proxmox_virtual_environment_vm" "test" {
+						node_name = "{{.NodeName}}"
+						name      = "issue-2377-vm"
+						started   = false
+					}
+
+					resource "proxmox_virtual_environment_pool_membership" "test" {
+						vm_id   = proxmox_virtual_environment_vm.test.id
+						pool_id = proxmox_virtual_environment_pool.test.pool_id
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_pool_membership.test", map[string]string{
+						"pool_id": poolName,
+					}),
+				),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
+// TestAccResourceVMPoolMembershipLegacy tests the fix for issue #2377 with legacy VM resource:
+// Using proxmox_virtual_environment_pool_membership should not cause perpetual diffs
+// when pool_id is not set in the legacy VM resource configuration.
+func TestAccResourceVMPoolMembershipLegacy(t *testing.T) {
+	te := InitEnvironment(t)
+	poolName := fmt.Sprintf("test-pool-2377-legacy-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+
+	te.AddTemplateVars(map[string]interface{}{
+		"PoolName": poolName,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_pool" "test" {
+						pool_id = "{{.PoolName}}"
+					}
+
+					resource "proxmox_virtual_environment_vm" "test" {
+						node_name = "{{.NodeName}}"
+						name      = "issue-2377-legacy-vm"
+						started   = false
+					}
+
+					resource "proxmox_virtual_environment_pool_membership" "test" {
+						vm_id   = proxmox_virtual_environment_vm.test.id
+						pool_id = proxmox_virtual_environment_pool.test.pool_id
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_pool_membership.test", map[string]string{
+						"pool_id": poolName,
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test", map[string]string{
+						"pool_id": poolName,
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_pool" "test" {
+						pool_id = "{{.PoolName}}"
+					}
+
+					resource "proxmox_virtual_environment_vm" "test" {
+						node_name = "{{.NodeName}}"
+						name      = "issue-2377-legacy-vm"
+						started   = false
+					}
+
+					resource "proxmox_virtual_environment_pool_membership" "test" {
+						vm_id   = proxmox_virtual_environment_vm.test.id
+						pool_id = proxmox_virtual_environment_pool.test.pool_id
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_pool_membership.test", map[string]string{
+						"pool_id": poolName,
+					}),
+					ResourceAttributes("proxmox_virtual_environment_vm.test", map[string]string{
+						"pool_id": poolName,
+					}),
+				),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+			{
+				RefreshState: true,
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test", map[string]string{
+						"pool_id": poolName,
+					}),
+				),
+			},
+		},
+	})
+}
+
+// TestAccResourceVMPoolMembershipWithExplicitPoolID tests that explicitly setting pool_id
+// on the VM resource still works correctly alongside pool_membership.
+func TestAccResourceVMPoolMembershipWithExplicitPoolID(t *testing.T) {
+	te := InitEnvironment(t)
+	poolName1 := fmt.Sprintf("test-pool-explicit1-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+	poolName2 := fmt.Sprintf("test-pool-explicit2-%s-%d", gofakeit.Word(), time.Now().UnixNano())
+
+	te.AddTemplateVars(map[string]interface{}{
+		"PoolName1": poolName1,
+		"PoolName2": poolName2,
+	})
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_pool" "test1" {
+						pool_id = "{{.PoolName1}}"
+					}
+
+					resource "proxmox_virtual_environment_pool" "test2" {
+						pool_id = "{{.PoolName2}}"
+					}
+
+					resource "proxmox_virtual_environment_vm" "test" {
+						node_name = "{{.NodeName}}"
+						name      = "explicit-pool-vm"
+						started   = false
+						pool_id   = proxmox_virtual_environment_pool.test1.pool_id
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test", map[string]string{
+						"pool_id": poolName1,
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+					resource "proxmox_virtual_environment_pool" "test1" {
+						pool_id = "{{.PoolName1}}"
+					}
+
+					resource "proxmox_virtual_environment_pool" "test2" {
+						pool_id = "{{.PoolName2}}"
+					}
+
+					resource "proxmox_virtual_environment_vm" "test" {
+						node_name = "{{.NodeName}}"
+						name      = "explicit-pool-vm"
+						started   = false
+						pool_id   = proxmox_virtual_environment_pool.test2.pool_id
+					}`, WithRootUser()),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test", map[string]string{
+						"pool_id": poolName2,
+					}),
+				),
+			},
+		},
+	})
 }
