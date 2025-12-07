@@ -12,7 +12,7 @@ description: |-
 Manages resource pool memberships for containers, virtual machines and storages
 
 > [!NOTE]
-> This resource requires the permission `"/pool/{poolid}", ["Pool.Allocate"]` to be enabled.
+> This resource requires the `Pool.Allocate` permission on the pool path (e.g., `/pool/{poolid}`).
 
 ## Example Usage
 
