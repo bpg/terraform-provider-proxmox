@@ -11,6 +11,9 @@ description: |-
 
 Manages resource pool memberships for containers, virtual machines and storages
 
+> [!NOTE]
+> This resource requires the permission `"/pool/{poolid}", ["Pool.Allocate"]` to be enabled.
+
 ## Example Usage
 
 ```terraform
