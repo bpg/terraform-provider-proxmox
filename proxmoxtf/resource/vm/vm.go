@@ -1960,7 +1960,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 			return diag.FromErr(err)
 		}
 
-		datastores := getDiskDatastores(vmConfig, d)
+		datastores := getDiskDatastores(vmConfig)
 
 		onlySharedDatastores := true
 
@@ -2400,7 +2400,7 @@ func vmCreateClone(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		return diag.FromErr(e)
 	}
 
-	clonedDiskInfo := disk.GetInfo(vmConfig, d) //nolint:staticcheck // from the cloned VM
+	clonedDiskInfo := vmConfig.StorageDevices
 
 	planDisks, e := disk.GetDiskDeviceObjects(d, VM(), nil) // from the resource config
 	if e != nil {
@@ -4153,7 +4153,7 @@ func vmReadCustom(
 		diags = append(diags, diag.FromErr(err)...)
 	}
 
-	allDiskInfo := disk.GetInfo(vmConfig, d) //nolint:staticcheck
+	allDiskInfo := disk.GetDiskInfoWithFileID(vmConfig, d)
 
 	diags = append(diags, disk.Read(ctx, d, allDiskInfo, vmID, client, nodeName, len(clone) > 0)...)
 
@@ -5596,12 +5596,12 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	}
 
 	// Prepare the new disk device configuration.
-	allDiskInfo := disk.GetInfo(vmConfig, d) //nolint:staticcheck
-
 	planDisks, err := disk.GetDiskDeviceObjects(d, resource, nil)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	allDiskInfo := vmConfig.StorageDevices
 
 	// Handle disk deletion before applying other changes
 	if d.HasChange(disk.MkDisk) {
@@ -6211,6 +6211,30 @@ func vmUpdateDiskLocationAndSize(
 			}
 		}
 
+		vmConfig, err := vmAPI.GetVM(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+
+		for newIface, newDisk := range diskNewEntries {
+			if _, present := diskOldEntries[newIface]; !present {
+				currentDisk := vmConfig.StorageDevices[newIface]
+				if currentDisk != nil && currentDisk.Size != nil && newDisk.Size != nil {
+					if currentDisk.Size.InMegabytes() < newDisk.Size.InMegabytes() {
+						if currentDisk.IsOwnedBy(vmID) {
+							diskResizeBodies = append(
+								diskResizeBodies,
+								&vms.ResizeDiskRequestBody{
+									Disk: newIface,
+									Size: *newDisk.Size,
+								},
+							)
+						}
+					}
+				}
+			}
+		}
+
 		if shutdownForDisksRequired && !template {
 			if e := vmShutdown(ctx, vmAPI, d); e != nil {
 				return e
@@ -6345,11 +6369,10 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 }
 
 // getDiskDatastores returns a list of the used datastores in a VM.
-func getDiskDatastores(vm *vms.GetResponseData, d *schema.ResourceData) []string {
-	storageDevices := disk.GetInfo(vm, d) //nolint:staticcheck
+func getDiskDatastores(vm *vms.GetResponseData) []string {
 	datastoresSet := map[string]int{}
 
-	for _, diskInfo := range storageDevices {
+	for _, diskInfo := range vm.StorageDevices {
 		// Ignore empty storage devices and storage devices (like ide) which may not have any media mounted
 		if diskInfo == nil || diskInfo.FileVolume == "none" {
 			continue

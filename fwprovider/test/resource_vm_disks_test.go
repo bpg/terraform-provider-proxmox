@@ -1315,3 +1315,133 @@ func TestAccResourceVMDiskCloneNFSResize(t *testing.T) {
 		},
 	})
 }
+
+func TestAccResourceVMDiskRemovalReuseIssue2218(t *testing.T) {
+	te := InitEnvironment(t)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 1
+						serial       = "test_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.1.interface": "scsi1",
+						"disk.1.size":      "1",
+						"disk.1.serial":    "test_disk",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.#":           "1",
+					}),
+				),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 5
+						serial       = "different_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.0.interface": "scsi0",
+						"disk.0.size":      "1",
+						"disk.0.serial":    "os_disk",
+						"disk.1.interface": "scsi1",
+						"disk.1.size":      "5",
+						"disk.1.serial":    "different_disk",
+						"disk.#":           "2",
+					}),
+				),
+			},
+			{
+				RefreshState: true,
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_removal" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-disk-removal-2218"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 1
+						serial       = "os_disk"
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 5
+						serial       = "different_disk"
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.test_disk_removal", map[string]string{
+						"disk.1.size": "5",
+					}),
+				),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		},
+	})
+}
