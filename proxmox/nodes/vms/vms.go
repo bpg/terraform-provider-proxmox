@@ -387,11 +387,16 @@ func (c *Client) RebootVMAsync(ctx context.Context, d *RebootRequestBody) (*stri
 func (c *Client) ResizeVMDisk(ctx context.Context, d *ResizeDiskRequestBody) error {
 	err := retry.New(
 		retry.Context(ctx),
-		retry.Attempts(3),
+		retry.Attempts(5),
 		retry.Delay(1*time.Second),
+		retry.DelayType(retry.BackOffDelay),
 		retry.LastErrorOnly(false),
 		retry.RetryIf(func(err error) bool {
-			return strings.Contains(err.Error(), "got timeout")
+			errStr := err.Error()
+			// retry on "got timeout" or "does not exist" errors.
+			// the "does not exist" error can happen on NFS storage when a disk
+			// was just moved and the storage needs time to sync.
+			return strings.Contains(errStr, "got timeout") || strings.Contains(errStr, "does not exist")
 		}),
 	).Do(
 		func() error {

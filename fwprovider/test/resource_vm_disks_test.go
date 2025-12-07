@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/bpg/terraform-provider-proxmox/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
@@ -1249,4 +1250,68 @@ func TestAccResourceVMDisks(t *testing.T) {
 			})
 		})
 	}
+}
+
+// TestAccResourceVMDiskCloneNFSResize tests cloning a VM with disk resize to NFS storage.
+// This is a regression test for https://github.com/bpg/terraform-provider-proxmox/issues/1599
+// where disk resize fails on NFS storage with "volume does not exist" error due to
+// NFS storage sync timing issues after disk move.
+func TestAccResourceVMDiskCloneNFSResize(t *testing.T) {
+	nfsDatastoreID := utils.GetAnyStringEnv("PROXMOX_VE_ACC_NFS_DATASTORE_ID")
+	if nfsDatastoreID == "" {
+		t.Skip("NFS storage is not available")
+	}
+
+	te := InitEnvironment(t)
+	te.AddTemplateVars(map[string]any{
+		"NFSDatastoreID": nfsDatastoreID,
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "template_nfs_resize" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-template-nfs-resize"
+					template  = true
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+				}
+				resource "proxmox_virtual_environment_vm" "clone_nfs_resize" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name      = "test-clone-nfs-resize"
+
+					clone {
+						vm_id = proxmox_virtual_environment_vm.template_nfs_resize.vm_id
+						full  = true
+					}
+
+					# Clone to NFS storage with disk resize - this is the scenario from issue #1599
+					# The disk needs to be moved from local-lvm to NFS storage and resized.
+					# On NFS storage, there can be a timing issue where the volume is not
+					# immediately available for resize after the move operation completes.
+					disk {
+						datastore_id = "{{.NFSDatastoreID}}"
+						interface    = "scsi0"
+						size         = 10
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					ResourceAttributes("proxmox_virtual_environment_vm.clone_nfs_resize", map[string]string{
+						"disk.0.datastore_id": nfsDatastoreID,
+						"disk.0.interface":    "scsi0",
+						"disk.0.size":         "10",
+					}),
+				),
+			},
+		},
+	})
 }
