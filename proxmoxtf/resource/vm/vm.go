@@ -3363,14 +3363,14 @@ func vmGetRNGDevice(d *schema.ResourceData) *vms.CustomRNGDevice {
 	if len(rngBlock) > 0 && rngBlock[0] != nil {
 		block := rngBlock[0].(map[string]any)
 
-		source, _ := block[mkRNGSource].(string)
+		source := getStringFromBlock(block, mkRNGSource, "")
 
-		maxBytes, _ := block[mkRNGMaxBytes].(int)
+		maxBytes := getIntFromBlock(block, mkRNGMaxBytes, 0)
 		if maxBytes == 0 {
 			maxBytes = dvRNGMaxBytes
 		}
 
-		period, _ := block[mkRNGPeriod].(int)
+		period := getIntFromBlock(block, mkRNGPeriod, 0)
 		if period == 0 {
 			period = dvRNGPeriod
 		}
@@ -3441,9 +3441,9 @@ func vmGetNumaDeviceObjects(d *schema.ResourceData) vms.CustomNUMADevices {
 
 		deviceName := block[mkNUMADevice].(string)
 		ids := block[mkNUMACPUIDs].(string)
-		hostNodes, _ := block[mkNUMAHostNodeNames].(string)
-		memory, _ := block[mkNUMAMemory].(int)
-		policy, _ := block[mkNUMAPolicy].(string)
+		hostNodes := getStringFromBlock(block, mkNUMAHostNodeNames, "")
+		memory := getIntFromBlock(block, mkNUMAMemory, 0)
+		policy := getStringFromBlock(block, mkNUMAPolicy, "")
 
 		device := vms.CustomNUMADevice{
 			Memory: &memory,
@@ -3688,6 +3688,38 @@ func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
 	}
 
 	return nil
+}
+
+func getIntFromBlock(block map[string]any, key string, defaultValue int) int {
+	if val, ok := block[key].(int); ok {
+		return val
+	}
+	return defaultValue
+}
+
+func getStringFromBlock(block map[string]any, key string, defaultValue string) string {
+	if val, ok := block[key].(string); ok {
+		return val
+	}
+	return defaultValue
+}
+
+func getBoolFromBlock(block map[string]any, key string, defaultValue bool) bool {
+	if val, ok := block[key].(bool); ok {
+		return val
+	}
+	return defaultValue
+}
+
+func isAgentEnabled(ctx context.Context, vmAPI *vms.Client) (bool, diag.Diagnostics) {
+	vmConfig, err := vmAPI.GetVM(ctx)
+	if err != nil {
+		return false, diag.FromErr(err)
+	}
+	if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil {
+		return bool(*vmConfig.Agent.Enabled), nil
+	}
+	return false, nil
 }
 
 func vmRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -5550,30 +5582,11 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			oldCPUBlock = oldCPU.([]any)[0].(map[string]any)
 		}
 
-		oldCPUCores := 0
-		if oldCores, ok := oldCPUBlock[mkCPUCores].(int); ok {
-			oldCPUCores = oldCores
-		}
-
-		oldCPUSockets := 0
-		if oldSockets, ok := oldCPUBlock[mkCPUSockets].(int); ok {
-			oldCPUSockets = oldSockets
-		}
-
-		oldCPUType := ""
-		if oldType, ok := oldCPUBlock[mkCPUType].(string); ok {
-			oldCPUType = oldType
-		}
-
-		oldCPUArchitecture := ""
-		if oldArch, ok := oldCPUBlock[mkCPUArchitecture].(string); ok {
-			oldCPUArchitecture = oldArch
-		}
-
-		oldCPUNUMA := false
-		if oldNUMA, ok := oldCPUBlock[mkCPUNUMA].(bool); ok {
-			oldCPUNUMA = oldNUMA
-		}
+		oldCPUCores := getIntFromBlock(oldCPUBlock, mkCPUCores, 0)
+		oldCPUSockets := getIntFromBlock(oldCPUBlock, mkCPUSockets, 0)
+		oldCPUType := getStringFromBlock(oldCPUBlock, mkCPUType, "")
+		oldCPUArchitecture := getStringFromBlock(oldCPUBlock, mkCPUArchitecture, "")
+		oldCPUNUMA := getBoolFromBlock(oldCPUBlock, mkCPUNUMA, false)
 
 		coresOrSocketsIncreased := (cpuCores > oldCPUCores) || (cpuSockets > oldCPUSockets)
 		noNonHotpluggableChanges := (cpuCores >= oldCPUCores && cpuSockets >= oldCPUSockets &&
@@ -5854,20 +5867,9 @@ func vmUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 			oldMemoryBlock = oldMemory.([]any)[0].(map[string]any)
 		}
 
-		oldMemoryDedicated := 0
-		if oldDedicated, ok := oldMemoryBlock[mkMemoryDedicated].(int); ok {
-			oldMemoryDedicated = oldDedicated
-		}
-
-		oldMemoryFloating := 0
-		if oldFloating, ok := oldMemoryBlock[mkMemoryFloating].(int); ok {
-			oldMemoryFloating = oldFloating
-		}
-
-		oldMemoryShared := 0
-		if oldShared, ok := oldMemoryBlock[mkMemoryShared].(int); ok {
-			oldMemoryShared = oldShared
-		}
+		oldMemoryDedicated := getIntFromBlock(oldMemoryBlock, mkMemoryDedicated, 0)
+		oldMemoryFloating := getIntFromBlock(oldMemoryBlock, mkMemoryFloating, 0)
+		oldMemoryShared := getIntFromBlock(oldMemoryBlock, mkMemoryShared, 0)
 
 		memoryIncreased := (memoryDedicated > oldMemoryDedicated) ||
 			(memoryFloating > oldMemoryFloating) ||
@@ -6360,14 +6362,9 @@ func vmUpdateDiskLocationAndSize(
 		}
 
 		if vmStatus.Status != "stopped" {
-			vmConfigForReboot, err := vmAPI.GetVM(ctx)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			agentEnabled := false
-			if vmConfigForReboot.Agent != nil && vmConfigForReboot.Agent.Enabled != nil {
-				agentEnabled = bool(*vmConfigForReboot.Agent.Enabled)
+			agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
+			if diags != nil {
+				return diags
 			}
 
 			if agentEnabled {
@@ -6435,14 +6432,9 @@ func vmDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 				return e
 			}
 		} else {
-			vmConfigForDestroy, err := vmAPI.GetVM(ctx)
-			if err != nil {
-				return diag.FromErr(err)
-			}
-
-			agentEnabled := false
-			if vmConfigForDestroy.Agent != nil && vmConfigForDestroy.Agent.Enabled != nil {
-				agentEnabled = bool(*vmConfigForDestroy.Agent.Enabled)
+			agentEnabled, diags := isAgentEnabled(ctx, vmAPI)
+			if diags != nil {
+				return diags
 			}
 
 			if agentEnabled {
@@ -6594,14 +6586,9 @@ func getAgentWaitForIPConfig(d *schema.ResourceData) *vms.WaitForIPConfig {
 
 	waitForIPBlock := waitForIPList[0].(map[string]any)
 
-	config := &vms.WaitForIPConfig{}
-
-	if ipv4, ok := waitForIPBlock[mkAgentWaitForIPIPv4].(bool); ok {
-		config.IPv4 = ipv4
-	}
-
-	if ipv6, ok := waitForIPBlock[mkAgentWaitForIPIPv6].(bool); ok {
-		config.IPv6 = ipv6
+	config := &vms.WaitForIPConfig{
+		IPv4: getBoolFromBlock(waitForIPBlock, mkAgentWaitForIPIPv4, false),
+		IPv6: getBoolFromBlock(waitForIPBlock, mkAgentWaitForIPIPv6, false),
 	}
 
 	// if both are false, return nil for backward compatibility
