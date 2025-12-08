@@ -3690,17 +3690,21 @@ func vmGetVGADeviceObject(d *schema.ResourceData) *vms.CustomVGADevice {
 	return nil
 }
 
+//nolint:unparam // defaultValue parameter is kept for API consistency and future flexibility
 func getIntFromBlock(block map[string]any, key string, defaultValue int) int {
 	if val, ok := block[key].(int); ok {
 		return val
 	}
+
 	return defaultValue
 }
 
+//nolint:unparam // defaultValue parameter is kept for API consistency and future flexibility
 func getStringFromBlock(block map[string]any, key string, defaultValue string) string {
 	if val, ok := block[key].(string); ok {
 		return val
 	}
+
 	return defaultValue
 }
 
@@ -3708,6 +3712,7 @@ func getBoolFromBlock(block map[string]any, key string, defaultValue bool) bool 
 	if val, ok := block[key].(bool); ok {
 		return val
 	}
+
 	return defaultValue
 }
 
@@ -3716,9 +3721,11 @@ func isAgentEnabled(ctx context.Context, vmAPI *vms.Client) (bool, diag.Diagnost
 	if err != nil {
 		return false, diag.FromErr(err)
 	}
+
 	if vmConfig.Agent != nil && vmConfig.Agent.Enabled != nil {
 		return bool(*vmConfig.Agent.Enabled), nil
 	}
+
 	return false, nil
 }
 
