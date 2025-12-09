@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.89.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.89.0...v0.89.1) (2025-12-09)
+
+
+### Bug Fixes
+
+* **vm,lxc:** revert deprecation notice for `pool_id` attribute ([#2405](https://github.com/bpg/terraform-provider-proxmox/issues/2405)) ([af3efa9](https://github.com/bpg/terraform-provider-proxmox/commit/af3efa9b41bfb16463e441aec25a08e86952c8d0))
+* **vm:** allow EFI disk parameter updates without VM recreation ([51b8d39](https://github.com/bpg/terraform-provider-proxmox/commit/51b8d39b39821b0692a6c5bb880173463af50e3d)), closes [#1515](https://github.com/bpg/terraform-provider-proxmox/issues/1515)
+* **vm:** handle disk size mismatch when re-adding removed disk ([#2411](https://github.com/bpg/terraform-provider-proxmox/issues/2411)) ([d7346d4](https://github.com/bpg/terraform-provider-proxmox/commit/d7346d434c88a1262978d3b8137f978406cc41c8))
+* **vm:** match CPU type format with PVE ([#2409](https://github.com/bpg/terraform-provider-proxmox/issues/2409)) ([63f22db](https://github.com/bpg/terraform-provider-proxmox/commit/63f22db63782af230cbf7101ecc64af86fb30568))
+* **vm:** prevent perpetual diff when using `pool_membership` without `pool_id` ([#2408](https://github.com/bpg/terraform-provider-proxmox/issues/2408)) ([acc95bf](https://github.com/bpg/terraform-provider-proxmox/commit/acc95bf372d270c38e76f47c0f6eb8cacfb97a7b))
+* **vm:** prevent unnecessary reboots on hotplug operations ([#2412](https://github.com/bpg/terraform-provider-proxmox/issues/2412)) ([77dc49e](https://github.com/bpg/terraform-provider-proxmox/commit/77dc49ea7cc70b7a43a7fb0cea2a0987338f7297)), closes [#538](https://github.com/bpg/terraform-provider-proxmox/issues/538)
+* **vm:** retry disk resize on 'does not exist' errors ([#2407](https://github.com/bpg/terraform-provider-proxmox/issues/2407)) ([f5f5437](https://github.com/bpg/terraform-provider-proxmox/commit/f5f5437c9f118690eded006cd3897dc5cce8d75e))
+* **vm:** retry HTTP 500 errors when waiting for agent retrieving IPs ([#2410](https://github.com/bpg/terraform-provider-proxmox/issues/2410)) ([c324ef0](https://github.com/bpg/terraform-provider-proxmox/commit/c324ef090127dd934ace863fc2ca5d148430275a))
+
+
+### Miscellaneous
+
+* **ci:** update jetbrains/qodana-action action (v2025.2.2 → v2025.2.3) ([#2400](https://github.com/bpg/terraform-provider-proxmox/issues/2400)) ([893fd6d](https://github.com/bpg/terraform-provider-proxmox/commit/893fd6d61fce1d8fd1ebb1468180fe0fb9d09292))
+* **deps:** update golangci/golangci-lint (v2.7.1 → v2.7.2) ([#2413](https://github.com/bpg/terraform-provider-proxmox/issues/2413)) ([99e30e1](https://github.com/bpg/terraform-provider-proxmox/commit/99e30e1d1eb9579a03f85e85b1bb2ce709f1a82f))
+* **deps:** update module golang.org/x/crypto (v0.45.0 → v0.46.0) ([#2414](https://github.com/bpg/terraform-provider-proxmox/issues/2414)) ([67ac0b1](https://github.com/bpg/terraform-provider-proxmox/commit/67ac0b1b088583f703c6008318a77e26c29544cf))
+* **deps:** update module golang.org/x/net (v0.47.0 → v0.48.0) ([#2415](https://github.com/bpg/terraform-provider-proxmox/issues/2415)) ([b0aabfd](https://github.com/bpg/terraform-provider-proxmox/commit/b0aabfda4eed6d3e7d61268b4769a1ba33985d58))
+
 ## [0.89.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.88.0...v0.89.0) (2025-12-06)
 
 
