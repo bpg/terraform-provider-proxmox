@@ -818,13 +818,11 @@ func TestOriginalBugScenario(t *testing.T) {
 	}
 }
 
-// TestDiskBlockReorderingSuppressesDiffLogic tests the core logic that should
-// suppress diffs when disk blocks are reordered but have identical content.
-// This directly tests the comparison logic used by DiffSuppressFunc.
+// TestDiskBlockReorderingSuppressesDiffLogic tests that reordering disk blocks
+// with identical content does not cause unnecessary diffs.
 func TestDiskBlockReorderingSuppressesDiffLogic(t *testing.T) {
 	t.Parallel()
 
-	// Initial disk configuration with disks in order: scsi0, scsi1, virtio0
 	initialDiskList := []any{
 		map[string]any{
 			mkDiskInterface:   "scsi0",
@@ -870,7 +868,6 @@ func TestDiskBlockReorderingSuppressesDiffLogic(t *testing.T) {
 		},
 	}
 
-	// Reordered disk configuration: virtio0, scsi0, scsi1 (same content, different order)
 	reorderedDiskList := []any{
 		map[string]any{
 			mkDiskInterface:   "virtio0",
@@ -916,8 +913,6 @@ func TestDiskBlockReorderingSuppressesDiffLogic(t *testing.T) {
 		},
 	}
 
-	// Test the core logic: when disks are reordered but identical, comparison should return true
-	// This simulates what SuppressIfListsOfMapsAreEqualIgnoringOrderByKey does
 	require.Len(t, reorderedDiskList, len(initialDiskList), "Lists should have same length")
 
 	oldMap := utils.MapResourcesByAttribute(initialDiskList, mkDiskInterface)
@@ -925,35 +920,25 @@ func TestDiskBlockReorderingSuppressesDiffLogic(t *testing.T) {
 
 	require.Len(t, newMap, len(oldMap), "Maps should have same length after mapping by interface")
 
-	// Compare each disk, ignoring path_in_datastore (computed field)
 	for k, v := range oldMap {
 		require.Contains(t, newMap, k, "New map should contain interface %s", k)
 
 		oldDisk := v.(map[string]any)
 		newDisk := newMap[k].(map[string]any)
 
-		// Create copies without path_in_datastore for comparison
-		oldDiskCopy := make(map[string]any)
-		newDiskCopy := make(map[string]any)
+		copyWithoutPath := func(disk map[string]any) map[string]any {
+			diskCopy := make(map[string]any)
 
-		for key, val := range oldDisk {
-			if key != mkDiskPathInDatastore {
-				oldDiskCopy[key] = val
+			for key, val := range disk {
+				if key != mkDiskPathInDatastore {
+					diskCopy[key] = val
+				}
 			}
+
+			return diskCopy
 		}
 
-		for key, val := range newDisk {
-			if key != mkDiskPathInDatastore {
-				newDiskCopy[key] = val
-			}
-		}
-
-		// The disks should be equal when ignoring path_in_datastore
-		require.True(t, reflect.DeepEqual(oldDiskCopy, newDiskCopy),
+		require.True(t, reflect.DeepEqual(copyWithoutPath(oldDisk), copyWithoutPath(newDisk)),
 			"Disk %s should be equal when ignoring path_in_datastore", k)
 	}
-
-	// This test confirms the logic works correctly - reordered but identical disks
-	// should be recognized as equal. The issue is that DiffSuppressFunc may not
-	// be called correctly or GetChange may not return the expected values in all scenarios.
 }

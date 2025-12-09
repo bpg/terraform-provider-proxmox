@@ -1,0 +1,17 @@
+fix(vm): suppress diff when disk blocks are reordered
+
+Add CustomizeDiff function to handle disk block reordering in VM
+configurations. When disk blocks are reordered but have identical
+content, the provider now suppresses the diff to prevent unnecessary
+plan changes.
+
+The fix compares disk blocks by their interface key, ignoring the
+computed path_in_datastore field, and clears all disk-related diffs
+when the blocks are equal but reordered.
+
+Changes:
+- Added CustomizeDiff function in proxmoxtf/resource/vm/disk/schema.go
+- Integrated CustomizeDiff into VM resource CustomizeDiff chain
+- Added unit test to verify comparison logic
+- Added acceptance test to verify fix works end-to-end
+

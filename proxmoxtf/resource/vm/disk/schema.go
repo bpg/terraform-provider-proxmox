@@ -8,6 +8,7 @@ package disk
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -288,8 +289,6 @@ func Schema() map[string]*schema.Schema {
 }
 
 // CustomizeDiff returns the custom diff functions for the disk resource.
-// This function normalizes disk block order when blocks are reordered but have identical content,
-// preventing unnecessary diffs from being detected.
 func CustomizeDiff() []schema.CustomizeDiffFunc {
 	return []schema.CustomizeDiffFunc{
 		customdiff.If(
@@ -320,6 +319,18 @@ func CustomizeDiff() []schema.CustomizeDiffFunc {
 					return nil
 				}
 
+				copyWithoutPath := func(disk map[string]any) map[string]any {
+					diskCopy := make(map[string]any)
+
+					for key, val := range disk {
+						if key != mkDiskPathInDatastore {
+							diskCopy[key] = val
+						}
+					}
+
+					return diskCopy
+				}
+
 				for k, v := range oldMap {
 					if _, ok := newMap[k]; !ok {
 						return nil
@@ -328,22 +339,7 @@ func CustomizeDiff() []schema.CustomizeDiffFunc {
 					oldDisk := v.(map[string]any)
 					newDisk := newMap[k].(map[string]any)
 
-					oldDiskCopy := make(map[string]any)
-					newDiskCopy := make(map[string]any)
-
-					for key, val := range oldDisk {
-						if key != mkDiskPathInDatastore {
-							oldDiskCopy[key] = val
-						}
-					}
-
-					for key, val := range newDisk {
-						if key != mkDiskPathInDatastore {
-							newDiskCopy[key] = val
-						}
-					}
-
-					if !reflect.DeepEqual(oldDiskCopy, newDiskCopy) {
+					if !reflect.DeepEqual(copyWithoutPath(oldDisk), copyWithoutPath(newDisk)) {
 						return nil
 					}
 				}
@@ -353,13 +349,17 @@ func CustomizeDiff() []schema.CustomizeDiffFunc {
 					for key := range diskMap {
 						attrPath := MkDisk + "." + strconv.Itoa(i) + "." + key
 						if d.HasChange(attrPath) {
-							d.Clear(attrPath)
+							if err := d.Clear(attrPath); err != nil {
+								return fmt.Errorf("failed to clear diff for %s: %w", attrPath, err)
+							}
 						}
 					}
 				}
 
 				if d.HasChange(MkDisk + ".#") {
-					d.Clear(MkDisk + ".#")
+					if err := d.Clear(MkDisk + ".#"); err != nil {
+						return fmt.Errorf("failed to clear diff for %s: %w", MkDisk+".#", err)
+					}
 				}
 
 				return nil
