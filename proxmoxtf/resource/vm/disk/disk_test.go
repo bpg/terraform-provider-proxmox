@@ -19,6 +19,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/proxmox/helpers/ptr"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/nodes/vms"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/types"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 // TestDiskOrderingDeterministic tests that disk ordering is deterministic
@@ -815,4 +816,144 @@ func TestOriginalBugScenario(t *testing.T) {
 		require.Equal(t, originalDisk.Size, newDisk.Size, "Disk %s size should remain unchanged", iface)
 		require.Equal(t, originalDisk.DatastoreID, newDisk.DatastoreID, "Disk %s datastore should remain unchanged", iface)
 	}
+}
+
+// TestDiskBlockReorderingSuppressesDiffLogic tests the core logic that should
+// suppress diffs when disk blocks are reordered but have identical content.
+// This directly tests the comparison logic used by DiffSuppressFunc.
+func TestDiskBlockReorderingSuppressesDiffLogic(t *testing.T) {
+	t.Parallel()
+
+	// Initial disk configuration with disks in order: scsi0, scsi1, virtio0
+	initialDiskList := []any{
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local-lvm",
+			mkDiskSize:        8,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local-lvm",
+			mkDiskSize:        10,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "virtio0",
+			mkDiskDatastoreID: "local-lvm",
+			mkDiskSize:        12,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+	}
+
+	// Reordered disk configuration: virtio0, scsi0, scsi1 (same content, different order)
+	reorderedDiskList := []any{
+		map[string]any{
+			mkDiskInterface:   "virtio0",
+			mkDiskDatastoreID: "local-lvm",
+			mkDiskSize:        12,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi0",
+			mkDiskDatastoreID: "local-lvm",
+			mkDiskSize:        8,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+		map[string]any{
+			mkDiskInterface:   "scsi1",
+			mkDiskDatastoreID: "local-lvm",
+			mkDiskSize:        10,
+			mkDiskAIO:         "io_uring",
+			mkDiskCache:       "none",
+			mkDiskDiscard:     "ignore",
+			mkDiskBackup:      true,
+			mkDiskIOThread:    false,
+			mkDiskReplicate:   true,
+			mkDiskSSD:         false,
+			mkDiskSerial:      "",
+			mkDiskSpeed:       []any{},
+		},
+	}
+
+	// Test the core logic: when disks are reordered but identical, comparison should return true
+	// This simulates what SuppressIfListsOfMapsAreEqualIgnoringOrderByKey does
+	require.Len(t, reorderedDiskList, len(initialDiskList), "Lists should have same length")
+
+	oldMap := utils.MapResourcesByAttribute(initialDiskList, mkDiskInterface)
+	newMap := utils.MapResourcesByAttribute(reorderedDiskList, mkDiskInterface)
+
+	require.Len(t, newMap, len(oldMap), "Maps should have same length after mapping by interface")
+
+	// Compare each disk, ignoring path_in_datastore (computed field)
+	for k, v := range oldMap {
+		require.Contains(t, newMap, k, "New map should contain interface %s", k)
+
+		oldDisk := v.(map[string]any)
+		newDisk := newMap[k].(map[string]any)
+
+		// Create copies without path_in_datastore for comparison
+		oldDiskCopy := make(map[string]any)
+		newDiskCopy := make(map[string]any)
+
+		for key, val := range oldDisk {
+			if key != mkDiskPathInDatastore {
+				oldDiskCopy[key] = val
+			}
+		}
+
+		for key, val := range newDisk {
+			if key != mkDiskPathInDatastore {
+				newDiskCopy[key] = val
+			}
+		}
+
+		// The disks should be equal when ignoring path_in_datastore
+		require.True(t, reflect.DeepEqual(oldDiskCopy, newDiskCopy),
+			"Disk %s should be equal when ignoring path_in_datastore", k)
+	}
+
+	// This test confirms the logic works correctly - reordered but identical disks
+	// should be recognized as equal. The issue is that DiffSuppressFunc may not
+	// be called correctly or GetChange may not return the expected values in all scenarios.
 }

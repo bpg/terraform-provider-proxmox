@@ -7,11 +7,17 @@
 package disk
 
 import (
+	"context"
+	"reflect"
+	"strconv"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
@@ -278,5 +284,86 @@ func Schema() map[string]*schema.Schema {
 			MaxItems: maxResourceVirtualEnvironmentVMDiskDevices,
 			MinItems: 0,
 		},
+	}
+}
+
+// CustomizeDiff returns the custom diff functions for the disk resource.
+// This function normalizes disk block order when blocks are reordered but have identical content,
+// preventing unnecessary diffs from being detected.
+func CustomizeDiff() []schema.CustomizeDiffFunc {
+	return []schema.CustomizeDiffFunc{
+		customdiff.If(
+			func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
+				return d.HasChange(MkDisk)
+			},
+			func(ctx context.Context, d *schema.ResourceDiff, _ any) error {
+				oldData, newData := d.GetChange(MkDisk)
+
+				oldArray, ok := oldData.([]any)
+				if !ok {
+					return nil
+				}
+
+				newArray, ok := newData.([]any)
+				if !ok {
+					return nil
+				}
+
+				if len(oldArray) != len(newArray) {
+					return nil
+				}
+
+				oldMap := utils.MapResourcesByAttribute(oldArray, mkDiskInterface)
+				newMap := utils.MapResourcesByAttribute(newArray, mkDiskInterface)
+
+				if len(oldMap) != len(newMap) {
+					return nil
+				}
+
+				for k, v := range oldMap {
+					if _, ok := newMap[k]; !ok {
+						return nil
+					}
+
+					oldDisk := v.(map[string]any)
+					newDisk := newMap[k].(map[string]any)
+
+					oldDiskCopy := make(map[string]any)
+					newDiskCopy := make(map[string]any)
+
+					for key, val := range oldDisk {
+						if key != mkDiskPathInDatastore {
+							oldDiskCopy[key] = val
+						}
+					}
+
+					for key, val := range newDisk {
+						if key != mkDiskPathInDatastore {
+							newDiskCopy[key] = val
+						}
+					}
+
+					if !reflect.DeepEqual(oldDiskCopy, newDiskCopy) {
+						return nil
+					}
+				}
+
+				for i := range oldArray {
+					diskMap := oldArray[i].(map[string]any)
+					for key := range diskMap {
+						attrPath := MkDisk + "." + strconv.Itoa(i) + "." + key
+						if d.HasChange(attrPath) {
+							d.Clear(attrPath)
+						}
+					}
+				}
+
+				if d.HasChange(MkDisk + ".#") {
+					d.Clear(MkDisk + ".#")
+				}
+
+				return nil
+			},
+		),
 	}
 }

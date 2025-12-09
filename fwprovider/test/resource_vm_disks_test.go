@@ -1228,6 +1228,69 @@ func TestAccResourceVMDisks(t *testing.T) {
 				),
 			},
 		}},
+		{"disk block reordering should not cause changes", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_reorder" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk-reorder"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 10
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 12
+					}
+				}`),
+				Check: ResourceAttributes("proxmox_virtual_environment_vm.test_disk_reorder", map[string]string{
+					"disk.0.interface": "scsi0",
+					"disk.0.size":      "8",
+					"disk.1.interface": "scsi1",
+					"disk.1.size":      "10",
+					"disk.2.interface": "virtio0",
+					"disk.2.size":      "12",
+				}),
+			},
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm" "test_disk_reorder" {
+					node_name = "{{.NodeName}}"
+					started   = false
+					name 	  = "test-disk-reorder"
+					
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "virtio0"
+						size         = 12
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi0"
+						size         = 8
+					}
+					disk {
+						datastore_id = "local-lvm"
+						interface    = "scsi1"
+						size         = 10
+					}
+				}`),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+		}},
 		{"resize boot disk with import_from should not trigger re-import", []resource.TestStep{
 			{
 				// Create VM with boot disk using import_from

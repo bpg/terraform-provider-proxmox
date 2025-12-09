@@ -1716,6 +1716,7 @@ func VM() *schema.Resource {
 		DeleteContext: vmDelete,
 		CustomizeDiff: customdiff.All(
 			customdiff.All(network.CustomizeDiff()...),
+			customdiff.All(disk.CustomizeDiff()...),
 			customdiff.ForceNewIf(
 				mkVMID,
 				func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
