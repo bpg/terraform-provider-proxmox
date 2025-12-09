@@ -139,7 +139,9 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 
 	storageClient := d.client.Node(data.NodeName.ValueString()).Storage(data.DatastoreID.ValueString())
 
-	files, err := storageClient.ListDatastoreFiles(ctx)
+	targetContentType := data.ContentType.ValueString()
+
+	files, err := storageClient.ListDatastoreFiles(ctx, &targetContentType)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to Read Files",
@@ -151,7 +153,6 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 	}
 
 	var foundFile *storage.DatastoreFileListResponseData
-	targetContentType := data.ContentType.ValueString()
 	targetFileName := data.FileName.ValueString()
 
 	for _, file := range files {
@@ -159,9 +160,7 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 			continue
 		}
 
-		if file.ContentType != targetContentType {
-			continue
-		}
+		// No need to check ContentType here as it's already filtered by the API call above
 
 		// Extract filename from volume ID format: datastore:content/filename
 		volumeParts := strings.SplitN(file.VolumeID, ":", 2)

@@ -349,7 +349,10 @@ func (r *ociImageResource) read(
 	nodesClient := r.client.Node(model.Node.ValueString())
 	storageClient := nodesClient.Storage(model.Storage.ValueString())
 
-	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx)
+	// OCI images are always of type "import"
+	contentType := "import"
+
+	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx, &contentType)
 	if err != nil {
 		return fmt.Errorf("unexpected error when listing datastore files: %w", err)
 	}

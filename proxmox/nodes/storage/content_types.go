@@ -6,6 +6,11 @@
 
 package storage
 
+// DatastoreFileListRequestBody contains the request parameters for listing datastore files.
+type DatastoreFileListRequestBody struct {
+	ContentType *string `json:"content,omitempty" url:"content,omitempty"`
+}
+
 // DatastoreFileListResponseBody contains the body from a datastore content list response.
 type DatastoreFileListResponseBody struct {
 	Data []*DatastoreFileListResponseData `json:"data,omitempty"`
