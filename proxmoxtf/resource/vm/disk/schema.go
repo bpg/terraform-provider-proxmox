@@ -7,11 +7,19 @@
 package disk
 
 import (
+	"context"
+	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/resource/validators"
 	"github.com/bpg/terraform-provider-proxmox/proxmoxtf/structure"
+	"github.com/bpg/terraform-provider-proxmox/utils"
 )
 
 const (
@@ -132,11 +140,62 @@ func Schema() map[string]*schema.Schema {
 						Default:     true,
 					},
 					mkDiskFileID: {
-						Type:             schema.TypeString,
-						Description:      "The file id for a disk image",
-						Optional:         true,
-						ForceNew:         true,
-						Default:          "",
+						Type:        schema.TypeString,
+						Description: "The file id for a disk image",
+						Optional:    true,
+						ForceNew:    true,
+						Default:     "",
+						DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+							if old == "" && new == "" {
+								return true
+							}
+
+							if old == new {
+								return true
+							}
+
+							diskAttrPath := k[:strings.LastIndex(k, ".")]
+							diskIndexStr := diskAttrPath[strings.LastIndex(diskAttrPath, ".")+1:]
+							diskIndex, err := strconv.Atoi(diskIndexStr)
+							if err != nil {
+								return false
+							}
+
+							oldData, newData := d.GetChange(MkDisk)
+							oldArray, ok := oldData.([]any)
+							if !ok {
+								return false
+							}
+							newArray, ok := newData.([]any)
+							if !ok {
+								return false
+							}
+
+							if diskIndex >= len(newArray) {
+								return false
+							}
+
+							newDisk, ok := newArray[diskIndex].(map[string]any)
+							if !ok {
+								return false
+							}
+
+							newInterface, _ := newDisk[mkDiskInterface].(string)
+							if newInterface == "" {
+								return false
+							}
+
+							oldMap := utils.MapResourcesByAttribute(oldArray, mkDiskInterface)
+
+							oldDiskByInterface, oldExists := oldMap[newInterface].(map[string]any)
+							if !oldExists {
+								return false
+							}
+
+							oldFileIDByInterface, _ := oldDiskByInterface[mkDiskFileID].(string)
+
+							return oldFileIDByInterface == new
+						},
 						ValidateDiagFunc: validators.FileID(),
 					},
 					mkDiskImportFrom: {
@@ -278,5 +337,89 @@ func Schema() map[string]*schema.Schema {
 			MaxItems: maxResourceVirtualEnvironmentVMDiskDevices,
 			MinItems: 0,
 		},
+	}
+}
+
+// CustomizeDiff returns the custom diff functions for the disk resource.
+func CustomizeDiff() []schema.CustomizeDiffFunc {
+	return []schema.CustomizeDiffFunc{
+		customdiff.If(
+			func(_ context.Context, d *schema.ResourceDiff, _ any) bool {
+				return d.HasChange(MkDisk)
+			},
+			func(ctx context.Context, d *schema.ResourceDiff, _ any) error {
+				oldData, newData := d.GetChange(MkDisk)
+
+				oldArray, ok := oldData.([]any)
+				if !ok {
+					return nil
+				}
+
+				newArray, ok := newData.([]any)
+				if !ok {
+					return nil
+				}
+
+				if len(oldArray) != len(newArray) {
+					return nil
+				}
+
+				oldMap := utils.MapResourcesByAttribute(oldArray, mkDiskInterface)
+				newMap := utils.MapResourcesByAttribute(newArray, mkDiskInterface)
+
+				if len(oldMap) != len(newMap) {
+					return nil
+				}
+
+				copyWithoutPath := func(disk map[string]any) map[string]any {
+					diskCopy := make(map[string]any)
+
+					for key, val := range disk {
+						if key != mkDiskPathInDatastore {
+							diskCopy[key] = val
+						}
+					}
+
+					return diskCopy
+				}
+
+				allEqual := true
+				for k, v := range oldMap {
+					if _, ok := newMap[k]; !ok {
+						allEqual = false
+						break
+					}
+
+					oldDisk := v.(map[string]any)
+					newDisk := newMap[k].(map[string]any)
+
+					if !reflect.DeepEqual(copyWithoutPath(oldDisk), copyWithoutPath(newDisk)) {
+						allEqual = false
+					}
+				}
+
+				if allEqual {
+					for i := range oldArray {
+						diskMap := oldArray[i].(map[string]any)
+						for key := range diskMap {
+							attrPath := MkDisk + "." + strconv.Itoa(i) + "." + key
+							if d.HasChange(attrPath) {
+								if err := d.Clear(attrPath); err != nil {
+									return fmt.Errorf("failed to clear diff for %s: %w", attrPath, err)
+								}
+							}
+						}
+					}
+
+					if d.HasChange(MkDisk + ".#") {
+						if err := d.Clear(MkDisk + ".#"); err != nil {
+							return fmt.Errorf("failed to clear diff for %s: %w", MkDisk+".#", err)
+						}
+					}
+				}
+
+				return nil
+			},
+		),
 	}
 }

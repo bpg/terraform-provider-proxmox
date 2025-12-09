@@ -549,12 +549,18 @@ func Read(
 
 		if len(currentDiskList) > 0 {
 			currentDiskMap := utils.MapResourcesByAttribute(currentDiskList, mkDiskInterface)
-			// copy import_from and size from the current disk if it exists
+			// copy import_from, file_id, and size from the current disk if it exists
+			// this is critical for file_id which has ForceNew: true - if lost, it triggers replacement
 			for k, v := range currentDiskMap {
 				if disk, ok := v.(map[string]any); ok {
 					if _, exists := diskMap[k]; exists {
 						if importFrom, ok := disk[mkDiskImportFrom].(string); ok && importFrom != "" {
 							diskMap[k].(map[string]any)[mkDiskImportFrom] = importFrom
+						}
+						// always preserve file_id from state - API may not return it consistently
+						// and losing it causes ForceNew replacement when disks are reordered
+						if fileID, ok := disk[mkDiskFileID].(string); ok && fileID != "" {
+							diskMap[k].(map[string]any)[mkDiskFileID] = fileID
 						}
 						// preserve size from state when API returns zero size (for disks with import_from or file_id)
 						if currentSize, ok := disk[mkDiskSize].(int); ok && currentSize > 0 {
@@ -566,9 +572,13 @@ func Read(
 				}
 			}
 
+			// preserve order from current state to maintain backward compatibility
+			// the DiffSuppressFunc will handle suppressing diffs when config order differs
 			disks := utils.ListResourcesAttributeValue(currentDiskList, mkDiskInterface)
 			diskList = utils.OrderedListFromMapByKeyValues(diskMap, disks)
 		} else {
+			// normalize order only when there's no existing state (first read)
+			// this ensures new resources start with consistent ordering
 			diskList = utils.OrderedListFromMap(diskMap)
 		}
 
