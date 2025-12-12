@@ -100,60 +100,6 @@ func TestAccResourceVM2CDROM(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
-		{"clone VM with CDROM", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "template_vm" {
-				node_name = "{{.NodeName}}"
-				name = "template-cdrom"
-				cdrom = {
-					"ide3" = {
-						file_id   = "cdrom"
-					}
-				}
-			}
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"
-				name = "test-cdrom"
-				clone = {
-					id = proxmox_virtual_environment_vm2.template_vm.id
-				}
-			}`),
-			Check: test.ResourceAttributes(resourceName, map[string]string{
-				"cdrom.%":            "1",
-				"cdrom.ide3.file_id": "cdrom",
-			}),
-		}}},
-		{"clone VM with some CDROM params and updating them in the clone", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "template_vm" {
-				node_name = "{{.NodeName}}"
-				name = "template-cdrom"
-				cdrom = {
-					"ide1" = {
-						file_id   = "none"
-					},
-					"ide2" = {
-						file_id   = "cdrom"
-					}
-				}
-			}
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"
-				name = "test-cpu"
-				clone = {
-					id = proxmox_virtual_environment_vm2.template_vm.id
-				}
-				cdrom = {
-					"ide1" = {
-						file_id   = "cdrom"
-					}
-				}
-			}`),
-			Check: test.ResourceAttributes(resourceName, map[string]string{
-				"cdrom.%":            "1",
-				"cdrom.ide1.file_id": "cdrom",
-			}),
-		}}},
 	}
 
 	for _, tt := range tests {

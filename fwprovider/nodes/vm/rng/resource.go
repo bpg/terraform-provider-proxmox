@@ -95,7 +95,6 @@ func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
-	isClone bool,
 	diags *diag.Diagnostics,
 ) {
 	var plan, state Model
@@ -116,7 +115,7 @@ func FillUpdateBody(
 	rngDevice := createRNGDevice(state, true)
 
 	if !plan.Source.Equal(state.Source) {
-		if attribute.ShouldBeRemoved(plan.Source, state.Source, isClone) {
+		if attribute.ShouldBeRemoved(plan.Source, state.Source) {
 			rngDevice.Source = ""
 		} else if attribute.IsDefined(plan.Source) {
 			rngDevice.Source = plan.Source.ValueString()
@@ -124,7 +123,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.MaxBytes.Equal(state.MaxBytes) {
-		if attribute.ShouldBeRemoved(plan.MaxBytes, state.MaxBytes, isClone) {
+		if attribute.ShouldBeRemoved(plan.MaxBytes, state.MaxBytes) {
 			rngDevice.MaxBytes = nil
 		} else if attribute.IsDefined(plan.MaxBytes) {
 			maxBytes := int(plan.MaxBytes.ValueInt64())
@@ -133,7 +132,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Period.Equal(state.Period) {
-		if attribute.ShouldBeRemoved(plan.Period, state.Period, isClone) {
+		if attribute.ShouldBeRemoved(plan.Period, state.Period) {
 			rngDevice.Period = nil
 		} else if attribute.IsDefined(plan.Period) {
 			period := int(plan.Period.ValueInt64())

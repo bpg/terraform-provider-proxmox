@@ -29,13 +29,9 @@ import (
 // Note: for computed fields / blocks we have to use an Object type (or an alias),
 // or a custom type in order to hold an unknown value.
 type Model struct {
-	Description types.String `tfsdk:"description"`
-	CDROM       cdrom.Value  `tfsdk:"cdrom"`
-	CPU         cpu.Value    `tfsdk:"cpu"`
-	Clone       *struct {
-		ID      types.Int64 `tfsdk:"id"`
-		Retries types.Int64 `tfsdk:"retries"`
-	} `tfsdk:"clone"`
+	Description                      types.String    `tfsdk:"description"`
+	CDROM                            cdrom.Value     `tfsdk:"cdrom"`
+	CPU                              cpu.Value       `tfsdk:"cpu"`
 	ID                               types.Int64     `tfsdk:"id"`
 	Name                             types.String    `tfsdk:"name"`
 	NodeName                         types.String    `tfsdk:"node_name"`

@@ -134,7 +134,6 @@ func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
-	isClone bool,
 	diags *diag.Diagnostics,
 ) {
 	var plan, state Model
@@ -159,7 +158,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Affinity.Equal(state.Affinity) {
-		if attribute.ShouldBeRemoved(plan.Affinity, state.Affinity, isClone) {
+		if attribute.ShouldBeRemoved(plan.Affinity, state.Affinity) {
 			del("CPUAffinity")
 		} else if attribute.IsDefined(plan.Affinity) {
 			updateBody.CPUAffinity = plan.Affinity.ValueStringPointer()
@@ -167,7 +166,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Architecture.Equal(state.Architecture) {
-		if attribute.ShouldBeRemoved(plan.Architecture, state.Architecture, isClone) {
+		if attribute.ShouldBeRemoved(plan.Architecture, state.Architecture) {
 			del("CPUArchitecture")
 		} else if attribute.IsDefined(plan.Architecture) {
 			updateBody.CPUArchitecture = plan.Architecture.ValueStringPointer()
@@ -175,7 +174,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Cores.Equal(state.Cores) {
-		if attribute.ShouldBeRemoved(plan.Cores, state.Cores, isClone) {
+		if attribute.ShouldBeRemoved(plan.Cores, state.Cores) {
 			del("CPUCores")
 		} else if attribute.IsDefined(plan.Cores) {
 			updateBody.CPUCores = plan.Cores.ValueInt64Pointer()
@@ -183,7 +182,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Limit.Equal(state.Limit) {
-		if attribute.ShouldBeRemoved(plan.Limit, state.Limit, isClone) {
+		if attribute.ShouldBeRemoved(plan.Limit, state.Limit) {
 			del("CPULimit")
 		} else if attribute.IsDefined(plan.Sockets) {
 			updateBody.CPULimit = plan.Limit.ValueInt64Pointer()
@@ -191,7 +190,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Sockets.Equal(state.Sockets) {
-		if attribute.ShouldBeRemoved(plan.Sockets, state.Sockets, isClone) {
+		if attribute.ShouldBeRemoved(plan.Sockets, state.Sockets) {
 			del("CPUSockets")
 		} else if attribute.IsDefined(plan.Sockets) {
 			updateBody.CPUSockets = plan.Sockets.ValueInt64Pointer()
@@ -199,7 +198,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Units.Equal(state.Units) {
-		if attribute.ShouldBeRemoved(plan.Units, state.Units, isClone) {
+		if attribute.ShouldBeRemoved(plan.Units, state.Units) {
 			del("CPUUnits")
 		} else if attribute.IsDefined(plan.Units) {
 			updateBody.CPUUnits = plan.Units.ValueInt64Pointer()
@@ -207,7 +206,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Numa.Equal(state.Numa) {
-		if attribute.ShouldBeRemoved(plan.Numa, state.Numa, isClone) {
+		if attribute.ShouldBeRemoved(plan.Numa, state.Numa) {
 			del("NUMAEnabled")
 		} else if attribute.IsDefined(plan.Numa) {
 			updateBody.NUMAEnabled = proxmoxtypes.CustomBoolPtr(plan.Numa.ValueBoolPointer())
@@ -215,7 +214,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Hotplugged.Equal(state.Hotplugged) {
-		if attribute.ShouldBeRemoved(plan.Hotplugged, state.Hotplugged, isClone) {
+		if attribute.ShouldBeRemoved(plan.Hotplugged, state.Hotplugged) {
 			del("VirtualCPUCount")
 		} else if attribute.IsDefined(plan.Hotplugged) {
 			updateBody.VirtualCPUCount = plan.Hotplugged.ValueInt64Pointer()
@@ -227,7 +226,7 @@ func FillUpdateBody(
 	cpuEmulation := &vms.CustomCPUEmulation{}
 
 	if !plan.Type.Equal(state.Type) {
-		if attribute.ShouldBeRemoved(plan.Type, state.Type, isClone) {
+		if attribute.ShouldBeRemoved(plan.Type, state.Type) {
 			delType = true
 		} else if attribute.IsDefined(plan.Type) {
 			cpuEmulation.Type = plan.Type.ValueString()
@@ -235,7 +234,7 @@ func FillUpdateBody(
 	}
 
 	if !plan.Flags.Equal(state.Flags) {
-		if attribute.ShouldBeRemoved(plan.Flags, state.Flags, isClone) {
+		if attribute.ShouldBeRemoved(plan.Flags, state.Flags) {
 			delFlags = true
 		} else if attribute.IsDefined(plan.Flags) {
 			d = plan.Flags.ElementsAs(ctx, &cpuEmulation.Flags, false)
