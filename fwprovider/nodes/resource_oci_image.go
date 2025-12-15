@@ -349,8 +349,8 @@ func (r *ociImageResource) read(
 	nodesClient := r.client.Node(model.Node.ValueString())
 	storageClient := nodesClient.Storage(model.Storage.ValueString())
 
-	// OCI images are always of type "import"
-	contentType := "import"
+	// OCI images are stored as `vztmpl` content type in Proxmox
+	contentType := "vztmpl"
 
 	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx, &contentType)
 	if err != nil {
