@@ -50,10 +50,16 @@ func (c *Client) DeleteDatastoreFile(
 }
 
 // ListDatastoreFiles retrieves a list of the files in a datastore.
+// contentType is optional and filters the results by content type (e.g., "iso", "vztmpl", "backup").
+// If contentType is nil, all files in the datastore are returned (unfiltered).
 func (c *Client) ListDatastoreFiles(
 	ctx context.Context,
+	contentType *string,
 ) ([]*DatastoreFileListResponseData, error) {
 	resBody := &DatastoreFileListResponseBody{}
+	reqBody := &DatastoreFileListRequestBody{
+		ContentType: contentType,
+	}
 
 	err := retry.New(
 		retry.Context(ctx),
@@ -68,7 +74,7 @@ func (c *Client) ListDatastoreFiles(
 		retry.LastErrorOnly(true),
 	).Do(
 		func() error {
-			return c.DoRequest(ctx, http.MethodGet, c.ExpandPath("content"), nil, resBody)
+			return c.DoRequest(ctx, http.MethodGet, c.ExpandPath("content"), reqBody, resBody)
 		},
 	)
 	if err != nil {

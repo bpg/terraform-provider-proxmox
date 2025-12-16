@@ -468,7 +468,9 @@ func (r *downloadFileResource) read(
 	nodesClient := r.client.Node(model.Node.ValueString())
 	storageClient := nodesClient.Storage(model.Storage.ValueString())
 
-	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx)
+	contentType := model.ContentType.ValueString()
+
+	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx, &contentType)
 	if err != nil {
 		return fmt.Errorf("unexpected error when listing datastore files: %w", err)
 	}

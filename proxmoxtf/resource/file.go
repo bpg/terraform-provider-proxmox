@@ -347,7 +347,7 @@ func fileCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnos
 	contentType, dg := fileGetContentType(ctx, d, capi)
 	diags = append(diags, dg...)
 
-	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
+	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx, contentType)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -773,8 +773,15 @@ func fileRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnosti
 	datastoreID := d.Get(mkResourceVirtualEnvironmentFileDatastoreID).(string)
 	nodeName := d.Get(mkResourceVirtualEnvironmentFileNodeName).(string)
 	sourceFile := d.Get(mkResourceVirtualEnvironmentFileSourceFile).([]interface{})
+	contentTypeStr := d.Get(mkResourceVirtualEnvironmentFileContentType).(string)
 
-	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx)
+	// Filter by content type if available for better performance
+	var contentType *string
+	if contentTypeStr != "" {
+		contentType = &contentTypeStr
+	}
+
+	list, err := capi.Node(nodeName).Storage(datastoreID).ListDatastoreFiles(ctx, contentType)
 	if err != nil {
 		return diag.FromErr(err)
 	}

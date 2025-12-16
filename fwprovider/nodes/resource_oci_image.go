@@ -296,7 +296,7 @@ func (r *ociImageResource) Create(
 	err := storageClient.DownloadOCIImageByReference(ctx, &ociPullReq)
 	if isErrFileAlreadyExists(err) && plan.OverwriteUnmanaged.ValueBool() {
 		// OCI images are stored as vztmpl content type in Proxmox
-		fileID := "vztmpl/" + plan.FileName.ValueString()
+		fileID := storage.ContentTypeVZTmpl + "/" + plan.FileName.ValueString()
 
 		err = storageClient.DeleteDatastoreFile(ctx, fileID)
 		if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
@@ -329,7 +329,7 @@ func (r *ociImageResource) Create(
 	}
 
 	// OCI images are stored as vztmpl content type in Proxmox
-	plan.ID = types.StringValue(plan.Storage.ValueString() + ":vztmpl/" + plan.FileName.ValueString())
+	plan.ID = types.StringValue(plan.Storage.ValueString() + ":" + storage.ContentTypeVZTmpl + "/" + plan.FileName.ValueString())
 
 	err = r.read(ctx, &plan)
 	if err != nil {
@@ -349,7 +349,10 @@ func (r *ociImageResource) read(
 	nodesClient := r.client.Node(model.Node.ValueString())
 	storageClient := nodesClient.Storage(model.Storage.ValueString())
 
-	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx)
+	// OCI images are stored as `vztmpl` content type in Proxmox
+	contentType := storage.ContentTypeVZTmpl
+
+	datastoresFiles, err := storageClient.ListDatastoreFiles(ctx, &contentType)
 	if err != nil {
 		return fmt.Errorf("unexpected error when listing datastore files: %w", err)
 	}
