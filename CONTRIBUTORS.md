@@ -219,6 +219,7 @@
       <td align="center" valign="top" width="14.28%"><a href="http://extrahourdevs.com"><img src="https://avatars.githubusercontent.com/u/5159138?v=4?s=100" width="100px;" alt="Alexander Petermann"/><br /><sub><b>Alexander Petermann</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=lexxxel" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/leleargo"><img src="https://avatars.githubusercontent.com/u/87581383?v=4?s=100" width="100px;" alt="Emanuele Argonni"/><br /><sub><b>Emanuele Argonni</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=leleargo" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/daviFrag"><img src="https://avatars.githubusercontent.com/u/73591373?v=4?s=100" width="100px;" alt="daviFrag"/><br /><sub><b>daviFrag</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=daviFrag" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/binarycodes"><img src="https://avatars.githubusercontent.com/u/45909?v=4?s=100" width="100px;" alt="Sujoy Das"/><br /><sub><b>Sujoy Das</b></sub></a><br /><a href="#financial-binarycodes" title="Financial">💵</a></td>
     </tr>
   </tbody>
   <tfoot>
