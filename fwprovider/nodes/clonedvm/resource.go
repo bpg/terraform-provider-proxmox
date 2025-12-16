@@ -294,7 +294,13 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 
 	status, err := vmAPI.GetVMStatus(ctx)
 	if err != nil {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
 		resp.Diagnostics.AddError("Failed to get VM status", err.Error())
+
 		return
 	}
 

@@ -25,7 +25,7 @@ func ResourceSchema() schema.Attribute {
 		Description: "The RNG (Random Number Generator) configuration. Can only be set by `root@pam.`",
 		MarkdownDescription: "Configure the RNG (Random Number Generator) device. The RNG device provides entropy " +
 			"to guests to ensure good quality random numbers for guest applications that require them. " +
-			"Can only be set by `root@pam.`" +
+			"Can only be set by `root@pam.` " +
 			"See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) " +
 			"for more information.",
 		Optional: true,

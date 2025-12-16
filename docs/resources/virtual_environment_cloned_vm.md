@@ -4,12 +4,12 @@ title: proxmox_virtual_environment_cloned_vm
 parent: Resources
 subcategory: Virtual Environment
 description: |-
-  Clone a VM from a source template/VM and manage only explicitly-defined configuration.
+  Clone a VM from a source template/VM and manage only explicitly-defined configuration. This resource uses explicit opt-in management: only configuration blocks and devices explicitly listed in your Terraform code are managed. Inherited settings from the template are preserved unless explicitly overridden or deleted. Removing a configuration from Terraform stops managing it but does not delete it from the VM.
 ---
 
 # Resource: proxmox_virtual_environment_cloned_vm
 
-Clone a VM from a source template/VM and manage only explicitly-defined configuration.
+Clone a VM from a source template/VM and manage only explicitly-defined configuration. This resource uses explicit opt-in management: only configuration blocks and devices explicitly listed in your Terraform code are managed. Inherited settings from the template are preserved unless explicitly overridden or deleted. Removing a configuration from Terraform stops managing it but does not delete it from the VM.
 
 
 
@@ -26,14 +26,14 @@ Clone a VM from a source template/VM and manage only explicitly-defined configur
 - `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces. (see [below for nested schema](#nestedatt--cdrom))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
 - `delete` (Attributes) Explicit deletions to perform after cloning/updating. Entries persist across applies. (see [below for nested schema](#nestedatt--delete))
-- `delete_unreferenced_disks_on_destroy` (Boolean) Delete unreferenced disks on destroy.
+- `delete_unreferenced_disks_on_destroy` (Boolean) Delete unreferenced disks on destroy. WARNING: When set to true, any disks not explicitly managed by Terraform will be deleted on destroy, potentially causing data loss. Defaults to false for safety.
 - `description` (String) Optional VM description applied after cloning.
 - `disk` (Attributes Map) Disks keyed by slot (scsi0, virtio0, sata0, ide0, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--disk))
 - `id` (Number) The VM identifier in the Proxmox cluster.
 - `name` (String) Optional VM name override applied after cloning.
 - `network` (Attributes Map) Network devices keyed by slot (net0, net1, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--network))
 - `purge_on_destroy` (Boolean) Purge backup configuration on destroy.
-- `rng` (Attributes) Configure the RNG (Random Number Generator) device. The RNG device provides entropy to guests to ensure good quality random numbers for guest applications that require them. Can only be set by `root@pam.`See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for more information. (see [below for nested schema](#nestedatt--rng))
+- `rng` (Attributes) Configure the RNG (Random Number Generator) device. The RNG device provides entropy to guests to ensure good quality random numbers for guest applications that require them. Can only be set by `root@pam.` See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for more information. (see [below for nested schema](#nestedatt--rng))
 - `stop_on_destroy` (Boolean) Stop the VM on destroy (instead of shutdown).
 - `tags` (Set of String) Tags applied after cloning.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
@@ -72,7 +72,7 @@ Optional:
 Optional:
 
 - `affinity` (String) The CPU cores that are used to run the VM’s vCPU. The value is a list of CPU IDs, separated by commas. The CPU IDs are zero-based.  For example, `0,1,2,3` (which also can be shortened to `0-3`) means that the VM’s vCPUs are run on the first four CPU cores. Setting `affinity` is only allowed for `root@pam` authenticated user.
-- `architecture` (String) The CPU architecture `<aarch64 | x86_64>` (defaults to the host). Setting `affinity` is only allowed for `root@pam` authenticated user.
+- `architecture` (String) The CPU architecture `<aarch64 | x86_64>` (defaults to the host). Setting `architecture` is only allowed for `root@pam` authenticated user.
 - `cores` (Number) The number of CPU cores per socket (defaults to `1`).
 - `flags` (Set of String) Set of additional CPU flags. Use `+FLAG` to enable, `-FLAG` to disable a flag. Custom CPU models can specify any flag supported by QEMU/KVM, VM-specific flags must be from the following set for security reasons: `pcid`, `spec-ctrl`, `ibpb`, `ssbd`, `virt-ssbd`, `amd-ssbd`, `amd-no-ssb`, `pdpe1gb`, `md-clear`, `hv-tlbflush`, `hv-evmcs`, `aes`.
 - `hotplugged` (Number) The number of hotplugged vCPUs (defaults to `0`).

@@ -42,7 +42,11 @@ func (r *Resource) Schema(
 	resp *resource.SchemaResponse,
 ) {
 	resp.Schema = schema.Schema{
-		Description: "Clone a VM from a source template/VM and manage only explicitly-defined configuration.",
+		Description: "Clone a VM from a source template/VM and manage only explicitly-defined configuration. " +
+			"This resource uses explicit opt-in management: only configuration blocks and devices explicitly " +
+			"listed in your Terraform code are managed. Inherited settings from the template are preserved " +
+			"unless explicitly overridden or deleted. Removing a configuration from Terraform stops managing " +
+			"it but does not delete it from the VM.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.Int64Attribute{
 				Computed: true,
@@ -89,10 +93,12 @@ func (r *Resource) Schema(
 				Default:     booldefault.StaticBool(true),
 			},
 			"delete_unreferenced_disks_on_destroy": schema.BoolAttribute{
-				Description: "Delete unreferenced disks on destroy.",
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(true),
+				Description: "Delete unreferenced disks on destroy. WARNING: When set to true, any disks not " +
+					"explicitly managed by Terraform will be deleted on destroy, potentially causing data loss. " +
+					"Defaults to false for safety.",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(false),
 			},
 			"clone":   cloneAttribute(),
 			"network": networkAttribute(),

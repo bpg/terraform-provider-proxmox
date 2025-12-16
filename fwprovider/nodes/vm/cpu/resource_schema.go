@@ -42,7 +42,7 @@ func ResourceSchema() schema.Attribute {
 			"architecture": schema.StringAttribute{
 				Description: "The CPU architecture.",
 				MarkdownDescription: "The CPU architecture `<aarch64 | x86_64>` (defaults to the host). " +
-					"Setting `affinity` is only allowed for `root@pam` authenticated user.",
+					"Setting `architecture` is only allowed for `root@pam` authenticated user.",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.String{
