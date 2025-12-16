@@ -17,6 +17,8 @@ modules-dev/
 .terraform/
 .vagrant/
 .run/
+.cache/
+.gocache/
 
 *~
 *#

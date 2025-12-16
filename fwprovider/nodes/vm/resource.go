@@ -123,11 +123,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	if plan.Clone != nil {
-		r.clone(ctx, plan, &resp.Diagnostics)
-	} else {
-		r.create(ctx, plan, &resp.Diagnostics)
-	}
+	r.create(ctx, plan, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -187,63 +183,6 @@ func (r *Resource) create(ctx context.Context, plan Model, diags *diag.Diagnosti
 	}
 }
 
-func (r *Resource) clone(ctx context.Context, plan Model, diags *diag.Diagnostics) {
-	if plan.Clone == nil {
-		diags.AddError("Clone configuration is missing", "")
-		return
-	}
-
-	sourceID := int(plan.Clone.ID.ValueInt64())
-	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(sourceID)
-
-	// name and description for the clone are optional, but they are not copied from the source VM.
-	cloneBody := &vms.CloneRequestBody{
-		Description: plan.Description.ValueStringPointer(),
-		Name:        plan.Name.ValueStringPointer(),
-		VMIDNew:     int(plan.ID.ValueInt64()),
-	}
-
-	err := vmAPI.CloneVM(ctx, int(plan.Clone.Retries.ValueInt64()), cloneBody)
-	if err != nil {
-		diags.AddError("Failed to clone VM", err.Error())
-	}
-
-	if diags.HasError() {
-		return
-	}
-
-	// now load the clone's configuration into a temporary model and update what is needed comparing to the plan
-	clone := Model{
-		ID:          plan.ID,
-		CPU:         plan.CPU,
-		Name:        plan.Name,
-		Description: plan.Description,
-		NodeName:    plan.NodeName,
-		RNG:         plan.RNG,
-		VGA:         plan.VGA,
-	}
-
-	read(ctx, r.client, &clone, diags)
-
-	if diags.HasError() {
-		return
-	}
-
-	r.update(ctx, plan, clone, true, diags)
-
-	// Convert to template if requested (after update completes)
-	if !plan.Template.IsNull() && plan.Template.ValueBool() {
-		tflog.Info(ctx, fmt.Sprintf("Converting cloned VM %d to template", plan.ID.ValueInt64()))
-
-		vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
-
-		err := vmAPI.ConvertToTemplate(ctx)
-		if err != nil {
-			diags.AddError("Failed to convert cloned VM to template", err.Error())
-		}
-	}
-}
-
 //nolint:dupl
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state Model
@@ -296,7 +235,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	r.update(ctx, plan, state, false, &resp.Diagnostics)
+	r.update(ctx, plan, state, &resp.Diagnostics)
 
 	// read back the VM from the PVE API to populate computed fields
 	exists := read(ctx, r.client, &plan, &resp.Diagnostics)
@@ -313,14 +252,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 }
 
 // update updates the VM with the new configuration.
-//
-// The isClone parameter is used to determine if the VM is being updated as part of a clone operation.
-// During a clone operation, the attributes are copied from the source VM to the clone, so for computed attributes
-// that are optional, we need to handle them differently. If they are not set in the clone configuration, we keep the
-// source VM's values.
-// During the normal update operation, if a computed attribute is not set in the plan, we remove it from the VM, so it
-// can assume its default PVE-provided value.
-func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, diags *diag.Diagnostics) {
+func (r *Resource) update(ctx context.Context, plan, state Model, diags *diag.Diagnostics) {
 	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
 
 	updateBody := &vms.UpdateRequestBody{}
@@ -347,12 +279,6 @@ func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, 
 		}
 	}
 
-	// For optional computed fields only:
-	// The first condition is for the clone case, where the tags (captured in `state.Tags`)
-	// have already been copied from the source VM to the clone during the cloning process.
-	// Then, if the clone config does not have tags, we keep the cloned ones in the VM.
-	// Otherwise, if the clone config has empty tags we remove them from the VM.
-	// And finally, if the clone config has tags we update them in th VM
 	if !plan.Tags.Equal(state.Tags) && !plan.Tags.IsUnknown() {
 		if plan.Tags.IsNull() || len(plan.Tags.Elements()) == 0 {
 			del("Tags")
@@ -362,10 +288,10 @@ func (r *Resource) update(ctx context.Context, plan, state Model, isClone bool, 
 	}
 
 	// fill out update body fields with values from other resource blocks
-	cdrom.FillUpdateBody(ctx, plan.CDROM, state.CDROM, updateBody, isClone, diags)
-	cpu.FillUpdateBody(ctx, plan.CPU, state.CPU, updateBody, isClone, diags)
-	rng.FillUpdateBody(ctx, plan.RNG, state.RNG, updateBody, isClone, diags)
-	vga.FillUpdateBody(ctx, plan.VGA, state.VGA, updateBody, isClone, diags)
+	cdrom.FillUpdateBody(ctx, plan.CDROM, state.CDROM, updateBody, diags)
+	cpu.FillUpdateBody(ctx, plan.CPU, state.CPU, updateBody, diags)
+	rng.FillUpdateBody(ctx, plan.RNG, state.RNG, updateBody, diags)
+	vga.FillUpdateBody(ctx, plan.VGA, state.VGA, updateBody, diags)
 
 	if !updateBody.IsEmpty() {
 		updateBody.VMID = int(plan.ID.ValueInt64())

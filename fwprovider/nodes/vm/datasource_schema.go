@@ -28,21 +28,6 @@ func (d *Datasource) Schema(
 	resp.Schema = schema.Schema{
 		Description: "This is an experimental implementation of a Proxmox VM datasource using Plugin Framework.",
 		Attributes: map[string]schema.Attribute{
-			"clone": schema.SingleNestedAttribute{
-				Description: "The cloning configuration.",
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"id": schema.Int64Attribute{
-						Description: "The ID of the VM to clone.",
-						Required:    true,
-					},
-					"retries": schema.Int64Attribute{
-						Description: "The number of retries to perform when cloning the VM (default: 3).",
-						Optional:    true,
-						Computed:    true,
-					},
-				},
-			},
 			"cpu": cpu.DataSourceSchema(),
 			"description": schema.StringAttribute{
 				Description: "The description of the VM.",

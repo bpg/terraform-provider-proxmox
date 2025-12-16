@@ -69,7 +69,6 @@ func FillUpdateBody(
 	ctx context.Context,
 	planValue, stateValue Value,
 	updateBody *vms.UpdateRequestBody,
-	_ bool,
 	diags *diag.Diagnostics,
 ) {
 	if planValue.IsNull() || planValue.IsUnknown() || planValue.Equal(stateValue) {

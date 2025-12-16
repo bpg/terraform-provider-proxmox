@@ -1,23 +1,15 @@
 ---
 layout: page
-title: proxmox_virtual_environment_vm2
+title: proxmox_virtual_environment_cloned_vm
 parent: Resources
 subcategory: Virtual Environment
 description: |-
-  This is an experimental implementation of a Proxmox VM resource using Plugin Framework.It is a Proof of Concept, highly experimental and will change in future. It does not support all features of the Proxmox API for VMs and MUST NOT be used in production.
+  Clone a VM from a source template/VM and manage only explicitly-defined configuration.
 ---
 
-# Resource: proxmox_virtual_environment_vm2
+# Resource: proxmox_virtual_environment_cloned_vm
 
-!> **DO NOT USE**
-This is an experimental implementation of a Proxmox VM resource using Plugin Framework.<br><br>It is a Proof of Concept, highly experimental and **will** change in future. It does not support all features of the Proxmox API for VMs and **MUST NOT** be used in production.
-
--> Many attributes are marked as **optional** _and_ **computed** in the schema,
-hence you may seem added to the plan with "(known after apply)" status, even if they are not set in the configuration.
-This is done to support the `clone` operation, when a VM is created from an existing VM or template,
-and the source attributes are copied to the clone.<br><br>
-Computed attributes allow the provider to set those attributes without user input.
-The attributes are also marked as optional to allow the practitioner to set (or overwrite) them if needed.
+Clone a VM from a source template/VM and manage only explicitly-defined configuration.
 
 
 
@@ -26,23 +18,45 @@ The attributes are also marked as optional to allow the practitioner to set (or 
 
 ### Required
 
-- `node_name` (String) The name of the node where the VM is provisioned.
+- `clone` (Attributes) Clone settings. Changes require recreation. (see [below for nested schema](#nestedatt--clone))
+- `node_name` (String) Target node for the cloned VM.
 
 ### Optional
 
 - `cdrom` (Attributes Map) The CD-ROM configuration. The key is the interface of the CD-ROM, could be one of `ideN`, `sataN`, `scsiN`, where N is the index of the interface. Note that `q35` machine type only supports `ide0` and `ide2` of IDE interfaces. (see [below for nested schema](#nestedatt--cdrom))
 - `cpu` (Attributes) The CPU configuration. (see [below for nested schema](#nestedatt--cpu))
-- `delete_unreferenced_disks_on_destroy` (Boolean) Set to true to delete unreferenced disks on destroy (defaults to `true`).
-- `description` (String) The description of the VM.
-- `id` (Number) The unique identifier of the VM in the Proxmox cluster.
-- `name` (String) The name of the VM. Doesn't have to be unique.
-- `purge_on_destroy` (Boolean) Set to true to purge the VM from backup configurations on destroy (defaults to `true`).
+- `delete` (Attributes) Explicit deletions to perform after cloning/updating. Entries persist across applies. (see [below for nested schema](#nestedatt--delete))
+- `delete_unreferenced_disks_on_destroy` (Boolean) Delete unreferenced disks on destroy.
+- `description` (String) Optional VM description applied after cloning.
+- `disk` (Attributes Map) Disks keyed by slot (scsi0, virtio0, sata0, ide0, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--disk))
+- `id` (Number) The VM identifier in the Proxmox cluster.
+- `name` (String) Optional VM name override applied after cloning.
+- `network` (Attributes Map) Network devices keyed by slot (net0, net1, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--network))
+- `purge_on_destroy` (Boolean) Purge backup configuration on destroy.
 - `rng` (Attributes) Configure the RNG (Random Number Generator) device. The RNG device provides entropy to guests to ensure good quality random numbers for guest applications that require them. Can only be set by `root@pam.`See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) for more information. (see [below for nested schema](#nestedatt--rng))
-- `stop_on_destroy` (Boolean) Set to true to stop (rather than shutdown) the VM on destroy (defaults to `false`).
-- `tags` (Set of String) The tags assigned to the VM.
-- `template` (Boolean) Set to true to create a VM template.
+- `stop_on_destroy` (Boolean) Stop the VM on destroy (instead of shutdown).
+- `tags` (Set of String) Tags applied after cloning.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `vga` (Attributes) Configure the VGA Hardware. If you want to use high resolution modes (>= 1280x1024x16) you may need to increase the vga memory option. Since QEMU 2.9 the default VGA display type is `std` for all OS types besides some Windows versions (XP and older) which use `cirrus`. The `qxl` option enables the SPICE display server. For win* OS you can select how many independent displays you want, Linux guests can add displays themself. You can also run without any graphic card, using a serial device as terminal. See the [Proxmox documentation](https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings) section 10.2.8 for more information and available configuration parameters. (see [below for nested schema](#nestedatt--vga))
+
+<a id="nestedatt--clone"></a>
+### Nested Schema for `clone`
+
+Required:
+
+- `source_vm_id` (Number) Source VM/template ID to clone from.
+
+Optional:
+
+- `bandwidth_limit` (Number) Clone bandwidth limit in MB/s.
+- `full` (Boolean) Perform a full clone (true) or linked clone (false).
+- `pool_id` (String) Pool to assign the cloned VM to.
+- `retries` (Number) Number of retries for clone operations.
+- `snapshot_name` (String) Snapshot name to clone from.
+- `source_node_name` (String) Source node of the VM/template. Defaults to target node if unset.
+- `target_datastore` (String) Target datastore for cloned disks.
+- `target_format` (String) Target disk format for clone (e.g., raw, qcow2).
+
 
 <a id="nestedatt--cdrom"></a>
 ### Nested Schema for `cdrom`
@@ -67,6 +81,53 @@ Optional:
 - `sockets` (Number) The number of CPU sockets (defaults to `1`).
 - `type` (String) Emulated CPU type, it's recommended to use `x86-64-v2-AES` or higher (defaults to `kvm64`). See https://pve.proxmox.com/pve-docs/pve-admin-guide.html#qm_virtual_machines_settings for more information.
 - `units` (Number) CPU weight for a VM. Argument is used in the kernel fair scheduler. The larger the number is, the more CPU time this VM gets. Number is relative to weights of all the other running VMs.
+
+
+<a id="nestedatt--delete"></a>
+### Nested Schema for `delete`
+
+Optional:
+
+- `disk` (List of String) Disk slots to delete (e.g., scsi2).
+- `network` (List of String) Network slots to delete (e.g., net1).
+
+
+<a id="nestedatt--disk"></a>
+### Nested Schema for `disk`
+
+Optional:
+
+- `aio` (String) AIO mode (io_uring, native, threads).
+- `backup` (Boolean) Include disk in backups.
+- `cache` (String) Cache mode.
+- `datastore_id` (String) Target datastore for new disks when file is not provided.
+- `discard` (String) Discard/trim behavior.
+- `file` (String) Existing volume reference (e.g., local-lvm:vm-100-disk-0).
+- `format` (String) Disk format (raw, qcow2, vmdk).
+- `import_from` (String) Import source volume/file id.
+- `iothread` (Boolean) Use IO thread.
+- `media` (String) Disk media (e.g., disk, cdrom).
+- `replicate` (Boolean) Consider disk for replication.
+- `serial` (String) Disk serial number.
+- `size_gb` (Number) Disk size (GiB) when creating new disks.
+- `ssd` (Boolean) Mark disk as SSD.
+
+
+<a id="nestedatt--network"></a>
+### Nested Schema for `network`
+
+Optional:
+
+- `bridge` (String) Bridge name.
+- `firewall` (Boolean) Enable firewall on this interface.
+- `link_down` (Boolean) Keep link down.
+- `mac_address` (String) MAC address (computed if omitted).
+- `model` (String) NIC model (e.g., virtio, e1000).
+- `mtu` (Number) Interface MTU.
+- `queues` (Number) Number of multiqueue NIC queues.
+- `rate_limit` (Number) Rate limit (MB/s).
+- `tag` (Number) VLAN tag.
+- `trunks` (Set of Number) Trunk VLAN IDs.
 
 
 <a id="nestedatt--rng"></a>

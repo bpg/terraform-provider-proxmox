@@ -85,9 +85,10 @@ import (
 //go:generate cp ./build/docs-gen/resources/virtual_environment_sdn_zone_evpn.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_user_token.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_vm2.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_cloned_vm.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_metrics_server.md ./docs/resources/
-//go:generate cp ./build/docs-gen/resources/virtual_environment_pool_membership.md ./docs/resources/
 //go:generate cp ./build/docs-gen/resources/virtual_environment_oci_image.md ./docs/resources/
+//go:generate cp ./build/docs-gen/resources/virtual_environment_pool_membership.md ./docs/resources/
 
 // these will be set by the goreleaser configuration
 // to appropriate values for the compiled binary.
