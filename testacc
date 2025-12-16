@@ -176,7 +176,7 @@ IS_PATTERN=0
 if [ -n "$TEST_NAME" ]; then
     # Check if test name contains wildcards/patterns
     case "$TEST_NAME" in
-        *\**)
+        *'*'*)
             # Pattern matching - use as-is
             RUN_ARG="-run ${TEST_NAME}"
             IS_PATTERN=1
