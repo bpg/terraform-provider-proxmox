@@ -6,21 +6,217 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-BASE_PKG="github.com/bpg/terraform-provider-proxmox"
+set -e
+set -u
 
-find_test_package() {
-    test_name="$1"
-    [ -z "$test_name" ] && echo "${BASE_PKG}/fwprovider/..." && return
-    
-    test_file=$(find . -name "*.go" -type f -exec grep -l "func ${test_name}(" {} \; | head -1)
-    [ -z "$test_file" ] && echo "${BASE_PKG}/fwprovider/..." && return
-    
-    package_dir=$(dirname "$test_file")
-    package_path=$(echo "$package_dir" | sed 's|^\./||')
-    echo "${BASE_PKG}/${package_path}"
+BASE_PKG="github.com/bpg/terraform-provider-proxmox"
+DEFAULT_TIMEOUT="30m"
+
+show_help() {
+    cat <<'EOF'
+Usage: ./testacc [OPTIONS] [TEST_NAME] [-- GO_TEST_FLAGS...]
+
+Run acceptance tests for the Proxmox Terraform provider.
+
+Arguments:
+  TEST_NAME             Name of the test to run (e.g., TestAccResourceVM2CPU)
+                       Supports patterns like TestAccResourceVM.* for multiple tests
+                       If omitted, runs all acceptance tests
+
+Options:
+  --all                Run all acceptance tests (same as omitting TEST_NAME)
+  --no-proxy           Disable HTTP/HTTPS proxy for this test run
+  --verbose            Show the exact command being executed
+  -h, --help           Show this help message
+
+Examples:
+  ./testacc                                    # Run all acceptance tests
+  ./testacc --all                              # Run all acceptance tests
+  ./testacc TestAccDatasourceFile              # Run only this specific test
+  ./testacc "TestAccDatasource.*"              # Run all matching tests
+  ./testacc TestAccDatasourceFile -- -v        # Run with verbose go test output
+  ./testacc --no-proxy TestAccDatasourceFile   # Run without proxy
+  ./testacc --verbose TestAccDatasourceFile    # Show command being executed
+
+Notes:
+  - Single test names use exact matching (^TestName$) for efficiency
+  - Patterns with .* or * match multiple tests
+  - The script automatically finds the package containing the test
+  - Always quote pattern arguments to prevent shell expansion
+
+Environment:
+  Acceptance tests require a testacc.env file in the project root with:
+    TF_ACC=1
+    PROXMOX_VE_API_TOKEN="root@pam!<token>=<value>"
+    PROXMOX_VE_ENDPOINT="https://<host>:8006/"
+    PROXMOX_VE_SSH_AGENT="true"
+    PROXMOX_VE_SSH_USERNAME="root"
+
+EOF
 }
 
-PACKAGE_PATH=$(find_test_package "$1")
+find_test_package() {
+    test_name="${1:-}"
+    is_pattern="${2:-0}"
 
+    if [ -z "$test_name" ]; then
+        printf '%s\n' "${BASE_PKG}/fwprovider/..."
+        return
+    fi
+
+    # If it's a pattern, search all packages for efficiency
+    if [ "$is_pattern" = "1" ]; then
+        printf 'Searching all packages for pattern match\n' >&2
+        printf '%s\n' "${BASE_PKG}/fwprovider/..."
+        return
+    fi
+
+    # For exact test names, find the specific package
+    # Search only in test files for the function definition
+    test_file=$(find ./fwprovider -name "*_test.go" -type f -print0 2>/dev/null | \
+                xargs -0 grep -l "^func ${test_name}(" 2>/dev/null | head -n 1)
+
+    if [ -z "$test_file" ]; then
+        printf 'Warning: Test '\''%s'\'' not found in codebase\n' "$test_name" >&2
+        printf '         Searching all packages (this may be slower)\n' >&2
+        printf '%s\n' "${BASE_PKG}/fwprovider/..."
+        return
+    fi
+
+    package_dir=$(dirname "$test_file")
+    package_path=$(printf '%s\n' "$package_dir" | sed 's|^\./||')
+    printf 'Found test in: %s\n' "$test_file" >&2
+    printf '%s\n' "${BASE_PKG}/${package_path}"
+}
+
+validate_env_file() {
+    # Basic validation of testacc.env format
+    # Check if file is readable and not empty
+    if [ ! -r "testacc.env" ]; then
+        printf 'Error: testacc.env is not readable\n' >&2
+        return 1
+    fi
+    if [ ! -s "testacc.env" ]; then
+        printf 'Error: testacc.env is empty\n' >&2
+        return 1
+    fi
+    return 0
+}
+
+# Parse arguments
+NO_PROXY=""
+TEST_NAME=""
+GO_FLAGS=""
+VERBOSE=""
+PARSE_GO_FLAGS=0
+
+for arg in "$@"; do
+    if [ "$PARSE_GO_FLAGS" = "1" ]; then
+        GO_FLAGS="${GO_FLAGS} ${arg}"
+    elif [ "$arg" = "--" ]; then
+        PARSE_GO_FLAGS=1
+    elif [ "$arg" = "--help" ] || [ "$arg" = "-h" ]; then
+        show_help
+        exit 0
+    elif [ "$arg" = "--all" ]; then
+        TEST_NAME=""
+    elif [ "$arg" = "--no-proxy" ]; then
+        NO_PROXY="1"
+    elif [ "$arg" = "--verbose" ]; then
+        VERBOSE="1"
+    elif [ "$arg" = "-v" ]; then
+        printf 'Error: '\''-v'\'' flag is reserved for go test verbose output\n' >&2
+        printf '       Use '\''--verbose'\'' to show the command being executed\n' >&2
+        printf '       Use '\''TestName -- -v'\'' to pass -v to go test\n' >&2
+        exit 1
+    elif [ -z "$TEST_NAME" ]; then
+        TEST_NAME="$arg"
+    else
+        printf 'Error: Unexpected argument '\''%s'\''\n' "$arg" >&2
+        printf 'Use '\''./testacc --help'\'' for usage information\n' >&2
+        exit 1
+    fi
+done
+
+# Check for testacc.env
+if [ ! -f "testacc.env" ]; then
+    printf 'Error: testacc.env file not found in current directory\n' >&2
+    printf '\n' >&2
+    printf 'Please create testacc.env with the following variables:\n' >&2
+    printf '  TF_ACC=1\n' >&2
+    printf '  PROXMOX_VE_API_TOKEN="root@pam!<token>=<value>"\n' >&2
+    printf '  PROXMOX_VE_ENDPOINT="https://<host>:8006/"\n' >&2
+    printf '  PROXMOX_VE_SSH_AGENT="true"\n' >&2
+    printf '  PROXMOX_VE_SSH_USERNAME="root"\n' >&2
+    printf '\n' >&2
+    printf 'See CONTRIBUTING.md for more details.\n' >&2
+    exit 1
+fi
+
+# Validate testacc.env
+if ! validate_env_file; then
+    exit 1
+fi
+
+# Check if go is available
+if ! command -v go >/dev/null 2>&1; then
+    printf 'Error: go command not found in PATH\n' >&2
+    exit 1
+fi
+
+# Setup NO_PROXY if requested
+if [ -n "$NO_PROXY" ]; then
+    export NO_PROXY="127.0.0.1,localhost,::1"
+    printf 'Using NO_PROXY=%s\n' "$NO_PROXY" >&2
+fi
+
+# Build test command and detect pattern
+RUN_ARG=""
+IS_PATTERN=0
+if [ -n "$TEST_NAME" ]; then
+    # Check if test name contains wildcards/patterns
+    case "$TEST_NAME" in
+        *\**)
+            # Pattern matching - use as-is
+            RUN_ARG="-run ${TEST_NAME}"
+            IS_PATTERN=1
+            printf 'Running tests matching pattern: %s\n' "$TEST_NAME" >&2
+            ;;
+        *)
+            # Exact test name - use anchored regex for efficiency
+            RUN_ARG="-run ^${TEST_NAME}\$"
+            printf 'Running single test: %s\n' "$TEST_NAME" >&2
+            ;;
+    esac
+else
+    printf 'Running all acceptance tests\n' >&2
+fi
+
+# Find package (after detecting pattern)
+PACKAGE_PATH=$(find_test_package "$TEST_NAME" "$IS_PATTERN")
+
+printf 'Package: %s\n' "$PACKAGE_PATH" >&2
+
+if [ -n "$VERBOSE" ]; then
+    printf '\n' >&2
+    printf 'Executing:\n' >&2
+    printf '  TF_ACC=1 env $(grep -v '\''^#'\'' testacc.env | xargs) \\\n' >&2
+    printf '    go test -count 1 --tags=acceptance -timeout %s \\\n' "$DEFAULT_TIMEOUT" >&2
+    if [ -n "$RUN_ARG" ]; then
+        printf '    %s \\\n' "$RUN_ARG" >&2
+    fi
+    printf '    %s' "$PACKAGE_PATH" >&2
+    if [ -n "$GO_FLAGS" ]; then
+        printf ' %s' "$GO_FLAGS" >&2
+    fi
+    printf '\n' >&2
+fi
+
+printf '\n' >&2
+
+# Run tests
+# Note: GO_FLAGS and RUN_ARG are intentionally unquoted for word splitting
 # shellcheck disable=SC2046,SC2086
-TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) go test -count 1 --tags=acceptance -timeout 360s -run "$1" "$PACKAGE_PATH" $2
+TF_ACC=1 env $(grep -v '^#' testacc.env | xargs) \
+    go test -count 1 --tags=acceptance -timeout "$DEFAULT_TIMEOUT" \
+    ${RUN_ARG} "$PACKAGE_PATH" ${GO_FLAGS}

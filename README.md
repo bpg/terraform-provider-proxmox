@@ -59,7 +59,7 @@ make test
 
 Tests are limited to regression tests, ensuring backward compatibility.
 
-A limited number of acceptance tests are available in the `proxmoxtf/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
+A limited number of acceptance tests are available in the `fwprovider/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
 These tests are not run by default, as they require a Proxmox VE environment to be available.
 They can be run using `make testacc`. The Proxmox connection can be configured using environment variables; see the provider documentation for details.
 

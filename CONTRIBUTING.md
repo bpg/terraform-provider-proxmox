@@ -83,7 +83,7 @@ The project has a test suite that must pass for contributions to be accepted. Wh
 
 ### Acceptance Tests
 
-Acceptance tests run against a real Proxmox instance and verify the provider's functionality end-to-end. These tests are located in the `fwprovider/tests` directory.
+Acceptance tests run against a real Proxmox instance and verify the provider's functionality end-to-end. These tests are located in the `fwprovider/test` directory.
 
 #### Prerequisites
 
