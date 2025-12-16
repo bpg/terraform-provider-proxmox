@@ -51,6 +51,7 @@ func (c *Client) DeleteDatastoreFile(
 
 // ListDatastoreFiles retrieves a list of the files in a datastore.
 // contentType is optional and filters the results by content type (e.g., "iso", "vztmpl", "backup").
+// If contentType is nil, all files in the datastore are returned (unfiltered).
 func (c *Client) ListDatastoreFiles(
 	ctx context.Context,
 	contentType *string,

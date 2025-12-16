@@ -6,6 +6,37 @@
 
 package storage
 
+import "slices"
+
+// Content type constants for Proxmox VE datastores.
+const (
+	ContentTypeBackup   = "backup"   // VM backups
+	ContentTypeImages   = "images"   // VM disk images
+	ContentTypeImport   = "import"   // VM disk images for import
+	ContentTypeISO      = "iso"      // ISO images
+	ContentTypeRootDir  = "rootdir"  // Container root directories
+	ContentTypeSnippets = "snippets" // Snippets (cloud-init, hook scripts, etc.)
+	ContentTypeVZTmpl   = "vztmpl"   // Container templates
+)
+
+// validContentTypes returns all valid content type values.
+func validContentTypes() []string {
+	return []string{
+		ContentTypeBackup,
+		ContentTypeImages,
+		ContentTypeImport,
+		ContentTypeISO,
+		ContentTypeRootDir,
+		ContentTypeSnippets,
+		ContentTypeVZTmpl,
+	}
+}
+
+// IsValidContentType checks if the given content type is valid.
+func IsValidContentType(contentType string) bool {
+	return slices.Contains(validContentTypes(), contentType)
+}
+
 // DatastoreFileListRequestBody contains the request parameters for listing datastore files.
 type DatastoreFileListRequestBody struct {
 	ContentType *string `json:"content,omitempty" url:"content,omitempty"`

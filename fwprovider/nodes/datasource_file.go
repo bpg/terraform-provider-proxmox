@@ -160,7 +160,8 @@ func (d *fileDataSource) Read(ctx context.Context, req datasource.ReadRequest, r
 			continue
 		}
 
-		// No need to check ContentType here as it's already filtered by the API call above
+		// No need to check ContentType here as it's already filtered server-side by the API call above.
+		// Previously, client-side filtering was performed by iterating through all files.
 
 		// Extract filename from volume ID format: datastore:content/filename
 		volumeParts := strings.SplitN(file.VolumeID, ":", 2)
