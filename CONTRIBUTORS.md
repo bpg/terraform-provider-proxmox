@@ -221,6 +221,9 @@
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/daviFrag"><img src="https://avatars.githubusercontent.com/u/73591373?v=4?s=100" width="100px;" alt="daviFrag"/><br /><sub><b>daviFrag</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=daviFrag" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/binarycodes"><img src="https://avatars.githubusercontent.com/u/45909?v=4?s=100" width="100px;" alt="Sujoy Das"/><br /><sub><b>Sujoy Das</b></sub></a><br /><a href="#financial-binarycodes" title="Financial">💵</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/666Goofy666"><img src="https://avatars.githubusercontent.com/u/153852747?v=4?s=100" width="100px;" alt="666Goofy666"/><br /><sub><b>666Goofy666</b></sub></a><br /><a href="https://github.com/bpg/terraform-provider-proxmox/commits?author=666Goofy666" title="Code">💻</a></td>
+    </tr>
   </tbody>
   <tfoot>
     <tr>
