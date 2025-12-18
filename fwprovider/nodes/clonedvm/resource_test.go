@@ -506,25 +506,25 @@ func checkMemoryConfig(te *test.Environment, resourceName string, expectedMaximu
 			return err
 		}
 
-		// Check maximum memory (Proxmox API: 'memory', our naming: 'maximum', SDK: 'dedicated')
+		// Check maximum memory
 		if config.DedicatedMemory == nil {
-			return fmt.Errorf("DedicatedMemory (maximum) is nil for %s", resourceName)
+			return fmt.Errorf("maximum memory is nil for %s", resourceName)
 		}
 		if int64(*config.DedicatedMemory) != int64(expectedMaximum) {
 			return fmt.Errorf("expected maximum memory %d, got %d for %s", expectedMaximum, *config.DedicatedMemory, resourceName)
 		}
 
-		// Check minimum memory (Proxmox API: 'balloon', our naming: 'minimum', SDK: 'floating')
+		// Check minimum memory
 		if config.FloatingMemory == nil {
-			return fmt.Errorf("FloatingMemory (minimum) is nil for %s", resourceName)
+			return fmt.Errorf("minimum memory is nil for %s", resourceName)
 		}
 		if int64(*config.FloatingMemory) != int64(expectedMinimum) {
 			return fmt.Errorf("expected minimum memory %d, got %d for %s", expectedMinimum, *config.FloatingMemory, resourceName)
 		}
 
-		// Check shares (Proxmox API: 'shares', our naming: 'shares', SDK: 'shared')
+		// Check memory shares
 		if config.FloatingMemoryShares == nil {
-			return fmt.Errorf("FloatingMemoryShares (shares) is nil for %s", resourceName)
+			return fmt.Errorf("memory shares is nil for %s", resourceName)
 		}
 		if *config.FloatingMemoryShares != expectedShares {
 			return fmt.Errorf("expected shares %d, got %d for %s", expectedShares, *config.FloatingMemoryShares, resourceName)

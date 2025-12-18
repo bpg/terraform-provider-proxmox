@@ -21,10 +21,6 @@ import (
 type Value = types.Object
 
 // NewValue returns a new Value with the given memory settings from the PVE API.
-//
-// This function reads memory configuration from the Proxmox API response and
-// converts it to our clearer naming convention (maximum/minimum instead of
-// dedicated/floating).
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
 	mem := Model{}
 

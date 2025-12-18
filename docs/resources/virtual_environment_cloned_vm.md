@@ -134,6 +134,14 @@ resource "proxmox_virtual_environment_cloned_vm" "full_featured" {
     type         = "host"
   }
 
+  # Memory configuration with ballooning
+  # Uses clearer naming: maximum/minimum instead of dedicated/floating
+  memory = {
+    maximum = 8192 # Max 8GB RAM (Proxmox API: 'memory')
+    minimum = 4096 # Guaranteed 4GB minimum (Proxmox API: 'balloon')
+    shares  = 2000 # CPU scheduler priority for memory ballooning
+  }
+
   network = {
     net0 = {
       bridge     = "vmbr0"
@@ -250,9 +258,7 @@ resource "proxmox_virtual_environment_cloned_vm" "imported" {
 - `description` (String) Optional VM description applied after cloning.
 - `disk` (Attributes Map) Disks keyed by slot (scsi0, virtio0, sata0, ide0, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--disk))
 - `id` (Number) The VM identifier in the Proxmox cluster.
-- `memory` (Attributes) Memory configuration for the VM. Uses Proxmox memory ballooning to allow dynamic memory allocation. The `maximum` sets the upper limit, while `minimum` sets the guaranteed floor. The host can reclaim memory between these values when needed. 
-
-**Note:** This uses clearer naming (`maximum`/`minimum`) compared to the legacy `vm` resource which uses `dedicated`/`floating`. See the [migration guide](/docs/guides/migration-vm2-clone.md#memory-terminology) for mapping details. (see [below for nested schema](#nestedatt--memory))
+- `memory` (Attributes) Memory configuration for the VM. Uses Proxmox memory ballooning to allow dynamic memory allocation. The `maximum` sets the upper limit, while `minimum` sets the guaranteed floor. The host can reclaim memory between these values when needed. (see [below for nested schema](#nestedatt--memory))
 - `name` (String) Optional VM name override applied after cloning.
 - `network` (Attributes Map) Network devices keyed by slot (net0, net1, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--network))
 - `purge_on_destroy` (Boolean) Purge backup configuration on destroy.
@@ -347,28 +353,12 @@ Optional:
 - `2` - Use 2 MiB hugepages
 - `1024` - Use 1 GiB hugepages
 - `any` - Use any available hugepage size
-
-**Proxmox API:** `hugepages` parameter
-- `keep_hugepages` (Boolean) Don't release hugepages when the VM shuts down. By default, hugepages are released back to the host when the VM stops. Setting this to `true` keeps them allocated for faster VM startup (defaults to `false`). 
-
-**Proxmox API:** `keephugepages` parameter
-- `maximum` (Number) Maximum available memory in MiB. This is the upper limit of RAM the VM can use when the balloon device is enabled (defaults to `512` MiB). 
-
-**Proxmox API:** `memory` parameter 
-
-**Legacy SDK:** `dedicated` parameter
+- `keep_hugepages` (Boolean) Don't release hugepages when the VM shuts down. By default, hugepages are released back to the host when the VM stops. Setting this to `true` keeps them allocated for faster VM startup (defaults to `false`).
+- `maximum` (Number) Maximum available memory in MiB. This is the upper limit of RAM the VM can use when the balloon device is enabled (defaults to `512` MiB).
 - `minimum` (Number) Minimum guaranteed memory in MiB. This is the floor amount of RAM that is always guaranteed to the VM. Setting to `0` disables the balloon driver entirely (defaults to `0`). 
 
-**How it works:** The host can reclaim memory between `minimum` and `maximum` when under memory pressure. The VM is guaranteed to always have at least `minimum` MiB available. 
-
-**Proxmox API:** `balloon` parameter 
-
-**Legacy SDK:** `floating` parameter
-- `shares` (Number) CPU scheduler priority for memory ballooning. This is used by the kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning operations. The value is relative to other running VMs (defaults to `1000`). 
-
-**Proxmox API:** `shares` parameter 
-
-**Legacy SDK:** `shared` parameter
+**How it works:** The host can reclaim memory between `minimum` and `maximum` when under memory pressure. The VM is guaranteed to always have at least `minimum` MiB available.
+- `shares` (Number) CPU scheduler priority for memory ballooning. This is used by the kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning operations. The value is relative to other running VMs (defaults to `1000`).
 
 
 <a id="nestedatt--network"></a>

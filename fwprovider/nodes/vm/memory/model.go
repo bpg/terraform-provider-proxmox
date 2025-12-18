@@ -13,9 +13,6 @@ import (
 
 // Model represents the memory configuration model.
 //
-// This uses clearer naming (maximum/minimum) instead of the legacy SDK naming
-// (dedicated/floating) which was confusing. See GitHub discussion #2198.
-//
 // Mapping to Proxmox API:
 //   - Maximum → memory (max available RAM when using balloon device)
 //   - Minimum → balloon (guaranteed minimum RAM; 0 disables balloon driver)

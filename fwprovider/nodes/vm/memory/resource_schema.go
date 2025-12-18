@@ -16,9 +16,6 @@ import (
 
 // ResourceSchema defines the schema for the memory resource.
 //
-// This implementation uses clearer naming (maximum/minimum) compared to the legacy
-// SDK VM resource which uses (dedicated/floating). See GitHub discussion #2198.
-//
 // Proxmox Memory Ballooning Explained:
 //   - maximum: The max RAM available to the VM (Proxmox API: 'memory')
 //   - minimum: The guaranteed minimum RAM (Proxmox API: 'balloon')
@@ -35,30 +32,20 @@ import (
 //	  minimum = 2048  # Host guarantees 2GB minimum
 //	}
 //	# Result: VM gets 2-4GB depending on host memory pressure
-//
-// Legacy SDK Mapping (for migration):
-//   - maximum = dedicated (Proxmox: memory)
-//   - minimum = floating (Proxmox: balloon)
-//   - shares = shared (Proxmox: shares)
 func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		Description: "Memory configuration. Controls maximum available RAM and minimum guaranteed RAM via ballooning.",
 		MarkdownDescription: "Memory configuration for the VM. Uses Proxmox memory ballooning to allow dynamic memory allocation. " +
 			"The `maximum` sets the upper limit, while `minimum` sets the guaranteed floor. " +
-			"The host can reclaim memory between these values when needed. " +
-			"\n\n**Note:** This uses clearer naming (`maximum`/`minimum`) compared to the legacy `vm` resource " +
-			"which uses `dedicated`/`floating`. See the [migration guide](/docs/guides/migration-vm2-clone.md#memory-terminology) " +
-			"for mapping details.",
+			"The host can reclaim memory between these values when needed.",
 		Optional: true,
 		Computed: true,
 		Attributes: map[string]schema.Attribute{
 			"maximum": schema.Int64Attribute{
-				Description: "Maximum available memory in MiB (Proxmox API: 'memory'). " +
+				Description: "Maximum available memory in MiB. " +
 					"This is the upper limit of RAM the VM can use when balloon device is enabled.",
 				MarkdownDescription: "Maximum available memory in MiB. This is the upper limit of RAM the VM can use " +
-					"when the balloon device is enabled (defaults to `512` MiB). " +
-					"\n\n**Proxmox API:** `memory` parameter " +
-					"\n\n**Legacy SDK:** `dedicated` parameter",
+					"when the balloon device is enabled (defaults to `512` MiB).",
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(512),
@@ -67,14 +54,12 @@ func ResourceSchema() schema.Attribute {
 				},
 			},
 			"minimum": schema.Int64Attribute{
-				Description: "Minimum guaranteed memory in MiB (Proxmox API: 'balloon'). " +
+				Description: "Minimum guaranteed memory in MiB. " +
 					"The guaranteed amount of RAM. Set to 0 to disable balloon device.",
 				MarkdownDescription: "Minimum guaranteed memory in MiB. This is the floor amount of RAM that is always " +
 					"guaranteed to the VM. Setting to `0` disables the balloon driver entirely (defaults to `0`). " +
 					"\n\n**How it works:** The host can reclaim memory between `minimum` and `maximum` when under " +
-					"memory pressure. The VM is guaranteed to always have at least `minimum` MiB available. " +
-					"\n\n**Proxmox API:** `balloon` parameter " +
-					"\n\n**Legacy SDK:** `floating` parameter",
+					"memory pressure. The VM is guaranteed to always have at least `minimum` MiB available.",
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(0),
@@ -83,13 +68,11 @@ func ResourceSchema() schema.Attribute {
 				},
 			},
 			"shares": schema.Int64Attribute{
-				Description: "CPU scheduler priority for memory ballooning (Proxmox API: 'shares'). " +
+				Description: "CPU scheduler priority for memory ballooning. " +
 					"Higher values give the VM more CPU time during memory pressure.",
 				MarkdownDescription: "CPU scheduler priority for memory ballooning. This is used by the " +
 					"kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning " +
-					"operations. The value is relative to other running VMs (defaults to `1000`). " +
-					"\n\n**Proxmox API:** `shares` parameter " +
-					"\n\n**Legacy SDK:** `shared` parameter",
+					"operations. The value is relative to other running VMs (defaults to `1000`).",
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(1000),
@@ -104,8 +87,7 @@ func ResourceSchema() schema.Attribute {
 					"\n\n**Options:**" +
 					"\n- `2` - Use 2 MiB hugepages" +
 					"\n- `1024` - Use 1 GiB hugepages" +
-					"\n- `any` - Use any available hugepage size" +
-					"\n\n**Proxmox API:** `hugepages` parameter",
+					"\n- `any` - Use any available hugepage size",
 				Optional: true,
 				Computed: true,
 				Validators: []validator.String{
@@ -113,11 +95,10 @@ func ResourceSchema() schema.Attribute {
 				},
 			},
 			"keep_hugepages": schema.BoolAttribute{
-				Description: "Keep hugepages allocated when VM is stopped (Proxmox API: 'keephugepages').",
+				Description: "Keep hugepages allocated when VM is stopped.",
 				MarkdownDescription: "Don't release hugepages when the VM shuts down. By default, hugepages are " +
 					"released back to the host when the VM stops. Setting this to `true` keeps them allocated " +
-					"for faster VM startup (defaults to `false`). " +
-					"\n\n**Proxmox API:** `keephugepages` parameter",
+					"for faster VM startup (defaults to `false`).",
 				Optional: true,
 				Computed: true,
 			},
