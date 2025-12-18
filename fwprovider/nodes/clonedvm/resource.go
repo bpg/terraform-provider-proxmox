@@ -26,6 +26,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/memory"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
@@ -428,6 +429,7 @@ func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, diags *dia
 
 	cdrom.FillCreateBody(ctx, plan.CDROM, updateBody, diags)
 	cpu.FillCreateBody(ctx, plan.CPU, updateBody, diags)
+	memory.FillUpdateBody(ctx, plan.Memory, updateBody, diags)
 	rng.FillCreateBody(ctx, plan.RNG, updateBody, diags)
 	vga.FillCreateBody(ctx, plan.VGA, updateBody, diags)
 
@@ -663,6 +665,7 @@ func read(ctx context.Context, vmAPI *vms.Client, model *Model, diags *diag.Diag
 	model.Tags = stringset.NewValueString(config.Tags, diags)
 
 	model.CPU = cpu.NewValue(ctx, config, diags)
+	model.Memory = memory.NewValue(ctx, config, diags)
 	model.RNG = rng.NewValue(ctx, config, diags)
 	model.VGA = vga.NewValue(ctx, config, diags)
 	model.CDROM = cdrom.NewValue(ctx, config, diags)

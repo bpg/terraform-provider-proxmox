@@ -383,6 +383,157 @@ func networkSlotPresent(config *vms.GetResponseData, slot string) bool {
 	return true
 }
 
+func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
+	if utils.GetAnyStringEnv("TF_ACC") == "" {
+		t.Skip("Acceptance tests are disabled")
+	}
+
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	baseConfig := `
+		resource "proxmox_virtual_environment_download_file" "cloud_image" {
+			content_type = "iso"
+			datastore_id = "local"
+			node_name    = "{{.NodeName}}"
+			url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+			overwrite_unmanaged = true
+		}
+
+		resource "proxmox_virtual_environment_vm" "template_vm" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+
+			disk {
+				datastore_id = "local-lvm"
+				file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+				interface    = "virtio0"
+				size         = 16
+			}
+
+			cpu {
+				cores = 1
+			}
+
+			memory {
+				dedicated = 512
+			}
+
+			network_device {
+				model  = "virtio"
+				bridge = "vmbr0"
+			}
+		}
+		`
+
+	initialConfig := te.RenderConfig(baseConfig + `
+		resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
+			node_name = "{{.NodeName}}"
+			name      = "fwk-cloned-memory"
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+
+			memory = {
+				maximum = 2048
+				minimum = 1024
+				shares  = 1500
+			}
+		}
+	`)
+
+	updatedConfig := te.RenderConfig(baseConfig + `
+		resource "proxmox_virtual_environment_cloned_vm" "memory_test" {
+			node_name = "{{.NodeName}}"
+			name      = "fwk-cloned-memory"
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+
+			memory = {
+				maximum = 4096
+				minimum = 2048
+				shares  = 2000
+			}
+		}
+	`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: initialConfig,
+				Check: resource.ComposeTestCheckFunc(
+					checkMemoryConfig(te, "proxmox_virtual_environment_cloned_vm.memory_test", 2048, 1024, 1500),
+				),
+			},
+			{
+				Config: updatedConfig,
+				Check: resource.ComposeTestCheckFunc(
+					checkMemoryConfig(te, "proxmox_virtual_environment_cloned_vm.memory_test", 4096, 2048, 2000),
+				),
+			},
+		},
+	})
+}
+
+func checkMemoryConfig(te *test.Environment, resourceName string, expectedMaximum, expectedMinimum, expectedShares int) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource %s not found", resourceName)
+		}
+
+		nodeName := rs.Primary.Attributes["node_name"]
+		idStr := rs.Primary.Attributes["id"]
+
+		if nodeName == "" || idStr == "" {
+			return fmt.Errorf("resource %s missing node_name or id in state", resourceName)
+		}
+
+		vmid, err := strconv.Atoi(idStr)
+		if err != nil {
+			return err
+		}
+
+		ctx := context.Background()
+		config, err := te.NodeClient().VM(vmid).GetVM(ctx)
+		if err != nil {
+			return err
+		}
+
+		// Check maximum memory (Proxmox API: 'memory', our naming: 'maximum', SDK: 'dedicated')
+		if config.DedicatedMemory == nil {
+			return fmt.Errorf("DedicatedMemory (maximum) is nil for %s", resourceName)
+		}
+		if int64(*config.DedicatedMemory) != int64(expectedMaximum) {
+			return fmt.Errorf("expected maximum memory %d, got %d for %s", expectedMaximum, *config.DedicatedMemory, resourceName)
+		}
+
+		// Check minimum memory (Proxmox API: 'balloon', our naming: 'minimum', SDK: 'floating')
+		if config.FloatingMemory == nil {
+			return fmt.Errorf("FloatingMemory (minimum) is nil for %s", resourceName)
+		}
+		if int64(*config.FloatingMemory) != int64(expectedMinimum) {
+			return fmt.Errorf("expected minimum memory %d, got %d for %s", expectedMinimum, *config.FloatingMemory, resourceName)
+		}
+
+		// Check shares (Proxmox API: 'shares', our naming: 'shares', SDK: 'shared')
+		if config.FloatingMemoryShares == nil {
+			return fmt.Errorf("FloatingMemoryShares (shares) is nil for %s", resourceName)
+		}
+		if *config.FloatingMemoryShares != expectedShares {
+			return fmt.Errorf("expected shares %d, got %d for %s", expectedShares, *config.FloatingMemoryShares, resourceName)
+		}
+
+		return nil
+	}
+}
+
 func slotIndex(slot string, prefix string) (int, bool) {
 	if !strings.HasPrefix(slot, prefix) {
 		return 0, false

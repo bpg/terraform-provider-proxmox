@@ -12,6 +12,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/memory"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
@@ -29,6 +30,7 @@ type Model struct {
 	Disk                             map[string]DiskModel    `tfsdk:"disk"`
 	Delete                           *DeleteModel            `tfsdk:"delete"`
 	CPU                              cpu.Value               `tfsdk:"cpu"`
+	Memory                           memory.Value            `tfsdk:"memory"`
 	RNG                              rng.Value               `tfsdk:"rng"`
 	VGA                              vga.Value               `tfsdk:"vga"`
 	CDROM                            cdrom.Value             `tfsdk:"cdrom"`

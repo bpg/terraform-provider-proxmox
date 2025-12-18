@@ -30,6 +30,7 @@ import (
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cdrom"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/cpu"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/memory"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/rng"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm/vga"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/types/stringset"
@@ -75,11 +76,12 @@ func (r *Resource) Schema(
 				Description: "Optional VM description applied after cloning.",
 				Optional:    true,
 			},
-			"tags":  stringset.ResourceAttribute("Tags applied after cloning.", ""),
-			"cpu":   cpu.ResourceSchema(),
-			"rng":   rng.ResourceSchema(),
-			"vga":   vga.ResourceSchema(),
-			"cdrom": cdrom.ResourceSchema(),
+			"tags":   stringset.ResourceAttribute("Tags applied after cloning.", ""),
+			"cpu":    cpu.ResourceSchema(),
+			"memory": memory.ResourceSchema(),
+			"rng":    rng.ResourceSchema(),
+			"vga":    vga.ResourceSchema(),
+			"cdrom":  cdrom.ResourceSchema(),
 			"stop_on_destroy": schema.BoolAttribute{
 				Description: "Stop the VM on destroy (instead of shutdown).",
 				Optional:    true,

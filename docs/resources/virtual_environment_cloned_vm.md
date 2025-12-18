@@ -11,7 +11,227 @@ description: |-
 
 Clone a VM from a source template/VM and manage only explicitly-defined configuration. This resource uses explicit opt-in management: only configuration blocks and devices explicitly listed in your Terraform code are managed. Inherited settings from the template are preserved unless explicitly overridden or deleted. Removing a configuration from Terraform stops managing it but does not delete it from the VM.
 
+## Example Usage
 
+```terraform
+# Example 1: Basic clone with minimal management
+resource "proxmox_virtual_environment_cloned_vm" "basic_clone" {
+  node_name = "pve"
+  name      = "basic-clone"
+
+  clone = {
+    source_vm_id = 100  # Template VM ID
+    full         = true # Perform full clone (not linked)
+  }
+
+  # Only manage CPU, inherit everything else from template
+  cpu = {
+    cores = 4
+  }
+}
+
+# Example 2: Clone with explicit network management
+resource "proxmox_virtual_environment_cloned_vm" "network_managed" {
+  node_name = "pve"
+  name      = "network-clone"
+
+  clone = {
+    source_vm_id = 100
+  }
+
+  # Map-based network devices - manage specific interfaces
+  network = {
+    net0 = {
+      bridge = "vmbr0"
+      model  = "virtio"
+      tag    = 100 # VLAN tag
+    }
+
+    net1 = {
+      bridge      = "vmbr1"
+      model       = "virtio"
+      firewall    = true
+      mac_address = "BC:24:11:2E:C5:00"
+    }
+  }
+
+  cpu = {
+    cores = 2
+  }
+}
+
+# Example 3: Clone with disk management
+resource "proxmox_virtual_environment_cloned_vm" "disk_managed" {
+  node_name = "pve"
+  name      = "disk-clone"
+
+  clone = {
+    source_vm_id     = 100
+    target_datastore = "local-lvm"
+  }
+
+  # Map-based disk management
+  disk = {
+    scsi0 = {
+      # Resize the cloned boot disk
+      datastore_id = "local-lvm"
+      size_gb      = 50
+      discard      = "on"
+      ssd          = true
+    }
+
+    scsi1 = {
+      # Add a new data disk
+      datastore_id = "local-lvm"
+      size_gb      = 100
+      backup       = false
+    }
+  }
+}
+
+# Example 4: Clone with explicit device deletion
+resource "proxmox_virtual_environment_cloned_vm" "selective_delete" {
+  node_name = "pve"
+  name      = "minimal-clone"
+
+  clone = {
+    source_vm_id = 100
+  }
+
+  # Only manage net0
+  network = {
+    net0 = {
+      bridge = "vmbr0"
+      model  = "virtio"
+    }
+  }
+
+  # Explicitly delete inherited net1 and net2
+  delete = {
+    network = ["net1", "net2"]
+  }
+}
+
+# Example 5: Full-featured clone with multiple settings
+resource "proxmox_virtual_environment_cloned_vm" "full_featured" {
+  node_name   = "pve"
+  name        = "production-vm"
+  description = "Production VM cloned from template"
+  tags        = ["production", "web"]
+
+  clone = {
+    source_vm_id     = 100
+    source_node_name = "pve" # Source node (defaults to target node if omitted)
+    full             = true
+    target_datastore = "local-lvm"
+    retries          = 3
+  }
+
+  cpu = {
+    cores        = 8
+    sockets      = 1
+    architecture = "x86_64"
+    type         = "host"
+  }
+
+  network = {
+    net0 = {
+      bridge     = "vmbr0"
+      model      = "virtio"
+      tag        = 100
+      firewall   = true
+      rate_limit = 100.0 # MB/s
+    }
+  }
+
+  disk = {
+    scsi0 = {
+      datastore_id = "local-lvm"
+      size_gb      = 100
+      discard      = "on"
+      iothread     = true
+      ssd          = true
+      cache        = "writethrough"
+    }
+  }
+
+  vga = {
+    type   = "std"
+    memory = 16
+  }
+
+  cdrom = {
+    ide2 = {
+      enabled = false # Disable inherited CDROM
+    }
+  }
+
+  # Lifecycle options
+  stop_on_destroy                      = false # Shutdown gracefully instead of force stop
+  purge_on_destroy                     = true
+  delete_unreferenced_disks_on_destroy = false # Safety: don't delete unmanaged disks
+
+  timeouts = {
+    create = "30m"
+    update = "30m"
+    delete = "10m"
+  }
+}
+
+# Example 6: Linked clone for testing
+resource "proxmox_virtual_environment_cloned_vm" "test_clone" {
+  node_name = "pve"
+  name      = "test-vm"
+
+  clone = {
+    source_vm_id = 100
+    full         = false # Linked clone - faster, uses less space
+  }
+
+  cpu = {
+    cores = 2
+  }
+
+  network = {
+    net0 = {
+      bridge = "vmbr0"
+      model  = "virtio"
+    }
+  }
+}
+
+# Example 7: Clone with pool assignment
+resource "proxmox_virtual_environment_cloned_vm" "pooled_clone" {
+  node_name = "pve"
+  name      = "pooled-vm"
+
+  clone = {
+    source_vm_id = 100
+    pool_id      = "production" # Assign to pool during clone
+  }
+
+  cpu = {
+    cores = 4
+  }
+}
+
+# Example 8: Import existing cloned VM
+resource "proxmox_virtual_environment_cloned_vm" "imported" {
+  # Import with: terraform import proxmox_virtual_environment_cloned_vm.imported pve/123
+
+  id        = 123 # VM ID to manage
+  node_name = "pve"
+
+  # After import, define managed configuration
+  clone = {
+    source_vm_id = 100 # Must match original clone source
+  }
+
+  cpu = {
+    cores = 4
+  }
+}
+```
 
 <!-- schema generated by tfplugindocs -->
 ## Schema
@@ -30,6 +250,9 @@ Clone a VM from a source template/VM and manage only explicitly-defined configur
 - `description` (String) Optional VM description applied after cloning.
 - `disk` (Attributes Map) Disks keyed by slot (scsi0, virtio0, sata0, ide0, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--disk))
 - `id` (Number) The VM identifier in the Proxmox cluster.
+- `memory` (Attributes) Memory configuration for the VM. Uses Proxmox memory ballooning to allow dynamic memory allocation. The `maximum` sets the upper limit, while `minimum` sets the guaranteed floor. The host can reclaim memory between these values when needed. 
+
+**Note:** This uses clearer naming (`maximum`/`minimum`) compared to the legacy `vm` resource which uses `dedicated`/`floating`. See the [migration guide](/docs/guides/migration-vm2-clone.md#memory-terminology) for mapping details. (see [below for nested schema](#nestedatt--memory))
 - `name` (String) Optional VM name override applied after cloning.
 - `network` (Attributes Map) Network devices keyed by slot (net0, net1, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--network))
 - `purge_on_destroy` (Boolean) Purge backup configuration on destroy.
@@ -111,6 +334,41 @@ Optional:
 - `serial` (String) Disk serial number.
 - `size_gb` (Number) Disk size (GiB) when creating new disks.
 - `ssd` (Boolean) Mark disk as SSD.
+
+
+<a id="nestedatt--memory"></a>
+### Nested Schema for `memory`
+
+Optional:
+
+- `hugepages` (String) Enable hugepages for VM memory allocation. Hugepages can improve performance for memory-intensive workloads by reducing TLB misses. 
+
+**Options:**
+- `2` - Use 2 MiB hugepages
+- `1024` - Use 1 GiB hugepages
+- `any` - Use any available hugepage size
+
+**Proxmox API:** `hugepages` parameter
+- `keep_hugepages` (Boolean) Don't release hugepages when the VM shuts down. By default, hugepages are released back to the host when the VM stops. Setting this to `true` keeps them allocated for faster VM startup (defaults to `false`). 
+
+**Proxmox API:** `keephugepages` parameter
+- `maximum` (Number) Maximum available memory in MiB. This is the upper limit of RAM the VM can use when the balloon device is enabled (defaults to `512` MiB). 
+
+**Proxmox API:** `memory` parameter 
+
+**Legacy SDK:** `dedicated` parameter
+- `minimum` (Number) Minimum guaranteed memory in MiB. This is the floor amount of RAM that is always guaranteed to the VM. Setting to `0` disables the balloon driver entirely (defaults to `0`). 
+
+**How it works:** The host can reclaim memory between `minimum` and `maximum` when under memory pressure. The VM is guaranteed to always have at least `minimum` MiB available. 
+
+**Proxmox API:** `balloon` parameter 
+
+**Legacy SDK:** `floating` parameter
+- `shares` (Number) CPU scheduler priority for memory ballooning. This is used by the kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning operations. The value is relative to other running VMs (defaults to `1000`). 
+
+**Proxmox API:** `shares` parameter 
+
+**Legacy SDK:** `shared` parameter
 
 
 <a id="nestedatt--network"></a>
