@@ -187,6 +187,26 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
+		// regression test: CPU without type should not set CPUEmulation
+		{"create VM with CPU cores only (no type) and verify no CPUEmulation error", []resource.TestStep{
+			{
+				Config: te.RenderConfig(`
+				resource "proxmox_virtual_environment_vm2" "test_vm" {
+					node_name = "{{.NodeName}}"
+					name = "test-cpu-no-type"
+					cpu = {
+						cores = 2
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
+						"cpu.cores":   "2",
+						"cpu.sockets": "1",
+						"cpu.type":    "kvm64",
+					}),
+				),
+			},
+		}},
 	}
 
 	for _, tt := range tests {

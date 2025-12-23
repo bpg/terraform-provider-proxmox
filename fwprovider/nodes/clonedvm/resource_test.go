@@ -38,6 +38,7 @@ func TestAccResourceClonedVM_InheritAndDelete(t *testing.T) {
 			content_type = "iso"
 			datastore_id = "local"
 			node_name    = "{{.NodeName}}"
+			file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
 			url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 			overwrite_unmanaged = true
 		}
@@ -138,6 +139,7 @@ func TestAccResourceClonedVM_StopManagingDoesNotDelete(t *testing.T) {
 			content_type = "iso"
 			datastore_id = "local"
 			node_name    = "{{.NodeName}}"
+			file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
 			url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 			overwrite_unmanaged = true
 		}
@@ -231,6 +233,7 @@ func TestAccResourceClonedVM_MapKeyStability(t *testing.T) {
 			content_type = "iso"
 			datastore_id = "local"
 			node_name    = "{{.NodeName}}"
+			file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
 			url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 			overwrite_unmanaged = true
 		}
@@ -397,6 +400,7 @@ func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
 			content_type = "iso"
 			datastore_id = "local"
 			node_name    = "{{.NodeName}}"
+			file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
 			url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
 			overwrite_unmanaged = true
 		}

@@ -118,12 +118,10 @@ resource "proxmox_virtual_environment_cloned_vm" "full_featured" {
     type         = "host"
   }
 
-  # Memory configuration with ballooning
-  # Uses clearer naming: maximum/minimum instead of dedicated/floating
   memory = {
-    maximum = 8192 # Max 8GB RAM (Proxmox API: 'memory')
-    minimum = 4096 # Guaranteed 4GB minimum (Proxmox API: 'balloon')
-    shares  = 2000 # CPU scheduler priority for memory ballooning
+    size    = 8192
+    balloon = 2048
+    shares  = 2000
   }
 
   network = {

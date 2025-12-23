@@ -115,15 +115,18 @@ func FillCreateBody(ctx context.Context, planValue Value, body *vms.CreateReques
 		body.VirtualCPUCount = plan.Hotplugged.ValueInt64Pointer()
 	}
 
-	body.CPUEmulation = &vms.CustomCPUEmulation{}
+	// Only set CPUEmulation if Type is explicitly provided
+	// Proxmox API requires CPU type to be specified if CPUEmulation is set
+	hasType := !plan.Type.IsUnknown() && !plan.Type.IsNull()
 
-	if !plan.Type.IsUnknown() {
+	if hasType {
+		body.CPUEmulation = &vms.CustomCPUEmulation{}
 		body.CPUEmulation.Type = plan.Type.ValueString()
-	}
 
-	if !plan.Flags.IsUnknown() {
-		d = plan.Flags.ElementsAs(ctx, &body.CPUEmulation.Flags, false)
-		diags.Append(d...)
+		if !plan.Flags.IsUnknown() && !plan.Flags.IsNull() {
+			d = plan.Flags.ElementsAs(ctx, &body.CPUEmulation.Flags, false)
+			diags.Append(d...)
+		}
 	}
 }
 

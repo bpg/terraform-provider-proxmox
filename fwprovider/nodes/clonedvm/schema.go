@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -76,12 +75,30 @@ func (r *Resource) Schema(
 				Description: "Optional VM description applied after cloning.",
 				Optional:    true,
 			},
-			"tags":   stringset.ResourceAttribute("Tags applied after cloning.", ""),
-			"cpu":    cpu.ResourceSchema(),
-			"memory": memory.ResourceSchema(),
-			"rng":    rng.ResourceSchema(),
-			"vga":    vga.ResourceSchema(),
-			"cdrom":  cdrom.ResourceSchema(),
+			"tags": schema.SetAttribute{
+				CustomType: stringset.Type{
+					SetType: types.SetType{
+						ElemType: types.StringType,
+					},
+				},
+				Description: "Tags applied after cloning.",
+				Optional:    true,
+				ElementType: types.StringType,
+				Validators: []validator.Set{
+					setvalidator.ValueStringsAre(
+						stringvalidator.RegexMatches(
+							regexp.MustCompile(`(.|\s)*\S(.|\s)*`),
+							"must be a non-empty and non-whitespace string",
+						),
+						stringvalidator.LengthAtLeast(1),
+					),
+				},
+			},
+			"cpu":    optInManagedAttribute(cpu.ResourceSchema()),
+			"memory": optInManagedAttribute(memory.ResourceSchema()),
+			"rng":    optInManagedAttribute(rng.ResourceSchema()),
+			"vga":    optInManagedAttribute(vga.ResourceSchema()),
+			"cdrom":  optInManagedAttribute(cdrom.ResourceSchema()),
 			"stop_on_destroy": schema.BoolAttribute{
 				Description: "Stop the VM on destroy (instead of shutdown).",
 				Optional:    true,
@@ -217,8 +234,6 @@ func networkAttribute() schema.Attribute {
 				"model": schema.StringAttribute{
 					Description: "NIC model (e.g., virtio, e1000).",
 					Optional:    true,
-					Computed:    true,
-					Default:     stringdefault.StaticString("virtio"),
 					Validators: []validator.String{
 						stringvalidator.LengthAtLeast(1),
 					},
@@ -226,19 +241,14 @@ func networkAttribute() schema.Attribute {
 				"firewall": schema.BoolAttribute{
 					Description: "Enable firewall on this interface.",
 					Optional:    true,
-					Computed:    true,
-					Default:     booldefault.StaticBool(false),
 				},
 				"link_down": schema.BoolAttribute{
 					Description: "Keep link down.",
 					Optional:    true,
-					Computed:    true,
-					Default:     booldefault.StaticBool(false),
 				},
 				"mac_address": schema.StringAttribute{
 					Description: "MAC address (computed if omitted).",
 					Optional:    true,
-					Computed:    true,
 					Validators: []validator.String{
 						stringvalidator.RegexMatches(
 							regexp.MustCompile(`^(?i:[0-9a-f]{2}(:[0-9a-f]{2}){5})$`),
@@ -303,7 +313,6 @@ func diskAttribute() schema.Attribute {
 				"file": schema.StringAttribute{
 					Description: "Existing volume reference (e.g., local-lvm:vm-100-disk-0).",
 					Optional:    true,
-					Computed:    true,
 					Validators: []validator.String{
 						stringvalidator.LengthAtLeast(1),
 					},
@@ -400,5 +409,101 @@ func deleteAttribute() schema.Attribute {
 				},
 			},
 		},
+	}
+}
+
+func optInManagedAttribute(attr schema.Attribute) schema.Attribute {
+	switch v := attr.(type) {
+	case schema.SingleNestedAttribute:
+		v.Optional = true
+		v.Computed = false
+		v.PlanModifiers = nil
+		v.Attributes = optInManagedAttributes(v.Attributes)
+
+		return v
+	case schema.MapNestedAttribute:
+		v.Optional = true
+		v.Computed = false
+		v.PlanModifiers = nil
+		v.NestedObject.Attributes = optInManagedAttributes(v.NestedObject.Attributes)
+
+		return v
+	default:
+		return attr
+	}
+}
+
+func optInManagedAttributes(in map[string]schema.Attribute) map[string]schema.Attribute {
+	if len(in) == 0 {
+		return in
+	}
+
+	out := make(map[string]schema.Attribute, len(in))
+	for k, v := range in {
+		out[k] = optInManagedAttributeAny(v)
+	}
+
+	return out
+}
+
+func optInManagedAttributeAny(attr schema.Attribute) schema.Attribute {
+	switch v := attr.(type) {
+	case schema.BoolAttribute:
+		v.Optional = true
+		v.Computed = false
+		v.Default = nil
+		v.PlanModifiers = nil
+
+		return v
+	case schema.Float64Attribute:
+		v.Optional = true
+		v.Computed = false
+		v.Default = nil
+		v.PlanModifiers = nil
+
+		return v
+	case schema.Int64Attribute:
+		v.Optional = true
+		v.Computed = false
+		v.Default = nil
+		v.PlanModifiers = nil
+
+		return v
+	case schema.ListAttribute:
+		v.Optional = true
+		v.Computed = false
+		v.PlanModifiers = nil
+
+		return v
+	case schema.MapNestedAttribute:
+		v.Optional = true
+		v.Computed = false
+		v.PlanModifiers = nil
+		v.NestedObject.Attributes = optInManagedAttributes(v.NestedObject.Attributes)
+
+		return v
+	case schema.SetAttribute:
+		v.Optional = true
+		v.Computed = false
+		v.Default = nil
+		v.PlanModifiers = nil
+
+		return v
+	case schema.SingleNestedAttribute:
+		v.Optional = true
+		v.Computed = false
+		v.PlanModifiers = nil
+		v.Attributes = optInManagedAttributes(v.Attributes)
+
+		return v
+	case schema.StringAttribute:
+		v.Optional = true
+		v.Computed = false
+		v.Default = nil
+		v.PlanModifiers = nil
+
+		return v
+	default:
+		return attr
 	}
 }

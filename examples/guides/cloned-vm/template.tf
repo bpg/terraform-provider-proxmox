@@ -1,6 +1,5 @@
-# Create a template VM with multiple network interfaces
-resource "proxmox_virtual_environment_vm" "multi_nic_template" {
-  name      = "multi-nic-template"
+resource "proxmox_virtual_environment_vm" "ubuntu_template" {
+  name      = "ubuntu-template"
   node_name = var.virtual_environment_node_name
 
   template = true
@@ -8,7 +7,7 @@ resource "proxmox_virtual_environment_vm" "multi_nic_template" {
 
   machine     = "q35"
   bios        = "ovmf"
-  description = "Template with multiple NICs for cloned_vm example"
+  description = "Managed by Terraform"
 
   cpu {
     cores = 2
@@ -42,21 +41,10 @@ resource "proxmox_virtual_environment_vm" "multi_nic_template" {
     user_data_file_id = proxmox_virtual_environment_file.user_data_cloud_config.id
   }
 
-  # Template has three network interfaces
   network_device {
     bridge = "vmbr0"
-    model  = "virtio"
   }
 
-  network_device {
-    bridge = "vmbr0"
-    model  = "virtio"
-  }
-
-  network_device {
-    bridge = "vmbr0"
-    model  = "virtio"
-  }
 }
 
 resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {

@@ -166,7 +166,15 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	vmAPI := r.client.Node(targetNode).VM(int(plan.ID.ValueInt64()))
 
-	applyManaged(ctx, vmAPI, plan, &resp.Diagnostics)
+	// Read current VM config to get existing disk file paths before updating
+	// This is needed because updating existing disks requires the file path
+	currentConfig, err := vmAPI.GetVM(ctx)
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
+		resp.Diagnostics.AddError("Failed to get VM config", err.Error())
+		return
+	}
+
+	applyManaged(ctx, vmAPI, plan, currentConfig, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -252,7 +260,14 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	vmAPI := r.client.Node(plan.NodeName.ValueString()).VM(int(plan.ID.ValueInt64()))
 
-	applyManaged(ctx, vmAPI, plan, &resp.Diagnostics)
+	// Read current VM config to get existing disk file paths before updating
+	currentConfig, err := vmAPI.GetVM(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to get VM config", err.Error())
+		return
+	}
+
+	applyManaged(ctx, vmAPI, plan, currentConfig, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -420,11 +435,13 @@ func buildCloneBody(plan Model) *vms.CloneRequestBody {
 	return body
 }
 
-func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, diags *diag.Diagnostics) {
+func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, currentConfig *vms.GetResponseData, diags *diag.Diagnostics) {
 	updateBody := &vms.UpdateRequestBody{
 		Description: plan.Description.ValueStringPointer(),
 		Name:        plan.Name.ValueStringPointer(),
-		Tags:        plan.Tags.ValueStringPointer(ctx, diags),
+	}
+	if !plan.Tags.IsUnknown() && !plan.Tags.IsNull() {
+		updateBody.Tags = plan.Tags.ValueStringPointer(ctx, diags)
 	}
 
 	cdrom.FillCreateBody(ctx, plan.CDROM, updateBody, diags)
@@ -439,7 +456,7 @@ func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, diags *dia
 		return
 	}
 
-	applyDisks(plan.Disk, updateBody, diags)
+	diskResizes := applyDisks(plan.Disk, currentConfig, updateBody, diags)
 
 	if diags.HasError() {
 		return
@@ -463,12 +480,18 @@ func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, diags *dia
 		}
 	}
 
-	if updateBody.IsEmpty() {
-		return
+	if !updateBody.IsEmpty() {
+		if err := vmAPI.UpdateVM(ctx, updateBody); err != nil {
+			diags.AddError("Failed to update VM", err.Error())
+			return
+		}
 	}
 
-	if err := vmAPI.UpdateVM(ctx, updateBody); err != nil {
-		diags.AddError("Failed to update VM", err.Error())
+	for _, resize := range diskResizes {
+		if err := vmAPI.ResizeVMDisk(ctx, resize); err != nil {
+			diags.AddError("Failed to resize VM disk", err.Error())
+			return
+		}
 	}
 }
 
@@ -560,23 +583,43 @@ func applyNetwork(ctx context.Context, nets map[string]NetworkModel, body *vms.U
 	body.NetworkDevices = devices
 }
 
-func applyDisks(disks map[string]DiskModel, body *vms.UpdateRequestBody, diags *diag.Diagnostics) {
+func applyDisks(
+	disks map[string]DiskModel,
+	currentConfig *vms.GetResponseData,
+	body *vms.UpdateRequestBody,
+	diags *diag.Diagnostics,
+) []*vms.ResizeDiskRequestBody {
+	if len(disks) == 0 {
+		return nil
+	}
+
+	var resizes []*vms.ResizeDiskRequestBody
+
 	for slot, cfg := range disks {
+		currentDevice := (*vms.CustomStorageDevice)(nil)
+		if currentConfig != nil {
+			currentDevice = currentConfig.StorageDevices[slot]
+		}
+
+		isNewDisk := currentDevice == nil
+
 		device := vms.CustomStorageDevice{}
 
 		if !cfg.File.IsUnknown() && !cfg.File.IsNull() {
 			device.FileVolume = cfg.File.ValueString()
+		} else if !isNewDisk {
+			device.FileVolume = currentDevice.FileVolume
 		}
 
 		if device.FileVolume == "" {
 			if cfg.DatastoreID.IsUnknown() || cfg.DatastoreID.IsNull() {
 				diags.AddError("Missing datastore_id", fmt.Sprintf("Disk %q requires either file or datastore_id+size_gb", slot))
-				return
+				return nil
 			}
 
 			if cfg.SizeGB.IsUnknown() || cfg.SizeGB.IsNull() || cfg.SizeGB.ValueInt64() == 0 {
 				diags.AddError("Missing size_gb", fmt.Sprintf("Disk %q requires size_gb when file is not provided", slot))
-				return
+				return nil
 			}
 
 			device.FileVolume = fmt.Sprintf("%s:%d", cfg.DatastoreID.ValueString(), cfg.SizeGB.ValueInt64())
@@ -587,7 +630,27 @@ func applyDisks(disks map[string]DiskModel, body *vms.UpdateRequestBody, diags *
 		}
 
 		if !cfg.SizeGB.IsUnknown() && !cfg.SizeGB.IsNull() && cfg.SizeGB.ValueInt64() > 0 {
-			device.Size = proxmoxtypes.DiskSizeFromGigabytes(cfg.SizeGB.ValueInt64())
+			desiredGB := cfg.SizeGB.ValueInt64()
+			if isNewDisk {
+				device.Size = proxmoxtypes.DiskSizeFromGigabytes(desiredGB)
+			} else if currentDevice.Size != nil {
+				currentGB := currentDevice.Size.InGigabytes()
+				if desiredGB < currentGB {
+					diags.AddError(
+						"Disk resize failure",
+						fmt.Sprintf("Disk %q: requested size_gb (%d) is lower than current size_gb (%d)", slot, desiredGB, currentGB),
+					)
+
+					return nil
+				}
+
+				if desiredGB > currentGB {
+					resizes = append(resizes, &vms.ResizeDiskRequestBody{
+						Disk: slot,
+						Size: *proxmoxtypes.DiskSizeFromGigabytes(desiredGB),
+					})
+				}
+			}
 		}
 
 		if !cfg.Backup.IsUnknown() && !cfg.Backup.IsNull() {
@@ -614,7 +677,7 @@ func applyDisks(disks map[string]DiskModel, body *vms.UpdateRequestBody, diags *
 			device.Serial = cfg.Serial.ValueStringPointer()
 		}
 
-		if !cfg.SSD.IsUnknown() && !cfg.SSD.IsNull() {
+		if isNewDisk && !cfg.SSD.IsUnknown() && !cfg.SSD.IsNull() {
 			device.SSD = proxmoxtypes.CustomBoolPtr(cfg.SSD.ValueBoolPointer())
 		}
 
@@ -632,6 +695,8 @@ func applyDisks(disks map[string]DiskModel, body *vms.UpdateRequestBody, diags *
 
 		body.AddCustomStorageDevice(slot, device)
 	}
+
+	return resizes
 }
 
 func read(ctx context.Context, vmAPI *vms.Client, model *Model, diags *diag.Diagnostics) bool {
@@ -660,87 +725,78 @@ func read(ctx context.Context, vmAPI *vms.Client, model *Model, diags *diag.Diag
 	}
 
 	model.ID = types.Int64Value(int64(*status.VMID))
-	model.Description = types.StringPointerValue(config.Description)
-	model.Name = types.StringPointerValue(config.Name)
-	model.Tags = stringset.NewValueString(config.Tags, diags)
+	if !model.Description.IsUnknown() && !model.Description.IsNull() {
+		model.Description = types.StringPointerValue(config.Description)
+	}
 
-	model.CPU = cpu.NewValue(ctx, config, diags)
-	model.Memory = memory.NewValue(ctx, config, diags)
-	model.RNG = rng.NewValue(ctx, config, diags)
-	model.VGA = vga.NewValue(ctx, config, diags)
-	model.CDROM = cdrom.NewValue(ctx, config, diags)
+	if !model.Name.IsUnknown() && !model.Name.IsNull() {
+		model.Name = types.StringPointerValue(config.Name)
+	}
+
+	if !model.Tags.IsUnknown() && !model.Tags.IsNull() {
+		model.Tags = stringset.NewValueString(config.Tags, diags)
+	}
 
 	if model.Network != nil {
 		for slot := range model.Network {
-			model.Network[slot] = readNetworkSlot(config, slot)
+			model.Network[slot] = readNetworkSlot(config, slot, model.Network[slot])
 		}
 	}
 
 	if model.Disk != nil {
 		for slot := range model.Disk {
-			model.Disk[slot] = readDiskSlot(config, slot)
+			model.Disk[slot] = readDiskSlot(config, slot, model.Disk[slot])
 		}
 	}
 
 	return true
 }
 
-func readNetworkSlot(config *vms.GetResponseData, slot string) NetworkModel {
-	nm := NetworkModel{
-		Bridge:     types.StringNull(),
-		Model:      types.StringNull(),
-		Firewall:   types.BoolNull(),
-		LinkDown:   types.BoolNull(),
-		MACAddress: types.StringNull(),
-		MTU:        types.Int64Null(),
-		Queues:     types.Int64Null(),
-		RateLimit:  types.Float64Null(),
-		Tag:        types.Int64Null(),
-		Trunks:     types.SetNull(types.Int64Type),
-	}
+func readNetworkSlot(config *vms.GetResponseData, slot string, current NetworkModel) NetworkModel {
+	nm := current
 
 	dev := networkDeviceBySlot(config, slot)
 	if dev == nil {
-		return nm
+		return current
 	}
 
-	if dev.Bridge != nil {
+	if !nm.Bridge.IsUnknown() && !nm.Bridge.IsNull() && dev.Bridge != nil {
 		nm.Bridge = types.StringValue(*dev.Bridge)
 	}
 
-	if dev.Firewall != nil {
+	if !nm.Firewall.IsUnknown() && !nm.Firewall.IsNull() && dev.Firewall != nil {
 		nm.Firewall = types.BoolPointerValue(dev.Firewall.PointerBool())
 	}
 
-	if dev.LinkDown != nil {
+	if !nm.LinkDown.IsUnknown() && !nm.LinkDown.IsNull() && dev.LinkDown != nil {
 		nm.LinkDown = types.BoolPointerValue(dev.LinkDown.PointerBool())
 	}
 
-	if dev.MACAddress != nil {
+	if !nm.MACAddress.IsUnknown() && !nm.MACAddress.IsNull() && dev.MACAddress != nil {
 		nm.MACAddress = types.StringValue(*dev.MACAddress)
 	}
 
-	if dev.Model != "" {
+	if !nm.Model.IsUnknown() && !nm.Model.IsNull() && dev.Model != "" {
 		nm.Model = types.StringValue(dev.Model)
 	}
 
-	if dev.MTU != nil {
+	if !nm.MTU.IsUnknown() && !nm.MTU.IsNull() && dev.MTU != nil {
 		nm.MTU = types.Int64Value(int64(*dev.MTU))
 	}
 
-	if dev.Queues != nil {
+	if !nm.Queues.IsUnknown() && !nm.Queues.IsNull() && dev.Queues != nil {
 		nm.Queues = types.Int64Value(int64(*dev.Queues))
 	}
 
-	if dev.RateLimit != nil {
+	if !nm.RateLimit.IsUnknown() && !nm.RateLimit.IsNull() && dev.RateLimit != nil {
 		nm.RateLimit = types.Float64Value(*dev.RateLimit)
 	}
 
-	if dev.Tag != nil {
+	if !nm.Tag.IsUnknown() && !nm.Tag.IsNull() && dev.Tag != nil {
 		nm.Tag = types.Int64Value(int64(*dev.Tag))
 	}
 
-	if len(dev.Trunks) > 0 {
+	if !nm.Trunks.IsUnknown() && !nm.Trunks.IsNull() && len(dev.Trunks) > 0 {
 		vals := make([]attr.Value, len(dev.Trunks))
 		for i, v := range dev.Trunks {
 			vals[i] = types.Int64Value(int64(v))
@@ -752,80 +808,69 @@ func readNetworkSlot(config *vms.GetResponseData, slot string) NetworkModel {
 	return nm
 }
 
-func readDiskSlot(config *vms.GetResponseData, slot string) DiskModel {
-	dm := DiskModel{
-		File:        types.StringNull(),
-		DatastoreID: types.StringNull(),
-		SizeGB:      types.Int64Null(),
-		Format:      types.StringNull(),
-		AIO:         types.StringNull(),
-		Backup:      types.BoolNull(),
-		Discard:     types.StringNull(),
-		Cache:       types.StringNull(),
-		IOThread:    types.BoolNull(),
-		Replicate:   types.BoolNull(),
-		Serial:      types.StringNull(),
-		SSD:         types.BoolNull(),
-		ImportFrom:  types.StringNull(),
-		Media:       types.StringNull(),
-	}
+func readDiskSlot(config *vms.GetResponseData, slot string, current DiskModel) DiskModel {
+	dm := current
 
 	device := config.StorageDevices[slot]
 	if device == nil {
-		return dm
+		return current
 	}
 
-	dm.File = types.StringValue(device.FileVolume)
-
-	if parts := strings.SplitN(device.FileVolume, ":", 2); len(parts) == 2 && parts[0] != "" {
-		dm.DatastoreID = types.StringValue(parts[0])
+	if !dm.File.IsUnknown() && !dm.File.IsNull() {
+		dm.File = types.StringValue(device.FileVolume)
 	}
 
-	if device.Size != nil {
+	if !dm.DatastoreID.IsUnknown() && !dm.DatastoreID.IsNull() {
+		if parts := strings.SplitN(device.FileVolume, ":", 2); len(parts) == 2 && parts[0] != "" {
+			dm.DatastoreID = types.StringValue(parts[0])
+		}
+	}
+
+	if !dm.SizeGB.IsUnknown() && !dm.SizeGB.IsNull() && device.Size != nil {
 		dm.SizeGB = types.Int64Value(device.Size.InGigabytes())
 	}
 
-	if device.Format != nil {
+	if !dm.Format.IsUnknown() && !dm.Format.IsNull() && device.Format != nil {
 		dm.Format = types.StringValue(*device.Format)
 	}
 
-	if device.AIO != nil {
+	if !dm.AIO.IsUnknown() && !dm.AIO.IsNull() && device.AIO != nil {
 		dm.AIO = types.StringValue(*device.AIO)
 	}
 
-	if device.Backup != nil {
+	if !dm.Backup.IsUnknown() && !dm.Backup.IsNull() && device.Backup != nil {
 		dm.Backup = types.BoolPointerValue(device.Backup.PointerBool())
 	}
 
-	if device.Discard != nil {
+	if !dm.Discard.IsUnknown() && !dm.Discard.IsNull() && device.Discard != nil {
 		dm.Discard = types.StringValue(*device.Discard)
 	}
 
-	if device.Cache != nil {
+	if !dm.Cache.IsUnknown() && !dm.Cache.IsNull() && device.Cache != nil {
 		dm.Cache = types.StringValue(*device.Cache)
 	}
 
-	if device.IOThread != nil {
+	if !dm.IOThread.IsUnknown() && !dm.IOThread.IsNull() && device.IOThread != nil {
 		dm.IOThread = types.BoolPointerValue(device.IOThread.PointerBool())
 	}
 
-	if device.Replicate != nil {
+	if !dm.Replicate.IsUnknown() && !dm.Replicate.IsNull() && device.Replicate != nil {
 		dm.Replicate = types.BoolPointerValue(device.Replicate.PointerBool())
 	}
 
-	if device.Serial != nil {
+	if !dm.Serial.IsUnknown() && !dm.Serial.IsNull() && device.Serial != nil {
 		dm.Serial = types.StringValue(*device.Serial)
 	}
 
-	if device.SSD != nil {
+	if !dm.SSD.IsUnknown() && !dm.SSD.IsNull() && device.SSD != nil {
 		dm.SSD = types.BoolPointerValue(device.SSD.PointerBool())
 	}
 
-	if device.ImportFrom != nil {
+	if !dm.ImportFrom.IsUnknown() && !dm.ImportFrom.IsNull() && device.ImportFrom != nil {
 		dm.ImportFrom = types.StringValue(*device.ImportFrom)
 	}
 
-	if device.Media != nil {
+	if !dm.Media.IsUnknown() && !dm.Media.IsNull() && device.Media != nil {
 		dm.Media = types.StringValue(*device.Media)
 	}
 

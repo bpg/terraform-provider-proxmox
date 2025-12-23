@@ -10,7 +10,7 @@ resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
   source_raw {
     data = <<-EOF
     #cloud-config
-    hostname: cloned-vm-example
+    hostname: test-ubuntu
     timezone: America/Toronto
     users:
       - default
@@ -32,6 +32,6 @@ resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
       - echo "done" > /tmp/cloud-config.done
     EOF
 
-    file_name = "cloned-vm-cloud-config.yaml"
+    file_name = "user-data-cloud-config.yaml"
   }
 }
