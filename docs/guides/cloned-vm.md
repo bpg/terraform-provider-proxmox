@@ -144,7 +144,16 @@ Removing a device from Terraform configuration **does not delete it** from the V
 
 ### Inherited Settings
 
-Initialization and agent settings are inherited from the template. If you need to customize these after cloning, use the legacy `proxmox_virtual_environment_vm` resource with a `clone` block instead. See the [Clone a VM](clone-vm.md) guide for the legacy approach.
+Initialization and agent settings are inherited from the template. The cloned VM resource currently does not manage the following VM-level settings, so they must be defined on the template (or managed via `proxmox_virtual_environment_vm` with a `clone` block):
+
+- BIOS / machine / boot order
+- EFI disk / secure boot settings
+- TPM state
+- Cloud-init / initialization
+- QEMU guest agent configuration
+- PCI/USB passthrough, serial/audio devices, watchdog, VirtioFS
+
+If you need to customize any of these after cloning, use the legacy `proxmox_virtual_environment_vm` resource with a `clone` block instead. See the [Clone a VM](clone-vm.md) guide for the legacy approach.
 
 ## When to Use
 

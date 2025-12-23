@@ -9,7 +9,20 @@ description: |-
 
 # Resource: proxmox_virtual_environment_cloned_vm
 
+~> **EXPERIMENTAL**
+
 Clone a VM from a source template/VM and manage only explicitly-defined configuration. This resource uses explicit opt-in management: only configuration blocks and devices explicitly listed in your Terraform code are managed. Inherited settings from the template are preserved unless explicitly overridden or deleted. Removing a configuration from Terraform stops managing it but does not delete it from the VM.
+
+## Limitations
+
+This resource intentionally manages only a subset of VM configuration. The following are currently not managed and must be inherited from the source template (or managed via `proxmox_virtual_environment_vm` with a `clone` block):
+
+- BIOS / machine / boot order
+- EFI disk / secure boot settings
+- TPM state
+- Cloud-init / initialization
+- QEMU guest agent configuration
+- PCI/USB passthrough, serial/audio devices, watchdog, VirtioFS
 
 ## Example Usage
 
