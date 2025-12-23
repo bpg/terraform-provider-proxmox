@@ -438,8 +438,8 @@ func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
 			}
 
 			memory = {
-				maximum = 2048
-				minimum = 1024
+				size    = 2048
+				balloon = 1024
 				shares  = 1500
 			}
 		}
@@ -455,8 +455,8 @@ func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
 			}
 
 			memory = {
-				maximum = 4096
-				minimum = 2048
+				size    = 4096
+				balloon = 2048
 				shares  = 2000
 			}
 		}
@@ -481,7 +481,7 @@ func TestAccResourceClonedVM_MemoryConfiguration(t *testing.T) {
 	})
 }
 
-func checkMemoryConfig(te *test.Environment, resourceName string, expectedMaximum, expectedMinimum, expectedShares int) resource.TestCheckFunc {
+func checkMemoryConfig(te *test.Environment, resourceName string, expectedMemory, expectedBalloon, expectedShares int) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
 		if !ok {
@@ -506,20 +506,20 @@ func checkMemoryConfig(te *test.Environment, resourceName string, expectedMaximu
 			return err
 		}
 
-		// Check maximum memory
+		// Check size
 		if config.DedicatedMemory == nil {
-			return fmt.Errorf("maximum memory is nil for %s", resourceName)
+			return fmt.Errorf("memory size is nil for %s", resourceName)
 		}
-		if int64(*config.DedicatedMemory) != int64(expectedMaximum) {
-			return fmt.Errorf("expected maximum memory %d, got %d for %s", expectedMaximum, *config.DedicatedMemory, resourceName)
+		if int64(*config.DedicatedMemory) != int64(expectedMemory) {
+			return fmt.Errorf("expected memory size %d, got %d for %s", expectedMemory, *config.DedicatedMemory, resourceName)
 		}
 
-		// Check minimum memory
+		// Check balloon
 		if config.FloatingMemory == nil {
-			return fmt.Errorf("minimum memory is nil for %s", resourceName)
+			return fmt.Errorf("balloon is nil for %s", resourceName)
 		}
-		if int64(*config.FloatingMemory) != int64(expectedMinimum) {
-			return fmt.Errorf("expected minimum memory %d, got %d for %s", expectedMinimum, *config.FloatingMemory, resourceName)
+		if int64(*config.FloatingMemory) != int64(expectedBalloon) {
+			return fmt.Errorf("expected balloon %d, got %d for %s", expectedBalloon, *config.FloatingMemory, resourceName)
 		}
 
 		// Check memory shares

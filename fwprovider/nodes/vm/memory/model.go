@@ -14,14 +14,14 @@ import (
 // Model represents the memory configuration model.
 //
 // Mapping to Proxmox API:
-//   - Maximum → memory (max available RAM when using balloon device)
-//   - Minimum → balloon (guaranteed minimum RAM; 0 disables balloon driver)
+//   - Size → memory (total available RAM)
+//   - Balloon → balloon (guaranteed minimum RAM via balloon device; 0 disables balloon driver)
 //   - Shares → shares (CPU scheduler priority for memory ballooning)
 //   - Hugepages → hugepages (use hugepages for VM memory)
 //   - KeepHugepages → keephugepages (don't release hugepages on shutdown)
 type Model struct {
-	Maximum       types.Int64  `tfsdk:"maximum"`
-	Minimum       types.Int64  `tfsdk:"minimum"`
+	Size          types.Int64  `tfsdk:"size"`
+	Balloon       types.Int64  `tfsdk:"balloon"`
 	Shares        types.Int64  `tfsdk:"shares"`
 	Hugepages     types.String `tfsdk:"hugepages"`
 	KeepHugepages types.Bool   `tfsdk:"keep_hugepages"`
@@ -29,8 +29,8 @@ type Model struct {
 
 func attributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"maximum":        types.Int64Type,
-		"minimum":        types.Int64Type,
+		"size":           types.Int64Type,
+		"balloon":        types.Int64Type,
 		"shares":         types.Int64Type,
 		"hugepages":      types.StringType,
 		"keep_hugepages": types.BoolType,

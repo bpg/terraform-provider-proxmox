@@ -24,27 +24,27 @@ type Value = types.Object
 func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diagnostics) Value {
 	mem := Model{}
 
-	// Map Proxmox API fields to our clearer naming:
-	// API 'memory' (DedicatedMemory) → our 'maximum'
-	// API 'balloon' (FloatingMemory) → our 'minimum'
+	// Map Proxmox API fields to Terraform schema:
+	// API 'memory' (DedicatedMemory) → our 'size'
+	// API 'balloon' (FloatingMemory) → our 'balloon'
 	// API 'shares' (FloatingMemoryShares) → our 'shares'
 	// API 'hugepages' → our 'hugepages'
 	// API 'keephugepages' → our 'keep_hugepages'
 
-	// Maximum memory (Proxmox API: 'memory')
+	// Size (Proxmox API: 'memory')
 	if config.DedicatedMemory != nil {
-		mem.Maximum = types.Int64Value(int64(*config.DedicatedMemory))
+		mem.Size = types.Int64Value(int64(*config.DedicatedMemory))
 	} else {
 		// Default to 512 MiB if not specified
-		mem.Maximum = types.Int64Value(512)
+		mem.Size = types.Int64Value(512)
 	}
 
-	// Minimum memory (Proxmox API: 'balloon')
+	// Balloon (Proxmox API: 'balloon')
 	if config.FloatingMemory != nil {
-		mem.Minimum = types.Int64Value(int64(*config.FloatingMemory))
+		mem.Balloon = types.Int64Value(int64(*config.FloatingMemory))
 	} else {
 		// Default to 0 (balloon disabled) if not specified
-		mem.Minimum = types.Int64Value(0)
+		mem.Balloon = types.Int64Value(0)
 	}
 
 	// Shares (CPU scheduler priority)
@@ -69,8 +69,7 @@ func NewValue(ctx context.Context, config *vms.GetResponseData, diags *diag.Diag
 
 // FillUpdateBody fills the UpdateRequestBody with the memory settings from the Value.
 //
-// This function converts our clearer naming convention (maximum/minimum) back to
-// the Proxmox API naming (memory/balloon) for API calls.
+// This function maps Terraform schema fields to Proxmox API fields for API calls.
 //
 // In the 'update' context, planValue is the plan (desired state).
 func FillUpdateBody(ctx context.Context, planValue Value, body *vms.UpdateRequestBody, diags *diag.Diagnostics) {
@@ -87,21 +86,21 @@ func FillUpdateBody(ctx context.Context, planValue Value, body *vms.UpdateReques
 		return
 	}
 
-	// Map our clearer naming back to Proxmox API fields:
-	// our 'maximum' → API 'memory' (DedicatedMemory)
-	// our 'minimum' → API 'balloon' (FloatingMemory)
+	// Map Terraform schema fields to Proxmox API fields:
+	// our 'size' → API 'memory' (DedicatedMemory)
+	// our 'balloon' → API 'balloon' (FloatingMemory)
 	// our 'shares' → API 'shares' (FloatingMemoryShares)
 
-	// Maximum memory → Proxmox 'memory' parameter
-	if !plan.Maximum.IsUnknown() && !plan.Maximum.IsNull() {
-		maximum := int(plan.Maximum.ValueInt64())
-		body.DedicatedMemory = &maximum
+	// Size → Proxmox 'memory' parameter
+	if !plan.Size.IsUnknown() && !plan.Size.IsNull() {
+		size := int(plan.Size.ValueInt64())
+		body.DedicatedMemory = &size
 	}
 
-	// Minimum memory → Proxmox 'balloon' parameter
-	if !plan.Minimum.IsUnknown() && !plan.Minimum.IsNull() {
-		minimum := int(plan.Minimum.ValueInt64())
-		body.FloatingMemory = &minimum
+	// Balloon → Proxmox 'balloon' parameter
+	if !plan.Balloon.IsUnknown() && !plan.Balloon.IsNull() {
+		balloon := int(plan.Balloon.ValueInt64())
+		body.FloatingMemory = &balloon
 	}
 
 	// Shares → Proxmox 'shares' parameter

@@ -17,10 +17,10 @@ import (
 // ResourceSchema defines the schema for the memory resource.
 //
 // Proxmox Memory Ballooning Explained:
-//   - maximum: The max RAM available to the VM (Proxmox API: 'memory')
-//   - minimum: The guaranteed minimum RAM (Proxmox API: 'balloon')
-//   - Setting minimum=0 disables the balloon driver entirely
-//   - The range between minimum and maximum is "balloonable" - can be reclaimed by host
+//   - size: Total memory available to the VM in MiB (Proxmox API: 'memory')
+//   - balloon: Minimum guaranteed memory via balloon device in MiB (Proxmox API: 'balloon')
+//   - Setting balloon=0 disables the balloon driver entirely
+//   - The range between balloon and size is "balloonable" - can be reclaimed by host
 //   - shares: CPU scheduler priority (higher = more CPU time during memory pressure)
 //   - hugepages: Use hugepages for VM memory (2, 1024, any)
 //   - keep_hugepages: Don't release hugepages when VM shuts down
@@ -28,24 +28,25 @@ import (
 // Example:
 //
 //	memory = {
-//	  maximum = 4096  # VM can use up to 4GB
-//	  minimum = 2048  # Host guarantees 2GB minimum
+//	  size    = 4096  # VM can use up to 4GB
+//	  balloon = 2048  # Host guarantees 2GB minimum
 //	}
 //	# Result: VM gets 2-4GB depending on host memory pressure
 func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
-		Description: "Memory configuration. Controls maximum available RAM and minimum guaranteed RAM via ballooning.",
+		Description: "Memory configuration. Controls total available RAM and minimum guaranteed RAM via ballooning.",
 		MarkdownDescription: "Memory configuration for the VM. Uses Proxmox memory ballooning to allow dynamic memory allocation. " +
-			"The `maximum` sets the upper limit, while `minimum` sets the guaranteed floor. " +
+			"The `size` sets the total available RAM, while `balloon` sets the guaranteed floor. " +
 			"The host can reclaim memory between these values when needed.",
 		Optional: true,
 		Computed: true,
 		Attributes: map[string]schema.Attribute{
-			"maximum": schema.Int64Attribute{
-				Description: "Maximum available memory in MiB. " +
-					"This is the upper limit of RAM the VM can use when balloon device is enabled.",
-				MarkdownDescription: "Maximum available memory in MiB. This is the upper limit of RAM the VM can use " +
-					"when the balloon device is enabled (defaults to `512` MiB).",
+			"size": schema.Int64Attribute{
+				Description: "Total memory available to the VM in MiB. " +
+					"This is the total RAM the VM can use. When ballooning is enabled, memory between `balloon` and `size` can be reclaimed by the host.",
+				MarkdownDescription: "Total memory available to the VM in MiB. This is the total RAM the VM can use. " +
+					"When ballooning is enabled (balloon > 0), memory between `balloon` and `size` can be reclaimed by the host. " +
+					"When ballooning is disabled (balloon = 0), this is the fixed amount of RAM allocated to the VM (defaults to `512` MiB).",
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(512),
@@ -53,13 +54,13 @@ func ResourceSchema() schema.Attribute {
 					int64validator.Between(64, 268435456), // 64 MiB to 256 TiB
 				},
 			},
-			"minimum": schema.Int64Attribute{
-				Description: "Minimum guaranteed memory in MiB. " +
+			"balloon": schema.Int64Attribute{
+				Description: "Minimum guaranteed memory in MiB via balloon device. " +
 					"The guaranteed amount of RAM. Set to 0 to disable balloon device.",
-				MarkdownDescription: "Minimum guaranteed memory in MiB. This is the floor amount of RAM that is always " +
+				MarkdownDescription: "Minimum guaranteed memory in MiB via balloon device. This is the floor amount of RAM that is always " +
 					"guaranteed to the VM. Setting to `0` disables the balloon driver entirely (defaults to `0`). " +
-					"\n\n**How it works:** The host can reclaim memory between `minimum` and `maximum` when under " +
-					"memory pressure. The VM is guaranteed to always have at least `minimum` MiB available.",
+					"\n\n**How it works:** The host can reclaim memory between `balloon` and `size` when under " +
+					"memory pressure. The VM is guaranteed to always have at least `balloon` MiB available.",
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(0),

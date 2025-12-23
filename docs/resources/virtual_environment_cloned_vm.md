@@ -258,7 +258,7 @@ resource "proxmox_virtual_environment_cloned_vm" "imported" {
 - `description` (String) Optional VM description applied after cloning.
 - `disk` (Attributes Map) Disks keyed by slot (scsi0, virtio0, sata0, ide0, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--disk))
 - `id` (Number) The VM identifier in the Proxmox cluster.
-- `memory` (Attributes) Memory configuration for the VM. Uses Proxmox memory ballooning to allow dynamic memory allocation. The `maximum` sets the upper limit, while `minimum` sets the guaranteed floor. The host can reclaim memory between these values when needed. (see [below for nested schema](#nestedatt--memory))
+- `memory` (Attributes) Memory configuration for the VM. Uses Proxmox memory ballooning to allow dynamic memory allocation. The `size` sets the total available RAM, while `balloon` sets the guaranteed floor. The host can reclaim memory between these values when needed. (see [below for nested schema](#nestedatt--memory))
 - `name` (String) Optional VM name override applied after cloning.
 - `network` (Attributes Map) Network devices keyed by slot (net0, net1, ...). Only listed keys are managed. (see [below for nested schema](#nestedatt--network))
 - `purge_on_destroy` (Boolean) Purge backup configuration on destroy.
@@ -347,6 +347,9 @@ Optional:
 
 Optional:
 
+- `balloon` (Number) Minimum guaranteed memory in MiB via balloon device. This is the floor amount of RAM that is always guaranteed to the VM. Setting to `0` disables the balloon driver entirely (defaults to `0`). 
+
+**How it works:** The host can reclaim memory between `balloon` and `size` when under memory pressure. The VM is guaranteed to always have at least `balloon` MiB available.
 - `hugepages` (String) Enable hugepages for VM memory allocation. Hugepages can improve performance for memory-intensive workloads by reducing TLB misses. 
 
 **Options:**
@@ -354,11 +357,8 @@ Optional:
 - `1024` - Use 1 GiB hugepages
 - `any` - Use any available hugepage size
 - `keep_hugepages` (Boolean) Don't release hugepages when the VM shuts down. By default, hugepages are released back to the host when the VM stops. Setting this to `true` keeps them allocated for faster VM startup (defaults to `false`).
-- `maximum` (Number) Maximum available memory in MiB. This is the upper limit of RAM the VM can use when the balloon device is enabled (defaults to `512` MiB).
-- `minimum` (Number) Minimum guaranteed memory in MiB. This is the floor amount of RAM that is always guaranteed to the VM. Setting to `0` disables the balloon driver entirely (defaults to `0`). 
-
-**How it works:** The host can reclaim memory between `minimum` and `maximum` when under memory pressure. The VM is guaranteed to always have at least `minimum` MiB available.
 - `shares` (Number) CPU scheduler priority for memory ballooning. This is used by the kernel fair scheduler. Higher values mean this VM gets more CPU time during memory ballooning operations. The value is relative to other running VMs (defaults to `1000`).
+- `size` (Number) Total memory available to the VM in MiB. This is the total RAM the VM can use. When ballooning is enabled (balloon > 0), memory between `balloon` and `size` can be reclaimed by the host. When ballooning is disabled (balloon = 0), this is the fixed amount of RAM allocated to the VM (defaults to `512` MiB).
 
 
 <a id="nestedatt--network"></a>
