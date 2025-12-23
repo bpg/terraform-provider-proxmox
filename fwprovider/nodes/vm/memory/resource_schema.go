@@ -29,9 +29,9 @@ import (
 //
 //	memory = {
 //	  size    = 4096  # VM can use up to 4GB
-//	  balloon = 2048  # Host guarantees 2GB minimum
+//	  balloon = 1024  # Host guarantees 1GB minimum
 //	}
-//	# Result: VM gets 2-4GB depending on host memory pressure
+//	# Result: VM gets 1-4GB depending on host memory pressure
 func ResourceSchema() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		Description: "Memory configuration. Controls total available RAM and minimum guaranteed RAM via ballooning.",
