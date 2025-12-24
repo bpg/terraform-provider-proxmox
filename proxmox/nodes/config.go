@@ -32,7 +32,7 @@ func (c *Client) GetConfig(ctx context.Context) (*[]ConfigGetResponseData, error
 
 // UpdateConfig updates the config for a node.
 func (c *Client) UpdateConfig(ctx context.Context, d *ConfigUpdateRequestBody) error {
-	err := c.DoRequest(ctx, http.MethodPost, c.ExpandPath("config"), d, nil)
+	err := c.DoRequest(ctx, http.MethodPut, c.ExpandPath("config"), d, nil)
 	if err != nil {
 		return fmt.Errorf("error updating node config: %w", err)
 	}
