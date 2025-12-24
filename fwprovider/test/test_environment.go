@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"maps"
 	"net/url"
+	"regexp"
+	"strings"
 	"sync"
 	"testing"
 	"text/template"
@@ -163,6 +165,7 @@ func InitEnvironment(t *testing.T) *Environment {
 			"DatastoreID":           datastoreID,
 			"CloudImagesServer":     cloudImagesServer,
 			"ContainerImagesServer": containerImagesServer,
+			"TestName":              sanitizeTemplateName(t.Name()),
 		},
 		NodeName:              nodeName,
 		DatastoreID:           datastoreID,
@@ -171,6 +174,21 @@ func InitEnvironment(t *testing.T) *Environment {
 
 		AccProviders: muxProviders(t),
 	}
+}
+
+var nonAlnum = regexp.MustCompile(`[^a-zA-Z0-9]+`)
+
+func sanitizeTemplateName(name string) string {
+	sanitized := strings.Trim(nonAlnum.ReplaceAllString(name, "-"), "-")
+	if sanitized == "" {
+		return "test"
+	}
+
+	if len(sanitized) > 48 {
+		return sanitized[:48]
+	}
+
+	return sanitized
 }
 
 // AddTemplateVars adds the given variables to the template variables of the current test environment.

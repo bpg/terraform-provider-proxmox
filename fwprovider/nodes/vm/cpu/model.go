@@ -39,3 +39,8 @@ func attributeTypes() map[string]attr.Type {
 		"units":        types.Int64Type,
 	}
 }
+
+// NullValue returns a properly typed null Value.
+func NullValue() Value {
+	return types.ObjectNull(attributeTypes())
+}

@@ -39,6 +39,7 @@ import (
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/apt"
+	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/clonedvm"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/datastores"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/network"
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/nodes/vm"
@@ -533,6 +534,7 @@ func (p *proxmoxProvider) Resources(_ context.Context) []func() resource.Resourc
 		nodes.NewDownloadFileResource,
 		nodes.NewOCIImageResource,
 		options.NewClusterOptionsResource,
+		clonedvm.NewResource,
 		vm.NewResource,
 		sdnzone.NewSimpleResource,
 		sdnzone.NewVLANResource,

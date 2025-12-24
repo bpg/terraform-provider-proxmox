@@ -101,59 +101,6 @@ func TestAccResourceVM2RNG(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
-		{"clone VM with some rng params", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "template_vm" {
-				node_name = "{{.NodeName}}"
-				name = "template-rng"
-				rng = {
-					source = "/dev/urandom"
-					max_bytes = 1024
-				}
-			}
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"
-				name = "test-rng"
-				clone = {
-					id = proxmox_virtual_environment_vm2.template_vm.id
-				}
-			}`, test.WithRootUser()),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"rng.source":    "/dev/urandom",
-					"rng.max_bytes": "1024",
-				}),
-			),
-		}}},
-		{"clone VM with some rng params and updating them in the clone", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "template_vm" {
-				node_name = "{{.NodeName}}"
-				name = "template-rng"
-				rng = {
-					source = "/dev/urandom"
-					max_bytes = 1024
-				}
-			}
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"
-				name = "test-rng"
-				clone = {
-					id = proxmox_virtual_environment_vm2.template_vm.id
-				}
-				rng = {
-					source = "/dev/random"
-					period = 2000
-				}
-			}`, test.WithRootUser()),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"rng.source":    "/dev/random",
-					"rng.period":    "2000",
-					"rng.max_bytes": "1024",
-				}),
-			),
-		}}},
 	}
 
 	for _, tt := range tests {

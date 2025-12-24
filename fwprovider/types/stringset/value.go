@@ -118,3 +118,8 @@ func NewValueString(str *string, diags *diag.Diagnostics, opts ...Option) Value 
 
 	return NewValueList(items, diags)
 }
+
+// NullValue returns a properly typed null Value.
+func NullValue() Value {
+	return Value{types.SetNull(types.StringType)}
+}

@@ -128,63 +128,6 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
-		{"clone VM with some cpu params", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "template_vm" {
-				node_name = "{{.NodeName}}"
-				name = "template-cpu"
-				cpu = {
-					cores = 2
-					sockets = 2
-					type = "host"
-				}
-			}
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"
-				name = "test-cpu"
-				clone = {
-					id = proxmox_virtual_environment_vm2.template_vm.id
-				}	
-			}`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"cpu.cores":   "2",
-					"cpu.sockets": "2",
-					"cpu.type":    "host",
-				}),
-			),
-		}}},
-		{"clone VM with some cpu params and updating them in the clone", []resource.TestStep{{
-			Config: te.RenderConfig(`
-			resource "proxmox_virtual_environment_vm2" "template_vm" {
-				node_name = "{{.NodeName}}"
-				name = "template-cpu"
-				cpu = {
-					cores = 2
-					sockets = 2
-					type = "host"
-				}
-			}
-			resource "proxmox_virtual_environment_vm2" "test_vm" {
-				node_name = "{{.NodeName}}"
-				name = "test-cpu"
-				clone = {
-					id = proxmox_virtual_environment_vm2.template_vm.id
-				}
-				cpu = {
-					cores = 4
-					units = 1024
-				}
-			}`),
-			Check: resource.ComposeTestCheckFunc(
-				test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-					"cpu.cores":   "4",
-					"cpu.sockets": "2",
-					"cpu.type":    "host",
-					"cpu.units":   "1024",
-				}),
-			),
-		}}},
 		{"create VM with cpu units = 1", []resource.TestStep{{
 			Config: te.RenderConfig(`
 			resource "proxmox_virtual_environment_vm2" "test_vm" {
@@ -244,48 +187,24 @@ func TestAccResourceVM2CPU(t *testing.T) {
 				RefreshState: true,
 			},
 		}},
-		// regression test for https://github.com/bpg/terraform-provider-proxmox/issues/2301
-		{"clone VM with x86-64-v4 CPU type, hotplugged CPUs, and ignore_changes", []resource.TestStep{
+		// regression test: CPU without type should not set CPUEmulation
+		{"create VM with CPU cores only (no type) and verify no CPUEmulation error", []resource.TestStep{
 			{
 				Config: te.RenderConfig(`
-				resource "proxmox_virtual_environment_vm2" "template_vm" {
-					node_name = "{{.NodeName}}"
-					name = "template-cpu-x86-64-v4"
-					cpu = {
-						cores = 1
-						sockets = 1
-						type = "x86-64-v4"
-					}
-				}
 				resource "proxmox_virtual_environment_vm2" "test_vm" {
 					node_name = "{{.NodeName}}"
-					name = "test-cpu-x86-64-v4-clone"
-					clone = {
-						id = proxmox_virtual_environment_vm2.template_vm.id
-					}
+					name = "test-cpu-no-type"
 					cpu = {
-						cores = 1
-						sockets = 1
-						type = "x86-64-v4"
-						hotplugged = 1
-					}
-					lifecycle {
-						ignore_changes = [
-							cpu[0].hotplugged,
-						]
+						cores = 2
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					test.ResourceAttributes("proxmox_virtual_environment_vm2.test_vm", map[string]string{
-						"cpu.cores":      "1",
-						"cpu.sockets":    "1",
-						"cpu.type":       "x86-64-v4",
-						"cpu.hotplugged": "1",
+						"cpu.cores":   "2",
+						"cpu.sockets": "1",
+						"cpu.type":    "kvm64",
 					}),
 				),
-			},
-			{
-				RefreshState: true,
 			},
 		}},
 	}
