@@ -61,7 +61,7 @@ Tests are limited to regression tests, ensuring backward compatibility.
 
 A limited number of acceptance tests are available in the `fwprovider/test` directory, mostly for "new" functionality implemented using the Terraform Provider Framework.
 These tests are not run by default, as they require a Proxmox VE environment to be available.
-They can be run using `make testacc`. The Proxmox connection can be configured using environment variables; see the provider documentation for details.
+They can be run using `./testacc` (requires `testacc.env` in the project root). The Proxmox connection can be configured using environment variables; see the provider documentation for details.
 
 ## Deploying the Example Resources
 
@@ -191,6 +191,7 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for a list of contributors to this projec
 - [Radosław Szamszur](https://github.com/rszamszur)
 - [Marshall Ford](https://github.com/marshallford)
 - [Simon Caron](https://github.com/simoncaron)
+- [/ar/sh](https://github.com/0x0000ARSH)
 
 Thanks again for your continuous support, it is much appreciated! 🙏
 
