@@ -382,7 +382,7 @@ func (r *Resource) ImportState(
 
 	state.StopOnDestroy = types.BoolValue(false)
 	state.PurgeOnDestroy = types.BoolValue(true)
-	state.DeleteUnreferencedDisksOnDestroy = types.BoolValue(true)
+	state.DeleteUnreferencedDisksOnDestroy = types.BoolValue(false)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
