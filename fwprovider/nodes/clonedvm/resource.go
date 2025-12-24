@@ -154,9 +154,6 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	sourceVM := r.client.Node(sourceNode).VM(int(plan.Clone.SourceVMID.ValueInt64()))
 
 	retries := int(plan.Clone.Retries.ValueInt64())
-	if retries == 0 {
-		retries = 1
-	}
 
 	err := sourceVM.CloneVM(ctx, retries, cloneBody)
 	if err != nil {

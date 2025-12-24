@@ -346,7 +346,7 @@ resource "proxmox_virtual_environment_cloned_vm" "new" {
 | `full` | `full` | Defaults to `true` in both |
 | `datastore_id` | `target_datastore` | Renamed for clarity |
 | `node_name` | `source_node_name` | Renamed for clarity |
-| `retries` | `retries` | Defaults to `1` in both |
+| `retries` | `retries` | Defaults to `3` in both |
 
 **Additional clone options available in `cloned_vm` (not in legacy):**
 

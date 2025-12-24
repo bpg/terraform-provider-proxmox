@@ -150,11 +150,17 @@ resource "proxmox_virtual_environment_cloned_vm" "full_featured" {
     memory = 16
   }
 
-  cdrom = {
-    ide2 = {
-      enabled = false # Disable inherited CDROM
-    }
+  # Option 1: Remove inherited CD-ROM using delete block
+  delete = {
+    disk = ["ide2"] # Remove inherited CD-ROM device
   }
+
+  # Option 2: Alternatively, manage the CD-ROM and ensure it's empty
+  # cdrom = {
+  #   ide2 = {
+  #     file_id = "none" # Ensure CD-ROM is empty
+  #   }
+  # }
 
   # Lifecycle options
   stop_on_destroy                      = false # Shutdown gracefully instead of force stop

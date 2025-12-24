@@ -196,7 +196,7 @@ func cloneAttribute() schema.Attribute {
 				Description: "Number of retries for clone operations.",
 				Optional:    true,
 				Computed:    true,
-				Default:     int64default.StaticInt64(1),
+				Default:     int64default.StaticInt64(3),
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
 				},
