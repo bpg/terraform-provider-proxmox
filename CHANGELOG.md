@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.90.0](https://github.com/bpg/terraform-provider-proxmox/compare/v0.89.1...v0.90.0) (2025-12-24)
+
+
+### Features
+
+* **cloned_vm:** add cloned VM resource implementation  ([#2424](https://github.com/bpg/terraform-provider-proxmox/issues/2424)) ([88cad5c](https://github.com/bpg/terraform-provider-proxmox/commit/88cad5c006c9d9521ce625b5316373100c1ef60c))
+* **provider:** add ContentType in ListDatastoreFiles ([#2423](https://github.com/bpg/terraform-provider-proxmox/issues/2423)) ([773b174](https://github.com/bpg/terraform-provider-proxmox/commit/773b174ce06f482280474211b60e71095b831274))
+
+
+### Miscellaneous
+
+* **ci:** Update actions/upload-artifact action (v5 → v6) ([#2419](https://github.com/bpg/terraform-provider-proxmox/issues/2419)) ([3021c54](https://github.com/bpg/terraform-provider-proxmox/commit/3021c540d9fb027a3ebbe97f0b6e17b187d16b9f))
+* **ci:** update jetbrains/qodana-action action (v2025.2.3 → v2025.2.4) ([#2426](https://github.com/bpg/terraform-provider-proxmox/issues/2426)) ([5b2e9ea](https://github.com/bpg/terraform-provider-proxmox/commit/5b2e9ea503b2171568743ff3de6cb8e048c5f2dc))
+* **ci:** update jetbrains/qodana-action action (v2025.2.4 → v2025.3.1) ([#2434](https://github.com/bpg/terraform-provider-proxmox/issues/2434)) ([db3c5bf](https://github.com/bpg/terraform-provider-proxmox/commit/db3c5bf76878ef95c5030307249325256f9c1b5d))
+* **deps:** update image golang (20b91ed → a22b2e6) ([#2418](https://github.com/bpg/terraform-provider-proxmox/issues/2418)) ([fa883ec](https://github.com/bpg/terraform-provider-proxmox/commit/fa883ec42276d5cdd36f1e1604f61b14b7d4cc3a))
+* **deps:** update image golang (a22b2e6 → 36b4f45) ([#2425](https://github.com/bpg/terraform-provider-proxmox/issues/2425)) ([11fccbe](https://github.com/bpg/terraform-provider-proxmox/commit/11fccbe62eface03b21b16e6deb60efbfc1119ce))
+* docs and dev UX improvements ([#2427](https://github.com/bpg/terraform-provider-proxmox/issues/2427)) ([a034e8b](https://github.com/bpg/terraform-provider-proxmox/commit/a034e8b6561b480d7884bf7c90d667f90e06ba32))
+
 ## [0.89.1](https://github.com/bpg/terraform-provider-proxmox/compare/v0.89.0...v0.89.1) (2025-12-09)
 
 
