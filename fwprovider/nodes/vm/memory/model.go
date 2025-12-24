@@ -36,3 +36,8 @@ func attributeTypes() map[string]attr.Type {
 		"keep_hugepages": types.BoolType,
 	}
 }
+
+// NullValue returns a properly typed null Value.
+func NullValue() Value {
+	return types.ObjectNull(attributeTypes())
+}

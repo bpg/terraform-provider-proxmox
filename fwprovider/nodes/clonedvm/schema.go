@@ -322,8 +322,10 @@ func diskAttribute() schema.Attribute {
 					Optional:    true,
 				},
 				"size_gb": schema.Int64Attribute{
-					Description: "Disk size (GiB) when creating new disks.",
-					Optional:    true,
+					Description: "Disk size (GiB) when creating new disks. **Note:** Disk shrinking is not " +
+						"supported. Attempting to set `size_gb` to a value smaller than the current disk size " +
+						"will result in an error. Only disk expansion is allowed.",
+					Optional: true,
 					Validators: []validator.Int64{
 						int64validator.Between(1, 10240),
 					},

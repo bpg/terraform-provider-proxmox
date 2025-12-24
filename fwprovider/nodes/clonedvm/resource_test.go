@@ -550,3 +550,299 @@ func slotIndex(slot string, prefix string) (int, bool) {
 
 	return idx, true
 }
+
+func TestAccResourceClonedVM_DiskManagement(t *testing.T) {
+	if utils.GetAnyStringEnv("TF_ACC") == "" {
+		t.Skip("Acceptance tests are disabled")
+	}
+
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	baseConfig := `
+		resource "proxmox_virtual_environment_download_file" "cloud_image" {
+			content_type = "iso"
+			datastore_id = "local"
+			node_name    = "{{.NodeName}}"
+			file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
+			url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+			overwrite_unmanaged = true
+		}
+
+		resource "proxmox_virtual_environment_vm" "template_vm" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+
+			disk {
+				datastore_id = "local-lvm"
+				file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+				interface    = "virtio0"
+				size         = 16
+			}
+
+			disk {
+				datastore_id = "local-lvm"
+				interface    = "scsi0"
+				size         = 8
+			}
+
+			cpu {
+				cores = 1
+			}
+
+			memory {
+				dedicated = 1024
+			}
+
+			network_device {
+				model  = "virtio"
+				bridge = "vmbr0"
+			}
+		}
+		`
+
+	initialConfig := te.RenderConfig(baseConfig + `
+		resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+			node_name = "{{.NodeName}}"
+			name      = "fwk-cloned-disk"
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+
+			disk = {
+				virtio0 = {
+					datastore_id = "local-lvm"
+					size_gb      = 32
+				}
+			}
+		}
+	`)
+
+	updatedConfig := te.RenderConfig(baseConfig + `
+		resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+			node_name = "{{.NodeName}}"
+			name      = "fwk-cloned-disk"
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+
+			disk = {
+				virtio0 = {
+					datastore_id = "local-lvm"
+					size_gb      = 64
+					discard      = "on"
+					ssd          = true
+				}
+
+				scsi1 = {
+					datastore_id = "local-lvm"
+					size_gb      = 20
+				}
+			}
+		}
+	`)
+
+	deleteConfig := te.RenderConfig(baseConfig + `
+		resource "proxmox_virtual_environment_cloned_vm" "disk_test" {
+			node_name = "{{.NodeName}}"
+			name      = "fwk-cloned-disk"
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+
+			disk = {
+				virtio0 = {
+					datastore_id = "local-lvm"
+					size_gb      = 64
+				}
+			}
+
+			delete = {
+				disk = ["scsi0"]
+			}
+		}
+	`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: initialConfig,
+				Check: resource.ComposeTestCheckFunc(
+					checkDiskSlot(te, "proxmox_virtual_environment_cloned_vm.disk_test", "virtio0", true),
+					checkDiskSlot(te, "proxmox_virtual_environment_cloned_vm.disk_test", "scsi0", true),
+				),
+			},
+			{
+				Config: updatedConfig,
+				Check: resource.ComposeTestCheckFunc(
+					checkDiskSlot(te, "proxmox_virtual_environment_cloned_vm.disk_test", "virtio0", true),
+					checkDiskSlot(te, "proxmox_virtual_environment_cloned_vm.disk_test", "scsi0", true),
+					checkDiskSlot(te, "proxmox_virtual_environment_cloned_vm.disk_test", "scsi1", true),
+				),
+			},
+			{
+				Config: deleteConfig,
+				Check: resource.ComposeTestCheckFunc(
+					checkDiskSlot(te, "proxmox_virtual_environment_cloned_vm.disk_test", "virtio0", true),
+					checkDiskSlot(te, "proxmox_virtual_environment_cloned_vm.disk_test", "scsi0", false),
+					checkDiskSlot(te, "proxmox_virtual_environment_cloned_vm.disk_test", "scsi1", true),
+				),
+			},
+		},
+	})
+}
+
+func checkDiskSlot(te *test.Environment, resourceName, slot string, expected bool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource %s not found", resourceName)
+		}
+
+		nodeName := rs.Primary.Attributes["node_name"]
+		idStr := rs.Primary.Attributes["id"]
+
+		if nodeName == "" || idStr == "" {
+			return fmt.Errorf("resource %s missing node_name or id in state", resourceName)
+		}
+
+		vmid, err := strconv.Atoi(idStr)
+		if err != nil {
+			return err
+		}
+
+		ctx := context.Background()
+		config, err := te.NodeClient().VM(vmid).GetVM(ctx)
+		if err != nil {
+			return err
+		}
+
+		found := diskSlotPresent(config, slot)
+
+		if expected && !found {
+			return fmt.Errorf("expected slot %s to exist for %s", slot, resourceName)
+		}
+
+		if !expected && found {
+			return fmt.Errorf("expected slot %s to be absent for %s", slot, resourceName)
+		}
+
+		return nil
+	}
+}
+
+func diskSlotPresent(config *vms.GetResponseData, slot string) bool {
+	device := config.StorageDevices[slot]
+	return device != nil
+}
+
+func TestAccResourceClonedVM_Import(t *testing.T) {
+	if utils.GetAnyStringEnv("TF_ACC") == "" {
+		t.Skip("Acceptance tests are disabled")
+	}
+
+	t.Parallel()
+
+	te := test.InitEnvironment(t)
+
+	config := te.RenderConfig(`
+		resource "proxmox_virtual_environment_download_file" "cloud_image" {
+			content_type = "iso"
+			datastore_id = "local"
+			node_name    = "{{.NodeName}}"
+			file_name    = "{{.TestName}}-ubuntu-24.04-minimal-cloudimg-amd64.img"
+			url          = "{{.CloudImagesServer}}/minimal/releases/noble/release/ubuntu-24.04-minimal-cloudimg-amd64.img"
+			overwrite_unmanaged = true
+		}
+
+		resource "proxmox_virtual_environment_vm" "template_vm" {
+			node_name = "{{.NodeName}}"
+			started   = false
+			template  = true
+
+			disk {
+				datastore_id = "local-lvm"
+				file_id      = proxmox_virtual_environment_download_file.cloud_image.id
+				interface    = "virtio0"
+				size         = 16
+			}
+
+			cpu {
+				cores = 1
+			}
+
+			memory {
+				dedicated = 1024
+			}
+
+			network_device {
+				model  = "virtio"
+				bridge = "vmbr0"
+			}
+		}
+
+		resource "proxmox_virtual_environment_cloned_vm" "import_test" {
+			node_name = "{{.NodeName}}"
+			name      = "fwk-cloned-import"
+
+			clone = {
+				source_vm_id = proxmox_virtual_environment_vm.template_vm.vm_id
+			}
+
+			cpu = {
+				cores = 2
+			}
+
+			memory = {
+				size = 2048
+			}
+
+			network = {
+				net0 = {
+					bridge = "vmbr0"
+					model  = "virtio"
+				}
+			}
+		}
+	`)
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: te.AccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+			},
+			{
+				ResourceName:      "proxmox_virtual_environment_cloned_vm.import_test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// cloned_vm uses opt-in management, so imported state only contains
+				// minimal fields - clone config and explicitly managed attributes are not preserved
+				ImportStateVerifyIgnore: []string{
+					"clone",
+					"cpu",
+					"memory",
+					"network",
+					"name",
+				},
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources["proxmox_virtual_environment_cloned_vm.import_test"]
+					if !ok {
+						return "", fmt.Errorf("resource not found")
+					}
+
+					nodeName := rs.Primary.Attributes["node_name"]
+					idStr := rs.Primary.Attributes["id"]
+
+					return fmt.Sprintf("%s/%s", nodeName, idStr), nil
+				},
+			},
+		},
+	})
+}

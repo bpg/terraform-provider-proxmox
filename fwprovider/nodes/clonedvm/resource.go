@@ -82,8 +82,6 @@ func (r *Resource) Configure(
 		return
 	}
 
-	// leave Delete as-is (may be null) to avoid forcing empty object into state
-
 	cfg, ok := req.ProviderData.(config.Resource)
 	if !ok {
 		resp.Diagnostics.AddError(
@@ -134,12 +132,20 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	if sourceNode == "" {
-		resp.Diagnostics.AddError("Missing source node", "either clone.source_node_name or node_name must be set")
+		resp.Diagnostics.AddError(
+			"Missing source node",
+			"Either clone.source_node_name or node_name must be set to identify the source node for cloning",
+		)
+
 		return
 	}
 
 	if plan.Clone.SourceVMID.IsUnknown() || plan.Clone.SourceVMID.IsNull() {
-		resp.Diagnostics.AddError("Missing source_vm_id", "clone.source_vm_id must be set")
+		resp.Diagnostics.AddError(
+			"Missing source VM ID",
+			"The clone.source_vm_id attribute is required and must specify the VM or template ID to clone from",
+		)
+
 		return
 	}
 
@@ -166,8 +172,16 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	// Read current VM config to get existing disk file paths before updating
 	// This is needed because updating existing disks requires the file path
 	currentConfig, err := vmAPI.GetVM(ctx)
-	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
-		resp.Diagnostics.AddError("Failed to get VM config", err.Error())
+	if err != nil {
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.Diagnostics.AddError(
+				"VM not found after clone",
+				fmt.Sprintf("VM %d was not found on node %s after cloning operation", plan.ID.ValueInt64(), targetNode),
+			)
+		} else {
+			resp.Diagnostics.AddError("Failed to get VM config", err.Error())
+		}
+
 		return
 	}
 
@@ -370,6 +384,25 @@ func (r *Resource) ImportState(
 		ID:       types.Int64Value(int64(id)),
 		NodeName: types.StringValue(nodeName),
 		Timeouts: ts,
+		// initialize all nested types with properly typed null values for import
+		Tags:   stringset.NullValue(),
+		CPU:    cpu.NullValue(),
+		Memory: memory.NullValue(),
+		RNG:    rng.NullValue(),
+		VGA:    vga.NullValue(),
+		CDROM:  cdrom.NullValue(),
+		// Clone is required for create but not for import - initialize with null values
+		Clone: CloneModel{
+			SourceVMID:      types.Int64Null(),
+			SourceNodeName:  types.StringNull(),
+			Full:            types.BoolNull(),
+			TargetDatastore: types.StringNull(),
+			TargetFormat:    types.StringNull(),
+			SnapshotName:    types.StringNull(),
+			PoolID:          types.StringNull(),
+			Retries:         types.Int64Null(),
+			BandwidthLimit:  types.Int64Null(),
+		},
 	}
 
 	vmAPI := r.client.Node(nodeName).VM(id)
@@ -465,7 +498,17 @@ func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, currentCon
 				continue
 			}
 
-			updateBody.Delete = append(updateBody.Delete, slot.ValueString())
+			slotStr := slot.ValueString()
+			if _, ok := slotIndex(slotStr, "net"); !ok {
+				diags.AddError(
+					"Invalid network slot in delete block",
+					fmt.Sprintf("Network slot %q must be in format net0, net1, etc.", slotStr),
+				)
+
+				return
+			}
+
+			updateBody.Delete = append(updateBody.Delete, slotStr)
 		}
 
 		for _, slot := range plan.Delete.Disk {
@@ -473,7 +516,17 @@ func applyManaged(ctx context.Context, vmAPI *vms.Client, plan Model, currentCon
 				continue
 			}
 
-			updateBody.Delete = append(updateBody.Delete, slot.ValueString())
+			slotStr := slot.ValueString()
+			if !isValidDiskSlot(slotStr) {
+				diags.AddError(
+					"Invalid disk slot in delete block",
+					fmt.Sprintf("Disk slot %q must be in format scsi0, virtio0, sata0, ide0, etc.", slotStr),
+				)
+
+				return
+			}
+
+			updateBody.Delete = append(updateBody.Delete, slotStr)
 		}
 	}
 
@@ -909,6 +962,30 @@ func slotIndex(slot string, prefix string) (int, bool) {
 	}
 
 	return idx, true
+}
+
+func isValidDiskSlot(slot string) bool {
+	if strings.HasPrefix(slot, "ide") {
+		idx, ok := slotIndex(slot, "ide")
+		return ok && idx >= 0 && idx <= 3
+	}
+
+	if strings.HasPrefix(slot, "sata") {
+		idx, ok := slotIndex(slot, "sata")
+		return ok && idx >= 0 && idx <= 5
+	}
+
+	if strings.HasPrefix(slot, "scsi") {
+		idx, ok := slotIndex(slot, "scsi")
+		return ok && idx >= 0
+	}
+
+	if strings.HasPrefix(slot, "virtio") {
+		idx, ok := slotIndex(slot, "virtio")
+		return ok && idx >= 0
+	}
+
+	return false
 }
 
 // Shutdown the VM, then wait for it to actually shut down.
