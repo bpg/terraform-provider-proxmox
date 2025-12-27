@@ -10,6 +10,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -40,7 +42,7 @@ type CustomLineBreakSeparatedList []string
 // CustomPrivileges allows a JSON object of privileges to also be a string array.
 type CustomPrivileges []string
 
-// CustomTimestamp allows a JSON boolean value to also be a unix timestamp.
+// CustomTimestamp allows a JSON integer value to also be a unix timestamp.
 type CustomTimestamp time.Time
 
 // CustomBoolPtr creates a pointer to a CustomBool.
@@ -52,7 +54,7 @@ func CustomBoolPtr(b *bool) *CustomBool {
 	return ptr.Ptr(CustomBool(*b))
 }
 
-// MarshalJSON converts a boolean to a JSON value.
+// MarshalJSON converts a CustomBool to a JSON integer (1 or 0).
 func (r CustomBool) MarshalJSON() ([]byte, error) {
 	buffer := new(bytes.Buffer)
 
@@ -65,7 +67,7 @@ func (r CustomBool) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// UnmarshalJSON converts a JSON value to a boolean.
+// UnmarshalJSON converts a JSON value to a CustomBool.
 func (r *CustomBool) UnmarshalJSON(b []byte) error {
 	s := string(b)
 	*r = s == "1" || s == "true"
@@ -93,20 +95,25 @@ func (r *CustomBool) FromValue(tfValue types.Bool) {
 	*r = CustomBool(tfValue.ValueBool())
 }
 
-// MarshalJSON converts a boolean to a JSON value.
+// MarshalJSON converts a CustomCommaSeparatedList to a JSON string.
 func (r *CustomCommaSeparatedList) MarshalJSON() ([]byte, error) {
 	s := strings.Join(*r, ",")
 
-	return json.Marshal(s)
+	b, err := json.Marshal(s)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal CustomCommaSeparatedList: %w", err)
+	}
+
+	return b, nil
 }
 
-// UnmarshalJSON converts a JSON value to a boolean.
+// UnmarshalJSON converts a JSON value to a CustomCommaSeparatedList.
 func (r *CustomCommaSeparatedList) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal CustomCommaSeparatedList: %w", err)
 	}
 
 	*r = strings.Split(s, ",")
@@ -141,36 +148,80 @@ func (r *CustomFloat64) PointerFloat64() *float64 {
 func (r *CustomInt) UnmarshalJSON(b []byte) error {
 	s := string(b)
 
-	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
-		s = s[1 : len(s)-1]
+	if len(s) > 0 && s[0] == '"' {
+		var val string
+		if err := json.Unmarshal(b, &val); err != nil {
+			return fmt.Errorf("cannot unmarshal string for CustomInt: %w", err)
+		}
+
+		s = val
+		if s == "" {
+			return fmt.Errorf("cannot parse int from empty string")
+		}
 	}
 
-	i, err := strconv.ParseInt(s, 10, 32)
-	if err != nil {
-		return fmt.Errorf("cannot parse int %q: %w", s, err)
+	// Try plain integer first
+	if i, err := strconv.ParseInt(s, 10, 0); err == nil {
+		*r = CustomInt(i)
+		return nil
 	}
 
-	*r = CustomInt(i)
+	// Fall back to float/scientific notation, then convert to int
+	if f, _, err := new(big.Float).Parse(s, 10); err == nil {
+		i := new(big.Int)
+		f.Int(i) // Truncates toward zero, similar to int64(float64_val)
 
-	return nil
+		if i.IsInt64() {
+			val := i.Int64()
+			if val >= math.MinInt && val <= math.MaxInt {
+				*r = CustomInt(val)
+				return nil
+			}
+		}
+
+		return fmt.Errorf("cannot parse int %q: value out of range", s)
+	}
+
+	return fmt.Errorf("cannot parse int %q: unsupported numeric format", s)
 }
 
-// UnmarshalJSON converts a JSON value to an integer.
+// UnmarshalJSON converts a JSON value to an integer64.
 func (r *CustomInt64) UnmarshalJSON(b []byte) error {
 	s := string(b)
 
-	if strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"") {
-		s = s[1 : len(s)-1]
+	if len(s) > 0 && s[0] == '"' {
+		var val string
+		if err := json.Unmarshal(b, &val); err != nil {
+			return fmt.Errorf("cannot unmarshal string for CustomInt64: %w", err)
+		}
+
+		s = val
+		if s == "" {
+			return fmt.Errorf("cannot parse int64 from empty string")
+		}
 	}
 
-	i, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		return fmt.Errorf("cannot parse int64 %q: %w", s, err)
+	// First, try parsing as a plain integer
+	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
+		*r = CustomInt64(i)
+		return nil
 	}
 
-	*r = CustomInt64(i)
+	// If that fails, numbers may be provided in scientific notation or as floats.
+	// Parse as a high-precision float and convert to int64 (truncating towards zero).
+	if f, _, err := new(big.Float).Parse(s, 10); err == nil {
+		i := new(big.Int)
+		f.Int(i) // Truncates toward zero, similar to int64(float64_val)
 
-	return nil
+		if i.IsInt64() {
+			*r = CustomInt64(i.Int64())
+			return nil
+		}
+
+		return fmt.Errorf("cannot parse int64 %q: value out of range", s)
+	}
+
+	return fmt.Errorf("cannot parse int64 %q: unsupported numeric format", s)
 }
 
 // PointerInt64 returns a pointer to an int64.
@@ -178,20 +229,25 @@ func (r *CustomInt64) PointerInt64() *int64 {
 	return (*int64)(r)
 }
 
-// MarshalJSON converts a boolean to a JSON value.
+// MarshalJSON converts a CustomLineBreakSeparatedList to a JSON string.
 func (r *CustomLineBreakSeparatedList) MarshalJSON() ([]byte, error) {
 	s := strings.Join(*r, "\n")
 
-	return json.Marshal(s)
+	b, err := json.Marshal(s)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal CustomLineBreakSeparatedList: %w", err)
+	}
+
+	return b, nil
 }
 
-// UnmarshalJSON converts a JSON value to a boolean.
+// UnmarshalJSON converts a JSON value to a CustomLineBreakSeparatedList.
 func (r *CustomLineBreakSeparatedList) UnmarshalJSON(b []byte) error {
 	var s string
 
 	err := json.Unmarshal(b, &s)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal CustomLineBreakSeparatedList: %w", err)
 	}
 
 	*r = strings.Split(s, "\n")
@@ -199,7 +255,7 @@ func (r *CustomLineBreakSeparatedList) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON converts a boolean to a JSON value.
+// MarshalJSON converts a CustomPrivileges to a JSON object.
 func (r *CustomPrivileges) MarshalJSON() ([]byte, error) {
 	privileges := map[string]CustomBool{}
 
@@ -207,16 +263,21 @@ func (r *CustomPrivileges) MarshalJSON() ([]byte, error) {
 		privileges[v] = true
 	}
 
-	return json.Marshal(privileges)
+	b, err := json.Marshal(privileges)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal CustomPrivileges: %w", err)
+	}
+
+	return b, nil
 }
 
-// UnmarshalJSON converts a JSON value to a boolean.
+// UnmarshalJSON converts a JSON value to a CustomPrivileges.
 func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
-	var privileges interface{}
+	var privileges any
 
 	err := json.Unmarshal(b, &privileges)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to unmarshal CustomPrivileges: %w", err)
 	}
 
 	switch s := privileges.(type) {
@@ -229,7 +290,7 @@ func (r *CustomPrivileges) UnmarshalJSON(b []byte) error {
 	default:
 		*r = CustomPrivileges{}
 
-		for k, v := range privileges.(map[string]interface{}) {
+		for k, v := range privileges.(map[string]any) {
 			if v.(float64) >= 1 {
 				*r = append(*r, k)
 			}
@@ -250,9 +311,10 @@ func (r CustomTimestamp) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON converts a JSON value to a timestamp.
 func (r *CustomTimestamp) UnmarshalJSON(b []byte) error {
 	s := string(b)
+
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse timestamp: %w", err)
 	}
 
 	*r = CustomTimestamp(time.Unix(i, 0).UTC())
