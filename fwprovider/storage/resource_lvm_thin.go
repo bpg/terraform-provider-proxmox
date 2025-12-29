@@ -55,6 +55,9 @@ func (r *lvmThinPoolStorageResource) Schema(_ context.Context, _ resource.Schema
 		"thin_pool": schema.StringAttribute{
 			Description: "The name of the LVM thin pool to use.",
 			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
 		},
 		"shared": schema.BoolAttribute{
 			Description: "Whether the storage is shared across all nodes.",
