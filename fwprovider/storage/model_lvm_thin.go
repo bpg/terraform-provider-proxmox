@@ -27,7 +27,7 @@ func (m *LVMThinStorageModel) GetStorageType() types.String {
 }
 
 // toCreateAPIRequest converts the Terraform model to a Proxmox API request body.
-func (m *LVMThinStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *LVMThinStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.LVMThinStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
@@ -42,7 +42,7 @@ func (m *LVMThinStorageModel) toCreateAPIRequest(ctx context.Context) (interface
 }
 
 // toUpdateAPIRequest converts the Terraform model to a Proxmox API request body for updates.
-func (m *LVMThinStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *LVMThinStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.LVMThinStorageUpdateRequest{}
 
 	if err := m.populateUpdateFields(ctx, &request.DataStoreCommonMutableFields); err != nil {

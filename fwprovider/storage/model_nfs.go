@@ -29,7 +29,7 @@ func (m *NFSStorageModel) GetStorageType() types.String {
 	return types.StringValue("nfs")
 }
 
-func (m *NFSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *NFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.NFSStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
@@ -46,7 +46,7 @@ func (m *NFSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, 
 	return request, nil
 }
 
-func (m *NFSStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *NFSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.NFSStorageUpdateRequest{}
 
 	if err := m.populateUpdateFields(ctx, &request.DataStoreCommonMutableFields); err != nil {

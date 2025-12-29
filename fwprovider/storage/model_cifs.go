@@ -32,7 +32,7 @@ func (m *CIFSStorageModel) GetStorageType() types.String {
 	return types.StringValue("cifs")
 }
 
-func (m *CIFSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *CIFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.CIFSStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
@@ -52,7 +52,7 @@ func (m *CIFSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{},
 	return request, nil
 }
 
-func (m *CIFSStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *CIFSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.CIFSStorageUpdateRequest{}
 
 	if err := m.populateUpdateFields(ctx, &request.DataStoreCommonMutableFields); err != nil {

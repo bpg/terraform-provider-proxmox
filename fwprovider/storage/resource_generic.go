@@ -8,11 +8,14 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bpg/terraform-provider-proxmox/fwprovider/config"
 	"github.com/bpg/terraform-provider-proxmox/proxmox"
+	"github.com/bpg/terraform-provider-proxmox/proxmox/api"
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -24,10 +27,10 @@ type storageModel interface {
 	GetID() types.String
 
 	// toCreateAPIRequest converts the Terraform model to the specific API request body for creation.
-	toCreateAPIRequest(ctx context.Context) (interface{}, error)
+	toCreateAPIRequest(ctx context.Context) (any, error)
 
 	// toUpdateAPIRequest converts the Terraform model to the specific API request body for updates.
-	toUpdateAPIRequest(ctx context.Context) (interface{}, error)
+	toUpdateAPIRequest(ctx context.Context) (any, error)
 
 	// fromAPI populates the model from the Proxmox API response.
 	fromAPI(ctx context.Context, datastore *storage.DatastoreGetResponseData) error
@@ -43,6 +46,10 @@ type storageResource[T interface {
 	client       proxmox.Client
 	storageType  string
 	resourceName string
+}
+
+func (r *storageResource[T, M]) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // Configure is the generic configuration function.
@@ -83,6 +90,19 @@ func (r *storageResource[T, M]) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	datastoreID := plan.GetID().ValueString()
+
+	datastore, err := r.client.Storage().GetDatastore(ctx, &storage.DatastoreGetRequest{ID: &datastoreID})
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after create", r.storageType), err.Error())
+		return
+	}
+
+	if err := plan.fromAPI(ctx, datastore); err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after create", r.storageType), err.Error())
+		return
+	}
+
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 }
@@ -102,7 +122,13 @@ func (r *storageResource[T, M]) Read(ctx context.Context, req resource.ReadReque
 
 	datastore, err := r.client.Storage().GetDatastore(ctx, &storage.DatastoreGetRequest{ID: &datastoreID})
 	if err != nil {
-		resp.State.RemoveResource(ctx)
+		if errors.Is(err, api.ErrResourceDoesNotExist) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage", r.storageType), err.Error())
+
 		return
 	}
 
@@ -139,6 +165,19 @@ func (r *storageResource[T, M]) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
+	datastoreID := plan.GetID().ValueString()
+
+	datastore, err := r.client.Storage().GetDatastore(ctx, &storage.DatastoreGetRequest{ID: &datastoreID})
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after update", r.storageType), err.Error())
+		return
+	}
+
+	if err := plan.fromAPI(ctx, datastore); err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading %s storage after update", r.storageType), err.Error())
+		return
+	}
+
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 }
@@ -155,7 +194,7 @@ func (r *storageResource[T, M]) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	err := r.client.Storage().DeleteDatastore(ctx, state.GetID().ValueString())
-	if err != nil {
+	if err != nil && !errors.Is(err, api.ErrResourceDoesNotExist) {
 		resp.Diagnostics.AddError(fmt.Sprintf("Error deleting %s storage", r.storageType), err.Error())
 		return
 	}

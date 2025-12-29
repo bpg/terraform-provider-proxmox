@@ -52,6 +52,8 @@ func (m *StorageModelBase) populateBaseFromAPI(ctx context.Context, datastore *s
 		}
 
 		m.ContentTypes = contentTypes
+	} else {
+		m.ContentTypes = types.SetValueMust(types.StringType, []attr.Value{})
 	}
 
 	if datastore.Disable != nil {
@@ -71,39 +73,59 @@ func (m *StorageModelBase) populateCreateFields(
 	immutableReq *storage.DataStoreCommonImmutableFields,
 	mutableReq *storage.DataStoreCommonMutableFields,
 ) error {
-	var nodes proxmox_types.CustomCommaSeparatedList
-	if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
-		return fmt.Errorf("cannot convert nodes: %s", diags)
-	}
-
-	var contentTypes proxmox_types.CustomCommaSeparatedList
-	if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
-		return fmt.Errorf("cannot convert content-types: %s", diags)
-	}
-
 	immutableReq.ID = m.ID.ValueStringPointer()
-	mutableReq.Nodes = &nodes
-	mutableReq.ContentTypes = &contentTypes
 	mutableReq.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
+
+	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
+		var nodes proxmox_types.CustomCommaSeparatedList
+		if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
+			return fmt.Errorf("cannot convert nodes: %s", diags)
+		}
+
+		if len(nodes) > 0 {
+			mutableReq.Nodes = &nodes
+		}
+	}
+
+	if !m.ContentTypes.IsNull() && !m.ContentTypes.IsUnknown() {
+		var contentTypes proxmox_types.CustomCommaSeparatedList
+		if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
+			return fmt.Errorf("cannot convert content-types: %s", diags)
+		}
+
+		if len(contentTypes) > 0 {
+			mutableReq.ContentTypes = &contentTypes
+		}
+	}
 
 	return nil
 }
 
 // populateUpdateFields is a helper to populate the common fields for an update request.
 func (m *StorageModelBase) populateUpdateFields(ctx context.Context, mutableReq *storage.DataStoreCommonMutableFields) error {
-	var nodes proxmox_types.CustomCommaSeparatedList
-	if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
-		return fmt.Errorf("cannot convert nodes: %s", diags)
-	}
-
-	var contentTypes proxmox_types.CustomCommaSeparatedList
-	if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
-		return fmt.Errorf("cannot convert content-types: %s", diags)
-	}
-
-	mutableReq.Nodes = &nodes
-	mutableReq.ContentTypes = &contentTypes
 	mutableReq.Disable = proxmox_types.CustomBoolPtr(m.Disable.ValueBoolPointer())
+
+	if !m.Nodes.IsNull() && !m.Nodes.IsUnknown() {
+		var nodes proxmox_types.CustomCommaSeparatedList
+		if diags := m.Nodes.ElementsAs(ctx, &nodes, false); diags.HasError() {
+			return fmt.Errorf("cannot convert nodes: %s", diags)
+		}
+
+		if len(nodes) > 0 {
+			mutableReq.Nodes = &nodes
+		}
+	}
+
+	if !m.ContentTypes.IsNull() && !m.ContentTypes.IsUnknown() {
+		var contentTypes proxmox_types.CustomCommaSeparatedList
+		if diags := m.ContentTypes.ElementsAs(ctx, &contentTypes, false); diags.HasError() {
+			return fmt.Errorf("cannot convert content-types: %s", diags)
+		}
+
+		if len(contentTypes) > 0 {
+			mutableReq.ContentTypes = &contentTypes
+		}
+	}
 
 	return nil
 }

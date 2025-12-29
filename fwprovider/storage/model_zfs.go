@@ -29,7 +29,7 @@ func (m *ZFSStorageModel) GetStorageType() types.String {
 }
 
 // toCreateAPIRequest converts the Terraform model to a Proxmox API request body.
-func (m *ZFSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *ZFSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.ZFSStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
@@ -48,7 +48,7 @@ func (m *ZFSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, 
 }
 
 // toUpdateAPIRequest converts the Terraform model to a Proxmox API request body for updates.
-func (m *ZFSStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *ZFSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.ZFSStorageUpdateRequest{}
 
 	if err := m.populateUpdateFields(ctx, &request.DataStoreCommonMutableFields); err != nil {

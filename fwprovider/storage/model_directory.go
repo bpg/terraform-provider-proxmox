@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/bpg/terraform-provider-proxmox/proxmox/storage"
+	proxmox_types "github.com/bpg/terraform-provider-proxmox/proxmox/types"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -26,7 +27,7 @@ func (m *DirectoryStorageModel) GetStorageType() types.String {
 	return types.StringValue("dir")
 }
 
-func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.DirectoryStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
@@ -36,11 +37,21 @@ func (m *DirectoryStorageModel) toCreateAPIRequest(ctx context.Context) (interfa
 
 	request.Path = m.Path.ValueStringPointer()
 	request.Preallocation = m.Preallocation.ValueStringPointer()
+	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
+
+	if m.Backups != nil {
+		backups, err := m.Backups.toAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		request.Backups = backups
+	}
 
 	return request, nil
 }
 
-func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.DirectoryStorageUpdateRequest{}
 
 	if err := m.populateUpdateFields(ctx, &request.DataStoreCommonMutableFields); err != nil {
@@ -48,6 +59,16 @@ func (m *DirectoryStorageModel) toUpdateAPIRequest(ctx context.Context) (interfa
 	}
 
 	request.Preallocation = m.Preallocation.ValueStringPointer()
+	request.Shared = proxmox_types.CustomBoolPtr(m.Shared.ValueBoolPointer())
+
+	if m.Backups != nil {
+		backups, err := m.Backups.toAPI()
+		if err != nil {
+			return nil, err
+		}
+
+		request.Backups = backups
+	}
 
 	return request, nil
 }

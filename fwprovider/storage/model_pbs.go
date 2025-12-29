@@ -35,7 +35,7 @@ func (m *PBSStorageModel) GetStorageType() types.String {
 }
 
 // toCreateAPIRequest converts the Terraform model to a Proxmox API request body.
-func (m *PBSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *PBSStorageModel) toCreateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.PBSStorageCreateRequest{}
 	request.Type = m.GetStorageType().ValueStringPointer()
 
@@ -60,7 +60,7 @@ func (m *PBSStorageModel) toCreateAPIRequest(ctx context.Context) (interface{}, 
 }
 
 // toUpdateAPIRequest converts the Terraform model to a Proxmox API request body for updates.
-func (m *PBSStorageModel) toUpdateAPIRequest(ctx context.Context) (interface{}, error) {
+func (m *PBSStorageModel) toUpdateAPIRequest(ctx context.Context) (any, error) {
 	request := storage.PBSStorageUpdateRequest{}
 
 	if err := m.populateUpdateFields(ctx, &request.DataStoreCommonMutableFields); err != nil {
